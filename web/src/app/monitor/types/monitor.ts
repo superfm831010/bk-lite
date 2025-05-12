@@ -312,6 +312,7 @@ export interface IntergrationMonitoredObject {
   server?: string | null;
   host?: string | null;
   port?: string | null;
+  jmx_url?: string | null;
 }
 
 export interface MetricListItem {
@@ -339,13 +340,13 @@ export interface NodeWorkload {
 }
 
 export interface NodeThresholdColor {
-  value: number,
-  color: string
+  value: number;
+  color: string;
 }
 
 export interface ChartDataConfig {
-  data: TableDataItem,
-  metricsData: MetricItem[],
-  hexColor: NodeThresholdColor[],
-  queryMetric: string
+  data: TableDataItem;
+  metricsData: MetricItem[];
+  hexColor: NodeThresholdColor[];
+  queryMetric: string;
 }

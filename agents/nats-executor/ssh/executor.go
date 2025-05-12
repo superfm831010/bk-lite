@@ -18,7 +18,7 @@ func Execute(req ExecuteRequest, instanceId string) ExecuteResponse {
 	client, err := goph.NewConn(&goph.Config{
 		User:     req.User,
 		Addr:     req.Host,
-		Port:     22,
+		Port:     req.Port,
 		Auth:     auth,
 		Timeout:  30 * time.Second,
 		Callback: ssh.InsecureIgnoreHostKey(), // 👈 跳过 known_hosts 验证
@@ -141,8 +141,9 @@ func SubscribeDownloadToRemote(nc *nats.Conn, instanceId *string) {
 		}
 
 		// 使用sshpass处理带密码的scp传输
-		scpCommand := fmt.Sprintf("sshpass -p '%s' scp -o StrictHostKeyChecking=no %s/%s %s@%s:%s",
+		scpCommand := fmt.Sprintf("sshpass -p '%s' scp -o StrictHostKeyChecking=no -P %d %s/%s %s@%s:%s",
 			downloadRequest.Password,
+			downloadRequest.Port,
 			localdownloadRequest.TargetPath,
 			localdownloadRequest.FileName,
 			downloadRequest.User,
@@ -194,8 +195,9 @@ func SubscribeUploadToRemote(nc *nats.Conn, instanceId *string) {
 		log.Printf("Starting upload from local path %s to remote host %s@%s:%s", uploadRequest.SourcePath, uploadRequest.User, uploadRequest.Host, uploadRequest.TargetPath)
 
 		// 使用sshpass处理带密码的scp传输
-		scpCommand := fmt.Sprintf("sshpass -p '%s' scp -o StrictHostKeyChecking=no %s %s@%s:%s",
+		scpCommand := fmt.Sprintf("sshpass -p '%s' scp -o StrictHostKeyChecking=no -P %d %s %s@%s:%s",
 			uploadRequest.Password,
+			uploadRequest.Port,
 			uploadRequest.SourcePath,
 			uploadRequest.User,
 			uploadRequest.Host,

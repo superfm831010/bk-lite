@@ -2,7 +2,6 @@ import time
 import uuid
 from typing import Optional
 
-from langchain_openai import OpenAIEmbeddings
 from loguru import logger
 
 from src.chunk.fixed_size_chunk import FixedSizeChunk

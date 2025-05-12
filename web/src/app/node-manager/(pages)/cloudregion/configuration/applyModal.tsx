@@ -138,7 +138,7 @@ const ApplyModal = forwardRef<ModalRef, ModalSuccess>(({ onSuccess }, ref) => {
         <div className="sticky top-0 z-10">
           <Search
             className="w-64 mr-[8px] h-[40px]"
-            placeholder="input search text"
+            placeholder={t('common.search')}
             enterButton
             onSearch={onSearch}
           />

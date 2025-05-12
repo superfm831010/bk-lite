@@ -24,7 +24,8 @@ import Permission from '@/components/permission';
 
 const Intergration = () => {
   const { isLoading } = useApiClient();
-  const { updateMonitorObject, getMonitorObject, getMonitorPlugin } = useMonitorApi();
+  const { updateMonitorObject, getMonitorObject, getMonitorPlugin } =
+    useMonitorApi();
   const { t } = useTranslation();
   const router = useRouter();
   const importRef = useRef<ModalRef>(null);
@@ -100,36 +101,33 @@ const Intergration = () => {
   };
 
   const getTreeData = (data: ObectItem[]): TreeItem[] => {
-    const groupedData = data.reduce(
-      (acc, item) => {
-        if (!acc[item.type]) {
-          acc[item.type] = {
-            title: item.display_type || '--',
-            key: item.type,
-            children: [],
-          };
-        }
-        if (
-          ![
-            'Pod',
-            'Node',
-            'Docker Container',
-            'ESXI',
-            'VM',
-            'DataStorage',
-          ].includes(item.name)
-        ) {
-          acc[item.type].children.push({
-            title: item.display_name || '--',
-            label: item.name || '--',
-            key: item.id,
-            children: [],
-          });
-        }
-        return acc;
-      },
-      {} as Record<string, TreeItem>
-    );
+    const groupedData = data.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = {
+          title: item.display_type || '--',
+          key: item.type,
+          children: [],
+        };
+      }
+      if (
+        ![
+          'Pod',
+          'Node',
+          'Docker Container',
+          'ESXI',
+          'VM',
+          'DataStorage',
+        ].includes(item.name)
+      ) {
+        acc[item.type].children.push({
+          title: item.display_name || '--',
+          label: item.name || '--',
+          key: item.id,
+          children: [],
+        });
+      }
+      return acc;
+    }, {} as Record<string, TreeItem>);
     return Object.values(groupedData);
   };
 
@@ -263,9 +261,10 @@ const Intergration = () => {
                 onClick={() => onAppClick(app)}
               >
                 <div
-                  className={`bg-[var(--color-bg-1)] shadow-sm hover:shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-4 relative cursor-pointer group ${selectedApp?.id === app.id
-                    ? 'border-2 border-blue-300'
-                    : 'border'
+                  className={`bg-[var(--color-bg-1)] shadow-sm hover:shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-4 relative cursor-pointer group ${
+                    selectedApp?.id === app.id
+                      ? 'border-2 border-blue-300'
+                      : 'border'
                   }`}
                 >
                   <div className="flex items-center space-x-4 my-2">

@@ -6,9 +6,10 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ViewSet
 
 from apps.core.utils.web_utils import WebUtils
+from apps.monitor.models import CollectConfig
 from apps.monitor.services.node_mgmt import InstanceConfigService
 from apps.monitor.utils.config_format import ConfigFormat
-from apps.monitor.utils.node_mgmt_api import NodeUtils
+from apps.rpc.node_mgmt import NodeMgmt
 
 logger = logging.getLogger("app")
 
@@ -30,7 +31,7 @@ class NodeMgmtView(ViewSet):
     @action(methods=['post'], detail=False, url_path='nodes')
     def get_nodes(self, request):
         organization_ids = [] if request.user.is_superuser else [i["id"] for i in request.user.group_list]
-        data = NodeUtils.get_nodes(dict(
+        data = NodeMgmt().node_list(dict(
             cloud_region_id=request.data.get("cloud_region_id", 1),
             organization_ids=organization_ids,
             name=request.data.get("name"),
@@ -103,6 +104,37 @@ class NodeMgmtView(ViewSet):
         return WebUtils.response_success(data)
 
     @swagger_auto_schema(
+        operation_description="查询配置内容",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "id": openapi.Schema(type=openapi.TYPE_STRING, description="配置id"),
+            },
+            required=["id"]
+        ),
+        tags=['NodeMgmt']
+    )
+    @action(methods=['post'], detail=False, url_path='get_config_content')
+    def get_config_content(self, request):
+        config_obj = CollectConfig.objects.filter(id=request.data["id"]).first()
+        if not config_obj:
+            return WebUtils.response_error("配置不存在!")
+
+        if config_obj.is_child:
+            configs = NodeMgmt().get_child_configs_by_ids([request.data["id"]])
+        else:
+            configs = NodeMgmt().get_configs_by_ids([request.data["id"]])
+        config = configs[0]
+        if config_obj.file_type == "toml":
+            config["content"] = ConfigFormat.toml_to_dict(config["content"])
+        elif config_obj.file_type == "yaml":
+            config["content"] = ConfigFormat.yaml_to_dict(config["content"])
+        else:
+            raise ValueError("file_type must be toml or yaml")
+
+        return WebUtils.response_success(config)
+
+    @swagger_auto_schema(
         operation_description="更改子配置",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
@@ -116,6 +148,21 @@ class NodeMgmtView(ViewSet):
     )
     @action(methods=['post'], detail=False, url_path='update_instance_child_config')
     def update_instance_child_config(self, request):
-        content = ConfigFormat.json_to_toml(request.data["content"])
-        data = NodeUtils.update_instance_child_config(dict(id=request.data["id"], content=content))
-        return WebUtils.response_success(data)
+        config_obj = CollectConfig.objects.filter(id=request.data["id"]).first()
+        if not config_obj:
+            return WebUtils.response_error("配置不存在!")
+        content = request.data.get("content")
+
+        if config_obj.file_type == "toml":
+            content = ConfigFormat.json_to_toml(content)
+        elif config_obj.file_type == "yaml":
+            content = ConfigFormat.json_to_yaml(content)
+        else:
+            raise ValueError("file_type must be toml or yaml")
+
+        if config_obj.is_child:
+            NodeMgmt().update_child_config_content(request.data["id"], content)
+        else:
+            NodeMgmt().update_config_content(request.data["id"], content)
+
+        return WebUtils.response_success()

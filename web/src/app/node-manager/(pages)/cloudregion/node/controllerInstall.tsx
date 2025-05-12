@@ -97,6 +97,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
             <Input
               defaultValue={row.ip}
               value={row.ip}
+              placeholder={t('common.inputMsg')}
               onChange={(e) => handleInputChange(e, row, 'ip')}
             />
           );
@@ -202,6 +203,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
             <Input.Password
               defaultValue={row.password}
               value={row.password}
+              placeholder={t('common.inputMsg')}
               onChange={(e) => handleInputChange(e, row, 'password')}
             />
           );

@@ -1,9 +1,7 @@
-import json
-import re
-
+import json_repair
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_openai import ChatOpenAI
-import json_repair
+
 from src.entity.rag.qa_enhance_request import QAEnhanceRequest
 
 

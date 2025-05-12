@@ -110,7 +110,7 @@ const VariableModal = forwardRef<ModalRef, ModalSuccess>(
               },
             ]}
           >
-            <Input />
+            <Input placeholder={t('common.inputMsg')} />
           </Form.Item>
           <Form.Item
             name="value"
@@ -122,13 +122,13 @@ const VariableModal = forwardRef<ModalRef, ModalSuccess>(
               },
             ]}
           >
-            <Input />
+            <Input placeholder={t('common.inputMsg')} />
           </Form.Item>
           <Form.Item
             name="description"
             label={t('node-manager.cloudregion.variable.desc')}
           >
-            <Input.TextArea rows={5} />
+            <Input.TextArea rows={5} placeholder={t('common.inputMsg')} />
           </Form.Item>
         </Form>
       </OperateModal>

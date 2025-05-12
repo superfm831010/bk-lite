@@ -41,7 +41,7 @@ compression_codec=1
 if default_sidecar_mode == "nats":
     TELEGRAF_CONFIG += """
 [[outputs.nats]]
-servers = ["${NATS_SERVERS}"]
+servers = ["nats://${NATS_SERVERS}"]
 username = "${NATS_USERNAME}"
 password = "${NATS_PASSWORD}"
 subject = "metrics.${node.ip_filter}"

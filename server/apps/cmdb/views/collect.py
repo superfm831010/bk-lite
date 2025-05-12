@@ -4,6 +4,7 @@
 # @Author: windyzhao
 from django.conf import settings
 from django.db.models import Q
+from django.http import JsonResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
@@ -182,3 +183,10 @@ class MidModelViewSet(ModelViewSet):
     ordering = ["-updated_at"]
     filterset_class = OidModelFilter
     pagination_class = CustomPageNumberPagination
+
+    def create(self, request, *args, **kwargs):
+        oid = request.data["oid"]
+        if OidMapping.objects.filter(oid=oid).exists():
+            return JsonResponse({"data": [], "result": False, "message": "OId已存在！"})
+
+        return super().create(request, *args, **kwargs)

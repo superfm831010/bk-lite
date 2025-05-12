@@ -24,9 +24,13 @@
     text-overflow: ellipsis;
 }
 
-.ant-modal-confirm-btns {
+.ant-modal-confirm-btns, .ant-modal-footer, .ant-popconfirm-buttons  {
     display: flex;
     flex-direction: row-reverse;
+}
+
+.ant-modal-footer button:nth-child(2) {
+    margin-right: 10px;
 }
 
 .ant-modal-confirm-btns button:nth-child(1) {

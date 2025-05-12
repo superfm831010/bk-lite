@@ -6,7 +6,7 @@ COLLECTORS = [
         "id": "telegraf_linux",
         "name": "Telegraf",
         "controller_default_run": False,
-        "icon": "shujucaiji ",
+        "icon": "shujucaiji",
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "/opt/fusion-collectors/bin/telegraf",
@@ -19,7 +19,7 @@ COLLECTORS = [
         "id": "telegraf_windows",
         "name": "Telegraf",
         "controller_default_run": False,
-        "icon": "shujucaiji ",
+        "icon": "shujucaiji",
         "node_operating_system": "windows",
         "service_type": "exec",
         "executable_path": "C:\\Program Files\\Telegraf\\telegraf.exe",
@@ -32,7 +32,7 @@ COLLECTORS = [
         "id": "natsexecutor_linux",
         "name": "NATS-Executor",
         "controller_default_run": True,
-        "icon": "caijixinxi ",
+        "icon": "caijixinxi",
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "/opt/fusion-collectors/bin/nats-executor",
@@ -45,7 +45,7 @@ COLLECTORS = [
         "id": "natsexecutor_windows",
         "name": "NATS-Executor",
         "controller_default_run": True,
-        "icon": "caijixinxi ",
+        "icon": "caijixinxi",
         "node_operating_system": "windows",
         "service_type": "exec",
         "executable_path": "C:\\Program Files\\NATS\\nats-executor.exe",
@@ -53,8 +53,20 @@ COLLECTORS = [
         "validation_parameters": "",
         "default_template": "",
         "introduction": "NATS Executor is a task scheduling and management tool that automates data storage, backup, and distributed file processing tasks."
-    }
-
+    },
+    {
+        "id": "jmx_jvm_linux",
+        "name": "JMX-JVM",
+        "controller_default_run": False,
+        "icon": "",
+        "node_operating_system": "linux",
+        "service_type": "exec",
+        "executable_path": "java",
+        "execute_parameters": "-jar jmx_jvm.jar 40000 %s",
+        "validation_parameters": "",
+        "default_template": "",
+        "introduction": "JMX-JVM is a Java Management Extensions (JMX) monitoring tool that collects and monitors JVM metrics, providing real-time performance insights."
+    },
 ]
 
 

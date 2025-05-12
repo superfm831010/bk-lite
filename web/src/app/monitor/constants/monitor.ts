@@ -1337,7 +1337,7 @@ const INDEX_CONFIG = [
       { type: 'value', key: 'vmware_esxi_count' },
       { type: 'value', key: 'vmware_datastore_count' },
       { type: 'value', key: 'vmware_vm_count' },
-    ]
+    ],
   },
   {
     name: 'ESXI',
@@ -1347,7 +1347,7 @@ const INDEX_CONFIG = [
       { type: 'value', key: 'esxi_cpu_usage_average_gauge' },
       { type: 'value', key: 'esxi_mem_usage_average_gauge' },
       { type: 'value', key: 'esxi_disk_read_average_gauge' },
-    ]
+    ],
   },
   {
     name: 'DataStorage',
@@ -1356,7 +1356,7 @@ const INDEX_CONFIG = [
     tableDiaplay: [
       { type: 'value', key: 'data_storage_disk_used_average_gauge' },
       { type: 'enum', key: 'data_storage_store_accessible_gauge' },
-    ]
+    ],
   },
   {
     name: 'VM',
@@ -1366,7 +1366,7 @@ const INDEX_CONFIG = [
       { type: 'value', key: 'vm_cpu_usage_average_gauge' },
       { type: 'value', key: 'vm_mem_usage_average_gauge' },
       { type: 'value', key: 'vm_disk_io_usage_gauge' },
-    ]
+    ],
   },
 ];
 
@@ -1498,6 +1498,7 @@ const COLLECT_TYPE_MAP: ObjectIconMap = {
   Postgres: 'database',
   ElasticSearch: 'database',
   VMWare: 'vmware',
+  JVM: 'jmx',
 };
 
 const OBJECT_INSTANCE_TYPE_MAP: ObjectIconMap = {
@@ -1530,6 +1531,7 @@ const OBJECT_INSTANCE_TYPE_MAP: ObjectIconMap = {
   Postgres: 'postgres',
   ElasticSearch: 'elasticsearch',
   vCenter: 'vmware',
+  JVM: 'jvm',
 };
 
 const INSTANCE_TYPE_MAP: ObjectIconMap = {
@@ -1564,6 +1566,7 @@ const INSTANCE_TYPE_MAP: ObjectIconMap = {
   Postgres: 'postgres',
   ElasticSearch: 'elasticsearch',
   VMWare: 'vmware',
+  JVM: 'jvm',
 };
 
 const CONFIG_TYPE_MAP: ConfigTypeMap = {
@@ -1598,6 +1601,7 @@ const CONFIG_TYPE_MAP: ConfigTypeMap = {
   Postgres: ['postgres'],
   ElasticSearch: ['elasticsearch'],
   VMWare: ['http'],
+  JVM: ['jvm'],
 };
 
 const MANUAL_CONFIG_TEXT_MAP: ObjectIconMap = {
@@ -1667,6 +1671,90 @@ const MANUAL_CONFIG_TEXT_MAP: ObjectIconMap = {
     ignored_databases = ["template0", "template1"]
     interval = "$intervals"
     tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+  JVM: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+
+# 白名单限制采集范围
+whitelistObjectNames:
+  - java.lang:type=Memory
+  - java.lang:type=Threading
+  - java.lang:type=OperatingSystem
+  - java.nio:type=BufferPool,name=*
+  - java.lang:type=GarbageCollector,name=*
+  - java.lang:type=MemoryPool,name=*
+
+rules:
+  # 内存相关指标
+  - pattern: java.lang<type=Memory><(\w+)MemoryUsage>(\w+)
+    name: jvm_memory_usage_$2
+    labels:
+      type: $1
+
+  # 线程相关指标
+  - pattern: java.lang<type=Threading><>ThreadCount
+    name: jvm_threads_count
+  - pattern: java.lang<type=Threading><>DaemonThreadCount
+    name: jvm_threads_daemon_count
+  - pattern: java.lang<type=Threading><>PeakThreadCount
+    name: jvm_threads_peak_count
+  - pattern: java.lang<type=Threading><>TotalStartedThreadCount
+    name: jvm_threads_total_started_count
+  - pattern: java.lang<type=Threading><>CurrentThreadUserTime
+    name: jvm_threads_current_user_time
+    valueFactor: 0.001
+
+  # 操作系统指标
+  - pattern: java.lang<type=OperatingSystem><>FreePhysicalMemorySize
+    name: jvm_os_memory_physical_free
+  - pattern: java.lang<type=OperatingSystem><>TotalPhysicalMemorySize
+    name: jvm_os_memory_physical_total
+  - pattern: java.lang<type=OperatingSystem><>FreeSwapSpaceSize
+    name: jvm_os_memory_swap_free
+  - pattern: java.lang<type=OperatingSystem><>TotalSwapSpaceSize
+    name: jvm_os_memory_swap_total
+  - pattern: java.lang<type=OperatingSystem><>CommittedVirtualMemorySize
+    name: jvm_os_memory_committed_virtual
+  - pattern: java.lang<type=OperatingSystem><>AvailableProcessors
+    name: jvm_os_available_processors
+  - pattern: java.lang<type=OperatingSystem><>ProcessCpuTime
+    name: jvm_os_processcputime_seconds
+    valueFactor: 0.000000001
+
+  # BufferPool 指标
+  - pattern: java.nio<type=BufferPool, name=(.+)><>Count
+    name: jvm_bufferpool_count
+    labels:
+      type: $1
+  - pattern: java.nio<type=BufferPool, name=(.+)><>MemoryUsed
+    name: jvm_bufferpool_memoryused
+    labels:
+      type: $1
+  - pattern: java.nio<type=BufferPool, name=(.+)><>TotalCapacity
+    name: jvm_bufferpool_totalcapacity
+    labels:
+      type: $1
+
+  # GC 指标
+  - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionTime
+    name: jvm_gc_collectiontime_seconds
+    valueFactor: 0.001
+    labels:
+      type: $1
+  - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionCount
+    name: jvm_gc_collectioncount
+    labels:
+      type: $1
+
+  # MemoryPool 指标
+  - pattern: java.lang<type=MemoryPool, name=(.+)><Usage>(\w+)
+    name: jvm_memorypool_usage_$2
+    labels:
+      type: $1`,
   default: `[[inputs.$config_type]]
     url = "$monitor_url"
     username = "$username"

@@ -256,6 +256,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                 loading={collectorLoading}
                 showSearch
                 allowClear
+                placeholder={t('common.selectMsg')}
                 onChange={handleCollectorChange}
               >
                 {collectorlist.map((item) => (
@@ -278,7 +279,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
               name="configuration"
               label={t('node-manager.cloudregion.node.configuration')}
             >
-              <Select showSearch allowClear loading={configListLoading}>
+              <Select showSearch allowClear loading={configListLoading} placeholder={t('common.selectMsg')}>
                 {configs.map((item) => (
                   <Option value={item.id} key={item.id}>
                     {item.name}
@@ -298,7 +299,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                 },
               ]}
             >
-              <Select showSearch allowClear loading={versionLoading}>
+              <Select showSearch allowClear loading={versionLoading} placeholder={t('common.selectMsg')}>
                 {packageList.map((item) => (
                   <Option value={item.id} key={item.id}>
                     {item.version}

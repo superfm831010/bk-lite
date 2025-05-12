@@ -49,7 +49,7 @@ def install_controller(task_id):
             f"{controller_storage_dir}/{package_obj.name}",
             controller_storage_dir,
         )
-        unzip_name = resp["result"]
+        unzip_name = resp
     except Exception as e:
         base_run = False
         base_massage = str(e)
@@ -72,10 +72,11 @@ def install_controller(task_id):
                 node_obj.ip,
                 node_obj.username,
                 node_obj.password,
+                node_obj.port,
             )
 
             action = "run"
-            exec_command_to_remote(task_obj.work_node, node_obj.ip, node_obj.username, node_obj.password, install_command)
+            exec_command_to_remote(task_obj.work_node, node_obj.ip, node_obj.username, node_obj.password, install_command, node_obj.port)
             node_obj.status = "success"
         except Exception as e:
             message = str(e)
@@ -107,7 +108,7 @@ def uninstall_controller(task_id):
             # 获取卸载命令
             uninstall_command = get_uninstall_command(node_obj.os)
             # 执行卸载脚步
-            exec_command_to_remote(task_obj.work_node, node_obj.ip, node_obj.username, node_obj.password, uninstall_command)
+            exec_command_to_remote(task_obj.work_node, node_obj.ip, node_obj.username, node_obj.password, uninstall_command, node_obj.port)
             # 删除控制器安装目录
             action = "delete_dir"
             exec_command_to_remote(
@@ -116,6 +117,7 @@ def uninstall_controller(task_id):
                 node_obj.username,
                 node_obj.password,
                 CONTROLLER_DIR_DELETE_COMMAND.get(node_obj.os),
+                node_obj.port,
             )
             # 删除node实例
             action = "delete_node"

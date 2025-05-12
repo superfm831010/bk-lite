@@ -8,8 +8,8 @@ from celery import shared_task
 
 from apps.core.logger import logger
 from apps.cmdb.models.collect_model import CollectModels
-from apps.cmdb.services.sync_collect import ProtocolCollect
-from apps.cmdb.constants import CollectDriverTypes, CollectRunStatusType
+from apps.cmdb.services.sync_collect import ProtocolCollect, JobCollect
+from apps.cmdb.constants import CollectRunStatusType
 
 
 @shared_task
@@ -22,10 +22,10 @@ def sync_collect_task(instance_id):
         return
 
     try:
-        if instance.driver_type == CollectDriverTypes.JOB:
+        if instance.is_job:
             # 脚本采集
-            result = {}
-            format_data = {}
+            collect = JobCollect(task=instance)
+            result, format_data = collect.main()
         else:
             # 插件采集
             collect = ProtocolCollect(task=instance)

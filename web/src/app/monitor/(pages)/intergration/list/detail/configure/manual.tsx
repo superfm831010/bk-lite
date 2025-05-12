@@ -156,6 +156,8 @@ const AutomaticConfiguration: React.FC = () => {
         return row.monitor_url;
       case 'ping':
         return row.monitor_url;
+      case 'jmx':
+        return row.monitor_url;
       case 'middleware':
         return row.monitor_url;
       case 'docker':

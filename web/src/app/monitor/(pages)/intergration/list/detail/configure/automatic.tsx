@@ -55,6 +55,9 @@ const AutomaticConfiguration: React.FC = () => {
     if (['snmp', 'ipmi'].includes(collectType)) {
       return { ...initItem, ip: null };
     }
+    if (collectType === 'jmx') {
+      return { ...initItem, jmx_url: null };
+    }
     if (collectType === 'docker') {
       return { ...initItem, endpoint: null };
     }
@@ -312,6 +315,23 @@ const AutomaticConfiguration: React.FC = () => {
         />
       ),
     },
+    {
+      title: middleWareFieldsMap.default,
+      dataIndex: 'jmx_url',
+      key: 'jmx_url',
+      width: 200,
+      render: (_: unknown, record: TableDataItem, index: number) => (
+        <Input
+          value={record.jmx_url}
+          onChange={(e) =>
+            handleFieldAndInstNameChange(e, {
+              index,
+              field: 'jmx_url',
+            })
+          }
+        />
+      ),
+    },
   ];
 
   const handleEditAuthPassword = () => {
@@ -466,6 +486,7 @@ const AutomaticConfiguration: React.FC = () => {
         configs: getConfigs(_values),
         collect_type: collectType,
         monitor_object_id: +objectId,
+        // collector: collectType === 'jmx' ? 'JMX-JVM' : 'Telegraf',
         instances: dataSource.map((item) => {
           const { key, ...rest } = item;
           values.key = key;
@@ -512,6 +533,8 @@ const AutomaticConfiguration: React.FC = () => {
         return row.url;
       case 'middleware':
         return row.url;
+      case 'jmx':
+        return row.jmx_url;
       case 'docker':
         return row.endpoint;
       case 'database':

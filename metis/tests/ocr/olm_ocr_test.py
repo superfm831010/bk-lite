@@ -11,5 +11,5 @@ def test_olm_ocr():
                  api_key=os.getenv('TEST_INFERENCE_TOKEN'),
                  model="olmOCR")
 
-    result = ocr.predict('./tests/assert/umr.jpeg')
+    result = ocr.predict('/Users/umr/Desktop/1.png')
     logger.info(result)

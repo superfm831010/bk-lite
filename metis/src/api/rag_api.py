@@ -17,12 +17,13 @@ from src.entity.rag.elasticsearch_document_metadata_update_request import \
     ElasticsearchDocumentMetadataUpdateRequest
 from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
 from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
-from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
 from src.entity.rag.qa_enhance_request import QAEnhanceRequest
+from src.entity.rag.summarize_enhance_request import SummarizeEnhanceRequest
 from src.loader.raw_loader import RawLoader
 from src.loader.website_loader import WebSiteLoader
 from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
 from src.services.rag_service import RagService
+from src.summarize.summarize_manager import SummarizeManager
 
 rag_api_router = Blueprint("rag", url_prefix="/rag")
 
@@ -69,6 +70,26 @@ async def count_index_document(request, body: ElasticSearchDocumentCountRequest)
         return json({"status": "error", "message": str(e)})
 
 
+@rag_api_router.post("/summarize_enhance")
+@auth.login_required
+@validate(json=SummarizeEnhanceRequest)
+async def summarize_enhance(request, body: SummarizeEnhanceRequest):
+    """
+    文本摘要增强
+    :param request:
+    :param body:
+    :return:
+    """
+    """
+    文本摘要增强
+    :param request:
+    :param body:
+    :return:
+    """
+    result = SummarizeManager.summarize(body.content, body.model, body.openai_api_base, body.openai_api_key)
+    return json({"status": "success", "message": result})
+
+
 @rag_api_router.post("/qa_pair_generate")
 @auth.login_required
 @validate(json=QAEnhanceRequest)
@@ -113,9 +134,9 @@ async def custom_content_ingest(request):
 
         # 处理文档元数据
         docs = RagService.prepare_documents_metadata(docs,
-                                          is_preview=is_preview,
-                                          title="自定义内容",
-                                          knowledge_id=request.form.get('knowledge_id'))
+                                                     is_preview=is_preview,
+                                                     title="自定义内容",
+                                                     knowledge_id=request.form.get('knowledge_id'))
         # 执行文档分块
         chunker = RagService.get_chunker(chunk_mode, request)
         chunking_start_time = time.time()
@@ -186,9 +207,9 @@ async def website_ingest(request):
 
         # 处理文档元数据
         docs = RagService.prepare_documents_metadata(docs,
-                                          is_preview=is_preview,
-                                          title=url,
-                                          knowledge_id=request.form.get('knowledge_id'))
+                                                     is_preview=is_preview,
+                                                     title=url,
+                                                     knowledge_id=request.form.get('knowledge_id'))
 
         # 执行文档分块并记录日志
         chunking_start_time = time.time()
@@ -279,9 +300,9 @@ async def file_ingest(request):
 
             # 处理文档元数据
             docs = RagService.prepare_documents_metadata(docs,
-                                              is_preview=is_preview,
-                                              title=file.name,
-                                              knowledge_id=request.form.get('knowledge_id'))
+                                                         is_preview=is_preview,
+                                                         title=file.name,
+                                                         knowledge_id=request.form.get('knowledge_id'))
 
             # 执行文档分块并记录日志
             chunking_start_time = time.time()
@@ -322,8 +343,6 @@ async def file_ingest(request):
         response_time = time.time() - start_time
         logger.error(f"[{request_id}] 文件处理错误, 耗时: {response_time:.2f}秒, 错误: {str(e)}\n{error_detail}")
         return json({"status": "error", "message": str(e)})
-
-
 
 
 @rag_api_router.post("/delete_index")

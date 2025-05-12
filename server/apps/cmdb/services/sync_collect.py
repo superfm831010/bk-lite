@@ -5,7 +5,7 @@
 from apps.cmdb.constants import CollectPluginTypes
 from apps.cmdb.models.collect_model import CollectModels
 from apps.cmdb.collection.service import MetricsCannula, CollectK8sMetrics, CollectVmwareMetrics, \
-    CollectNetworkMetrics, ProtocolCollectMetrics, AliyunCollectMetrics
+    CollectNetworkMetrics, ProtocolCollectMetrics, AliyunCollectMetrics, HostCollectMetrics
 
 
 class ProtocolCollect(object):
@@ -70,7 +70,7 @@ class BaseCollect(object):
     def __init__(self, instance_id, default_metrics=None):
         self.task = CollectModels.objects.get(id=instance_id)
         self.default_metrics = default_metrics
-        self.model_id, self.inst_name, self.organization, self.inst_id = self.format_params()
+        self.model_id, self.inst_name, self.organization, self.inst_id, self.filter_collect_task = self.format_params()
 
     def format_params(self):
         if not self.task.instances:
@@ -81,7 +81,7 @@ class BaseCollect(object):
         inst_name = instance["inst_name"]
         organization = instance["organization"]
         inst_id = instance["_id"]
-        return model_id, inst_name, organization, inst_id
+        return model_id, inst_name, organization, inst_id, not self.task.is_host
 
     @property
     def get_organization(self):
@@ -99,7 +99,8 @@ class BaseCollect(object):
 
         metrics_cannula = MetricsCannula(inst_id=self.inst_id, organization=self.organization, inst_name=self.inst_name,
                                          task_id=self.task_id, collect_plugin=self.COLLECT_PLUGIN,
-                                         manual=self.task.input_method, default_metrics=self.default_metrics)
+                                         manual=self.task.input_method, default_metrics=self.default_metrics,
+                                         filter_collect_task=self.filter_collect_task)
 
         result = metrics_cannula.collect_controller()
         format_data = self.format_collect_data(result)
@@ -161,3 +162,34 @@ class ProtocolTaskCollect(BaseCollect):
 
 class AliyunCollect(BaseCollect):
     COLLECT_PLUGIN = AliyunCollectMetrics
+
+
+# ======
+
+
+class JobCollect(object):
+    def __init__(self, task, default_metrics=None):
+        self.task = task
+        self.default_metrics = default_metrics
+
+    @property
+    def collect_manage(self):
+        result = {
+            CollectPluginTypes.HOST: self.collect_host,
+        }
+        return result
+
+    def get_instance(self):
+        instance = self.task.instances[0] if self.task.instances else None
+        return instance
+
+    def collect_host(self):
+        data = HostCollect(self.task.id)()
+        return data
+
+    def main(self):
+        return self.collect_manage[self.task.task_type]()
+
+
+class HostCollect(BaseCollect):
+    COLLECT_PLUGIN = HostCollectMetrics

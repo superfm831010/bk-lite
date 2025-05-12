@@ -10,7 +10,7 @@ from loguru import logger
 from langgraph.checkpoint.postgres import PostgresSaver
 
 from sanic_fire import cmd
-from sanic_fire.core import command_class, command_func
+from sanic_fire.core import command_func
 
 from src.embed.embed_builder import EmbedBuilder
 from src.ocr.pp_ocr import PPOcr
@@ -31,8 +31,6 @@ if os.getenv('MODE', 'DEBUG') != 'DEBUG':
 
 
 # 配置认证
-
-
 @auth.verify_password
 def verify_password(username, password):
     if os.getenv('MODE', 'DEBUG') == 'DEBUG':
@@ -45,8 +43,6 @@ def verify_password(username, password):
 
 
 # 配置启动钩子
-
-
 @app.before_server_start
 async def show_banner(app, loop):
     with open(f"src/asserts/banner.txt") as f:

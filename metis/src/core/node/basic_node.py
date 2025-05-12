@@ -1,11 +1,14 @@
 from typing import TypedDict
 
+import json_repair
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 
 from src.core.entity.basic_llm_request import BasicLLMReuqest
 from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
+from loguru import logger
 
 
 class BasicNode:
@@ -45,33 +48,65 @@ class BasicNode:
         if len(naive_rag_request) == 0:
             return state
 
+        rag_message = f'''
+                       以下是参考资料,每份参考资料都由标题和内容组成,以XML格式提供:
+
+                       示例:
+                           <knowledge>
+                               <ref_id>1</ref_id>
+                               <title>知识标题</title>
+                               <knowledge_id>1</knowledge_id>
+                               <chunk_number>1</chunk_number>
+                               <segment_number>2</segment_number>
+                               <segment_id>4</segment_id>
+                               <content>知识内容</content>
+                           </knowledge>
+
+                       字段说明:
+                           ref_id: 是第几份参考资料，从1开始
+                           title: 参考资料的标题
+                           content: 参考资料的内容
+                           knowledge_id: 知识id
+                           chunk_number: 分块序号
+                           chunk_id: 分块ID号
+                           segment_number: 分段序号
+                           segment_id: 分块ID
+                       参考资料:
+                   '''
+
+        selected_knowledge_ids = []
+        if 'km_info' in config["configurable"]:
+            km_info = config["configurable"]["km_info"]
+            llm = ChatOpenAI(model=config["configurable"]['km_route_llm_model'],
+                             base_url=config["configurable"]['km_route_llm_api_base'],
+                             api_key=config["configurable"]['km_route_llm_api_key'],
+                             temperature=0.01)
+
+            selected_knowledge_prompt = f"""
+                                    我将会给你一段xml，格式为
+                                        <knowledge>
+                                            <knowledge_id>1</knowledge_id>
+                                            <description>知识库描述</description>
+                                        <knowledge>
+                                    需要根据知识库描述，以及用户的问题，返回与问题相关的知识库id号，格式为json数组，以下是示例: [1,3,2]
+                                """
+            selected_knowledge_prompt += "任务开始: 以下是需要选择的知识库信息"
+            for km in km_info:
+                selected_knowledge_prompt += f"""
+                            <knowledge>
+                                <knowledge_id>{km['index_name']}</knowledge_id>
+                                <description>{km['description']}</description>
+                            </knowledge>
+                        """
+            selected_knowledge_prompt += f"请找出与用户问题相关的知识库id号,用户的问题是:{config["configurable"]["graph_request"].user_message}"
+            selected_km_response = llm.invoke(selected_knowledge_prompt)
+            selected_knowledge_ids = json_repair.loads(selected_km_response.content)
+
         for rag_search_request in naive_rag_request:
+            if len(selected_knowledge_ids) != 0 and rag_search_request.index_name not in selected_knowledge_ids:
+                logger.info(f"智能知识路由判断:[{rag_search_request.index_name}]不适合当前问题,跳过检索")
             elasticsearch_rag = ElasticSearchRag()
             rag_result = elasticsearch_rag.search(rag_search_request)
-            rag_message = f'''
-                               以下是参考资料,每份参考资料都由标题和内容组成,以XML格式提供:
-        
-                               示例:
-                                   <knowledge>
-                                       <ref_id>1</ref_id>
-                                       <title>知识标题</title>
-                                       <knowledge_id>1</knowledge_id>
-                                       <chunk_number>1</chunk_number>
-                                       <segment_number>2</segment_number>
-                                       <segment_id>4</segment_id>
-                                       <content>知识内容</content>
-                                   </knowledge>
-        
-                               字段说明:
-                                   ref_id: 是第几份参考资料，从1开始
-                                   title: 参考资料的标题
-                                   content: 参考资料的内容
-                                   knowledge_id: 知识id
-                                   chunk_number: 分块序号
-                                   segment_number: 分段序号
-                                   segment_id: 分块ID
-                               参考资料:
-                           '''
 
             for index, r in enumerate(rag_result):
                 rag_message += f"""
@@ -80,6 +115,7 @@ class BasicNode:
                         <title>{r.metadata['_source']['metadata']['knowledge_title']}</title>
                         <knowledge_id>{r.metadata['_source']['metadata']['knowledge_id']}</knowledge_id>
                         <chunk_number>{r.metadata['_source']['metadata']['chunk_number']}</chunk_number>
+                        <chunk_id>{r.metadata['_source']['metadata']['chunk_id']}</chunk_id>
                         <segment_number>{r.metadata['_source']['metadata']['segment_number']}</segment_number>
                         <segment_id>{r.metadata['_source']['metadata']['segment_id']}</segment_id>
                         <content>{r.page_content}</content>
@@ -102,6 +138,7 @@ class BasicNode:
                                 <knowledge_id>1</knowledge_id>
                                 <segment_number>1</segment_number>
                                 <chunk_number>1</chunk_number>
+                                <chunk_id>1</chunk_id>
                                 <segment_id>1</segment_id>
                                 <title>知识标题</title>
                             </rag>
@@ -110,6 +147,7 @@ class BasicNode:
                                 <knowledge_id>0</knowledge_id>
                                 <segment_number>13</segment_number>
                                 <chunk_number>1</chunk_number>
+                                <chunk_id>133</chunk_id>
                                 <segment_id>5</segment_id>
                                 <title>知识标题</title>
                             </rag>                            

@@ -28,3 +28,4 @@ class ElasticSearchRetrieverRequest(BaseModel):
     rerank_model_name: str = ''
     rerank_top_k: int = 5
 
+    rag_recall_mode: str = "chunk"

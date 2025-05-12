@@ -248,7 +248,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                     { required: true, message: t('common.inputRequired') },
                   ]}
                 >
-                  <Input disabled={type === 'delete'} />
+                  <Input disabled={type === 'delete'} placeholder={t('common.inputMsg')} />
                 </Form.Item>
                 <Form.Item
                   label={t('node-manager.cloudregion.Configuration.system')}
@@ -263,6 +263,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                       { value: 'linux', label: 'Linux' },
                       { value: 'windows', label: 'Windows' },
                     ]}
+                    placeholder={t('common.selectMsg')}
                   ></Select>
                 </Form.Item>
                 <Form.Item
@@ -272,7 +273,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                     { required: true, message: t('common.inputRequired') },
                   ]}
                 >
-                  <Input disabled={type === 'delete'} />
+                  <Input disabled={type === 'delete'} placeholder={t('common.inputMsg')} />
                 </Form.Item>
                 <Form.Item
                   label={t('node-manager.collector.executeParameters')}
@@ -281,7 +282,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                     { required: true, message: t('common.inputRequired') },
                   ]}
                 >
-                  <TextArea disabled={type === 'delete'} />
+                  <TextArea disabled={type === 'delete'} placeholder={t('common.inputMsg')} />
                 </Form.Item>
                 <Form.Item
                   label={t(
@@ -292,7 +293,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                     { required: true, message: t('common.inputRequired') },
                   ]}
                 >
-                  <TextArea disabled={type === 'delete'} />
+                  <TextArea disabled={type === 'delete'} placeholder={t('common.inputMsg')} />
                 </Form.Item>
               </>
             )}
@@ -305,7 +306,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                     { required: true, message: t('common.inputRequired') },
                   ]}
                 >
-                  <Input />
+                  <Input placeholder={t('common.inputMsg')} />
                 </Form.Item>
                 <Form.Item
                   label={t('node-manager.collector.importFile')}
@@ -320,7 +321,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                     </p>
                     <p className="flex justify-center content-center items-center">
                       {t('common.uploadText')}
-                      <Button type="link">点击上传</Button>
+                      <Button type="link">{t('node-manager.collector.clickUpload')}</Button>
                     </p>
                   </Dragger>
                 </Form.Item>

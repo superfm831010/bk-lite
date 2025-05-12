@@ -1,0 +1,11 @@
+[[inputs.prometheus]]
+    urls = ["{{ url }}"]
+    interval = "{{ interval }}s"
+    timeout = "{{ timeout }}s"
+    response_timeout = "{{ response_timeout }}s"
+    http_headers = "{{ custom_headers }}"
+    [inputs.prometheus.tags]
+        instance_id = "{{ instance_id }}"
+        instance_type = "{{ instance_type }}"
+        collect_type = "http"
+        config_type = "prometheus"

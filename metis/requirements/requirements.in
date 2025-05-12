@@ -47,3 +47,6 @@ scikit-learn==1.6.1
 json-repair==0.39.1
 neo4j-graphrag==1.7.0
 jieba==0.42.1
+pyod==2.0.5
+xgboost==3.0.0
+suod==0.1.4

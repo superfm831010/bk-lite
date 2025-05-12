@@ -1,5 +1,5 @@
-from src.algorithm.textrank import util
-from src.algorithm.textrank.segmentation import Segmentation
+from src.summarize.textrank import util
+from src.summarize.textrank.segmentation import Segmentation
 
 
 class TextRankKeyword(object):

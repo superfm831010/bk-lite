@@ -120,3 +120,5 @@ ALIYUN_COLLECT_CLUSTER = [
     "aliyun_pgsql_info_gauge", "aliyun_redis_info_gauge", "aliyun_mongodb_info_gauge",
     "aliyun_kafka_info_gauge", "aliyun_clb_info_gauge"
 ]
+
+HOST_COLLECT_METRIC = ["host_info_gauge"]

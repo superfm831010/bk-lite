@@ -2,7 +2,7 @@ import logging
 
 import nats_client
 
-from apps.node_mgmt.child_config.common import ChildConfigCommon
+from apps.node_mgmt.config_template.common import ConfigService
 from apps.node_mgmt.services.node import NodeService
 
 logger = logging.getLogger("app")
@@ -27,32 +27,58 @@ def collector_list(query_data: dict):
 
 
 @nats_client.register
-def batch_setting_node_child_config(data: dict):
-    """批量对节点设置子配置"""
-    logger.info(f"batch_setting_node_child_config: {data}")
-    object_type = data.get('object_type')
+def batch_add_node_child_config(data: dict):
+    """批量添加子配置"""
+    logger.info(f"batch_add_node_child_config: {data}")
+    collector = data.get('collector')
     nodes = data.get('nodes')
-    ChildConfigCommon(object_type).batch_setting_node_config(nodes)
+    ConfigService().batch_add_child_config(collector, nodes)
 
 
 @nats_client.register
-def get_instance_child_config(query_data: dict):
-    """获取实例子配置"""
-    collect_type = query_data.get('collect_type')
-    config_type = query_data.get('config_type')
-    collect_instance_id = query_data.get('collect_instance_id')
-    return ChildConfigCommon.get_child_config_by_instance_id(collect_type, config_type, collect_instance_id)
+def batch_add_node_config(data: dict):
+    """批量添加配置"""
+    logger.info(f"batch_add_exporter_config: {data}")
+    collector = data.get('collector')
+    nodes = data.get('nodes')
+    ConfigService().batch_add_config(collector, nodes)
 
 
 @nats_client.register
-def update_instance_child_config(data: dict):
+def get_child_configs_by_ids(ids: list):
+    """根据ID获取子配置"""
+    return ConfigService().get_child_configs_by_ids(ids)
+
+
+@nats_client.register
+def get_configs_by_ids(ids: list):
+    """根据ID获取配置"""
+    return ConfigService().get_configs_by_ids(ids)
+
+
+@nats_client.register
+def update_child_config_content(data: dict):
     """更新实例子配置"""
     id = data.get('id')
     content = data.get('content')
-    ChildConfigCommon.update_instance_child_config(id, content)
+    ConfigService().update_child_config_content(id, content)
 
 
 @nats_client.register
-def delete_instance_child_config(instance_ids: list):
-    """更新实例子配置"""
-    ChildConfigCommon.delete_child_config_by_instance_id(instance_ids)
+def update_config_content(data: dict):
+    """更新配置内容"""
+    id = data.get('id')
+    content = data.get('content')
+    ConfigService().update_config_content(id, content)
+
+
+@nats_client.register
+def delete_child_configs(ids: list):
+    """删除实例子配置"""
+    ConfigService().delete_child_configs(ids)
+
+
+@nats_client.register
+def delete_configs(ids: list):
+    """删除实例子配置"""
+    ConfigService().delete_configs(ids)

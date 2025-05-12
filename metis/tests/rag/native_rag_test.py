@@ -125,3 +125,39 @@ def test_native_rag_with_local_models():
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
     )
     rag.delete_index(delete_index_req)
+
+
+def test_native_rag_with_segment_recall():
+    rag = ElasticSearchRag()
+
+    request = ElasticSearchRetrieverRequest(
+        index_name='knowledge_base_1',
+        search_query="rework",
+        size=20,
+        embed_model_base_url="local:huggingface_embedding:BAAI/bge-small-zh-v1.5",
+        embed_model_api_key="",
+        embed_model_name="bge-small-zh-v1.5",
+        enable_rerank=False,
+        rag_recall_mode='segment'
+    )
+
+    result = rag.search(request)
+    logger.info(result)
+
+
+def test_native_rag_with_origin_recall():
+    rag = ElasticSearchRag()
+
+    request = ElasticSearchRetrieverRequest(
+        index_name='knowledge_base_1',
+        search_query="rework",
+        size=20,
+        embed_model_base_url="local:huggingface_embedding:BAAI/bge-small-zh-v1.5",
+        embed_model_api_key="",
+        embed_model_name="bge-small-zh-v1.5",
+        enable_rerank=False,
+        rag_recall_mode='segment'
+    )
+
+    result = rag.search(request)
+    logger.info(f"召回数量: {len(result)}")
