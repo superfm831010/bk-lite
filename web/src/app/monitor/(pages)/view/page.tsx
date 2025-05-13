@@ -77,7 +77,10 @@ const Intergration = () => {
       },
       {} as Record<string, TreeItem>
     );
-    return Object.values(groupedData).filter((item) => item.key !== 'Other');
+    if (groupedData.Other) {
+      groupedData.Other.children = groupedData.Other.children.filter((item) => item.label !== "SNMP Trap");
+    }
+    return Object.values(groupedData);
   };
 
   return (
