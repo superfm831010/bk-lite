@@ -43,7 +43,7 @@ class ConfigService:
 
     def batch_add_child_config(self, collector, nodes: list):
         """批量添加子配置"""
-        subdir = f"config/{COLLECTOR_PATH_MAP.get(collector)}"
+        subdir = f"child_config/{COLLECTOR_PATH_MAP.get(collector)}"
         node_objs, base_config_ids = [], []
         for node in nodes:
             node_id = node["id"]

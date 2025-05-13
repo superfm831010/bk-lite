@@ -61,7 +61,7 @@ COLLECTORS = [
         "icon": "",
         "node_operating_system": "linux",
         "service_type": "exec",
-        "executable_path": "java",
+        "executable_path": "/usr/bin/java",
         "execute_parameters": "-jar jmx_jvm.jar 40000 %s",
         "validation_parameters": "",
         "default_template": "",

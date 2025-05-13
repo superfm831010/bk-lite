@@ -18,10 +18,10 @@ class ToolsGraph(BasicGraph):
             return "tools"
         return END
 
-    async def invoke(self, graph, request: BasicLLMReuqest):
+    async def invoke(self, graph, request: BasicLLMReuqest, stream_mode='values'):
         config = {
             "graph_request": request,
-            "recursion_limit": 10,
+            "recursion_limit": 30,
             "configurable": {
                 **(request.extra_config or {})
             }
@@ -37,8 +37,14 @@ class ToolsGraph(BasicGraph):
 
                 with PostgresSaver.from_conn_string(os.getenv('DB_URI')) as checkpoint:
                     graph.checkpoint = checkpoint
-            result = await graph.ainvoke(request, config)
-            return result
+
+            if stream_mode == 'values':
+                result = await graph.ainvoke(request, config)
+                return result
+
+            if stream_mode == 'messages':
+                result = graph.astream(request, config, stream_mode=stream_mode)
+                return result
         except Exception as e:
             print(traceback.format_exc())
             return None

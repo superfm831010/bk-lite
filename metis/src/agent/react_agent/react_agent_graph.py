@@ -30,6 +30,11 @@ class ReActAgentGraph(ToolsGraph):
         graph = graph_builder.compile()
         return graph
 
+    async def stream(self, request: ReActAgentRequest):
+        graph = await self.compile_graph(request)
+        result = await self.invoke(graph, request, stream_mode='messages')
+        return result
+
     async def execute(self, request: ReActAgentRequest) -> ReActAgentResponse:
         graph = await self.compile_graph(request)
         result = await self.invoke(graph, request)

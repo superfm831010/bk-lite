@@ -27,10 +27,14 @@ class ChatBotWorkflowGraph(BasicGraph):
         graph = graph_builder.compile()
         return graph
 
+    def stream(self, request: ChatBotWorkflowRequest):
+        graph = self.compile_graph()
+        result = self.invoke(graph, request, stream_mode='messages')
+        return result
+
     def execute(self, request: ChatBotWorkflowRequest) -> ChatBotWorkflowResponse:
         graph = self.compile_graph()
         result = self.invoke(graph, request)
-
         prompt_token = 0
         completion_token = 0
 

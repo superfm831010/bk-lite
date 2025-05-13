@@ -2,6 +2,7 @@ import os
 from typing import List
 
 import pytest
+from langchain_core.messages import AIMessageChunk
 from loguru import logger
 
 from src.core.entity.tools_server import ToolsServer
@@ -14,7 +15,6 @@ async def test_react_agent_with_time_tools():
     tools_servers: List[ToolsServer] = [
         ToolsServer(name="time", url='langchain:current_time'),
         ToolsServer(name="duckduckgo", url='langchain:duckduckgo'),
-        # MCPServer(name="time mcp", url="http://127.0.0.1:17000/sse"),
     ]
 
     request = ReActAgentRequest(
@@ -27,8 +27,16 @@ async def test_react_agent_with_time_tools():
         tools_servers=tools_servers,
     )
     graph = ReActAgentGraph()
+
+    logger.info(f"messages 模式")
+    result = await graph.stream(request)
+    await graph.aprint_chunk(result)
+    print('\n')
+
+    logger.info(f"values模式")
     result = await graph.execute(request)
     logger.info(result)
+    print('\n')
 
 
 @pytest.mark.asyncio

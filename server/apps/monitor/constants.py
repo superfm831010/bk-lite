@@ -252,6 +252,13 @@ MONITOR_OBJS = [
         "instance_id_keys": ["instance_id", "resource_id"],
         "supplementary_indicators": ["data_storage_disk_used_average_gauge", "data_storage_store_accessible_gauge"],
     },
+    {
+        "type": "Other",
+        "name": "JVM",
+        "default_metric": 'any({resource_type="jvm"}) by (instance_id)',
+        "instance_id_keys": ["instance_id"],
+        "supplementary_indicators": [],
+    },
 ]
 
 # 阀值对比方法
