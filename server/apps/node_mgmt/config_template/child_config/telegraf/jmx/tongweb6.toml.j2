@@ -1,5 +1,5 @@
 [[inputs.prometheus]]
-    urls = ["http://127.0.0.1:40000/metrics"]
+    urls = ["http://127.0.0.1:40600/metrics"]
     interval = "{{ interval }}s"
     timeout = "20s"
     response_timeout = "20s"
@@ -7,4 +7,4 @@
         instance_id = "{{ instance_id }}"
         instance_type = "{{ instance_type }}"
         collect_type = "jmx"
-        config_type = "jvm"
+        config_type = "tongweb6"
