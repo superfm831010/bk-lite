@@ -27,7 +27,7 @@ class ChatBotWorkflowGraph(BasicGraph):
         graph = graph_builder.compile()
         return graph
 
-    def stream(self, request: ChatBotWorkflowRequest):
+    async def stream(self, request: ChatBotWorkflowRequest):
         graph = self.compile_graph()
         result = self.invoke(graph, request, stream_mode='messages')
         return result

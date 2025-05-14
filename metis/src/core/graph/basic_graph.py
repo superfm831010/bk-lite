@@ -1,14 +1,26 @@
 import os
 
+import tiktoken
 from langchain_core.messages import AIMessageChunk
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.constants import START
 
 from src.core.entity.basic_llm_request import BasicLLMReuqest
-from src.core.entity.basic_llm_response import BasicLLMResponse
 
 
 class BasicGraph:
+    def count_tokens(self, text: str, encoding_name='gpt-4o') -> int:
+        try:
+            encoding = tiktoken.encoding_for_model(encoding_name)  # 获取模型的 Token 编码器
+            tokens = encoding.encode(text)  # 将文本 Token 化
+            return len(tokens)  # 返回 Token 数量
+        except KeyError:
+            # 如果模型名称不支持，回退到默认的编码方式
+            print(f"模型 {encoding_name} 不支持。默认回退到通用编码器。")
+            encoding = tiktoken.get_encoding("cl100k_base")  # 通用编码器
+            tokens = encoding.encode(text)
+            return len(tokens)
+
     async def aprint_chunk(self, result):
         async for chunk in result:
             if isinstance(chunk[0], AIMessageChunk):
@@ -55,5 +67,5 @@ class BasicGraph:
             return result
 
         if stream_mode == 'messages':
-            result = graph.stream(request, config, stream_mode=stream_mode)
+            result = graph.astream(request, config, stream_mode=stream_mode)
             return result

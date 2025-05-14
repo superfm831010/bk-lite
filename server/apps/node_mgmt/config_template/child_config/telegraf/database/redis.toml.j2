@@ -1,0 +1,10 @@
+[[inputs.redis]]
+    servers = ["tcp://{{ host }}:{{ port }}"]
+    username = "{{ username }}"
+    password = "{{ password }}"
+    interval = "{{ interval }}s"
+    [inputs.redis.tags]
+        instance_id = "{{ instance_id }}"
+        instance_type = "{{ instance_type }}"
+        collect_type = "database"
+        config_type = "redis"
