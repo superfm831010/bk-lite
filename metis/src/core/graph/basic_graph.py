@@ -25,11 +25,13 @@ class BasicGraph:
         async for chunk in result:
             if isinstance(chunk[0], AIMessageChunk):
                 print(chunk[0].content, end='', flush=True)
+        print('\n')
 
     def print_chunk(self, result):
         for chunk in result:
             if type(chunk[0]) == AIMessageChunk:
                 print(chunk[0].content, end='', flush=True)
+        print('\n')
 
     def prepare_graph(self, graph_builder, node_builder) -> str:
         graph_builder.add_node("prompt_message_node", node_builder.prompt_message_node)

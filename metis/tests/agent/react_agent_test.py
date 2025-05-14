@@ -13,7 +13,9 @@ from src.agent.react_agent.react_agent_graph import ReActAgentGraph
 @pytest.mark.asyncio
 async def test_react_agent_with_time_tools():
     tools_servers: List[ToolsServer] = [
-        ToolsServer(name="time", url='langchain:current_time'),
+        ToolsServer(name="current_time", url='langchain:current_time'),
+        ToolsServer(name="jenkins", url='langchain:jenkins'),
+        ToolsServer(name="python_analyze_repl", url='langchain:python_analyze_repl'),
         ToolsServer(name="duckduckgo", url='langchain:duckduckgo'),
     ]
 
@@ -21,7 +23,7 @@ async def test_react_agent_with_time_tools():
         model="gpt-4o",
         openai_api_base=os.getenv("OPENAI_BASE_URL"),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
-        user_message="现在几点",
+        user_message="把现在的时间，转换成字符串，然后在字符串的前面加上'hello world'，最后返回这个字符串",
         user_id="umr",
         thread_id="2",
         tools_servers=tools_servers,
