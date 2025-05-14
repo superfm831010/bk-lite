@@ -39,7 +39,7 @@ import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EditConfig from './updateConfig';
 import {
-  OBJECT_INSTANCE_TYPE_MAP,
+  OBJECT_CONFIG_MAP,
   NODE_STATUS_MAP,
 } from '@/app/monitor/constants/monitor';
 const { confirm } = Modal;
@@ -286,10 +286,7 @@ const Asset = () => {
       type: 'edit',
       form: {
         ...row,
-        instance_type:
-          OBJECT_INSTANCE_TYPE_MAP[
-            objects.find((item) => item.id === objectId)?.name || ''
-          ],
+        objName: objects.find((item) => item.id === objectId)?.name || '',
       },
     });
   };
@@ -441,9 +438,9 @@ const Asset = () => {
         const data = {
           instance_id: row.instance_id,
           instance_type:
-            OBJECT_INSTANCE_TYPE_MAP[
+            OBJECT_CONFIG_MAP[
               objects.find((item) => item.id === objectId)?.name || ''
-            ],
+            ]?.instance_type,
         };
         const res = await getInstanceChildConfig(data);
         _dataSource[targetIndex].dataSource = res.map(

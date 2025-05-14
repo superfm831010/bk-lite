@@ -7,6 +7,7 @@ import {
   ViewQueryKeyValuePairs,
   ChartData,
   TreeItem,
+  TableDataItem,
 } from '@/app/monitor/types';
 import { Group } from '@/types';
 import {
@@ -15,7 +16,11 @@ import {
   ChartProps,
   NodeWorkload,
 } from '@/app/monitor/types/monitor';
-import { UNIT_LIST, APPOINT_METRIC_IDS } from '@/app/monitor/constants/monitor';
+import {
+  UNIT_LIST,
+  APPOINT_METRIC_IDS,
+  OBJECT_CONFIG_MAP,
+} from '@/app/monitor/constants/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
@@ -501,4 +506,14 @@ export const getK8SData = (
     return [];
   }
   return result;
+};
+
+export const findCollectTypeByPluginName = (pluginName = '') => {
+  const config = Object.values(OBJECT_CONFIG_MAP).reduce(
+    (pre: TableDataItem, cur: any) => {
+      return Object.assign(pre, cur.plugins);
+    },
+    {}
+  );
+  return config[pluginName]?.collect_type || '--';
 };
