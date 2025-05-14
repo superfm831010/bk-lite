@@ -82,16 +82,16 @@ class LatsAgentNode(ToolsNodes):
 
         # 构建反思链，使用Reflection工具强制输出结构化评估
         reflection_llm_chain = (
-            prompt
-            | llm.bind_tools(
-                tools=[Reflection],
-                tool_choice="Reflection"  # 强制使用Reflection工具
-            ).with_config(
-                run_name="Reflection",  # 为追踪添加运行名称
-                configurable={"verbose": False},  # 禁止输出到控制台
-                callbacks=[]  # 清空回调，防止输出
-            )
-            | PydanticToolsParser(tools=[Reflection])  # 解析成Reflection对象
+                prompt
+                | llm.bind_tools(
+            tools=[Reflection],
+            tool_choice="Reflection"  # 强制使用Reflection工具
+        ).with_config(
+            run_name="Reflection",  # 为追踪添加运行名称
+            configurable={"verbose": False},  # 禁止输出到控制台
+            callbacks=[]  # 清空回调，防止输出
+        )
+                | PydanticToolsParser(tools=[Reflection])  # 解析成Reflection对象
         )
 
         logger.debug("反思评估链创建完成")
@@ -107,6 +107,7 @@ class LatsAgentNode(ToolsNodes):
         Returns:
             候选解决方案生成链
         """
+
         def generate_candidates(messages: ChatPromptValue) -> List[BaseMessage]:
             """生成多个候选解决方案
 
@@ -126,12 +127,12 @@ class LatsAgentNode(ToolsNodes):
                 chat_result = llm.generate(
                     [messages.to_messages()],
                     callbacks=config["callbacks"],
-                    run_name=f"GenerateCandidate_{i+1}",
+                    run_name=f"GenerateCandidate_{i + 1}",
                     **bound_kwargs,
                 )
                 candidate = chat_result.generations[0][0].message
                 candidates.append(candidate)
-                logger.debug(f"生成候选解决方案 #{i+1}: {candidate.content[:50]}...")
+                logger.debug(f"生成候选解决方案 #{i + 1}: {candidate.content[:50]}...")
 
             return candidates
 
@@ -180,10 +181,10 @@ class LatsAgentNode(ToolsNodes):
         return node
 
     def _process_candidates(
-        self,
-        candidates: List[BaseMessage],
-        state: LatsAgentState,
-        config: RunnableConfig
+            self,
+            candidates: List[BaseMessage],
+            state: LatsAgentState,
+            config: RunnableConfig
     ) -> Tuple[List[List[BaseMessage]], List[Reflection]]:
         """处理候选解决方案，执行工具调用并进行反思评估
 
@@ -277,7 +278,8 @@ class LatsAgentNode(ToolsNodes):
 
         # 创建批量处理的静默配置
         batch_config = {**config, "callbacks": [], "configurable": {**
-                                                                    (config.get("configurable") or {}), "verbose": False}}
+                                                                    (config.get("configurable") or {}),
+                                                                    "verbose": False}}
 
         # 使用静默配置执行批量反思评估
         reflections = reflection_chain.batch(
@@ -326,6 +328,11 @@ class LatsAgentNode(ToolsNodes):
 
         # 使用单一日志语句输出整个评估汇总
         logger.info(evaluation_summary)
+
+        # 假如分数等于10，则认为已经找到解决方案
+        for reflection in reflections:
+            if reflection.score == 10:
+                reflection.found_solution = True
 
         return output_messages, reflections
 
@@ -402,9 +409,7 @@ class LatsAgentNode(ToolsNodes):
             # 获取最佳解决方案的内容并添加到状态消息
             final_solution = best_solution.get_trajectory(
                 include_reflections=False)[-1]
-            solution_content = final_solution.content[:150] + "..." if len(
-                final_solution.content) > 150 else final_solution.content
-            logger.info(f"解决方案内容: {solution_content}")
+            logger.info(f"解决方案内容: {final_solution}")
 
             # 打印反思评估
             reflection_text = best_solution.reflection.reflections[:100] + "..." if len(
