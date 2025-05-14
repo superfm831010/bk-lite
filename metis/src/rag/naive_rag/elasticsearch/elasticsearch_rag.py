@@ -9,24 +9,24 @@ from langchain_elasticsearch import ElasticsearchStore
 from loguru import logger
 
 from src.embed.embed_builder import EmbedBuilder
-from src.entity.rag.elasticsearch_document_count_request import ElasticSearchDocumentCountRequest
-from src.entity.rag.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
-from src.entity.rag.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
-from src.entity.rag.elasticsearch_document_metadata_update_request import \
-    ElasticsearchDocumentMetadataUpdateRequest
-from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
-from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
-from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
-from src.rag.native_rag.elasticsearch_query_builder import ElasticsearchQueryBuilder
+from src.entity.rag.base.document_count_request import DocumentCountRequest
+from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
+from src.entity.rag.base.document_ingest_request import DocumentIngestRequest
+from src.entity.rag.base.document_list_request import DocumentListRequest
+from src.entity.rag.base.document_metadata_update_request import DocumentMetadataUpdateRequest
+from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
+from src.entity.rag.base.index_delete_request import IndexDeleteRequest
+from src.rag.naive_rag.base_native_rag import BaseNativeRag
+from src.rag.naive_rag.elasticsearch.elasticsearch_query_builder import ElasticsearchQueryBuilder
 from src.rerank.rerank_manager import ReRankManager
 
 
-class ElasticSearchRag:
+class ElasticSearchRag(BaseNativeRag):
     def __init__(self):
         self.es = elasticsearch.Elasticsearch(hosts=[os.getenv('ELASTICSEARCH_URL')],
                                               basic_auth=("elastic", os.getenv('ELASTICSEARCH_PASSWORD')))
 
-    def update_metadata(self, req: ElasticsearchDocumentMetadataUpdateRequest):
+    def update_metadata(self, req: DocumentMetadataUpdateRequest):
         """
         根据过滤条件更新文档的元数据
 
@@ -79,7 +79,7 @@ class ElasticSearchRag:
         )
         self.es.indices.refresh(index=req.index_name)
 
-    def count_index_document(self, req: ElasticSearchDocumentCountRequest):
+    def count_index_document(self, req: DocumentCountRequest):
         if not req.metadata_filter:
             # Count all documents in the index
             count = self.es.count(index=req.index_name)
@@ -113,10 +113,10 @@ class ElasticSearchRag:
         count = self.es.count(index=req.index_name, body=query)
         return count['count']
 
-    def delete_index(self, req: ElasticSearchIndexDeleteRequest):
+    def delete_index(self, req: IndexDeleteRequest):
         self.es.indices.delete(index=req.index_name)
 
-    def list_index_document(self, req: ElasticSearchDocumentListRequest):
+    def list_index_document(self, req: DocumentListRequest):
         # Build filter query for specific metadata
         metadata_filter = []
         for key, value in req.metadata_filter.items():
@@ -162,7 +162,7 @@ class ElasticSearchRag:
 
         return documents
 
-    def delete_document(self, req: ElasticSearchDocumentDeleteRequest):
+    def delete_document(self, req: DocumentDeleteRequest):
         metadata_filter = []
         for key, value in req.metadata_filter.items():
             # Check if the value is a comma-separated string
@@ -187,7 +187,7 @@ class ElasticSearchRag:
 
         self.es.delete_by_query(index=req.index_name, body=query)
 
-    def ingest(self, req: ElasticSearchStoreRequest):
+    def ingest(self, req: DocumentIngestRequest):
 
         if req.index_mode == 'overwrite' and self.es.indices.exists(index=req.index_name):
             self.es.indices.delete(index=req.index_name)
@@ -212,7 +212,7 @@ class ElasticSearchRag:
                 del doc.metadata['_source']['vector']
         return docs
 
-    def _rerank_results(self, req: ElasticSearchRetrieverRequest, search_result: List[Document]) -> List[Document]:
+    def _rerank_results(self, req: DocumentRetrieverRequest, search_result: List[Document]) -> List[Document]:
         """
         对搜索结果进行重排序处理
         """
@@ -310,7 +310,7 @@ class ElasticSearchRag:
                 logger.error(f"处理远程ReRank API响应时出错: {e}")
                 return search_result  # Return original if response processing fails
 
-    def search(self, req: ElasticSearchRetrieverRequest) -> List[Document]:
+    def search(self, req: DocumentRetrieverRequest) -> List[Document]:
         # 构建检索器 (使用固定的size)
         documents_retriever = ElasticsearchRetriever.from_es_params(
             index_name=req.index_name,

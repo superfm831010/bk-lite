@@ -3,7 +3,7 @@ import os
 from loguru import logger
 
 from src.enhance.qa_enhance import QAEnhance
-from src.entity.rag.qa_enhance_request import QAEnhanceRequest
+from src.entity.rag.enhance.qa_enhance_request import QAEnhanceRequest
 
 
 def test_qa_enhance():

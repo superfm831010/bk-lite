@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 
-class ElasticSearchIndexDeleteRequest(BaseModel):
+class IndexDeleteRequest(BaseModel):
     index_name: str

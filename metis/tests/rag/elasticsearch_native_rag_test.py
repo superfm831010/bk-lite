@@ -4,17 +4,16 @@ from langchain_core.documents import Document
 
 from loguru import logger
 
-from src.entity.rag.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
-from src.entity.rag.elasticsearch_document_metadata_update_request import \
-    ElasticsearchDocumentMetadataUpdateRequest
-from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
-from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
-from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
-from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
+from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
+from src.entity.rag.base.document_ingest_request import DocumentIngestRequest
+from src.entity.rag.base.document_metadata_update_request import DocumentMetadataUpdateRequest
+from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
+from src.entity.rag.base.index_delete_request import IndexDeleteRequest
+from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
 
 
 def get_sample_request():
-    request = ElasticSearchStoreRequest(
+    request = DocumentIngestRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
         index_mode='overwrite',
         docs=[
@@ -47,7 +46,7 @@ def test_native_rag_ingest():
 
     rag.ingest(get_sample_request())
 
-    metadata_update_request = ElasticsearchDocumentMetadataUpdateRequest(
+    metadata_update_request = DocumentMetadataUpdateRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
         metadata_filter={
             'knowledge_id': "8"
@@ -59,7 +58,7 @@ def test_native_rag_ingest():
     )
     rag.update_metadata(metadata_update_request)
 
-    delete_req = ElasticSearchDocumentDeleteRequest(
+    delete_req = DocumentDeleteRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
         metadata_filter={
             'knowledge_id': "8"
@@ -67,7 +66,7 @@ def test_native_rag_ingest():
     )
     rag.delete_document(delete_req)
 
-    delete_index_req = ElasticSearchIndexDeleteRequest(
+    delete_index_req = IndexDeleteRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
     )
     rag.delete_index(delete_index_req)
@@ -77,7 +76,7 @@ def test_native_rag():
     rag = ElasticSearchRag()
     rag.ingest(get_sample_request())
 
-    request = ElasticSearchRetrieverRequest(
+    request = DocumentRetrieverRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
         search_query="你好",
         size=20,
@@ -94,7 +93,7 @@ def test_native_rag():
     result = rag.search(request)
     logger.info(result)
 
-    delete_index_req = ElasticSearchIndexDeleteRequest(
+    delete_index_req = IndexDeleteRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
     )
     rag.delete_index(delete_index_req)
@@ -104,7 +103,7 @@ def test_native_rag_with_local_models():
     rag = ElasticSearchRag()
     rag.ingest(get_sample_request())
 
-    request = ElasticSearchRetrieverRequest(
+    request = DocumentRetrieverRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
         search_query="吗",
         size=20,
@@ -121,7 +120,7 @@ def test_native_rag_with_local_models():
     result = rag.search(request)
     logger.info(result)
 
-    delete_index_req = ElasticSearchIndexDeleteRequest(
+    delete_index_req = IndexDeleteRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
     )
     rag.delete_index(delete_index_req)
@@ -130,7 +129,7 @@ def test_native_rag_with_local_models():
 def test_native_rag_with_segment_recall():
     rag = ElasticSearchRag()
     rag.ingest(get_sample_request())
-    request = ElasticSearchRetrieverRequest(
+    request = DocumentRetrieverRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
         search_query="rework",
         size=20,
@@ -144,7 +143,7 @@ def test_native_rag_with_segment_recall():
     result = rag.search(request)
     logger.info(result)
     
-    delete_index_req = ElasticSearchIndexDeleteRequest(
+    delete_index_req = IndexDeleteRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
     )
     rag.delete_index(delete_index_req)
@@ -153,7 +152,7 @@ def test_native_rag_with_segment_recall():
 def test_native_rag_with_origin_recall():
     rag = ElasticSearchRag()
     rag.ingest(get_sample_request())
-    request = ElasticSearchRetrieverRequest(
+    request = DocumentRetrieverRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
         search_query="rework",
         size=20,
@@ -167,7 +166,7 @@ def test_native_rag_with_origin_recall():
     result = rag.search(request)
     logger.info(f"召回数量: {len(result)}")
     
-    delete_index_req = ElasticSearchIndexDeleteRequest(
+    delete_index_req = IndexDeleteRequest(
         index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
     )
     rag.delete_index(delete_index_req)

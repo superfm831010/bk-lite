@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from src.core.entity.chat_history import ChatHistory
-from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
+from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
 
 
 class BasicLLMReuqest(BaseModel):
@@ -22,7 +22,7 @@ class BasicLLMReuqest(BaseModel):
     thread_id: Optional[str] = ''
 
     enable_naive_rag: bool = False
-    naive_rag_request: List[ElasticSearchRetrieverRequest] = []
+    naive_rag_request: List[DocumentRetrieverRequest] = []
 
     rag_stage: str = 'naive-rag'
 

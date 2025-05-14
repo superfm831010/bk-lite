@@ -10,18 +10,17 @@ from sanic_ext import validate
 
 from src.core.web.api_auth import auth
 from src.enhance.qa_enhance import QAEnhance
-from src.entity.rag.elasticsearch_document_count_request import ElasticSearchDocumentCountRequest
-from src.entity.rag.elasticsearch_document_delete_request import ElasticSearchDocumentDeleteRequest
-from src.entity.rag.elasticsearch_document_list_request import ElasticSearchDocumentListRequest
-from src.entity.rag.elasticsearch_document_metadata_update_request import \
-    ElasticsearchDocumentMetadataUpdateRequest
-from src.entity.rag.elasticsearch_index_delete_request import ElasticSearchIndexDeleteRequest
-from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
-from src.entity.rag.qa_enhance_request import QAEnhanceRequest
-from src.entity.rag.summarize_enhance_request import SummarizeEnhanceRequest
+from src.entity.rag.base.document_count_request import DocumentCountRequest
+from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
+from src.entity.rag.base.document_list_request import DocumentListRequest
+from src.entity.rag.base.document_metadata_update_request import DocumentMetadataUpdateRequest
+from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
+from src.entity.rag.base.index_delete_request import IndexDeleteRequest
+from src.entity.rag.enhance.qa_enhance_request import QAEnhanceRequest
+from src.entity.rag.enhance.summarize_enhance_request import SummarizeEnhanceRequest
 from src.loader.raw_loader import RawLoader
 from src.loader.website_loader import WebSiteLoader
-from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
+from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
 from src.services.rag_service import RagService
 from src.summarize.summarize_manager import SummarizeManager
 
@@ -30,8 +29,8 @@ rag_api_router = Blueprint("rag", url_prefix="/rag")
 
 @rag_api_router.post("/naive_rag_test")
 @auth.login_required
-@validate(json=ElasticSearchRetrieverRequest)
-def naive_rag_test(request, body: ElasticSearchRetrieverRequest):
+@validate(json=DocumentRetrieverRequest)
+def naive_rag_test(request, body: DocumentRetrieverRequest):
     """
     测试RAG
     :param request:
@@ -55,8 +54,8 @@ def naive_rag_test(request, body: ElasticSearchRetrieverRequest):
 
 @rag_api_router.post("/count_index_document")
 @auth.login_required
-@validate(json=ElasticSearchDocumentCountRequest)
-async def count_index_document(request, body: ElasticSearchDocumentCountRequest):
+@validate(json=DocumentCountRequest)
+async def count_index_document(request, body: DocumentCountRequest):
     request_id = str(uuid.uuid4())[:8]
     logger.info(f"[{request_id}] 计数索引文档请求, 索引: {body.index_name}")
     try:
@@ -361,9 +360,9 @@ async def file_ingest(request):
 
 
 @rag_api_router.post("/delete_index")
-@validate(json=ElasticSearchIndexDeleteRequest)
+@validate(json=IndexDeleteRequest)
 @auth.login_required
-async def delete_index(request, body: ElasticSearchIndexDeleteRequest):
+async def delete_index(request, body: IndexDeleteRequest):
     request_id = str(uuid.uuid4())[:8]
     logger.info(f"[{request_id}] 删除索引请求, 索引名: {body.index_name}")
     try:
@@ -381,8 +380,8 @@ async def delete_index(request, body: ElasticSearchIndexDeleteRequest):
 
 @rag_api_router.post("/delete_doc")
 @auth.login_required
-@validate(json=ElasticSearchDocumentDeleteRequest)
-async def delete_doc(request, body: ElasticSearchDocumentDeleteRequest):
+@validate(json=DocumentDeleteRequest)
+async def delete_doc(request, body: DocumentDeleteRequest):
     """
     删除文档
     :param request:
@@ -407,8 +406,8 @@ async def delete_doc(request, body: ElasticSearchDocumentDeleteRequest):
 
 @rag_api_router.post("/list_rag_document")
 @auth.login_required
-@validate(json=ElasticSearchDocumentListRequest)
-async def list_rag_document(request, body: ElasticSearchDocumentListRequest):
+@validate(json=DocumentListRequest)
+async def list_rag_document(request, body: DocumentListRequest):
     """
     查询RAG数据
     :param request:
@@ -433,8 +432,8 @@ async def list_rag_document(request, body: ElasticSearchDocumentListRequest):
 
 @rag_api_router.post("/update_rag_document_metadata")
 @auth.login_required
-@validate(json=ElasticsearchDocumentMetadataUpdateRequest)
-async def update_rag_document_metadata(request, body: ElasticsearchDocumentMetadataUpdateRequest):
+@validate(json=DocumentMetadataUpdateRequest)
+async def update_rag_document_metadata(request, body: DocumentMetadataUpdateRequest):
     request_id = str(uuid.uuid4())[:8]
     logger.info(
         f"[{request_id}] 更新文档元数据请求, 索引名: {body.index_name}, 过滤条件: {body.metadata_filter}")
