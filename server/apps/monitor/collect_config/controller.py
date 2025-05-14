@@ -89,7 +89,6 @@ class Controller:
                         "collect_type": collect_type,
                         "type": config_info.get("type"),
                         "interval": config_info.get("interval", 10),
-                        "url": "http://127.0.0.1:40000/metrics",
                     }
                     child_config_info = self.format_config(child_config_info)
                     child_node_info["configs"].append(child_config_info)

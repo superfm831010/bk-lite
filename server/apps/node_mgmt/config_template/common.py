@@ -9,13 +9,29 @@ from apps.node_mgmt.models import CollectorConfiguration, ChildConfig, Collector
 # key为采集器名称, value为采集器模版目录，只维护采集类的采集器
 COLLECTOR_PATH_MAP = {
     "Telegraf": "telegraf",
-    "JMX-JVM": "exporter",
+
+    "ActiveMQ-JMX": "plugins",
+    "JBoss-JMX": "plugins",
+    "Jetty-JMX": "plugins",
+    "TongWeb6-JMX": "plugins",
+    "TongWeb7-JMX": "plugins",
+    "WebLogic-JMX": "plugins",
+    "JVM-JMX": "plugins",
+    "Tomcat-JMX": "plugins",
 }
+
+
+def to_toml_dict(d):
+    if not d:
+        return "{}"
+    return "{ " + ", ".join(f'"{k}" = "{v}"' for k, v in d.items()) + " }"
 
 
 class ConfigService:
     def __init__(self):
         self.template_root = "apps/node_mgmt/config_template"
+
+
 
     def render_config(self, subdir: str, collect_method: str, target: str, context: dict) -> str:
         """
@@ -36,6 +52,7 @@ class ConfigService:
         for filename in os.listdir(target_dir):
             if re.match(pattern, filename):
                 env = Environment(loader=FileSystemLoader(target_dir))
+                env.filters['to_toml'] = to_toml_dict  # 注册自定义 filter
                 template = env.get_template(filename)
                 return template.render(context)
 

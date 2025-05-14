@@ -5,7 +5,7 @@ import useMonitorApi from '@/app/monitor/api';
 import templateStyle from './index.module.scss';
 import { TreeItem, TableDataItem } from '@/app/monitor/types';
 import { ObectItem } from '@/app/monitor/types/monitor';
-import { OBJECT_ICON_MAP } from '@/app/monitor/constants/monitor';
+import { OBJECT_CONFIG_MAP } from '@/app/monitor/constants/monitor';
 import { deepClone, findLabelById } from '@/app/monitor/utils/common';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TreeSelector from '@/app/monitor/components/treeSelector';
@@ -46,12 +46,12 @@ const Template: React.FC = () => {
       const params = {
         monitor_object_name: monitorName,
       };
-      const data = await getPolicyTemplate(params)
+      const data = await getPolicyTemplate(params);
       const list = data.map((item: TableDataItem, index: number) => ({
         ...item,
         id: index,
         description: item.description || '--',
-        icon: OBJECT_ICON_MAP[monitorName as string] || 'Host',
+        icon: OBJECT_CONFIG_MAP[monitorName as string]?.icon || 'Host',
       }));
       setTableData(list);
     } finally {
@@ -72,25 +72,22 @@ const Template: React.FC = () => {
   };
 
   const getTreeData = (data: ObectItem[]): TreeItem[] => {
-    const groupedData = data.reduce(
-      (acc, item) => {
-        if (!acc[item.type]) {
-          acc[item.type] = {
-            title: item.display_type || '--',
-            key: item.type,
-            children: [],
-          };
-        }
-        acc[item.type].children.push({
-          title: item.display_name || '--',
-          label: item.name || '--',
-          key: item.id,
+    const groupedData = data.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = {
+          title: item.display_type || '--',
+          key: item.type,
           children: [],
-        });
-        return acc;
-      },
-      {} as Record<string, TreeItem>
-    );
+        };
+      }
+      acc[item.type].children.push({
+        title: item.display_name || '--',
+        label: item.name || '--',
+        key: item.id,
+        children: [],
+      });
+      return acc;
+    }, {} as Record<string, TreeItem>);
     return Object.values(groupedData);
   };
 

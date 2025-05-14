@@ -9,6 +9,7 @@ import {
   getEnumValueUnit,
   getEnumColor,
   getK8SData,
+  findCollectTypeByPluginName,
 } from '@/app/monitor/utils/common';
 import { useRouter } from 'next/navigation';
 import {
@@ -24,7 +25,6 @@ import {
   Pagination,
   TableDataItem,
 } from '@/app/monitor/types';
-import { COLLECT_TYPE_MAP } from '@/app/monitor/constants/monitor';
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
@@ -40,7 +40,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     getMonitorMetrics,
     getInstanceList,
     getInstanceQueryParams,
-    getMonitorPlugin
+    getMonitorPlugin,
   } = useMonitorApi();
   const { t } = useTranslation();
   const router = useRouter();
@@ -241,7 +241,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         : (k8sQuery || []).map((item: string) => ({ id: item, child: [] }));
       setQueryData(queryForm);
       const _plugins = res[2].map((item: IntergrationItem) => ({
-        label: COLLECT_TYPE_MAP[item.name || ''],
+        label: findCollectTypeByPluginName(item.name),
         value: item.id,
       }));
       setPlugins(_plugins);
@@ -289,9 +289,11 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
             dataIndex: item.key,
             key: item.key,
             width: 200,
-            ...(item.type === 'value' ? {
-              sorter: (a: any, b: any) => a[item.key] - b[item.key],
-            } : {}),
+            ...(item.type === 'value'
+              ? {
+                sorter: (a: any, b: any) => a[item.key] - b[item.key],
+              }
+              : {}),
             render: (_: unknown, record: TableDataItem) => {
               const color = getEnumColor(target, record[item.key]);
               return (
