@@ -1,11 +1,7 @@
 from pydantic import BaseModel
 
 
-class ElasticSearchDocumentListRequest(BaseModel):
-    """
-    Request model for ElasticSearch document list.
-    """
-
+class DocumentListRequest(BaseModel):
     index_name: str
     page: int
     size: int

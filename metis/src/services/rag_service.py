@@ -9,7 +9,7 @@ from src.chunk.full_chunk import FullChunk
 from src.chunk.recursive_chunk import RecursiveChunk
 from src.chunk.semantic_chunk import SemanticChunk
 from src.embed.embed_builder import EmbedBuilder
-from src.entity.rag.elasticsearch_store_request import ElasticSearchStoreRequest
+from src.entity.rag.base.document_ingest_request import DocumentIngestRequest
 from src.loader.doc_loader import DocLoader
 from src.loader.excel_loader import ExcelLoader
 from src.loader.image_loader import ImageLoader
@@ -20,7 +20,7 @@ from src.loader.text_loader import TextLoader
 from src.ocr.azure_ocr import AzureOCR
 from src.ocr.olm_ocr import OlmOcr
 from src.ocr.pp_ocr import PPOcr
-from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
+from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
 
 
 class RagService:
@@ -46,7 +46,7 @@ class RagService:
             for doc in chunked_docs:
                 doc.metadata.update(metadata)
 
-        elasticsearch_store_request = ElasticSearchStoreRequest(
+        elasticsearch_store_request = DocumentIngestRequest(
             index_name=knowledge_base_id,
             docs=chunked_docs,
             embed_model_base_url=embed_model_base_url,

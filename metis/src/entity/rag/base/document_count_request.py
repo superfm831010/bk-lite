@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 
-class ElasticSearchDocumentDeleteRequest(BaseModel):
+class DocumentCountRequest(BaseModel):
     index_name: str
     metadata_filter: dict = {}
+    query: str

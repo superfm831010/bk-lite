@@ -3,7 +3,8 @@ from typing import Dict, List, Any
 from langchain_openai import OpenAIEmbeddings
 
 from src.embed.embed_builder import EmbedBuilder
-from src.entity.rag.elasticsearch_retriever_request import ElasticSearchRetrieverRequest
+from src.entity.rag.base.document_ingest_request import DocumentIngestRequest
+from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
 
 
 class ElasticsearchQueryBuilder:
@@ -21,7 +22,7 @@ class ElasticsearchQueryBuilder:
         return filters
 
     @staticmethod
-    def build_text_query(req: ElasticSearchRetrieverRequest) -> Dict:
+    def build_text_query(req: DocumentIngestRequest) -> Dict:
         if not req.enable_term_search:
             return {}
 
@@ -55,7 +56,7 @@ class ElasticsearchQueryBuilder:
         }
 
     @staticmethod
-    def build_vector_query(req: ElasticSearchRetrieverRequest) -> Dict:
+    def build_vector_query(req: DocumentRetrieverRequest) -> Dict:
         if not req.enable_vector_search:
             return {}
 
@@ -77,11 +78,11 @@ class ElasticsearchQueryBuilder:
         }
 
     @staticmethod
-    def _get_vector(req: ElasticSearchRetrieverRequest, embedding: OpenAIEmbeddings) -> List[float]:
+    def _get_vector(req: DocumentRetrieverRequest, embedding: OpenAIEmbeddings) -> List[float]:
         return embedding.embed_query(req.search_query)
 
     @staticmethod
-    def build_query(req: ElasticSearchRetrieverRequest, size: int = None) -> Dict[str, Any]:
+    def build_query(req: DocumentRetrieverRequest, size: int = None) -> Dict[str, Any]:
         query = {"size": size if size is not None else req.size}
 
         text_query = ElasticsearchQueryBuilder.build_text_query(req)

@@ -38,6 +38,7 @@ services:
     ports:
       - "5432:5432"
     restart: always
+
   elasticsearch:
     image: 'bklite/elasticsearch'
     ports:
@@ -48,6 +49,7 @@ services:
        xpack.security.enabled: "true"
        ELASTIC_PASSWORD: "password"
        TZ: "UTC"
+       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     volumes:
       - elasticsearch:/usr/share/elasticsearch/data
 

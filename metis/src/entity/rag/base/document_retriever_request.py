@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class ElasticSearchRetrieverRequest(BaseModel):
+class DocumentRetrieverRequest(BaseModel):
     index_name: str
     search_query: str = ''
     metadata_filter: dict = {}

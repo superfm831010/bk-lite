@@ -4,7 +4,7 @@ from langchain_core.documents import Document
 from pydantic import BaseModel
 
 
-class ElasticSearchStoreRequest(BaseModel):
+class DocumentIngestRequest(BaseModel):
     embed_model_base_url: str = ''
     embed_model_api_key: str = ''
     embed_model_name: str = ''
