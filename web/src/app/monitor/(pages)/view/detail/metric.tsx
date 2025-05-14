@@ -17,13 +17,13 @@ import {
   IntergrationItem,
   ViewDetailProps,
 } from '@/app/monitor/types/monitor';
-import { COLLECT_TYPE_MAP } from '@/app/monitor/constants/monitor';
 import { useTranslation } from '@/utils/i18n';
 import {
   deepClone,
   findUnitNameById,
   mergeViewQueryKeyValues,
   renderChart,
+  findCollectTypeByPluginName,
 } from '@/app/monitor/utils/common';
 import dayjs, { Dayjs } from 'dayjs';
 import Icon from '@/components/icon';
@@ -36,7 +36,12 @@ const MetricViews: React.FC<ViewDetailProps> = ({
   idValues,
 }) => {
   const { isLoading } = useApiClient();
-  const { getMonitorPlugin, getMonitorMetrics, getMetricsGroup, getInstanceQuery } = useMonitorApi();
+  const {
+    getMonitorPlugin,
+    getMonitorMetrics,
+    getMetricsGroup,
+    getInstanceQuery,
+  } = useMonitorApi();
   const { t } = useTranslation();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -81,9 +86,9 @@ const MetricViews: React.FC<ViewDetailProps> = ({
     setLoading(true);
     const responseData = await getMonitorPlugin({
       monitor_object_id: monitorObjectId,
-    })
+    });
     const _plugins = responseData.map((item: IntergrationItem) => ({
-      label: COLLECT_TYPE_MAP[item.name || ''],
+      label: findCollectTypeByPluginName(item.name),
       value: item.id,
     }));
     setPlugins(_plugins);
@@ -171,11 +176,10 @@ const MetricViews: React.FC<ViewDetailProps> = ({
   const fetchViewData = async (data: IndexViewItem[], groupId: number) => {
     const metricList = data.find((item) => item.id === groupId)?.child || [];
     const requestQueue = metricList.map((item) =>
-      getInstanceQuery(getParams(item))
-        .then((response) => ({
-          id: item.id,
-          data: response.data.result || []
-        }))
+      getInstanceQuery(getParams(item)).then((response) => ({
+        id: item.id,
+        data: response.data.result || [],
+      }))
     );
     try {
       const results = await Promise.all(requestQueue);
@@ -370,9 +374,10 @@ const MetricViews: React.FC<ViewDetailProps> = ({
                             {item.display_name}
                           </span>
                           <span className="text-[var(--color-text-3)] text-[12px]">
-                            {`${findUnitNameById(item.unit)
-                              ? '（' + findUnitNameById(item.unit) + '）'
-                              : ''
+                            {`${
+                              findUnitNameById(item.unit)
+                                ? '（' + findUnitNameById(item.unit) + '）'
+                                : ''
                             }`}
                           </span>
                           <Tooltip

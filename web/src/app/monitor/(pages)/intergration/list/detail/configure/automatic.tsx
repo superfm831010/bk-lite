@@ -1,13 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Form, Input, Select, Button, message, InputNumber } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import CustomTable from '@/components/custom-table';
 import { v4 as uuidv4 } from 'uuid';
 import { deepClone } from '@/app/monitor/utils/common';
 import {
-  COLLECT_TYPE_MAP,
-  INSTANCE_TYPE_MAP,
-  CONFIG_TYPE_MAP,
+  OBJECT_CONFIG_MAP,
   useMiddleWareFields,
   TIMEOUT_UNITS,
 } from '@/app/monitor/constants/monitor';
@@ -42,46 +40,14 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   const authList = useRef(commonContext?.authOrganizations || []);
   const organizationList: Organization[] = authList.current;
   const pluginName = searchParams.get('collect_type') || '';
-  const collectType = COLLECT_TYPE_MAP[pluginName];
-  const instType = INSTANCE_TYPE_MAP[pluginName];
-  const configTypes = CONFIG_TYPE_MAP[pluginName];
   const objectName = searchParams.get('name') || '';
   const objectId = searchParams.get('id') || '';
-  const getInitMonitoredObjectItem = () => {
-    const initItem = {
-      key: uuidv4(),
-      node_ids: null,
-      instance_name: null,
-      group_ids: groupId,
-    };
-    if (['web', 'ping', 'middleware'].includes(collectType)) {
-      return { ...initItem, url: null };
-    }
-    if (['snmp', 'ipmi'].includes(collectType)) {
-      return { ...initItem, ip: null };
-    }
-    if (collectType === 'jmx') {
-      return { ...initItem, jmx_url: null };
-    }
-    if (collectType === 'docker') {
-      return { ...initItem, endpoint: null };
-    }
-    if (collectType === 'database') {
-      return pluginName === 'ElasticSearch'
-        ? { ...initItem, server: null }
-        : { ...initItem, host: null, port: null };
-    }
-    if (collectType === 'vmware') {
-      return { ...initItem, host: null };
-    }
-    return initItem as IntergrationMonitoredObject;
-  };
   const authPasswordRef = useRef<any>(null);
   const privPasswordRef = useRef<any>(null);
   const passwordRef = useRef<any>(null);
-  const [dataSource, setDataSource] = useState<IntergrationMonitoredObject[]>([
-    getInitMonitoredObjectItem(),
-  ]);
+  const [dataSource, setDataSource] = useState<IntergrationMonitoredObject[]>(
+    []
+  );
   const [authPasswordDisabled, setAuthPasswordDisabled] =
     useState<boolean>(true);
   const [privPasswordDisabled, setPrivPasswordDisabled] =
@@ -339,6 +305,48 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     },
   ];
 
+  const collectType = useMemo(() => {
+    return OBJECT_CONFIG_MAP[objectName]?.plugins?.[pluginName]?.collect_type;
+  }, [OBJECT_CONFIG_MAP]);
+
+  const instType = useMemo(() => {
+    return OBJECT_CONFIG_MAP[objectName]?.instance_type;
+  }, [OBJECT_CONFIG_MAP]);
+
+  const configTypes = useMemo(() => {
+    return OBJECT_CONFIG_MAP[objectName]?.plugins?.[pluginName]?.config_type;
+  }, [OBJECT_CONFIG_MAP]);
+
+  const initItems = useMemo(() => {
+    const initItem = {
+      key: uuidv4(),
+      node_ids: null,
+      instance_name: null,
+      group_ids: groupId,
+    };
+    if (['web', 'ping', 'middleware'].includes(collectType)) {
+      return { ...initItem, url: null };
+    }
+    if (['snmp', 'ipmi'].includes(collectType)) {
+      return { ...initItem, ip: null };
+    }
+    if (collectType === 'jmx') {
+      return { ...initItem, jmx_url: null };
+    }
+    if (collectType === 'docker') {
+      return { ...initItem, endpoint: null };
+    }
+    if (collectType === 'database') {
+      return pluginName === 'ElasticSearch'
+        ? { ...initItem, server: null }
+        : { ...initItem, host: null, port: null };
+    }
+    if (collectType === 'http') {
+      return { ...initItem, host: null };
+    }
+    return initItem as IntergrationMonitoredObject;
+  }, [OBJECT_CONFIG_MAP]);
+
   const handleEditAuthPassword = () => {
     if (authPasswordDisabled) {
       form.setFieldsValue({
@@ -402,6 +410,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
 
   useEffect(() => {
     if (isLoading) return;
+    setDataSource([initItems]);
     getNodeList();
     initData();
   }, [isLoading]);
@@ -463,7 +472,10 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
 
   const handleAdd = (key: string) => {
     const index = dataSource.findIndex((item) => item.key === key);
-    const newData: IntergrationMonitoredObject = getInitMonitoredObjectItem();
+    const newData: IntergrationMonitoredObject = {
+      ...initItems,
+      key: uuidv4(),
+    };
     const updatedData = [...dataSource];
     updatedData.splice(index + 1, 0, newData); // 在当前行下方插入新数据
     setDataSource(updatedData);
@@ -487,11 +499,15 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       const _values = deepClone(values);
       delete _values.metric_type;
       delete _values.nodes;
+      const plugins = OBJECT_CONFIG_MAP[objectName]?.plugins || {};
+      const key = Object.keys(plugins).find(
+        (key) => plugins[key]?.collect_type === collectType
+      );
       const params = {
         configs: getConfigs(_values),
         collect_type: collectType,
         monitor_object_id: +objectId,
-        collector: collectType === 'jmx' ? 'JMX-JVM' : 'Telegraf',
+        collector: plugins[key || ''].collector,
         instances: dataSource.map((item) => {
           const { key, ...rest } = item;
           values.key = key;
@@ -508,18 +524,21 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   };
 
   const getConfigs = (row: TableDataItem) => {
-    switch (collectType) {
-      case 'host':
-        return form.getFieldValue('metric_type').map((item: string) => ({
-          type: item,
-          ...row,
-        }));
-      default:
-        if (row.timeout) {
-          row.timeout = row.timeout + 's';
-        }
-        return [{ type: configTypes[0], ...row }];
+    if (row.timeout) {
+      row.timeout = row.timeout + 's';
     }
+    if (collectType === 'host') {
+      return form.getFieldValue('metric_type').map((item: string) => ({
+        type: item,
+        ...row,
+      }));
+    }
+    if (collectType === 'http') {
+      row.custom_headers = { username: row.username, password: row.password };
+      delete row.username;
+      delete row.password;
+    }
+    return [{ type: configTypes[0], ...row }];
   };
 
   const getInstId = (row: IntergrationMonitoredObject) => {
@@ -544,7 +563,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
         return row.endpoint;
       case 'database':
         return row.server || `${row.host}:${row.port}`;
-      case 'vmware':
+      case 'http':
         return `vc-${row.host}`;
       default:
         return objectName + '-' + (row.ip || '');

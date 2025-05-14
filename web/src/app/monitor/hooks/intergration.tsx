@@ -638,7 +638,7 @@ const useColumnsAndFormItems = ({
             </>
           ),
         };
-      case 'vmware':
+      case 'http':
         return {
           displaycolumns: [columns[0], columns[11], ...columns.slice(4, 7)],
           formItems: (
@@ -1716,7 +1716,7 @@ const useFormItems = ({
             MANUAL_CONFIG_TEXT_MAP[pluginName] ||
             MANUAL_CONFIG_TEXT_MAP['default'],
         };
-      case 'vmware':
+      case 'http':
         return {
           formItems: (
             <>
