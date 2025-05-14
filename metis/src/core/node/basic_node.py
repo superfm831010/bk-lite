@@ -2,12 +2,11 @@ from typing import TypedDict
 
 import json_repair
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 
 from src.core.entity.basic_llm_request import BasicLLMReuqest
-from src.rag.native_rag.elasticsearch_rag import ElasticSearchRag
+from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
 from loguru import logger
 
 

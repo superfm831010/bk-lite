@@ -33,10 +33,10 @@ async def test_react_agent_with_time_tools():
     await graph.aprint_chunk(result)
     print('\n')
 
-    logger.info(f"values模式")
-    result = await graph.execute(request)
-    logger.info(result)
-    print('\n')
+    # logger.info(f"values模式")
+    # result = await graph.execute(request)
+    # logger.info(result)
+    # print('\n')
 
 
 @pytest.mark.asyncio

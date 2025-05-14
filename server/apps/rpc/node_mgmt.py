@@ -5,6 +5,13 @@ class NodeMgmt(object):
     def __init__(self):
         self.client = RpcClient('node_mgmt')
 
+    def cloud_region_list(self):
+        """
+        :return: 云区域列表
+        """
+        return_data = self.client.run('cloud_region_list')
+        return return_data
+
     def node_list(self, query_data):
         """
         :param query_data: 查询条件

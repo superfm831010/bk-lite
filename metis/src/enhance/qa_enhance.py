@@ -2,7 +2,7 @@ import json_repair
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_openai import ChatOpenAI
 
-from src.entity.rag.qa_enhance_request import QAEnhanceRequest
+from src.entity.rag.enhance.qa_enhance_request import QAEnhanceRequest
 
 
 class QAEnhance:
