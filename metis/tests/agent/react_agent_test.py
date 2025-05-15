@@ -30,7 +30,7 @@ async def test_react_agent_with_time_tools():
     graph = ReActAgentGraph()
 
     logger.info(f"values模式")
-    result = await graph.execute(request)
+    result = graph.execute(request)
     logger.info(result)
 
     logger.info(f"messages 模式")
