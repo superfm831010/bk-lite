@@ -11,6 +11,9 @@ from loguru import logger
 
 
 class BasicNode:
+    def log(self, config: RunnableConfig, message: str):
+        trace_id = config["configurable"]['trace_id']
+        logger.debug(f"[{trace_id}] {message}")
 
     def get_llm_client(self, request: BasicLLMReuqest) -> ChatOpenAI:
         llm = ChatOpenAI(model=request.model, base_url=request.openai_api_base,
