@@ -85,7 +85,10 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       setConfigForm(res);
       const plugins = OBJECT_CONFIG_MAP[data.objName].plugins || {};
       const _PluginName = Object.keys(plugins).find(
-        (key) => plugins[key]?.collect_type === data.collect_type
+        (key) =>
+          plugins[key]?.collect_type === data.collect_type &&
+          plugins[key]?.collector === data.collector &&
+          (plugins[key]?.config_type || []).includes(data.config_type)
       );
       setCollectType(data.collect_type);
       setPluginName(_PluginName as string);
@@ -93,6 +96,7 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       initData(content || {}, {
         plugin_name: _PluginName,
         is_child: data.is_child,
+        collect_type: data.collect_type,
       });
     } finally {
       setPageLoading(false);
@@ -174,6 +178,10 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     if (['Website', 'Ping'].includes(config.plugin_name)) {
       formData.monitor_url = formData.urls?.[0] || '';
     }
+    if (config.collect_type === 'jmx') {
+      formData.monitor_url =
+        (config.is_child ? formData.urls?.[0] : formData.jmxUrl) || '';
+    }
     switch (config.plugin_name) {
       case 'ElasticSearch':
         formData.server = formData.servers?.[0];
@@ -227,10 +235,6 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
         break;
       case 'VMWare':
         Object.assign(formData, extractVmvareUrl(formData));
-        break;
-      case 'JVM':
-        formData.monitor_url =
-          (config.is_child ? formData.urls?.[0] : formData.jmxUrl) || '';
         break;
       default:
         break;

@@ -1732,6 +1732,70 @@ const OBJECT_CONFIG_MAP: any = {
     interval = "$intervals"
     tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
+      'ActiveMQ-JMX': {
+        collect_type: 'jmx',
+        config_type: ['activemq'],
+        collector: 'ActiveMQ-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+blacklistObjectNames:
+  - "org.apache.activemq:clientId=*,*"
+whitelistObjectNames:
+  - "org.apache.activemq:destinationType=Queue,*"
+  - "org.apache.activemq:destinationType=Topic,*"
+  - "org.apache.activemq:type=Broker,brokerName=*"
+  - "org.apache.activemq:type=Topic,brokerName=*"
+  - "java.lang:*"
+
+rules:
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>max
+    name: jvm_memory_heap_usage_max
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>used
+    name: jvm_memory_heap_usage_used
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>committed
+    name: jvm_memory_heap_usage_committed
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>init
+    name: jvm_memory_heap_usage_init
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>max
+    name: jvm_memory_nonheap_usage_max
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>used
+    name: jvm_memory_nonheap_usage_used
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>committed
+    name: jvm_memory_nonheap_usage_committed
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>init
+    name: jvm_memory_nonheap_usage_init
+
+  - pattern: org.apache.activemq<type=Broker, brokerName=(\S*), destinationType=Queue, destinationName=(\S*)><>(\w+)
+    name: activemq_queue_$3
+    attrNameSnakeCase: true
+    labels:
+      destination: $2
+
+  - pattern: org.apache.activemq<type=Broker, brokerName=(\S*), destinationType=Topic, destinationName=(\S*)><>(\w+)
+    name: activemq_topic_$3
+    attrNameSnakeCase: true
+    labels:
+      destination: $2
+
+  - pattern: org.apache.activemq<type=Broker, brokerName=(\S*)><>CurrentConnectionsCount
+    name: activemq_connections
+    type: GAUGE
+
+  - pattern: org.apache.activemq<type=Broker, brokerName=(\S*)><>Total(.*)Count
+    name: activemq_$2_total
+    type: COUNTER
+
+  - pattern: org.apache.activemq<type=Broker, brokerName=(\S*)><>(.*)PercentUsage
+    name: activemq_$2_usage_ratio
+    type: GAUGE
+    valueFactor: 0.01
+`,
+      },
     },
   },
   Apache: {
@@ -1815,6 +1879,582 @@ const OBJECT_CONFIG_MAP: any = {
     password = "$password"
     interval = "$intervals"
     tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+      'Tomcat-JMX': {
+        collect_type: 'jmx',
+        config_type: ['tomcat'],
+        collector: 'Tomcat-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+lowercaseOutputLabelNames: true
+lowercaseOutputName: true
+whitelistObjectNames: ["java.lang:type=OperatingSystem", "Catalina:*"]
+blacklistObjectNames: []
+rules:
+  - pattern: 'Catalina<type=Server><>serverInfo: (.+)'
+    name: tomcat_serverinfo
+    value: 1
+    labels:
+      serverInfo: "$1"
+    type: COUNTER
+  - pattern: 'Catalina<type=GlobalRequestProcessor, name=\"(\w+-\w+)-(\d+)\"><>(\w+):'
+    name: tomcat_$3_total
+    labels:
+      port: "$2"
+      protocol_type: "$1"
+    help: Tomcat global $3
+    type: COUNTER
+  - pattern: 'Catalina<j2eeType=Servlet, WebModule=//([-a-zA-Z0-9+&@#/%?=~_|!:.,;]*[-a-zA-Z0-9+&@#/%=~_|]), name=([-a-zA-Z0-9+/$%~_-|!.]*), J2EEApplication=none, J2EEServer=none><>(requestCount|processingTime|errorCount):'
+    name: tomcat_servlet_$3_total
+    labels:
+      module: "$1"
+      servlet: "$2"
+    help: Tomcat servlet $3 total
+    type: COUNTER
+  - pattern: 'Catalina<type=ThreadPool, name="(\w+-\w+)-(\d+)"><>(currentThreadCount|currentThreadsBusy|keepAliveCount|connectionCount|acceptCount|acceptorThreadCount|pollerThreadCount|maxThreads|minSpareThreads):'
+    name: tomcat_threadpool_$3
+    labels:
+      port: "$2"
+      protocol_type: "$1"
+    help: Tomcat threadpool $3
+    type: GAUGE
+  - pattern: 'Catalina<type=Manager, host=([-a-zA-Z0-9+&@#/%?=~_|!:.,;]*[-a-zA-Z0-9+&@#/%=~_|]), context=([-a-zA-Z0-9+/$%~_-|!.]*)><>(processingTime|sessionCounter|rejectedSessions|expiredSessions):'
+    name: tomcat_session_$3_total
+    labels:
+      context: "$2"
+      host: "$1"
+    help: Tomcat session $3 total
+    type: COUNTER
+
+  # tomcat6适配
+  - pattern: 'Catalina<type=GlobalRequestProcessor, name=(\w+)-(\d+)><>(\w+):'
+    name: tomcat_$3_total
+    labels:
+      port: "$2"
+      protocol_type: "$1"
+    help: Tomcat global $3
+    type: COUNTER
+
+  - pattern: 'Catalina<type=ThreadPool, name=(\w+)-(\d+)><>(running|currentThreadCount|currentThreadsBusy|maxThreads):'
+    name: tomcat_threadpool_$3
+    labels:
+      port: "$2"
+      protocol_type: "$1"
+    help: Tomcat threadpool $3
+    type: GAUGE
+
+  - pattern: 'Catalina<type=Manager, path=/([-a-zA-Z0-9+&@#/%?=~_|!:.,;]*[-a-zA-Z0-9+&@#/%=~_|]), host=([-a-zA-Z0-9+&@#/%?=~_|!:.,;]*[-a-zA-Z0-9+&@#/%=~_|])><>(processingTime|sessionCounter|rejectedSessions|expiredSessions):'
+    name: tomcat_session_$3_total
+    labels:
+      context: "$2"
+      host: "$1"
+    help: Tomcat session $3 total
+    type: COUNTER`,
+      },
+    },
+  },
+  TongWeb: {
+    instance_type: 'tongweb',
+    icon: 'Host',
+    groupIds: {},
+    plugins: {
+      'TongWeb6-JMX': {
+        collect_type: 'jmx',
+        config_type: ['tongweb6'],
+        collector: 'TongWeb6-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+whitelistObjectNames:
+  - TWNT:*
+  - monitor:*
+
+
+rules:
+  # runtime
+  - pattern: monitor<name=runtime, group=jvm><Uptime>(count)
+    name: tongweb6_monitor_runtime_uptime
+    help: 实例已运行时间(ms)
+
+  # http-connector
+  - pattern: monitor<name=(.+), group=http-connector><(.+)>(count)
+    name: tongweb6_monitor_http_connector_$2
+    labels:
+      name_info: $1
+
+  # GlobalRequestProcessor
+  - pattern: TWNT<type=GlobalRequestProcessor, name=(.+)><>(requestCount|maxTime|bytesReceived|bytesSent|processingTime|errorCount)
+    name: tongweb6_global_request_processor_$2
+    labels:
+      name_info: $1
+
+  # Manager
+  - pattern: TWNT<type=Manager, context=(.+), host=(.+)><>(activeSessions|expiredSessions|maxActive|processingTime|rejectedSessions|sessionAverageAliveTime|sessionMaxAliveTime)
+    name: tongweb6_manager_$3
+    labels:
+      host_info: $1
+      context_info: $2
+
+  # ThreadPool
+  - pattern: TWNT<type=ThreadPool, name=(.+)><>(currentThreadsBusy|currentThreadsHang|keepAliveCount)
+    name: tongweb6_thread_pool_$2
+    labels:
+      name_info: $1`,
+      },
+      'TongWeb7-JMX': {
+        collect_type: 'jmx',
+        config_type: ['tongweb7'],
+        collector: 'TongWeb7-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+
+# 白名单限制采集范围
+whitelistObjectNames:
+  - TONGWEB:type=Connector,port=*
+  - TONGWEB:type=GlobalRequestProcessor,name=*
+  - TONGWEB:type=Manager,host=*,context=*
+  - TONGWEB:type=ThreadPool,name=*
+
+rules:
+  # Connector
+  - pattern: TONGWEB<type=Connector, port=(.+)><>(maxPostSize|maxSavePostSize|maxParameterCount|asyncTimeout)
+    name: tongweb7_Connector_$2
+    labels:
+      port: $1
+
+  # GlobalRequestProcessor
+  - pattern: TONGWEB<type=GlobalRequestProcessor, name=(.+)><>(requestCount|maxTime|bytesReceived|bytesSent|processingTime|errorCount)
+    name: tongweb7_GlobalRequestProcessor_$2
+    labels:
+      name_info: $1
+
+  # Manager
+  - pattern: TONGWEB<type=Manager, host=(.+), context=(.+)><>(rejectedSessions|activeSessions|sessionMaxAliveTime|sessionAverageAliveTime|maxActive|expiredSessions)
+    name: tongweb7_Manager_$3
+    labels:
+      host_info: $1
+      context_info: $2
+
+  # ThreadPool
+  - pattern: TONGWEB<type=ThreadPool, name=(.+)><>(currentThreadsBusy|currentThreadCount|currentThreadsHang|keepAliveCount|queueSize)
+    name: tongweb7_ThreadPool_$2
+    labels:
+      name_info: $1`,
+      },
+    },
+  },
+  JBoss: {
+    instance_type: 'jboss',
+    icon: 'Host',
+    groupIds: {},
+    plugins: {
+      'JBoss-JMX': {
+        collect_type: 'jmx',
+        config_type: ['jboss'],
+        collector: 'JBoss-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+whitelistObjectNames:
+ - "jboss.as:subsystem=messaging-activemq,server=*,jms-queue=*"
+ - "jboss.as:subsystem=messaging-activemq,server=*,jms-topic=*"
+ - "jboss.as:subsystem=datasources,data-source=*,statistics=*"
+ - "jboss.as:subsystem=datasources,xa-data-source=*,statistics=*"
+ - "jboss.as:subsystem=transactions*"
+ - "jboss.as:subsystem=undertow,server=*,http-listener=*"
+ - "jboss.as:subsystem=undertow,server=*,https-listener=*"
+ # - "java.lang:*"
+rules:
+  - pattern: "^jboss.as<subsystem=messaging-activemq, server=.+, jms-(queue|topic)=(.+)><>(.+):"
+    attrNameSnakeCase: true
+    name: wildfly_messaging_$3
+    labels:
+      $1: $2
+
+  - pattern: "^jboss.as<subsystem=datasources, (?:xa-)*data-source=(.+), statistics=(.+)><>(.+):"
+    attrNameSnakeCase: true
+    name: wildfly_datasource_$2_$3
+    labels:
+      source_name: $1
+
+  - pattern: "^jboss.as<subsystem=transactions><>number_of_(.+):"
+    attrNameSnakeCase: true
+    name: wildfly_transaction_$1
+
+  - pattern: "^jboss.as<subsystem=undertow, server=(.+), (http[s]?-listener)=(.+)><>(bytes_.+|error_count|processing_time|request_count):"
+    attrNameSnakeCase: true
+    name: wildfly_undertow_$4
+    labels:
+      server_name: $1
+      listener: $3`,
+      },
+    },
+  },
+  Jetty: {
+    instance_type: 'jetty',
+    icon: 'Host',
+    groupIds: {},
+    plugins: {
+      'Jetty-JMX': {
+        collect_type: 'jmx',
+        config_type: ['jetty'],
+        collector: 'Jetty-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>max
+    name: jvm_memory_heap_usage_max
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>used
+    name: jvm_memory_heap_usage_used
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>committed
+    name: jvm_memory_heap_usage_committed
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>init
+    name: jvm_memory_heap_usage_init
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>max
+    name: jvm_memory_nonheap_usage_max
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>used
+    name: jvm_memory_nonheap_usage_used
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>committed
+    name: jvm_memory_nonheap_usage_committed
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>init
+    name: jvm_memory_nonheap_usage_init
+  - pattern: org.eclipse.jetty.io<type=arraybytebufferpool, id=0><>heapMemory
+    name: jetty_bufferpool_heapMemory
+  - pattern: org.eclipse.jetty.deploy<type=deploymentmanager, id=(.+)><>stopTimeout
+    name: jetty_deploymentmanager_stopTimeout
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.deploy.providers<type=webappprovider, id=(.+)><>stopTimeout
+    name: jetty_webappprovider_stopTimeout
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.io<type=arraybytebufferpool, id=(.+)><>heapMemory
+    name: jetty_arraybufferpool_heapMemory
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.io<type=arraybytebufferpool, id=(.+)><>directByteBufferCount
+    name: jetty_arraybufferpool_directByteBufferCount
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.io<type=arraybytebufferpool, id=(.+)><>directMemory
+    name: jetty_arraybufferpool_directMemory
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.io<type=arraybytebufferpool, id=(.+)><>heapByteBufferCount
+    name: jetty_arraybufferpool_heapByteBufferCount
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.io<context=(.+), type=managedselector, id=(.+)><>stopTimeout
+    name: jetty_managedselector_stopTimeout
+    labels:
+      context: "$1"
+      id:  "$2"
+  - pattern: org.eclipse.jetty.io<context=(.+), type=managedselector, id=(.+)><>averageSelectedKeys
+    name: jetty_managedselector_averageSelectedKeys
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.io<context=(.+), type=managedselector, id=(.+)><>maxSelectedKeys
+    name: jetty_managedselector_maxSelectedKeys
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.io<context=(.+), type=managedselector, id=(.+)><>selectCount
+    name: jetty_managedselector_selectCount
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.io<context=(.+), type=managedselector, id=(.+)><>totalKeys
+    name: jetty_managedselector_totalKeys
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>responseHeaderSize
+    name: jetty_httpconfiguration_responseHeaderSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>requestHeaderSize
+    name: jetty_httpconfiguration_requestHeaderSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>maxErrorDispatches
+    name: jetty_httpconfiguration_maxErrorDispatches
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>idleTimeout
+    name: jetty_httpconfiguration_idleTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>outputBufferSize
+    name: jetty_httpconfiguration_outputBufferSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>headerCacheSize
+    name: jetty_httpconfiguration_headerCacheSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>minRequestDataRate
+    name: jetty_httpconfiguration_minRequestDataRate
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>outputAggregationSize
+    name: jetty_httpconfiguration_outputAggregationSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>blockingTimeout
+    name: jetty_httpconfiguration_blockingTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>minResponseDataRate
+    name: jetty_httpconfiguration_minResponseDataRate
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector, id=(.+)><>stopTimeout
+    name: jetty_serverconnector_stopTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector, id=(.+)><>acceptQueueSize
+    name: jetty_serverconnector_acceptQueueSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector, id=(.+)><>acceptedReceiveBufferSize
+    name: jetty_serverconnector_acceptedReceiveBufferSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector, id=(.+)><>acceptedSendBufferSize
+    name: jetty_serverconnector_acceptedSendBufferSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector, id=(.+)><>idleTimeout
+    name: jetty_serverconnector_idleTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector$serverconnectormanager, id=(.+)><>selectorCount
+    name: jetty_serverconnector_selectorCount
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector$serverconnectormanager, id=(.+)><>connectTimeout
+    name: jetty_serverconnector_connectTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>threadsPriority
+    name: jetty_queuedthreadpool_threadsPriority
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>queueSize
+    name: jetty_queuedthreadpool_queueSize
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>availableReservedThreads
+    name: jetty_queuedthreadpool_availableReservedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>stopTimeout
+    name: jetty_queuedthreadpool_stopTimeout
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>utilizedThreads
+    name: jetty_queuedthreadpool_utilizedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>utilizationRate
+    name: jetty_queuedthreadpool_utilizationRate
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>minThreads
+    name: jetty_queuedthreadpool_minThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>maxReservedThreads
+    name: jetty_queuedthreadpool_maxReservedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>threads
+    name: jetty_queuedthreadpool_threads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>reservedThreads
+    name: jetty_queuedthreadpool_reservedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>readyThreads
+    name: jetty_queuedthreadpool_readyThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>leasedThreads
+    name: jetty_queuedthreadpool_leasedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>maxAvailableThreads
+    name: jetty_queuedthreadpool_maxAvailableThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>busyThreads
+    name: jetty_queuedthreadpool_busyThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>lowThreadsThreshold
+    name: jetty_queuedthreadpool_lowThreadsThreshold
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>idleTimeout
+    name: jetty_queuedthreadpool_idleTimeout
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>idleThreads
+    name: jetty_queuedthreadpool_idleThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>maxThreads
+    name: jetty_queuedthreadpool_maxThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>maxLeasedThreads
+    name: jetty_queuedthreadpool_maxLeasedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=reservedthreadexecutor, id=(.+)><>pending
+    name: jetty_reservedthreadexecutor_pending
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=reservedthreadexecutor, id=(.+)><>available
+    name: jetty_reservedthreadexecutor_available
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=reservedthreadexecutor, id=(.+)><>idleTimeoutMs
+    name: jetty_reservedthreadexecutor_idleTimeoutMs
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=reservedthreadexecutor, id=(.+)><>capacity
+    name: jetty_reservedthreadexecutor_capacity
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=threadpoolbudget, id=(.+)><>leasedThreads
+    name: jetty_threadpoolbudget_leasedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread.strategy<context=(.+), type=eatwhatyoukill, id=(.+)><>stopTimeout
+    name: jetty_eatwhatyoukill_stopTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.util.thread.strategy<context=(.+), type=eatwhatyoukill, id=(.+)><>pCTasksConsumed
+    name: jetty_eatwhatyoukill_pCTasksConsumed
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.util.thread.strategy<context=(.+), type=eatwhatyoukill, id=(.+)><>pECTasksExecuted
+    name: jetty_eatwhatyoukill_pECTasksExecuted
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.util.thread.strategy<context=(.+), type=eatwhatyoukill, id=(.+)><>ePCTasksConsumed
+    name: jetty_eatwhatyoukill_ePCTasksConsumed
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.util.thread.strategy<context=(.+), type=eatwhatyoukill, id=(.+)><>pICTasksExecuted
+    name: jetty_eatwhatyoukill_pICTasksExecuted
+    labels:
+      context: "$1"
+      id: "$2"`,
+      },
+    },
+  },
+  WebLogic: {
+    instance_type: 'weblogic',
+    icon: 'Host',
+    groupIds: {},
+    plugins: {
+      'WebLogic-JMX': {
+        collect_type: 'jmx',
+        config_type: ['weblogic'],
+        collector: 'WebLogic-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+whitelistObjectNames:
+  - "com.bea:Name=*,Type=ServerRuntime"
+  - "com.bea:ServerRuntime=*,Type=ApplicationRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=JDBCDataSourceRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=JMSDestinationRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=JDBCStoreRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=FileStoreRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=SAFRemoteEndpointRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=ThreadPoolRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=JMSRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=SAFRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=WorkManagerRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=MessagingBridgeRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=PersistentStoreRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=WebServerRuntime,*"
+
+
+rules:
+  # ex: com.bea<ServerRuntime=AdminServer, Name=default, ApplicationRuntime=moduleJMS, Type=WorkManagerRuntime><>CompletedRequests
+  - pattern: "^com.bea<ServerRuntime=(.+), Name=(.+), (.+)Runtime=(.*), Type=(.+)Runtime><>(.+):"
+    name: weblogic_$3_$5_$6
+    attrNameSnakeCase: true
+    labels:
+      runtime: $1
+      name: $2
+      application: $4
+
+  # ex: com.bea<ServerRuntime=AdminServer, Name=dsName, Type=JDBCDataSourceRuntime><>Metric
+  - pattern: "^com.bea<ServerRuntime=(.+), Name=(.+), Type=(.+)Runtime><>(.+):"
+    name: weblogic_$3_$4
+    attrNameSnakeCase: true
+    labels:
+      runtime: $1
+      name: $2
+
+  # ex: com.bea<ServerRuntime=AdminServer, Name=bea_wls_cluster_internal, Type=ApplicationRuntime><OverallHealthStateJMX>IsCritical
+  - pattern: "^com.bea<ServerRuntime=(.+), Name=(.+), Type=(.+)Runtime><(.+)>(.+):"
+    name: weblogic_$3_$4_$5
+    attrNameSnakeCase: true
+    labels:
+      runtime: $1
+      name: $2`,
       },
     },
   },
@@ -1927,89 +2567,89 @@ const OBJECT_CONFIG_MAP: any = {
         config_type: ['jvm'],
         collector: 'JMX-JVM',
         manualCfgText: `username: $username
-    password: $password
-    jmxUrl: $monitor_url
-    ssl: false
-    startDelaySeconds: 0
-    lowercaseOutputName: true
-    lowercaseOutputLabelNames: true
-    
-    # 白名单限制采集范围
-    whitelistObjectNames:
-      - java.lang:type=Memory
-      - java.lang:type=Threading
-      - java.lang:type=OperatingSystem
-      - java.nio:type=BufferPool,name=*
-      - java.lang:type=GarbageCollector,name=*
-      - java.lang:type=MemoryPool,name=*
-    
-    rules:
-      # 内存相关指标
-      - pattern: java.lang<type=Memory><(\w+)MemoryUsage>(\w+)
-        name: jvm_memory_usage_$2
-        labels:
-          type: $1
-    
-      # 线程相关指标
-      - pattern: java.lang<type=Threading><>ThreadCount
-        name: jvm_threads_count
-      - pattern: java.lang<type=Threading><>DaemonThreadCount
-        name: jvm_threads_daemon_count
-      - pattern: java.lang<type=Threading><>PeakThreadCount
-        name: jvm_threads_peak_count
-      - pattern: java.lang<type=Threading><>TotalStartedThreadCount
-        name: jvm_threads_total_started_count
-      - pattern: java.lang<type=Threading><>CurrentThreadUserTime
-        name: jvm_threads_current_user_time
-        valueFactor: 0.001
-    
-      # 操作系统指标
-      - pattern: java.lang<type=OperatingSystem><>FreePhysicalMemorySize
-        name: jvm_os_memory_physical_free
-      - pattern: java.lang<type=OperatingSystem><>TotalPhysicalMemorySize
-        name: jvm_os_memory_physical_total
-      - pattern: java.lang<type=OperatingSystem><>FreeSwapSpaceSize
-        name: jvm_os_memory_swap_free
-      - pattern: java.lang<type=OperatingSystem><>TotalSwapSpaceSize
-        name: jvm_os_memory_swap_total
-      - pattern: java.lang<type=OperatingSystem><>CommittedVirtualMemorySize
-        name: jvm_os_memory_committed_virtual
-      - pattern: java.lang<type=OperatingSystem><>AvailableProcessors
-        name: jvm_os_available_processors
-      - pattern: java.lang<type=OperatingSystem><>ProcessCpuTime
-        name: jvm_os_processcputime_seconds
-        valueFactor: 0.000000001
-    
-      # BufferPool 指标
-      - pattern: java.nio<type=BufferPool, name=(.+)><>Count
-        name: jvm_bufferpool_count
-        labels:
-          type: $1
-      - pattern: java.nio<type=BufferPool, name=(.+)><>MemoryUsed
-        name: jvm_bufferpool_memoryused
-        labels:
-          type: $1
-      - pattern: java.nio<type=BufferPool, name=(.+)><>TotalCapacity
-        name: jvm_bufferpool_totalcapacity
-        labels:
-          type: $1
-    
-      # GC 指标
-      - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionTime
-        name: jvm_gc_collectiontime_seconds
-        valueFactor: 0.001
-        labels:
-          type: $1
-      - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionCount
-        name: jvm_gc_collectioncount
-        labels:
-          type: $1
-    
-      # MemoryPool 指标
-      - pattern: java.lang<type=MemoryPool, name=(.+)><Usage>(\w+)
-        name: jvm_memorypool_usage_$2
-        labels:
-          type: $1`,
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+
+# 白名单限制采集范围
+whitelistObjectNames:
+  - java.lang:type=Memory
+  - java.lang:type=Threading
+  - java.lang:type=OperatingSystem
+  - java.nio:type=BufferPool,name=*
+  - java.lang:type=GarbageCollector,name=*
+  - java.lang:type=MemoryPool,name=*
+
+rules:
+  # 内存相关指标
+  - pattern: java.lang<type=Memory><(\w+)MemoryUsage>(\w+)
+    name: jvm_memory_usage_$2
+    labels:
+      type: $1
+
+  # 线程相关指标
+  - pattern: java.lang<type=Threading><>ThreadCount
+    name: jvm_threads_count
+  - pattern: java.lang<type=Threading><>DaemonThreadCount
+    name: jvm_threads_daemon_count
+  - pattern: java.lang<type=Threading><>PeakThreadCount
+    name: jvm_threads_peak_count
+  - pattern: java.lang<type=Threading><>TotalStartedThreadCount
+    name: jvm_threads_total_started_count
+  - pattern: java.lang<type=Threading><>CurrentThreadUserTime
+    name: jvm_threads_current_user_time
+    valueFactor: 0.001
+
+  # 操作系统指标
+  - pattern: java.lang<type=OperatingSystem><>FreePhysicalMemorySize
+    name: jvm_os_memory_physical_free
+  - pattern: java.lang<type=OperatingSystem><>TotalPhysicalMemorySize
+    name: jvm_os_memory_physical_total
+  - pattern: java.lang<type=OperatingSystem><>FreeSwapSpaceSize
+    name: jvm_os_memory_swap_free
+  - pattern: java.lang<type=OperatingSystem><>TotalSwapSpaceSize
+    name: jvm_os_memory_swap_total
+  - pattern: java.lang<type=OperatingSystem><>CommittedVirtualMemorySize
+    name: jvm_os_memory_committed_virtual
+  - pattern: java.lang<type=OperatingSystem><>AvailableProcessors
+    name: jvm_os_available_processors
+  - pattern: java.lang<type=OperatingSystem><>ProcessCpuTime
+    name: jvm_os_processcputime_seconds
+    valueFactor: 0.000000001
+
+  # BufferPool 指标
+  - pattern: java.nio<type=BufferPool, name=(.+)><>Count
+    name: jvm_bufferpool_count
+    labels:
+      type: $1
+  - pattern: java.nio<type=BufferPool, name=(.+)><>MemoryUsed
+    name: jvm_bufferpool_memoryused
+    labels:
+      type: $1
+  - pattern: java.nio<type=BufferPool, name=(.+)><>TotalCapacity
+    name: jvm_bufferpool_totalcapacity
+    labels:
+      type: $1
+
+  # GC 指标
+  - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionTime
+    name: jvm_gc_collectiontime_seconds
+    valueFactor: 0.001
+    labels:
+      type: $1
+  - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionCount
+    name: jvm_gc_collectioncount
+    labels:
+      type: $1
+
+  # MemoryPool 指标
+  - pattern: java.lang<type=MemoryPool, name=(.+)><Usage>(\w+)
+    name: jvm_memorypool_usage_$2
+    labels:
+      type: $1`,
       },
     },
   },

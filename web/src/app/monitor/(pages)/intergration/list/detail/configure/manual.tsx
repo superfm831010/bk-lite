@@ -198,7 +198,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
           return (pre += _configMsg[cur]);
         }, '');
       }
-      setConfigMsg(replaceTemplate(_configMsg as string, params));
+      setConfigMsg(replaceTemplate(_configMsg || '', params));
       message.success(t('common.successfullyAdded'));
     } finally {
       setConfirmLoading(false);
@@ -213,7 +213,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       // 使用正则表达式来匹配模板字符串中的 ${key} 或 $key
       const regex = new RegExp(`\\$${key}`, 'g');
       // 替换匹配到的内容为对象中的值
-      return acc.replace(regex, data[key].toString());
+      return acc.replace(regex, (data[key] || 'null').toString());
     }, template);
   };
 
