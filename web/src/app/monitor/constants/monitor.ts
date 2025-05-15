@@ -1416,165 +1416,6 @@ const APPOINT_METRIC_IDS: string[] = [
 
 const TIMEOUT_UNITS: string[] = ['s'];
 
-const MANUAL_CONFIG_TEXT_MAP: ObjectIconMap = {
-  Apache: `[[inputs.$config_type]]
-    urls = ["$monitor_url"]
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  ClickHouse: `[[inputs.$config_type]]
-    servers = ["$monitor_url"]
-    username = "default"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Consul: `[[inputs.$config_type]]
-    address = "$monitor_url"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  RabbitMQ: `[[inputs.$config_type]]
-    url = "$monitor_url"
-    username = "$username"
-    password = "$password"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Tomcat: `[[inputs.$config_type]]
-    url = "$monitor_url"
-    username = "$username"
-    password = "$password"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  ActiveMQ: `[[inputs.$config_type]]
-    url = "$monitor_url"
-    username = "$username"
-    password = "$password"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Nginx: `[[inputs.$config_type]]
-    urls = ["$monitor_url"]
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Zookeeper: `[[inputs.$config_type]]
-    servers = ["$monitor_url"]
-    timeout = "$timeouts"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  ElasticSearch: `[[inputs.$config_type]]
-    servers = ["$server"]
-    username = "$username"
-    password = "$password"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  MongoDB: `[[inputs.$config_type]]
-    servers = ["mongodb://$host:$port/?connect=direct"]
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Mysql: `[[inputs.$config_type]]
-    servers = ["$username:$password@tcp($host:$port)/?tls=false"]
-    metric_version = 2
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Redis: `[[inputs.$config_type]]
-    servers = ["tcp://$host:$port"]
-    username = ""
-    password = "$password" 
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Postgres: `[[inputs.$config_type]]
-    address = "host=$host port=$port user=$username password=$password sslmode=disable"
-    ignored_databases = ["template0", "template1"]
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  JVM: `username: $username
-password: $password
-jmxUrl: $monitor_url
-ssl: false
-startDelaySeconds: 0
-lowercaseOutputName: true
-lowercaseOutputLabelNames: true
-
-# 白名单限制采集范围
-whitelistObjectNames:
-  - java.lang:type=Memory
-  - java.lang:type=Threading
-  - java.lang:type=OperatingSystem
-  - java.nio:type=BufferPool,name=*
-  - java.lang:type=GarbageCollector,name=*
-  - java.lang:type=MemoryPool,name=*
-
-rules:
-  # 内存相关指标
-  - pattern: java.lang<type=Memory><(\w+)MemoryUsage>(\w+)
-    name: jvm_memory_usage_$2
-    labels:
-      type: $1
-
-  # 线程相关指标
-  - pattern: java.lang<type=Threading><>ThreadCount
-    name: jvm_threads_count
-  - pattern: java.lang<type=Threading><>DaemonThreadCount
-    name: jvm_threads_daemon_count
-  - pattern: java.lang<type=Threading><>PeakThreadCount
-    name: jvm_threads_peak_count
-  - pattern: java.lang<type=Threading><>TotalStartedThreadCount
-    name: jvm_threads_total_started_count
-  - pattern: java.lang<type=Threading><>CurrentThreadUserTime
-    name: jvm_threads_current_user_time
-    valueFactor: 0.001
-
-  # 操作系统指标
-  - pattern: java.lang<type=OperatingSystem><>FreePhysicalMemorySize
-    name: jvm_os_memory_physical_free
-  - pattern: java.lang<type=OperatingSystem><>TotalPhysicalMemorySize
-    name: jvm_os_memory_physical_total
-  - pattern: java.lang<type=OperatingSystem><>FreeSwapSpaceSize
-    name: jvm_os_memory_swap_free
-  - pattern: java.lang<type=OperatingSystem><>TotalSwapSpaceSize
-    name: jvm_os_memory_swap_total
-  - pattern: java.lang<type=OperatingSystem><>CommittedVirtualMemorySize
-    name: jvm_os_memory_committed_virtual
-  - pattern: java.lang<type=OperatingSystem><>AvailableProcessors
-    name: jvm_os_available_processors
-  - pattern: java.lang<type=OperatingSystem><>ProcessCpuTime
-    name: jvm_os_processcputime_seconds
-    valueFactor: 0.000000001
-
-  # BufferPool 指标
-  - pattern: java.nio<type=BufferPool, name=(.+)><>Count
-    name: jvm_bufferpool_count
-    labels:
-      type: $1
-  - pattern: java.nio<type=BufferPool, name=(.+)><>MemoryUsed
-    name: jvm_bufferpool_memoryused
-    labels:
-      type: $1
-  - pattern: java.nio<type=BufferPool, name=(.+)><>TotalCapacity
-    name: jvm_bufferpool_totalcapacity
-    labels:
-      type: $1
-
-  # GC 指标
-  - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionTime
-    name: jvm_gc_collectiontime_seconds
-    valueFactor: 0.001
-    labels:
-      type: $1
-  - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionCount
-    name: jvm_gc_collectioncount
-    labels:
-      type: $1
-
-  # MemoryPool 指标
-  - pattern: java.lang<type=MemoryPool, name=(.+)><Usage>(\w+)
-    name: jvm_memorypool_usage_$2
-    labels:
-      type: $1`,
-  default: `[[inputs.$config_type]]
-    url = "$monitor_url"
-    username = "$username"
-    password = "$password"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-};
-
 const OBJECT_CONFIG_MAP: any = {
   Host: {
     instance_type: 'os',
@@ -1596,6 +1437,7 @@ const OBJECT_CONFIG_MAP: any = {
           'system',
         ],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1611,6 +1453,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'k8s',
         config_type: ['k8s'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1649,6 +1492,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'web',
         config_type: ['http_response'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1661,6 +1505,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'ping',
         config_type: ['ping'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1676,6 +1521,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'snmp',
         config_type: ['switch'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1691,6 +1537,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'snmp',
         config_type: ['router'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1706,6 +1553,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'snmp',
         config_type: ['firewall'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1721,6 +1569,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'snmp',
         config_type: ['loadbalance'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1733,6 +1582,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'snmp',
         config_type: ['detection_device'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1745,6 +1595,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'snmp',
         config_type: ['scanning_device'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1757,6 +1608,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'snmp',
         config_type: ['bastion_host'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1769,11 +1621,13 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'snmp',
         config_type: ['storage'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
       'Storage IPMI': {
         collect_type: 'ipmi',
         config_type: ['storage'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1786,11 +1640,13 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'snmp',
         config_type: ['hardware_server'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
       'Hardware Server IPMI': {
         collect_type: 'ipmi',
         config_type: ['hardware_server'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1809,6 +1665,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'trap',
         config_type: ['snmp_trap'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1821,6 +1678,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'docker',
         config_type: ['docker'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -1833,6 +1691,12 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'middleware',
         config_type: ['rabbitmq'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    url = "$monitor_url"
+    username = "$username"
+    password = "$password"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1845,6 +1709,10 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'middleware',
         config_type: ['nginx'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    urls = ["$monitor_url"]
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1857,6 +1725,12 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'middleware',
         config_type: ['activemq'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    url = "$monitor_url"
+    username = "$username"
+    password = "$password"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1869,6 +1743,10 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'middleware',
         config_type: ['apache'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    urls = ["$monitor_url"]
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1881,6 +1759,11 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'middleware',
         config_type: ['clickhouse'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["$monitor_url"]
+    username = "default"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1893,6 +1776,10 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'middleware',
         config_type: ['consul'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    address = "$monitor_url"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1905,6 +1792,11 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'middleware',
         config_type: ['zookeeper'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["$monitor_url"]
+    timeout = "$timeouts"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1917,6 +1809,12 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'middleware',
         config_type: ['tomcat'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    url = "$monitor_url"
+    username = "$username"
+    password = "$password"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1929,6 +1827,10 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'database',
         config_type: ['mongodb'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["mongodb://$host:$port/?connect=direct"]
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1941,6 +1843,11 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'database',
         config_type: ['mysql'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["$username:$password@tcp($host:$port)/?tls=false"]
+    metric_version = 2
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1953,6 +1860,12 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'database',
         config_type: ['redis'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["tcp://$host:$port"]
+    username = ""
+    password = "$password" 
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1965,6 +1878,11 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'database',
         config_type: ['postgres'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    address = "host=$host port=$port user=$username password=$password sslmode=disable"
+    ignored_databases = ["template0", "template1"]
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1977,6 +1895,12 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'database',
         config_type: ['elasticsearch'],
         collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["$server"]
+    username = "$username"
+    password = "$password"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
       },
     },
   },
@@ -1989,6 +1913,7 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'http',
         config_type: ['prometheus'],
         collector: 'Telegraf',
+        manualCfgText: '',
       },
     },
   },
@@ -2001,6 +1926,90 @@ const OBJECT_CONFIG_MAP: any = {
         collect_type: 'jmx',
         config_type: ['jvm'],
         collector: 'JMX-JVM',
+        manualCfgText: `username: $username
+    password: $password
+    jmxUrl: $monitor_url
+    ssl: false
+    startDelaySeconds: 0
+    lowercaseOutputName: true
+    lowercaseOutputLabelNames: true
+    
+    # 白名单限制采集范围
+    whitelistObjectNames:
+      - java.lang:type=Memory
+      - java.lang:type=Threading
+      - java.lang:type=OperatingSystem
+      - java.nio:type=BufferPool,name=*
+      - java.lang:type=GarbageCollector,name=*
+      - java.lang:type=MemoryPool,name=*
+    
+    rules:
+      # 内存相关指标
+      - pattern: java.lang<type=Memory><(\w+)MemoryUsage>(\w+)
+        name: jvm_memory_usage_$2
+        labels:
+          type: $1
+    
+      # 线程相关指标
+      - pattern: java.lang<type=Threading><>ThreadCount
+        name: jvm_threads_count
+      - pattern: java.lang<type=Threading><>DaemonThreadCount
+        name: jvm_threads_daemon_count
+      - pattern: java.lang<type=Threading><>PeakThreadCount
+        name: jvm_threads_peak_count
+      - pattern: java.lang<type=Threading><>TotalStartedThreadCount
+        name: jvm_threads_total_started_count
+      - pattern: java.lang<type=Threading><>CurrentThreadUserTime
+        name: jvm_threads_current_user_time
+        valueFactor: 0.001
+    
+      # 操作系统指标
+      - pattern: java.lang<type=OperatingSystem><>FreePhysicalMemorySize
+        name: jvm_os_memory_physical_free
+      - pattern: java.lang<type=OperatingSystem><>TotalPhysicalMemorySize
+        name: jvm_os_memory_physical_total
+      - pattern: java.lang<type=OperatingSystem><>FreeSwapSpaceSize
+        name: jvm_os_memory_swap_free
+      - pattern: java.lang<type=OperatingSystem><>TotalSwapSpaceSize
+        name: jvm_os_memory_swap_total
+      - pattern: java.lang<type=OperatingSystem><>CommittedVirtualMemorySize
+        name: jvm_os_memory_committed_virtual
+      - pattern: java.lang<type=OperatingSystem><>AvailableProcessors
+        name: jvm_os_available_processors
+      - pattern: java.lang<type=OperatingSystem><>ProcessCpuTime
+        name: jvm_os_processcputime_seconds
+        valueFactor: 0.000000001
+    
+      # BufferPool 指标
+      - pattern: java.nio<type=BufferPool, name=(.+)><>Count
+        name: jvm_bufferpool_count
+        labels:
+          type: $1
+      - pattern: java.nio<type=BufferPool, name=(.+)><>MemoryUsed
+        name: jvm_bufferpool_memoryused
+        labels:
+          type: $1
+      - pattern: java.nio<type=BufferPool, name=(.+)><>TotalCapacity
+        name: jvm_bufferpool_totalcapacity
+        labels:
+          type: $1
+    
+      # GC 指标
+      - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionTime
+        name: jvm_gc_collectiontime_seconds
+        valueFactor: 0.001
+        labels:
+          type: $1
+      - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionCount
+        name: jvm_gc_collectioncount
+        labels:
+          type: $1
+    
+      # MemoryPool 指标
+      - pattern: java.lang<type=MemoryPool, name=(.+)><Usage>(\w+)
+        name: jvm_memorypool_usage_$2
+        labels:
+          type: $1`,
       },
     },
   },
@@ -2031,7 +2040,6 @@ export {
   APPOINT_METRIC_IDS,
   TIMEOUT_UNITS,
   NODE_STATUS_MAP,
-  MANUAL_CONFIG_TEXT_MAP,
   INIT_VIEW_MODAL_FORM,
   OBJECT_CONFIG_MAP,
   useMiddleWareFields,

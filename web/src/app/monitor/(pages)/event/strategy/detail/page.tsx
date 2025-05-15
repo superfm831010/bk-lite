@@ -40,7 +40,8 @@ import {
 import { useCommon } from '@/app/monitor/context/common';
 import {
   deepClone,
-  findCollectTypeByPluginName,
+  getConfigByPluginName,
+  getConfigByObjectName,
 } from '@/app/monitor/utils/common';
 import strategyStyle from '../index.module.scss';
 import {
@@ -59,7 +60,6 @@ import {
   LEVEL_MAP,
   useLevelList,
   SCHEDULE_UNIT_MAP,
-  OBJECT_CONFIG_MAP,
 } from '@/app/monitor/constants/monitor';
 const { Option } = Select;
 import Icon from '@/components/icon';
@@ -115,7 +115,8 @@ const StrategyOperation = () => {
   const [noDataAlert, setNoDataAlert] = useState<number | null>(null);
   const [noDataLevel, setNoDataLevel] = useState<string>();
   const [groupBy, setGroupBy] = useState<string[]>(
-    OBJECT_CONFIG_MAP[monitorName as string]?.groupIds?.default || defaultGroup
+    getConfigByObjectName(monitorName as string, 'groupIds').default ||
+      defaultGroup
   );
   const [formData, setFormData] = useState<StrategyFields>({
     threshold: [],
@@ -211,7 +212,7 @@ const StrategyOperation = () => {
       monitor_object_id: monitorObjId,
     });
     const plugins = data.map((item: PluginItem) => ({
-      label: findCollectTypeByPluginName(item.name),
+      label: getConfigByPluginName(item.name, 'collect_type'),
       value: item.id,
       name: item.name,
     }));
@@ -890,8 +891,10 @@ const StrategyOperation = () => {
                                       onChange={handleGroupByChange}
                                     >
                                       {(
-                                        OBJECT_CONFIG_MAP[monitorName as string]
-                                          ?.groupIds?.list || defaultGroup
+                                        getConfigByObjectName(
+                                          monitorName as string,
+                                          'groupIds'
+                                        ).list || defaultGroup
                                       ).map((item: string) => (
                                         <Option value={item} key={item}>
                                           {item}
@@ -1071,10 +1074,10 @@ const StrategyOperation = () => {
                         <div className="w-[220px] bg-[var(--color-bg-1)] border-2 border-blue-300 shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-3 relative cursor-pointer group">
                           <div className="flex items-center space-x-4 my-1">
                             <Icon
-                              type={
-                                OBJECT_CONFIG_MAP[monitorName as string]
-                                  ?.icon || 'Host'
-                              }
+                              type={getConfigByObjectName(
+                                monitorName as string,
+                                'icon'
+                              )}
                               className="text-2xl"
                             />
                             <h2 className="text-[16px] font-bold m-0">

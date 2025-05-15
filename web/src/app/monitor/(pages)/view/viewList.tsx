@@ -9,7 +9,7 @@ import {
   getEnumValueUnit,
   getEnumColor,
   getK8SData,
-  findCollectTypeByPluginName,
+  getConfigByPluginName,
 } from '@/app/monitor/utils/common';
 import { useRouter } from 'next/navigation';
 import {
@@ -241,7 +241,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         : (k8sQuery || []).map((item: string) => ({ id: item, child: [] }));
       setQueryData(queryForm);
       const _plugins = res[2].map((item: IntergrationItem) => ({
-        label: findCollectTypeByPluginName(item.name),
+        label: getConfigByPluginName(item.name, 'collect_type'),
         value: item.id,
       }));
       setPlugins(_plugins);

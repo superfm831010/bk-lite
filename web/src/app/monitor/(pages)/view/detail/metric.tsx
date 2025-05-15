@@ -23,7 +23,7 @@ import {
   findUnitNameById,
   mergeViewQueryKeyValues,
   renderChart,
-  findCollectTypeByPluginName,
+  getConfigByPluginName,
 } from '@/app/monitor/utils/common';
 import dayjs, { Dayjs } from 'dayjs';
 import Icon from '@/components/icon';
@@ -88,7 +88,7 @@ const MetricViews: React.FC<ViewDetailProps> = ({
       monitor_object_id: monitorObjectId,
     });
     const _plugins = responseData.map((item: IntergrationItem) => ({
-      label: findCollectTypeByPluginName(item.name),
+      label: getConfigByPluginName(item.name, 'collect_type'),
       value: item.id,
     }));
     setPlugins(_plugins);
