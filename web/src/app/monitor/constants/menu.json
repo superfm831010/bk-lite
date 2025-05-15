@@ -1,12 +1,6 @@
 {
   "zh": [
     {
-      "title": "搜索",
-      "icon": "search-f",
-      "url": "/monitor/search",
-      "name": "search"
-    },
-    {
       "title": "视图",
       "icon": "daohang-yunyingfenxishi",
       "url": "/monitor/view",
@@ -18,6 +12,12 @@
           "isNotMenuItem": true
         }
       ]
+    },
+    {
+      "title": "搜索",
+      "icon": "search-f",
+      "url": "/monitor/search",
+      "name": "search"
     },
     {
       "title": "事件",
