@@ -1,14 +1,14 @@
 from collections import defaultdict
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Tuple, TypedDict
 
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage, AIMessageChunk
 from langchain_core.output_parsers import JsonOutputToolsParser, PydanticToolsParser
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import chain as as_runnable
 from langgraph.constants import END
 from langgraph.prebuilt import ToolNode
-from langchain_core.runnables import chain as as_runnable
 from loguru import logger
 
 from src.agent.lats_agent.lats_agent_state import LatsAgentState, Node, Reflection
@@ -419,7 +419,27 @@ class LatsAgentNode(ToolsNodes):
 
             # 更新状态消息
             logger.debug("更新状态消息，添加最佳解决方案")
-            state["messages"].append(final_solution)
+
+            llm = self.get_llm_client(config["configurable"]["graph_request"])
+            prompt_template = ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        "您是一个智能AI助手，请尽可能准确、全面地回答用户问题。",
+                    ),
+                    ("user", "{input}"),  # 用户输入
+                    MessagesPlaceholder(variable_name="messages",
+                                        optional=True),  # 可选的上下文消息
+                ]
+            )
+            chain = prompt_template | llm
+            question = f"用户的问题是:{config['configurable']['graph_request'].user_message}"
+            question += f"经过Lats Agent分析后，找到的解决方案是:{final_solution.content}"
+            question += "请结合用户的问题和解决方案，回复用户的问题,准确，全面，简洁，不要捏造事实。"
+            msg = chain.invoke({
+                "input": question
+            })
+            state["messages"].append(msg)
 
             # 标记根节点为已解决
             root._is_solved = True
@@ -460,6 +480,33 @@ class LatsAgentNode(ToolsNodes):
         for child in node.children:
             count += self._count_nodes(child)
         return count
+
+    def should_continue(self, state: LatsAgentState) -> TypedDict:
+        """决定是否继续执行图中的下一步
+
+        Args:
+            state: 当前状态
+
+        Returns:
+            下一个节点名称或结束标记
+        """
+        root = state["root"]
+
+        # 记录当前执行状态的关键信息
+        logger.debug(f"搜索树高度: {root.height}, 是否解决: {root.is_solved}")
+
+        # 如果找到解决方案，结束搜索
+        if root.is_solved:
+            logger.info("找到解决方案，结束搜索")
+            return END
+
+        # 如果搜索深度超过限制，结束搜索
+        if root.height > LatsAgentNode.MAX_TREE_HEIGHT:
+            logger.info(f"搜索深度达到上限 ({LatsAgentNode.MAX_TREE_HEIGHT})，结束搜索")
+            return END
+
+        # 继续探索
+        return "expand"
 
     def get_initial_answer_chain(self, state: LatsAgentState, config: RunnableConfig):
         """获取用于生成初始回答的链
@@ -563,12 +610,7 @@ class LatsAgentNode(ToolsNodes):
         logger.info("=" * 50)
         solution_status = "✅" if r.found_solution else "❌"
         logger.info(f"评分: {r.score}/10 | 是否解决问题: {solution_status}")
-
-        # 输出反思内容，长文本需要截断
-        reflection_summary = r.reflections
-        if len(reflection_summary) > 100:
-            reflection_summary = reflection_summary[:100] + "..."
-        logger.info(f"评估概要: {reflection_summary}")
+        logger.info(f"评估概要: {r.reflections}")
 
         # 记录初始解决方案内容
         if output_messages:

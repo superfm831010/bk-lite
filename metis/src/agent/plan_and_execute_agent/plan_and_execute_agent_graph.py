@@ -7,8 +7,8 @@ from src.agent.plan_and_execute_agent.plan_and_execute_agent_node import PlanAnd
 from src.agent.plan_and_execute_agent.plan_and_execute_agent_state import PlanAndExecuteAgentState
 from src.core.entity.basic_llm_response import BasicLLMResponse
 from src.core.graph.tools_graph import ToolsGraph
-from src.entity.agent.plan_and_execute_agent_request import PlanAndExecuteAgentRequest
-from src.entity.agent.plan_and_execute_agent_response import PlanAndExecuteAgentResponse
+from src.entity.agent.plan_and_execute_agent.plan_and_execute_agent_request import PlanAndExecuteAgentRequest
+from src.entity.agent.plan_and_execute_agent.plan_and_execute_agent_response import PlanAndExecuteAgentResponse
 
 
 class PlanAndExecuteAgentGraph(ToolsGraph):
@@ -72,56 +72,3 @@ class PlanAndExecuteAgentGraph(ToolsGraph):
         logger.info(f"编译Plan and Execute Agent图")
         graph = graph_builder.compile()
         return graph
-
-    async def stream(self, request: PlanAndExecuteAgentRequest):
-        """流式执行图
-
-        Args:
-            request: 计划执行代理请求
-
-        Returns:
-            流式执行结果
-        """
-        logger.info(
-            f"开始流式执行Plan and Execute Agent，请求: {request.user_message[:50]}...")
-        graph = await self.compile_graph(request)
-        result = await self.invoke(graph, request, stream_mode='messages')
-        return result
-
-    async def execute(self, request: PlanAndExecuteAgentRequest) -> PlanAndExecuteAgentResponse:
-        """执行图并返回最终结果
-
-        Args:
-            request: 计划执行代理请求
-
-        Returns:
-            包含最终响应的对象
-        """
-        logger.info(
-            f"开始执行Plan and Execute Agent，请求: {request.user_message[:50]}...")
-        graph = await self.compile_graph(request)
-
-        try:
-            result = await self.invoke(graph, request)
-            logger.info(f"Plan and Execute Agent执行完成")
-
-            # 获取最终响应
-            response = result.get('response', '')
-            if not response and 'messages' in result:
-                # 尝试从最后一条消息中获取响应
-                last_messages = result.get('messages', [])
-                if last_messages:
-                    response = last_messages[-1].content
-
-            # 创建响应对象
-            llm_response = BasicLLMResponse(
-                message=response,
-            )
-            return llm_response
-        except Exception as e:
-            logger.error(f"Plan and Execute Agent执行失败: {str(e)}")
-            # 返回错误响应
-            return BasicLLMResponse(
-                message=f"执行任务时发生错误: {str(e)}",
-                error=True
-            )

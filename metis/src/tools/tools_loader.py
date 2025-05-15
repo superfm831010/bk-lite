@@ -137,9 +137,11 @@ class ToolsLoader:
             cp_tool = copy.deepcopy(tool)
             func = cp_tool['func']
             enable_extra_prompt = cp_tool['enable_extra_prompt']
+
             if enable_extra_prompt:
+                func.description += f"""\n{tool_server.extra_tools_prompt}"""
                 final_prompt = f"""以下是函数的动态参数生成要求，param json 参数说明:\n"""
-                for key, value in tool_server.extra_prompt.items():
+                for key, value in tool_server.extra_param_prompt.items():
                     final_prompt += f"{key}:{value}，"
                 final_prompt += f"""
                     请根据以上要求生成函数的动态参数, param为json字典字符串

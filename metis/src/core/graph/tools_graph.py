@@ -1,5 +1,6 @@
 import os
 import traceback
+import uuid
 
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.constants import END
@@ -22,6 +23,7 @@ class ToolsGraph(BasicGraph):
         config = {
             "graph_request": request,
             "recursion_limit": 30,
+            "trace_id":str(uuid.uuid4()),
             "configurable": {
                 **(request.extra_config or {})
             }
@@ -32,6 +34,7 @@ class ToolsGraph(BasicGraph):
                 config['configurable'] = {
                     "thread_id": request.thread_id,
                     "user_id": request.user_id,
+                    "trace_id": str(uuid.uuid4()),
                     **(config['configurable'] or {})
                 }
 

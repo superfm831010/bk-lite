@@ -5,7 +5,7 @@ import pytest
 
 from src.agent.lats_agent.lats_agent_graph import LatsAgentGraph
 from src.core.entity.tools_server import ToolsServer
-from src.entity.agent.lats_agent_request import LatsAgentRequest
+from src.entity.agent.lats_agent.lats_agent_request import LatsAgentRequest
 
 
 @pytest.mark.asyncio
@@ -20,7 +20,7 @@ async def test_lats_agent_with_time_tools():
         model="gpt-4o",
         openai_api_base=os.getenv("OPENAI_BASE_URL"),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
-        user_message="Jenkins任务一共有多少个名字是包含exporter的，生成一个统计分析表，MarkDown格式输出",
+        user_message="明天是星期几",
         user_id="umr",
         thread_id="2",
         tools_servers=tools_servers,
