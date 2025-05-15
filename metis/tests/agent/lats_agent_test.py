@@ -20,7 +20,7 @@ async def test_lats_agent_with_time_tools():
         model="gpt-4o",
         openai_api_base=os.getenv("OPENAI_BASE_URL"),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
-        user_message="明天是星期几",
+        user_message="Jenkins任务一共有多少个名字是包含exporter的，生成一个统计分析表，MarkDown格式输出",
         user_id="umr",
         thread_id="2",
         tools_servers=tools_servers,

@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import Dict, List, Tuple, TypedDict
 
+from langchain_core.callbacks import StdOutCallbackHandler, StreamingStdOutCallbackHandler
 from langchain_core.messages import AIMessage, BaseMessage, AIMessageChunk
 from langchain_core.output_parsers import JsonOutputToolsParser, PydanticToolsParser
 from langchain_core.prompt_values import ChatPromptValue
@@ -126,13 +127,18 @@ class LatsAgentNode(ToolsNodes):
             for i in range(self.MAX_CANDIDATES):
                 chat_result = llm.generate(
                     [messages.to_messages()],
-                    callbacks=config["callbacks"],
+                    callbacks=[],
                     run_name=f"GenerateCandidate_{i + 1}",
                     **bound_kwargs,
                 )
                 candidate = chat_result.generations[0][0].message
                 candidates.append(candidate)
-                logger.debug(f"生成候选解决方案 #{i + 1}: {candidate.content[:50]}...")
+
+                self.tools_prompt_tokens += candidate.usage_metadata['input_tokens']
+                self.tools_completions_tokens += candidate.usage_metadata['output_tokens']
+
+                logger.debug(f"候选解决方案 #{i + 1}: {candidate}...")
+                logger.debug(f"候选解决方案 #{i + 1}: Token用量:{candidate.usage_metadata}")
 
             return candidates
 

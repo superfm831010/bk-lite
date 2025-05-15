@@ -15,6 +15,8 @@ class ToolsNodes(BasicNode):
         self.tools = []
         self.mcp_client = None
         self.mcp_config = {}
+        self.tools_prompt_tokens = 0
+        self.tools_completions_tokens = 0
 
     async def setup(self, request: BaseModel):
         # 初始化MCP客户端配置
