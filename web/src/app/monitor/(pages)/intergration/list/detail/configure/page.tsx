@@ -13,7 +13,7 @@ const Configure: React.FC = () => {
   const searchParams = useSearchParams();
   const pluginName = searchParams.get('collect_type') || '';
   const [pageLoading, setPageLoading] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<string>('manual');
+  const [activeTab, setActiveTab] = useState<string>('automatic');
 
   const onTabChange = (val: string) => {
     setPageLoading(false);
@@ -30,8 +30,8 @@ const Configure: React.FC = () => {
         className="mb-[20px]"
         value={activeTab}
         options={[
-          { label: t('monitor.intergrations.manual'), value: 'manual' },
           { label: t('monitor.intergrations.automatic'), value: 'automatic' },
+          { label: t('monitor.intergrations.manual'), value: 'manual' },
         ]}
         onChange={onTabChange}
       />
