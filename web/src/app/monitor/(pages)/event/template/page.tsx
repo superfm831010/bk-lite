@@ -5,8 +5,11 @@ import useMonitorApi from '@/app/monitor/api';
 import templateStyle from './index.module.scss';
 import { TreeItem, TableDataItem } from '@/app/monitor/types';
 import { ObectItem } from '@/app/monitor/types/monitor';
-import { OBJECT_CONFIG_MAP } from '@/app/monitor/constants/monitor';
-import { deepClone, findLabelById } from '@/app/monitor/utils/common';
+import {
+  deepClone,
+  findLabelById,
+  getConfigByObjectName,
+} from '@/app/monitor/utils/common';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EntityList from '@/components/entity-list';
@@ -51,7 +54,7 @@ const Template: React.FC = () => {
         ...item,
         id: index,
         description: item.description || '--',
-        icon: OBJECT_CONFIG_MAP[monitorName as string]?.icon || 'Host',
+        icon: getConfigByObjectName(monitorName as string, 'icon'),
       }));
       setTableData(list);
     } finally {

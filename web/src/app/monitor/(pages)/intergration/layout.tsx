@@ -5,7 +5,7 @@ import { Tooltip } from 'antd';
 import WithSideMenuLayout from '@/components/sub-layout';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Icon from '@/components/icon';
-import { OBJECT_CONFIG_MAP } from '@/app/monitor/constants/monitor';
+import { getConfigByObjectName } from '@/app/monitor/utils/common';
 
 const IntergrationDetailLayout = ({
   children,
@@ -17,8 +17,10 @@ const IntergrationDetailLayout = ({
   const groupId = searchParams.get('plugin_name');
   const desc = searchParams.get('plugin_description');
   const objId = searchParams.get('id') || '';
-  const icon =
-    OBJECT_CONFIG_MAP[searchParams.get('name') as string]?.icon || 'Host';
+  const icon = getConfigByObjectName(
+    searchParams.get('name') as string,
+    'icon'
+  );
   const pathname = usePathname();
   const isDetail = pathname.includes('/detail/');
 

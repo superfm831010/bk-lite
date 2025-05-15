@@ -4,20 +4,19 @@ import React, { useState } from 'react';
 import { Segmented } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { OBJECT_CONFIG_MAP } from '@/app/monitor/constants/monitor';
 import Icon from '@/components/icon';
 import detailStyle from '../index.module.scss';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import Overview from './overview';
 import Metric from './metric';
+import { getConfigByObjectName } from '@/app/monitor/utils/common';
 
 const ViewDetail = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const desc = searchParams.get('instance_name');
-  const icon =
-    OBJECT_CONFIG_MAP[searchParams.get('name') || '']?.icon || 'Host';
+  const icon = getConfigByObjectName(searchParams.get('name') || '', 'icon');
   const monitorObjDisplayName: string =
     searchParams.get('monitorObjDisplayName') || '';
   const monitorObjectId: React.Key = searchParams.get('monitorObjId') || '';

@@ -314,8 +314,8 @@
       "countTitle": "Represents the count of all dimensions within the selected time range.\n The count function is used to count the number of matching time series, suitable for statistics on how many dimensions meet the criteria, such as the number of active instances or ports.",
       "distributionMap": "Distribution Map",
       "message": "Message",
-      "activeAlarmsMapTips": "Display the distribution map of all active alarms.",
-      "historicalAlarmsMapTips": "Display the distribution map of all historical alarms.",
+      "activeAlarmsMapTips": "Display a map of the distribution of all active alarms that meet the filtering criteria.",
+      "historicalAlarmsMapTips": "Displays a graph of the distribution of all historical alarms that match the filter for the selected time range.",
       "promQLPlaceholder": "Please refer to the syntax of Prometheus to write PromQL, which can usually query and filter relevant metrics."
     },
     "intergrations": {
