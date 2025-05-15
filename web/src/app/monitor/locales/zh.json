@@ -216,7 +216,12 @@
       "node": "节点",
       "filterOptions": "过滤项",
       "displayIndicators": "展示指标",
-      "editIndicators": "点击编辑"
+      "editIndicators": "点击编辑",
+      "jmx_scrape_error_gauge": "抓取失败的指标",
+      "jvm_memory_usage_used_value": "已使用内存大小",
+      "jvm_memory_usage_max_value": "JVM 内存使用最大值",
+      "jvm_os_memory_physical_free_value": "可用物理内存",
+      "jvm_gc_collectiontime_seconds_value": "GC 收集总时间"
     },
     "events": {
       "event": "事件",

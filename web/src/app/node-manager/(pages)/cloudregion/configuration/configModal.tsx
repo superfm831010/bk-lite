@@ -220,7 +220,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
                   },
                 ]}
               >
-                <Input disabled />
+                <Input disabled placeholder={t('common.inputMsg')} />
               </Form.Item>
               <Form.Item
                 name="config_type"
@@ -234,7 +234,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
                   },
                 ]}
               >
-                <Input disabled />
+                <Input disabled placeholder={t('common.inputMsg')} />
               </Form.Item>
             </>
           ) : (
@@ -249,7 +249,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
                   },
                 ]}
               >
-                <Input />
+                <Input placeholder={t('common.inputMsg')} />
               </Form.Item>
               <Form.Item
                 name="operating_system"
@@ -264,6 +264,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
                 <Select
                   disabled={type !== 'add'}
                   options={OPERATE_SYSTEMS}
+                  placeholder={t('common.selectMsg')}
                   onChange={() =>
                     configFormRef.current?.setFieldsValue({
                       collector_id: null,
@@ -296,7 +297,7 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
                         },
                       ]}
                     >
-                      <Select disabled={type !== 'add'}>
+                      <Select disabled={type !== 'add'} placeholder={t('common.selectMsg')}>
                         {collectorList.map((item: TableDataItem) => (
                           <Option key={item.id} value={item.id}>
                             {item.name}

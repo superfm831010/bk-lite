@@ -166,7 +166,7 @@ const VMTask: React.FC<VMTaskFormProps> = ({
 
               <Form.Item
                 name="port"
-                label={t('Collection.VMTask.port')}
+                label={t('Collection.port')}
                 rules={rules.port}
               >
                 <InputNumber

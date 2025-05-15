@@ -1,5 +1,6 @@
 import os
 
+from langchain_core.messages import AIMessage, AIMessageChunk
 from loguru import logger
 
 from src.core.entity.chat_history import ChatHistory
@@ -18,8 +19,14 @@ def test_chat():
         thread_id="2"
     )
     workflow = ChatBotWorkflowGraph()
+
+    logger.info(f"values模式")
     result = workflow.execute(request)
     logger.info(result)
+
+    logger.info(f"messages 模式")
+    result = workflow.stream(request)
+    workflow.print_chunk(result)
 
 
 def test_chat_with_naiverag():
@@ -37,8 +44,14 @@ def test_chat_with_naiverag():
         naive_rag_request=[]
     )
     workflow = ChatBotWorkflowGraph()
+
+    logger.info(f"values模式")
     result = workflow.execute(request)
-    print(result)
+    logger.info(result)
+
+    logger.info(f"messages 模式")
+    result = workflow.stream(request)
+    workflow.print_chunk(result)
 
 
 def test_chat_with_manunal_chat_history():
@@ -56,5 +69,11 @@ def test_chat_with_manunal_chat_history():
         ]
     )
     workflow = ChatBotWorkflowGraph()
+
+    logger.info(f"values模式")
     result = workflow.execute(request)
     logger.info(result)
+
+    logger.info(f"messages 模式")
+    result = workflow.stream(request)
+    workflow.print_chunk(result)

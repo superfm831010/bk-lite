@@ -92,6 +92,7 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
               <Input
                 defaultValue={row.username}
                 value={row.username}
+                placeholder={t('common.inputMsg')}
                 onChange={(e) => handleInputBlur(e, row, 'username')}
               />
             );
@@ -115,6 +116,7 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
               <Input.Password
                 defaultValue={row.usepasswordrname}
                 value={row.password}
+                placeholder={t('common.inputMsg')}
                 onChange={(e) => handleInputBlur(e, row, 'password')}
               />
             );

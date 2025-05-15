@@ -638,7 +638,7 @@ const useColumnsAndFormItems = ({
             </>
           ),
         };
-      case 'vmware':
+      case 'http':
         return {
           displaycolumns: [columns[0], columns[11], ...columns.slice(4, 7)],
           formItems: (
@@ -671,6 +671,44 @@ const useColumnsAndFormItems = ({
                     },
                   ]}
                 >
+                  <Input
+                    ref={passwordRef}
+                    disabled={passwordDisabled}
+                    className="w-[300px] mr-[10px]"
+                    type="password"
+                    suffix={
+                      <EditOutlined
+                        className="text-[var(--color-text-2)]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditPassword();
+                        }}
+                      />
+                    }
+                  />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.passwordDes')}
+                </span>
+              </Form.Item>
+            </>
+          ),
+        };
+      case 'jmx':
+        return {
+          displaycolumns: [columns[0], columns[12], ...columns.slice(4, 7)],
+          formItems: (
+            <>
+              <Form.Item label={t('monitor.intergrations.username')}>
+                <Form.Item noStyle name="username">
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.usernameDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label={t('monitor.intergrations.password')}>
+                <Form.Item noStyle name="password">
                   <Input
                     ref={passwordRef}
                     disabled={passwordDisabled}
@@ -1678,7 +1716,7 @@ const useFormItems = ({
             MANUAL_CONFIG_TEXT_MAP[pluginName] ||
             MANUAL_CONFIG_TEXT_MAP['default'],
         };
-      case 'vmware':
+      case 'http':
         return {
           formItems: (
             <>
@@ -1754,6 +1792,64 @@ const useFormItems = ({
         urls = ["http://stargazer:8083/api/monitor/vmware/metrics?username=$username&password=$password&host=$host"]
         interval = "$intervals"
         tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="http" }`,
+        };
+      case 'jmx':
+        return {
+          formItems: (
+            <>
+              <Form.Item label={t('monitor.intergrations.username')}>
+                <Form.Item noStyle name="username">
+                  <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.usernameDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label={t('monitor.intergrations.password')}>
+                <Form.Item noStyle name="password">
+                  <Input
+                    ref={passwordRef}
+                    disabled={isEdit || passwordDisabled}
+                    className="w-[300px] mr-[10px]"
+                    type="password"
+                    suffix={
+                      <EditOutlined
+                        className="text-[var(--color-text-2)]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isEdit) return;
+                          handleEditPassword();
+                        }}
+                      />
+                    }
+                  />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.passwordDes')}
+                </span>
+              </Form.Item>
+              <Form.Item required label="URL">
+                <Form.Item
+                  noStyle
+                  name="monitor_url"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.urlDes')}
+                </span>
+              </Form.Item>
+            </>
+          ),
+          configText:
+            MANUAL_CONFIG_TEXT_MAP[pluginName] ||
+            MANUAL_CONFIG_TEXT_MAP['default'],
         };
       default:
         return {

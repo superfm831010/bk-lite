@@ -63,9 +63,10 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     const [selectedRows, setSelectedRows] = useState<any[]>([]);
     const [modelId, setModelId] = useState<string>('');
     const [enabledFields, setEnabledFields] = useState<Record<string, boolean>>({});
+    const [proxyOptions, setProxyOptions] = useState<{ proxy_id: string; proxy_name: string }[]>([]);
     const [form] = Form.useForm();
     const { t } = useTranslation();
-    const { post } = useApiClient();
+    const { get, post } = useApiClient();
 
     useEffect(() => {
       if (groupVisible) {
@@ -74,6 +75,32 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
         form.setFieldsValue(instanceData);
       }
     }, [groupVisible, instanceData]);
+
+    useEffect(() => {
+      if (groupVisible && modelId === 'host') {
+        get('/cmdb/api/instance/list_proxys/', {})
+          .then((data: any[]) => {
+            setProxyOptions(data || []);
+          })
+          .catch(() => {
+            setProxyOptions([]);
+          });
+      }
+    }, [groupVisible, modelId]);
+
+    // 监听 ip_addr 和 cloud，自动填充 inst_name
+    const ipValue = Form.useWatch('ip_addr', form);
+    const cloudValue = Form.useWatch('cloud', form);
+    useEffect(() => {
+      if (modelId === 'host') {
+        const cloudName = proxyOptions.find(opt => opt.proxy_id === cloudValue)?.proxy_name;
+        if (ipValue && cloudName) {
+          form.setFieldsValue({
+            inst_name: `${ipValue || ''}[${cloudName || ''}]`,
+          });
+        }
+      }
+    }, [ipValue, cloudValue, modelId, proxyOptions]);
 
     useImperativeHandle(ref, () => ({
       showModal: ({
@@ -141,17 +168,33 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     };
 
     const renderFormField = (item: AttrFieldType) => {
-      const isEditable = type !== 'batchEdit' || enabledFields[item.attr_id];
-      const baseDisabled = !item.editable && type !== 'add';
-      const fieldDisabled = type === 'batchEdit' ? !isEditable  : baseDisabled;
+      const fieldDisabled =
+        type === 'batchEdit'
+          ? !enabledFields[item.attr_id]
+          : (!item.editable && type !== 'add');
+
+      const hostDisabled = modelId === 'host'  && item.attr_id === 'inst_name'
 
       const formField = (() => {
+        // 特殊处理-主机的云区域为下拉选项
+        if (item.attr_id === 'cloud') {
+          return (
+            <Select disabled={fieldDisabled} placeholder={t('common.selectMsg')}>
+              {proxyOptions.map((opt) => (
+                <Select.Option key={opt.proxy_id} value={opt.proxy_id}>
+                  {opt.proxy_name}
+                </Select.Option>
+              ))}
+            </Select>
+          );
+        }
         switch (item.attr_type) {
           case 'user':
             return (
               <Select
                 showSearch
                 disabled={fieldDisabled}
+                placeholder={t('common.selectMsg')}
               >
                 {userList.map((opt) => (
                   <Select.Option key={opt.id} value={opt.id}>
@@ -164,6 +207,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             return (
               <Select
                 disabled={fieldDisabled}
+                placeholder={t('common.selectMsg')}
               >
                 {item.option?.map((opt) => (
                   <Select.Option key={opt.id} value={opt.id}>
@@ -176,6 +220,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             return (
               <Select
                 disabled={fieldDisabled}
+                placeholder={t('common.selectMsg')}
               >
                 {[
                   { id: 1, name: 'Yes' },
@@ -205,9 +250,11 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
               />
             );
           default:
+
             return (
               <Input
-                disabled={fieldDisabled}
+                placeholder={t('common.inputMsg')}
+                disabled={fieldDisabled || hostDisabled}
               />
             );
         }

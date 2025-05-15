@@ -135,7 +135,17 @@ export const CLOUD_FORM_INITIAL_VALUES = {
   accessSecret: '',
   regionId: '',
   timeout: 600
-}
+};
+
+export const HOST_FORM_INITIAL_VALUES = {
+  instId: undefined,
+  cycle: CYCLE_OPTIONS.ONCE,
+  enterType: ENTER_TYPE.AUTOMATIC,
+  username: '',
+  password: '',
+  port: '22',
+  timeout: 60
+};
 
 export const validateCycleTime = (
   type: string,
@@ -257,7 +267,7 @@ export const createTaskValidationRules = (context: ValidationContext) => {
       ],
       port: [
         baseValidators.required(
-          `${t('common.inputMsg')}${t('Collection.VMTask.port')}`
+          `${t('common.inputMsg')}${t('Collection.port')}`
         ),
       ],
       sslVerify: [
@@ -283,7 +293,7 @@ export const createTaskValidationRules = (context: ValidationContext) => {
       ],
       port: [
         baseValidators.required(
-          `${t('common.inputMsg')}${t('Collection.SNMPTask.port')}`
+          `${t('common.inputMsg')}${t('Collection.port')}`
         ),
       ],
       communityString: [

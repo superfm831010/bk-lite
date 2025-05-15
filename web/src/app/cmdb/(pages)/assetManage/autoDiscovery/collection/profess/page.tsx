@@ -8,6 +8,7 @@ import VMTask from './components/vmTask';
 import SNMPTask from './components/snmpTask';
 import SQLTask from './components/sqlTask';
 import CloudTask from './components/cloudTask';
+import HostTask from './components/hostTask';
 import TaskDetail from './components/taskDetail';
 import useApiClient from '@/utils/request';
 import CustomTable from '@/components/custom-table';
@@ -322,13 +323,10 @@ const ProfessionalCollection: React.FC = () => {
 
   const getTaskContent = () => {
     if (!selectedRef.current.node) return null;
-    
     const modelItem = selectedRef.current.node.tabItems?.find(
       (item) => item.id === activeTab
     );
-    
     if (!modelItem) return null;
-
     const props = {
       onClose: closeDrawer,
       onSuccess: fetchData,
@@ -336,16 +334,17 @@ const ProfessionalCollection: React.FC = () => {
       modelItem: modelItem as ModelItem,
       editId: editingId,
     };
-    if (selectedRef.current.nodeId === 'k8s') {
-      return <K8sTask {...props} />;
-    } else if (['network_topo', 'network'].includes(selectedRef.current.nodeId)) {
-      return <SNMPTask {...props} />;
-    } else if (selectedRef.current.nodeId === 'databases') {
-      return <SQLTask {...props} />;
-    } else if (selectedRef.current.nodeId === 'cloud') {
-      return <CloudTask {...props} />;
-    }    
-    return <VMTask {...props} />;
+    const taskMap: Record<string, React.ComponentType<any>> = {
+      k8s: K8sTask,
+      vmware: VMTask,
+      network_topo: SNMPTask,
+      network: SNMPTask,
+      databases: SQLTask,
+      cloud: CloudTask,
+      host_manage: HostTask,
+    };
+    const TaskComponent = taskMap[selectedRef.current.nodeId] || K8sTask;
+    return <TaskComponent {...props} />;
   };
 
   const toCamelCase = (str: string) => {
@@ -563,6 +562,7 @@ const ProfessionalCollection: React.FC = () => {
             expandedKeys={expandedKeys}
             selectedKeys={[selectedRef.current.nodeId]}
             onSelect={onTreeSelect}
+            style={{ minHeight: '100px' }}
           />
         </Spin>
       </div>

@@ -327,8 +327,8 @@ const Configration = () => {
             </div>
             <div className="tablewidth">
               <CustomTable<any>
+                scroll={{ y: 'calc(100vh - 326px)', x: 'calc(100vw - 300px)' }}
                 loading={loading}
-                scroll={{ y: 'calc(100vh - 400px)', x: 'max-content' }}
                 columns={columns}
                 dataSource={tableData}
                 rowSelection={rowSelection}

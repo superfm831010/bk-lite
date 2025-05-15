@@ -86,6 +86,14 @@ class CollectModels(MaintainerInfo, TimeInfo):
     def is_cloud(self):
         return self.task_type == CollectPluginTypes.CLOUD
 
+    @property
+    def is_job(self):
+        return self.driver_type == CollectDriverTypes.JOB
+
+    @property
+    def is_host(self):
+        return self.task_type == CollectPluginTypes.HOST
+
 
 class OidMapping(MaintainerInfo, TimeInfo):
     """

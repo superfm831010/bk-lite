@@ -2,33 +2,33 @@
   "zh": [
     {
       "title": "云区域",
-      "icon": "yunchang-yunquyu",
+      "icon": "cloud-full",
       "url": "/node-manager/cloudregion",
       "name": "cloud_region_list",
       "children": [
         {
           "title": "节点",
           "url": "/node-manager/cloudregion/node",
-          "icon": "shezhi",
+          "icon": "jiedianguanli",
           "name": "cloud_region_node"
         },
         {
           "title": "配置",
           "url": "/node-manager/cloudregion/configuration",
-          "icon": "shezhi",
+          "icon": "settings-fill",
           "name": "cloud_region_configuration"
         },
         {
           "title": "变量",
           "url": "/node-manager/cloudregion/variable",
-          "icon": "shezhi",
+          "icon": "bianliang",
           "name": "cloud_region_variable"
         }
       ]
     },
     {
       "title": "探针",
-      "icon": "xiaocaijiqi",
+      "icon": "caijiqi",
       "url": "/node-manager/sidecar",
       "name": "Probe",
       "children": [
@@ -40,7 +40,7 @@
             {
               "title": "包管理",
               "url": "/node-manager/sidecar/collector/detail",
-              "icon": "shezhi",
+              "icon": "baoguanli-full",
               "name": "collector_packet"
             }
           ]
@@ -53,7 +53,7 @@
             {
               "title": "包管理",
               "url": "/node-manager/sidecar/controller/detail",
-              "icon": "shezhi",
+              "icon": "baoguanli-full",
               "name": "controller_packet"
             }
           ]

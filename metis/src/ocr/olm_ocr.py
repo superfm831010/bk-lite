@@ -24,11 +24,12 @@ class OlmOcr:
                         {
                             "type": "text",
                             "text": """
-                                Below is the image of one page of a PDF document,Just return the plain text representation of this document as if you were reading it naturally.
-                                Turn equations into a LaTeX representation, and tables into markdown format. Remove the headers and footers, but keep references and footnotes.
-                                Read any natural handwriting.
-                                If there is no text at all that you think you should read, you can output empty string.
-                                Do not hallucinate.
+                               你是一个具备OCR能力的智能体，阅读方式和人类一样。你可以从图片中提取文本信息。
+                               下面是一张的图片，要求：
+                                    1. 一步一步的思考
+                                    2. 只需返回该文档的纯文本表示，就像您自然阅读一样
+                                    3. 当识别出公式的时候，将公式转换为 LaTeX 格式，将表格转换为 Markdown 格式
+                                    4. 不要产生幻觉
                             """
                         },
                         {

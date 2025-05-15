@@ -39,7 +39,7 @@ import {
 const AlertDetail = forwardRef<ModalRef, ModalConfig>(
   ({ objects, metrics, userList, onSuccess }, ref) => {
     const { t } = useTranslation();
-    const { getMonitorEventDetail, getInstanceQuery, getEventRaw } = useMonitorApi()
+    const { getMonitorEventDetail, getInstanceQuery, getEventRaw } = useMonitorApi();
     const { convertToLocalizedTime } = useLocalizedTime();
     const STATE_MAP = useStateMap();
     const LEVEL_LIST = useLevelList();

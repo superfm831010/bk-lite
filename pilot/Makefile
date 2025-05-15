@@ -6,7 +6,8 @@ setup:
 	./.venv/bin/pip install pip-tools
 
 install:
-	./.venv/bin/pip-compile --extra dev -v
+	./.venv/bin/pip-compile -v ./requirements/requirements.in ./requirements/requirements-dev.in \
+		--output-file ./requirements.txt 
 	./.venv/bin/pip-sync -v
 
 release:

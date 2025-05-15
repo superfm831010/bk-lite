@@ -219,6 +219,7 @@
         "chooseAsset": "选择资产",
         "everyMinute": "每",
         "executeOnce": "执行一次",
+        "port": "端口",
         "execStatus": {
             "add": "新增资产",
             "update": "更新资产",
@@ -246,13 +247,11 @@
             "chooseVCenter": "vCenter",
             "username": "账户",
             "password": "密码",
-            "port": "端口",
             "sslVerify": "SSL 验证"
         },
         "SNMPTask": {
             "chooseSNMP": "SNMP",
             "version": "SNMP版本",
-            "port": "端口",
             "communityString": "团体字",
             "securityLevel": "安全级别",
             "userName": "用户名",

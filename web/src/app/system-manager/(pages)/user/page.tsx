@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { Input, message, Modal, Tree, Button, Spin, Popconfirm } from 'antd';
+import { Input, message, Modal, Tree, Button, Spin, Popconfirm, Dropdown, Menu, Form } from 'antd';
 import type { DataNode as TreeDataNode } from 'antd/lib/tree';
 import { ColumnsType } from 'antd/es/table';
 import TopSection from '@/components/top-section';
@@ -13,7 +13,10 @@ import { useUserApi } from '@/app/system-manager/api/user/index';
 import { OriginalGroup } from '@/app/system-manager/types/group';
 import { UserDataType, TableRowSelection } from '@/app/system-manager/types/user';
 import PageLayout from '@/components/page-layout';
-import styles from './index.module.scss'
+import styles from './index.module.scss';
+import { useGroupApi } from '@/app/system-manager/api/group/index';
+import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
+import OperateModal from '@/components/operate-modal';
 
 const { Search } = Input;
 
@@ -30,6 +33,15 @@ const User: React.FC = () => {
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [addGroupForm] = Form.useForm();
+  const [addGroupModalOpen, setAddGroupModalOpen] = useState(false);
+  const [addSubGroupModalOpen, setAddSubGroupModalOpen] = useState(false);
+  const [currentParentGroupKey, setCurrentParentGroupKey] = useState<string | null>(null);
+  const [addGroupLoading, setAddGroupLoading] = useState(false);
+  const [renameGroupModalOpen, setRenameGroupModalOpen] = useState(false);
+  const [renameGroupLoading, setRenameGroupLoading] = useState(false);
+  const [renameGroupKey, setRenameGroupKey] = useState<string | null>(null);
+  const [renameGroupForm] = Form.useForm();
 
   const userModalRef = useRef<ModalRef>(null);
   const passwordModalRef = useRef<PasswordModalRef>(null);
@@ -37,6 +49,7 @@ const User: React.FC = () => {
   const { t } = useTranslation();
   const { confirm } = Modal;
   const { getUsersList, getOrgTree, deleteUser } = useUserApi();
+  const { addTeamData, updateGroup, deleteTeam } = useGroupApi();
 
   const columns: ColumnsType<UserDataType> = [
     {
@@ -245,24 +258,172 @@ const User: React.FC = () => {
     setPageSize(pageSize);
   };
 
+  const handleAddRootGroup = () => {
+    setCurrentParentGroupKey(null);
+    setAddGroupModalOpen(true);
+  };
+
+  const handleAddSubGroup = (parentGroupKey: string) => {
+    setCurrentParentGroupKey(parentGroupKey);
+    setAddSubGroupModalOpen(true);
+  };
+
+  const onAddGroup = async () => {
+    setAddGroupLoading(true);
+    try {
+      const values = await addGroupForm.validateFields();
+      await addTeamData({
+        group_name: values.name,
+        parent_group_id: currentParentGroupKey || undefined,
+      });
+      message.success(t('common.addSuccess'));
+      fetchTreeData();
+      setAddGroupModalOpen(false);
+      setAddSubGroupModalOpen(false);
+    } catch {
+      message.error(t('common.addFailed'));
+    } finally {
+      setAddGroupLoading(false);
+    }
+  };
+
+  const handleGroupAction = async (action: string, groupKey: string) => {
+    switch (action) {
+      case 'addSubGroup':
+        handleAddSubGroup(groupKey);
+        break;
+      case 'rename':
+        const group = findNode(treeData, groupKey);
+        if (group) {
+          renameGroupForm.resetFields();
+          setRenameGroupKey(groupKey);
+          renameGroupForm.setFieldsValue({ renameTeam: group.title });
+          setRenameGroupModalOpen(true);
+        }
+        break;
+      case 'delete':
+        confirm({
+          title: t('common.delConfirm'),
+          content: t('common.delConfirmCxt'),
+          centered: true,
+          okText: t('common.confirm'),
+          cancelText: t('common.cancel'),
+          async onOk() {
+            handleDeleteGroup(groupKey);
+          },
+        });
+        break;
+    }
+  };
+
+  const handleDeleteGroup = (key: string) => {
+    const group = findNode(treeData, key);
+    if (group) {
+      deleteGroup(group);
+    }
+  };
+
+  const deleteGroup = async (group: TreeDataNode) => {
+    setLoading(true);
+    try {
+      await deleteTeam({ id: group.key });
+      message.success(t('common.delSuccess'));
+      fetchTreeData();
+    } catch {
+      message.error(t('common.delFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRenameGroup = async () => {
+    setRenameGroupLoading(true);
+    try {
+      await renameGroupForm.validateFields();
+      const values = renameGroupForm.getFieldValue('renameTeam');
+      await updateGroup({
+        group_id: renameGroupKey,
+        group_name: values,
+      });
+      message.success(t('system.group.renameSuccess'));
+      fetchTreeData();
+      setRenameGroupModalOpen(false);
+    } catch {
+      message.error(t('system.group.renameFailed'));
+    } finally {
+      setRenameGroupLoading(false);
+      renameGroupForm.resetFields();
+    }
+  };
+
+  const findNode = (tree: TreeDataNode[], key: string): TreeDataNode | undefined => {
+    for (const node of tree) {
+      if (node.key === key) return node;
+      if (node.children) {
+        const found = findNode(node.children, key);
+        if (found) return found;
+      }
+    }
+  };
+
+  const renderGroupActions = (groupKey: string) => (
+    <Dropdown
+      overlay={
+        <Menu
+          onClick={({ key }) => handleGroupAction(key, groupKey)}
+          items={[
+            { key: 'addSubGroup', label: t('system.group.addSubGroups') },
+            { key: 'rename', label: t('system.group.rename') },
+            { key: 'delete', label: t('common.delete') },
+          ]}
+        />
+      }
+      trigger={['click']}
+    >
+      <MoreOutlined
+        className="cursor-pointer"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </Dropdown>
+  );
+
+  const renderTreeNode = (nodes: TreeDataNode[]): TreeDataNode[] =>
+    nodes.map((node) => ({
+      ...node,
+      title: (
+        <div className="flex justify-between items-center">
+          <span className="truncate">
+            {typeof node.title === 'function' ? node.title(node) : node.title}
+          </span>
+          {renderGroupActions(node.key as string)}
+        </div>
+      ),
+      children: node.children ? renderTreeNode(node.children) : [],
+    }));
+
   const topSectionContent = (
     <TopSection title={t('system.user.title')} content={t('system.user.desc')} />
   );
 
   const leftSectionContent = (
     <div className={`w-full h-full flex flex-col ${styles.userInfo}`}>
-      <Input
-        className="w-full"
-        placeholder={`${t('common.search')}...`}
-        onChange={(e) => handleTreeSearchChange(e.target.value)}
-        value={treeSearchValue}
-      />
+      <div className="flex items-center mb-4">
+        <Input
+          size="small"
+          className="flex-1"
+          placeholder={`${t('common.search')}...`}
+          onChange={(e) => handleTreeSearchChange(e.target.value)}
+          value={treeSearchValue}
+        />
+        <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={handleAddRootGroup}></Button>
+      </div>
       <Tree
-        className="w-full flex-1 mt-4 overflow-auto"
+        className="w-full flex-1 overflow-auto"
         showLine
+        blockNode
         expandAction={false}
         defaultExpandAll
-        treeData={filteredTreeData}
+        treeData={renderTreeNode(filteredTreeData)}
         onSelect={handleTreeSelect}
       />
     </div>
@@ -306,11 +467,60 @@ const User: React.FC = () => {
   );
 
   return (
-    <PageLayout
-      topSection={topSectionContent}
-      leftSection={leftSectionContent}
-      rightSection={rightSectionContent}
-    />
+    <>
+      <PageLayout
+        topSection={topSectionContent}
+        leftSection={leftSectionContent}
+        rightSection={rightSectionContent}
+      />
+      <OperateModal
+        title={t('common.add')}
+        open={addGroupModalOpen || addSubGroupModalOpen}
+        onOk={onAddGroup}
+        confirmLoading={addGroupLoading}
+        onCancel={() => {
+          setAddGroupModalOpen(false);
+          setAddSubGroupModalOpen(false);
+          addGroupForm.resetFields();
+        }}
+        okText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+      >
+        <Form form={addGroupForm}>
+          <Form.Item
+            name="name"
+            label={t('system.group.form.name')}
+            rules={[{ required: true, message: t('common.inputRequired') }]}
+          >
+            <Input placeholder={`${t('common.inputMsg')}${t('system.group.form.name')}`} />
+          </Form.Item>
+        </Form>
+      </OperateModal>
+      <OperateModal
+        title={t('system.group.rename')}
+        closable={false}
+        okText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        okButtonProps={{ loading: renameGroupLoading }}
+        cancelButtonProps={{ disabled: renameGroupLoading }}
+        open={renameGroupModalOpen}
+        onOk={onRenameGroup}
+        onCancel={() => {
+          setRenameGroupModalOpen(false);
+          renameGroupForm.resetFields();
+        }}
+      >
+        <Form form={renameGroupForm}>
+          <Form.Item
+            name="renameTeam"
+            label={t('system.user.form.name')}
+            rules={[{ required: true, message: t('common.inputRequired') }]}
+          >
+            <Input placeholder={`${t('common.inputMsg')}${t('system.user.form.name')}`} />
+          </Form.Item>
+        </Form>
+      </OperateModal>
+    </>
   );
 };
 

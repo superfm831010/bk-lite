@@ -36,7 +36,7 @@ const Collector = () => {
 
   const navigateToCollectorDetail = (item: CardItem) => {
     router.push(`
-      /node-manager/sidecar/collector/detail?id=${item.id}&name=${item.name}&introduction=${item.description}&system=${item.tagList[0]}`);
+      /node-manager/sidecar/collector/detail?id=${item.id}&name=${item.name}&introduction=${item.description}&system=${item.tagList[0]}&icon=${item.icon}`);
   };
 
   const filterBySelected = (data: any[], selected: string[]) => {
@@ -64,7 +64,7 @@ const Collector = () => {
         executable_path: item.executable_path,
         execute_parameters: item.execute_parameters,
         description: item.introduction || '--',
-        icon: 'caijiqizongshu',
+        icon: item.icon || 'caijiqizongshu',
         tagList: [system],
       };
     });
