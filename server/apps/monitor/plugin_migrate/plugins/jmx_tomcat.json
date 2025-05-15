@@ -1,0 +1,8 @@
+{
+  "plugin": "Tomcat-JMX",
+  "plugin_desc": "",
+  "name": "Tomcat",
+  "type": "Middleware",
+  "description": "",
+  "metrics": []
+}
