@@ -45,6 +45,7 @@ class InstanceConfigService:
             )
             configs.append({
                 "config_id": config_obj.id,
+                "collector": config_obj.collector,
                 "collect_type": config_obj.collect_type,
                 "config_type": config_obj.config_type,
                 "instance_id": collect_instance_id,

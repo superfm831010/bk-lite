@@ -1,14 +1,18 @@
 import os
+import uuid
+from abc import ABC, abstractmethod
 
 import tiktoken
-from langchain_core.messages import AIMessageChunk
+from langchain_core.messages import AIMessageChunk, AIMessage
+from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.constants import START
 
 from src.core.entity.basic_llm_request import BasicLLMReuqest
+from src.core.entity.basic_llm_response import BasicLLMResponse
 
 
-class BasicGraph:
+class BasicGraph(ABC):
     def count_tokens(self, text: str, encoding_name='gpt-4o') -> int:
         try:
             encoding = tiktoken.encoding_for_model(encoding_name)  # 获取模型的 Token 编码器
@@ -25,11 +29,13 @@ class BasicGraph:
         async for chunk in result:
             if isinstance(chunk[0], AIMessageChunk):
                 print(chunk[0].content, end='', flush=True)
+        print('\n')
 
     def print_chunk(self, result):
         for chunk in result:
             if type(chunk[0]) == AIMessageChunk:
                 print(chunk[0].content, end='', flush=True)
+        print('\n')
 
     def prepare_graph(self, graph_builder, node_builder) -> str:
         graph_builder.add_node("prompt_message_node", node_builder.prompt_message_node)
@@ -48,6 +54,7 @@ class BasicGraph:
         config = {
             "graph_request": request,
             "recursion_limit": 10,
+            "trace_id": str(uuid.uuid4()),
             "configurable": {
                 **request.extra_config,
             }
@@ -57,6 +64,7 @@ class BasicGraph:
             config['configurable'] = {
                 "thread_id": request.thread_id,
                 "user_id": request.user_id,
+                "trace_id": str(uuid.uuid4()),
                 **(config['configurable'] or {})
             }
             with PostgresSaver.from_conn_string(os.getenv('DB_URI')) as checkpoint:
@@ -69,3 +77,30 @@ class BasicGraph:
         if stream_mode == 'messages':
             result = graph.astream(request, config, stream_mode=stream_mode)
             return result
+
+    @abstractmethod
+    async def compile_graph(self, request: BasicLLMReuqest):
+        pass
+
+    async def stream(self, request: BasicLLMReuqest):
+        graph = await self.compile_graph(request)
+        result = await self.invoke(graph, request, stream_mode='messages')
+        return result
+
+    async def execute(self, request: BasicLLMReuqest) -> BasicLLMResponse:
+        graph = await self.compile_graph(request)
+        result = self.invoke(graph, request)
+
+        prompt_token = 0
+        completion_token = 0
+
+        for i in result["messages"]:
+            if type(i) == AIMessage and 'token_usage' in i.response_metadata:
+                prompt_token += i.response_metadata['token_usage']['prompt_tokens']
+                completion_token += i.response_metadata['token_usage']['completion_tokens']
+        response = BasicLLMResponse(message=result["messages"][-1].content,
+                                    total_tokens=prompt_token + completion_token,
+                                    prompt_tokens=prompt_token,
+                                    completion_tokens=completion_token)
+
+        return response

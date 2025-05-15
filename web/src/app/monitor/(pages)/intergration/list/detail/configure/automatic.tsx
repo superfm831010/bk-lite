@@ -3,9 +3,12 @@ import { Form, Input, Select, Button, message, InputNumber } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import CustomTable from '@/components/custom-table';
 import { v4 as uuidv4 } from 'uuid';
-import { deepClone } from '@/app/monitor/utils/common';
 import {
-  OBJECT_CONFIG_MAP,
+  deepClone,
+  getConfigByPluginName,
+  getConfigByObjectName,
+} from '@/app/monitor/utils/common';
+import {
   useMiddleWareFields,
   TIMEOUT_UNITS,
 } from '@/app/monitor/constants/monitor';
@@ -306,16 +309,16 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   ];
 
   const collectType = useMemo(() => {
-    return OBJECT_CONFIG_MAP[objectName]?.plugins?.[pluginName]?.collect_type;
-  }, [OBJECT_CONFIG_MAP]);
+    return getConfigByPluginName(pluginName, 'collect_type');
+  }, [pluginName]);
 
   const instType = useMemo(() => {
-    return OBJECT_CONFIG_MAP[objectName]?.instance_type;
-  }, [OBJECT_CONFIG_MAP]);
+    return getConfigByObjectName(objectName, 'instance_type');
+  }, [objectName]);
 
   const configTypes = useMemo(() => {
-    return OBJECT_CONFIG_MAP[objectName]?.plugins?.[pluginName]?.config_type;
-  }, [OBJECT_CONFIG_MAP]);
+    return getConfigByPluginName(pluginName, 'config_type');
+  }, [pluginName]);
 
   const initItems = useMemo(() => {
     const initItem = {
@@ -345,7 +348,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       return { ...initItem, host: null };
     }
     return initItem as IntergrationMonitoredObject;
-  }, [OBJECT_CONFIG_MAP]);
+  }, [collectType, groupId]);
 
   const handleEditAuthPassword = () => {
     if (authPasswordDisabled) {
@@ -499,15 +502,11 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       const _values = deepClone(values);
       delete _values.metric_type;
       delete _values.nodes;
-      const plugins = OBJECT_CONFIG_MAP[objectName]?.plugins || {};
-      const key = Object.keys(plugins).find(
-        (key) => plugins[key]?.collect_type === collectType
-      );
       const params = {
         configs: getConfigs(_values),
         collect_type: collectType,
         monitor_object_id: +objectId,
-        collector: plugins[key || ''].collector,
+        collector: getConfigByPluginName(pluginName, 'collector'),
         instances: dataSource.map((item) => {
           const { key, ...rest } = item;
           values.key = key;

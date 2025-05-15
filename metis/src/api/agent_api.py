@@ -11,8 +11,8 @@ from sanic_ext import validate
 from src.agent.chatbot_workflow.chatbot_workflow_graph import ChatBotWorkflowGraph
 from src.agent.react_agent.react_agent_graph import ReActAgentGraph
 from src.core.web.api_auth import auth
-from src.entity.agent.chatbot_workflow_request import ChatBotWorkflowRequest
-from src.entity.agent.react_agent_request import ReActAgentRequest
+from src.entity.agent.chatbot_workflow.chatbot_workflow_request import ChatBotWorkflowRequest
+from src.entity.agent.react_agent.react_agent_request import ReActAgentRequest
 from src.services.agent_service import AgentService
 
 agent_api_router = Blueprint("agent", url_prefix="/agent")
@@ -93,7 +93,7 @@ async def invoke_chatbot_workflow(request, body: ChatBotWorkflowRequest):
     workflow = ChatBotWorkflowGraph()
     AgentService.set_naive_rag_search_query(body)
     logger.debug(f"执行ChatBotWorkflowGraph,用户的问题:[{body.user_message}]")
-    result = workflow.execute(body)
+    result = await workflow.execute(body)
     response_content = result.model_dump()
     logger.info(
         f"执行ChatBotWorkflowGraph成功,用户的问题:[{body.user_message}]，结果:[{response_content}]")
