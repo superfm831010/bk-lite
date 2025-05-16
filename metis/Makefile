@@ -13,3 +13,6 @@ setup:
 install: 
 	$(PIP_COMPILE) ./requirements/requirements.in ./requirements/requirements-dev.in -v --output-file ./requirements.txt
 	$(PIP_SYNC) -v
+
+check:
+	$(PIP_COMPILE) --upgrade --dry-run  ./requirements/requirements.in ./requirements/requirements-dev.in -v
