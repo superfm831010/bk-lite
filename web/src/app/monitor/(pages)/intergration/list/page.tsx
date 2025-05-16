@@ -7,13 +7,13 @@ import intergrationStyle from './index.module.scss';
 import { SettingOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import Icon from '@/components/icon';
-import { deepClone } from '@/app/monitor/utils/common';
+import {
+  deepClone,
+  getConfigByPluginName,
+  getConfigByObjectName,
+} from '@/app/monitor/utils/common';
 import { useRouter } from 'next/navigation';
 import { ObectItem, TreeSortData } from '@/app/monitor/types/monitor';
-import {
-  OBJECT_ICON_MAP,
-  COLLECT_TYPE_MAP,
-} from '@/app/monitor/constants/monitor';
 import { ModalRef, TableDataItem, TreeItem } from '@/app/monitor/types';
 import ImportModal from './importModal';
 import axios from 'axios';
@@ -269,9 +269,10 @@ const Intergration = () => {
                 >
                   <div className="flex items-center space-x-4 my-2">
                     <Icon
-                      type={
-                        OBJECT_ICON_MAP[getObjectInfo().name || ''] || 'Host'
-                      }
+                      type={getConfigByObjectName(
+                        getObjectInfo().name || '',
+                        'icon'
+                      )}
                       className="text-[48px] min-w-[48px]"
                     />
                     <div
@@ -286,7 +287,7 @@ const Intergration = () => {
                         {app.display_name || '--'}
                       </h2>
                       <Tag className="mt-[4px]">
-                        {COLLECT_TYPE_MAP[app.name] || '--'}
+                        {getConfigByPluginName(app.name, 'collect_type')}
                       </Tag>
                     </div>
                   </div>

@@ -5,8 +5,12 @@ import useMonitorApi from '@/app/monitor/api';
 import templateStyle from './index.module.scss';
 import { TreeItem, TableDataItem } from '@/app/monitor/types';
 import { ObectItem } from '@/app/monitor/types/monitor';
-import { OBJECT_ICON_MAP } from '@/app/monitor/constants/monitor';
-import { deepClone, findLabelById } from '@/app/monitor/utils/common';
+import { STRATEGY_TEMPLATES } from '@/app/monitor/constants/monitor';
+import {
+  deepClone,
+  findLabelById,
+  getConfigByObjectName,
+} from '@/app/monitor/utils/common';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EntityList from '@/components/entity-list';
@@ -46,12 +50,12 @@ const Template: React.FC = () => {
       const params = {
         monitor_object_name: monitorName,
       };
-      const data = await getPolicyTemplate(params)
+      const data = await getPolicyTemplate(params);
       const list = data.map((item: TableDataItem, index: number) => ({
         ...item,
         id: index,
         description: item.description || '--',
-        icon: OBJECT_ICON_MAP[monitorName as string] || 'Host',
+        icon: getConfigByObjectName(monitorName as string, 'icon'),
       }));
       setTableData(list);
     } finally {
@@ -72,8 +76,8 @@ const Template: React.FC = () => {
   };
 
   const getTreeData = (data: ObectItem[]): TreeItem[] => {
-    const groupedData = data.reduce(
-      (acc, item) => {
+    const groupedData = data.reduce((acc, item) => {
+      if (STRATEGY_TEMPLATES.includes(item.name as string)) {
         if (!acc[item.type]) {
           acc[item.type] = {
             title: item.display_type || '--',
@@ -87,10 +91,9 @@ const Template: React.FC = () => {
           key: item.id,
           children: [],
         });
-        return acc;
-      },
-      {} as Record<string, TreeItem>
-    );
+      }
+      return acc;
+    }, {} as Record<string, TreeItem>);
     return Object.values(groupedData);
   };
 

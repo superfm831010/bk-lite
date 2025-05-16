@@ -2,9 +2,9 @@ import React, { useMemo } from 'react';
 import { Form, Checkbox, Space, Select, Input, InputNumber } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
+import { getConfigByPluginName } from '@/app/monitor/utils/common';
 import {
   TIMEOUT_UNITS,
-  MANUAL_CONFIG_TEXT_MAP,
   useMiddleWareFields,
 } from '@/app/monitor/constants/monitor';
 const { Option } = Select;
@@ -638,7 +638,7 @@ const useColumnsAndFormItems = ({
             </>
           ),
         };
-      case 'vmware':
+      case 'http':
         return {
           displaycolumns: [columns[0], columns[11], ...columns.slice(4, 7)],
           formItems: (
@@ -1554,9 +1554,7 @@ const useFormItems = ({
               )}
             </>
           ),
-          configText:
-            MANUAL_CONFIG_TEXT_MAP[pluginName] ||
-            MANUAL_CONFIG_TEXT_MAP['default'],
+          configText: getConfigByPluginName(pluginName, 'manualCfgText'),
         };
       case 'docker':
         return {
@@ -1712,11 +1710,9 @@ const useFormItems = ({
               )}
             </>
           ),
-          configText:
-            MANUAL_CONFIG_TEXT_MAP[pluginName] ||
-            MANUAL_CONFIG_TEXT_MAP['default'],
+          configText: getConfigByPluginName(pluginName, 'manualCfgText'),
         };
-      case 'vmware':
+      case 'http':
         return {
           formItems: (
             <>
@@ -1847,9 +1843,7 @@ const useFormItems = ({
               </Form.Item>
             </>
           ),
-          configText:
-            MANUAL_CONFIG_TEXT_MAP[pluginName] ||
-            MANUAL_CONFIG_TEXT_MAP['default'],
+          configText: getConfigByPluginName(pluginName, 'manualCfgText'),
         };
       default:
         return {

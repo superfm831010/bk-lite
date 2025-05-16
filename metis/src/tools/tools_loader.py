@@ -10,6 +10,10 @@ from src.tools.kubernetes_tools import (
     get_kubernetes_node_capacity, get_kubernetes_orphaned_resources,
     get_kubernetes_resource_yaml, get_kubernetes_pod_logs
 )
+from src.tools.ansible_tools import ansible_adhoc
+from src.tools.http_request_tools import (
+    http_get, http_post, http_put, http_delete)
+
 import copy
 
 ToolsMap = {
@@ -94,7 +98,32 @@ ToolsMap = {
             "func": get_kubernetes_pod_logs,
             'enable_extra_prompt': False,
         }
+    ],
+    "ansible": [
+        {
+            "func": ansible_adhoc,
+            'enable_extra_prompt': False,
+        }
+    ],
+    "http_request": [
+        {
+            "func": http_get,
+            'enable_extra_prompt': True,
+        },
+        {
+            "func": http_post,
+            'enable_extra_prompt': True,
+        },
+        {
+            "func": http_put,
+            'enable_extra_prompt': True,
+        },
+        {
+            "func": http_delete,
+            'enable_extra_prompt': True,
+        }
     ]
+
 }
 
 
@@ -108,14 +137,16 @@ class ToolsLoader:
             cp_tool = copy.deepcopy(tool)
             func = cp_tool['func']
             enable_extra_prompt = cp_tool['enable_extra_prompt']
+
             if enable_extra_prompt:
+                func.description += f"""\n{tool_server.extra_tools_prompt}"""
                 final_prompt = f"""以下是函数的动态参数生成要求，param json 参数说明:\n"""
-                for key, value in tool_server.extra_prompt.items():
+                for key, value in tool_server.extra_param_prompt.items():
                     final_prompt += f"{key}:{value}，"
                 final_prompt += f"""
                     请根据以上要求生成函数的动态参数, param为json字典字符串
                 """
-                func.description = tool_server.extra_prompt
+                func.description += final_prompt
                 tools.append(func)
             else:
                 tools.append(func)

@@ -314,8 +314,8 @@
       "countTitle": "表示选中时间范围内，所有维度的数量。\n count函数用于计数匹配的时间序列数量，适用于统计有多少个维度符合条件，例如有多少个活跃的实例或端口。",
       "distributionMap": "分布图",
       "message": "报文",
-      "activeAlarmsMapTips": "展示所有活跃告警的分布图。",
-      "historicalAlarmsMapTips": "展示所有历史告警的分布图。",
+      "activeAlarmsMapTips": "展示所有符合过滤项的活跃告警分布图。",
+      "historicalAlarmsMapTips": "展示所选时间范围内，符合过滤项的所有历史告警分布图。",
       "promQLPlaceholder": "请参考Prometheus的语法撰写PromQL，通常可以查询并过滤相关的指标。"
     },
     "intergrations": {

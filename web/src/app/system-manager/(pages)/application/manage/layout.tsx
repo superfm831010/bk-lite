@@ -16,7 +16,7 @@ const AppManageLayout = ({ children }: { children: React.ReactNode }) => {
   const [clientDescription, setClientDescription] = useState('');
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
-  const id = searchParams ? searchParams.get('id') : null;
+  const id = searchParams ? searchParams.get('clientId') : null;
   const { getClientDetail } = useUserApi();
 
   const updateMenuItems = useMemo(() => {
@@ -33,7 +33,7 @@ const AppManageLayout = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const fetchClientDetail = async () => {
-    const client = await getClientDetail({ params: { id } });
+    const client = await getClientDetail({ params: { name: id } });
     setClientName(client.name);
     setClientDescription(client.description);
   };

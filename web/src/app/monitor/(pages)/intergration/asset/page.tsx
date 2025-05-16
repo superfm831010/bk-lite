@@ -34,14 +34,15 @@ import { PlusOutlined } from '@ant-design/icons';
 import Icon from '@/components/icon';
 import RuleModal from './ruleModal';
 import { useCommon } from '@/app/monitor/context/common';
-import { deepClone, showGroupName } from '@/app/monitor/utils/common';
+import {
+  deepClone,
+  showGroupName,
+  getConfigByObjectName,
+} from '@/app/monitor/utils/common';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EditConfig from './updateConfig';
-import {
-  OBJECT_INSTANCE_TYPE_MAP,
-  NODE_STATUS_MAP,
-} from '@/app/monitor/constants/monitor';
+import { NODE_STATUS_MAP } from '@/app/monitor/constants/monitor';
 const { confirm } = Modal;
 import Permission from '@/components/permission';
 
@@ -286,10 +287,7 @@ const Asset = () => {
       type: 'edit',
       form: {
         ...row,
-        instance_type:
-          OBJECT_INSTANCE_TYPE_MAP[
-            objects.find((item) => item.id === objectId)?.name || ''
-          ],
+        objName: objects.find((item) => item.id === objectId)?.name || '',
       },
     });
   };
@@ -440,10 +438,10 @@ const Asset = () => {
         setTableData(_dataSource);
         const data = {
           instance_id: row.instance_id,
-          instance_type:
-            OBJECT_INSTANCE_TYPE_MAP[
-              objects.find((item) => item.id === objectId)?.name || ''
-            ],
+          instance_type: getConfigByObjectName(
+            objects.find((item) => item.id === objectId)?.name || '',
+            'instance_type'
+          ),
         };
         const res = await getInstanceChildConfig(data);
         _dataSource[targetIndex].dataSource = res.map(

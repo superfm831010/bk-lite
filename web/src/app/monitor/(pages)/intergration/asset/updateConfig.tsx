@@ -15,7 +15,7 @@ import OperateModal from '@/components/operate-modal';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
 import {
-  INSTANCE_TYPE_MAP,
+  OBJECT_CONFIG_MAP,
   TIMEOUT_UNITS,
 } from '@/app/monitor/constants/monitor';
 const { Option } = Select;
@@ -83,34 +83,20 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
         id: data.config_id,
       });
       setConfigForm(res);
-      const _collectType =
-        data?.collect_type === 'http' ? 'vmware' : data?.collect_type;
-      let _PluginName =
-        Object.keys(INSTANCE_TYPE_MAP).find(
-          (key) => INSTANCE_TYPE_MAP[key] === data?.instance_type
-        ) || '';
-      if (
-        ['Hardware Server SNMP General', 'Hardware Server IPMI'].includes(
-          _PluginName
-        )
-      ) {
-        _PluginName =
-          data?.collect_type === 'ipmi'
-            ? 'Hardware Server IPMI'
-            : 'Hardware Server SNMP General';
-      }
-      if (['Storage SNMP General', 'Storage IPMI'].includes(_PluginName)) {
-        _PluginName =
-          data?.collect_type === 'ipmi'
-            ? 'Hardware Server IPMI'
-            : 'Storage SNMP General';
-      }
-      setCollectType(_collectType);
-      setPluginName(_PluginName);
-      const content = data?.is_child ? res.content?.config : res.content;
+      const plugins = OBJECT_CONFIG_MAP[data.objName].plugins || {};
+      const _PluginName = Object.keys(plugins).find(
+        (key) =>
+          plugins[key]?.collect_type === data.collect_type &&
+          plugins[key]?.collector === data.collector &&
+          (plugins[key]?.config_type || []).includes(data.config_type)
+      );
+      setCollectType(data.collect_type);
+      setPluginName(_PluginName as string);
+      const content = data.is_child ? res.content?.config : res.content;
       initData(content || {}, {
         plugin_name: _PluginName,
-        is_child: data?.is_child,
+        is_child: data.is_child,
+        collect_type: data.collect_type,
       });
     } finally {
       setPageLoading(false);
@@ -192,6 +178,10 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     if (['Website', 'Ping'].includes(config.plugin_name)) {
       formData.monitor_url = formData.urls?.[0] || '';
     }
+    if (config.collect_type === 'jmx') {
+      formData.monitor_url =
+        (config.is_child ? formData.urls?.[0] : formData.jmxUrl) || '';
+    }
     switch (config.plugin_name) {
       case 'ElasticSearch':
         formData.server = formData.servers?.[0];
@@ -244,11 +234,7 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
             ?.replace('trap', '') || '';
         break;
       case 'VMWare':
-        Object.assign(formData, extractVmvareUrl(formData.urls?.[0] || ''));
-        break;
-      case 'JVM':
-        formData.monitor_url =
-          (config.is_child ? formData.urls?.[0] : formData.jmxUrl) || '';
+        Object.assign(formData, extractVmvareUrl(formData));
         break;
       default:
         break;
@@ -315,14 +301,11 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     };
   };
 
-  const extractVmvareUrl = (url: string) => {
+  const extractVmvareUrl = (obj: any) => {
     try {
-      const _url = new URL(url);
-      const params = new URLSearchParams(_url.search);
       return {
-        host: params.get('host'),
-        username: params.get('username'),
-        password: params.get('password'),
+        ...obj.http_headers,
+        host: obj.tags.instance_id.replace('vc-', ''),
       };
     } catch {
       return {};

@@ -6,17 +6,23 @@ import PermissionModal from './permissionModal';
 
 interface TreeTransferProps {
   treeData: TreeDataNode[];
-  selectedKeys: string[];
+  selectedKeys: number[];
   groupRules?: { [key: string]: number[] },
-  onChange: (newKeys: string[]) => void;
-  onChangeRule?: (newKey: string, newRules: number[]) => void;
-  mode?: 'group' | 'role'; // 新增：选择模式，默认 'role'
+  onChange: (newKeys: number[]) => void;
+  onChangeRule?: (newKey: number, newRules: number[]) => void;
+  mode?: 'group' | 'role';
 }
 
-export const flattenRoleData = (nodes: TreeDataNode[]): { key: string; title: string }[] => {
-  return nodes?.reduce<{ key: string; title: string }[]>((acc, node) => {
+// 增加事件处理函数接口
+interface NodeHandlers {
+  onPermissionSetting: (node: TreeDataNode, e: React.MouseEvent) => void;
+  onRemove: (newKeys: number[]) => void;
+}
+
+export const flattenRoleData = (nodes: TreeDataNode[]): { key: number; title: string }[] => {
+  return nodes?.reduce<{ key: number; title: string }[]>((acc, node) => {
     if (node.selectable) {
-      acc.push({ key: node.key as string, title: node.title as string });
+      acc.push({ key: node.key as number, title: node.title as string });
     }
     if (node.children) {
       acc = acc.concat(flattenRoleData(node.children));
@@ -25,7 +31,7 @@ export const flattenRoleData = (nodes: TreeDataNode[]): { key: string; title: st
   }, []);
 };
 
-const filterTreeData = (nodes: TreeDataNode[], selectedKeys: string[]): TreeDataNode[] => {
+const filterTreeData = (nodes: TreeDataNode[], selectedKeys: number[]): TreeDataNode[] => {
   return nodes.reduce<TreeDataNode[]>((acc, node) => {
     const newNode = { ...node };
     if (node.children) {
@@ -33,18 +39,18 @@ const filterTreeData = (nodes: TreeDataNode[], selectedKeys: string[]): TreeData
       if (filtered.length > 0) {
         newNode.children = filtered;
         acc.push(newNode);
-      } else if (selectedKeys.includes(String(node.key))) {
+      } else if (selectedKeys.includes(node.key as number)) {
         acc.push(newNode);
       }
-    } else if (selectedKeys.includes(String(node.key))) {
+    } else if (selectedKeys.includes(node.key as number)) {
       acc.push(newNode);
     }
     return acc;
   }, []);
 };
 
-const getSubtreeKeys = (node: TreeDataNode): string[] => {
-  const keys = [String(node.key)];
+const getSubtreeKeys = (node: TreeDataNode): number[] => {
+  const keys = [node.key as number];
   if (node.children && node.children.length > 0) {
     node.children.forEach(child => {
       keys.push(...getSubtreeKeys(child));
@@ -54,16 +60,16 @@ const getSubtreeKeys = (node: TreeDataNode): string[] => {
 };
 
 const cleanSelectedKeys = (
-  selected: string[],
+  selected: number[],
   nodes: TreeDataNode[]
-): string[] => {
+): number[] => {
   let result = [...selected];
   nodes.forEach(node => {
     if (!node.selectable && node.children) {
-      const childSelectable = flattenRoleData(node.children).map(item => item.key);
-      if (result.includes(String(node.key))) {
+      const childSelectable = flattenRoleData(node.children).map(item => Number(item.key));
+      if (result.includes(node.key as number)) {
         if (!childSelectable.every(childKey => result.includes(childKey))) {
-          result = result.filter(key => key !== String(node.key));
+          result = result.filter(key => key !== node.key);
         }
       }
       result = cleanSelectedKeys(result, node.children);
@@ -72,24 +78,27 @@ const cleanSelectedKeys = (
   return result;
 };
 
-// 新增：判断节点是否全选（包括子节点）
-const isFullySelected = (node: TreeDataNode, selectedKeys: string[]): boolean => {
+const isFullySelected = (node: TreeDataNode, selectedKeys: number[]): boolean => {
   if (node.children && node.children.length > 0) {
     return node.children.every(child => isFullySelected(child, selectedKeys));
   }
-  return selectedKeys.includes(String(node.key));
+  return selectedKeys.includes(node.key as number);
 };
 
-// 增加事件处理函数接口
-interface NodeHandlers {
-  onPermissionSetting: (node: TreeDataNode, e: React.MouseEvent) => void;
-  onRemove: (newKeys: string[]) => void;
-}
+const getAllKeys = (nodes: TreeDataNode[]): number[] => {
+  return nodes.reduce<number[]>((acc, node) => {
+    acc.push(node.key as number);
+    if (node.children) {
+      acc.push(...getAllKeys(node.children));
+    }
+    return acc;
+  }, []);
+};
 
 // 新增：当 mode 为 "group" 时，生成右侧树的节点，只保留全选节点
 const transformRightTreeGroup = (
   nodes: TreeDataNode[],
-  selectedKeys: string[],
+  selectedKeys: number[],
   handlers: NodeHandlers
 ): TreeDataNode[] => {
   return nodes.reduce<TreeDataNode[]>((acc, node) => {
@@ -128,7 +137,7 @@ const transformRightTreeGroup = (
       }
     } else {
       // 处理叶子节点
-      if (selectedKeys.includes(String(node.key))) {
+      if (selectedKeys.includes(node.key as number)) {
         acc.push({
           ...node,
           title: (
@@ -163,8 +172,8 @@ const transformRightTreeGroup = (
 const transformRightTree = (
   nodes: TreeDataNode[],
   treeData: TreeDataNode[],
-  selectedKeys: string[],
-  onRemove: (newKeys: string[]) => void,
+  selectedKeys: number[],
+  onRemove: (newKeys: number[]) => void,
   onPermissionSetting?: (node: TreeDataNode, e: React.MouseEvent) => void,
   mode?: 'group'
 ): TreeDataNode[] => {
@@ -193,22 +202,11 @@ const transformRightTree = (
   }));
 };
 
-const getAllKeys = (nodes: TreeDataNode[]): string[] => {
-  return nodes.reduce<string[]>((acc, node) => {
-    acc.push(String(node.key));
-    if (node.children) {
-      acc.push(...getAllKeys(node.children));
-    }
-    return acc;
-  }, []);
-};
-
 const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, groupRules = {}, onChange, onChangeRule, mode = 'role' }) => {
   const [isPermissionModalVisible, setIsPermissionModalVisible] = useState<boolean>(false);
   const [currentNode, setCurrentNode] = useState<TreeDataNode | null>(null);
   const [currentRules, setCurrentRules] = useState<number[]>([]);
 
-  // 使用 useMemo 缓存计算，提高性能
   const flattenedRoleData = useMemo(() => flattenRoleData(treeData), [treeData]);
   const leftExpandedKeys = useMemo(() => getAllKeys(treeData), [treeData]);
   const filteredRightData = useMemo(() => filterTreeData(treeData, selectedKeys), [treeData, selectedKeys]);
@@ -216,7 +214,7 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, gro
   const handlePermissionSetting = (node: TreeDataNode, e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentNode(node);
-    const nodeKey = String(node.key);
+    const nodeKey = node.key as number;
     const rules = groupRules[nodeKey] || [];
     setCurrentRules(rules);
     setIsPermissionModalVisible(true);
@@ -226,14 +224,12 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, gro
     if (!currentNode || !onChangeRule) return;
 
     const filteredPermissions = values?.permissions?.filter((val: any) => val.permission !== 0).map((val: any) => val.permission);
-    const nodeKey = String(currentNode.key);
+    const nodeKey = currentNode.key as number;
 
-    // 调用外部传入的修改规则的回调
     onChangeRule(nodeKey, filteredPermissions);
     setIsPermissionModalVisible(false);
   };
 
-  // 右侧树数据转换
   const rightTransformedData = useMemo(() =>
     transformRightTree(
       filteredRightData,
@@ -249,14 +245,12 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, gro
     getAllKeys(rightTransformedData), [rightTransformedData]
   );
 
-  // 修改 Transfer 的数据源
   const transferDataSource = useMemo(() => {
     if (mode === 'group') {
-      // 对于 group 模式，确保包含所有的叶子节点
-      const getAllLeafNodes = (nodes: TreeDataNode[]): { key: string; title: string }[] => {
-        return nodes.reduce<{ key: string; title: string }[]>((acc, node) => {
+      const getAllLeafNodes = (nodes: TreeDataNode[]): { key: number; title: string }[] => {
+        return nodes.reduce<{ key: number; title: string }[]>((acc, node) => {
           if (!node.children || node.children.length === 0) {
-            acc.push({ key: node.key as string, title: node.title as string });
+            acc.push({ key: node.key as number, title: node.title as string });
           } else {
             acc = acc.concat(getAllLeafNodes(node.children));
           }
@@ -280,7 +274,7 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, gro
         render={(item) => item.title}
         showSelectAll={false}
         onChange={(nextTargetKeys) => {
-          onChange(nextTargetKeys as string[]);
+          onChange(nextTargetKeys as number[]);
         }}
       >
         {({ direction }) => {

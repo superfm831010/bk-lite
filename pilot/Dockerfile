@@ -7,10 +7,10 @@ RUN apt-get update && \
 
 WORKDIR /apps
 
-ADD ./pyproject.toml ./pyproject.toml
-RUN pip install pip-tools
-RUN ./.venv/bin/pip-compile -v ./requirements/requirements.in ./requirements/requirements-dev.in --output-file ./requirements.txt 
-RUN ./.venv/bin/pip-sync -v
+# ADD ./pyproject.toml ./pyproject.toml
+ADD ./requirements ./requirements
+RUN pip install -r ./requirements/requirements.in 
+RUN pip install -r ./requirements/requirements-dev.in
 
 ADD ./actions ./actions
 ADD ./channels ./channels
