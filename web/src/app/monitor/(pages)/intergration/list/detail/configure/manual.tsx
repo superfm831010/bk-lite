@@ -163,14 +163,10 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
         return row.monitor_ip;
       case 'trap':
         return 'trap' + row.monitor_ip;
-      case 'web':
-        return row.monitor_url;
-      case 'ping':
-        return row.monitor_url;
-      case 'jmx':
-        return row.monitor_url;
-      case 'middleware':
-        return row.monitor_url;
+      case 'snmp':
+        return objectName + '-' + (row.monitor_ip || '');
+      case 'ipmi':
+        return objectName + '-' + (row.monitor_ip || '');
       case 'docker':
         return row.endpoint;
       case 'database':
@@ -178,7 +174,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       case 'http':
         return `vc-${row.host}`;
       default:
-        return objectName + '-' + (row.monitor_ip || '');
+        return row.monitor_url;
     }
   };
 

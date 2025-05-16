@@ -550,22 +550,20 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       case 'trap':
         const target: any = nodeList.find((item) => row.node_ids === item.id);
         return 'trap' + target?.ip + '-' + target?.cloud_region;
-      case 'web':
-        return row.url;
-      case 'ping':
-        return row.url;
-      case 'middleware':
-        return row.url;
-      case 'jmx':
-        return row.jmx_url;
+      case 'snmp':
+        return objectName + '-' + (row.ip || '');
+      case 'ipmi':
+        return objectName + '-' + (row.ip || '');
       case 'docker':
         return row.endpoint;
       case 'database':
         return row.server || `${row.host}:${row.port}`;
       case 'http':
         return `vc-${row.host}`;
+      case 'jmx':
+        return row.jmx_url;
       default:
-        return objectName + '-' + (row.ip || '');
+        return row.url;
     }
   };
 
