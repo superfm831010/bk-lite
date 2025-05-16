@@ -3,9 +3,17 @@ import logging
 import nats_client
 
 from apps.node_mgmt.config_template.common import ConfigService
+from apps.node_mgmt.models import CloudRegion
 from apps.node_mgmt.services.node import NodeService
 
 logger = logging.getLogger("app")
+
+
+@nats_client.register
+def cloud_region_list():
+    """获取云区域列表"""
+    objs = CloudRegion.objects.all()
+    return [{"id": obj.id, "name": obj.name} for obj in objs]
 
 
 @nats_client.register

@@ -5,5 +5,5 @@ sed -i "s|__SERVER__API__TOKEN__|$SERVER_API_TOKEN|g" /opt/fusion-collectors/sid
 sed -i "s|__SIDECAR__ZONE__|$SIDECAR_ZONE|g" /opt/fusion-collectors/sidecar.yml
 sed -i "s|__SIDECAR__GROUP__|$SIDECAR_GROUP|g" /opt/fusion-collectors/sidecar.yml
 
-
+echo $SIDECAR_NODEID > /opt/fusion-collectors/node-id
 supervisord -n

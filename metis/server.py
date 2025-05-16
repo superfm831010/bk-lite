@@ -48,6 +48,11 @@ async def show_banner(app, loop):
     with open(f"src/asserts/banner.txt") as f:
         print(f.read())
 
+    if os.getenv('SUPABASE_URL') and os.getenv('SUPABASE_KEY'):
+        logger.info(f"启动supabase能力,supabase地址{os.getenv('SUPABASE_URL')}")
+        from supabase import create_client, Client
+        app.ctx.supabase = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
+
 
 # 注册路由
 app.blueprint(api)

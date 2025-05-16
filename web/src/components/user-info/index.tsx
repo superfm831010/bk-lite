@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Dropdown, Space, Avatar, Menu, MenuProps, message } from 'antd';
 import { usePathname, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { DownOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import VersionModal from './versionModal';
@@ -49,13 +49,25 @@ const UserInfo: React.FC = () => {
 
       const data = await response.json();
       if (response.ok) {
-        window.location.href = data.url;
+        // Clear the session using NextAuth's signOut
+        await signOut({ redirect: false });
+        
+        // Redirect to the login page
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          window.location.href = '/auth/signin';
+        }
       } else {
         throw new Error(data.error || 'Failed to log out');
       }
     } catch (error) {
       console.error('Logout error:', error);
       message.error(t('common.logoutFailed'));
+      
+      // Even on error, attempt to sign out and redirect
+      await signOut({ redirect: false });
+      window.location.href = '/auth/signin';
     } finally {
       setIsLoading(false);
     }

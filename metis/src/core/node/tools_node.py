@@ -15,6 +15,8 @@ class ToolsNodes(BasicNode):
         self.tools = []
         self.mcp_client = None
         self.mcp_config = {}
+        self.tools_prompt_tokens = 0
+        self.tools_completions_tokens = 0
 
     async def setup(self, request: BaseModel):
         # 初始化MCP客户端配置
@@ -31,11 +33,9 @@ class ToolsNodes(BasicNode):
         # 初始化LangChain工具
         for server in request.tools_servers:
             if server.url.startswith("langchain:") is True:
-                langchain_tools = ToolsLoader.load_tools(server.url)
+                langchain_tools = ToolsLoader.load_tools(server)
                 for tool in langchain_tools:
                     self.tools.append(tool)
-
-
 
     async def build_tools_node(self) -> ToolNode:
         if self.tools:

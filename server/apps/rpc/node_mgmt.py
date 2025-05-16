@@ -3,7 +3,14 @@ from apps.rpc.base import RpcClient
 
 class NodeMgmt(object):
     def __init__(self):
-        self.client = RpcClient('node_mgmt')
+        self.client = RpcClient()
+
+    def cloud_region_list(self):
+        """
+        :return: 云区域列表
+        """
+        return_data = self.client.run("cloud_region_list")
+        return return_data
 
     def node_list(self, query_data):
         """
@@ -18,7 +25,7 @@ class NodeMgmt(object):
             "page_size": 10,
         }
         """
-        return_data = self.client.run('node_list', query_data)
+        return_data = self.client.run("node_list", query_data)
         return return_data
 
     def batch_add_node_child_config(self, data):
@@ -46,7 +53,7 @@ class NodeMgmt(object):
             }]
         }
         """
-        return_data = self.client.run('batch_add_node_child_config', data)
+        return_data = self.client.run("batch_add_node_child_config", data)
         return return_data
 
     def batch_add_node_config(self, data):
@@ -70,21 +77,21 @@ class NodeMgmt(object):
             }]
         }
         """
-        return_data = self.client.run('batch_add_node_config', data)
+        return_data = self.client.run("batch_add_node_config", data)
         return return_data
 
     def get_child_configs_by_ids(self, ids):
         """
         :param ids: 子配置ID列表
         """
-        return_data = self.client.run('get_child_configs_by_ids', ids)
+        return_data = self.client.run("get_child_configs_by_ids", ids)
         return return_data
 
     def get_configs_by_ids(self, ids):
         """
         :param ids: 配置ID列表
         """
-        return_data = self.client.run('get_configs_by_ids', ids)
+        return_data = self.client.run("get_configs_by_ids", ids)
         return return_data
 
     def update_child_config_content(self, id, content):
@@ -92,7 +99,7 @@ class NodeMgmt(object):
         :param id: 子配置ID
         :param content: 子配置内容
         """
-        return_data = self.client.run('update_child_config_content', {"id": id, "content": content})
+        return_data = self.client.run("update_child_config_content", {"id": id, "content": content})
         return return_data
 
     def update_config_content(self, id, content):
@@ -100,19 +107,19 @@ class NodeMgmt(object):
         :param id: 配置ID
         :param content: 配置内容
         """
-        return_data = self.client.run('update_config_content', {"id": id, "content": content})
+        return_data = self.client.run("update_config_content", {"id": id, "content": content})
         return return_data
 
     def delete_child_configs(self, ids):
         """
         :param ids: 子配置ID列表
         """
-        return_data = self.client.run('delete_child_configs', ids)
+        return_data = self.client.run("delete_child_configs", ids)
         return return_data
 
     def delete_configs(self, ids):
         """
         :param ids: 配置ID列表
         """
-        return_data = self.client.run('delete_configs', ids)
+        return_data = self.client.run("delete_configs", ids)
         return return_data

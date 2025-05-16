@@ -350,3 +350,7 @@ export interface ChartDataConfig {
   hexColor: NodeThresholdColor[];
   queryMetric: string;
 }
+
+export interface IntergrationAccessProps {
+  showInterval?: boolean;
+}

@@ -52,8 +52,8 @@
       "ocr_model": "OCR Model"
     },
     "user": {
-      "title": "User",
-      "desc": "Display all information.You can maintain user information and assign roles.",
+      "title": "Organization Structure",
+      "desc": "Display all information about the organization structure and users. You can maintain organizations at all levels, perform CRUD operations, set user information, and assign roles and groups.",
       "search": "Search",
       "table": {
         "username": "USERNAME",

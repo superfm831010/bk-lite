@@ -48,6 +48,7 @@ class NodeMgmtView(ViewSet):
             type=openapi.TYPE_OBJECT,
             properties={
                 "monitor_object_id": openapi.Schema(type=openapi.TYPE_STRING, description="监控对象id"),
+                "collector": openapi.Schema(type=openapi.TYPE_STRING, description="采集器名称"),
                 "collect_type": openapi.Schema(type=openapi.TYPE_STRING, description="采集类型"),
                 "configs": openapi.Schema(
                     type=openapi.TYPE_ARRAY,
@@ -73,7 +74,7 @@ class NodeMgmtView(ViewSet):
                     )
                 )
             },
-            required=["monitor_object_id", "collect_type", "configs", "instances"]
+            required=["monitor_object_id", "collector", "collect_type", "configs", "instances"]
         ),
         tags=['NodeMgmt']
     )
@@ -85,7 +86,7 @@ class NodeMgmtView(ViewSet):
         return WebUtils.response_success()
 
     @swagger_auto_schema(
-        operation_description="查询实例子配置",
+        operation_description="查询实例关联的配置",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -96,11 +97,9 @@ class NodeMgmtView(ViewSet):
         ),
         tags=['NodeMgmt']
     )
-    @action(methods=['post'], detail=False, url_path='get_instance_child_config')
+    @action(methods=['post'], detail=False, url_path='get_instance_asso_config')
     def get_instance_child_config(self, request):
         data = InstanceConfigService.get_instance_configs(request.data["instance_id"], request.data["instance_type"])
-        for config in data:
-            config["content"] = ConfigFormat.toml_to_dict(config["content"])
         return WebUtils.response_success(data)
 
     @swagger_auto_schema(
@@ -119,16 +118,16 @@ class NodeMgmtView(ViewSet):
         config_obj = CollectConfig.objects.filter(id=request.data["id"]).first()
         if not config_obj:
             return WebUtils.response_error("配置不存在!")
-
+        content_key = "content" if config_obj.is_child else "config_template"
         if config_obj.is_child:
             configs = NodeMgmt().get_child_configs_by_ids([request.data["id"]])
         else:
             configs = NodeMgmt().get_configs_by_ids([request.data["id"]])
         config = configs[0]
         if config_obj.file_type == "toml":
-            config["content"] = ConfigFormat.toml_to_dict(config["content"])
+            config["content"] = ConfigFormat.toml_to_dict(config[content_key])
         elif config_obj.file_type == "yaml":
-            config["content"] = ConfigFormat.yaml_to_dict(config["content"])
+            config["content"] = ConfigFormat.yaml_to_dict(config[content_key])
         else:
             raise ValueError("file_type must be toml or yaml")
 
