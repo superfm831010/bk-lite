@@ -30,6 +30,10 @@ const Collectordetail = () => {
     }
   }, [isLoading]);
 
+  useEffect(() => {
+    if(!isLoading) getTableData();  
+  }, [pagination.current, pagination.pageSize]);
+
   const getTableData = async () => {
     const searchParams = new URLSearchParams(window.location.search);
     const info = {
@@ -38,16 +42,19 @@ const Collectordetail = () => {
     };
     try {
       setTableLoading(true);
-      const getPackage = getPackageList({
+      const param = {
         object: info.name,
         os: info.system[0],
-      });
+        page: pagination.current,
+        page_size: pagination.pageSize,
+      };
+      const getPackage = getPackageList(param);
       const res = await Promise.all([getPackage]);
       const packageInfo = res[0];
-      setTableData(packageInfo || []);
+      setTableData(packageInfo?.items || []);
       setPagination((prev: Pagination) => ({
         ...prev,
-        total: packageInfo.length,
+        total: packageInfo?.count || 0,
         current: 1,
       }));
     } finally {
@@ -67,20 +74,17 @@ const Collectordetail = () => {
       });
   };
 
-  const handleTableChange = (pageConfig: any) => {
-    console.log(pagination);
-    setPagination((prev: Pagination) => ({
-      total: prev.total,
-      ...pageConfig,
-    }));
+  const handleTableChange = (pagination: any) => {
+    setPagination(pagination);
   };
 
   return (
     <div className="w-full h-[calc(100vh-230px)]">
       <CustomTable
-        scroll={{ y: 'calc(100vh - 280px)', x: 'calc(100vw - 320px)' }}
+        scroll={{ y: 'calc(100vh - 336px)', x: 'calc(100vw - 320px)' }}
         columns={columns}
         dataSource={tableData}
+        pagination={pagination}
         loading={tableLoading}
         rowKey="id"
         onChange={handleTableChange}

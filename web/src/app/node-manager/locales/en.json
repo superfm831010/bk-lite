@@ -122,7 +122,7 @@
       },
       "Configuration": {
         "system": "Operating System",
-        "linxu": "Linux",
+        "linux": "Linux",
         "windows": "Windows",
         "collector": "Collector",
         "count": "Node Count",
@@ -168,7 +168,8 @@
       "deleteInfo": "Are you sure to delete this Collector?",
       "single": "Single choice Windows/Linux",
       "executeFilePath": "Execute file path",
-      "executeParameters": "Execution parameters"
+      "executeParameters": "Execution parameters",
+      "clickUpload": "Click to upload"
     }
   }
 }

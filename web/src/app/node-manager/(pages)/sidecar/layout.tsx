@@ -16,6 +16,7 @@ const SidecarLayout = ({ children }: { children: React.ReactNode }) => {
     name: '',
     system: [],
     introduction: '',
+    icon: '',
   });
 
   useEffect(() => {
@@ -25,6 +26,7 @@ const SidecarLayout = ({ children }: { children: React.ReactNode }) => {
       name: searchParams.get('name') || '',
       system: [searchParams.get('system') || ''],
       introduction: searchParams.get('introduction') || '',
+      icon: searchParams.get('icon') || 'caijiqizongshu'
     };
     setDetaildata(info);
   }, [isDetail]);
@@ -46,7 +48,7 @@ const SidecarLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="h-[58px] flex flex-col justify-items-center">
         <div className="flex justify-center mb-[8px]">
           <Icon
-            type="caijiqizongshu"
+            type={detaildata.icon}
             style={{ height: '34px', width: '34px' }}
           ></Icon>
         </div>

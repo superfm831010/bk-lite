@@ -81,7 +81,12 @@ const useApiCollector = () => {
   };
 
   // 获取包列表
-  const getPackageList = async (params: { object?: string; os?: string }) => {
+  const getPackageList = async (params: { 
+    object?: string; 
+    os?: string;
+    page?: number;
+    page_size?: number;
+  }) => {
     return await get('/node_mgmt/api/package', { params });
   };
 

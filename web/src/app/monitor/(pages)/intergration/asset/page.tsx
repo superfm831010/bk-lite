@@ -39,7 +39,7 @@ import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EditConfig from './updateConfig';
 import {
-  OBJECT_INSTANCE_TYPE_MAP,
+  OBJECT_CONFIG_MAP,
   NODE_STATUS_MAP,
 } from '@/app/monitor/constants/monitor';
 const { confirm } = Modal;
@@ -119,10 +119,7 @@ const Asset = () => {
               okButtonProps={{ loading: confirmLoading }}
               onConfirm={() => deleteInstConfirm(record)}
             >
-              <Button
-                type="link"
-                className="ml-[10px]"
-              >
+              <Button type="link" className="ml-[10px]">
                 {t('common.remove')}
               </Button>
             </Popconfirm>
@@ -287,7 +284,10 @@ const Asset = () => {
     configRef.current?.showModal({
       title: t('monitor.intergrations.updateConfigration'),
       type: 'edit',
-      form: row,
+      form: {
+        ...row,
+        objName: objects.find((item) => item.id === objectId)?.name || '',
+      },
     });
   };
 
@@ -335,7 +335,7 @@ const Asset = () => {
       setRuleLoading(type !== 'timer');
       const params = {
         monitor_object_id: objectId,
-      }
+      };
       const data = await getInstanceGroupRule(params);
       setRuleList(data || []);
     } finally {
@@ -349,7 +349,7 @@ const Asset = () => {
       const params = {
         name: '',
         add_instance_count: true,
-      }
+      };
       const data = await getMonitorObject(params);
       setObjects(data);
       const _treeData = getTreeData(deepClone(data));
@@ -417,9 +417,9 @@ const Asset = () => {
       getObjects();
       getAssetInsts(objectId);
     } finally {
-      setConfirmLoading(false)
+      setConfirmLoading(false);
     }
-  }
+  };
 
   const clearText = () => {
     setSearchText('');
@@ -438,9 +438,9 @@ const Asset = () => {
         const data = {
           instance_id: row.instance_id,
           instance_type:
-            OBJECT_INSTANCE_TYPE_MAP[
+            OBJECT_CONFIG_MAP[
               objects.find((item) => item.id === objectId)?.name || ''
-            ],
+            ]?.instance_type,
         };
         const res = await getInstanceChildConfig(data);
         _dataSource[targetIndex].dataSource = res.map(

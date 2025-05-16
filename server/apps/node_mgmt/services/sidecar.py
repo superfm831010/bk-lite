@@ -234,7 +234,7 @@ class Sidecar:
         }
         template_str = template_str.replace('node.', 'node__')
         template = Template(template_str)
-        return template.safe_substitute(variables)
+        return template.safe_substitute(_variables)
 
     @staticmethod
     def get_sidecar_install_guide(ip, operating_system, group):

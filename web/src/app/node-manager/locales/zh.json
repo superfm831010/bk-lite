@@ -170,7 +170,8 @@
       "editInfo": "您确定要修改此采集器吗？",
       "single": "单选Windows/Linux",
       "executeFilePath": "执行文件路径",
-      "executeParameters": "执行参数"
+      "executeParameters": "执行参数",
+      "clickUpload": "点击上传"
     }
   }
 }

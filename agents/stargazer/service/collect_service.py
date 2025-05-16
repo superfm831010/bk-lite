@@ -9,6 +9,8 @@
 import time
 import traceback
 import importlib
+from asyncio import iscoroutinefunction
+
 from sanic.log import logger
 
 
@@ -22,6 +24,7 @@ class CollectService(object):
             "snmp_topo": "SnmpTopoClient",
             "mysql_info": "MysqlInfo",
             "aliyun_info": "CwAliyun",
+            "host_info": "HostInfo",
         }
 
     def import_plugin(self, plugin_name):
@@ -38,12 +41,24 @@ class CollectService(object):
             logger.error(f"Error importing plugin {plugin_name}: {e}")
             raise
 
-    def collect(self):
+    async def execute(self, func, *args, **kwargs):
+        """
+        通用执行方法，兼容同步和异步方法。
+        """
+        if iscoroutinefunction(func):
+            # 如果是异步方法，使用 await 调用
+            return await func(*args, **kwargs)
+        else:
+            # 如果是同步方法，直接调用
+            return func(*args, **kwargs)
+
+    async def collect(self):
         try:
             # 动态加载插件
             plugin_class = self.import_plugin(self.plugin_name)
             plugin_instance = plugin_class(self.params)
-            result = plugin_instance.list_all_resources()
+            # 调用 list_all_resources，兼容同步和异步
+            result = await self.execute(plugin_instance.list_all_resources)
             return result
         except Exception as e:
             logger.info(f"Error loading plugin {self.plugin_name}: {traceback.format_exc()}")

@@ -130,13 +130,13 @@ const CloudRegion = () => {
             <Input />
           </Form.Item>
           <Form.Item name={['cloudRegion', 'name']} label={t('common.name')}>
-            <Input disabled />
+            <Input disabled placeholder={t('common.inputMsg')} />
           </Form.Item>
           <Form.Item
             name={['cloudRegion', 'introduction']}
             label={t('node-manager.cloudregion.editform.Introduction')}
           >
-            <Input.TextArea rows={5} />
+            <Input.TextArea rows={5} placeholder={t('common.inputMsg')} />
           </Form.Item>
         </Form>
       </OperateModal>

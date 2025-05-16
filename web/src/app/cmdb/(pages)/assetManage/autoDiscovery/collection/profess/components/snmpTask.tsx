@@ -184,7 +184,7 @@ const SNMPTask: React.FC<SNMPTaskFormProps> = ({
               </Form.Item>
 
               <Form.Item
-                label={t('Collection.SNMPTask.port')}
+                label={t('Collection.port')}
                 name="snmp_port"
                 rules={rules.port}
               >

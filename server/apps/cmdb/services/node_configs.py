@@ -8,7 +8,7 @@ from abc import abstractmethod, ABCMeta
 
 
 class BaseNodeParams(metaclass=ABCMeta):
-    PLUGIN_MAP = {}
+    PLUGIN_MAP = {}  # 插件名称映射
     _registry = {}  # 自动收集支持的 model_id 对应的子类
     BASE_INTERVAL_MAP = {"vmware_vc": 300, "network": 300, "network_topo": 300, "mysql_info": 300,
                          "aliyun_account": 300}  # 默认的采集间隔时间
@@ -20,6 +20,12 @@ class BaseNodeParams(metaclass=ABCMeta):
             BaseNodeParams._registry[model_id] = cls
             if model_id == "network":
                 BaseNodeParams._registry["network_topo"] = cls
+            plugin_name = getattr(cls, "plugin_name", None)
+            if plugin_name:
+                BaseNodeParams.PLUGIN_MAP.update({model_id: plugin_name})
+        interval_map = getattr(cls, "interval_map", None)
+        if interval_map:
+            BaseNodeParams.BASE_INTERVAL_MAP.update(interval_map)
 
     def __init__(self, instance):
         self.instance = instance
@@ -82,7 +88,7 @@ class BaseNodeParams(metaclass=ABCMeta):
             raise KeyError(f"未在 PLUGIN_MAP 中找到对应 {self.model_id} 的插件配置")
 
     @abstractmethod
-    def set_credential(self):
+    def set_credential(self, *args, **kwargs):
         """
         生成凭据
         """
@@ -93,9 +99,9 @@ class BaseNodeParams(metaclass=ABCMeta):
         格式化服务器的路径
         """
         _key, _value = self.get_host_ip_addr(host)
-        params = self.set_credential()
+        params = self.set_credential(host=host)
         params.update({"plugin_name": self.model_plugin_name, _key: _value})
-        _params = {f"_cmdb_{k}": v for k, v in params.items()}
+        _params = {f"_cmdb_{k}": str(v) for k, v in params.items()}
         json_str = json.dumps(_params)
         result = json_str.replace(":", "=")
         return result
@@ -163,7 +169,7 @@ class VmwareNodeParams(BaseNodeParams):
         self.PLUGIN_MAP.update({self.model_id: "vmware_info"})
         self.host_field = "hostname"
 
-    def set_credential(self):
+    def set_credential(self, *args, **kwargs):
         """
         生成 vmware vc 的凭据
         """
@@ -190,7 +196,7 @@ class NetworkNodeParams(BaseNodeParams):
         # 当 instance.model_id 为 "vmware_vc" 时，PLUGIN_MAP 配置为 "vmware_info"
         self.PLUGIN_MAP.update({self.model_id: "snmp_facts"})
 
-    def set_credential(self):
+    def set_credential(self, *args, **kwargs):
         """
         生成 network 的凭据
         # 示例参数：
@@ -244,7 +250,7 @@ class MysqlNodeParams(BaseNodeParams):
         # 当 instance.model_id 为 "vmware_vc" 时，PLUGIN_MAP 配置为 "vmware_info"
         self.PLUGIN_MAP.update({self.model_id: "mysql_info"})
 
-    def set_credential(self):
+    def set_credential(self, *args, **kwargs):
         credential_data = {
             "port": self.credential.get("port", 3306),
             "user": self.credential.get("user", ""),
@@ -269,13 +275,45 @@ class AliyunNodeParams(BaseNodeParams):
         super().__init__(*args, **kwargs)
         self.PLUGIN_MAP.update({self.model_id: "aliyun_info"})
 
-    def set_credential(self):
+    def set_credential(self, *args, **kwargs):
         regions_id = self.credential["regions"]["resource_id"]
         credential_data = {
             "access_key": self.credential.get("accessKey", ""),
             "access_secret": self.credential.get("accessSecret", ""),
             "region_id": regions_id
         }
+        return credential_data
+
+    def get_instance_id(self, instance):
+        """
+        获取实例 id
+        """
+        if self.has_set_instances:
+            return f"{self.instance.id}_{instance['inst_name']}"
+        else:
+            return f"{self.instance.id}_{instance}"
+
+
+class HostNodeParams(BaseNodeParams):
+    supported_model_id = "host"  # 模型id
+    plugin_name = "host_info"  # 插件名称
+    interval_map = {plugin_name: 300}  # 插件的默认采集间隔时间
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def set_credential(self, *args, **kwargs):
+        host = kwargs["host"]
+        node_ip = self.instance.access_point[0]["ip"]
+        credential_data = {
+            "node_id": self.instance.access_point[0]["id"],
+            "execute_timeout": self.instance.timeout,
+        }
+        if host["ip_addr"] != node_ip:
+            credential_data["username"] = self.credential.get("username", ""),
+            credential_data["password"] = self.credential.get("password", ""),
+            credential_data["port"] = self.credential.get("port", 22),
+
         return credential_data
 
     def get_instance_id(self, instance):

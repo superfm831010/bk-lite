@@ -1,0 +1,8 @@
+[[inputs.mongodb]]
+    servers = ["mongodb://{{ host }}:{{ port }}/?connect=direct"]
+    interval = "{{ interval }}s"
+    [inputs.mongodb.tags]
+        instance_id = "{{ instance_id }}"
+        instance_type = "{{ instance_type }}"
+        collect_type = "database"
+        config_type = "mongodb"

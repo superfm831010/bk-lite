@@ -4,6 +4,7 @@ type ExecuteRequest struct {
 	Command        string `json:"command"`
 	ExecuteTimeout int    `json:"execute_timeout"`
 	Host           string `json:"host"`
+	Port           uint   `json:"port"`
 	User           string `json:"user"`
 	Password       string `json:"password"`
 }
@@ -20,6 +21,7 @@ type DownloadFileRequest struct {
 	FileKey        string `json:"file_key"`
 	TargetPath     string `json:"target_path"`
 	Host           string `json:"host"`
+	Port           uint   `json:"port"`
 	User           string `json:"user"`
 	Password       string `json:"password"`
 	ExecuteTimeout int    `json:"execute_timeout"`
@@ -28,6 +30,7 @@ type DownloadFileRequest struct {
 type UploadFileRequest struct {
 	User           string `json:"user"`            // SSH 用户名
 	Host           string `json:"host"`            // 目标主机地址
+	Port           uint   `json:"port"`            // SSH 端口
 	Password       string `json:"password"`        // SSH 密码
 	SourcePath     string `json:"source_path"`     // 本地文件路径
 	TargetPath     string `json:"target_path"`     // 远程目标路径

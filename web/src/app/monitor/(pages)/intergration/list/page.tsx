@@ -7,13 +7,13 @@ import intergrationStyle from './index.module.scss';
 import { SettingOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import Icon from '@/components/icon';
-import { deepClone } from '@/app/monitor/utils/common';
+import {
+  deepClone,
+  findCollectTypeByPluginName,
+} from '@/app/monitor/utils/common';
 import { useRouter } from 'next/navigation';
 import { ObectItem, TreeSortData } from '@/app/monitor/types/monitor';
-import {
-  OBJECT_ICON_MAP,
-  COLLECT_TYPE_MAP,
-} from '@/app/monitor/constants/monitor';
+import { OBJECT_CONFIG_MAP } from '@/app/monitor/constants/monitor';
 import { ModalRef, TableDataItem, TreeItem } from '@/app/monitor/types';
 import ImportModal from './importModal';
 import axios from 'axios';
@@ -24,7 +24,8 @@ import Permission from '@/components/permission';
 
 const Intergration = () => {
   const { isLoading } = useApiClient();
-  const { updateMonitorObject, getMonitorObject, getMonitorPlugin } = useMonitorApi();
+  const { updateMonitorObject, getMonitorObject, getMonitorPlugin } =
+    useMonitorApi();
   const { t } = useTranslation();
   const router = useRouter();
   const importRef = useRef<ModalRef>(null);
@@ -100,36 +101,33 @@ const Intergration = () => {
   };
 
   const getTreeData = (data: ObectItem[]): TreeItem[] => {
-    const groupedData = data.reduce(
-      (acc, item) => {
-        if (!acc[item.type]) {
-          acc[item.type] = {
-            title: item.display_type || '--',
-            key: item.type,
-            children: [],
-          };
-        }
-        if (
-          ![
-            'Pod',
-            'Node',
-            'Docker Container',
-            'ESXI',
-            'VM',
-            'DataStorage',
-          ].includes(item.name)
-        ) {
-          acc[item.type].children.push({
-            title: item.display_name || '--',
-            label: item.name || '--',
-            key: item.id,
-            children: [],
-          });
-        }
-        return acc;
-      },
-      {} as Record<string, TreeItem>
-    );
+    const groupedData = data.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = {
+          title: item.display_type || '--',
+          key: item.type,
+          children: [],
+        };
+      }
+      if (
+        ![
+          'Pod',
+          'Node',
+          'Docker Container',
+          'ESXI',
+          'VM',
+          'DataStorage',
+        ].includes(item.name)
+      ) {
+        acc[item.type].children.push({
+          title: item.display_name || '--',
+          label: item.name || '--',
+          key: item.id,
+          children: [],
+        });
+      }
+      return acc;
+    }, {} as Record<string, TreeItem>);
     return Object.values(groupedData);
   };
 
@@ -263,15 +261,17 @@ const Intergration = () => {
                 onClick={() => onAppClick(app)}
               >
                 <div
-                  className={`bg-[var(--color-bg-1)] shadow-sm hover:shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-4 relative cursor-pointer group ${selectedApp?.id === app.id
-                    ? 'border-2 border-blue-300'
-                    : 'border'
+                  className={`bg-[var(--color-bg-1)] shadow-sm hover:shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-4 relative cursor-pointer group ${
+                    selectedApp?.id === app.id
+                      ? 'border-2 border-blue-300'
+                      : 'border'
                   }`}
                 >
                   <div className="flex items-center space-x-4 my-2">
                     <Icon
                       type={
-                        OBJECT_ICON_MAP[getObjectInfo().name || ''] || 'Host'
+                        OBJECT_CONFIG_MAP[getObjectInfo().name || '']?.icon ||
+                        'Host'
                       }
                       className="text-[48px] min-w-[48px]"
                     />
@@ -287,7 +287,7 @@ const Intergration = () => {
                         {app.display_name || '--'}
                       </h2>
                       <Tag className="mt-[4px]">
-                        {COLLECT_TYPE_MAP[app.name] || '--'}
+                        {findCollectTypeByPluginName(app.name)}
                       </Tag>
                     </div>
                   </div>

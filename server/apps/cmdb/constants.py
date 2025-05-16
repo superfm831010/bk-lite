@@ -147,6 +147,10 @@ class CollectPluginTypes(object):
     K8S = "k8s"
     CLOUD = "cloud"
     PROTOCOL = "protocol"
+    HOST = "host"
+    MIDDLEWARE = "middleware"
+    IP = "ip"
+    OTHER = "other"
 
     CHOICE = (
         (VM, "VM采集"),
@@ -154,6 +158,10 @@ class CollectPluginTypes(object):
         (K8S, "K8S采集"),
         (CLOUD, "云采集"),
         (PROTOCOL, "协议采集"),
+        (HOST, "主机采集"),
+        (MIDDLEWARE, "中间件采集"),
+        (IP, "IP采集"),
+        (OTHER, "其他采集"),
     )
 
 
@@ -235,7 +243,14 @@ COLLECT_OBJ_TREE = [
              "type": CollectDriverTypes.PROTOCOL}
         ],
     },
-
+    {
+        "id": "host_manage",
+        "name": "主机管理",
+        "children": [
+            {"id": "host", "model_id": "host", "name": "主机", "task_type": CollectPluginTypes.HOST,
+             "type": CollectDriverTypes.JOB}
+        ],
+    },
 
 ]
 

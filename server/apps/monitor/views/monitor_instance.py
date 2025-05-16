@@ -5,11 +5,11 @@ from rest_framework.decorators import action
 
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.filters.monitor_object import MonitorInstanceGroupingRuleFilter
-from apps.monitor.models import MonitorInstanceGroupingRule, MonitorInstance, MonitorObject
+from apps.monitor.models import MonitorInstanceGroupingRule, MonitorInstance, MonitorObject, CollectConfig
 from apps.monitor.serializers.monitor_object import MonitorInstanceGroupingRuleSerializer
 from apps.monitor.services.monitor_instance import InstanceSearch
 from apps.monitor.services.monitor_object import MonitorObjectService
-from apps.monitor.utils.node_mgmt_api import NodeUtils
+from apps.rpc.node_mgmt import NodeMgmt
 from config.drf.pagination import CustomPageNumberPagination
 
 
@@ -152,7 +152,19 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
         instance_ids = request.data.get("instance_ids", [])
         MonitorInstance.objects.filter(id__in=instance_ids).update(is_deleted=True)
         if request.data.get("clean_child_config"):
-            NodeUtils.delete_instance_child_config(instance_ids)
+            config_objs = CollectConfig.objects.filter(monitor_instance_id__in=instance_ids)
+            child_configs, configs = [], []
+            for config in config_objs:
+                if config.is_child:
+                    child_configs.append(config.id)
+                else:
+                    configs.append(config.id)
+            # 删除子配置
+            NodeMgmt().delete_child_configs(child_configs)
+            # 删除配置
+            NodeMgmt().delete_configs(configs)
+            # 删除配置对象
+            config_objs.delete()
         return WebUtils.response_success()
 
 

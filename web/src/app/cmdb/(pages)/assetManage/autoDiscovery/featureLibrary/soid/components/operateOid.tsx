@@ -105,7 +105,7 @@ const OperateOid: React.FC<OperateOidProps> = ({
         );
         onOk();
       } catch {
-        message.error('操作失败');
+        console.error('操作失败');
       }
     } catch {
     } finally {

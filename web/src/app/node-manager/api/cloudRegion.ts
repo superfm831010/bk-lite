@@ -122,6 +122,8 @@ const useApiCloudRegion = () => {
   const getChildConfig = async (params: {
     collector_config_id: string;
     search?: string;
+    page?:number;
+    page_size?: number;
   }) => {
     return await get('/node_mgmt/api/child_config', { params });
   };
@@ -199,6 +201,8 @@ const useApiCloudRegion = () => {
   const getVariableList = async (params: {
     cloud_region_id: number;
     search?: string;
+    page?: number;
+    page_size?: number;
   }) => {
     return await get('/node_mgmt/api/sidecar_env/', { params });
   };

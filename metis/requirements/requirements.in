@@ -47,3 +47,13 @@ scikit-learn==1.6.1
 json-repair==0.39.1
 neo4j-graphrag==1.7.0
 jieba==0.42.1
+pyod==2.0.5
+xgboost==3.0.0
+suod==0.1.4
+
+supabase==2.15.1
+
+langchain-weaviate==0.0.4
+
+ansible==11.5.0
+ansible-runner==2.4.1

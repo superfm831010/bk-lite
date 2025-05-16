@@ -134,8 +134,9 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     const dropdownItems = {
       items: NETWORK_DEVICE_OPTIONS,
     };
-    
-    const isCommonSelectInstNode = ['databases', 'cloud'].includes(nodeId as string);
+
+    const isHost = nodeId === 'host_manage';
+    const isCommonSelectInstNode = ['databases', 'cloud', 'host_manage'].includes(nodeId as string);
 
     const instColumns = [
       {
@@ -475,8 +476,9 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             )}
 
             {/* ip选择 */}
-            {nodeId && ['network_topo', 'network', 'databases'].includes(nodeId) && (
+            {nodeId && ['network_topo', 'network', 'databases', 'host_manage'].includes(nodeId) && (
               <>
+                { !isHost && 
                 <Radio.Group
                   value={collectionType}
                   className="ml-8 mb-6"
@@ -485,8 +487,9 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                   <Radio value="ip">{t('Collection.chooseIp')}</Radio>
                   <Radio value="asset">{t('Collection.chooseAsset')}</Radio>
                 </Radio.Group>
+                }
 
-                {collectionType === 'ip' ? (
+                {collectionType === 'ip' && !isHost ? (
                   <>
                     {/* IP范围 */}
                     <Form.Item
@@ -571,9 +574,8 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                 )}
               </>
             )}
-
             {/* 接入点 */}
-            {nodeId !== 'k8s' && (
+            { nodeId !== 'k8s'  && (
               <Form.Item
                 label={t('Collection.accessPoint')}
                 name="accessPointId"

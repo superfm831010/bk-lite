@@ -24,7 +24,8 @@
     text-overflow: ellipsis;
 }
 
-.ant-modal-confirm-btns {
+.ant-modal-confirm-btns,
+.ant-popconfirm-buttons {
     display: flex;
     flex-direction: row-reverse;
 }

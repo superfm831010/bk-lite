@@ -7,6 +7,7 @@ import {
   SubConfigHookParams,
 } from '@/app/node-manager/types/cloudregion';
 import { TableDataItem } from '@/app/node-manager/types/index';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
 export const useApplyColumns = ({
   handleApply,
@@ -91,8 +92,7 @@ export const useConfigColumns = ({
     {
       title: t('common.name'),
       dataIndex: 'name',
-      fixed: 'left',
-      width: 300,
+      width: 150
     },
     {
       title: t('node-manager.cloudregion.node.node'),
@@ -107,9 +107,12 @@ export const useConfigColumns = ({
                 className="text-blue-500 hover:text-blue-700"
                 onClick={() => nodeClick()}
               >
-                {(record.nodes || [])
-                  .map((item: TableDataItem) => item.ip)
-                  .join(',')}
+                <EllipsisWithTooltip
+                  text={(record.nodes || [])
+                    .map((item: TableDataItem) => item.ip)
+                    .join(',')}
+                  className="w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-left"
+                />
               </Button>
             ) : (
               '--'
@@ -140,7 +143,7 @@ export const useConfigColumns = ({
       dataIndex: 'key',
       fixed: 'right',
       align: 'center',
-      width: 180,
+      width: 240,
       render: (key, item) => (
         <div className="flex justify-center">
           <PermissionWrapper requiredPermissions={['Apply']}>

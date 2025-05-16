@@ -31,11 +31,9 @@ class ToolsNodes(BasicNode):
         # 初始化LangChain工具
         for server in request.tools_servers:
             if server.url.startswith("langchain:") is True:
-                langchain_tools = ToolsLoader.load_tools(server.url)
+                langchain_tools = ToolsLoader.load_tools(server)
                 for tool in langchain_tools:
                     self.tools.append(tool)
-
-
 
     async def build_tools_node(self) -> ToolNode:
         if self.tools:
