@@ -8,9 +8,8 @@ RUN apt-get update && \
 WORKDIR /apps
 
 # ADD ./pyproject.toml ./pyproject.toml
-RUN pip install pip-tools
-RUN pip-compile -v ./requirements/requirements.in ./requirements/requirements-dev.in --output-file ./requirements.txt 
-RUN pip-sync -v
+RUN pip install -r ./requirements/requirements.in 
+RUN pip install -r ./requirements/requirements-dev.in
 
 ADD ./actions ./actions
 ADD ./channels ./channels
