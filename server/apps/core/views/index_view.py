@@ -74,7 +74,7 @@ def get_my_client(request):
 def get_client_detail(request):
     client = SystemMgmt()
     return_data = client.get_client_detail(
-        client_id=request.GET["id"],
+        client_id=request.GET["name"],
     )
     return JsonResponse(return_data)
 
