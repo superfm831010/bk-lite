@@ -124,6 +124,7 @@ async def invoke_react_agent(request, body: ReActAgentRequest):
 
     logger.debug(f"执行ReActAgentGraph,用户的问题:[{body.user_message}]")
     result = await graph.execute(body)
+
     response_content = result.model_dump()
     logger.info(
         f"执行ReActAgentGraph成功，用户的问题:[{body.user_message}],结果:[{response_content}]")

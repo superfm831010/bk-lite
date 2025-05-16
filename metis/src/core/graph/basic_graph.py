@@ -50,7 +50,7 @@ class BasicGraph(ABC):
 
         return 'user_message_node'
 
-    def invoke(self, graph, request: BasicLLMReuqest, stream_mode='values'):
+    async def invoke(self, graph, request: BasicLLMReuqest, stream_mode='values'):
         config = {
             "graph_request": request,
             "recursion_limit": 10,
@@ -71,7 +71,7 @@ class BasicGraph(ABC):
                 graph.checkpoint = checkpoint
 
         if stream_mode == 'values':
-            result = graph.invoke(request, config)
+            result = await graph.ainvoke(request, config)
             return result
 
         if stream_mode == 'messages':
@@ -89,7 +89,7 @@ class BasicGraph(ABC):
 
     async def execute(self, request: BasicLLMReuqest) -> BasicLLMResponse:
         graph = await self.compile_graph(request)
-        result = self.invoke(graph, request)
+        result = await self.invoke(graph, request)
 
         prompt_token = 0
         completion_token = 0
