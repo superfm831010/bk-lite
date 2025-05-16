@@ -50,11 +50,12 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         """
         # 检查计划是否为空
         if not state.get("plan"):
-            logger.info("没有可执行的计划步骤，需要重新规划")
+            self.log(config, "没有可执行的计划步骤，需要重新规划")
             return {"current_step_index": state.get("current_step_index", 0) + 1}
 
         plan = state["plan"]
         plan_str = "\n".join(f"{i + 1}. {step}" for i, step in enumerate(plan))
+
         task = plan[0]
         current_step_index = state.get("current_step_index", 0)
         total_steps = len(plan) + len(state.get("past_steps", []))
@@ -70,8 +71,8 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         past_steps_info = ""
         if state.get("past_steps"):
             past_steps_info = "\n\n已完成的步骤:\n" + "\n".join([
-                f"步骤 {i+1}: {step[0]}\n结果: {step[1][:200]}..." if len(
-                    step[1]) > 200 else f"步骤 {i+1}: {step[0]}\n结果: {step[1]}"
+                f"步骤 {i + 1}: {step[0]}\n结果: {step[1][:200]}..." if len(
+                    step[1]) > 200 else f"步骤 {i + 1}: {step[0]}\n结果: {step[1]}"
                 for i, step in enumerate(state["past_steps"])
             ])
 
@@ -80,7 +81,7 @@ class PlanAndExecuteAgentNode(ToolsNodes):
     
 如果这是最后一个步骤，请确保提供完整的最终答案。"""
 
-        logger.info(f"执行计划步骤 {current_step_index + 1}/{total_steps}: {task}")
+        self.log(config, f"执行计划步骤 {current_step_index + 1}/{total_steps}: {task}")
 
         # 创建人类消息
         human_message = HumanMessage(content=task_formatted)
@@ -98,11 +99,11 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         response = None
 
         if is_last_step:
-            logger.info("执行最后一个步骤，检查是否包含最终答案")
+            self.log(config, "执行最后一个步骤，检查是否包含最终答案")
             # 尝试从响应中提取最终答案
             if "最终结果" in ai_response.content or "最终答案" in ai_response.content:
                 response = ai_response.content
-                logger.info(f"检测到最终答案，任务完成")
+                self.log(config, f"检测到最终答案，任务完成")
 
         # 更新状态
         return {
@@ -113,7 +114,7 @@ class PlanAndExecuteAgentNode(ToolsNodes):
             **({"response": response} if response else {})
         }
 
-    def should_end(self, state: PlanAndExecuteAgentState):
+    def should_end(self, state: PlanAndExecuteAgentState, config: RunnableConfig):
         """决定是否应该结束图执行
 
         Args:
@@ -124,7 +125,7 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         """
         # 如果有响应，则结束执行
         if state.get("response"):
-            logger.info(f"执行完成，返回最终响应")
+            self.log(config, f"执行完成，返回最终响应")
             return END
 
         # 如果计划列表为空且已经执行了一些步骤，需要检查最后一步的执行结果
@@ -134,16 +135,16 @@ class PlanAndExecuteAgentNode(ToolsNodes):
 
             # 如果最后一步的结果看起来像是最终答案，就直接使用它作为响应
             if "最终结果" in last_step_result or "最终答案" in last_step_result or "任务完成" in last_step_result:
-                logger.info(f"检测到最后一步似乎已完成任务，提取结果作为最终响应")
+                self.log(config, f"检测到最后一步似乎已完成任务，提取结果作为最终响应")
                 return {
                     "response": last_step_result,
                 }
 
-            logger.info(f"计划执行完毕，进行最终结果整理")
+            self.log(config, f"计划执行完毕，进行最终结果整理")
             return "replan"
 
         # 否则继续执行下一步
-        logger.debug(f"继续执行下一个计划步骤，剩余步骤数: {len(state.get('plan', []))}")
+        self.log(config, f"继续执行下一个计划步骤，剩余步骤数: {len(state.get('plan', []))}")
         return "agent"
 
     def _create_planning_prompt(self, for_replanning: bool = False) -> ChatPromptTemplate:
@@ -199,18 +200,18 @@ class PlanAndExecuteAgentNode(ToolsNodes):
 
         # 检查是否已经有响应
         if state.get("response"):
-            logger.info(f"已有最终响应，无需重新规划")
+            self.log(config, f"已有最终响应，无需重新规划")
             return state
 
         # 格式化过去的步骤
         past_steps_formatted = "\n".join([
-            f"步骤 {i+1}: {step[0]}\n结果: {step[1]}"
+            f"步骤 {i + 1}: {step[0]}\n结果: {step[1]}"
             for i, step in enumerate(state["past_steps"])
         ])
 
         # 格式化原始计划（如果有）
         original_plan_formatted = "\n".join([
-            f"步骤 {i+1}: {step}" for i, step in enumerate(state.get("plan", []))
+            f"步骤 {i + 1}: {step}" for i, step in enumerate(state.get("plan", []))
         ]) if state.get("plan") else "无"
 
         # 检查是否所有步骤已完成
@@ -245,8 +246,8 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         replanner = replanner_prompt | llm.with_structured_output(Act)
 
         # 执行重新规划
-        logger.info(
-            f"执行{'最终结果整理' if all_steps_completed else '重新规划'}，已完成 {len(state['past_steps'])} 个步骤")
+        self.log(config,
+                 f"执行{'最终结果整理' if all_steps_completed else '重新规划'}，已完成 {len(state['past_steps'])} 个步骤")
         output = await replanner.ainvoke({
             "messages": [human_message],
             "original_plan": original_plan_formatted,
@@ -259,7 +260,7 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         )
 
         if isinstance(output.action, Response):
-            logger.info(f"重新规划结果：完成任务，返回最终响应")
+            self.log(config,f"重新规划结果：完成任务，返回最终响应")
             # 生成最终响应
             ai_message = AIMessage(
                 content=f"任务已完成，最终结果：{output.action.response}")
@@ -270,7 +271,7 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         else:
             # 生成新计划
             new_plan = output.action.steps
-            logger.info(f"重新规划结果：新计划包含 {len(new_plan)} 个步骤")
+            self.log(config,f"重新规划结果：新计划包含 {len(new_plan)} 个步骤")
             plan_str = "\n".join([f"- {step}" for step in new_plan])
             ai_message = AIMessage(content=f"已重新规划任务，新计划：\n{plan_str}")
 
@@ -306,13 +307,13 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         planner = planner_prompt | llm.with_structured_output(Plan)
 
         # 执行规划
-        logger.info(f"为任务生成初始计划: {user_message}")
+        self.log(config,f"为任务生成初始计划: {user_message}")
         plan = await planner.ainvoke({"messages": [human_message]})
 
         # 格式化计划
         plan_str = "\n".join([f"- {step}" for step in plan.steps])
-        logger.info(f"生成的初始计划包含 {len(plan.steps)} 个步骤")
-        logger.debug(f"生成的初始计划:\n{plan_str}")
+        self.log(config,f"生成的初始计划包含 {len(plan.steps)} 个步骤")
+        self.log(config,f"生成的初始计划:\n{plan_str}")
 
         # 创建系统消息和AI消息，以便将它们添加到状态
         system_message = SystemMessage(content="系统已为您的请求生成了执行计划")

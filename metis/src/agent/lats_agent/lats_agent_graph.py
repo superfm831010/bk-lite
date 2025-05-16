@@ -1,5 +1,4 @@
-import logging
-from typing import Literal, Union, Any, Dict
+from typing import Literal, Union, Any
 
 from langgraph.constants import END
 from langgraph.graph import StateGraph
@@ -7,39 +6,9 @@ from loguru import logger
 
 from src.agent.lats_agent.lats_agent_node import LatsAgentNode
 from src.agent.lats_agent.lats_agent_state import LatsAgentState
-from src.core.entity.basic_llm_response import BasicLLMResponse
 from src.core.graph.tools_graph import ToolsGraph
-from src.entity.agent.lats_agent_request import LatsAgentRequest
-from src.entity.agent.lats_agent_response import LatsAgentResponse
-
-
-def should_continue(state: LatsAgentState) -> Union[str, Literal["__end__"]]:
-    """决定是否继续执行图中的下一步
-
-    Args:
-        state: 当前状态
-
-    Returns:
-        下一个节点名称或结束标记
-    """
-    root = state["root"]
-
-    # 记录当前执行状态的关键信息
-    logger.debug(f"搜索树高度: {root.height}, 是否解决: {root.is_solved}")
-
-    # 如果找到解决方案，结束搜索
-    if root.is_solved:
-        logger.info("找到解决方案，结束搜索")
-        return END
-
-    # 如果搜索深度超过限制，结束搜索
-    if root.height > LatsAgentNode.MAX_TREE_HEIGHT:
-        logger.info(f"搜索深度达到上限 ({LatsAgentNode.MAX_TREE_HEIGHT})，结束搜索")
-        return END
-
-    # 继续探索
-    return "expand"
-
+from src.entity.agent.lats_agent.lats_agent_request import LatsAgentRequest
+from src.entity.agent.lats_agent.lats_agent_response import LatsAgentResponse
 
 class LatsAgentGraph(ToolsGraph):
     """LatsAgent 图执行器
@@ -81,7 +50,7 @@ class LatsAgentGraph(ToolsGraph):
         for node_name in ["generate_initial_response", "expand"]:
             graph_builder.add_conditional_edges(
                 node_name,
-                should_continue,
+                node_builder.should_continue,
                 ["expand", END]
             )
 
@@ -90,51 +59,3 @@ class LatsAgentGraph(ToolsGraph):
         logger.info("LatsAgent 执行图编译完成")
 
         return graph
-
-    async def stream(self, request: LatsAgentRequest) -> Any:
-        """以流式方式执行 LatsAgent
-
-        Args:
-            request: LatsAgent 请求参数
-
-        Returns:
-            流式执行结果
-        """
-        logger.info(
-            f"开始流式执行 LatsAgent，用户ID: {request.user_id}, 线程ID: {request.thread_id}")
-
-        graph = await self.compile_graph(request)
-        result = await self.invoke(graph, request, stream_mode='messages')
-
-        logger.info("LatsAgent 流式执行完成")
-        return result
-
-    async def execute(self, request: LatsAgentRequest) -> LatsAgentResponse:
-        """执行 LatsAgent 并返回结果
-
-        Args:
-            request: LatsAgent 请求参数
-
-        Returns:
-            执行结果
-        """
-        logger.info(
-            f"开始执行 LatsAgent，用户ID: {request.user_id}, 线程ID: {request.thread_id}")
-
-        graph = await self.compile_graph(request)
-
-        # 使用更高的递归限制以支持复杂计算
-        config = {"recursion_limit": 30}
-        result = await self.invoke(graph, request, config=config)
-
-        # 构造响应
-        llm_response = LatsAgentResponse(
-            message=result.get('response', ""),
-            metadata={
-                "tree_height": result.get("root", {}).height if "root" in result else 0,
-                "is_solved": result.get("root", {}).is_solved if "root" in result else False
-            }
-        )
-
-        logger.info("LatsAgent 执行完成")
-        return llm_response

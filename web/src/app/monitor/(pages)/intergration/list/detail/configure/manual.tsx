@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Form, Button, message, InputNumber, Select } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { deepClone } from '@/app/monitor/utils/common';
 import {
-  TIMEOUT_UNITS,
-  OBJECT_CONFIG_MAP,
-} from '@/app/monitor/constants/monitor';
+  deepClone,
+  getConfigByPluginName,
+  getConfigByObjectName,
+} from '@/app/monitor/utils/common';
+import { TIMEOUT_UNITS } from '@/app/monitor/constants/monitor';
 import { useSearchParams } from 'next/navigation';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
@@ -39,16 +40,16 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   const [configMsg, setConfigMsg] = useState<string>('');
 
   const collectType = useMemo(() => {
-    return OBJECT_CONFIG_MAP[objectName]?.plugins?.[pluginName]?.collect_type;
-  }, [OBJECT_CONFIG_MAP]);
+    return getConfigByPluginName(pluginName, 'collect_type');
+  }, [pluginName]);
 
   const instanceType = useMemo(() => {
-    return OBJECT_CONFIG_MAP[objectName]?.instance_type;
-  }, [OBJECT_CONFIG_MAP]);
+    return getConfigByObjectName(objectName, 'instance_type');
+  }, [objectName]);
 
   const configTypes = useMemo(() => {
-    return OBJECT_CONFIG_MAP[objectName]?.plugins?.[pluginName]?.config_type;
-  }, [OBJECT_CONFIG_MAP]);
+    return getConfigByPluginName(pluginName, 'config_type');
+  }, [pluginName]);
 
   const handleEditAuthPassword = () => {
     if (authPasswordDisabled) {
@@ -197,7 +198,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
           return (pre += _configMsg[cur]);
         }, '');
       }
-      setConfigMsg(replaceTemplate(_configMsg as string, params));
+      setConfigMsg(replaceTemplate(_configMsg || '', params));
       message.success(t('common.successfullyAdded'));
     } finally {
       setConfirmLoading(false);
@@ -212,7 +213,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       // 使用正则表达式来匹配模板字符串中的 ${key} 或 $key
       const regex = new RegExp(`\\$${key}`, 'g');
       // 替换匹配到的内容为对象中的值
-      return acc.replace(regex, data[key].toString());
+      return acc.replace(regex, (data[key] || 'null').toString());
     }, template);
   };
 

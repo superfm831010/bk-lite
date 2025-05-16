@@ -69,7 +69,7 @@ COLLECTORS = [
     },
     {
         "id": "jmx_tomcat_linux",
-        "name": "JMX-Tomcat",
+        "name": "Tomcat-JMX",
         "controller_default_run": False,
         "icon": "",
         "node_operating_system": "linux",
@@ -82,7 +82,7 @@ COLLECTORS = [
     },
     {
         "id": "jmx_jboss_linux",
-        "name": "JMX-JBoss",
+        "name": "JBoss-JMX",
         "controller_default_run": False,
         "icon": "",
         "node_operating_system": "linux",
@@ -95,7 +95,7 @@ COLLECTORS = [
     },
     {
         "id": "jmx_jetty_linux",
-        "name": "JMX-Jetty",
+        "name": "Jetty-JMX",
         "controller_default_run": False,
         "icon": "",
         "node_operating_system": "linux",
@@ -108,7 +108,7 @@ COLLECTORS = [
     },
     {
         "id": "jmx_activemq_linux",
-        "name": "JMX-ActiveMQ",
+        "name": "ActiveMQ-JMX",
         "controller_default_run": False,
         "icon": "",
         "node_operating_system": "linux",
@@ -121,7 +121,7 @@ COLLECTORS = [
     },
     {
         "id": "jmx_weblogic_linux",
-        "name": "JMX-WebLogic",
+        "name": "WebLogic-JMX",
         "controller_default_run": False,
         "icon": "",
         "node_operating_system": "linux",
@@ -134,7 +134,7 @@ COLLECTORS = [
     },
     {
         "id": "jmx_tongweb6_linux",
-        "name": "JMX-TongWeb6",
+        "name": "TongWeb6-JMX",
         "controller_default_run": False,
         "icon": "",
         "node_operating_system": "linux",
@@ -147,7 +147,7 @@ COLLECTORS = [
     },
     {
         "id": "jmx_tongweb7_linux",
-        "name": "JMX-TongWeb7",
+        "name": "TongWeb7-JMX",
         "controller_default_run": False,
         "icon": "",
         "node_operating_system": "linux",
