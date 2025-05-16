@@ -8,6 +8,7 @@ RUN apt-get update && \
 WORKDIR /apps
 
 # ADD ./pyproject.toml ./pyproject.toml
+ADD ./requirements ./requirements
 RUN pip install -r ./requirements/requirements.in 
 RUN pip install -r ./requirements/requirements-dev.in
 
