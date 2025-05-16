@@ -2670,6 +2670,21 @@ const INIT_VIEW_MODAL_FORM = {
   title: '',
 };
 
+const STRATEGY_TEMPLATES = [
+  'Host',
+  'Ping',
+  'Website',
+  'Switch',
+  'Router',
+  'Firewall',
+  'Loadbalance',
+  'Detection Device',
+  'Scanning Device',
+  'Bastion Host',
+  'Storage',
+  'Hardware Server',
+];
+
 export {
   UNIT_LIST,
   INDEX_CONFIG,
@@ -2682,6 +2697,7 @@ export {
   NODE_STATUS_MAP,
   INIT_VIEW_MODAL_FORM,
   OBJECT_CONFIG_MAP,
+  STRATEGY_TEMPLATES,
   useMiddleWareFields,
   useInterfaceLabelMap,
   useScheduleList,
