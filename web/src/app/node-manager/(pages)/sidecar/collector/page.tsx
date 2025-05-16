@@ -11,7 +11,7 @@ import type { CardItem } from '@/app/node-manager/types/collector';
 import CollectorModal from '../components/collectorModal';
 import { ModalRef } from '@/app/node-manager/types';
 import PermissionWrapper from '@/components/permission';
-import { useMenuItem } from '@/app/node-manager/constants/collector';
+import { useMenuItem, COLLECTOR_LABEL } from '@/app/node-manager/constants/collector';
 import { Option } from '@/types';
 const { Search } = Input;
 
@@ -43,8 +43,16 @@ const Collector = () => {
     if (!selected?.length) return data;
     const selectedSet = new Set(selected);
     return data.filter((item) =>
-      item.tagList.every((tag: string) => selectedSet.has(tag))
+      item.tagList.some((tag: string) => selectedSet.has(tag))
     );
+  };
+
+  const getCollectorLabelKey = (value: string) => {
+    for (const key in COLLECTOR_LABEL) {
+      if (COLLECTOR_LABEL[key].includes(value)) {
+        return key;
+      }
+    }
   };
 
   const handleResult = (res: any, selected?: string[]) => {
@@ -53,6 +61,8 @@ const Collector = () => {
     const filter = res.filter((item: any) => !item.controller_default_run);
     let tempdata = filter.map((item: any) => {
       const system = item.node_operating_system || item.os;
+      const tagList = [system];
+      if(getCollectorLabelKey(item.name)) tagList.push(getCollectorLabelKey(item.name));
       if (system && !optionSet.has(system)) {
         optionSet.add(system);
         _options.push({ value: system, label: system });
@@ -65,7 +75,7 @@ const Collector = () => {
         execute_parameters: item.execute_parameters,
         description: item.introduction || '--',
         icon: item.icon || 'caijiqizongshu',
-        tagList: [system],
+        tagList,
       };
     });
     tempdata = filterBySelected(tempdata, selected || []);
