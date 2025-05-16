@@ -76,7 +76,7 @@ def startup():
         host="0.0.0.0",
         access_log=True,
         port=int(os.getenv('APP_PORT', 18083)),
-        workers=int(os.getenv('APP_WORKER', 2))
+        workers=int(os.getenv('APP_WORKERS', 2))
     )
 
 
