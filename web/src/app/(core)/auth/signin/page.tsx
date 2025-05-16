@@ -1,6 +1,7 @@
 import { authOptions } from "@/constants/authOptions";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import SigninClient from "./SigninClient";
 
 const signinErrors: Record<string | "default", string> = {
   default: "Unable to sign in.",
@@ -10,29 +11,22 @@ const signinErrors: Record<string | "default", string> = {
   oauthcreateaccount: "Try signing in with a different account.",
   emailcreateaccount: "Try signing in with a different account.",
   callback: "Try signing in with a different account.",
-  oauthaccountnotlinked:
-    "To confirm your identity, sign in with the same account you used originally.",
+  oauthaccountnotlinked: "To confirm your identity, sign in with the same account you used originally.",
   sessionrequired: "Please sign in to access this page.",
-}
+};
 
 interface SignInPageProp {
-  params: object
+  params?: object;
   searchParams: {
-    callbackUrl: string
-    error: string
-  }
+    callbackUrl: string;
+    error: string;
+  };
 }
 
-export default async function Signin({ searchParams: { callbackUrl, error } }: SignInPageProp) {
+export default async function SigninPage({ searchParams }: SignInPageProp) {
   const session = await getServerSession(authOptions);
-  if (session) {
-    redirect(callbackUrl || "/")
+  if (session && session.user && session.user.id) {
+    redirect(searchParams.callbackUrl || "/");
   }
-  return (
-    <div className='flex flex-col space-y-3 justify-center items-center h-screen'>
-      {error && <div>
-        {signinErrors[error.toLowerCase()]}
-      </div>}
-    </div>
-  )
+  return <SigninClient searchParams={searchParams} signinErrors={signinErrors} />;
 }

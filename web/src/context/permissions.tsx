@@ -91,7 +91,7 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
         let allMenuData: MenuItem[] = [];
         if (myClientData && myClientData.length > 0) {
           const menuPromises = myClientData.map(client =>
-            get('/core/api/get_user_menus/', { params: { id: client.id } })
+            get('/core/api/get_user_menus/', { params: { name: client.name } })
           );
           const menuResults = await Promise.all(menuPromises);
           allMenuData = menuResults.flat();

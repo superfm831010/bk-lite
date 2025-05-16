@@ -3,6 +3,7 @@
   "name": "CMDB",
   "url": "/cmdb/assetSearch",
   "description": "Create roles for the cmdb app to manage data permissions, menu permissions, and feature permissions.",
+  "description_cn": "Create roles for the cmdb app to manage data permissions, menu permissions, and feature permissions.",
   "menus": [
     {
       "name": "Search",

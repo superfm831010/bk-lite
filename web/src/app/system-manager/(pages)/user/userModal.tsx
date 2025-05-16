@@ -17,7 +17,7 @@ interface ModalProps {
 interface ModalConfig {
   type: 'add' | 'edit';
   userId?: string;
-  groupKeys?: string[];
+  groupKeys?: number[];
 }
 
 export interface ModalRef {
@@ -34,9 +34,8 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [type, setType] = useState<'add' | 'edit'>('add');
   const [roleTreeData, setRoleTreeData] = useState<TreeDataNode[]>([]);
-  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [roleMaps, setRoleMaps] = useState<{ [key: string]: string }>({});
+  const [selectedGroups, setSelectedGroups] = useState<number[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
   const [groupRules, setGroupRules] = useState<{ [key: string]: number[] }>({});
 
   const { addUser, editUser, getUserDetail, getRoleList } = useUserApi();
@@ -44,21 +43,14 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
   const fetchRoleInfo = async () => {
     try {
       const roleData = await getRoleList({ client_list: clientData });
-      const mapping: { [key: string]: string } = {};
-      roleData.forEach((item: any) => {
-        item.children && item.children.forEach((child: any) => {
-          mapping[String(child.role_id)] = child.role_name;
-        });
-      });
-      setRoleMaps(mapping);
       setRoleTreeData(
         roleData.map((item: any) => ({
-          key: String(item.id),
-          title: item.display_name,
+          key: item.id,
+          title: item.name,
           selectable: false,
           children: item.children.map((child: any) => ({
-            key: String(child.role_id),
-            title: child.display_name,
+            key: child.id,
+            title: child.name,
             selectable: true,
           })),
         }))
@@ -77,15 +69,15 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
         setCurrentUserId(userId);
         formRef.current?.setFieldsValue({
           ...userDetail,
-          roles: userDetail.roles?.map((role: { role_id: string }) => role.role_id) || [],
-          groups: userDetail.groups?.map((group: { id: string }) => group.id) || [],
-          zoneinfo: userDetail.attributes?.zoneinfo ? userDetail.attributes.zoneinfo[0] : undefined,
-          locale: userDetail.attributes?.locale ? userDetail.attributes.locale[0] : undefined,
+          lastName: userDetail?.display_name,
+          zoneinfo: userDetail?.timezone,
+          roles: userDetail.roles?.map((role: { role_id: number }) => role.role_id) || [],
+          groups: userDetail.groups?.map((group: { id: number }) => group.id) || [],
         });
-        setSelectedRoles(userDetail.roles?.map((role: { role_id: string }) => role.role_id) || []);
-        setSelectedGroups(userDetail.groups?.map((group: { id: string }) => group.id) || []);
+        setSelectedRoles(userDetail.roles?.map((role: { role_id: number }) => role.role_id) || []);
+        setSelectedGroups(userDetail.groups?.map((group: { id: number }) => group.id) || []);
 
-        const groupRulesObj = userDetail.groups?.reduce((acc: { [key: string]: number[] }, group: { id: string; rules: { [key: string]: number } }) => {
+        const groupRulesObj = userDetail.groups?.reduce((acc: { [key: string]: number[] }, group: { id: number; rules: { [key: string]: number } }) => {
           acc[group.id] = Object.values(group.rules) || [];
           return acc;
         }, {});
@@ -124,22 +116,11 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
     try {
       setIsSubmitting(true);
       const formData = await formRef.current?.validateFields();
-      const { zoneinfo, locale, ...restData } = formData;
-      const roles: { id: string; name: string }[] = [];
-      roleTreeData.forEach(parent => {
-        if (parent.children) {
-          parent.children.forEach((child: any) => {
-            if (selectedRoles.includes(child.key)) {
-              roles.push({ id: child.key as string, name: roleMaps[child.key] });
-            }
-          });
-        }
-      });
+      const { zoneinfo, ...restData } = formData;
       const payload = {
         ...restData,
-        roles,
         rules: Object.values(groupRules).flat(2),
-        attributes: { zoneinfo: [zoneinfo], locale: [locale] }
+        timezone: zoneinfo, 
       };
       if (type === 'add') {
         await addUser(payload);
@@ -165,15 +146,15 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
   const transformTreeData = (data: any) => {
     return data.map((node: any) => ({
       title: node.title || 'Unknown',
-      value: node.key,
-      key: node.key,
+      value: node.key as number,
+      key: node.key as number,
       children: node.children ? transformTreeData(node.children) : []
     }));
   };
 
   const filteredTreeData = treeData ? transformTreeData(treeData) : [];
 
-  const handleChangeRule = (newKey: string, newRules: number[]) => {
+  const handleChangeRule = (newKey: number, newRules: number[]) => {
     setGroupRules({
       ...groupRules,
       [newKey]: newRules

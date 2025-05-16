@@ -1,4 +1,3 @@
-import datetime
 import json
 
 import requests
@@ -41,7 +40,7 @@ def general_embed_by_document_list(document_list, is_show=False, username=""):
     task_obj = KnowledgeTask.objects.create(
         created_by=username,
         knowledge_base_id=knowledge_base_id,
-        task_name=f"{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}-{username}",
+        task_name=document_list[0].name,
         knowledge_ids=[doc.id for doc in document_list],
         train_progress=0,
     )
@@ -49,6 +48,8 @@ def general_embed_by_document_list(document_list, is_show=False, username=""):
     for index, document in tqdm(enumerate(document_list)):
         invoke_document_to_es(document=document)
         task_obj.train_progress += train_progress
+        if index < len(document_list) - 1:
+            task_obj.name = document_list[index + 1].name
         task_obj.save()
     task_obj.delete()
 
