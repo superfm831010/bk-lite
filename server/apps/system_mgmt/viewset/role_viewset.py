@@ -37,7 +37,7 @@ class RoleViewSet(ViewSetUtils):
             )
         for client_obj in client_list:
             app_role = role_map.get(client_obj["name"], [])
-            return_data.append({"id": client_obj["id"], "name": client_obj["name"], "children": app_role})
+            return_data.append({"id": client_obj["id"] * 886, "name": client_obj["name"], "children": app_role})
         return JsonResponse({"result": True, "data": return_data})
 
     @action(detail=False, methods=["GET"])
