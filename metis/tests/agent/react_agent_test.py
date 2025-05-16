@@ -2,12 +2,11 @@ import os
 from typing import List
 
 import pytest
-from langchain_core.messages import AIMessageChunk
 from loguru import logger
 
-from src.core.entity.tools_server import ToolsServer
-from src.entity.agent.react_agent_request import ReActAgentRequest
 from src.agent.react_agent.react_agent_graph import ReActAgentGraph
+from src.core.entity.tools_server import ToolsServer
+from src.entity.agent.react_agent.react_agent_request import ReActAgentRequest
 
 
 @pytest.mark.asyncio
@@ -30,26 +29,24 @@ async def test_react_agent_with_time_tools():
     )
     graph = ReActAgentGraph()
 
+    logger.info(f"values模式")
+    result = graph.execute(request)
+    logger.info(result)
+
     logger.info(f"messages 模式")
     result = await graph.stream(request)
     await graph.aprint_chunk(result)
     print('\n')
-
-    # logger.info(f"values模式")
-    # result = await graph.execute(request)
-    # logger.info(result)
-    # print('\n')
 
 
 @pytest.mark.asyncio
 async def test_react_agent_with_jenkins_tools():
     tools_servers: List[ToolsServer] = [
         ToolsServer(name="jenkins", url='langchain:jenkins'),
-        # MCPServer(name="time mcp", url="http://127.0.0.1:17000/sse"),
     ]
 
     msgs = [
-        "Jenkins有多少个构建任务,最新一次构建成功的任务是哪个",
+        "Jenkins有多少个构建任务",
     ]
     for m in msgs:
         request = ReActAgentRequest(
@@ -71,49 +68,51 @@ async def test_react_agent_with_jenkins_tools():
         logger.info(result)
 
 
-@pytest.mark.asyncio
-async def test_react_agent_with_ansible_tools():
-    tools_servers: List[ToolsServer] = [
-        ToolsServer(name="ansible_adhoc", url='langchain:ansible', extra_prompt={}),
-    ]
-
-    request = ReActAgentRequest(
-        model="gpt-4o",
-        openai_api_base=os.getenv("OPENAI_BASE_URL"),
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
-        user_message="mysql有几张库",
-        user_id="umr",
-        thread_id="2",
-        tools_servers=tools_servers,
-        extra_config={
-            "module": "mysql_info",
-            "module_args": "login_user=root login_host=127.0.0.1 login_password=123456",
-        }
-    )
-    graph = ReActAgentGraph()
-
-    logger.info(f"messages 模式")
-    result = await graph.stream(request)
-    await graph.aprint_chunk(result)
-    print('\n')
+#
+# @pytest.mark.asyncio
+# async def test_react_agent_with_ansible_tools():
+#     tools_servers: List[ToolsServer] = [
+#         ToolsServer(name="ansible_adhoc", url='langchain:ansible', extra_prompt={}),
+#     ]
+#
+#     request = ReActAgentRequest(
+#         model="gpt-4o",
+#         openai_api_base=os.getenv("OPENAI_BASE_URL"),
+#         openai_api_key=os.getenv("OPENAI_API_KEY"),
+#         user_message="mysql有几张库",
+#         user_id="umr",
+#         thread_id="2",
+#         tools_servers=tools_servers,
+#         extra_config={
+#             "module": "mysql_info",
+#             "module_args": "login_user=root login_host=127.0.0.1 login_password=123456",
+#         }
+#     )
+#     graph = ReActAgentGraph()
+#
+#     logger.info(f"messages 模式")
+#     result = await graph.stream(request)
+#     await graph.aprint_chunk(result)
+#     print('\n')
 
 
 @pytest.mark.asyncio
 async def test_react_agent_with_ansible_inventory_tools():
     tools_servers: List[ToolsServer] = [
-        ToolsServer(name="ansible_adhoc", url='langchain:ansible'),
+        ToolsServer(name="ansible_adhoc", url='langchain:ansible',
+                    extra_param_prompt={}, extra_tools_prompt='这个工具可以获取主机名称'),
     ]
 
     request = ReActAgentRequest(
         model="gpt-4o",
         openai_api_base=os.getenv("OPENAI_BASE_URL"),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
-        user_message="这些机器的主机名叫啥",
+        user_message="这些机器的主机名",
         user_id="umr",
         thread_id="2",
         tools_servers=tools_servers,
         extra_config={
-            "inventory": os.getenv("TEST_ANSIBLE_INVENTORY"),
+            # "inventory": os.getenv("TEST_ANSIBLE_INVENTORY"),
             "module": "command",
             "module_args": "hostname",
         }

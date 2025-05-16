@@ -1,14 +1,15 @@
 import os
 
-from langchain_core.messages import AIMessage, AIMessageChunk
+import pytest
 from loguru import logger
 
 from src.core.entity.chat_history import ChatHistory
-from src.entity.agent.chatbot_workflow_request import ChatBotWorkflowRequest
+from src.entity.agent.chatbot_workflow.chatbot_workflow_request import ChatBotWorkflowRequest
 from src.agent.chatbot_workflow.chatbot_workflow_graph import ChatBotWorkflowGraph
 
 
-def test_chat():
+@pytest.mark.asyncio
+async def test_chat():
     request = ChatBotWorkflowRequest(
         model="gpt-4o",
         openai_api_base=os.getenv("OPENAI_BASE_URL"),
@@ -20,16 +21,17 @@ def test_chat():
     )
     workflow = ChatBotWorkflowGraph()
 
-    logger.info(f"values模式")
-    result = workflow.execute(request)
-    logger.info(result)
+    # logger.info(f"values模式")
+    # result = workflow.execute(request)
+    # logger.info(result)
 
     logger.info(f"messages 模式")
-    result = workflow.stream(request)
-    workflow.print_chunk(result)
+    result = await workflow.stream(request)
+    await workflow.aprint_chunk(result)
 
 
-def test_chat_with_naiverag():
+@pytest.mark.asyncio
+async def test_chat_with_naiverag():
     user_message = "你好"
 
     request = ChatBotWorkflowRequest(
@@ -50,11 +52,12 @@ def test_chat_with_naiverag():
     logger.info(result)
 
     logger.info(f"messages 模式")
-    result = workflow.stream(request)
-    workflow.print_chunk(result)
+    result = await workflow.stream(request)
+    await workflow.aprint_chunk(result)
 
 
-def test_chat_with_manunal_chat_history():
+@pytest.mark.asyncio
+async def test_chat_with_manunal_chat_history():
     request = ChatBotWorkflowRequest(
         model="gpt-4o",
         openai_api_base=os.getenv("OPENAI_BASE_URL"),
@@ -71,9 +74,9 @@ def test_chat_with_manunal_chat_history():
     workflow = ChatBotWorkflowGraph()
 
     logger.info(f"values模式")
-    result = workflow.execute(request)
+    result = await workflow.execute(request)
     logger.info(result)
 
     logger.info(f"messages 模式")
-    result = workflow.stream(request)
-    workflow.print_chunk(result)
+    result = await workflow.stream(request)
+    await workflow.aprint_chunk(result)
