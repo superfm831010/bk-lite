@@ -5,6 +5,7 @@ import useMonitorApi from '@/app/monitor/api';
 import templateStyle from './index.module.scss';
 import { TreeItem, TableDataItem } from '@/app/monitor/types';
 import { ObectItem } from '@/app/monitor/types/monitor';
+import { STRATEGY_TEMPLATES } from '@/app/monitor/constants/monitor';
 import {
   deepClone,
   findLabelById,
@@ -76,19 +77,21 @@ const Template: React.FC = () => {
 
   const getTreeData = (data: ObectItem[]): TreeItem[] => {
     const groupedData = data.reduce((acc, item) => {
-      if (!acc[item.type]) {
-        acc[item.type] = {
-          title: item.display_type || '--',
-          key: item.type,
+      if (STRATEGY_TEMPLATES.includes(item.name as string)) {
+        if (!acc[item.type]) {
+          acc[item.type] = {
+            title: item.display_type || '--',
+            key: item.type,
+            children: [],
+          };
+        }
+        acc[item.type].children.push({
+          title: item.display_name || '--',
+          label: item.name || '--',
+          key: item.id,
           children: [],
-        };
+        });
       }
-      acc[item.type].children.push({
-        title: item.display_name || '--',
-        label: item.name || '--',
-        key: item.id,
-        children: [],
-      });
       return acc;
     }, {} as Record<string, TreeItem>);
     return Object.values(groupedData);
