@@ -19,11 +19,23 @@ const SkillSettingsLayout = ({ children }: { children: React.ReactNode }) => {
 
   const handleBackButtonClick = () => {
     const pathSegments = pathname ? pathname.split('/').filter(Boolean) : [];
+    
+    // 检查是否已经在登录页面，避免循环重定向
+    if (pathname === '/auth/signin') {
+      return;
+    }
+    
     if (pathSegments.length >= 3) {
       if (pathSegments.length === 3) {
         router.push('/knowledge');
       } else if (pathSegments.length > 3) {
-        router.push(`/opspilot/knowledge/detail?id=${id}&name=${name}&desc=${desc}`);
+        // 添加检查以确保参数都存在
+        if (id) {
+          router.push(`/opspilot/knowledge/detail?id=${id}${name ? `&name=${name}` : ''}${desc ? `&desc=${desc}` : ''}`);
+        } else {
+          // 如果没有ID参数，使用安全的回退策略
+          router.push('/opspilot/knowledge');
+        }
       }
     }
     else {
