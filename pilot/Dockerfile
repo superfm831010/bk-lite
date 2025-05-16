@@ -9,8 +9,8 @@ WORKDIR /apps
 
 # ADD ./pyproject.toml ./pyproject.toml
 RUN pip install pip-tools
-RUN ./.venv/bin/pip-compile -v ./requirements/requirements.in ./requirements/requirements-dev.in --output-file ./requirements.txt 
-RUN ./.venv/bin/pip-sync -v
+RUN pip-compile -v ./requirements/requirements.in ./requirements/requirements-dev.in --output-file ./requirements.txt 
+RUN pip-sync -v
 
 ADD ./actions ./actions
 ADD ./channels ./channels
