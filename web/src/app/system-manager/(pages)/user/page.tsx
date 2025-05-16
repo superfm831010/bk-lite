@@ -36,11 +36,11 @@ const User: React.FC = () => {
   const [addGroupForm] = Form.useForm();
   const [addGroupModalOpen, setAddGroupModalOpen] = useState(false);
   const [addSubGroupModalOpen, setAddSubGroupModalOpen] = useState(false);
-  const [currentParentGroupKey, setCurrentParentGroupKey] = useState<string | null>(null);
+  const [currentParentGroupKey, setCurrentParentGroupKey] = useState<number | null>(null);
   const [addGroupLoading, setAddGroupLoading] = useState(false);
   const [renameGroupModalOpen, setRenameGroupModalOpen] = useState(false);
   const [renameGroupLoading, setRenameGroupLoading] = useState(false);
-  const [renameGroupKey, setRenameGroupKey] = useState<string | null>(null);
+  const [renameGroupKey, setRenameGroupKey] = useState<number | null>(null);
   const [renameGroupForm] = Form.useForm();
 
   const userModalRef = useRef<ModalRef>(null);
@@ -118,7 +118,7 @@ const User: React.FC = () => {
       const data = res.users.map((item: UserDataType) => ({
         key: item.id,
         username: item.username,
-        name: item.lastName,
+        name: item.display_name,
         email: item.email,
         role: item.role,
       }));
@@ -155,12 +155,12 @@ const User: React.FC = () => {
 
   const handleTreeSelect = (selectedKeys: React.Key[]) => {
     setSelectedRowKeys([]);
-    setSelectedTreeKeys(selectedKeys);
+    setSelectedTreeKeys(selectedKeys.map(Number));
     fetchUsers({
       search: searchValue,
       page: currentPage,
       page_size: pageSize,
-      group_id: selectedKeys[0],
+      group_id: selectedKeys[0] as number,
     });
   };
 
@@ -222,7 +222,7 @@ const User: React.FC = () => {
   const openUserModal = (type: 'add') => {
     userModalRef.current?.showModal({
       type,
-      groupKeys: type === 'add' ? (selectedTreeKeys as string[]) : [],
+      groupKeys: type === 'add' ? selectedTreeKeys.map(Number) : [],
     });
   };
 
@@ -263,7 +263,7 @@ const User: React.FC = () => {
     setAddGroupModalOpen(true);
   };
 
-  const handleAddSubGroup = (parentGroupKey: string) => {
+  const handleAddSubGroup = (parentGroupKey: number) => {
     setCurrentParentGroupKey(parentGroupKey);
     setAddSubGroupModalOpen(true);
   };
@@ -287,7 +287,7 @@ const User: React.FC = () => {
     }
   };
 
-  const handleGroupAction = async (action: string, groupKey: string) => {
+  const handleGroupAction = async (action: string, groupKey: number) => {
     switch (action) {
       case 'addSubGroup':
         handleAddSubGroup(groupKey);
@@ -316,7 +316,7 @@ const User: React.FC = () => {
     }
   };
 
-  const handleDeleteGroup = (key: string) => {
+  const handleDeleteGroup = (key: number) => {
     const group = findNode(treeData, key);
     if (group) {
       deleteGroup(group);
@@ -356,7 +356,7 @@ const User: React.FC = () => {
     }
   };
 
-  const findNode = (tree: TreeDataNode[], key: string): TreeDataNode | undefined => {
+  const findNode = (tree: TreeDataNode[], key: number): TreeDataNode | undefined => {
     for (const node of tree) {
       if (node.key === key) return node;
       if (node.children) {
@@ -366,7 +366,7 @@ const User: React.FC = () => {
     }
   };
 
-  const renderGroupActions = (groupKey: string) => (
+  const renderGroupActions = (groupKey: number) => (
     <Dropdown
       overlay={
         <Menu
@@ -395,7 +395,7 @@ const User: React.FC = () => {
           <span className="truncate">
             {typeof node.title === 'function' ? node.title(node) : node.title}
           </span>
-          {renderGroupActions(node.key as string)}
+          {renderGroupActions(node.key as number)}
         </div>
       ),
       children: node.children ? renderTreeNode(node.children) : [],

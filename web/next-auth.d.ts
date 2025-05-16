@@ -8,6 +8,19 @@ declare module "next-auth" {
     username?: string;
     roles?: string[];
     zoneinfo?: string;
+    user?: {
+      id: string;
+      username?: string;
+      locale?: string;
+      token?: string;
+    };
+  }
+
+  interface User {
+    id: string;
+    username?: string;
+    locale?: string;
+    token?: string;
   }
 }
 
@@ -22,5 +35,7 @@ declare module "next-auth/jwt" {
     username?: string;
     roles?: string[];
     zoneinfo?: string;
+    id?: string;
+    token?: string;
   }
 }
