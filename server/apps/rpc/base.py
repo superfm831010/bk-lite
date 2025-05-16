@@ -4,7 +4,8 @@ import nats_client
 
 
 class RpcClient(object):
-    def __init__(self, namespace):
+    def __init__(self):
+        namespace = "bk_lite"
         self.namespace = namespace
 
     def run(self, method_name, *args, **kwargs):
