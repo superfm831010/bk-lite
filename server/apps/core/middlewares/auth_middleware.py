@@ -4,23 +4,24 @@ from django.conf import settings
 from django.contrib import auth
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.translation import gettext as _
-from rest_framework.permissions import AllowAny
 
 from apps.core.utils.web_utils import WebUtils
 
 
-class KeyCloakAuthMiddleware(MiddlewareMixin):
+class AuthMiddleware(MiddlewareMixin):
     def __init__(self, get_response):
         super().__init__(get_response)
         self.logger = logging.getLogger(__name__)
 
     def process_view(self, request, view, args, kwargs):
-        if any([
-            getattr(view, "api_exempt", False),
-            getattr(request, "api_pass", False),
-            request.path == "/swagger/",
-            request.path.startswith("/admin/")
-        ]):
+        if any(
+            [
+                getattr(view, "api_exempt", False),
+                getattr(request, "api_pass", False),
+                request.path == "/swagger/",
+                request.path.startswith("/admin/"),
+            ]
+        ):
             return None
 
         # 检查是否豁免登录

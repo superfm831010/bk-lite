@@ -3,6 +3,7 @@
   "name": "Node",
   "url": "/node-manager/cloudregion",
   "description": "Create roles for the Node app to manage data permissions, menu permissions, and feature permissions.",
+  "description_cn": "Create roles for the Node app to manage data permissions, menu permissions, and feature permissions.",
   "menus": [
     {
       "name": "Cloud Region",

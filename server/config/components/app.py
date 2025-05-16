@@ -54,7 +54,7 @@ STORAGES = {
 }
 
 AUTHENTICATION_BACKENDS = (
-    "apps.core.backends.KeycloakAuthBackend",  # this is default
+    "apps.core.backends.AuthBackend",  # this is default
     "apps.core.backends.APISecretAuthBackend",
     "django.contrib.auth.backends.ModelBackend",
 )
@@ -76,7 +76,7 @@ MIDDLEWARE = (
     "apps.core.middlewares.app_exception_middleware.AppExceptionMiddleware",
     "apps.core.middlewares.drf_middleware.DisableCSRFMiddleware",
     "apps.core.middlewares.api_middleware.APISecretMiddleware",
-    "apps.core.middlewares.keycloak_auth_middleware.KeyCloakAuthMiddleware",
+    "apps.core.middlewares.auth_middleware.AuthMiddleware",
 )
 
 if DEBUG:
