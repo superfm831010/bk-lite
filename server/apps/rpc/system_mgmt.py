@@ -3,7 +3,7 @@ from apps.rpc.base import RpcClient
 
 class SystemMgmt(object):
     def __init__(self):
-        self.client = RpcClient("system_mgmt")
+        self.client = RpcClient()
 
     def login(self, username, password):
         """
