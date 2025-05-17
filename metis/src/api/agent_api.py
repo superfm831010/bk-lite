@@ -9,7 +9,7 @@ from sanic_ext import validate
 
 from src.agent.chatbot_workflow.chatbot_workflow_graph import ChatBotWorkflowGraph
 from src.agent.react_agent.react_agent_graph import ReActAgentGraph
-from src.core.web.api_auth import auth
+from src.core.sanic_plus.auth.api_auth import auth
 from src.entity.agent.chatbot_workflow.chatbot_workflow_request import ChatBotWorkflowRequest
 from src.entity.agent.react_agent.react_agent_request import ReActAgentRequest
 from src.services.agent_service import AgentService

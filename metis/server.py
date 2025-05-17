@@ -3,13 +3,14 @@ from dotenv import load_dotenv
 from sanic import Sanic
 from sanic.logging.default import LOGGING_CONFIG_DEFAULTS
 import src.api as blueprints
-from src.core.sanic_plus.autodiscover import autodiscover
-from src.core.web.api_auth import auth
-from src.core.web.config import YamlConfig
-from src.core.web.crypto import PasswordCrypto
+from src.core.sanic_plus.utils.autodiscover import autodiscover
+from src.core.sanic_plus.auth.api_auth import auth
+from src.core.sanic_plus.utils.config import YamlConfig
 from sanic.log import logger
 from langgraph.checkpoint.postgres import PostgresSaver
 from sanic import json
+
+from src.core.sanic_plus.utils.crypto import PasswordCrypto
 from src.embed.embed_builder import EmbedBuilder
 from src.ocr.pp_ocr import PPOcr
 from src.rerank.rerank_manager import ReRankManager
@@ -18,6 +19,7 @@ from src.rerank.rerank_manager import ReRankManager
 load_dotenv()
 
 if os.getenv('MODE', 'DEBUG') != 'DEBUG':
+    logger.info("生产模式下运行，加载鉴权配置....")
     crypto = PasswordCrypto(os.getenv("SECRET_KEY"))
     users = {
         "admin": crypto.encrypt(os.getenv("ADMIN_PASSWORD")),
@@ -39,10 +41,10 @@ def verify_password(username, password):
 def bootstrap():
     config = YamlConfig(path="config.yml")
     LOGGING_CONFIG_DEFAULTS['formatters']['generic'] = {
-        'class': 'src.core.sanic_plus.sanic_log_formater.SanicLogFormatter',
+        'class': 'src.core.sanic_plus.log.sanic_log_formater.SanicLogFormatter',
     }
     LOGGING_CONFIG_DEFAULTS['formatters']['access'] = {
-        'class': 'src.core.sanic_plus.sanic_log_formater.SanicAccessFormatter',
+        'class': 'src.core.sanic_plus.log.sanic_log_formater.SanicAccessFormatter',
     }
     app = Sanic("Metis", config=config, log_config=LOGGING_CONFIG_DEFAULTS)
 
@@ -66,7 +68,7 @@ def bootstrap():
 
         if os.getenv('SUPABASE_URL') and os.getenv('SUPABASE_KEY'):
             logger.info(f"启动supabase能力,supabase地址{os.getenv('SUPABASE_URL')}")
-            from supabase import create_client, Client
+            from supabase import create_client
             app.ctx.supabase = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
 
     @app.command

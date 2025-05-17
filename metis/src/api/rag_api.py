@@ -1,14 +1,13 @@
 import json as js
 import tempfile
 import time
-import traceback
 import uuid
 
 from sanic.log import logger
 from sanic import Blueprint, json
 from sanic_ext import validate
 
-from src.core.web.api_auth import auth
+from src.core.sanic_plus.auth.api_auth import auth
 from src.enhance.qa_enhance import QAEnhance
 from src.entity.rag.base.document_count_request import DocumentCountRequest
 from src.entity.rag.base.document_delete_request import DocumentDeleteRequest

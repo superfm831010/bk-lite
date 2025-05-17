@@ -2,7 +2,7 @@ import os
 
 from loguru import logger
 
-from src.core.web.crypto import PasswordCrypto
+from src.core.sanic_plus.utils.crypto import PasswordCrypto
 
 
 def test_decrypt():

@@ -1,7 +1,7 @@
 from sanic import Blueprint
 from sanic_ext import validate
 
-from src.core.web.api_auth import auth
+from src.core.sanic_plus.auth.api_auth import auth
 from src.entity.anomaly_detection.anomaly_detection_predict_request import AnomalyDetectionPredictRequest
 from src.entity.anomaly_detection.anomaly_detection_train_request import AnomalyDetectionTrainRequest
 
