@@ -6,7 +6,7 @@ import requests
 from langchain_core.documents import Document
 from langchain_elasticsearch import ElasticsearchRetriever
 from langchain_elasticsearch import ElasticsearchStore
-from loguru import logger
+from sanic.log import logger
 
 from src.embed.embed_builder import EmbedBuilder
 from src.entity.rag.base.document_count_request import DocumentCountRequest

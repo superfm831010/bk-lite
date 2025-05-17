@@ -5,7 +5,7 @@ from typing import Dict, Any
 import joblib
 import numpy as np
 import pandas as pd
-from loguru import logger
+from sanic.log import logger
 from src.anomaly_detection.base_anomaly_detection import BaseAnomalyDetection
 
 

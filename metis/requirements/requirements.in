@@ -7,13 +7,11 @@ redis==5.0.1
 pillow==10.3.0
 pandas==2.2.2
 numpy==1.26.4
-loguru==0.7.3
-sanic-fire==0.1
 pyarmor==9.1.5
 supabase==2.15.1
 
 # Web
-sanic==24.6.0
+sanic==25.3.0
 sanic-ext==23.12.0
 Sanic-HTTPAuth==0.2.0
 

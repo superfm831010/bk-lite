@@ -16,3 +16,12 @@ install:
 
 check:
 	$(PIP_COMPILE) --upgrade --dry-run  ./requirements/requirements.in ./requirements/requirements-dev.in -v
+
+download-models:
+	sanic server:bootstrap exec download_models
+
+sync-db:
+	sanic server:bootstrap exec sync_db
+
+dev:
+	sanic server:bootstrap --factory --debug --host=0.0.0.0 --port=18082

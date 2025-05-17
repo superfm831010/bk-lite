@@ -1,9 +1,8 @@
 import json as json_util
 import uuid
 from datetime import datetime
-
 from langchain_core.messages import AIMessageChunk, ToolMessage
-from loguru import logger
+from sanic.log import logger
 from sanic import Blueprint, json
 from sanic.response import ResponseStream
 from sanic_ext import validate
@@ -15,7 +14,7 @@ from src.entity.agent.chatbot_workflow.chatbot_workflow_request import ChatBotWo
 from src.entity.agent.react_agent.react_agent_request import ReActAgentRequest
 from src.services.agent_service import AgentService
 
-agent_api_router = Blueprint("agent", url_prefix="/agent")
+agent_api_router = Blueprint("agent", url_prefix="/api/agent")
 
 
 async def stream_response(workflow, body, res):
