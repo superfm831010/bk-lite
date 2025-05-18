@@ -1,18 +1,22 @@
 [run]
+branch = True
+source = ./src
+parallel = True
 omit =
-    */test_*.py
-    */_test.py
-    */tests/*
-    */venv/*
-    */env/*
-    */.venv/*
-    */.env/*
+    .vscode/*
+    docs/*
+    models/*
+    requirements/*
+    support-files/*
+    test_results/*
+    tests/*
+    .venv/*
 
 [report]
+precision = 2
+show_missing = True
 exclude_lines =
-    pragma: no cover
-    def __repr__
-    raise NotImplementedError
     if __name__ == .__main__.:
-    pass
-    raise ImportError
+
+[html]
+directory = test_results/coverage_html_report
