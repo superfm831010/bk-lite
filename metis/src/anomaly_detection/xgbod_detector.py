@@ -46,7 +46,7 @@ class XGBODDetector(BaseAnomalyDetection):
         test_size = train_config.get('test_size', 0.2)
         val_size = train_config.get('val_size', 0.1)
         random_state = train_config.get('random_state', 42)
-
+        self.feature_columns.append('value')
         X = df[self.feature_columns].values
         y = df['label'].astype(int).values
 
@@ -94,7 +94,7 @@ class XGBODDetector(BaseAnomalyDetection):
 
         predict_df = input_df.copy()
         predict_df['label'] = predict_df.get('label', 0)
-
+        logger.info(predict_df.head(5))
         freq = self.train_config.get('freq', 'infer')
         window = int(self.train_config.get('window', 5))
         processed_df, _ = self.generate_features(predict_df, freq, window)
@@ -102,8 +102,8 @@ class XGBODDetector(BaseAnomalyDetection):
         for col in self.feature_columns:
             if col not in processed_df:
                 processed_df[col] = 0  # 填补缺失特征
+        X = processed_df[self.feature_columns]
 
-        X = processed_df[self.feature_columns].values
         y_pred = self.model.predict(X)
 
         result_df = input_df.copy()

@@ -77,6 +77,7 @@ class BaseAnomalyDetection:
         按指定频率对时间序列数据生成特征
         """
         df = self._infer_and_set_freq(df, freq)
+        logger.info(f"预测数据大小: {df.head(5)}")
         return self._fill_and_generate_features(df, window)
 
     def visualize_anomaly_detection_results(

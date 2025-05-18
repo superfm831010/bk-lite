@@ -1,3 +1,5 @@
+import traceback
+
 from langgraph.checkpoint.postgres import PostgresSaver
 from sanic import Sanic
 from sanic import json
@@ -53,8 +55,9 @@ def bootstrap() -> Sanic:
 
     @app.exception(Exception)
     async def global_api_exception(request, exception):
-        msg = f"全局异常捕获: {exception}, 请求路径: {request.path}, 请求参数: {request.args}, 请求体: {request.json}"
-        logger.error(msg, exc_info=True)
+        error_traceback = traceback.format_exc()
+        msg = f"全局异常捕获: {exception}, 请求路径: {request.path}, 请求参数: {request.args}, 请求体: {request.json}\n堆栈信息: {error_traceback}"
+        logger.error(msg)
         return json({}, status=500)
 
     # 配置启动钩子
