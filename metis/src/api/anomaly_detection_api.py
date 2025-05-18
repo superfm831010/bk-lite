@@ -21,6 +21,9 @@ from src.entity.anomaly_detection.anomaly_detection_train_request import Anomaly
 anomaly_detection_api_router = Blueprint(
     "anomaly_detection", url_prefix="/api/anomaly_detection")
 
+# 模型缓存字典，格式为 {f"{algorithm}:{model_id}": (detector_instance, model_path)}
+MODEL_CACHE = {}
+
 
 async def train_model_background(app, train_config):
     """
@@ -268,8 +271,9 @@ async def predict(request, body: AnomalyDetectionPredictRequest):
             detector, model_path = await _load_detector_model(
                 request.app, algorithm, model_id, run_mode)
 
-            # 添加临时文件以便清理
-            if run_mode == "remote" and os.path.exists(model_path):
+            # 添加临时文件以便清理（仅当模型是新下载的时候）
+            # 注意：缓存使用的模型在API生命周期内不会被清理
+            if run_mode == "remote" and os.path.exists(model_path) and not _is_model_cached(algorithm, model_id):
                 temp_files.append(model_path)
 
         except FileNotFoundError as e:
@@ -296,7 +300,7 @@ async def predict(request, body: AnomalyDetectionPredictRequest):
         return json({"status": "error", "message": f"预测失败: {str(e)}"}, status=500)
 
     finally:
-        # 清理所有临时文件
+        # 清理所有临时文件（仅当不是缓存的模型时）
         for temp_file in temp_files:
             if os.path.exists(temp_file):
                 try:
@@ -351,9 +355,24 @@ def _validate_and_prepare_input_data(predict_data) -> pd.DataFrame:
     return input_df
 
 
+def _is_model_cached(algorithm: str, model_id: str) -> bool:
+    """
+    检查模型是否已经在缓存中
+
+    参数:
+        algorithm: 算法名称
+        model_id: 模型ID
+
+    返回:
+        布尔值: 模型是否在缓存中
+    """
+    cache_key = f"{algorithm}:{model_id}"
+    return cache_key in MODEL_CACHE
+
+
 async def _load_detector_model(app, algorithm: str, model_id: str, run_mode: str) -> Tuple[BaseAnomalyDetection, str]:
     """
-    加载检测器模型
+    加载检测器模型，优先从内存缓存中加载
 
     参数:
         app: Sanic应用实例
@@ -364,6 +383,12 @@ async def _load_detector_model(app, algorithm: str, model_id: str, run_mode: str
     返回:
         tuple: (检测器实例, 模型路径)
     """
+    # 检查缓存中是否已有该模型
+    cache_key = f"{algorithm}:{model_id}"
+    if cache_key in MODEL_CACHE:
+        logger.info(f"从内存缓存加载模型: {cache_key}")
+        return MODEL_CACHE[cache_key]
+
     # 创建检测器
     detector = create_detector(algorithm)
 
@@ -405,6 +430,10 @@ async def _load_detector_model(app, algorithm: str, model_id: str, run_mode: str
         if os.path.exists(model_path) and run_mode == "remote":
             os.unlink(model_path)
         raise ValueError(f"模型文件格式错误或损坏: {str(e)}")
+
+    # 将加载的模型保存到缓存
+    MODEL_CACHE[cache_key] = (detector, model_path)
+    logger.info(f"模型已加载并保存到内存缓存: {cache_key}")
 
     return detector, model_path
 

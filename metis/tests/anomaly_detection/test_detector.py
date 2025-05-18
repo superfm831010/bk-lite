@@ -1,13 +1,13 @@
+import logging
+import os
+
+from src.anomaly_detection.random_forest_detector import RandomForestAnomalyDetector
 from src.anomaly_detection.unsupervised_iforest_detector import UnsupervisedIForestDetector
+from src.anomaly_detection.xgbod_detector import XGBODDetector
 from tests.anomaly_detection.utils import (
     generate_training_data,
     generate_test_data_with_indices,
 )
-from src.anomaly_detection.xgbod_detector import XGBODDetector
-from src.anomaly_detection.random_forest_detector import RandomForestAnomalyDetector
-import os
-import logging
-import pandas as pd
 
 logger = logging.getLogger(__name__)
 
