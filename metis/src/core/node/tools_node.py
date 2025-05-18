@@ -1,7 +1,3 @@
-from typing import TypedDict
-
-from langchain_core.messages import ToolMessage
-from langchain_core.runnables import RunnableConfig
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import ToolNode
 from pydantic import BaseModel
@@ -27,8 +23,7 @@ class ToolsNodes(BasicNode):
                     "transport": 'sse'
                 }
         self.mcp_client = MultiServerMCPClient(self.mcp_config)
-        await self.mcp_client.__aenter__()  # 手动打开连接
-        self.tools = self.mcp_client.get_tools()
+        self.tools = await self.mcp_client.get_tools()
 
         # 初始化LangChain工具
         for server in request.tools_servers:
