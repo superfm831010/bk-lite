@@ -1,35 +1,31 @@
-import os
-from dotenv import load_dotenv
-from sanic import Sanic
-from sanic.logging.default import LOGGING_CONFIG_DEFAULTS
-import src.api as blueprints
-from src.core.sanic_plus.utils.autodiscover import autodiscover
-from src.core.sanic_plus.auth.api_auth import auth
-from src.core.sanic_plus.utils.config import YamlConfig
-from sanic.log import logger
 from langgraph.checkpoint.postgres import PostgresSaver
+from sanic import Sanic
 from sanic import json
+from sanic.log import logger
+from sanic.logging.default import LOGGING_CONFIG_DEFAULTS
 
+import src.api as blueprints
+from src.core.env.core_settings import core_settings
+from src.core.sanic_plus.auth.api_auth import auth
+from src.core.sanic_plus.utils.autodiscover import autodiscover
+from src.core.sanic_plus.utils.config import YamlConfig
 from src.core.sanic_plus.utils.crypto import PasswordCrypto
 from src.embed.embed_builder import EmbedBuilder
 from src.ocr.pp_ocr import PPOcr
 from src.rerank.rerank_manager import ReRankManager
 
-# 加载环境变量和配置
-load_dotenv()
-
-if os.getenv('MODE', 'DEBUG') != 'DEBUG':
+if core_settings.is_prod_mode():
     logger.info("生产模式下运行，加载鉴权配置....")
-    crypto = PasswordCrypto(os.getenv("SECRET_KEY"))
+    crypto = PasswordCrypto(core_settings.secret_key)
     users = {
-        "admin": crypto.encrypt(os.getenv("ADMIN_PASSWORD")),
+        "admin": crypto.encrypt(core_settings.admin_password),
     }
 
 
 # 配置认证
 @auth.verify_password
 def verify_password(username, password):
-    if os.getenv('MODE', 'DEBUG') == 'DEBUG':
+    if core_settings.is_debug_mode():
         return True
 
     if username in users:
@@ -66,15 +62,15 @@ def bootstrap():
         with open(f"src/asserts/banner.txt") as f:
             print(f.read())
 
-        if os.getenv('SUPABASE_URL') and os.getenv('SUPABASE_KEY'):
-            logger.info(f"启动supabase能力,supabase地址{os.getenv('SUPABASE_URL')}")
+        if core_settings.supabase_enabled():
+            logger.info(f"启动supabase能力,supabase地址{core_settings.supabase_url}")
             from supabase import create_client
-            app.ctx.supabase = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
+            app.ctx.supabase = create_client(core_settings.supabase_url, core_settings.supabase_key)
 
     @app.command
     def sync_db():
         try:
-            with PostgresSaver.from_conn_string(os.getenv('DB_URI')) as checkpointer:
+            with PostgresSaver.from_conn_string(core_settings.db_uri) as checkpointer:
                 checkpointer.setup()
         except Exception as e:
             pass
