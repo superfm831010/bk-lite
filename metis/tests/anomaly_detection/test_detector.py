@@ -1,5 +1,7 @@
 import os
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.anomaly_detection.random_forest_detector import RandomForestAnomalyDetector
 from src.anomaly_detection.xgbod_detector import XGBODDetector

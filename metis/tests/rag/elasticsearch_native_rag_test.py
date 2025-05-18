@@ -2,7 +2,9 @@ import os
 
 from langchain_core.documents import Document
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
 from src.entity.rag.base.document_ingest_request import DocumentIngestRequest

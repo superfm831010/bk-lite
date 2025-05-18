@@ -1,7 +1,9 @@
 import os
 
 import pytest
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.core.entity.chat_history import ChatHistory
 from src.entity.agent.chatbot_workflow.chatbot_workflow_request import ChatBotWorkflowRequest

@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.ocr.azure_ocr import AzureOCR
 

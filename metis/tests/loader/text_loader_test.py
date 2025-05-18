@@ -1,5 +1,7 @@
 from src.loader.text_loader import TextLoader
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def test_load_txt_full_mode():
