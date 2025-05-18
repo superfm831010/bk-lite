@@ -12,13 +12,13 @@ class CoreSettings(BaseSettings):
     supabase_url: str = ''
     supabase_key: str = ''
 
-    def is_debug_mode(self):
+    def is_debug_mode(self) -> bool:
         return self.mode == 'DEBUG'
 
-    def is_prod_mode(self):
+    def is_prod_mode(self) -> bool:
         return self.mode == 'PROD'
 
-    def supabase_enabled(self):
+    def supabase_enabled(self) -> bool:
         return bool(self.supabase_url and self.supabase_key)
 
     class Config:

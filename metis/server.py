@@ -24,7 +24,7 @@ if core_settings.is_prod_mode():
 
 # 配置认证
 @auth.verify_password
-def verify_password(username, password):
+def verify_password(username, password) -> bool:
     if core_settings.is_debug_mode():
         return True
 
@@ -34,8 +34,9 @@ def verify_password(username, password):
     return False
 
 
-def bootstrap():
+def bootstrap() -> Sanic:
     config = YamlConfig(path="config.yml")
+
     LOGGING_CONFIG_DEFAULTS['formatters']['generic'] = {
         'class': 'src.core.sanic_plus.log.sanic_log_formater.SanicLogFormatter',
     }
@@ -53,7 +54,7 @@ def bootstrap():
     @app.exception(Exception)
     async def global_api_exception(request, exception):
         msg = f"全局异常捕获: {exception}, 请求路径: {request.path}, 请求参数: {request.args}, 请求体: {request.json}"
-        logger.error(msg)
+        logger.error(msg, exc_info=True)
         return json({}, status=500)
 
     # 配置启动钩子
@@ -64,8 +65,10 @@ def bootstrap():
 
         if core_settings.supabase_enabled():
             logger.info(f"启动supabase能力,supabase地址{core_settings.supabase_url}")
+
             from supabase import create_client
-            app.ctx.supabase = create_client(core_settings.supabase_url, core_settings.supabase_key)
+            app.ctx.supabase = create_client(
+                core_settings.supabase_url, core_settings.supabase_key)
 
     @app.command
     def sync_db():
@@ -83,7 +86,8 @@ def bootstrap():
         EmbedBuilder().get_embed('local:huggingface_embedding:maidalun1020/bce-embedding-base_v1')
 
         logger.info("download BCE ReRank Models")
-        ReRankManager.get_rerank_instance('local:bce:maidalun1020/bce-reranker-base_v1')
+        ReRankManager.get_rerank_instance(
+            'local:bce:maidalun1020/bce-reranker-base_v1')
 
         logger.info("download PaddleOCR")
         PPOcr()
