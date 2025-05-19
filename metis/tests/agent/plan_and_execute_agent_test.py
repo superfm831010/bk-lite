@@ -6,7 +6,9 @@ import pytest
 from src.agent.plan_and_execute_agent.plan_and_execute_agent_graph import PlanAndExecuteAgentGraph
 from src.core.entity.tools_server import ToolsServer
 from src.entity.agent.plan_and_execute_agent.plan_and_execute_agent_request import PlanAndExecuteAgentRequest
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.mark.asyncio

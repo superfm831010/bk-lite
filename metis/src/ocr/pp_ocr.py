@@ -1,4 +1,4 @@
-from loguru import logger
+from sanic.log import logger
 from src.ocr.base_ocr import BaseOCR
 
 

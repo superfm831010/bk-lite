@@ -1,4 +1,6 @@
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.loader.image_loader import ImageLoader
 from src.ocr.pp_ocr import PPOcr

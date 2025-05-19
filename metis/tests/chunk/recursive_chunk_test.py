@@ -3,7 +3,9 @@ import os
 from dotenv import load_dotenv
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.chunk.recursive_chunk import RecursiveChunk
 from src.chunk.semantic_chunk import SemanticChunk

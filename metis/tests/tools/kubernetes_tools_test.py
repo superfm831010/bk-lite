@@ -1,6 +1,8 @@
 import os
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.tools.kubernetes_tools import get_kubernetes_namespaces, list_kubernetes_pods, list_kubernetes_nodes, \
     list_kubernetes_deployments, list_kubernetes_services, list_kubernetes_events, get_failed_kubernetes_pods, \

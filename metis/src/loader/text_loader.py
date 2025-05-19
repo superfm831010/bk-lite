@@ -2,7 +2,7 @@ from typing import List
 
 from langchain_core.documents import Document
 from langchain_core.document_loaders import BaseLoader
-from loguru import logger
+from sanic.log import logger
 
 
 class TextLoader(BaseLoader):

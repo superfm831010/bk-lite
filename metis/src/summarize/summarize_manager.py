@@ -1,5 +1,5 @@
 from src.summarize.textrank.textrank_sentence import TextRankSentence
-from loguru import logger
+from sanic.log import logger
 
 
 class SummarizeManager:

@@ -6,7 +6,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 import ansible_runner
 
-from loguru import logger
+from sanic.log import logger
 
 
 class AnsibleRunner():
