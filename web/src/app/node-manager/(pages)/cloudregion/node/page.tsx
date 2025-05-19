@@ -301,7 +301,7 @@ const Node = () => {
     });
     const natsexecutors = ['natsexecutor_windows', 'natsexecutor_linux'];
     const natsexecutor: TableDataItem = data.filter((item: TableDataItem) => natsexecutors.includes(item.id as string));
-    const _columns = [
+    const columnItems = [
       {
         title: 'NATS-Executor',
         dataIndex: natsexecutor.id as string,
@@ -357,7 +357,7 @@ const Node = () => {
         render: (_: any, record: TableDataItem) => renderColunms(record, 'BK-pull', data)
       }
     ];
-    setActiveColumns(_columns);
+    setActiveColumns(columnItems);
   };
 
   const getStatusInfo = (
