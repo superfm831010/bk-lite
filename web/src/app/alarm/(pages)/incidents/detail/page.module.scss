@@ -1,0 +1,67 @@
+.detailContainer {
+  width: 100%;
+  padding: 16px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.breadcrumb {
+  margin-bottom: 16px;
+}
+
+.title {
+  margin-top: 16px;
+}
+
+.descriptions {
+  margin-top: 16px;
+}
+
+.tabsWrapper {
+  margin-top: 24px;
+}
+
+.alertTab {
+  padding: 16px;
+}
+
+.timelineContent {
+  max-height: calc(100vh - 360px);
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.fixedContent {
+  width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.backIcon {
+  font-weight: bold;
+  color: #1890ff;        
+  font-size: 16px;  
+  margin-right: 8px; 
+  cursor: pointer;    
+  vertical-align: middle;
+}
+
+.filterRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.switchWrapper {
+  display: flex;
+  align-items: center;
+}
+
+.switchLabel {
+  margin-left: 8px;
+  font-size: 14px;
+  color: var(--color-text-1);
+}
