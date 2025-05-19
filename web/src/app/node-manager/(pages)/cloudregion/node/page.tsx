@@ -259,13 +259,15 @@ const Node = () => {
     }
   };
 
+  const getCollectorName = (id: string, data: any) => {
+    const name = data.find((item: any) => item.id === id)?.name;
+    return name || '--'
+  };
+
   const renderColunms = (record: TableDataItem, target: string, data: any) => {
-    const getCollectorName = (id: string) => {
-      return data.find((item: any) => item.id === id).name
-    };
     const collectors = record.status.collectors_install.filter(
       (item: TableDataItem) =>
-        getCollectorLabelKey(getCollectorName(item.collector_id)) === target
+        getCollectorLabelKey(getCollectorName(item.collector_id, data)) === target
     );
     const tagList = collectors.map((tex: TableDataItem) => {
       const collectorTarget = (record.status.collectors || []).find(
@@ -281,15 +283,15 @@ const Node = () => {
       return (
         <Tooltip title={title} key={tex.id} className='py-1 pr-1'>
           <div>
-            <span style={{ color, borderColor: color, borderWidth: 1 }} className="text-[12px] p-1">
-              {getCollectorName(tex.collector_id)}
+            <span style={{ color, borderColor: color, borderWidth: 1 }} className="text-[12px] p-1 w-[100px] block text-center">
+              {getCollectorName(tex.collector_id, data)}
             </span>
           </div>
         </Tooltip>
       )
     });
     return (
-      <div className='flex flex-wrap justify-start'>
+      <div className='flex flex-wrap justify-center'>
         {tagList.length ? tagList : '--'}
       </div>
     )
@@ -304,8 +306,8 @@ const Node = () => {
     const columnItems = [
       {
         title: 'NATS-Executor',
-        dataIndex: natsexecutor.id as string,
-        key: natsexecutor.id as string,
+        dataIndex: 'natsexecutor_windows',
+        key: 'natsexecutor_windows',
         width: 140,
         render: (_: any, record: TableDataItem) => {
           const tagList = natsexecutor.map((tex: TableDataItem) => {
@@ -337,26 +339,30 @@ const Node = () => {
         dataIndex: 'telegraf',
         key: 'telegraf',
         width: 120,
+        align: 'center',
         render: (_: any, record: TableDataItem) => renderColunms(record, 'Telegraf', data)
       },
       {
         title: 'Export',
         dataIndex: 'export',
         key: 'export',
-        width: 120,
+        width: 336,
+        align: 'center',
         render: (_: any, record: TableDataItem) => renderColunms(record, 'Export', data)
       },
       {
         title: 'JMX',
         dataIndex: 'jmx',
         key: 'jmx',
-        width: 200,
+        width: 224,
+        align: 'center',
         render: (_: any, record: TableDataItem) => renderColunms(record, 'JMX', data)
       },
       {
         title: 'BK-pull',
         dataIndex: 'bk-pull',
         key: 'bk-pull',
+        align: 'center',
         width: 120,
         render: (_: any, record: TableDataItem) => renderColunms(record, 'BK-pull', data)
       }

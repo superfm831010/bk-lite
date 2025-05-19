@@ -62,7 +62,8 @@ const Collector = () => {
     let tempdata = filter.map((item: any) => {
       const system = item.node_operating_system || item.os;
       const tagList = [system];
-      if(getCollectorLabelKey(item.name)) tagList.push(getCollectorLabelKey(item.name));
+      const label = getCollectorLabelKey(item.name);
+      if(label) tagList.push(label);
       if (system && !optionSet.has(system)) {
         optionSet.add(system);
         _options.push({ value: system, label: system });
