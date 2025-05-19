@@ -14,7 +14,7 @@ import type {
   ConfigDate,
   SubRef,
 } from '@/app/node-manager/types/cloudregion';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useApiCollector from '@/app/node-manager/api/collector';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import MainLayout from '../mainlayout/layout';
@@ -327,8 +327,8 @@ const Configration = () => {
             </div>
             <div className="tablewidth">
               <CustomTable<any>
+                scroll={{ y: 'calc(100vh - 326px)', x: 'calc(100vw - 300px)' }}
                 loading={loading}
-                scroll={{ y: 'calc(100vh - 400px)', x: 'max-content' }}
                 columns={columns}
                 dataSource={tableData}
                 rowSelection={rowSelection}

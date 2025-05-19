@@ -17,6 +17,7 @@ const SkillPage: React.FC = () => {
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [refreshKey, setRefreshKey] = useState<number>(0);
   const { t } = useTranslation();
   const { fetchSkillTemplates, createSkill } = useSkillApi();
 
@@ -55,6 +56,7 @@ const SkillPage: React.FC = () => {
       };
       await createSkill(payload);
       setIsTemplateModalVisible(false);
+      setRefreshKey((prev) => prev + 1);
     } finally {
       setSubmitting(false);
     }
@@ -65,7 +67,9 @@ const SkillPage: React.FC = () => {
   return (
     <>
       <EntityList<Skill>
+        key={refreshKey}
         endpoint="/opspilot/model_provider_mgmt/llm/"
+        queryParams={{ is_template: 0 }}
         CardComponent={SkillCard}
         ModifyModalComponent={(props) => (
           <GenericModifyModal

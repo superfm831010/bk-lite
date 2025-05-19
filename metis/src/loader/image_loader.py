@@ -1,5 +1,5 @@
 from langchain_core.documents import Document
-from loguru import logger
+from sanic.log import logger
 
 from src.ocr.base_ocr import BaseOCR
 

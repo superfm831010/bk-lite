@@ -24,11 +24,15 @@ class RerankProvider(models.Model, EncryptMixin):
     is_build_in = models.BooleanField(default=False, verbose_name="是否内置")
 
     def save(self, *args, **kwargs):
+        if "api_key" in self.rerank_config:
+            self.encrypt_field("api_key", self.rerank_config)
         super().save(*args, **kwargs)
 
     @cached_property
     def decrypted_rerank_config_config(self):
         rerank_config_decrypted = self.rerank_config.copy()
+        if "api_key" in rerank_config_decrypted:
+            self.decrypt_field("api_key", rerank_config_decrypted)
         return rerank_config_decrypted
 
     def __str__(self):

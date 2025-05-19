@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import collectorStyle from '../index.module.scss';
 import { Menu, Input, Space, Select, Button } from 'antd';
 import useApiClient from '@/utils/request';
-import useApiCollector from '@/app/node-manager/api/collector/index';
+import useApiCollector from '@/app/node-manager/api/collector';
 import EntityList from '@/components/entity-list/index';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
@@ -36,7 +36,7 @@ const Collector = () => {
 
   const navigateToCollectorDetail = (item: CardItem) => {
     router.push(`
-      /node-manager/sidecar/collector/detail?id=${item.id}&name=${item.name}&introduction=${item.description}&system=${item.tagList[0]}`);
+      /node-manager/sidecar/collector/detail?id=${item.id}&name=${item.name}&introduction=${item.description}&system=${item.tagList[0]}&icon=${item.icon}`);
   };
 
   const filterBySelected = (data: any[], selected: string[]) => {
@@ -64,7 +64,7 @@ const Collector = () => {
         executable_path: item.executable_path,
         execute_parameters: item.execute_parameters,
         description: item.introduction || '--',
-        icon: 'caijiqizongshu',
+        icon: item.icon || 'caijiqizongshu',
         tagList: [system],
       };
     });

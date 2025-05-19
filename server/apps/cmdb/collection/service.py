@@ -1,4 +1,5 @@
 import json
+import re
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Type
@@ -19,7 +20,7 @@ from apps.cmdb.collection.constants import (
     REPLICAS_METRICS, K8S_STATEFULSET_REPLICAS, K8S_REPLICASET_REPLICAS, K8S_DEPLOYMENT_REPLICAS, ANNOTATIONS_METRICS,
     K8S_DEPLOYMENT_ANNOTATIONS, K8S_REPLICASET_ANNOTATIONS, K8S_STATEFULSET_ANNOTATIONS, K8S_DAEMONSET_ANNOTATIONS,
     K8S_JOB_ANNOTATIONS, K8S_CRONJOB_ANNOTATIONS, POD_NODE_RELATION, VMWARE_CLUSTER, VMWARE_COLLECT_MAP,
-    NETWORK_COLLECT, NETWORK_INTERFACES_RELATIONS, PROTOCOL_METRIC_MAP, ALIYUN_COLLECT_CLUSTER,
+    NETWORK_COLLECT, NETWORK_INTERFACES_RELATIONS, PROTOCOL_METRIC_MAP, ALIYUN_COLLECT_CLUSTER, HOST_COLLECT_METRIC,
 )
 from apps.cmdb.constants import INSTANCE
 from apps.cmdb.graph.neo4j import Neo4jClient
@@ -30,13 +31,14 @@ from apps.core.logger import logger
 # 指标纳管（纳管控制器）
 class MetricsCannula:
     def __init__(self, inst_id, organization: list, inst_name: str, task_id: int, collect_plugin: Type,
-                 manual: bool = False, default_metrics: dict = None):
+                 manual: bool = False, default_metrics: dict = None, filter_collect_task=True):
         self.inst_id = inst_id
         self.organization = organization
         self.task_id = str(task_id)
         self.manual = False if default_metrics else manual  # 是否手动
         self.inst_name = inst_name
         self.collect_plugin = collect_plugin
+        self.filter_collect_task = filter_collect_task
         self.collect_data = {}  # 采集后的原始数据
         self.collect_params = {}
         self.collection_metrics = default_metrics or self.get_collection_metrics()
@@ -73,8 +75,10 @@ class MetricsCannula:
         for model_id, metrics in self.collection_metrics.items():
             params = [
                 {"field": "model_id", "type": "str=", "value": model_id},
-                {"field": "collect_task", "type": "str=", "value": self.task_id},
             ]
+            if self.filter_collect_task:
+                params.append({"field": "collect_task", "type": "str=", "value": self.task_id})
+
             with Neo4jClient() as ag:
                 already_data, _ = ag.query_entity(INSTANCE, params)
                 management = Management(
@@ -1330,3 +1334,109 @@ class AliyunCollectMetrics(CollectBase):
                 if data:
                     result.append(data)
             self.result[model_id] = result
+
+
+class HostCollectMetrics(CollectBase):
+    def __init__(self, inst_name, inst_id, task_id, *args, **kwargs):
+        super().__init__(inst_name, inst_id, task_id, *args, **kwargs)
+        self.os_type_list = [{"id": "1", "name": "Linux"}, {"id": "2", "name": "Windows"},
+                             {"id": "3", "name": "AIX"},
+                             {"id": "4", "name": "Unix"}, {"id": "other", "name": "Other"}]
+        self.cup_arch_list = [{"id": "x86", "name": "x86"}, {"id": "x64", "name": "x64"}, {"id": "arm", "name": "ARM"},
+                              {"id": "arm64", "name": "ARM64"}, {"id": "other", "name": "Other"}]
+
+    @property
+    def _metrics(self):
+        data = HOST_COLLECT_METRIC
+        return data
+
+    def prom_sql(self):
+        sql = " or ".join(
+            "{}{{instance_id=\"{}\"}}".format(m, f"{self.task_id}_{self.inst_name}") for m in self._metrics)
+        return sql
+
+    @property
+    def model_field_mapping(self):
+        mapping = {
+            "inst_name": self.set_inst_name,
+            "hostname": "hostname",
+            "os_type": self.set_os_type,
+            "os_name": "os_name",
+            "os_version": "os_version",
+            "os_bit": "os_bits",
+            "cpu_model": "cpu_model",
+            "cpu_core": (self.transform_int, "cpu_cores"),
+            "memory": (self.transform_int, "memory_gb"),
+            "disk": (self.transform_int, "disk_gb"),
+            "cpu_arch": self.set_cpu_arch,
+            "inner_mac": (self.format_mac, "mac_address"),
+
+        }
+
+        return mapping
+
+    def set_inst_name(self, *args, **kwargs):
+        return self.inst_name
+
+    @staticmethod
+    def transform_int(data):
+        return int(float(data))
+
+    @staticmethod
+    def format_mac(mac, *args, **kwargs):
+        # 统一转为大写，冒号分隔
+        mac = mac.strip().lower().replace("-", ":")
+        if not re.match(r"^([0-9a-f]{2}:){5}[0-9a-f]{2}$", mac):
+            return mac
+        return mac.upper()
+
+    def set_cpu_arch(self, data, *args, **kwargs):
+        cpu_arch = data["cpu_architecture"]
+        for arch in self.cup_arch_list:
+            if arch["name"].lower() in cpu_arch.lower():
+                return arch["id"]
+        return "other"
+
+    def set_os_type(self, data, *args, **kwargs):
+        os_type = data["os_type"]
+        for os in self.os_type_list:
+            if os["name"].lower() in os_type.lower():
+                return os["id"]
+        return "other"
+
+    def format_data(self, data):
+        """格式化数据"""
+        for index_data in data["result"]:
+            metric_name = index_data["metric"]["__name__"]
+            value = index_data["value"]
+            _time, value = value[0], value[1]
+            if not self.timestamp_gt:
+                if timestamp_gt_one_day_ago(_time):
+                    break
+                else:
+                    self.timestamp_gt = True
+
+            index_dict = dict(
+                index_key=metric_name,
+                index_value=value,
+                **index_data["metric"],
+            )
+
+            self.collection_metrics_dict[metric_name].append(index_dict)
+
+    def format_metrics(self):
+        """格式化数据"""
+        for metric_key, metrics in self.collection_metrics_dict.items():
+            result = []
+            for index_data in metrics:
+                data = {}
+                for field, key_or_func in self.model_field_mapping.items():
+                    if isinstance(key_or_func, tuple):
+                        data[field] = key_or_func[0](index_data[key_or_func[1]])
+                    elif callable(key_or_func):
+                        data[field] = key_or_func(index_data)
+                    else:
+                        data[field] = index_data.get(key_or_func, "")
+                if data:
+                    result.append(data)
+            self.result[self.model_id] = result

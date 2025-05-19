@@ -1,13 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Form, Input, Select, Button, message, InputNumber } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import CustomTable from '@/components/custom-table';
 import { v4 as uuidv4 } from 'uuid';
-import { deepClone } from '@/app/monitor/utils/common';
 import {
-  COLLECT_TYPE_MAP,
-  INSTANCE_TYPE_MAP,
-  CONFIG_TYPE_MAP,
+  deepClone,
+  getConfigByPluginName,
+  getConfigByObjectName,
+} from '@/app/monitor/utils/common';
+import {
   useMiddleWareFields,
   TIMEOUT_UNITS,
 } from '@/app/monitor/constants/monitor';
@@ -16,14 +17,19 @@ import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
 import { useCommon } from '@/app/monitor/context/common';
 import { Organization, ListItem, TableDataItem } from '@/app/monitor/types';
-import { IntergrationMonitoredObject } from '@/app/monitor/types/monitor';
+import {
+  IntergrationAccessProps,
+  IntergrationMonitoredObject,
+} from '@/app/monitor/types/monitor';
 import { useUserInfoContext } from '@/context/userInfo';
 import { useColumnsAndFormItems } from '@/app/monitor/hooks/intergration';
 import Permission from '@/components/permission';
 
 const { Option } = Select;
 
-const AutomaticConfiguration: React.FC = () => {
+const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
+  showInterval = true,
+}) => {
   const [form] = Form.useForm();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
@@ -37,43 +43,14 @@ const AutomaticConfiguration: React.FC = () => {
   const authList = useRef(commonContext?.authOrganizations || []);
   const organizationList: Organization[] = authList.current;
   const pluginName = searchParams.get('collect_type') || '';
-  const collectType = COLLECT_TYPE_MAP[pluginName];
-  const instType = INSTANCE_TYPE_MAP[pluginName];
-  const configTypes = CONFIG_TYPE_MAP[pluginName];
   const objectName = searchParams.get('name') || '';
   const objectId = searchParams.get('id') || '';
-  const getInitMonitoredObjectItem = () => {
-    const initItem = {
-      key: uuidv4(),
-      node_ids: null,
-      instance_name: null,
-      group_ids: groupId,
-    };
-    if (['web', 'ping', 'middleware'].includes(collectType)) {
-      return { ...initItem, url: null };
-    }
-    if (['snmp', 'ipmi'].includes(collectType)) {
-      return { ...initItem, ip: null };
-    }
-    if (collectType === 'docker') {
-      return { ...initItem, endpoint: null };
-    }
-    if (collectType === 'database') {
-      return pluginName === 'ElasticSearch'
-        ? { ...initItem, server: null }
-        : { ...initItem, host: null, port: null };
-    }
-    if (collectType === 'vmware') {
-      return { ...initItem, host: null };
-    }
-    return initItem as IntergrationMonitoredObject;
-  };
   const authPasswordRef = useRef<any>(null);
   const privPasswordRef = useRef<any>(null);
   const passwordRef = useRef<any>(null);
-  const [dataSource, setDataSource] = useState<IntergrationMonitoredObject[]>([
-    getInitMonitoredObjectItem(),
-  ]);
+  const [dataSource, setDataSource] = useState<IntergrationMonitoredObject[]>(
+    []
+  );
   const [authPasswordDisabled, setAuthPasswordDisabled] =
     useState<boolean>(true);
   const [privPasswordDisabled, setPrivPasswordDisabled] =
@@ -312,7 +289,66 @@ const AutomaticConfiguration: React.FC = () => {
         />
       ),
     },
+    {
+      title: middleWareFieldsMap.default,
+      dataIndex: 'jmx_url',
+      key: 'jmx_url',
+      width: 200,
+      render: (_: unknown, record: TableDataItem, index: number) => (
+        <Input
+          value={record.jmx_url}
+          onChange={(e) =>
+            handleFieldAndInstNameChange(e, {
+              index,
+              field: 'jmx_url',
+            })
+          }
+        />
+      ),
+    },
   ];
+
+  const collectType = useMemo(() => {
+    return getConfigByPluginName(pluginName, 'collect_type');
+  }, [pluginName]);
+
+  const instType = useMemo(() => {
+    return getConfigByObjectName(objectName, 'instance_type');
+  }, [objectName]);
+
+  const configTypes = useMemo(() => {
+    return getConfigByPluginName(pluginName, 'config_type');
+  }, [pluginName]);
+
+  const initItems = useMemo(() => {
+    const initItem = {
+      key: uuidv4(),
+      node_ids: null,
+      instance_name: null,
+      group_ids: groupId,
+    };
+    if (['web', 'ping', 'middleware'].includes(collectType)) {
+      return { ...initItem, url: null };
+    }
+    if (['snmp', 'ipmi'].includes(collectType)) {
+      return { ...initItem, ip: null };
+    }
+    if (collectType === 'jmx') {
+      return { ...initItem, jmx_url: null };
+    }
+    if (collectType === 'docker') {
+      return { ...initItem, endpoint: null };
+    }
+    if (collectType === 'database') {
+      return pluginName === 'ElasticSearch'
+        ? { ...initItem, server: null }
+        : { ...initItem, host: null, port: null };
+    }
+    if (collectType === 'http') {
+      return { ...initItem, host: null };
+    }
+    return initItem as IntergrationMonitoredObject;
+  }, [collectType, groupId]);
 
   const handleEditAuthPassword = () => {
     if (authPasswordDisabled) {
@@ -377,6 +413,7 @@ const AutomaticConfiguration: React.FC = () => {
 
   useEffect(() => {
     if (isLoading) return;
+    setDataSource([initItems]);
     getNodeList();
     initData();
   }, [isLoading]);
@@ -438,7 +475,10 @@ const AutomaticConfiguration: React.FC = () => {
 
   const handleAdd = (key: string) => {
     const index = dataSource.findIndex((item) => item.key === key);
-    const newData: IntergrationMonitoredObject = getInitMonitoredObjectItem();
+    const newData: IntergrationMonitoredObject = {
+      ...initItems,
+      key: uuidv4(),
+    };
     const updatedData = [...dataSource];
     updatedData.splice(index + 1, 0, newData); // 在当前行下方插入新数据
     setDataSource(updatedData);
@@ -466,6 +506,7 @@ const AutomaticConfiguration: React.FC = () => {
         configs: getConfigs(_values),
         collect_type: collectType,
         monitor_object_id: +objectId,
+        collector: getConfigByPluginName(pluginName, 'collector'),
         instances: dataSource.map((item) => {
           const { key, ...rest } = item;
           values.key = key;
@@ -482,18 +523,21 @@ const AutomaticConfiguration: React.FC = () => {
   };
 
   const getConfigs = (row: TableDataItem) => {
-    switch (collectType) {
-      case 'host':
-        return form.getFieldValue('metric_type').map((item: string) => ({
-          type: item,
-          ...row,
-        }));
-      default:
-        if (row.timeout) {
-          row.timeout = row.timeout + 's';
-        }
-        return [{ type: configTypes[0], ...row }];
+    if (row.timeout) {
+      row.timeout = row.timeout + 's';
     }
+    if (collectType === 'host') {
+      return form.getFieldValue('metric_type').map((item: string) => ({
+        type: item,
+        ...row,
+      }));
+    }
+    if (collectType === 'http') {
+      row.custom_headers = { username: row.username, password: row.password };
+      delete row.username;
+      delete row.password;
+    }
+    return [{ type: configTypes[0], ...row }];
   };
 
   const getInstId = (row: IntergrationMonitoredObject) => {
@@ -506,20 +550,20 @@ const AutomaticConfiguration: React.FC = () => {
       case 'trap':
         const target: any = nodeList.find((item) => row.node_ids === item.id);
         return 'trap' + target?.ip + '-' + target?.cloud_region;
-      case 'web':
-        return row.url;
-      case 'ping':
-        return row.url;
-      case 'middleware':
-        return row.url;
+      case 'snmp':
+        return objectName + '-' + (row.ip || '');
+      case 'ipmi':
+        return objectName + '-' + (row.ip || '');
       case 'docker':
         return row.endpoint;
       case 'database':
         return row.server || `${row.host}:${row.port}`;
-      case 'vmware':
+      case 'http':
         return `vc-${row.host}`;
+      case 'jmx':
+        return row.jmx_url;
       default:
-        return objectName + '-' + (row.ip || '');
+        return row.url;
     }
   };
 
@@ -612,36 +656,38 @@ const AutomaticConfiguration: React.FC = () => {
           {t('monitor.intergrations.configuration')}
         </b>
         {formItems}
-        <Form.Item required label={t('monitor.intergrations.interval')}>
-          <Form.Item
-            noStyle
-            name="interval"
-            rules={[
-              {
-                required: true,
-                message: t('common.required'),
-              },
-            ]}
-          >
-            <InputNumber
-              className="mr-[10px]"
-              min={1}
-              precision={0}
-              addonAfter={
-                <Select style={{ width: 116 }} defaultValue="s">
-                  {TIMEOUT_UNITS.map((item: string) => (
-                    <Option key={item} value={item}>
-                      {item}
-                    </Option>
-                  ))}
-                </Select>
-              }
-            />
+        {showInterval && (
+          <Form.Item required label={t('monitor.intergrations.interval')}>
+            <Form.Item
+              noStyle
+              name="interval"
+              rules={[
+                {
+                  required: true,
+                  message: t('common.required'),
+                },
+              ]}
+            >
+              <InputNumber
+                className="mr-[10px]"
+                min={1}
+                precision={0}
+                addonAfter={
+                  <Select style={{ width: 116 }} defaultValue="s">
+                    {TIMEOUT_UNITS.map((item: string) => (
+                      <Option key={item} value={item}>
+                        {item}
+                      </Option>
+                    ))}
+                  </Select>
+                }
+              />
+            </Form.Item>
+            <span className="text-[12px] text-[var(--color-text-3)]">
+              {t('monitor.intergrations.intervalDes')}
+            </span>
           </Form.Item>
-          <span className="text-[12px] text-[var(--color-text-3)]">
-            {t('monitor.intergrations.intervalDes')}
-          </span>
-        </Form.Item>
+        )}
         <b className="text-[14px] flex mb-[10px] ml-[-10px]">
           {t('monitor.intergrations.basicInformation')}
         </b>

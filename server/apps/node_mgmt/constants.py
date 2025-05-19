@@ -35,9 +35,9 @@ COLLECTOR_INSTALL_DIR = {
     WINDOWS_OS: "C:\\gse\\fusion-collectors\\bin",
 }
 
-# 解压并执行命令
-UNZIP_RUN_COMMAND = {
-    LINUX_OS: "cd /opt/fusion-collectors && ./install.sh {server_url} {server_token}",
+# 设置权限并运行命令
+RUN_COMMAND = {
+    LINUX_OS: "chmod -R +x /opt/fusion-collectors && cd /opt/fusion-collectors && ./install.sh {server_url}/node_mgmt/open_api/node {server_token}",
     WINDOWS_OS: "powershell -command \"cd C:\\gse\\fusion-collectors && .\\install.ps1 {server_url} {server_token}\"",
 }
 

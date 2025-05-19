@@ -293,13 +293,16 @@ class LLMService:
 
         # 为每个知识库搜索相关文档
         for knowledge_base in knowledge_base_list:
-            embed_model_base_url = knowledge_base.embed_model.embed_config["base_url"]
-            embed_model_api_key = knowledge_base.embed_model.embed_config["api_key"]
+            embed_config = knowledge_base.embed_model.decrypted_embed_config
+            embed_model_base_url = embed_config["base_url"]
+            embed_model_api_key = embed_config["api_key"]
+            embed_model_name = embed_config["model"]
             rerank_model_base_url = rerank_model_api_key = rerank_model_name = ""
             if knowledge_base.rerank_model:
-                rerank_model_base_url = knowledge_base.rerank_model.rerank_config["base_url"]
-                rerank_model_api_key = knowledge_base.rerank_model.rerank_config["api_key"]
-                rerank_model_name = knowledge_base.rerank_model.name
+                rerank_config = knowledge_base.rerank_model.decrypted_rerank_config_config
+                rerank_model_base_url = rerank_config["base_url"]
+                rerank_model_api_key = rerank_config["api_key"]
+                rerank_model_name = rerank_config.get("model", knowledge_base.rerank_model.name)
             score_threshold = score_threshold_map.get(knowledge_base.id, 0.7)
             kwargs = {
                 "index_name": knowledge_base.knowledge_index_name(),
@@ -316,7 +319,7 @@ class LLMService:
                 "enable_rerank": knowledge_base.enable_rerank,
                 "embed_model_base_url": embed_model_base_url,
                 "embed_model_api_key": embed_model_api_key,
-                "embed_model_name": knowledge_base.embed_model.name,
+                "embed_model_name": embed_model_name,
                 "rerank_model_base_url": rerank_model_base_url,
                 "rerank_model_api_key": rerank_model_api_key,
                 "rerank_model_name": rerank_model_name,

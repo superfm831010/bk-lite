@@ -1,6 +1,8 @@
 import os
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.tools.jenkins_tools import list_jenkins_jobs
 

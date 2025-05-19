@@ -38,7 +38,11 @@ import {
   ChannelItem,
 } from '@/app/monitor/types/monitor';
 import { useCommon } from '@/app/monitor/context/common';
-import { deepClone } from '@/app/monitor/utils/common';
+import {
+  deepClone,
+  getConfigByPluginName,
+  getConfigByObjectName,
+} from '@/app/monitor/utils/common';
 import strategyStyle from '../index.module.scss';
 import {
   PlusOutlined,
@@ -56,9 +60,6 @@ import {
   LEVEL_MAP,
   useLevelList,
   SCHEDULE_UNIT_MAP,
-  MONITOR_GROUPS_MAP,
-  OBJECT_ICON_MAP,
-  COLLECT_TYPE_MAP,
 } from '@/app/monitor/constants/monitor';
 const { Option } = Select;
 import Icon from '@/components/icon';
@@ -73,7 +74,7 @@ const StrategyOperation = () => {
     getMetricsGroup,
     getMonitorMetrics,
     getMonitorPlugin,
-    getMonitorPolicy
+    getMonitorPolicy,
   } = useMonitorApi();
   const CONDITION_LIST = useConditionList();
   const METHOD_LIST = useMethodList();
@@ -114,7 +115,8 @@ const StrategyOperation = () => {
   const [noDataAlert, setNoDataAlert] = useState<number | null>(null);
   const [noDataLevel, setNoDataLevel] = useState<string>();
   const [groupBy, setGroupBy] = useState<string[]>(
-    MONITOR_GROUPS_MAP[monitorName as string]?.default || defaultGroup
+    getConfigByObjectName(monitorName as string, 'groupIds').default ||
+      defaultGroup
   );
   const [formData, setFormData] = useState<StrategyFields>({
     threshold: [],
@@ -210,7 +212,7 @@ const StrategyOperation = () => {
       monitor_object_id: monitorObjId,
     });
     const plugins = data.map((item: PluginItem) => ({
-      label: COLLECT_TYPE_MAP[item.name || ''],
+      label: getConfigByPluginName(item.name, 'collect_type'),
       value: item.id,
       name: item.name,
     }));
@@ -475,7 +477,9 @@ const StrategyOperation = () => {
   };
 
   const goBack = () => {
-    const targetUrl = `/monitor/event/${type === 'builtIn' ? 'template' : 'strategy'}?objId=${monitorObjId}`;
+    const targetUrl = `/monitor/event/${
+      type === 'builtIn' ? 'template' : 'strategy'
+    }?objId=${monitorObjId}`;
     router.push(targetUrl);
   };
 
@@ -887,10 +891,11 @@ const StrategyOperation = () => {
                                       onChange={handleGroupByChange}
                                     >
                                       {(
-                                        MONITOR_GROUPS_MAP[
-                                          monitorName as string
-                                        ]?.list || defaultGroup
-                                      ).map((item) => (
+                                        getConfigByObjectName(
+                                          monitorName as string,
+                                          'groupIds'
+                                        ).list || defaultGroup
+                                      ).map((item: string) => (
                                         <Option value={item} key={item}>
                                           {item}
                                         </Option>
@@ -1069,7 +1074,10 @@ const StrategyOperation = () => {
                         <div className="w-[220px] bg-[var(--color-bg-1)] border-2 border-blue-300 shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-3 relative cursor-pointer group">
                           <div className="flex items-center space-x-4 my-1">
                             <Icon
-                              type={OBJECT_ICON_MAP[monitorName as string]}
+                              type={getConfigByObjectName(
+                                monitorName as string,
+                                'icon'
+                              )}
                               className="text-2xl"
                             />
                             <h2 className="text-[16px] font-bold m-0">
@@ -1090,7 +1098,9 @@ const StrategyOperation = () => {
                             <div
                               className="flex items-center space-x-4 my-1 font-[800]"
                               style={{
-                                borderLeft: `4px solid ${LEVEL_MAP[item.level]}`,
+                                borderLeft: `4px solid ${
+                                  LEVEL_MAP[item.level]
+                                }`,
                                 paddingLeft: '10px',
                               }}
                             >
@@ -1238,7 +1248,11 @@ const StrategyOperation = () => {
                                       ))}
                                     </Select>
                                     {t('monitor.events.nodataRecoverCondition')}
-                                    {` ${noDataAlert || ''} ${SCHEDULE_LIST.find((item) => item.value === nodataUnit)?.label} `}
+                                    {` ${noDataAlert || ''} ${
+                                      SCHEDULE_LIST.find(
+                                        (item) => item.value === nodataUnit
+                                      )?.label
+                                    } `}
                                     {t('monitor.events.nodataRecover')}
                                   </div>
                                 )}

@@ -13,7 +13,7 @@ import type { FormInstance } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { ModalSuccess, ModalRef } from '@/app/node-manager/types';
 import type { TableDataItem } from '@/app/node-manager/types';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 
 const VariableModal = forwardRef<ModalRef, ModalSuccess>(
@@ -110,7 +110,7 @@ const VariableModal = forwardRef<ModalRef, ModalSuccess>(
               },
             ]}
           >
-            <Input />
+            <Input placeholder={t('common.inputMsg')} />
           </Form.Item>
           <Form.Item
             name="value"
@@ -122,13 +122,13 @@ const VariableModal = forwardRef<ModalRef, ModalSuccess>(
               },
             ]}
           >
-            <Input />
+            <Input placeholder={t('common.inputMsg')} />
           </Form.Item>
           <Form.Item
             name="description"
             label={t('node-manager.cloudregion.variable.desc')}
           >
-            <Input.TextArea rows={5} />
+            <Input.TextArea rows={5} placeholder={t('common.inputMsg')} />
           </Form.Item>
         </Form>
       </OperateModal>

@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from apps.core.logger import logger
 from apps.opspilot.bot_mgmt.utils import get_user_info
 from apps.opspilot.model_provider_mgmt.models import LLMSkill, SkillRule
@@ -36,9 +38,21 @@ class SkillExecuteService:
             last_content = content.strip().split("\n")[-1]
             if "引用知识" not in last_content and knowledge_titles:
                 content += "\n"
-                content += f'引用知识: {", ".join(knowledge_titles)}'
+                if channel == "enterprise_wechat":
+                    title = cls.format_enterprise_wechat_title(result["citing_knowledge"])
+                else:
+                    title = knowledge_titles
+                content += f'引用知识: {", ".join(title)}'
         result["content"] = content
         return result
+
+    @classmethod
+    def format_enterprise_wechat_title(cls, citing_knowledge):
+        return_data = []
+        for i in citing_knowledge:
+            url = f"{settings.OPSPILOT_WEB_URL.rstrip('/')}/opspilot/knowledge/preview?id={i['knowledge_id']}"
+            return_data.append(f"[{i['knowledge_title']}]({url})")
+        return return_data
 
     @classmethod
     def get_rule_result(cls, channel, llm_skill, user, groups):

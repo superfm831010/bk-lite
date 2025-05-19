@@ -15,3 +15,4 @@ CONVERSATION_MQ_PASSWORD = os.getenv("CONVERSATION_MQ_PASSWORD", "password")
 MINIO_PRIVATE_BUCKETS = ["munchkin-private"]
 MINIO_PUBLIC_BUCKETS = ["munchkin-public"]
 KUBE_CONFIG_FILE = os.getenv("KUBE_CONFIG_FILE", "")
+OPSPILOT_WEB_URL = os.getenv("OPSPILOT_WEB_URL", "https://ops-pilot.canway.net/")

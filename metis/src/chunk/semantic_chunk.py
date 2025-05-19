@@ -1,3 +1,4 @@
+import uuid
 from collections import defaultdict
 from typing import List
 
@@ -25,6 +26,7 @@ class SemanticChunk:
         result_docs = []
         for segment_number, segment_docs in grouped_docs.items():
             for chunk_number, doc in enumerate(segment_docs):
-                doc.metadata['chunk_number'] = chunk_number
+                doc.metadata['chunk_number'] = str(chunk_number)
+                doc.metadata['chunk_id'] = str(uuid.uuid4())
                 result_docs.append(doc)
         return split_docs

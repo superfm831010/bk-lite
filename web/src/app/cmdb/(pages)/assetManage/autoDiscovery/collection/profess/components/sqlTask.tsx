@@ -166,7 +166,7 @@ const SQLTask: React.FC<SQLTaskFormProps> = ({
               </Form.Item>
 
               <Form.Item
-                label={t('Collection.VMTask.port')}
+                label={t('Collection.port')}
                 name="port"
                 rules={[{ required: true }]}
               >

@@ -3,7 +3,7 @@ import tempfile
 
 import docx
 from langchain_core.documents import Document
-from loguru import logger
+from sanic.log import logger
 from tqdm import tqdm
 
 from src.ocr.base_ocr import BaseOCR

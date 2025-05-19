@@ -1,0 +1,8 @@
+{
+  "plugin": "WebLogic-JMX",
+  "plugin_desc": "",
+  "name": "WebLogic",
+  "type": "Middleware",
+  "description": "",
+  "metrics": []
+}

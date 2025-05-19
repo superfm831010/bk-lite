@@ -1,13 +1,5 @@
-import { JWT, getToken } from 'next-auth/jwt';
+import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
-
-// Helper function to generate logout parameters
-function logoutParams(token: JWT): Record<string, string> {
-  return {
-    id_token_hint: token.idToken as string,
-    post_logout_redirect_uri: process.env.NEXTAUTH_URL as string,
-  };
-}
 
 // Handle the actual logout API
 export const POST = async (req: NextRequest) => {
@@ -24,16 +16,12 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const endSessionEndpoint = new URL(
-      `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/logout`
-    );
-
-    const params = new URLSearchParams(logoutParams(token));
-    console.log('Logout URL parameters:', params.toString());
-
-    // Redirect user to the Keycloak logout URL
-    const logoutURL = `${endSessionEndpoint}?${params}`;
-    return NextResponse.json({ url: logoutURL }, { status: 200 });
+    // Return success with the signIn URL for redirection
+    const signInUrl = '/auth/signin';
+    return NextResponse.json({ 
+      success: true, 
+      url: signInUrl 
+    }, { status: 200 });
   } catch (error) {
     console.error('Logout error:', error);
     return NextResponse.json(
@@ -43,9 +31,12 @@ export const POST = async (req: NextRequest) => {
   }
 };
 
-// Optional: Handle GET requests for debugging or miscommunication
+// Optional: Handle GET requests for debugging or consistency
 export const GET = async () => {
-  return NextResponse.json({ message: 'Method Not Allowed' }, { status: 405 });
+  return NextResponse.json({ 
+    success: true, 
+    url: '/auth/signin' 
+  }, { status: 200 });
 };
 
 // Export to force dynamic behavior

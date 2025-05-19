@@ -252,6 +252,41 @@ MONITOR_OBJS = [
         "instance_id_keys": ["instance_id", "resource_id"],
         "supplementary_indicators": ["data_storage_disk_used_average_gauge", "data_storage_store_accessible_gauge"],
     },
+    {
+        "type": "Other",
+        "name": "JVM",
+        "default_metric": 'any({instance_type="jvm"}) by (instance_id)',
+        "instance_id_keys": ["instance_id"],
+        "supplementary_indicators": [],
+    },
+    {
+        "type": "Middleware",
+        "name": "JBoss",
+        "default_metric": 'any({instance_type="jboss"}) by (instance_id)',
+        "instance_id_keys": ["instance_id"],
+        "supplementary_indicators": [],
+    },
+    {
+        "type": "Middleware",
+        "name": "Jetty",
+        "default_metric": 'any({instance_type="jetty"}) by (instance_id)',
+        "instance_id_keys": ["instance_id"],
+        "supplementary_indicators": [],
+    },
+    {
+        "type": "Middleware",
+        "name": "TongWeb",
+        "default_metric": 'any({instance_type="tongweb"}) by (instance_id)',
+        "instance_id_keys": ["instance_id"],
+        "supplementary_indicators": [],
+    },
+    {
+        "type": "Middleware",
+        "name": "WebLogic",
+        "default_metric": 'any({instance_type="weblogic"}) by (instance_id)',
+        "instance_id_keys": ["instance_id"],
+        "supplementary_indicators": [],
+    },
 ]
 
 # 阀值对比方法

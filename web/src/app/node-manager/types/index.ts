@@ -45,6 +45,7 @@ interface Collectorcardprops {
   name: string;
   system: string[];
   introduction: string;
+  icon: string;
 }
 
 interface DropDownItem {

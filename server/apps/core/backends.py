@@ -26,7 +26,7 @@ class APISecretAuthBackend(ModelBackend):
         return None
 
 
-class KeycloakAuthBackend(ModelBackend):
+class AuthBackend(ModelBackend):
     def authenticate(self, request=None, username=None, password=None, token=None):
         # 判断是否传入验证所需的bk_token,没传入则返回None
         if not token:

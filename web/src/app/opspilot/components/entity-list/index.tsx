@@ -12,6 +12,7 @@ const { Search } = Input;
 
 interface EntityListProps<T> {
   endpoint: string;
+  queryParams?: Record<string, any>;
   CardComponent: React.FC<any>;
   ModifyModalComponent: React.FC<any>;
   itemTypeSingle: string;
@@ -19,7 +20,7 @@ interface EntityListProps<T> {
   onCreateFromTemplate?: (itemType: string) => void;
 }
 
-const EntityList = <T,>({ endpoint, CardComponent, ModifyModalComponent, itemTypeSingle, beforeDelete, onCreateFromTemplate }: EntityListProps<T>) => {
+const EntityList = <T,>({ endpoint, queryParams = {}, CardComponent, ModifyModalComponent, itemTypeSingle, beforeDelete, onCreateFromTemplate }: EntityListProps<T>) => {
   const { t } = useTranslation();
   const { get, post, patch, del } = useApiClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,7 +46,8 @@ const EntityList = <T,>({ endpoint, CardComponent, ModifyModalComponent, itemTyp
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const data = await get(`${endpoint}`);
+      const queryString = new URLSearchParams(queryParams).toString();
+      const data = await get(`${endpoint}?${queryString}`);
       setItems(Array.isArray(data) ? data : []);
     } catch {
       message.error(t('common.fetchFailed'));

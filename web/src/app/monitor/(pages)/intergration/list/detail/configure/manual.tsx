@@ -1,13 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Form, Button, message, InputNumber, Select } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { deepClone } from '@/app/monitor/utils/common';
 import {
-  COLLECT_TYPE_MAP,
-  CONFIG_TYPE_MAP,
-  INSTANCE_TYPE_MAP,
-  TIMEOUT_UNITS,
-} from '@/app/monitor/constants/monitor';
+  deepClone,
+  getConfigByPluginName,
+  getConfigByObjectName,
+} from '@/app/monitor/utils/common';
+import { TIMEOUT_UNITS } from '@/app/monitor/constants/monitor';
 import { useSearchParams } from 'next/navigation';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
@@ -16,8 +15,11 @@ import CodeEditor from '@/app/monitor/components/codeEditor';
 import { TableDataItem } from '@/app/monitor/types';
 const { Option } = Select;
 import Permission from '@/components/permission';
+import { IntergrationAccessProps } from '@/app/monitor/types/monitor';
 
-const AutomaticConfiguration: React.FC = () => {
+const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
+  showInterval = true,
+}) => {
   const [form] = Form.useForm();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
@@ -26,9 +28,6 @@ const AutomaticConfiguration: React.FC = () => {
   const pluginName = searchParams.get('collect_type') || '';
   const objId = searchParams.get('id') || '';
   const objectName = searchParams.get('name') || '';
-  const collectType = COLLECT_TYPE_MAP[pluginName];
-  const configTypes = CONFIG_TYPE_MAP[pluginName];
-  const instanceType = INSTANCE_TYPE_MAP[pluginName];
   const authPasswordRef = useRef<any>(null);
   const privPasswordRef = useRef<any>(null);
   const passwordRef = useRef<any>(null);
@@ -39,6 +38,18 @@ const AutomaticConfiguration: React.FC = () => {
   const [passwordDisabled, setPasswordDisabled] = useState<boolean>(true);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [configMsg, setConfigMsg] = useState<string>('');
+
+  const collectType = useMemo(() => {
+    return getConfigByPluginName(pluginName, 'collect_type');
+  }, [pluginName]);
+
+  const instanceType = useMemo(() => {
+    return getConfigByObjectName(objectName, 'instance_type');
+  }, [objectName]);
+
+  const configTypes = useMemo(() => {
+    return getConfigByPluginName(pluginName, 'config_type');
+  }, [pluginName]);
 
   const handleEditAuthPassword = () => {
     if (authPasswordDisabled) {
@@ -152,20 +163,18 @@ const AutomaticConfiguration: React.FC = () => {
         return row.monitor_ip;
       case 'trap':
         return 'trap' + row.monitor_ip;
-      case 'web':
-        return row.monitor_url;
-      case 'ping':
-        return row.monitor_url;
-      case 'middleware':
-        return row.monitor_url;
+      case 'snmp':
+        return objectName + '-' + (row.monitor_ip || '');
+      case 'ipmi':
+        return objectName + '-' + (row.monitor_ip || '');
       case 'docker':
         return row.endpoint;
       case 'database':
         return row.server || `${row.host}:${row.port}`;
-      case 'vmware':
+      case 'http':
         return `vc-${row.host}`;
       default:
-        return objectName + '-' + (row.monitor_ip || '');
+        return row.monitor_url;
     }
   };
 
@@ -185,7 +194,7 @@ const AutomaticConfiguration: React.FC = () => {
           return (pre += _configMsg[cur]);
         }, '');
       }
-      setConfigMsg(replaceTemplate(_configMsg as string, params));
+      setConfigMsg(replaceTemplate(_configMsg || '', params));
       message.success(t('common.successfullyAdded'));
     } finally {
       setConfirmLoading(false);
@@ -200,7 +209,7 @@ const AutomaticConfiguration: React.FC = () => {
       // 使用正则表达式来匹配模板字符串中的 ${key} 或 $key
       const regex = new RegExp(`\\$${key}`, 'g');
       // 替换匹配到的内容为对象中的值
-      return acc.replace(regex, data[key].toString());
+      return acc.replace(regex, (data[key] || 'null').toString());
     }, template);
   };
 
@@ -213,36 +222,38 @@ const AutomaticConfiguration: React.FC = () => {
           </p>
         )}
         {formItems}
-        <Form.Item required label={t('monitor.intergrations.interval')}>
-          <Form.Item
-            noStyle
-            name="interval"
-            rules={[
-              {
-                required: true,
-                message: t('common.required'),
-              },
-            ]}
-          >
-            <InputNumber
-              className="mr-[10px]"
-              min={1}
-              precision={0}
-              addonAfter={
-                <Select style={{ width: 116 }} defaultValue="s">
-                  {TIMEOUT_UNITS.map((item: string) => (
-                    <Option key={item} value={item}>
-                      {item}
-                    </Option>
-                  ))}
-                </Select>
-              }
-            />
+        {showInterval && (
+          <Form.Item required label={t('monitor.intergrations.interval')}>
+            <Form.Item
+              noStyle
+              name="interval"
+              rules={[
+                {
+                  required: true,
+                  message: t('common.required'),
+                },
+              ]}
+            >
+              <InputNumber
+                className="mr-[10px]"
+                min={1}
+                precision={0}
+                addonAfter={
+                  <Select style={{ width: 116 }} defaultValue="s">
+                    {TIMEOUT_UNITS.map((item: string) => (
+                      <Option key={item} value={item}>
+                        {item}
+                      </Option>
+                    ))}
+                  </Select>
+                }
+              />
+            </Form.Item>
+            <span className="text-[12px] text-[var(--color-text-3)]">
+              {t('monitor.intergrations.intervalDes')}
+            </span>
           </Form.Item>
-          <span className="text-[12px] text-[var(--color-text-3)]">
-            {t('monitor.intergrations.intervalDes')}
-          </span>
-        </Form.Item>
+        )}
       </Form>
       <Permission requiredPermissions={['Add']}>
         <Button type="primary" loading={confirmLoading} onClick={handleSave}>

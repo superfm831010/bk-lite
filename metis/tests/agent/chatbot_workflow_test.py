@@ -1,13 +1,17 @@
 import os
 
-from loguru import logger
+import pytest
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.core.entity.chat_history import ChatHistory
-from src.entity.agent.chatbot_workflow_request import ChatBotWorkflowRequest
+from src.entity.agent.chatbot_workflow.chatbot_workflow_request import ChatBotWorkflowRequest
 from src.agent.chatbot_workflow.chatbot_workflow_graph import ChatBotWorkflowGraph
 
 
-def test_chat():
+@pytest.mark.asyncio
+async def test_chat():
     request = ChatBotWorkflowRequest(
         model="gpt-4o",
         openai_api_base=os.getenv("OPENAI_BASE_URL"),
@@ -18,11 +22,18 @@ def test_chat():
         thread_id="2"
     )
     workflow = ChatBotWorkflowGraph()
-    result = workflow.execute(request)
-    logger.info(result)
+
+    # logger.info(f"values模式")
+    # result = workflow.execute(request)
+    # logger.info(result)
+
+    logger.info(f"messages 模式")
+    result = await workflow.stream(request)
+    await workflow.aprint_chunk(result)
 
 
-def test_chat_with_naiverag():
+@pytest.mark.asyncio
+async def test_chat_with_naiverag():
     user_message = "你好"
 
     request = ChatBotWorkflowRequest(
@@ -37,11 +48,18 @@ def test_chat_with_naiverag():
         naive_rag_request=[]
     )
     workflow = ChatBotWorkflowGraph()
+
+    logger.info(f"values模式")
     result = workflow.execute(request)
-    print(result)
+    logger.info(result)
+
+    logger.info(f"messages 模式")
+    result = await workflow.stream(request)
+    await workflow.aprint_chunk(result)
 
 
-def test_chat_with_manunal_chat_history():
+@pytest.mark.asyncio
+async def test_chat_with_manunal_chat_history():
     request = ChatBotWorkflowRequest(
         model="gpt-4o",
         openai_api_base=os.getenv("OPENAI_BASE_URL"),
@@ -56,5 +74,11 @@ def test_chat_with_manunal_chat_history():
         ]
     )
     workflow = ChatBotWorkflowGraph()
-    result = workflow.execute(request)
+
+    logger.info(f"values模式")
+    result = await workflow.execute(request)
     logger.info(result)
+
+    logger.info(f"messages 模式")
+    result = await workflow.stream(request)
+    await workflow.aprint_chunk(result)

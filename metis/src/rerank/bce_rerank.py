@@ -6,7 +6,7 @@ from tqdm import tqdm
 from typing import List, Dict, Tuple, Type, Union
 from copy import deepcopy
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from loguru import logger
+from sanic.log import logger
 
 
 class BCEReRank:

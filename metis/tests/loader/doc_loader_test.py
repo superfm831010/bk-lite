@@ -1,4 +1,6 @@
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.loader.doc_loader import DocLoader
 from src.ocr.pp_ocr import PPOcr

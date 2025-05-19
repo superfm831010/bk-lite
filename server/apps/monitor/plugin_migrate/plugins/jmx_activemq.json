@@ -1,0 +1,8 @@
+{
+  "plugin": "ActiveMQ-JMX",
+  "plugin_desc": "",
+  "name": "ActiveMQ",
+  "type": "Middleware",
+  "description": "",
+  "metrics": []
+}

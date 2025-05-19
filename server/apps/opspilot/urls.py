@@ -13,12 +13,10 @@ from apps.opspilot.knowledge_mgmt.viewsets import (
 )
 from apps.opspilot.model_provider_mgmt.views import (
     EmbedProviderViewSet,
-    EmbedViewSet,
     LLMModelViewSet,
     LLMViewSet,
     OCRProviderViewSet,
     RerankProviderViewSet,
-    RerankViewSet,
     RuleViewSet,
     SkillRequestLogViewSet,
     SkillToolsViewSet,
@@ -27,11 +25,9 @@ from apps.opspilot.quota_rule_mgmt.views import QuotaRuleViewSet
 
 router = routers.DefaultRouter()
 # model_provider
-router.register(r"model_provider_mgmt/embed", EmbedViewSet, basename="embed")
 router.register(r"model_provider_mgmt/embed_provider", EmbedProviderViewSet)
 router.register(r"model_provider_mgmt/rerank_provider", RerankProviderViewSet)
 router.register(r"model_provider_mgmt/ocr_provider", OCRProviderViewSet)
-router.register(r"model_provider_mgmt/rerank", RerankViewSet, basename="rerank")
 router.register(r"model_provider_mgmt/llm", LLMViewSet)
 router.register(r"model_provider_mgmt/rule", RuleViewSet)
 router.register(r"model_provider_mgmt/llm_model", LLMModelViewSet)

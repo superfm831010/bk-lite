@@ -18,7 +18,7 @@ interface StackedBarChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[var(--color-primary-bg-active)] p-4 shadow-sm">
+      <div className="bg-[var(--color-bg-3)] p-4 shadow-sm">
         <p className="text-sm font-bold">{label}</p>
         {payload.map((entry: any, index: number) => (
           <div

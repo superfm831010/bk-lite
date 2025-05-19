@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 
 from apps.cmdb.services.instance import InstanceManage
 from apps.core.utils.web_utils import WebUtils
+from apps.rpc.node_mgmt import NodeMgmt
 from config.components.drf import AUTH_TOKEN_HEADER_NAME
 
 
@@ -177,7 +178,8 @@ class InstanceViewSet(viewsets.ViewSet):
     @swagger_auto_schema(
         operation_id="instance_association_delete",
         operation_description="删除实例关联",
-        manual_parameters=[openapi.Parameter("id", openapi.IN_PATH, description="实例关联ID", type=openapi.TYPE_INTEGER)],
+        manual_parameters=[
+            openapi.Parameter("id", openapi.IN_PATH, description="实例关联ID", type=openapi.TYPE_INTEGER)],
     )
     @action(detail=False, methods=["delete"], url_path="association/(?P<id>.+?)")
     def instance_association_delete(self, request, id: int):
@@ -377,3 +379,14 @@ class InstanceViewSet(viewsets.ViewSet):
     def model_inst_count(self, request):
         result = InstanceManage.model_inst_count(request.META.get(AUTH_TOKEN_HEADER_NAME).split("Bearer ")[-1])
         return WebUtils.response_success(result)
+
+    @action(methods=["GET"], detail=False)
+    def list_proxys(self, requests, *args, **kwargs):
+        """
+        查询云区域数据
+        TODO 等节点管理开放接口后再对接接口
+        """
+        node_mgmt = NodeMgmt()
+        data = node_mgmt.cloud_region_list()
+        _data = [{"proxy_id": i['id'], "proxy_name": i['name']} for i in data]
+        return WebUtils.response_success(_data)

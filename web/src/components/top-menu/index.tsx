@@ -179,7 +179,10 @@ const TopMenu = () => {
         </div>
       </div>
       <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-        <div className="flex items-center space-x-4">
+        <div
+          className="flex items-center space-x-4 overflow-x-auto"
+          style={{ whiteSpace: 'nowrap' }}
+        >
           {menuItems
             .filter((item) => item.url && !item.isNotMenuItem)
             .map((item) => {

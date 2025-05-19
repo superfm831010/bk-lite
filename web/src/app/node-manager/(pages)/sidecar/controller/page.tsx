@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import collectorStyle from '../index.module.scss';
 import { Menu, Input, Space, Select, Button } from 'antd';
 import useApiClient from '@/utils/request';
-import useApiCollector from '@/app/node-manager/api/collector/index';
+import useApiCollector from '@/app/node-manager/api/collector';
 import EntityList from '@/components/entity-list/index';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';

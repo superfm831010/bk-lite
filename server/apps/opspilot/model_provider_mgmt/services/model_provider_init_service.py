@@ -36,7 +36,7 @@ class ModelProviderInitService:
                 is_build_in=True,
                 defaults={
                     "rerank_config": {
-                        "base_url": "https://inference.canway.net/v1/rerank",
+                        "base_url": "local:bce:maidalun1020/bce-reranker-base_v1",
                         "api_key": "",
                         "model": "bce-reranker-base_v1",
                     },
@@ -50,7 +50,7 @@ class ModelProviderInitService:
                 is_build_in=True,
                 defaults={
                     "embed_config": {
-                        "base_url": "https://inference.canway.net/v1",
+                        "base_url": "local:huggingface_embedding:maidalun1020/bce-embedding-base_v1",
                         "api_key": "",
                         "model": "bce-embedding-base_v1",
                     },
@@ -195,6 +195,40 @@ class ModelProviderInitService:
                 "params": {"url": "langchain:current_time", "name": "General tools"},
                 "description": "Built-in commonly used tools, including holiday queries, current time queries, etc., to provide additional information.",  # noqa
                 "tags": ["general"],
+                "icon": "",
+                "is_build_in": True,
+            },
+        )
+        SkillTools.objects.update_or_create(
+            name="Kubernetes Tools",
+            defaults={
+                "team": [self.group_id],
+                "params": {
+                    "url": "langchain:kubernetes",
+                    "name": "Kubernetes Tools",
+                    "kwargs": [{"key": "kubeconfig_path", "value": ""}],
+                },
+                "description": "Kubernetes Tools",  # noqa
+                "tags": ["maintenance"],
+                "icon": "",
+                "is_build_in": True,
+            },
+        )
+        SkillTools.objects.update_or_create(
+            name="Jenkins",
+            defaults={
+                "team": [self.group_id],
+                "params": {
+                    "url": "langchain:jenkins",
+                    "name": "Jenkins",
+                    "kwargs": [
+                        {"key": "jenkins_url", "value": ""},
+                        {"key": "jenkins_username", "value": ""},
+                        {"key": "jenkins_password", "value": ""},
+                    ],
+                },
+                "description": "",  # noqa
+                "tags": ["maintenance"],
                 "icon": "",
                 "is_build_in": True,
             },

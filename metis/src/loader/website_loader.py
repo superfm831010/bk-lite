@@ -2,7 +2,7 @@ from typing import List
 from langchain_community.document_loaders import RecursiveUrlLoader
 from langchain_community.document_transformers import BeautifulSoupTransformer
 from langchain_core.documents import Document
-from loguru import logger
+from sanic.log import logger
 
 
 class WebSiteLoader:

@@ -1,4 +1,3 @@
-import datetime
 import json
 
 import requests
@@ -41,7 +40,7 @@ def general_embed_by_document_list(document_list, is_show=False, username=""):
     task_obj = KnowledgeTask.objects.create(
         created_by=username,
         knowledge_base_id=knowledge_base_id,
-        task_name=f"{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}-{username}",
+        task_name=document_list[0].name,
         knowledge_ids=[doc.id for doc in document_list],
         train_progress=0,
     )
@@ -49,6 +48,8 @@ def general_embed_by_document_list(document_list, is_show=False, username=""):
     for index, document in tqdm(enumerate(document_list)):
         invoke_document_to_es(document=document)
         task_obj.train_progress += train_progress
+        if index < len(document_list) - 1:
+            task_obj.name = document_list[index + 1].name
         task_obj.save()
     task_obj.delete()
 
@@ -73,29 +74,6 @@ def invoke_document_to_es(document_id=0, document=None):
     document.train_status = DocumentStatus.READY
     document.save()
     logger.info(f"document {document.name} progress: {document.train_progress}")
-
-
-def invoke_to_es_by_splice(docs, document, process_num, remote_indexer):
-    try:
-        remote_indexer.invoke(
-            {
-                "elasticsearch_url": settings.ELASTICSEARCH_URL,
-                "elasticsearch_password": settings.ELASTICSEARCH_PASSWORD,
-                "embed_model_address": document.knowledge_base.embed_model.embed_config["base_url"],
-                "index_name": document.knowledge_base.knowledge_index_name(),
-                "index_mode": "",
-                "docs": docs,
-            }
-        )
-    except Exception as e:
-        logger.exception(e)
-        document.train_status = DocumentStatus.ERROR
-        document.train_progress = 0
-        document.save()
-        return
-    document.train_progress = round(document.train_progress + process_num, 4)
-    document.save()
-    logger.info(f"document {document.name} process: {document.train_progress}")
 
 
 def invoke_one_document(document, is_show=False):
@@ -160,10 +138,10 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
     semantic_embed_config = {}
     semantic_embed_model_name = ""
     if knowledge_document.knowledge_base.embed_model:
-        embed_config = knowledge_document.knowledge_base.embed_model.embed_config
+        embed_config = knowledge_document.knowledge_base.embed_model.decrypted_embed_config
         embed_model_name = knowledge_document.knowledge_base.embed_model.name
     if knowledge_document.semantic_chunk_parse_embedding_model:
-        semantic_embed_config = knowledge_document.semantic_chunk_parse_embedding_model.embed_config
+        semantic_embed_config = knowledge_document.semantic_chunk_parse_embedding_model.decrypted_embed_config
         semantic_embed_model_name = knowledge_document.semantic_chunk_parse_embedding_model.name
     ocr_config = {}
     if knowledge_document.enable_ocr_parse:

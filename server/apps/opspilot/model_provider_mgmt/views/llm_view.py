@@ -35,10 +35,11 @@ class LLMViewSet(AuthViewSet):
 
     def create(self, request, *args, **kwargs):
         params = request.data
-        client = get_quota_client(request)
-        skill_count, used_skill_count, __ = client.get_skill_quota()
-        if skill_count != -1 and skill_count <= used_skill_count:
-            return JsonResponse({"result": False, "message": _("Skill count exceeds quota limit.")})
+        if not request.user.is_superuser:
+            client = get_quota_client(request)
+            skill_count, used_skill_count, __ = client.get_skill_quota()
+            if skill_count != -1 and skill_count <= used_skill_count:
+                return JsonResponse({"result": False, "message": _("Skill count exceeds quota limit.")})
         validate_msg = self._validate_name(params["name"], request.user.group_list, params["team"])
         if validate_msg:
             message = _(f"A skill with the same name already exists in group {validate_msg}.")

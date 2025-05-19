@@ -204,7 +204,6 @@
         "automatic": "Automatic",
         "approvalRequired": "Approval required",
         "password": "Password",
-        "port": "Port",
         "sslVerify": "SSL verify",
         "advanced": "Advanced",
         "timeout": "Timeout",
@@ -223,6 +222,7 @@
         "chooseAsset": "Choose Asset",
         "everyMinute": "Every",
         "executeOnce": "Execute once",
+        "port": "Port",
         "execStatus": {
             "add": "Add Assets",
             "update": "Update Assets",
@@ -250,13 +250,11 @@
             "chooseVCenter": "vCenter",
             "username": "Account",
             "password": "Password",
-            "port": "Port",
             "sslVerify": "SSL verify"
         },
         "SNMPTask": {
             "chooseSNMP": "SNMP",
             "version": "SNMP version",
-            "port": "Port",
             "communityString": "Community String",
             "securityLevel": "Security Level",
             "userName": "UserName",

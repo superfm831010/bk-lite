@@ -13,7 +13,7 @@ import {
 } from '@/app/node-manager/constants/cloudregion';
 import { useGroupNames } from '@/app/node-manager/hooks/node';
 import CustomTable from '@/components/custom-table';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import InstallGuidance from './installGuidance';
 
 const ControllerTable: React.FC<ControllerInstallProps> = ({

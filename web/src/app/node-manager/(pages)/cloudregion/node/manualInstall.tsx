@@ -8,7 +8,7 @@ import CodeEditor from '@/app/node-manager/components/codeEditor';
 import { DownloadOutlined } from '@ant-design/icons';
 import { useAuth } from '@/context/auth';
 import controllerInstallSyle from './index.module.scss';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import axios from 'axios';
 const { Option } = Select;

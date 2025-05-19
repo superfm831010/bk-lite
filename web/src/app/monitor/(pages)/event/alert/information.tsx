@@ -51,7 +51,7 @@ const Information: React.FC<TableDataItem> = ({
   const handleCloseConfirm = async (row: TableDataItem) => {
     setConfirmLoading(true);
     try {
-      await patchMonitorAlert(row.id, {
+      await patchMonitorAlert(row.id as string, {
         status: 'closed',
       });
       message.success(t('monitor.events.successfullyClosed'));

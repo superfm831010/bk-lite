@@ -20,18 +20,19 @@ class FileKnowledgeViewSet(viewsets.ModelViewSet):
     @action(methods=["POST"], detail=False)
     def create_file_knowledge(self, request):
         kwargs = request.data
-        client = get_quota_client(request)
         files = request.FILES.getlist("files")
-        file_size = sum(i.size for i in files) / 1024 / 1024
-        file_quota, used_file_size, __ = client.get_file_quota()
-        if file_quota != -1 and file_quota < file_size + used_file_size:
-            no_used_file_size = file_quota - used_file_size
-            return JsonResponse(
-                {
-                    "result": False,
-                    "message": _(f"File size exceeds quota limit. Available size: {no_used_file_size} MB"),
-                }
-            )
+        if not request.user.is_superuser:
+            client = get_quota_client(request)
+            file_size = sum(i.size for i in files) / 1024 / 1024
+            file_quota, used_file_size, __ = client.get_file_quota()
+            if file_quota != -1 and file_quota < file_size + used_file_size:
+                no_used_file_size = file_quota - used_file_size
+                return JsonResponse(
+                    {
+                        "result": False,
+                        "message": _(f"File size exceeds quota limit. Available size: {no_used_file_size} MB"),
+                    }
+                )
         result = self.import_file_knowledge(files, kwargs, request.user.username)
         return JsonResponse(result)
 

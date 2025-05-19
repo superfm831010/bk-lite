@@ -2,8 +2,6 @@ import base64
 import requests
 import json
 
-from loguru import logger
-
 
 class OlmOcr:
     def __init__(self, base_url: str, api_key: str, model="olmOCR-7B-0225-preview"):
@@ -12,8 +10,6 @@ class OlmOcr:
         self.model = model
 
     def predict(self, file_path: str) -> str:
-        logger.info(f'使用olmOCR识别文件: {file_path}')
-
         # 读取图片并转换为base64编码
         with open(file_path, "rb") as image_file:
             base64_image = base64.b64encode(image_file.read()).decode('utf-8')
@@ -28,11 +24,12 @@ class OlmOcr:
                         {
                             "type": "text",
                             "text": """
-                                Below is the image of one page of a PDF document,Just return the plain text representation of this document as if you were reading it naturally.
-                                Turn equations into a LaTeX representation, and tables into markdown format. Remove the headers and footers, but keep references and footnotes.
-                                Read any natural handwriting.
-                                If there is no text at all that you think you should read, you can output empty string.
-                                Do not hallucinate.
+                               你是一个具备OCR能力的智能体，阅读方式和人类一样。你可以从图片中提取文本信息。
+                               下面是一张的图片，要求：
+                                    1. 一步一步的思考
+                                    2. 只需返回该文档的纯文本表示，就像您自然阅读一样
+                                    3. 当识别出公式的时候，将公式转换为 LaTeX 格式，将表格转换为 Markdown 格式
+                                    4. 不要产生幻觉
                             """
                         },
                         {

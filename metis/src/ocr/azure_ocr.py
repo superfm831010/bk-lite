@@ -2,7 +2,7 @@ import time
 
 from azure.cognitiveservices.vision.computervision import ComputerVisionClient
 from azure.cognitiveservices.vision.computervision.models import OperationStatusCodes
-from loguru import logger
+from sanic.log import logger
 from msrest.authentication import CognitiveServicesCredentials
 
 from src.ocr.base_ocr import BaseOCR

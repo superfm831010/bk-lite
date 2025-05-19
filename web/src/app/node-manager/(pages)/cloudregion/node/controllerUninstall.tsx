@@ -18,7 +18,7 @@ import {
   ModalRef,
   TableDataItem,
 } from '@/app/node-manager/types';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import { OPERATE_SYSTEMS } from '@/app/node-manager/constants/cloudregion';
 import { ControllerInstallFields } from '@/app/node-manager/types/cloudregion';
@@ -92,6 +92,7 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
               <Input
                 defaultValue={row.username}
                 value={row.username}
+                placeholder={t('common.inputMsg')}
                 onChange={(e) => handleInputBlur(e, row, 'username')}
               />
             );
@@ -115,6 +116,7 @@ const ControllerUninstall = forwardRef<ModalRef, ModalSuccess>(
               <Input.Password
                 defaultValue={row.usepasswordrname}
                 value={row.password}
+                placeholder={t('common.inputMsg')}
                 onChange={(e) => handleInputBlur(e, row, 'password')}
               />
             );

@@ -1,4 +1,5 @@
 import toml
+import yaml
 from urllib.parse import urlencode, urlparse, parse_qs
 
 class ConfigFormat:
@@ -17,6 +18,16 @@ class ConfigFormat:
         data = {json_config["plugin"][0]: {json_config["plugin"][1]: [json_config["config"]]}}
         result = toml.dumps(data)
         return result
+
+    @staticmethod
+    def yaml_to_dict(yaml_config):
+        """将 YAML 格式的配置转换为字典"""
+        return yaml.safe_load(yaml_config)
+
+    @staticmethod
+    def json_to_yaml(json_config):
+        """将 JSON 格式的配置转换为 YAML 格式"""
+        return yaml.dump(json_config, default_flow_style=False)
 
     @staticmethod
     def query_params_to_url(base_url, query_params):

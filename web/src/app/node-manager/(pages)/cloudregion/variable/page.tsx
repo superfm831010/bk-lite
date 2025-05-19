@@ -4,12 +4,12 @@ import { Button, Input, message } from 'antd';
 import CustomTable from '@/components/custom-table';
 import { useTranslation } from '@/utils/i18n';
 import VariableModal from './variableModal';
-import { ModalRef, TableDataItem } from '@/app/node-manager/types';
+import { ModalRef, TableDataItem, Pagination } from '@/app/node-manager/types';
 import { useVarColumns } from '@/app/node-manager/hooks/variable';
 import type { GetProps } from 'antd';
 import MainLayout from '../mainlayout/layout';
 import { PlusOutlined } from '@ant-design/icons';
-import useApiCloudRegion from '@/app/node-manager/api/cloudregion';
+import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useApiClient from '@/utils/request';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import variableStyle from './index.module.scss';
@@ -26,12 +26,21 @@ const Variable = () => {
   const [data, setData] = useState<TableDataItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchText, setSearchText] = useState<string>('');
+  const [pagination, setPagination] = useState<Pagination>({
+    current: 1,
+    total: 0,
+    pageSize: 20,
+  });
 
   useEffect(() => {
     if (!isLoading) {
       getTablelist();
     }
   }, [isLoading]);
+
+  useEffect(() => {
+    if(!isLoading) getTablelist(searchText);
+  }, [pagination.current, pagination.pageSize]);
 
   const openUerModal = (type: string, form: TableDataItem) => {
     variableRef.current?.showModal({
@@ -72,18 +81,32 @@ const Variable = () => {
   const getTablelist = async (search = searchText) => {
     setLoading(true);
     try {
-      const res = await getVariableList(cloudId, search);
-      const tempdata = res.map((item: any) => {
+      const param = {
+        cloud_region_id: cloudId,
+        search,
+        page: pagination.current,
+        page_size: pagination.pageSize
+      };
+      const res = await getVariableList(param);
+      const tempdata = res.items.map((item: any) => {
         return {
           ...item,
           key: item.id,
           name: item.key,
         };
       });
+      setPagination((prev: Pagination) => ({
+        ...prev,
+        total: res?.count || 0
+      }))
       setData(tempdata);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTableChange = (pagination: any) => {
+    setPagination(pagination);
   };
 
   return (
@@ -115,10 +138,12 @@ const Variable = () => {
         </div>
         <div className="tablewidth">
           <CustomTable
-            scroll={{ y: 'calc(100vh - 326px)', x: 'calc(100vw - 300px)' }}
+            scroll={{ y: 'calc(100vh - 376px)', x: 'calc(100vw - 300px)' }}
             loading={loading}
             columns={columns}
             dataSource={data}
+            pagination={pagination}
+            onChange={handleTableChange}
           />
         </div>
         <VariableModal

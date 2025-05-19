@@ -8,17 +8,20 @@ def get_quota_client(request):
     current_team = request.COOKIES.get("current_team")
     if not current_team:
         current_team = teams[0]
-    client = QuotaUtils(request.user.username, current_team)
+    client = QuotaUtils(request.user.username, current_team, request.user.is_superuser)
     return client
 
 
 class QuotaUtils(object):
-    def __init__(self, username, team):
+    def __init__(self, username, team, is_superuser=False):
         self.username = username
         self.team = team
+        self.is_superuser = is_superuser
         self.quota_list = self.get_quota_list()
 
     def get_quota_list(self):
+        if self.is_superuser:
+            return []
         quota_list = QuotaRule.objects.filter(
             Q(target_type="user", target_list__contains=self.username)
             | Q(target_type="group", target_list__contains=self.team)

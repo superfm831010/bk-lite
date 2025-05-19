@@ -16,5 +16,5 @@ RUN pip install -r ./requirements/requirements-dev.in
 RUN playwright install chromium
 ADD ./support-files/service.conf /etc/supervisor/conf.d/service.conf
 
-RUN python ./server.py download_models
+RUN sanic server:bootstrap exec download_models
 ENTRYPOINT ["/bin/bash","/app/support-files/startup.sh"]

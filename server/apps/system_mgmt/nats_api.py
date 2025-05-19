@@ -1,40 +1,59 @@
 import os
+import time
 
+import jwt
+from django.contrib.auth.hashers import check_password
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 import nats_client
-from apps.core.backends import cache, logger
-from apps.system_mgmt.models import Channel, ChannelChoices, UserRule
-from apps.system_mgmt.services.group_manage import GroupManage
+from apps.core.backends import cache
+from apps.system_mgmt.models import App, Channel, ChannelChoices, Group, Menu, Role, User, UserRule
+from apps.system_mgmt.models.system_settings import SystemSettings
 from apps.system_mgmt.services.role_manage import RoleManage
-from apps.system_mgmt.services.user_manage import UserManage
 from apps.system_mgmt.utils.channel_utils import send_by_bot, send_email, send_wechat
-from apps.system_mgmt.utils.keycloak_client import KeyCloakClient
+from apps.system_mgmt.utils.group_utils import GroupUtils
 
 
 @nats_client.register
 def verify_token(token, client_id):
     if not token:
         return {"result": False, "message": _("Token is missing")}
-    client = KeyCloakClient()
-    is_active, user_info = client.token_is_valid(token)
-    if not is_active:
+    token = token.split("Basic ")[-1]
+    secret_key = os.getenv("SECRET_KEY")
+    algorithm = os.getenv("JWT_ALGORITHM", "HS256")
+    user_info = jwt.decode(token, key=secret_key, algorithms=algorithm)
+    time_now = int(time.time())
+    login_expired_time_set = SystemSettings.objects.filter(key="login_expired_time").first()
+    login_expired_time = 3600
+    if login_expired_time_set:
+        login_expired_time = int(login_expired_time_set.value)
+
+    if time_now - login_expired_time > user_info["login_time"]:
         return {"result": False, "message": _("Token is invalid")}
-    roles = user_info["realm_access"]["roles"]
-    is_superuser = "admin" in roles or f"{client_id}_admin" in roles
-    groups = cache.get(f"group_{user_info.get('username')}")
+    user = User.objects.filter(id=user_info["user_id"]).first()
+    if not user:
+        return {"result": False, "message": _("User not found")}
+    role_list = list(
+        Role.objects.filter(id__in=user.role_list).filter(Q(app=client_id) | Q(app="")).values_list("name", flat=True)
+    )
+
+    is_superuser = "admin" in role_list
+    groups = cache.get(f"group_{user.username}")
     if not groups:
-        groups = client.get_user_groups(user_info.get("sub"), is_superuser)
-        cache.set(f"group_{user_info.get('username')}", groups, 60)
+        group_list = Group.objects.filter(id__in=user.group_list)
+        # groups = GroupUtils.build_group_tree(group_list)
+        groups = list(group_list.values("id", "name", "parent_id"))
+        cache.set(f"group_{user.username}", groups, 60)
     return {
         "result": True,
         "data": {
-            "username": user_info["username"],
-            "email": user_info.get("email", ""),
+            "username": user.username,
+            "email": user.email,
             "is_superuser": is_superuser,
             "group_list": groups,
-            "roles": roles,
-            "locale": user_info.get("locale", "en"),
+            "roles": role_list,
+            "locale": user.locale,
         },
     }
 
@@ -45,126 +64,97 @@ def get_user_menus(client_id, roles, username, is_superuser):
     client_id = client_id
     menus = []
     if not is_superuser:
-        policy_ids = client.get_policy_by_by_roles(client_id, roles)
-        for i in policy_ids:
-            menus.extend(client.role_menus(client_id, i))
-        menus = list(set(menus))
+        menu_ids = []
+        role_menus = Role.objects.filter(name__in=roles).values_list("menu_list", flat=True)
+        for i in role_menus:
+            menu_ids.extend(i)
+        menus = list(Menu.objects.filter(app=client_id, id__in=list(set(menu_ids))).values_list("name", flat=True))
     user_menus = client.get_all_menus(client_id, user_menus=menus, username=username, is_superuser=is_superuser)
     return {"result": True, "data": user_menus}
 
 
 @nats_client.register
 def get_client(client_id=""):
-    client = KeyCloakClient()
-    res = client.realm_client.get_clients()
+    app_list = App.objects.all()
     if client_id:
-        filter_client = client_id.split(";")
-    else:
-        filter_client = [i["clientId"] for i in res]
-    return {
-        "result": True,
-        "data": [
-            {
-                "id": i["id"],
-                "name": i["name"],
-                "client_id": i["clientId"],
-                "description": i["description"],
-                "url": i["baseUrl"],
-            }
-            for i in res
-            if i["clientId"] in filter_client and i.get("authorizationServicesEnabled")
-        ],
-    }
+        app_list = app_list.filter(name__in=client_id.split(";"))
+    return {"result": True, "data": list(app_list.values())}
 
 
 @nats_client.register
 def get_client_detail(client_id):
-    client = KeyCloakClient()
-    res = client.realm_client.get_client(client_id=client_id)
-    return {"result": True, "data": res}
+    app_obj = App.objects.filter(name=client_id).first()
+    if not app_obj:
+        return {"result": False, "message": _("Client not found")}
+    return {
+        "result": True,
+        "data": {
+            "id": app_obj.id,
+            "name": app_obj.name,
+            "description": app_obj.description,
+            "description_cn": app_obj.description_cn,
+        },
+    }
 
 
 @nats_client.register
 def get_group_users(group):
-    client = KeyCloakClient()
-    users = client.realm_client.get_group_members(group)
-    return_data = [
-        {"username": i["username"], "first_name": i.get("firstName", ""), "last_name": i.get("lastName", "")}
-        for i in users
-    ]
-    return {"result": True, "data": return_data}
+    users = User.objects.filter(group_list__contains=int(group)).values("id", "username", "display_name")
+    return {"result": True, "data": list(users)}
 
 
 @nats_client.register
 def get_all_users():
-    client = UserManage()
-    res = client.user_all()
-    return {"result": True, "data": res}
+    data = User.objects.all().values(*User.display_fields())
+    return {"result": True, "data": list(data)}
 
 
 @nats_client.register
 def search_groups(query_params):
-    _first, _max = UserManage.get_first_and_max(query_params)
-    kwargs = {
-        "first": _first,
-        "max": _max,
-        "search": query_params.get("search", ""),
-    }
-    client = GroupManage()
-    if query_params.get("page"):
-        res = client.group_list(kwargs)
-    else:
-        res = client.group_list(query_params)
-    return {"result": True, "data": res}
+    groups = Group.objects.filter(name__contains=query_params["search"]).values()
+    return {"result": True, "data": list(groups)}
 
 
 @nats_client.register
 def search_users(query_params):
-    _first, _max = UserManage.get_first_and_max(query_params)
-    kwargs = {
-        "first": _first,
-        "max": _max,
-        "search": query_params.get("search", ""),
-    }
-    client = UserManage()
-    if query_params.get("page"):
-        res = client.user_list(kwargs)
-    else:
-        res = client.user_list(query_params)
-    return {"result": True, "data": res}
+    page = int(query_params.get("page", 1))
+    page_size = int(query_params.get("page_size", 10))
+    search = query_params.get("search", "")
+    queryset = User.objects.filter(
+        Q(username__icontains=search) | Q(display_name__icontains=search) | Q(email__icontains=search)
+    )
+    start = (page - 1) * page_size
+    end = page * page_size
+    total = queryset.count()
+    data = queryset.values(*User.display_fields())[start:end]
+    return {"result": True, "data": {"count": total, "users": list(data)}}
 
 
 @nats_client.register
 def init_user_default_attributes(user_id, group_name, default_group_id):
-    client = KeyCloakClient()
-    role_obj = client.realm_client.get_realm_roles(search_text="opspilot_normal")
-    try:
-        client.realm_client.assign_realm_roles(user_id, role_obj)
-        client.realm_client.update_user(user_id, {"attributes": {"locale": ["zh-CN"], "zoneinfo": ["Asia/Shanghai"]}})
-        top_group_name = os.getenv("TOP_GROUP", "Default")
-        top_group = client.realm_client.get_groups({"search": top_group_name})
-        top_group = [i["id"] for i in top_group if i["name"] == top_group_name]
-        if top_group:
-            top_group = top_group[0]
-        else:
-            top_group = client.realm_client.create_group({"name": top_group_name})
-        group_id = client.realm_client.create_group({"name": group_name}, top_group, skip_exists=True)
-        if not group_id:
-            return {"result": False, "message": f"group named '{group_name}' already exists."}
-        user = client.realm_client.get_user(user_id)
-        client.realm_client.group_user_add(user_id, group_id)
-        client.realm_client.group_user_remove(user_id, default_group_id)
-        cache.delete(f"group_{user.get('username')}")
-        return {"result": True, "data": {"group_id": group_id}}
-    except Exception as e:
-        logger.error(e)
-        return {"result": False, "message": str(e)}
+    role_obj = Role.objects.get(name="normal", app="opspilot")
+    user = User.objects.get(id=user_id)
+    top_group, _ = Group.objects.get_or_create(
+        name=os.getenv("TOP_GROUP", "Default"), parent_id=0, defaults={"description": ""}
+    )
+    if Group.objects.filter(parent_id=top_group.id, name=group_name).exists():
+        return {"result": False, "message": _("Group already exists")}
+    group_obj = Group.objects.create(name=group_name, parent_id=top_group.id)
+    user.locale = "zh-Hans"
+    user.timezone = "Asia/Shanghai"
+    if role_obj.id not in user.role_list:
+        user.role_list.append(role_obj.id)
+    user.group_list.remove(int(default_group_id))
+    user.group_list.append(group_obj.id)
+    user.save()
+    cache.delete(f"group_{user.username}")
+    return {"result": True, "data": {"group_id": group_obj.id}}
 
 
 @nats_client.register
 def get_all_groups():
-    client = KeyCloakClient()
-    return_data = client.get_user_groups("", True)
+    groups = Group.objects.all()
+    return_data = GroupUtils.build_group_tree(groups)
     return {"result": True, "data": return_data}
 
 
@@ -198,14 +188,25 @@ def get_user_rules(app, group_id, username):
 
 @nats_client.register
 def get_group_id(group_name):
-    kwargs = {
-        "first": 0,
-        "max": 1,
-        "search": group_name,
-        "exact": True,
-    }
-    client = KeyCloakClient()
-    res = client.realm_client.get_groups(kwargs)
-    if not res:
+    group = Group.objects.filter(name=group_name, parent_id=0).first()
+    if not group:
         return {"result": False, "message": f"group named '{group_name}' not exists."}
-    return {"result": True, "data": res[0]["id"]}
+    return {"result": True, "data": group.id}
+
+
+@nats_client.register
+def login(username, password):
+    user = User.objects.filter(username=username).first()
+    if not user:
+        return {"result": False, "message": _("Username or password is incorrect")}
+
+    # 使用 check_password 验证密码是否匹配
+    if not check_password(password, user.password):
+        return {"result": False, "message": _("Username or password is incorrect")}
+    if user.disabled:
+        return {"result": False, "message": _("User is disabled")}
+    secret_key = os.getenv("SECRET_KEY")
+    algorithm = os.getenv("JWT_ALGORITHM", "HS256")
+    user_obj = {"user_id": user.id, "login_time": int(time.time())}
+    token = jwt.encode(payload=user_obj, key=secret_key, algorithm=algorithm)
+    return {"result": True, "data": {"token": token, "username": username, "id": user.id, "locale": user.locale}}

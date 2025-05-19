@@ -18,7 +18,6 @@ const { confirm } = Modal;
 const RoleManagement: React.FC = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-  const id = searchParams?.get('id') || '';
   const clientId = searchParams?.get('clientId') || '';
 
   const [roleForm] = Form.useForm();
@@ -67,7 +66,7 @@ const RoleManagement: React.FC = () => {
   const fetchRoles = async () => {
     setLoadingRoles(true);
     try {
-      const roles = await getRoles({ client_id: id });
+      const roles = await getRoles({ client_id: clientId });
       setRoleList(roles);
       if (roles.length > 0) {
         setSelectedRole(roles[0]);
@@ -79,7 +78,7 @@ const RoleManagement: React.FC = () => {
   };
 
   const fetchAllMenus = async () => {
-    const menus = await getAllMenus({ params: { client_id: id } });
+    const menus = await getAllMenus({ params: { client_id: clientId } });
     setMenuData(menus);
   };
 
@@ -88,8 +87,7 @@ const RoleManagement: React.FC = () => {
     try {
       const users = await getUsersByRole({
         params: {
-          role_id: role.role_id,
-          client_id: id,
+          role_id: role.id,
           search,
         },
       });
@@ -127,7 +125,7 @@ const RoleManagement: React.FC = () => {
   const fetchRolePermissions = async (role: Role) => {
     setLoading(true);
     try {
-      const permissions = await getRoleMenus({ params: { id, policy_id: role.policy_id } });
+      const permissions = await getRoleMenus({ params: { role_id: role.id } });
       const permissionsMap: Record<string, string[]> = permissions.reduce((acc: any, item: string) => {
         const [name, ...operations] = item.split('-');
         if (!acc[name]) acc[name] = [];
@@ -146,7 +144,7 @@ const RoleManagement: React.FC = () => {
     setIsEditingRole(!!role);
     setSelectedRole(role);
     if (role) {
-      roleForm.setFieldsValue({ roleName: role.display_name });
+      roleForm.setFieldsValue({ roleName: role.name });
     } else {
       roleForm.resetFields();
     }
@@ -160,16 +158,13 @@ const RoleManagement: React.FC = () => {
       const roleName = roleForm.getFieldValue('roleName');
       if (isEditingRole && selectedRole) {
         await updateRole({
-          role_id: selectedRole.role_id,
-          policy_id: selectedRole.policy_id,
-          policy_name: roleName,
-          id
+          role_id: selectedRole.id,
+          role_name: roleName,
         });
       } else {
         await addRole({
           client_id: clientId,
-          name: roleName,
-          id
+          name: roleName
         });
       }
       await fetchRoles();
@@ -185,10 +180,8 @@ const RoleManagement: React.FC = () => {
   const onDeleteRole = async (role: Role) => {
     try {
       await deleteRole({
-        policy_id: role.policy_id,
-        display_name: role.display_name,
-        role_name: role.role_name,
-        id
+        role_name: role.name,
+        role_id: role.id,
       });
       message.success(t('common.delSuccess'));
       await fetchRoles();
@@ -239,7 +232,7 @@ const RoleManagement: React.FC = () => {
         try {
           setDeleteLoading(true);
           await deleteUser({
-            role_id: selectedRole.role_id,
+            role_id: selectedRole.id,
             user_ids: selectedUserKeys,
           });
           message.success(t('common.delSuccess'));
@@ -260,7 +253,7 @@ const RoleManagement: React.FC = () => {
     if (!selectedRole) return;
     try {
       await deleteUser({
-        role_id: selectedRole.role_id,
+        role_id: selectedRole.id,
         user_ids: [record.id]
       });
       message.success(t('common.delSuccess'));
@@ -273,7 +266,7 @@ const RoleManagement: React.FC = () => {
 
   const onSelectRole = (role: Role) => {
     setSelectedRole(role);
-    if (activeTab === '2' || role.display_name === 'admin') {
+    if (activeTab === '2' || role.name === 'admin') {
       setActiveTab('1');
       fetchUsersByRole(role, 1, pageSize);
       return;
@@ -294,9 +287,8 @@ const RoleManagement: React.FC = () => {
         operations.map(operation => `${menuName}-${operation}`)
       );
       await setRoleMenus({
-        policy_id: selectedRole.policy_id,
-        policy_name: selectedRole.display_name,
-        id,
+        role_id: selectedRole.id,
+        role_name: selectedRole.name,
         menus
       });
       message.success(t('common.updateSuccess'));
@@ -323,7 +315,7 @@ const RoleManagement: React.FC = () => {
     try {
       const values = await addUserForm.validateFields();
       await addUser({
-        role_id: selectedRole?.role_id,
+        role_id: selectedRole?.id,
         user_ids: values.users
       });
       message.success(t('common.addSuccess'));
@@ -405,7 +397,7 @@ const RoleManagement: React.FC = () => {
                 />
               </Spin>
             </TabPane>
-            {selectedRole?.display_name !== 'admin' && (
+            {selectedRole?.name !== 'admin' && (
               <TabPane tab={t('system.role.permissions')} key="2">
                 <div className="flex justify-end items-center mb-4">
                   <Button type="primary" loading={loading} onClick={handleConfirmPermissions}>{t('common.confirm')}</Button>

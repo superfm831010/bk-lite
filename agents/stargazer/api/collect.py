@@ -17,6 +17,6 @@ async def collect(request):
     if not params:
         params = {i[0]: i[1] for i in request.query_args}
     collect_service = CollectService(params)
-    metrics_data = collect_service.collect()
+    metrics_data = await collect_service.collect()
     logger.info("Metrics data generated....")
     return response.raw(metrics_data, content_type='text/plain; version=0.0.4; charset=utf-8')

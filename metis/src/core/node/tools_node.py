@@ -1,7 +1,3 @@
-from typing import TypedDict
-
-from langchain_core.messages import ToolMessage
-from langchain_core.runnables import RunnableConfig
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import ToolNode
 from pydantic import BaseModel
@@ -15,6 +11,8 @@ class ToolsNodes(BasicNode):
         self.tools = []
         self.mcp_client = None
         self.mcp_config = {}
+        self.tools_prompt_tokens = 0
+        self.tools_completions_tokens = 0
 
     async def setup(self, request: BaseModel):
         # 初始化MCP客户端配置
@@ -25,17 +23,14 @@ class ToolsNodes(BasicNode):
                     "transport": 'sse'
                 }
         self.mcp_client = MultiServerMCPClient(self.mcp_config)
-        await self.mcp_client.__aenter__()  # 手动打开连接
-        self.tools = self.mcp_client.get_tools()
+        self.tools = await self.mcp_client.get_tools()
 
         # 初始化LangChain工具
         for server in request.tools_servers:
             if server.url.startswith("langchain:") is True:
-                langchain_tools = ToolsLoader.load_tools(server.url)
+                langchain_tools = ToolsLoader.load_tools(server)
                 for tool in langchain_tools:
                     self.tools.append(tool)
-
-
 
     async def build_tools_node(self) -> ToolNode:
         if self.tools:

@@ -32,8 +32,9 @@ class KnowledgeSearchService:
         """
         rerank_model_address = rerank_model_api_key = rerank_model_name = ""
         if kwargs["enable_rerank"]:
-            rerank_model_address = rerank_model.rerank_config["base_url"]
-            rerank_model_api_key = rerank_model.rerank_config["api_key"]
+            rerank_config = rerank_model.decrypted_rerank_config_config
+            rerank_model_address = rerank_config["base_url"]
+            rerank_model_api_key = rerank_config["api_key"]
             rerank_model_name = rerank_model.rerank_config.get("model", rerank_model.name)
         params = {
             "index_name": knowledge_base_folder.knowledge_index_name(),
@@ -77,7 +78,8 @@ class KnowledgeSearchService:
         docs = []
         # 获取嵌入模型地址
         embed_mode = EmbedProvider.objects.get(id=kwargs["embed_model"])
-        embed_mode_config = embed_mode.embed_config
+
+        embed_mode_config = embed_mode.decrypted_embed_config
 
         # 获取重排序模型地址
         rerank_model = None

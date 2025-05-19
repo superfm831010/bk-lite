@@ -4,6 +4,7 @@ ENV SERVER_URL ""
 ENV SERVER_API_TOKEN ""
 ENV SIDECAR_ZONE "default"
 ENV SIDECAR_GROUP "default"
+ENV SIDECAR_NODEID ""
 
 RUN apt-get update && \
     apt-get install -y ca-certificates ipmitool vim && \
