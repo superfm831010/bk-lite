@@ -19,7 +19,7 @@ from src.entity.anomaly_detection.anomaly_detection_predict_request import Anoma
 from src.entity.anomaly_detection.anomaly_detection_train_request import AnomalyDetectionTrainRequest
 
 anomaly_detection_api_router = Blueprint(
-    "anomaly_detection", url_prefix="/api/anomaly_detection")
+    "anomaly_detection", url_prefix="/anomaly_detection")
 
 # 模型缓存字典，格式为 {f"{algorithm}:{model_id}": (detector_instance, model_path)}
 MODEL_CACHE = {}

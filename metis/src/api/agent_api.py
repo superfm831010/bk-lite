@@ -14,7 +14,7 @@ from src.entity.agent.chatbot_workflow.chatbot_workflow_request import ChatBotWo
 from src.entity.agent.react_agent.react_agent_request import ReActAgentRequest
 from src.services.agent_service import AgentService
 
-agent_api_router = Blueprint("agent", url_prefix="/api/agent")
+agent_api_router = Blueprint("agent", url_prefix="/agent")
 
 
 async def stream_response(workflow, body, res):
