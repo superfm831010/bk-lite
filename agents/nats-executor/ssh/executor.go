@@ -141,7 +141,7 @@ func SubscribeDownloadToRemote(nc *nats.Conn, instanceId *string) {
 		}
 
 		// 使用sshpass处理带密码的scp传输
-		scpCommand := fmt.Sprintf("sshpass -p '%s' scp -o StrictHostKeyChecking=no -P %d %s/%s %s@%s:%s",
+		scpCommand := fmt.Sprintf("sshpass -p '%s' scp -o StrictHostKeyChecking=no -P %d -r %s/%s %s@%s:%s",
 			downloadRequest.Password,
 			downloadRequest.Port,
 			localdownloadRequest.TargetPath,
@@ -195,7 +195,7 @@ func SubscribeUploadToRemote(nc *nats.Conn, instanceId *string) {
 		log.Printf("Starting upload from local path %s to remote host %s@%s:%s", uploadRequest.SourcePath, uploadRequest.User, uploadRequest.Host, uploadRequest.TargetPath)
 
 		// 使用sshpass处理带密码的scp传输
-		scpCommand := fmt.Sprintf("sshpass -p '%s' scp -o StrictHostKeyChecking=no -P %d %s %s@%s:%s",
+		scpCommand := fmt.Sprintf("sshpass -p '%s' scp -o StrictHostKeyChecking=no -P %d -r %s %s@%s:%s",
 			uploadRequest.Password,
 			uploadRequest.Port,
 			uploadRequest.SourcePath,
