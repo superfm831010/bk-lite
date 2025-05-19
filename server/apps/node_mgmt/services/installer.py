@@ -1,5 +1,8 @@
+from apps.node_mgmt.constants import NODE_SERVER_URL_KEY
+from apps.node_mgmt.models import SidecarEnv
 from apps.node_mgmt.models.installer import ControllerTask, ControllerTaskNode, CollectorTaskNode, CollectorTask
 from apps.node_mgmt.utils.installer import get_install_command
+from apps.node_mgmt.utils.token_auth import generate_token
 
 
 class InstallerService:
@@ -7,7 +10,11 @@ class InstallerService:
     @staticmethod
     def get_install_command(os, package_name, cloud_region_id):
         """获取安装命令"""
-        return get_install_command(os, package_name, cloud_region_id)
+        # 获取安装命令所需参数
+        sidecar_token = generate_token({"username": "admin"})
+        obj = SidecarEnv.objects.filter(cloud_region=cloud_region_id, key=NODE_SERVER_URL_KEY).first()
+        server_url = obj.value if obj else "null"
+        return get_install_command(os, package_name, cloud_region_id, sidecar_token, server_url, "")
 
     @staticmethod
     def install_controller(cloud_region_id, work_node, package_version_id, nodes):
