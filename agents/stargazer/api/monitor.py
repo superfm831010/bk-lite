@@ -2,13 +2,12 @@ import datetime
 
 from core.config import YamlConfig
 from common.cmp.driver import CMPDriver
-from monitor.utils import convert_to_prometheus
-
 from sanic import Blueprint
 from sanic.log import logger
 from sanic import response
 
 from plugins.vmware_info import VmwareManage
+from utils.convert import convert_to_prometheus
 
 yml_config = YamlConfig(path="./config.yml")
 

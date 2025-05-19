@@ -10,8 +10,8 @@ from apps.node_mgmt.constants import L_INSTALL_DOWNLOAD_URL, L_SIDECAR_DOWNLOAD_
 from apps.node_mgmt.default_config.nats_executor import create_nats_executor_config
 from apps.node_mgmt.default_config.telegraf import create_telegraf_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
-from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration
-
+from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization
+from apps.node_mgmt.utils.sidecar import format_tags_dynamic
 
 logger = logging.getLogger("app")
 
@@ -62,6 +62,15 @@ class Sidecar:
         return JsonResponse({'collectors': collectors}, headers={'ETag': new_etag})
 
     @staticmethod
+    def asso_groups(node_id: str, groups: list):
+        if groups:
+            NodeOrganization.objects.bulk_create(
+                [NodeOrganization(node_id=node_id, organization=group) for group in groups],
+                ignore_conflicts=True,
+                batch_size=100,
+            )
+
+    @staticmethod
     def update_node_client(request, node_id):
         """更新sidecar客户端信息"""
 
@@ -99,8 +108,18 @@ class Sidecar:
         node = Node.objects.filter(id=node_id).first()
 
         if not node:
+
+            # 补充云区域关联
+            tags_data = format_tags_dynamic(request_data.get("tags", []),  ["group", "cloud"])
+            clouds = tags_data.get("cloud", [])
+            if clouds:
+                request_data.update(cloud_region_id=int(clouds[0]))
+
             # 创建节点
             node = Node.objects.create(**request_data)
+
+            # 关联组织
+            Sidecar.asso_groups(node_id, tags_data.get("group", []))
 
             # 创建默认的 Telegraf 配置
             create_telegraf_config(node)
