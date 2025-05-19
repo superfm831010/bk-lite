@@ -31,6 +31,7 @@ import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useApiCollector from '@/app/node-manager/api/collector';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import { useTelegrafMap } from '@/app/node-manager/constants/cloudregion';
+import { COLLECTOR_LABEL } from '@/app/node-manager/constants/collector';
 import ControllerInstall from './controllerInstall';
 import ControllerUninstall from './controllerUninstall';
 import CollectorInstallTable from './controllerTable';
@@ -250,76 +251,113 @@ const Node = () => {
     initData(params);
   };
 
+  const getCollectorLabelKey = (value: string) => {
+    for (const key in COLLECTOR_LABEL) {
+      if (COLLECTOR_LABEL[key].includes(value)) {
+        return key;
+      }
+    }
+  };
+
+  const renderColunms = (record: TableDataItem, target: string, data: any) => {
+    const getCollectorName = (id: string) => {
+      return data.find((item: any) => item.id === id).name
+    };
+    const collectors = record.status.collectors_install.filter(
+      (item: TableDataItem) =>
+        getCollectorLabelKey(getCollectorName(item.collector_id)) === target
+    );
+    const tagList = collectors.map((tex: TableDataItem) => {
+      const collectorTarget = (record.status.collectors || []).find(
+        (dataItem: TableDataItem) => dataItem.collector_id === tex.collector_id
+      );
+      const installTarget = (record.status.collectors_install || []).find(
+        (dataItem: TableDataItem) => dataItem.collector_id === tex.collector_id
+      );
+      const { title, color } = getStatusInfo(
+        collectorTarget,
+        installTarget
+      );
+      return (
+        <Tooltip title={title} key={tex.id} className='py-1 pr-1'>
+          <div>
+            <span style={{ color, borderColor: color, borderWidth: 1 }} className="text-[12px] p-1">
+              {getCollectorName(tex.collector_id)}
+            </span>
+          </div>
+        </Tooltip>
+      )
+    });
+    return (
+      <div className='flex flex-wrap justify-start'>
+        {tagList.length ? tagList : '--'}
+      </div>
+    )
+  };
+
   const getCollectors = async (selectedsystem: string) => {
     const data = await getCollectorlist({
       node_operating_system: selectedsystem,
     });
     const natsexecutors = ['natsexecutor_windows', 'natsexecutor_linux'];
-    const columnItems = data
-      .map((tex: TableDataItem) => {
-        if (natsexecutors.includes(tex.id as string)) {
-          return {
-            title: tex.name,
-            dataIndex: tex.id,
-            render: (key: string, item: TableDataItem) => {
-              const collectorTarget = (item.status.collectors || []).find(
-                (item: TableDataItem) => item.collector_id === tex.id
-              );
-              const installTarget = (item.status.collectors_install || []).find(
-                (item: TableDataItem) => item.collector_id === tex.id
-              );
-              if (!collectorTarget && !installTarget) return '--';
-              const { title, tagColor, status } = getStatusInfo(
-                collectorTarget,
-                installTarget
-              );
-              return (
-                <Tooltip title={title}>
-                  <Tag bordered={false} color={tagColor}>
-                    {status}
-                  </Tag>
-                </Tooltip>
-              );
-            },
-          };
-        }
-        return {
-          title: tex.name,
-          dataIndex: tex.id,
-          render: (key: string, item: TableDataItem) => {
-            const collectorTarget = (item.status.collectors || []).find(
+    const natsexecutor: TableDataItem = data.filter((item: TableDataItem) => natsexecutors.includes(item.id as string));
+    const _columns = [
+      {
+        title: 'NATS-Executor',
+        dataIndex: natsexecutor.id as string,
+        key: natsexecutor.id as string,
+        render: (_: any, record: TableDataItem) => {
+          const tagList = natsexecutor.map((tex: TableDataItem) => {
+            const collectorTarget = (record.status.collectors || []).find(
               (item: TableDataItem) => item.collector_id === tex.id
             );
-            const installTarget = (item.status.collectors_install || []).find(
+            const installTarget = (record.status.collectors_install || []).find(
               (item: TableDataItem) => item.collector_id === tex.id
             );
-            if (!collectorTarget && !installTarget) return '--';
-            const { title, color, status } = getStatusInfo(
+            const { title, tagColor, status } = getStatusInfo(
               collectorTarget,
               installTarget
             );
             return (
-              <Tooltip title={title}>
-                <div>
-                  <span
-                    className="recordStatus"
-                    style={{
-                      backgroundColor: color,
-                    }}
-                  ></span>
-                  <span style={{ color }} className="text-[12px]">
-                    {status}
-                  </span>
-                </div>
+              <Tooltip title={title} key={tex.collector_id}>
+                <Tag bordered={false} color={tagColor}>
+                  {status}
+                </Tag>
               </Tooltip>
             );
-          },
-        };
-      })
-      .sort((item: TableDataItem) =>
-        natsexecutors.includes(item.dataIndex) ? -1 : 0
-      );
-    setActiveColumns(columnItems);
+          });
+          return (
+            tagList.length ? tagList : '--'
+          )
+        },
+      },
+      {
+        title: 'Telegraf',
+        dataIndex: 'telegraf',
+        key: 'telegraf',
+        render: (_: any, record: TableDataItem) => renderColunms(record, 'Telegraf', data)
+      },
+      {
+        title: 'Export',
+        dataIndex: 'export',
+        key: 'export',
+        render: (_: any, record: TableDataItem) => renderColunms(record, 'Export', data)
+      },
+      {
+        title: 'JMX',
+        dataIndex: 'jmx',
+        key: 'jmx',
+        width: 240,
+        render: (_: any, record: TableDataItem) => renderColunms(record, 'JMX', data)
+      },
+      {
+        title: 'BK-pull',
+        dataIndex: 'bk-pull',
+        key: 'bk-pull',
+        render: (_: any, record: TableDataItem) => renderColunms(record, 'BK-pull', data)
+      }
+    ];
+    setActiveColumns(_columns);
   };
 
   const getStatusInfo = (
