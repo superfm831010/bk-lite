@@ -306,6 +306,7 @@ const Node = () => {
         title: 'NATS-Executor',
         dataIndex: natsexecutor.id as string,
         key: natsexecutor.id as string,
+        width: 140,
         render: (_: any, record: TableDataItem) => {
           const tagList = natsexecutor.map((tex: TableDataItem) => {
             const collectorTarget = (record.status.collectors || []).find(
@@ -335,25 +336,28 @@ const Node = () => {
         title: 'Telegraf',
         dataIndex: 'telegraf',
         key: 'telegraf',
+        width: 120,
         render: (_: any, record: TableDataItem) => renderColunms(record, 'Telegraf', data)
       },
       {
         title: 'Export',
         dataIndex: 'export',
         key: 'export',
+        width: 120,
         render: (_: any, record: TableDataItem) => renderColunms(record, 'Export', data)
       },
       {
         title: 'JMX',
         dataIndex: 'jmx',
         key: 'jmx',
-        width: 240,
+        width: 200,
         render: (_: any, record: TableDataItem) => renderColunms(record, 'JMX', data)
       },
       {
         title: 'BK-pull',
         dataIndex: 'bk-pull',
         key: 'bk-pull',
+        width: 120,
         render: (_: any, record: TableDataItem) => renderColunms(record, 'BK-pull', data)
       }
     ];
