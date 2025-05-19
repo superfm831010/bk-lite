@@ -100,7 +100,7 @@ class BaseNodeParams(metaclass=ABCMeta):
         _key, _value = self.get_host_ip_addr(host)
         params = self.set_credential(host=host)
         params.update({"plugin_name": self.model_plugin_name, _key: _value})
-        _params = {f"_cmdb_{k}": str(v) for k, v in params.items()}
+        _params = {f"cmdb_{k}": str(v) for k, v in params.items()}
         return _params
 
     @property
