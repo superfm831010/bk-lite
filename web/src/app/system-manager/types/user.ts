@@ -5,7 +5,7 @@ interface UserDataType {
   key: string;
   username: string;
   email: string;
-  lastName: string;
+  display_name: string;
   name?: string;
   team?: string;
   role?: string;

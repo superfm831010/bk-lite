@@ -3,7 +3,7 @@ from apps.rpc.base import RpcClient
 
 class OpsPilot(object):
     def __init__(self):
-        self.client = RpcClient("opspilot")
+        self.client = RpcClient()
 
     def init_user_set(self, group_id, group_name):
         """

@@ -1,3 +1,4 @@
+import json
 import os
 
 from django.http import JsonResponse
@@ -5,6 +6,7 @@ from django.shortcuts import render
 from django.utils.translation import gettext as _
 from rest_framework.decorators import api_view
 
+from apps.core.utils.exempt import api_exempt
 from apps.rpc.system_mgmt import SystemMgmt
 
 
@@ -12,6 +14,18 @@ def index(request):
     data = {"STATIC_URL": "static/", "RUN_MODE": "PROD"}
     response = render(request, "index.prod.html", data)
     return response
+
+
+@api_exempt
+def login(request):
+    data = json.loads(request.body) or request.POST.dict()
+    username = data.get("username", "")
+    password = data.get("password", "")
+    if not username or not password:
+        return JsonResponse({"result": False, "message": _("Username or password cannot be empty")})
+    client = SystemMgmt()
+    res = client.login(username, password)
+    return JsonResponse(res)
 
 
 @api_view(["GET"])
@@ -43,10 +57,10 @@ def login_info(request):
 def get_client(request):
     client = SystemMgmt()
     if "admin" in request.user.roles:
-        app_list = []
+        client_id = []
     else:
-        app_list = [i.split("_")[0] for i in request.user.roles]
-    return_data = client.get_client(";".join(list(set(app_list))))
+        client_id = [i.split("_")[0] for i in request.user.roles]
+    return_data = client.get_client(";".join(list(set(client_id))))
     return JsonResponse(return_data)
 
 
@@ -60,7 +74,7 @@ def get_my_client(request):
 def get_client_detail(request):
     client = SystemMgmt()
     return_data = client.get_client_detail(
-        client_id=request.GET["id"],
+        client_id=request.GET["name"],
     )
     return JsonResponse(return_data)
 
@@ -68,7 +82,7 @@ def get_client_detail(request):
 def get_user_menus(request):
     client = SystemMgmt()
     return_data = client.get_user_menus(
-        client_id=request.GET["id"],
+        client_id=request.GET["name"],
         roles=request.user.roles,
         username=request.user.username,
         is_superuser=request.user.is_superuser,

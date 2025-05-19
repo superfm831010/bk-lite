@@ -3,7 +3,15 @@ from apps.rpc.base import RpcClient
 
 class SystemMgmt(object):
     def __init__(self):
-        self.client = RpcClient("system_mgmt")
+        self.client = RpcClient()
+
+    def login(self, username, password):
+        """
+        :param username: 用户名
+        :param password: 密码
+        """
+        return_data = self.client.run("login", username=username, password=password)
+        return return_data
 
     def get_client(self, client_id):
         return_data = self.client.run("get_client", client_id)
