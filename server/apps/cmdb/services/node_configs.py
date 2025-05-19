@@ -3,7 +3,6 @@
 # @Time: 2025/3/21 14:19
 # @Author: windyzhao
 import ipaddress
-import json
 from abc import abstractmethod, ABCMeta
 
 
@@ -101,9 +100,7 @@ class BaseNodeParams(metaclass=ABCMeta):
         _key, _value = self.get_host_ip_addr(host)
         params = self.set_credential(host=host)
         params.update({"plugin_name": self.model_plugin_name, _key: _value})
-        _params = {f"_cmdb_{k}": str(v) for k, v in params.items()}
-        json_str = json.dumps(_params)
-        result = json_str.replace(":", "=")
+        result = params
         return result
 
     @property
@@ -132,23 +129,25 @@ class BaseNodeParams(metaclass=ABCMeta):
             nodes.append({
                 "id": node["id"],
                 "configs": [{
+                    "id": self.get_instance_id(host),
                     "url": _url,
-                    "type": "http",
-                    "instance_id": str((self.get_instance_id(host),)),
-                    "interval": self.BASE_INTERVAL_MAP.get(self.model_id, 60),
+                    "collect_type": "http",
+                    "type": "prometheus",
+                    "instance_id":  str((self.get_instance_id(host),)),
+                    "interval": self.BASE_INTERVAL_MAP.get(self.model_id, 300),
                     "instance_type": self.get_instance_type,
                     "timeout": self.timeout,
                     "response_timeout": self.response_timeout,
                     "custom_headers": self.custom_headers(host=host)
                 }]
             })
-        return {"object_type": "http", "nodes": nodes}
+        return {"collector": "Telegraf", "nodes": nodes}
 
     def delete_params(self):
         """
         生成节点管理删除配置的参数
         """
-        return [str((self.get_instance_id(host),)) for host in self.hosts]
+        return [str(self.get_instance_id(host)) for host in self.hosts]
 
     def main(self, operator="push"):
         """
