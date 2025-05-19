@@ -9,7 +9,7 @@ from langchain_core.documents import Document
 from tabula.io import read_pdf
 from tqdm import tqdm
 from src.ocr.base_ocr import BaseOCR
-from loguru import logger
+from sanic.log import logger
 
 
 class PDFLoader:

@@ -2,7 +2,9 @@ import json
 import os
 
 import requests
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def test_xinference_reranker():
