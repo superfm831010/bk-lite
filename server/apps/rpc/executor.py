@@ -1,6 +1,11 @@
 from apps.rpc.base import RpcClient
 
 
+class ExecutorRpcClient(RpcClient):
+    def __init__(self, namespace):
+        self.namespace = namespace
+
+
 class Executor(object):
     def __init__(self, instance_id):
         """
@@ -8,12 +13,12 @@ class Executor(object):
         :param instance_id: 执行器实例ID
         """
         self.instance_id = instance_id
-        self.local_client = RpcClient()
-        self.ssh_client = RpcClient()
-        self.download_to_local_client = RpcClient()
-        self.download_to_remote_client = RpcClient()
-        self.transfer_file_to_remote_client = RpcClient()
-        self.unzip_local_client = RpcClient()
+        self.local_client = ExecutorRpcClient('local.execute')
+        self.ssh_client = ExecutorRpcClient('ssh.execute')
+        self.download_to_local_client = ExecutorRpcClient('download.local')
+        self.download_to_remote_client = ExecutorRpcClient('download.remote')
+        self.transfer_file_to_remote_client = ExecutorRpcClient('upload.remote')
+        self.unzip_local_client = ExecutorRpcClient('unzip.local')
 
     def execute_local(self, command, timeout=60):
         """
