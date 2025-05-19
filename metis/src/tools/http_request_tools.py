@@ -3,7 +3,7 @@ from typing import Dict
 import json_repair
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
-from loguru import logger
+from sanic.log import logger
 
 import requests
 

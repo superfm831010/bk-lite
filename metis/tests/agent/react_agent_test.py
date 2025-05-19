@@ -2,7 +2,9 @@ import os
 from typing import List
 
 import pytest
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.agent.react_agent.react_agent_graph import ReActAgentGraph
 from src.core.entity.tools_server import ToolsServer

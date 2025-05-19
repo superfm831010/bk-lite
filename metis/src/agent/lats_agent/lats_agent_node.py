@@ -10,7 +10,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables import chain as as_runnable
 from langgraph.constants import END
 from langgraph.prebuilt import ToolNode
-from loguru import logger
+from sanic.log import logger
 
 from src.agent.lats_agent.lats_agent_state import LatsAgentState, Node, Reflection
 from src.core.node.tools_node import ToolsNodes

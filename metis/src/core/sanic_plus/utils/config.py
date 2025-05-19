@@ -7,7 +7,4 @@ class YamlConfig(Config):
         super().__init__(*args, **kwargs)
 
         with open(path, "r") as f:
-            self.apply(yaml.load(f, Loader=yaml.SafeLoader))
-
-    def apply(self, config):
-        self.update(config)
+            self.update(yaml.load(f, Loader=yaml.SafeLoader))

@@ -10,6 +10,7 @@ from langgraph.constants import START
 
 from src.core.entity.basic_llm_request import BasicLLMReuqest
 from src.core.entity.basic_llm_response import BasicLLMResponse
+from src.core.env.core_settings import core_settings
 
 
 class BasicGraph(ABC):
@@ -67,7 +68,7 @@ class BasicGraph(ABC):
                 "trace_id": str(uuid.uuid4()),
                 **(config['configurable'] or {})
             }
-            with PostgresSaver.from_conn_string(os.getenv('DB_URI')) as checkpoint:
+            with PostgresSaver.from_conn_string(core_settings.db_uri) as checkpoint:
                 graph.checkpoint = checkpoint
 
         if stream_mode == 'values':
