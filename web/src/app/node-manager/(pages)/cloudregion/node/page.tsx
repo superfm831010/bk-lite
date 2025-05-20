@@ -251,7 +251,7 @@ const Node = () => {
     initData(params);
   };
 
-  const getCollectorLabelKey = (value: string) => {
+  const getCollectorLabelKey = (value: string = '') => {
     for (const key in COLLECTOR_LABEL) {
       if (COLLECTOR_LABEL[key].includes(value)) {
         return key;
@@ -260,32 +260,32 @@ const Node = () => {
   };
 
   const getCollectorName = (id: string, data: any) => {
-    const name = data.find((item: any) => item.id === id)?.name;
-    return name || '--'
+    const item = data?.find((item: any) => item.id === id);
+    return item ? item.name : '--';
   };
 
   const renderColunms = (record: TableDataItem, target: string, data: any) => {
-    const collectors = record.status.collectors_install.filter(
+    const collectors = (record.status?.collectors_install || []).filter(
       (item: TableDataItem) =>
         getCollectorLabelKey(getCollectorName(item.collector_id, data)) === target
     );
     const tagList = collectors.map((tex: TableDataItem) => {
-      const collectorTarget = (record.status.collectors || []).find(
+      const collectorTarget = (record.status?.collectors || []).find(
         (dataItem: TableDataItem) => dataItem.collector_id === tex.collector_id
       );
-      const installTarget = (record.status.collectors_install || []).find(
+      const installTarget = (record.status?.collectors_install || []).find(
         (dataItem: TableDataItem) => dataItem.collector_id === tex.collector_id
       );
-      const { title, color } = getStatusInfo(
+      const { title, tagColor } = getStatusInfo(
         collectorTarget,
         installTarget
       );
       return (
-        <Tooltip title={title} key={tex.id} className='py-1 pr-1'>
+        <Tooltip title={title} key={tex.collector_id} className='py-1 pr-1'>
           <div>
-            <span style={{ color, borderColor: color, borderWidth: 1 }} className="text-[12px] p-1 w-[100px] block text-center">
+            <Tag color={tagColor}>
               {getCollectorName(tex.collector_id, data)}
-            </span>
+            </Tag>
           </div>
         </Tooltip>
       )
@@ -300,7 +300,7 @@ const Node = () => {
   const getCollectors = async (selectedsystem: string) => {
     const data = await getCollectorlist({
       node_operating_system: selectedsystem,
-    });
+    }) || [];
     const natsexecutors = ['natsexecutor_windows', 'natsexecutor_linux'];
     const natsexecutor: TableDataItem = data.filter((item: TableDataItem) => natsexecutors.includes(item.id as string));
     const columnItems = [
@@ -311,10 +311,10 @@ const Node = () => {
         width: 140,
         render: (_: any, record: TableDataItem) => {
           const tagList = natsexecutor.map((tex: TableDataItem) => {
-            const collectorTarget = (record.status.collectors || []).find(
+            const collectorTarget = (record.status?.collectors || []).find(
               (item: TableDataItem) => item.collector_id === tex.id
             );
-            const installTarget = (record.status.collectors_install || []).find(
+            const installTarget = (record.status?.collectors_install || []).find(
               (item: TableDataItem) => item.collector_id === tex.id
             );
             const { title, tagColor, status } = getStatusInfo(
