@@ -542,6 +542,10 @@ export const getConfigByObjectName = (objectName = '', key: string) => {
         return '';
       case 'icon':
         return 'Host';
+      case 'tableDiaplay':
+        return [];
+      case 'dashboardDisplay':
+        return [];
       case 'groupIds':
         return {
           list: ['instance_id'],
