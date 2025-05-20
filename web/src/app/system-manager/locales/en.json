@@ -174,6 +174,29 @@
       "actions": "Actions",
       "noSpecificDataSupport": "This module does not support specific data editing",
       "noAvailableModules": "No available permission modules"
+    },
+    "application": {
+      "title": "Application",
+      "createTitle": "Create Application",
+      "editTitle": "Edit Application",
+      "id": "Application ID",
+      "idFormat": "Only letters, numbers, underscores and hyphens are allowed",
+      "idTooltip": "Unique identifier for the application, used as the key in system",
+      "name": "Application Name",
+      "nameRequired": "Please enter application name",
+      "nameMaxLength": "Name cannot exceed 50 characters",
+      "url": "Application URL",
+      "urlRequired": "Please enter application URL",
+      "urlInvalid": "Please enter a valid URL or path starting with '/'",
+      "tags": "Tags",
+      "tagsTooltip": "Add tags to categorize this application (maximum 8 tags)",
+      "addTag": "Add Tag",
+      "maxTagsReached": "Maximum 8 tags allowed",
+      "tagsHelp": "Maximum 8 tags, each up to 6 characters",
+      "description": "Description",
+      "descriptionMaxLength": "Description cannot exceed 500 characters",
+      "selectIcon": "Select Icon",
+      "searchIcon": "Search Icon"
     }
   }
 }

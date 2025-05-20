@@ -32,6 +32,7 @@ const ChannelModal: React.FC<ChannelModalProps> = ({
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [channelData, setChannelData] = useState<any>({ config: {} });
   const [originalSmtpPwd, setOriginalSmtpPwd] = useState<string | undefined>(undefined);
+  const [originalBotKey, setOriginalBotKey] = useState<string | undefined>(undefined);
 
   const fetchChannelDetail = async (id: string) => {
     setLoading(true);
@@ -39,6 +40,7 @@ const ChannelModal: React.FC<ChannelModalProps> = ({
       const data = await getChannelDetail(id);
       setChannelData(data);
       setOriginalSmtpPwd(data.config?.smtp_pwd);
+      setOriginalBotKey(data.config?.bot_key);
       form.setFieldsValue({
         ...data,
         ...data.config
@@ -79,12 +81,13 @@ const ChannelModal: React.FC<ChannelModalProps> = ({
     try {
       setConfirmLoading(true);
       const values = await form.validateFields();
-      const { name, description, smtp_pwd, ...config } = values;
+      const { name, description, smtp_pwd, bot_key, ...config } = values;
 
-      // Exclude smtp_pwd if it hasn't changed
+      // Exclude smtp_pwd and bot_key if they haven't changed
       const finalConfig = {
         ...config,
         ...(smtp_pwd !== originalSmtpPwd ? { smtp_pwd } : {}),
+        ...(bot_key !== originalBotKey ? { bot_key } : {}),
       };
 
       const payload = {

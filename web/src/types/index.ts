@@ -57,6 +57,8 @@ export interface ClientData {
   description: string;
   url: string;
   icon?: string;
+  is_build_in?: boolean;
+  tags?: string[];
 }
 
 export interface TourItem {
