@@ -1,8 +1,10 @@
 from rest_framework import mixins
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.exceptions import ValidationError
 from rest_framework.viewsets import GenericViewSet
 
 from apps.node_mgmt.filters.cloud_region import CloudRegionFilter
+from apps.node_mgmt.models import Node
 from apps.node_mgmt.serializers.cloud_region import CloudRegionSerializer, CloudRegionUpdateSerializer
 from apps.node_mgmt.models.cloud_region import CloudRegion
 from drf_yasg import openapi
@@ -10,6 +12,8 @@ from drf_yasg import openapi
 
 class CloudRegionViewSet(mixins.ListModelMixin,
                          mixins.UpdateModelMixin,
+                         mixins.DestroyModelMixin,
+                         mixins.CreateModelMixin,
                          GenericViewSet):
     queryset = CloudRegion.objects.all()
     serializer_class = CloudRegionSerializer
@@ -35,3 +39,26 @@ class CloudRegionViewSet(mixins.ListModelMixin,
     def partial_update(self, request, *args, **kwargs):
         self.serializer_class = CloudRegionUpdateSerializer
         return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="创建云区域",
+        tags=['CloudRegion'],
+        request_body=CloudRegionSerializer,
+    )
+    def create(self, request, *args, **kwargs):
+        self.serializer_class = CloudRegionSerializer
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="删除云区域",
+        tags=['CloudRegion'],
+        manual_parameters=[
+            openapi.Parameter('id', openapi.IN_PATH, description="云区域ID", type=openapi.TYPE_INTEGER)
+        ]
+    )
+    def destroy(self, request, *args, **kwargs):
+        # 校验云区域下是否存在节点
+        cloud_region_id = kwargs.get('pk')
+        if Node.objects.filter(cloud_region_id=cloud_region_id).exists():
+            raise ValidationError("该云区域下存在节点，无法删除")
+        return super().destroy(request, *args, **kwargs)
