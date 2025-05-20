@@ -6,10 +6,9 @@ from sanic import json
 from sanic.log import logger
 from sanic.logging.default import LOGGING_CONFIG_DEFAULTS
 
-import src.api as blueprints
+from src.api import api
 from src.core.env.core_settings import core_settings
 from src.core.sanic_plus.auth.api_auth import auth
-from src.core.sanic_plus.utils.autodiscover import autodiscover
 from src.core.sanic_plus.utils.config import YamlConfig
 from src.core.sanic_plus.utils.crypto import PasswordCrypto
 from src.embed.embed_builder import EmbedBuilder
@@ -47,11 +46,7 @@ def bootstrap() -> Sanic:
     }
     app = Sanic("Metis", config=config, log_config=LOGGING_CONFIG_DEFAULTS)
 
-    autodiscover(
-        app,
-        blueprints,
-        recursive=True,
-    )
+    app.blueprint(api)
 
     @app.exception(Exception)
     async def global_api_exception(request, exception):

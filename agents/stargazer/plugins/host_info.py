@@ -20,6 +20,7 @@ class HostInfo:
         self.password = params.get("password")
         self.time_out = int(params.get("execute_timeout", 60))
         self.command = params.get("command", self.script)
+        self.port = int(params.get("port", 22))
         self.nats_client = NATSClient()
 
     @property
