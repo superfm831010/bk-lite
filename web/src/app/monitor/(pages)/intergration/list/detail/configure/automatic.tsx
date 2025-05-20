@@ -425,7 +425,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     switch (collectType) {
       case 'host':
         form.setFieldsValue({
-          metric_type: configTypes,
+          metric_type: configTypes.filter((item: string) => item !== 'gpu'),
         });
         break;
       case 'ipmi':

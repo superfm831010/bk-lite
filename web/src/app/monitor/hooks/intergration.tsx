@@ -115,6 +115,14 @@ const useColumnsAndFormItems = ({
                       </span>
                     </span>
                   </Checkbox>
+                  <Checkbox value="gpu">
+                    <span>
+                      <span className="w-[80px] inline-block">GPU</span>
+                      <span className="text-[var(--color-text-3)] text-[12px]">
+                        {t('monitor.intergrations.gpuDes')}
+                      </span>
+                    </span>
+                  </Checkbox>
                 </Space>
               </Checkbox.Group>
             </Form.Item>
@@ -848,6 +856,14 @@ const useFormItems = ({
                         </span>
                       </span>
                     </Checkbox>
+                    <Checkbox value="gpu">
+                      <span>
+                        <span className="w-[80px] inline-block">GPU</span>
+                        <span className="text-[var(--color-text-3)] text-[12px]">
+                          {t('monitor.intergrations.gpuDes')}
+                        </span>
+                      </span>
+                    </Checkbox>
                   </Space>
                 </Checkbox.Group>
               </Form.Item>
@@ -910,6 +926,15 @@ const useFormItems = ({
             system: `[[inputs.system]]
     interval = "$intervals"
     tags = { "instance_id"="$instance_id","instance_type"="os","collect_type"="host","config_type"="system" }
+    
+`,
+            gpu: `[[inputs.nvidia_smi]]
+    interval = "$intervals"
+    [inputs.docker.tags]
+        instance_id = "$instance_id"
+        instance_type = "os"
+        collect_type = "host"
+        config_type = "gpu"
     
 `,
           },
