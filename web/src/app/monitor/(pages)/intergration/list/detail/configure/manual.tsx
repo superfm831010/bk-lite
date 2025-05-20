@@ -124,7 +124,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     switch (collectType) {
       case 'host':
         form.setFieldsValue({
-          metric_type: configTypes,
+          metric_type: configTypes.filter((item: string) => item !== 'gpu'),
         });
         break;
       case 'ipmi':
@@ -158,15 +158,14 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   };
 
   const getInstId = (row: TableDataItem) => {
+    if (['snmp', 'ipmi'].includes(collectType)) {
+      return objectName + '-' + (row.monitor_ip || '');
+    }
     switch (collectType) {
       case 'host':
         return row.monitor_ip;
       case 'trap':
         return 'trap' + row.monitor_ip;
-      case 'snmp':
-        return objectName + '-' + (row.monitor_ip || '');
-      case 'ipmi':
-        return objectName + '-' + (row.monitor_ip || '');
       case 'docker':
         return row.endpoint;
       case 'database':

@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } 
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useAuth } from '@/context/auth';
 import { message } from 'antd';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { useTranslation } from '@/utils/i18n';
 
 const apiClient = axios.create({
@@ -62,7 +62,9 @@ const useApiClient = () => {
           const { status } = error.response;
           const messageText = error.response?.data?.message;
           if (status === 401) {
-            signIn();
+            signOut({ redirect: false }).then(() => {
+              signIn();
+            });
           } else if ([400, 403].includes(status)) {
             message.error(messageText);
             return Promise.reject(new Error(messageText));
