@@ -13,8 +13,16 @@ class SystemMgmt(object):
         return_data = self.client.run("login", username=username, password=password)
         return return_data
 
-    def get_client(self, client_id):
-        return_data = self.client.run("get_client", client_id)
+    def reset_pwd(self, username, password):
+        """
+        :param username: 用户名
+        :param password: 密码
+        """
+        return_data = self.client.run("reset_pwd", username=username, password=password)
+        return return_data
+
+    def get_client(self, client_id, username):
+        return_data = self.client.run("get_client", client_id=client_id, username=username)
         return return_data
 
     def get_client_detail(self, client_id):
