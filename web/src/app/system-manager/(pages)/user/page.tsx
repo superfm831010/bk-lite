@@ -17,6 +17,7 @@ import styles from './index.module.scss';
 import { useGroupApi } from '@/app/system-manager/api/group/index';
 import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import OperateModal from '@/components/operate-modal';
+import PermissionWrapper from '@/components/permission';
 
 const { Search } = Input;
 
@@ -89,19 +90,25 @@ const User: React.FC = () => {
       fixed: 'right',
       render: (key: string) => (
         <>
-          <Button type="link" className="mr-[8px]" onClick={() => handleEditUser(key)}>
-            {t('common.edit')}
-          </Button>
-          <Button type="link" className="mr-[8px]" onClick={() => openPasswordModal(key)}>
-            {t('system.common.password')}
-          </Button>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button type="link" className="mr-[8px]" onClick={() => handleEditUser(key)}>
+              {t('common.edit')}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button type="link" className="mr-[8px]" onClick={() => openPasswordModal(key)}>
+              {t('system.common.password')}
+            </Button>
+          </PermissionWrapper>
           <Popconfirm
             title={t('common.delConfirm')}
             okText={t('common.confirm')}
             cancelText={t('common.cancel')}
             onConfirm={() => showDeleteConfirm(key)}
           >
-            <Button type="link">{t('common.delete')}</Button>
+            <PermissionWrapper requiredPermissions={['Delete']}>
+              <Button type="link">{t('common.delete')}</Button>
+            </PermissionWrapper>
           </Popconfirm>
         </>
       ),
@@ -372,9 +379,30 @@ const User: React.FC = () => {
         <Menu
           onClick={({ key }) => handleGroupAction(key, groupKey)}
           items={[
-            { key: 'addSubGroup', label: t('system.group.addSubGroups') },
-            { key: 'rename', label: t('system.group.rename') },
-            { key: 'delete', label: t('common.delete') },
+            {
+              key: 'addSubGroup',
+              label: (
+                <PermissionWrapper requiredPermissions={['Add']}>
+                  {t('system.group.addSubGroups')}
+                </PermissionWrapper>
+              ),
+            },
+            {
+              key: 'rename',
+              label: (
+                <PermissionWrapper requiredPermissions={['Edit']}>
+                  {t('system.group.rename')}
+                </PermissionWrapper>
+              ),
+            },
+            {
+              key: 'delete',
+              label: (
+                <PermissionWrapper requiredPermissions={['Delete']}>
+                  {t('common.delete')}
+                </PermissionWrapper>
+              ),
+            },
           ]}
         />
       }
@@ -415,7 +443,9 @@ const User: React.FC = () => {
           onChange={(e) => handleTreeSearchChange(e.target.value)}
           value={treeSearchValue}
         />
-        <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={handleAddRootGroup}></Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={handleAddRootGroup}></Button>
+        </PermissionWrapper>
       </div>
       <Tree
         className="w-full flex-1 overflow-auto"
@@ -439,13 +469,17 @@ const User: React.FC = () => {
           onSearch={handleUserSearch}
           placeholder={`${t('common.search')}...`}
         />
-        <Button type="primary" className="mr-2" onClick={() => openUserModal('add')}>
-          +{t('common.add')}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button type="primary" className="mr-2" onClick={() => openUserModal('add')}>
+            +{t('common.add')}
+          </Button>
+        </PermissionWrapper>
         <UserModal ref={userModalRef} treeData={treeData} onSuccess={onSuccessUserModal} />
-        <Button onClick={handleModifyDelete} disabled={isDeleteDisabled}>
-          {t('common.batchDelete')}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Delete']}>
+          <Button onClick={handleModifyDelete} disabled={isDeleteDisabled}>
+            {t('common.batchDelete')}
+          </Button>
+        </PermissionWrapper>
         <PasswordModal ref={passwordModalRef} onSuccess={() => fetchUsers({ search: searchValue, page: currentPage, page_size: pageSize })} />
       </div>
       <Spin spinning={loading}>
