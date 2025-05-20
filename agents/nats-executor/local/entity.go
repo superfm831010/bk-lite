@@ -6,7 +6,7 @@ type ExecuteRequest struct {
 }
 
 type ExecuteResponse struct {
-	Output     string `json:"output"`
+	Output     string `json:"result"`
 	InstanceId string `json:"instance_id"`
 	Success    bool   `json:"success"`
 }

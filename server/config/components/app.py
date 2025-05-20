@@ -54,7 +54,7 @@ STORAGES = {
 }
 
 AUTHENTICATION_BACKENDS = (
-    "apps.core.backends.KeycloakAuthBackend",  # this is default
+    "apps.core.backends.AuthBackend",  # this is default
     "apps.core.backends.APISecretAuthBackend",
     "django.contrib.auth.backends.ModelBackend",
 )
@@ -76,7 +76,7 @@ MIDDLEWARE = (
     "apps.core.middlewares.app_exception_middleware.AppExceptionMiddleware",
     "apps.core.middlewares.drf_middleware.DisableCSRFMiddleware",
     "apps.core.middlewares.api_middleware.APISecretMiddleware",
-    "apps.core.middlewares.keycloak_auth_middleware.KeyCloakAuthMiddleware",
+    "apps.core.middlewares.auth_middleware.AuthMiddleware",
 )
 
 if DEBUG:
@@ -87,9 +87,9 @@ if DEBUG:
     )  # noqa
     # 该跨域中间件需要放在前面
     MIDDLEWARE = (
-                     "corsheaders.middleware.CorsMiddleware",
-                     "debug_toolbar.middleware.DebugToolbarMiddleware",
-                 ) + MIDDLEWARE  # noqa
+        "corsheaders.middleware.CorsMiddleware",
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+    ) + MIDDLEWARE  # noqa
     CORS_ORIGIN_ALLOW_ALL = True
     CORS_ALLOW_CREDENTIALS = True
     CORS_ALLOW_HEADERS = [
@@ -106,10 +106,9 @@ if DEBUG:
 # 获取 apps 目录下的所有子目录名称
 APPS_DIR = os.path.join(BASE_DIR, "apps")
 if os.path.exists(APPS_DIR):
+    install_apps = os.getenv("INSTALL_APPS", "").split(",")
     app_folders = [
-        name
-        for name in os.listdir(APPS_DIR)
-        if os.path.isdir(os.path.join(APPS_DIR, name)) and name not in ["__pycache__", "base", "core", "rpc"]
+        name for name in os.listdir(APPS_DIR) if os.path.isdir(os.path.join(APPS_DIR, name)) and name in install_apps
     ]
 else:
     app_folders = []

@@ -16,6 +16,7 @@ const EntityList = <T,>({
   filterOptions = [],
   filter = false,
   filterLoading = false,
+  search = true,
   operateSection,
   menuActions,
   singleAction,
@@ -138,14 +139,14 @@ const EntityList = <T,>({
             loading={filterLoading}
             onChange={handleFilter}
           />)}
-          <Search
+          {search && (<Search
             size={searchSize}
             allowClear
             enterButton
             placeholder={`${t('common.search')}...`}
             className="w-60"
             onSearch={handleSearch}
-          />
+          />)}
         </Space.Compact>
         {operateSection && <>{operateSection}</>}
       </div>

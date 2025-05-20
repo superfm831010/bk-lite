@@ -1,13 +1,5 @@
 FROM python:3.10
 
-RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/;
-RUN rm -Rf /etc/apt/sources.list.d \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian-security bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list;
-
-
 RUN apt-get update && \
     apt-get install -y libhdf5-dev vim unzip curl pkg-config libssl-dev libffi-dev supervisor && \
     apt-get clean && \
@@ -15,10 +7,10 @@ RUN apt-get update && \
 
 WORKDIR /apps
 
-ADD ./pyproject.toml ./pyproject.toml
-RUN pip install pip-tools
-RUN pip-compile --extra dev -v
-RUN pip install -r requirements.txt
+# ADD ./pyproject.toml ./pyproject.toml
+ADD ./requirements ./requirements
+RUN pip install -r ./requirements/requirements.in 
+RUN pip install -r ./requirements/requirements-dev.in
 
 ADD ./actions ./actions
 ADD ./channels ./channels

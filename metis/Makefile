@@ -1,54 +1,30 @@
-# Configuration
 VENV := ./.venv
 PIP := $(VENV)/bin/pip
 PIP_COMPILE := $(VENV)/bin/pip-compile
+
 PIP_SYNC := $(VENV)/bin/pip-sync
-PYARMOR := pyarmor
-DIST_DIR := dist
-RUNTIME_DIR := runtime
 
-# Supported platforms for runtime
-PLATFORMS := linux.x86_64 linux.armv7 linux.aarch64 darwin.aarch64
+.PHONY: setup clean install-%
 
-.PHONY: setup clean install-% compile-% release-% test-%
-
-# Development environment setup
 setup:
 	virtualenv $(VENV) -p python3.12
 	$(PIP) install pip-tools
 
-# Cleanup
-clean:
-	rm -Rf ./$(DIST_DIR)
-
-# Package installation targets
-install-%: ./requirements/requirements-%.txt
-	$(PIP_COMPILE) ./requirements/requirements-core.txt \
-				   ./requirements/requirements-$*.txt \
-		-v --output-file ./requirements.txt
+install: 
+	$(PIP_COMPILE) ./requirements/requirements.in ./requirements/requirements-dev.in -v --output-file ./requirements.txt
 	$(PIP_SYNC) -v
 
-# Runtime generation
-gen-runtime:
-	$(PYARMOR) gen runtime $(foreach platform,$(PLATFORMS),--platform $(platform)) -O $(RUNTIME_DIR)
+check:
+	$(PIP_COMPILE) --upgrade --dry-run  ./requirements/requirements.in ./requirements/requirements-dev.in -v
 
-# Compilation targets
-compile-%: clean
-	$(PYARMOR) gen --use-runtime $(RUNTIME_DIR) -O $(DIST_DIR) -r ./server.py
-	$(PYARMOR) gen --use-runtime $(RUNTIME_DIR) -O $(DIST_DIR) -r ./core
-	$(PYARMOR) gen --use-runtime $(RUNTIME_DIR) -O $(DIST_DIR) -r ./apps
-	find ./$(DIST_DIR)/apps -mindepth 1 -maxdepth 1 -type d -not -name '$*' -exec rm -rf {} +
-	cp -Rf ./$(RUNTIME_DIR)/* ./$(DIST_DIR)
+download-models:
+	sanic server:bootstrap exec download_models
 
-# Release targets
-release:
-	$(PYARMOR) gen -O $(DIST_DIR) -r ./apps
-	$(PYARMOR) gen -O $(DIST_DIR) -r ./core
-	$(PYARMOR) gen -O $(DIST_DIR) -r ./server.py
+sync-db:
+	sanic server:bootstrap exec sync_db
 
-release-%:
-	docker build -t $(or $(DOCKER_REGISTRY)/bk-lite:$*,bk-lite:$*) -f ./support-files/release/$*/Dockerfile .
+dev:
+	sanic server:bootstrap --factory --debug --host=0.0.0.0 --port=18082
 
-# Test targets
-test-%:
-	docker run -it --rm --name $* -p 8001:8001 bk-lite:$*
+test:
+	pytest -n auto

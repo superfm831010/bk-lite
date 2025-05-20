@@ -1,75 +1,71 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/nats-io/nats.go"
 	"log"
+	"os"
+
+	"github.com/nats-io/nats.go"
+	"gopkg.in/yaml.v3"
+
 	"nats-executor/local"
 	"nats-executor/ssh"
 )
 
+type Config struct {
+	NATSUrls       string `yaml:"nats_urls"`
+	NATSInstanceID string `yaml:"nats_instanceId"`
+}
+
+func loadConfig(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("failed to parse config file: %w", err)
+	}
+	return &cfg, nil
+}
+
 func main() {
-	var urls = flag.String("s", nats.DefaultURL, "The nats server URLs (separated by comma)")
-	var instanceId = flag.String("i", "1", "The instance id")
+	configPath := flag.String("config", "", "Path to the config file (YAML format)")
 	flag.Parse()
 
-	log.Printf("Connecting to NATS server at %s", *urls)
+	if *configPath == "" {
+		log.Fatal("Please specify the config file path using --config")
+	}
+
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+
+	}
+
+	log.Printf("Connecting to NATS server at %s", cfg.NATSUrls)
 	opts := []nats.Option{
-		nats.Name("nats-executer"),
+		nats.Name("nats-executor"),
 		nats.Compression(true),
 	}
-	nc, err := nats.Connect(*urls, opts...)
+
+	nc, err := nats.Connect(cfg.NATSUrls, opts...)
 	if err != nil {
 		log.Fatalf("Failed to connect to NATS server: %v", err)
 	}
 	defer nc.Close()
 	log.Println("Connected to NATS server")
 
-	subscribeLocalExecutor(nc, instanceId)
-	subscribeSSHExecutor(nc, instanceId)
+	// 注册各类订阅
+	local.SubscribeLocalExecutor(nc, &cfg.NATSInstanceID)
+	local.SubscribeDownloadToLocal(nc, &cfg.NATSInstanceID)
+	local.SubscribeUnzipToLocal(nc, &cfg.NATSInstanceID)
+
+	ssh.SubscribeSSHExecutor(nc, &cfg.NATSInstanceID)
+	ssh.SubscribeDownloadToRemote(nc, &cfg.NATSInstanceID)
+	ssh.SubscribeUploadToRemote(nc, &cfg.NATSInstanceID)
 
 	log.Println("Waiting for messages...")
 	select {}
-}
-
-func subscribeSSHExecutor(nc *nats.Conn, instanceId *string) {
-	subject := fmt.Sprintf("ssh.execute.%s", *instanceId)
-	log.Printf("Subscribing to subject: %s", subject)
-	nc.Subscribe(subject, func(msg *nats.Msg) {
-		var sshExecuteRequest ssh.ExecuteRequest
-		if err := json.Unmarshal(msg.Data, &sshExecuteRequest); err != nil {
-			log.Printf("Error unmarshalling message: %v", err)
-			return
-		}
-		log.Printf("Received a message: %s", sshExecuteRequest.Command)
-		responseData := ssh.Execute(sshExecuteRequest, *instanceId)
-		log.Printf("Publishing response to subject: ssh.execute.response")
-
-		responseContent, _ := json.Marshal(responseData)
-		if err := nc.Publish("ssh.execute.response", responseContent); err != nil {
-			log.Printf("Error publishing response: %v", err)
-		}
-	})
-}
-
-func subscribeLocalExecutor(nc *nats.Conn, instanceId *string) {
-	subject := fmt.Sprintf("local.execute.%s", *instanceId)
-	log.Printf("Subscribing to subject: %s", subject)
-	nc.Subscribe(subject, func(msg *nats.Msg) {
-		var localExecuteRequest local.ExecuteRequest
-		if err := json.Unmarshal(msg.Data, &localExecuteRequest); err != nil {
-			log.Printf("Error unmarshalling message: %v", err)
-			return
-		}
-		log.Printf("Received a message: %s", localExecuteRequest.Command)
-		responseData := local.Execute(localExecuteRequest, *instanceId)
-		log.Printf("Publishing response to subject: local.execute.response")
-
-		responseContent, _ := json.Marshal(responseData)
-		if err := nc.Publish("local.execute.response", responseContent); err != nil {
-			log.Printf("Error publishing response: %v", err)
-		}
-	})
 }

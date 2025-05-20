@@ -42,29 +42,14 @@ from alibabacloud_vpc20160428 import models as vpc_20160428_models
 from alibabacloud_vpc20160428.client import Client as Vpc20160428Client  # noqa
 from alibabacloud_waf_openapi20211001 import models as waf_openapi_20211001_models
 from alibabacloud_waf_openapi20211001.client import Client as WafOpenapi20211001Client
-from aliyunsdkbssopenapi.request.v20171214 import QueryAccountBalanceRequest
-from aliyunsdkcms.request.v20190101 import DescribeMetricListRequest
 from aliyunsdkcore import client
 from aliyunsdkcore.request import CommonRequest
-from aliyunsdkdds.request.v20151201.DescribeAvailableResourceRequest import (
-    DescribeAvailableResourceRequest as dds_avail_resource,
-)
 from aliyunsdkecs.request.v20140526 import (
     ApplyAutoSnapshotPolicyRequest,
-    AttachDiskRequest,
-    AuthorizeSecurityGroupEgressRequest,
-    AuthorizeSecurityGroupRequest,
     CancelAutoSnapshotPolicyRequest,
     CreateDiskRequest,
     CreateImageRequest,
-    CreateSecurityGroupRequest,
-    CreateSnapshotGroupRequest,
-    CreateSnapshotRequest,
-    DeleteDiskRequest,
     DeleteImageRequest,
-    DeleteInstanceRequest,
-    DeleteSecurityGroupRequest,
-    DeleteSnapshotRequest,
     DescribeAutoSnapshotPolicyExRequest,
     DescribeAvailableResourceRequest,
     DescribeDisksRequest,
@@ -86,36 +71,24 @@ from aliyunsdkecs.request.v20140526 import (
     TagResourcesRequest,
     UntagResourcesRequest,
 )
-from aliyunsdknas.request.v20170626 import CreateFileSystemRequest, DeleteFileSystemRequest, DescribeFileSystemsRequest
-from aliyunsdkr_kvstore.request.v20150101.DescribeAvailableResourceRequest import (
-    DescribeAvailableResourceRequest as kvs_avail_resource,
-)
-from aliyunsdkslb.request.v20140515 import DescribeHealthStatusRequest, DescribeServerCertificatesRequest
-from aliyunsdkvpc.request.v20160428 import (  # DescribeEipAddressesRequest,
-    AllocateEipAddressRequest,
-    AssociateEipAddressRequest,
-    AssociateRouteTableRequest,
-    CreateRouteTableRequest,
-    CreateVpcRequest,
+from aliyunsdknas.request.v20170626 import DescribeFileSystemsRequest
+from aliyunsdkslb.request.v20140515 import DescribeServerCertificatesRequest
+from aliyunsdkvpc.request.v20160428 import (
     CreateVSwitchRequest,
-    DeleteRouteEntryRequest,
-    DeleteRouteTableRequest,
-    DeleteVpcRequest,
     DeleteVSwitchRequest,
     DescribeRouteEntryListRequest,
     DescribeRouteTableListRequest,
     DescribeVpcsRequest,
     DescribeVSwitchesRequest,
-    ModifyEipAddressAttributeRequest,
-    ReleaseEipAddressRequest,
-    UnassociateEipAddressRequest,
-    UnassociateRouteTableRequest,
 )
 from six.moves import range
 from Tea.core import TeaCore
 
-from plugins.base import CloudType, RESOURCE_MAP
-from plugins.base_utils import get_format_method, set_dir_size
+from common.cmp.cloud_apis.constant import CloudType
+from common.cmp.cloud_apis.resource_apis.cw_aliyun import RESOURCE_MAP
+from common.cmp.cloud_apis.resource_apis.resource_format.common.base_format import get_format_method
+from common.cmp.utils import set_dir_size
+from plugins.base_utils import utc_to_dts, convert_to_prometheus_format, ts_to_dts
 
 
 def convert_param_to_list(param):
@@ -200,7 +173,7 @@ class CwAliyun(object):
     阿里云组件类,通过该类创建阿里云的Client实例，调用阿里云api接口
     """
 
-    def __init__(self, access_key, access_secret, region_id, host="", **kwargs):
+    def __init__(self, params, **kwargs):
         """
         初始化方法，创建Client实例。在创建Client实例时，您需要获取Region ID、AccessKey ID和AccessKey Secret
         :param access_key:
@@ -208,17 +181,35 @@ class CwAliyun(object):
         :param region_id:
         :param kwargs:
         """
-        self.AccessKey = access_key
-        self.AccessSecret = access_secret
-        self.RegionId = "cn-hangzhou" if not region_id else region_id
+        self.AccessKey = params["access_key"]
+        self.AccessSecret = params["access_secret"]
+        self.RegionId = params.get("region_id", "cn-hangzhou")
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+        # 猴子补丁：为CredentialModel类添加缺失的provider_name属性
+        from alibabacloud_credentials.models import CredentialModel
+        if not hasattr(CredentialModel, "provider_name"):
+            setattr(CredentialModel, "provider_name", None)
+
+        # 如果get_credential方法也缺失，也添加这个方法
+        if not hasattr(CredentialModel, "get_credential"):
+            setattr(CredentialModel, "get_credential", lambda self: self)
+
+        # 创建ACS客户端
         self.client = client.AcsClient(
             self.AccessKey, self.AccessSecret, self.RegionId, timeout=30, connect_timeout=30, max_retry_time=3
         )
+
+        # 创建OSS认证对象
         self.auth = oss2.Auth(self.AccessKey, self.AccessSecret)
-        self.auth_config = open_api_models.Config(access_key_id=self.AccessKey, access_key_secret=self.AccessSecret)
+
+        # 创建配置 - 不使用credential对象，直接设置access_key_id和access_key_secret
+        self.auth_config = open_api_models.Config(
+            access_key_id=self.AccessKey,
+            access_key_secret=self.AccessSecret
+        )
+        self.auth_config.region_id = self.RegionId
 
     def __getattr__(self, item):
         """
@@ -936,7 +927,8 @@ class Aliyun(object):
                 bucket.update(result.get("Bucket", {}))
             return {"result": True, "data": buckets}
         except Exception as e:
-            print("list_buckets error")
+            import traceback
+            print("list_buckets error. error={}".format(traceback.format_exc()))
             return {"result": False, "message": repr(e)}
 
     def list_rds(self, **kwargs):
@@ -964,7 +956,8 @@ class Aliyun(object):
                 describe_db_instances_request.page_number += 1
             return {"result": True, "data": rds_instances}
         except Exception as e:
-            print("list_rds error")
+            import traceback
+            print("list_rds error. error={}".format(traceback.format_exc()))
             return {"result": False, "message": repr(e)}
 
     def list_redis(self):
@@ -988,7 +981,8 @@ class Aliyun(object):
                 describe_instances_request.page_number += 1
             return {"result": True, "data": redis_instances}
         except Exception as e:
-            print("list_redis error")
+            import traceback
+            print("list_redis error. error={}".format(traceback.format_exc()))
             return {"result": False, "message": repr(e)}
 
     def list_mongodb(self):
@@ -1021,7 +1015,8 @@ serverless"""
                     describe_db_instances_request.page_number += 1
             return {"result": True, "data": mongodb_instances}
         except Exception as e:
-            print("list_mongodb error")
+            import traceback
+            print("list_mongodb error. error={}".format(traceback.format_exc()))
             return {"result": False, "message": repr(e)}
 
     def list_kafka(self):
@@ -1037,7 +1032,7 @@ serverless"""
             kafka_instances = result.get("InstanceList", {}).get("InstanceVO", [])
             return {"result": True, "data": kafka_instances}
         except Exception as e:
-            print("list_kafka error")
+            print("list_kafka error. error={}".format(e))
             return {"result": False, "message": repr(e)}
 
     def list_kafka_consumer_group(self, **kwargs):
@@ -1169,7 +1164,8 @@ serverless"""
                 describe_load_balancers_request.page_number += 1
             return {"result": True, "data": clb_instances}
         except Exception as e:
-            print("list_slb error")
+            import traceback
+            print("list_slb error. error={}".format(traceback.format_exc()))
             return {"result": False, "message": repr(e)}
 
     def list_k8s_clusters(self):
@@ -1423,37 +1419,38 @@ serverless"""
                 return {resource_name: result.get("data", [])}
             return {}
 
-        data = {}
         kafka_result = self.list_kafka()
-        mse_clusters_result = self.list_mse_clusters()
-        mse_namespaces_result = self.list_mse_namespaces(mse_clusters=mse_clusters_result)
-        mse_service_result = self.list_mse_service(mse_namespaces=mse_namespaces_result)
+        # mse_clusters_result = self.list_mse_clusters()
+        # mse_namespaces_result = self.list_mse_namespaces(mse_clusters=mse_clusters_result)
+        # mse_service_result = self.list_mse_service(mse_namespaces=mse_namespaces_result)
 
         resources = [
+            # (self.list_domains, "aliyun_domain"),
+            # (self.list_parsings, "aliyun_parsing"),
+            # (self.list_cdn, "aliyun_cdn"),
+            # (self.list_waf, "aliyun_firewall"),
+            # (self.list_cas, "aliyun_ssl"),
             (self.list_vms, "aliyun_ecs"),
-            (self.list_domains, "aliyun_domain"),
-            (self.list_parsings, "aliyun_parsing"),
-            (self.list_cdn, "aliyun_cdn"),
-            (self.list_waf, "aliyun_firewall"),
-            (self.list_cas, "aliyun_ssl"),
             (self.list_buckets, "aliyun_bucket"),
             (lambda: self.list_rds(engine="Mysql"), "aliyun_mysql"),
             (lambda: self.list_rds(engine="PostgreSQL"), "aliyun_pgsql"),
             (self.list_redis, "aliyun_redis"),
             (self.list_mongodb, "aliyun_mongodb"),
             (lambda: kafka_result, "aliyun_kafka_inst"),
-            (lambda: self.list_kafka_consumer_group(kafka_instances=kafka_result), "aliyun_kafka_group"),
-            (lambda: self.list_kafka_topic(kafka_instances=kafka_result), "aliyun_kafka_topic"),
             (self.list_clb, "aliyun_clb"),
-            (self.list_k8s_clusters, "aliyun_k8s_cluster"),
-            (self.list_eips, "aliyun_eip"),
-            (lambda: mse_clusters_result, "aliyun_mse_cluster"),
-            (lambda: mse_service_result, "aliyun_mse_service"),
-            (lambda: self.list_mse_inst(mse_services=mse_service_result), "aliyun_mse_inst"),
-            (self.list_albs, "aliyun_alb"),
-            (self.list_nas, "aliyun_nas"),
+
+            # (lambda: self.list_kafka_consumer_group(kafka_instances=kafka_result), "aliyun_kafka_group"),
+            # (lambda: self.list_kafka_topic(kafka_instances=kafka_result), "aliyun_kafka_topic"),
+            # (self.list_k8s_clusters, "aliyun_k8s_cluster"),
+            # (self.list_eips, "aliyun_eip"),
+            # (lambda: mse_clusters_result, "aliyun_mse_cluster"),
+            # (lambda: mse_service_result, "aliyun_mse_service"),
+            # (lambda: self.list_mse_inst(mse_services=mse_service_result), "aliyun_mse_inst"),
+            # (self.list_albs, "aliyun_alb"),
+            # (self.list_nas, "aliyun_nas"),
         ]
 
+        data = {}
         with ThreadPoolExecutor(max_workers=10) as executor:
             future_to_resource = {
                 executor.submit(handle_resource, resource_func, resource_name): resource_name
@@ -1464,50 +1461,231 @@ serverless"""
                 if result:
                     data.update(result)
 
-        return {"result": True, "data": data}
+        format_data = self.format_aliyun_data(data)
+        metrics = convert_to_prometheus_format(format_data)
+        return metrics
 
-    def monitor_data(self, **kwargs):
-        """
-        获取监控信息列表
-        :param kwargs:aliyun DescribeMetricListRequest api param, see https://help.aliyun.com/
-        :return:监控信息
-        """
-        try:
-            request = self._set_monitor_data_params(**kwargs)
-            ali_response = self.client.do_action_with_exception(request)
-            ali_result = json.loads(ali_response)
-            monitor_list = []
-            if not (ali_result.get("Datapoints"), []):
-                print("ali_result: {}".format(ali_result))
-            monitor_list.extend(json.loads(ali_result.get("Datapoints")))
+    # ===============
+    @staticmethod
+    def format_ecs_data(data_list):
+        result = []
+        for data in data_list:
+            result.append(
+                {
+                    "resource_name": data["resource_name"],
+                    "resource_id": data["resource_id"],
+                    "ip_addr": data["inner_ip"][0] if data["inner_ip"] else "",
+                    "public_ip": data["public_ip"][0] if data["public_ip"] else (
+                        data["inner_ip"][0] if data["inner_ip"] else ""),
+                    "region": data["region"],
+                    "zone": data["zone"],
+                    "vpc": data["vpc"],
+                    "status": data["status"],
+                    "instance_type": data["instance_type"],
+                    "os_name": data["os_name"],
+                    "vcpus": data["vcpus"],
+                    "memory": data["memory"],
+                    "charge_type": data["charge_type"],
+                    "create_time": data["create_time"],
+                    "expired_time": data["expired_time"],
+                }
+            )
 
-            while ali_result.get("NextToken", None):
-                kwargs["NextToken"] = ali_result["NextToken"]
-                request = self._set_monitor_data_params(**kwargs)
-                ali_response = self.client.do_action_with_exception(request)
-                ali_result = json.loads(ali_response)
-                monitor_list.extend(json.loads(ali_result.get("Datapoints", "")))
-            return {"result": True, "data": monitor_list}
-        except Exception as e:
-            print("monitor_data")
-            return {"result": False, "data": [], "message": str(e)}
+        return result
 
-    @classmethod
-    def _set_monitor_data_params(cls, **kwargs):
-        """
-        设置监控数据参数
-        :param kwargs:
-        :return:
-        """
-        request = DescribeMetricListRequest.DescribeMetricListRequest()
-        list_required_params = ["Namespace", "MetricName", "Dimensions", "StartTime"]
-        request = set_required_params(request, list_required_params, kwargs)
-        list_optional_params = ["Period", "EndTime", "NextToken", "Length"]
-        request = set_optional_params(request, list_optional_params, kwargs)
-        request.set_accept_format("json")
-        return request
+    @staticmethod
+    def format_bucket_data(data_list):
+        result = []
+        for data in data_list:
+            result.append(
+                {
+                    "resource_name": data["Name"],
+                    "resource_id": data["Name"],
+                    "location": data["Location"],
+                    "extranet_endpoint": f"{data['Name']}.{data['ExtranetEndpoint']}",
+                    "intranet_endpoint": f"{data['Name']}.{data['IntranetEndpoint']}",
+                    "storage_class": data["StorageClass"],
+                    "cross_region_replication": data["CrossRegionReplication"],
+                    "block_public_access": data["BlockPublicAccess"],
+                    "creation_date": utc_to_dts(data["CreationDate"], utc_fmt='%Y-%m-%dT%H:%M:%S.%fZ'),
+                }
+            )
 
+        return result
 
+    @staticmethod
+    def format_aliyun_mysql(data_list):
+        result = []
+        for data in data_list:
+            zone_slave = ",".join([data[i] for i in data if i.startswith("ZoneIdSlave")])
+            result.append({
+                "resource_name": data.get("DBInstanceDescription"),
+                "resource_id": data.get("DBInstanceId"),
+                "region": data.get("RegionId"),
+                "zone": data.get("ZoneId"),
+                "zone_slave": zone_slave,
+                "engine": data.get("Engine"),
+                "version": data.get("EngineVersion"),
+                "type": data.get("DBInstanceType"),
+                "status": data.get("DBInstanceStatus"),
+                "class": data.get("DBInstanceClass"),
+                "storage_type": data.get("DBInstanceStorageType"),
+                "network_type": data.get("InstanceNetworkType"),
+                "connection_mode": data.get("ConnectionMode"),
+                "lock_mode": data.get("LockMode"),
+                "cpu": data.get("DBInstanceCPU"),
+                "memory_mb": data.get("DBInstanceMemory"),
+                "charge_type": data.get("ChargeType"),
+                "create_time": utc_to_dts(data.get("CreateTime")),
+                "expire_time": utc_to_dts(data.get("ExpireTime")),
+            })
+        return result
+
+    @staticmethod
+    def format_aliyun_pgsql(data_list):
+        result = []
+        for data in data_list:
+            zone_slave = ",".join([data[i] for i in data if i.startswith("ZoneIdSlave")])
+            result.append({
+                "resource_name": data.get("DBInstanceDescription"),
+                "resource_id": data.get("DBInstanceId"),
+                "region": data.get("RegionId"),
+                "zone": data.get("ZoneId"),
+                "zone_slave": zone_slave,
+                "engine": data.get("Engine"),
+                "version": data.get("EngineVersion"),
+                "type": data.get("DBInstanceType"),
+                "status": data.get("DBInstanceStatus"),
+                "class": data.get("DBInstanceClass"),
+                "storage_type": data.get("DBInstanceStorageType"),
+                "network_type": data.get("InstanceNetworkType"),
+                "net_type": data.get("DBInstanceNetType"),
+                "connection_mode": data.get("ConnectionMode"),
+                "lock_mode": data.get("LockMode"),
+                "cpu": data.get("DBInstanceCPU", ""),
+                "memory_mb": data.get("DBInstanceMemory"),
+                "charge_type": data.get("ChargeType", ""),
+                "create_time": utc_to_dts(data.get("CreateTime")),
+                "expire_time": utc_to_dts(data.get("ExpireTime")),
+            })
+        return result
+
+    @staticmethod
+    def format_aliyun_redis(data_list):
+        result = []
+        for data in data_list:
+            result.append({
+                "resource_name": data.get("InstanceName"),
+                "resource_id": data.get("InstanceId"),
+                "region": data["RegionId"],
+                "zone": data["ZoneId"],
+                "engine_version": data["EngineVersion"],
+                "architecture_type": data["ArchitectureType"],
+                "capacity": data["Capacity"],
+                "network_type": data["NetworkType"],
+                "connection_domain": data["ConnectionDomain"],
+                "port": data["Port"],
+                "bandwidth": data["Bandwidth"],
+                "shard_count": data.get("ShardCount", ""),
+                "qps": data["QPS"],
+                "instance_class": data["InstanceClass"],
+                "package_type": data["PackageType"],
+                "charge_type": data["ChargeType"],
+                "create_time": utc_to_dts(data.get("CreateTime")),
+                "end_time": utc_to_dts(data.get("EndTime")),
+            })
+        return result
+
+    @staticmethod
+    def format_aliyun_mongodb(data_list):
+        result = []
+        for data in data_list:
+            zone_slave = ",".join([data.get("SecondaryZoneId", "") or data.get("HiddenZoneId", "")])
+            result.append({
+                "resource_name": data.get("DBInstanceDescription"),
+                "resource_id": data.get("DBInstanceId"),
+                "region": data.get("RegionId"),
+                "zone": data.get("ZoneId"),
+                "zone_slave": zone_slave,
+                "engine": data.get("Engine"),
+                "version": data.get("EngineVersion"),
+                "type": data.get("DBInstanceType"),
+                "status": data.get("DBInstanceStatus"),
+                "class": data.get("DBInstanceClass"),
+                "storage_type": data.get("StorageType"),
+                "storage_gb": data.get("DBInstanceStorage", ""),
+                "lock_mode": data.get("LockMode", ""),
+                "charge_type": data.get("ChargeType", ""),
+                "create_time": utc_to_dts(data.get("CreateTime"), utc_fmt='%Y-%m-%dT%H:%MZ'),
+                "expire_time": utc_to_dts(data.get("ExpireTime"), utc_fmt='%Y-%m-%dT%H:%MZ'),
+            })
+        return result
+
+    @staticmethod
+    def format_aliyun_kafka_inst(data_list):
+        result = []
+        for data in data_list:
+            result.append({
+                "resource_name": data.get("LoadBalancerName"),
+                "resource_id": data.get("LoadBalancerId"),
+                "region": data.get("RegionId"),
+                "zone": data.get("ZoneId"),
+                "vpc": data.get("VpcId"),
+                "status": data.get("LoadBalancerStatus"),
+                "class": data.get("LoadBalancerSpec"),
+                "storage_gb": data.get("DiskSize", ""),
+                "storage_type": data.get("DiskType", ""),
+                "msg_retain": data.get("MsgRetain"),
+                "topoc_num": data.get("TopicNumLimit", ""),
+                "io_max_read": data.get("IoMaxRead", ""),
+                "io_max_write": data.get("IoMaxWrite", ""),
+                "charge_type": data.get("PaidType", ""),
+                "create_time": ts_to_dts(data.get("CreateTime")),
+            })
+        return result
+
+    @staticmethod
+    def format_aliyun_clb(data_list):
+        result = []
+        for data in data_list:
+            result.append({
+                "resource_name": data.get("LoadBalancerName"),
+                "resource_id": data.get("LoadBalancerId"),
+                "region": data.get("RegionId"),
+                "zone": data.get("MasterZoneId"),
+                "zone_slave": data.get("SlaveZoneId"),
+                "vpc": data.get("VpcId"),
+                "ip_addr": data.get("Address"),
+                "status": data.get("LoadBalancerStatus"),
+                "class": data.get("LoadBalancerSpec"),
+                "charge_type": data.get("PayType", ""),
+                "create_time": utc_to_dts(data["CreateTime"], utc_fmt='%Y-%m-%dT%H:%MZ'),
+            })
+        return result
+
+    @property
+    def format_funcs(self):
+        funcs = {
+            "aliyun_ecs": self.format_ecs_data,
+            "aliyun_bucket": self.format_bucket_data,
+            "aliyun_mysql": self.format_aliyun_mysql,
+            "aliyun_pgsql": self.format_aliyun_pgsql,
+            "aliyun_mongodb": self.format_aliyun_mongodb,
+            "aliyun_redis": self.format_aliyun_redis,
+            "aliyun_clb": self.format_aliyun_clb,
+            "aliyun_kafka_inst": self.format_aliyun_kafka_inst,
+        }
+        return funcs
+
+    def format_aliyun_data(self, data_dict):
+        result = {}
+        for model_id, model_data in data_dict.items():
+            func = self.format_funcs[model_id]
+            result[model_id] = func(model_data)
+
+        return result
+
+    # =============================oss=========================
 
     def get_bucket_stat(self, bucket_name, buckets=None, **kwargs):
         """

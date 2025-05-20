@@ -81,7 +81,7 @@ const CustomTable = <T extends object>({
     return {
       ...column,
       render: (text: any) => {
-        if (text === null || text === undefined) return null;
+        if ([null, undefined, ''].includes(text)) return '--';
         if (typeof text === 'string') {
           return (
             <EllipsisWithTooltip

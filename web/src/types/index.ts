@@ -95,6 +95,7 @@ export interface EntityListProps<T> {
   filterOptions?: Option[];
   filter?: boolean;
   filterLoading?: boolean;
+  search?: boolean;
   operateSection?: React.ReactNode;
   infoText?: string;
   menuActions?: (item: T) => React.ReactNode;

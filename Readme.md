@@ -7,6 +7,8 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/TencentBlueKing/bk-cmdb/pulls)
 
 
+![logo](./docs/resource/img/logo.png)
+
 [(English Documents Available)](readme_en.md)
 
 Blueking Lite是一个AI First的轻量版运维产品，由以下模块共同组成： 
@@ -39,7 +41,7 @@ Blueking Lite是一个AI First的轻量版运维产品，由以下模块共同�
 ## Getting started
 
 * [下载与编译](docs/overview/source_compile.md)
-* [安装部署](docs/overview/installation.md)
+* [安装部署](deploy/docker-compose/Readme.md)
 * [接口文档](docs/overview/api_doc.md)
 
 ## Roadmap
@@ -71,3 +73,7 @@ Blueking Lite是一个AI First的轻量版运维产品，由以下模块共同�
 项目基于 MIT 协议，详细请参考 [LICENSE](LICENSE.txt)。
 
 我们承诺未来不会更改适用于交付给任何人的当前项目版本的开源许可证（MIT 协议）。
+
+## Contributors
+
+![](https://contrib.nn.ci/api?repo=TencentBlueKing/bk-lite)

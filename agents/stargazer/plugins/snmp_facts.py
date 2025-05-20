@@ -8,6 +8,7 @@ from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.hlapi import usmHMACSHAAuthProtocol, usmHMACMD5AuthProtocol, usmAesCfb128Protocol, usmDESPrivProtocol
 
 from plugins.base_utils import convert_to_prometheus_format
+from plugins.snmp_topo import SnmpTopoClient
 
 
 class DefineOid:
@@ -20,7 +21,7 @@ class DefineOid:
         # 系统信息 OIDs
         self.sysDescr = dp + "1.3.6.1.2.1.1.1.0"
         self.sysObjectId = dp + "1.3.6.1.2.1.1.2.0"
-        self.sysUpTime = dp + "1.3.6.1.2.1.1.3.0"
+        # self.sysUpTime = dp + "1.3.6.1.2.1.1.3.0"
         self.sysContact = dp + "1.3.6.1.2.1.1.4.0"
         self.sysName = dp + "1.3.6.1.2.1.1.5.0"
         self.sysLocation = dp + "1.3.6.1.2.1.1.6.0"
@@ -43,6 +44,7 @@ class SnmpFacts:
 
     def __init__(self, kwargs):
         # 初始化参数
+        self.kwargs = kwargs
         self.host = kwargs.get('host')
         self.version = kwargs.get('version')
         self.community = kwargs.get('community')
@@ -52,9 +54,10 @@ class SnmpFacts:
         self.privacy = kwargs.get('privacy')
         self.authkey = kwargs.get('authkey')
         self.privkey = kwargs.get('privkey')
-        self.timeout = int(kwargs.get('timeout', 5))
-        self.retries = int(kwargs.get('retries', 3))
+        self.timeout = int(kwargs.get('timeout', 1))
+        self.retries = int(kwargs.get('retries', 5))
         self.snmp_port = int(kwargs.get('snmp_port', 161))  # 默认 SNMP 端口为 161
+        self.topo = kwargs.get('topo', False)
 
         # 校验参数
         self._validate_params()
@@ -145,7 +148,7 @@ class SnmpFacts:
                 cmdgen.UdpTransportTarget((self.host, self.snmp_port), **transport_opts),
                 cmdgen.MibVariable(p.sysDescr),
                 cmdgen.MibVariable(p.sysObjectId),
-                cmdgen.MibVariable(p.sysUpTime),
+                # cmdgen.MibVariable(p.sysUpTime),
                 cmdgen.MibVariable(p.sysContact),
                 cmdgen.MibVariable(p.sysName),
                 cmdgen.MibVariable(p.sysLocation),
@@ -161,8 +164,8 @@ class SnmpFacts:
                     results['system']['sysdescr'] = str(current_val)
                 elif current_oid == v.sysObjectId:
                     results['system']['sysobjectid'] = current_val
-                elif current_oid == v.sysUpTime:
-                    results['system']['sysuptime'] = current_val
+                # elif current_oid == v.sysUpTime:
+                #     results['system']['sysuptime'] = current_val
                 elif current_oid == v.sysContact:
                     results['system']['syscontact'] = current_val
                 elif current_oid == v.sysName:
@@ -232,5 +235,9 @@ class SnmpFacts:
             "network_system": [system_data],
             "network_interfaces": interfaces_data
         }
+        if self.topo:
+            topo_client = SnmpTopoClient(self.kwargs)
+            model_data['network_topo'] = topo_client.bulkCmd()
+
         result = convert_to_prometheus_format(model_data)
         return result

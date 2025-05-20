@@ -1,14 +1,13 @@
 import datetime
 
 from core.config import YamlConfig
-from monitor.cmp.driver import CMPDriver
-from monitor.utils import convert_to_prometheus
-
+from common.cmp.driver import CMPDriver
 from sanic import Blueprint
 from sanic.log import logger
 from sanic import response
 
 from plugins.vmware_info import VmwareManage
+from utils.convert import convert_to_prometheus
 
 yml_config = YamlConfig(path="./config.yml")
 
@@ -31,14 +30,10 @@ def get_config(monitor_type: str, monitor_instance: str):
 @monitor_router.get("/vmware/metrics")
 async def vmware_metrics(request):
 
-    username = request.args.get("username")
-    password = request.args.get("password")
-    host = request.args.get("host")
+    username = request.headers.get("username")
+    password = request.headers.get("password")
+    host = request.headers.get("host")
     minutes = request.args.get("minutes", 5)
-    # resource_id = request.args.get("resource_id")
-    # if not resource_id:
-    #     return response.json({"error": "resource_id are required"}, status=400)
-    # config = get_config("vmware", resource_id)
 
     driver = CMPDriver(
         username,

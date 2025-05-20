@@ -14,6 +14,3 @@ class Channel(models.Model, EncryptMixin):
     channel_type = models.CharField(max_length=30, choices=ChannelChoices.choices)
     config = models.JSONField(default=dict)
     description = models.TextField()
-
-    class Meta:
-        db_table = "channel_mgmt_channel"

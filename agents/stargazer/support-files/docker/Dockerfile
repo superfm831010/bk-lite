@@ -1,13 +1,5 @@
 FROM python:3.10
 
-RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/;
-RUN rm -Rf /etc/apt/sources.list.d \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list \
-    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian-security bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list;
-
-
 RUN apt-get update && \
     apt-get install -y vim  unzip curl pkg-config libssl-dev  supervisor && \
     apt-get clean && \
@@ -19,9 +11,7 @@ ADD . .
 
 ADD support-files/supervisor/service.conf /etc/supervisor/conf.d/service.conf
 
-RUN pip install pip-tools
-RUN pip-compile ./requirements/requirements-core.txt ./requirements/requirements-extra.txt  -v --output-file ./requirements.txt
-
-RUN pip install -r requirements.txt
+RUN pip install -r ./requirements/requirements-core.txt 
+RUN pip install -r ./requirements/requirements-extra.txt 
 
 CMD ["supervisord", "-n"]

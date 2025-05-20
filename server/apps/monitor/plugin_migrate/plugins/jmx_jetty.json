@@ -1,0 +1,8 @@
+{
+  "plugin": "Jetty-JMX",
+  "plugin_desc": "",
+  "name": "Jetty",
+  "type": "Middleware",
+  "description": "",
+  "metrics": []
+}
