@@ -8,11 +8,10 @@ from apps.node_mgmt.views.installer import InstallerViewSet
 from apps.node_mgmt.views.package import PackageMgmtView
 from apps.node_mgmt.views.sidecar_env import SidecarEnvViewSet
 from apps.node_mgmt.views.node import NodeViewSet
-from apps.node_mgmt.views.sidecar import SidecarViewSet, OpenSidecarViewSet
+from apps.node_mgmt.views.sidecar import OpenSidecarViewSet
 
 router = routers.DefaultRouter(trailing_slash=True)
 router.register(r"api/node", NodeViewSet, basename="node")
-router.register(r"api/sidecar", SidecarViewSet, basename="sidecar")
 router.register(r'api/cloud_region', CloudRegionViewSet, basename='cloud_region')
 router.register(r'api/sidecar_env', SidecarEnvViewSet, basename='env_variable')
 router.register(r"api/collector", CollectorViewSet, basename="collector")
