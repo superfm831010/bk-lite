@@ -38,7 +38,7 @@ const UserInfo: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const isConsole = process.env.NEXT_PUBLIC_IS_OPS_CONSOLE === 'true';
-  const username = session?.username || 'Test';
+  const username = session?.user?.username || 'Test';
 
   const federatedLogout = useCallback(async () => {
     setIsLoading(true);

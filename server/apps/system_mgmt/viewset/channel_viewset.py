@@ -24,12 +24,17 @@ class ChannelViewSet(viewsets.ModelViewSet):
         config = request.data["config"]
         if obj.channel_type == "email":
             obj.encrypt_field("smtp_pwd", config)
+            config.setdefault("smtp_pwd", obj.config["smtp_pwd"])
         elif obj.channel_type == "enterprise_wechat":
             obj.encrypt_field("secret", config)
             obj.encrypt_field("token", config)
             obj.encrypt_field("aes_key", config)
+            config.setdefault("secret", obj.config["secret"])
+            config.setdefault("token", obj.config["token"])
+            config.setdefault("aes_key", obj.config["aes_key"])
         elif obj.channel_type == "enterprise_wechat_bot":
             obj.encrypt_field("bot_key", config)
+            config.setdefault("bot_key", obj.config["bot_key"])
         obj.config = config
         obj.save()
         return JsonResponse({"result": True})

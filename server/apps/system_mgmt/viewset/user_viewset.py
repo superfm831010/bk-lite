@@ -88,6 +88,7 @@ class UserViewSet(ViewSetUtils):
                     timezone=kwargs["timezone"],
                     group_list=kwargs["groups"],
                     role_list=kwargs["roles"],
+                    temporary_pwd=kwargs.get("temporary_pwd", False),
                 )
                 if rules:
                     add_rule = [UserRule(username=kwargs["username"], group_rule_id=i) for i in rules]

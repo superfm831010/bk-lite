@@ -15,10 +15,17 @@
                 height: 100%;
             }
         }
+    }
 
-        .tablewidth {
-            max-width: calc(100vw - 288px);
-            min-width: 1000px;
+    .table {
+        max-width: calc(100vw - 288px);
+        min-width: 1000px;
+
+        :global {
+            .ant-tag {
+                width: auto !important;
+                margin-bottom: 10px;
+            }
         }
     }
 }

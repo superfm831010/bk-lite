@@ -269,10 +269,46 @@ const useMiddleWareFields = (): ObjectIconMap => {
   );
 };
 
-const INDEX_CONFIG = [
-  {
-    name: 'Host',
-    id: 1,
+const SCHEDULE_UNIT_MAP: UnitMap = {
+  minMin: 1,
+  minMax: 59,
+  hourMin: 1,
+  hourMax: 23,
+  dayMin: 1,
+  dayMax: 1,
+};
+
+const PERIOD_LIST: ListItem[] = [
+  { label: '1min', value: 60 },
+  { label: '5min', value: 300 },
+  { label: '15min', value: 900 },
+  { label: '30min', value: 1800 },
+  { label: '1hour', value: 3600 },
+  { label: '6hour', value: 21600 },
+  { label: '12hour', value: 43200 },
+  { label: '24hour', value: 86400 },
+];
+
+const COMPARISON_METHOD: ListItem[] = [
+  { label: '>', value: '>' },
+  { label: '<', value: '<' },
+  { label: '=', value: '=' },
+  { label: '≠', value: '!=' },
+  { label: '≥', value: '>=' },
+  { label: '≤', value: '<=' },
+];
+
+const APPOINT_METRIC_IDS: string[] = [
+  'cluster_pod_count',
+  'cluster_node_count',
+];
+
+const TIMEOUT_UNITS: string[] = ['s'];
+
+const OBJECT_CONFIG_MAP: any = {
+  Host: {
+    instance_type: 'os',
+    icon: 'Host',
     dashboardDisplay: [
       {
         indexId: 'env.procs',
@@ -392,13 +428,33 @@ const INDEX_CONFIG = [
       { type: 'progress', key: 'mem.pct_used' },
       { type: 'value', key: 'load5' },
     ],
+    groupIds: {
+      list: ['instance_id'],
+      default: ['instance_id'],
+    },
+    plugins: {
+      Host: {
+        collect_type: 'host',
+        config_type: [
+          'cpu',
+          'disk',
+          'diskio',
+          'mem',
+          'net',
+          'processes',
+          'system',
+        ],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Website',
-    id: 2,
+  Cluster: {
+    instance_type: 'k8s',
+    icon: 'K8S',
     dashboardDisplay: [
       {
-        indexId: 'http_success.rate',
+        indexId: 'cluster_pod_count',
         displayType: 'single',
         sortIndex: 0,
         displayDimension: [],
@@ -408,7 +464,7 @@ const INDEX_CONFIG = [
         },
       },
       {
-        indexId: 'http_duration',
+        indexId: 'cluster_node_count',
         displayType: 'single',
         sortIndex: 1,
         displayDimension: [],
@@ -418,75 +474,36 @@ const INDEX_CONFIG = [
         },
       },
       {
-        indexId: 'http_ssl',
-        displayType: 'single',
+        indexId: 'k8s_cluster',
+        displayType: 'lineChart',
         sortIndex: 2,
         displayDimension: [],
         style: {
           height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'http_status_code',
-        displayType: 'lineChart',
-        sortIndex: 3,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '48%',
-        },
-      },
-      {
-        indexId: 'http_dns.lookup.time',
-        displayType: 'lineChart',
-        sortIndex: 4,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '48%',
+          width: '32%',
         },
       },
     ],
     tableDiaplay: [
-      { type: 'enum', key: 'http_success.rate' },
-      { type: 'value', key: 'http_duration' },
-      { type: 'enum', key: 'http_code' },
+      { type: 'value', key: 'cluster_pod_count' },
+      { type: 'value', key: 'cluster_node_count' },
     ],
+    groupIds: {
+      list: ['instance_id'],
+      default: ['instance_id'],
+    },
+    plugins: {
+      K8S: {
+        collect_type: 'k8s',
+        config_type: ['k8s'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Ping',
-    id: 3,
-    dashboardDisplay: [
-      //   {
-      //     indexId: 'ping_response_time',
-      //     displayType: 'single',
-      //     sortIndex: 0,
-      //     displayDimension: [],
-      //     style: {
-      //       height: '200px',
-      //       width: '15%',
-      //     },
-      //   },
-      //   {
-      //     indexId: 'ping_error_response_code',
-      //     displayType: 'single',
-      //     sortIndex: 1,
-      //     displayDimension: [],
-      //     style: {
-      //       height: '200px',
-      //       width: '15%',
-      //     },
-      //   },
-    ],
-    tableDiaplay: [
-      { type: 'value', key: 'ping_response_time' },
-      { type: 'enum', key: 'ping_error_response_code' },
-    ],
-  },
-  {
-    name: 'Pod',
-    id: 4,
+  Pod: {
+    instance_type: '',
+    icon: 'K8S',
     dashboardDisplay: [
       {
         indexId: 'pod_status',
@@ -544,10 +561,17 @@ const INDEX_CONFIG = [
       { type: 'progress', key: 'pod_cpu_utilization' },
       { type: 'progress', key: 'pod_memory_utilization' },
     ],
+    groupIds: {
+      // list: ['instance_id', 'uid'],
+      // default: ['instance_id', 'uid'],
+      list: ['uid'],
+      default: ['uid'],
+    },
+    plugins: {},
   },
-  {
-    name: 'Node',
-    id: 5,
+  Node: {
+    instance_type: '',
+    icon: 'K8S',
     dashboardDisplay: [
       {
         indexId: 'node_status_condition',
@@ -647,830 +671,6 @@ const INDEX_CONFIG = [
       { type: 'progress', key: 'node_cpu_utilization' },
       { type: 'progress', key: 'node_memory_utilization' },
     ],
-  },
-  {
-    name: 'Cluster',
-    id: 6,
-    dashboardDisplay: [
-      {
-        indexId: 'cluster_pod_count',
-        displayType: 'single',
-        sortIndex: 0,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'cluster_node_count',
-        displayType: 'single',
-        sortIndex: 1,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'k8s_cluster',
-        displayType: 'lineChart',
-        sortIndex: 2,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '32%',
-        },
-      },
-    ],
-    tableDiaplay: [
-      { type: 'value', key: 'cluster_pod_count' },
-      { type: 'value', key: 'cluster_node_count' },
-    ],
-  },
-  {
-    name: 'Switch',
-    id: 7,
-    dashboardDisplay: [
-      {
-        indexId: 'sysUpTime',
-        displayType: 'single',
-        sortIndex: 0,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'iftotalInOctets',
-        displayType: 'lineChart',
-        sortIndex: 1,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'iftotalOutOctets',
-        displayType: 'lineChart',
-        sortIndex: 2,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'interfaces',
-        displayType: 'multipleIndexsTable',
-        sortIndex: 3,
-        displayDimension: [
-          'ifOperStatus',
-          'ifHighSpeed',
-          'ifInErrors',
-          'ifOutErrors',
-          'ifInUcastPkts',
-          'ifOutUcastPkts',
-          'ifInOctets',
-          'ifOutOctets',
-        ],
-        style: {
-          height: '400px',
-          width: '100%',
-        },
-      },
-    ],
-    tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-    ],
-  },
-  {
-    name: 'Loadbalance',
-    id: 8,
-    dashboardDisplay: [
-      {
-        indexId: 'sysUpTime',
-        displayType: 'single',
-        sortIndex: 0,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'iftotalInOctets',
-        displayType: 'lineChart',
-        sortIndex: 1,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'iftotalOutOctets',
-        displayType: 'lineChart',
-        sortIndex: 2,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'interfaces',
-        displayType: 'multipleIndexsTable',
-        sortIndex: 3,
-        displayDimension: [
-          'ifOperStatus',
-          'ifHighSpeed',
-          'ifInErrors',
-          'ifOutErrors',
-          'ifInUcastPkts',
-          'ifOutUcastPkts',
-          'ifInOctets',
-          'ifOutOctets',
-        ],
-        style: {
-          height: '400px',
-          width: '100%',
-        },
-      },
-    ],
-    tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-    ],
-  },
-  {
-    name: 'Router',
-    id: 9,
-    dashboardDisplay: [
-      {
-        indexId: 'sysUpTime',
-        displayType: 'single',
-        sortIndex: 0,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'iftotalInOctets',
-        displayType: 'lineChart',
-        sortIndex: 1,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'iftotalOutOctets',
-        displayType: 'lineChart',
-        sortIndex: 2,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'interfaces',
-        displayType: 'multipleIndexsTable',
-        sortIndex: 3,
-        displayDimension: [
-          'ifOperStatus',
-          'ifHighSpeed',
-          'ifInErrors',
-          'ifOutErrors',
-          'ifInUcastPkts',
-          'ifOutUcastPkts',
-          'ifInOctets',
-          'ifOutOctets',
-        ],
-        style: {
-          height: '400px',
-          width: '100%',
-        },
-      },
-    ],
-    tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-    ],
-  },
-  {
-    name: 'Firewall',
-    id: 10,
-    dashboardDisplay: [
-      {
-        indexId: 'sysUpTime',
-        displayType: 'single',
-        sortIndex: 0,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'iftotalInOctets',
-        displayType: 'lineChart',
-        sortIndex: 1,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'iftotalOutOctets',
-        displayType: 'lineChart',
-        sortIndex: 2,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'interfaces',
-        displayType: 'multipleIndexsTable',
-        sortIndex: 3,
-        displayDimension: [
-          'ifOperStatus',
-          'ifHighSpeed',
-          'ifInErrors',
-          'ifOutErrors',
-          'ifInUcastPkts',
-          'ifOutUcastPkts',
-          'ifInOctets',
-          'ifOutOctets',
-        ],
-        style: {
-          height: '400px',
-          width: '100%',
-        },
-      },
-    ],
-    tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-    ],
-  },
-  {
-    name: 'Detection Device',
-    id: 11,
-    dashboardDisplay: [
-      {
-        indexId: 'sysUpTime',
-        displayType: 'single',
-        sortIndex: 0,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'iftotalInOctets',
-        displayType: 'lineChart',
-        sortIndex: 1,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'iftotalOutOctets',
-        displayType: 'lineChart',
-        sortIndex: 2,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'interfaces',
-        displayType: 'multipleIndexsTable',
-        sortIndex: 3,
-        displayDimension: [
-          'ifOperStatus',
-          'ifHighSpeed',
-          'ifInErrors',
-          'ifOutErrors',
-          'ifInUcastPkts',
-          'ifOutUcastPkts',
-          'ifInOctets',
-          'ifOutOctets',
-        ],
-        style: {
-          height: '400px',
-          width: '100%',
-        },
-      },
-    ],
-    tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-    ],
-  },
-  {
-    name: 'Bastion Host',
-    id: 12,
-    dashboardDisplay: [
-      {
-        indexId: 'sysUpTime',
-        displayType: 'single',
-        sortIndex: 0,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'iftotalInOctets',
-        displayType: 'lineChart',
-        sortIndex: 1,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'iftotalOutOctets',
-        displayType: 'lineChart',
-        sortIndex: 2,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'interfaces',
-        displayType: 'multipleIndexsTable',
-        sortIndex: 3,
-        displayDimension: [
-          'ifOperStatus',
-          'ifHighSpeed',
-          'ifInErrors',
-          'ifOutErrors',
-          'ifInUcastPkts',
-          'ifOutUcastPkts',
-          'ifInOctets',
-          'ifOutOctets',
-        ],
-        style: {
-          height: '400px',
-          width: '100%',
-        },
-      },
-    ],
-    tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-    ],
-  },
-  {
-    name: 'Scanning Device',
-    id: 13,
-    dashboardDisplay: [
-      {
-        indexId: 'sysUpTime',
-        displayType: 'single',
-        sortIndex: 0,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'iftotalInOctets',
-        displayType: 'lineChart',
-        sortIndex: 1,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'iftotalOutOctets',
-        displayType: 'lineChart',
-        sortIndex: 2,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'interfaces',
-        displayType: 'multipleIndexsTable',
-        sortIndex: 3,
-        displayDimension: [
-          'ifOperStatus',
-          'ifHighSpeed',
-          'ifInErrors',
-          'ifOutErrors',
-          'ifInUcastPkts',
-          'ifOutUcastPkts',
-          'ifInOctets',
-          'ifOutOctets',
-        ],
-        style: {
-          height: '400px',
-          width: '100%',
-        },
-      },
-    ],
-    tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-    ],
-  },
-  {
-    name: 'Audit System',
-    id: 14,
-    dashboardDisplay: [
-      {
-        indexId: 'sysUpTime',
-        displayType: 'single',
-        sortIndex: 0,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'iftotalInOctets',
-        displayType: 'lineChart',
-        sortIndex: 1,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'iftotalOutOctets',
-        displayType: 'lineChart',
-        sortIndex: 2,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '40%',
-        },
-      },
-      {
-        indexId: 'interfaces',
-        displayType: 'multipleIndexsTable',
-        sortIndex: 3,
-        displayDimension: [
-          'ifOperStatus',
-          'ifHighSpeed',
-          'ifInErrors',
-          'ifOutErrors',
-          'ifInUcastPkts',
-          'ifOutUcastPkts',
-          'ifInOctets',
-          'ifOutOctets',
-        ],
-        style: {
-          height: '400px',
-          width: '100%',
-        },
-      },
-    ],
-    tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-    ],
-  },
-  {
-    name: 'Docker',
-    id: 15,
-    dashboardDisplay: [],
-    tableDiaplay: [{ type: 'value', key: 'docker_n_containers' }],
-  },
-  {
-    name: 'Docker Container',
-    id: 16,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'enum', key: 'docker_container_status' },
-      { type: 'progress', key: 'docker_container_cpu_usage_percent' },
-      { type: 'progress', key: 'docker_container_mem_usage_percent' },
-    ],
-  },
-  {
-    name: 'Zookeeper',
-    id: 17,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'zookeeper_uptime' },
-      { type: 'value', key: 'zookeeper_avg_latency' },
-    ],
-  },
-  {
-    name: 'Apache',
-    id: 18,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'apache_uptime' },
-      { type: 'value', key: 'apache_req_per_sec' },
-      { type: 'progress', key: 'apache_cpu_load' },
-    ],
-  },
-  {
-    name: 'ClickHouse',
-    id: 19,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'clickhouse_events_query' },
-      { type: 'value', key: 'clickhouse_events_inserted_rows' },
-      { type: 'value', key: 'clickhouse_asynchronous_metrics_load_average1' },
-    ],
-  },
-  {
-    name: 'RabbitMQ',
-    id: 20,
-    dashboardDisplay: [],
-    tableDiaplay: [{ type: 'value', key: 'rabbitmq_overview_messages_ready' }],
-  },
-  {
-    name: 'ActiveMQ',
-    id: 21,
-    dashboardDisplay: [],
-    tableDiaplay: [{ type: 'value', key: 'activemq_topic_consumer_count' }],
-  },
-  {
-    name: 'Nginx',
-    id: 22,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'nginx_requests' },
-      { type: 'value', key: 'nginx_active' },
-    ],
-  },
-  {
-    name: 'Tomcat',
-    id: 23,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'tomcat_connector_request_count' },
-      { type: 'value', key: 'tomcat_connector_current_threads_busy' },
-      { type: 'value', key: 'tomcat_connector_error_count' },
-    ],
-  },
-  {
-    name: 'Consul',
-    id: 24,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'enum', key: 'consul_health_checks_status' },
-      { type: 'value', key: 'consul_health_checks_passing' },
-    ],
-  },
-  {
-    name: 'ElasticSearch',
-    id: 25,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'elasticsearch_fs_total_available_in_bytes' },
-      { type: 'value', key: 'elasticsearch_http_current_open' },
-      { type: 'value', key: 'elasticsearch_indices_docs_count' },
-    ],
-  },
-  {
-    name: 'MongoDB',
-    id: 26,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'mongodb_connections_current' },
-      { type: 'value', key: 'mongodb_latency_commands' },
-      { type: 'value', key: 'mongodb_resident_megabytes' },
-    ],
-  },
-  {
-    name: 'Mysql',
-    id: 27,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'mysql_bytes_received' },
-      { type: 'value', key: 'mysql_bytes_sent' },
-      { type: 'value', key: 'mysql_connections_total' },
-    ],
-  },
-  {
-    name: 'Postgres',
-    id: 28,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'postgresql_active_time' },
-      { type: 'value', key: 'postgresql_blks_hit' },
-    ],
-  },
-  {
-    name: 'Redis',
-    id: 29,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'redis_used_memory' },
-      { type: 'value', key: 'redis_instantaneous_ops_per_sec' },
-    ],
-  },
-  {
-    name: 'Storage',
-    id: 30,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-      { type: 'enum', key: 'ipmi_power_watts' },
-      { type: 'value', key: 'ipmi_temperature_celsius' },
-      { type: 'value', key: 'ipmi_voltage_volts' },
-    ],
-  },
-  {
-    name: 'Hardware Server',
-    id: 31,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-      { type: 'enum', key: 'ipmi_power_watts' },
-      { type: 'value', key: 'ipmi_temperature_celsius' },
-      { type: 'value', key: 'ipmi_voltage_volts' },
-    ],
-  },
-  {
-    name: 'vCenter',
-    id: 32,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'vmware_esxi_count' },
-      { type: 'value', key: 'vmware_datastore_count' },
-      { type: 'value', key: 'vmware_vm_count' },
-    ],
-  },
-  {
-    name: 'ESXI',
-    id: 33,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'esxi_cpu_usage_average_gauge' },
-      { type: 'value', key: 'esxi_mem_usage_average_gauge' },
-      { type: 'value', key: 'esxi_disk_read_average_gauge' },
-    ],
-  },
-  {
-    name: 'DataStorage',
-    id: 34,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'data_storage_disk_used_average_gauge' },
-      { type: 'enum', key: 'data_storage_store_accessible_gauge' },
-    ],
-  },
-  {
-    name: 'VM',
-    id: 35,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'vm_cpu_usage_average_gauge' },
-      { type: 'value', key: 'vm_mem_usage_average_gauge' },
-      { type: 'value', key: 'vm_disk_io_usage_gauge' },
-    ],
-  },
-  {
-    name: 'JVM',
-    id: 36,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'enum', key: 'jmx_scrape_error_gauge' },
-      { type: 'value', key: 'jvm_memory_usage_used_value' },
-      { type: 'value', key: 'jvm_memory_usage_max_value' },
-      { type: 'value', key: 'jvm_os_memory_physical_free_value' },
-      { type: 'value', key: 'jvm_gc_collectiontime_seconds_value' },
-    ],
-  },
-];
-
-const SCHEDULE_UNIT_MAP: UnitMap = {
-  minMin: 1,
-  minMax: 59,
-  hourMin: 1,
-  hourMax: 23,
-  dayMin: 1,
-  dayMax: 1,
-};
-
-const PERIOD_LIST: ListItem[] = [
-  { label: '1min', value: 60 },
-  { label: '5min', value: 300 },
-  { label: '15min', value: 900 },
-  { label: '30min', value: 1800 },
-  { label: '1hour', value: 3600 },
-  { label: '6hour', value: 21600 },
-  { label: '12hour', value: 43200 },
-  { label: '24hour', value: 86400 },
-];
-
-const COMPARISON_METHOD: ListItem[] = [
-  { label: '>', value: '>' },
-  { label: '<', value: '<' },
-  { label: '=', value: '=' },
-  { label: '≠', value: '!=' },
-  { label: '≥', value: '>=' },
-  { label: '≤', value: '<=' },
-];
-
-const APPOINT_METRIC_IDS: string[] = [
-  'cluster_pod_count',
-  'cluster_node_count',
-];
-
-const TIMEOUT_UNITS: string[] = ['s'];
-
-const OBJECT_CONFIG_MAP: any = {
-  Host: {
-    instance_type: 'os',
-    icon: 'Host',
-    groupIds: {
-      list: ['instance_id'],
-      default: ['instance_id'],
-    },
-    plugins: {
-      Host: {
-        collect_type: 'host',
-        config_type: [
-          'cpu',
-          'disk',
-          'diskio',
-          'mem',
-          'net',
-          'processes',
-          'system',
-        ],
-        collector: 'Telegraf',
-        manualCfgText: '',
-      },
-    },
-  },
-  Cluster: {
-    instance_type: 'k8s',
-    icon: 'K8S',
-    groupIds: {
-      list: ['instance_id'],
-      default: ['instance_id'],
-    },
-    plugins: {
-      K8S: {
-        collect_type: 'k8s',
-        config_type: ['k8s'],
-        collector: 'Telegraf',
-        manualCfgText: '',
-      },
-    },
-  },
-  Pod: {
-    instance_type: '',
-    icon: 'K8S',
-    groupIds: {
-      // list: ['instance_id', 'uid'],
-      // default: ['instance_id', 'uid'],
-      list: ['uid'],
-      default: ['uid'],
-    },
-    plugins: {},
-  },
-  Node: {
-    instance_type: '',
-    icon: 'K8S',
     groupIds: {
       // list: ['instance_id', 'node'],
       // default: ['instance_id', 'node'],
@@ -1482,6 +682,63 @@ const OBJECT_CONFIG_MAP: any = {
   Website: {
     instance_type: 'web',
     icon: 'Website',
+    dashboardDisplay: [
+      {
+        indexId: 'http_success.rate',
+        displayType: 'single',
+        sortIndex: 0,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'http_duration',
+        displayType: 'single',
+        sortIndex: 1,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'http_ssl',
+        displayType: 'single',
+        sortIndex: 2,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'http_status_code',
+        displayType: 'lineChart',
+        sortIndex: 3,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '48%',
+        },
+      },
+      {
+        indexId: 'http_dns.lookup.time',
+        displayType: 'lineChart',
+        sortIndex: 4,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '48%',
+        },
+      },
+    ],
+    tableDiaplay: [
+      { type: 'enum', key: 'http_success.rate' },
+      { type: 'value', key: 'http_duration' },
+      { type: 'enum', key: 'http_code' },
+    ],
     groupIds: {
       list: ['instance_id'],
       // list: ['instance_id', 'instance_name', 'host'],
@@ -1499,6 +756,32 @@ const OBJECT_CONFIG_MAP: any = {
   Ping: {
     instance_type: 'ping',
     icon: 'Host',
+    dashboardDisplay: [
+      {
+        indexId: 'ping_response_time',
+        displayType: 'single',
+        sortIndex: 0,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'ping_error_response_code',
+        displayType: 'single',
+        sortIndex: 1,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+    ],
+    tableDiaplay: [
+      { type: 'value', key: 'ping_response_time' },
+      { type: 'enum', key: 'ping_error_response_code' },
+    ],
     groupIds: {},
     plugins: {
       Ping: {
@@ -1512,6 +795,62 @@ const OBJECT_CONFIG_MAP: any = {
   Switch: {
     instance_type: 'switch',
     icon: 'Switch',
+    dashboardDisplay: [
+      {
+        indexId: 'sysUpTime',
+        displayType: 'single',
+        sortIndex: 0,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'iftotalInOctets',
+        displayType: 'lineChart',
+        sortIndex: 1,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'iftotalOutOctets',
+        displayType: 'lineChart',
+        sortIndex: 2,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'interfaces',
+        displayType: 'multipleIndexsTable',
+        sortIndex: 3,
+        displayDimension: [
+          'ifOperStatus',
+          'ifHighSpeed',
+          'ifInErrors',
+          'ifOutErrors',
+          'ifInUcastPkts',
+          'ifOutUcastPkts',
+          'ifInOctets',
+          'ifOutOctets',
+        ],
+        style: {
+          height: '400px',
+          width: '100%',
+        },
+      },
+    ],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+    ],
     groupIds: {
       list: ['instance_id'],
       default: ['instance_id'],
@@ -1528,6 +867,62 @@ const OBJECT_CONFIG_MAP: any = {
   Router: {
     instance_type: 'router',
     icon: 'Router',
+    dashboardDisplay: [
+      {
+        indexId: 'sysUpTime',
+        displayType: 'single',
+        sortIndex: 0,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'iftotalInOctets',
+        displayType: 'lineChart',
+        sortIndex: 1,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'iftotalOutOctets',
+        displayType: 'lineChart',
+        sortIndex: 2,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'interfaces',
+        displayType: 'multipleIndexsTable',
+        sortIndex: 3,
+        displayDimension: [
+          'ifOperStatus',
+          'ifHighSpeed',
+          'ifInErrors',
+          'ifOutErrors',
+          'ifInUcastPkts',
+          'ifOutUcastPkts',
+          'ifInOctets',
+          'ifOutOctets',
+        ],
+        style: {
+          height: '400px',
+          width: '100%',
+        },
+      },
+    ],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+    ],
     groupIds: {
       list: ['instance_id'],
       default: ['instance_id'],
@@ -1544,6 +939,62 @@ const OBJECT_CONFIG_MAP: any = {
   Firewall: {
     instance_type: 'firewall',
     icon: 'Firewall',
+    dashboardDisplay: [
+      {
+        indexId: 'sysUpTime',
+        displayType: 'single',
+        sortIndex: 0,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'iftotalInOctets',
+        displayType: 'lineChart',
+        sortIndex: 1,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'iftotalOutOctets',
+        displayType: 'lineChart',
+        sortIndex: 2,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'interfaces',
+        displayType: 'multipleIndexsTable',
+        sortIndex: 3,
+        displayDimension: [
+          'ifOperStatus',
+          'ifHighSpeed',
+          'ifInErrors',
+          'ifOutErrors',
+          'ifInUcastPkts',
+          'ifOutUcastPkts',
+          'ifInOctets',
+          'ifOutOctets',
+        ],
+        style: {
+          height: '400px',
+          width: '100%',
+        },
+      },
+    ],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+    ],
     groupIds: {
       list: ['instance_id'],
       default: ['instance_id'],
@@ -1560,6 +1011,62 @@ const OBJECT_CONFIG_MAP: any = {
   Loadbalance: {
     instance_type: 'loadbalance',
     icon: 'Loadbalance',
+    dashboardDisplay: [
+      {
+        indexId: 'sysUpTime',
+        displayType: 'single',
+        sortIndex: 0,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'iftotalInOctets',
+        displayType: 'lineChart',
+        sortIndex: 1,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'iftotalOutOctets',
+        displayType: 'lineChart',
+        sortIndex: 2,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'interfaces',
+        displayType: 'multipleIndexsTable',
+        sortIndex: 3,
+        displayDimension: [
+          'ifOperStatus',
+          'ifHighSpeed',
+          'ifInErrors',
+          'ifOutErrors',
+          'ifInUcastPkts',
+          'ifOutUcastPkts',
+          'ifInOctets',
+          'ifOutOctets',
+        ],
+        style: {
+          height: '400px',
+          width: '100%',
+        },
+      },
+    ],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+    ],
     groupIds: {
       list: ['instance_id'],
       default: ['instance_id'],
@@ -1576,6 +1083,62 @@ const OBJECT_CONFIG_MAP: any = {
   'Detection Device': {
     instance_type: 'detection_device',
     icon: 'DetectionDevice',
+    dashboardDisplay: [
+      {
+        indexId: 'sysUpTime',
+        displayType: 'single',
+        sortIndex: 0,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'iftotalInOctets',
+        displayType: 'lineChart',
+        sortIndex: 1,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'iftotalOutOctets',
+        displayType: 'lineChart',
+        sortIndex: 2,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'interfaces',
+        displayType: 'multipleIndexsTable',
+        sortIndex: 3,
+        displayDimension: [
+          'ifOperStatus',
+          'ifHighSpeed',
+          'ifInErrors',
+          'ifOutErrors',
+          'ifInUcastPkts',
+          'ifOutUcastPkts',
+          'ifInOctets',
+          'ifOutOctets',
+        ],
+        style: {
+          height: '400px',
+          width: '100%',
+        },
+      },
+    ],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+    ],
     groupIds: {},
     plugins: {
       'Detection Device SNMP General': {
@@ -1589,6 +1152,62 @@ const OBJECT_CONFIG_MAP: any = {
   'Scanning Device': {
     instance_type: 'scanning_device',
     icon: 'ScanningDevice',
+    dashboardDisplay: [
+      {
+        indexId: 'sysUpTime',
+        displayType: 'single',
+        sortIndex: 0,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'iftotalInOctets',
+        displayType: 'lineChart',
+        sortIndex: 1,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'iftotalOutOctets',
+        displayType: 'lineChart',
+        sortIndex: 2,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'interfaces',
+        displayType: 'multipleIndexsTable',
+        sortIndex: 3,
+        displayDimension: [
+          'ifOperStatus',
+          'ifHighSpeed',
+          'ifInErrors',
+          'ifOutErrors',
+          'ifInUcastPkts',
+          'ifOutUcastPkts',
+          'ifInOctets',
+          'ifOutOctets',
+        ],
+        style: {
+          height: '400px',
+          width: '100%',
+        },
+      },
+    ],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+    ],
     groupIds: {},
     plugins: {
       'Scanning Device SNMP General': {
@@ -1602,6 +1221,62 @@ const OBJECT_CONFIG_MAP: any = {
   'Bastion Host': {
     instance_type: 'bastion_host',
     icon: 'BastionHost',
+    dashboardDisplay: [
+      {
+        indexId: 'sysUpTime',
+        displayType: 'single',
+        sortIndex: 0,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'iftotalInOctets',
+        displayType: 'lineChart',
+        sortIndex: 1,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'iftotalOutOctets',
+        displayType: 'lineChart',
+        sortIndex: 2,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'interfaces',
+        displayType: 'multipleIndexsTable',
+        sortIndex: 3,
+        displayDimension: [
+          'ifOperStatus',
+          'ifHighSpeed',
+          'ifInErrors',
+          'ifOutErrors',
+          'ifInUcastPkts',
+          'ifOutUcastPkts',
+          'ifInOctets',
+          'ifOutOctets',
+        ],
+        style: {
+          height: '400px',
+          width: '100%',
+        },
+      },
+    ],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+    ],
     groupIds: {},
     plugins: {
       'Bastion Host SNMP General': {
@@ -1615,6 +1290,15 @@ const OBJECT_CONFIG_MAP: any = {
   Storage: {
     instance_type: 'storage',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+      { type: 'enum', key: 'ipmi_power_watts' },
+      { type: 'value', key: 'ipmi_temperature_celsius' },
+      { type: 'value', key: 'ipmi_voltage_volts' },
+    ],
     groupIds: {},
     plugins: {
       'Storage SNMP General': {
@@ -1634,6 +1318,15 @@ const OBJECT_CONFIG_MAP: any = {
   'Hardware Server': {
     instance_type: 'hardware_server',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+      { type: 'enum', key: 'ipmi_power_watts' },
+      { type: 'value', key: 'ipmi_temperature_celsius' },
+      { type: 'value', key: 'ipmi_voltage_volts' },
+    ],
     groupIds: {},
     plugins: {
       'Hardware Server SNMP General': {
@@ -1653,6 +1346,62 @@ const OBJECT_CONFIG_MAP: any = {
   'Audit System': {
     instance_type: '',
     icon: 'AuditSystem',
+    dashboardDisplay: [
+      {
+        indexId: 'sysUpTime',
+        displayType: 'single',
+        sortIndex: 0,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'iftotalInOctets',
+        displayType: 'lineChart',
+        sortIndex: 1,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'iftotalOutOctets',
+        displayType: 'lineChart',
+        sortIndex: 2,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '40%',
+        },
+      },
+      {
+        indexId: 'interfaces',
+        displayType: 'multipleIndexsTable',
+        sortIndex: 3,
+        displayDimension: [
+          'ifOperStatus',
+          'ifHighSpeed',
+          'ifInErrors',
+          'ifOutErrors',
+          'ifInUcastPkts',
+          'ifOutUcastPkts',
+          'ifInOctets',
+          'ifOutOctets',
+        ],
+        style: {
+          height: '400px',
+          width: '100%',
+        },
+      },
+    ],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+    ],
     groupIds: {},
     plugins: {},
   },
@@ -1660,6 +1409,8 @@ const OBJECT_CONFIG_MAP: any = {
     instance_type: 'snmp_trap',
     icon: 'Host',
     groupIds: {},
+    dashboardDisplay: [],
+    tableDiaplay: [],
     plugins: {
       'SNMP Trap': {
         collect_type: 'trap',
@@ -1672,6 +1423,8 @@ const OBJECT_CONFIG_MAP: any = {
   Docker: {
     instance_type: 'docker',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [{ type: 'value', key: 'docker_n_containers' }],
     groupIds: {},
     plugins: {
       Docker: {
@@ -1685,6 +1438,8 @@ const OBJECT_CONFIG_MAP: any = {
   RabbitMQ: {
     instance_type: 'rabbitmq',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [{ type: 'value', key: 'rabbitmq_overview_messages_ready' }],
     groupIds: {},
     plugins: {
       RabbitMQ: {
@@ -1703,6 +1458,11 @@ const OBJECT_CONFIG_MAP: any = {
   Nginx: {
     instance_type: 'nginx',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'nginx_requests' },
+      { type: 'value', key: 'nginx_active' },
+    ],
     groupIds: {},
     plugins: {
       Nginx: {
@@ -1719,6 +1479,8 @@ const OBJECT_CONFIG_MAP: any = {
   ActiveMQ: {
     instance_type: 'activemq',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [{ type: 'value', key: 'activemq_topic_consumer_count' }],
     groupIds: {},
     plugins: {
       ActiveMQ: {
@@ -1801,6 +1563,12 @@ rules:
   Apache: {
     instance_type: 'apache',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'apache_uptime' },
+      { type: 'value', key: 'apache_req_per_sec' },
+      { type: 'progress', key: 'apache_cpu_load' },
+    ],
     groupIds: {},
     plugins: {
       Apache: {
@@ -1817,6 +1585,12 @@ rules:
   ClickHouse: {
     instance_type: 'clickhouse',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'clickhouse_events_query' },
+      { type: 'value', key: 'clickhouse_events_inserted_rows' },
+      { type: 'value', key: 'clickhouse_asynchronous_metrics_load_average1' },
+    ],
     groupIds: {},
     plugins: {
       ClickHouse: {
@@ -1834,6 +1608,11 @@ rules:
   Consul: {
     instance_type: 'consul',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'enum', key: 'consul_health_checks_status' },
+      { type: 'value', key: 'consul_health_checks_passing' },
+    ],
     groupIds: {},
     plugins: {
       Consul: {
@@ -1850,6 +1629,11 @@ rules:
   Zookeeper: {
     instance_type: 'zookeeper',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'zookeeper_uptime' },
+      { type: 'value', key: 'zookeeper_avg_latency' },
+    ],
     groupIds: {},
     plugins: {
       Zookeeper: {
@@ -1867,6 +1651,12 @@ rules:
   Tomcat: {
     instance_type: 'tomcat',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'tomcat_connector_request_count' },
+      { type: 'value', key: 'tomcat_connector_current_threads_busy' },
+      { type: 'value', key: 'tomcat_connector_error_count' },
+    ],
     groupIds: {},
     plugins: {
       Tomcat: {
@@ -1958,6 +1748,8 @@ rules:
   TongWeb: {
     instance_type: 'tongweb',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [],
     groupIds: {},
     plugins: {
       'TongWeb6-JMX': {
@@ -2057,6 +1849,8 @@ rules:
   JBoss: {
     instance_type: 'jboss',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [],
     groupIds: {},
     plugins: {
       'JBoss-JMX': {
@@ -2107,6 +1901,8 @@ rules:
   Jetty: {
     instance_type: 'jetty',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [],
     groupIds: {},
     plugins: {
       'Jetty-JMX': {
@@ -2400,6 +2196,8 @@ rules:
   WebLogic: {
     instance_type: 'weblogic',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [],
     groupIds: {},
     plugins: {
       'WebLogic-JMX': {
@@ -2461,6 +2259,12 @@ rules:
   MongoDB: {
     instance_type: 'mongodb',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'mongodb_connections_current' },
+      { type: 'value', key: 'mongodb_latency_commands' },
+      { type: 'value', key: 'mongodb_resident_megabytes' },
+    ],
     groupIds: {},
     plugins: {
       MongoDB: {
@@ -2477,6 +2281,12 @@ rules:
   Mysql: {
     instance_type: 'mysql',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'mysql_bytes_received' },
+      { type: 'value', key: 'mysql_bytes_sent' },
+      { type: 'value', key: 'mysql_connections_total' },
+    ],
     groupIds: {},
     plugins: {
       Mysql: {
@@ -2494,6 +2304,11 @@ rules:
   Redis: {
     instance_type: 'redis',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'redis_used_memory' },
+      { type: 'value', key: 'redis_instantaneous_ops_per_sec' },
+    ],
     groupIds: {},
     plugins: {
       Redis: {
@@ -2512,6 +2327,11 @@ rules:
   Postgres: {
     instance_type: 'postgres',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'postgresql_active_time' },
+      { type: 'value', key: 'postgresql_blks_hit' },
+    ],
     groupIds: {},
     plugins: {
       Postgres: {
@@ -2529,6 +2349,12 @@ rules:
   ElasticSearch: {
     instance_type: 'elasticsearch',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'elasticsearch_fs_total_available_in_bytes' },
+      { type: 'value', key: 'elasticsearch_http_current_open' },
+      { type: 'value', key: 'elasticsearch_indices_docs_count' },
+    ],
     groupIds: {},
     plugins: {
       ElasticSearch: {
@@ -2547,6 +2373,12 @@ rules:
   vCenter: {
     instance_type: 'vmware',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'vmware_esxi_count' },
+      { type: 'value', key: 'vmware_datastore_count' },
+      { type: 'value', key: 'vmware_vm_count' },
+    ],
     groupIds: {},
     plugins: {
       VMWare: {
@@ -2560,6 +2392,14 @@ rules:
   JVM: {
     instance_type: 'jvm',
     icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'enum', key: 'jmx_scrape_error_gauge' },
+      { type: 'value', key: 'jvm_memory_usage_used_value' },
+      { type: 'value', key: 'jvm_memory_usage_max_value' },
+      { type: 'value', key: 'jvm_os_memory_physical_free_value' },
+      { type: 'value', key: 'jvm_gc_collectiontime_seconds_value' },
+    ],
     groupIds: {},
     plugins: {
       JVM: {
@@ -2687,7 +2527,6 @@ const STRATEGY_TEMPLATES = [
 
 export {
   UNIT_LIST,
-  INDEX_CONFIG,
   PERIOD_LIST,
   COMPARISON_METHOD,
   LEVEL_MAP,
