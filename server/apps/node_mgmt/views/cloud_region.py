@@ -43,7 +43,13 @@ class CloudRegionViewSet(mixins.ListModelMixin,
     @swagger_auto_schema(
         operation_summary="创建云区域",
         tags=['CloudRegion'],
-        request_body=CloudRegionSerializer,
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'name': openapi.Schema(type=openapi.TYPE_STRING, description="云区域名称"),
+                'introduction': openapi.Schema(type=openapi.TYPE_STRING, description="云区域介绍"),
+            }
+        ),
     )
     def create(self, request, *args, **kwargs):
         self.serializer_class = CloudRegionSerializer
