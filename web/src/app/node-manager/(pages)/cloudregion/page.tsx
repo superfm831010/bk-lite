@@ -1,9 +1,8 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import { FormInstance, Input, message } from 'antd';
-import OperateModal from '@/components/operate-modal';
+import { FormInstance } from 'antd';
 import useApiClient from '@/utils/request';
-import { Form, Menu } from 'antd';
+import { Menu } from 'antd';
 import cloudRegionStyle from './index.module.scss';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
@@ -14,20 +13,22 @@ import type {
   CloudRegionItem,
   CloudRegionCardProps,
 } from '@/app/node-manager/types/cloudregion';
+import CloudRegionModal from './cloudregionModal';
+import { ModalRef } from '@/app/node-manager/types';
 
 const CloudRegion = () => {
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
-  const { getCloudList, updateCloudIntro } = useApiCloudRegion();
+  const { getCloudList } = useApiCloudRegion();
   const router = useRouter();
   const cloudRegionFormRef = useRef<FormInstance>(null);
+  const modalRef = useRef<ModalRef>(null);
   const divRef = useRef(null);
   const [selectedRegion, setSelectedRegion] =
     useState<CloudRegionCardProps | null>(null);
   const [openEditCloudRegion, setOpenEditCloudRegion] = useState(false);
   const [cloudItems, setCloudItems] = useState<CloudRegionItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
 
   // 获取相关的接口
   const fetchCloudRegions = async () => {
@@ -59,22 +60,12 @@ const CloudRegion = () => {
     }
   }, [openEditCloudRegion, selectedRegion]);
 
-  const handleFormOkClick = async () => {
-    setConfirmLoading(true);
-    try {
-      const { cloudRegion } = cloudRegionFormRef.current?.getFieldsValue();
-      await updateCloudIntro(cloudRegion.id, {
-        introduction: cloudRegion.introduction,
-      });
-      message.success(t('common.updateSuccess'));
-      fetchCloudRegions();
-      setOpenEditCloudRegion(false);
-    } finally {
-      setConfirmLoading(false);
-    }
-  };
-
   const handleEdit = (row: any) => {
+    openModal({
+      title: 'editform',
+      type: 'edit',
+      form: row
+    })
     setSelectedRegion(row);
     setOpenEditCloudRegion(true);
   };
@@ -85,11 +76,17 @@ const CloudRegion = () => {
     );
   };
 
-  const handleCancel = () => {
-    setOpenEditCloudRegion(false);
-    setSelectedRegion(null);
-    setConfirmLoading(false);
+  const openModal = (config: any) => {
+    modalRef.current?.showModal({
+      title: config?.title,
+      type: config?.type,
+      form: config?.form,
+    });
   };
+
+  const handleSumbit = () => {
+    fetchCloudRegions();
+  }
 
   return (
     <div
@@ -116,30 +113,7 @@ const CloudRegion = () => {
         }}
       ></EntityList>
       {/* 编辑默认云区域弹窗 */}
-      <OperateModal
-        title={t('node-manager.cloudregion.editform.title')}
-        open={openEditCloudRegion}
-        okText={t('common.confirm')}
-        cancelText={t('common.cancel')}
-        confirmLoading={confirmLoading}
-        onCancel={handleCancel}
-        onOk={handleFormOkClick}
-      >
-        <Form layout="vertical" ref={cloudRegionFormRef} name="nest-messages">
-          <Form.Item name={['cloudRegion', 'id']} hidden>
-            <Input />
-          </Form.Item>
-          <Form.Item name={['cloudRegion', 'name']} label={t('common.name')}>
-            <Input disabled placeholder={t('common.inputMsg')} />
-          </Form.Item>
-          <Form.Item
-            name={['cloudRegion', 'introduction']}
-            label={t('node-manager.cloudregion.editform.Introduction')}
-          >
-            <Input.TextArea rows={5} placeholder={t('common.inputMsg')} />
-          </Form.Item>
-        </Form>
-      </OperateModal>
+      <CloudRegionModal ref={modalRef} onSuccess={handleSumbit} />
     </div>
   );
 };
