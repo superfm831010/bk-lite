@@ -26,12 +26,10 @@ import {
   getEnumValueUnit,
   mergeViewQueryKeyValues,
   renderChart,
+  getConfigByObjectName,
 } from '@/app/monitor/utils/common';
 import dayjs, { Dayjs } from 'dayjs';
-import {
-  INDEX_CONFIG,
-  useInterfaceLabelMap,
-} from '@/app/monitor/constants/monitor';
+import { useInterfaceLabelMap } from '@/app/monitor/constants/monitor';
 import Icon from '@/components/icon';
 import { ColumnItem } from '@/types';
 
@@ -81,27 +79,28 @@ const Overview: React.FC<ViewDetailProps> = ({
 
   const getInitData = async () => {
     setLoading(true);
-    const indexList =
-      INDEX_CONFIG.find((item) => item.name === monitorObjectName)
-        ?.dashboardDisplay || [];
+    const indexList = getConfigByObjectName(
+      monitorObjectName,
+      'dashboardDisplay'
+    );
     try {
       getMonitorMetrics({
         monitor_object_id: monitorObjectId,
       }).then((res) => {
         const interfaceConfig = indexList.find(
-          (item) => item.indexId === 'interfaces'
+          (item: TableDataItem) => item.indexId === 'interfaces'
         );
         const _metricData = res
           .filter((item: MetricItem) =>
             indexList.find(
-              (indexItem) =>
+              (indexItem: TableDataItem) =>
                 indexItem.indexId === item.name ||
                 (interfaceConfig?.displayDimension || []).includes(item.name)
             )
           )
           .map((item: MetricItem) => {
             const target = indexList.find(
-              (indexItem) => indexItem.indexId === item.name
+              (indexItem: TableDataItem) => indexItem.indexId === item.name
             );
             if (target) {
               Object.assign(item, target);
