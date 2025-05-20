@@ -23,7 +23,7 @@ from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
 from src.services.rag_service import RagService
 from src.summarize.summarize_manager import SummarizeManager
 
-rag_api_router = Blueprint("rag", url_prefix="/api/rag")
+rag_api_router = Blueprint("rag", url_prefix="/rag")
 
 
 @rag_api_router.post("/naive_rag_test")

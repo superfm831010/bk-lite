@@ -541,19 +541,15 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   };
 
   const getInstId = (row: IntergrationMonitoredObject) => {
+    const target: any = nodeList.find((item) => row.node_ids === item.id);
+    if (['snmp', 'ipmi'].includes(collectType)) {
+      return objectName + '-' + (row.ip || '');
+    }
     switch (collectType) {
       case 'host':
-        const hostTarget: any = nodeList.find(
-          (item) => row.node_ids === item.id
-        );
-        return hostTarget?.ip + '-' + hostTarget?.cloud_region;
+        return target?.ip + '-' + target?.cloud_region;
       case 'trap':
-        const target: any = nodeList.find((item) => row.node_ids === item.id);
         return 'trap' + target?.ip + '-' + target?.cloud_region;
-      case 'snmp':
-        return objectName + '-' + (row.ip || '');
-      case 'ipmi':
-        return objectName + '-' + (row.ip || '');
       case 'docker':
         return row.endpoint;
       case 'database':
