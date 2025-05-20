@@ -63,7 +63,7 @@ const useApiClient = () => {
           const messageText = error.response?.data?.message;
           if (status === 401) {
             signIn();
-          } else if (status === 403) {
+          } else if ([400, 403].includes(status)) {
             message.error(messageText);
             return Promise.reject(new Error(messageText));
           } else if (status === 500) {
