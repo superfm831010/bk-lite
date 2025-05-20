@@ -443,6 +443,7 @@ const OBJECT_CONFIG_MAP: any = {
           'net',
           'processes',
           'system',
+          "gpu"
         ],
         collector: 'Telegraf',
         manualCfgText: '',

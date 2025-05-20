@@ -10,6 +10,7 @@ import { useRoleApi } from '@/app/system-manager/api/application';
 import CustomTable from '@/components/custom-table';
 import OperateModal from '@/components/operate-modal';
 import DynamicForm from '@/components/dynamic-form';
+import PermissionWrapper from "@/components/permission";
 import PermissionRule from '@/app/system-manager/components/application/permissionRule';
 import {
   DataItem,
@@ -431,21 +432,25 @@ const DataManagement: React.FC = () => {
       key: 'actions',
       render: (_: any, record: DataItem) => (
         <div className="flex space-x-2">
-          <Button
-            type="link"
-            onClick={() => showDataModal(record)}
-          >
-            {t('common.edit')}
-          </Button>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button
+              type="link"
+              onClick={() => showDataModal(record)}
+            >
+              {t('common.edit')}
+            </Button>
+          </PermissionWrapper>
           <Popconfirm
             title={t('common.delConfirm')}
             okText={t('common.confirm')}
             cancelText={t('common.cancel')}
             onConfirm={() => handleDelete(record)}
           >
-            <Button type="link">
-              {t('common.delete')}
-            </Button>
+            <PermissionWrapper requiredPermissions={['Delete']}>
+              <Button type="link">
+                {t('common.delete')}
+              </Button>
+            </PermissionWrapper>
           </Popconfirm>
         </div>
       ),
@@ -461,13 +466,15 @@ const DataManagement: React.FC = () => {
           onSearch={handleSearch}
           placeholder={`${t('common.search')}`}
         />
-        <Button
-          type="primary"
-          onClick={() => showDataModal()}
-          icon={<PlusOutlined />}
-        >
-          {t('common.add')}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button
+            type="primary"
+            onClick={() => showDataModal()}
+            icon={<PlusOutlined />}
+          >
+            {t('common.add')}
+          </Button>
+        </PermissionWrapper>
       </div>
       <Spin spinning={loading}>
         <CustomTable

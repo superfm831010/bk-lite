@@ -141,7 +141,7 @@ const TopMenu = () => {
           onClick={() => window.open(app.url, '_blank')}
         >
           <Icon
-            type={app.client_id || 'yingyongxitongguanli'}
+            type={app.name || 'yingyongxitongguanli'}
             className="text-2xl mb-1 transition-transform duration-300 transform group-hover:scale-125"
           />
           {app.name}
