@@ -14,7 +14,7 @@ export const useAlarmApi = () => {
         content: 'CPU 使用率过高',
         monitor_instance_name: '实例A',
         source: 'server',
-        status: 'new',
+        status: 'dispatched',
         policy: { notice: false },
         operator: 'Alice',
         value: 95,
@@ -26,7 +26,7 @@ export const useAlarmApi = () => {
         content: '内存使用率偏高',
         monitor_instance_name: '实例B',
         source: 'vm',
-        status: 'processing',
+        status: 'dispatched',
         policy: { notice: true },
         operator: 'Bob',
         value: 70,
@@ -52,7 +52,7 @@ export const useAlarmApi = () => {
     });
   };
 
-  const patchMonitorAlert = async (id: string | number, data: any) => {
+  const patchMonitorAlert = async (id: string | number | undefined, data: any) => {
     return await put(`/alerts/api/alert_source/${id}/`, data);
   };
 

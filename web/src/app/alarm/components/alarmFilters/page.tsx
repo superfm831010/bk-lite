@@ -9,12 +9,16 @@ import { LEVEL_MAP } from '@/app/alarm/constants/monitor';
 
 interface Props {
   filters: FiltersConfig;
+  filterSource?: boolean;
+  stateOptions: { value: string; label: string }[];
   onFilterChange: (vals: string[], field: keyof FiltersConfig) => void;
   clearFilters: (field: keyof FiltersConfig) => void;
 }
 
 const AlarmFilters: React.FC<Props> = ({
   filters,
+  filterSource = true,
+  stateOptions,
   onFilterChange,
   clearFilters,
 }) => {
@@ -23,33 +27,29 @@ const AlarmFilters: React.FC<Props> = ({
   const filterConfigs = [
     {
       field: 'level' as keyof FiltersConfig,
-      title: t('monitor.events.level'),
+      title: t('alarms.level'),
       options: [
-        { value: 'critical', label: t('monitor.events.critical') },
-        { value: 'error', label: t('monitor.events.error') },
-        { value: 'warning', label: t('monitor.events.warning') },
+        { value: 'critical', label: t('alarms.critical') },
+        { value: 'error', label: t('alarms.error') },
+        { value: 'warning', label: t('alarms.warning') },
       ],
     },
     {
       field: 'state' as keyof FiltersConfig,
-      title: t('monitor.events.state'),
-      options: [
-        { value: 'pending', label: t('monitor.events.pending') },
-        { value: 'processing', label: t('monitor.events.processing') },
-        { value: 'unassigned', label: t('monitor.events.unassigned') },
-      ],
+      title: t('alarms.state'),
+      options: stateOptions,
     },
   ];
 
   const groupObjects = [
-    { label: t('monitor.events.source'), value: 'monitor' },
-    { label: t('monitor.logs'), value: 'log' },
+    { label: t('alarms.monitor'), value: 'monitor' },
+    { label: t('alarms.logs'), value: 'log' },
   ];
 
   return (
     <div className={alertStyle.filters}>
       <h3 className="font-[800] mb-[16px] text-[15px]">
-        {t('monitor.events.filterItems')}
+        {t('alarms.filterItems')}
       </h3>
       <div className={alertStyle.container}>
         {filterConfigs.map(({ field, title, options }) => (
@@ -92,38 +92,40 @@ const AlarmFilters: React.FC<Props> = ({
             </Collapse>
           </div>
         ))}
-        <div className={alertStyle.item}>
-          <Collapse
-            title={
-              <div className={alertStyle.header}>
-                <span>{t('monitor.events.source')}</span>
-                <ClearOutlined
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    clearFilters('alarm_source');
-                  }}
-                  className={alertStyle.clearIcon}
-                />
-              </div>
-            }
-          >
-            <Checkbox.Group
-              className={alertStyle.group}
-              value={filters.alarm_source}
-              onChange={(vals) =>
-                onFilterChange(vals as string[], 'alarm_source')
+        {filterSource && (
+          <div className={alertStyle.item}>
+            <Collapse
+              title={
+                <div className={alertStyle.header}>
+                  <span>{t('alarms.source')}</span>
+                  <ClearOutlined
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearFilters('alarm_source');
+                    }}
+                    className={alertStyle.clearIcon}
+                  />
+                </div>
               }
             >
-              <Space direction="vertical">
-                {groupObjects.map((o) => (
-                  <Checkbox key={o.value} value={o.value}>
-                    {o.label}
-                  </Checkbox>
-                ))}
-              </Space>
-            </Checkbox.Group>
-          </Collapse>
-        </div>
+              <Checkbox.Group
+                className={alertStyle.group}
+                value={filters.alarm_source}
+                onChange={(vals) =>
+                  onFilterChange(vals as string[], 'alarm_source')
+                }
+              >
+                <Space direction="vertical">
+                  {groupObjects.map((o) => (
+                    <Checkbox key={o.value} value={o.value}>
+                      {o.label}
+                    </Checkbox>
+                  ))}
+                </Space>
+              </Checkbox.Group>
+            </Collapse>
+          </div>
+        )}
       </div>
     </div>
   );

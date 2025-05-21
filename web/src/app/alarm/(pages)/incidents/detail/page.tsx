@@ -1,13 +1,22 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import CustomTable from '@/components/custom-table';
-import styles from './page.module.scss';
+import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
 import GanttChart from '../components/ganttChart/page';
 import LinkModal from '../components/linkModal/page';
-import type { ColumnsType } from 'antd/es/table';
-import { useParams } from 'next/navigation';
+import Icon from '@/components/icon';
+import type { TableDataItem } from '@/app/alarm/types';
+import { useTranslation } from '@/utils/i18n';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
+import {
+  ArrowLeftOutlined,
+  DownOutlined,
+  EditOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  AlertOutlined,
+} from '@ant-design/icons';
 import {
   Breadcrumb,
   Descriptions,
@@ -15,15 +24,18 @@ import {
   Timeline,
   Input,
   Button,
-  Switch,
+  Radio,
   Dropdown,
+  Select,
+  Tag,
   type MenuProps,
 } from 'antd';
-import { ArrowLeftOutlined, DownOutlined } from '@ant-design/icons';
-import { useTranslation } from '@/utils/i18n';
-import type { TableDataItem } from '@/app/alarm/types';
+import { LEVEL_MAP, useLevelList } from '@/app/alarm/constants/monitor';
+import styles from './page.module.scss';
 
 const { TabPane } = Tabs;
+
+const mockUsers = [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }];
 
 const mockData: TableDataItem[] = [
   {
@@ -34,7 +46,7 @@ const mockData: TableDataItem[] = [
     title: 'CPU 使用率过高',
     count: 3,
     source: 'Server A',
-    status: 'new',
+    status: 'abnormal',
     duration: '1h30m',
     operator: 'Alice',
     notify_status: 'notified',
@@ -47,7 +59,7 @@ const mockData: TableDataItem[] = [
     title: '内存使用率临界',
     count: 1,
     source: 'Server B',
-    status: 'processing',
+    status: 'autoexecute_executing',
     duration: '20m',
     operator: 'Bob',
     notify_status: 'unnotified',
@@ -57,15 +69,19 @@ const mockData: TableDataItem[] = [
 const IncidentDetail: React.FC = () => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { id } = useParams();
-  const [linkMode, setLinkMode] = useState<'link' | 'unlink'>('link');
+  const searchParams = useSearchParams();
+  const incidentName = searchParams.get('name') || '';
   const [tableData, setTableData] = useState<any[]>([]);
   const [tabLoading, setTabLoading] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
-  const [tableVisible, setTableVisible] = useState<boolean>(true);
+  const [viewType, setViewType] = useState<'table' | 'gantt'>('table');
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [operateVisible, setOperateVisible] = useState(false);
-  const [Pagination, setPagination] = useState<{
+  const [editingAssignee, setEditingAssignee] = useState(false);
+  const [users, setUsers] = useState<{ name: string }[]>([]);
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+  const [assigneeValue, setAssigneeValue] = useState<string>('');
+  const [pagination, setPagination] = useState<{
     current: number;
     pageSize: number;
     total: number;
@@ -75,8 +91,11 @@ const IncidentDetail: React.FC = () => {
     total: 0,
   });
 
+  const LEVEL_LIST = useLevelList();
+
   const detail = {
-    alertName: `Alert #${id}`,
+    level: 'critical',
+    alertName: `告警 #${incidentName}`,
     createTime: '2023-08-01 12:00:00',
     source: 'Server A',
     state: 'new',
@@ -90,105 +109,25 @@ const IncidentDetail: React.FC = () => {
   ];
 
   const descFields = [
-    { label: t('monitor.events.createTime'), value: detail.createTime },
-    { label: t('monitor.events.source'), value: detail.source },
+    { label: t('alarms.createTime'), value: detail.createTime },
+    { label: t('alarms.source'), value: detail.source },
     {
-      label: t('monitor.events.state'),
-      value: t(`monitor.events.${detail.state}`) || detail.state,
+      label: t('alarms.state'),
+      value: t(`alarms.${detail.state}`) || detail.state,
     },
-    { label: t('monitor.events.assignee'), value: detail.assignee },
-    { label: t('monitor.events.note'), value: detail.note },
-  ];
-
-  const columns: ColumnsType<TableDataItem> = [
-    {
-      title: t('monitor.events.level'),
-      dataIndex: 'level',
-      key: 'level',
-      width: 100,
-    },
-    {
-      title: t('monitor.events.firstEventTime'),
-      dataIndex: 'first_event_time',
-      key: 'first_event_time',
-      width: 160,
-    },
-    {
-      title: t('monitor.events.lastEventTime'),
-      dataIndex: 'last_event_time',
-      key: 'last_event_time',
-      width: 160,
-    },
-    {
-      title: t('monitor.events.eventTitle'),
-      dataIndex: 'title',
-      key: 'title',
-      width: 200,
-    },
-    {
-      title: t('monitor.events.eventCount'),
-      dataIndex: 'count',
-      key: 'count',
-      width: 100,
-    },
-    {
-      title: t('monitor.events.source'),
-      dataIndex: 'source',
-      key: 'source',
-      width: 120,
-    },
-    {
-      title: t('monitor.events.state'),
-      dataIndex: 'status',
-      key: 'status',
-      width: 100,
-    },
-    {
-      title: t('monitor.events.duration'),
-      dataIndex: 'duration',
-      key: 'duration',
-      width: 100,
-    },
-    {
-      title: t('common.operator'),
-      dataIndex: 'operator',
-      key: 'operator',
-      width: 100,
-    },
-    {
-      title: t('monitor.events.notificationStatus'),
-      dataIndex: 'notify_status',
-      key: 'notify_status',
-      width: 140,
-    },
-    {
-      title: t('common.action'),
-      key: 'action',
-      dataIndex: 'action',
-      width: 120,
-      fixed: 'right',
-      render: () => (
-        <Button
-          type="link"
-          onClick={() => {
-            /* TODO: action */
-          }}
-        >
-          {t('common.detail')}
-        </Button>
-      ),
-    },
+    { label: t('alarms.assignee'), value: detail.assignee },
+    { label: t('alarms.note'), value: detail.note },
   ];
 
   const fetchList = async (
-    page = Pagination.current,
-    pageSize = Pagination.pageSize
+    page = pagination.current,
+    pageSize = pagination.pageSize
   ) => {
     setTabLoading(true);
     try {
       const res = {
         items: mockData,
-        total: 0,
+        total: mockData.length,
       };
       setTableData(res.items || []);
       setPagination({ current: page, pageSize, total: res.total || 0 });
@@ -198,8 +137,23 @@ const IncidentDetail: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchList(1, Pagination.pageSize);
-  }, [searchText]);
+    fetchList(1, pagination.pageSize);
+    setUsers(mockUsers);
+  }, []);
+
+  useEffect(() => {
+    setSelectedAssignees([detail.assignee]);
+    setAssigneeValue(detail.assignee);
+  }, [detail.assignee]);
+
+  const confirmAssignee = () => {
+    setAssigneeValue(selectedAssignees.join(', '));
+    setEditingAssignee(false);
+  };
+  const cancelAssignee = () => {
+    setSelectedAssignees([assigneeValue]);
+    setEditingAssignee(false);
+  };
 
   const onTabTableChange = (pag: any) => {
     setPagination({
@@ -210,15 +164,91 @@ const IncidentDetail: React.FC = () => {
     fetchList(pag.current, pag.pageSize);
   };
 
-  const linkMenuItems: MenuProps['items'] = [
-    { key: 'link', label: t('common.linkAlert') },
-    { key: 'unlink', label: t('common.unlinkAlert') },
-  ];
+  const handleUnlink = () => {
+    console.log('Unlinking records:', selectedRowKeys);
+  };
 
-  const onLinkMenuClick = ({ key }: { key: string }) => {
-    setLinkMode(key as 'link' | 'unlink');  
+  const handleLink = (record?: TableDataItem) => {
+    console.log('Linking record:', record);
     setOperateVisible(true);
   };
+
+  const statusMenuItems: MenuProps['items'] = [
+    { key: 'acknowledge', label: `${t('alarms.acknowledge')}` },
+    { key: 'close', label: `${t('common.close')}` },
+    { key: 'open', label: `${t('common.open')}` },
+  ];
+
+  const renderDescItems = () =>
+    descFields.map(({ label, value }, idx) => {
+      if (label === t('alarms.state')) {
+        return (
+          <Descriptions.Item label={label} key={idx}>
+            <div className={styles.descContent}>
+              {value}
+              <Dropdown
+                menu={{ items: statusMenuItems }}
+                placement="bottomRight"
+              >
+                <Button size="small" style={{ marginLeft: 8 }}>
+                  {t('common.action')}
+                  <DownOutlined />
+                </Button>
+              </Dropdown>
+            </div>
+          </Descriptions.Item>
+        );
+      }
+      if (label === t('alarms.assignee')) {
+        return (
+          <Descriptions.Item label={label} key={idx}>
+            <div className={styles.descContent}>
+              {editingAssignee ? (
+                <>
+                  <Select
+                    mode="multiple"
+                    options={users.map((u) => ({
+                      value: u.name,
+                      label: u.name,
+                    }))}
+                    value={selectedAssignees}
+                    onChange={setSelectedAssignees}
+                    className="mw-[100px] mr-[10px]"
+                  />
+                  <Button
+                    size="small"
+                    type="link"
+                    icon={<CheckOutlined />}
+                    onClick={confirmAssignee}
+                  />
+                  <Button
+                    size="small"
+                    type="link"
+                    icon={<CloseOutlined />}
+                    onClick={cancelAssignee}
+                  />
+                </>
+              ) : (
+                <>
+                  <span className="mr-[10px]">{assigneeValue}</span>
+                  <Button
+                    size="small"
+                    type="link"
+                    icon={<EditOutlined />}
+                    onClick={() => setEditingAssignee(true)}
+                  />
+                </>
+              )}
+            </div>
+          </Descriptions.Item>
+        );
+      }
+      return (
+        <Descriptions.Item label={label} key={idx}>
+          <div className={styles.descContent}>{value}</div>
+        </Descriptions.Item>
+      );
+    });
 
   return (
     <div className={styles.detailContainer}>
@@ -227,93 +257,104 @@ const IncidentDetail: React.FC = () => {
           onClick={() => router.back()}
           className={styles.backIcon}
         />
-        <Breadcrumb.Item>{detail.alertName}</Breadcrumb.Item>
+        <Breadcrumb.Item>
+          <span className="ml-[10px] mr-[10px]">{detail.alertName}</span>
+          <Tag
+            icon={<AlertOutlined />}
+            color={LEVEL_MAP[detail.level] as string}
+          >
+            {LEVEL_LIST.find((item) => item.value === detail.level)?.label ||
+              detail.level}
+          </Tag>
+        </Breadcrumb.Item>
       </Breadcrumb>
 
-      <Descriptions
-        column={{ xs: 1, sm: 2, md: 3, lg: 3, xl: 4, xxl: 4 }}
-        size="middle"
-        className={styles.descriptions}
-        labelStyle={{ width: '80px' }}
-      >
-        {descFields.map(({ label, value }, idx) => (
-          <Descriptions.Item label={label} key={idx}>
-            <div className={styles.fixedContent}>{value}</div>
-          </Descriptions.Item>
-        ))}
-      </Descriptions>
-
-      <div className={styles.tabsWrapper}>
-        <Tabs defaultActiveKey="alert">
-          <TabPane tab={t('monitor.events.alert')} key="alert">
-            <div className={styles.tabContent}>
-              <div className={styles.filterRow}>
-                <div className={styles.switchWrapper}>
-                  <Input
-                    allowClear
-                    className="w-[300px] mr-[20px]"
-                    placeholder={t('common.searchPlaceHolder')}
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    onPressEnter={() => fetchList(1, Pagination.pageSize)}
-                  />
-                  <Switch
-                    checked={tableVisible}
-                    onChange={setTableVisible}
-                    className={styles.changeSwitch}
-                  />
-                  <span className={styles.switchLabel}>
-                    {t('common.changeView')}
-                  </span>
+      <div className={styles.detailContent}>
+        <Descriptions
+          column={{ xs: 1, sm: 2, md: 3, lg: 3, xl: 4, xxl: 4 }}
+          size="default"
+          className={styles.descriptions}
+        >
+          {renderDescItems()}
+        </Descriptions>
+        <div className={styles.tabsWrapper}>
+          <Tabs defaultActiveKey="alert">
+            <TabPane tab={t('alarms.alert')} key="alert">
+              <div className={styles.tabContent}>
+                <div className={styles.filterRow}>
+                  <div className={styles.switchWrapper}>
+                    <Input
+                      allowClear
+                      className="w-[300px] mr-[20px]"
+                      placeholder={t('common.searchPlaceHolder')}
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      onPressEnter={() => fetchList(1, pagination.pageSize)}
+                    />
+                    <Radio.Group
+                      value={viewType}
+                      className={styles.viewTypeSwitch}
+                      optionType="button"
+                      onChange={(e) => setViewType(e.target.value)}
+                    >
+                      <Radio value="table" className={styles.typeButton}>
+                        <Icon type="jibenxinxi" className={styles.viewIcon} />
+                      </Radio>
+                      <Radio value="gantt" className={styles.typeButton}>
+                        <Icon type="bianliang" className={styles.viewIcon} />
+                      </Radio>
+                    </Radio.Group>
+                  </div>
+                  <div>
+                    <Button type="primary" className='mr-[12px]' onClick={() => handleLink()}>
+                      {t('common.linkAlert')}
+                    </Button>
+                    <Button type="primary" onClick={() => handleUnlink()}>
+                      {t('common.unlinkAlert')}
+                    </Button>
+                  </div>
                 </div>
-                <Dropdown
-                  menu={{ items: linkMenuItems, onClick: onLinkMenuClick }}
-                  placement="bottomRight"
-                >
-                  <Button type="primary">
-                    {t('monitor.events.batchOperations')} <DownOutlined />
-                  </Button>
-                </Dropdown>
+                {viewType === 'table' ? (
+                  <AlarmTable
+                    dataSource={tableData}
+                    pagination={pagination}
+                    metrics={[]}
+                    loading={tabLoading}
+                    tableScrollY="calc(100vh - 500px)"
+                    selectedRowKeys={selectedRowKeys}
+                    onChange={onTabTableChange}
+                    onSelectionChange={setSelectedRowKeys}
+                    extraActions={() => (
+                      <Button
+                        type="link"
+                        className="ml-[8px]"
+                        onClick={() => handleUnlink()}
+                      >
+                        {t('common.unlinkAlert')}
+                      </Button>
+                    )}
+                  />
+                ) : (
+                  <GanttChart />
+                )}
               </div>
-              {tableVisible ? (
-                <CustomTable
-                  rowKey="id"
-                  columns={columns}
-                  dataSource={tableData}
-                  loading={tabLoading}
-                  pagination={Pagination}
-                  scroll={{
-                    y: 'calc(100vh - 500px)',
-                    x: 'calc(100vw - 320px)',
-                  }}
-                  onChange={onTabTableChange}
-                  rowSelection={{
-                    selectedRowKeys,
-                    onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
-                  }}
-                />
-              ) : (
-                <GanttChart />
-              )}
-            </div>
-          </TabPane>
-          <TabPane tab={t('monitor.events.timeline')} key="timeline">
-            <Timeline className={styles.timelineContent}>
-              {timeline.map((item, idx) => (
-                <Timeline.Item key={idx}>
-                  <span className="font-medium">{item.time}</span> -{' '}
-                  {item.event}
-                </Timeline.Item>
-              ))}
-            </Timeline>
-          </TabPane>
-        </Tabs>
+            </TabPane>
+            <TabPane tab={t('alarms.changes')} key="timeline">
+              <Timeline className={styles.timelineContent}>
+                {timeline.map((item, idx) => (
+                  <Timeline.Item key={idx}>
+                    <span className="font-medium">{item.time}</span> -{' '}
+                    {item.event}
+                  </Timeline.Item>
+                ))}
+              </Timeline>
+            </TabPane>
+          </Tabs>
+        </div>
       </div>
       <LinkModal
-        mode={linkMode}
         visible={operateVisible}
         onClose={() => setOperateVisible(false)}
-        data={tableData}
         onLink={() => {
           setOperateVisible(false);
         }}

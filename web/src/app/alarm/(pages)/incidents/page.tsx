@@ -14,6 +14,7 @@ import { FiltersConfig } from '@/app/alarm/types/monitor';
 import { useTranslation } from '@/utils/i18n';
 import { AlertOutlined } from '@ant-design/icons';
 import { LEVEL_MAP, useLevelList } from '@/app/alarm/constants/monitor';
+import { incidentStates } from '@/app/alarm/constants/alarm';
 import { useRouter } from 'next/navigation';
 
 const IncidentsPage: React.FC = () => {
@@ -41,11 +42,17 @@ const IncidentsPage: React.FC = () => {
     rangePickerVaule: null,
   };
 
+  const stateOptions = incidentStates.map((val) => ({
+    value: val,
+    label: t(`alarms.${val}`),
+  }));
+
+
   const handleRefresh = () => fetchList(1, pagination.pageSize);
 
   const columns: ColumnsType<TableDataItem> = [
     {
-      title: t('monitor.events.level'),
+      title: t('alarms.level'),
       dataIndex: 'level',
       key: 'level',
       width: 100,
@@ -56,37 +63,37 @@ const IncidentsPage: React.FC = () => {
       ),
     },
     {
-      title: t('monitor.events.createTime'),
+      title: t('alarms.createTime'),
       dataIndex: 'firstAlertTime',
       key: 'firstAlertTime',
       width: 140,
     },
     {
-      title: t('monitor.events.alertName'),
+      title: t('alarms.alertName'),
       dataIndex: 'alertName',
       key: 'alertName',
       width: 140,
     },
     {
-      title: t('monitor.events.source'),
+      title: t('alarms.source'),
       dataIndex: 'source',
       key: 'source',
       width: 140,
     },
     {
-      title: t('monitor.events.state'),
+      title: t('alarms.state'),
       dataIndex: 'state',
       key: 'state',
       width: 140,
     },
     {
-      title: t('monitor.events.duration'),
+      title: t('alarms.duration'),
       dataIndex: 'duration',
       key: 'duration',
       width: 140,
     },
     {
-      title: t('monitor.events.assignee'),
+      title: t('alarms.assignee'),
       dataIndex: 'operator',
       key: 'operator',
       width: 140,
@@ -101,7 +108,7 @@ const IncidentsPage: React.FC = () => {
         <Button
           type="link"
           onClick={() => {
-            router.push(`/alarm/incidents/detail?source=${record.source}`);
+            router.push(`/alarm/incidents/detail?name=${record.content}`);
           }}
         >
           {t('common.detail')}
@@ -146,6 +153,8 @@ const IncidentsPage: React.FC = () => {
     <div className={alertStyle.container}>
       <div className={alertStyle.filters}>
         <AlarmFilters
+          filterSource={false}
+          stateOptions={stateOptions}
           filters={filters}
           onFilterChange={onFilterChange}
           clearFilters={clearFilters}

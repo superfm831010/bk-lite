@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './index.module.scss';
 import CustomTable from '@/components/custom-table';
 import type { ColumnsType } from 'antd/es/table';
@@ -7,47 +7,37 @@ import { Drawer, Input, Button } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 
 interface OperateModalProps {
-  mode: 'link' | 'unlink';
-  data: TableDataItem[];
   visible: boolean;
   onClose: () => void;
   onLink: (selectedKeys: React.Key[]) => void;
 }
 
 const OperateModal: React.FC<OperateModalProps> = ({
-  mode,
   visible,
-  data,
   onClose,
   onLink,
 }) => {
   const { t } = useTranslation();
-  const label = mode === 'link' ? t('common.linkAlert') : t('common.unlinkAlert');
+  const label = t('common.linkAlert');
   const [search, setSearch] = useState('');
   const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
 
-  const filtered = useMemo(
-    () =>
-      data.filter((item) =>
-        item.title.toLowerCase().includes(search.trim().toLowerCase())
-      ),
-    [data, search]
-  );
+  const alarmTableList: TableDataItem[] = []
 
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
-    total: filtered.length,
+    total: alarmTableList.length,
   });
 
   useEffect(() => {
-    setPagination((prev) => ({ ...prev, total: filtered.length }));
-  }, [filtered.length]);
+    setPagination((prev) => ({ ...prev, total: alarmTableList.length }));
+  }, [alarmTableList.length]);
 
   const columns: ColumnsType<TableDataItem> = [
-    { title: t('monitor.events.eventTitle'), dataIndex: 'title', key: 'title' },
-    { title: t('monitor.events.level'), dataIndex: 'level', key: 'level' },
-    { title: t('monitor.events.source'), dataIndex: 'source', key: 'source' },
+    { title: t('alarms.eventTitle'), dataIndex: 'title', key: 'title' },
+    { title: t('alarms.level'), dataIndex: 'level', key: 'level' },
+    { title: t('alarms.source'), dataIndex: 'source', key: 'source' },
     {
       title: t('common.action'),
       key: 'action',
@@ -94,7 +84,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
       <CustomTable
         rowKey="id"
         columns={columns}
-        dataSource={filtered}
+        dataSource={alarmTableList}
         pagination={pagination}
         scroll={{ y: 'calc(100vh - 260px)', x: 'calc(50vw - 320px)' }}
         onChange={onTabTableChange}

@@ -4,34 +4,27 @@ import React, { useEffect, useState, useRef } from 'react';
 import Icon from '@/components/icon';
 import useApiClient from '@/utils/request';
 import dayjs, { Dayjs } from 'dayjs';
-import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
-import Permission from '@/components/permission';
 import StackedBarChart from '@/app/alarm/components/stackedBarChart';
-import AlertDetail from './components/alertDetail';
 import alertStyle from './index.module.scss';
-import UserAvatar from '@/app/cmdb/components/userAvatar';
 import AlarmFilters from '@/app/alarm/components/alarmFilters/page';
+import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
 import { useTranslation } from '@/utils/i18n';
 import { MetricItem } from '@/app/alarm/types/monitor';
-import { AlertOutlined, DownOutlined } from '@ant-design/icons';
+import { DownOutlined } from '@ant-design/icons';
 import { FiltersConfig } from '@/app/alarm/types/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
-import { useAlarmTabs } from '@/app/alarm/hooks/event';
-import { useCommon } from '@/app/monitor/context/common';
+import { LEVEL_MAP } from '@/app/alarm/constants/monitor';
 import {
-  LEVEL_MAP,
-  useLevelList,
-  useStateMap,
-} from '@/app/alarm/constants/monitor';
-import { deepClone, getEnumValueUnit } from '@/app/alarm/utils/common';
+  baseStates,
+  allStates,
+  batchMenuKeys,
+} from '@/app/alarm/constants/alarm';
+import { deepClone } from '@/app/alarm/utils/common';
 import {
-  ColumnItem,
-  ModalRef,
   Pagination,
   TableDataItem,
-  UserItem,
   TabItem,
   TimeSelectorDefaultValue,
 } from '@/app/alarm/types';
@@ -39,48 +32,22 @@ import {
   Input,
   Button,
   Checkbox,
-  Tag,
-  message,
   Tabs,
   Spin,
   Tooltip,
-  Popconfirm,
   Switch,
   Dropdown,
   MenuProps,
 } from 'antd';
 
 const Alert: React.FC = () => {
-  const getSettings = () => {
-    try {
-      return JSON.parse(localStorage.getItem('alarmSettings') || '{}');
-    } catch {
-      return {};
-    }
-  };
-  const saveSettings = (
-    settings: Partial<{ pageSize: number; showChart: boolean }>
-  ) => {
-    localStorage.setItem(
-      'alarmSettings',
-      JSON.stringify({ ...getSettings(), ...settings })
-    );
-  };
-
   const { isLoading } = useApiClient();
-  const { getAlarmList, getMonitorMetrics, patchMonitorAlert } = useAlarmApi();
+  const { getAlarmList, getMonitorMetrics } = useAlarmApi();
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
-  const STATE_MAP = useStateMap();
-  const LEVEL_LIST = useLevelList();
-  const commonContext = useCommon();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const detailRef = useRef<ModalRef>(null);
-  const users = useRef(commonContext?.userList || []);
-  const userList: UserItem[] = users.current;
   const beginTime: number = dayjs().subtract(10080, 'minute').valueOf();
   const lastTime: number = dayjs().valueOf();
-  const tabs: TabItem[] = useAlarmTabs();
   const [searchText, setSearchText] = useState<string>('');
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [chartLoading, setChartLoading] = useState<boolean>(false);
@@ -93,7 +60,24 @@ const Alert: React.FC = () => {
   const [myAlarms, setMyAlarms] = useState<boolean>(true);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [metrics, setMetrics] = useState<MetricItem[]>([]);
-  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const getSettings = () => {
+    try {
+      return JSON.parse(localStorage.getItem('alarmSettings') || '{}');
+    } catch {
+      return {};
+    }
+  };
+
+  const saveSettings = (
+    settings: Partial<{ pageSize: number; showChart: boolean }>
+  ) => {
+    localStorage.setItem(
+      'alarmSettings',
+      JSON.stringify({ ...getSettings(), ...settings })
+    );
+  };
+
   const [pagination, setPagination] = useState<Pagination>(() => {
     const { pageSize } = getSettings();
     return {
@@ -102,17 +86,31 @@ const Alert: React.FC = () => {
       pageSize: pageSize || 20,
     };
   });
+
+  const tabList: TabItem[] = [
+    {
+      label: t('alarms.activeAlarms'),
+      key: 'activeAlarms',
+    },
+    {
+      label: t('alarms.historicalAlarms'),
+      key: 'historicalAlarms',
+    },
+  ]
+
   const timeDefaultValue =
     useRef<TimeSelectorDefaultValue>({
       selectValue: 10080,
       rangePickerVaule: null,
     })?.current || {};
+
   const [filters, setFilters] = useState<FiltersConfig>({
     level: [],
     state: [],
     notify: [],
     alarm_source: [],
   });
+
   const [showChart, setShowChart] = useState<boolean>(() => {
     const { showChart } = getSettings();
     return showChart !== undefined ? showChart : true;
@@ -122,115 +120,17 @@ const Alert: React.FC = () => {
     ? 'calc(100vh - 500px)'
     : 'calc(100vh - 400px)';
 
-  const columns: ColumnItem[] = [
-    {
-      title: t('monitor.events.level'),
-      dataIndex: 'level',
-      key: 'level',
-      width: 100,
-      render: (_, { level }) => (
-        <Tag icon={<AlertOutlined />} color={LEVEL_MAP[level] as string}>
-          {LEVEL_LIST.find((item) => item.value === level)?.label || '--'}
-        </Tag>
-      ),
-    },
-    {
-      title: t('common.time'),
-      dataIndex: 'updated_at',
-      key: 'updated_at',
-      width: 160,
-      sorter: (a: any, b: any) => a.id - b.id,
-      render: (_, { updated_at }) => (
-        <>{updated_at ? convertToLocalizedTime(updated_at) : '--'}</>
-      ),
-    },
-    {
-      title: t('monitor.events.alertName'),
-      dataIndex: 'content',
-      key: 'content',
-      width: 120,
-    },
-    {
-      title: t('monitor.events.source'),
-      dataIndex: 'source',
-      key: 'source',
-      width: 120,
-    },
-    {
-      title: t('monitor.events.state'),
-      dataIndex: 'status',
-      key: 'status',
-      width: 80,
-      render: (_, { status }) => (
-        <Tag color={status === 'new' ? 'blue' : 'var(--color-text-4)'}>
-          {STATE_MAP[status]}
-        </Tag>
-      ),
-    },
-    {
-      title: t('monitor.events.notify'),
-      dataIndex: 'notify',
-      key: 'notify',
-      width: 100,
-      render: (_, record) => (
-        <>
-          {t(
-            `monitor.events.${
-              record.policy?.notice ? 'notified' : 'unnotified'
-            }`
-          )}
-        </>
-      ),
-    },
-    {
-      title: t('common.operator'),
-      dataIndex: 'operator',
-      key: 'operator',
-      width: 100,
-      render: (_, { operator }) => {
-        return operator ? <UserAvatar userName={operator} /> : <>--</>;
-      },
-    },
-    {
-      title: t('common.action'),
-      key: 'action',
-      dataIndex: 'action',
-      width: 120,
-      fixed: 'right',
-      render: (_, record) => (
-        <>
-          <Button
-            className="mr-[10px]"
-            type="link"
-            onClick={() => openAlertDetail(record)}
-          >
-            {t('common.detail')}
-          </Button>
-          <Permission requiredPermissions={['Operate']}>
-            <Popconfirm
-              title={t('monitor.events.closeTitle')}
-              description={t('monitor.events.closeContent')}
-              okText={t('common.confirm')}
-              cancelText={t('common.cancel')}
-              okButtonProps={{ loading: confirmLoading }}
-              onConfirm={() => alertCloseConfirm(record.id)}
-            >
-              <Button type="link" disabled={record.status !== 'new'}>
-                {t('common.close')}
-              </Button>
-            </Popconfirm>
-          </Permission>
-        </>
-      ),
-    },
-  ];
+  const batchMenuItems: MenuProps['items'] = batchMenuKeys.map((key) => ({
+    key,
+    label: t(`alarms.${key}`),
+  }));
 
-  const batchMenuItems: MenuProps['items'] = [
-    { key: 'close', label: t('monitor.events.close') },
-    { key: 'assign', label: t('monitor.events.assign') },
-    { key: 'reassign', label: t('monitor.events.reassign') },
-    { key: 'acknowledge', label: t('monitor.events.acknowledge') },
-  ];
+  const isActiveAlarms = activeTab === 'activeAlarms';
+
+  const stateOptions = (isActiveAlarms ? baseStates : allStates).map((val) => ({
+    value: val,
+    label: t(`alarms.${val}`),
+  }));
 
   useEffect(() => {
     if (!frequency) {
@@ -300,19 +200,6 @@ const Alert: React.FC = () => {
   const getMetrics = async () => {
     const data: any = await getMonitorMetrics();
     setMetrics(data);
-  };
-
-  const alertCloseConfirm = async (id: string | number) => {
-    setConfirmLoading(true);
-    try {
-      await patchMonitorAlert(id, {
-        status: 'closed',
-      });
-      message.success(t('monitor.events.successfullyClosed'));
-      onRefresh();
-    } finally {
-      setConfirmLoading(false);
-    }
   };
 
   const clearTimer = () => {
@@ -435,23 +322,6 @@ const Alert: React.FC = () => {
     getChartData('refresh');
   };
 
-  const openAlertDetail = (row: TableDataItem) => {
-    const metricInfo =
-      metrics.find(
-        (item) => item.id === row.policy?.query_condition?.metric_id
-      ) || {};
-    detailRef.current?.showModal({
-      title: t('monitor.events.alertDetail'),
-      type: 'add',
-      form: {
-        ...row,
-        metric: metricInfo,
-        alertTitle: row.source,
-        alertValue: getEnumValueUnit(metricInfo as MetricItem, row.value),
-      },
-    });
-  };
-
   const onTimeChange = (val: number[]) => {
     setTimeRange(val);
   };
@@ -551,16 +421,17 @@ const Alert: React.FC = () => {
             filters={filters}
             onFilterChange={onFilterChange}
             clearFilters={clearFilters}
+            stateOptions={stateOptions}
           />
           <div className={alertStyle.alertContent}>
             <Spin spinning={chartLoading}>
               <div className={alertStyle.chartWrapper}>
                 <div className="flex items-center justify-between pb-[12px]">
                   <div className="flex items-center text-[14px] ml-[10px] relative">
-                    {t('monitor.events.distributionMap')}
+                    {t('alarms.distributionMap')}
                     <Tooltip
                       placement="top"
-                      title={t(`monitor.events.${activeTab}MapTips`)}
+                      title={t(`alarms.${activeTab}MapTips`)}
                     >
                       <div
                         className="cursor-pointer"
@@ -586,7 +457,7 @@ const Alert: React.FC = () => {
                   </div>
                   <TimeSelector
                     defaultValue={timeDefaultValue}
-                    onlyRefresh={activeTab === 'activeAlarms'}
+                    onlyRefresh={isActiveAlarms}
                     onChange={(value) => onTimeChange(value)}
                     onFrequenceChange={onFrequencyChange}
                     onRefresh={onRefresh}
@@ -603,7 +474,7 @@ const Alert: React.FC = () => {
               </div>
             </Spin>
             <div className={alertStyle.table}>
-              <Tabs activeKey={activeTab} items={tabs} onChange={changeTab} />
+              <Tabs activeKey={activeTab} items={tabList} onChange={changeTab} />
               <div className="flex items-center justify-between mb-[16px]">
                 <div className="flex items-center space-x-4">
                   <Input
@@ -614,56 +485,57 @@ const Alert: React.FC = () => {
                     onPressEnter={enterText}
                     onClear={clearText}
                   />
-                  <Checkbox
-                    className="ml-2"
-                    checked={myAlarms}
-                    onChange={(e) => {
-                      setMyAlarms(e.target.checked);
-                      onRefresh();
-                    }}
-                  >
-                    {t('monitor.events.myAlarms')}
-                  </Checkbox>
+                  {isActiveAlarms && (
+                    <Checkbox
+                      className="ml-2"
+                      checked={myAlarms}
+                      onChange={(e) => {
+                        setMyAlarms(e.target.checked);
+                        onRefresh();
+                      }}
+                    >
+                      {t('alarms.myAlarms')}
+                    </Checkbox>
+                  )}
                   <span className="text-sm text-[var(--color-text-2)] ml-[10px]">
                     {`共检索出 ${pagination.total} 条结果，共选中 ${selectedRowKeys.length} 条告警`}
                   </span>
                 </div>
-                <Dropdown
-                  menu={{ items: batchMenuItems }}
-                  trigger={['click']}
-                  placement="bottomRight"
-                  arrow
-                  overlayClassName={alertStyle.batchDropdown}
-                >
-                  <Button type="primary">
-                    {t('monitor.events.batchOperations')}
-                    <DownOutlined />
-                  </Button>
-                </Dropdown>
+
+                {isActiveAlarms && (
+                  <div className="flex items-center space-x-4">
+                    <Dropdown
+                      menu={{ items: batchMenuItems }}
+                      trigger={['click']}
+                      placement="bottomRight"
+                      arrow
+                      overlayClassName={alertStyle.batchDropdown}
+                    >
+                      <Button>
+                        {t('alarms.batchOperations')}
+                        <DownOutlined />
+                      </Button>
+                    </Dropdown>
+                    <Button color="danger" variant="solid">
+                      {t('alarms.declareIncident')}
+                    </Button>
+                  </div>
+                )}
               </div>
-              <CustomTable
-                scroll={{ y: tableScrollY, x: 'calc(100vw - 320px)' }}
-                columns={columns}
+              <AlarmTable
                 dataSource={tableData}
                 pagination={pagination}
+                metrics={metrics}
                 loading={tableLoading}
-                rowKey="id"
+                tableScrollY={tableScrollY}
+                selectedRowKeys={selectedRowKeys}
+                onSelectionChange={setSelectedRowKeys}
                 onChange={handleTableChange}
-                rowSelection={{
-                  selectedRowKeys,
-                  onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
-                }}
               />
             </div>
           </div>
         </div>
       </Spin>
-      <AlertDetail
-        ref={detailRef}
-        metrics={metrics}
-        userList={userList}
-        onSuccess={() => getAlarmTableData('refresh')}
-      />
     </div>
   );
 };

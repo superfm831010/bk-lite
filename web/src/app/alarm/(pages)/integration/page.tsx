@@ -2,55 +2,61 @@
 
 import React, { useState, useEffect } from 'react';
 import alertStyle from './page.module.scss';
-import dayjs from 'dayjs';
 import { useSourceApi } from '@/app/alarm/api/sources';
-
-
-const logoMap: Record<string, string> = {
-  monitor: 'data:image/png;base64,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',
-  log: 'http://paas.weops.com/o/weops_saas/static/dist/weOps/img/REST_API_PUSH.ab0500e..png',
-};
+import { Spin, Empty } from 'antd';
+import { useTranslation } from '@/utils/i18n';
 
 const IntegrationPage: React.FC = () => {
   const { getAlertSources } = useSourceApi();
   const [sources, setSources] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
-    getSourcesList()
+    getSourcesList();
   }, []);
 
   const getSourcesList = async () => {
+    setLoading(true);
     try {
       const res = await getAlertSources();
-      console.log('Alert sources:', res);
       if (res) {
         setSources(res);
-      } 
+      }
     } catch (error) {
-      console.error('Error fetching alert sources:', error);
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className={alertStyle.container}>
-      {sources.map((src) => (
-        <div key={src.source_id} className={alertStyle.card}>
-          <div className={alertStyle.cardContent}>
-            <img
-              src={logoMap[src.source_id] || ''}
-              alt={src.description}
-              className={alertStyle.logo}
-            />
-            <span className={alertStyle.name}>{src.name}</span>
-            <span className={alertStyle.info}>描述：{src.description}</span>
-            <span className={alertStyle.info}>
-              最后接收时间：{src.updated_at
-                ? dayjs(src.updated_at).format('YYYY-MM-DD HH:mm:ss')
-                : '--'}
-            </span>
+    <div className="w-full flex-1">
+      <Spin spinning={loading}>
+        {!loading && sources.length === 0 ? (
+          <Empty description={t('common.noData')} className="mt-[24vh]" />
+        ) : (
+          <div
+            className={`${alertStyle.container} grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-6`}
+          >
+            {sources.map((src) => (
+              <div key={src.source_id} className={alertStyle.card}>
+                <div className={alertStyle.cardContent}>
+                  <img
+                    src="/app/restful.png"
+                    alt={src.description}
+                    className={alertStyle.logo}
+                  />
+                  <span className={alertStyle.name}>{src.name}</span>
+                  <span className={alertStyle.info}>
+                    {t('integration.description')}：{src.description}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-      ))}
+        )}
+      </Spin>
     </div>
   );
 };

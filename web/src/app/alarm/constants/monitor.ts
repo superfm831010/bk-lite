@@ -7,12 +7,12 @@ const useStateMap = (): StateMap => {
   const { t } = useTranslation();
   return useMemo(
     () => ({
-      new: t('monitor.events.new'),
-      recovered: t('monitor.events.recovery'),
-      closed: t('monitor.events.closed'),
-      pending: t('monitor.events.pending'),
-      processing: t('monitor.events.processing'),
-      unassigned: t('monitor.events.unassigned'),
+      new: t('alarms.new'),
+      recovered: t('alarms.recovered'),
+      closed: t('alarms.closed'),
+      pending: t('alarms.pending'),
+      processing: t('alarms.processing'),
+      unassigned: t('alarms.unassigned'),
     }),
     [t]
   );
@@ -22,9 +22,9 @@ const useLevelList = (): ListItem[] => {
   const { t } = useTranslation();
   return useMemo(
     () => [
-      { label: t('monitor.events.critical'), value: 'critical' },
-      { label: t('monitor.events.error'), value: 'error' },
-      { label: t('monitor.events.warning'), value: 'warning' },
+      { label: t('alarms.critical'), value: 'critical' },
+      { label: t('alarms.error'), value: 'error' },
+      { label: t('alarms.warning'), value: 'warning' },
     ],
     [t]
   );
