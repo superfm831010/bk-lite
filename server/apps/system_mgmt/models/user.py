@@ -11,6 +11,7 @@ class User(models.Model):
     timezone = models.CharField(max_length=32, default="Asia/Shanghai")
     group_list = models.JSONField(default=list)
     role_list = models.JSONField(default=list)
+    temporary_pwd = models.BooleanField(default=False)
 
     @staticmethod
     def display_fields():

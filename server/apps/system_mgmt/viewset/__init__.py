@@ -1,3 +1,4 @@
+from .app_viewset import AppViewSet  # noqa
 from .channel_viewset import ChannelViewSet  # noqa
 from .group_data_rule_viewset import GroupDataRuleViewSet  # noqa
 from .group_viewset import GroupViewSet  # noqa
