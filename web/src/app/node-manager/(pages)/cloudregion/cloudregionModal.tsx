@@ -1,14 +1,11 @@
 import React, {
   forwardRef,
   useEffect,
-  // useEffect,
   useImperativeHandle,
   useRef,
   useState,
 } from 'react';
-
-import { Form, Input, FormInstance, message } from 'antd';
-// import useApiClient from '@/utils/request';
+import { Form, Button, Input, message, Popconfirm, FormInstance } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import {
   ModalRef,
@@ -21,40 +18,66 @@ import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 const CloudRegionModal = forwardRef<ModalRef, ModalSuccess>(
   ({ onSuccess }, ref) => {
     const { t } = useTranslation();
-    // const { isLoading } = useApiClient();
-    const { updateCloudIntro } = useApiCloudRegion();
+    const { updateCloudIntro, createCloudRegion, deleteCloudRegion } = useApiCloudRegion();
     const cloudRegionFormRef = useRef<FormInstance>(null);
     const [openEditCloudRegion, setOpenEditCloudRegion] = useState(false);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [title, setTitle] = useState<string>('editform');
-    const [formData, setFormData] = useState<TableDataItem>();
+    const [type, setType] = useState<string>('edit');
+    const [formData, setFormData] = useState<TableDataItem>({
+      name: '',
+      introduction: ''
+    });
+    const Popconfirmarr = ['delete'];
 
     useImperativeHandle(ref, () => ({
       showModal: ({ type, title, form }) => {
         setTitle(title as string);
+        setType(type as string);
         setOpenEditCloudRegion(true);
-        if (type === 'edit') {
-          setFormData(form);
+        if (['edit', 'delete'].includes(type)) {
+          setFormData(form as TableDataItem);
         }
       }
     }));
 
     useEffect(() => {
       cloudRegionFormRef.current?.resetFields();
-      cloudRegionFormRef.current?.setFieldsValue(formData);
-      console.log(formData);
-    }, [cloudRegionFormRef, formData])
+      cloudRegionFormRef.current?.setFieldsValue({
+        cloudRegion: formData,
+      });
+    }, [formData, openEditCloudRegion]);
 
     const handleFormOkClick = async () => {
       setConfirmLoading(true);
       try {
+        await cloudRegionFormRef.current?.validateFields();
         const { cloudRegion } = cloudRegionFormRef.current?.getFieldsValue();
-        await updateCloudIntro(cloudRegion.id, {
-          introduction: cloudRegion.introduction,
-        });
-        message.success(t('common.updateSuccess'));
+        if (type === 'edit') {
+          const params = {
+            name: cloudRegion.name,
+            introduction: cloudRegion.introduction,
+          };
+          await updateCloudIntro(cloudRegion.id, params);
+          message.success(t('common.updateSuccess'));
+        } else if (type === 'add') {
+          const { name, introduction } = cloudRegion;
+          await createCloudRegion({
+            name,
+            introduction
+          });
+          message.success(t('common.addSuccess'));
+        } else {
+          const { id } = cloudRegion;
+          await deleteCloudRegion(id);
+          message.success(t('common.deleteSuccess'));
+        }
         onSuccess();
         setOpenEditCloudRegion(false);
+        setFormData({
+          name: '',
+          introduction: ''
+        });
       } finally {
         setConfirmLoading(false);
       }
@@ -62,7 +85,7 @@ const CloudRegionModal = forwardRef<ModalRef, ModalSuccess>(
 
     const handleCancel = () => {
       setOpenEditCloudRegion(false);
-      cloudRegionFormRef.current?.resetFields();
+      setFormData({ name: '', introduction: '' });
       setConfirmLoading(false);
     };
 
@@ -73,22 +96,62 @@ const CloudRegionModal = forwardRef<ModalRef, ModalSuccess>(
           open={openEditCloudRegion}
           okText={t('common.confirm')}
           cancelText={t('common.cancel')}
-          confirmLoading={confirmLoading}
           onCancel={handleCancel}
-          onOk={handleFormOkClick}
+          footer={
+            <div>
+              {Popconfirmarr.includes(type) ? (
+                <Popconfirm
+                  title={t(`common.delete`)}
+                  description={t(`node-manager.cloudregion.deleteform.deleteInfo`)}
+                  okText={t('common.confirm')}
+                  cancelText={t('common.cancel')}
+                  onConfirm={handleFormOkClick}
+                >
+                  <Button
+                    className="mr-[10px]"
+                    type="primary"
+                    loading={confirmLoading}
+                    danger
+                  >
+                    {t('common.delete')}
+                  </Button>
+                </Popconfirm>
+              ) : (
+                <Button
+                  type="primary"
+                  className="mr-[10px]"
+                  disabled={formData.name === 'default'}
+                  loading={confirmLoading}
+                  onClick={handleFormOkClick}
+                >
+                  {t('common.confirm')}
+                </Button>
+              )}
+              <Button onClick={handleCancel}>{t('common.cancel')}</Button>
+            </div>
+          }
         >
           <Form layout="vertical" ref={cloudRegionFormRef} name="nest-messages">
             <Form.Item name={['cloudRegion', 'id']} hidden>
               <Input />
             </Form.Item>
-            <Form.Item name={['cloudRegion', 'name']} label={t('common.name')}>
-              <Input disabled placeholder={t('common.inputMsg')} />
+            <Form.Item
+              name={['cloudRegion', 'name']}
+              label={t('common.name')}
+              rules={[
+                { required: true, message: t('common.inputRequired') },
+              ]}
+            >
+              <Input disabled={formData?.name === 'default' || type === 'delete'} placeholder={t('common.inputMsg')} />
             </Form.Item>
             <Form.Item
               name={['cloudRegion', 'introduction']}
               label={t('node-manager.cloudregion.editform.Introduction')}
+              rules={[
+                { required: true, message: t('common.inputRequired') },
+              ]}
             >
-              <Input.TextArea rows={5} placeholder={t('common.inputMsg')} />
+              <Input.TextArea disabled={formData?.name === 'default' || type === 'delete'} rows={5} placeholder={t('common.inputMsg')} />
             </Form.Item>
           </Form>
         </OperateModal>

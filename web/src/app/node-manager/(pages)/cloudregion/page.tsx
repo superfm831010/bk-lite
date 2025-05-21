@@ -1,8 +1,7 @@
 'use client';
-import React, { useEffect, useRef, useState } from 'react';
-import { FormInstance } from 'antd';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import useApiClient from '@/utils/request';
-import { Menu } from 'antd';
+import { Menu, Button } from 'antd';
 import cloudRegionStyle from './index.module.scss';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
@@ -15,20 +14,18 @@ import type {
 } from '@/app/node-manager/types/cloudregion';
 import CloudRegionModal from './cloudregionModal';
 import { ModalRef } from '@/app/node-manager/types';
+import { useMenuItem } from '@/app/node-manager/constants/cloudregion';
 
 const CloudRegion = () => {
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
   const { getCloudList } = useApiCloudRegion();
   const router = useRouter();
-  const cloudRegionFormRef = useRef<FormInstance>(null);
   const modalRef = useRef<ModalRef>(null);
   const divRef = useRef(null);
-  const [selectedRegion, setSelectedRegion] =
-    useState<CloudRegionCardProps | null>(null);
-  const [openEditCloudRegion, setOpenEditCloudRegion] = useState(false);
   const [cloudItems, setCloudItems] = useState<CloudRegionItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const menuItem = useMenuItem();
 
   // 获取相关的接口
   const fetchCloudRegions = async () => {
@@ -52,27 +49,9 @@ const CloudRegion = () => {
     }
   }, [isLoading]);
 
-  useEffect(() => {
-    if (openEditCloudRegion && selectedRegion) {
-      cloudRegionFormRef.current?.setFieldsValue({
-        cloudRegion: selectedRegion,
-      });
-    }
-  }, [openEditCloudRegion, selectedRegion]);
-
-  const handleEdit = (row: any) => {
-    openModal({
-      title: 'editform',
-      type: 'edit',
-      form: row
-    })
-    setSelectedRegion(row);
-    setOpenEditCloudRegion(true);
-  };
-
   const navigateToNode = (item: CloudRegionItem) => {
     router.push(
-      `/node-manager/cloudregion/node?cloud_region_id=1&name=${item.name}`
+      `/node-manager/cloudregion/node?cloud_region_id=${item.id}&name=${item.name}`
     );
   };
 
@@ -84,9 +63,40 @@ const CloudRegion = () => {
     });
   };
 
-  const handleSumbit = () => {
+  const handleSubmit = () => {
     fetchCloudRegions();
-  }
+  };
+
+  const menuActions = useCallback(
+    (data: any) => {
+      return (
+        <Menu onClick={(e) => e.domEvent.preventDefault()}>
+          {menuItem.map((item) => {
+            if(data?.name === "default" && item.key === "delete") return;
+            return (
+              <Menu.Item
+                key={item.title}
+                className="!p-0"
+                onClick={() =>
+                  openModal({ ...item.config, form: data})
+                }
+              >
+                <PermissionWrapper
+                  requiredPermissions={[item.role]}
+                  className="!block"
+                >
+                  <Button type="text" className="w-full">
+                    {t(`common.${item.title}`)}
+                  </Button>
+                </PermissionWrapper>
+              </Menu.Item>
+            );
+          })}
+        </Menu>
+      );
+    },
+    [menuItem]
+  );
 
   return (
     <div
@@ -96,24 +106,14 @@ const CloudRegion = () => {
       <EntityList
         data={cloudItems}
         loading={loading}
-        menuActions={(row) => {
-          return (
-            <Menu>
-              <PermissionWrapper requiredPermissions={['Edit']}>
-                <Menu.Item key="edit" onClick={() => handleEdit(row)}>
-                  {t('common.edit')}
-                </Menu.Item>
-              </PermissionWrapper>
-            </Menu>
-          );
-        }}
-        openModal={() => {}}
+        menuActions={menuActions}
+        openModal={() => openModal({ title: 'addform', type: 'add', form: {} })}
         onCardClick={(item: CloudRegionItem) => {
           navigateToNode(item);
         }}
       ></EntityList>
       {/* 编辑默认云区域弹窗 */}
-      <CloudRegionModal ref={modalRef} onSuccess={handleSumbit} />
+      <CloudRegionModal ref={modalRef} onSuccess={handleSubmit} />
     </div>
   );
 };
