@@ -25,6 +25,7 @@ const EntityList = <T,>({
   onCardClick,
   changeFilter,
   infoText,
+  nameField = 'name',
 }: EntityListProps<T>) => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,11 +45,12 @@ const EntityList = <T,>({
   };
 
   const filteredItems = useMemo(() => {
-    return data.filter((item) => (item as any).name?.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [data, searchTerm]);
+    return data.filter((item) => (item as any)[nameField]?.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [data, searchTerm, nameField]);
 
   const renderCard = useCallback((item: T) => {
-    const { id, name, description, icon, tagList } = item as any;
+    const { id, description, icon, tagList } = item as any;
+    const name = (item as any)[nameField];
     const singleButtonAction = singleAction ? singleAction(item) : null;
     const isSingleButtonAction = singleButtonAction && singleActionType === 'button';
     const isSingleIconAction = singleActionType === 'icon' && singleButtonAction;
@@ -121,7 +123,7 @@ const EntityList = <T,>({
         )}
       </div>
     );
-  }, [hoveredCard]);
+  }, [hoveredCard, nameField]);
 
   return (
     <div className="w-full h-full">

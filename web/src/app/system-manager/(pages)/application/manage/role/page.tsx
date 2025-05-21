@@ -208,16 +208,16 @@ const RoleManagement: React.FC = () => {
       title: t('common.actions'),
       key: 'actions',
       render: (_: any, record: User) => (
-        <Popconfirm
-          title={t('common.delConfirm')}
-          okText={t('common.confirm')}
-          cancelText={t('common.cancel')}
-          onConfirm={() => handleDeleteUser(record)}
-        >
-          <PermissionWrapper requiredPermissions={['Delete']}>
+        <PermissionWrapper requiredPermissions={['Delete']}>
+          <Popconfirm
+            title={t('common.delConfirm')}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => handleDeleteUser(record)}
+          >
             <Button type="link">{t('common.delete')}</Button>
-          </PermissionWrapper>
-        </Popconfirm>
+          </Popconfirm>
+        </PermissionWrapper>
       ),
     },
   ];
