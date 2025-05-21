@@ -17,7 +17,7 @@ class MonitorObjectService:
     @staticmethod
     def get_instances_by_metric(metric: str, instance_id_keys: list):
         """获取监控对象实例"""
-        metrics = VictoriaMetricsAPI().query(metric)
+        metrics = VictoriaMetricsAPI().query(metric, "24h")
         instance_map = {}
         for metric_info in metrics.get("data", {}).get("result", []):
             instance_id = str(tuple([metric_info["metric"].get(i) for i in instance_id_keys]))
