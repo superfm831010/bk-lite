@@ -29,7 +29,7 @@ class RoleViewSet(ViewSetUtils):
         client_list = request.data.get("client_list", [])
         return_data = []
         client_ids = [i["name"] for i in client_list]
-        roles = Role.objects.filter(app__in=client_ids).values("id", "name", "app")
+        roles = Role.objects.filter(app__in=client_ids).values("id", "name", "app").order_by("id")
         role_map = {}
         for i in roles:
             role_map.setdefault(i["app"], []).append(
