@@ -2,7 +2,7 @@ from typing import Literal, Union, Any
 
 from langgraph.constants import END
 from langgraph.graph import StateGraph
-from loguru import logger
+from sanic.log import logger
 
 from src.agent.lats_agent.lats_agent_node import LatsAgentNode
 from src.agent.lats_agent.lats_agent_state import LatsAgentState

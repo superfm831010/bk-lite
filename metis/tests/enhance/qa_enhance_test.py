@@ -1,6 +1,8 @@
 import os
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.enhance.qa_enhance import QAEnhance
 from src.entity.rag.enhance.qa_enhance_request import QAEnhanceRequest

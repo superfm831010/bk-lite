@@ -1,5 +1,7 @@
 from langchain_core.documents import Document
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.rerank.rerank_manager import ReRankManager
 

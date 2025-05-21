@@ -1,6 +1,8 @@
 import os
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 from src.tools.http_request_tools import http_get, http_post, http_put, http_delete
 
 

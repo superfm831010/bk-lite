@@ -10,18 +10,11 @@ SIDECAR_STATUS_ENUM = {
     NOT_INSTALLED: "未安装",
 }
 
-# 本服务的地址
-LOCAL_HOST = os.getenv("WEB_SERVER_URL")
-
 # 节点服务地址key
 NODE_SERVER_URL_KEY = "NODE_SERVER_URL"
 
 LINUX_OS = "linux"
 WINDOWS_OS = "windows"
-
-W_SIDECAR_DOWNLOAD_URL = f"{LOCAL_HOST}/openapi/sidecar/download_file/?file_name=sidecar_windows.zip"
-L_SIDECAR_DOWNLOAD_URL = f"{LOCAL_HOST}/openapi/sidecar/download_file/?file_name=sidecar_linux.tar.gz"
-L_INSTALL_DOWNLOAD_URL = f"{LOCAL_HOST}/openapi/sidecar/download_file/?file_name=install_sidecar.sh"
 
 # 控制器下发目录
 CONTROLLER_INSTALL_DIR = {
@@ -37,7 +30,7 @@ COLLECTOR_INSTALL_DIR = {
 
 # 设置权限并运行命令
 RUN_COMMAND = {
-    LINUX_OS: "chmod -R +x /opt/fusion-collectors && cd /opt/fusion-collectors && ./install.sh {server_url}/node_mgmt/open_api/node {server_token}",
+    LINUX_OS: "chmod -R +x /opt/fusion-collectors && cd /opt/fusion-collectors && ./install.sh {server_url}/node_mgmt/open_api/node {server_token} {cloud} {group}",
     WINDOWS_OS: "powershell -command \"cd C:\\gse\\fusion-collectors && .\\install.ps1 {server_url} {server_token}\"",
 }
 

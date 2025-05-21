@@ -1,5 +1,5 @@
 from langchain_openai import OpenAIEmbeddings
-from loguru import logger
+from sanic.log import logger
 
 
 class EmbedBuilder:

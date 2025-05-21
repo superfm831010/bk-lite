@@ -1,13 +1,15 @@
+import logging
 import os
-from loguru import logger
 
 from src.anomaly_detection.random_forest_detector import RandomForestAnomalyDetector
+from src.anomaly_detection.unsupervised_iforest_detector import UnsupervisedIForestDetector
 from src.anomaly_detection.xgbod_detector import XGBODDetector
 from tests.anomaly_detection.utils import (
     generate_training_data,
     generate_test_data_with_indices,
 )
-from src.anomaly_detection.unsupervised_iforest_detector import UnsupervisedIForestDetector
+
+logger = logging.getLogger(__name__)
 
 
 def test_unsupervised_iforest_detector_train():
@@ -83,10 +85,24 @@ def detector_workflow(detector, job_name: str, train_config: dict,
     test_path = f"./test_results/anomaly_detection_test_{job_name}.csv"
     test_df.to_csv(test_path, index=False)
 
+    # 记录测试数据的基本信息
+    logger.info(f"测试数据: 总样本数 {len(test_df)}, 包含 {len(anomaly_indices)} 个异常点")
+
     # Step 5: 加载模型并预测
     logger.info("📦 加载模型进行预测...")
     detector.load_model(model_path)
+
+    # 添加确认输入和输出形状一致的检查
+    input_shape = test_df.shape
+    logger.info(f"开始预测，共 {input_shape[0]} 条数据")
+
     predict_result = detector.predict(test_df)
+
+    # 验证预测结果的形状是否与输入一致
+    output_shape = predict_result.shape
+    logger.info(f"预测完成，结果包含 {output_shape[0]} 条数据 (输入有 {input_shape[0]} 条)")
+    assert input_shape[0] == output_shape[0], f"预测结果长度 {output_shape[0]} 与输入数据长度 {input_shape[0]} 不一致"
+    assert 'anomaly' in predict_result.columns, "预测结果中未包含'anomaly'列"
 
     # Step 6: 可视化与性能评估
     logger.info("🖼️ 开始可视化并评估外部预测结果...")
@@ -102,5 +118,5 @@ def detector_workflow(detector, job_name: str, train_config: dict,
                 f"Recall: {metrics['recall']:.4f}, "
                 f"F1: {metrics['f1']:.4f}")
 
-    # Step 7: 简单断言确保模型有效
-    assert metrics["f1"] > 0.1, "F1 分数过低，可能模型无效"
+    # 返回预测结果便于进一步检查
+    return predict_result

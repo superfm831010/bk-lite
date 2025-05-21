@@ -425,7 +425,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     switch (collectType) {
       case 'host':
         form.setFieldsValue({
-          metric_type: configTypes,
+          metric_type: configTypes.filter((item: string) => item !== 'gpu'),
         });
         break;
       case 'ipmi':
@@ -541,31 +541,25 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   };
 
   const getInstId = (row: IntergrationMonitoredObject) => {
+    const target: any = nodeList.find((item) => row.node_ids === item.id);
+    if (['snmp', 'ipmi'].includes(collectType)) {
+      return objectName + '-' + (row.ip || '');
+    }
     switch (collectType) {
       case 'host':
-        const hostTarget: any = nodeList.find(
-          (item) => row.node_ids === item.id
-        );
-        return hostTarget?.ip + '-' + hostTarget?.cloud_region;
+        return target?.ip + '-' + target?.cloud_region;
       case 'trap':
-        const target: any = nodeList.find((item) => row.node_ids === item.id);
         return 'trap' + target?.ip + '-' + target?.cloud_region;
-      case 'web':
-        return row.url;
-      case 'ping':
-        return row.url;
-      case 'middleware':
-        return row.url;
-      case 'jmx':
-        return row.jmx_url;
       case 'docker':
         return row.endpoint;
       case 'database':
         return row.server || `${row.host}:${row.port}`;
       case 'http':
         return `vc-${row.host}`;
+      case 'jmx':
+        return row.jmx_url;
       default:
-        return objectName + '-' + (row.ip || '');
+        return row.url;
     }
   };
 

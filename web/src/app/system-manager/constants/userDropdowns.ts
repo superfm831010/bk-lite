@@ -32,5 +32,5 @@ export const ZONEINFO_OPTIONS = [
 
 export const LOCALE_OPTIONS = [
   { value: 'en', label: 'system.common.english' },
-  { value: 'zh-CN', label: 'system.common.chinese' }
+  { value: 'zh-Hans', label: 'system.common.chinese' }
 ];

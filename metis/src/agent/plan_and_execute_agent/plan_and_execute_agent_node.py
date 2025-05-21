@@ -5,7 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableConfig
 from langgraph.constants import END
 from langgraph.prebuilt import create_react_agent
-from loguru import logger
+from sanic.log import logger
 from pydantic import BaseModel, Field
 
 from src.agent.plan_and_execute_agent.plan_and_execute_agent_state import PlanAndExecuteAgentState

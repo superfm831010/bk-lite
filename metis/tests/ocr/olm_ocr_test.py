@@ -1,7 +1,9 @@
 import os
 
 from dotenv import load_dotenv
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.ocr.olm_ocr import OlmOcr
 

@@ -10,6 +10,7 @@ import {
   getEnumColor,
   getK8SData,
   getConfigByPluginName,
+  getConfigByObjectName,
 } from '@/app/monitor/utils/common';
 import { useRouter } from 'next/navigation';
 import {
@@ -28,7 +29,6 @@ import {
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import { INDEX_CONFIG } from '@/app/monitor/constants/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import Permission from '@/components/permission';
 import { ListItem } from '@/types';
@@ -253,9 +253,10 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       setMetrics(res[1] || []);
       const _objectName = objects.find((item) => item.id === objectId)?.name;
       if (_objectName) {
-        const filterMetrics =
-          INDEX_CONFIG.find((item) => item.name === _objectName)
-            ?.tableDiaplay || [];
+        const filterMetrics = getConfigByObjectName(
+          _objectName,
+          'tableDiaplay'
+        );
         const _columns = filterMetrics.map((item: any) => {
           const target = (res[1] || []).find(
             (tex: MetricItem) => tex.name === item.key

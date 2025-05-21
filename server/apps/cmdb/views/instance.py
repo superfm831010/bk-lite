@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 
 from apps.cmdb.services.instance import InstanceManage
 from apps.core.utils.web_utils import WebUtils
+from apps.rpc.node_mgmt import NodeMgmt
 from config.components.drf import AUTH_TOKEN_HEADER_NAME
 
 
@@ -385,5 +386,7 @@ class InstanceViewSet(viewsets.ViewSet):
         查询云区域数据
         TODO 等节点管理开放接口后再对接接口
         """
-        data = [{"proxy_id": 1, "proxy_name": "default"}]
-        return WebUtils.response_success(data)
+        node_mgmt = NodeMgmt()
+        data = node_mgmt.cloud_region_list()
+        _data = [{"proxy_id": i['id'], "proxy_name": i['name']} for i in data]
+        return WebUtils.response_success(_data)
