@@ -34,19 +34,23 @@ def verify_token(token, client_id):
     user = User.objects.filter(id=user_info["user_id"]).first()
     if not user:
         return {"result": False, "message": _("User not found")}
-    role_list = list(
-        Role.objects.filter(id__in=user.role_list).filter(Q(app=client_id) | Q(app="")).values_list("name", flat=True)
-    )
-
-    is_superuser = "admin" in role_list
-    groups = cache.get(f"group_{user.username}")
-    if not groups:
-        group_list = Group.objects.all()
+    role_list = Role.objects.filter(id__in=user.role_list).filter(Q(app=client_id) | Q(app=""))
+    role_names = list(role_list.values_list("name", flat=True))
+    is_superuser = "admin" in role_names
+    group_list = Group.objects.all()
+    if not is_superuser:
+        group_list = group_list.filter(id__in=user.group_list)
+    # groups = GroupUtils.build_group_tree(group_list)
+    groups = list(group_list.values("id", "name", "parent_id"))
+    menus = cache.get(f"menus-user:{user.id}-app:{client_id}")
+    if not menus:
         if not is_superuser:
-            group_list = group_list.filter(id__in=user.group_list)
-        # groups = GroupUtils.build_group_tree(group_list)
-        groups = list(group_list.values("id", "name", "parent_id"))
-        cache.set(f"group_{user.username}", groups, 60)
+            menu_list = role_list.values_list("menu_list", flat=True)
+            menu_ids = []
+            for i in menu_list:
+                menu_ids.extend(i)
+            menus = list(Menu.objects.filter(app=client_id, id__in=list(set(menu_ids))).values_list("name", flat=True))
+        cache.set(f"menus-user:{user.id}-app:{client_id}", menus, 60 * 30)
     return {
         "result": True,
         "data": {
@@ -54,8 +58,9 @@ def verify_token(token, client_id):
             "email": user.email,
             "is_superuser": is_superuser,
             "group_list": groups,
-            "roles": role_list,
+            "roles": role_names,
             "locale": user.locale,
+            "permission": menus,
         },
     }
 

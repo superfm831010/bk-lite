@@ -40,3 +40,24 @@ class HasRole(object):
             return WebUtils.response_403(_("insufficient permissions"))
 
         return wrapper
+
+
+class HasPermission(object):
+    def __init__(self, permission=""):
+        self.permission = set(permission.split(","))
+
+    def __call__(self, task_definition):
+        @wraps(task_definition)
+        def wrapper(*args, **kwargs):
+            request = args[0]
+            if isinstance(request, View):
+                request = args[1]
+            if getattr(request, "api_pass", False):
+                return task_definition(*args, **kwargs)
+            if request.user.is_superuser:
+                return task_definition(*args, **kwargs)
+            if self.permission & request.user.permission:
+                return task_definition(*args, **kwargs)
+            return WebUtils.response_403(_("insufficient permissions"))
+
+        return wrapper
