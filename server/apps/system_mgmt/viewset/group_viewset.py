@@ -44,10 +44,39 @@ class GroupViewSet(ViewSetUtils):
     @action(detail=False, methods=["POST"])
     def delete_groups(self, request):
         kwargs = request.data
-        users = User.objects.filter(group_list__contains=int(kwargs["id"]))
+        group_id = int(kwargs["id"])
+
+        # 一次性获取所有组
+        all_groups = Group.objects.all().values("id", "parent_id")
+
+        # 构建父子关系映射
+        child_map = {}
+        for group in all_groups:
+            parent_id = group["parent_id"]
+            if parent_id not in child_map:
+                child_map[parent_id] = []
+            child_map[parent_id].append(group["id"])
+
+        # 收集所有需要删除的组ID(当前组及其所有子组)
+        groups_to_delete = []
+
+        def collect_groups_to_delete(parent_id):
+            groups_to_delete.append(parent_id)
+            # 查找所有子组(从内存映射中)
+            if parent_id in child_map:
+                for child_id in child_map[parent_id]:
+                    collect_groups_to_delete(child_id)
+
+        # 开始收集
+        collect_groups_to_delete(group_id)
+
+        # 一次性检查这些组中是否有用户
+        users = User.objects.filter(group_list__overlap=groups_to_delete).exists()
         if users:
             return JsonResponse(
                 {"result": False, "message": _("This group or sub groups has users, please remove the users first!")}
             )
-        Group.objects.filter(id=int(kwargs["id"])).delete()
+
+        # 删除所有收集到的组
+        Group.objects.filter(id__in=groups_to_delete).delete()
         return JsonResponse({"result": True})
