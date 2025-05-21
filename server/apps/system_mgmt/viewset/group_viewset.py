@@ -46,6 +46,8 @@ class GroupViewSet(ViewSetUtils):
         kwargs = request.data
         users = User.objects.filter(group_list__contains=int(kwargs["id"]))
         if users:
-            raise Exception(_("This group or sub groups has users, please remove the users first!"))
+            return JsonResponse(
+                {"result": False, "message": _("This group or sub groups has users, please remove the users first!")}
+            )
         Group.objects.filter(id=int(kwargs["id"])).delete()
         return JsonResponse({"result": True})
