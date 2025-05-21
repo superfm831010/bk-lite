@@ -35,18 +35,18 @@ export interface IconFontData {
   glyphs: IconGlyph[];
 }
 
-export interface ApplicationFormData {
-  name: string;
-  display_name: string;
-  description: string;
-  url: string;
-  icon?: string | null;
-  tags?: string[];
-}
-
 export interface ApplicationFormModalProps {
   visible: boolean;
-  initialData?: ApplicationFormData;
+  initialData: {
+    id: number;
+    name: string;
+    display_name: string;
+    description: string;
+    url: string;
+    icon: string | null;
+    tags: string[];
+    is_build_in: boolean;
+  } | null;
   isEdit?: boolean;
   onClose: () => void;
   onSuccess: () => void;

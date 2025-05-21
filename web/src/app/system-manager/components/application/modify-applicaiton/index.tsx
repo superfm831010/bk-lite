@@ -31,6 +31,7 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
   const [filteredIcons, setFilteredIcons] = useState<IconGlyph[]>([]);
   const iconSelectorRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<InputRef>(null);
+  const isBuiltIn = initialData?.is_build_in;
 
   useEffect(() => {
     const loadIconData = async () => {
@@ -105,12 +106,9 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
     try {
       const values = await form.validateFields();
       setLoading(true);
-
-      if (!isEdit) {
-        // Implementation for checking if ID exists would go here
-      }
-
-      const applicationData = {
+      const applicationData = isBuiltIn ? {
+        url: values.url
+      } : {
         name: values.name,
         display_name: values.display_name,
         description: values.description,
@@ -120,11 +118,11 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
       };
 
       if (isEdit && initialData?.name) {
-        await updateApplication({...applicationData, id: initialData.name});
+        await updateApplication({...applicationData, id: initialData.id});
         message.success(t('common.updateSuccess'));
       } else {
         await addApplication(applicationData);
-        message.success(t('common.createSuccess'));
+        message.success(t('common.saveSuccess'));
       }
 
       onSuccess();
@@ -209,6 +207,7 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
           <Button 
             onClick={toggleIconSelector}
             className="flex items-center justify-center text-left w-14 h-14 px-4 py-1"
+            disabled={isBuiltIn}
           >
             {selectedIcon ? (
               <div className="flex items-center">
@@ -219,7 +218,7 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
             )}
           </Button>
           
-          {iconSelectorVisible && (
+          {iconSelectorVisible && !isBuiltIn && (
             <div 
               ref={iconSelectorRef}
               className="absolute z-50 left-0 right-0 mt-10 bg-white border border-gray-200 rounded-md shadow-lg p-4 max-h-[300px] overflow-y-auto"
@@ -270,7 +269,7 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
           ]}
           tooltip={t('system.application.idTooltip')}
         >
-          <Input placeholder={`${t('common.inputMsg')}${t('system.application.id')}`} disabled={isEdit} />
+          <Input placeholder={`${t('common.inputMsg')}${t('system.application.id')}`} disabled={isEdit || isBuiltIn} />
         </Form.Item>
 
         <Form.Item
@@ -281,7 +280,7 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
             { max: 50, message: t('system.application.nameMaxLength') }
           ]}
         >
-          <Input placeholder={`${t('common.inputMsg')}${t('system.application.name')}`} />
+          <Input placeholder={`${t('common.inputMsg')}${t('system.application.name')}`} disabled={isBuiltIn} />
         </Form.Item>
 
         <Form.Item
@@ -310,13 +309,13 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
             {tags.map((tag, index) => (
               <Tag
                 key={index}
-                closable
-                onClose={() => handleTagClose(tag)}
+                closable={!isBuiltIn}
+                onClose={!isBuiltIn ? () => handleTagClose(tag) : undefined}
               >
                 {tag}
               </Tag>
             ))}
-            {inputVisible && (
+            {inputVisible && !isBuiltIn && (
               <Input
                 ref={inputRef}
                 type="text"
@@ -329,12 +328,12 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
                 maxLength={6}
               />
             )}
-            {!inputVisible && tags.length < 8 && (
+            {!inputVisible && !isBuiltIn && tags.length < 8 && (
               <Tag className="cursor-pointer" onClick={showInput}>
                 <PlusOutlined /> {t('system.application.addTag')}
               </Tag>
             )}
-            {tags.length >= 8 && (
+            {!isBuiltIn && tags.length >= 8 && (
               <Tooltip title={t('system.application.maxTagsReached')}>
                 <Tag className="cursor-not-allowed opacity-50">
                   <PlusOutlined /> {t('system.application.addTag')}
@@ -357,6 +356,7 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
           <TextArea
             placeholder={`${t('common.inputMsg')}${t('system.application.description')}`}
             autoSize={{ minRows: 3, maxRows: 6 }}
+            disabled={isBuiltIn}
           />
         </Form.Item>
       </Form>

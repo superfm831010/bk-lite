@@ -440,18 +440,18 @@ const DataManagement: React.FC = () => {
               {t('common.edit')}
             </Button>
           </PermissionWrapper>
-          <Popconfirm
-            title={t('common.delConfirm')}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            onConfirm={() => handleDelete(record)}
-          >
-            <PermissionWrapper requiredPermissions={['Delete']}>
+          <PermissionWrapper requiredPermissions={['Delete']}>
+            <Popconfirm
+              title={t('common.delConfirm')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => handleDelete(record)}
+            >
               <Button type="link">
                 {t('common.delete')}
               </Button>
-            </PermissionWrapper>
-          </Popconfirm>
+            </Popconfirm>
+          </PermissionWrapper>
         </div>
       ),
     },

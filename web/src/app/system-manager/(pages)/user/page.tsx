@@ -100,16 +100,16 @@ const User: React.FC = () => {
               {t('system.common.password')}
             </Button>
           </PermissionWrapper>
-          <Popconfirm
-            title={t('common.delConfirm')}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            onConfirm={() => showDeleteConfirm(key)}
-          >
-            <PermissionWrapper requiredPermissions={['Delete']}>
+          <PermissionWrapper requiredPermissions={['Delete']}>
+            <Popconfirm
+              title={t('common.delConfirm')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => showDeleteConfirm(key)}
+            >
               <Button type="link">{t('common.delete')}</Button>
-            </PermissionWrapper>
-          </Popconfirm>
+            </Popconfirm>
+          </PermissionWrapper>
         </>
       ),
     },
@@ -160,14 +160,30 @@ const User: React.FC = () => {
     setIsDeleteDisabled(selectedRowKeys.length === 0);
   }, [selectedRowKeys]);
 
+  const nodeExistsInTree = (tree: TreeDataNode[], key: React.Key): boolean => {
+    for (const node of tree) {
+      if (node.key === key) return true;
+      if (node.children && node.children.length > 0) {
+        if (nodeExistsInTree(node.children, key)) return true;
+      }
+    }
+    return false;
+  };
+
   const handleTreeSelect = (selectedKeys: React.Key[]) => {
     setSelectedRowKeys([]);
-    setSelectedTreeKeys(selectedKeys.map(Number));
+    
+    if (selectedKeys.length === 0 || !nodeExistsInTree(filteredTreeData, selectedKeys[0])) {
+      setSelectedTreeKeys([]);
+    } else {
+      setSelectedTreeKeys(selectedKeys.map(Number));
+    }
+    
     fetchUsers({
       search: searchValue,
       page: currentPage,
       page_size: pageSize,
-      group_id: selectedKeys[0] as number,
+      group_id: selectedKeys.length > 0 ? selectedKeys[0] as number : undefined,
     });
   };
 
@@ -309,16 +325,24 @@ const User: React.FC = () => {
         }
         break;
       case 'delete':
-        confirm({
-          title: t('common.delConfirm'),
-          content: t('common.delConfirmCxt'),
-          centered: true,
-          okText: t('common.confirm'),
-          cancelText: t('common.cancel'),
-          async onOk() {
-            handleDeleteGroup(groupKey);
-          },
-        });
+        const targetGroup = findNode(treeData, groupKey);
+        if (targetGroup) {
+          const hasChildren = targetGroup.children && targetGroup.children.length > 0;
+          const confirmContent = hasChildren 
+            ? t('system.group.deleteWithChildrenWarning') + '' + t('common.delConfirmCxt')
+            : t('common.delConfirmCxt');
+            
+          confirm({
+            title: t('common.delConfirm'),
+            content: confirmContent,
+            centered: true,
+            okText: t('common.confirm'),
+            cancelText: t('common.cancel'),
+            async onOk() {
+              handleDeleteGroup(groupKey);
+            },
+          });
+        }
         break;
     }
   };
