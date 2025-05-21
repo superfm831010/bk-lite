@@ -2,7 +2,7 @@ import time
 import uuid
 from typing import Optional
 
-from loguru import logger
+from sanic.log import logger
 
 from src.chunk.fixed_size_chunk import FixedSizeChunk
 from src.chunk.full_chunk import FullChunk

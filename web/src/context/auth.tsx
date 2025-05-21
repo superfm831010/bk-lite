@@ -1,13 +1,15 @@
 'use client';
 
-import { useSession, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useTranslation } from '@/utils/i18n';
 import { createContext, useContext, useEffect, useState } from 'react';
 import Spin from '@/components/spin';
 import { useLocale } from '@/context/locale';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface AuthContextType {
   token: string | null;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -18,41 +20,60 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { setLocale: changeLocale } = useLocale();
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const authPaths = ['/auth/signin', '/auth/signout'];
 
   useEffect(() => {
     if (status === 'loading') return;
-    console.log('session:', session);
-    if (!session) {
-      signIn('keycloak');
+
+    const isSessionValid = session?.user && session?.user?.id;
+    
+    if (!session || !isSessionValid) {
+      setToken(null);
+      setIsAuthenticated(false);
+      
+      if (pathname && !authPaths.includes(pathname)) {
+        router.push('/auth/signin');
+      }
       return;
     }
-    if (session?.accessToken) {
-      setToken(session.accessToken);
+
+    if (isSessionValid) {
+      setToken(session.user?.id || null);
       setIsAuthenticated(true);
-      const userLocale = session.locale || 'en';
+      const userLocale = session.user?.locale || 'en';
       const savedLocale = localStorage.getItem('locale') || 'en';
       if (userLocale !== savedLocale) {
         changeLocale(userLocale);
       }
       localStorage.setItem('locale', userLocale);
     } else {
-      console.warn(t('common.noAccessToken'));
+      console.warn(t('common.noUserSession'));
+      if (pathname && !authPaths.includes(pathname)) {
+        router.push('/auth/signin');
+      }
     }
-  }, [status]);
+  }, [status, session, pathname]);
 
-  if (status === 'loading' || !isAuthenticated) {
-    return (
-      <Spin></Spin>
-    );
+  if (status === 'loading' && pathname && !authPaths.includes(pathname)) {
+    return <Spin />;
   }
 
   return (
-    <AuthContext.Provider value={{ token }}>
+    <AuthContext.Provider value={{ token, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
 
 export default AuthProvider;

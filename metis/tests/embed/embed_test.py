@@ -1,7 +1,9 @@
 import os
 
 from langchain_openai import OpenAIEmbeddings
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.embed.embed_builder import EmbedBuilder
 

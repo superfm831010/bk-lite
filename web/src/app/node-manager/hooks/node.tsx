@@ -21,22 +21,24 @@ export const useColumns = ({
         title: t('node-manager.cloudregion.node.ip'),
         dataIndex: 'ip',
         key: 'ip',
+        width: 120
       },
       {
         title: t('common.name'),
         dataIndex: 'name',
         key: 'name',
+        width: 120
       },
       {
         title: 'Sidecar',
         dataIndex: 'active',
+        width: 100,
         render: (value: string, item) => {
           return (
             <Tooltip title={`${item.status?.message}`}>
               <Tag bordered={false} color={value ? 'success' : 'warning'}>
                 {t(
-                  `node-manager.cloudregion.node.${
-                    value ? 'active' : 'inactive'
+                  `node-manager.cloudregion.node.${value ? 'active' : 'inactive'
                   }`
                 )}
               </Tag>
@@ -45,11 +47,11 @@ export const useColumns = ({
         },
       },
       {
+        title: t('common.action'),
         key: 'action',
-        title: t('common.actions'),
         dataIndex: 'action',
+        width: 120,
         fixed: 'right',
-        width: 140,
         render: (key, item) => (
           <Permission requiredPermissions={['View']}>
             <Button type="link" onClick={() => checkConfig(item)}>

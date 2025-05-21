@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Script from 'next/script';
 import { useRouter, usePathname } from 'next/navigation';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
-import { SessionProvider } from 'next-auth/react';
+import { SessionProvider, useSession } from 'next-auth/react';
 import { LocaleProvider } from '@/context/locale';
 import { ThemeProvider } from '@/context/theme';
 import { MenusProvider, useMenus } from '@/context/menus';
@@ -26,13 +26,18 @@ const Loader = () => (
 
 const LayoutWithProviders = ({ children }: { children: React.ReactNode }) => {
   const { loading: permissionsLoading, hasPermission } = usePermissions();
+  const { data: session, status } = useSession();
   const { loading: menusLoading, configMenus } = useMenus();
   const router = useRouter();
   const pathname = usePathname();
   const [isAllowed, setIsAllowed] = useState(false);
 
-  const isLoading = permissionsLoading || menusLoading;
-  const excludedPaths = ['/no-permission', '/no-found', '/', '/auth/signin', '/auth/signout'];
+  const isAuthenticated = status === 'authenticated' && !!session;
+  const isAuthLoading = status === 'loading';
+  
+  const isLoading = isAuthLoading || (isAuthenticated && (permissionsLoading || menusLoading));
+  const authPaths = ['/auth/signin', '/auth/signout'];
+  const excludedPaths = ['/no-permission', '/no-found', '/', ...authPaths];
 
   const isPathInMenu = useCallback((path: string, menus: MenuItem[]): boolean => {
     for (const menu of menus) {
@@ -48,6 +53,11 @@ const LayoutWithProviders = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const checkPermission = async () => {
+      if ((pathname && authPaths.includes(pathname)) || !isAuthenticated) {
+        setIsAllowed(true);
+        return;
+      }
+
       if (!isLoading) {
         if (pathname && excludedPaths.includes(pathname)) {
           setIsAllowed(true);
@@ -69,19 +79,20 @@ const LayoutWithProviders = ({ children }: { children: React.ReactNode }) => {
     };
 
     checkPermission();
-  }, [isLoading, pathname]);
+  }, [isLoading, pathname, isAuthenticated]);
 
-  // 显示加载动画，或在没有权限时避免加载页面
-  if (isLoading || (!isAllowed && pathname && !excludedPaths.includes(pathname))) {
+  if (isLoading || (isAuthenticated && !isAllowed && pathname && !excludedPaths.includes(pathname) && !isLoading)) {
     return <Loader />;
   }
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="sticky top-0 left-0 right-0 flex justify-between items-center header-bg">
-        <TopMenu />
-      </header>
-      <main className="flex-1 p-4 flex text-sm">
+      {isAuthenticated && (
+        <header className="sticky top-0 left-0 right-0 flex justify-between items-center header-bg">
+          <TopMenu />
+        </header>
+      )}
+      <main className={`flex-1 p-4 flex text-sm ${!isAuthenticated ? 'h-screen' : ''}`}>
         <AntdRegistry>{children}</AntdRegistry>
       </main>
     </div>

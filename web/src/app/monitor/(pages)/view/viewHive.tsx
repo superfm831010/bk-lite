@@ -30,8 +30,8 @@ import {
   getEnumColor,
   getEnumValueUnit,
   isStringArray,
+  getConfigByObjectName,
 } from '@/app/monitor/utils/common';
-import { INDEX_CONFIG } from '@/app/monitor/constants/monitor';
 import { Select, Spin } from 'antd';
 import { ListItem } from '@/types';
 const { Option } = Select;
@@ -98,11 +98,9 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
     if (objectId && objects?.length && mertics?.length) {
       const objName = objects.find((item) => item.id === objectId)?.name;
       if (objName) {
-        const filterMetrics =
-          INDEX_CONFIG.find((item) => item.name === objName)?.tableDiaplay ||
-          [];
+        const filterMetrics = getConfigByObjectName(objName, 'tableDiaplay');
         return mertics.filter((metric) =>
-          filterMetrics.find((item) => item.key === metric.name)
+          filterMetrics.find((item: TableDataItem) => item.key === metric.name)
         );
       }
     }
@@ -282,7 +280,7 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
     const objParams = {
       monitor_object_id: objectId,
     };
-    const getInstList = await getInstanceSearch(objectId, params)
+    const getInstList = await getInstanceSearch(objectId, params);
     const getQueryParams = await getInstanceQueryParams(name, objParams);
     setTableLoading(true);
     try {

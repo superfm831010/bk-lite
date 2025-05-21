@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI
 
 from src.core.entity.basic_llm_request import BasicLLMReuqest
 from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
-from loguru import logger
+from sanic.log import logger
 
 
 class BasicNode:

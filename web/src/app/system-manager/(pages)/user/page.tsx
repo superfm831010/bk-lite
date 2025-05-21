@@ -17,6 +17,7 @@ import styles from './index.module.scss';
 import { useGroupApi } from '@/app/system-manager/api/group/index';
 import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import OperateModal from '@/components/operate-modal';
+import PermissionWrapper from '@/components/permission';
 
 const { Search } = Input;
 
@@ -36,11 +37,11 @@ const User: React.FC = () => {
   const [addGroupForm] = Form.useForm();
   const [addGroupModalOpen, setAddGroupModalOpen] = useState(false);
   const [addSubGroupModalOpen, setAddSubGroupModalOpen] = useState(false);
-  const [currentParentGroupKey, setCurrentParentGroupKey] = useState<string | null>(null);
+  const [currentParentGroupKey, setCurrentParentGroupKey] = useState<number | null>(null);
   const [addGroupLoading, setAddGroupLoading] = useState(false);
   const [renameGroupModalOpen, setRenameGroupModalOpen] = useState(false);
   const [renameGroupLoading, setRenameGroupLoading] = useState(false);
-  const [renameGroupKey, setRenameGroupKey] = useState<string | null>(null);
+  const [renameGroupKey, setRenameGroupKey] = useState<number | null>(null);
   const [renameGroupForm] = Form.useForm();
 
   const userModalRef = useRef<ModalRef>(null);
@@ -89,19 +90,25 @@ const User: React.FC = () => {
       fixed: 'right',
       render: (key: string) => (
         <>
-          <Button type="link" className="mr-[8px]" onClick={() => handleEditUser(key)}>
-            {t('common.edit')}
-          </Button>
-          <Button type="link" className="mr-[8px]" onClick={() => openPasswordModal(key)}>
-            {t('system.common.password')}
-          </Button>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button type="link" className="mr-[8px]" onClick={() => handleEditUser(key)}>
+              {t('common.edit')}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button type="link" className="mr-[8px]" onClick={() => openPasswordModal(key)}>
+              {t('system.common.password')}
+            </Button>
+          </PermissionWrapper>
           <Popconfirm
             title={t('common.delConfirm')}
             okText={t('common.confirm')}
             cancelText={t('common.cancel')}
             onConfirm={() => showDeleteConfirm(key)}
           >
-            <Button type="link">{t('common.delete')}</Button>
+            <PermissionWrapper requiredPermissions={['Delete']}>
+              <Button type="link">{t('common.delete')}</Button>
+            </PermissionWrapper>
           </Popconfirm>
         </>
       ),
@@ -118,7 +125,7 @@ const User: React.FC = () => {
       const data = res.users.map((item: UserDataType) => ({
         key: item.id,
         username: item.username,
-        name: item.lastName,
+        name: item.display_name,
         email: item.email,
         role: item.role,
       }));
@@ -155,12 +162,12 @@ const User: React.FC = () => {
 
   const handleTreeSelect = (selectedKeys: React.Key[]) => {
     setSelectedRowKeys([]);
-    setSelectedTreeKeys(selectedKeys);
+    setSelectedTreeKeys(selectedKeys.map(Number));
     fetchUsers({
       search: searchValue,
       page: currentPage,
       page_size: pageSize,
-      group_id: selectedKeys[0],
+      group_id: selectedKeys[0] as number,
     });
   };
 
@@ -222,7 +229,7 @@ const User: React.FC = () => {
   const openUserModal = (type: 'add') => {
     userModalRef.current?.showModal({
       type,
-      groupKeys: type === 'add' ? (selectedTreeKeys as string[]) : [],
+      groupKeys: type === 'add' ? selectedTreeKeys.map(Number) : [],
     });
   };
 
@@ -263,7 +270,7 @@ const User: React.FC = () => {
     setAddGroupModalOpen(true);
   };
 
-  const handleAddSubGroup = (parentGroupKey: string) => {
+  const handleAddSubGroup = (parentGroupKey: number) => {
     setCurrentParentGroupKey(parentGroupKey);
     setAddSubGroupModalOpen(true);
   };
@@ -287,7 +294,7 @@ const User: React.FC = () => {
     }
   };
 
-  const handleGroupAction = async (action: string, groupKey: string) => {
+  const handleGroupAction = async (action: string, groupKey: number) => {
     switch (action) {
       case 'addSubGroup':
         handleAddSubGroup(groupKey);
@@ -316,7 +323,7 @@ const User: React.FC = () => {
     }
   };
 
-  const handleDeleteGroup = (key: string) => {
+  const handleDeleteGroup = (key: number) => {
     const group = findNode(treeData, key);
     if (group) {
       deleteGroup(group);
@@ -356,7 +363,7 @@ const User: React.FC = () => {
     }
   };
 
-  const findNode = (tree: TreeDataNode[], key: string): TreeDataNode | undefined => {
+  const findNode = (tree: TreeDataNode[], key: number): TreeDataNode | undefined => {
     for (const node of tree) {
       if (node.key === key) return node;
       if (node.children) {
@@ -366,15 +373,36 @@ const User: React.FC = () => {
     }
   };
 
-  const renderGroupActions = (groupKey: string) => (
+  const renderGroupActions = (groupKey: number) => (
     <Dropdown
       overlay={
         <Menu
           onClick={({ key }) => handleGroupAction(key, groupKey)}
           items={[
-            { key: 'addSubGroup', label: t('system.group.addSubGroups') },
-            { key: 'rename', label: t('system.group.rename') },
-            { key: 'delete', label: t('common.delete') },
+            {
+              key: 'addSubGroup',
+              label: (
+                <PermissionWrapper requiredPermissions={['Add']}>
+                  {t('system.group.addSubGroups')}
+                </PermissionWrapper>
+              ),
+            },
+            {
+              key: 'rename',
+              label: (
+                <PermissionWrapper requiredPermissions={['Edit']}>
+                  {t('system.group.rename')}
+                </PermissionWrapper>
+              ),
+            },
+            {
+              key: 'delete',
+              label: (
+                <PermissionWrapper requiredPermissions={['Delete']}>
+                  {t('common.delete')}
+                </PermissionWrapper>
+              ),
+            },
           ]}
         />
       }
@@ -395,7 +423,7 @@ const User: React.FC = () => {
           <span className="truncate">
             {typeof node.title === 'function' ? node.title(node) : node.title}
           </span>
-          {renderGroupActions(node.key as string)}
+          {renderGroupActions(node.key as number)}
         </div>
       ),
       children: node.children ? renderTreeNode(node.children) : [],
@@ -415,7 +443,9 @@ const User: React.FC = () => {
           onChange={(e) => handleTreeSearchChange(e.target.value)}
           value={treeSearchValue}
         />
-        <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={handleAddRootGroup}></Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={handleAddRootGroup}></Button>
+        </PermissionWrapper>
       </div>
       <Tree
         className="w-full flex-1 overflow-auto"
@@ -439,13 +469,17 @@ const User: React.FC = () => {
           onSearch={handleUserSearch}
           placeholder={`${t('common.search')}...`}
         />
-        <Button type="primary" className="mr-2" onClick={() => openUserModal('add')}>
-          +{t('common.add')}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button type="primary" className="mr-2" onClick={() => openUserModal('add')}>
+            +{t('common.add')}
+          </Button>
+        </PermissionWrapper>
         <UserModal ref={userModalRef} treeData={treeData} onSuccess={onSuccessUserModal} />
-        <Button onClick={handleModifyDelete} disabled={isDeleteDisabled}>
-          {t('common.batchDelete')}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Delete']}>
+          <Button onClick={handleModifyDelete} disabled={isDeleteDisabled}>
+            {t('common.batchDelete')}
+          </Button>
+        </PermissionWrapper>
         <PasswordModal ref={passwordModalRef} onSuccess={() => fetchUsers({ search: searchValue, page: currentPage, page_size: pageSize })} />
       </div>
       <Spin spinning={loading}>

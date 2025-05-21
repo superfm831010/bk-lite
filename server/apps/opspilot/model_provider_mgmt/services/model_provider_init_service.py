@@ -177,38 +177,58 @@ class ModelProviderInitService:
                 "ocr_config": {"base_url": "http://ocr-server/olm_ocr", "api_key": ""},
             },
         )
+
         SkillTools.objects.update_or_create(
-            name="Online Search",
+            name="DuckDuckGo Search",
             defaults={
                 "team": [self.group_id],
-                "params": {"url": "langchain:duckduckgo", "name": "Online Search"},
-                "description": "Enables quick search and retrieval of information through the internet to obtain real-time data.",  # noqa
+                "params": {"url": "langchain:duckduckgo", "name": "DuckDuckGo Search"},
+                "description": """
+        Perform fast web searches using DuckDuckGo.
+
+        This tool allows you to search the internet and retrieve relevant results in real time.  
+        You can specify the search query and control the number of results returned.  
+        Ideal for getting up-to-date information without tracking or ads.
+        """,
                 "tags": ["search"],
                 "icon": "",
                 "is_build_in": True,
             },
         )
         SkillTools.objects.update_or_create(
-            name="General tools",
+            name="Current Time Tool",
             defaults={
                 "team": [self.group_id],
-                "params": {"url": "langchain:current_time", "name": "General tools"},
-                "description": "Built-in commonly used tools, including holiday queries, current time queries, etc., to provide additional information.",  # noqa
+                "params": {"url": "langchain:current_time", "name": "Current Time Tool"},
+                "description": """
+        Provides the current date and time.
+
+        Use this tool to get the exact current timestamp in `YYYY-MM-DD HH:MM:SS` format.
+        Useful for logging, scheduling, or any functionality that requires up-to-date time information.
+        """,
                 "tags": ["general"],
                 "icon": "",
                 "is_build_in": True,
             },
         )
         SkillTools.objects.update_or_create(
-            name="Kubernetes Tools",
+            name="Kubernetes Insight Tools",
             defaults={
                 "team": [self.group_id],
                 "params": {
                     "url": "langchain:kubernetes",
-                    "name": "Kubernetes Tools",
+                    "name": "Kubernetes Insight Tools",
                     "kwargs": [{"key": "kubeconfig_path", "value": ""}],
                 },
-                "description": "Kubernetes Tools",  # noqa
+                "description": (
+                    "A collection of user-friendly tools for exploring and monitoring your Kubernetes cluster.\n\n"
+                    "These tools allow you to:\n\n"
+                    "- 🔍 List **namespaces**, **pods**, **deployments**, **services**, and **nodes**\n"
+                    "- 🚨 View recent **events** across the cluster\n"
+                    "- ⚠️ Troubleshoot **failed** or **pending** pods\n\n"
+                    "Each tool provides clean JSON output, making it easy to plug into chains or agents.\n\n"
+                    "**Configure once** with your kubeconfig path and use anywhere."
+                ),
                 "tags": ["maintenance"],
                 "icon": "",
                 "is_build_in": True,
@@ -227,8 +247,23 @@ class ModelProviderInitService:
                         {"key": "jenkins_password", "value": ""},
                     ],
                 },
-                "description": "",  # noqa
-                "tags": ["maintenance"],
+                "description": """\
+                ### Jenkins Tools
+
+                This toolset allows you to interact with Jenkins servers for CI/CD automation.  
+                It includes tools to:
+
+                - 🔍 **List available Jenkins jobs** — useful when you're unsure what to build.
+                - 🚀 **Trigger a Jenkins job build** — safely initiate a build, with validation to avoid disabled or unknown jobs.
+
+                **Use cases**:
+                - Discover available jobs before execution.
+                - Trigger builds programmatically with parameters.
+                - Integrate Jenkins pipelines into your LangChain workflow.
+
+                Make sure to provide valid credentials and Jenkins server URL before using.
+                """,
+                "tags": ["maintenance", ],
                 "icon": "",
                 "is_build_in": True,
             },

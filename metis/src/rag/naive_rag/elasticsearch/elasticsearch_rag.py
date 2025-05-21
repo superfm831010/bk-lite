@@ -6,8 +6,9 @@ import requests
 from langchain_core.documents import Document
 from langchain_elasticsearch import ElasticsearchRetriever
 from langchain_elasticsearch import ElasticsearchStore
-from loguru import logger
+from sanic.log import logger
 
+from src.core.env.core_settings import core_settings
 from src.embed.embed_builder import EmbedBuilder
 from src.entity.rag.base.document_count_request import DocumentCountRequest
 from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
@@ -23,8 +24,8 @@ from src.rerank.rerank_manager import ReRankManager
 
 class ElasticSearchRag(BaseNativeRag):
     def __init__(self):
-        self.es = elasticsearch.Elasticsearch(hosts=[os.getenv('ELASTICSEARCH_URL')],
-                                              basic_auth=("elastic", os.getenv('ELASTICSEARCH_PASSWORD')))
+        self.es = elasticsearch.Elasticsearch(hosts=[core_settings.elasticsearch_url],
+                                              basic_auth=("elastic", core_settings.elasticsearch_password))
 
     def update_metadata(self, req: DocumentMetadataUpdateRequest):
         """
@@ -227,7 +228,7 @@ class ElasticSearchRag(BaseNativeRag):
             top_k_search_result = []
             # Ensure rerank_ids and rerank_scores are available and have the same length
             if 'rerank_ids' in local_rerank_result and 'rerank_scores' in local_rerank_result and \
-               len(local_rerank_result['rerank_ids']) == len(local_rerank_result['rerank_scores']):
+                    len(local_rerank_result['rerank_ids']) == len(local_rerank_result['rerank_scores']):
 
                 top_rerank_ids = local_rerank_result['rerank_ids'][:req.rerank_top_k]
 
@@ -316,9 +317,9 @@ class ElasticSearchRag(BaseNativeRag):
             index_name=req.index_name,
             body_func=lambda x: ElasticsearchQueryBuilder.build_query(req),
             content_field="text",
-            url=os.getenv('ELASTICSEARCH_URL'),
+            url=core_settings.elasticsearch_url,
             username="elastic",
-            password=os.getenv('ELASTICSEARCH_PASSWORD'),
+            password=core_settings.elasticsearch_password,
         )
 
         # 执行搜索

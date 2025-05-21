@@ -1,8 +1,10 @@
 import os
 
-from loguru import logger
+import logging
 
-from src.core.web.crypto import PasswordCrypto
+logger = logging.getLogger(__name__)
+
+from src.core.sanic_plus.utils.crypto import PasswordCrypto
 
 
 def test_decrypt():

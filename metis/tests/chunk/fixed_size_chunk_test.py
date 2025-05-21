@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.chunk.fixed_size_chunk import FixedSizeChunk
 from src.loader.text_loader import TextLoader

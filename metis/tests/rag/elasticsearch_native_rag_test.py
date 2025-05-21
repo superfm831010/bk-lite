@@ -1,8 +1,11 @@
 import os
+import uuid
 
 from langchain_core.documents import Document
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
 from src.entity.rag.base.document_ingest_request import DocumentIngestRequest
@@ -12,9 +15,9 @@ from src.entity.rag.base.index_delete_request import IndexDeleteRequest
 from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
 
 
-def get_sample_request():
+def get_sample_request(index_name=''):
     request = DocumentIngestRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
+        index_name=index_name,
         index_mode='overwrite',
         docs=[
             Document(page_content='你好', metadata={
@@ -43,11 +46,11 @@ def get_sample_request():
 
 def test_native_rag_ingest():
     rag = ElasticSearchRag()
-
-    rag.ingest(get_sample_request())
+    index_name = str(uuid.uuid4())
+    rag.ingest(get_sample_request(index_name))
 
     metadata_update_request = DocumentMetadataUpdateRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
+        index_name=index_name,
         metadata_filter={
             'knowledge_id': "8"
         },
@@ -59,7 +62,7 @@ def test_native_rag_ingest():
     rag.update_metadata(metadata_update_request)
 
     delete_req = DocumentDeleteRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
+        index_name=index_name,
         metadata_filter={
             'knowledge_id': "8"
         }
@@ -67,17 +70,18 @@ def test_native_rag_ingest():
     rag.delete_document(delete_req)
 
     delete_index_req = IndexDeleteRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
+        index_name=index_name
     )
     rag.delete_index(delete_index_req)
 
 
 def test_native_rag():
     rag = ElasticSearchRag()
-    rag.ingest(get_sample_request())
+    index_name = str(uuid.uuid4())
+    rag.ingest(get_sample_request(index_name))
 
     request = DocumentRetrieverRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
+        index_name=index_name,
         search_query="你好",
         size=20,
         embed_model_base_url='local:huggingface_embedding:BAAI/bge-small-zh-v1.5',
@@ -94,17 +98,18 @@ def test_native_rag():
     logger.info(result)
 
     delete_index_req = IndexDeleteRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
+        index_name=index_name
     )
     rag.delete_index(delete_index_req)
 
 
 def test_native_rag_with_local_models():
     rag = ElasticSearchRag()
-    rag.ingest(get_sample_request())
+    index_name = str(uuid.uuid4())
+    rag.ingest(get_sample_request(index_name))
 
     request = DocumentRetrieverRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
+        index_name=index_name,
         search_query="吗",
         size=20,
         embed_model_base_url="local:huggingface_embedding:BAAI/bge-small-zh-v1.5",
@@ -121,16 +126,17 @@ def test_native_rag_with_local_models():
     logger.info(result)
 
     delete_index_req = IndexDeleteRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
+        index_name=index_name
     )
     rag.delete_index(delete_index_req)
 
 
 def test_native_rag_with_segment_recall():
     rag = ElasticSearchRag()
-    rag.ingest(get_sample_request())
+    index_name = str(uuid.uuid4())
+    rag.ingest(get_sample_request(index_name))
     request = DocumentRetrieverRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
+        index_name=index_name,
         search_query="rework",
         size=20,
         embed_model_base_url="local:huggingface_embedding:BAAI/bge-small-zh-v1.5",
@@ -142,32 +148,32 @@ def test_native_rag_with_segment_recall():
 
     result = rag.search(request)
     logger.info(result)
-    
+
     delete_index_req = IndexDeleteRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
+        index_name=index_name
     )
     rag.delete_index(delete_index_req)
 
 
 def test_native_rag_with_origin_recall():
     rag = ElasticSearchRag()
-    rag.ingest(get_sample_request())
+    index_name = str(uuid.uuid4())
+    rag.ingest(get_sample_request(index_name))
     request = DocumentRetrieverRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX'),
+        index_name=index_name,
         search_query="rework",
         size=20,
         embed_model_base_url="local:huggingface_embedding:BAAI/bge-small-zh-v1.5",
         embed_model_api_key="",
         embed_model_name="bge-small-zh-v1.5",
         enable_rerank=False,
-        rag_recall_mode='segment'
+        rag_recall_mode='origin'
     )
 
     result = rag.search(request)
     logger.info(f"召回数量: {len(result)}")
-    
+
     delete_index_req = IndexDeleteRequest(
-        index_name=os.getenv('TEST_ELASTICSEARCH_RAG_INDEX')
+        index_name=index_name
     )
     rag.delete_index(delete_index_req)
-    
