@@ -1,6 +1,7 @@
 import React from 'react';
 import { Skeleton, Popconfirm } from 'antd';
 import Icon from '@/components/icon';
+import PermissionWrapper from "@/components/permission";
 import { Role } from '@/app/system-manager/types/application';
 
 type TranslateFunction = (key: string) => string;
@@ -34,19 +35,23 @@ const RoleList: React.FC<RoleListProps> = ({
         {role.name}
       </div>
       <div className="flex text-base items-center text-[var(--color-text-3)]">
-        <span className="hidden group-hover:inline cursor-pointer hover:text-[var(--color-text-active)]" onClick={() => showRoleModal(role)}>
-          <Icon type="bianji" />
-        </span>
-        <Popconfirm
-          title={t('common.delConfirm')}
-          okText={t('common.confirm')}
-          cancelText={t('common.cancel')}
-          onConfirm={() => onDeleteRole(role)}
-        >
-          <span className="ml-[5px] hidden group-hover:inline cursor-pointer hover:text-[var(--color-text-active)]">
-            <Icon type="shanchu" />
+        <PermissionWrapper requiredPermissions={['Edit']} className="inline-block">
+          <span className="hidden group-hover:inline cursor-pointer hover:text-[var(--color-text-active)]" onClick={() => showRoleModal(role)}>
+            <Icon type="bianji" />
           </span>
-        </Popconfirm>
+        </PermissionWrapper>
+        <PermissionWrapper requiredPermissions={['Delete']} className="inline-block ml-[5px]">
+          <Popconfirm
+            title={t('common.delConfirm')}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => onDeleteRole(role)}
+          >
+            <span className="hidden group-hover:inline cursor-pointer hover:text-[var(--color-text-active)]">
+              <Icon type="shanchu" />
+            </span>
+          </Popconfirm>
+        </PermissionWrapper>
       </div>
     </div>
   );
@@ -55,9 +60,11 @@ const RoleList: React.FC<RoleListProps> = ({
     <div className="w-[180px] pr-4 mr-4 border-r border-[var(--color-border-1)]">
       <div className="flex justify-between items-center">
         <h2 className="font-semibold">{t('system.role.title')}</h2>
-        <div onClick={() => showRoleModal(null)}>
-          <Icon type="xinzeng" className="text-xl cursor-pointer" />
-        </div>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <div onClick={() => showRoleModal(null)}>
+            <Icon type="xinzeng" className="text-xl cursor-pointer" />
+          </div>
+        </PermissionWrapper>
       </div>
       <div className="mt-4">
         {loadingRoles ? (

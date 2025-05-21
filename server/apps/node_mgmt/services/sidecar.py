@@ -6,12 +6,11 @@ from string import Template
 from django.core.cache import cache
 from django.http import JsonResponse, HttpResponse
 
-from apps.node_mgmt.constants import L_INSTALL_DOWNLOAD_URL, L_SIDECAR_DOWNLOAD_URL, W_SIDECAR_DOWNLOAD_URL, LOCAL_HOST
 from apps.node_mgmt.default_config.nats_executor import create_nats_executor_config
 from apps.node_mgmt.default_config.telegraf import create_telegraf_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
-from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration
-
+from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization
+from apps.node_mgmt.utils.sidecar import format_tags_dynamic
 
 logger = logging.getLogger("app")
 
@@ -62,6 +61,15 @@ class Sidecar:
         return JsonResponse({'collectors': collectors}, headers={'ETag': new_etag})
 
     @staticmethod
+    def asso_groups(node_id: str, groups: list):
+        if groups:
+            NodeOrganization.objects.bulk_create(
+                [NodeOrganization(node_id=node_id, organization=group) for group in groups],
+                ignore_conflicts=True,
+                batch_size=100,
+            )
+
+    @staticmethod
     def update_node_client(request, node_id):
         """更新sidecar客户端信息"""
 
@@ -99,8 +107,18 @@ class Sidecar:
         node = Node.objects.filter(id=node_id).first()
 
         if not node:
+
+            # 补充云区域关联
+            tags_data = format_tags_dynamic(request_data.get("tags", []),  ["group", "cloud"])
+            clouds = tags_data.get("cloud", [])
+            if clouds:
+                request_data.update(cloud_region_id=int(clouds[0]))
+
             # 创建节点
             node = Node.objects.create(**request_data)
+
+            # 关联组织
+            Sidecar.asso_groups(node_id, tags_data.get("group", []))
 
             # 创建默认的 Telegraf 配置
             create_telegraf_config(node)
@@ -235,56 +253,3 @@ class Sidecar:
         template_str = template_str.replace('node.', 'node__')
         template = Template(template_str)
         return template.safe_substitute(_variables)
-
-    @staticmethod
-    def get_sidecar_install_guide(ip, operating_system, group):
-        """生成 sidecar 安装指南"""
-        local_host = LOCAL_HOST
-        local_api_token = ""
-        if operating_system.lower() == 'windows':
-            return r'.\install_sidecar.bat  "{}" "{}" "{}" "{}"'.format(ip, local_api_token, local_host, group)
-        elif operating_system.lower() == 'linux':
-            params = [L_INSTALL_DOWNLOAD_URL, ip, local_api_token, local_host, L_SIDECAR_DOWNLOAD_URL, group]
-            return 'curl -sSL {}|bash -s - -n "{}" -t "{}" -s "{}" -d "{}" -g "{}"'.format(*params)
-        else:
-            return ""
-
-    # def get_installation_steps(self):
-    #     """获取安装步骤"""
-    #     local_host = LOCAL_HOST
-    #     local_api_token = ""
-    #
-    #     if self.node.os_type == LINUX_OS:
-    #         return self.linux_step(self.node.node_id, local_api_token, local_host)
-    #     elif self.node.os_type == WINDOWS_OS:
-    #         return self.windows_step(self.node.node_id, local_api_token, local_host)
-
-    def windows_step(self, node_id, gl_token, gl_host):
-        """windows安装步骤"""
-
-        return [
-            {
-                "title": "下载安装包",
-                "content": "下载安装包",
-                "download_url": W_SIDECAR_DOWNLOAD_URL,
-            },
-            {
-                "title": "创建以下目录",
-                "content": "c:/gse",
-            },
-            {
-                "title": "执行安装脚本，在指定目录下安装控制器和探针",
-                "content": r'.\install_sidecar.bat "{}" "{}" "{}"'.format(node_id, gl_token, gl_host),
-            },
-        ]
-
-    def linux_step(self, node_id, gl_token, gl_host):
-        """linux安装步骤"""
-
-        params = [L_INSTALL_DOWNLOAD_URL, node_id, gl_token, gl_host, L_SIDECAR_DOWNLOAD_URL]
-        return [
-            {
-                "title": "下载安装包",
-                "content": 'curl -sSL {}|bash -s - -n "{}" -t "{}" -s "{}" -d "{}"'.format(*params),
-            },
-        ]

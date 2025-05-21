@@ -31,6 +31,7 @@ import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import useApiCollector from '@/app/node-manager/api/collector';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import { useTelegrafMap } from '@/app/node-manager/constants/cloudregion';
+import { COLLECTOR_LABEL } from '@/app/node-manager/constants/collector';
 import ControllerInstall from './controllerInstall';
 import ControllerUninstall from './controllerUninstall';
 import CollectorInstallTable from './controllerTable';
@@ -250,76 +251,98 @@ const Node = () => {
     initData(params);
   };
 
-  const getCollectors = async (selectedsystem: string) => {
-    const data = await getCollectorlist({
-      node_operating_system: selectedsystem,
-    });
-    const natsexecutors = ['natsexecutor_windows', 'natsexecutor_linux'];
-    const columnItems = data
-      .map((tex: TableDataItem) => {
-        if (natsexecutors.includes(tex.id as string)) {
-          return {
-            title: tex.name,
-            dataIndex: tex.id,
-            render: (key: string, item: TableDataItem) => {
-              const collectorTarget = (item.status.collectors || []).find(
-                (item: TableDataItem) => item.collector_id === tex.id
-              );
-              const installTarget = (item.status.collectors_install || []).find(
-                (item: TableDataItem) => item.collector_id === tex.id
-              );
-              if (!collectorTarget && !installTarget) return '--';
-              const { title, tagColor, status } = getStatusInfo(
-                collectorTarget,
-                installTarget
-              );
-              return (
-                <Tooltip title={title}>
-                  <Tag bordered={false} color={tagColor}>
-                    {status}
-                  </Tag>
-                </Tooltip>
-              );
-            },
-          };
-        }
-        return {
-          title: tex.name,
-          dataIndex: tex.id,
-          render: (key: string, item: TableDataItem) => {
-            const collectorTarget = (item.status.collectors || []).find(
-              (item: TableDataItem) => item.collector_id === tex.id
-            );
-            const installTarget = (item.status.collectors_install || []).find(
-              (item: TableDataItem) => item.collector_id === tex.id
-            );
-            if (!collectorTarget && !installTarget) return '--';
-            const { title, color, status } = getStatusInfo(
-              collectorTarget,
-              installTarget
-            );
-            return (
-              <Tooltip title={title}>
-                <div>
-                  <span
-                    className="recordStatus"
-                    style={{
-                      backgroundColor: color,
-                    }}
-                  ></span>
-                  <span style={{ color }} className="text-[12px]">
-                    {status}
-                  </span>
-                </div>
-              </Tooltip>
-            );
-          },
-        };
-      })
-      .sort((item: TableDataItem) =>
-        natsexecutors.includes(item.dataIndex) ? -1 : 0
+  const getCollectorLabelKey = (value: string = '') => {
+    for (const key in COLLECTOR_LABEL) {
+      if (COLLECTOR_LABEL[key].includes(value)) {
+        return key;
+      }
+    }
+  };
+
+  const getCollectorName = (id: string, data: TableDataItem[] = []) => {
+    return data.find((item: TableDataItem) => item.id === id)?.name || '--';
+  };
+
+  const renderColunms = (record: TableDataItem, target: string, data: any) => {
+    const collectors = (record.status?.collectors_install || []).filter(
+      (item: TableDataItem) => {
+        const labelKey = getCollectorName(item.collector_id, data || []);
+        return getCollectorLabelKey(labelKey) === target;
+      }
+    );
+    const tagList = collectors.map((tex: TableDataItem) => {
+      const collectorTarget = (record.status?.collectors || []).find(
+        (dataItem: TableDataItem) => dataItem.collector_id === tex.collector_id
       );
-    setActiveColumns(columnItems);
+      const installTarget = (record.status?.collectors_install || []).find(
+        (dataItem: TableDataItem) => dataItem.collector_id === tex.collector_id
+      );
+      const { title, tagColor } = getStatusInfo(collectorTarget, installTarget);
+      return (
+        <Tooltip title={title} key={tex.collector_id} className="py-1 pr-1">
+          <Tag color={tagColor}>
+            {getCollectorName(tex.collector_id, data || [])}
+          </Tag>
+        </Tooltip>
+      );
+    });
+    if (tagList.length) {
+      return (
+        <div className="flex flex-wrap justify-center">
+          {tagList.length ? tagList : '--'}
+        </div>
+      );
+    }
+    return '--';
+  };
+
+  const getCollectors = async (selectedsystem: string) => {
+    const data =
+      (await getCollectorlist({
+        node_operating_system: selectedsystem,
+      })) || [];
+    const natsexecutorId =
+      selectedsystem === 'linux'
+        ? 'natsexecutor_linux'
+        : 'natsexecutor_windows';
+    const plugins = ['Telegraf', 'Export', 'JMX', 'BK-pull'];
+    const columnItems: any = plugins.map((item: string) => ({
+      title: item,
+      dataIndex: item,
+      key: item,
+      width: 300,
+      align: 'center',
+      render: (_: any, record: TableDataItem) =>
+        renderColunms(record, item, data),
+    }));
+    setActiveColumns([
+      {
+        title: 'NATS-Executor',
+        dataIndex: natsexecutorId,
+        key: natsexecutorId,
+        width: 120,
+        render: (_: any, record: TableDataItem) => {
+          const collectorTarget = (record.status?.collectors || []).find(
+            (item: TableDataItem) => item.collector_id === natsexecutorId
+          );
+          const installTarget = (record.status?.collectors_install || []).find(
+            (item: TableDataItem) => item.collector_id === natsexecutorId
+          );
+          const { title, tagColor, status } = getStatusInfo(
+            collectorTarget,
+            installTarget
+          );
+          return (
+            <Tooltip title={title}>
+              <Tag bordered={false} color={tagColor}>
+                {status}
+              </Tag>
+            </Tooltip>
+          );
+        },
+      },
+      ...columnItems,
+    ]);
   };
 
   const getStatusInfo = (
@@ -411,15 +434,14 @@ const Node = () => {
                 <ReloadOutlined onClick={() => getNodes('refresh')} />
               </div>
             </div>
-            <div className="tablewidth">
-              <CustomTable
-                columns={tableColumns}
-                loading={loading}
-                dataSource={nodeList}
-                scroll={{ y: 'calc(100vh - 326px)', x: 'calc(100vw - 300px)' }}
-                rowSelection={rowSelection}
-              />
-            </div>
+            <CustomTable
+              className={nodeStyle.table}
+              columns={tableColumns}
+              loading={loading}
+              dataSource={nodeList}
+              scroll={{ y: 'calc(100vh - 326px)', x: 'calc(100vw - 300px)' }}
+              rowSelection={rowSelection}
+            />
             <CollectorModal
               ref={collectorRef}
               onSuccess={(config) => {

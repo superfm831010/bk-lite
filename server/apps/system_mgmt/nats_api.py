@@ -2,7 +2,7 @@ import os
 import time
 
 import jwt
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
@@ -25,7 +25,7 @@ def verify_token(token, client_id):
     user_info = jwt.decode(token, key=secret_key, algorithms=algorithm)
     time_now = int(time.time())
     login_expired_time_set = SystemSettings.objects.filter(key="login_expired_time").first()
-    login_expired_time = 3600
+    login_expired_time = 3600 * 24
     if login_expired_time_set:
         login_expired_time = int(login_expired_time_set.value)
 
@@ -34,17 +34,23 @@ def verify_token(token, client_id):
     user = User.objects.filter(id=user_info["user_id"]).first()
     if not user:
         return {"result": False, "message": _("User not found")}
-    role_list = list(
-        Role.objects.filter(id__in=user.role_list).filter(Q(app=client_id) | Q(app="")).values_list("name", flat=True)
-    )
-
-    is_superuser = "admin" in role_list
-    groups = cache.get(f"group_{user.username}")
-    if not groups:
-        group_list = Group.objects.filter(id__in=user.group_list)
-        # groups = GroupUtils.build_group_tree(group_list)
-        groups = list(group_list.values("id", "name", "parent_id"))
-        cache.set(f"group_{user.username}", groups, 60)
+    role_list = Role.objects.filter(id__in=user.role_list).filter(Q(app=client_id) | Q(app=""))
+    role_names = list(role_list.values_list("name", flat=True))
+    is_superuser = "admin" in role_names
+    group_list = Group.objects.all()
+    if not is_superuser:
+        group_list = group_list.filter(id__in=user.group_list)
+    # groups = GroupUtils.build_group_tree(group_list)
+    groups = list(group_list.values("id", "name", "parent_id"))
+    menus = cache.get(f"menus-user:{user.id}-app:{client_id}")
+    if not menus:
+        if not is_superuser:
+            menu_list = role_list.values_list("menu_list", flat=True)
+            menu_ids = []
+            for i in menu_list:
+                menu_ids.extend(i)
+            menus = list(Menu.objects.filter(app=client_id, id__in=list(set(menu_ids))).values_list("name", flat=True))
+        cache.set(f"menus-user:{user.id}-app:{client_id}", menus, 60 * 30)
     return {
         "result": True,
         "data": {
@@ -52,8 +58,9 @@ def verify_token(token, client_id):
             "email": user.email,
             "is_superuser": is_superuser,
             "group_list": groups,
-            "roles": role_list,
+            "roles": role_names,
             "locale": user.locale,
+            "permission": menus,
         },
     }
 
@@ -74,10 +81,17 @@ def get_user_menus(client_id, roles, username, is_superuser):
 
 
 @nats_client.register
-def get_client(client_id=""):
+def get_client(client_id="", username=""):
     app_list = App.objects.all()
     if client_id:
         app_list = app_list.filter(name__in=client_id.split(";"))
+    if username:
+        user = User.objects.filter(username=username).first()
+        if not user:
+            return {"result": False, "message": _("User not found")}
+        app_name_list = list(Role.objects.filter(id__in=user.role_list).values_list("app", flat=True).distinct())
+        if "" not in app_name_list:
+            app_list = app_list.filter(name__in=app_name_list)
     return {"result": True, "data": list(app_list.values())}
 
 
@@ -209,4 +223,24 @@ def login(username, password):
     algorithm = os.getenv("JWT_ALGORITHM", "HS256")
     user_obj = {"user_id": user.id, "login_time": int(time.time())}
     token = jwt.encode(payload=user_obj, key=secret_key, algorithm=algorithm)
-    return {"result": True, "data": {"token": token, "username": username, "id": user.id, "locale": user.locale}}
+    return {
+        "result": True,
+        "data": {
+            "token": token,
+            "username": username,
+            "id": user.id,
+            "locale": user.locale,
+            "temporary_pwd": user.temporary_pwd,
+        },
+    }
+
+
+@nats_client.register
+def reset_pwd(username, password):
+    user = User.objects.filter(username=username).first()
+    if not user:
+        return {"result": False, "message": _("Username not exists")}
+    user.password = make_password(password)
+    user.temporary_pwd = False
+    user.save()
+    return {"result": True}

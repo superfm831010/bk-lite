@@ -8,6 +8,7 @@ import CustomTable from "@/components/custom-table";
 import ChannelModal from "@/app/system-manager/components/channel/channelModal";
 import { ChannelType } from "@/app/system-manager/types/channel";
 import { useChannelApi } from "@/app/system-manager/api/channel";
+import PermissionWrapper from "@/components/permission";
 
 const { Search } = Input;
 
@@ -50,17 +51,23 @@ const ChannelSettingsPage: React.FC = () => {
       fixed: "right",
       render: (key: string) => (
         <>
-          <Button type="link" className="mr-[8px]" onClick={() => openChannelModal("edit", key)}>
-            {t("common.edit")}
-          </Button>
-          <Popconfirm
-            title={t("common.delConfirm")}
-            okText={t("common.confirm")}
-            cancelText={t("common.cancel")}
-            onConfirm={() => handleDeleteChannel(key)}
-          >
-            <Button type="link">{t("common.delete")}</Button>
-          </Popconfirm>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button type="link" className="mr-[8px]" onClick={() => openChannelModal("edit", key)}>
+              {t("common.edit")}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Delete']}>
+            <Popconfirm
+              title={t("common.delConfirm")}
+              okText={t("common.confirm")}
+              cancelText={t("common.cancel")}
+              onConfirm={() => handleDeleteChannel(key)}
+            >
+              <Button type="link">
+                {t("common.delete")}
+              </Button>
+            </Popconfirm>
+          </PermissionWrapper>
         </>
       ),
     },
@@ -155,9 +162,11 @@ const ChannelSettingsPage: React.FC = () => {
           placeholder={`${t("common.search")}...`}
           onSearch={handleSearchChange}
         />
-        <Button type="primary" className="mr-2" onClick={() => openChannelModal("add")}>
-          + {t("common.add")}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button type="primary" className="mr-2" onClick={() => openChannelModal("add")}>
+            + {t("common.add")}
+          </Button>
+        </PermissionWrapper>
         <ChannelModal
           visible={isModalVisible}
           onClose={() => setIsModalVisible(false)}

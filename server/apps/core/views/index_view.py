@@ -28,6 +28,16 @@ def login(request):
     return JsonResponse(res)
 
 
+@api_exempt
+def reset_pwd(request):
+    data = json.loads(request.body) or request.POST.dict()
+    username = data.get("username", "")
+    password = data.get("password", "")
+    client = SystemMgmt()
+    res = client.reset_pwd(username, password)
+    return JsonResponse(res)
+
+
 @api_view(["GET"])
 def login_info(request):
     is_first_login = False
@@ -56,18 +66,14 @@ def login_info(request):
 
 def get_client(request):
     client = SystemMgmt()
-    if "admin" in request.user.roles:
-        client_id = []
-    else:
-        client_id = [i.split("_")[0] for i in request.user.roles]
-    return_data = client.get_client(";".join(list(set(client_id))))
+    return_data = client.get_client("", request.user.username)
     return JsonResponse(return_data)
 
 
 def get_my_client(request):
     client = SystemMgmt()
     client_id = request.GET.get("client_id", "") or os.getenv("CLIENT_ID", "")
-    return_data = client.get_client(client_id)
+    return_data = client.get_client(client_id, "")
     return JsonResponse(return_data)
 
 

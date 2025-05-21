@@ -53,10 +53,12 @@ export interface UserInfoContextType {
 export interface ClientData {
   id: string;
   name: string;
-  client_id: string;
+  display_name: string;
   description: string;
   url: string;
   icon?: string;
+  is_build_in?: boolean;
+  tags?: string[];
 }
 
 export interface TourItem {
@@ -96,6 +98,7 @@ export interface EntityListProps<T> {
   search?: boolean;
   operateSection?: React.ReactNode;
   infoText?: string;
+  nameField?: string;
   menuActions?: (item: T) => React.ReactNode;
   singleAction?: (item: T) => { text: string, onClick: (item: T) => void };
   openModal?: (item?: T) => void;

@@ -8,6 +8,7 @@ import OperateModal from '@/components/operate-modal';
 import { useRoleApi } from '@/app/system-manager/api/application';
 import { Role, User, Menu } from '@/app/system-manager/types/application';
 import PermissionTable from './permissionTable';
+import PermissionWrapper from "@/components/permission";
 import RoleList from './roleList';
 
 const { Search } = Input;
@@ -207,14 +208,16 @@ const RoleManagement: React.FC = () => {
       title: t('common.actions'),
       key: 'actions',
       render: (_: any, record: User) => (
-        <Popconfirm
-          title={t('common.delConfirm')}
-          okText={t('common.confirm')}
-          cancelText={t('common.cancel')}
-          onConfirm={() => handleDeleteUser(record)}
-        >
-          <Button type="link">{t('common.delete')}</Button>
-        </Popconfirm>
+        <PermissionWrapper requiredPermissions={['Delete']}>
+          <Popconfirm
+            title={t('common.delConfirm')}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => handleDeleteUser(record)}
+          >
+            <Button type="link">{t('common.delete')}</Button>
+          </Popconfirm>
+        </PermissionWrapper>
       ),
     },
   ];
@@ -363,20 +366,24 @@ const RoleManagement: React.FC = () => {
                   onSearch={handleUserSearch}
                   placeholder={`${t('common.search')}`}
                 />
-                <Button
-                  className="mr-[8px]"
-                  type="primary"
-                  onClick={openUserModal}
-                >
-                  +{t('common.add')}
-                </Button>
-                <Button
-                  loading={deleteLoading}
-                  onClick={handleBatchDeleteUsers}
-                  disabled={selectedUserKeys.length === 0 || deleteLoading}
-                >
-                  {t('system.common.modifydelete')}
-                </Button>
+                <PermissionWrapper requiredPermissions={['Add user']}>
+                  <Button
+                    className="mr-[8px]"
+                    type="primary"
+                    onClick={openUserModal}
+                  >
+                    +{t('common.add')}
+                  </Button>
+                </PermissionWrapper>
+                <PermissionWrapper requiredPermissions={['Delete']}>
+                  <Button
+                    loading={deleteLoading}
+                    onClick={handleBatchDeleteUsers}
+                    disabled={selectedUserKeys.length === 0 || deleteLoading}
+                  >
+                    {t('system.common.modifydelete')}
+                  </Button>
+                </PermissionWrapper>
               </div>
               <Spin spinning={loading}>
                 <CustomTable
@@ -400,7 +407,9 @@ const RoleManagement: React.FC = () => {
             {selectedRole?.name !== 'admin' && (
               <TabPane tab={t('system.role.permissions')} key="2">
                 <div className="flex justify-end items-center mb-4">
-                  <Button type="primary" loading={loading} onClick={handleConfirmPermissions}>{t('common.confirm')}</Button>
+                  <PermissionWrapper requiredPermissions={['Edit Permission']}>
+                    <Button type="primary" loading={loading} onClick={handleConfirmPermissions}>{t('common.confirm')}</Button>
+                  </PermissionWrapper>
                 </div>
                 <PermissionTable
                   t={t}
