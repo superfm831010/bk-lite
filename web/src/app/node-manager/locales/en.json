@@ -105,7 +105,7 @@
         "viewGuide": "View guidance",
         "installing": "Installing",
         "uninstalling": "Uninstalling",
-        "successInstall": "installed successfully",
+        "successInstall": "Installed successfully",
         "successUninstall": "Uninstalled successfully",
         "failInstall": "Installation failed",
         "failUninstall": "Uninstallation failed",
