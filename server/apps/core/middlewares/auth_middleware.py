@@ -18,8 +18,10 @@ class AuthMiddleware(MiddlewareMixin):
             [
                 getattr(view, "api_exempt", False),
                 getattr(request, "api_pass", False),
+                getattr(request, "weixin_user", False),
                 request.path == "/swagger/",
                 request.path.startswith("/admin/"),
+                request.path.startswith("/accounts/"),
             ]
         ):
             return None
