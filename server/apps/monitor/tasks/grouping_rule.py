@@ -135,7 +135,7 @@ class RuleGrouping:
                 MonitorInstanceOrganization(monitor_instance_id=asso_tuple[0], organization=asso_tuple[1])
                 for asso_tuple in create_asso_set
             ]
-            MonitorInstanceOrganization.objects.bulk_create(create_objs, batch_size=200)
+            MonitorInstanceOrganization.objects.bulk_create(create_objs, batch_size=200, ignore_conflicts=True)
 
         # if delete_asso_set:
         #     delete_ids = [exist_instance_map[asso_tuple] for asso_tuple in delete_asso_set]
