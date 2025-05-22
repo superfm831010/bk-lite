@@ -18,6 +18,7 @@ import { useGroupApi } from '@/app/system-manager/api/group/index';
 import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import OperateModal from '@/components/operate-modal';
 import PermissionWrapper from '@/components/permission';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
 const { Search } = Input;
 
@@ -34,7 +35,7 @@ const User: React.FC = () => {
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [addGroupForm] = Form.useForm();
+  const addGroupFormRef = useRef<any>(null);
   const [addGroupModalOpen, setAddGroupModalOpen] = useState(false);
   const [addSubGroupModalOpen, setAddSubGroupModalOpen] = useState(false);
   const [currentParentGroupKey, setCurrentParentGroupKey] = useState<number | null>(null);
@@ -42,7 +43,7 @@ const User: React.FC = () => {
   const [renameGroupModalOpen, setRenameGroupModalOpen] = useState(false);
   const [renameGroupLoading, setRenameGroupLoading] = useState(false);
   const [renameGroupKey, setRenameGroupKey] = useState<number | null>(null);
-  const [renameGroupForm] = Form.useForm();
+  const renameGroupFormRef = useRef<any>(null);
 
   const userModalRef = useRef<ModalRef>(null);
   const passwordModalRef = useRef<PasswordModalRef>(null);
@@ -281,6 +282,18 @@ const User: React.FC = () => {
     setPageSize(pageSize);
   };
 
+  const resetAddGroupForm = () => {
+    if (addGroupFormRef.current) {
+      addGroupFormRef.current.resetFields();
+    }
+  };
+
+  const resetRenameGroupForm = () => {
+    if (renameGroupFormRef.current) {
+      renameGroupFormRef.current.resetFields();
+    }
+  };
+
   const handleAddRootGroup = () => {
     setCurrentParentGroupKey(null);
     setAddGroupModalOpen(true);
@@ -294,17 +307,19 @@ const User: React.FC = () => {
   const onAddGroup = async () => {
     setAddGroupLoading(true);
     try {
-      const values = await addGroupForm.validateFields();
+      const values = await addGroupFormRef.current?.validateFields();
       await addTeamData({
         group_name: values.name,
         parent_group_id: currentParentGroupKey || undefined,
       });
-      message.success(t('common.addSuccess'));
+      message.success(t('common.saveSuccess'));
       fetchTreeData();
       setAddGroupModalOpen(false);
       setAddSubGroupModalOpen(false);
+      // Reset after successful submission
+      resetAddGroupForm();
     } catch {
-      message.error(t('common.addFailed'));
+      message.error(t('common.saveFailed'));
     } finally {
       setAddGroupLoading(false);
     }
@@ -318,10 +333,11 @@ const User: React.FC = () => {
       case 'rename':
         const group = findNode(treeData, groupKey);
         if (group) {
-          renameGroupForm.resetFields();
           setRenameGroupKey(groupKey);
-          renameGroupForm.setFieldsValue({ renameTeam: group.title });
           setRenameGroupModalOpen(true);
+          setTimeout(() => {
+            renameGroupFormRef.current?.setFieldsValue({ renameTeam: group.title });
+          }, 0);
         }
         break;
       case 'delete':
@@ -370,20 +386,20 @@ const User: React.FC = () => {
   const onRenameGroup = async () => {
     setRenameGroupLoading(true);
     try {
-      await renameGroupForm.validateFields();
-      const values = renameGroupForm.getFieldValue('renameTeam');
+      await renameGroupFormRef.current?.validateFields();
+      const values = renameGroupFormRef.current?.getFieldsValue();
       await updateGroup({
         group_id: renameGroupKey,
-        group_name: values,
+        group_name: values.renameTeam,
       });
       message.success(t('system.group.renameSuccess'));
       fetchTreeData();
       setRenameGroupModalOpen(false);
+      resetRenameGroupForm();
     } catch {
       message.error(t('system.group.renameFailed'));
     } finally {
       setRenameGroupLoading(false);
-      renameGroupForm.resetFields();
     }
   };
 
@@ -443,11 +459,14 @@ const User: React.FC = () => {
     nodes.map((node) => ({
       ...node,
       title: (
-        <div className="flex justify-between items-center">
-          <span className="truncate">
-            {typeof node.title === 'function' ? node.title(node) : node.title}
+        <div className="flex justify-between items-center w-full pr-1">
+          <EllipsisWithTooltip 
+            text={typeof node.title === 'function' ? String(node.title(node)) : String(node.title)}
+            className="truncate max-w-[100px] flex-1"
+          />
+          <span className="flex-shrink-0 ml-2">
+            {renderGroupActions(node.key as number)}
           </span>
-          {renderGroupActions(node.key as number)}
         </div>
       ),
       children: node.children ? renderTreeNode(node.children) : [],
@@ -539,12 +558,13 @@ const User: React.FC = () => {
         onCancel={() => {
           setAddGroupModalOpen(false);
           setAddSubGroupModalOpen(false);
-          addGroupForm.resetFields();
+          resetAddGroupForm();
         }}
         okText={t('common.confirm')}
         cancelText={t('common.cancel')}
+        destroyOnClose={true}
       >
-        <Form form={addGroupForm}>
+        <Form ref={addGroupFormRef}>
           <Form.Item
             name="name"
             label={t('system.group.form.name')}
@@ -565,10 +585,11 @@ const User: React.FC = () => {
         onOk={onRenameGroup}
         onCancel={() => {
           setRenameGroupModalOpen(false);
-          renameGroupForm.resetFields();
+          resetRenameGroupForm();
         }}
+        destroyOnClose={true}
       >
-        <Form form={renameGroupForm}>
+        <Form ref={renameGroupFormRef}>
           <Form.Item
             name="renameTeam"
             label={t('system.user.form.name')}

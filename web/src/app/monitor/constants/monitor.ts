@@ -170,11 +170,11 @@ const UNIT_LIST = [
     children: [
       { label: 'bits', value: 'bits', unit: 'b' },
       { label: 'bytes', value: 'bytes', unit: 'B' },
-      { label: 'kibibytes', value: 'kbytes', unit: 'KiB' },
-      { label: 'mebibytes', value: 'mbytes', unit: 'MiB' },
-      { label: 'gibibytes', value: 'gbytes', unit: 'GiB' },
-      { label: 'tebibytes', value: 'tbytes', unit: 'TiB' },
-      { label: 'pebibytes', value: 'pbytes', unit: 'PiB' },
+      { label: 'kibibytes', value: 'kibibytes', unit: 'KiB' },
+      { label: 'mebibytes', value: 'mebibytes', unit: 'MiB' },
+      { label: 'gibibytes', value: 'gibibytes', unit: 'GiB' },
+      { label: 'tebibytes', value: 'tebibytes', unit: 'TiB' },
+      { label: 'pebibytes', value: 'pebibytes', unit: 'PiB' },
     ],
   },
   {
@@ -182,11 +182,11 @@ const UNIT_LIST = [
     children: [
       { label: 'bits', value: 'decbits', unit: 'b' },
       { label: 'bytes', value: 'decbytes', unit: 'B' },
-      { label: 'kilobytes', value: 'deckbytes', unit: 'KB' },
-      { label: 'megabytes', value: 'decmbytes', unit: 'MB' },
-      { label: 'gigabytes', value: 'decgbytes', unit: 'GB' },
-      { label: 'terabytes', value: 'dectbytes', unit: 'TB' },
-      { label: 'petabytes', value: 'decpbytes', unit: 'PB' },
+      { label: 'kibibytes', value: 'deckbytes', unit: 'KB' },
+      { label: 'mebibytes', value: 'decmbytes', unit: 'MB' },
+      { label: 'gibibytes', value: 'decgbytes', unit: 'GB' },
+      { label: 'tebibytes', value: 'dectbytes', unit: 'TB' },
+      { label: 'pebibytes', value: 'decpbytes', unit: 'PB' },
     ],
   },
   {
@@ -194,6 +194,7 @@ const UNIT_LIST = [
     children: [
       { label: 'packets/sec', value: 'pps', unit: 'p/s' },
       { label: 'bits/sec', value: 'bps', unit: 'b/s' },
+      { label: 'bytes/min', value: 'bytes/min', unit: 'B/min' },
       { label: 'bytes/sec', value: 'Bps', unit: 'B/s' },
       { label: 'kilobytes/sec', value: 'KBs', unit: 'KB/s' },
       { label: 'kilobits/sec', value: 'Kbits', unit: 'Kb/s' },
@@ -218,10 +219,13 @@ const UNIT_LIST = [
   {
     label: 'Time',
     children: [
-      { label: 'Hertz (1/s)', value: 'hertz', unit: 'hz' },
+      { label: 'Hertz (1/s)', value: 'hertz', unit: 'Hz' },
+      { label: 'Kilohertz (1000/s)', value: 'kilohertz', unit: 'KHz' },
+      { label: 'Megahertz (1000000/s)', value: 'megahertz', unit: 'MHz' },
       { label: 'nanoseconds (ns)', value: 'ns', unit: 'ns' },
       { label: 'microseconds (µs)', value: 'µs', unit: 'µs' },
       { label: 'milliseconds (ms)', value: 'ms', unit: 'ms' },
+      { label: 'centisecond (cs)', value: 'cs', unit: 'cs' },
       { label: 'seconds (s)', value: 's', unit: 's' },
       { label: 'minutes (m)', value: 'm', unit: 'min' },
       { label: 'hours (h)', value: 'h', unit: 'hour' },

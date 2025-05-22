@@ -10,9 +10,9 @@ from apps.core.utils.exempt import api_exempt
 from apps.rpc.system_mgmt import SystemMgmt
 
 
+@api_exempt
 def index(request):
-    data = {"STATIC_URL": "static/", "RUN_MODE": "PROD"}
-    response = render(request, "index.prod.html", data)
+    response = render(request, "index.html")
     return response
 
 

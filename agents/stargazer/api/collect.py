@@ -18,5 +18,5 @@ async def collect(request):
         params = {i[0]: i[1] for i in request.query_args}
     collect_service = CollectService(params)
     metrics_data = await collect_service.collect()
-    logger.info("Metrics data generated....")
+    logger.info("Metrics data generated.... plugin={}".format(collect_service.plugin_name))
     return response.raw(metrics_data, content_type='text/plain; version=0.0.4; charset=utf-8')
