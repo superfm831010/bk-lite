@@ -39,7 +39,7 @@ class SyncInstance:
             if monitor_info["name"] not in self.monitor_map:
                 continue
             query = monitor_info["default_metric"]
-            metrics = VictoriaMetricsAPI().query(query, step="24h")
+            metrics = VictoriaMetricsAPI().query(query, step="10m")
             for metric_info in metrics.get("data", {}).get("result", []):
                 instance_id = tuple([metric_info["metric"].get(i) for i in monitor_info["instance_id_keys"]])
                 instance_name = "__".join([str(i) for i in instance_id])
@@ -51,13 +51,14 @@ class SyncInstance:
                     "name": instance_name,
                     "monitor_object_id": self.monitor_map[monitor_info["name"]],
                     "auto": True,
+                    "is_deleted": False,
                 }
         return instances_map
 
     # 查询库中已有的实例
     def get_exist_instance_set(self):
-        exist_instances = MonitorInstance.objects.all()
-        return {i.id for i in exist_instances}
+        exist_instances = MonitorInstance.objects.filter(is_deleted=False).values("id")
+        return {i["id"] for i in exist_instances}
 
     def run(self):
         """更新监控实例"""
@@ -70,8 +71,15 @@ class SyncInstance:
                 create_instances.append(MonitorInstance(**instance_info))
         if delete_instances:
             MonitorInstance.objects.filter(id__in=delete_instances, is_deleted=True).delete()
+
         if create_instances:
-            MonitorInstance.objects.bulk_create(create_instances, batch_size=200)
+            # 区分是否已经逻辑删除
+            is_deleted_instance_set = {i["id"] for i in MonitorInstance.objects.filter(is_deleted=True).values("id")}
+            update_instances = [i for i in create_instances if i.id in is_deleted_instance_set]
+            _create_instances = [i for i in create_instances if i.id not in is_deleted_instance_set]
+            MonitorInstance.objects.bulk_create(_create_instances, batch_size=200)
+            if update_instances:
+                MonitorInstance.objects.bulk_update(update_instances, ["name", "is_deleted", "auto"], batch_size=200)
 
         # todo删除不活跃的实例
 
