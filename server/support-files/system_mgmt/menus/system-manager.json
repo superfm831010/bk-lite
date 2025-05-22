@@ -27,7 +27,10 @@
           "id": "application_list",
           "name": "Application-list",
           "operation": [
-            "View"
+            "View",
+            "Edit",
+            "Add",
+            "Delete"
           ]
         },
         {
@@ -38,6 +41,7 @@
             "Edit",
             "Add",
             "Add user",
+            "Remove user",
             "Edit Permission",
             "Delete"
           ]

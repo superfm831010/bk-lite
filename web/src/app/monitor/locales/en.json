@@ -372,6 +372,7 @@
       "netDes": "Monitor network performance, including network traffic, bandwidth usage, and latency.",
       "processesDes": "Monitor information about running processes, including the number of processes, CPU usage, and memory consumption.",
       "systemDes": "Monitor overall system performance and health, including metrics such as system uptime, load averages, and general activity levels.",
+      "gpuDes": "Monitor Nvidia-GPU usage, including metrics such as percent utilization, video memory usage, and temperature.",
       "port": "Port",
       "host": "Host",
       "version": "Version",
@@ -412,7 +413,8 @@
       "addressDes": "access address",
       "commonPortDes": "Port for communication with devices",
       "commonHostDes": "Host for communication with devices",
-      "color": "Color"
+      "color": "Color",
+      "note": "The monitoring data of K8S only supports active reporting, and is not supported to be accessed here for the time being."
     }
   }
 }

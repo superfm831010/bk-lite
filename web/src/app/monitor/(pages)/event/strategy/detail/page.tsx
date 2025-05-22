@@ -608,7 +608,7 @@ const StrategyOperation = () => {
                       >
                         <Input
                           placeholder={t('monitor.events.strategyName')}
-                          className="w-[300px]"
+                          className="w-[800px]"
                         />
                       </Form.Item>
                       <Form.Item<StrategyFields>
@@ -631,7 +631,7 @@ const StrategyOperation = () => {
                         >
                           <Input
                             placeholder={t('monitor.events.alertName')}
-                            className="w-[300px]"
+                            className="w-[800px]"
                           />
                         </Form.Item>
                         <div className="text-[var(--color-text-3)] mt-[10px]">
@@ -651,7 +651,7 @@ const StrategyOperation = () => {
                       >
                         <CustomCascader
                           style={{
-                            width: '300px',
+                            width: '800px',
                           }}
                           multiple
                           placeholder={t('common.group')}
@@ -1329,7 +1329,7 @@ const StrategyOperation = () => {
                               >
                                 <Select
                                   style={{
-                                    width: '300px',
+                                    width: '800px',
                                   }}
                                   showSearch
                                   allowClear

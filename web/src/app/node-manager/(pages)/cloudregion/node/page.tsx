@@ -110,7 +110,7 @@ const Node = () => {
   const tableColumns = useMemo(() => {
     if (!activeColumns?.length) return columns;
     const _columns = cloneDeep(columns);
-    _columns.splice(3, 0, ...activeColumns);
+    _columns.splice(2, 0, ...activeColumns);
     return _columns;
   }, [columns, nodeList, statusMap, activeColumns]);
 
@@ -317,10 +317,10 @@ const Node = () => {
     }));
     setActiveColumns([
       {
-        title: 'NATS-Executor',
+        title: 'Controller',
         dataIndex: natsexecutorId,
         key: natsexecutorId,
-        width: 120,
+        width: 180,
         render: (_: any, record: TableDataItem) => {
           const collectorTarget = (record.status?.collectors || []).find(
             (item: TableDataItem) => item.collector_id === natsexecutorId
@@ -328,16 +328,23 @@ const Node = () => {
           const installTarget = (record.status?.collectors_install || []).find(
             (item: TableDataItem) => item.collector_id === natsexecutorId
           );
-          const { title, tagColor, status } = getStatusInfo(
+          const { title, tagColor } = getStatusInfo(
             collectorTarget,
             installTarget
           );
           return (
-            <Tooltip title={title}>
-              <Tag bordered={false} color={tagColor}>
-                {status}
-              </Tag>
-            </Tooltip>
+            <>
+              <Tooltip title={`${record.status?.message}`} className="py-1 pr-1">
+                <Tag color={record.active ? 'success' : 'warning'}>
+                  Sidecar
+                </Tag>
+              </Tooltip>
+              <Tooltip title={title}>
+                <Tag color={tagColor} className="py-1 pr-1">
+                  NATS-Executor
+                </Tag>
+              </Tooltip>
+            </>
           );
         },
       },

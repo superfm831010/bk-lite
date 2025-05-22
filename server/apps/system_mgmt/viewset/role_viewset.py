@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import action
 
 from apps.core.backends import cache
+from apps.core.decorators.api_perminssion import HasPermission
 from apps.system_mgmt.models import Menu, Role, User
 from apps.system_mgmt.serializers.role_serializer import RoleSerializer
 from apps.system_mgmt.services.role_manage import RoleManage
@@ -14,19 +15,21 @@ class RoleViewSet(ViewSetUtils):
     serializer_class = RoleSerializer
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("application_role-View")
     def search_role_list(self, request):
         client_id = request.data.get("client_id", [])
         if not isinstance(client_id, list):
             client_id = [client_id]
-        data = Role.objects.filter(app__in=client_id).values("id", "name")
+        data = Role.objects.filter(app__in=client_id).values("id", "name").order_by("id")
         return JsonResponse({"result": True, "data": list(data)})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("application_role-View")
     def get_role_tree(self, request):
         client_list = request.data.get("client_list", [])
         return_data = []
         client_ids = [i["name"] for i in client_list]
-        roles = Role.objects.filter(app__in=client_ids).values("id", "name", "app")
+        roles = Role.objects.filter(app__in=client_ids).values("id", "name", "app").order_by("id")
         role_map = {}
         for i in roles:
             role_map.setdefault(i["app"], []).append(
@@ -41,23 +44,28 @@ class RoleViewSet(ViewSetUtils):
         return JsonResponse({"result": True, "data": return_data})
 
     @action(detail=False, methods=["GET"])
+    @HasPermission("application_role-View")
     def search_role_users(self, request):
         search = request.GET.get("search", "")
         role_id = request.GET.get("role_id", "0")
         # 过滤用户数据
-        queryset = User.objects.filter(role_list__contains=int(role_id)).filter(
-            Q(username__icontains=search) | Q(display_name__icontains=search) | Q(email__icontains=search)
+        queryset = (
+            User.objects.filter(role_list__contains=int(role_id))
+            .filter(Q(username__icontains=search) | Q(display_name__icontains=search) | Q(email__icontains=search))
+            .order_by("-id")
         )
         data, total = self.search_by_page(queryset, request, User.display_fields())
         return JsonResponse({"result": True, "data": data})
 
     @action(detail=False, methods=["GET"])
+    @HasPermission("application_role-View")
     def get_all_menus(self, request):
         client_id = request.GET.get("client_id")
         data = RoleManage().get_all_menus(client_id, is_superuser=True)
         return JsonResponse({"result": True, "data": data})
 
     @action(detail=False, methods=["GET"])
+    @HasPermission("application_role-View")
     def get_role_menus(self, request):
         role_id = request.GET.get("role_id")
         menus = Role.objects.get(id=role_id).menu_list
@@ -65,6 +73,7 @@ class RoleViewSet(ViewSetUtils):
         return JsonResponse({"result": True, "data": list(return_data)})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("application_role-Add")
     def create_role(self, request):
         role_obj = Role.objects.create(
             app=request.data.get("client_id"),
@@ -74,6 +83,7 @@ class RoleViewSet(ViewSetUtils):
         return JsonResponse({"result": True, "data": return_data})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("application_role-Delete")
     def delete_role(self, request):
         role_id = request.data.get("role_id")
         role_name = request.data.get("role_name")
@@ -87,11 +97,13 @@ class RoleViewSet(ViewSetUtils):
         return JsonResponse({"result": True})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("application_role-Edit")
     def update_role(self, request):
         Role.objects.filter(id=request.data.get("role_id")).update(name=request.data.get("role_name"))
         return JsonResponse({"result": True})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("application_role-Add user")
     def add_user(self, request):
         pk = request.data.get("role_id")
         user_ids = request.data.get("user_ids")
@@ -103,6 +115,7 @@ class RoleViewSet(ViewSetUtils):
         return JsonResponse({"result": True})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("application_role-Remove user")
     def delete_user(self, request):
         pk = int(request.data.get("role_id"))
         user_ids = request.data.get("user_ids")
@@ -114,6 +127,7 @@ class RoleViewSet(ViewSetUtils):
         return JsonResponse({"result": True})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("application_role-Edit Permission")
     def set_role_menus(self, request):
         params = request.data
         role_id = params.get("role_id")

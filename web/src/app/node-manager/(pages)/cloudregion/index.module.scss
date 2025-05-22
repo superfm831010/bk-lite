@@ -14,5 +14,9 @@
          text-overflow: ellipsis;
          white-space: wrap;
       }
+
+      .ant-dropdown-menu-item {
+         margin-bottom: 3px !important;
+      }
    }
 }

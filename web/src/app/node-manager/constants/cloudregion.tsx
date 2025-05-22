@@ -202,12 +202,35 @@ const BATCH_FIELD_MAPS: Record<string, string> = {
   password: 'loginPassword',
 };
 
+const useMenuItem = () => {
+  const { t } = useTranslation();
+  return useMemo(() => [
+    {
+      key: 'edit',
+      role: 'Edit',
+      title: 'edit',
+      config: {
+        title: 'editform', type: 'edit'
+      }
+    },
+    {
+      key: 'delete',
+      role: 'Delete',
+      title: 'delete',
+      config: {
+        title: 'deleteform', type: 'delete'
+      }
+    },
+  ], [t])
+};
+
 export {
   useTelegrafMap,
   useInstallWays,
   useInstallMap,
   useSidecarItems,
   useCollectorItems,
+  useMenuItem,
   OPERATE_SYSTEMS,
   BATCH_FIELD_MAPS,
 };

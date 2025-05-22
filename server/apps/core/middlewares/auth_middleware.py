@@ -20,6 +20,7 @@ class AuthMiddleware(MiddlewareMixin):
                 getattr(request, "api_pass", False),
                 request.path == "/swagger/",
                 request.path.startswith("/admin/"),
+                request.path.startswith("/accounts/"),
             ]
         ):
             return None
