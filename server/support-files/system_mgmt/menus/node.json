@@ -11,7 +11,7 @@
         {
           "id": "cloud_region_list",
           "name": "Cloud Region-List",
-          "operation": ["View", "Edit"]
+          "operation": ["View", "Edit", "Add", "Delete"]
         },
         {
           "id": "cloud_region_node",
