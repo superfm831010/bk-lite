@@ -5,7 +5,7 @@ from apps.opspilot.models import Bot, FileKnowledge, LLMSkill, QuotaRule, TeamTo
 
 def get_quota_client(request):
     teams = request.user.group_list
-    current_team = request.COOKIES.get("current_team")
+    current_team = int(request.COOKIES.get("current_team", 0))
     if not current_team:
         current_team = teams[0]
     client = QuotaUtils(request.user.username, current_team, request.user.is_superuser)
@@ -15,7 +15,7 @@ def get_quota_client(request):
 class QuotaUtils(object):
     def __init__(self, username, team, is_superuser=False):
         self.username = username
-        self.team = team
+        self.team = int(team)
         self.is_superuser = is_superuser
         self.quota_list = self.get_quota_list()
 

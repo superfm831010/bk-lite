@@ -65,7 +65,7 @@ def invoke_document_to_es(document_id=0, document=None):
     document.chunk_size = 0
     document.save()
     logger.info(f"document {document.name} progress: {document.train_progress}")
-    KnowledgeSearchService.delete_es_content(document.knowledge_index_name(), document_id, document.name)
+    KnowledgeSearchService.delete_es_content(document.knowledge_index_name(), document.id, document.name)
     res, knowledge_docs = invoke_one_document(document)
     if not res:
         document.train_status = DocumentStatus.ERROR

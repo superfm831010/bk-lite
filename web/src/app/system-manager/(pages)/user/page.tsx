@@ -17,6 +17,7 @@ import styles from './index.module.scss';
 import { useGroupApi } from '@/app/system-manager/api/group/index';
 import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import OperateModal from '@/components/operate-modal';
+import PermissionWrapper from '@/components/permission';
 
 const { Search } = Input;
 
@@ -89,20 +90,26 @@ const User: React.FC = () => {
       fixed: 'right',
       render: (key: string) => (
         <>
-          <Button type="link" className="mr-[8px]" onClick={() => handleEditUser(key)}>
-            {t('common.edit')}
-          </Button>
-          <Button type="link" className="mr-[8px]" onClick={() => openPasswordModal(key)}>
-            {t('system.common.password')}
-          </Button>
-          <Popconfirm
-            title={t('common.delConfirm')}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            onConfirm={() => showDeleteConfirm(key)}
-          >
-            <Button type="link">{t('common.delete')}</Button>
-          </Popconfirm>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button type="link" className="mr-[8px]" onClick={() => handleEditUser(key)}>
+              {t('common.edit')}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button type="link" className="mr-[8px]" onClick={() => openPasswordModal(key)}>
+              {t('system.common.password')}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Delete']}>
+            <Popconfirm
+              title={t('common.delConfirm')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => showDeleteConfirm(key)}
+            >
+              <Button type="link">{t('common.delete')}</Button>
+            </Popconfirm>
+          </PermissionWrapper>
         </>
       ),
     },
@@ -153,14 +160,30 @@ const User: React.FC = () => {
     setIsDeleteDisabled(selectedRowKeys.length === 0);
   }, [selectedRowKeys]);
 
+  const nodeExistsInTree = (tree: TreeDataNode[], key: React.Key): boolean => {
+    for (const node of tree) {
+      if (node.key === key) return true;
+      if (node.children && node.children.length > 0) {
+        if (nodeExistsInTree(node.children, key)) return true;
+      }
+    }
+    return false;
+  };
+
   const handleTreeSelect = (selectedKeys: React.Key[]) => {
     setSelectedRowKeys([]);
-    setSelectedTreeKeys(selectedKeys.map(Number));
+    
+    if (selectedKeys.length === 0 || !nodeExistsInTree(filteredTreeData, selectedKeys[0])) {
+      setSelectedTreeKeys([]);
+    } else {
+      setSelectedTreeKeys(selectedKeys.map(Number));
+    }
+    
     fetchUsers({
       search: searchValue,
       page: currentPage,
       page_size: pageSize,
-      group_id: selectedKeys[0] as number,
+      group_id: selectedKeys.length > 0 ? selectedKeys[0] as number : undefined,
     });
   };
 
@@ -302,16 +325,24 @@ const User: React.FC = () => {
         }
         break;
       case 'delete':
-        confirm({
-          title: t('common.delConfirm'),
-          content: t('common.delConfirmCxt'),
-          centered: true,
-          okText: t('common.confirm'),
-          cancelText: t('common.cancel'),
-          async onOk() {
-            handleDeleteGroup(groupKey);
-          },
-        });
+        const targetGroup = findNode(treeData, groupKey);
+        if (targetGroup) {
+          const hasChildren = targetGroup.children && targetGroup.children.length > 0;
+          const confirmContent = hasChildren 
+            ? t('system.group.deleteWithChildrenWarning') + '' + t('common.delConfirmCxt')
+            : t('common.delConfirmCxt');
+            
+          confirm({
+            title: t('common.delConfirm'),
+            content: confirmContent,
+            centered: true,
+            okText: t('common.confirm'),
+            cancelText: t('common.cancel'),
+            async onOk() {
+              handleDeleteGroup(groupKey);
+            },
+          });
+        }
         break;
     }
   };
@@ -372,9 +403,30 @@ const User: React.FC = () => {
         <Menu
           onClick={({ key }) => handleGroupAction(key, groupKey)}
           items={[
-            { key: 'addSubGroup', label: t('system.group.addSubGroups') },
-            { key: 'rename', label: t('system.group.rename') },
-            { key: 'delete', label: t('common.delete') },
+            {
+              key: 'addSubGroup',
+              label: (
+                <PermissionWrapper requiredPermissions={['Add']}>
+                  {t('system.group.addSubGroups')}
+                </PermissionWrapper>
+              ),
+            },
+            {
+              key: 'rename',
+              label: (
+                <PermissionWrapper requiredPermissions={['Edit']}>
+                  {t('system.group.rename')}
+                </PermissionWrapper>
+              ),
+            },
+            {
+              key: 'delete',
+              label: (
+                <PermissionWrapper requiredPermissions={['Delete']}>
+                  {t('common.delete')}
+                </PermissionWrapper>
+              ),
+            },
           ]}
         />
       }
@@ -415,7 +467,9 @@ const User: React.FC = () => {
           onChange={(e) => handleTreeSearchChange(e.target.value)}
           value={treeSearchValue}
         />
-        <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={handleAddRootGroup}></Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={handleAddRootGroup}></Button>
+        </PermissionWrapper>
       </div>
       <Tree
         className="w-full flex-1 overflow-auto"
@@ -439,13 +493,17 @@ const User: React.FC = () => {
           onSearch={handleUserSearch}
           placeholder={`${t('common.search')}...`}
         />
-        <Button type="primary" className="mr-2" onClick={() => openUserModal('add')}>
-          +{t('common.add')}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button type="primary" className="mr-2" onClick={() => openUserModal('add')}>
+            +{t('common.add')}
+          </Button>
+        </PermissionWrapper>
         <UserModal ref={userModalRef} treeData={treeData} onSuccess={onSuccessUserModal} />
-        <Button onClick={handleModifyDelete} disabled={isDeleteDisabled}>
-          {t('common.batchDelete')}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Delete']}>
+          <Button onClick={handleModifyDelete} disabled={isDeleteDisabled}>
+            {t('common.batchDelete')}
+          </Button>
+        </PermissionWrapper>
         <PasswordModal ref={passwordModalRef} onSuccess={() => fetchUsers({ search: searchValue, page: currentPage, page_size: pageSize })} />
       </div>
       <Spin spinning={loading}>
