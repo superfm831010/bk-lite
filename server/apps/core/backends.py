@@ -2,6 +2,7 @@ import logging
 import os
 import traceback
 
+from allauth.account.auth_backends import AuthenticationBackend
 from django.contrib.auth.backends import ModelBackend
 from django.core.cache import caches
 from django.db import IntegrityError
@@ -70,3 +71,16 @@ class AuthBackend(ModelBackend):
             logger.exception(traceback.format_exc())
             logger.exception("Auto create & update UserModel fail")
             return None
+
+
+class SocialBackends(AuthenticationBackend):
+    def authenticate(self, request, **credentials):
+        logger.info("SocialBackends.authenticate called with credentials: %s", credentials)
+        result = super().authenticate(request, **credentials)
+        if result:
+            logger.info("Authentication successful for user: %s", result.username)
+            setattr(request, "weixin_user", True)
+            request.user.username = result.username
+            request.user.is_superuser = result.is_superuser
+
+        return result
