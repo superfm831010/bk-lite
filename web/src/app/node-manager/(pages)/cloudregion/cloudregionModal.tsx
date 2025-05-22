@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Form, Button, Input, message, Popconfirm, FormInstance } from 'antd';
+import { Form, Button, Input, message, FormInstance } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import {
   ModalRef,
@@ -18,7 +18,7 @@ import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 const CloudRegionModal = forwardRef<ModalRef, ModalSuccess>(
   ({ onSuccess }, ref) => {
     const { t } = useTranslation();
-    const { updateCloudIntro, createCloudRegion, deleteCloudRegion } = useApiCloudRegion();
+    const { updateCloudIntro, createCloudRegion } = useApiCloudRegion();
     const cloudRegionFormRef = useRef<FormInstance>(null);
     const [openEditCloudRegion, setOpenEditCloudRegion] = useState(false);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
@@ -28,7 +28,6 @@ const CloudRegionModal = forwardRef<ModalRef, ModalSuccess>(
       name: '',
       introduction: ''
     });
-    const Popconfirmarr = ['delete'];
 
     useImperativeHandle(ref, () => ({
       showModal: ({ type, title, form }) => {
@@ -67,10 +66,6 @@ const CloudRegionModal = forwardRef<ModalRef, ModalSuccess>(
             introduction
           });
           message.success(t('common.addSuccess'));
-        } else {
-          const { id } = cloudRegion;
-          await deleteCloudRegion(id);
-          message.success(t('common.deleteSuccess'));
         }
         onSuccess();
         setOpenEditCloudRegion(false);
@@ -99,34 +94,15 @@ const CloudRegionModal = forwardRef<ModalRef, ModalSuccess>(
           onCancel={handleCancel}
           footer={
             <div>
-              {Popconfirmarr.includes(type) ? (
-                <Popconfirm
-                  title={t(`common.delete`)}
-                  description={t(`node-manager.cloudregion.deleteform.deleteInfo`)}
-                  okText={t('common.confirm')}
-                  cancelText={t('common.cancel')}
-                  onConfirm={handleFormOkClick}
-                >
-                  <Button
-                    className="mr-[10px]"
-                    type="primary"
-                    loading={confirmLoading}
-                    danger
-                  >
-                    {t('common.delete')}
-                  </Button>
-                </Popconfirm>
-              ) : (
-                <Button
-                  type="primary"
-                  className="mr-[10px]"
-                  disabled={formData.name === 'default'}
-                  loading={confirmLoading}
-                  onClick={handleFormOkClick}
-                >
-                  {t('common.confirm')}
-                </Button>
-              )}
+              <Button
+                type="primary"
+                className="mr-[10px]"
+                disabled={formData.name === 'default'}
+                loading={confirmLoading}
+                onClick={handleFormOkClick}
+              >
+                {t('common.confirm')}
+              </Button>
               <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }

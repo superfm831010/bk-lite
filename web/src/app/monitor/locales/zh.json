@@ -413,7 +413,8 @@
       "addressDes": "接入地址",
       "commonPortDes": "与设备进行通信的端口",
       "commonHostDes": "与设备进行通信的主机",
-      "color": "颜色"
+      "color": "颜色",
+      "note": "K8S的监控数据仅支持主动上报，暂不支持在此处接入。"
     }
   }
 }
