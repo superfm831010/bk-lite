@@ -14,6 +14,7 @@ import type { UploadProps } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useAuth } from '@/context/auth';
+import { useSession } from 'next-auth/react';
 
 interface FieldModalProps {
   onSuccess: () => void;
@@ -42,7 +43,8 @@ const ImportInst = forwardRef<FieldModalRef, FieldModalProps>(
     const { post } = useApiClient();
     const { Dragger } = Upload;
     const authContext = useAuth();
-    const token = authContext?.token || null;
+    const { data: session } = useSession();
+    const token = session?.user?.token || authContext?.token || null;
     const tokenRef = useRef(token);
 
     useImperativeHandle(ref, () => ({
