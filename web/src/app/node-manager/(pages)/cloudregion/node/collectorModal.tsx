@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useEffect,
 } from 'react';
-import { Form, Select, message, Button, Popconfirm  } from 'antd';
+import { Form, Select, message, Button, Popconfirm } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import { useTranslation } from '@/utils/i18n';
@@ -83,13 +83,13 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
             : 'natsexecutor_windows';
         const options: any = [];
         data?.forEach((item: any) => {
-          if(item.id === natsexecutorId) {
+          if (item.id === natsexecutorId) {
             options.push({
               label: 'Controller',
               title: 'Controller',
               options: [{
                 label: item.name,
-                value: item. id
+                value: item.id
               }]
             })
             return;
@@ -312,14 +312,6 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                 options={options}
                 onChange={handleCollectorChange}
               ></Select>
-              {/* <Cascader
-                showSearch
-                allowClear
-                loading={collectorLoading} 
-                options={options} 
-                onChange={handleCollectorChange} 
-                placeholder={t('common.selectMsg')} 
-              /> */}
             </Form.Item>
             {type === 'startCollector' && collector?.includes('telegraf') && (
               <div className="text-[12px] text-[var(--color-text-2)]">
