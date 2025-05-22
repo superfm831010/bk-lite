@@ -166,7 +166,6 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
     };
 
     const normFile = (e: any) => {
-      console.log('Upload event:', e);
       if (Array.isArray(e)) {
         return e;
       }

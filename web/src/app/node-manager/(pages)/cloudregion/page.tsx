@@ -116,7 +116,7 @@ const CloudRegion = () => {
               }
             >
               <PermissionWrapper
-                requiredPermissions={['Edit']}
+                requiredPermissions={['Delete']}
                 className="!block"
               >
                 <Button type="text" className="w-full">
