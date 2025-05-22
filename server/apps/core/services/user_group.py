@@ -34,3 +34,9 @@ class UserGroup:
             return dict(is_all=True, group_ids=[])
         group_ids = Group(token).get_user_group_and_subgroup_ids(user_group_list=user_groups)
         return dict(is_all=False, group_ids=group_ids)
+
+    @classmethod
+    def get_all_groups(cls, system_mgmt_client):
+        """获取所有用户组"""
+        groups = system_mgmt_client.get_all_groups()
+        return groups["data"]
