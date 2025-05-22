@@ -16,6 +16,7 @@ class HostInfo:
 
     def __init__(self, params: dict):
         self.node_id = params["node_id"]
+        self.host = params.get("host", "")
         self.username = params.get("username")
         self.password = params.get("password")
         self.time_out = int(params.get("execute_timeout", 60))
@@ -174,6 +175,7 @@ EOF
         if self.username:
             script_params["username"] = self.username
             script_params["password"] = self.password
+            script_params["host"] = self.host
         if self.time_out:
             script_params["execute_timeout"] = self.time_out
         return script_params

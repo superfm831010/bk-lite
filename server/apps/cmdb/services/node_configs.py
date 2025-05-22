@@ -37,10 +37,10 @@ class BaseNodeParams(metaclass=ABCMeta):
 
     def get_host_ip_addr(self, host):
         if isinstance(host, dict):
-            ip_addr = host.get("ip_addr", "")
+            ip_addr = host.get(self.host_field, "")
         else:
             ip_addr = host
-        return self.host_field, ip_addr
+        return "host", ip_addr
 
     @property
     def has_set_instances(self):
@@ -133,7 +133,7 @@ class BaseNodeParams(metaclass=ABCMeta):
                     "url": _url,
                     "collect_type": "http",
                     "type": "prometheus",
-                    "instance_id":  str((self.get_instance_id(host),)),
+                    "instance_id": str((self.get_instance_id(host),)),
                     "interval": self.BASE_INTERVAL_MAP.get(self.model_id, 300),
                     "instance_type": self.get_instance_type,
                     "timeout": self.timeout,
@@ -194,6 +194,7 @@ class NetworkNodeParams(BaseNodeParams):
         super().__init__(*args, **kwargs)
         # 当 instance.model_id 为 "vmware_vc" 时，PLUGIN_MAP 配置为 "vmware_info"
         self.PLUGIN_MAP.update({self.model_id: "snmp_facts"})
+        self.host_field = "ip_addr"
 
     def set_credential(self, *args, **kwargs):
         """
@@ -225,7 +226,7 @@ class NetworkNodeParams(BaseNodeParams):
             "privacy": self.credential.get("privacy", ""),
             "authkey": self.credential.get("authkey", ""),
             "privkey": self.credential.get("privkey", ""),
-            "timeout": self.credential.get("timeout", ""),
+            "timeout": self.credential.get("timeout", "1"),
         }
         if self.model_id == "network_topo":
             credential_data.update({"topo": "true"})
@@ -248,6 +249,7 @@ class MysqlNodeParams(BaseNodeParams):
         super().__init__(*args, **kwargs)
         # 当 instance.model_id 为 "vmware_vc" 时，PLUGIN_MAP 配置为 "vmware_info"
         self.PLUGIN_MAP.update({self.model_id: "mysql_info"})
+        self.host_field = "ip_addr"
 
     def set_credential(self, *args, **kwargs):
         credential_data = {
