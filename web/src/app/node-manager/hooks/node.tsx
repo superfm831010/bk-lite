@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/utils/i18n';
-// import { Tag, Tooltip, Button } from 'antd';
 import { Button } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { TableDataItem } from '@/app/node-manager/types/index';

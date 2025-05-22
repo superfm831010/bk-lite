@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useEffect,
 } from 'react';
-import { Form, Select, message, Button, Popconfirm, Cascader  } from 'antd';
+import { Form, Select, message, Button, Popconfirm  } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import { useTranslation } from '@/utils/i18n';
@@ -17,7 +17,6 @@ import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import type { TableDataItem } from '@/app/node-manager/types';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
 import { COLLECTOR_LABEL } from '@/app/node-manager/constants/collector';
-import { cloneDeep } from 'lodash';
 const { Option } = Select;
 
 interface Option {
@@ -86,23 +85,27 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
         data?.forEach((item: any) => {
           if(item.id === natsexecutorId) {
             options.push({
-              label: item.name,
-              value: item.id,
+              label: 'Controller',
+              title: 'Controller',
+              options: [{
+                label: item.name,
+                value: item. id
+              }]
             })
             return;
           }
           const tag = getCollectorLabelKey(item.name);
-          const tagIndex = options.findIndex((item: any) => item.value === tag);
+          const tagIndex = options.findIndex((item: any) => item.title === tag);
           if (tagIndex >= 0) {
-            options[tagIndex].children.push({
+            options[tagIndex].options.push({
               label: item.name,
               value: item.id
             })
           } else {
             options.push({
               label: tag,
-              value: tag,
-              children: [{
+              title: tag,
+              options: [{
                 label: item.name,
                 value: item.id
               }]
@@ -232,9 +235,9 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
       }
     };
 
-    const handleCollectorChange = async (option: string[]) => {
-      const _option = cloneDeep(option);
-      const id = _option?.reverse()[0]
+    const handleCollectorChange = async (option: string) => {
+      console.log(option);
+      const id = option;
       setCollector(id);
       setPackageList([]);
       collectorFormRef.current?.setFieldsValue({
@@ -302,14 +305,21 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                 },
               ]}
             >
-              <Cascader
+              <Select
+                showSearch
+                allowClear
+                loading={collectorLoading}
+                options={options}
+                onChange={handleCollectorChange}
+              ></Select>
+              {/* <Cascader
                 showSearch
                 allowClear
                 loading={collectorLoading} 
                 options={options} 
                 onChange={handleCollectorChange} 
                 placeholder={t('common.selectMsg')} 
-              />
+              /> */}
             </Form.Item>
             {type === 'startCollector' && collector?.includes('telegraf') && (
               <div className="text-[12px] text-[var(--color-text-2)]">

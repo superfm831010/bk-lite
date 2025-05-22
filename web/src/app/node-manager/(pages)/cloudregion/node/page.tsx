@@ -317,7 +317,7 @@ const Node = () => {
     }));
     setActiveColumns([
       {
-        title: t('node-manager.cloudregion.node.sidecar'),
+        title: 'Controller',
         dataIndex: natsexecutorId,
         key: natsexecutorId,
         width: 240,
