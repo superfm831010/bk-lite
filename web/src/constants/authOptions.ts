@@ -85,6 +85,7 @@ export const authOptions: AuthOptions = {
         token.username = user.username;
         token.locale = user.locale || 'en';
         token.token = user.token;
+        token.temporary_pwd = user.temporary_pwd;
       }
       
       return token;
@@ -95,6 +96,7 @@ export const authOptions: AuthOptions = {
         username: token.username,
         locale: token.locale,
         token: token.token,
+        temporary_pwd: token.temporary_pwd,
       };
       return session;
     },
@@ -107,6 +109,7 @@ export const authOptions: AuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
+        secure: process.env.NODE_ENV === 'production',
         domain: cookieDomain
       }
     },
@@ -115,6 +118,7 @@ export const authOptions: AuthOptions = {
       options: {
         sameSite: 'lax',
         path: '/',
+        secure: process.env.NODE_ENV === 'production',
         domain: cookieDomain
       }
     },
@@ -124,6 +128,7 @@ export const authOptions: AuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
+        secure: process.env.NODE_ENV === 'production',
         domain: cookieDomain
       }
     }
