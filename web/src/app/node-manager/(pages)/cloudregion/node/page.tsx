@@ -320,7 +320,7 @@ const Node = () => {
         title: 'Controller',
         dataIndex: natsexecutorId,
         key: natsexecutorId,
-        width: 240,
+        width: 180,
         render: (_: any, record: TableDataItem) => {
           const collectorTarget = (record.status?.collectors || []).find(
             (item: TableDataItem) => item.collector_id === natsexecutorId
