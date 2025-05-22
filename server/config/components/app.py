@@ -35,9 +35,6 @@ INSTALLED_APPS = (
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
     "rest_framework",
     "rest_framework.authtoken",
     "django_minio_backend",
@@ -48,7 +45,6 @@ INSTALLED_APPS = (
     "django_select2",
     "apps.core",
     "nats_client",
-    "allauth.socialaccount.providers.weixin",
 )
 
 STORAGES = {
@@ -61,7 +57,6 @@ AUTHENTICATION_BACKENDS = (
     "apps.core.backends.AuthBackend",  # this is default
     "apps.core.backends.APISecretAuthBackend",
     "django.contrib.auth.backends.ModelBackend",
-    "apps.core.backends.SocialBackends",
 )
 
 AUTH_USER_MODEL = "base.User"
@@ -81,17 +76,9 @@ MIDDLEWARE = (
     "apps.core.middlewares.app_exception_middleware.AppExceptionMiddleware",
     "apps.core.middlewares.drf_middleware.DisableCSRFMiddleware",
     "apps.core.middlewares.api_middleware.APISecretMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
     "apps.core.middlewares.auth_middleware.AuthMiddleware",
 )
-SOCIALACCOUNT_PROVIDERS = {
-    "weixin": {
-        "AUTHORIZE_URL": "https://open.weixin.qq.com/connect/qrconnect",  # for media platform
-        "SCOPE": ["snsapi_login"],
-    }
-}
 
-LOGIN_REDIRECT_URL = os.getenv("LOGIN_REDIRECT_URL", "/")
 if DEBUG:
     INSTALLED_APPS += (
         "corsheaders",
