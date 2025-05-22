@@ -39,6 +39,13 @@
         "title": "编辑云区域",
         "Introduction": "简介"
       },
+      "addform": {
+        "title": "新增云区域"
+      },
+      "deleteform": {
+        "title": "删除云区域",
+        "deleteInfo": "您确定要删除此云区域吗?"
+      },
       "node": {
         "node": "节点",
         "desc": "节点管理主要用于在每个节点上安装探针,并通过探针管理各种类型的收集器。",

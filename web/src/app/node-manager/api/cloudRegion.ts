@@ -15,10 +15,26 @@ const useApiCloudRegion = () => {
     return await get('/node_mgmt/api/cloud_region/');
   };
 
+  // 创建云区域
+  const createCloudRegion = async (data: {
+    name: string,
+    introduction: string,
+  }) => {
+    return await post('/node_mgmt/api/cloud_region/', data)
+  };
+
+  // 删除云区域
+  const deleteCloudRegion = async (id: string | number) => {
+    return await del(`/node_mgmt/api/cloud_region/${id}`)
+  };
+
   //更新云区域的介绍
   const updateCloudIntro = async (
     id: string,
-    data: { introduction: string }
+    data: {
+      name?: string,
+      introduction: string 
+    }
   ) => {
     return await patch(`/node_mgmt/api/cloud_region/${id}/`, data);
   };
@@ -122,7 +138,7 @@ const useApiCloudRegion = () => {
   const getChildConfig = async (params: {
     collector_config_id: string;
     search?: string;
-    page?:number;
+    page?: number;
     page_size?: number;
   }) => {
     return await get('/node_mgmt/api/child_config', { params });
@@ -236,6 +252,8 @@ const useApiCloudRegion = () => {
   return {
     getCloudList,
     updateCloudIntro,
+    createCloudRegion,
+    deleteCloudRegion,
     getNodeList,
     getConfiglist,
     createConfig,
