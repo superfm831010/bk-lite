@@ -215,7 +215,7 @@ const useMenuItem = () => {
     },
     {
       key: 'delete',
-      role: 'Edit',
+      role: 'Delete',
       title: 'delete',
       config: {
         title: 'deleteform', type: 'delete'
