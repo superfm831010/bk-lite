@@ -60,6 +60,7 @@ class AuthBackend(ModelBackend):
             user.locale = user_info.get("locale", "en")
             user.save()
             user.rules = rules
+            user.permission = set(user_info.get("permission") or [])
             return user
         except IntegrityError:
             logger.exception(traceback.format_exc())

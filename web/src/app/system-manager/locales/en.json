@@ -98,6 +98,7 @@
       "addSubGroups": "Add Sub-Groups",
       "rename": "Rename",
       "renameSuccess": "Rename Success",
+      "deleteWithChildrenWarning": "Deleting this group will also delete all its sub-groups and users. Are you sure you want to delete?",
       "form": {
         "name": "Group Name"
       }

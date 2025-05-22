@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import action
 
 from apps.core.backends import cache
+from apps.core.decorators.api_perminssion import HasPermission
 from apps.system_mgmt.models import Menu, Role, User
 from apps.system_mgmt.serializers.role_serializer import RoleSerializer
 from apps.system_mgmt.services.role_manage import RoleManage
@@ -14,6 +15,7 @@ class RoleViewSet(ViewSetUtils):
     serializer_class = RoleSerializer
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("application_role-View")
     def search_role_list(self, request):
         client_id = request.data.get("client_id", [])
         if not isinstance(client_id, list):
@@ -22,11 +24,12 @@ class RoleViewSet(ViewSetUtils):
         return JsonResponse({"result": True, "data": list(data)})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("application_role-View")
     def get_role_tree(self, request):
         client_list = request.data.get("client_list", [])
         return_data = []
         client_ids = [i["name"] for i in client_list]
-        roles = Role.objects.filter(app__in=client_ids).values("id", "name", "app")
+        roles = Role.objects.filter(app__in=client_ids).values("id", "name", "app").order_by("id")
         role_map = {}
         for i in roles:
             role_map.setdefault(i["app"], []).append(

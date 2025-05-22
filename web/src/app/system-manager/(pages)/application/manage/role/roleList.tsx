@@ -40,18 +40,18 @@ const RoleList: React.FC<RoleListProps> = ({
             <Icon type="bianji" />
           </span>
         </PermissionWrapper>
-        <Popconfirm
-          title={t('common.delConfirm')}
-          okText={t('common.confirm')}
-          cancelText={t('common.cancel')}
-          onConfirm={() => onDeleteRole(role)}
-        >
-          <PermissionWrapper requiredPermissions={['Delete']} className="inline-block ml-[5px]">
+        <PermissionWrapper requiredPermissions={['Delete']} className="inline-block ml-[5px]">
+          <Popconfirm
+            title={t('common.delConfirm')}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => onDeleteRole(role)}
+          >
             <span className="hidden group-hover:inline cursor-pointer hover:text-[var(--color-text-active)]">
               <Icon type="shanchu" />
             </span>
-          </PermissionWrapper>
-        </Popconfirm>
+          </Popconfirm>
+        </PermissionWrapper>
       </div>
     </div>
   );

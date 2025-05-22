@@ -98,6 +98,7 @@
       "addSubGroups": "添加子分组",
       "rename": "重命名",
       "renameSuccess": "重命名成功",
+      "deleteWithChildrenWarning": "删除该分组将同时删除其所有子分组和用户，您确定要删除吗？",
       "form": {
         "name": "团队名"
       }

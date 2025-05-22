@@ -21,7 +21,7 @@ class SystemMgmt(object):
         return_data = self.client.run("reset_pwd", username=username, password=password)
         return return_data
 
-    def get_client(self, client_id, username):
+    def get_client(self, client_id, username=""):
         return_data = self.client.run("get_client", client_id=client_id, username=username)
         return return_data
 

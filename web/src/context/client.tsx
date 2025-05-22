@@ -8,6 +8,7 @@ interface ClientDataContextType {
   loading: boolean;
   getAll: () => Promise<ClientData[]>;
   reset: () => void;
+  refresh: () => Promise<ClientData[]>; // Update return type to Promise<ClientData[]>
 }
 
 const ClientDataContext = createContext<ClientDataContextType | undefined>(undefined);
@@ -59,7 +60,21 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       await initialize();
     }
     return [...clientData];
-  }, [initialize, clientData, loading, apiLoading]);
+  }, [initialize, loading, apiLoading]);
+
+  // Update refresh function to return the updated clientData
+  const refresh = useCallback(async () => {
+    try {
+      const data = await get('/core/api/get_client/');
+      if (data) {
+        setClientData(data);
+      }
+      return data || [];
+    } catch (err) {
+      console.error('Failed to refresh client data:', err);
+      return [];
+    }
+  }, [get]);
 
   const reset = useCallback(() => {
     setClientData([]);
@@ -70,7 +85,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   return (
     <ClientDataContext.Provider
-      value={{ clientData, myClientData, loading, getAll, reset }}
+      value={{ clientData, myClientData, loading, getAll, reset, refresh }}
     >
       {children}
     </ClientDataContext.Provider>

@@ -38,6 +38,11 @@ class CloudRegionViewSet(mixins.ListModelMixin,
     )
     def partial_update(self, request, *args, **kwargs):
         self.serializer_class = CloudRegionUpdateSerializer
+        # 默认云区域default禁止编辑
+        cloud_region_id = kwargs.get('pk')
+        cloud_region = CloudRegion.objects.filter(id=cloud_region_id).first()
+        if cloud_region and cloud_region.name == 'default':
+            raise ValidationError("default云区域禁止编辑")
         return super().partial_update(request, *args, **kwargs)
 
     @swagger_auto_schema(
