@@ -263,25 +263,39 @@ const Node = () => {
     return data.find((item: TableDataItem) => item.id === id)?.name || '--';
   };
 
-  const renderColunms = (record: TableDataItem, target: string, data: any) => {
-    const collectors = (record.status?.collectors_install || []).filter(
-      (item: TableDataItem) => {
-        const labelKey = getCollectorName(item.collector_id, data || []);
-        return getCollectorLabelKey(labelKey) === target;
-      }
-    );
-    const tagList = collectors.map((tex: TableDataItem) => {
+  const renderColunms = (
+    record: TableDataItem,
+    {
+      type,
+      data,
+    }: {
+      type: string;
+      data: any;
+    }
+  ) => {
+    const collectors = [
+      ...new Set(
+        [
+          ...(record.status?.collectors_install || []),
+          ...(record.status?.collectors || []),
+        ].map((item) => item.collector_id)
+      ),
+    ].filter((id: string) => {
+      const labelKey = getCollectorName(id, data || []);
+      return getCollectorLabelKey(labelKey) === type;
+    });
+    const tagList = collectors.map((collectorId: string) => {
       const collectorTarget = (record.status?.collectors || []).find(
-        (dataItem: TableDataItem) => dataItem.collector_id === tex.collector_id
+        (dataItem: TableDataItem) => dataItem.collector_id === collectorId
       );
       const installTarget = (record.status?.collectors_install || []).find(
-        (dataItem: TableDataItem) => dataItem.collector_id === tex.collector_id
+        (dataItem: TableDataItem) => dataItem.collector_id === collectorId
       );
       const { title, tagColor } = getStatusInfo(collectorTarget, installTarget);
       return (
-        <Tooltip title={title} key={tex.collector_id} className="py-1 pr-1">
+        <Tooltip title={title} key={collectorId} className="py-1 pr-1">
           <Tag color={tagColor}>
-            {getCollectorName(tex.collector_id, data || [])}
+            {getCollectorName(collectorId, data || [])}
           </Tag>
         </Tooltip>
       );
@@ -306,14 +320,17 @@ const Node = () => {
         ? 'natsexecutor_linux'
         : 'natsexecutor_windows';
     const plugins = ['Telegraf', 'Export', 'JMX', 'BK-pull'];
-    const columnItems: any = plugins.map((item: string) => ({
-      title: item,
-      dataIndex: item,
-      key: item,
+    const columnItems: any = plugins.map((type: string) => ({
+      title: type,
+      dataIndex: type,
+      key: type,
       width: 300,
       align: 'center',
       render: (_: any, record: TableDataItem) =>
-        renderColunms(record, item, data),
+        renderColunms(record, {
+          type,
+          data,
+        }),
     }));
     setActiveColumns([
       {
@@ -334,10 +351,11 @@ const Node = () => {
           );
           return (
             <>
-              <Tooltip title={`${record.status?.message}`} className="py-1 pr-1">
-                <Tag color={record.active ? 'success' : 'warning'}>
-                  Sidecar
-                </Tag>
+              <Tooltip
+                title={`${record.status?.message}`}
+                className="py-1 pr-1"
+              >
+                <Tag color={record.active ? 'success' : 'warning'}>Sidecar</Tag>
               </Tooltip>
               <Tooltip title={title}>
                 <Tag color={tagColor} className="py-1 pr-1">
@@ -356,15 +374,16 @@ const Node = () => {
     collectorTarget: TableDataItem,
     installTarget: TableDataItem
   ) => {
-    const { action, message } = installTarget?.message || {};
-    const str = `${action ? action + ': ' : ''}${message}`;
-    const title = collectorTarget ? collectorTarget.message : str;
+    const { message } = installTarget?.message || {};
     const statusCode = collectorTarget
       ? collectorTarget.status
       : installTarget?.status;
     const tagColor = statusMap[statusCode]?.tagColor || 'default';
     const color = statusMap[statusCode]?.color || '#b2b5bd';
     const status = statusMap[statusCode]?.text || '--';
+    const engText = statusMap[statusCode]?.engText || '--';
+    const str = message || engText;
+    const title = collectorTarget ? collectorTarget.message : str;
     return {
       title,
       color,
