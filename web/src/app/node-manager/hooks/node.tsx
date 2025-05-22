@@ -30,23 +30,6 @@ export const useColumns = ({
         key: 'name',
         width: 120
       },
-      // {
-      //   title: 'Sidecar',
-      //   dataIndex: 'active',
-      //   width: 100,
-      //   render: (value: string, item) => {
-      //     return (
-      //       <Tooltip title={`${item.status?.message}`}>
-      //         <Tag bordered={false} color={value ? 'success' : 'warning'}>
-      //           {t(
-      //             `node-manager.cloudregion.node.${value ? 'active' : 'inactive'
-      //             }`
-      //           )}
-      //         </Tag>
-      //       </Tooltip>
-      //     );
-      //   },
-      // },
       {
         title: t('common.actions'),
         key: 'action',

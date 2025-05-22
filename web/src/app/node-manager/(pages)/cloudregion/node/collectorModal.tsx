@@ -138,7 +138,6 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
     const handleConfirm = () => {
       //表单验证
       collectorFormRef.current?.validateFields().then((values) => {
-        console.log(values, collector);
         let request: any = installCollector;
         let params: any = {
           nodes: nodeIds,
