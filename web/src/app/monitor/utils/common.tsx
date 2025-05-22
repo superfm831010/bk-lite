@@ -200,9 +200,9 @@ export const showGroupName = (
   if (!groupIds?.length) return '--';
   const groupNames: any[] = [];
   groupIds.forEach((el) => {
-    groupNames.push(findGroupNameById(organizationList, el));
+    groupNames.push(findGroupNameById(organizationList, Number(el)));
   });
-  return groupNames.filter((item) => !!item).join(',');
+  return groupNames.filter((item) => !!item).join(',') || '--';
 };
 
 // 图标中x轴的时间回显处理

@@ -117,7 +117,7 @@ const useColumnsAndFormItems = ({
                   </Checkbox>
                   <Checkbox value="gpu">
                     <span>
-                      <span className="w-[80px] inline-block">GPU</span>
+                      <span className="w-[80px] inline-block">Nvidia-GPU</span>
                       <span className="text-[var(--color-text-3)] text-[12px]">
                         {t('monitor.intergrations.gpuDes')}
                       </span>
@@ -858,7 +858,7 @@ const useFormItems = ({
                     </Checkbox>
                     <Checkbox value="gpu">
                       <span>
-                        <span className="w-[80px] inline-block">GPU</span>
+                        <span className="w-[80px] inline-block">Nvidia-GPU</span>
                         <span className="text-[var(--color-text-3)] text-[12px]">
                           {t('monitor.intergrations.gpuDes')}
                         </span>

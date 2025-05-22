@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import { Tag, Tooltip, Button } from 'antd';
+// import { Tag, Tooltip, Button } from 'antd';
+import { Button } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { TableDataItem } from '@/app/node-manager/types/index';
 import { useUserInfoContext } from '@/context/userInfo';
@@ -29,23 +30,23 @@ export const useColumns = ({
         key: 'name',
         width: 120
       },
-      {
-        title: 'Sidecar',
-        dataIndex: 'active',
-        width: 100,
-        render: (value: string, item) => {
-          return (
-            <Tooltip title={`${item.status?.message}`}>
-              <Tag bordered={false} color={value ? 'success' : 'warning'}>
-                {t(
-                  `node-manager.cloudregion.node.${value ? 'active' : 'inactive'
-                  }`
-                )}
-              </Tag>
-            </Tooltip>
-          );
-        },
-      },
+      // {
+      //   title: 'Sidecar',
+      //   dataIndex: 'active',
+      //   width: 100,
+      //   render: (value: string, item) => {
+      //     return (
+      //       <Tooltip title={`${item.status?.message}`}>
+      //         <Tag bordered={false} color={value ? 'success' : 'warning'}>
+      //           {t(
+      //             `node-manager.cloudregion.node.${value ? 'active' : 'inactive'
+      //             }`
+      //           )}
+      //         </Tag>
+      //       </Tooltip>
+      //     );
+      //   },
+      // },
       {
         title: t('common.actions'),
         key: 'action',
