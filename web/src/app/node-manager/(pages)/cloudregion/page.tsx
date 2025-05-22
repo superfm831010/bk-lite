@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import useApiClient from '@/utils/request';
-import { Menu, Button } from 'antd';
+import { Menu, Button, Modal, message } from 'antd';
 import cloudRegionStyle from './index.module.scss';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
@@ -15,11 +15,12 @@ import type {
 import CloudRegionModal from './cloudregionModal';
 import { ModalRef } from '@/app/node-manager/types';
 import { useMenuItem } from '@/app/node-manager/constants/cloudregion';
+const { confirm } = Modal;
 
 const CloudRegion = () => {
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
-  const { getCloudList } = useApiCloudRegion();
+  const { getCloudList, deleteCloudRegion } = useApiCloudRegion();
   const router = useRouter();
   const modalRef = useRef<ModalRef>(null);
   const divRef = useRef(null);
@@ -67,31 +68,63 @@ const CloudRegion = () => {
     fetchCloudRegions();
   };
 
+  const handleDelete = (id: string) => {
+    confirm({
+      title: t(`node-manager.cloudregion.deleteform.title`),
+      content: t(`node-manager.cloudregion.deleteform.deleteInfo`),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      centered: true,
+      onOk() {
+        return new Promise(async (resolve) => {
+          try {
+            await deleteCloudRegion(id);
+            message.success(t('common.successfullyDeleted'));
+            fetchCloudRegions();
+          } finally {
+            return resolve(true);
+          }
+        })
+      }
+    })
+  };
+
   const menuActions = useCallback(
     (data: any) => {
       return (
         <Menu onClick={(e) => e.domEvent.preventDefault()}>
-          {menuItem.map((item) => {
-            if(data?.name === "default" && item.key === "delete") return;
-            return (
-              <Menu.Item
-                key={item.title}
-                className="!p-0"
-                onClick={() =>
-                  openModal({ ...item.config, form: data})
-                }
+          <Menu.Item
+            className="!p-0"
+            onClick={() =>
+              openModal({ title: 'editform', type: 'edit', form: data })
+            }
+          >
+            <PermissionWrapper
+              requiredPermissions={['Edit']}
+              className="!block"
+            >
+              <Button type="text" className="w-full">
+                {t(`common.edit`)}
+              </Button>
+            </PermissionWrapper>
+          </Menu.Item>
+          {data?.name !== "default" && (
+            <Menu.Item
+              className="!p-0"
+              onClick={() =>
+                handleDelete(data.id)
+              }
+            >
+              <PermissionWrapper
+                requiredPermissions={['Delete']}
+                className="!block"
               >
-                <PermissionWrapper
-                  requiredPermissions={[item.role]}
-                  className="!block"
-                >
-                  <Button type="text" className="w-full">
-                    {t(`common.${item.title}`)}
-                  </Button>
-                </PermissionWrapper>
-              </Menu.Item>
-            );
-          })}
+                <Button type="text" className="w-full">
+                  {t(`common.delete`)}
+                </Button>
+              </PermissionWrapper>
+            </Menu.Item>
+          )}
         </Menu>
       );
     },

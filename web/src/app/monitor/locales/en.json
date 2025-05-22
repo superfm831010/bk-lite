@@ -413,7 +413,8 @@
       "addressDes": "access address",
       "commonPortDes": "Port for communication with devices",
       "commonHostDes": "Host for communication with devices",
-      "color": "Color"
+      "color": "Color",
+      "note": "The monitoring data of K8S only supports active reporting, and is not supported to be accessed here for the time being."
     }
   }
 }

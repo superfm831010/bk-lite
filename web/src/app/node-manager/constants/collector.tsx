@@ -1,7 +1,7 @@
 import { useTranslation } from '@/utils/i18n';
 import { useMemo } from 'react';
 
-const COLLECTOR_LABEL: Record<string,string[]>= {
+const COLLECTOR_LABEL: Record<string, string[]> = {
   Telegraf: ['Telegraf'],
   JMX: [
     'Tomcat-JMX',
@@ -66,16 +66,8 @@ const useMenuItem = () => {
       config: {
         title: 'uploadPackage', type: 'upload'
       }
-    },
-    {
-      key: 'delete',
-      role: 'Delete',
-      title: 'delete',
-      config: {
-        title: 'deleteCollector', type: 'delete'
-      }
     }
-  ],[t])
+  ], [t])
 };
 
 export {
