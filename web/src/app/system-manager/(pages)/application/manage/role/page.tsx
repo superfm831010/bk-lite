@@ -201,14 +201,14 @@ const RoleManagement: React.FC = () => {
     },
     {
       title: t('system.user.table.lastName'),
-      dataIndex: 'lastName',
-      key: 'lastName',
+      dataIndex: 'display_name',
+      key: 'display_name',
     },
     {
       title: t('common.actions'),
       key: 'actions',
       render: (_: any, record: User) => (
-        <PermissionWrapper requiredPermissions={['Delete']}>
+        <PermissionWrapper requiredPermissions={['Remove user']}>
           <Popconfirm
             title={t('common.delConfirm')}
             okText={t('common.confirm')}
