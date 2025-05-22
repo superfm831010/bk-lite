@@ -16,7 +16,14 @@ import useApiCollector from '@/app/node-manager/api/collector';
 import useApiCloudRegion from '@/app/node-manager/api/cloudRegion';
 import type { TableDataItem } from '@/app/node-manager/types';
 import useCloudId from '@/app/node-manager/hooks/useCloudRegionId';
+import { COLLECTOR_LABEL } from '@/app/node-manager/constants/collector';
 const { Option } = Select;
+
+interface Option {
+  value: string;
+  label: string;
+  children?: Option[];
+}
 
 const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
   ({ onSuccess }, ref) => {
@@ -43,6 +50,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [collector, setCollector] = useState<string | null>(null);
     const [system, setSystem] = useState<string>('');
+    const [options, setOptions] = useState<Option[]>([]);
 
     useImperativeHandle(ref, () => ({
       showModal: ({ type, ids, selectedsystem }) => {
@@ -69,6 +77,42 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
         const data = await getCollectorlist({
           node_operating_system: selectedsystem,
         });
+        const natsexecutorId =
+          selectedsystem === 'linux'
+            ? 'natsexecutor_linux'
+            : 'natsexecutor_windows';
+        const options: any = [];
+        data?.forEach((item: any) => {
+          if (item.id === natsexecutorId) {
+            options.push({
+              label: 'Controller',
+              title: 'Controller',
+              options: [{
+                label: item.name,
+                value: item.id
+              }]
+            })
+            return;
+          }
+          const tag = getCollectorLabelKey(item.name);
+          const tagIndex = options.findIndex((item: any) => item.title === tag);
+          if (tagIndex >= 0) {
+            options[tagIndex].options.push({
+              label: item.name,
+              value: item.id
+            })
+          } else {
+            options.push({
+              label: tag,
+              title: tag,
+              options: [{
+                label: item.name,
+                value: item.id
+              }]
+            });
+          }
+        });
+        setOptions(options);
         setCollectorlist(data);
       } finally {
         setCollectorLoading(false);
@@ -183,17 +227,27 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
       }
     };
 
-    const handleCollectorChange = async (value: string) => {
-      setCollector(value);
+    const getCollectorLabelKey = (value: string = '') => {
+      for (const key in COLLECTOR_LABEL) {
+        if (COLLECTOR_LABEL[key].includes(value)) {
+          return key;
+        }
+      }
+    };
+
+    const handleCollectorChange = async (option: string) => {
+      console.log(option);
+      const id = option;
+      setCollector(id);
       setPackageList([]);
       collectorFormRef.current?.setFieldsValue({
         version: null,
         configuration: null,
       });
       const object = collectorlist.find(
-        (item: TableDataItem) => item.id === value
+        (item: TableDataItem) => item.id === id
       )?.name;
-      if (type === 'installCollector' && value) {
+      if (type === 'installCollector' && id) {
         try {
           setVersionLoading(true);
           const data = await getPackageList({ object, os: system });
@@ -252,19 +306,12 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
               ]}
             >
               <Select
-                value={collector}
-                loading={collectorLoading}
                 showSearch
                 allowClear
-                placeholder={t('common.selectMsg')}
+                loading={collectorLoading}
+                options={options}
                 onChange={handleCollectorChange}
-              >
-                {collectorlist.map((item) => (
-                  <Option value={item.id} key={item.id}>
-                    {item.name}
-                  </Option>
-                ))}
-              </Select>
+              ></Select>
             </Form.Item>
             {type === 'startCollector' && collector?.includes('telegraf') && (
               <div className="text-[12px] text-[var(--color-text-2)]">

@@ -34,7 +34,20 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
     if (result?.error) {
       setFormError(result.error);
     } else {
-      window.location.href = callbackUrl || "/";
+      try {
+        const userResponse = await fetch('/api/auth/check-user-status');
+        const userData = await userResponse.json();
+        
+        if (userData.temporary_pwd) {
+          // If temporary password, directly redirect to reset password page
+          window.location.href = "/auth/reset-password";
+        } else {
+          window.location.href = callbackUrl || "/";
+        }
+      } catch (error) {
+        console.error("Failed to check user status:", error);
+        window.location.href = callbackUrl || "/";
+      }
     }
   };
 

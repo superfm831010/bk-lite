@@ -74,7 +74,7 @@ class BaseCollect(object):
 
     def format_params(self):
         if not self.task.instances:
-            return None, None, self.get_organization, None
+            return self.task.model_id, None, None, self.get_organization, None
 
         instance = self.task.instances[0]
         model_id = instance["model_id"]

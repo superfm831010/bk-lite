@@ -14,6 +14,7 @@ import {
   CascaderProps,
   Tree,
   Input,
+  Empty,
 } from 'antd';
 import CustomTable from '@/components/custom-table';
 import SearchFilter from './list/searchFilter';
@@ -44,6 +45,7 @@ import type { MenuProps } from 'antd';
 import { useRouter } from 'next/navigation';
 import PermissionWrapper from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import { useSession } from 'next-auth/react';
 
 interface ModelTabs {
   key: string;
@@ -80,7 +82,8 @@ const AssetDataContent = () => {
     searchParams.get('classificationId') || '';
   const commonContext = useCommon();
   const authContext = useAuth();
-  const token = authContext?.token || null;
+  const { data: session } = useSession();
+  const token = session?.user?.token || authContext?.token || null;
   const tokenRef = useRef(token);
   const authList = useRef(commonContext?.authOrganizations || []);
   const organizationList: Organization[] = authList.current;
@@ -382,8 +385,14 @@ const AssetDataContent = () => {
     },
   ];
 
-  const updateFieldList = (id?: string) => {
-    fetchData();
+  const updateFieldList = async (id?: string) => {
+    await fetchData();
+    try {
+      const instCount = await get('/cmdb/api/instance/model_inst_count/');
+      setModelInstCount(instCount);
+    } catch {
+      console.error('Failed to fetch model instance count');
+    }
     if (id) {
       showInstanceModal({
         _id: id,
@@ -560,7 +569,9 @@ const AssetDataContent = () => {
             icn: item.icn,
           }));
           setModelList(newModelList);
-          router.push(`/cmdb/assetData?modelId=${key}&classificationId=${group.classification_id}`);
+          router.push(
+            `/cmdb/assetData?modelId=${key}&classificationId=${group.classification_id}`
+          );
         }
       });
       getInitData(key);
@@ -669,14 +680,23 @@ const AssetDataContent = () => {
             />
           </div>
           <div className={assetDataStyle.treeWrapper}>
-            <Tree
-              showLine
-              selectedKeys={selectedTreeKeys}
-              expandedKeys={expandedTreeKeys}
-              onExpand={(keys) => setExpandedTreeKeys(keys as string[])}
-              onSelect={onSelectUnified}
-              treeData={filteredTreeData}
-            />
+            {filteredTreeData.length > 0 ? (
+              <Tree
+                showLine
+                selectedKeys={selectedTreeKeys}
+                expandedKeys={expandedTreeKeys}
+                onExpand={(keys) => setExpandedTreeKeys(keys as string[])}
+                onSelect={onSelectUnified}
+                treeData={filteredTreeData}
+              />
+            ) : (
+              <div className="flex justify-center items-center h-full">
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={t('common.noData')}
+                />
+              </div>
+            )}
           </div>
         </div>
         <div className={assetDataStyle.assetList}>

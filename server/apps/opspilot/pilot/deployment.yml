@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: pilot-{{bot_id}}
-          image: etherfurnace/pilot
+          image: bklite/pilot
           imagePullPolicy: Always
           command: [ "/bin/bash" ]
           args:

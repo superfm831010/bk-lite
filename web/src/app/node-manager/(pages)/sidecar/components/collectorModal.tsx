@@ -10,7 +10,7 @@ import {
   ModalSuccess,
   TableDataItem,
 } from '@/app/node-manager/types';
-import { Form, Button, Input, Select, Upload, message, Popconfirm } from 'antd';
+import { Form, Button, Input, Select, Upload, message } from 'antd';
 import { CloudUploadOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import { FormInstance } from 'antd/lib';
@@ -32,7 +32,7 @@ const initData = {
 const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
   ({ onSuccess }, ref) => {
     const { t } = useTranslation();
-    const { uploadPackage, addCollector, deleteCollector, editCollecttor } =
+    const { uploadPackage, addCollector, editCollecttor } =
       useApiCollector();
     const formRef = useRef<FormInstance>(null);
     const [form] = Form.useForm();
@@ -44,7 +44,6 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [formData, setFormData] = useState<TableDataItem>(initData);
     const [fileList, setFileList] = useState<any>([]);
-    const Popconfirmarr = ['delete'];
 
     useImperativeHandle(ref, () => ({
       showModal: ({ type, form, title, key }) => {
@@ -91,9 +90,6 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
     };
 
     const onSubmit = () => {
-      if (Popconfirmarr.includes(type)) {
-        return;
-      }
       setConfirmLoading(true);
       formRef.current
         ?.validateFields()
@@ -169,25 +165,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
       return Promise.resolve();
     };
 
-    //删除确认的弹窗
-    const deleteConfirm = () => {
-      setConfirmLoading(true);
-      formRef.current?.validateFields().then(() => {
-        deleteCollector({ id })
-          .then(() => {
-            setConfirmLoading(false);
-            message.success('common.delSuccess');
-            setVisible(false);
-            onSuccess();
-          })
-          .catch(() => {
-            setConfirmLoading(false);
-          });
-      });
-    };
-
     const normFile = (e: any) => {
-      console.log('Upload event:', e);
       if (Array.isArray(e)) {
         return e;
       }
@@ -202,33 +180,14 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
           onCancel={handleCancel}
           footer={
             <div>
-              {Popconfirmarr.includes(type) ? (
-                <Popconfirm
-                  title={t(`node-manager.collector.${type}`)}
-                  description={t(`node-manager.collector.${type}Info`)}
-                  okText={t('common.confirm')}
-                  cancelText={t('common.cancel')}
-                  onConfirm={deleteConfirm}
-                >
-                  <Button
-                    className="mr-[10px]"
-                    type="primary"
-                    loading={confirmLoading}
-                    danger
-                  >
-                    {t('common.delete')}
-                  </Button>
-                </Popconfirm>
-              ) : (
-                <Button
-                  type="primary"
-                  className="mr-[10px]"
-                  loading={confirmLoading}
-                  onClick={onSubmit}
-                >
-                  {t('common.confirm')}
-                </Button>
-              )}
+              <Button
+                type="primary"
+                className="mr-[10px]"
+                loading={confirmLoading}
+                onClick={onSubmit}
+              >
+                {t('common.confirm')}
+              </Button>
               <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
@@ -239,7 +198,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
             initialValues={formData}
             layout="vertical"
           >
-            {['edit', 'add', 'delete'].includes(type) && (
+            {['edit', 'add'].includes(type) && (
               <>
                 <Form.Item
                   label={t('common.name')}
@@ -248,7 +207,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                     { required: true, message: t('common.inputRequired') },
                   ]}
                 >
-                  <Input disabled={type === 'delete'} placeholder={t('common.inputMsg')} />
+                  <Input placeholder={t('common.inputMsg')} />
                 </Form.Item>
                 <Form.Item
                   label={t('node-manager.cloudregion.Configuration.system')}
@@ -273,7 +232,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                     { required: true, message: t('common.inputRequired') },
                   ]}
                 >
-                  <Input disabled={type === 'delete'} placeholder={t('common.inputMsg')} />
+                  <Input placeholder={t('common.inputMsg')} />
                 </Form.Item>
                 <Form.Item
                   label={t('node-manager.collector.executeParameters')}
@@ -282,7 +241,7 @@ const CollectorModal = forwardRef<ModalRef, ModalSuccess>(
                     { required: true, message: t('common.inputRequired') },
                   ]}
                 >
-                  <TextArea disabled={type === 'delete'} placeholder={t('common.inputMsg')} />
+                  <TextArea placeholder={t('common.inputMsg')} />
                 </Form.Item>
                 <Form.Item
                   label={t(
