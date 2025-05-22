@@ -1,6 +1,11 @@
 from apps.rpc.base import RpcClient
 
 
+class ExecutorRpcClient(RpcClient):
+    def __init__(self, namespace):
+        self.namespace = namespace
+
+
 class Executor(object):
     def __init__(self, instance_id):
         """
@@ -8,12 +13,12 @@ class Executor(object):
         :param instance_id: 执行器实例ID
         """
         self.instance_id = instance_id
-        self.local_client = RpcClient('local.execute')
-        self.ssh_client = RpcClient('ssh.execute')
-        self.download_to_local_client = RpcClient('download.local')
-        self.download_to_remote_client = RpcClient('download.remote')
-        self.transfer_file_to_remote_client = RpcClient('upload.remote')
-        self.unzip_local_client = RpcClient('unzip.local')
+        self.local_client = ExecutorRpcClient('local.execute')
+        self.ssh_client = ExecutorRpcClient('ssh.execute')
+        self.download_to_local_client = ExecutorRpcClient('download.local')
+        self.download_to_remote_client = ExecutorRpcClient('download.remote')
+        self.transfer_file_to_remote_client = ExecutorRpcClient('upload.remote')
+        self.unzip_local_client = ExecutorRpcClient('unzip.local')
 
     def execute_local(self, command, timeout=60):
         """
@@ -22,10 +27,7 @@ class Executor(object):
         :param timeout: 执行超时时间(秒)
         :return: 命令执行结果
         """
-        request_data = {
-            "command": command,
-            "execute_timeout": timeout
-        }
+        request_data = {"command": command, "execute_timeout": timeout}
         return_data = self.local_client.run(self.instance_id, request_data, _timeout=timeout)
         return return_data
 
@@ -41,13 +43,7 @@ class Executor(object):
         :param timeout: 执行超时时间(秒)
         :return: 命令执行结果
         """
-        request_data = {
-            "command": command,
-            "host": host,
-            "port": port,
-            "user": username,
-            "execute_timeout": timeout
-        }
+        request_data = {"command": command, "host": host, "port": port, "user": username, "execute_timeout": timeout}
 
         # 添加可选参数
         if password:
@@ -73,12 +69,14 @@ class Executor(object):
             "file_key": file_key,
             "file_name": file_name,
             "target_path": target_path,
-            "execute_timeout": timeout
+            "execute_timeout": timeout,
         }
         return_data = self.download_to_local_client.run(self.instance_id, request_data, _timeout=timeout)
         return return_data
 
-    def download_to_remote(self, bucket_name, file_key, file_name, target_path, host, username, password=None, timeout=60, port=22):
+    def download_to_remote(
+        self, bucket_name, file_key, file_name, target_path, host, username, password=None, timeout=60, port=22
+    ):
         """
         下载文件到远程
         :param bucket_name: 存储桶名称

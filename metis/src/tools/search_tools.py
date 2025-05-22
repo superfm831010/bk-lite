@@ -3,7 +3,7 @@ from typing import Optional
 from duckduckgo_search import DDGS
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
-from loguru import logger
+from sanic.log import logger
 
 
 @tool

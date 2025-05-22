@@ -36,4 +36,4 @@ def init_network_oid(**kwargs):
         }
         bulk_data.append(oid_model(**params))
 
-    oid_model.objects.bulk_create(bulk_data, batch_size=100)
+    oid_model.objects.bulk_create(bulk_data, batch_size=100, ignore_conflicts=True)

@@ -34,14 +34,15 @@ import { PlusOutlined } from '@ant-design/icons';
 import Icon from '@/components/icon';
 import RuleModal from './ruleModal';
 import { useCommon } from '@/app/monitor/context/common';
-import { deepClone, showGroupName } from '@/app/monitor/utils/common';
+import {
+  deepClone,
+  showGroupName,
+  getConfigByObjectName,
+} from '@/app/monitor/utils/common';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EditConfig from './updateConfig';
-import {
-  OBJECT_INSTANCE_TYPE_MAP,
-  NODE_STATUS_MAP,
-} from '@/app/monitor/constants/monitor';
+import { NODE_STATUS_MAP } from '@/app/monitor/constants/monitor';
 const { confirm } = Modal;
 import Permission from '@/components/permission';
 
@@ -119,10 +120,7 @@ const Asset = () => {
               okButtonProps={{ loading: confirmLoading }}
               onConfirm={() => deleteInstConfirm(record)}
             >
-              <Button
-                type="link"
-                className="ml-[10px]"
-              >
+              <Button type="link" className="ml-[10px]">
                 {t('common.remove')}
               </Button>
             </Popconfirm>
@@ -287,7 +285,10 @@ const Asset = () => {
     configRef.current?.showModal({
       title: t('monitor.intergrations.updateConfigration'),
       type: 'edit',
-      form: row,
+      form: {
+        ...row,
+        objName: objects.find((item) => item.id === objectId)?.name || '',
+      },
     });
   };
 
@@ -335,7 +336,7 @@ const Asset = () => {
       setRuleLoading(type !== 'timer');
       const params = {
         monitor_object_id: objectId,
-      }
+      };
       const data = await getInstanceGroupRule(params);
       setRuleList(data || []);
     } finally {
@@ -349,7 +350,7 @@ const Asset = () => {
       const params = {
         name: '',
         add_instance_count: true,
-      }
+      };
       const data = await getMonitorObject(params);
       setObjects(data);
       const _treeData = getTreeData(deepClone(data));
@@ -417,9 +418,9 @@ const Asset = () => {
       getObjects();
       getAssetInsts(objectId);
     } finally {
-      setConfirmLoading(false)
+      setConfirmLoading(false);
     }
-  }
+  };
 
   const clearText = () => {
     setSearchText('');
@@ -437,10 +438,10 @@ const Asset = () => {
         setTableData(_dataSource);
         const data = {
           instance_id: row.instance_id,
-          instance_type:
-            OBJECT_INSTANCE_TYPE_MAP[
-              objects.find((item) => item.id === objectId)?.name || ''
-            ],
+          instance_type: getConfigByObjectName(
+            objects.find((item) => item.id === objectId)?.name || '',
+            'instance_type'
+          ),
         };
         const res = await getInstanceChildConfig(data);
         _dataSource[targetIndex].dataSource = res.map(

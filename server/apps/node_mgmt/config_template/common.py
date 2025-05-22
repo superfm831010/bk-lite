@@ -1,4 +1,5 @@
 import ast
+import toml
 import os
 import re
 from jinja2 import Environment, FileSystemLoader
@@ -9,8 +10,22 @@ from apps.node_mgmt.models import CollectorConfiguration, ChildConfig, Collector
 # key为采集器名称, value为采集器模版目录，只维护采集类的采集器
 COLLECTOR_PATH_MAP = {
     "Telegraf": "telegraf",
-    "JMX-JVM": "exporter",
+
+    "ActiveMQ-JMX": "plugins",
+    "JBoss-JMX": "plugins",
+    "Jetty-JMX": "plugins",
+    "TongWeb6-JMX": "plugins",
+    "TongWeb7-JMX": "plugins",
+    "WebLogic-JMX": "plugins",
+    "JVM-JMX": "plugins",
+    "Tomcat-JMX": "plugins",
 }
+
+
+def to_toml_dict(d):
+    if not d:
+        return "{}"
+    return "{ " + ", ".join(f'"{k}" = "{v}"' for k, v in d.items()) + " }"
 
 
 class ConfigService:
@@ -26,6 +41,10 @@ class ConfigService:
         :param context: 用于模板渲染的变量字典
         :return: 渲染后的配置字符串
         """
+
+        if "snmp_config" in context:
+            context["snmp_config"] = toml.dumps(context["snmp_config"]).strip()
+
         target_dir = os.path.join(self.template_root, subdir, collect_method)
         if not os.path.isdir(target_dir):
             raise FileNotFoundError(f"Template dir '{target_dir}' not found.")
@@ -36,6 +55,7 @@ class ConfigService:
         for filename in os.listdir(target_dir):
             if re.match(pattern, filename):
                 env = Environment(loader=FileSystemLoader(target_dir))
+                env.filters['to_toml'] = to_toml_dict  # 注册自定义 filter
                 template = env.get_template(filename)
                 return template.render(context)
 
@@ -43,7 +63,7 @@ class ConfigService:
 
     def batch_add_child_config(self, collector, nodes: list):
         """批量添加子配置"""
-        subdir = f"config/{COLLECTOR_PATH_MAP.get(collector)}"
+        subdir = f"child_config/{COLLECTOR_PATH_MAP.get(collector)}"
         node_objs, base_config_ids = [], []
         for node in nodes:
             node_id = node["id"]

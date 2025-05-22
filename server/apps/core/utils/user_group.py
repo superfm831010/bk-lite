@@ -1,4 +1,3 @@
-# from apps.core.utils.keycloak_client import KeyCloakClient
 from apps.rpc.system_mgmt import SystemMgmt
 
 
@@ -53,7 +52,6 @@ class SubGroup:
 class Group:
     def __init__(self, token):
         self.token = token
-        # self.keycloak_client = KeyCloakClient()
         self.system_mgmt_client = SystemMgmt()
 
     def get_group_list(self):

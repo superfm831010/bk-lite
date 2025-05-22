@@ -52,8 +52,8 @@
       "ocr_model": "OCR 模型"
     },
     "user": {
-      "title": "用户",
-      "desc": "显示所有信息。您可以维护用户信息并分配角色。",
+      "title": "组织架构",
+      "desc": "显示组织架构和用户的所有信息，您可以维护各级组织、增删改查、也可以设置用户信息并分配角色、分组",
       "search": "搜索",
       "table": {
         "username": "用户名",
@@ -98,6 +98,7 @@
       "addSubGroups": "添加子分组",
       "rename": "重命名",
       "renameSuccess": "重命名成功",
+      "deleteWithChildrenWarning": "删除该分组将同时删除其所有子分组和用户，您确定要删除吗？",
       "form": {
         "name": "团队名"
       }
@@ -174,6 +175,30 @@
       "actions": "操作",
       "noSpecificDataSupport": "此模块不支持指定数据编辑",
       "noAvailableModules": "没有可用的权限模块"
+    },
+    "application": {
+      "title": "应用",
+      "createTitle": "创建应用",
+      "editTitle": "编辑应用",
+      "id": "应用ID",
+      "idFormat": "只允许使用字母、数字、下划线和连字符",
+      "idTooltip": "应用的唯一标识符，用作系统中的键",
+      "name": "应用名称",
+      "nameRequired": "请输入应用名称",
+      "nameMaxLength": "名称不能超过50个字符",
+      "namePlaceholder": "请输入应用名称",
+      "url": "应用URL",
+      "urlRequired": "请输入应用URL",
+      "urlInvalid": "请输入有效的URL或以'/'开头的路径",
+      "tags": "标签",
+      "tagsTooltip": "添加标签以对应用进行分类（最多8个标签）",
+      "addTag": "添加标签",
+      "maxTagsReached": "最多允许8个标签",
+      "tagsHelp": "最多8个标签，每个标签最多6个字符",
+      "description": "描述",
+      "descriptionMaxLength": "描述不能超过500个字符",
+      "selectIcon": "选择图标",
+      "searchIcon": "搜索图标"
     }
   }
 }

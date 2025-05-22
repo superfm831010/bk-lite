@@ -1,32 +1,6 @@
 version: '3'
 services:
 
-  minio:
-    image: 'minio/minio'
-    ports:
-      - '9000:9000'
-      - '9001:9001'    
-    environment:
-      - MINIO_ROOT_USER=minio
-      - MINIO_ROOT_PASSWORD=bklite-minio-password
-    command: server --console-address :9001 /data
-    volumes:
-      - minio:/data
-
-
-  rabbitmq:
-    restart: always
-    image: rabbitmq:management
-    ports:
-      - 5671:5671
-      - 5672:5672
-      - 15671:15671    
-      - 15672:15672    
-    environment:
-      TZ: Asia/Shanghai
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: password
-
   postgres:
     image: postgres:15
     environment:
@@ -37,7 +11,53 @@ services:
       - postgres:/data/postgres
     ports:
       - "5432:5432"
+    networks:
+      - traefik      
     restart: always
+
+  minio:
+    image: 'minio/minio'
+    ports:
+      - '9000:9000'
+      - '9001:9001'    
+    environment:
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=bklite-minio-password
+    command: server --console-address :9001 /data
+    networks:
+      - traefik    
+    volumes:
+      - minio:/data
+
+  redis:
+    image: redis:5.0.14
+    container_name: redis
+    command: redis-server --requirepass password
+    volumes:
+      - redis:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - traefik      
+    restart: always
+
+  rabbitmq:
+    restart: always
+    image: rabbitmq:management
+    ports:
+      - 5671:5671
+      - 5672:5672
+      - 15671:15671    
+      - 15672:15672    
+    networks:
+      - traefik      
+    environment:
+      TZ: Asia/Shanghai
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: password
+
+
+
   elasticsearch:
     image: 'bklite/elasticsearch'
     ports:
@@ -48,10 +68,109 @@ services:
        xpack.security.enabled: "true"
        ELASTIC_PASSWORD: "password"
        TZ: "UTC"
+       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    networks:
+      - traefik       
     volumes:
       - elasticsearch:/usr/share/elasticsearch/data
+
+  neo4j:
+    image: neo4j
+    container_name: neo4j
+    restart: always
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+      - "7473:7473"
+    environment:
+      - NEO4J_AUTH=neo4j/neo4j_password
+    networks:
+      - traefik      
+    volumes:
+      - neo4j:/data
+
+  nats:
+    image: nats:2.10.25
+    container_name: nats
+    volumes:
+      - nats:/nats
+      - ./conf/nats/nats.conf:/etc/nats/nats.conf
+    ports:
+      - "4222:4222"
+    command:
+      - -c
+      - /etc/nats/nats.conf
+      - --user
+      - admin
+      - --pass
+      - nats_password
+    networks:
+      - traefik      
+    restart: always
+
+  victoria-metrics:
+    image: victoriametrics/victoria-metrics:v1.106.1
+    container_name: victoria-metrics
+    volumes:
+      - victoria-metrics:/victoria-metrics-data
+    ports:
+      - "8428:8428"
+    command:
+      - --storageDataPath=/victoria-metrics-data
+      - --httpListenAddr=0.0.0.0:8428
+      - --retentionPeriod=168h
+      - -maxLabelsPerTimeseries=300
+    networks:
+      - traefik      
+    restart: always
+  telegraf:
+    image: bklite/telegraf
+    container_name: telegraf
+    environment:
+      - METRIC_NATS_USERNAME=admin
+      - METRIC_NATS_PASSWORD=5FE2MUTR7ZaLRVx7uAuObRnmBYxMG
+      - METRIC_OUTPUT_URL=http://victoria-metrics:8428
+      - METRIC_NATS_SERVERS=nats://nats:4222
+    networks:
+      - traefik      
+    volumes:
+      - ./conf/telegraf/telegraf.conf:/apps/telegraf.conf
+    restart: always
+
+  victorialogs:
+    image: victoriametrics/victoria-logs:v1.17.0-victorialogs
+    restart: always
+    ports:
+      - 9428:9428
+    networks:
+      - traefik      
+    volumes:
+      - vlog-data:/vlogs
+    command:
+      - -storageDataPath=/vlogs
+      - -loggerFormat=json
+
+  vector:
+    image: timberio/vector:0.34.1-debian
+    container_name: vector
+    ports:
+      - 8686:8686
+    networks:
+      - traefik      
+    volumes:
+      - ./conf/vector/vector.yaml:/etc/vector/vector.yaml:ro
+    restart: always
+
+networks:
+  traefik:
+    external: true
 
 volumes:
   postgres:
   elasticsearch:
   minio:
+  redis:
+  neo4j:
+  nats:
+  victoria-metrics:
+  vlog-data:

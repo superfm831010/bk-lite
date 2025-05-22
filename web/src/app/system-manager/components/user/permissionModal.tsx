@@ -21,7 +21,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, rules = [], 
   const [dataPermissions, setDataPermissions] = useState<PermissionDataType[]>([]);
   const [appData, setAppData] = useState<AppPermission[]>([]);
 
-  const clientModules = clientData.filter(client => client.client_id !== 'ops-console').map(r=> r.client_id);
+  const clientModules = clientData.filter(client => client.name !== 'ops-console').map(r=> r.name);
 
   useEffect(() => {
     if (visible && node) {

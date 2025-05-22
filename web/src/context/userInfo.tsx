@@ -3,14 +3,16 @@ import useApiClient from '@/utils/request';
 import { Group, UserInfoContextType } from '@/types/index'
 import { convertTreeDataToGroupOptions } from '@/utils/index'
 import Cookies from 'js-cookie';
+import { useSession } from 'next-auth/react';
 
 const UserInfoContext = createContext<UserInfoContextType | undefined>(undefined);
 
 export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { get } = useApiClient();
+  const { data: session, status } = useSession();
   const [selectedGroup, setSelectedGroupState] = useState<Group | null>(null);
   const [userId, setUserId] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [roles, setRoles] = useState<string[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [flatGroups, setFlatGroups] = useState<Group[]>([]);
@@ -18,37 +20,44 @@ export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isFirstLogin, setIsFirstLogin] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchLoginInfo = async () => {
-      setLoading(true);
-      try {
-        const data = await get('/core/api/login_info/');
-        const { group_list: groupList, roles, is_superuser, is_first_login, user_id } = data;
+    console.log('Session:', session);
+    if (status === 'authenticated' && session && session.user?.id) {
+      const fetchLoginInfo = async () => {
+        setLoading(true);
+        try {
+          const data = await get('/core/api/login_info/');
+          if (!data) {
+            console.error('Failed to fetch login info: No data received');
+            setLoading(false);
+            return;
+          }
+          
+          const { group_list: groupList, roles, is_superuser, is_first_login, user_id } = data;
+          setGroups(groupList || []);
+          setRoles(roles || []);
+          setIsSuperUser(!!is_superuser);
+          setIsFirstLogin(!!is_first_login);
+          setUserId(user_id || '');
 
-        setGroups(groupList);
-        setRoles(roles);
-        setIsSuperUser(is_superuser);
-        setIsFirstLogin(is_first_login);
-        setUserId(user_id);
+          if (groupList?.length) {
+            const flattenedGroups = convertTreeDataToGroupOptions(groupList);
+            setFlatGroups(flattenedGroups);
 
-        if (groupList?.length) {
-          const flattenedGroups = convertTreeDataToGroupOptions(groupList);
-          setFlatGroups(flattenedGroups);
-
-          const groupIdFromCookie = Cookies.get('current_team');
-          const initialGroup = flattenedGroups.find((group: Group) => group.id === groupIdFromCookie) || flattenedGroups[0];
-
-          setSelectedGroupState(initialGroup);
-          Cookies.set('current_team', initialGroup.id);
+            const groupIdFromCookie = Cookies.get('current_team');
+            const initialGroup = flattenedGroups.find((group: Group) => group.id === groupIdFromCookie) || flattenedGroups[0];
+            setSelectedGroupState(initialGroup);
+            Cookies.set('current_team', initialGroup.id);
+          }
+        } catch (err) {
+          console.error('Failed to fetch login_info:', err);
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        console.error('Failed to fetch login_info:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    fetchLoginInfo();
-  }, []);
+      fetchLoginInfo();
+    }
+  }, [status]);
 
   const setSelectedGroup = (group: Group) => {
     setSelectedGroupState(group);

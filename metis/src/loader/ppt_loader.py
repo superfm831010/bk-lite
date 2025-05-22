@@ -1,6 +1,6 @@
 from typing import List
 from langchain_core.documents import Document
-from loguru import logger
+from sanic.log import logger
 from pptx import Presentation
 from tqdm import tqdm
 from langchain_core.document_loaders import BaseLoader

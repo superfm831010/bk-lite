@@ -192,14 +192,19 @@ const LineChart: React.FC<LineChartProps> = ({
           page_size: -1,
         },
       });
-      const time_intervals: TableDataItem[] = _data.results?.filter(
-        (item: any) => {
-          const times = timeToSecond(item.created_at);
-          if (times >= minTime && times <= maxTime) return true;
-          return false;
-        }
-      );
-      const intervals = Math.ceil((maxTime - minTime) / 60);
+      const time_intervals: TableDataItem[] =
+        maxTime === minTime // 折线图只存在一条数据时返回所有事件
+          ? _data.results
+          : _data.results?.filter(
+            (item: any) => {
+              const times = timeToSecond(item.created_at);
+              if (times >= minTime && times <= maxTime) {
+                return true;
+              }
+              return false;
+            }
+          );
+      const intervals = maxTime === minTime ? 120 : Math.ceil((maxTime - minTime) / 60);
       const lengths = intervals >= 120 ? 24 : Math.ceil(intervals / 5);
       const step = Math.ceil(_data.results?.length / lengths);
       setBoxItems(handleCutArray(cutArray(time_intervals.reverse(), step)));

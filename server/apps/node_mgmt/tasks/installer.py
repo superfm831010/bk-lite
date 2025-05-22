@@ -1,11 +1,12 @@
 from celery import shared_task
 
 from apps.node_mgmt.constants import CONTROLLER_INSTALL_DIR, COLLECTOR_INSTALL_DIR, LINUX_OS, \
-    CONTROLLER_DIR_DELETE_COMMAND
+    CONTROLLER_DIR_DELETE_COMMAND, NODE_SERVER_URL_KEY
 from apps.node_mgmt.models import ControllerTask, CollectorTask, PackageVersion, Node, NodeCollectorInstallStatus, \
-    Collector
+    Collector, SidecarEnv
 from apps.node_mgmt.utils.installer import exec_command_to_remote, download_to_local, \
     exec_command_to_local, get_install_command, get_uninstall_command, unzip_file, transfer_file_to_remote
+from apps.node_mgmt.utils.token_auth import generate_token
 from config.components.nats import NATS_NAMESPACE
 
 
@@ -29,8 +30,11 @@ def install_controller(task_id):
     dir_map = CONTROLLER_INSTALL_DIR.get(package_obj.os)
     controller_install_dir, controller_storage_dir = dir_map["install_dir"], dir_map["storage_dir"]
 
-    # 获取安装命令
-    install_command = get_install_command(package_obj.os, package_obj.name, task_obj.cloud_region_id)
+    # 获取安装命令所需参数
+    sidecar_token = generate_token({"username": "admin"})
+    obj = SidecarEnv.objects.filter(cloud_region=task_obj.cloud_region_id, key=NODE_SERVER_URL_KEY).first()
+    server_url = obj.value if obj else "null"
+
     base_action, base_massage, unzip_name, base_run = "", "", "", True
 
     try:
@@ -76,6 +80,9 @@ def install_controller(task_id):
             )
 
             action = "run"
+            groups = ",".join(node_obj.organizations)
+            install_command = get_install_command(
+                package_obj.os, package_obj.name, task_obj.cloud_region_id,sidecar_token, server_url, groups)
             exec_command_to_remote(task_obj.work_node, node_obj.ip, node_obj.username, node_obj.password, install_command, node_obj.port)
             node_obj.status = "success"
         except Exception as e:

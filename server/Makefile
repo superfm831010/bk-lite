@@ -7,6 +7,12 @@ setup:
 
 install:
 	./.venv/bin/pip-compile ./requirements/requirements-core.txt \
+							./requirements/requirements-cmdb.txt \
+							./requirements/requirements-console.txt \
+							./requirements/requirements-monitor.txt \
+							./requirements/requirements-node_mgmt.txt \
+							./requirements/requirements-opspilot.txt \
+							./requirements/requirements-system_mgmt.txt \
 							-v --output-file ./requirements.txt
 	./.venv/bin/pip-sync -v
 

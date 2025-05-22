@@ -2,9 +2,9 @@ import React, { useMemo } from 'react';
 import { Form, Checkbox, Space, Select, Input, InputNumber } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
+import { getConfigByPluginName } from '@/app/monitor/utils/common';
 import {
   TIMEOUT_UNITS,
-  MANUAL_CONFIG_TEXT_MAP,
   useMiddleWareFields,
 } from '@/app/monitor/constants/monitor';
 const { Option } = Select;
@@ -112,6 +112,14 @@ const useColumnsAndFormItems = ({
                       <span className="w-[80px] inline-block">System</span>
                       <span className="text-[var(--color-text-3)] text-[12px]">
                         {t('monitor.intergrations.systemDes')}
+                      </span>
+                    </span>
+                  </Checkbox>
+                  <Checkbox value="gpu">
+                    <span>
+                      <span className="w-[80px] inline-block">GPU</span>
+                      <span className="text-[var(--color-text-3)] text-[12px]">
+                        {t('monitor.intergrations.gpuDes')}
                       </span>
                     </span>
                   </Checkbox>
@@ -638,7 +646,7 @@ const useColumnsAndFormItems = ({
             </>
           ),
         };
-      case 'vmware':
+      case 'http':
         return {
           displaycolumns: [columns[0], columns[11], ...columns.slice(4, 7)],
           formItems: (
@@ -699,34 +707,16 @@ const useColumnsAndFormItems = ({
           displaycolumns: [columns[0], columns[12], ...columns.slice(4, 7)],
           formItems: (
             <>
-              <Form.Item label={t('monitor.intergrations.username')} required>
-                <Form.Item
-                  noStyle
-                  name="username"
-                  rules={[
-                    {
-                      required: true,
-                      message: t('common.required'),
-                    },
-                  ]}
-                >
+              <Form.Item label={t('monitor.intergrations.username')}>
+                <Form.Item noStyle name="username">
                   <Input className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.usernameDes')}
                 </span>
               </Form.Item>
-              <Form.Item label={t('monitor.intergrations.password')} required>
-                <Form.Item
-                  noStyle
-                  name="password"
-                  rules={[
-                    {
-                      required: true,
-                      message: t('common.required'),
-                    },
-                  ]}
-                >
+              <Form.Item label={t('monitor.intergrations.password')}>
+                <Form.Item noStyle name="password">
                   <Input
                     ref={passwordRef}
                     disabled={passwordDisabled}
@@ -866,6 +856,14 @@ const useFormItems = ({
                         </span>
                       </span>
                     </Checkbox>
+                    <Checkbox value="gpu">
+                      <span>
+                        <span className="w-[80px] inline-block">GPU</span>
+                        <span className="text-[var(--color-text-3)] text-[12px]">
+                          {t('monitor.intergrations.gpuDes')}
+                        </span>
+                      </span>
+                    </Checkbox>
                   </Space>
                 </Checkbox.Group>
               </Form.Item>
@@ -928,6 +926,15 @@ const useFormItems = ({
             system: `[[inputs.system]]
     interval = "$intervals"
     tags = { "instance_id"="$instance_id","instance_type"="os","collect_type"="host","config_type"="system" }
+    
+`,
+            gpu: `[[inputs.nvidia_smi]]
+    interval = "$intervals"
+    [inputs.docker.tags]
+        instance_id = "$instance_id"
+        instance_type = "os"
+        collect_type = "host"
+        config_type = "gpu"
     
 `,
           },
@@ -1572,9 +1579,7 @@ const useFormItems = ({
               )}
             </>
           ),
-          configText:
-            MANUAL_CONFIG_TEXT_MAP[pluginName] ||
-            MANUAL_CONFIG_TEXT_MAP['default'],
+          configText: getConfigByPluginName(pluginName, 'manualCfgText'),
         };
       case 'docker':
         return {
@@ -1730,11 +1735,9 @@ const useFormItems = ({
               )}
             </>
           ),
-          configText:
-            MANUAL_CONFIG_TEXT_MAP[pluginName] ||
-            MANUAL_CONFIG_TEXT_MAP['default'],
+          configText: getConfigByPluginName(pluginName, 'manualCfgText'),
         };
-      case 'vmware':
+      case 'http':
         return {
           formItems: (
             <>
@@ -1815,34 +1818,16 @@ const useFormItems = ({
         return {
           formItems: (
             <>
-              <Form.Item label={t('monitor.intergrations.username')} required>
-                <Form.Item
-                  noStyle
-                  name="username"
-                  rules={[
-                    {
-                      required: true,
-                      message: t('common.required'),
-                    },
-                  ]}
-                >
+              <Form.Item label={t('monitor.intergrations.username')}>
+                <Form.Item noStyle name="username">
                   <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.usernameDes')}
                 </span>
               </Form.Item>
-              <Form.Item label={t('monitor.intergrations.password')} required>
-                <Form.Item
-                  noStyle
-                  name="password"
-                  rules={[
-                    {
-                      required: true,
-                      message: t('common.required'),
-                    },
-                  ]}
-                >
+              <Form.Item label={t('monitor.intergrations.password')}>
+                <Form.Item noStyle name="password">
                   <Input
                     ref={passwordRef}
                     disabled={isEdit || passwordDisabled}
@@ -1875,7 +1860,7 @@ const useFormItems = ({
                     },
                   ]}
                 >
-                  <Input className="w-[300px] mr-[10px]" />
+                  <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.urlDes')}
@@ -1883,9 +1868,7 @@ const useFormItems = ({
               </Form.Item>
             </>
           ),
-          configText:
-            MANUAL_CONFIG_TEXT_MAP[pluginName] ||
-            MANUAL_CONFIG_TEXT_MAP['default'],
+          configText: getConfigByPluginName(pluginName, 'manualCfgText'),
         };
       default:
         return {

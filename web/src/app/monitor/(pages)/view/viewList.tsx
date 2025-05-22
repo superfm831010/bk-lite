@@ -9,6 +9,8 @@ import {
   getEnumValueUnit,
   getEnumColor,
   getK8SData,
+  getConfigByPluginName,
+  getConfigByObjectName,
 } from '@/app/monitor/utils/common';
 import { useRouter } from 'next/navigation';
 import {
@@ -24,11 +26,9 @@ import {
   Pagination,
   TableDataItem,
 } from '@/app/monitor/types';
-import { COLLECT_TYPE_MAP } from '@/app/monitor/constants/monitor';
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import { INDEX_CONFIG } from '@/app/monitor/constants/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import Permission from '@/components/permission';
 import { ListItem } from '@/types';
@@ -40,7 +40,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     getMonitorMetrics,
     getInstanceList,
     getInstanceQueryParams,
-    getMonitorPlugin
+    getMonitorPlugin,
   } = useMonitorApi();
   const { t } = useTranslation();
   const router = useRouter();
@@ -241,7 +241,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         : (k8sQuery || []).map((item: string) => ({ id: item, child: [] }));
       setQueryData(queryForm);
       const _plugins = res[2].map((item: IntergrationItem) => ({
-        label: COLLECT_TYPE_MAP[item.name || ''],
+        label: getConfigByPluginName(item.name, 'collect_type'),
         value: item.id,
       }));
       setPlugins(_plugins);
@@ -253,9 +253,10 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       setMetrics(res[1] || []);
       const _objectName = objects.find((item) => item.id === objectId)?.name;
       if (_objectName) {
-        const filterMetrics =
-          INDEX_CONFIG.find((item) => item.name === _objectName)
-            ?.tableDiaplay || [];
+        const filterMetrics = getConfigByObjectName(
+          _objectName,
+          'tableDiaplay'
+        );
         const _columns = filterMetrics.map((item: any) => {
           const target = (res[1] || []).find(
             (tex: MetricItem) => tex.name === item.key
@@ -289,9 +290,11 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
             dataIndex: item.key,
             key: item.key,
             width: 200,
-            ...(item.type === 'value' ? {
-              sorter: (a: any, b: any) => a[item.key] - b[item.key],
-            } : {}),
+            ...(item.type === 'value'
+              ? {
+                sorter: (a: any, b: any) => a[item.key] - b[item.key],
+              }
+              : {}),
             render: (_: unknown, record: TableDataItem) => {
               const color = getEnumColor(target, record[item.key]);
               return (

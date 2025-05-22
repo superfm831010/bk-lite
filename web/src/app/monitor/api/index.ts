@@ -1,33 +1,38 @@
 import useApiClient from '@/utils/request';
 import React from 'react';
-import { SearchParams, NodeConfigInfo, TreeSortData, IntergrationMonitoredObject } from '@/app/monitor/types/monitor';
+import {
+  SearchParams,
+  NodeConfigInfo,
+  TreeSortData,
+  IntergrationMonitoredObject,
+} from '@/app/monitor/types/monitor';
 
 interface OrderParam {
-  id: number,
-  sort_order: number,
-  [key: string]: any
+  id: number;
+  sort_order: number;
+  [key: string]: any;
 }
 
 interface NodeConfigParam {
-  configs?: any,
-  collect_type?: string,
-  monitor_object_id?: number,
-  instances?: Omit<IntergrationMonitoredObject, 'key'>[]
+  configs?: any;
+  collect_type?: string;
+  monitor_object_id?: number;
+  instances?: Omit<IntergrationMonitoredObject, 'key'>[];
 }
 
 interface MetricsParam {
-  monitor_object_id?: React.Key,
-  monitor_plugin_id?: string | number,
-  monitor_object_name?: string,
-  name?: string,
+  monitor_object_id?: React.Key;
+  monitor_plugin_id?: string | number;
+  monitor_object_name?: string;
+  name?: string;
 }
 
 interface InstanceParam {
-  page?: number,
-  page_size?: number,
-  add_metrics?: boolean,
-  name?: string,
-  vm_params?: any
+  page?: number;
+  page_size?: number;
+  add_metrics?: boolean;
+  name?: string;
+  vm_params?: any;
 }
 
 const useMonitorApi = () => {
@@ -35,53 +40,61 @@ const useMonitorApi = () => {
     get,
     post,
     del,
-    // put, 
-    patch } = useApiClient();
+    // put,
+    patch,
+  } = useApiClient();
 
   const getMonitorMetrics = async (params: MetricsParam = {}) => {
     return await get(`/monitor/api/metrics/`, {
-      params
+      params,
     });
   };
 
   const getMetricsGroup = async (params: MetricsParam = {}) => {
     return await get(`/monitor/api/metrics_group/`, {
-      params
+      params,
     });
   };
 
-  const getMonitorObject = async (params: {
-    name?: string,
-    add_instance_count?: boolean,
-    add_policy_count?: boolean,
-  } = {}) => {
+  const getMonitorObject = async (
+    params: {
+      name?: string;
+      add_instance_count?: boolean;
+      add_policy_count?: boolean;
+    } = {}
+  ) => {
     return await get('/monitor/api/monitor_object/', {
-      params
+      params,
     });
   };
 
-  const getMonitorAlert = async (params: {
-    status_in?: string[],
-    level_in?: string,
-    monitor_instance_id?: string,
-    monitor_objects?: React.Key,
-    content?: string,
-    page?: number,
-    page_size?: number,
-    created_at_after?: string,
-    created_at_before?: string,
-  } = {}) => {
+  const getMonitorAlert = async (
+    params: {
+      status_in?: string[];
+      level_in?: string;
+      monitor_instance_id?: string;
+      monitor_objects?: React.Key;
+      content?: string;
+      page?: number;
+      page_size?: number;
+      created_at_after?: string;
+      created_at_before?: string;
+    } = {}
+  ) => {
     return await get(`/monitor/api/monitor_alert/`, {
-      params
+      params,
     });
   };
 
-  const getMonitorEventDetail = async (id?: string | number, params: {
-    page?: number,
-    page_size?: number,
-  } = {}) => {
+  const getMonitorEventDetail = async (
+    id?: string | number,
+    params: {
+      page?: number;
+      page_size?: number;
+    } = {}
+  ) => {
     return await get(`/monitor/api/monitor_event/query/${id}/`, {
-      params
+      params,
     });
   };
 
@@ -89,77 +102,101 @@ const useMonitorApi = () => {
     return await get(`/monitor/api/monitor_event/raw_data/${id}/`);
   };
 
-  const getInstanceQuery = async (params: SearchParams = {
-    query: ''
-  }) => {
+  const getInstanceQuery = async (
+    params: SearchParams = {
+      query: '',
+    }
+  ) => {
     return await get(`/monitor/api/metrics_instance/query_range/`, {
-      params
+      params,
     });
   };
 
-  const getInstanceList = async (objectId?: React.Key, params: InstanceParam = {}) => {
+  const getInstanceList = async (
+    objectId?: React.Key,
+    params: InstanceParam = {}
+  ) => {
     return await get(`/monitor/api/monitor_instance/${objectId}/list/`, {
-      params
+      params,
     });
   };
 
-  const getInstanceSearch = async (objectId: React.Key, data: InstanceParam) => {
-    return await post(`/monitor/api/monitor_instance/${objectId}/search/`, data);
+  const getInstanceSearch = async (
+    objectId: React.Key,
+    data: InstanceParam
+  ) => {
+    return await post(
+      `/monitor/api/monitor_instance/${objectId}/search/`,
+      data
+    );
   };
 
-  const getInstanceGroupRule = async (params: {
-    monitor_object_id?: React.Key,
-  } = {}) => {
+  const getInstanceGroupRule = async (
+    params: {
+      monitor_object_id?: React.Key;
+    } = {}
+  ) => {
     return await get(`/monitor/api/monitor_instance_group_rule/`, {
-      params
+      params,
     });
   };
 
   const getInstanceChildConfig = async (data: {
-    instance_id?: string | number,
-    instance_type?: string,
+    instance_id?: string | number;
+    instance_type?: string;
   }) => {
-    return await post(`/monitor/api/node_mgmt/get_instance_child_config/`, data);
+    return await post(`/monitor/api/node_mgmt/get_instance_asso_config/`, data);
   };
 
-  const getInstanceQueryParams = async (name: string, params: {
-    monitor_object_id?: React.Key,
-  } = {}) => {
-    return await get(`/monitor/api/monitor_instance/query_params_enum/${name}/`, {
-      params
-    });
+  const getInstanceQueryParams = async (
+    name: string,
+    params: {
+      monitor_object_id?: React.Key;
+    } = {}
+  ) => {
+    return await get(
+      `/monitor/api/monitor_instance/query_params_enum/${name}/`,
+      {
+        params,
+      }
+    );
   };
 
-  const getMonitorPolicy = async (id?: any, params: {
-    name?: string,
-    page?: number,
-    page_size?: number,
-    monitor_object_id?: React.Key,
-  } = {}) => {
+  const getMonitorPolicy = async (
+    id?: any,
+    params: {
+      name?: string;
+      page?: number;
+      page_size?: number;
+      monitor_object_id?: React.Key;
+    } = {}
+  ) => {
     return await get(`/monitor/api/monitor_policy/${id}`, {
-      params
+      params,
     });
   };
 
   const getPolicyTemplate = async (params: {
-    monitor_object_name?: string | null,
+    monitor_object_name?: string | null;
   }) => {
     return await post('/monitor/api/monitor_policy/template/', params);
   };
 
-  const getMonitorPlugin = async (params: {
-    monitor_object_id?: React.Key | null,
-    name?: string,
-  } = {}) => {
+  const getMonitorPlugin = async (
+    params: {
+      monitor_object_id?: React.Key | null;
+      name?: string;
+    } = {}
+  ) => {
     return await get('/monitor/api/monitor_plugin/', {
-      params
+      params,
     });
   };
 
   const getMonitorNodeList = async (data: {
-    cloud_region_id?: number,
-    page?: number,
-    page_size?: number,
+    cloud_region_id?: number;
+    page?: number;
+    page_size?: number;
   }) => {
     return await post('/monitor/api/node_mgmt/nodes/', data);
   };
@@ -168,20 +205,29 @@ const useMonitorApi = () => {
     return await get('/monitor/api/system_mgmt/search_channel_list/');
   };
 
-  const patchMonitorAlert = async (id: string | number, data: {
-    status?: string
-  }) => {
+  const patchMonitorAlert = async (
+    id: string | number,
+    data: {
+      status?: string;
+    }
+  ) => {
     return await patch(`/monitor/api/monitor_alert/${id}/`, data);
   };
 
-  const patchMonitorPolicy = async (id: number, data: {
-    enable?: boolean,
-  }) => {
+  const patchMonitorPolicy = async (
+    id: number,
+    data: {
+      enable?: boolean;
+    }
+  ) => {
     return await patch(`/monitor/api/monitor_policy/${id}/`, data);
   };
 
   const updateInstanceChildConfig = async (data: NodeConfigInfo) => {
-    return await post('/monitor/api/node_mgmt/update_instance_child_config/', data);
+    return await post(
+      '/monitor/api/node_mgmt/update_instance_child_config/',
+      data
+    );
   };
 
   const updateMonitorObject = async (data: TreeSortData[]) => {
@@ -201,14 +247,23 @@ const useMonitorApi = () => {
   };
 
   const updateNodeChildConfig = async (data: NodeConfigParam) => {
-    return await post('/monitor/api/node_mgmt/batch_setting_node_child_config/', data);
+    return await post(
+      '/monitor/api/node_mgmt/batch_setting_node_child_config/',
+      data
+    );
   };
 
-  const checkMonitorInstance = async (id: string, data: {
-    instance_id: string | number,
-    instance_name: string
-  }) => {
-    return await post(`/monitor/api/monitor_instance/${id}/check_monitor_instance/`, data);
+  const checkMonitorInstance = async (
+    id: string,
+    data: {
+      instance_id: string | number;
+      instance_name: string;
+    }
+  ) => {
+    return await post(
+      `/monitor/api/monitor_instance/${id}/check_monitor_instance/`,
+      data
+    );
   };
 
   const deleteMonitorPolicy = async (id: number | string) => {
@@ -220,10 +275,13 @@ const useMonitorApi = () => {
   };
 
   const deleteMonitorInstance = async (data: {
-    instance_ids: any,
-    clean_child_config: boolean
+    instance_ids: any;
+    clean_child_config: boolean;
   }) => {
-    return await post(`/monitor/api/monitor_instance/remove_monitor_instance/`, data);
+    return await post(
+      `/monitor/api/monitor_instance/remove_monitor_instance/`,
+      data
+    );
   };
 
   const deleteMonitorMetrics = async (id: string | number) => {
@@ -234,7 +292,9 @@ const useMonitorApi = () => {
     return await del(`/monitor/api/metrics_group/${id}/`);
   };
 
-
+  const getConfigContent = async (data: { id: number }) => {
+    return await post('/monitor/api/node_mgmt/get_config_content/', data);
+  };
 
   return {
     getMonitorMetrics,
@@ -268,8 +328,8 @@ const useMonitorApi = () => {
     deleteMonitorInstance,
     deleteMonitorMetrics,
     deleteMetricsGroup,
-  }
-
-}
+    getConfigContent,
+  };
+};
 
 export default useMonitorApi;

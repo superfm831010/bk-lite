@@ -5,9 +5,7 @@ import {
   LevelMap,
   UnitMap,
   StateMap,
-  MonitorGroupMap,
   ObjectIconMap,
-  ConfigTypeMap,
 } from '@/app/monitor/types/monitor';
 
 const useFrequencyList = (): ListItem[] => {
@@ -271,10 +269,46 @@ const useMiddleWareFields = (): ObjectIconMap => {
   );
 };
 
-const INDEX_CONFIG = [
-  {
-    name: 'Host',
-    id: 1,
+const SCHEDULE_UNIT_MAP: UnitMap = {
+  minMin: 1,
+  minMax: 59,
+  hourMin: 1,
+  hourMax: 23,
+  dayMin: 1,
+  dayMax: 1,
+};
+
+const PERIOD_LIST: ListItem[] = [
+  { label: '1min', value: 60 },
+  { label: '5min', value: 300 },
+  { label: '15min', value: 900 },
+  { label: '30min', value: 1800 },
+  { label: '1hour', value: 3600 },
+  { label: '6hour', value: 21600 },
+  { label: '12hour', value: 43200 },
+  { label: '24hour', value: 86400 },
+];
+
+const COMPARISON_METHOD: ListItem[] = [
+  { label: '>', value: '>' },
+  { label: '<', value: '<' },
+  { label: '=', value: '=' },
+  { label: '≠', value: '!=' },
+  { label: '≥', value: '>=' },
+  { label: '≤', value: '<=' },
+];
+
+const APPOINT_METRIC_IDS: string[] = [
+  'cluster_pod_count',
+  'cluster_node_count',
+];
+
+const TIMEOUT_UNITS: string[] = ['s'];
+
+const OBJECT_CONFIG_MAP: any = {
+  Host: {
+    instance_type: 'os',
+    icon: 'Host',
     dashboardDisplay: [
       {
         indexId: 'env.procs',
@@ -394,13 +428,34 @@ const INDEX_CONFIG = [
       { type: 'progress', key: 'mem.pct_used' },
       { type: 'value', key: 'load5' },
     ],
+    groupIds: {
+      list: ['instance_id'],
+      default: ['instance_id'],
+    },
+    plugins: {
+      Host: {
+        collect_type: 'host',
+        config_type: [
+          'cpu',
+          'disk',
+          'diskio',
+          'mem',
+          'net',
+          'processes',
+          'system',
+          "gpu"
+        ],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Website',
-    id: 2,
+  Cluster: {
+    instance_type: 'k8s',
+    icon: 'K8S',
     dashboardDisplay: [
       {
-        indexId: 'http_success.rate',
+        indexId: 'cluster_pod_count',
         displayType: 'single',
         sortIndex: 0,
         displayDimension: [],
@@ -410,7 +465,7 @@ const INDEX_CONFIG = [
         },
       },
       {
-        indexId: 'http_duration',
+        indexId: 'cluster_node_count',
         displayType: 'single',
         sortIndex: 1,
         displayDimension: [],
@@ -420,75 +475,36 @@ const INDEX_CONFIG = [
         },
       },
       {
-        indexId: 'http_ssl',
-        displayType: 'single',
+        indexId: 'k8s_cluster',
+        displayType: 'lineChart',
         sortIndex: 2,
         displayDimension: [],
         style: {
           height: '200px',
-          width: '15%',
-        },
-      },
-      {
-        indexId: 'http_status_code',
-        displayType: 'lineChart',
-        sortIndex: 3,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '48%',
-        },
-      },
-      {
-        indexId: 'http_dns.lookup.time',
-        displayType: 'lineChart',
-        sortIndex: 4,
-        displayDimension: [],
-        style: {
-          height: '200px',
-          width: '48%',
+          width: '32%',
         },
       },
     ],
     tableDiaplay: [
-      { type: 'enum', key: 'http_success.rate' },
-      { type: 'value', key: 'http_duration' },
-      { type: 'enum', key: 'http_code' },
+      { type: 'value', key: 'cluster_pod_count' },
+      { type: 'value', key: 'cluster_node_count' },
     ],
+    groupIds: {
+      list: ['instance_id'],
+      default: ['instance_id'],
+    },
+    plugins: {
+      K8S: {
+        collect_type: 'k8s',
+        config_type: ['k8s'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Ping',
-    id: 3,
-    dashboardDisplay: [
-      //   {
-      //     indexId: 'ping_response_time',
-      //     displayType: 'single',
-      //     sortIndex: 0,
-      //     displayDimension: [],
-      //     style: {
-      //       height: '200px',
-      //       width: '15%',
-      //     },
-      //   },
-      //   {
-      //     indexId: 'ping_error_response_code',
-      //     displayType: 'single',
-      //     sortIndex: 1,
-      //     displayDimension: [],
-      //     style: {
-      //       height: '200px',
-      //       width: '15%',
-      //     },
-      //   },
-    ],
-    tableDiaplay: [
-      { type: 'value', key: 'ping_response_time' },
-      { type: 'enum', key: 'ping_error_response_code' },
-    ],
-  },
-  {
-    name: 'Pod',
-    id: 4,
+  Pod: {
+    instance_type: '',
+    icon: 'K8S',
     dashboardDisplay: [
       {
         indexId: 'pod_status',
@@ -546,10 +562,17 @@ const INDEX_CONFIG = [
       { type: 'progress', key: 'pod_cpu_utilization' },
       { type: 'progress', key: 'pod_memory_utilization' },
     ],
+    groupIds: {
+      // list: ['instance_id', 'uid'],
+      // default: ['instance_id', 'uid'],
+      list: ['uid'],
+      default: ['uid'],
+    },
+    plugins: {},
   },
-  {
-    name: 'Node',
-    id: 5,
+  Node: {
+    instance_type: '',
+    icon: 'K8S',
     dashboardDisplay: [
       {
         indexId: 'node_status_condition',
@@ -649,13 +672,20 @@ const INDEX_CONFIG = [
       { type: 'progress', key: 'node_cpu_utilization' },
       { type: 'progress', key: 'node_memory_utilization' },
     ],
+    groupIds: {
+      // list: ['instance_id', 'node'],
+      // default: ['instance_id', 'node'],
+      list: ['node'],
+      default: ['node'],
+    },
+    plugins: {},
   },
-  {
-    name: 'Cluster',
-    id: 6,
+  Website: {
+    instance_type: 'web',
+    icon: 'Website',
     dashboardDisplay: [
       {
-        indexId: 'cluster_pod_count',
+        indexId: 'http_success.rate',
         displayType: 'single',
         sortIndex: 0,
         displayDimension: [],
@@ -665,7 +695,7 @@ const INDEX_CONFIG = [
         },
       },
       {
-        indexId: 'cluster_node_count',
+        indexId: 'http_duration',
         displayType: 'single',
         sortIndex: 1,
         displayDimension: [],
@@ -675,24 +705,97 @@ const INDEX_CONFIG = [
         },
       },
       {
-        indexId: 'k8s_cluster',
-        displayType: 'lineChart',
+        indexId: 'http_ssl',
+        displayType: 'single',
         sortIndex: 2,
         displayDimension: [],
         style: {
           height: '200px',
-          width: '32%',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'http_status_code',
+        displayType: 'lineChart',
+        sortIndex: 3,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '48%',
+        },
+      },
+      {
+        indexId: 'http_dns.lookup.time',
+        displayType: 'lineChart',
+        sortIndex: 4,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '48%',
         },
       },
     ],
     tableDiaplay: [
-      { type: 'value', key: 'cluster_pod_count' },
-      { type: 'value', key: 'cluster_node_count' },
+      { type: 'enum', key: 'http_success.rate' },
+      { type: 'value', key: 'http_duration' },
+      { type: 'enum', key: 'http_code' },
     ],
+    groupIds: {
+      list: ['instance_id'],
+      // list: ['instance_id', 'instance_name', 'host'],
+      default: ['instance_id'],
+    },
+    plugins: {
+      Website: {
+        collect_type: 'web',
+        config_type: ['http_response'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Switch',
-    id: 7,
+  Ping: {
+    instance_type: 'ping',
+    icon: 'Host',
+    dashboardDisplay: [
+      {
+        indexId: 'ping_response_time',
+        displayType: 'single',
+        sortIndex: 0,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+      {
+        indexId: 'ping_error_response_code',
+        displayType: 'single',
+        sortIndex: 1,
+        displayDimension: [],
+        style: {
+          height: '200px',
+          width: '15%',
+        },
+      },
+    ],
+    tableDiaplay: [
+      { type: 'value', key: 'ping_response_time' },
+      { type: 'enum', key: 'ping_error_response_code' },
+    ],
+    groupIds: {},
+    plugins: {
+      Ping: {
+        collect_type: 'ping',
+        config_type: ['ping'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
+  },
+  Switch: {
+    instance_type: 'switch',
+    icon: 'Switch',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -749,10 +852,22 @@ const INDEX_CONFIG = [
       { type: 'value', key: 'iftotalOutOctets' },
       { type: 'value', key: 'sysUpTime' },
     ],
+    groupIds: {
+      list: ['instance_id'],
+      default: ['instance_id'],
+    },
+    plugins: {
+      'Switch SNMP General': {
+        collect_type: 'snmp',
+        config_type: ['switch'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Loadbalance',
-    id: 8,
+  Router: {
+    instance_type: 'router',
+    icon: 'Router',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -809,10 +924,22 @@ const INDEX_CONFIG = [
       { type: 'value', key: 'iftotalOutOctets' },
       { type: 'value', key: 'sysUpTime' },
     ],
+    groupIds: {
+      list: ['instance_id'],
+      default: ['instance_id'],
+    },
+    plugins: {
+      'Router SNMP General': {
+        collect_type: 'snmp',
+        config_type: ['router'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Router',
-    id: 9,
+  Firewall: {
+    instance_type: 'firewall',
+    icon: 'Firewall',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -869,10 +996,22 @@ const INDEX_CONFIG = [
       { type: 'value', key: 'iftotalOutOctets' },
       { type: 'value', key: 'sysUpTime' },
     ],
+    groupIds: {
+      list: ['instance_id'],
+      default: ['instance_id'],
+    },
+    plugins: {
+      'Firewall SNMP General': {
+        collect_type: 'snmp',
+        config_type: ['firewall'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Firewall',
-    id: 10,
+  Loadbalance: {
+    instance_type: 'loadbalance',
+    icon: 'Loadbalance',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -929,10 +1068,22 @@ const INDEX_CONFIG = [
       { type: 'value', key: 'iftotalOutOctets' },
       { type: 'value', key: 'sysUpTime' },
     ],
+    groupIds: {
+      list: ['instance_id'],
+      default: ['instance_id'],
+    },
+    plugins: {
+      'Loadbalance SNMP General': {
+        collect_type: 'snmp',
+        config_type: ['loadbalance'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Detection Device',
-    id: 11,
+  'Detection Device': {
+    instance_type: 'detection_device',
+    icon: 'DetectionDevice',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -989,10 +1140,19 @@ const INDEX_CONFIG = [
       { type: 'value', key: 'iftotalOutOctets' },
       { type: 'value', key: 'sysUpTime' },
     ],
+    groupIds: {},
+    plugins: {
+      'Detection Device SNMP General': {
+        collect_type: 'snmp',
+        config_type: ['detection_device'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Bastion Host',
-    id: 12,
+  'Scanning Device': {
+    instance_type: 'scanning_device',
+    icon: 'ScanningDevice',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -1049,10 +1209,19 @@ const INDEX_CONFIG = [
       { type: 'value', key: 'iftotalOutOctets' },
       { type: 'value', key: 'sysUpTime' },
     ],
+    groupIds: {},
+    plugins: {
+      'Scanning Device SNMP General': {
+        collect_type: 'snmp',
+        config_type: ['scanning_device'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Scanning Device',
-    id: 13,
+  'Bastion Host': {
+    instance_type: 'bastion_host',
+    icon: 'BastionHost',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -1109,10 +1278,75 @@ const INDEX_CONFIG = [
       { type: 'value', key: 'iftotalOutOctets' },
       { type: 'value', key: 'sysUpTime' },
     ],
+    groupIds: {},
+    plugins: {
+      'Bastion Host SNMP General': {
+        collect_type: 'snmp',
+        config_type: ['bastion_host'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Audit System',
-    id: 14,
+  Storage: {
+    instance_type: 'storage',
+    icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+      { type: 'enum', key: 'ipmi_power_watts' },
+      { type: 'value', key: 'ipmi_temperature_celsius' },
+      { type: 'value', key: 'ipmi_voltage_volts' },
+    ],
+    groupIds: {},
+    plugins: {
+      'Storage SNMP General': {
+        collect_type: 'snmp',
+        config_type: ['storage'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+      'Storage IPMI': {
+        collect_type: 'ipmi',
+        config_type: ['storage'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
+  },
+  'Hardware Server': {
+    instance_type: 'hardware_server',
+    icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'iftotalInOctets' },
+      { type: 'value', key: 'iftotalOutOctets' },
+      { type: 'value', key: 'sysUpTime' },
+      { type: 'enum', key: 'ipmi_power_watts' },
+      { type: 'value', key: 'ipmi_temperature_celsius' },
+      { type: 'value', key: 'ipmi_voltage_volts' },
+    ],
+    groupIds: {},
+    plugins: {
+      'Hardware Server SNMP General': {
+        collect_type: 'snmp',
+        config_type: ['hardware_server'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+      'Hardware Server IPMI': {
+        collect_type: 'ipmi',
+        config_type: ['hardware_server'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
+  },
+  'Audit System': {
+    instance_type: '',
+    icon: 'AuditSystem',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -1169,509 +1403,1011 @@ const INDEX_CONFIG = [
       { type: 'value', key: 'iftotalOutOctets' },
       { type: 'value', key: 'sysUpTime' },
     ],
+    groupIds: {},
+    plugins: {},
   },
-  {
-    name: 'Docker',
-    id: 15,
+  'SNMP Trap': {
+    instance_type: 'snmp_trap',
+    icon: 'Host',
+    groupIds: {},
+    dashboardDisplay: [],
+    tableDiaplay: [],
+    plugins: {
+      'SNMP Trap': {
+        collect_type: 'trap',
+        config_type: ['snmp_trap'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
+  },
+  Docker: {
+    instance_type: 'docker',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [{ type: 'value', key: 'docker_n_containers' }],
+    groupIds: {},
+    plugins: {
+      Docker: {
+        collect_type: 'docker',
+        config_type: ['docker'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'Docker Container',
-    id: 16,
+  RabbitMQ: {
+    instance_type: 'rabbitmq',
+    icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [{ type: 'value', key: 'rabbitmq_overview_messages_ready' }],
+    groupIds: {},
+    plugins: {
+      RabbitMQ: {
+        collect_type: 'middleware',
+        config_type: ['rabbitmq'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    url = "$monitor_url"
+    username = "$username"
+    password = "$password"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
+  },
+  Nginx: {
+    instance_type: 'nginx',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
-      { type: 'enum', key: 'docker_container_status' },
-      { type: 'progress', key: 'docker_container_cpu_usage_percent' },
-      { type: 'progress', key: 'docker_container_mem_usage_percent' },
+      { type: 'value', key: 'nginx_requests' },
+      { type: 'value', key: 'nginx_active' },
     ],
+    groupIds: {},
+    plugins: {
+      Nginx: {
+        collect_type: 'middleware',
+        config_type: ['nginx'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    urls = ["$monitor_url"]
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
   },
-  {
-    name: 'Zookeeper',
-    id: 17,
+  ActiveMQ: {
+    instance_type: 'activemq',
+    icon: 'Host',
     dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'zookeeper_uptime' },
-      { type: 'value', key: 'zookeeper_avg_latency' },
-    ],
+    tableDiaplay: [{ type: 'value', key: 'activemq_topic_consumer_count' }],
+    groupIds: {},
+    plugins: {
+      ActiveMQ: {
+        collect_type: 'middleware',
+        config_type: ['activemq'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    url = "$monitor_url"
+    username = "$username"
+    password = "$password"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+      'ActiveMQ-JMX': {
+        collect_type: 'jmx',
+        config_type: ['activemq'],
+        collector: 'ActiveMQ-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+blacklistObjectNames:
+  - "org.apache.activemq:clientId=*,*"
+whitelistObjectNames:
+  - "org.apache.activemq:destinationType=Queue,*"
+  - "org.apache.activemq:destinationType=Topic,*"
+  - "org.apache.activemq:type=Broker,brokerName=*"
+  - "org.apache.activemq:type=Topic,brokerName=*"
+  - "java.lang:*"
+
+rules:
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>max
+    name: jvm_memory_heap_usage_max
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>used
+    name: jvm_memory_heap_usage_used
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>committed
+    name: jvm_memory_heap_usage_committed
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>init
+    name: jvm_memory_heap_usage_init
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>max
+    name: jvm_memory_nonheap_usage_max
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>used
+    name: jvm_memory_nonheap_usage_used
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>committed
+    name: jvm_memory_nonheap_usage_committed
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>init
+    name: jvm_memory_nonheap_usage_init
+
+  - pattern: org.apache.activemq<type=Broker, brokerName=(\S*), destinationType=Queue, destinationName=(\S*)><>(\w+)
+    name: activemq_queue_$3
+    attrNameSnakeCase: true
+    labels:
+      destination: $2
+
+  - pattern: org.apache.activemq<type=Broker, brokerName=(\S*), destinationType=Topic, destinationName=(\S*)><>(\w+)
+    name: activemq_topic_$3
+    attrNameSnakeCase: true
+    labels:
+      destination: $2
+
+  - pattern: org.apache.activemq<type=Broker, brokerName=(\S*)><>CurrentConnectionsCount
+    name: activemq_connections
+    type: GAUGE
+
+  - pattern: org.apache.activemq<type=Broker, brokerName=(\S*)><>Total(.*)Count
+    name: activemq_$2_total
+    type: COUNTER
+
+  - pattern: org.apache.activemq<type=Broker, brokerName=(\S*)><>(.*)PercentUsage
+    name: activemq_$2_usage_ratio
+    type: GAUGE
+    valueFactor: 0.01
+`,
+      },
+    },
   },
-  {
-    name: 'Apache',
-    id: 18,
+  Apache: {
+    instance_type: 'apache',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'apache_uptime' },
       { type: 'value', key: 'apache_req_per_sec' },
       { type: 'progress', key: 'apache_cpu_load' },
     ],
+    groupIds: {},
+    plugins: {
+      Apache: {
+        collect_type: 'middleware',
+        config_type: ['apache'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    urls = ["$monitor_url"]
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
   },
-  {
-    name: 'ClickHouse',
-    id: 19,
+  ClickHouse: {
+    instance_type: 'clickhouse',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'clickhouse_events_query' },
       { type: 'value', key: 'clickhouse_events_inserted_rows' },
       { type: 'value', key: 'clickhouse_asynchronous_metrics_load_average1' },
     ],
+    groupIds: {},
+    plugins: {
+      ClickHouse: {
+        collect_type: 'middleware',
+        config_type: ['clickhouse'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["$monitor_url"]
+    username = "default"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
   },
-  {
-    name: 'RabbitMQ',
-    id: 20,
-    dashboardDisplay: [],
-    tableDiaplay: [{ type: 'value', key: 'rabbitmq_overview_messages_ready' }],
-  },
-  {
-    name: 'ActiveMQ',
-    id: 21,
-    dashboardDisplay: [],
-    tableDiaplay: [{ type: 'value', key: 'activemq_topic_consumer_count' }],
-  },
-  {
-    name: 'Nginx',
-    id: 22,
+  Consul: {
+    instance_type: 'consul',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
-      { type: 'value', key: 'nginx_requests' },
-      { type: 'value', key: 'nginx_active' },
+      { type: 'enum', key: 'consul_health_checks_status' },
+      { type: 'value', key: 'consul_health_checks_passing' },
     ],
+    groupIds: {},
+    plugins: {
+      Consul: {
+        collect_type: 'middleware',
+        config_type: ['consul'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    address = "$monitor_url"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
   },
-  {
-    name: 'Tomcat',
-    id: 23,
+  Zookeeper: {
+    instance_type: 'zookeeper',
+    icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'zookeeper_uptime' },
+      { type: 'value', key: 'zookeeper_avg_latency' },
+    ],
+    groupIds: {},
+    plugins: {
+      Zookeeper: {
+        collect_type: 'middleware',
+        config_type: ['zookeeper'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["$monitor_url"]
+    timeout = "$timeouts"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
+  },
+  Tomcat: {
+    instance_type: 'tomcat',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'tomcat_connector_request_count' },
       { type: 'value', key: 'tomcat_connector_current_threads_busy' },
       { type: 'value', key: 'tomcat_connector_error_count' },
     ],
+    groupIds: {},
+    plugins: {
+      Tomcat: {
+        collect_type: 'middleware',
+        config_type: ['tomcat'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    url = "$monitor_url"
+    username = "$username"
+    password = "$password"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+      'Tomcat-JMX': {
+        collect_type: 'jmx',
+        config_type: ['tomcat'],
+        collector: 'Tomcat-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+lowercaseOutputLabelNames: true
+lowercaseOutputName: true
+whitelistObjectNames: ["java.lang:type=OperatingSystem", "Catalina:*"]
+blacklistObjectNames: []
+rules:
+  - pattern: 'Catalina<type=Server><>serverInfo: (.+)'
+    name: tomcat_serverinfo
+    value: 1
+    labels:
+      serverInfo: "$1"
+    type: COUNTER
+  - pattern: 'Catalina<type=GlobalRequestProcessor, name=\"(\w+-\w+)-(\d+)\"><>(\w+):'
+    name: tomcat_$3_total
+    labels:
+      port: "$2"
+      protocol_type: "$1"
+    help: Tomcat global $3
+    type: COUNTER
+  - pattern: 'Catalina<j2eeType=Servlet, WebModule=//([-a-zA-Z0-9+&@#/%?=~_|!:.,;]*[-a-zA-Z0-9+&@#/%=~_|]), name=([-a-zA-Z0-9+/$%~_-|!.]*), J2EEApplication=none, J2EEServer=none><>(requestCount|processingTime|errorCount):'
+    name: tomcat_servlet_$3_total
+    labels:
+      module: "$1"
+      servlet: "$2"
+    help: Tomcat servlet $3 total
+    type: COUNTER
+  - pattern: 'Catalina<type=ThreadPool, name="(\w+-\w+)-(\d+)"><>(currentThreadCount|currentThreadsBusy|keepAliveCount|connectionCount|acceptCount|acceptorThreadCount|pollerThreadCount|maxThreads|minSpareThreads):'
+    name: tomcat_threadpool_$3
+    labels:
+      port: "$2"
+      protocol_type: "$1"
+    help: Tomcat threadpool $3
+    type: GAUGE
+  - pattern: 'Catalina<type=Manager, host=([-a-zA-Z0-9+&@#/%?=~_|!:.,;]*[-a-zA-Z0-9+&@#/%=~_|]), context=([-a-zA-Z0-9+/$%~_-|!.]*)><>(processingTime|sessionCounter|rejectedSessions|expiredSessions):'
+    name: tomcat_session_$3_total
+    labels:
+      context: "$2"
+      host: "$1"
+    help: Tomcat session $3 total
+    type: COUNTER
+
+  # tomcat6适配
+  - pattern: 'Catalina<type=GlobalRequestProcessor, name=(\w+)-(\d+)><>(\w+):'
+    name: tomcat_$3_total
+    labels:
+      port: "$2"
+      protocol_type: "$1"
+    help: Tomcat global $3
+    type: COUNTER
+
+  - pattern: 'Catalina<type=ThreadPool, name=(\w+)-(\d+)><>(running|currentThreadCount|currentThreadsBusy|maxThreads):'
+    name: tomcat_threadpool_$3
+    labels:
+      port: "$2"
+      protocol_type: "$1"
+    help: Tomcat threadpool $3
+    type: GAUGE
+
+  - pattern: 'Catalina<type=Manager, path=/([-a-zA-Z0-9+&@#/%?=~_|!:.,;]*[-a-zA-Z0-9+&@#/%=~_|]), host=([-a-zA-Z0-9+&@#/%?=~_|!:.,;]*[-a-zA-Z0-9+&@#/%=~_|])><>(processingTime|sessionCounter|rejectedSessions|expiredSessions):'
+    name: tomcat_session_$3_total
+    labels:
+      context: "$2"
+      host: "$1"
+    help: Tomcat session $3 total
+    type: COUNTER`,
+      },
+    },
   },
-  {
-    name: 'Consul',
-    id: 24,
+  TongWeb: {
+    instance_type: 'tongweb',
+    icon: 'Host',
     dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'enum', key: 'consul_health_checks_status' },
-      { type: 'value', key: 'consul_health_checks_passing' },
-    ],
+    tableDiaplay: [],
+    groupIds: {},
+    plugins: {
+      'TongWeb6-JMX': {
+        collect_type: 'jmx',
+        config_type: ['tongweb6'],
+        collector: 'TongWeb6-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+whitelistObjectNames:
+  - TWNT:*
+  - monitor:*
+
+
+rules:
+  # runtime
+  - pattern: monitor<name=runtime, group=jvm><Uptime>(count)
+    name: tongweb6_monitor_runtime_uptime
+    help: 实例已运行时间(ms)
+
+  # http-connector
+  - pattern: monitor<name=(.+), group=http-connector><(.+)>(count)
+    name: tongweb6_monitor_http_connector_$2
+    labels:
+      name_info: $1
+
+  # GlobalRequestProcessor
+  - pattern: TWNT<type=GlobalRequestProcessor, name=(.+)><>(requestCount|maxTime|bytesReceived|bytesSent|processingTime|errorCount)
+    name: tongweb6_global_request_processor_$2
+    labels:
+      name_info: $1
+
+  # Manager
+  - pattern: TWNT<type=Manager, context=(.+), host=(.+)><>(activeSessions|expiredSessions|maxActive|processingTime|rejectedSessions|sessionAverageAliveTime|sessionMaxAliveTime)
+    name: tongweb6_manager_$3
+    labels:
+      host_info: $1
+      context_info: $2
+
+  # ThreadPool
+  - pattern: TWNT<type=ThreadPool, name=(.+)><>(currentThreadsBusy|currentThreadsHang|keepAliveCount)
+    name: tongweb6_thread_pool_$2
+    labels:
+      name_info: $1`,
+      },
+      'TongWeb7-JMX': {
+        collect_type: 'jmx',
+        config_type: ['tongweb7'],
+        collector: 'TongWeb7-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+
+# 白名单限制采集范围
+whitelistObjectNames:
+  - TONGWEB:type=Connector,port=*
+  - TONGWEB:type=GlobalRequestProcessor,name=*
+  - TONGWEB:type=Manager,host=*,context=*
+  - TONGWEB:type=ThreadPool,name=*
+
+rules:
+  # Connector
+  - pattern: TONGWEB<type=Connector, port=(.+)><>(maxPostSize|maxSavePostSize|maxParameterCount|asyncTimeout)
+    name: tongweb7_Connector_$2
+    labels:
+      port: $1
+
+  # GlobalRequestProcessor
+  - pattern: TONGWEB<type=GlobalRequestProcessor, name=(.+)><>(requestCount|maxTime|bytesReceived|bytesSent|processingTime|errorCount)
+    name: tongweb7_GlobalRequestProcessor_$2
+    labels:
+      name_info: $1
+
+  # Manager
+  - pattern: TONGWEB<type=Manager, host=(.+), context=(.+)><>(rejectedSessions|activeSessions|sessionMaxAliveTime|sessionAverageAliveTime|maxActive|expiredSessions)
+    name: tongweb7_Manager_$3
+    labels:
+      host_info: $1
+      context_info: $2
+
+  # ThreadPool
+  - pattern: TONGWEB<type=ThreadPool, name=(.+)><>(currentThreadsBusy|currentThreadCount|currentThreadsHang|keepAliveCount|queueSize)
+    name: tongweb7_ThreadPool_$2
+    labels:
+      name_info: $1`,
+      },
+    },
   },
-  {
-    name: 'ElasticSearch',
-    id: 25,
+  JBoss: {
+    instance_type: 'jboss',
+    icon: 'Host',
     dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'elasticsearch_fs_total_available_in_bytes' },
-      { type: 'value', key: 'elasticsearch_http_current_open' },
-      { type: 'value', key: 'elasticsearch_indices_docs_count' },
-    ],
+    tableDiaplay: [],
+    groupIds: {},
+    plugins: {
+      'JBoss-JMX': {
+        collect_type: 'jmx',
+        config_type: ['jboss'],
+        collector: 'JBoss-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+whitelistObjectNames:
+ - "jboss.as:subsystem=messaging-activemq,server=*,jms-queue=*"
+ - "jboss.as:subsystem=messaging-activemq,server=*,jms-topic=*"
+ - "jboss.as:subsystem=datasources,data-source=*,statistics=*"
+ - "jboss.as:subsystem=datasources,xa-data-source=*,statistics=*"
+ - "jboss.as:subsystem=transactions*"
+ - "jboss.as:subsystem=undertow,server=*,http-listener=*"
+ - "jboss.as:subsystem=undertow,server=*,https-listener=*"
+ # - "java.lang:*"
+rules:
+  - pattern: "^jboss.as<subsystem=messaging-activemq, server=.+, jms-(queue|topic)=(.+)><>(.+):"
+    attrNameSnakeCase: true
+    name: wildfly_messaging_$3
+    labels:
+      $1: $2
+
+  - pattern: "^jboss.as<subsystem=datasources, (?:xa-)*data-source=(.+), statistics=(.+)><>(.+):"
+    attrNameSnakeCase: true
+    name: wildfly_datasource_$2_$3
+    labels:
+      source_name: $1
+
+  - pattern: "^jboss.as<subsystem=transactions><>number_of_(.+):"
+    attrNameSnakeCase: true
+    name: wildfly_transaction_$1
+
+  - pattern: "^jboss.as<subsystem=undertow, server=(.+), (http[s]?-listener)=(.+)><>(bytes_.+|error_count|processing_time|request_count):"
+    attrNameSnakeCase: true
+    name: wildfly_undertow_$4
+    labels:
+      server_name: $1
+      listener: $3`,
+      },
+    },
   },
-  {
-    name: 'MongoDB',
-    id: 26,
+  Jetty: {
+    instance_type: 'jetty',
+    icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [],
+    groupIds: {},
+    plugins: {
+      'Jetty-JMX': {
+        collect_type: 'jmx',
+        config_type: ['jetty'],
+        collector: 'Jetty-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>max
+    name: jvm_memory_heap_usage_max
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>used
+    name: jvm_memory_heap_usage_used
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>committed
+    name: jvm_memory_heap_usage_committed
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>init
+    name: jvm_memory_heap_usage_init
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>max
+    name: jvm_memory_nonheap_usage_max
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>used
+    name: jvm_memory_nonheap_usage_used
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>committed
+    name: jvm_memory_nonheap_usage_committed
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>init
+    name: jvm_memory_nonheap_usage_init
+  - pattern: org.eclipse.jetty.io<type=arraybytebufferpool, id=0><>heapMemory
+    name: jetty_bufferpool_heapMemory
+  - pattern: org.eclipse.jetty.deploy<type=deploymentmanager, id=(.+)><>stopTimeout
+    name: jetty_deploymentmanager_stopTimeout
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.deploy.providers<type=webappprovider, id=(.+)><>stopTimeout
+    name: jetty_webappprovider_stopTimeout
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.io<type=arraybytebufferpool, id=(.+)><>heapMemory
+    name: jetty_arraybufferpool_heapMemory
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.io<type=arraybytebufferpool, id=(.+)><>directByteBufferCount
+    name: jetty_arraybufferpool_directByteBufferCount
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.io<type=arraybytebufferpool, id=(.+)><>directMemory
+    name: jetty_arraybufferpool_directMemory
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.io<type=arraybytebufferpool, id=(.+)><>heapByteBufferCount
+    name: jetty_arraybufferpool_heapByteBufferCount
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.io<context=(.+), type=managedselector, id=(.+)><>stopTimeout
+    name: jetty_managedselector_stopTimeout
+    labels:
+      context: "$1"
+      id:  "$2"
+  - pattern: org.eclipse.jetty.io<context=(.+), type=managedselector, id=(.+)><>averageSelectedKeys
+    name: jetty_managedselector_averageSelectedKeys
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.io<context=(.+), type=managedselector, id=(.+)><>maxSelectedKeys
+    name: jetty_managedselector_maxSelectedKeys
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.io<context=(.+), type=managedselector, id=(.+)><>selectCount
+    name: jetty_managedselector_selectCount
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.io<context=(.+), type=managedselector, id=(.+)><>totalKeys
+    name: jetty_managedselector_totalKeys
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>responseHeaderSize
+    name: jetty_httpconfiguration_responseHeaderSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>requestHeaderSize
+    name: jetty_httpconfiguration_requestHeaderSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>maxErrorDispatches
+    name: jetty_httpconfiguration_maxErrorDispatches
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>idleTimeout
+    name: jetty_httpconfiguration_idleTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>outputBufferSize
+    name: jetty_httpconfiguration_outputBufferSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>headerCacheSize
+    name: jetty_httpconfiguration_headerCacheSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>minRequestDataRate
+    name: jetty_httpconfiguration_minRequestDataRate
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>outputAggregationSize
+    name: jetty_httpconfiguration_outputAggregationSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>blockingTimeout
+    name: jetty_httpconfiguration_blockingTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=httpconfiguration, id=(.+)><>minResponseDataRate
+    name: jetty_httpconfiguration_minResponseDataRate
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector, id=(.+)><>stopTimeout
+    name: jetty_serverconnector_stopTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector, id=(.+)><>acceptQueueSize
+    name: jetty_serverconnector_acceptQueueSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector, id=(.+)><>acceptedReceiveBufferSize
+    name: jetty_serverconnector_acceptedReceiveBufferSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector, id=(.+)><>acceptedSendBufferSize
+    name: jetty_serverconnector_acceptedSendBufferSize
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector, id=(.+)><>idleTimeout
+    name: jetty_serverconnector_idleTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector$serverconnectormanager, id=(.+)><>selectorCount
+    name: jetty_serverconnector_selectorCount
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.server<context=(.+), type=serverconnector$serverconnectormanager, id=(.+)><>connectTimeout
+    name: jetty_serverconnector_connectTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>threadsPriority
+    name: jetty_queuedthreadpool_threadsPriority
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>queueSize
+    name: jetty_queuedthreadpool_queueSize
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>availableReservedThreads
+    name: jetty_queuedthreadpool_availableReservedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>stopTimeout
+    name: jetty_queuedthreadpool_stopTimeout
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>utilizedThreads
+    name: jetty_queuedthreadpool_utilizedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>utilizationRate
+    name: jetty_queuedthreadpool_utilizationRate
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>minThreads
+    name: jetty_queuedthreadpool_minThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>maxReservedThreads
+    name: jetty_queuedthreadpool_maxReservedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>threads
+    name: jetty_queuedthreadpool_threads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>reservedThreads
+    name: jetty_queuedthreadpool_reservedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>readyThreads
+    name: jetty_queuedthreadpool_readyThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>leasedThreads
+    name: jetty_queuedthreadpool_leasedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>maxAvailableThreads
+    name: jetty_queuedthreadpool_maxAvailableThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>busyThreads
+    name: jetty_queuedthreadpool_busyThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>lowThreadsThreshold
+    name: jetty_queuedthreadpool_lowThreadsThreshold
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>idleTimeout
+    name: jetty_queuedthreadpool_idleTimeout
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>idleThreads
+    name: jetty_queuedthreadpool_idleThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>maxThreads
+    name: jetty_queuedthreadpool_maxThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=queuedthreadpool, id=(.+)><>maxLeasedThreads
+    name: jetty_queuedthreadpool_maxLeasedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=reservedthreadexecutor, id=(.+)><>pending
+    name: jetty_reservedthreadexecutor_pending
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=reservedthreadexecutor, id=(.+)><>available
+    name: jetty_reservedthreadexecutor_available
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=reservedthreadexecutor, id=(.+)><>idleTimeoutMs
+    name: jetty_reservedthreadexecutor_idleTimeoutMs
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=reservedthreadexecutor, id=(.+)><>capacity
+    name: jetty_reservedthreadexecutor_capacity
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread<type=threadpoolbudget, id=(.+)><>leasedThreads
+    name: jetty_threadpoolbudget_leasedThreads
+    labels:
+      id: "$1"
+  - pattern: org.eclipse.jetty.util.thread.strategy<context=(.+), type=eatwhatyoukill, id=(.+)><>stopTimeout
+    name: jetty_eatwhatyoukill_stopTimeout
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.util.thread.strategy<context=(.+), type=eatwhatyoukill, id=(.+)><>pCTasksConsumed
+    name: jetty_eatwhatyoukill_pCTasksConsumed
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.util.thread.strategy<context=(.+), type=eatwhatyoukill, id=(.+)><>pECTasksExecuted
+    name: jetty_eatwhatyoukill_pECTasksExecuted
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.util.thread.strategy<context=(.+), type=eatwhatyoukill, id=(.+)><>ePCTasksConsumed
+    name: jetty_eatwhatyoukill_ePCTasksConsumed
+    labels:
+      context: "$1"
+      id: "$2"
+  - pattern: org.eclipse.jetty.util.thread.strategy<context=(.+), type=eatwhatyoukill, id=(.+)><>pICTasksExecuted
+    name: jetty_eatwhatyoukill_pICTasksExecuted
+    labels:
+      context: "$1"
+      id: "$2"`,
+      },
+    },
+  },
+  WebLogic: {
+    instance_type: 'weblogic',
+    icon: 'Host',
+    dashboardDisplay: [],
+    tableDiaplay: [],
+    groupIds: {},
+    plugins: {
+      'WebLogic-JMX': {
+        collect_type: 'jmx',
+        config_type: ['weblogic'],
+        collector: 'WebLogic-JMX',
+        manualCfgText: `username: $username
+password: $password
+jmxUrl: $monitor_url
+ssl: false
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+whitelistObjectNames:
+  - "com.bea:Name=*,Type=ServerRuntime"
+  - "com.bea:ServerRuntime=*,Type=ApplicationRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=JDBCDataSourceRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=JMSDestinationRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=JDBCStoreRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=FileStoreRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=SAFRemoteEndpointRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=ThreadPoolRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=JMSRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=SAFRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=WorkManagerRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=MessagingBridgeRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=PersistentStoreRuntime,*"
+  - "com.bea:ServerRuntime=*,Type=WebServerRuntime,*"
+
+
+rules:
+  # ex: com.bea<ServerRuntime=AdminServer, Name=default, ApplicationRuntime=moduleJMS, Type=WorkManagerRuntime><>CompletedRequests
+  - pattern: "^com.bea<ServerRuntime=(.+), Name=(.+), (.+)Runtime=(.*), Type=(.+)Runtime><>(.+):"
+    name: weblogic_$3_$5_$6
+    attrNameSnakeCase: true
+    labels:
+      runtime: $1
+      name: $2
+      application: $4
+
+  # ex: com.bea<ServerRuntime=AdminServer, Name=dsName, Type=JDBCDataSourceRuntime><>Metric
+  - pattern: "^com.bea<ServerRuntime=(.+), Name=(.+), Type=(.+)Runtime><>(.+):"
+    name: weblogic_$3_$4
+    attrNameSnakeCase: true
+    labels:
+      runtime: $1
+      name: $2
+
+  # ex: com.bea<ServerRuntime=AdminServer, Name=bea_wls_cluster_internal, Type=ApplicationRuntime><OverallHealthStateJMX>IsCritical
+  - pattern: "^com.bea<ServerRuntime=(.+), Name=(.+), Type=(.+)Runtime><(.+)>(.+):"
+    name: weblogic_$3_$4_$5
+    attrNameSnakeCase: true
+    labels:
+      runtime: $1
+      name: $2`,
+      },
+    },
+  },
+  MongoDB: {
+    instance_type: 'mongodb',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'mongodb_connections_current' },
       { type: 'value', key: 'mongodb_latency_commands' },
       { type: 'value', key: 'mongodb_resident_megabytes' },
     ],
+    groupIds: {},
+    plugins: {
+      MongoDB: {
+        collect_type: 'database',
+        config_type: ['mongodb'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["mongodb://$host:$port/?connect=direct"]
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
   },
-  {
-    name: 'Mysql',
-    id: 27,
+  Mysql: {
+    instance_type: 'mysql',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'mysql_bytes_received' },
       { type: 'value', key: 'mysql_bytes_sent' },
       { type: 'value', key: 'mysql_connections_total' },
     ],
+    groupIds: {},
+    plugins: {
+      Mysql: {
+        collect_type: 'database',
+        config_type: ['mysql'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["$username:$password@tcp($host:$port)/?tls=false"]
+    metric_version = 2
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
   },
-  {
-    name: 'Postgres',
-    id: 28,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'postgresql_active_time' },
-      { type: 'value', key: 'postgresql_blks_hit' },
-    ],
-  },
-  {
-    name: 'Redis',
-    id: 29,
+  Redis: {
+    instance_type: 'redis',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'redis_used_memory' },
       { type: 'value', key: 'redis_instantaneous_ops_per_sec' },
     ],
+    groupIds: {},
+    plugins: {
+      Redis: {
+        collect_type: 'database',
+        config_type: ['redis'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["tcp://$host:$port"]
+    username = ""
+    password = "$password" 
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
   },
-  {
-    name: 'Storage',
-    id: 30,
+  Postgres: {
+    instance_type: 'postgres',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-      { type: 'enum', key: 'ipmi_power_watts' },
-      { type: 'value', key: 'ipmi_temperature_celsius' },
-      { type: 'value', key: 'ipmi_voltage_volts' },
+      { type: 'value', key: 'postgresql_active_time' },
+      { type: 'value', key: 'postgresql_blks_hit' },
     ],
+    groupIds: {},
+    plugins: {
+      Postgres: {
+        collect_type: 'database',
+        config_type: ['postgres'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    address = "host=$host port=$port user=$username password=$password sslmode=disable"
+    ignored_databases = ["template0", "template1"]
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
   },
-  {
-    name: 'Hardware Server',
-    id: 31,
+  ElasticSearch: {
+    instance_type: 'elasticsearch',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
-      { type: 'value', key: 'iftotalInOctets' },
-      { type: 'value', key: 'iftotalOutOctets' },
-      { type: 'value', key: 'sysUpTime' },
-      { type: 'enum', key: 'ipmi_power_watts' },
-      { type: 'value', key: 'ipmi_temperature_celsius' },
-      { type: 'value', key: 'ipmi_voltage_volts' },
+      { type: 'value', key: 'elasticsearch_fs_total_available_in_bytes' },
+      { type: 'value', key: 'elasticsearch_http_current_open' },
+      { type: 'value', key: 'elasticsearch_indices_docs_count' },
     ],
+    groupIds: {},
+    plugins: {
+      ElasticSearch: {
+        collect_type: 'database',
+        config_type: ['elasticsearch'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.$config_type]]
+    servers = ["$server"]
+    username = "$username"
+    password = "$password"
+    interval = "$intervals"
+    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
   },
-  {
-    name: 'vCenter',
-    id: 32,
+  vCenter: {
+    instance_type: 'vmware',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'vmware_esxi_count' },
       { type: 'value', key: 'vmware_datastore_count' },
       { type: 'value', key: 'vmware_vm_count' },
     ],
+    groupIds: {},
+    plugins: {
+      VMWare: {
+        collect_type: 'http',
+        config_type: ['prometheus'],
+        collector: 'Telegraf',
+        manualCfgText: '',
+      },
+    },
   },
-  {
-    name: 'ESXI',
-    id: 33,
+  JVM: {
+    instance_type: 'jvm',
+    icon: 'Host',
     dashboardDisplay: [],
     tableDiaplay: [
-      { type: 'value', key: 'esxi_cpu_usage_average_gauge' },
-      { type: 'value', key: 'esxi_mem_usage_average_gauge' },
-      { type: 'value', key: 'esxi_disk_read_average_gauge' },
+      { type: 'enum', key: 'jmx_scrape_error_gauge' },
+      { type: 'value', key: 'jvm_memory_usage_used_value' },
+      { type: 'value', key: 'jvm_memory_usage_max_value' },
+      { type: 'value', key: 'jvm_os_memory_physical_free_value' },
+      { type: 'value', key: 'jvm_gc_collectiontime_seconds_value' },
     ],
-  },
-  {
-    name: 'DataStorage',
-    id: 34,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'data_storage_disk_used_average_gauge' },
-      { type: 'enum', key: 'data_storage_store_accessible_gauge' },
-    ],
-  },
-  {
-    name: 'VM',
-    id: 35,
-    dashboardDisplay: [],
-    tableDiaplay: [
-      { type: 'value', key: 'vm_cpu_usage_average_gauge' },
-      { type: 'value', key: 'vm_mem_usage_average_gauge' },
-      { type: 'value', key: 'vm_disk_io_usage_gauge' },
-    ],
-  },
-];
-
-const SCHEDULE_UNIT_MAP: UnitMap = {
-  minMin: 1,
-  minMax: 59,
-  hourMin: 1,
-  hourMax: 23,
-  dayMin: 1,
-  dayMax: 1,
-};
-
-const PERIOD_LIST: ListItem[] = [
-  { label: '1min', value: 60 },
-  { label: '5min', value: 300 },
-  { label: '15min', value: 900 },
-  { label: '30min', value: 1800 },
-  { label: '1hour', value: 3600 },
-  { label: '6hour', value: 21600 },
-  { label: '12hour', value: 43200 },
-  { label: '24hour', value: 86400 },
-];
-
-const COMPARISON_METHOD: ListItem[] = [
-  { label: '>', value: '>' },
-  { label: '<', value: '<' },
-  { label: '=', value: '=' },
-  { label: '≠', value: '!=' },
-  { label: '≥', value: '>=' },
-  { label: '≤', value: '<=' },
-];
-
-const MONITOR_GROUPS_MAP: MonitorGroupMap = {
-  Host: {
-    list: ['instance_id'],
-    default: ['instance_id'],
-  },
-  Website: {
-    list: ['instance_id'],
-    // list: ['instance_id', 'instance_name', 'host'],
-    default: ['instance_id'],
-  },
-  Cluster: {
-    list: ['instance_id'],
-    default: ['instance_id'],
-  },
-  Pod: {
-    // list: ['instance_id', 'uid'],
-    // default: ['instance_id', 'uid'],
-    list: ['uid'],
-    default: ['uid'],
-  },
-  Node: {
-    // list: ['instance_id', 'node'],
-    // default: ['instance_id', 'node'],
-    list: ['node'],
-    default: ['node'],
-  },
-  Switch: {
-    list: ['instance_id'],
-    default: ['instance_id'],
-  },
-  Router: {
-    list: ['instance_id'],
-    default: ['instance_id'],
-  },
-  Loadbalance: {
-    list: ['instance_id'],
-    default: ['instance_id'],
-  },
-  Firewall: {
-    list: ['instance_id'],
-    default: ['instance_id'],
-  },
-};
-
-const OBJECT_ICON_MAP: ObjectIconMap = {
-  Host: 'Host',
-  Website: 'Website',
-  Cluster: 'K8S',
-  Pod: 'K8S',
-  Node: 'K8S',
-  Router: 'Router',
-  Switch: 'Switch',
-  Firewall: 'Firewall',
-  Loadbalance: 'Loadbalance',
-  'Detection Device': 'DetectionDevice',
-  'Bastion Host': 'BastionHost',
-  'Scanning Device': 'ScanningDevice',
-  'Audit System': 'AuditSystem',
-};
-
-const APPOINT_METRIC_IDS: string[] = [
-  'cluster_pod_count',
-  'cluster_node_count',
-];
-
-const TIMEOUT_UNITS: string[] = ['s'];
-
-const COLLECT_TYPE_MAP: ObjectIconMap = {
-  Host: 'host',
-  Website: 'web',
-  Ping: 'ping',
-  'Router SNMP General': 'snmp',
-  'Switch SNMP General': 'snmp',
-  'Firewall SNMP General': 'snmp',
-  'Loadbalance SNMP General': 'snmp',
-  'Detection Device SNMP General': 'snmp',
-  'Scanning Device SNMP General': 'snmp',
-  'Bastion Host SNMP General': 'snmp',
-  'Storage SNMP General': 'snmp',
-  'Hardware Server SNMP General': 'snmp',
-  'Hardware Server IPMI': 'ipmi',
-  'Storage IPMI': 'ipmi',
-  K8S: 'k8s',
-  'SNMP Trap': 'trap',
-  Docker: 'docker',
-  RabbitMQ: 'middleware',
-  Nginx: 'middleware',
-  ActiveMQ: 'middleware',
-  Apache: 'middleware',
-  ClickHouse: 'middleware',
-  Consul: 'middleware',
-  Zookeeper: 'middleware',
-  Tomcat: 'middleware',
-  MongoDB: 'database',
-  Mysql: 'database',
-  Redis: 'database',
-  Postgres: 'database',
-  ElasticSearch: 'database',
-  VMWare: 'vmware',
-  JVM: 'jmx',
-};
-
-const OBJECT_INSTANCE_TYPE_MAP: ObjectIconMap = {
-  Host: 'os',
-  Website: 'web',
-  Ping: 'ping',
-  Switch: 'switch',
-  Router: 'router',
-  Firewall: 'firewall',
-  Loadbalance: 'loadbalance',
-  'Detection Device': 'detection_device',
-  'Scanning Device': 'scanning_device',
-  'Bastion Host': 'bastion_host',
-  Storage: 'storage',
-  'Hardware Server': 'hardware_server',
-  Cluster: 'k8s',
-  'SNMP Trap': 'snmp_trap',
-  Docker: 'docker',
-  RabbitMQ: 'rabbitmq',
-  Nginx: 'nginx',
-  ActiveMQ: 'activemq',
-  Apache: 'apache',
-  ClickHouse: 'clickhouse',
-  Consul: 'consul',
-  Zookeeper: 'zookeeper',
-  Tomcat: 'tomcat',
-  MongoDB: 'mongodb',
-  Mysql: 'mysql',
-  Redis: 'redis',
-  Postgres: 'postgres',
-  ElasticSearch: 'elasticsearch',
-  vCenter: 'vmware',
-  JVM: 'jvm',
-};
-
-const INSTANCE_TYPE_MAP: ObjectIconMap = {
-  Host: 'os',
-  Website: 'web',
-  Ping: 'ping',
-  'Router SNMP General': 'router',
-  'Switch SNMP General': 'switch',
-  'Firewall SNMP General': 'firewall',
-  'Loadbalance SNMP General': 'loadbalance',
-  'Detection Device SNMP General': 'detection_device',
-  'Scanning Device SNMP General': 'scanning_device',
-  'Bastion Host SNMP General': 'bastion_host',
-  'Storage SNMP General': 'storage',
-  'Hardware Server SNMP General': 'hardware_server',
-  'Hardware Server IPMI': 'hardware_server',
-  'Storage IPMI': 'storage',
-  K8S: 'k8s',
-  'SNMP Trap': 'snmp_trap',
-  Docker: 'docker',
-  RabbitMQ: 'rabbitmq',
-  Nginx: 'nginx',
-  ActiveMQ: 'activemq',
-  Apache: 'apache',
-  ClickHouse: 'clickhouse',
-  Consul: 'consul',
-  Zookeeper: 'zookeeper',
-  Tomcat: 'tomcat',
-  MongoDB: 'mongodb',
-  Mysql: 'mysql',
-  Redis: 'redis',
-  Postgres: 'postgres',
-  ElasticSearch: 'elasticsearch',
-  VMWare: 'vmware',
-  JVM: 'jvm',
-};
-
-const CONFIG_TYPE_MAP: ConfigTypeMap = {
-  Host: ['cpu', 'disk', 'diskio', 'mem', 'net', 'processes', 'system'],
-  Website: ['http_response'],
-  Ping: ['ping'],
-  'Router SNMP General': ['router'],
-  'Switch SNMP General': ['switch'],
-  'Firewall SNMP General': ['firewall'],
-  'Loadbalance SNMP General': ['loadbalance'],
-  'Detection Device SNMP General': ['detection_device'],
-  'Scanning Device SNMP General': ['scanning_device'],
-  'Bastion Host SNMP General': ['bastion_host'],
-  'Storage SNMP General': ['storage'],
-  'Hardware Server SNMP General': ['hardware_server'],
-  'Hardware Server IPMI': ['hardware_server'],
-  'Storage IPMI': ['storage'],
-  K8S: ['k8s'],
-  'SNMP Trap': ['snmp_trap'],
-  Docker: ['docker'],
-  RabbitMQ: ['rabbitmq'],
-  Nginx: ['nginx'],
-  ActiveMQ: ['activemq'],
-  Apache: ['apache'],
-  ClickHouse: ['clickhouse'],
-  Consul: ['consul'],
-  Zookeeper: ['zookeeper'],
-  Tomcat: ['tomcat'],
-  MongoDB: ['mongodb'],
-  Mysql: ['mysql'],
-  Redis: ['redis'],
-  Postgres: ['postgres'],
-  ElasticSearch: ['elasticsearch'],
-  VMWare: ['http'],
-  JVM: ['jvm'],
-};
-
-const MANUAL_CONFIG_TEXT_MAP: ObjectIconMap = {
-  Apache: `[[inputs.$config_type]]
-    urls = ["$monitor_url"]
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  ClickHouse: `[[inputs.$config_type]]
-    servers = ["$monitor_url"]
-    username = "default"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Consul: `[[inputs.$config_type]]
-    address = "$monitor_url"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  RabbitMQ: `[[inputs.$config_type]]
-    url = "$monitor_url"
-    username = "$username"
-    password = "$password"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Tomcat: `[[inputs.$config_type]]
-    url = "$monitor_url"
-    username = "$username"
-    password = "$password"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  ActiveMQ: `[[inputs.$config_type]]
-    url = "$monitor_url"
-    username = "$username"
-    password = "$password"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Nginx: `[[inputs.$config_type]]
-    urls = ["$monitor_url"]
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Zookeeper: `[[inputs.$config_type]]
-    servers = ["$monitor_url"]
-    timeout = "$timeouts"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  ElasticSearch: `[[inputs.$config_type]]
-    servers = ["$server"]
-    username = "$username"
-    password = "$password"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  MongoDB: `[[inputs.$config_type]]
-    servers = ["mongodb://$host:$port/?connect=direct"]
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Mysql: `[[inputs.$config_type]]
-    servers = ["$username:$password@tcp($host:$port)/?tls=false"]
-    metric_version = 2
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Redis: `[[inputs.$config_type]]
-    servers = ["tcp://$host:$port"]
-    username = ""
-    password = "$password" 
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  Postgres: `[[inputs.$config_type]]
-    address = "host=$host port=$port user=$username password=$password sslmode=disable"
-    ignored_databases = ["template0", "template1"]
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
-  JVM: `username: $username
+    groupIds: {},
+    plugins: {
+      JVM: {
+        collect_type: 'jmx',
+        config_type: ['jvm'],
+        collector: 'JMX-JVM',
+        manualCfgText: `username: $username
 password: $password
 jmxUrl: $monitor_url
 ssl: false
@@ -1755,12 +2491,9 @@ rules:
     name: jvm_memorypool_usage_$2
     labels:
       type: $1`,
-  default: `[[inputs.$config_type]]
-    url = "$monitor_url"
-    username = "$username"
-    password = "$password"
-    interval = "$intervals"
-    tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
+  },
 };
 
 const NODE_STATUS_MAP: ObjectIconMap = {
@@ -1778,24 +2511,33 @@ const INIT_VIEW_MODAL_FORM = {
   title: '',
 };
 
+const STRATEGY_TEMPLATES = [
+  'Host',
+  'Ping',
+  'Website',
+  'Switch',
+  'Router',
+  'Firewall',
+  'Loadbalance',
+  'Detection Device',
+  'Scanning Device',
+  'Bastion Host',
+  'Storage',
+  'Hardware Server',
+];
+
 export {
   UNIT_LIST,
-  INDEX_CONFIG,
   PERIOD_LIST,
   COMPARISON_METHOD,
   LEVEL_MAP,
   SCHEDULE_UNIT_MAP,
-  MONITOR_GROUPS_MAP,
-  OBJECT_ICON_MAP,
   APPOINT_METRIC_IDS,
   TIMEOUT_UNITS,
-  COLLECT_TYPE_MAP,
-  INSTANCE_TYPE_MAP,
-  CONFIG_TYPE_MAP,
-  OBJECT_INSTANCE_TYPE_MAP,
   NODE_STATUS_MAP,
-  MANUAL_CONFIG_TEXT_MAP,
   INIT_VIEW_MODAL_FORM,
+  OBJECT_CONFIG_MAP,
+  STRATEGY_TEMPLATES,
   useMiddleWareFields,
   useInterfaceLabelMap,
   useScheduleList,

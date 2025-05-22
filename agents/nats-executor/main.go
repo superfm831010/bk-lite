@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/nats-io/nats.go"
 	"gopkg.in/yaml.v3"
@@ -14,8 +15,9 @@ import (
 )
 
 type Config struct {
-	NATSUrls       string `yaml:"nats_urls"`
-	NATSInstanceID string `yaml:"nats_instanceId"`
+	NATSUrls        string `yaml:"nats_urls"`
+	NATSInstanceID  string `yaml:"nats_instanceId"`
+	NatsConnTimeout int    `yaml:"nats_conn_timeout"`
 }
 
 func loadConfig(path string) (*Config, error) {
@@ -48,6 +50,7 @@ func main() {
 	opts := []nats.Option{
 		nats.Name("nats-executor"),
 		nats.Compression(true),
+		nats.Timeout(time.Duration(cfg.NatsConnTimeout) * time.Second),
 	}
 
 	nc, err := nats.Connect(cfg.NATSUrls, opts...)
