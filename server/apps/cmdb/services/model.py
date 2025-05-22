@@ -221,7 +221,7 @@ class ModelManage(object):
             result.append(
                 dict(
                     id=item["id"],
-                    name=item["path"],
+                    name=item["name"],
                     is_default=False,
                     type="str",
                 )
@@ -254,7 +254,7 @@ class ModelManage(object):
         system_mgmt_client = SystemMgmt()
 
         if ORGANIZATION in attr_types:
-            groups = UserGroup.groups_list(system_mgmt_client, {"search": ""})
+            groups = UserGroup.get_all_groups(system_mgmt_client)
             # 获取默认的第一个根组织
             groups = groups if groups else []
             option = []
