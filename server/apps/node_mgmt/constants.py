@@ -30,7 +30,7 @@ COLLECTOR_INSTALL_DIR = {
 
 # 设置权限并运行命令
 RUN_COMMAND = {
-    LINUX_OS: "chmod -R +x /opt/fusion-collectors && cd /opt/fusion-collectors && ./install.sh {server_url}/node_mgmt/open_api/node {server_token} {cloud} {group}",
+    LINUX_OS: "chmod -R +x /opt/fusion-collectors/* && cd /opt/fusion-collectors && ./install.sh {server_url}/node_mgmt/open_api/node {server_token} {cloud} {group}",
     WINDOWS_OS: "powershell -command \"cd C:\\gse\\fusion-collectors && .\\install.ps1 {server_url} {server_token}\"",
 }
 
