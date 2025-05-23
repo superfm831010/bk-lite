@@ -56,7 +56,7 @@ class Group:
 
     def get_group_list(self):
         """获取组织列表"""
-        groups = self.system_mgmt_client.search_groups({"search": ""})
+        groups = self.system_mgmt_client.get_all_groups()
         return groups["data"] if groups else []
 
     # def get_user_group_list(self):
