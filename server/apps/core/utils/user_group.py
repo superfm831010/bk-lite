@@ -59,12 +59,6 @@ class Group:
         groups = self.system_mgmt_client.get_all_groups()
         return groups["data"] if groups else []
 
-    # def get_user_group_list(self):
-    #     """获取用户组织列表"""
-    #     userinfo = self.keycloak_client.get_userinfo(self.token)
-    #     user_group_list = self.keycloak_client.realm_client.get_user_groups(userinfo["sub"])
-    #     return user_group_list
-
     def get_user_group_and_subgroup_ids(self, user_group_list=[]):
         """获取用户组织ID与子组ID的列表"""
         # 获取所有组织列表
