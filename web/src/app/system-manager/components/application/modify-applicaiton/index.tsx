@@ -106,9 +106,7 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
     try {
       const values = await form.validateFields();
       setLoading(true);
-      const applicationData = isBuiltIn ? {
-        url: values.url
-      } : {
+      const applicationData = {
         name: values.name,
         display_name: values.display_name,
         description: values.description,
@@ -116,7 +114,6 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
         icon: selectedIcon || null,
         tags: tags
       };
-
       if (isEdit && initialData?.name) {
         await updateApplication({...applicationData, id: initialData.id});
         message.success(t('common.updateSuccess'));

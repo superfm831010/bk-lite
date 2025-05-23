@@ -447,7 +447,7 @@ const OBJECT_CONFIG_MAP: any = {
           'net',
           'processes',
           'system',
-          "gpu"
+          'gpu',
         ],
         collector: 'Telegraf',
         manualCfgText: '',
@@ -456,7 +456,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   Cluster: {
     instance_type: 'k8s',
-    icon: 'K8S',
+    icon: 'ks',
     dashboardDisplay: [
       {
         indexId: 'cluster_pod_count',
@@ -508,7 +508,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   Pod: {
     instance_type: '',
-    icon: 'K8S',
+    icon: 'ks',
     dashboardDisplay: [
       {
         indexId: 'pod_status',
@@ -576,7 +576,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   Node: {
     instance_type: '',
-    icon: 'K8S',
+    icon: 'ks',
     dashboardDisplay: [
       {
         indexId: 'node_status_condition',
@@ -686,7 +686,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   Website: {
     instance_type: 'web',
-    icon: 'Website',
+    icon: 'wangzhan',
     dashboardDisplay: [
       {
         indexId: 'http_success.rate',
@@ -760,7 +760,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   Ping: {
     instance_type: 'ping',
-    icon: 'Host',
+    icon: 'wangzhan',
     dashboardDisplay: [
       {
         indexId: 'ping_response_time',
@@ -871,7 +871,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   Router: {
     instance_type: 'router',
-    icon: 'Router',
+    icon: 'luyouqi',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -1087,7 +1087,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   'Detection Device': {
     instance_type: 'detection_device',
-    icon: 'DetectionDevice',
+    icon: 'shebei-shebeixinxi',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -1156,7 +1156,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   'Scanning Device': {
     instance_type: 'scanning_device',
-    icon: 'ScanningDevice',
+    icon: 'shebei-shebeixinxi',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -1225,7 +1225,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   'Bastion Host': {
     instance_type: 'bastion_host',
-    icon: 'BastionHost',
+    icon: 'shebei-shebeixinxi',
     dashboardDisplay: [
       {
         indexId: 'sysUpTime',
@@ -1294,7 +1294,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   Storage: {
     instance_type: 'storage',
-    icon: 'Host',
+    icon: 'shebei-shebeixinxi',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'iftotalInOctets' },
@@ -1322,7 +1322,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   'Hardware Server': {
     instance_type: 'hardware_server',
-    icon: 'Host',
+    icon: 'shebei-shebeixinxi',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'iftotalInOctets' },
@@ -1427,7 +1427,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   Docker: {
     instance_type: 'docker',
-    icon: 'Host',
+    icon: 'Docker',
     dashboardDisplay: [],
     tableDiaplay: [{ type: 'value', key: 'docker_n_containers' }],
     groupIds: {},
@@ -1440,9 +1440,21 @@ const OBJECT_CONFIG_MAP: any = {
       },
     },
   },
+  'Docker Container': {
+    instance_type: 'docker',
+    icon: 'Docker',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'enum', key: 'docker_container_status' },
+      { type: 'value', key: 'docker_container_cpu_usage_percent' },
+      { type: 'value', key: 'docker_container_mem_usage_percent' },
+    ],
+    groupIds: {},
+    plugins: {},
+  },
   RabbitMQ: {
     instance_type: 'rabbitmq',
-    icon: 'Host',
+    icon: 'rabbitmq',
     dashboardDisplay: [],
     tableDiaplay: [{ type: 'value', key: 'rabbitmq_overview_messages_ready' }],
     groupIds: {},
@@ -1462,7 +1474,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   Nginx: {
     instance_type: 'nginx',
-    icon: 'Host',
+    icon: 'nginx',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'nginx_requests' },
@@ -1483,7 +1495,7 @@ const OBJECT_CONFIG_MAP: any = {
   },
   ActiveMQ: {
     instance_type: 'activemq',
-    icon: 'Host',
+    icon: '02_ActiveMQ',
     dashboardDisplay: [],
     tableDiaplay: [{ type: 'value', key: 'activemq_topic_consumer_count' }],
     groupIds: {},
@@ -1567,7 +1579,7 @@ rules:
   },
   Apache: {
     instance_type: 'apache',
-    icon: 'Host',
+    icon: 'apache',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'apache_uptime' },
@@ -1589,7 +1601,7 @@ rules:
   },
   ClickHouse: {
     instance_type: 'clickhouse',
-    icon: 'Host',
+    icon: 'zhongjianjian',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'clickhouse_events_query' },
@@ -1612,7 +1624,7 @@ rules:
   },
   Consul: {
     instance_type: 'consul',
-    icon: 'Host',
+    icon: 'zhongjianjian',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'enum', key: 'consul_health_checks_status' },
@@ -1633,7 +1645,7 @@ rules:
   },
   Zookeeper: {
     instance_type: 'zookeeper',
-    icon: 'Host',
+    icon: 'Zookeeper',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'zookeeper_uptime' },
@@ -1655,7 +1667,7 @@ rules:
   },
   Tomcat: {
     instance_type: 'tomcat',
-    icon: 'Host',
+    icon: 'Tomcat',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'tomcat_connector_request_count' },
@@ -1752,7 +1764,7 @@ rules:
   },
   TongWeb: {
     instance_type: 'tongweb',
-    icon: 'Host',
+    icon: 'tongWeb',
     dashboardDisplay: [],
     tableDiaplay: [],
     groupIds: {},
@@ -1853,7 +1865,7 @@ rules:
   },
   JBoss: {
     instance_type: 'jboss',
-    icon: 'Host',
+    icon: 'Jboss',
     dashboardDisplay: [],
     tableDiaplay: [],
     groupIds: {},
@@ -1905,7 +1917,7 @@ rules:
   },
   Jetty: {
     instance_type: 'jetty',
-    icon: 'Host',
+    icon: 'jetty',
     dashboardDisplay: [],
     tableDiaplay: [],
     groupIds: {},
@@ -2200,7 +2212,7 @@ rules:
   },
   WebLogic: {
     instance_type: 'weblogic',
-    icon: 'Host',
+    icon: 'weblogic',
     dashboardDisplay: [],
     tableDiaplay: [],
     groupIds: {},
@@ -2263,7 +2275,7 @@ rules:
   },
   MongoDB: {
     instance_type: 'mongodb',
-    icon: 'Host',
+    icon: 'mongodb',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'mongodb_connections_current' },
@@ -2285,7 +2297,7 @@ rules:
   },
   Mysql: {
     instance_type: 'mysql',
-    icon: 'Host',
+    icon: 'mysql1',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'mysql_bytes_received' },
@@ -2308,7 +2320,7 @@ rules:
   },
   Redis: {
     instance_type: 'redis',
-    icon: 'Host',
+    icon: 'Redis',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'redis_used_memory' },
@@ -2331,7 +2343,7 @@ rules:
   },
   Postgres: {
     instance_type: 'postgres',
-    icon: 'Host',
+    icon: 'postgres',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'postgresql_active_time' },
@@ -2353,7 +2365,7 @@ rules:
   },
   ElasticSearch: {
     instance_type: 'elasticsearch',
-    icon: 'Host',
+    icon: 'elasticsearch-Elasticsearch',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'elasticsearch_fs_total_available_in_bytes' },
@@ -2377,7 +2389,7 @@ rules:
   },
   vCenter: {
     instance_type: 'vmware',
-    icon: 'Host',
+    icon: 'vmware',
     dashboardDisplay: [],
     tableDiaplay: [
       { type: 'value', key: 'vmware_esxi_count' },
@@ -2393,6 +2405,41 @@ rules:
         manualCfgText: '',
       },
     },
+  },
+  ESXI: {
+    instance_type: 'vmware',
+    icon: 'vmware',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'esxi_cpu_usage_average_gauge' },
+      { type: 'value', key: 'esxi_mem_usage_average_gauge' },
+      { type: 'value', key: 'esxi_disk_read_average_gauge' },
+    ],
+    groupIds: {},
+    plugins: {},
+  },
+  DataStorage: {
+    instance_type: 'vmware',
+    icon: 'vmware',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'data_storage_disk_used_average_gauge' },
+      { type: 'enum', key: 'data_storage_store_accessible_gauge' },
+    ],
+    groupIds: {},
+    plugins: {},
+  },
+  VM: {
+    instance_type: 'vmware',
+    icon: 'vmware',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'vm_cpu_usage_average_gauge' },
+      { type: 'value', key: 'vm_mem_usage_average_gauge' },
+      { type: 'value', key: 'vm_disk_io_usage_gauge' },
+    ],
+    groupIds: {},
+    plugins: {},
   },
   JVM: {
     instance_type: 'jvm',
