@@ -551,7 +551,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       case 'trap':
         return 'trap' + target?.ip + '-' + target?.cloud_region;
       case 'docker':
-        return row.endpoint;
+        return row.instance_name;
       case 'database':
         return row.server || `${row.host}:${row.port}`;
       case 'http':
