@@ -40,11 +40,34 @@ const AssetManage = () => {
   const [searchText, setSearchText] = useState<string>('');
   const [dragItem, setDragItem] = useState<any>({});
   const [dragOverItem, setDragOverItem] = useState<any>({});
+  const [rawModelGroup, setRawModelGroup] = useState<GroupItem[]>([]); 
 
   useEffect(() => {
     if (isLoading) return;
     getModelGroup();
   }, [get, isLoading]);
+
+  useEffect(() => {
+    if (!searchText.trim()) {
+      setModelGroup(rawModelGroup);
+      return;
+    }
+    const lower = searchText.toLowerCase();
+    const filtered = rawModelGroup.reduce((acc: GroupItem[], group) => {
+      if (group.classification_name.toLowerCase().includes(lower)) {
+        acc.push({ ...group, count: group.list.length });
+      } else {
+        const matched = group.list.filter((m) =>
+          m.model_name.toLowerCase().includes(lower)
+        );
+        if (matched.length) {
+          acc.push({ ...group, list: matched, count: matched.length });
+        }
+      }
+      return acc;
+    }, []);
+    setModelGroup(filtered);
+  }, [searchText, rawModelGroup]);
 
   const showDeleteConfirm = (row: GroupItem) => {
     confirm({
@@ -96,13 +119,8 @@ const AssetManage = () => {
   const onSearchTxtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value);
   };
-
-  const onTxtPressEnter = () => {
-    getModelGroup();
-  };
-
-  const onTxtClear = () => {
-    getModelGroup();
+  const onSearchTxtEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    setSearchText((e.target as HTMLInputElement).value);
   };
 
   const linkToDetail = (model: ModelItem) => {
@@ -164,10 +182,9 @@ const AssetManage = () => {
           target.count++;
         }
       });
-      setGroupList(groupData);
+      setRawModelGroup(groups);
       setModelGroup(groups);
-    } catch (error) {
-      console.error(error);
+      setGroupList(groupData);
     } finally {
       setLoading(false);
     }
@@ -192,8 +209,8 @@ const AssetManage = () => {
               value={searchText}
               allowClear
               onChange={onSearchTxtChange}
-              onPressEnter={onTxtPressEnter}
-              onClear={onTxtClear}
+              onPressEnter={onSearchTxtEnter}
+              onClear={() => setSearchText('')}
             />
           </div>
           <div className="right-side">
