@@ -42,13 +42,13 @@ from common.cmp.cloud_apis.resource_apis.resource_format.qcloud.qcloud_constant 
     qcloud_disk_cn_dict,
 )
 from common.cmp.cloud_apis.resource_apis.utils import handle_disk_category
+from common.cmp.driver import logger
 from common.cmp.utils import (
     convert_param_to_list,
     format_public_cloud_resource_type,
     generate_serial_number,
     set_dir_size_qcloud,
 )
-from core.logger import cmp_logger as logger
 
 RESOURCE_HANDLE_DICT = {
     "region": {"request": "DescribeRegions", "resp": "RegionSet"},
@@ -1231,7 +1231,7 @@ class Qcloud(object):
             bk_obj_id = resources[0]["bk_obj_id"]
             namespace = self.BK_OBJ_ID_NS_MAP.get(bk_obj_id)
             default_metrics = self.BK_OBJ_ID_METRICS.get(bk_obj_id)
-            metrics = kwargs.get("Metrics", default_metrics)
+            metrics = kwargs.get("Metrics", default_metrics) or default_metrics
             if not metrics:
                 return {"result": False, "message": "缺少监控指标"}
             res = {}
