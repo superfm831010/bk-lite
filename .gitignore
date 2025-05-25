@@ -1,6 +1,5 @@
 .idea
 *.tar
-infra/support-files/images/keycloak/*.jar
 logs
 .venv
 __pycache__
