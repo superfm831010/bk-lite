@@ -21,3 +21,4 @@ __pycache__
 *.hypothesis
 models/
 .lh
+support-files/dev/conf/nats/certs/
