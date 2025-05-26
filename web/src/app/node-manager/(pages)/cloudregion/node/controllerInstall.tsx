@@ -58,6 +58,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
     port: 22,
     username: 'root',
     password: null,
+    node_name: null,
   };
   const { getPackages, installController } = useApiCloudRegion();
   const cloudId = useCloudId();
@@ -99,6 +100,22 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
               value={row.ip}
               placeholder={t('common.inputMsg')}
               onChange={(e) => handleInputChange(e, row, 'ip')}
+            />
+          );
+        },
+      },
+      {
+        title: t('node-manager.cloudregion.node.nodeName'),
+        dataIndex: 'node_name',
+        width: 100,
+        key: 'node_name',
+        render: (value: string, row: TableDataItem) => {
+          return (
+            <Input
+              defaultValue={row.node_name}
+              value={row.node_name}
+              placeholder={t('common.inputMsg')}
+              onChange={(e) => handleInputChange(e, row, 'node_name')}
             />
           );
         },
@@ -330,6 +347,9 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
     const index = data.findIndex((item) => item.id === row.id);
     if (index !== -1) {
       data[index][key] = e.target.value;
+      if (key === 'ip' && e.target.value) {
+        data[index].node_name = e.target.value + '-' + cloudId;
+      }
       setTableData(data);
     }
   };
@@ -380,6 +400,7 @@ const ControllerInstall: React.FC<ControllerInstallProps> = ({
         port: item.port,
         username: item.username,
         password: item.password,
+        node_name: item.node_name,
       }));
       const params = {
         cloud_region_id: cloudId,
