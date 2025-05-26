@@ -33,29 +33,34 @@ class DockerClient(object):
         # 构建环境变量
         environment = {
             "TZ": "Asia/Shanghai",
-            "RASA_TELEMETRY_ENABLED":"false",
+            "RASA_TELEMETRY_ENABLED": "false",
             "MUNCHKIN_BOT_ID": str(bot.id),
             "MUNCHKIN_API_KEY": bot.api_token,
             "MUNCHKIN_BASE_URL": settings.MUNCHKIN_BASE_URL,
             "RABBITMQ_HOST": settings.CONVERSATION_MQ_HOST,
             "RABBITMQ_PORT": str(settings.CONVERSATION_MQ_PORT),
-            "RABBITMQ_USER": settings.CONVERSATION_MQ_USER,
+            "RABBITMQ_USERNAME": settings.CONVERSATION_MQ_USER,
             "RABBITMQ_PASSWORD": settings.CONVERSATION_MQ_PASSWORD,
             "ENABLE_SSL": "1" if bot.enable_ssl else "0",
             "BOT_DOMAIN": bot.bot_domain or "",
         }
-        
+
         # 端口映射配置
         ports = {}
         if bot.enable_node_port and bot.node_port:
             ports["5005/tcp"] = bot.node_port
-        
+
         # 配置标签
         labels = {
             "app": "pilot",
             "bot-id": str(bot.id)
         }
-        
+
+        # 配置extra_hosts
+        extra_hosts = {
+            "rabbitmq-service": settings.CONVERSATION_MQ_HOST
+        }
+
         # 如果存在bot_domain，添加Traefik相关标签
         if bot.bot_domain:
             labels.update({
@@ -65,14 +70,14 @@ class DockerClient(object):
                 f"traefik.http.routers.pilot-{bot.id}.tls": "true",
                 f"traefik.http.services.pilot-{bot.id}.loadbalancer.server.port": "5005"
             })
-        
+
         # 启动命令
         command = "/bin/sh -c 'mkdir -p data && python3 cli.py get_bot_config_data && supervisord -n'"
-        
+
         try:
             # 检查是否已存在同名容器，如存在则先移除
             self._remove_container_if_exists(container_name)
-            
+
             # 创建并启动容器
             container = self.client.containers.run(
                 image="bklite/pilot:latest",
@@ -83,12 +88,13 @@ class DockerClient(object):
                 labels=labels,
                 restart_policy={"Name": "always"},
                 network="traefik",
-                command=command
+                command=command,
+                extra_hosts=extra_hosts
             )
-            
+
             logger.info(f"启动Pilot[{bot.id}]容器成功，容器ID: {container.id}")
             return True
-            
+
         except Exception as e:
             logger.error(f"启动Pilot[{bot.id}]容器失败: {e}")
             return False

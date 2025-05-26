@@ -23,7 +23,7 @@ shell:
 	rasa shell --endpoints ./configs/endpoints.yml --credentials ./configs/credentials.yml
 
 run:
-    RASA_TELEMETRY_ENABLED=false rasa run --enable-api --cors "*" --endpoints ./configs/endpoints.yml --credentials ./configs/credentials.yml
+    RASA_TELEMETRY_ENABLED=false rasa run --enable-api --cors "*" --endpoints ./dev/endpoints.yml --credentials ./dev/credentials.yml
 
 online-run:
 	RASA_TELEMETRY_ENABLED=false rasa run --enable-api --cors "*" --endpoints ./data/endpoints.yml --credentials ./data/credentials.yml

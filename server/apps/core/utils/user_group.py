@@ -50,20 +50,13 @@ class SubGroup:
 
 
 class Group:
-    def __init__(self, token):
-        self.token = token
+    def __init__(self):
         self.system_mgmt_client = SystemMgmt()
 
     def get_group_list(self):
         """获取组织列表"""
-        groups = self.system_mgmt_client.search_groups({"search": ""})
+        groups = self.system_mgmt_client.get_all_groups()
         return groups["data"] if groups else []
-
-    # def get_user_group_list(self):
-    #     """获取用户组织列表"""
-    #     userinfo = self.keycloak_client.get_userinfo(self.token)
-    #     user_group_list = self.keycloak_client.realm_client.get_user_groups(userinfo["sub"])
-    #     return user_group_list
 
     def get_user_group_and_subgroup_ids(self, user_group_list=[]):
         """获取用户组织ID与子组ID的列表"""

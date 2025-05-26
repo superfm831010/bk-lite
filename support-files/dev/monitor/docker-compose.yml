@@ -1,0 +1,46 @@
+version: '3'
+services:
+  monitor-web:
+    image: bklite/monitor-web
+    container_name: monitor-web
+    environment:
+      NEXTAUTH_URL: http://127.0.0.1:42004
+      NEXTAUTH_SECRET: aebeibuaV4Qu
+      NEXTAPI_URL: http://monitor:8000
+    restart: always
+    ports:
+      - 42004:3000
+    networks:
+      - traefik
+
+  monitor:
+    image: bklite/monitor
+    container_name: monitor
+    restart: always
+    ports:
+      - 32004:8000
+    environment:
+      - NATS_NAMESPACE=bklite
+      - DB_NAME=monitor
+      - CELERY_RESULT_BACKEND=redis://:password@redis:6379/10
+      - DB_PASSWORD=password
+      - DB_PORT=5432
+      - VICTORIAMETRICS_HOST=http://victoria-metrics:8428
+      - BROKER_URL=redis://:password@redis:6379/12
+      - DB_ENGINE=postgresql
+      - DB_USER=postgres
+      - NATS_SERVERS=nats://admin:nats_password@nats:4222
+      - CLIENT_ID=monitor
+      - IS_USE_CELERY=True
+      - CELERY_BROKER_URL=redis://:password@redis:6379/10
+      - DEBUG=0
+      - SECRET_KEY=f8e2b4d1-9c5a-4e67-b3f2-8a1d6c9e4b7f
+      - DB_HOST=postgres
+      - INSTALL_APPS=monitor
+
+    networks:
+      - traefik      
+
+networks:
+  traefik:
+    external: true
