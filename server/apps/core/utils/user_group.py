@@ -50,8 +50,7 @@ class SubGroup:
 
 
 class Group:
-    def __init__(self, token):
-        self.token = token
+    def __init__(self):
         self.system_mgmt_client = SystemMgmt()
 
     def get_group_list(self):

@@ -8,7 +8,6 @@ from apps.cmdb.services.instance import InstanceManage
 from apps.core.decorators.api_perminssion import HasPermission
 from apps.core.utils.web_utils import WebUtils
 from apps.rpc.node_mgmt import NodeMgmt
-from config.components.drf import AUTH_TOKEN_HEADER_NAME
 
 
 class InstanceViewSet(viewsets.ViewSet):
@@ -37,7 +36,8 @@ class InstanceViewSet(viewsets.ViewSet):
     def search(self, request):
         page, page_size = int(request.data.get("page", 1)), int(request.data.get("page_size", 10))
         insts, count = InstanceManage.instance_list(
-            request.META.get(AUTH_TOKEN_HEADER_NAME).split("Bearer ")[-1],
+            request.user.group_list,
+            request.user.roles,
             request.data["model_id"],
             request.data.get("query_list", []),
             page,
@@ -87,7 +87,8 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Delete")
     def destroy(self, request, pk: int):
         InstanceManage.instance_batch_delete(
-            request.META.get(AUTH_TOKEN_HEADER_NAME).split("Bearer ")[-1],
+            request.user.group_list,
+            request.user.roles,
             [int(pk)],
             request.user.username,
         )
@@ -105,7 +106,8 @@ class InstanceViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"], url_path="batch_delete")
     def instance_batch_delete(self, request):
         InstanceManage.instance_batch_delete(
-            request.META.get(AUTH_TOKEN_HEADER_NAME).split("Bearer ")[-1],
+            request.user.group_list,
+            request.user.roles,
             request.data,
             request.user.username,
         )
@@ -122,7 +124,8 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Edit,asset_basic_information-Edit")
     def partial_update(self, request, pk: int):
         inst = InstanceManage.instance_update(
-            request.META.get(AUTH_TOKEN_HEADER_NAME).split("Bearer ")[-1],
+            request.user.group_list,
+            request.user.roles,
             int(pk),
             request.data,
             request.user.username,
@@ -148,7 +151,8 @@ class InstanceViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"], url_path="batch_update")
     def instance_batch_update(self, request):
         InstanceManage.batch_instance_update(
-            request.META.get(AUTH_TOKEN_HEADER_NAME).split("Bearer ")[-1],
+            request.user.group_list,
+            request.user.roles,
             request.data["inst_ids"],
             request.data["update_data"],
             request.user.username,
@@ -334,7 +338,9 @@ class InstanceViewSet(viewsets.ViewSet):
     @action(methods=["post"], detail=False)
     def fulltext_search(self, request):
         result = InstanceManage.fulltext_search(
-            request.META.get(AUTH_TOKEN_HEADER_NAME).split("Bearer ")[-1], request.data.get("search", "")
+            request.user.group_list,
+            request.user.roles,
+            request.data.get("search", "")
         )
         return WebUtils.response_success(result)
 
@@ -397,7 +403,7 @@ class InstanceViewSet(viewsets.ViewSet):
     @action(methods=["get"], detail=False, url_path=r"model_inst_count")
     @HasPermission("asset_list-View,view_list-View")
     def model_inst_count(self, request):
-        result = InstanceManage.model_inst_count(request.META.get(AUTH_TOKEN_HEADER_NAME).split("Bearer ")[-1])
+        result = InstanceManage.model_inst_count(user_groups=request.user.group_list, roles=request.user.roles)
         return WebUtils.response_success(result)
 
     @action(methods=["GET"], detail=False)
