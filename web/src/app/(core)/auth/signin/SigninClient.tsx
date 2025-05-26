@@ -19,7 +19,6 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
   const [isWechatBrowser, setIsWechatBrowser] = useState(false);
 
   useEffect(() => {
-    // Check if user is using WeChat browser
     const userAgent = navigator.userAgent.toLowerCase();
     setIsWechatBrowser(userAgent.includes('micromessenger') || userAgent.includes('wechat'));
   }, []);

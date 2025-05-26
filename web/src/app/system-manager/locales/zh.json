@@ -199,6 +199,14 @@
       "descriptionMaxLength": "描述不能超过500个字符",
       "selectIcon": "选择图标",
       "searchIcon": "搜索图标"
+    },
+    "security": {
+      "settings": "安全设置",
+      "authSources": "认证源",
+      "loginSettings": "登录设置",
+      "otpSetting": "开启 OTP 认证",
+      "loginExpiredTime": "登录过期时间",
+      "hours": "小时"
     }
   }
 }

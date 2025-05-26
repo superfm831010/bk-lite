@@ -169,7 +169,10 @@ const EntityList = <T,>({
                 >
                   <div
                     className="w-full h-full flex items-center justify-center"
-                    onClick={() => openModal()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      openModal();
+                    }}
                   >
                     <div className="text-center">
                       <div className="text-2xl">+</div>

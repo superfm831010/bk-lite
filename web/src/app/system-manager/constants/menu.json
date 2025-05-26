@@ -39,6 +39,12 @@
           "url": "/system-manager/channel/detail/settings"
         }
       ]
+    },
+    {
+      "title": "安全管理",
+      "icon": "shujumoxingguanli",
+      "name": "user_list",
+      "url": "/system-manager/security"
     }
   ],
   "en": [
@@ -81,6 +87,12 @@
           "url": "/system-manager/channel/detail/settings"
         }
       ]
+    },
+    {
+      "title": "Security Management",
+      "icon": "shujumoxingguanli",
+      "name": "user_list",
+      "url": "/system-manager/security"
     }
   ]
 }

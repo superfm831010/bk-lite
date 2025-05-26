@@ -198,6 +198,14 @@
       "descriptionMaxLength": "Description cannot exceed 500 characters",
       "selectIcon": "Select Icon",
       "searchIcon": "Search Icon"
+    },
+    "security": {
+      "settings": "Security Settings",
+      "authSources": "Authentication Sources",
+      "loginSettings": "Login Settings",
+      "otpSetting": "Enable OTP Authentication",
+      "loginExpiredTime": "Login Expiration Time",
+      "hours": "hours"
     }
   }
 }
