@@ -64,7 +64,7 @@ const EntityList = <T,>({
         onMouseLeave={() => setHoveredCard((current) => (current === id ? null : current))}
       >
         {menuActions && (
-          <div className="absolute right-2 z-10 top-6" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute right-2 z-1 top-6" onClick={(e) => e.stopPropagation()}>
             <Dropdown overlay={menuActions(item) as React.ReactElement} trigger={['click']} placement="bottomRight">
               <div className="cursor-pointer">
                 <Icon type="sangedian-copy" className="text-xl" />
