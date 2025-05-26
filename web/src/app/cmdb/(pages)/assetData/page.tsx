@@ -118,7 +118,9 @@ const AssetDataContent = () => {
   });
   const [treeSearchText, setTreeSearchText] = useState('');
   const [filteredTreeData, setFilteredTreeData] = useState<any[]>([]);
-  const [modelInstCount, setModelInstCount] = useState<Record<string, number>>({});
+  const [modelInstCount, setModelInstCount] = useState<Record<string, number>>(
+    {}
+  );
 
   const handleExport = async (keys: string[]) => {
     try {
@@ -242,18 +244,24 @@ const AssetDataContent = () => {
       setModelId(defaultModelId);
       setSelectedTreeKeys([defaultModelId]);
       getInitData(defaultModelId);
-      router.push(`/cmdb/assetData?modelId=${defaultModelId}&classificationId=${defaultGroupId}`);
+      router.push(
+        `/cmdb/assetData?modelId=${defaultModelId}&classificationId=${defaultGroupId}`
+      );
     } catch {
       setLoading(false);
     }
   };
 
-  const getTableParams = () => {
+  const getTableParams = (overrideQueryList?: unknown) => {
+    const activeQueryList =
+      overrideQueryList !== undefined ? overrideQueryList : queryList;
     const conditions = organization?.length
       ? [{ field: 'organization', type: 'list[]', value: organization }]
       : [];
     return {
-      query_list: queryList ? [queryList, ...conditions] : conditions,
+      query_list: activeQueryList
+        ? [activeQueryList, ...conditions]
+        : conditions,
       page: pagination.current,
       page_size: pagination.pageSize,
       order: '',
@@ -262,8 +270,8 @@ const AssetDataContent = () => {
     };
   };
 
-  const getInitData = (id: string) => {
-    const tableParmas = getTableParams();
+  const getInitData = (id: string, overrideQueryList?: unknown) => {
+    const tableParmas = getTableParams(overrideQueryList);
     const getAttrList = get(`/cmdb/api/model/${id}/attr_list/`);
     const getInstList = post('/cmdb/api/instance/search/', {
       ...tableParmas,
@@ -447,41 +455,50 @@ const AssetDataContent = () => {
     });
   };
 
-  const renderModelTitle = useCallback((modelName: string, modelId: string) => (
-    <div className='flex items-center'>
-      <EllipsisWithTooltip text={modelName} className={assetDataStyle.treeLabel} />
-      <span className="ml-1 text-gray-400">
-        ({modelInstCount[modelId] || 0})
-      </span>
-    </div>
-  ), [modelInstCount]);
+  const renderModelTitle = useCallback(
+    (modelName: string, modelId: string) => (
+      <div className="flex items-center">
+        <EllipsisWithTooltip
+          text={modelName}
+          className={assetDataStyle.treeLabel}
+        />
+        <span className="ml-1 text-gray-400">
+          ({modelInstCount[modelId] || 0})
+        </span>
+      </div>
+    ),
+    [modelInstCount]
+  );
 
-  const filterTreeNodes = useCallback((nodes: any[], searchText: string) => {
-    if (!searchText) return nodes;
+  const filterTreeNodes = useCallback(
+    (nodes: any[], searchText: string) => {
+      if (!searchText) return nodes;
 
-    return nodes.reduce((filtered: any[], node) => {
-      const matchesSearch = node.content
-        .toLowerCase()
-        .includes(searchText.toLowerCase());
-        
-      if (node.children) {
-        const filteredChildren = filterTreeNodes(node.children, searchText);
-        if (filteredChildren.length > 0 || matchesSearch) {
-          filtered.push({
-            ...node,
-            children: filteredChildren.map(child => ({
-              ...child,
-              title: renderModelTitle(child.content, child.key)
-            }))
-          });
+      return nodes.reduce((filtered: any[], node) => {
+        const matchesSearch = node.content
+          .toLowerCase()
+          .includes(searchText.toLowerCase());
+
+        if (node.children) {
+          const filteredChildren = filterTreeNodes(node.children, searchText);
+          if (filteredChildren.length > 0 || matchesSearch) {
+            filtered.push({
+              ...node,
+              children: filteredChildren.map((child) => ({
+                ...child,
+                title: renderModelTitle(child.content, child.key),
+              })),
+            });
+          }
+        } else if (matchesSearch) {
+          filtered.push(node);
         }
-      } else if (matchesSearch) {
-        filtered.push(node);
-      }
 
-      return filtered;
-    }, []);
-  }, [renderModelTitle]);
+        return filtered;
+      }, []);
+    },
+    [renderModelTitle]
+  );
 
   const handleTreeSearch = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -536,6 +553,7 @@ const AssetDataContent = () => {
   }, [modelGroup, renderModelTitle]);
 
   const onSelectUnified = (selectedKeys: React.Key[]) => {
+    setQueryList(null);
     if (!selectedKeys.length) return;
     const key = selectedKeys[0] as string;
     if (key.startsWith('group:')) {
@@ -554,8 +572,10 @@ const AssetDataContent = () => {
           icn: item.icn,
         }));
         setModelList(newModelList);
-        getInitData(firstModelKey);
-        router.push(`/cmdb/assetData?modelId=${firstModelKey}&classificationId=${groupIdSelected}`);
+        getInitData(firstModelKey, null);
+        router.push(
+          `/cmdb/assetData?modelId=${firstModelKey}&classificationId=${groupIdSelected}`
+        );
       }
     } else {
       setSelectedTreeKeys([key]);
@@ -574,7 +594,7 @@ const AssetDataContent = () => {
           );
         }
       });
-      getInitData(key);
+      getInitData(key, null);
     }
   };
 
@@ -709,6 +729,7 @@ const AssetDataContent = () => {
                 onChange={selectOrganization}
               />
               <SearchFilter
+                key={modelId}
                 userList={userList}
                 attrList={propertyList.filter(
                   (item) => item.attr_type !== 'organization'
