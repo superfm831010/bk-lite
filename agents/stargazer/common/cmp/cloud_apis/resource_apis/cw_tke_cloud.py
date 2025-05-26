@@ -129,7 +129,7 @@ if __name__ == "__main__":
     # # cw.node_details('mc-6npmcrfm')
     # # cw.clusters()
     #
-    # from monitor.cmp.cloud_apis.resource_apis.sync_cloud_resource.cloud_resource import SyncTKECloudResource
+    # from common.cmp.cloud_apis.resource_apis.sync_cloud_resource.cloud_resource import SyncTKECloudResource
     #
     # sytke = SyncTKECloudResource()
     # sytke.sync_node_list()

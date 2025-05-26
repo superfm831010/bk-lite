@@ -10,9 +10,9 @@ import requests
 from common.cmp.cloud_apis.base import PrivateCloudManage
 from common.cmp.cloud_apis.cloud_object.base import VM, BusinessRegion, DataStore, HostMachine
 
-# from monitor.cmp.cloud_apis.constant import CloudResourceType, CloudType, SnapshotStatus, VMStatusType, VolumeStatus,
+# from common.cmp.cloud_apis.constant import CloudResourceType, CloudType, SnapshotStatus, VMStatusType, VolumeStatus,
 # VPCStatus
-# from monitor.cmp.cloud_apis.resource_apis.constant import (
+# from common.cmp.cloud_apis.resource_apis.constant import (
 #     FCDiskStatus,
 #     FCSnapshotStatus,
 #     FCVMStatus,
@@ -20,10 +20,10 @@ from common.cmp.cloud_apis.cloud_object.base import VM, BusinessRegion, DataStor
 #     MANAGEONESiteStatus,
 #     MANAGEONESnapshotType,
 # )
-# from monitor.cmp.cloud_apis.resource_apis.utils import check_required_params, fail, set_optional_params
-# from monitor.cmp.models import AccountConfig
-# from monitor.cmp.cloud_apis.constant import CloudResourceType, CloudType
-# from monitor.cmp.cloud_apis.resource_apis.utils import fail
+# from common.cmp.cloud_apis.resource_apis.utils import check_required_params, fail, set_optional_params
+# from common.cmp.models import AccountConfig
+# from common.cmp.cloud_apis.constant import CloudResourceType, CloudType
+# from common.cmp.cloud_apis.resource_apis.utils import fail
 
 logger = logging.getLogger("root")
 

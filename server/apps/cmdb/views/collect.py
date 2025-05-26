@@ -23,7 +23,7 @@ from apps.cmdb.constants import COLLECT_OBJ_TREE, CollectRunStatusType, OPERATOR
 from apps.cmdb.filters.collect_filters import CollectModelFilter, OidModelFilter
 from apps.cmdb.models.collect_model import CollectModels, OidMapping
 from apps.cmdb.serializers.collect_serializer import CollectModelSerializer, CollectModelLIstSerializer, \
-    MidModelSerializer
+    OidModelSerializer
 from apps.cmdb.services.colletc_service import CollectModelService
 
 
@@ -176,9 +176,9 @@ class CollectModelViewSet(ModelViewSet):
         return WebUtils.response_success(result)
 
 
-class MidModelViewSet(ModelViewSet):
+class OidModelViewSet(ModelViewSet):
     queryset = OidMapping.objects.all()
-    serializer_class = MidModelSerializer
+    serializer_class = OidModelSerializer
     ordering_fields = ["updated_at"]
     ordering = ["-updated_at"]
     filterset_class = OidModelFilter
@@ -187,6 +187,6 @@ class MidModelViewSet(ModelViewSet):
     def create(self, request, *args, **kwargs):
         oid = request.data["oid"]
         if OidMapping.objects.filter(oid=oid).exists():
-            return JsonResponse({"data": [], "result": False, "message": "OId已存在！"})
+            return JsonResponse({"data": [], "result": False, "message": "OID已存在！"})
 
         return super().create(request, *args, **kwargs)

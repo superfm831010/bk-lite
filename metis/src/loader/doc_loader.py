@@ -1,3 +1,4 @@
+import base64
 import re
 import tempfile
 
@@ -52,7 +53,7 @@ class DocLoader:
         tables = document.tables
         for table in tqdm(tables, desc=f"解析[{self.file_path}]的表格"):
             docs.append(Document(self.table_to_md(table),
-                        metadata={"format": "table"}))
+                                 metadata={"format": "table"}))
 
         # 提取图片并使用OCR识别
         if self.ocr is not None:
@@ -60,12 +61,13 @@ class DocLoader:
                 if "image" in rel.target_ref:
                     image_data = rel.target_part.blob
                     try:
+                        image_base64 = base64.b64encode(image_data).decode('utf-8')
                         with tempfile.NamedTemporaryFile(suffix=".png", delete=True) as temp_img:
                             temp_img.write(image_data)
                             temp_img.flush()
                             ocr_result = self.ocr.predict(temp_img.name)
                             docs.append(
-                                Document(ocr_result, metadata={"format": "image"}))
+                                Document(ocr_result, metadata={"format": "image", "image_base64": image_base64}))
                     except Exception as e:
                         raise IOError(f"Error processing image: {e}")
 

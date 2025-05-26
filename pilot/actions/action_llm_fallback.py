@@ -28,11 +28,10 @@ class ActionLLMFallback(Action):
 
         converation_history = RasaUtils.load_chat_history(tracker)
         munchkin = MunchkinDriver()
-        enable_online_search = tracker.get_slot('enable_online_search')
         try:
             if tracker.latest_message['text'] != '':
                 result = munchkin.chat('action_llm_fallback', tracker.latest_message['text'], converation_history,
-                                       tracker.sender_id, enable_online_search, tracker.get_latest_input_channel())
+                                       tracker.sender_id, tracker.get_latest_input_channel())
                 dispatcher.utter_message(
                     text=result["content"], other_data={"citing_knowledge": result.get("citing_knowledge", [])}
                 )

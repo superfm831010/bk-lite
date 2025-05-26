@@ -57,31 +57,68 @@ class SyncInstance:
 
     # 查询库中已有的实例
     def get_exist_instance_set(self):
-        exist_instances = MonitorInstance.objects.filter(is_deleted=False).values("id")
+        exist_instances = MonitorInstance.objects.filter().values("id")
         return {i["id"] for i in exist_instances}
+
+    def sync_monitor_instances(self):
+        metrics_instance_map = self.get_instance_map_by_metrics()  # VM 指标采集
+        vm_all = set(metrics_instance_map.keys())
+
+        all_instances_qs = MonitorInstance.objects.all().values("id", "is_deleted")
+        table_all = {i["id"] for i in all_instances_qs}
+        table_deleted = {i["id"] for i in all_instances_qs if i["is_deleted"]}
+        table_alive = table_all - table_deleted
+
+        # 计算增删改集合
+        add_set = vm_all - table_alive
+        update_set = vm_all & table_deleted
+        delete_set = table_deleted & (table_all - vm_all)
+
+        # 执行删除（物理删除）
+        if delete_set:
+            MonitorInstance.objects.filter(id__in=delete_set, is_deleted=True).delete()
+
+        # 需要插入或更新的对象构建
+        create_instances = []
+        update_instances = []
+
+        for instance_id in (add_set | update_set):
+            info = metrics_instance_map[instance_id]
+            instance = MonitorInstance(**info)
+            if instance_id in update_set:
+                update_instances.append(instance)
+            else:
+                create_instances.append(instance)
+
+        # 新增（完全不存在的）
+        if create_instances:
+            MonitorInstance.objects.bulk_create(create_instances, batch_size=200)
+
+        # 恢复逻辑删除
+        if update_instances:
+            for instance in update_instances:
+                instance.is_deleted = False  # 恢复
+            MonitorInstance.objects.bulk_update(update_instances, ["name", "is_deleted", "auto"], batch_size=200)
+
+        # 计算活跃实例（vm中有的即活跃）
+        alive_set = vm_all & table_alive
+
+        # 查询不活跃实例
+        no_alive_instances = {i["id"] for i in MonitorInstance.objects.filter(is_active=False, auto=True).values("id")}
+
+        MonitorInstance.objects.filter(id__in=alive_set).update(is_active=True)
+        MonitorInstance.objects.exclude(id__in=alive_set).update(is_active=False)
+
+        if not no_alive_instances:
+            return
+
+        # 删除不活跃且为自动发现的实例
+        MonitorInstance.objects.filter(id__in=no_alive_instances).delete()
+
 
     def run(self):
         """更新监控实例"""
-        metrics_instance_map = self.get_instance_map_by_metrics()
-        exist_instance_set = self.get_exist_instance_set()
-        create_instances, delete_instances = [], []
-        delete_instances.extend(exist_instance_set - set(metrics_instance_map.keys()))
-        for instance_id, instance_info in metrics_instance_map.items():
-            if instance_id not in exist_instance_set:
-                create_instances.append(MonitorInstance(**instance_info))
-        if delete_instances:
-            MonitorInstance.objects.filter(id__in=delete_instances, is_deleted=True).delete()
-
-        if create_instances:
-            # 区分是否已经逻辑删除
-            is_deleted_instance_set = {i["id"] for i in MonitorInstance.objects.filter(is_deleted=True).values("id")}
-            update_instances = [i for i in create_instances if i.id in is_deleted_instance_set]
-            _create_instances = [i for i in create_instances if i.id not in is_deleted_instance_set]
-            MonitorInstance.objects.bulk_create(_create_instances, batch_size=200)
-            if update_instances:
-                MonitorInstance.objects.bulk_update(update_instances, ["name", "is_deleted", "auto"], batch_size=200)
-
-        # todo删除不活跃的实例
+        self.sync_monitor_instances()
 
 
 class RuleGrouping:

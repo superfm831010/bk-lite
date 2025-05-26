@@ -1,5 +1,6 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import { AuthOptions } from "next-auth";
+import WeChatProvider from "../lib/wechatProvider";
 
 // Function to automatically detect the top-level domain for cookie sharing
 const getTopLevelDomain = () => {
@@ -69,6 +70,11 @@ export const authOptions: AuthOptions = {
         }
       },
     }),
+    WeChatProvider({
+      clientId: process.env.WECHAT_APP_ID || "",
+      clientSecret: process.env.WECHAT_APP_SECRET || "",
+      redirectUri: `${process.env.WECHAT_APP_REDIRECT_URI}/api/auth/callback/wechat`,
+    }),
   ],
   pages: {
     signIn: '/auth/signin',
@@ -79,13 +85,17 @@ export const authOptions: AuthOptions = {
     maxAge: 60 * 60 * 24,
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
-        token.username = user.username;
+        token.username = user.username || user.name || '';
         token.locale = user.locale || 'en';
         token.token = user.token;
         token.temporary_pwd = user.temporary_pwd;
+        token.provider = account?.provider;
+        token.wechatOpenId = user.wechatOpenId;
+        token.wechatUnionId = user.wechatUnionId;
+        token.wechatWorkId = user.wechatWorkId;
       }
       
       return token;
@@ -97,6 +107,10 @@ export const authOptions: AuthOptions = {
         locale: token.locale,
         token: token.token,
         temporary_pwd: token.temporary_pwd,
+        provider: token.provider,
+        wechatOpenId: token.wechatOpenId,
+        wechatUnionId: token.wechatUnionId,
+        wechatWorkId: token.wechatWorkId,
       };
       return session;
     },

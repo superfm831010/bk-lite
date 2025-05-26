@@ -1,0 +1,54 @@
+version: '3'
+services:
+  cmdb-web:
+    image: bklite/cmdb-web
+    container_name: cmdb-web
+    environment:
+      NEXTAUTH_URL: http://127.0.0.1:42002
+      NEXTAUTH_SECRET: aebeibuaV4Qu
+      NEXTAPI_URL: http://cmdb:8000
+    restart: always
+    ports:
+      - 42003:3000
+    networks:
+      - traefik
+
+  cmdb:
+    image: bklite/cmdb
+    container_name: cmdb
+    restart: always
+    ports:
+      - 32003:8000
+    environment:
+      - DEBUG=1
+      - INSTALL_APPS=cmdb
+      - SECRET_KEY=f8e2b4d1-9c5a-4e67-b3f2-8a1d6c9e4b7f
+      - DB_ENGINE=postgresql
+      - DB_USER=postgres
+      - DB_HOST=postgres
+      - DB_PASSWORD=password
+      - DB_PORT=5432
+      - NATS_SERVERS=nats://admin:nats_password@nats:4222
+      - NATS_NAMESPACE=bklite
+      - CLIENT_ID=cmdb
+      - DB_NAME=cmdb
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=neo4j_password
+      - VICTORIAMETRICS_HOST=http://victoria-metrics:8428
+      - IS_USE_CELERY=True
+      - BROKER_URL=redis://:password@redis:6379/11
+      - CELERY_BROKER_URL=redis://:password@redis:6379/11
+      - CELERY_RESULT_BACKEND=redis://:password@redis:6379/11
+      - REDIS_CACHE_URL=redis://:password@redis:6379/11
+      - CELERY_WORKER_CONCURRENCY=1
+
+    networks:
+      - traefik      
+
+networks:
+  traefik:
+    external: true
+
+volumes:
+  vlog-data:
