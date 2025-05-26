@@ -14,7 +14,7 @@ class InstallerService:
         sidecar_token = generate_token({"username": "admin"})
         obj = SidecarEnv.objects.filter(cloud_region=cloud_region_id, key=NODE_SERVER_URL_KEY).first()
         server_url = obj.value if obj else "null"
-        groups = ",".join(organizations) if organizations else ""
+        groups = ",".join([ str(i) for i in organizations])
         return get_install_command(os, package_name, cloud_region_id, sidecar_token, server_url, groups, node_name)
 
     @staticmethod

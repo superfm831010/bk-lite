@@ -80,7 +80,7 @@ def install_controller(task_id):
             )
 
             action = "run"
-            groups = ",".join(node_obj.organizations)
+            groups = ",".join([str(i) for i in node_obj.organizations])
             install_command = get_install_command(
                 package_obj.os, package_obj.name, task_obj.cloud_region_id,sidecar_token, server_url, groups, node_obj.node_name)
             exec_command_to_remote(task_obj.work_node, node_obj.ip, node_obj.username, node_obj.password, install_command, node_obj.port)
