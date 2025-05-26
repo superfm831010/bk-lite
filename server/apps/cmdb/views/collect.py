@@ -10,6 +10,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.cmdb.models import EXECUTE
 from apps.cmdb.utils.change_record import create_change_record
+from apps.core.decorators.api_perminssion import  HasPermission
 from apps.rpc.node_mgmt import NodeMgmt
 from config.drf.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -19,7 +20,8 @@ from django.utils.timezone import now
 from apps.cmdb.celery_tasks import sync_collect_task
 from config.drf.pagination import CustomPageNumberPagination
 from apps.core.utils.web_utils import WebUtils
-from apps.cmdb.constants import COLLECT_OBJ_TREE, CollectRunStatusType, OPERATOR_COLLECT_TASK, CollectPluginTypes
+from apps.cmdb.constants import COLLECT_OBJ_TREE, CollectRunStatusType, OPERATOR_COLLECT_TASK, CollectPluginTypes, \
+    PERMISSIONS_ROLES
 from apps.cmdb.filters.collect_filters import CollectModelFilter, OidModelFilter
 from apps.cmdb.models.collect_model import CollectModels, OidMapping
 from apps.cmdb.serializers.collect_serializer import CollectModelSerializer, CollectModelLIstSerializer, \
@@ -40,6 +42,7 @@ class CollectModelViewSet(ModelViewSet):
         operation_id="tree",
         operation_description="查询采集模型对象树",
     )
+    @HasPermission("discovery_collection-View")
     @action(methods=["get"], detail=False, url_path="collect_model_tree")
     def tree(self, request, *args, **kwargs):
         data = COLLECT_OBJ_TREE
@@ -58,6 +61,7 @@ class CollectModelViewSet(ModelViewSet):
             openapi.Parameter("exec_status", openapi.IN_QUERY, description="采集状态", type=openapi.TYPE_STRING),
         ]
     )
+    @HasPermission("discovery_collection-View")
     @action(methods=["get"], detail=False, url_path="search")
     def search(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -69,19 +73,23 @@ class CollectModelViewSet(ModelViewSet):
         serializer = CollectModelLIstSerializer(queryset, many=True)
         return WebUtils.response_success(serializer.data)
 
+    @HasPermission("discovery_collection-Add")
     def create(self, request, *args, **kwargs):
         data = CollectModelService.create(request, self)
         return WebUtils.response_success(data)
 
+    @HasPermission("discovery_collection-Edit")
     def update(self, request, *args, **kwargs):
         data = CollectModelService.update(request, self)
         return WebUtils.response_success(data)
 
+    @HasPermission("discovery_collection-Delete")
     def destroy(self, request, *args, **kwargs):
         data = CollectModelService.destroy(request, self)
         return WebUtils.response_success(data)
 
     @action(methods=["GET"], detail=True)
+    @HasPermission("discovery_collection-View")
     def info(self, request, *args, **kwargs):
         instance = self.get_object()
         return WebUtils.response_success(instance.info)
@@ -95,6 +103,7 @@ class CollectModelViewSet(ModelViewSet):
             required=[]
         ),
     )
+    @HasPermission("discovery_collection-Execute")
     @action(methods=["POST"], detail=True)
     def exec_task(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -119,6 +128,7 @@ class CollectModelViewSet(ModelViewSet):
         return WebUtils.response_success(instance.id)
 
     @action(methods=["POST"], detail=True)
+    @HasPermission("discovery_collection-Add")
     @transaction.atomic
     def approval(self, request, *args, **kwargs):
         """
@@ -137,6 +147,7 @@ class CollectModelViewSet(ModelViewSet):
         return WebUtils.response_success()
 
     @action(methods=["GET"], detail=False)
+    @HasPermission("discovery_collection-View")
     def nodes(self, request, *args, **kwargs):
         """
         获取所有节点
@@ -152,6 +163,7 @@ class CollectModelViewSet(ModelViewSet):
         return WebUtils.response_success(data)
 
     @action(methods=["GET"], detail=False)
+    @HasPermission("discovery_collection-View")
     def model_instances(self, requests, *args, **kwargs):
         """
         获取此模型下发过任务的实例
@@ -165,6 +177,7 @@ class CollectModelViewSet(ModelViewSet):
         return WebUtils.response_success(result)
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("discovery_collection-View")
     def list_regions(self, requests, *args, **kwargs):
         """
         查询云的所有区域
@@ -184,9 +197,26 @@ class MidModelViewSet(ModelViewSet):
     filterset_class = OidModelFilter
     pagination_class = CustomPageNumberPagination
 
+    @HasPermission("discovery_feature_library-View")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @HasPermission("discovery_feature_library-Add")
     def create(self, request, *args, **kwargs):
         oid = request.data["oid"]
         if OidMapping.objects.filter(oid=oid).exists():
             return JsonResponse({"data": [], "result": False, "message": "OId已存在！"})
 
         return super().create(request, *args, **kwargs)
+
+    @HasPermission("discovery_feature_library-Edit")
+    def update(self, request, *args, **kwargs):
+        oid = request.data["oid"]
+        if OidMapping.objects.filter(~Q(id=self.get_object().id), oid=oid).exists():
+            return JsonResponse({"data": [], "result": False, "message": "OId已存在！"})
+
+        return super().update(request, *args, **kwargs)
+
+    @HasPermission("discovery_feature_library-Delete")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
