@@ -548,14 +548,14 @@ const Asset = () => {
             </Tooltip>
           </div>
           <ul className={assetStyle.ruleList}>
-            <Permission
-              requiredPermissions={['Edit']}
-              className={`${assetStyle.ruleItem} ${assetStyle.add} shadow-sm rounded-sm`}
-            >
-              <li onClick={() => openRuleModal('add')}>
+            <li onClick={() => openRuleModal('add')}>
+              <Permission
+                requiredPermissions={['Edit']}
+                className={`${assetStyle.ruleItem} ${assetStyle.add} shadow-sm rounded-sm`}
+              >
                 <PlusOutlined />
-              </li>
-            </Permission>
+              </Permission>
+            </li>
             {ruleList.map((item) => (
               <li
                 key={item.id}

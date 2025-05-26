@@ -279,6 +279,15 @@ const LineChart: React.FC<LineChartProps> = ({
               <YAxis axisLine={false} tickLine={false} tick={renderYAxisTick} />
 
               {threshold.map((item, index) => {
+                const values = data.map((d: any) => {
+                  const targetKey = Object.keys(d || {}).find((key) =>
+                    key.includes('value')
+                  );
+                  return targetKey ? d[targetKey] : 0;
+                });
+                const yMax = Math.max(...values);
+                const yMin = Math.min(...values);
+                const yMiddle = (yMax + yMin) / 2;
                 return (
                   <ReferenceLine
                     key={index}
@@ -292,7 +301,7 @@ const LineChart: React.FC<LineChartProps> = ({
                       fill={`${LEVEL_MAP[item.level]}`}
                       position="left"
                       dx={30}
-                      dy={-10}
+                      dy={(item.value || 0) >= yMiddle ? 10 : -10}
                     ></Label>
                   </ReferenceLine>
                 );

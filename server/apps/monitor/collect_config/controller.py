@@ -58,9 +58,9 @@ class Controller:
                 for config in configs:
                     config_info = {"collect_type": collect_type, **config, **instance}
                     config_info = self.format_config(config_info)
-
-                    snmp_config = self.format_snmp_config(config_info)
-                    config_info["snmp_config"] = snmp_config
+                    if config_info["type"] == "snmp":
+                        snmp_config = self.format_snmp_config(config_info)
+                        config_info["snmp_config"] = snmp_config
 
                     node_info["configs"].append(config_info)
                     config_objs.append(
