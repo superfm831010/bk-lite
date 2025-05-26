@@ -5,9 +5,10 @@ ENV SERVER_API_TOKEN ""
 ENV SIDECAR_ZONE "default"
 ENV SIDECAR_GROUP "default"
 ENV SIDECAR_NODEID ""
+ENV SIDECAR_NODENAME "telegraf-proxy"
 
 RUN apt-get update && \
-    apt-get install -y ca-certificates ipmitool vim && \
+    apt-get install -y ca-certificates ipmitool vim snmp && \
     update-ca-certificates supervisor && \
     rm -rf /var/lib/apt/lists/*
 
