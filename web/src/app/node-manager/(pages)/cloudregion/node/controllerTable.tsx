@@ -171,7 +171,7 @@ const ControllerTable: React.FC<ControllerInstallProps> = ({
         >
           <ArrowLeftOutlined className="text-[var(--color-primary)] text-[20px] cursor-pointer mr-[10px]" />
         </Popconfirm>
-        <span>{t('node-manager.cloudregion.node.autoInstall')}</span>
+        <span>{t(`node-manager.cloudregion.node.${config.type}`)}</span>
       </div>
       <div className={controllerInstallSyle.table}>
         <div className="flex justify-end mb-[16px]">
