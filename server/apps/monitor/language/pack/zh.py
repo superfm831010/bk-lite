@@ -7,7 +7,7 @@ MONITOR_OBJECT_TYPE = {
     "Network Device": "网络设备",
     "Hardware Device": "硬件设备",
     "Container Management": "容器管理",
-    "Other": "其他",
+    "Other": "其他数据源",
     "VMware": "VMware"
 }
 
@@ -46,7 +46,10 @@ MONITOR_OBJECT = {
     "vCenter": "vCenter",
     "ESXI": "ESXI",
     "VM": "虚拟机",
-    "DataStorage": "数据存储"
+    "DataStorage": "数据存储",
+    "JVM": "JVM",
+    "Jetty": "Jetty",
+    "WebLogic": "WebLogic"
 }
 
 MONITOR_OBJECT_PLUGIN = {
@@ -173,6 +176,26 @@ MONITOR_OBJECT_PLUGIN = {
     "vCenter": {
         "name": "vCenter",
         "desc": "vCenter是VMware的虚拟化管理中枢，用于监控资源（CPU/内存/存储/网络）、分析性能并优化配置。帮助识别虚拟机/主机异常，提升环境效率。"
+    },
+    "JVM": {
+        "name": "JVM",
+        "desc": "用于采集和分析 JVM（Java 虚拟机）的运行状态、内存使用（堆内存、非堆内存、BufferPool 等）、线程活动、垃圾回收情况及系统资源（CPU、物理内存、交换空间）等性能指标，帮助定位性能瓶颈、预警内存泄露并优化 Java 应用运行效率。"
+    },
+    "ActiveMQ-JMX": {
+        "name": "ActiveMQ-JMX",
+        "desc": "该 ActiveMQ 插件基于 JMX 采集，可获取消息队列、连接池、消息吞吐量等关键性能指标，实时监控消息处理效率与资源使用情况，助力优化系统性能，保障服务稳定。"
+    },
+    "Jetty-JMX": {
+        "name": "Jetty-JMX",
+        "desc": "用于采集 Jetty 任务处理、线程池、网络连接、HTTP 配置以及 JMX 自监控等关键性能指标，帮助监控服务器资源使用情况、任务处理能力及网络连接状况，从而优化系统性能并提升服务稳定性。"
+    },
+    "Tomcat-JMX": {
+        "name": "Tomcat-JMX",
+        "desc": "通过 JMX 采集 Tomcat 线程池、HTTP 连接、JVM 内存、请求耗时等关键性能指标，监控运行状态与资源效率，辅助优化性能及排查故障。"
+    },
+    "WebLogic-JMX": {
+        "name": "WebLogic-JMX",
+        "desc": "该插件通过 JMX 采集 WebLogic 关键指标，包括线程池、连接池、内存、EJB、Servlet、JMS 性能及 Web 服务响应时间，助力实时监控、性能优化与风险预警，保障系统稳定。"
     }
 }
 
@@ -423,6 +446,50 @@ MONITOR_OBJECT_METRIC_GROUP = {
         "Disk": "磁盘",
         "Network": "网络",
         "Power": "电源",
+    },
+    "JVM":{
+        "JMXselfMonitor": "JMX自监控信息",
+        "Memory": "内存",
+        "Thread": "线程",
+        "OS": "操作系统",
+        "BufferPool": "缓冲池",
+        "GC": "垃圾回收",
+        "MemoryPool": "内存池",
+    },
+    "ActiveMQ-JMX": {
+        "Connection": "连接",
+        "Memory": "内存",
+        "Queue": "队列",
+        "Message": "消息",
+        "Producer": "生产者",
+        "Consumer": "消费者",
+        "Other": "其他",
+        "JvmMemory": "JVM内存",
+        "JMXselfMonitor": "JMX自监控信息",
+    },
+    "Jetty-JMX": {
+        "Queuedthreadpool": "线程池",
+        "JvmMemory": "JVM内存",
+        "Httpconfiguration": "HTTP配置",
+        "Bufferpool": "缓冲区",
+        "Serverconnector": "网络连接",
+        "Managedselector": "选择器",
+        "Reservedthread": "预留线程",
+        "JMXselfMonitor": "JMX自监控信息",
+    },
+    "Tomcat-JMX": {
+        "GlobalRequestProcessor": "全局请求处理",
+        "Threadpool": "线程池",
+        "Session": "会话",
+        "JMXselfMonitor": "JMX 自监控信息"
+    },
+    "WebLogic-JMX": {
+        "Threadpool": "线程池",
+        "Application": "应用",
+        "WorkManager": "工作管理器",
+        "JMS": "消息传递服务",
+        "PersistentStore": "持久化存储",
+        "JMXselfMonitor": "JMX 自监控信息"
     }
 }
 
@@ -577,6 +644,34 @@ MONITOR_OBJECT_METRIC = {
     "net.dropped_out": {
         "name": "网卡丢弃包",
         "desc": "显示网络接口发送的丢弃包数量，指示网络发送拥塞情况。本指标对监控网络可靠性非常关键。"
+    },
+    "nvidia_smi_memory_free": {
+      "name": "GPU显存剩余容量",
+      "desc": "当前GPU显存中未被占用的剩余容量，用于评估可用资源。"
+    },
+    "nvidia_smi_memory_used": {
+      "name": "GPU显存已使用量",
+      "desc": "当前GPU显存已经被占用的容量，反映运行任务占用的显存大小。"
+    },
+    "nvidia_smi_memory_total": {
+      "name": "GPU显存总容量",
+      "desc": "GPU的显存总容量，表示该设备支持的最大显存量。"
+    },
+    "nvidia_smi_utilization_memory": {
+      "name": "GPU显存使用率",
+      "desc": "当前显存使用的百分比，表示GPU显存资源的使用情况（0%~100%），有助于优化显存分配。"
+    },
+    "nvidia_smi_power_draw": {
+      "name": "GPU实时功耗",
+      "desc": "当前GPU使用的实时功率消耗，以瓦特（W）为单位，用于监控GPU的能耗水平。"
+    },
+    "nvidia_smi_temperature_gpu": {
+      "name": "GPU核心温度",
+      "desc": "当前GPU核心的运行温度，以摄氏度（°C）为单位，用于监控设备的运行状态和安全性。"
+    },
+    "nvidia_smi_fan_speed": {
+      "name": "GPU风扇转速占比",
+      "desc": "当前GPU风扇运行速度的百分比，相对于风扇的最大转速（0%~100%），用于监控散热情况和工作状态。"
     }
 },
     "Website": {
@@ -1721,98 +1816,102 @@ MONITOR_OBJECT_METRIC = {
 },
 "Postgres": {
     "postgresql_active_time": {
-        "name": "活跃时间",
-        "desc": "此指标表示 PostgreSQL 在活跃状态下的总时长，反映数据库活动的持续时间。"
+      "name": "PostgreSQL 活跃时间",
+      "desc": "此指标表示 PostgreSQL实例在活跃状态下的总时长，反映数据库活动的持续时间。"
     },
     "postgresql_blk_read_time": {
-        "name": "块读耗时",
-        "desc": "此指标表示 PostgreSQL 从磁盘读取数据块的总耗时。"
+      "name": "PostgreSQL 块读耗时变化率",
+      "desc": "表示 PostgreSQL 实例的块读操作耗时变化率（秒/秒）。用于监控读操作的性能。"
     },
     "postgresql_blk_write_time": {
-        "name": "块写耗时",
-        "desc": "此指标表示 PostgreSQL 将数据块写入磁盘的总耗时。"
+      "name": "PostgreSQL 块写耗时变化率",
+      "desc": "表示 PostgreSQL 实例的块写操作耗时变化率（秒/秒）。用于监控写操作的性能。"
     },
     "postgresql_blks_hit": {
-        "name": "块缓存命中次数",
-        "desc": "此指标表示 PostgreSQL 查询缓存命中数据块的次数，反映了缓存性能。"
+      "name": "PostgreSQL 块缓存命中变化率",
+      "desc": "表示 PostgreSQL 实例的块缓存命中次数的变化率（次/秒）。用于监控缓存效率。"
     },
     "postgresql_blks_read": {
-        "name": "块读取次数",
-        "desc": "此指标表示 PostgreSQL 从磁盘读取的数据块数。"
+      "name": "PostgreSQL 块读取速率",
+      "desc": "表示 PostgreSQL 实例的块读取速率（次/秒）。用于监控读取操作的频率。"
+    },
+    "postgresql_blks_hit_ratio": {
+      "name": "PostgreSQL 块缓存命中率（5m）",
+      "desc": "表示 PostgreSQL 实例在过去 5 分钟内的块缓存命中率，反映缓存的有效性。高命中率意味着大部分数据请求直接从缓存获取，减少磁盘读取，提升查询性能。"
     },
     "postgresql_buffers_alloc": {
-        "name": "分配的缓存数",
-        "desc": "此指标表示 PostgreSQL 分配的缓存块数，用于监控内存使用情况。"
+      "name": "PostgreSQL 缓存分配速率",
+      "desc": "表示 PostgreSQL 实例的缓存分配速率（次/秒）。用于监控缓存分配情况。"
     },
     "postgresql_buffers_checkpoint": {
-        "name": "检查点缓存数",
-        "desc": "此指标表示 PostgreSQL 在检查点期间写入的缓存块数。"
+      "name": "PostgreSQL 检查点缓存速率",
+      "desc": "表示 PostgreSQL 实例的检查点缓存速率（次/秒）。用于监控检查点操作的频率。"
     },
     "postgresql_xact_commit": {
-        "name": "提交事务数",
-        "desc": "此指标表示 PostgreSQL 提交的事务总数，反映数据库的工作负载情况。"
+      "name": "PostgreSQL 提交事务速率",
+      "desc": "表示 PostgreSQL 实例的提交事务速率（次/秒）。用于监控事务提交的频率。"
     },
     "postgresql_xact_rollback": {
-        "name": "回滚事务数",
-        "desc": "此指标表示 PostgreSQL 执行的事务回滚操作的总数。"
+      "name": "PostgreSQL 回滚事务速率",
+      "desc": "表示 PostgreSQL 实例的回滚事务速率（次/秒）。用于监控事务回滚的频率。"
     },
     "postgresql_sessions": {
-        "name": "总会话数",
-        "desc": "此指标表示 PostgreSQL 创建的总会话数，反映数据库连接活动。"
+      "name": "PostgreSQL 活跃会话数",
+      "desc": "单个PostgreSQL 实例中所有数据库的活跃会话总数（包括空闲连接），用于监控数据库连接池使用情况，识别连接泄漏或异常激增。"
     },
     "postgresql_sessions_abandoned": {
-        "name": "放弃会话数",
-        "desc": "此指标表示因长时间未使用而被放弃的会话的计数。"
+      "name": "PostgreSQL 异常断开会话频率",
+      "desc": "每秒因网络中断或客户端崩溃导致的异常断开会话数，用于定位客户端或网络层稳定性问题，避免残留进程占用资源。"
     },
     "postgresql_sessions_killed": {
-        "name": "被终止会话数",
-        "desc": "此指标表示被管理员或系统主动终止的会话总数。"
+      "name": "PostgreSQL 被终止会话频率",
+      "desc": "表示 PostgreSQL 实例的被终止会话速率（次/秒）。用于监控会话终止的频率。"
     }
 },
 "Redis": {
     "redis_used_memory": {
-        "name": "已用内存",
-        "desc": "Redis 所使用的总内存大小，包括所有内部数据结构和缓存。"
+      "name": "已用内存",
+      "desc": "Redis 所使用的总内存大小，包括所有内部数据结构和缓存。"
     },
     "redis_mem_fragmentation_ratio": {
-        "name": "内存碎片率",
-        "desc": "内存碎片率，反映内存使用效率。"
+      "name": "内存碎片率",
+      "desc": "内存碎片率，反映内存使用效率。"
     },
     "redis_instantaneous_ops_per_sec": {
-        "name": "每秒操作次数",
-        "desc": "当前每秒处理的 Redis 命令数（QPS）。"
+      "name": "每秒操作次数",
+      "desc": "当前每秒处理的 Redis 命令数（QPS）。"
     },
     "redis_keyspace_hits": {
-        "name": "键空间命中次数",
-        "desc": "缓存命中的次数。"
+      "name": "键空间命中次数",
+      "desc": "缓存命中的次数。"
     },
     "redis_keyspace_misses": {
-        "name": "键空间未命中次数",
-        "desc": "缓存未命中的次数。"
+      "name": "键空间未命中次数",
+      "desc": "缓存未命中的次数。"
     },
     "redis_clients": {
-        "name": "已连接客户端数",
-        "desc": "当前连接的客户端数量，反映活跃连接数。"
+      "name": "已连接客户端数",
+      "desc": "当前连接的客户端数量，反映活跃连接数。"
     },
-    "redis_used_cpu_sys": {
-        "name": "CPU 使用率（系统）",
-        "desc": "Redis 进程消耗的系统 CPU 时间总计。"
+    "redis_used_cpu_sys_rate": {
+      "name": "Redis 系统模式 CPU 变化率",
+      "desc": "Redis 在系统模式下每秒消耗的 CPU 时间变化率。值过高（如 >1）可能表示 I/O 操作频繁，需告警。"
     },
     "redis_evicted_keys": {
-        "name": "驱逐的键数",
-        "desc": "因内存限制而被逐出的键值数量。"
+      "name": "驱逐的键数",
+      "desc": "因内存限制而被逐出的键值数量。"
     },
     "redis_connected_slaves": {
-        "name": "已连接从节点数",
-        "desc": "当前连接到主节点的副本数量。"
+      "name": "已连接从节点数",
+      "desc": "当前连接到主节点的副本数量。"
     },
     "redis_rdb_last_save_time_elapsed": {
-        "name": "上次保存经过时间",
-        "desc": "上次成功进行 RDB 保存操作后的经过时间。"
+      "name": "上次保存经过时间",
+      "desc": "上次成功进行 RDB 保存操作后的经过时间。"
     },
     "redis_rejected_connections": {
-        "name": "拒绝的连接数",
-        "desc": "因服务器过载或策略限制而被拒绝的连接数。"
+      "name": "拒绝的连接数",
+      "desc": "因服务器过载或策略限制而被拒绝的连接数。"
     }
 },
 "Docker": {
@@ -1982,7 +2081,445 @@ MONITOR_OBJECT_METRIC = {
             "name": "电源状态",
             "desc": "表示虚拟机（VM）当前的电源状态，用于监控 VM 是处于开机还是关机状态。该指标对于监测 VM 可用性、优化资源分配和自动化运维具有重要作用。"
         }
+    },
+    "JVM": {
+        "jmx_scrape_duration_seconds_gauge": {
+        "name": "JMX 抓取消耗时间",
+        "desc": "最近一次的JMX监控数据采集耗时，以秒为单位，用于评估数据采集性能。"
+        },
+        "jmx_scrape_error_gauge": {
+        "name": "JMX 抓取错误",
+        "desc": "标识 JMX 抓取过程中是否出现失败，非零值表示抓取失败"
+        },
+        "jvm_memory_usage_init_value": {
+        "name": "初始内存大小",
+        "desc": "Java 虚拟机启动时初始化分配的内存大小，反映内存初始配置"
+        },
+        "jvm_memory_usage_committed_value": {
+        "name": "已提交内存大小",
+        "desc": "Java 虚拟机当前已提交给系统使用的内存大小，可用于评估内存资源占用"
+        },
+        "jvm_memory_usage_used_value": {
+        "name": "已使用内存大小",
+        "desc": "Java 虚拟机当前实际已使用的内存量，直观体现内存使用情况"
+        },
+        "jvm_memory_usage_max_value": {
+        "name": "JVM 内存使用最大值",
+        "desc": "Java 虚拟机在运行过程中内存使用曾达到的最大值，可用于检测内存压力和泄漏"
+        },
+        "jvm_threads_total_started_count_value": {
+        "name": "总线程数",
+        "desc": "Java 虚拟机自启动以来总共创建并启动的线程数量，展示线程创建规模"
+        },
+        "jvm_threads_daemon_count_value": {
+        "name": "守护线程数",
+        "desc": "Java 虚拟机中当前处于活动状态的守护线程数量，守护线程用于服务其他线程"
+        },
+        "jvm_threads_peak_count_value": {
+        "name": "峰值线程数",
+        "desc": "Java 虚拟机运行过程中线程数量达到的峰值，可辅助分析线程资源使用高峰"
+        },
+        "jvm_threads_count_value": {
+        "name": "当前线程数",
+        "desc": "Java 虚拟机当前正在运行的线程数量，实时反映线程活跃程度"
+        },
+        "jvm_threads_current_user_time_value": {
+        "name": "当前线程用户时间",
+        "desc": "Java 虚拟机中当前线程执行用户代码所花费的 CPU 时间，用于分析线程性能"
+        },
+        "jvm_os_memory_physical_free_value": {
+        "name": "可用物理内存",
+        "desc": "系统当前可用的物理内存大小，体现系统剩余内存资源"
+        },
+        "jvm_os_memory_physical_total_value": {
+        "name": "总物理内存",
+        "desc": "系统中物理内存的总容量大小，是硬件配置的固定参数"
+        },
+        "jvm_os_memory_swap_free_value": {
+        "name": "可用交换空间",
+        "desc": "系统当前可用的交换空间大小，用于在物理内存不足时临时存储数据"
+        },
+        "jvm_os_memory_swap_total_value": {
+        "name": "总交换空间",
+        "desc": "系统中交换空间的总容量大小，决定可扩展的虚拟内存上限"
+        },
+        "jvm_os_memory_committed_virtual_value": {
+        "name": "提交的虚拟内存",
+        "desc": "Java 虚拟机已提交使用的虚拟内存大小，反映对虚拟内存资源的占用"
+        },
+        "jvm_os_available_processors_value": {
+        "name": "可用处理器数",
+        "desc": "系统当前可用于执行线程的处理器核心数量，影响程序并行处理能力"
+        },
+        "jvm_os_processcputime_seconds_value": {
+        "name": "进程 CPU 时间",
+        "desc": "Java 虚拟机进程自启动以来消耗的 CPU 时间，衡量进程资源占用"
+        },
+        "jvm_bufferpool_count_value": {
+        "name": "BufferPool 计数",
+        "desc": "Java NIO 中 BufferPool 的缓冲区对象数量，用于监控资源池规模"
+        },
+        "jvm_bufferpool_memoryused_value": {
+        "name": "BufferPool 已用内存",
+        "desc": "Java NIO 中 BufferPool 当前已使用的内存大小，反映资源池使用情况"
+        },
+        "jvm_bufferpool_totalcapacity_value": {
+        "name": "BufferPool 总容量",
+        "desc": "Java NIO 中 BufferPool 的总内存容量大小，展示资源池最大承载能力"
+        },
+        "jvm_gc_collectiontime_seconds_value": {
+        "name": "GC 收集总时间",
+        "desc": "Java 虚拟机中垃圾回收操作累计消耗的总时间，用于评估 GC 性能"
+        },
+        "jvm_gc_collectioncount_value": {
+        "name": "GC 收集总次数",
+        "desc": "Java 虚拟机中垃圾回收操作的累计执行次数，反映 GC 活动频率"
+        },
+        "jvm_memorypool_usage_init_value": {
+        "name": "内存池初始使用量",
+        "desc": "Java 虚拟机中内存池初始化分配的内存使用量，体现内存池初始状态"
+        },
+        "jvm_memorypool_usage_committed_value": {
+        "name": "内存池提交内存使用量",
+        "desc": "Java 虚拟机中内存池当前已提交使用的内存量，展示内存池资源占用"
+        },
+        "jvm_memorypool_usage_used_value": {
+        "name": "内存池已使用内存",
+        "desc": "Java 虚拟机中内存池当前实际已使用的内存量，直观体现内存池使用程度"
+        },
+        "jvm_memorypool_usage_max_value": {
+        "name": "内存池最大使用量",
+        "desc": "Java 虚拟机中内存池在运行过程中曾达到的最大内存使用量，可检测内存池压力"
+        }
+    },
+    "Tomcat-JMX": {
+    "tomcat_bytesreceived_increase": {
+      "name": "全局接收流量增长数",
+      "desc": "过去5分钟内接收流量的增长量（以kibibytes为单位），反映网络输入速率。若数值持续增长，可能表明网络输入流量增加，需要关注网络带宽。"
+    },
+    "tomcat_bytessent_increase": {
+      "name": "全局发送流量增长数",
+      "desc": "过去5分钟内发送流量的增长量（以kibibytes为单位），反映网络输出速率。若数值过高，可能表示网络输出流量大，需要关注网络带宽。"
+    },
+    "tomcat_errorcount_increase": {
+      "name": "全局错误增长数",
+      "desc": "过去5分钟内错误次数的增长量，反映错误发生频率变化。若数值过高，可能表明系统存在较多问题，需要及时排查。"
+    },
+    "tomcat_processingtime_increase": {
+      "name": "全局处理时长增长量",
+      "desc": "过去5分钟内处理请求的总时间增长量（以秒为单位），用于评估整体处理效率的变化趋势。若数值持续增加，可能表示系统处理请求的时间在增长，需要进一步分析是否存在性能瓶颈。"
+    },
+    "tomcat_maxtime_total_counter": {
+      "name": "全局最大处理时长",
+      "desc": "特定端口和协议下的最大请求处理时长（以秒为单位），用于定位慢请求。若数值过高，可能表示存在性能瓶颈，需要优化应用性能。"
+    },
+    "tomcat_requestcount_increase": {
+      "name": "全局请求增长数",
+      "desc": "过去5分钟内请求数的增长量，反映流量变化趋势。若数值持续增长，可能表示流量增加，需要关注系统负载。"
+    },
+    "tomcat_threadpool_currentthreadcount_gauge": {
+      "name": "线程池当前线程数",
+      "desc": "当前线程池中的线程数量，实时监控并发负载。若数值过高，可能表示线程池负载过重，需要优化线程池配置。"
+    },
+    "tomcat_threadpool_utilization": {
+      "name": "线程池利用率",
+      "desc": "线程池的利用率，反映线程池的使用情况。若数值过高，可能表示线程池接近饱和，需要增加线程池容量或优化应用性能。"
+    },
+    "tomcat_threadpool_currentthreadsbusy_gauge": {
+      "name": "线程池繁忙线程数",
+      "desc": "繁忙状态的线程数量，用于判断处理能力瓶颈。若数值过高，可能表示处理能力不足，需要优化线程池配置。"
+    },
+    "tomcat_threadpool_running_gauge": {
+      "name": "线程池运行线程数",
+      "desc": "线程池中正在运行的线程数，反映实际工作线程负载。若数值过高，可能表示线程池负载过重，需要优化线程池配置。"
+    },
+    "tomcat_session_processingtime_avg": {
+      "name": "平均会话处理时间",
+      "desc": "过去5分钟内，每秒的平均会话处理时间（以毫秒为单位）。这个指标反映了系统在处理会话时的平均效率。较低的值表示系统处理会话的速度较快，效率高；较高的值可能表示系统在处理会话时存在性能瓶颈。"
+    },
+    "tomcat_session_sessioncounter_total_counter": {
+      "name": "会话总数",
+      "desc": "特定主机下的活跃会话总数，用于监控会话资源占用。若数值过高，可能表示会话资源占用过多，需要优化会话管理。"
+    },
+    "tomcat_session_expiredsessions_total_counter": {
+      "name": "过期会话总数",
+      "desc": "特定主机下的过期会话总数，用于检测会话超时情况。若数值过高，可能表示会话超时频繁，需要检查会话配置或资源限制。"
+    },
+    "tomcat_session_rejectionrate": {
+      "name": "会话拒绝率",
+      "desc": "会话拒绝率，反映会话创建失败的比例。若数值过高，可能表示会话管理存在问题，需要检查会话配置或资源限制。"
+    },
+    "jmx_scrape_error_gauge": {
+      "name": "JMX抓取失败的监控指标",
+      "desc": "值为0时表示监控指标抓取成功，值为1时表示抓取失败。"
     }
+  },
+  "Jetty-JMX": {
+    "jetty_queuedthreadpool_utilizationrate_value": {
+      "name": "线程池利用率",
+      "desc": "当前线程池执行临时作业的线程利用率(线程池当前活跃线程数与最大线程数的比值),反映线程池资源使用压力。"
+    },
+    "jetty_queuedthreadpool_threads_value": {
+      "name": "线程池中的线程数",
+      "desc": "线程池当前管理的线程总数，包括活跃和空闲线程。"
+    },
+    "jetty_queuedthreadpool_maxthreads_value": {
+      "name": "最大线程数",
+      "desc": "Jetty线程池中允许的最大线程数,即线程空闲多久后会被回收的时间阈值。"
+    },
+    "jetty_queuedthreadpool_idletimeout_value": {
+      "name": "线程空闲超时时间",
+      "desc": "Jetty线程空闲的最大允许时间"
+    },
+    "jetty_queuedthreadpool_readythreads_value": {
+      "name": "Jetty 就绪线程数",
+      "desc": "Jetty 服务器中处于就绪状态的线程数量，用于评估线程池的空闲资源。"
+    },
+    "jvm_memory_heap_usage_used_rate": {
+      "name": "堆内存使用量的平均变化率",
+      "desc": "5分钟内JVM 堆内存使用量的平均变化率（每分钟兆字节），用于实时监控堆内存使用的变化趋势，及时发现内存泄漏或内存压力问题。"
+    },
+    "jvm_memory_heap_usage_max_value": {
+      "name": "堆内存最大值",
+      "desc": "JVM 堆内存的最大值，用于评估堆内存的上限，防止内存溢出。"
+    },
+    "jvm_memory_heap_usage_used_value": {
+      "name": "堆内存使用量",
+      "desc": "JVM 堆内存中已使用的部分，用于评估当前堆内存的使用情况。"
+    },
+    "jvm_memory_heap_usage_committed_value": {
+      "name": "堆内存提交量",
+      "desc": "JVM 堆内存中已提交的部分，用于评估实际分配给 JVM 的堆内存大小。"
+    },
+    "jvm_memory_nonheap_usage_used_rate": {
+      "name": "非堆内存使用量的平均变化率",
+      "desc": "5分钟内，JVM 非堆内存使用量的平均变化率（每分钟兆字节），用于监控非堆内存的使用变化趋势。"
+    },
+    "jvm_memory_nonheap_usage_max_value": {
+      "name": "非堆内存最大值",
+      "desc": "JVM 非堆内存的最大值，用于评估非堆内存的上限。"
+    },
+    "jetty_httpconfiguration_outputbuffersize_value": {
+      "name": "HTTP输出缓冲区大小",
+      "desc": "表示 Jetty 处理 HTTP 响应时的输出缓冲区大小（KB），用于控制单次响应数据的缓冲能力，平衡性能与内存占用。"
+    },
+    "jetty_httpconfiguration_idletimeout_value": {
+      "name": "HTTP空闲超时时间",
+      "desc": "表示 HTTP 连接无数据传输时的最长保持时间（秒），用于释放空闲连接资源，避免资源浪费和恶意连接占用。"
+    },
+    "jetty_httpconfiguration_headercachesize_value": {
+      "name": "HTTP头字段缓存的最大大小",
+      "desc": "表示 Jetty 缓存 HTTP 请求 / 响应头的最大条目数，用于减少重复解析开销，提升请求处理速度。"
+    },
+    "jetty_httpconfiguration_maxerrordispatches_value": {
+      "name": "最大错误处理调度次数",
+      "desc": "表示 Jetty 处理错误时允许的最大重定向次数，用于防止错误处理循环，避免服务器资源耗尽。"
+    },
+    "jetty_bufferpool_heapmemory_value": {
+      "name": "块缓冲堆内存占用",
+      "desc": "表示 Jetty 缓冲区池占用的堆内存大小（MB），用于监控数据块缓存的内存使用情况，排查内存泄漏。"
+    },
+    "jetty_bufferpool_heapmemory_rate": {
+      "name": "块缓冲堆内存占用变化率",
+      "desc": "表示过去 5 分钟块缓冲堆内存的平均每秒变化速率（MB / 秒），用于识别内存占用趋势，定位异常波动。"
+    },
+    "jetty_arraybufferpool_directmemory_value": {
+      "name": "直接内存占用",
+      "desc": "表示 Jetty 直接缓冲区占用的直接内存大小（MB），用于监控高性能 I/O 操作的非堆内存使用，避免内存溢出。"
+    },
+    "jetty_arraybufferpool_directmemory_rate": {
+      "name": "直接内存占用变化率",
+      "desc": "表示过去 5 分钟直接内存的平均每秒变化速率（MB / 秒），用于分析直接内存分配 / 释放模式，排查泄漏风险。"
+    },
+    "jetty_serverconnector_idletimeout_value": {
+      "name": "空闲超时时间",
+      "desc": "表示 Jetty 网络连接器的连接空闲超时时间（秒），用于控制底层 TCP 连接存活周期，优化长连接资源回收。"
+    },
+    "jetty_managedselector_selectcount_value": {
+      "name": "选择器Loop调用次数",
+      "desc": "表示 Jetty 选择器的 select () 方法累计调用次数，用于反映 I/O 事件处理频率，评估网络流量或线程负载。"
+    },
+    "jetty_managedselector_selectcount_increase": {
+      "name": "选择器 Loop 调用次数增加量",
+      "desc": "表示过去 5 分钟选择器 select () 调用次数增量，用于消除计数器重置影响，准确衡量 I/O 操作量变化趋势。"
+    },
+    "jetty_reservedthreadexecutor_available_value": {
+      "name": "可用预留线程数",
+      "desc": "表示 Jetty 预留线程执行器中的可用线程数，用于监控高优先级任务线程池的负载情况，避免请求处理延迟。"
+    },
+    "jmx_scrape_error_gauge": {
+      "name": "JMX抓取失败的监控指标",
+      "desc": "值为0时表示监控指标抓取成功，值为1时表示抓取失败。"
+    }
+  },
+    "ActiveMQ-JMX": {
+    "activemq_connections_total_counter": {
+      "name": "连接总数",
+      "desc": "当前连接到ActiveMQ代理的总连接数。监控此指标有助于检测代理的负载和连接管理效率。"
+    },
+    "activemq_connections_total_rate": {
+      "name": "连接速率",
+      "desc": "5分钟内连接速率，用于监控连接建立频率。"
+    },
+    "activemq_connections_gauge": {
+      "name": "当前连接数",
+      "desc": "ActiveMQ代理当前活跃的连接数。通过监控此指标，可以识别代理的实时连接状态及其可能的瓶颈情况。"
+    },
+    "activemq_topic_memory_percent_usage_value": {
+      "name": "内存使用百分比",
+      "desc": "显示内存消耗百分比，监控该指标可以及时优化资源分配，避免性能下降。"
+    },
+    "activemq_topic_memory_usage_byte_count_value": {
+      "name": "未投递消息的内存使用量",
+      "desc": "当前未交付消息占用的内存量。通过此指标可以衡量代理的内存消耗及其管理策略。"
+    },
+    "activemq_memory_usage_ratio_gauge": {
+      "name": "内存使用率",
+      "desc": "当前系统使用的内存限制百分比。监控此指标有助管理和优化内存使用。"
+    },
+    "activemq_topic_queue_size_value": {
+      "name": "队列大小",
+      "desc": "还未消费的消息总量，通过监控此指标可以确定代理的工作负载和处理能力。"
+    },
+    "activemq_topic_enqueue_count_value": {
+      "name": "发送到目标的消息数量",
+      "desc": "当前目标接收到的消息数量，帮助监控通信流量及流量控制措施。"
+    },
+    "activemq_topic_enqueue_rate": {
+      "name": "发送速率",
+      "desc": "单位时间内发送到队列的消息数量，用于实时监控系统的负载和消息处理能力。"
+    },
+    "activemq_dequeue_total_counter": {
+      "name": "确认的消息总数",
+      "desc": "代理上确认处理的消息总数。通过此指标可以了解整体的处理情况和效率。"
+    },
+    "activemq_message_total_counter": {
+      "name": "未确认消息总数",
+      "desc": "系统中未确认的消息总计。此指标帮助识别可能的消息积压问题。"
+    },
+    "activemq_message_total_rate": {
+      "name": "未确认消息消息增长速率",
+      "desc": "5分钟内未确认消息数量的增长速率，用于监控消息积压情况。如果增长速率持续较高，可能表示系统存在处理瓶颈或消息积压问题"
+    },
+    "activemq_enqueue_total_counter": {
+      "name": "发送到代理的消息数量",
+      "desc": "总共发送到代理的消息数量，反映系统的负载和通信频繁程度。"
+    },
+    "activemq_topic_expired_count_value": {
+      "name": "已过期的消息数量",
+      "desc": "显示已过期的消息数量，用于检测消息处理延迟或消费者处理能力不足的问题。"
+    },
+    "activemq_topic_blocked_sends_value": {
+      "name": "被流控阻塞的消息数量",
+      "desc": "显示因流量控制而被阻塞的消息数量，用于评估系统的流量控制状态和消息发送的顺畅性。"
+    },
+    "activemq_producer_total_counter": {
+      "name": "生产者总数",
+      "desc": "显示当前连接到 ActiveMQ 代理的生产者总数，用于了解系统的生产者负载和消息发送的活跃程度。"
+    },
+    "activemq_topic_producer_flow_control_value": {
+      "name": "生产者流量控制状态",
+      "desc": "显示指定目标主题的生产者是否启用了流量控制，1 表示启用，0 表示未启用，用于防止生产者发送过多消息导致系统过载。"
+    },
+    "activemq_consumer_total_counter": {
+      "name": "消费者总数",
+      "desc": "显示当前连接到 ActiveMQ 代理的消费者总数，用于了解系统的消费者负载和消息处理能力。"
+    },
+    "activemq_store_usage_ratio_gauge": {
+      "name": "存储使用率",
+      "desc": "持久存储的使用百分比。监控此指标助于优化存储管理和资源分配。"
+    },
+    "jvm_memory_heap_usage_max_value": {
+      "name": "堆内存最大值",
+      "desc": "JVM 堆内存的最大值，用于评估堆内存的上限，防止内存溢出。"
+    },
+    "jvm_memory_heap_usage_used_value": {
+      "name": "堆内存使用量",
+      "desc": "JVM 堆内存中已使用的部分，用于评估当前堆内存的使用情况。"
+    },
+    "jvm_memory_nonheap_usage_used_rate": {
+      "name": "非堆内存使用量的平均变化率",
+      "desc": "5分钟内，JVM 非堆内存使用量的平均变化率（每分钟兆字节），用于监控非堆内存的使用变化趋势。"
+    },
+    "jmx_scrape_error_gauge": {
+      "name": "JMX抓取失败的监控指标",
+      "desc": "值为0时表示监控指标抓取成功，值为1时表示抓取失败。"
+    }
+  },
+  "WebLogic-JMX": {
+    "weblogic_threadpool_throughput_value": {
+      "name": "线程池吞吐量",
+      "desc": "线程池每秒处理的请求数量，反映处理能力。该指标越高，表明线程池处理请求的能力越强。当吞吐量显著下降时，可能表示线程池存在性能瓶颈或资源不足。"
+    },
+    "weblogic_threadpool_pending_user_request_count_value": {
+      "name": "待处理用户请求数",
+      "desc": "等待线程池处理的用户请求队列长度，持续增长可能导致响应延迟。如果该指标持续增加，说明线程池处理请求的速度跟不上请求到达的速度，可能会导致用户体验下降。"
+    },
+    "weblogic_threadpool_queue_length_value": {
+      "name": "线程池队列长度",
+      "desc": "线程池请求队列中的任务数量，反映请求积压情况。队列长度过长意味着大量请求等待处理，可能需要增加线程池资源或优化请求处理逻辑。"
+    },
+    "weblogic_threadpool_stuck_thread_count_value": {
+      "name": "停滞线程数",
+      "desc": "长时间运行未完成的线程数量，可能表示存在死锁或慢查询。当该指标大于0时，需要排查是否存在代码逻辑问题或数据库查询性能问题。"
+    },
+    "weblogic_threadpool_load_ratio": {
+      "name": "线程池负载比",
+      "desc": "评估线程池负载压力，值 > 1 表示请求超过处理能力，80%时应严重警告。该指标可以帮助判断线程池是否处于过载状态，以便及时采取措施避免系统崩溃。"
+    },
+    "weblogic_threadpool_average_utilization": {
+      "name": "线程平均利用率",
+      "desc": "反映线程池在一段时间内的平均利用率。利用率过高可能导致线程池过载，过低则可能表示资源浪费。一般建议保持在60%-80%之间。"
+    },
+    "weblogic_application_healthstatejmx_is_critical_value": {
+      "name": "应用健康严重状态",
+      "desc": "应用是否处于严重异常状态的标志，直接反映业务可用性。当该指标为1时，表示应用出现严重问题，需要立即排查和修复。"
+    },
+    "weblogic_application_overallhealthstatejmx_is_critical_value": {
+      "name": "应用整体健康严重状态",
+      "desc": "综合多个指标评估的应用整体健康状态是否严重异常。当该指标为1时，说明应用的整体健康状况不佳，可能影响业务的正常运行。"
+    },
+    "weblogic_workmanager_stuck_thread_count_value": {
+      "name": "全局工作管理器停滞线程数",
+      "desc": "全局工作管理器中停滞的线程数量，用于系统级线程问题排查。当该指标大于0时，需要检查系统是否存在线程阻塞或资源竞争问题。"
+    },
+    "weblogic_workmanager_pending_requests_value": {
+      "name": "全局工作管理器待处理请求数",
+      "desc": "全局工作管理器中等待处理的请求数量。如果该指标持续增加，可能会影响系统的响应速度。"
+    },
+    "weblogic_jms_jmsservers_current_count_value": {
+      "name": "JMS 服务器当前数量",
+      "desc": "当前正在运行的 JMS 服务器实例数量。数量的增减可能影响消息传递的性能和可靠性。"
+    },
+    "weblogic_jms_connections_high_count_value": {
+      "name": "JMS 连接数峰值",
+      "desc": "JMS 连接数的历史最高记录，用于评估连接池配置合理性。如果当前连接数接近峰值，可能需要调整连接池大小。"
+    },
+    "weblogic_jms_connections_current_count_value": {
+      "name": "JMS 当前连接数",
+      "desc": "当前已建立的 JMS 连接数。过多的连接可能导致资源紧张，过少则可能影响消息传递效率。"
+    },
+    "weblogic_persistentstore_object_count_value": {
+      "name": "持久化存储对象数",
+      "desc": "持久化存储中当前保存的对象数量（如消息、事务日志）。过多的对象可能导致存储空间不足，需要定期清理。"
+    },
+    "weblogic_persistentstore_physical_write_count_value": {
+      "name": "持久化存储物理写入频率",
+      "desc": "表示持久化存储每秒的物理写入次数，反映写入负载。过高的写入频率可能导致存储性能下降。"
+    },
+    "weblogic_persistentstore_read_count_value": {
+      "name": "持久化存储读取次数",
+      "desc": "持久化存储执行的读操作次数，反映读取负载。频繁的读取操作可能影响存储性能，需要优化读取策略。"
+    },
+    "weblogic_persistentstore_total_io_rate_value": {
+      "name": "持久化存储总 I/O 频率",
+      "desc": "表示持久化存储每秒的总 I/O 操作次数，包括读和写。过高的 I/O 频率可能导致存储性能瓶颈，需要关注存储系统的性能指标。"
+    },
+    "jmx_scrape_error_gauge": {
+      "name": "JMX抓取失败的监控指标",
+      "desc": "值为0时表示监控指标抓取成功，值为1时表示抓取失败。"
+    }
+  }
 }
 
 LANGUAGE_DICT = {
