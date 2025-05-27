@@ -18,7 +18,8 @@ class GroupViewSet(ViewSetUtils):
     def search_group_list(self, request):
         queryset = Group.objects.all()
         # 构建嵌套组结构
-        groups_data = GroupUtils.build_group_tree(queryset)
+        groups = [i["id"] for i in request.user.group_list]
+        groups_data = GroupUtils.build_group_tree(queryset, request.user.is_superuser, groups)
         return JsonResponse({"result": True, "data": groups_data})
 
     @action(detail=False, methods=["GET"])
@@ -33,6 +34,15 @@ class GroupViewSet(ViewSetUtils):
     @HasPermission("user_list-Add")
     def create_group(self, request):
         params = request.data
+        if not request.user.is_superuser:
+            groups = [i["id"] for i in request.user.group_list]
+            if params.get("parent_group_id") not in groups:
+                return JsonResponse(
+                    {
+                        "result": False,
+                        "message": _("You do not have permission to create a group under this parent group."),
+                    }
+                )
         group = Group.objects.create(
             parent_id=params.get("parent_group_id", 0),
             name=params["group_name"],
@@ -43,6 +53,10 @@ class GroupViewSet(ViewSetUtils):
     @action(detail=False, methods=["POST"])
     @HasPermission("user_list-Edit")
     def update_group(self, request):
+        if not request.user.is_superuser:
+            groups = [i["id"] for i in request.user.group_list]
+            if request.data.get("group_id") not in groups:
+                return JsonResponse({"result": False, "message": _("You do not have permission to edit this group.")})
         Group.objects.filter(id=request.data.get("group_id")).update(name=request.data.get("group_name"))
         return JsonResponse({"result": True})
 
@@ -51,7 +65,10 @@ class GroupViewSet(ViewSetUtils):
     def delete_groups(self, request):
         kwargs = request.data
         group_id = int(kwargs["id"])
-
+        if not request.user.is_superuser:
+            groups = [i["id"] for i in request.user.group_list]
+            if group_id not in groups:
+                return JsonResponse({"result": False, "message": _("You do not have permission to delete this group.")})
         # 一次性获取所有组
         all_groups = Group.objects.all().values("id", "parent_id")
 

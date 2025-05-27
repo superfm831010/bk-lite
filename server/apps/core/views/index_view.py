@@ -10,9 +10,9 @@ from apps.core.utils.exempt import api_exempt
 from apps.rpc.system_mgmt import SystemMgmt
 
 
-@api_exempt
 def index(request):
-    response = render(request, "index.html")
+    data = {"STATIC_URL": "static/", "RUN_MODE": "PROD"}
+    response = render(request, "index.prod.html", data)
     return response
 
 
@@ -25,6 +25,25 @@ def login(request):
         return JsonResponse({"result": False, "message": _("Username or password cannot be empty")})
     client = SystemMgmt()
     res = client.login(username, password)
+    return JsonResponse(res)
+
+
+@api_view
+def wechat_user_register(request):
+    data = json.loads(request.body) or request.POST.dict()
+    user_id = data.get("user_id", "")
+    nick_name = data.get("nick_name", "")
+    if not user_id:
+        return JsonResponse({"result": False, "message": _("user_id cannot be empty")})
+    client = SystemMgmt()
+    res = client.wechat_user_register(user_id, nick_name)
+    return JsonResponse(res)
+
+
+@api_view
+def get_wechat_settings(request):
+    client = SystemMgmt()
+    res = client.get_wechat_settings()
     return JsonResponse(res)
 
 
@@ -62,6 +81,28 @@ def login_info(request):
             },
         }
     )
+
+
+@api_exempt
+def generate_qr_code(request):
+    username = request.GET.get("username")
+    if not username:
+        return JsonResponse({"result": False, "message": _("Username cannot be empty")})
+    client = SystemMgmt()
+    res = client.generate_qr_code(username)
+    return JsonResponse(res)
+
+
+@api_exempt
+def verify_otp_code(request):
+    kwargs = json.loads(request.body) or request.POST.dict()
+    username = kwargs.get("username", "")
+    otp_code = kwargs.get("otp_code", "")
+    if not username or not otp_code:
+        return JsonResponse({"result": False, "message": _("Username or OTP code cannot be empty")})
+    client = SystemMgmt()
+    res = client.verify_otp_code(username, otp_code)
+    return JsonResponse(res)
 
 
 def get_client(request):
