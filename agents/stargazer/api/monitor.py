@@ -1,5 +1,7 @@
 import datetime
 
+import pytz
+
 from core.config import YamlConfig
 from common.cmp.driver import CMPDriver
 from sanic import Blueprint
@@ -27,6 +29,20 @@ def get_config(monitor_type: str, monitor_instance: str):
     return config
 
 
+def get_time_range(minutes: int):
+    """
+    Get the start and end time based on the current time and given minutes
+    :param minutes: int, number of minutes to go back from current time
+    :return: tuple (start_time, end_time)
+    """
+    tz = pytz.timezone("Asia/Shanghai")  # UTC+8 时区
+    end_time = datetime.datetime.now(tz)
+    start_time = end_time - datetime.timedelta(minutes=int(minutes))
+    start_time_str = start_time.strftime("%Y-%m-%d %H:%M") + ":00"
+    end_time_str = end_time.strftime("%Y-%m-%d %H:%M") + ":00"
+    return start_time_str, end_time_str
+
+
 @monitor_router.get("/vmware/metrics")
 async def vmware_metrics(request):
 
@@ -42,10 +58,8 @@ async def vmware_metrics(request):
         host= host,
     )
 
-    end_time = datetime.datetime.now()
-    start_time = end_time - datetime.timedelta(minutes=int(minutes))
-    start_time_str = start_time.strftime("%Y-%m-%d %H:%M") + ":00"
-    end_time_str = end_time.strftime("%Y-%m-%d %H:%M") + ":00"
+    # 获取当前时间和指定分钟数的开始和结束时间
+    start_time_str, end_time_str = get_time_range(int(minutes))
 
     object_map = VmwareManage(params=dict(
         username=username,
@@ -95,12 +109,9 @@ async def qcloud_metrics(request):
         "qcloud",
     )
 
-    end_time = datetime.datetime.now()
-    start_time = end_time - datetime.timedelta(minutes=int(minutes))
-    start_time_str = start_time.strftime("%Y-%m-%d %H:%M") + ":00"
-    end_time_str = end_time.strftime("%Y-%m-%d %H:%M") + ":00"
-    all_resources = driver.list_all_resources()
+    start_time_str, end_time_str = get_time_range(int(minutes))
 
+    all_resources = driver.list_all_resources()
     metric_dict = {}
     for object_id, resources in all_resources.get("data", {}).items():
         if not resources:
