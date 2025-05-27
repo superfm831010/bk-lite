@@ -1,18 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Switch, message, Modal, Form, Input, Segmented, Menu, InputNumber, Button } from 'antd';
+import { Switch, message, Form, Input, Segmented, Menu, InputNumber, Button, Alert } from 'antd';
+import { CopyOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import EntityList from '@/components/entity-list';
+import OperateModal from '@/components/operate-modal';
 import { useSecurityApi } from '@/app/system-manager/api/security';
-
-interface AuthSource {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  tagList?: string[];
-}
+import { AuthSource } from '@/app/system-manager/types/security';
+import { enhanceAuthSourcesList } from '@/app/system-manager/utils/authSourceUtils';
+import wechatAuthImg from '@/app/system-manager/img/wechat_auth.png';
 
 const SecurityPage: React.FC = () => {
   const { t } = useTranslation();
@@ -20,25 +17,26 @@ const SecurityPage: React.FC = () => {
   const [otpEnabled, setOtpEnabled] = useState(false);
   const [pendingOtpEnabled, setPendingOtpEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [authSourcesLoading, setAuthSourcesLoading] = useState(false);
   const [loginExpiredTime, setLoginExpiredTime] = useState<string>('24');
   const [pendingLoginExpiredTime, setPendingLoginExpiredTime] = useState<string>('24');
-  const [authSources, setAuthSources] = useState<AuthSource[]>([
-    {
-      id: '1',
-      name: '微信开放平台',
-      description: '支持微信平台扫码登陆！！！',
-      icon: 'weixingongzhonghao',
-      tagList: ['OAuth2.0']
-    }
-  ]);
+  const [authSources, setAuthSources] = useState<AuthSource[]>([]);
+  const [authSourcesLoaded, setAuthSourcesLoaded] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingSource, setEditingSource] = useState<AuthSource | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
   const [form] = Form.useForm();
-  const { getSystemSettings, updateOtpSettings } = useSecurityApi();
+  const { getSystemSettings, updateOtpSettings, getAuthSources, updateAuthSource } = useSecurityApi();
 
   useEffect(() => {
     fetchSystemSettings();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === '2' && !authSourcesLoaded) {
+      fetchAuthSources();
+    }
+  }, [activeTab, authSourcesLoaded]);
 
   const fetchSystemSettings = async () => {
     try {
@@ -52,9 +50,25 @@ const SecurityPage: React.FC = () => {
       setPendingLoginExpiredTime(expiredTime);
     } catch (error) {
       console.error('Failed to fetch system settings:', error);
-      message.error(t('common.fetchFailed'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAuthSources = async () => {
+    try {
+      setAuthSourcesLoading(true);
+      const data = await getAuthSources();
+      const enhancedData = enhanceAuthSourcesList(data || []);
+      console.log('Fetched auth sources:', enhancedData);
+      setAuthSources(enhancedData);
+      setAuthSourcesLoaded(true);
+    } catch (error) {
+      console.error('Failed to fetch auth sources:', error);
+      setAuthSources([]);
+      setAuthSourcesLoaded(true);
+    } finally {
+      setAuthSourcesLoading(false);
     }
   };
 
@@ -87,39 +101,69 @@ const SecurityPage: React.FC = () => {
 
   const handleEditSource = (source: AuthSource) => {
     setEditingSource(source);
-    form.setFieldsValue(source);
+    form.setFieldsValue({
+      name: source.name,
+      app_id: source.app_id,
+      app_secret: source.app_secret,
+      enabled: source.enabled,
+      redirect_uri: source.other_config.redirect_uri,
+      callback_url: source.other_config.callback_url
+    });
     setIsModalVisible(true);
   };
 
-  const handleDeleteSource = (source: AuthSource) => {
-    Modal.confirm({
-      title: t('common.confirm'),
-      content: t('common.deleteConfirm').replace('{name}', source.name),
-      onOk: () => {
-        setAuthSources(authSources.filter(item => item.id !== source.id));
-        message.success(t('common.deleteSuccess'));
+  const handleModalOk = async () => {
+    try {
+      setModalLoading(true);
+      const values = await form.validateFields();
+      if (editingSource) {
+        const updateData = {
+          name: values.name,
+          app_id: values.app_id,
+          app_secret: values.app_secret,
+          other_config: {
+            callback_url: values.callback_url || editingSource.other_config.callback_url,
+            redirect_uri: values.redirect_uri
+          },
+          enabled: values.enabled
+        };
+        
+        await updateAuthSource(editingSource.id, updateData);
+        
+        const updatedSource = { ...editingSource, ...updateData };
+        const enhancedSource = enhanceAuthSourcesList([updatedSource])[0];
+        
+        setAuthSources(authSources.map(item => 
+          item.id === editingSource.id 
+            ? enhancedSource
+            : item
+        ));
+        
+        message.success(t('common.updateSuccess'));
+        setIsModalVisible(false);
+        setEditingSource(null);
+        form.resetFields();
       }
-    });
+    } catch (error) {
+      console.error('Failed to update auth source:', error);
+      message.error(t('common.updateFailed'));
+    } finally {
+      setModalLoading(false);
+    }
   };
 
-  const handleModalOk = () => {
-    form.validateFields().then(values => {
-      if (editingSource) {
-        // Edit existing source
-        setAuthSources(authSources.map(item => 
-          item.id === editingSource.id ? { ...item, ...values } : item
-        ));
-        message.success(t('common.updateSuccess'));
-      } else {
-        const newSource = {
-          id: Date.now().toString(),
-          ...values,
-          tagList: ['OAuth2.0']
-        };
-        setAuthSources([...authSources, newSource]);
-        message.success(t('common.addSuccess'));
-      }
-      setIsModalVisible(false);
+  const handleModalCancel = () => {
+    if (modalLoading) return; // 防止在loading时关闭
+    setIsModalVisible(false);
+    setEditingSource(null);
+    form.resetFields();
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      message.success(t('common.copySuccess'));
+    }).catch(() => {
+      message.error(t('common.copyFailed'));
     });
   };
 
@@ -128,11 +172,20 @@ const SecurityPage: React.FC = () => {
       <Menu.Item key="edit" onClick={() => handleEditSource(item)}>
         {t('common.edit')}
       </Menu.Item>
-      <Menu.Item key="delete" onClick={() => handleDeleteSource(item)}>
-        {t('common.delete')}
-      </Menu.Item>
     </Menu>
   );
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
+  const getAuthImageSrc = (sourceType: string) => {
+    const imageMap: Record<string, string> = {
+      wechat: wechatAuthImg.src,
+      // 添加其他认证方式的图片
+    };
+    return imageMap[sourceType] || undefined;
+  };
 
   const tabContent = {
     '1': (
@@ -161,8 +214,8 @@ const SecurityPage: React.FC = () => {
         <div className="mt-6">
           <Button 
             type="primary" 
-            loading={loading} 
             onClick={handleSaveSettings}
+            loading={loading}
           >
             {t('common.save')}
           </Button>
@@ -172,7 +225,7 @@ const SecurityPage: React.FC = () => {
     '2': (
       <EntityList
         data={authSources}
-        loading={false}
+        loading={authSourcesLoading}
         search={false}
         menuActions={menuActions}
         onCardClick={handleEditSource}
@@ -188,42 +241,105 @@ const SecurityPage: React.FC = () => {
           { label: t('system.security.authSources'), value: '2' }
         ]}
         value={activeTab}
-        onChange={(value) => setActiveTab(value as string)}
+        onChange={handleTabChange}
         className="mb-4"
       />
       
       {tabContent[activeTab as '1' | '2']}
 
-      <Modal
-        title={editingSource ? t('common.edit') : t('common.add')}
+      <OperateModal
+        title={t('common.edit')}
         open={isModalVisible}
         onOk={handleModalOk}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={handleModalCancel}
+        width={800}
+        confirmLoading={modalLoading}
+        maskClosable={!modalLoading}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="name"
-            label={t('common.name')}
-            rules={[{ required: true, message: t('common.required') }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="description"
-            label={t('common.description')}
-          >
-            <Input.TextArea rows={3} />
-          </Form.Item>
-          <Form.Item
-            name="icon"
-            label={t('common.icon')}
-            rules={[{ required: true, message: t('common.required') }]}
-            initialValue="weixin"
-          >
-            <Input />
-          </Form.Item>
-        </Form>
-      </Modal>
+        <Alert type="info" showIcon message={t('system.security.informationTip')} className='mb-4'  />
+        <div className="flex gap-6">
+          <div className="flex-1">
+            <Form form={form} layout="vertical">
+              <Form.Item
+                name="name"
+                label={t('system.security.loginMethodName')}
+                rules={[{ required: true, message: `${t('common.inputMsg')} ${t('system.security.loginMethodName')}` }]}
+              >
+                <Input placeholder={`${t('common.inputMsg')} ${t('system.security.loginMethodName')}`} />
+              </Form.Item>
+              
+              <Form.Item
+                name="app_id"
+                label={t('system.security.appId')}
+                rules={[{ required: true, message: `${t('common.inputMsg')} ${t('system.security.appId')}` }]}
+              >
+                <Input placeholder={`${t('common.inputMsg')} ${t('system.security.appId')}`} />
+              </Form.Item>
+              
+              <Form.Item
+                name="app_secret"
+                label={t('system.security.appSecret')}
+                rules={[{ required: true, message: `${t('common.inputMsg')} ${t('system.security.appSecret')}` }]}
+              >
+                <Input.Password placeholder={`${t('common.inputMsg')} ${t('system.security.appSecret')}`} />
+              </Form.Item>
+              
+              <Form.Item
+                name="redirect_uri"
+                label={t('system.security.redirectUri')}
+              >
+                <Input 
+                  suffix={
+                    <Button 
+                      type="text" 
+                      icon={<CopyOutlined />} 
+                      size="small"
+                      onClick={() => copyToClipboard(form.getFieldValue('redirect_uri') || '')}
+                    />
+                  }
+                />
+              </Form.Item>
+              
+              <Form.Item
+                name="callback_url"
+                label={t('system.security.callbackUrl')}
+              >
+                <Input 
+                  suffix={
+                    <Button 
+                      type="text" 
+                      icon={<CopyOutlined />} 
+                      size="small"
+                      onClick={() => copyToClipboard(form.getFieldValue('callback_url') || '')}
+                    />
+                  }
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="enabled"
+                label={t('system.security.enabled')}
+                valuePropName="checked"
+              >
+                <Switch size="small" />
+              </Form.Item>
+            </Form>
+          </div>
+          
+          <div className="w-64 flex justify-center items-start pt-8">
+            {editingSource && getAuthImageSrc(editingSource.source_type) && (
+              <img 
+                src={getAuthImageSrc(editingSource.source_type)}
+                alt={`${editingSource.source_type} auth`}
+                className="max-w-full h-auto"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )}
+          </div>
+        </div>
+      </OperateModal>
     </div>
   );
 };
