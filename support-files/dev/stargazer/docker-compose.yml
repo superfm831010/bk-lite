@@ -1,0 +1,17 @@
+version: '3'
+services:
+
+  stargazer:
+    image: bklite/stargazer
+    container_name: stargazer
+    ports:
+      - 8083:8083
+    environment:
+      - NATS_URLS=nats://admin:nats_password@nats:4222
+    networks:
+      - traefik
+
+
+networks:
+  traefik:
+    external: true

@@ -2,33 +2,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { AuthOptions } from "next-auth";
 import WeChatProvider from "../lib/wechatProvider";
 
-// Function to automatically detect the top-level domain for cookie sharing
-const getTopLevelDomain = () => {
-  if (typeof window === 'undefined') {
-    return undefined;
-  }
-
-  const hostname = window.location.hostname;
-  
-  // Don't set domain for localhost or IP addresses
-  if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-    return undefined;
-  }
-  
-  // Extract the top-level domain (e.g., example.com from subdomain.example.com)
-  const parts = hostname.split('.');
-  if (parts.length >= 2) {
-    return `.${parts.slice(-2).join('.')}`;
-  }
-  
-  return undefined;
-};
-
-// Get the cookie domain at initialization time
-const cookieDomain = typeof window !== 'undefined' 
-  ? getTopLevelDomain() 
-  : undefined;
-
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
@@ -114,37 +87,5 @@ export const authOptions: AuthOptions = {
       };
       return session;
     },
-  },
-  // Configure cookies to enable session sharing across subdomains
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        domain: cookieDomain
-      }
-    },
-    callbackUrl: {
-      name: `next-auth.callback-url`,
-      options: {
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        domain: cookieDomain
-      }
-    },
-    csrfToken: {
-      name: `next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        domain: cookieDomain
-      }
-    }
   },
 };
