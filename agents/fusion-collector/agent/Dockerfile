@@ -8,8 +8,8 @@ ENV SIDECAR_NODEID ""
 ENV SIDECAR_NODENAME "telegraf-proxy"
 
 RUN apt-get update && \
-    apt-get install -y ca-certificates ipmitool vim snmp && \
-    update-ca-certificates supervisor && \
+    apt-get install -y ca-certificates ipmitool vim snmp  \
+                        update-ca-certificates supervisor && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/fusion-collectors/
