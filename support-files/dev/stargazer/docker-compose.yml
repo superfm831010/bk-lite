@@ -7,7 +7,7 @@ services:
     ports:
       - 8083:8083
     environment:
-      - NATS_URLS=nats://admin:phae3yookeiJ@nats:4222
+      - NATS_URLS=nats://admin:nats_password@nats:4222
     networks:
       - traefik
 
