@@ -1,8 +1,0 @@
-{
-  "plugin": "JBoss-JMX",
-  "plugin_desc": "",
-  "name": "JBoss",
-  "type": "Middleware",
-  "description": "",
-  "metrics": []
-}

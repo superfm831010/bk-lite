@@ -2,6 +2,7 @@
   "plugin": "Mysql",
   "plugin_desc": "Used to collect and monitor key metrics for MySQL database health and performance.",
   "name": "Mysql",
+  "icon": "mysql1",
   "type": "Database",
   "description": "",
   "metrics": [

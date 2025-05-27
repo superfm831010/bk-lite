@@ -1,8 +1,0 @@
-{
-  "plugin": "TongWeb7-JMX",
-  "plugin_desc": "",
-  "name": "TongWeb",
-  "type": "Middleware",
-  "description": "",
-  "metrics": []
-}

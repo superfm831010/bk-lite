@@ -5,6 +5,7 @@
   "objects": [
     {
       "name": "Cluster",
+      "icon": "ks",
       "type": "K8S",
       "level": "base",
       "description": "",
@@ -68,7 +69,7 @@
           "display_name": "Pod Status",
           "instance_id_keys": ["instance_id","pod"],
           "data_type": "Enum",
-          "unit": "[{\"name\":\"running\",\"id\":1},{\"name\":\"not running\",\"id\":0}]",
+          "unit": "[{\"name\":\"running\",\"id\":1,\"color\":\"#83ff4f\"},{\"name\":\"not running\",\"id\":0,\"color\":\"#faad14\"}]",
           "dimensions": [],
           "description": "Retrieves the current status of the Pod, such as Running, Stopped, etc."
         },
@@ -164,7 +165,7 @@
           "display_name": "Node Status",
           "instance_id_keys": ["instance_id","node"],
           "data_type": "Enum",
-          "unit": "[{\"name\":\"ready\",\"id\":1},{\"name\":\"not ready\",\"id\":0}]",
+          "unit": "[{\"name\":\"ready\",\"id\":1,\"color\":\"#83ff4f\"},{\"name\":\"not ready\",\"id\":0,\"color\":\"#faad14\"}]",
           "dimensions": [],
           "description": "Node Status indicates the current operational state of the node, such as “Running” or “Stopped.” It helps administrators monitor and manage nodes within the Kubernetes cluster."
         },

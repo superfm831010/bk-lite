@@ -8,13 +8,13 @@
     {
       "metric_group": "JMXselfMonitor",
       "name": "jmx_scrape_duration_seconds_gauge",
-      "display_name": "JMX Scrape Duration ",
+      "display_name": "JMX Scrape Duration",
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "s",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The duration of the most recent JMX monitoring data collection, measured in seconds, is used to evaluate the performance of data collection.",
-      "query": "jmx_scrape_duration_seconds_gauge{__$labels__}"
+      "query": "jmx_scrape_duration_seconds_gauge{instance_type=\"jvm\",__$labels__}"
     },
     {
       "metric_group": "JMXselfMonitor",
@@ -22,10 +22,10 @@
       "display_name": "JMX Scrape Error",
       "instance_id_keys": ["instance_id"],
       "data_type": "Enum",
-      "unit": "[{\"name\":\"采集报错\",\"id\":1},{\"name\":\"采集正常\",\"id\":0}]",
-      "dimensions": [],
+      "unit": "[{\"name\":\"采集正常\",\"id\":0,\"color\":\"#83ff4f\"},{\"name\":\"采集报错\",\"id\":1,\"color\":\"#ff4d4f\"}]",
+      "dimensions": ["type"],
       "description": "Indicates whether there is a failure during the JMX scraping process. A non-zero value indicates a failure",
-      "query": "jmx_scrape_error_gauge{__$labels__}"
+      "query": "jmx_scrape_error_gauge{instance_type=\"jvm\",__$labels__}"
     },
     {
       "metric_group": "Memory",
@@ -34,7 +34,7 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "MiB",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The size of memory initialized and allocated when the Java Virtual Machine starts, reflecting the initial memory configuration",
       "query": "jvm_memory_usage_init_value{__$labels__} / (1024 * 1024)"
     },
@@ -45,7 +45,7 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "MiB",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The current size of memory committed for use by the Java Virtual Machine, which can be used to assess memory resource occupancy",
       "query": "jvm_memory_usage_committed_value{__$labels__} / (1024 * 1024)"
     },
@@ -56,7 +56,7 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "MiB",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The current actual amount of memory used by the Java Virtual Machine, directly reflecting the memory usage",
       "query": "jvm_memory_usage_used_value{__$labels__} / (1024 * 1024)"
     },
@@ -67,7 +67,7 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "MiB",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The maximum amount of memory used by the Java Virtual Machine during operation, which can be used to detect memory pressure and leaks",
       "query": "jvm_memory_usage_max_value{__$labels__} / (1024 * 1024)"
     },
@@ -146,7 +146,7 @@
       "unit": "MiB",
       "dimensions": [],
       "description": "The total capacity of physical memory in the system, which is a fixed parameter of the hardware configuration",
-      "query": "sum(jvm_os_memory_physical_total_value{__$labels__}) / (1024 * 1024)"
+      "query": "sum(jvm_os_memory_physical_total_value{__$labels__}) by (instance_id) / (1024 * 1024)"
     },
     {
       "metric_group": "OS",
@@ -168,7 +168,7 @@
       "unit": "MiB",
       "dimensions": [],
       "description": "The total capacity of swap space in the system, determining the upper limit of expandable virtual memory",
-      "query": "sum(jvm_os_memory_swap_total_value{__$labels__}) / (1024 * 1024)"
+      "query": "sum(jvm_os_memory_swap_total_value{__$labels__}) by (instance_id) / (1024 * 1024)"
     },
     {
       "metric_group": "OS",
@@ -200,8 +200,8 @@
       "data_type": "Number",
       "unit": "s",
       "dimensions": [],
-      "description": "jvm_memorypool_usage_init_value / (1024 * 1024)",
-      "query": "jvm_os_processcputime_seconds_value"
+      "description": "The total cumulative CPU time consumed by the JVM process since startup, used to measure process resource occupancy",
+      "query": "jvm_os_processcputime_seconds_value{__$labels__}"
     },
     {
       "metric_group": "BufferPool",
@@ -210,7 +210,7 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The number of buffer objects in the BufferPool of Java NIO, used to monitor the scale of the resource pool",
       "query": "jvm_bufferpool_count_value{__$labels__}"
     },
@@ -221,9 +221,9 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "MiB",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The current size of memory used by the BufferPool in Java NIO, reflecting the usage of the resource pool",
-      "query": "sum(jvm_bufferpool_memoryused_value{__$labels__}) / (1024 * 1024)"
+      "query": "sum(jvm_bufferpool_memoryused_value{__$labels__}) by (instance_id,type) / (1024 * 1024)"
     },
     {
       "metric_group": "BufferPool",
@@ -232,9 +232,9 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "MiB",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The total memory capacity of the BufferPool in Java NIO, showing the maximum carrying capacity of the resource pool",
-      "query": "sum(jvm_bufferpool_totalcapacity_value{__$labels__}) / (1024 * 1024)"
+      "query": "sum(jvm_bufferpool_totalcapacity_value{__$labels__}) by (instance_id,type) / (1024 * 1024)"
     },
     {
       "metric_group": "GC",
@@ -243,9 +243,9 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "s",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The total cumulative time consumed by garbage collection operations in the Java Virtual Machine, used to evaluate GC performance",
-      "query": "sum(jvm_gc_collectiontime_seconds_value{__$labels__}) /1000"
+      "query": "sum(jvm_gc_collectiontime_seconds_value{__$labels__}) by (instance_id,type) / 1000"
     },
     {
       "metric_group": "GC",
@@ -254,9 +254,9 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The cumulative number of garbage collection operations in the Java Virtual Machine, reflecting the frequency of GC activities",
-      "query": "sum(jvm_gc_collectioncount_value{__$labels__})"
+      "query": "sum(jvm_gc_collectioncount_value{__$labels__}) by (instance_id,type)"
     },
     {
       "metric_group": "MemoryPool",
@@ -265,9 +265,9 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "MiB",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The initialized memory usage of the memory pool in the Java Virtual Machine, reflecting the initial state of the memory pool",
-      "query": "sum(jvm_memorypool_usage_init_value{__$labels__}) / (1024 * 1024)"
+      "query": "sum(jvm_memorypool_usage_init_value{__$labels__}) by (instance_id,type) / (1024 * 1024)"
     },
     {
       "metric_group": "MemoryPool",
@@ -276,9 +276,9 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "MiB",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The current committed memory usage of the memory pool in the Java Virtual Machine, showing the occupancy of memory pool resources",
-      "query": "sum(jvm_memorypool_usage_committed_value{__$labels__}) / (1024 * 1024)"
+      "query": "sum(jvm_memorypool_usage_committed_value{__$labels__}) by (instance_id,type) / (1024 * 1024)"
     },
     {
       "metric_group": "MemoryPool",
@@ -287,9 +287,9 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "MiB",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The current actual memory usage of the memory pool in the Java Virtual Machine, directly reflecting the usage level of the memory pool",
-      "query": "sum(jvm_memorypool_usage_used_value{__$labels__}) / (1024 * 1024)"
+      "query": "sum(jvm_memorypool_usage_used_value{__$labels__}) by (instance_id,type) / (1024 * 1024)"
     },
     {
       "metric_group": "MemoryPool",
@@ -298,9 +298,9 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "MiB",
-      "dimensions": [],
+      "dimensions": ["type"],
       "description": "The maximum memory usage ever reached by the memory pool during the operation of the Java Virtual Machine, which can detect memory pool pressure",
-      "query": "max(jvm_memorypool_usage_max_value{__$labels__}) / (1024 * 1024)"
+      "query": "max(jvm_memorypool_usage_max_value{__$labels__}) by (instance_id,type) / (1024 * 1024)"
     }
   ]
 }
