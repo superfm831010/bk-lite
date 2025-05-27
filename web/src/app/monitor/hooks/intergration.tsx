@@ -647,8 +647,12 @@ const useColumnsAndFormItems = ({
           ),
         };
       case 'http':
+        const httpColumns =
+          pluginName === 'VMWare'
+            ? [columns[0], columns[11], ...columns.slice(4, 7)]
+            : [columns[0], ...columns.slice(4, 7)];
         return {
-          displaycolumns: [columns[0], columns[11], ...columns.slice(4, 7)],
+          displaycolumns: httpColumns,
           formItems: (
             <>
               <Form.Item label={t('monitor.intergrations.username')} required>
@@ -858,7 +862,9 @@ const useFormItems = ({
                     </Checkbox>
                     <Checkbox value="gpu">
                       <span>
-                        <span className="w-[80px] inline-block">Nvidia-GPU</span>
+                        <span className="w-[80px] inline-block">
+                          Nvidia-GPU
+                        </span>
                         <span className="text-[var(--color-text-3)] text-[12px]">
                           {t('monitor.intergrations.gpuDes')}
                         </span>
@@ -1790,29 +1796,51 @@ const useFormItems = ({
                   {t('monitor.intergrations.passwordDes')}
                 </span>
               </Form.Item>
-              <Form.Item required label={t('monitor.intergrations.host')}>
-                <Form.Item
-                  noStyle
-                  name="host"
-                  rules={[
-                    {
-                      required: true,
-                      message: t('common.required'),
-                    },
-                  ]}
-                >
-                  <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+              {pluginName === 'VMWare' ? (
+                <Form.Item required label={t('monitor.intergrations.host')}>
+                  <Form.Item
+                    noStyle
+                    name="host"
+                    rules={[
+                      {
+                        required: true,
+                        message: t('common.required'),
+                      },
+                    ]}
+                  >
+                    <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                  </Form.Item>
+                  <span className="text-[12px] text-[var(--color-text-3)]">
+                    {t('monitor.intergrations.commonHostDes')}
+                  </span>
                 </Form.Item>
-                <span className="text-[12px] text-[var(--color-text-3)]">
-                  {t('monitor.intergrations.commonHostDes')}
-                </span>
-              </Form.Item>
+              ) : (
+                !isEdit && (
+                  <Form.Item required label="URL">
+                    <Form.Item
+                      noStyle
+                      name="monitor_url"
+                      rules={[
+                        {
+                          required: true,
+                          message: t('common.required'),
+                        },
+                      ]}
+                    >
+                      <Input
+                        className="w-[300px] mr-[10px]"
+                        disabled={isEdit}
+                      />
+                    </Form.Item>
+                    <span className="text-[12px] text-[var(--color-text-3)]">
+                      {t('monitor.intergrations.urlDes')}
+                    </span>
+                  </Form.Item>
+                )
+              )}
             </>
           ),
-          configText: `[[inputs.$config_type]]
-        urls = ["http://stargazer:8083/api/monitor/vmware/metrics?username=$username&password=$password&host=$host"]
-        interval = "$intervals"
-        tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="http" }`,
+          configText: getConfigByPluginName(pluginName, 'manualCfgText'),
         };
       case 'jmx':
         return {
