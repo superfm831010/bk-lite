@@ -10,7 +10,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.cmdb.models import EXECUTE
 from apps.cmdb.utils.change_record import create_change_record
-from apps.core.decorators.api_perminssion import  HasPermission
+from apps.core.decorators.api_permission import  HasPermission
 from apps.rpc.node_mgmt import NodeMgmt
 from config.drf.viewsets import ModelViewSet
 from rest_framework.decorators import action

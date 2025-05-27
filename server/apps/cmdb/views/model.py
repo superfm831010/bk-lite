@@ -8,7 +8,7 @@ from apps.cmdb.language.service import SettingLanguage
 from apps.cmdb.models import DELETE_INST, UPDATE_INST
 from apps.cmdb.services.model import ModelManage
 from apps.cmdb.utils.change_record import create_change_record
-from apps.core.decorators.api_perminssion import HasPermission
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.web_utils import WebUtils
 
 

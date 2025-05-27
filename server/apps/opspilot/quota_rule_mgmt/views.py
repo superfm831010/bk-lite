@@ -4,7 +4,7 @@ from django_filters.rest_framework import FilterSet
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from apps.core.decorators.api_perminssion import HasRole
+from apps.core.decorators.api_permission import HasRole
 from apps.opspilot.models import QuotaRule
 from apps.opspilot.quota_rule_mgmt.quota_utils import get_quota_client
 from apps.opspilot.quota_rule_mgmt.serializers import QuotaRuleSerializer

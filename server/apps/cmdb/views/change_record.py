@@ -5,7 +5,7 @@ from apps.cmdb.filters.change_record import ChangeRecordFilter
 from apps.cmdb.language.service import SettingLanguage
 from apps.cmdb.models.change_record import OPERATE_TYPE_CHOICES, ChangeRecord
 from apps.cmdb.serializers.change_record import ChangeRecordSerializer
-from apps.core.decorators.api_perminssion import HasPermission
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.web_utils import WebUtils
 from config.drf.pagination import CustomPageNumberPagination
 
