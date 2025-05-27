@@ -147,8 +147,10 @@ else
     export SECRET_KEY=$(generate_password 32)
     export NEXTAUTH_SECRET=$(generate_password 12)
     export SIDECAR_INIT_TOKEN=$(generate_password 64)
-    export NATS_USERNAME=admin
-    export NATS_PASSWORD=$(generate_password 32)
+    export NATS_ADMIN_USERNAME=admin
+    export NATS_ADMIN_PASSWORD=$(generate_password 32)
+    export NATS_MONITOR_USERNAME=monitor
+    export NATS_MONITOR_PASSWORD=$(generate_password 32)
     export NEO4J_USERNAME=neo4j
     export NEO4J_PASSWORD=$(generate_password 32)
     export NEO4J_AUTH="${NEO4J_USERNAME}/${NEO4J_PASSWORD}"
@@ -162,8 +164,10 @@ export REDIS_PASSWORD=$REDIS_PASSWORD
 export SECRET_KEY=$SECRET_KEY
 export NEXTAUTH_SECRET=$NEXTAUTH_SECRET
 export SIDECAR_INIT_TOKEN=$SIDECAR_INIT_TOKEN
-export NATS_USERNAME=$NATS_USERNAME
-export NATS_PASSWORD=$NATS_PASSWORD
+export NATS_ADMIN_USERNAME=$NATS_ADMIN_USERNAME
+export NATS_ADMIN_PASSWORD=$NATS_ADMIN_PASSWORD
+export NATS_MONITOR_USERNAME=$NATS_MONITOR_USERNAME
+export NATS_MONITOR_PASSWORD=$NATS_MONITOR_PASSWORD
 export NEO4J_USERNAME=$NEO4J_USERNAME
 export NEO4J_PASSWORD=$NEO4J_PASSWORD
 export NEO4J_AUTH=$NEO4J_AUTH
@@ -215,6 +219,54 @@ else
     log "ERROR" "不支持的CPU架构: $CPU_ARCH"
     exit 1
 fi
+
+# 检查nats.conf文件是否存在
+if [ -f ./conf/nats/nats.conf ]; then
+    log "WARNING" "nats.conf文件已存在，文件将被覆盖..."
+else
+    log "INFO" "创建 nats.conf 文件..."
+fi
+
+cat > ./conf/nats/nats.conf <<EOF
+port: 4222
+
+monitor_port: 8222
+
+trace: true
+debug: false
+logtime: false
+
+jetstream: enabled
+jetstream {
+  store_dir=/nats/storage
+}
+
+server_name=nats-server
+authorization {  
+  default_permissions = {
+    publish =[]
+    subscribe = []
+  }
+  users = [
+    {
+      user: "${NATS_ADMIN_USERNAME}"
+      password: "${NATS_ADMIN_PASSWORD}"
+      permissions: {
+        publish = [">"]
+        subscribe = [">"]
+      }
+    },
+    {
+      user: "${NATS_MONITOR_USERNAME}"
+      password: "${NATS_MONITOR_PASSWORD}"
+      permissions: {
+        publish = ["metrics.>"]
+        subscribe = []
+      }
+    }
+  ]
+}
+EOF
 
 # 检查docker-compose.yml文件是否已存在
 if [ -f docker-compose.yml ]; then
@@ -293,10 +345,6 @@ services:
     command:
       - "-c"
       - "/etc/nats/nats.conf"
-      - "--user"
-      - "${NATS_USERNAME}"
-      - "--pass"
-      - "${NATS_PASSWORD}"
     networks:
       - prod
 
@@ -341,6 +389,7 @@ services:
       PGDATA: /data/postgres
     volumes:
       - postgres:/data/postgres
+      - ./conf/postgres/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
     networks:
       - prod
     healthcheck:
@@ -354,7 +403,7 @@ services:
     image: ${DOCKER_IMAGE_SYSTEM_MANAGER}
     restart: always
     environment:
-      NATS_SERVERS: nats://${NATS_USERNAME}:${NATS_PASSWORD}@nats:4222
+      NATS_SERVERS: nats://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
       NATS_NAMESPACE: bk-lite
       DEFAULT_REQUEST_TIMEOUT: ${DEFAULT_REQUEST_TIMEOUT}
       DB_NAME: system_mgmt
@@ -368,11 +417,10 @@ services:
       DB_PORT: "5432"
       DB_ENGINE: postgresql
       INSTALL_APPS: system_mgmt
+      JWT_ALGORITHM: HS256
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./keycloak_web_secret.env:/tmp/keycloak_web_secret.env
     healthcheck:
       test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", "http://127.0.0.1:8000/"]
       interval: 10s
@@ -404,6 +452,7 @@ services:
       - system-manager
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://system-manager-web:3000/healthcheck').then(res => res.status === 200)"]
+      start_period: 5s
 
   node-manager:
     image: ${DOCKER_IMAGE_NODE_MANAGER}
@@ -411,14 +460,14 @@ services:
     ports:
       - "${NODE_MANAGER_API_PORT}:8000"
     environment:
-      NATS_SERVERS: nats://${NATS_USERNAME}:${NATS_PASSWORD}@nats:4222
+      NATS_SERVERS: nats://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
       NATS_NAMESPACE: bk-lite
       DB_NAME: node_mgmt
       CLIENT_ID: node_mgmt
       SIDECAR_INIT_TOKEN: ${SIDECAR_INIT_TOKEN}
-      DEFAULT_ZONE_VAR_NATS_SERVERS: nats://${HOST_IP}:4222
-      DEFAULT_ZONE_VAR_NATS_USERNAME: ${NATS_USERNAME}
-      DEFAULT_ZONE_VAR_NATS_PASSWORD: ${NATS_PASSWORD}
+      DEFAULT_ZONE_VAR_NATS_SERVERS: ${HOST_IP}:4222
+      DEFAULT_ZONE_VAR_NATS_USERNAME: ${NATS_MONITOR_USERNAME}
+      DEFAULT_ZONE_VAR_NATS_PASSWORD: ${NATS_MONITOR_PASSWORD}
       DEFAULT_ZONE_VAR_NODE_SERVER_URL: http://${HOST_IP}:${NODE_MANAGER_API_PORT}
       DEFAULT_ZONE_VAR_STARGAZER_URL: http://stargazer:8083
       SIDECAR_INPUT_MODE: nats
@@ -467,12 +516,13 @@ services:
       - node-manager
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://node-manager-web:3000/healthcheck').then(res => res.status === 200)"]
+      start_period: 5s
 
   monitor:
     image: ${DOCKER_IMAGE_MONITOR}
     restart: always
     environment:
-      NATS_SERVERS: nats://${NATS_USERNAME}:${NATS_PASSWORD}@nats:4222
+      NATS_SERVERS: nats://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
       NATS_NAMESPACE: bk-lite
       CLIENT_ID: monitor
       DB_NAME: monitor
@@ -523,6 +573,7 @@ services:
       - monitor
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://monitor-web:3000/healthcheck').then(res => res.status === 200)"]
+      start_period: 5s
   
   cmdb:
     image: ${DOCKER_IMAGE_CMDB}
@@ -536,7 +587,7 @@ services:
       DB_HOST: postgres
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_PORT: "5432"
-      NATS_SERVERS: nats://${NATS_USERNAME}:${NATS_PASSWORD}@nats:4222
+      NATS_SERVERS: nats://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
       NATS_NAMESPACE: bk-lite
       CLIENT_ID: cmdb
       DB_NAME: cmdb
@@ -580,13 +631,14 @@ services:
       - cmdb
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://cmdb-web:3000/healthcheck').then(res => res.status === 200)"]
+      start_period: 5s
 
   telegraf:
     image: bklite/telegraf
     container_name: telegraf
     environment:
-      - METRIC_NATS_USERNAME=admin
-      - METRIC_NATS_PASSWORD=${NATS_PASSWORD}
+      - METRIC_NATS_USERNAME=${NATS_ADMIN_USERNAME}
+      - METRIC_NATS_PASSWORD=${NATS_ADMIN_PASSWORD}
       - METRIC_OUTPUT_URL=http://victoria-metrics:8428
       - METRIC_NATS_SERVERS=nats://nats:4222
     volumes:
@@ -597,12 +649,28 @@ services:
       - lite
     restart: always
 
+  fusion-collector:
+    image: bklite/fusion-collector:latest
+    container_name: fusion-collector
+    environment:
+      - SERVER_URL=http://node-manager:8000/node_mgmt/open_api/node
+      - SERVER_API_TOKEN=${SIDECAR_INIT_TOKEN}
+      - SIDECAR_ZONE=1
+      - SIDECAR_GROUP=1
+      - SIDECAR_NODEID=1
+      - SIDECAR_NODENAME=fusion-collector
+    networks:
+      - prod
+    profiles:
+      - lite
+    restart: always
+
   ops-console:
     image: ${DOCKER_IMAGE_OPSCONSOLE}
     restart: always
     environment:
-      NATS_SERVERS: nats://${NATS_USERNAME}:${NATS_PASSWORD}@nats:4222
-      NATS_NAMESPACE: ops-console
+      NATS_SERVERS: nats://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
+      NATS_NAMESPACE: bk-lite
       CLIENT_ID: ops-console
       DB_NAME: ops-console
       DB_USER: ${POSTGRES_USERNAME}
@@ -644,6 +712,7 @@ services:
       - traefik.http.services.ops-console-web.loadbalancer.server.port=3000
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://ops-console-web:3000/healthcheck').then(res => res.status === 200)"]
+      start_period: 5s
     depends_on:
       - ops-console
     profiles:
@@ -670,7 +739,7 @@ COMPOSE_NETWORK=${PROJECT_NAME}_prod
 log "INFO" "创建JetStream..."
 docker run --rm --network=${COMPOSE_NETWORK} \
     $DOCKER_IMAGE_NATS_CLI -s nats://nats:4222 \
-    --user $NATS_USERNAME --password $NATS_PASSWORD \
+    --user $NATS_ADMIN_USERNAME --password $NATS_ADMIN_PASSWORD \
     stream add metrics --subjects=metrics.* --storage=file \
     --replicas=1 --retention=limits  --discard=old \
     --max-age=20m --max-bytes=104857600 --max-consumers=-1 \
@@ -682,69 +751,16 @@ log "INFO" "启动 Postgres..."
 docker-compose up -d postgres
 wait_container_health postgres "Postgres"
 
-# 创建所有必要的数据库 - 使用一条命令创建多个数据库
-log "INFO" "创建必要的数据库..."
-docker-compose exec -T postgres psql -U "$POSTGRES_USERNAME" -d postgres <<-'EOSQL'
-CREATE DATABASE system_mgmt;
-CREATE DATABASE node_mgmt;
-CREATE DATABASE monitor;
-CREATE DATABASE "ops-console";
-CREATE DATABASE keycloak;
-CREATE DATABASE cmdb;
-EOSQL
-
 # 启动服务
 log "INFO" "启动系统管理服务..."
 docker-compose up -d system-manager
-wait_container_health system-manager "系统管理服务"
 
-log "INFO" "初始化admin用户..." 
-docker-compose exec -T system-manager python manage.py create_user \
-    admin \
-    password \
-    --email=admin@bklite.net --is_superuser
-
-log "INFO" "启动系统管理Web..."
-docker-compose up -d system-manager-web
-wait_container_health system-manager-web "系统管理Web"
-
-log "INFO" "启动节点管理..."
-docker-compose up -d node-manager
-wait_container_health node-manager "节点管理"
-
-log "INFO" "启动节点管理Web..."
-docker-compose up -d node-manager-web
-wait_container_health node-manager-web "节点管理Web"
-
-log "INFO" "启动监控系统..."
-docker-compose up -d monitor
-wait_container_health monitor "监控系统"
-
-log "INFO" "启动监控系统Web..."
-docker-compose up -d monitor-web
-wait_container_health monitor-web "监控系统Web"
-
-log "INFO" "启动控制台..."
-docker-compose up -d ops-console
-wait_container_health ops-console "OpsConsole"
-
-log "INFO" "启动控制台Web..."
-docker-compose up -d ops-console-web
-wait_container_health ops-console-web "控制台Web"
-
-log "INFO" "启动CMDB..."
-docker-compose up -d cmdb
-wait_container_health cmdb "CMDB"
-
-log "INFO" "启动CMDB Web..."
-docker-compose up -d cmdb-web
-wait_container_health cmdb-web "CMDBWeb"
-
-log "INFO" "启动telegraf..."
-docker-compose up -d telegraf
-
-log "INFO" "启动stargazer..."
-docker-compose up -d stargazer
-
+log "INFO" "启动所有服务"
+docker-compose --profile=lite up -d
+sleep 10
+wait_container_health cmdb-web "CMDB"
+wait_container_health monitor-web "MONITOR"
+wait_container_health system-manager "SYSTEM_MGMT"
+wait_container_health node-manager "NODE_MGMT"
 log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_MONITOR_PORT 访问系统"
 log "INFO" "初始用户名: admin, 初始密码: password"
