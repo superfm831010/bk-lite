@@ -1,0 +1,21 @@
+{
+  "plugin": "Tencent Cloud",
+  "plugin_desc": "Used to monitor Tencent Cloud's cloud platform and CVM instances, providing insights into resource usage, performance, and operational status.",
+  "is_compound_object": true,
+  "objects": [
+    {
+      "name": "云平台",
+      "type": "Tencent Cloud",
+      "level": "base",
+      "description": "",
+      "metrics": []
+    },
+    {
+      "name": "CVM",
+      "type": "Tencent Cloud",
+      "level": "derivative",
+      "description": "",
+      "metrics": []
+    }
+  ]
+}

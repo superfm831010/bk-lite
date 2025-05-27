@@ -9,9 +9,14 @@ class Controller:
     def __init__(self, data):
         self.data = data
 
-    def format_config(self, config):
-        config["id"] = str(uuid.uuid4().hex)
-        return config
+    def set_config_id(self, config):
+        config.update(id=str(uuid.uuid4().hex))
+
+    def format_child_config(self, config):
+        if config['collect_type'] == "snmp":
+            self.format_snmp_config(config)
+        elif config['collect_type'] == "http":
+            self.format_http_config(config)
 
     def format_snmp_config(self, config):
         if config["version"] == 2:
@@ -35,7 +40,13 @@ class Controller:
             )
         else:
             raise ValueError("SNMP version error")
-        return result
+        config.update(snmp_config=result)
+
+    def format_http_config(self, config):
+        url = f"${{STARGAZER_URL}}/api/monitor/{config['instance_type']}/metrics"
+        config.update(url=url)
+        if config["instance_type"] == "vmware":
+            config["custom_headers"].update(host=config["host"])
 
     def only_child_config(self):
 
@@ -57,10 +68,9 @@ class Controller:
                 node_info = {"id": node_id, "configs": []}
                 for config in configs:
                     config_info = {"collect_type": collect_type, **config, **instance}
-                    config_info = self.format_config(config_info)
-                    if config_info["type"] == "snmp":
-                        snmp_config = self.format_snmp_config(config_info)
-                        config_info["snmp_config"] = snmp_config
+
+                    self.set_config_id(config_info)
+                    self.format_child_config(config_info)
 
                     node_info["configs"].append(config_info)
                     config_objs.append(
@@ -108,7 +118,7 @@ class Controller:
                 child_node_info = {"id": node_id, "configs": []}
                 for config in configs:
                     config_info = {"collect_type": collect_type, **config, **instance}
-                    config_info = self.format_config(config_info)
+                    self.set_config_id(config_info)
                     node_info["configs"].append(config_info)
 
                     child_config_info = {
@@ -118,7 +128,7 @@ class Controller:
                         "type": config_info.get("type"),
                         "interval": config_info.get("interval", 10),
                     }
-                    child_config_info = self.format_config(child_config_info)
+                    self.set_config_id(child_config_info)
                     child_node_info["configs"].append(child_config_info)
 
                     config_result["nodes"].append(node_info)
