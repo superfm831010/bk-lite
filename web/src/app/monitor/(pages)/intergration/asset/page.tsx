@@ -42,6 +42,7 @@ import {
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EditConfig from './updateConfig';
+import EditInstance from './editInstance';
 import { NODE_STATUS_MAP } from '@/app/monitor/constants/monitor';
 const { confirm } = Modal;
 import Permission from '@/components/permission';
@@ -64,6 +65,7 @@ const Asset = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const ruleRef = useRef<ModalRef>(null);
   const configRef = useRef<ModalRef>(null);
+  const instanceRef = useRef<ModalRef>(null);
   const [pagination, setPagination] = useState<Pagination>({
     current: 1,
     total: 0,
@@ -111,6 +113,16 @@ const Asset = () => {
           <Button type="link" onClick={() => checkDetail(record)}>
             {t('common.detail')}
           </Button>
+          <Permission requiredPermissions={['Edit']}>
+            <Button
+              disabled
+              type="link"
+              className="ml-[10px]"
+              onClick={() => openInstanceModal(record)}
+            >
+              {t('common.edit')}
+            </Button>
+          </Permission>
           <Permission requiredPermissions={['Delete']}>
             <Popconfirm
               title={t('common.deleteTitle')}
@@ -289,6 +301,14 @@ const Asset = () => {
         ...row,
         objName: objects.find((item) => item.id === objectId)?.name || '',
       },
+    });
+  };
+
+  const openInstanceModal = (row = {}) => {
+    instanceRef.current?.showModal({
+      title: t('common.edit'),
+      type: 'edit',
+      form: row,
     });
   };
 
@@ -630,6 +650,11 @@ const Asset = () => {
         onSuccess={operateRule}
       />
       <EditConfig ref={configRef} onSuccess={() => getAssetInsts(objectId)} />
+      <EditInstance
+        ref={instanceRef}
+        organizationList={organizationList}
+        onSuccess={() => getAssetInsts(objectId)}
+      />
     </div>
   );
 };
