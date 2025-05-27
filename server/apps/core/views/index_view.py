@@ -10,19 +10,7 @@ from rest_framework.decorators import api_view
 from apps.core.utils.exempt import api_exempt
 from apps.rpc.system_mgmt import SystemMgmt
 
-# 配置日志
 logger = logging.getLogger(__name__)
-
-# 常量定义
-DEFAULT_GROUP_NAME_KEY = "DEFAULT_GROUP_NAME"
-DEFAULT_GROUP_FALLBACK = "Guest"
-CLIENT_ID_KEY = "CLIENT_ID"
-EMPTY_STRING = ""
-
-# 错误消息常量
-ERROR_MSG_EMPTY_CREDENTIALS = _("Username or password cannot be empty")
-ERROR_MSG_NOT_AUTHORIZED = _("Not Authorized")
-ERROR_MSG_SYSTEM_ERROR = _("System error occurred")
 
 
 def _create_system_mgmt_client():
@@ -69,12 +57,10 @@ def _check_first_login(user, default_group):
     """检查是否为首次登录"""
     group_list = getattr(user, "group_list", [])
 
-    # 如果没有组列表，认为是首次登录
     if not group_list:
         logger.info(f"User {user.username} has no groups - first login")
         return True
 
-    # 如果只有一个组且为默认组，认为是首次登录
     if len(group_list) == 1:
         first_group = group_list[0]
         group_name = first_group.get("name") if isinstance(first_group, dict) else str(first_group)
@@ -98,7 +84,6 @@ def login(request):
     logger.info("Login attempt started")
 
     try:
-        # 安全解析请求数据
         if hasattr(request, "body") and request.body:
             try:
                 data = json.loads(request.body)
@@ -108,12 +93,12 @@ def login(request):
         else:
             data = request.POST.dict()
 
-        username = data.get("username", EMPTY_STRING).strip()
-        password = data.get("password", EMPTY_STRING)
+        username = data.get("username", "").strip()
+        password = data.get("password", "")
 
         if not username or not password:
             logger.warning(f"Login failed: empty credentials for user '{username}'")
-            return JsonResponse({"result": False, "message": ERROR_MSG_EMPTY_CREDENTIALS})
+            return JsonResponse({"result": False, "message": _("Username or password cannot be empty")})
 
         logger.info(f"Processing login for user: {username}")
         client = _create_system_mgmt_client()
@@ -127,7 +112,7 @@ def login(request):
         return JsonResponse(res)
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
 
 
 @api_exempt
@@ -136,7 +121,6 @@ def wechat_user_register(request):
     logger.info("WeChat user registration attempt started")
 
     try:
-        # 安全解析请求数据
         if hasattr(request, "body") and request.body:
             try:
                 data = json.loads(request.body)
@@ -146,8 +130,8 @@ def wechat_user_register(request):
         else:
             data = request.POST.dict()
 
-        user_id = data.get("user_id", EMPTY_STRING).strip()
-        nick_name = data.get("nick_name", EMPTY_STRING).strip()
+        user_id = data.get("user_id", "").strip()
+        nick_name = data.get("nick_name", "").strip()
 
         if not user_id:
             logger.warning("WeChat registration failed: user_id cannot be empty")
@@ -166,7 +150,7 @@ def wechat_user_register(request):
 
     except Exception as e:
         logger.error(f"WeChat registration error: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
 
 
 @api_exempt
@@ -187,7 +171,7 @@ def get_wechat_settings(request):
 
     except Exception as e:
         logger.error(f"Error retrieving WeChat settings: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
 
 
 @api_exempt
@@ -195,7 +179,6 @@ def reset_pwd(request):
     logger.info("Password reset attempt started")
 
     try:
-        # 安全解析请求数据
         if hasattr(request, "body") and request.body:
             try:
                 data = json.loads(request.body)
@@ -205,8 +188,8 @@ def reset_pwd(request):
         else:
             data = request.POST.dict()
 
-        username = data.get("username", EMPTY_STRING).strip()
-        password = data.get("password", EMPTY_STRING)
+        username = data.get("username", "").strip()
+        password = data.get("password", "")
 
         logger.info(f"Processing password reset for user: {username}")
         client = _create_system_mgmt_client()
@@ -221,7 +204,7 @@ def reset_pwd(request):
 
     except Exception as e:
         logger.error(f"Password reset error: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
 
 
 @api_view(["GET"])
@@ -229,7 +212,7 @@ def login_info(request):
     logger.info(f"Login info requested for user: {request.user.username}")
 
     try:
-        default_group = os.environ.get(DEFAULT_GROUP_NAME_KEY, DEFAULT_GROUP_FALLBACK)
+        default_group = os.environ.get("DEFAULT_GROUP_NAME", "Guest")
         is_first_login = _check_first_login(request.user, default_group)
 
         client = _create_system_mgmt_client()
@@ -256,7 +239,7 @@ def login_info(request):
 
     except Exception as e:
         logger.error(f"Error retrieving login info for {request.user.username}: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
 
 
 @api_exempt
@@ -265,7 +248,7 @@ def generate_qr_code(request):
     logger.info("QR code generation requested")
 
     try:
-        username = request.GET.get("username", EMPTY_STRING).strip()
+        username = request.GET.get("username", "").strip()
 
         if not username:
             logger.warning("QR code generation failed: username cannot be empty")
@@ -284,7 +267,7 @@ def generate_qr_code(request):
 
     except Exception as e:
         logger.error(f"QR code generation error: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
 
 
 @api_exempt
@@ -293,7 +276,6 @@ def verify_otp_code(request):
     logger.info("OTP code verification attempt started")
 
     try:
-        # 安全解析请求数据
         if hasattr(request, "body") and request.body:
             try:
                 data = json.loads(request.body)
@@ -303,8 +285,8 @@ def verify_otp_code(request):
         else:
             data = request.POST.dict()
 
-        username = data.get("username", EMPTY_STRING).strip()
-        otp_code = data.get("otp_code", EMPTY_STRING).strip()
+        username = data.get("username", "").strip()
+        otp_code = data.get("otp_code", "").strip()
 
         if not username or not otp_code:
             logger.warning(f"OTP verification failed: empty credentials for user '{username}'")
@@ -323,7 +305,7 @@ def verify_otp_code(request):
 
     except Exception as e:
         logger.error(f"OTP verification error: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
 
 
 def get_client(request):
@@ -331,14 +313,14 @@ def get_client(request):
 
     try:
         client = _create_system_mgmt_client()
-        return_data = client.get_client(EMPTY_STRING, request.user.username)
+        return_data = client.get_client("", request.user.username)
 
         logger.info(f"Client info retrieved successfully for user: {request.user.username}")
         return JsonResponse(return_data)
 
     except Exception as e:
         logger.error(f"Error retrieving client info for {request.user.username}: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
 
 
 def get_my_client(request):
@@ -346,21 +328,21 @@ def get_my_client(request):
 
     try:
         client = _create_system_mgmt_client()
-        client_id = request.GET.get("client_id", EMPTY_STRING) or os.getenv(CLIENT_ID_KEY, EMPTY_STRING)
+        client_id = request.GET.get("client_id", "") or os.getenv("CLIENT_ID", "")
 
         logger.info(f"Retrieving client info for client_id: {client_id or 'default'}")
-        return_data = client.get_client(client_id, EMPTY_STRING)
+        return_data = client.get_client(client_id, "")
 
         logger.info("My client info retrieved successfully")
         return JsonResponse(return_data)
 
     except Exception as e:
         logger.error(f"Error retrieving my client info: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
 
 
 def get_client_detail(request):
-    client_name = request.GET.get("name", EMPTY_STRING)
+    client_name = request.GET.get("name", "")
     logger.info(f"Client detail requested for: {client_name}")
 
     if not client_name:
@@ -376,11 +358,11 @@ def get_client_detail(request):
 
     except Exception as e:
         logger.error(f"Error retrieving client detail for {client_name}: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
 
 
 def get_user_menus(request):
-    client_name = request.GET.get("name", EMPTY_STRING)
+    client_name = request.GET.get("name", "")
     logger.info(f"User menus requested for client: {client_name}, user: {request.user.username}")
 
     if not client_name:
@@ -401,7 +383,7 @@ def get_user_menus(request):
 
     except Exception as e:
         logger.error(f"Error retrieving user menus for {client_name}: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
 
 
 def get_all_groups(request):
@@ -409,7 +391,7 @@ def get_all_groups(request):
 
     if not getattr(request.user, "is_superuser", False):
         logger.warning(f"Non-superuser {request.user.username} attempted to access all groups")
-        return JsonResponse({"result": False, "message": ERROR_MSG_NOT_AUTHORIZED})
+        return JsonResponse({"result": False, "message": _("Not Authorized")})
 
     try:
         client = _create_system_mgmt_client()
@@ -420,4 +402,4 @@ def get_all_groups(request):
 
     except Exception as e:
         logger.error(f"Error retrieving all groups: {str(e)}")
-        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+        return JsonResponse({"result": False, "message": _("System error occurred")})
