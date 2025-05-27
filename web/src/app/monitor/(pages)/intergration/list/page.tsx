@@ -117,6 +117,7 @@ const Intergration = () => {
           'ESXI',
           'VM',
           'DataStorage',
+          'CVM',
         ].includes(item.name)
       ) {
         acc[item.type].children.push({

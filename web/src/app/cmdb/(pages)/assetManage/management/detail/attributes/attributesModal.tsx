@@ -8,7 +8,9 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import { Input, Button, Form, message, Select, Radio } from 'antd';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import { PlusOutlined, DeleteTwoTone, HolderOutlined } from '@ant-design/icons';
@@ -34,6 +36,34 @@ interface AttrConfig {
 export interface AttrModalRef {
   showModal: (info: AttrConfig) => void;
 }
+
+const SortableItem = ({
+  id,
+  index,
+  children,
+}: {
+  id: string;
+  index: number;
+  children: React.ReactNode;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    marginTop: index ? 10 : 0,
+    display: 'flex',
+  };
+  return (
+    <li ref={setNodeRef} style={style}>
+      {React.Children.map(children, (child, idx) =>
+        idx === 0 && React.isValidElement(child)
+          ? React.cloneElement(child, { ...attributes, ...listeners })
+          : child
+      )}
+    </li>
+  );
+};
 
 const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
   ({ onSuccess, attrTypeList }, ref) => {
@@ -129,7 +159,7 @@ const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
       setEnumList(enumTypeList);
     };
 
-    const onEnumValChange = (
+    const onEnumKeyChange = (
       e: React.ChangeEvent<HTMLInputElement>,
       index: number
     ) => {
@@ -137,7 +167,7 @@ const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
       enumTypeList[index].id = e.target.value;
       setEnumList(enumTypeList);
     };
-    const onEnumKeyChange = (
+    const onEnumValChange = (
       e: React.ChangeEvent<HTMLInputElement>,
       index: number
     ) => {
@@ -146,12 +176,16 @@ const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
       setEnumList(enumTypeList);
     };
 
-    const onDragEnd = (result: any) => {
-      if (!result.destination) return;
-      const items = Array.from(enumList);
-      const [reorderedItem] = items.splice(result.source.index, 1);
-      items.splice(result.destination.index, 0, reorderedItem);
-      setEnumList(items);
+    const sensors = useSensors(useSensor(PointerSensor));
+
+    const onDragEnd = (event: any) => {
+      const { active, over } = event;
+      if (!over) return;
+      const oldIndex = parseInt(active.id as string, 10);
+      const newIndex = parseInt(over.id as string, 10);
+      if (oldIndex !== newIndex) {
+        setEnumList((items) => arrayMove(items, oldIndex, newIndex));
+      }
     };
 
     const operateAttr = async (params: AttrFieldType) => {
@@ -247,65 +281,39 @@ const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
                     name="option"
                     rules={[{ validator: validateEnumList }]}
                   >
-                    <DragDropContext onDragEnd={onDragEnd}>
-                      <Droppable droppableId="enumList">
-                        {(provided: any) => (
-                          <ul
-                            className="bg-[var(--color-bg-hover)] p-[10px]"
-                            {...provided.droppableProps}
-                            ref={provided.innerRef}
-                          >
-                            {enumList.map((enumItem, index) => (
-                              <Draggable
-                                key={index}
-                                draggableId={`item-${index}`}
-                                index={index}
-                              >
-                                {(provided: any) => (
-                                  <li
-                                    className={`flex ${
-                                      index ? 'mt-[10px]' : ''
-                                    }`}
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                  >
-                                    <HolderOutlined className="mr-[4px]" />
-                                    <Input
-                                      placeholder={t('fieldKey')}
-                                      className="mr-[10px] w-1/5"
-                                      value={enumItem.name}
-                                      onChange={(e) =>
-                                        onEnumKeyChange(e, index)
-                                      }
-                                    />
-                                    <Input
-                                      placeholder={t('fieldValue')}
-                                      className="mr-[10px] w-3/5"
-                                      value={enumItem.id}
-                                      onChange={(e) =>
-                                        onEnumValChange(e, index)
-                                      }
-                                    />
-                                    <PlusOutlined
-                                      className="edit mr-[10px] cursor-pointer text-[var(--color-primary)]"
-                                      onClick={addEnumItem}
-                                    />
-                                    {index ? (
-                                      <DeleteTwoTone
-                                        className="delete cursor-pointer"
-                                        onClick={() => deleteEnumItem(index)}
-                                      />
-                                    ) : null}
-                                  </li>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
-                          </ul>
-                        )}
-                      </Droppable>
-                    </DragDropContext>
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                      <SortableContext items={enumList.map((_, idx) => idx.toString())} strategy={verticalListSortingStrategy}>
+                        <ul className="bg-[var(--color-bg-hover)] p-[10px]">
+                          {enumList.map((enumItem, index) => (
+                            <SortableItem key={index} id={index.toString()} index={index}>
+                              <HolderOutlined className="mr-[4px]" />
+                              <Input
+                                placeholder={t('fieldKey')}
+                                className="mr-[10px] w-1/5"
+                                value={enumItem.id}
+                                onChange={(e) => onEnumKeyChange(e, index)}
+                              />
+                              <Input
+                                placeholder={t('fieldValue')}
+                                className="mr-[10px] w-3/5"
+                                value={enumItem.name}
+                                onChange={(e) => onEnumValChange(e, index)}
+                              />
+                              <PlusOutlined
+                                className="edit mr-[10px] cursor-pointer text-[var(--color-primary)]"
+                                onClick={addEnumItem}
+                              />
+                              {enumList.length > 1 && (
+                                <DeleteTwoTone
+                                  className="delete cursor-pointer"
+                                  onClick={() => deleteEnumItem(index)}
+                                />
+                              )}
+                            </SortableItem>
+                          ))}
+                        </ul>
+                      </SortableContext>
+                    </DndContext>
                   </Form.Item>
                 ) : null
               }

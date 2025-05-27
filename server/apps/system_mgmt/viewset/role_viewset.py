@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import action
 
 from apps.core.backends import cache
-from apps.core.decorators.api_perminssion import HasPermission
+from apps.core.decorators.api_permission import HasPermission
 from apps.system_mgmt.models import Menu, Role, User
 from apps.system_mgmt.serializers.role_serializer import RoleSerializer
 from apps.system_mgmt.services.role_manage import RoleManage

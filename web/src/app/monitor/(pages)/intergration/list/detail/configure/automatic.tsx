@@ -344,11 +344,11 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
         ? { ...initItem, server: null }
         : { ...initItem, host: null, port: null };
     }
-    if (collectType === 'http') {
+    if (pluginName === 'VMWare') {
       return { ...initItem, host: null };
     }
     return initItem as IntergrationMonitoredObject;
-  }, [collectType, groupId]);
+  }, [collectType, groupId, pluginName]);
 
   const handleEditAuthPassword = () => {
     if (authPasswordDisabled) {
@@ -545,13 +545,14 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     if (['snmp', 'ipmi'].includes(collectType)) {
       return objectName + '-' + (row.ip || '');
     }
+    if (pluginName === 'Tencent Cloud' || collectType === 'docker') {
+      return row.instance_name;
+    }
     switch (collectType) {
       case 'host':
         return target?.ip + '-' + target?.cloud_region;
       case 'trap':
         return 'trap' + target?.ip + '-' + target?.cloud_region;
-      case 'docker':
-        return row.instance_name;
       case 'database':
         return row.server || `${row.host}:${row.port}`;
       case 'http':

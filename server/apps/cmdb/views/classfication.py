@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 
 from apps.cmdb.services.classification import ClassificationManage
-from apps.core.decorators.api_perminssion import HasPermission
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.web_utils import WebUtils
 
 
