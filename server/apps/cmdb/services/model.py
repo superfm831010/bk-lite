@@ -267,7 +267,8 @@ class ModelManage(object):
             users = UserGroup.user_list(system_mgmt_client, {"search": ""})
             option = [
                 dict(
-                    id=user["username"],
+                    # id=user["username"],
+                    id=user["id"],
                     name=user["username"],
                     is_default=False,
                     type="str",
