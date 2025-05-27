@@ -22,9 +22,9 @@ COLLECTORS = [
         "icon": "shujucaiji",
         "node_operating_system": "windows",
         "service_type": "exec",
-        "executable_path": "C:\\Program Files\\Telegraf\\telegraf.exe",
-        "execute_parameters": "-config C:\\Program Files\\Telegraf\\telegraf.conf",
-        "validation_parameters": "-test -config C:\\Program Files\\Telegraf\\telegraf.conf",
+        "executable_path": "C:\\bklite\\fusion-collectors\\bin\\telegraf.exe",
+        "execute_parameters": "-config %s",
+        "validation_parameters": "--config %s --test",
         "default_template": "",
         "introduction": "Telegraf is a lightweight and efficient metrics collector that supports real-time collection, processing, and transmission of multi-source data, widely used in monitoring and data analysis scenarios."
     },
@@ -48,8 +48,8 @@ COLLECTORS = [
         "icon": "caijixinxi",
         "node_operating_system": "windows",
         "service_type": "exec",
-        "executable_path": "C:\\Program Files\\NATS\\nats-executor.exe",
-        "execute_parameters": "-config C:\\Program Files\\NATS\\nats-executor.conf",
+        "executable_path": "C:\\bklite\\fusion-collectors\\bin\\nats-executor.exe",
+        "execute_parameters": "--config %s",
         "validation_parameters": "",
         "default_template": "",
         "introduction": "NATS Executor is a task scheduling and management tool that automates data storage, backup, and distributed file processing tasks."
