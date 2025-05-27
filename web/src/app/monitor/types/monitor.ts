@@ -34,6 +34,12 @@ export interface NodeConfigInfo {
   [key: string]: unknown;
 }
 
+export interface InstanceInfo {
+  organization?: (string | number)[];
+  instance_id?: string;
+  instance_name?: string;
+}
+
 export interface GroupingRules {
   query?: string;
   instances?: string[];

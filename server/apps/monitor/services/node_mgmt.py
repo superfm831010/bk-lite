@@ -74,8 +74,8 @@ class InstanceConfigService:
         # 格式化实例id,将实例id统一为字符串元祖（支持多维度组成的实例id）
         for instance in data["instances"]:
             instance["instance_id"] = str(tuple([instance["instance_id"]]))
-            if "interval" not in instance:
-                instance["interval"] = 10
+            # if "interval" not in instance:
+            #     instance["interval"] = 10
 
         # 删除逻辑删除的实例，避免影响现有逻辑
         MonitorInstance.objects.filter(id__in=[instance["instance_id"] for instance in data["instances"]], is_deleted=True).delete()
@@ -99,7 +99,7 @@ class InstanceConfigService:
             instance["instance_id"]: {
                 "id": instance["instance_id"],
                 "name": instance["instance_name"],
-                "interval": instance["interval"],
+                # "interval": instance["interval"],
                 "monitor_object_id": data["monitor_object_id"],
                 "group_ids": instance["group_ids"],
             }

@@ -23,3 +23,6 @@ lint:
 
 run:
 	sanic server:app --host=0.0.0.0 --port=8083 --workers=1
+
+build:
+	docker build -t bklite/stargazer -f ./support-files/docker/Dockerfile .

@@ -5,7 +5,7 @@ from django_filters.rest_framework import FilterSet
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from apps.core.decorators.api_perminssion import HasPermission
+from apps.core.decorators.api_permission import HasPermission
 from apps.rpc.node_mgmt import NodeMgmt
 from apps.rpc.opspilot import OpsPilot
 from apps.rpc.system_mgmt import SystemMgmt

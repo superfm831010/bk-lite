@@ -6,7 +6,6 @@ import {
   Checkbox,
   Space,
   Tag,
-  // Modal,
   message,
   Tabs,
   Spin,
@@ -54,7 +53,12 @@ import useMonitorApi from '@/app/monitor/api/index';
 
 const Alert: React.FC = () => {
   const { isLoading } = useApiClient();
-  const { getMonitorAlert, getMonitorMetrics, getMonitorObject, patchMonitorAlert } = useMonitorApi();
+  const {
+    getMonitorAlert,
+    getMonitorMetrics,
+    getMonitorObject,
+    patchMonitorAlert,
+  } = useMonitorApi();
   const { t } = useTranslation();
   const STATE_MAP = useStateMap();
   const LEVEL_LIST = useLevelList();
@@ -157,7 +161,8 @@ const Alert: React.FC = () => {
       render: (_, record) => (
         <>
           {t(
-            `monitor.events.${record.policy?.notice ? 'notified' : 'unnotified'
+            `monitor.events.${
+              record.policy?.notice ? 'notified' : 'unnotified'
             }`
           )}
         </>
@@ -180,7 +185,8 @@ const Alert: React.FC = () => {
             <span className="user-name">
               <EllipsisWithTooltip
                 className="w-[50px] overflow-hidden text-ellipsis whitespace-nowrap"
-                text={operator} />
+                text={operator}
+              />
             </span>
           </div>
         ) : (
@@ -212,10 +218,7 @@ const Alert: React.FC = () => {
               okButtonProps={{ loading: confirmLoading }}
               onConfirm={() => alertCloseConfirm(record.id)}
             >
-              <Button
-                type="link"
-                disabled={record.status !== 'new'}
-              >
+              <Button type="link" disabled={record.status !== 'new'}>
                 {t('common.close')}
               </Button>
             </Popconfirm>
@@ -328,7 +331,7 @@ const Alert: React.FC = () => {
     } finally {
       setConfirmLoading(false);
     }
-  }
+  };
 
   const clearTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -508,7 +511,7 @@ const Alert: React.FC = () => {
         const roundedTime = convertToLocalizedTime(
           minTime.add(
             Math.floor(timestamp.diff(minTime, 'minute') / intervalMinutes) *
-            intervalMinutes,
+              intervalMinutes,
             'minute'
           )
         );

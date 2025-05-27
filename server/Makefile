@@ -61,3 +61,24 @@ celery-flower:
 
 start-nats:
 	python manage.py nats_listener
+
+build-system-manager:
+	docker build -f ./support-files/release/system-manager/Dockerfile -t bklite/system-manager .
+
+build-console:
+	docker build -f ./support-files/release/console/Dockerfile -t bklite/ops-console .
+
+build-node-manager:
+	docker build -f ./support-files/release/node-manager/Dockerfile -t bklite/node-manager .
+
+build-cmdb:
+	docker build -f ./support-files/release/cmdb/Dockerfile -t bklite/cmdb .
+
+build-monitor:
+	docker build -f ./support-files/release/monitor/Dockerfile -t bklite/monitor .
+
+build-opspilot:
+	docker build -f ./support-files/release/opspilot/Dockerfile -t bklite/ops-pilot .
+
+test:
+	pytest

@@ -268,9 +268,11 @@ const OidLibrary: React.FC = () => {
             />
           </Space.Compact>
         </div>
-        <Button type="primary" onClick={() => operateMap('add')}>
-          {t('OidLibrary.newMapping')}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button type="primary" onClick={() => operateMap('add')}>
+            {t('OidLibrary.newMapping')}
+          </Button>
+        </PermissionWrapper>
       </div>
       <CustomTable
         size="middle"
