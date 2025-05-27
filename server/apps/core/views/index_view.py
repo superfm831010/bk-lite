@@ -1,6 +1,6 @@
 import json
-import os
 import logging
+import os
 
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -67,7 +67,7 @@ def _safe_get_user_id_by_username(client, username):
 
 def _check_first_login(user, default_group):
     """检查是否为首次登录"""
-    group_list = getattr(user, 'group_list', [])
+    group_list = getattr(user, "group_list", [])
 
     # 如果没有组列表，认为是首次登录
     if not group_list:
@@ -86,10 +86,10 @@ def _check_first_login(user, default_group):
     return False
 
 
-@api_exempt
 def index(request):
     logger.info("Index page requested")
-    response = render(request, "index.html")
+    data = {"STATIC_URL": "static/", "RUN_MODE": "PROD"}
+    response = render(request, "index.prod.html", data)
     return response
 
 
@@ -99,7 +99,7 @@ def login(request):
 
     try:
         # 安全解析请求数据
-        if hasattr(request, 'body') and request.body:
+        if hasattr(request, "body") and request.body:
             try:
                 data = json.loads(request.body)
             except json.JSONDecodeError:
@@ -125,9 +125,68 @@ def login(request):
             logger.warning(f"Login failed for user: {username}")
 
         return JsonResponse(res)
-
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
+        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+
+
+@api_exempt
+def wechat_user_register(request):
+    """微信用户注册"""
+    logger.info("WeChat user registration attempt started")
+
+    try:
+        # 安全解析请求数据
+        if hasattr(request, "body") and request.body:
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError:
+                logger.warning("Invalid JSON in request body, falling back to POST data")
+                data = request.POST.dict()
+        else:
+            data = request.POST.dict()
+
+        user_id = data.get("user_id", EMPTY_STRING).strip()
+        nick_name = data.get("nick_name", EMPTY_STRING).strip()
+
+        if not user_id:
+            logger.warning("WeChat registration failed: user_id cannot be empty")
+            return JsonResponse({"result": False, "message": _("user_id cannot be empty")})
+
+        logger.info(f"Processing WeChat registration for user_id: {user_id}, nick_name: {nick_name}")
+        client = _create_system_mgmt_client()
+        res = client.wechat_user_register(user_id, nick_name)
+
+        if res.get("result"):
+            logger.info(f"WeChat registration successful for user_id: {user_id}")
+        else:
+            logger.warning(f"WeChat registration failed for user_id: {user_id}")
+
+        return JsonResponse(res)
+
+    except Exception as e:
+        logger.error(f"WeChat registration error: {str(e)}")
+        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+
+
+@api_exempt
+def get_wechat_settings(request):
+    """获取微信设置"""
+    logger.info("WeChat settings requested")
+
+    try:
+        client = _create_system_mgmt_client()
+        res = client.get_wechat_settings()
+
+        if res.get("result"):
+            logger.info("WeChat settings retrieved successfully")
+        else:
+            logger.warning("Failed to retrieve WeChat settings")
+
+        return JsonResponse(res)
+
+    except Exception as e:
+        logger.error(f"Error retrieving WeChat settings: {str(e)}")
         return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
 
 
@@ -137,7 +196,7 @@ def reset_pwd(request):
 
     try:
         # 安全解析请求数据
-        if hasattr(request, 'body') and request.body:
+        if hasattr(request, "body") and request.body:
             try:
                 data = json.loads(request.body)
             except json.JSONDecodeError:
@@ -185,9 +244,9 @@ def login_info(request):
             "data": {
                 "user_id": user_id,
                 "username": request.user.username,
-                "is_superuser": getattr(request.user, 'is_superuser', False),
-                "group_list": getattr(request.user, 'group_list', []),
-                "roles": getattr(request.user, 'roles', []),
+                "is_superuser": getattr(request.user, "is_superuser", False),
+                "group_list": getattr(request.user, "group_list", []),
+                "roles": getattr(request.user, "roles", []),
                 "is_first_login": is_first_login,
             },
         }
@@ -197,6 +256,73 @@ def login_info(request):
 
     except Exception as e:
         logger.error(f"Error retrieving login info for {request.user.username}: {str(e)}")
+        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+
+
+@api_exempt
+def generate_qr_code(request):
+    """生成QR码"""
+    logger.info("QR code generation requested")
+
+    try:
+        username = request.GET.get("username", EMPTY_STRING).strip()
+
+        if not username:
+            logger.warning("QR code generation failed: username cannot be empty")
+            return JsonResponse({"result": False, "message": _("Username cannot be empty")})
+
+        logger.info(f"Processing QR code generation for user: {username}")
+        client = _create_system_mgmt_client()
+        res = client.generate_qr_code(username)
+
+        if res.get("result"):
+            logger.info(f"QR code generated successfully for user: {username}")
+        else:
+            logger.warning(f"QR code generation failed for user: {username}")
+
+        return JsonResponse(res)
+
+    except Exception as e:
+        logger.error(f"QR code generation error: {str(e)}")
+        return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
+
+
+@api_exempt
+def verify_otp_code(request):
+    """验证OTP代码"""
+    logger.info("OTP code verification attempt started")
+
+    try:
+        # 安全解析请求数据
+        if hasattr(request, "body") and request.body:
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError:
+                logger.warning("Invalid JSON in request body, falling back to POST data")
+                data = request.POST.dict()
+        else:
+            data = request.POST.dict()
+
+        username = data.get("username", EMPTY_STRING).strip()
+        otp_code = data.get("otp_code", EMPTY_STRING).strip()
+
+        if not username or not otp_code:
+            logger.warning(f"OTP verification failed: empty credentials for user '{username}'")
+            return JsonResponse({"result": False, "message": _("Username or OTP code cannot be empty")})
+
+        logger.info(f"Processing OTP verification for user: {username}")
+        client = _create_system_mgmt_client()
+        res = client.verify_otp_code(username, otp_code)
+
+        if res.get("result"):
+            logger.info(f"OTP verification successful for user: {username}")
+        else:
+            logger.warning(f"OTP verification failed for user: {username}")
+
+        return JsonResponse(res)
+
+    except Exception as e:
+        logger.error(f"OTP verification error: {str(e)}")
         return JsonResponse({"result": False, "message": ERROR_MSG_SYSTEM_ERROR})
 
 
@@ -264,10 +390,10 @@ def get_user_menus(request):
     try:
         client = _create_system_mgmt_client()
         return_data = client.get_user_menus(
-            client_id=client_name,
-            roles=getattr(request.user, 'roles', []),
+            client_id=request.GET["name"],
+            roles=request.user.role_ids,
             username=request.user.username,
-            is_superuser=getattr(request.user, 'is_superuser', False),
+            is_superuser=request.user.is_superuser,
         )
 
         logger.info(f"User menus retrieved successfully for client: {client_name}, user: {request.user.username}")
@@ -281,7 +407,7 @@ def get_user_menus(request):
 def get_all_groups(request):
     logger.info(f"All groups requested by user: {request.user.username}")
 
-    if not getattr(request.user, 'is_superuser', False):
+    if not getattr(request.user, "is_superuser", False):
         logger.warning(f"Non-superuser {request.user.username} attempted to access all groups")
         return JsonResponse({"result": False, "message": ERROR_MSG_NOT_AUTHORIZED})
 

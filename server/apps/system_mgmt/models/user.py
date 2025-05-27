@@ -12,6 +12,7 @@ class User(models.Model):
     group_list = models.JSONField(default=list)
     role_list = models.JSONField(default=list)
     temporary_pwd = models.BooleanField(default=False)
+    otp_secret = models.CharField(max_length=128, null=True, blank=True)
 
     @staticmethod
     def display_fields():
@@ -23,6 +24,7 @@ class User(models.Model):
             "disabled",
             "locale",
             "timezone",
+            "role_list",
         ]
 
 
