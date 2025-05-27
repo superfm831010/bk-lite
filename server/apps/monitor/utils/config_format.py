@@ -17,6 +17,7 @@ class ConfigFormat:
     def json_to_toml(json_config):
         data = {json_config["plugin"][0]: {json_config["plugin"][1]: [json_config["config"]]}}
         result = toml.dumps(data)
+        result = result.replace("[inputs]", '')  # 将单引号替换为双引号
         return result
 
     @staticmethod
