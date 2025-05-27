@@ -39,7 +39,7 @@ class SyncInstance:
             if monitor_info["name"] not in self.monitor_map:
                 continue
             query = monitor_info["default_metric"]
-            metrics = VictoriaMetricsAPI().query(query, step="24h")
+            metrics = VictoriaMetricsAPI().query(query, step="10m")
             for metric_info in metrics.get("data", {}).get("result", []):
                 instance_id = tuple([metric_info["metric"].get(i) for i in monitor_info["instance_id_keys"]])
                 instance_name = "__".join([str(i) for i in instance_id])
@@ -51,29 +51,74 @@ class SyncInstance:
                     "name": instance_name,
                     "monitor_object_id": self.monitor_map[monitor_info["name"]],
                     "auto": True,
+                    "is_deleted": False,
                 }
         return instances_map
 
     # 查询库中已有的实例
     def get_exist_instance_set(self):
-        exist_instances = MonitorInstance.objects.all()
-        return {i.id for i in exist_instances}
+        exist_instances = MonitorInstance.objects.filter().values("id")
+        return {i["id"] for i in exist_instances}
 
-    def run(self):
-        """更新监控实例"""
-        metrics_instance_map = self.get_instance_map_by_metrics()
-        exist_instance_set = self.get_exist_instance_set()
-        create_instances, delete_instances = [], []
-        delete_instances.extend(exist_instance_set - set(metrics_instance_map.keys()))
-        for instance_id, instance_info in metrics_instance_map.items():
-            if instance_id not in exist_instance_set:
-                create_instances.append(MonitorInstance(**instance_info))
-        if delete_instances:
-            MonitorInstance.objects.filter(id__in=delete_instances, is_deleted=True).delete()
+    def sync_monitor_instances(self):
+        metrics_instance_map = self.get_instance_map_by_metrics()  # VM 指标采集
+        vm_all = set(metrics_instance_map.keys())
+
+        all_instances_qs = MonitorInstance.objects.all().values("id", "is_deleted")
+        table_all = {i["id"] for i in all_instances_qs}
+        table_deleted = {i["id"] for i in all_instances_qs if i["is_deleted"]}
+        table_alive = table_all - table_deleted
+
+        # 计算增删改集合
+        add_set = vm_all - table_alive
+        update_set = vm_all & table_deleted
+        delete_set = table_deleted & (table_all - vm_all)
+
+        # 执行删除（物理删除）
+        if delete_set:
+            MonitorInstance.objects.filter(id__in=delete_set, is_deleted=True).delete()
+
+        # 需要插入或更新的对象构建
+        create_instances = []
+        update_instances = []
+
+        for instance_id in (add_set | update_set):
+            info = metrics_instance_map[instance_id]
+            instance = MonitorInstance(**info)
+            if instance_id in update_set:
+                update_instances.append(instance)
+            else:
+                create_instances.append(instance)
+
+        # 新增（完全不存在的）
         if create_instances:
             MonitorInstance.objects.bulk_create(create_instances, batch_size=200)
 
-        # todo删除不活跃的实例
+        # 恢复逻辑删除
+        if update_instances:
+            for instance in update_instances:
+                instance.is_deleted = False  # 恢复
+            MonitorInstance.objects.bulk_update(update_instances, ["name", "is_deleted", "auto"], batch_size=200)
+
+        # 计算活跃实例（vm中有的即活跃）
+        alive_set = vm_all & table_alive
+
+        # 查询不活跃实例
+        no_alive_instances = {i["id"] for i in MonitorInstance.objects.filter(is_active=False, auto=True).values("id")}
+
+        MonitorInstance.objects.filter(id__in=alive_set).update(is_active=True)
+        MonitorInstance.objects.exclude(id__in=alive_set).update(is_active=False)
+
+        if not no_alive_instances:
+            return
+
+        # 删除不活跃且为自动发现的实例
+        MonitorInstance.objects.filter(id__in=no_alive_instances).delete()
+
+
+    def run(self):
+        """更新监控实例"""
+        self.sync_monitor_instances()
 
 
 class RuleGrouping:
@@ -127,7 +172,7 @@ class RuleGrouping:
                 MonitorInstanceOrganization(monitor_instance_id=asso_tuple[0], organization=asso_tuple[1])
                 for asso_tuple in create_asso_set
             ]
-            MonitorInstanceOrganization.objects.bulk_create(create_objs, batch_size=200)
+            MonitorInstanceOrganization.objects.bulk_create(create_objs, batch_size=200, ignore_conflicts=True)
 
         # if delete_asso_set:
         #     delete_ids = [exist_instance_map[asso_tuple] for asso_tuple in delete_asso_set]

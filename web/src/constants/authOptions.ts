@@ -1,32 +1,6 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import { AuthOptions } from "next-auth";
-
-// Function to automatically detect the top-level domain for cookie sharing
-const getTopLevelDomain = () => {
-  if (typeof window === 'undefined') {
-    return undefined;
-  }
-
-  const hostname = window.location.hostname;
-  
-  // Don't set domain for localhost or IP addresses
-  if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-    return undefined;
-  }
-  
-  // Extract the top-level domain (e.g., example.com from subdomain.example.com)
-  const parts = hostname.split('.');
-  if (parts.length >= 2) {
-    return `.${parts.slice(-2).join('.')}`;
-  }
-  
-  return undefined;
-};
-
-// Get the cookie domain at initialization time
-const cookieDomain = typeof window !== 'undefined' 
-  ? getTopLevelDomain() 
-  : undefined;
+import WeChatProvider from "../lib/wechatProvider";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -69,6 +43,11 @@ export const authOptions: AuthOptions = {
         }
       },
     }),
+    WeChatProvider({
+      clientId: process.env.WECHAT_APP_ID || "",
+      clientSecret: process.env.WECHAT_APP_SECRET || "",
+      redirectUri: `${process.env.WECHAT_APP_REDIRECT_URI}/api/auth/callback/wechat`,
+    }),
   ],
   pages: {
     signIn: '/auth/signin',
@@ -79,12 +58,17 @@ export const authOptions: AuthOptions = {
     maxAge: 60 * 60 * 24,
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
-        token.username = user.username;
+        token.username = user.username || user.name || '';
         token.locale = user.locale || 'en';
         token.token = user.token;
+        token.temporary_pwd = user.temporary_pwd;
+        token.provider = account?.provider;
+        token.wechatOpenId = user.wechatOpenId;
+        token.wechatUnionId = user.wechatUnionId;
+        token.wechatWorkId = user.wechatWorkId;
       }
       
       return token;
@@ -95,37 +79,13 @@ export const authOptions: AuthOptions = {
         username: token.username,
         locale: token.locale,
         token: token.token,
+        temporary_pwd: token.temporary_pwd,
+        provider: token.provider,
+        wechatOpenId: token.wechatOpenId,
+        wechatUnionId: token.wechatUnionId,
+        wechatWorkId: token.wechatWorkId,
       };
       return session;
     },
-  },
-  // Configure cookies to enable session sharing across subdomains
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        domain: cookieDomain
-      }
-    },
-    callbackUrl: {
-      name: `next-auth.callback-url`,
-      options: {
-        sameSite: 'lax',
-        path: '/',
-        domain: cookieDomain
-      }
-    },
-    csrfToken: {
-      name: `next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        domain: cookieDomain
-      }
-    }
   },
 };

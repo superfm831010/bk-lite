@@ -1,6 +1,6 @@
 "use client";
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 interface SigninClientProps {
@@ -16,6 +16,13 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isWechatBrowser, setIsWechatBrowser] = useState(false);
+
+  useEffect(() => {
+    // Check if user is using WeChat browser
+    const userAgent = navigator.userAgent.toLowerCase();
+    setIsWechatBrowser(userAgent.includes('micromessenger') || userAgent.includes('wechat'));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +41,32 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
     if (result?.error) {
       setFormError(result.error);
     } else {
-      window.location.href = callbackUrl || "/";
+      try {
+        const userResponse = await fetch('/api/auth/check-user-status');
+        const userData = await userResponse.json();
+        
+        if (userData.temporary_pwd) {
+          // If temporary password, directly redirect to reset password page
+          window.location.href = "/auth/reset-password";
+        } else {
+          window.location.href = callbackUrl || "/";
+        }
+      } catch (error) {
+        console.error("Failed to check user status:", error);
+        window.location.href = callbackUrl || "/";
+      }
     }
+  };
+
+  const handleWechatSignIn = async () => {
+    console.log("开始微信公众号登录流程...");
+    console.log("回调URL:", callbackUrl || "/");
+    
+    // Use next-auth's signIn function with the custom WeChat provider defined in authOptions.ts
+    signIn("wechat", { 
+      callbackUrl: callbackUrl || "/",
+      redirect: true
+    });
   };
 
   return (
@@ -115,6 +146,32 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
               ) : 'Sign In'}
             </button>
           </form>
+          
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+              </div>
+            </div>
+            
+            <div className="mt-6">
+              <button
+                onClick={handleWechatSignIn}
+                className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                Sign in with WeChat
+              </button>
+            </div>
+            
+            {isWechatBrowser && (
+              <div className="mt-4 text-center text-sm text-green-600">
+                You are using WeChat browser, for best experience use the WeChat login.
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

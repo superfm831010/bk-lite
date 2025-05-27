@@ -290,6 +290,9 @@ const AssetSearch = () => {
       model_id: activeTab,
       classification_id: '',
       inst_id: _instDetail[0]?.id || '',
+      inst_name: _instDetail.find(
+        (title: TabJsxItem) => title.key === 'inst_name'
+      )?.children,
     };
     const queryString = new URLSearchParams(params).toString();
     const url = `/cmdb/assetData/detail/baseInfo?${queryString}`;

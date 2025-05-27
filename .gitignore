@@ -1,6 +1,5 @@
 .idea
 *.tar
-infra/support-files/images/keycloak/*.jar
 logs
 .venv
 __pycache__
@@ -21,3 +20,11 @@ __pycache__
 .pytest_cache
 *.hypothesis
 models/
+.lh
+support-files/dev/conf/nats/certs/
+agents/fusion-collector/agent/nats-executor
+agents/fusion-collector/agent/telegraf
+agents/fusion-collector/agent/vector
+agents/fusion-collector/agent/mibs
+agents/fusion-collector/agent/misc
+agents/fusion-collector/agent/collector-sidecar

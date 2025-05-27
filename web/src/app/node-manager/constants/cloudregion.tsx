@@ -32,16 +32,19 @@ const useTelegrafMap = (): Record<string, Record<string, string>> => {
         tagColor: 'processing',
         color: '#1677ff',
         text: t('node-manager.cloudregion.node.installing'),
+        engText: 'Installing',
       },
       11: {
         tagColor: 'success',
         color: '#52c41a',
         text: t('node-manager.cloudregion.node.successInstall'),
+        engText: 'Installed successfully',
       },
       12: {
         tagColor: 'error',
         color: '#ff4d4f',
         text: t('node-manager.cloudregion.node.failInstall'),
+        engText: 'Installation failed',
       },
     }),
     [t]
@@ -202,12 +205,40 @@ const BATCH_FIELD_MAPS: Record<string, string> = {
   password: 'loginPassword',
 };
 
+const useMenuItem = () => {
+  const { t } = useTranslation();
+  return useMemo(
+    () => [
+      {
+        key: 'edit',
+        role: 'Edit',
+        title: 'edit',
+        config: {
+          title: 'editform',
+          type: 'edit',
+        },
+      },
+      {
+        key: 'delete',
+        role: 'Delete',
+        title: 'delete',
+        config: {
+          title: 'deleteform',
+          type: 'delete',
+        },
+      },
+    ],
+    [t]
+  );
+};
+
 export {
   useTelegrafMap,
   useInstallWays,
   useInstallMap,
   useSidecarItems,
   useCollectorItems,
+  useMenuItem,
   OPERATE_SYSTEMS,
   BATCH_FIELD_MAPS,
 };

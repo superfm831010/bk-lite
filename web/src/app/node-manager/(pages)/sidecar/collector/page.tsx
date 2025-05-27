@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import collectorStyle from '../index.module.scss';
-import { Menu, Input, Space, Select, Button } from 'antd';
+import { Menu, Input, Space, Select, Button, message, Modal } from 'antd';
 import useApiClient from '@/utils/request';
 import useApiCollector from '@/app/node-manager/api/collector';
 import EntityList from '@/components/entity-list/index';
@@ -14,12 +14,13 @@ import PermissionWrapper from '@/components/permission';
 import { useMenuItem, COLLECTOR_LABEL } from '@/app/node-manager/constants/collector';
 import { Option } from '@/types';
 const { Search } = Input;
+const { confirm } = Modal;
 
 const Collector = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
-  const { getCollectorlist } = useApiCollector();
+  const { getCollectorlist, deleteCollector } = useApiCollector();
   const menuItem = useMenuItem();
   const modalRef = useRef<ModalRef>(null);
   const [collectorCards, setCollectorCards] = useState<CardItem[]>([]);
@@ -63,7 +64,7 @@ const Collector = () => {
       const system = item.node_operating_system || item.os;
       const tagList = [system];
       const label = getCollectorLabelKey(item.name);
-      if(label) tagList.push(label);
+      if (label) tagList.push(label);
       if (system && !optionSet.has(system)) {
         optionSet.add(system);
         _options.push({ value: system, label: system });
@@ -110,6 +111,27 @@ const Collector = () => {
     fetchCollectorlist();
   };
 
+  const handleDelete = (id: string) => {
+    confirm({
+      title: t(`node-manager.collector.delete`),
+      content: t(`node-manager.collector.deleteInfo`),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      centered: true,
+      onOk() {
+        return new Promise(async (resolve) => {
+          try {
+            await deleteCollector({ id });
+            message.success(t('common.successfullyDeleted'));
+            fetchCollectorlist();
+          } finally {
+            return resolve(true);
+          }
+        })
+      }
+    })
+  };
+
   const menuActions = useCallback(
     (data: any) => {
       return (
@@ -134,6 +156,21 @@ const Collector = () => {
               </Menu.Item>
             );
           })}
+          <Menu.Item
+            className="!p-0"
+            onClick={() =>
+              handleDelete(data.id)
+            }
+          >
+            <PermissionWrapper
+              requiredPermissions={['Delete']}
+              className="!block"
+            >
+              <Button type="text" className="w-full">
+                {t(`node-manager.collector.delete`)}
+              </Button>
+            </PermissionWrapper>
+          </Menu.Item>
         </Menu>
       );
     },

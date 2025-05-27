@@ -25,12 +25,18 @@ class UserGroup:
         return groups["data"]
 
     @classmethod
-    def user_groups_list(cls, token, request):
+    def user_groups_list(cls, request):
         """用户组列表"""
         # 查询用户角色
         is_super_admin = request.user.is_superuser
         user_groups = request.user.group_list
         if is_super_admin:
             return dict(is_all=True, group_ids=[])
-        group_ids = Group(token).get_user_group_and_subgroup_ids(user_group_list=user_groups)
+        group_ids = Group().get_user_group_and_subgroup_ids(user_group_list=user_groups)
         return dict(is_all=False, group_ids=group_ids)
+
+    @classmethod
+    def get_all_groups(cls, system_mgmt_client):
+        """获取所有用户组"""
+        groups = system_mgmt_client.get_all_groups()
+        return groups["data"]

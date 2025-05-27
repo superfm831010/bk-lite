@@ -22,7 +22,6 @@ class UserViewSet(ViewSetUtils):
     def search_user_list(self, request):
         # 获取请求参数
         search = request.GET.get("search", "")
-
         group_id = request.GET.get("group_id", "")
         # 过滤用户数据
         queryset = User.objects.filter(
@@ -108,8 +107,10 @@ class UserViewSet(ViewSetUtils):
     def reset_password(self, request):
         try:
             password = request.data.get("password")
-            # md5 加密
-            User.objects.filter(id=request.data.get("id")).update(password=make_password(password))
+            temporary_pwd = request.data.get("temporary", False)
+            User.objects.filter(id=request.data.get("id")).update(
+                password=make_password(password), temporary_pwd=temporary_pwd
+            )
             return JsonResponse({"result": True})
         except Exception as e:
             logger.exception(e)

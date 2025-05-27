@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.utils.translation import gettext as _
 from rest_framework.decorators import action
 
+from apps.core.decorators.api_perminssion import HasPermission
 from apps.system_mgmt.models import Group, User
 from apps.system_mgmt.serializers.group_serializer import GroupSerializer
 from apps.system_mgmt.utils.group_utils import GroupUtils
@@ -13,6 +14,7 @@ class GroupViewSet(ViewSetUtils):
     serializer_class = GroupSerializer
 
     @action(detail=False, methods=["GET"])
+    @HasPermission("user_list-View")
     def search_group_list(self, request):
         queryset = Group.objects.all()
         # 构建嵌套组结构
@@ -20,6 +22,7 @@ class GroupViewSet(ViewSetUtils):
         return JsonResponse({"result": True, "data": groups_data})
 
     @action(detail=False, methods=["GET"])
+    @HasPermission("user_list-View")
     def get_detail(self, request):
         group = Group.objects.get(id=request.GET["group_id"])
         return JsonResponse(
@@ -27,6 +30,7 @@ class GroupViewSet(ViewSetUtils):
         )
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("user_list-Add")
     def create_group(self, request):
         params = request.data
         group = Group.objects.create(
@@ -37,11 +41,13 @@ class GroupViewSet(ViewSetUtils):
         return JsonResponse({"result": True, "data": data})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("user_list-Edit")
     def update_group(self, request):
         Group.objects.filter(id=request.data.get("group_id")).update(name=request.data.get("group_name"))
         return JsonResponse({"result": True})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("user_list-Delete")
     def delete_groups(self, request):
         kwargs = request.data
         group_id = int(kwargs["id"])

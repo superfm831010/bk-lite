@@ -13,6 +13,30 @@ class Controller:
         config["id"] = str(uuid.uuid4().hex)
         return config
 
+    def format_snmp_config(self, config):
+        if config["version"] == 2:
+            result = dict(
+                agents=[f"udp://{config['ip']}:{config['port']}"],
+                version=2,
+                community=config["community"],
+                timeout=config["timeout"],
+            )
+        elif config["version"] == 3:
+            result = dict(
+                agents=[f"udp://{config['ip']}:{config['port']}"],
+                version=3,
+                timeout=config["timeout"],
+                sec_name=config["sec_name"],
+                sec_level=config["sec_level"],
+                auth_protocol=config["auth_protocol"],
+                auth_password=config["auth_password"],
+                priv_protocol=config["priv_protocol"],
+                priv_password=config["priv_password"],
+            )
+        else:
+            raise ValueError("SNMP version error")
+        return result
+
     def only_child_config(self):
 
         file_type = ONLY_CHILD_CONFIG.get((self.data["collector"], self.data["collect_type"]))
@@ -34,6 +58,10 @@ class Controller:
                 for config in configs:
                     config_info = {"collect_type": collect_type, **config, **instance}
                     config_info = self.format_config(config_info)
+                    if config_info["type"] == "snmp":
+                        snmp_config = self.format_snmp_config(config_info)
+                        config_info["snmp_config"] = snmp_config
+
                     node_info["configs"].append(config_info)
                     config_objs.append(
                         CollectConfig(

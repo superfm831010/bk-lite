@@ -9,6 +9,7 @@ admin.site.site_title = "Opspilot Admin"
 admin.site.site_header = admin.site.site_title
 public_router = routers.DefaultRouter()
 urlpatterns = [
+    re_path(r"index/", index_view.index),
     re_path(r"api/login/", index_view.login),
     re_path(r"api/reset_pwd/", index_view.reset_pwd),
     re_path(r"api/login_info/", index_view.login_info),

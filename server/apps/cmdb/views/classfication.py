@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 
 from apps.cmdb.services.classification import ClassificationManage
-from apps.core.decorators.api_perminssion import HasRole
+from apps.core.decorators.api_perminssion import HasPermission
 from apps.core.utils.web_utils import WebUtils
 
 
@@ -20,7 +20,7 @@ class ClassificationViewSet(viewsets.ViewSet):
             required=["classification_id", "classification_name"],
         ),
     )
-    @HasRole(["admin"])
+    @HasPermission("model_management-Add Group")
     def create(self, request):
         result = ClassificationManage.create_model_classification(request.data)
         return WebUtils.response_success(result)
@@ -29,6 +29,7 @@ class ClassificationViewSet(viewsets.ViewSet):
         operation_id="classification_search",
         operation_description="查询模型分类",
     )
+    @HasPermission("model_management-View,view_list-View")
     def list(self, request):
         result = ClassificationManage.search_model_classification(request.user.locale)
         return WebUtils.response_success(result)
@@ -38,7 +39,7 @@ class ClassificationViewSet(viewsets.ViewSet):
         operation_description="删除模型分类",
         manual_parameters=[openapi.Parameter("id", openapi.IN_PATH, description="模型分类ID", type=openapi.TYPE_STRING)],
     )
-    @HasRole(["admin"])
+    @HasPermission("model_management-Delete Group")
     def destroy(self, request, pk: str):
         ClassificationManage.check_classification_is_used(pk)
         classification_info = ClassificationManage.search_model_classification_info(pk)
@@ -56,7 +57,7 @@ class ClassificationViewSet(viewsets.ViewSet):
             },
         ),
     )
-    @HasRole(["admin"])
+    @HasPermission("model_management-Edit Group")
     def update(self, request, pk: str):
         classification_info = ClassificationManage.search_model_classification_info(pk)
         data = ClassificationManage.update_model_classification(classification_info.get("_id"), request.data)
