@@ -6,7 +6,6 @@ from rest_framework.decorators import action
 from apps.core.services.user_group import UserGroup
 from apps.core.utils.web_utils import WebUtils
 from apps.rpc.system_mgmt import SystemMgmt
-from config.components.drf import AUTH_TOKEN_HEADER_NAME
 
 
 class UserGroupViewSet(viewsets.ViewSet):
@@ -58,5 +57,5 @@ class UserGroupViewSet(viewsets.ViewSet):
     )
     @action(methods=["get"], detail=False)
     def user_groups(self, request):
-        data = UserGroup().user_groups_list(request.META.get(AUTH_TOKEN_HEADER_NAME).split("Bearer ")[-1], request)
+        data = UserGroup().user_groups_list(request)
         return WebUtils.response_success(data)

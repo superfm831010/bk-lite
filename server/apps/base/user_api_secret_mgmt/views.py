@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from apps.base.models import UserAPISecret
 from apps.base.user_api_secret_mgmt.serializers import UserAPISecretSerializer
-from apps.core.decorators.api_perminssion import HasRole
+from apps.core.decorators.api_permission import HasRole
 
 
 class UserAPISecretViewSet(viewsets.ModelViewSet):

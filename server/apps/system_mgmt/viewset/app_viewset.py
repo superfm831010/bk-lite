@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.utils.translation import gettext as _
 from rest_framework import viewsets
 
-from apps.core.decorators.api_perminssion import HasPermission
+from apps.core.decorators.api_permission import HasPermission
 from apps.system_mgmt.models import App
 from apps.system_mgmt.serializers.app_serializer import AppSerializer
 

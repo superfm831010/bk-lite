@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.utils.translation import gettext as _
 from rest_framework.decorators import action
 
-from apps.core.decorators.api_perminssion import HasPermission
+from apps.core.decorators.api_permission import HasPermission
 from apps.system_mgmt.models import Group, User
 from apps.system_mgmt.serializers.group_serializer import GroupSerializer
 from apps.system_mgmt.utils.group_utils import GroupUtils

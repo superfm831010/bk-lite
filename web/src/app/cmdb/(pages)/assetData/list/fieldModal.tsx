@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import {
   Input,
+  InputNumber,
   Button,
   Form,
   message,
@@ -20,7 +21,11 @@ import {
 } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import { useTranslation } from '@/utils/i18n';
-import { AttrFieldType, Organization, UserItem } from '@/app/cmdb/types/assetManage';
+import {
+  AttrFieldType,
+  Organization,
+  UserItem,
+} from '@/app/cmdb/types/assetManage';
 import { deepClone } from '@/app/cmdb/utils/common';
 import useApiClient from '@/utils/request';
 import dayjs from 'dayjs';
@@ -62,8 +67,12 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     const [instanceData, setInstanceData] = useState<any>({});
     const [selectedRows, setSelectedRows] = useState<any[]>([]);
     const [modelId, setModelId] = useState<string>('');
-    const [enabledFields, setEnabledFields] = useState<Record<string, boolean>>({});
-    const [proxyOptions, setProxyOptions] = useState<{ proxy_id: string; proxy_name: string }[]>([]);
+    const [enabledFields, setEnabledFields] = useState<Record<string, boolean>>(
+      {}
+    );
+    const [proxyOptions, setProxyOptions] = useState<
+      { proxy_id: string; proxy_name: string }[]
+    >([]);
     const [form] = Form.useForm();
     const { t } = useTranslation();
     const { get, post } = useApiClient();
@@ -93,7 +102,9 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     const cloudValue = Form.useWatch('cloud', form);
     useEffect(() => {
       if (modelId === 'host') {
-        const cloudName = proxyOptions.find(opt => opt.proxy_id === cloudValue)?.proxy_name;
+        const cloudName = proxyOptions.find(
+          (opt) => opt.proxy_id === cloudValue
+        )?.proxy_name;
         if (ipValue && cloudName) {
           form.setFieldsValue({
             inst_name: `${ipValue || ''}[${cloudName || ''}]`,
@@ -140,11 +151,11 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     }));
 
     const handleFieldToggle = (fieldId: string, enabled: boolean) => {
-      setEnabledFields(prev => ({
+      setEnabledFields((prev) => ({
         ...prev,
-        [fieldId]: enabled
+        [fieldId]: enabled,
       }));
-      
+
       if (!enabled) {
         form.setFieldValue(fieldId, undefined);
       }
@@ -153,13 +164,18 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     const renderFormLabel = (item: AttrFieldType) => {
       return (
         <div className="flex items-center">
-          {type === 'batchEdit' && item.editable && !item.is_only && (
+          {type === 'batchEdit' && item.editable && !item.is_only ? (
             <Checkbox
               checked={enabledFields[item.attr_id]}
-              onChange={(e) => handleFieldToggle(item.attr_id, e.target.checked)}
-            />
+              onChange={(e) =>
+                handleFieldToggle(item.attr_id, e.target.checked)
+              }
+            >
+              <span>{item.attr_name}</span>
+            </Checkbox>
+          ) : (
+            <span className="ml-2">{item.attr_name}</span>
           )}
-          <span className="ml-2">{item.attr_name}</span>
           {item.is_required && type !== 'batchEdit' && (
             <span className="text-[#ff4d4f] ml-1">*</span>
           )}
@@ -171,15 +187,18 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
       const fieldDisabled =
         type === 'batchEdit'
           ? !enabledFields[item.attr_id]
-          : (!item.editable && type !== 'add');
+          : !item.editable && type !== 'add';
 
-      const hostDisabled = modelId === 'host'  && item.attr_id === 'inst_name'
+      const hostDisabled = modelId === 'host' && item.attr_id === 'inst_name';
 
       const formField = (() => {
         // 特殊处理-主机的云区域为下拉选项
         if (item.attr_id === 'cloud') {
           return (
-            <Select disabled={fieldDisabled} placeholder={t('common.selectMsg')}>
+            <Select
+              disabled={fieldDisabled}
+              placeholder={t('common.selectMsg')}
+            >
               {proxyOptions.map((opt) => (
                 <Select.Option key={opt.proxy_id} value={opt.proxy_id}>
                   {opt.proxy_name}
@@ -249,8 +268,15 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
                 options={organizationList}
               />
             );
+          case 'int':
+            return (
+              <InputNumber
+                disabled={fieldDisabled}
+                style={{ width: '100%' }}
+                placeholder={t('common.inputMsg')}
+              />
+            );
           default:
-
             return (
               <Input
                 placeholder={t('common.inputMsg')}
@@ -278,26 +304,31 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     const operateAttr = async (params: AttrFieldType, confirmType?: string) => {
       try {
         if (type === 'batchEdit') {
-          const hasEnabledFields = Object.values(enabledFields).some(enabled => enabled);
+          const hasEnabledFields = Object.values(enabledFields).some(
+            (enabled) => enabled
+          );
           if (!hasEnabledFields) {
             message.warning(t('common.inputMsg'));
             return;
           }
         }
         setConfirmLoading(true);
-        const formData = type === 'batchEdit'
-          ? Object.keys(params).reduce((acc, key) => {
-            if (enabledFields[key]) {
-              acc[key] = params[key];
-            }
-            return acc;
-          }, {} as any)
-          : params;
+        const formData =
+          type === 'batchEdit'
+            ? Object.keys(params).reduce((acc, key) => {
+              if (enabledFields[key]) {
+                acc[key] = params[key];
+              }
+              return acc;
+            }, {} as any)
+            : params;
         const msg: string = t(
           type === 'add' ? 'successfullyAdded' : 'successfullyModified'
         );
         const url: string =
-          type === 'add' ? `/cmdb/api/instance/` : `/cmdb/api/instance/batch_update/`;
+          type === 'add'
+            ? `/cmdb/api/instance/`
+            : `/cmdb/api/instance/batch_update/`;
         let requestParams: RequestParams = {
           model_id: modelId,
           instance_info: formData,
@@ -377,7 +408,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
                       name={item.attr_id}
                       label={renderFormLabel({
                         ...item,
-                        attr_type: 'organization'
+                        attr_type: 'organization',
                       })}
                       rules={[
                         {
@@ -388,7 +419,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
                     >
                       {renderFormField({
                         ...item,
-                        attr_type: 'organization'
+                        attr_type: 'organization',
                       })}
                     </Form.Item>
                   </Col>

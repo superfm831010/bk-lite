@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.utils.translation import gettext as _
 from rest_framework.decorators import action
 
-from apps.core.decorators.api_perminssion import HasRole
+from apps.core.decorators.api_permission import HasRole
 from apps.core.logger import logger
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.bot_mgmt.serializers import BotSerializer

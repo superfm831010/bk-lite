@@ -40,12 +40,17 @@ export const useStudioApi = () => {
    * @param botId - The ID of the bot.
    */
   const fetchInitialData = async (botId: string | null): Promise<any> => {
-    return Promise.all([
+    const [rasaModelsData, skillsResponse, channelsData, botData] = await Promise.all([
       get('/opspilot/bot_mgmt/rasa_model/'),
       get('/opspilot/model_provider_mgmt/llm/'),
       get('/opspilot/bot_mgmt/bot/get_bot_channels/', { params: { bot_id: botId } }),
       get(`/opspilot/bot_mgmt/bot/${botId}`)
     ]);
+
+    // 过滤掉模板技能 (is_template: true)
+    const skillsData = skillsResponse.filter((skill: any) => !skill.is_template);
+
+    return [rasaModelsData, skillsData, channelsData, botData];
   };
 
   /**
