@@ -15,6 +15,3 @@ services:
 networks:
   traefik:
     external: true
-
-volumes:
-  redis:
