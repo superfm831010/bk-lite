@@ -2,8 +2,10 @@ FROM telegraf:1.32 as builder
 
 FROM ubuntu:24.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && \
-    apt-get install -y ca-certificates ipmitool vim supervisor && \
+    apt-get install -y ca-certificates ipmitool vim supervisor  && \
     update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
     
