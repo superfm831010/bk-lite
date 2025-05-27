@@ -287,6 +287,20 @@ MONITOR_OBJS = [
         "instance_id_keys": ["instance_id"],
         "supplementary_indicators": [],
     },
+    {
+        "type": "Tencent Cloud",
+        "name": "云平台",
+        "default_metric": 'any({instance_type="qcloud"}) by (instance_id)',
+        "instance_id_keys": ["instance_id"],
+        "supplementary_indicators": [],
+    },
+    {
+        "type": "Tencent Cloud",
+        "name": "CVM",
+        "default_metric": 'any({instance_type="qcloud"}) by (instance_id)',
+        "instance_id_keys": ["instance_id"],
+        "supplementary_indicators": [],
+    },
 ]
 
 # 阀值对比方法

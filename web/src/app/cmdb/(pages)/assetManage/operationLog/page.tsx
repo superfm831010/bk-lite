@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import useApiClient from '@/utils/request';
-import CustomTable from '@/components/custom-table';
-import Introduction from '@/app/cmdb/components/introduction';
 import styles from './index.module.scss';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
+import useApiClient from '@/utils/request';
+import CustomTable from '@/components/custom-table';
+import Introduction from '@/app/cmdb/components/introduction';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { Input, Select, DatePicker, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useCommon } from '@/app/cmdb/context/common';
@@ -59,10 +60,15 @@ const OperationLog: React.FC = () => {
     { label: t('OperationLog.operationOpts.delete_edge'), value: 'delete_edge' },
   ];
 
-  const operators = userList.map(user => ({
-    label: user.username,
-    value: user.username
-  }));
+  const operators = userList.map((user: UserItem) => {
+    const labelText = `${user.display_name} (${user.username})`;
+    return {
+      value: user.username,
+      label: (
+        <EllipsisWithTooltip text={labelText} className="whitespace-nowrap overflow-hidden text-ellipsis break-all" />
+      ),
+    };
+  });
 
   useEffect(() => {
     setColumns(buildColumns());
@@ -180,7 +186,7 @@ const OperationLog: React.FC = () => {
             <div className="flex items-center">
               <label className="mr-2 whitespace-nowrap">{t('OperationLog.operator')}:</label>
               <Select
-                style={{ width: 140 }}
+                style={{ width: 180 }}
                 placeholder={t('common.selectMsg')}
                 options={operators}
                 value={filters.operator}
@@ -191,7 +197,7 @@ const OperationLog: React.FC = () => {
             <div className="flex items-center">
               <label className="mr-2 whitespace-nowrap">{t('OperationLog.operationType')}:</label>
               <Select
-                style={{ width: 140 }}
+                style={{ width: 120 }}
                 placeholder={t('common.selectMsg')}
                 options={operationTypes}
                 value={filters.type}
@@ -202,7 +208,7 @@ const OperationLog: React.FC = () => {
             <div className="flex items-center">
               <label className="mr-2 whitespace-nowrap">{t('OperationLog.summary')}:</label>
               <Input
-                style={{ width: 240 }}
+                style={{ width: 220 }}
                 placeholder={t('common.inputMsg')}
                 value={inputValue}
                 onChange={handleInputChange}
@@ -214,7 +220,7 @@ const OperationLog: React.FC = () => {
             <div className="flex items-center">
               <label className="mr-2 whitespace-nowrap">{t('OperationLog.timeRange')}:</label>
               <DatePicker.RangePicker
-                style={{ width: 400 }}
+                style={{ width: 380 }}
                 showTime
                 value={filters.dateRange}
                 onChange={(dates) => handleFilterChange('dateRange', dates)}
