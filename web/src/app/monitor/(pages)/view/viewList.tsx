@@ -26,6 +26,7 @@ import {
   Pagination,
   TableDataItem,
 } from '@/app/monitor/types';
+import { DERIVATIVE_OBJECTS } from '@/app/monitor/constants/monitor';
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
@@ -59,13 +60,6 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
   const [plugins, setPlugins] = useState<IntergrationItem[]>([]);
   const columns: ColumnItem[] = [
     {
-      title: t('common.name'),
-      dataIndex: 'instance_name',
-      width: 140,
-      ellipsis: true,
-      key: 'instance_name',
-    },
-    {
       title: t('monitor.views.reportTime'),
       dataIndex: 'time',
       key: 'time',
@@ -80,7 +74,6 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       dataIndex: 'status',
       key: 'status',
       width: 160,
-      // filters: [],
       render: (_, record) => (
         <>
           {record?.status ? t(`monitor.intergrations.${record.status}`) : '--'}
@@ -222,7 +215,8 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     const objParams = {
       monitor_object_id: objectId,
     };
-    const objName = objects.find((item) => item.id === objectId)?.name;
+    const targetObject = objects.find((item) => item.id === objectId);
+    const objName = targetObject?.name;
     const getInstList = getInstanceList(objectId, params);
     const getQueryParams = getInstanceQueryParams(objName as string, objParams);
     const getMetrics = getMonitorMetrics(objParams);
@@ -251,12 +245,8 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         total: res[0]?.count || 0,
       }));
       setMetrics(res[1] || []);
-      const _objectName = objects.find((item) => item.id === objectId)?.name;
-      if (_objectName) {
-        const filterMetrics = getConfigByObjectName(
-          _objectName,
-          'tableDiaplay'
-        );
+      if (objName) {
+        const filterMetrics = getConfigByObjectName(objName, 'tableDiaplay');
         const _columns = filterMetrics.map((item: any) => {
           const target = (res[1] || []).find(
             (tex: MetricItem) => tex.name === item.key
@@ -302,7 +292,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <span style={{ color }}>
                     <EllipsisWithTooltip
                       text={getEnumValueUnit(target, record[item.key])}
-                      className="w-[100px] overflow-hidden text-ellipsis whitespace-nowrap"
+                      className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
                     ></EllipsisWithTooltip>
                   </span>
                 </>
@@ -310,7 +300,10 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
             },
           };
         });
-        const originColumns = deepClone(columns);
+        const originColumns = deepClone([
+          ...getBaseInstanceColumn(targetObject),
+          ...columns,
+        ]);
         const indexToInsert = originColumns.length - 1;
         originColumns.splice(indexToInsert, 0, ..._columns);
         setTableColumn(originColumns);
@@ -320,6 +313,51 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     } finally {
       setTableLoading(false);
     }
+  };
+
+  const getBaseInstanceColumn = (row: TableDataItem) => {
+    const baseTarget = objects
+      .filter((item) => item.type === row.type)
+      .find((item) => item.level === 'base');
+    const title = baseTarget?.display_name || t('monitor.source');
+    const isDerivative = DERIVATIVE_OBJECTS.includes(row.name);
+    const columnItems: any = [
+      {
+        title: t('common.name'),
+        dataIndex: 'instance_name',
+        width: 160,
+        key: 'instance_name',
+        render: (_: unknown, record: TableDataItem) => {
+          const instanceName =
+            (isDerivative
+              ? record.instance_id_values?.[1]
+              : record.instance_name) || '--';
+          return (
+            <EllipsisWithTooltip
+              text={instanceName}
+              className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
+            ></EllipsisWithTooltip>
+          );
+        },
+      },
+    ];
+    if (isDerivative) {
+      columnItems.unshift({
+        title: title,
+        dataIndex: 'base_instance_name',
+        width: 160,
+        key: 'base_instance_name',
+        render: (_: unknown, record: TableDataItem) => {
+          return (
+            <EllipsisWithTooltip
+              text={record.instance_id_values?.[0] || '--'}
+              className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
+            ></EllipsisWithTooltip>
+          );
+        },
+      });
+    }
+    return columnItems;
   };
 
   const getPercent = (value: number) => {

@@ -184,7 +184,7 @@ const Alert: React.FC = () => {
             </span>
             <span className="user-name">
               <EllipsisWithTooltip
-                className="w-[50px] overflow-hidden text-ellipsis whitespace-nowrap"
+                className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
                 text={operator}
               />
             </span>

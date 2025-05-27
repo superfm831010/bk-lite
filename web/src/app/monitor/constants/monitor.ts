@@ -2615,6 +2615,16 @@ const STRATEGY_TEMPLATES = [
 
 const NEED_TAGS_ENTRY_OBJECTS = ['Docker', 'Cluster', 'vCenter', '云平台'];
 
+const DERIVATIVE_OBJECTS = [
+  'Docker Container',
+  'ESXI',
+  'VM',
+  'DataStorage',
+  'Pod',
+  'Node',
+  'CVM',
+];
+
 export {
   UNIT_LIST,
   PERIOD_LIST,
@@ -2628,6 +2638,7 @@ export {
   OBJECT_CONFIG_MAP,
   STRATEGY_TEMPLATES,
   NEED_TAGS_ENTRY_OBJECTS,
+  DERIVATIVE_OBJECTS,
   useMiddleWareFields,
   useInterfaceLabelMap,
   useScheduleList,
