@@ -123,7 +123,6 @@ class HasPermission(object):
             return set()
 
         permissions = {p.strip() for p in permission.split(PERMISSION_DELIMITER) if p.strip()}
-        logger.debug(f"Parsed permissions: {permissions}")
         return permissions
 
     def _extract_request(self, args: tuple) -> Any:
