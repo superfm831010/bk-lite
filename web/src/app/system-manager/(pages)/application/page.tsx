@@ -174,7 +174,7 @@ const ApplicationPage = () => {
           currentItem ? {
             id: Number(currentItem.id),
             name: currentItem.name,
-            display_name: currentItem.name,
+            display_name: currentItem.display_name,
             description: currentItem.description || '',
             url: currentItem.url || '',
             icon: currentItem.icon || null,

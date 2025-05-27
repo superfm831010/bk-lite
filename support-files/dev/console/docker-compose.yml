@@ -1,0 +1,45 @@
+version: '3'
+services:
+  console-web:
+    image: bklite/ops-console-web
+    container_name: ops-console-web
+    environment:
+      NEXTAUTH_URL: http://127.0.0.1:42001
+      NEXTAUTH_SECRET: aebeibuaV4Qu
+      NEXTAPI_URL: http://console:8000
+    restart: always
+    ports:
+      - 42001:3000
+    networks:
+      - traefik
+
+  console:
+    image: bklite/ops-console
+    container_name: ops-console
+    restart: always
+    ports:
+      - 32001:8000
+    environment:
+      DEBUG: "True"
+      DB_NAME: "ops-console"
+      DB_USER: "postgres"
+      DB_HOST: "postgres"
+      DB_PASSWORD: "password"
+      DB_PORT: "5432"
+      SECRET_KEY: "f8e2b4d1-9c5a-4e67-b3f2-8a1d6c9e4b7f"
+      ENABLE_CELERY: "False"
+      NATS_SERVERS: nats://admin:nats_password@nats:4222
+      NATS_NAMESPACE: "bklite"
+      CLIENT_ID: "ops-console"
+      DEFAULT_GROUP_NAME: "Guest"
+      INSTALL_APPS: console_mgmt
+
+    networks:
+      - traefik      
+
+networks:
+  traefik:
+    external: true
+
+volumes:
+  vlog-data:

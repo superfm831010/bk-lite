@@ -27,7 +27,7 @@ class MunchkinDriver:
         }).json()
         return result
 
-    def chat(self, action_name, user_message, chat_history, sender_id='', enable_online_search=False, channel='socketio'):
+    def chat(self, action_name, user_message, chat_history, sender_id='', channel='socketio'):
         chat_history = chat_history[:server_settings.chatgpt_model_max_history]
         logger.info(
             f"执行[{action_name}]动作,通道:[{channel}],发送者ID:[{sender_id}],消息: {user_message}"
@@ -40,7 +40,6 @@ class MunchkinDriver:
                 "sender_id": sender_id,
                 "user_message": user_message,
                 "chat_history": chat_history,
-                "enable_online_search": enable_online_search,
                 "channel": channel
             }
         ), headers={

@@ -18,7 +18,7 @@ from common.cmp.cloud_apis.cloud_object.base import (
     Zone,
 )
 
-# from monitor.cmp.cloud_apis.resource_apis.constant import VmwareVirtualMachineStatus
+# from common.cmp.cloud_apis.resource_apis.constant import VmwareVirtualMachineStatus
 from common.cmp.cloud_apis.resource_apis.resource_format.vmware.vmware_format_utils import (
     format_disk_status,
     format_disk_type,

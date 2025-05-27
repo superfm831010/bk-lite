@@ -1,7 +1,7 @@
 server_url: "__SERVER__URL__"
 server_api_token: "__SERVER__API__TOKEN__"
 node_id: "file:/opt/fusion-collectors/node-id"
-node_name: ""
+node_name: "__SIDECAR__NODE__NAME__"
 update_interval: 10
 tls_skip_verify: false
 send_status: true
