@@ -61,6 +61,7 @@ class AuthBackend(ModelBackend):
             user.save()
             user.rules = rules
             user.permission = set(user_info.get("permission") or [])
+            user.role_ids = user_info.get("role_ids", [])
             return user
         except IntegrityError:
             logger.exception(traceback.format_exc())

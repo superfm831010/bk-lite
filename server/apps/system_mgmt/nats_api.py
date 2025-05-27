@@ -63,6 +63,7 @@ def verify_token(token, client_id):
             "is_superuser": is_superuser,
             "group_list": groups,
             "roles": role_names,
+            "role_ids": user.role_list,
             "locale": user.locale,
             "permission": menus,
         },
@@ -76,7 +77,7 @@ def get_user_menus(client_id, roles, username, is_superuser):
     menus = []
     if not is_superuser:
         menu_ids = []
-        role_menus = Role.objects.filter(name__in=roles).values_list("menu_list", flat=True)
+        role_menus = Role.objects.filter(app=client_id, id__in=roles).values_list("menu_list", flat=True)
         for i in role_menus:
             menu_ids.extend(i)
         menus = list(Menu.objects.filter(app=client_id, id__in=list(set(menu_ids))).values_list("name", flat=True))
@@ -241,7 +242,7 @@ def login(username, password):
             "locale": user.locale,
             "temporary_pwd": user.temporary_pwd,
             "enable_otp": enable_otp,
-            "qrcode": user.otp_secret == "",
+            "qrcode": user.otp_secret is None or user.otp_secret == "",
         },
     }
 

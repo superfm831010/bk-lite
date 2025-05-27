@@ -130,7 +130,7 @@ def get_user_menus(request):
     client = SystemMgmt()
     return_data = client.get_user_menus(
         client_id=request.GET["name"],
-        roles=request.user.roles,
+        roles=request.user.role_ids,
         username=request.user.username,
         is_superuser=request.user.is_superuser,
     )
