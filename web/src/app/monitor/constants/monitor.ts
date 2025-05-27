@@ -206,6 +206,7 @@ const UNIT_LIST = [
       { label: 'terabits/sec', value: 'Tbits', unit: 'Tb/s' },
       { label: 'petabytes/sec', value: 'PBs', unit: 'PB/s' },
       { label: 'petabits/sec', value: 'Pbits', unit: 'Pb/s' },
+      { label: 'milliseconds/sec', value: 'mss', unit: 'ms/s' },
     ],
   },
   {
@@ -2402,7 +2403,17 @@ rules:
         collect_type: 'http',
         config_type: ['prometheus'],
         collector: 'Telegraf',
-        manualCfgText: '',
+        manualCfgText: `[[inputs.prometheus]]
+    urls = ["\${STARGAZER_URL}/api/monitor/vmware/metrics"]
+    interval = "$intervals"
+    timeout = "30s"
+    response_timeout = "30s"
+    http_headers = { "username"="$username", "password"="$password", "host"="$host" }
+    [inputs.prometheus.tags]
+        instance_id = "$instance_id"
+        instance_type = "$instance_type"
+        collect_type = "http"
+        config_type = "prometheus"`,
       },
     },
   },
@@ -2545,6 +2556,31 @@ rules:
       },
     },
   },
+  云平台: {
+    instance_type: 'qcloud',
+    icon: 'zonghenengyuanfuwupingtaikuangjiaicon-',
+    dashboardDisplay: [],
+    tableDiaplay: [],
+    groupIds: {},
+    plugins: {
+      'Tencent Cloud': {
+        collect_type: 'http',
+        config_type: ['prometheus'],
+        collector: 'Telegraf',
+        manualCfgText: `[[inputs.prometheus]]
+    urls = ["\${STARGAZER_URL}/api/monitor/qcloud/metrics"]
+    interval = "$intervals"
+    timeout = "30s"
+    response_timeout = "30s"
+    http_headers = { "username"="$username", "password"="$password" }
+    [inputs.prometheus.tags]
+        instance_id = "$instance_id"
+        instance_type = "$instance_type"
+        collect_type = "http"
+        config_type = "prometheus"`,
+      },
+    },
+  },
 };
 
 const NODE_STATUS_MAP: ObjectIconMap = {
@@ -2577,6 +2613,8 @@ const STRATEGY_TEMPLATES = [
   'Hardware Server',
 ];
 
+const NEED_TAGS_ENTRY_OBJECTS = ['Docker', 'Cluster', 'vCenter', '云平台'];
+
 export {
   UNIT_LIST,
   PERIOD_LIST,
@@ -2589,6 +2627,7 @@ export {
   INIT_VIEW_MODAL_FORM,
   OBJECT_CONFIG_MAP,
   STRATEGY_TEMPLATES,
+  NEED_TAGS_ENTRY_OBJECTS,
   useMiddleWareFields,
   useInterfaceLabelMap,
   useScheduleList,

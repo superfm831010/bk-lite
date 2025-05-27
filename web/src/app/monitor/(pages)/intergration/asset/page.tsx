@@ -468,6 +468,7 @@ const Asset = () => {
       'ESXI',
       'VM',
       'DataStorage',
+      'CVM',
     ].includes(monitorObjName);
   };
 
