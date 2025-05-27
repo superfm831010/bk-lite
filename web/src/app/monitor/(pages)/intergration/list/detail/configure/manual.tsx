@@ -161,17 +161,20 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     if (['snmp', 'ipmi'].includes(collectType)) {
       return objectName + '-' + (row.monitor_ip || '');
     }
+    if (pluginName === 'Tencent Cloud') {
+      return row.monitor_url;
+    }
     switch (collectType) {
       case 'host':
         return row.monitor_ip;
       case 'trap':
         return 'trap' + row.monitor_ip;
-      case 'docker':
-        return row.instance_name;
       case 'database':
         return row.server || `${row.host}:${row.port}`;
       case 'http':
         return `vc-${row.host}`;
+      case 'docker':
+        return row.endpoint;
       default:
         return row.monitor_url;
     }
