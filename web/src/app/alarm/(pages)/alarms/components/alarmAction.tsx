@@ -1,29 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { TableDataItem, UserItem } from '@/app/alarm/types';
 import { Button, Popconfirm, message, Dropdown, Menu } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { DownOutlined } from '@ant-design/icons';
-
-interface AlarmActionProps {
-  row: TableDataItem;
-  user: UserItem;
-  menuId: string | number;
-  fetchAlarmExecute: (alarmId: string | number) => Promise<any>;
-  checkPermission: (opt: { id: string | number; type: string }) => boolean;
-  onSuccess: (type: string, row: TableDataItem) => void;
-  displayMode?: 'inline' | 'dropdown';
-}
+import { AlarmActionProps } from '@/app/alarm/types/alarms';
 
 const AlarmAction: React.FC<AlarmActionProps> = ({
   row,
   user,
   menuId,
+  displayMode = 'inline',
   fetchAlarmExecute,
   checkPermission,
   onSuccess,
-  displayMode = 'inline',
 }) => {
   const { t } = useTranslation();
   const [templateName, setTemplateName] = useState<string>('');
@@ -62,7 +52,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
   ];
 
   const actionButtons = (
-    <div className="gap-2 flex items-center">
+    <>
       {['abnormal', 'dispatched'].includes(row.status) && (
         <>
           {row.status === 'abnormal' && (
@@ -205,24 +195,45 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
           {t('alarms.dispatch')}
         </Button>
       )}
-    </div>
+    </>
   );
 
+  const flattenChildren = (nodes: React.ReactNode): React.ReactElement[] => {
+    const items: React.ReactElement[] = [];
+    React.Children.forEach(nodes, child => {
+      if (React.isValidElement(child)) {
+        if (child.type === React.Fragment) {
+          items.push(...flattenChildren(child.props.children));
+        } else {
+          items.push(child);
+        }
+      }
+    });
+    return items;
+  };
+
   if (displayMode === 'dropdown') {
-    const menuItems = React.Children.toArray(actionButtons.props.children).map(
-      (child, idx) => ({ key: idx.toString(), label: child })
-    );
+    const items = flattenChildren(actionButtons);
+    const menuItems = items.map((child, idx) => ({
+      key: idx.toString(),
+      label: (
+        <div className="flex flex-col">
+          {React.isValidElement(child)
+            ? React.cloneElement(child as React.ReactElement, { type: 'text', size: 'small' })
+            : child}
+        </div>
+      ),
+    }));
     return (
       <Dropdown overlay={<Menu items={menuItems} />} trigger={['click']}>
-        <Button>
+        <Button type="primary">
           {t('common.actions')}
           <DownOutlined />
         </Button>
       </Dropdown>
     );
   }
-
-  return actionButtons;
+  return <div className="gap-2 flex items-center">{actionButtons}</div>;
 };
 
 export default AlarmAction;

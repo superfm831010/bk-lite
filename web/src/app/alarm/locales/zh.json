@@ -13,7 +13,8 @@
     "action": "操作",
     "linkAlert": "关联告警",
     "unlinkAlert": "解除告警",
-    "copied": "已复制到粘贴板"
+    "copied": "已复制到粘贴板",
+    "operateFailed": "操作失败"
   },
   "incidents": {
   },
@@ -86,6 +87,32 @@
     "rawData": "原始数据"
   },
   "integration": {
-    "description": "描述"
+    "secret": "密钥",
+    "baseInfo": "基础信息",
+    "description": "描述",
+    "eventFieldsMapping": "事件字段映射",
+    "eventFieldsDescription": "事件字段描述"
+  },
+  "settings": {
+    "alertAssign": "告警分派",
+    "shieldStrategy": "屏蔽策略",
+    "alertAssignMessage": "您可以配置自动分派策略，让符合筛选条件的告警，分派给指定人员，并可选择通知方式。",
+    "shieldStrategyMessage": "通过屏蔽策略，您可以更加高效地管理告警信息的发送，提高告警系统的效率和用户体验。",
+    "alertAssignTableName": "名称",
+    "alertAssignTablePersonnel": "人员",
+    "alertAssignTableAffectiveTime": "生效时间",
+    "alertAssignTableStatus": "状态",
+    "alertAssignTableCreateTime": "创建时间",
+    "alertAssignTableStartStop": "启停",
+    "alertAssignTableActions": "操作",
+    "assignName": "名称",
+    "assignPersonnel": "人员",
+    "assignTime": "生效时间",
+    "assignStatus": "状态",
+    "assignCreateTime": "创建时间",
+    "assignStartStop": "启/停",
+    "assignActions": "操作",
+    "enableSuccess": "启用成功",
+    "disableSuccess": "停用成功"
   }
 }

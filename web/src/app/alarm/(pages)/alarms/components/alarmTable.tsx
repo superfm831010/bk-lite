@@ -10,9 +10,8 @@ import { getEnumValueUnit } from '@/app/alarm/utils/common';
 import { AlertOutlined } from '@ant-design/icons';
 import { Tag, Button, message } from 'antd';
 import { ModalRef } from '@/app/alarm/types';
-import { useCommon } from '@/app/monitor/context/common';
-import { MetricItem } from '@/app/alarm/types/monitor';
-import { TableDataItem, Pagination, UserItem } from '@/app/alarm/types';
+import { MetricItem, AlarmTableProps } from '@/app/alarm/types/alarms';
+import { TableDataItem } from '@/app/alarm/types';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import {
@@ -21,17 +20,6 @@ import {
   LEVEL_MAP,
 } from '@/app/alarm/constants/monitor';
 
-interface AlarmTableProps {
-  dataSource: TableDataItem[];
-  pagination: Pagination;
-  loading: boolean;
-  metrics: any[];
-  tableScrollY: string;
-  selectedRowKeys: React.Key[];
-  onChange: (pag: any) => void;
-  onSelectionChange: (keys: React.Key[]) => void;
-  extraActions?: (record: TableDataItem) => React.ReactNode;
-}
 
 const AlarmTable: React.FC<AlarmTableProps> = ({
   dataSource,
@@ -46,12 +34,9 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
 }) => {
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
-  const commonContext = useCommon();
   const STATE_MAP = useStateMap();
   const LEVEL_LIST = useLevelList();
   const detailRef = useRef<ModalRef>(null);
-  const users = useRef(commonContext?.userList || []);
-  const userList: UserItem[] = users.current;
 
   const columns: ColumnsType<TableDataItem> = [
     {
@@ -180,7 +165,7 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       <AlertDetail
         ref={detailRef}
         metrics={metrics}
-        userList={userList}
+        userList={[]}
         onSuccess={() => onChange('refresh')}
       />
     </>

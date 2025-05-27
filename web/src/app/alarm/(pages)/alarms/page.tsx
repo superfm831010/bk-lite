@@ -9,11 +9,14 @@ import StackedBarChart from '@/app/alarm/components/stackedBarChart';
 import alertStyle from './index.module.scss';
 import AlarmFilters from '@/app/alarm/components/alarmFilters/page';
 import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
+import SearchFilter from '@/app/cmdb/(pages)/assetData/list/searchFilter';
+import AlarmAssignModal from './components/assignModal';
+import { UserItem } from '@/app/alarm/types';
+import { useCommon } from '@/app/cmdb/context/common';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
 import { useTranslation } from '@/utils/i18n';
-import { MetricItem } from '@/app/alarm/types/monitor';
+import { MetricItem, FiltersConfig } from '@/app/alarm/types/alarms';
 import { DownOutlined } from '@ant-design/icons';
-import { FiltersConfig } from '@/app/alarm/types/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { LEVEL_MAP } from '@/app/alarm/constants/monitor';
 import {
@@ -29,7 +32,6 @@ import {
   TimeSelectorDefaultValue,
 } from '@/app/alarm/types';
 import {
-  Input,
   Button,
   Checkbox,
   Tabs,
@@ -47,7 +49,9 @@ const Alert: React.FC = () => {
   const { convertToLocalizedTime } = useLocalizedTime();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const beginTime: number = dayjs().subtract(10080, 'minute').valueOf();
-  const lastTime: number = dayjs().valueOf();
+  const lastTime: number = dayjs().valueOf(); 
+  const common = useCommon();
+  const userList: UserItem[] = common?.userList || [];
   const [searchText, setSearchText] = useState<string>('');
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [chartLoading, setChartLoading] = useState<boolean>(false);
@@ -60,6 +64,7 @@ const Alert: React.FC = () => {
   const [myAlarms, setMyAlarms] = useState<boolean>(true);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [metrics, setMetrics] = useState<MetricItem[]>([]);
+  const [assignVisible, setAssignVisible] = useState(false);
 
   const getSettings = () => {
     try {
@@ -392,7 +397,7 @@ const Alert: React.FC = () => {
     checkedValues: string[],
     field: keyof FiltersConfig
   ) => {
-    setFilters((pre) => {
+    setFilters((pre: any) => {
       pre[field] = checkedValues;
       return {
         ...pre,
@@ -401,16 +406,36 @@ const Alert: React.FC = () => {
   };
 
   const clearFilters = (field: keyof FiltersConfig) => {
-    setFilters((prev) => ({ ...prev, [field]: [] }));
+    setFilters((prev: any) => ({ ...prev, [field]: [] }));
   };
 
   const enterText = () => {
     getAlarmTableData('refresh');
   };
 
-  const clearText = () => {
-    setSearchText('');
-    getAlarmTableData('refresh', 'clear');
+  const attrList = [
+    { 
+      attr_id: 'alarm_name', 
+      attr_name: '告警名称', 
+      attr_type: 'str', 
+      is_required: false, 
+      editable: false, 
+      option: [] 
+    },
+    { 
+      attr_id: 'alarm_id',   
+      attr_name: '告警ID',   
+      attr_type: 'str', 
+      is_required: false, 
+      editable: false, 
+      option: [] 
+    },
+  ];
+
+  const handleBatchMenuClick: MenuProps['onClick'] = ({ key }) => {
+    if (key === 'assign') {
+      setAssignVisible(true);
+    }
   };
 
   return (
@@ -475,15 +500,17 @@ const Alert: React.FC = () => {
             </Spin>
             <div className={alertStyle.table}>
               <Tabs activeKey={activeTab} items={tabList} onChange={changeTab} />
-              <div className="flex items-center justify-between mb-[16px]">
+              <div className="flex items-center justify-between mb-[16px] min-w-[1000px]">
                 <div className="flex items-center space-x-4">
-                  <Input
-                    allowClear
-                    className="w-[300px]"
-                    placeholder={t('common.searchPlaceHolder')}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    onPressEnter={enterText}
-                    onClear={clearText}
+                  <SearchFilter
+                    attrList={attrList}
+                    userList={userList}
+                    organizationList={[]}
+                    showExactSearch={false}
+                    onSearch={(val: any) => {
+                      setSearchText(val);
+                      enterText();
+                    }}
                   />
                   {isActiveAlarms && (
                     <Checkbox
@@ -497,28 +524,28 @@ const Alert: React.FC = () => {
                       {t('alarms.myAlarms')}
                     </Checkbox>
                   )}
-                  <span className="text-sm text-[var(--color-text-2)] ml-[10px]">
+                  <span className="text-sm text-[var(--color-text-2)]">
                     {`共检索出 ${pagination.total} 条结果，共选中 ${selectedRowKeys.length} 条告警`}
                   </span>
                 </div>
 
                 {isActiveAlarms && (
                   <div className="flex items-center space-x-4">
+                    <Button type="primary" variant="solid">
+                      {t('alarms.declareIncident')}
+                    </Button>
                     <Dropdown
-                      menu={{ items: batchMenuItems }}
+                      menu={{ items: batchMenuItems, onClick: handleBatchMenuClick }}
                       trigger={['click']}
                       placement="bottomRight"
                       arrow
                       overlayClassName={alertStyle.batchDropdown}
                     >
-                      <Button>
+                      <Button type="primary">
                         {t('alarms.batchOperations')}
                         <DownOutlined />
                       </Button>
                     </Dropdown>
-                    <Button color="danger" variant="solid">
-                      {t('alarms.declareIncident')}
-                    </Button>
                   </div>
                 )}
               </div>
@@ -536,6 +563,13 @@ const Alert: React.FC = () => {
           </div>
         </div>
       </Spin>
+      <AlarmAssignModal
+        visible={assignVisible}
+        onCancel={() => setAssignVisible(false)}
+        onSuccess={() => {
+          onRefresh();
+        }}
+      />
     </div>
   );
 };

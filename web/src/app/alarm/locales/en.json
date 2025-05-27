@@ -13,7 +13,8 @@
     "action": "Action",
     "linkAlert": "Link Alert",
     "unlinkAlert": "Unlink Alert",
-    "copied": "Copied to clipboard"
+    "copied": "Copied to clipboard",
+    "operateFailed": "Operation failed"
   },
   "incidents": {},
   "alarms": {
@@ -85,6 +86,32 @@
     "rawData": "Raw Data"
   },
   "integration": {
-    "description": "description"
+    "secret": "Secret",
+    "baseInfo": "Base Info",
+    "description": "description",
+    "eventFieldsMapping": "Event Fields Mapping",
+    "eventFieldsDescription": "Event Fields Description"
+  },
+  "settings": {
+    "alertAssign": "Alert Assignment",
+    "shieldStrategy": "Shielding Strategy",
+    "alertAssignMessage": "You can configure an automatic dispatch strategy to assign alerts that meet the filtering criteria to designated personnel and choose the notification method.",
+    "shieldStrategyMessage": "By implementing a blocking strategy, you can manage the sending of alarm information more efficiently, improving the efficiency and user experience of the alarm system.",
+    "alertAssignTableName": "Name",
+    "alertAssignTablePersonnel": "Personnel",
+    "alertAssignTableAffectiveTime": "Affective Time",
+    "alertAssignTableStatus": "Status",
+    "alertAssignTableCreateTime": "Create Time",
+    "alertAssignTableStartStop": "Start/Stop",
+    "alertAssignTableActions": "Actions",
+    "assignName": "Name",
+    "assignPersonnel": "Personnel",
+    "assignTime": "Affective Time",
+    "assignStatus": "Status",
+    "assignCreateTime": "Create Time",
+    "assignStartStop": "Start/Stop",
+    "assignActions": "Actions",
+    "enableSuccess": "Enable successfully",
+    "disableSuccess": "Disable successfully"
   }
 }

@@ -4,7 +4,7 @@ import alertStyle from './index.module.scss';
 import { Checkbox, Space } from 'antd';
 import { ClearOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
-import { FiltersConfig } from '@/app/alarm/types/monitor';
+import { FiltersConfig } from '@/app/alarm/types/alarms';
 import { LEVEL_MAP } from '@/app/alarm/constants/monitor';
 
 interface Props {

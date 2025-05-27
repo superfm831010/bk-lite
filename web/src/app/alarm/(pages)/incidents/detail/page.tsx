@@ -1,11 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import styles from './page.module.scss';
 import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
 import GanttChart from '../components/ganttChart/page';
 import LinkModal from '../components/linkModal/page';
 import Icon from '@/components/icon';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import type { TableDataItem } from '@/app/alarm/types';
+import { UserItem } from '@/app/alarm/types';
+import { useCommon } from '@/app/alarm/context/common';
+import { LEVEL_MAP, useLevelList } from '@/app/alarm/constants/monitor';
 import { useTranslation } from '@/utils/i18n';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
@@ -30,12 +35,8 @@ import {
   Tag,
   type MenuProps,
 } from 'antd';
-import { LEVEL_MAP, useLevelList } from '@/app/alarm/constants/monitor';
-import styles from './page.module.scss';
 
 const { TabPane } = Tabs;
-
-const mockUsers = [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }];
 
 const mockData: TableDataItem[] = [
   {
@@ -67,6 +68,8 @@ const mockData: TableDataItem[] = [
 ];
 
 const IncidentDetail: React.FC = () => {
+  const common = useCommon();
+  const userList = common?.userList || [];
   const router = useRouter();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
@@ -78,9 +81,9 @@ const IncidentDetail: React.FC = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [operateVisible, setOperateVisible] = useState(false);
   const [editingAssignee, setEditingAssignee] = useState(false);
-  const [users, setUsers] = useState<{ name: string }[]>([]);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
-  const [assigneeValue, setAssigneeValue] = useState<string>('');
+  const [preAssignees, setPreAssignees] = useState<string[]>([]);
+  const [assigneeDisplay, setAssigneeDisplay] = useState<string>('');
   const [pagination, setPagination] = useState<{
     current: number;
     pageSize: number;
@@ -99,7 +102,7 @@ const IncidentDetail: React.FC = () => {
     createTime: '2023-08-01 12:00:00',
     source: 'Server A',
     state: 'new',
-    assignee: 'Alice',
+    assignee: '',
     note: '这是一个示例备注。',
   };
 
@@ -136,22 +139,33 @@ const IncidentDetail: React.FC = () => {
     }
   };
 
+  const userOptions = userList.map((u: UserItem) => ({
+    label: `${u.display_name} (${u.username})`,
+    value: u.id,
+  }));
+
   useEffect(() => {
     fetchList(1, pagination.pageSize);
-    setUsers(mockUsers);
   }, []);
 
   useEffect(() => {
-    setSelectedAssignees([detail.assignee]);
-    setAssigneeValue(detail.assignee);
+    if (detail.assignee) {
+      setSelectedAssignees(detail.assignee.split(','));
+      setPreAssignees(detail.assignee.split(','));
+    }
   }, [detail.assignee]);
 
   const confirmAssignee = () => {
-    setAssigneeValue(selectedAssignees.join(', '));
+    const nameStr = selectedAssignees.map((id) => {
+      const user = userList.find((u: UserItem) => u.id === id);
+      return user ? `${user.display_name} (${user.username})` : '';
+    });
+    setPreAssignees(selectedAssignees);
+    setAssigneeDisplay(nameStr.join(', '));
     setEditingAssignee(false);
   };
   const cancelAssignee = () => {
-    setSelectedAssignees([assigneeValue]);
+    setSelectedAssignees(preAssignees);
     setEditingAssignee(false);
   };
 
@@ -190,7 +204,7 @@ const IncidentDetail: React.FC = () => {
                 menu={{ items: statusMenuItems }}
                 placement="bottomRight"
               >
-                <Button size="small" style={{ marginLeft: 8 }}>
+                <Button size="small" type="primary" style={{ marginLeft: 12 }}>
                   {t('common.action')}
                   <DownOutlined />
                 </Button>
@@ -202,18 +216,20 @@ const IncidentDetail: React.FC = () => {
       if (label === t('alarms.assignee')) {
         return (
           <Descriptions.Item label={label} key={idx}>
-            <div className={styles.descContent}>
+            <div
+              className={
+                styles.descContent + ' flex-1 flex items-center overflow-hidden'
+              }
+            >
               {editingAssignee ? (
                 <>
                   <Select
-                    mode="multiple"
-                    options={users.map((u) => ({
-                      value: u.name,
-                      label: u.name,
-                    }))}
+                    options={userOptions}
                     value={selectedAssignees}
+                    maxTagCount={1}
+                    mode="multiple"
+                    className="flex-1 mr-[10px]"
                     onChange={setSelectedAssignees}
-                    className="mw-[100px] mr-[10px]"
                   />
                   <Button
                     size="small"
@@ -230,7 +246,10 @@ const IncidentDetail: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <span className="mr-[10px]">{assigneeValue}</span>
+                  <EllipsisWithTooltip
+                    className="whitespace-nowrap overflow-hidden text-ellipsis mr-[10px]"
+                    text={assigneeDisplay || '--'}
+                  ></EllipsisWithTooltip>
                   <Button
                     size="small"
                     type="link"
@@ -306,7 +325,11 @@ const IncidentDetail: React.FC = () => {
                     </Radio.Group>
                   </div>
                   <div>
-                    <Button type="primary" className='mr-[12px]' onClick={() => handleLink()}>
+                    <Button
+                      type="primary"
+                      className="mr-[12px]"
+                      onClick={() => handleLink()}
+                    >
                       {t('common.linkAlert')}
                     </Button>
                     <Button type="primary" onClick={() => handleUnlink()}>

@@ -245,7 +245,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(({}, ref) => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    message.success('Copied to clipboard');
+    message.success(t('common.copied'));
   };
 
   return (
@@ -273,6 +273,9 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(({}, ref) => {
             <b>{formData.content || '--'}</b>
           </div>
           <div>
+            <Button type="primary" variant="solid" className="mr-[16px]">
+              {t('alarms.declareIncident')}
+            </Button>
             <AlarmAction
               row={formData}
               user={{ ...formData.user }}
@@ -286,9 +289,6 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(({}, ref) => {
                 throw new Error('Function not implemented.');
               }}
             />
-            <Button color="danger" variant="solid" className="ml-[10px]">
-              {t('alarms.declareIncident')}
-            </Button>
           </div>
         </div>
         <ul className="flex mt-[16px] mb-[16px] space-x-6">

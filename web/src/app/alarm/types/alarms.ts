@@ -1,3 +1,4 @@
+import type { UserItem, Pagination, TableDataItem } from '@/app/alarm/types';
 export interface GroupInfo {
     name?: string;
     description?: string;
@@ -129,14 +130,6 @@ export interface IndexViewItem {
     isLoading?: boolean;
     child?: any[];
 }
-
-export interface TableDataItem {
-    metric: Record<string, string>;
-    value: string;
-    index: number;
-    [key: string]: any;
-}
-
 export interface ChartDataItem {
     metric: Record<string, string>;
     values: [number, string][];
@@ -350,3 +343,26 @@ export interface ChartDataConfig {
     hexColor: NodeThresholdColor[];
     queryMetric: string;
 }
+
+export interface AlarmActionProps {
+  row: TableDataItem;
+  user: UserItem;
+  menuId: string | number;
+  displayMode?: 'inline' | 'dropdown';
+  fetchAlarmExecute: (alarmId: string | number) => Promise<any>;
+  checkPermission: (opt: { id: string | number; type: string }) => boolean;
+  onSuccess: (type: string, row: TableDataItem) => void;
+}
+
+export interface AlarmTableProps {
+  dataSource: TableDataItem[];
+  pagination: Pagination;
+  loading: boolean;
+  metrics: any[];
+  tableScrollY: string;
+  selectedRowKeys: React.Key[];
+  onChange: (pag: any) => void;
+  onSelectionChange: (keys: React.Key[]) => void;
+  extraActions?: (record: TableDataItem) => React.ReactNode;
+}
+

@@ -8,7 +8,7 @@ import {
   MetricItem,
   ChartDataItem,
   ChartProps,
-} from '@/app/alarm/types/monitor';
+} from '@/app/alarm/types/alarms';
 import { UNIT_LIST, APPOINT_METRIC_IDS } from '@/app/alarm/constants/monitor';
 
 // 深克隆

@@ -10,7 +10,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
 import { Input, Button, Tag, Spin } from 'antd';
 import { TableDataItem, Pagination } from '@/app/alarm/types';
-import { FiltersConfig } from '@/app/alarm/types/monitor';
+import { FiltersConfig } from '@/app/alarm/types/alarms';
 import { useTranslation } from '@/utils/i18n';
 import { AlertOutlined } from '@ant-design/icons';
 import { LEVEL_MAP, useLevelList } from '@/app/alarm/constants/monitor';

@@ -1,7 +1,7 @@
 import { useTranslation } from '@/utils/i18n';
 import { useMemo } from 'react';
 import { ListItem } from '@/types';
-import { LevelMap, StateMap } from '@/app/alarm/types/monitor';
+import { LevelMap, StateMap } from '@/app/alarm/types/alarms';
 
 const useStateMap = (): StateMap => {
   const { t } = useTranslation();
