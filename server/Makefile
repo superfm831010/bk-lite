@@ -79,3 +79,6 @@ build-monitor:
 
 build-opspilot:
 	docker build -f ./support-files/release/opspilot/Dockerfile -t bklite/ops-pilot .
+
+test:
+	pytest

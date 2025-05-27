@@ -9,9 +9,11 @@ load_dotenv()
 
 # 纳管数据（数据纳管到数据库）
 class Management:
-    def __init__(self, organization, inst_name, model_id, old_data, new_data, unique_keys, collect_time, task_id):
+    def __init__(self, organization, inst_name, model_id, old_data, new_data, unique_keys, collect_time, task_id,
+                 collect_plugin=None):
         self.organization = organization
         self.collect_time = collect_time
+        self.collect_plugin = collect_plugin
         self.inst_name = inst_name
         self.model_id = model_id
         self.old_data = old_data
@@ -47,7 +49,10 @@ class Management:
         return old_map, new_map
 
     def contrast(self, old_map, new_map):
-        """数据对比"""
+        """数据对比
+        数据删除逻辑：
+        查询不到数据：不动cmdb数据，查询到数据，对比删除
+        """
         add_list, update_list, delete_list = [], [], []
         for key, info in new_map.items():
             info["model_id"] = self.model_id
@@ -56,10 +61,13 @@ class Management:
             else:
                 info.update(_id=old_map[key]["_id"])
                 update_list.append(info)
-        for key, info in old_map.items():
-            info["model_id"] = self.model_id
-            if key not in new_map:
-                delete_list.append(info)
+        if getattr(self.collect_plugin, "_MODEL_ID", None) is not None:
+            # 如果插件有定义模型ID，则需要删除cmdb数据
+            if new_map:
+                for key, info in old_map.items():
+                    info["model_id"] = self.model_id
+                    if key not in new_map:
+                        delete_list.append(info)
         return add_list, update_list, delete_list
 
     def add_inst(self, inst_list):

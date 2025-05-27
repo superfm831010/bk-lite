@@ -29,6 +29,8 @@ import {
 import { deepClone } from '@/app/cmdb/utils/common';
 import useApiClient from '@/utils/request';
 import dayjs from 'dayjs';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+
 interface FieldModalProps {
   onSuccess: (instId?: string) => void;
   organizationList: Organization[];
@@ -215,9 +217,9 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
                 disabled={fieldDisabled}
                 placeholder={t('common.selectMsg')}
               >
-                {userList.map((opt) => (
+                {userList.map((opt: UserItem) => (
                   <Select.Option key={opt.id} value={opt.id}>
-                    {opt.username}
+                    <EllipsisWithTooltip text={`${opt.display_name} (${opt.username})`} className="whitespace-nowrap overflow-hidden text-ellipsis break-all" />
                   </Select.Option>
                 ))}
               </Select>
