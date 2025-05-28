@@ -7,10 +7,13 @@ import { UserItem } from '@/app/cmdb/types/assetManage';
 import { useTranslation } from '@/utils/i18n';
 import { SearchFilterProps } from '@/app/cmdb/types/assetData';
 
-const SearchFilter: React.FC<SearchFilterProps> = ({
+const SearchFilter: React.FC<
+  SearchFilterProps
+> = ({
   attrList,
   userList,
   organizationList,
+  showExactSearch = true,
   onSearch,
 }) => {
   const [searchAttr, setSearchAttr] = useState<string>('');
@@ -215,9 +218,11 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
         ))}
       </Select>
       {renderSearchInput()}
-      <Checkbox onChange={onExactSearchChange} className='min-w-[103px]'>
-        {t('Model.isExactSearch')}
-      </Checkbox>
+      {showExactSearch && (
+        <Checkbox onChange={onExactSearchChange}>
+          {t('Model.isExactSearch')}
+        </Checkbox>
+      )}
     </div>
   );
 };

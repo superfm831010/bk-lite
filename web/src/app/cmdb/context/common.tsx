@@ -51,7 +51,12 @@ const CommonContextProvider = ({ children }: { children: React.ReactNode }) => {
   const getPermissionGroups = async () => {
     setPageLoading(true);
     try {
-      const getUserList = get('/core/api/user_group/user_list/');
+      const getUserList = get('/core/api/user_group/user_list/', {
+        params: {
+          page_size: 10000,
+          page: 1,
+        },
+      });
       const getOrganizationList = get('/core/api/user_group/group_list/');
       const getAuthOrganization = get('/core/api/user_group/user_groups/');
       Promise.all([getUserList, getOrganizationList, getAuthOrganization])

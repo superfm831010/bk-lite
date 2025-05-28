@@ -44,9 +44,9 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   const layoutProps: WithSideMenuLayoutProps = {
     children,
+    intro,
     showBackButton: true,
     onBackButtonClick: handleBackButtonClick,
-    intro,
   };
 
   return (
