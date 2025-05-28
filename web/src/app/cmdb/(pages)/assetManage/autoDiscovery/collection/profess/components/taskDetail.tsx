@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Alert, Tabs, Button, message, Modal, Spin } from 'antd';
 import CustomTable from '@/components/custom-table';
 import type { CollectTask } from '@/app/cmdb/types/autoDiscovery';
-import { TASK_DETAIL_CONFIG } from '@/app/cmdb/constants/professCollection';
+import { CREATE_TASK_DETAIL_CONFIG } from '@/app/cmdb/constants/professCollection';
 import styles from '../index.module.scss';
 import useApiClient from '@/utils/request';
 import { useTranslation } from '@/utils/i18n';
@@ -239,7 +239,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({
     }));
   };
 
-  const tabItems = Object.entries(TASK_DETAIL_CONFIG)
+  const tabItems = Object.entries(CREATE_TASK_DETAIL_CONFIG(t))
     .filter(([key]) => !(modelId === 'k8s' && key === 'relation'))
     .map(([key, config]) => {
       const count = detailData[key as keyof TaskDetailData]?.count || 0;
@@ -255,7 +255,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({
           <div className="flex flex-col h-full">
             <Alert
               message={config.message}
-              type={config.alertType}
+              type={config.alertType as any}
               showIcon
               className="mb-4"
             />

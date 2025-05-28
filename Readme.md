@@ -11,19 +11,9 @@
 
 [(English Documents Available)](readme_en.md)
 
-Blueking Lite是一个AI First的轻量版运维产品，由以下模块共同组成： 
+Blueking Lite是一个AI First的轻量版运维产品： 
 
- * 智能运维模块
-   * OpsPilot
- * 核心支撑模块
-   * 系统管理
-   * 控制台
-   * 节点管理
-   * CMDB
-   * 监控管理
-   * 告警管理
-   * 日志管理
-   * 运营分析
+![intro](./docs/resource/img/intro.png)
 
 具有部署资源要求、使用成本低，渐进式的使用体验等特点，为运维管理员提供了日常运维中的必备工具。
 

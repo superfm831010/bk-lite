@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import PasswordResetForm from "./PasswordResetForm";
 import OtpVerificationForm from "./OtpVerificationForm";
+import { saveSharedAuthData, autoSignInFromSharedAuth, clearSharedAuthData } from "@/utils/crossDomainAuth";
 
 interface SigninClientProps {
   searchParams: {
@@ -34,11 +35,30 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
   const [authStep, setAuthStep] = useState<AuthStep>('login');
   const [loginData, setLoginData] = useState<LoginResponse>({});
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  const [checkingSharedAuth, setCheckingSharedAuth] = useState(true);
 
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     setIsWechatBrowser(userAgent.includes('micromessenger') || userAgent.includes('wechat'));
+    
+    // Check for shared authentication state
+    checkForSharedAuth();
   }, []);
+
+  const checkForSharedAuth = async () => {
+    try {
+      const autoSignInSuccess = await autoSignInFromSharedAuth(callbackUrl);
+      if (autoSignInSuccess) {
+        // Auto sign-in successful, redirect directly
+        window.location.href = callbackUrl || "/";
+        return;
+      }
+    } catch (error) {
+      console.error('Auto sign-in failed:', error);
+    } finally {
+      setCheckingSharedAuth(false);
+    }
+  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,6 +179,17 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
 
       console.log('Completing authentication with user data:', userDataForAuth);
 
+      // Save shared authentication state data
+      saveSharedAuthData({
+        id: userDataForAuth.id,
+        username: userDataForAuth.username || '',
+        token: userDataForAuth.token || '',
+        locale: userDataForAuth.locale,
+        temporary_pwd: userDataForAuth.temporary_pwd,
+        enable_otp: userDataForAuth.enable_otp,
+        qrcode: userDataForAuth.qrcode,
+      });
+
       // Pass the already validated user data to NextAuth
       const result = await signIn("credentials", {
         redirect: false,
@@ -175,6 +206,8 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
         console.error('SignIn error:', result.error);
         setFormError(result.error);
         setIsLoading(false);
+        // Clear potentially invalid shared authentication state
+        clearSharedAuthData();
       } else if (result?.ok) {
         console.log('SignIn successful, redirecting to:', callbackUrl || "/");
         // Use window.location.href for a clean redirect
@@ -183,17 +216,19 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
         console.error('SignIn failed with unknown error');
         setFormError("Authentication failed");
         setIsLoading(false);
+        clearSharedAuthData();
       }
     } catch (error) {
       console.error("Failed to complete authentication:", error);
       setFormError("Authentication failed");
       setIsLoading(false);
+      clearSharedAuthData();
     }
   };
 
   const handleWechatSignIn = async () => {
-    console.log("开始微信公众号登录流程...");
-    console.log("回调URL:", callbackUrl || "/");
+    console.log("Starting WeChat login process...");
+    console.log("Callback URL:", callbackUrl || "/");
     
     signIn("wechat", { 
       callbackUrl: callbackUrl || "/",
@@ -238,7 +273,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
           <span className="flex items-center justify-center">
             <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             Signing in...
           </span>
@@ -265,6 +300,38 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
       onError={setFormError}
     />
   );
+
+  // If checking shared authentication state, show loading status
+  if (checkingSharedAuth) {
+    return (
+      <div className="flex w-[calc(100%+2rem)] h-screen -m-4">
+        <div 
+          className="w-3/5 hidden md:block bg-gradient-to-br from-blue-500 to-indigo-700"
+          style={{
+            backgroundImage: "url('/system-login-bg.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center"
+          }}
+        >
+        </div>
+        
+        <div className="w-full md:w-2/5 flex items-center justify-center p-8 bg-gray-50">
+          <div className="w-full max-w-md text-center">
+            <div className="flex justify-center mb-6">
+              <Image src="/logo-site.png" alt="Logo" width={60} height={60} className="h-14 w-auto" />
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span className="text-lg text-gray-600">Checking authentication...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex w-[calc(100%+2rem)] h-screen -m-4">

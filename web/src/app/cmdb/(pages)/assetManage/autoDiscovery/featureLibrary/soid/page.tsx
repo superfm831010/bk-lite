@@ -259,7 +259,7 @@ const OidLibrary: React.FC = () => {
             <Input
               allowClear
               value={searchKey}
-              placeholder={t('assetSearchTxt')}
+              placeholder={t('common.search')}
               style={{ width: 250 }}
               onChange={(e) => setSearchKey(e.target.value)}
               onPressEnter={handleFilterChange}

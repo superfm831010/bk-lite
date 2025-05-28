@@ -123,7 +123,7 @@ const VMTask: React.FC<VMTaskFormProps> = ({
           modelItem={modelItem}
           onClose={onClose}
           submitLoading={submitLoading}
-          instPlaceholder={`${t('common.select')}${t('Collection.VMTask.chooseVCenter')}`}
+          instPlaceholder={`${t('common.select')} ${t('Collection.VMTask.chooseVCenter')}`}
           timeoutProps={{
             min: 0,
             defaultValue: 600,
@@ -153,7 +153,7 @@ const VMTask: React.FC<VMTaskFormProps> = ({
                 label={t('Collection.VMTask.username')}
                 rules={rules.username}
               >
-                <Input placeholder={t('common.inputMsg')} />
+                <Input placeholder={t('common.pleaseInput')} />
               </Form.Item>
 
               <Form.Item
@@ -161,7 +161,7 @@ const VMTask: React.FC<VMTaskFormProps> = ({
                 label={t('Collection.VMTask.password')}
                 rules={rules.password}
               >
-                <Input.Password placeholder={t('common.inputMsg')} />
+                <Input.Password placeholder={t('common.pleaseInput')} />
               </Form.Item>
 
               <Form.Item
@@ -172,7 +172,7 @@ const VMTask: React.FC<VMTaskFormProps> = ({
                 <InputNumber
                   min={1}
                   max={65535}
-                  placeholder={t('common.inputMsg')}
+                  placeholder={t('common.pleaseInput')}
                   className="w-32"
                   defaultValue={443}
                 />

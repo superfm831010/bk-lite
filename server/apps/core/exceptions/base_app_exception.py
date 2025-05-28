@@ -17,28 +17,18 @@ class BaseAppException(Exception):
         :param args: 传递给父类Exception的其他参数
         """
         super(BaseAppException, self).__init__(*args)
-
-        # 参数验证和处理
-        if message is not None and not isinstance(message, str):
-            # 如果message不是字符串，转换为字符串并记录警告
-            message = str(message)
-            logging.warning(
-                "BaseAppException message参数应该是字符串类型，已自动转换。原类型: %s",
-                type(message).__name__,
-            )
-
-        self.message = self.MESSAGE if message is None else message
+        
+        self.message = message or self.MESSAGE
         self.data = data
 
-        # 记录异常创建日志，便于运维排查
+        # 仅记录异常发生的关键信息
         logger = logging.getLogger(self.__class__.__module__)
         logger.log(
             self.LOG_LEVEL,
-            "异常创建 - 类型: %s, 错误码: %s, 消息: %s, 数据类型: %s",
+            "异常 %s: %s [%s]",
             self.__class__.__name__,
-            self.ERROR_CODE,
             self.message,
-            type(self.data).__name__ if self.data is not None else "None",
+            self.ERROR_CODE
         )
 
     def render_data(self) -> Any:
@@ -55,19 +45,9 @@ class BaseAppException(Exception):
 
         :return: 包含result、code、message、data的字典
         """
-        response = {
+        return {
             "result": False,
             "code": self.ERROR_CODE,
             "message": self.message,
             "data": self.render_data(),
         }
-
-        # 记录响应数据生成日志
-        logger = logging.getLogger(self.__class__.__module__)
-        logger.debug(
-            "异常响应数据生成 - 错误码: %s, 消息长度: %d",
-            self.ERROR_CODE,
-            len(self.message) if self.message else 0,
-        )
-
-        return response

@@ -169,7 +169,7 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
         onChange={onChange}
         className="flex-1"
         loading={loading}
-        placeholder={t('common.selectMsg')}
+        placeholder={t('common.pleaseSelect')}
         options={options}
       />
       <SyncOutlined 
@@ -226,7 +226,7 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
                 rules={[{ required: true }]}
               >
                 <Input 
-                  placeholder={t('common.inputMsg')} 
+                  placeholder={t('common.pleaseInput')} 
                   onChange={handleCredentialChange}
                 />
               </Form.Item>
@@ -237,7 +237,7 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
                 rules={[{ required: true }]}
               >
                 <Input.Password 
-                  placeholder={t('common.inputMsg')} 
+                  placeholder={t('common.pleaseInput')} 
                   onChange={handleCredentialChange}
                 />
               </Form.Item>
