@@ -393,7 +393,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
               label={t('Collection.taskNameLabel')}
               rules={rules.taskName}
             >
-              <Input placeholder={t('Collection.taskNamePlaceholder')} />
+              <Input placeholder={t('common.pleaseInput')} />
             </Form.Item>
 
             {/* 扫描周期 */}
@@ -416,7 +416,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                         <TimePicker
                           className="w-40 ml-2"
                           format="HH:mm"
-                          placeholder={t('Collection.selectTime')}
+                          placeholder={t('common.pleaseSelect')}
                         />
                       </Form.Item>
                     </Radio>
@@ -434,7 +434,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                           <InputNumber
                             className="w-20"
                             min={5}
-                            placeholder={t('common.inputMsg')}
+                            placeholder={t('common.pleaseInput')}
                           />
                         </Form.Item>
                         {t('Collection.executeInterval')}
@@ -454,8 +454,8 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                 <Space>
                   <Form.Item name="instId" rules={rules.instId} noStyle>
                     <Select
-                      style={{ width: '420px' }}
-                      placeholder={instPlaceholder}
+                      style={{ width: '400px' }}
+                      placeholder={t('common.pleaseSelect')}
                       options={instOptions}
                       loading={instOptLoading}
                       showSearch
@@ -517,7 +517,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                       ]}
                     >
                       <Cascader
-                        placeholder={t('Model.selectOrganazationPlaceholder')}
+                        placeholder={t('common.pleaseSelect')}
                         options={organizationList}
                         value={ipRangeOrg}
                         onChange={(value) => setIpRangeOrg(value)}
@@ -583,15 +583,12 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                 rules={[
                   {
                     required: true,
-                    message:
-                      t('common.selectMsg') + t('Collection.accessPoint'),
+                    message: t('required'),
                   },
                 ]}
               >
                 <Select
-                  placeholder={
-                    t('common.selectMsg') + t('Collection.accessPoint')
-                  }
+                  placeholder={t('common.pleaseSelect')}
                   options={accessPoints}
                   loading={accessPointLoading}
                 />
@@ -631,7 +628,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                   rules={rules.timeout}
                 >
                   <InputNumber
-                    className="w-28"
+                    className="w-40"
                     min={timeoutProps.min}
                     addonAfter={timeoutProps.addonAfter}
                   />

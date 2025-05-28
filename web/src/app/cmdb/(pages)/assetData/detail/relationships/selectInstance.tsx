@@ -38,12 +38,12 @@ const { confirm } = Modal;
 const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
   (
     {
-      onSuccess,
       userList,
       organizationList,
       models,
       assoTypes,
       needFetchAssoInstIds,
+      onSuccess,
     },
     ref
   ) => {
