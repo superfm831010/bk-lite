@@ -68,7 +68,7 @@ const nextConfig = withCombineLocalesAndMenus(
       },
       staticPageGenerationTimeout: 300,
       // experimental: {
-      //   proxyTimeout: 300_000, // 将超时设置为300秒
+      //   proxyTimeout: 300_000, // Set timeout to 300 seconds
       // },
       // async rewrites() {
       //   return [
