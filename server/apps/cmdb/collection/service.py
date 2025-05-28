@@ -89,7 +89,8 @@ class MetricsCannula:
                     metrics,
                     ["inst_name"],
                     self.now_time,
-                    self.task_id
+                    self.task_id,
+                    collect_plugin=self.collect_plugin
                 )
                 if self.manual:
                     self.add_list.extend(management.add_list)
@@ -105,6 +106,8 @@ class MetricsCannula:
 
 
 class CollectK8sMetrics:
+    _MODEL_ID = "k8s_cluster"
+
     def __init__(self, cluster_name, *args, **kwargs):
         self.cluster_name = cluster_name
         self.metrics = self.get_metrics()
@@ -565,6 +568,8 @@ class CollectK8sMetrics:
 
 
 class CollectVmwareMetrics(CollectBase):
+    _MODEL_ID = "vmware_vc"
+
     def __init__(self, inst_name, inst_id, task_id, *args, **kwargs):
         super().__init__(inst_name, inst_id, task_id, *args, **kwargs)
         self.model_resource_id_mapping = {}
@@ -1088,6 +1093,8 @@ class ProtocolCollectMetrics(CollectBase):
 
 
 class AliyunCollectMetrics(CollectBase):
+    _MODEL_ID = "aliyun_account"
+
     def __init__(self, inst_name, inst_id, task_id, *args, **kwargs):
         super().__init__(inst_name, inst_id, task_id, *args, **kwargs)
         self.model_resource_id_mapping = {}
