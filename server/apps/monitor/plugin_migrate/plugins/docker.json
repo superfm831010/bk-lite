@@ -5,6 +5,7 @@
   "objects": [
     {
       "name": "Docker",
+      "icon": "Docker",
       "type": "Container Management",
       "level": "base",
       "description": "",
@@ -56,7 +57,7 @@
           "display_name": "Status",
           "instance_id_keys": ["instance_id", "container_name"],
           "data_type": "Enum",
-          "unit": "[{\"name\":\"正常\",\"id\":0},{\"name\":\"异常\",\"id\":1}]",
+          "unit": "[{\"name\":\"正常\",\"id\":0,\"color\":\"#83ff4f\"},{\"name\":\"异常\",\"id\":1,\"color\":\"#ff4d4f\"}]",
           "dimensions": [],
           "description": "This metric indicates the state of the container, where 0 means the container is normal",
           "query": "max(docker_container_status_container_id{container_status=\"running\",__$labels__}) by (instance_id,container_name)"

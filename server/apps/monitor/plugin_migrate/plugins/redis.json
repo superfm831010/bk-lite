@@ -2,6 +2,7 @@
   "plugin": "Redis",
   "plugin_desc": "Used to collect key indicators of Redis performance and resource utilization, helping improve system efficiency and stability.",
   "name": "Redis",
+  "icon": "Redis",
   "type": "Database",
   "description": "",
   "metrics": [
@@ -23,8 +24,8 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "percent",
-      "dimensions": [],
-      "description": "This metric indicates the memory currently used by Redis.",
+      "dimensions": ["instance_id"],
+      "description": "This metric indicates the memory fragmentation ratio of the Redis allocator.",
       "query": "redis_mem_fragmentation_ratio{__$labels__}"
     },
     {
@@ -34,8 +35,8 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "ops",
-      "dimensions": [],
-      "description": "This metric indicates the memory actually allocated by the Redis allocator.",
+      "dimensions": ["instance_id"],
+      "description": "This metric indicates the total number of commands processed by Redis per second.",
       "query": "sum(redis_instantaneous_ops_per_sec{__$labels__}) by (instance_id)"
     },
     {
@@ -44,9 +45,9 @@
       "display_name": "Keyspace Hits",
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
-      "unit": "ops",
+      "unit": "cps",
       "dimensions": [],
-      "description": "This metric indicates the memory fragmentation of the Redis allocator.",
+      "description": "This metric indicates the rate of cache hits by Redis.",
       "query": "rate(redis_keyspace_hits{__$labels__}[5m])"
     },
     {
@@ -55,9 +56,9 @@
       "display_name": "Keyspace Misses",
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
-      "unit": "ops",
+      "unit": "cps",
       "dimensions": [],
-      "description": "This metric indicates the memory fragmentation ratio of the Redis allocator.",
+      "description": "This metric indicates the rate of cache misses by Redis.",
       "query": "rate(redis_keyspace_misses{__$labels__}[5m])"
     },
     {
@@ -67,20 +68,20 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": [],
-      "description": "This metric indicates the physical memory (RSS) currently used by Redis.",
+      "dimensions": ["instance_id"],
+      "description": "This metric indicates the number of currently connected clients to Redis.",
       "query": "redis_clients{__$labels__}"
     },
     {
       "metric_group": "CPU",
-      "name": "redis_used_cpu_sys",
-      "display_name": "CPU Used (System)",
+      "name": "redis_used_cpu_sys_rate",
+      "display_name": "Redis System CPU Rate",
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "s",
-      "dimensions": [],
-      "description": "This metric indicates the uptime of the Redis instance.",
-      "query": "redis_used_cpu_sys{__$labels__}"
+      "dimensions": ["instance_id"],
+      "description": "Rate of CPU time consumed by Redis in system mode per second. High value (>1) may indicate heavy I/O operations, triggering an alert.",
+      "query": "last_over_time(rate(redis_used_cpu_sys{__$labels__}[1s])[5m])"
     },
     {
       "metric_group": "Performance",
@@ -90,7 +91,7 @@
       "data_type": "Number",
       "unit": "cps",
       "dimensions": [],
-      "description": "This metric indicates the total number of commands processed by Redis.",
+      "description": "This metric indicates the rate of keys evicted due to memory limits.",
       "query": "rate(redis_evicted_keys{__$labels__}[5m])"
     },
     {
@@ -100,8 +101,8 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": [],
-      "description": "This metric indicates the total number of connections received by Redis.",
+      "dimensions": ["instance_id"],
+      "description": "This metric indicates the number of connected replicas to the Redis master.",
       "query": "redis_connected_slaves{__$labels__}"
     },
     {
@@ -111,8 +112,8 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "s",
-      "dimensions": [],
-      "description": "This metric indicates the number of calls made to different Redis commands.",
+      "dimensions": ["instance_id"],
+      "description": "This metric indicates the elapsed time since the last successful RDB save operation.",
       "query": "redis_rdb_last_save_time_elapsed{__$labels__}"
     },
     {
@@ -123,7 +124,7 @@
       "data_type": "Number",
       "unit": "cps",
       "dimensions": [],
-      "description": "This metric indicates the total execution time of Redis commands.",
+      "description": "This metric indicates the rate of connections rejected due to server overload or policy limits.",
       "query": "rate(redis_rejected_connections{__$labels__}[5m])"
     }
   ]

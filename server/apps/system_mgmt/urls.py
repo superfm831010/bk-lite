@@ -5,6 +5,7 @@ from apps.system_mgmt.viewset import (
     ChannelViewSet,
     GroupDataRuleViewSet,
     GroupViewSet,
+    LoginModuleViewSet,
     RoleViewSet,
     SystemSettingsViewSet,
     UserViewSet,
@@ -18,4 +19,5 @@ router.register(r"channel", ChannelViewSet)
 router.register(r"group_data_rule", GroupDataRuleViewSet)
 router.register(r"system_settings", SystemSettingsViewSet)
 router.register(r"app", AppViewSet)
+router.register(r"login_module", LoginModuleViewSet)
 urlpatterns = router.urls

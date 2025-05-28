@@ -14,7 +14,10 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "simple": {"format": "%(levelname)s %(message)s \n"},
+        "simple": {
+            "format": "%(levelname)s [%(asctime)s] [%(name)s] [%(filename)s:%(funcName)s:%(lineno)d] %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
         "verbose": {
             "format": "%(levelname)s [%(asctime)s] %(pathname)s "
                       "%(lineno)d %(funcName)s %(process)d %(thread)d "

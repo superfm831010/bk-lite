@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import action
 
 from apps.core.backends import cache
-from apps.core.decorators.api_perminssion import HasPermission
+from apps.core.decorators.api_permission import HasPermission
 from apps.system_mgmt.models import Menu, Role, User
 from apps.system_mgmt.serializers.role_serializer import RoleSerializer
 from apps.system_mgmt.services.role_manage import RoleManage
@@ -138,5 +138,7 @@ class RoleViewSet(ViewSetUtils):
         role_obj.save()
         cache_key = f"all_menus_{role_obj.app}"
         keys = RoleManage.get_cache_keys(cache_key)
+        user_menu_cache = "menus-user:"
+        keys.extend(RoleManage.get_cache_keys(user_menu_cache))
         cache.delete_many(keys)
         return JsonResponse({"result": True})

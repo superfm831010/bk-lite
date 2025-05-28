@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import action
 
 from apps.core.backends import cache
-from apps.core.decorators.api_perminssion import HasPermission
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.logger import logger
 from apps.system_mgmt.models import Group, Role, User, UserRule
 from apps.system_mgmt.serializers.user_serializer import UserSerializer
@@ -30,7 +30,13 @@ class UserViewSet(ViewSetUtils):
         # 如果指定了用户组ID，则过滤该组内的用户
         if group_id:
             queryset = queryset.filter(group_list__contains=int(group_id))
-        data, total = self.search_by_page(queryset, request, User.display_fields())
+        roles = Role.objects.all().values("id", "name", "app")
+        role_map = {}
+        for i in roles:
+            role_map[i["id"]] = f"{i['app']}-{i['name']}"
+        data, total = self.search_by_page(queryset.order_by("-id"), request, User.display_fields())
+        for i in data:
+            i["roles"] = [role_map.get(role_id, "") for role_id in i["role_list"]]
         return JsonResponse({"result": True, "data": {"count": total, "users": data}})
 
     @action(detail=False, methods=["GET"])

@@ -29,6 +29,8 @@ import {
 import { deepClone } from '@/app/cmdb/utils/common';
 import useApiClient from '@/utils/request';
 import dayjs from 'dayjs';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+
 interface FieldModalProps {
   onSuccess: (instId?: string) => void;
   organizationList: Organization[];
@@ -197,7 +199,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
           return (
             <Select
               disabled={fieldDisabled}
-              placeholder={t('common.selectMsg')}
+              placeholder={t('common.pleaseSelect')}
             >
               {proxyOptions.map((opt) => (
                 <Select.Option key={opt.proxy_id} value={opt.proxy_id}>
@@ -213,11 +215,11 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
               <Select
                 showSearch
                 disabled={fieldDisabled}
-                placeholder={t('common.selectMsg')}
+                placeholder={t('common.pleaseSelect')}
               >
-                {userList.map((opt) => (
+                {userList.map((opt: UserItem) => (
                   <Select.Option key={opt.id} value={opt.id}>
-                    {opt.username}
+                    <EllipsisWithTooltip text={`${opt.display_name} (${opt.username})`} className="whitespace-nowrap overflow-hidden text-ellipsis break-all" />
                   </Select.Option>
                 ))}
               </Select>
@@ -226,7 +228,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             return (
               <Select
                 disabled={fieldDisabled}
-                placeholder={t('common.selectMsg')}
+                placeholder={t('common.pleaseSelect')}
               >
                 {item.option?.map((opt) => (
                   <Select.Option key={opt.id} value={opt.id}>
@@ -239,7 +241,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             return (
               <Select
                 disabled={fieldDisabled}
-                placeholder={t('common.selectMsg')}
+                placeholder={t('common.pleaseSelect')}
               >
                 {[
                   { id: 1, name: 'Yes' },
@@ -254,6 +256,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
           case 'time':
             return (
               <DatePicker
+                placeholder={t('common.pleaseSelect')}
                 showTime
                 disabled={fieldDisabled}
                 format="YYYY-MM-DD HH:mm:ss"
@@ -273,13 +276,13 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
               <InputNumber
                 disabled={fieldDisabled}
                 style={{ width: '100%' }}
-                placeholder={t('common.inputMsg')}
+                placeholder={t('common.pleaseInput')}
               />
             );
           default:
             return (
               <Input
-                placeholder={t('common.inputMsg')}
+                placeholder={t('common.pleaseInput')}
                 disabled={fieldDisabled || hostDisabled}
               />
             );
@@ -308,7 +311,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             (enabled) => enabled
           );
           if (!hasEnabledFields) {
-            message.warning(t('common.inputMsg'));
+            message.warning(t('common.pleaseInput'));
             return;
           }
         }

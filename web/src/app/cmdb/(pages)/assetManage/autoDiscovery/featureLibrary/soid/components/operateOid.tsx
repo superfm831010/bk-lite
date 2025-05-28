@@ -142,9 +142,9 @@ const OperateOid: React.FC<OperateOidProps> = ({
         <Form.Item
           name="device_type"
           label={t('OidLibrary.deviceType')}
-          rules={[{ required: true, message: t('common.selectMsg') }]}
+          rules={[{ required: true, message: t('required') }]}
         >
-          <Select placeholder={t('common.selectMsg')}>
+          <Select placeholder={t('common.pleaseSelect')}>
             {deviceTypeList.map((option) => (
               <Select.Option key={option.key} value={option.key}>
                 {option.label}
@@ -155,23 +155,23 @@ const OperateOid: React.FC<OperateOidProps> = ({
         <Form.Item
           name="oid"
           label="sysObjectID"
-          rules={[{ required: true, message: t('common.inputMsg') }]}
+          rules={[{ required: true, message: t('common.required') }]}
         >
-          <Input allowClear placeholder={t('common.inputMsg')} />
+          <Input allowClear placeholder={t('common.pleaseInput')} />
         </Form.Item>
         <Form.Item
           name="brand"
           label={t('OidLibrary.brand')}
-          rules={[{ required: true, message: t('common.inputMsg') }]}
+          rules={[{ required: true, message: t('common.required') }]}
         >
-          <Input allowClear placeholder={t('common.inputMsg')} />
+          <Input allowClear placeholder={t('common.pleaseInput')} />
         </Form.Item>
         <Form.Item
           name="model"
           label={t('OidLibrary.model')}
-          rules={[{ required: true, message: t('common.inputMsg') }]}
+          rules={[{ required: true, message: t('common.required') }]}
         >
-          <Input allowClear placeholder={t('common.inputMsg')} />
+          <Input allowClear placeholder={t('common.pleaseInput')} />
         </Form.Item>
       </Form>
     </Drawer>

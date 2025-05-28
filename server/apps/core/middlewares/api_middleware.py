@@ -1,3 +1,4 @@
+import logging
 from django.conf import settings
 from django.contrib import auth
 from django.utils.deprecation import MiddlewareMixin
@@ -6,21 +7,71 @@ from rest_framework import status
 
 from apps.core.utils.web_utils import WebUtils
 
+logger = logging.getLogger(__name__)
+
 
 class APISecretMiddleware(MiddlewareMixin):
+    """API令牌认证中间件"""
+
+    API_PASS_ATTR = "api_pass"
+    TOKEN_MISSING_MSG = "token validation failed"
+
     def process_request(self, request):
-        token = request.META.get(settings.API_TOKEN_HEADER_NAME)
+        """处理请求的API令牌验证"""
+        # 获取API令牌
+        token = self._get_api_token(request)
         if token is None:
-            setattr(request, "api_pass", False)
+            setattr(request, self.API_PASS_ATTR, False)
             return None
-        user = auth.authenticate(request=request, api_token=token)
-        if user is not None:
-            setattr(request, "api_pass", True)
-            auth.login(request, user)
-            session_key = request.session.session_key
-            if not session_key:
-                request.session.cycle_key()
+
+        # 验证令牌并进行用户认证
+        try:
+            user = auth.authenticate(request=request, api_token=token)
+            if user is not None:
+                return self._handle_successful_auth(request, user)
+            else:
+                return self._handle_failed_auth(request)
+
+        except Exception as e:
+            logger.error("API令牌验证异常: %s", str(e))
+            return WebUtils.response_error(
+                error_message=_(self.TOKEN_MISSING_MSG),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _get_client_ip(self, request):
+        """获取客户端IP地址"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR', 'unknown')
+
+    def _get_api_token(self, request):
+        """从请求头中获取API令牌"""
+        header_name = getattr(settings, 'API_TOKEN_HEADER_NAME', None)
+        if not header_name:
+            logger.error("API_TOKEN_HEADER_NAME配置缺失")
             return None
+
+        return request.META.get(header_name)
+
+    def _handle_successful_auth(self, request, user):
+        """处理认证成功的情况"""
+        setattr(request, self.API_PASS_ATTR, True)
+        auth.login(request, user)
+
+        # 确保会话密钥存在
+        if not request.session.session_key:
+            request.session.cycle_key()
+
+        return None
+
+    def _handle_failed_auth(self, request):
+        """处理认证失败的情况"""
+        client_ip = self._get_client_ip(request)
+        logger.warning("API令牌验证失败 - IP: %s, 路径: %s", client_ip, request.path)
+
         return WebUtils.response_error(
-            error_message=_("token validation failed"), status_code=status.HTTP_403_FORBIDDEN
+            error_message=_(self.TOKEN_MISSING_MSG),
+            status_code=status.HTTP_403_FORBIDDEN
         )

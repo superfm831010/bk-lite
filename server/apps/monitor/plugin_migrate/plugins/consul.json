@@ -2,6 +2,7 @@
   "plugin": "Consul",
   "plugin_desc": "Used for real-time monitoring of Consul service health, collecting status check results, analyzing passing, warning, and critical metrics to help users promptly identify issues and ensure service availability.\n",
   "name": "Consul",
+  "icon": "zhongjianjian",
   "type": "Middleware",
   "description": "",
   "metrics": [
@@ -11,7 +12,7 @@
       "display_name": "Health Check Status",
       "instance_id_keys": ["instance_id"],
       "data_type": "Enum",
-      "unit": "[{\"name\":\"passing\",\"id\":0},{\"name\":\"warning\",\"id\":1},{\"name\":\"critical\",\"id\":2}]",
+      "unit": "[{\"name\":\"passing\",\"id\":0,\"color\":\"#83ff4f\"},{\"name\":\"warning\",\"id\":1,\"color\":\"#faad14\"},{\"name\":\"critical\",\"id\":2,\"color\":\"#ff4d4f\"}]",
       "dimensions": [],
       "description": "This metric represents the status of the health check in Consul, where 0=passing, 1=warning, 2=critical.",
       "query": "sum(consul_health_checks_status{__$labels__}) by (instance_id)"

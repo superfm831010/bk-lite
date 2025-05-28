@@ -175,8 +175,20 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     if (['Hardware Server IPMI', 'Storage IPMI'].includes(config.plugin_name)) {
       Object.assign(formData, extractIPMIUrl(formData.servers?.[0] || ''));
     }
-    if (['Website', 'Ping'].includes(config.plugin_name)) {
+    if (['Website', 'Ping', 'Apache', 'Nginx'].includes(config.plugin_name)) {
       formData.monitor_url = formData.urls?.[0] || '';
+    }
+    if (['Tomcat', 'RabbitMQ', 'ActiveMQ'].includes(config.plugin_name)) {
+      formData.monitor_url = formData.url || '';
+    }
+    if (['Zookeeper', 'ClickHouse'].includes(config.plugin_name)) {
+      formData.monitor_url = formData.servers?.[0] || '';
+    }
+    if (['MongoDB', 'Redis'].includes(config.plugin_name)) {
+      Object.assign(formData, extractMongoDBUrl(formData.servers?.[0] || ''));
+    }
+    if (['VMWare', 'Tencent Cloud'].includes(config.plugin_name)) {
+      Object.assign(formData, extractVmvareUrl(formData));
     }
     if (config.collect_type === 'jmx') {
       formData.monitor_url =
@@ -186,38 +198,11 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       case 'ElasticSearch':
         formData.server = formData.servers?.[0];
         break;
-      case 'MongoDB':
-        Object.assign(formData, extractMongoDBUrl(formData.servers?.[0] || ''));
-        break;
       case 'Mysql':
         Object.assign(formData, extractMysqlUrl(formData.servers?.[0] || ''));
         break;
       case 'Postgres':
         Object.assign(formData, extractPostgresUrl(formData.address || ''));
-        break;
-      case 'Redis':
-        Object.assign(formData, extractMongoDBUrl(formData.servers?.[0] || ''));
-        break;
-      case 'Zookeeper':
-        formData.monitor_url = formData.servers?.[0] || '';
-        break;
-      case 'Apache':
-        formData.monitor_url = formData.urls?.[0] || '';
-        break;
-      case 'Tomcat':
-        formData.monitor_url = formData.url || '';
-        break;
-      case 'ClickHouse':
-        formData.monitor_url = formData.servers?.[0] || '';
-        break;
-      case 'RabbitMQ':
-        formData.monitor_url = formData.url || '';
-        break;
-      case 'ActiveMQ':
-        formData.monitor_url = formData.url || '';
-        break;
-      case 'Nginx':
-        formData.monitor_url = formData.urls?.[0] || '';
         break;
       case 'Consul':
         formData.monitor_url = formData.address || '';
@@ -232,9 +217,6 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
           (formData.tags?.instance_id || '')
             .split('-')?.[0]
             ?.replace('trap', '') || '';
-        break;
-      case 'VMWare':
-        Object.assign(formData, extractVmvareUrl(formData));
         break;
       default:
         break;

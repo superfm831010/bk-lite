@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import type { CheckboxProps } from 'antd';
+import searchFilterStyle from './searchFilter.module.scss';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { Select, Input, InputNumber, Cascader, Checkbox, DatePicker } from 'antd';
 import { UserItem } from '@/app/cmdb/types/assetManage';
-import searchFilterStyle from './searchFilter.module.scss';
 import { useTranslation } from '@/utils/i18n';
-import type { CheckboxProps } from 'antd';
 import { SearchFilterProps } from '@/app/cmdb/types/assetData';
 
-const SearchFilter: React.FC<SearchFilterProps> = ({
+const SearchFilter: React.FC<
+  SearchFilterProps
+> = ({
   attrList,
   userList,
   organizationList,
+  showExactSearch = true,
   onSearch,
 }) => {
   const [searchAttr, setSearchAttr] = useState<string>('');
@@ -94,7 +98,7 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
           >
             {userList.map((opt: UserItem) => (
               <Select.Option key={opt.id} value={opt.id}>
-                {opt.username}
+                <EllipsisWithTooltip text={`${opt.display_name} (${opt.username})`} className="whitespace-nowrap overflow-hidden text-ellipsis break-all" />
               </Select.Option>
             ))}
           </Select>
@@ -214,9 +218,11 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
         ))}
       </Select>
       {renderSearchInput()}
-      <Checkbox onChange={onExactSearchChange} className='min-w-[103px]'>
-        {t('Model.isExactSearch')}
-      </Checkbox>
+      {showExactSearch && (
+        <Checkbox onChange={onExactSearchChange}>
+          {t('Model.isExactSearch')}
+        </Checkbox>
+      )}
     </div>
   );
 };

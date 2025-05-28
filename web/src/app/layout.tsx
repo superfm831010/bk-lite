@@ -37,7 +37,7 @@ const LayoutWithProviders = ({ children }: { children: React.ReactNode }) => {
   const isAuthLoading = status === 'loading';
   
   const isLoading = isAuthLoading || (isAuthenticated && (permissionsLoading || menusLoading));
-  const authPaths = ['/auth/signin', '/auth/signout', '/auth/reset-password'];
+  const authPaths = ['/auth/signin', '/auth/signout'];
   const excludedPaths = ['/no-permission', '/no-found', '/', ...authPaths];
 
   const isPathInMenu = useCallback((path: string, menus: MenuItem[]): boolean => {
@@ -53,12 +53,6 @@ const LayoutWithProviders = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    // Redirect to reset password page if user has temporary password
-    if (status === 'authenticated' && session?.user?.temporary_pwd && pathname !== '/auth/reset-password') {
-      router.replace('/auth/reset-password');
-      return;
-    }
-
     const checkPermission = async () => {
       if ((pathname && authPaths.includes(pathname)) || !isAuthenticated) {
         setIsAllowed(true);
