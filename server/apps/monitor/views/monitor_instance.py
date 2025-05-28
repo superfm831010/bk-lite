@@ -167,6 +167,31 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
             config_objs.delete()
         return WebUtils.response_success()
 
+    @swagger_auto_schema(
+        operation_id="monitor_instance_update",
+        operation_description="更新监控实例",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "instance_id": openapi.Schema(type=openapi.TYPE_STRING, description="监控实例ID"),
+                "name": openapi.Schema(type=openapi.TYPE_STRING, description="监控实例名称"),
+                "organizations": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_INTEGER, description="组织ID列表")
+                ),
+            },
+            required=["instance_id", "name", "organizations"]
+        )
+    )
+    @action(methods=['post'], detail=False, url_path='update_monitor_instance')
+    def update_monitor_instance(self, request):
+        MonitorObjectService.update_instance(
+            request.data.get("instance_id"),
+            request.data.get("name"),
+            request.data.get("organizations", []),
+        )
+        return WebUtils.response_success()
+
 
 class MonitorInstanceGroupingRuleVieSet(viewsets.ModelViewSet):
     queryset = MonitorInstanceGroupingRule.objects.all()
