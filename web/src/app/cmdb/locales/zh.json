@@ -67,6 +67,9 @@
     "searchTxt": "搜索",
     "searchTitle": "资产搜索",
     "assetSearchTxt": "请输入关键词",
+    "cutomTable": {
+        "fieldSetting": "列表字段设置"
+    },
     "menu": {
         "log": "日志",
         "assetManage": "模型管理",

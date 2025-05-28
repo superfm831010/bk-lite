@@ -5,7 +5,6 @@ import { Tooltip } from 'antd';
 import WithSideMenuLayout from '@/components/sub-layout';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Icon from '@/components/icon';
-import { getConfigByObjectName } from '@/app/monitor/utils/common';
 
 const IntergrationDetailLayout = ({
   children,
@@ -17,10 +16,7 @@ const IntergrationDetailLayout = ({
   const groupId = searchParams.get('plugin_name');
   const desc = searchParams.get('plugin_description');
   const objId = searchParams.get('id') || '';
-  const icon = getConfigByObjectName(
-    searchParams.get('name') as string,
-    'icon'
-  );
+  const icon = searchParams.get('icon');
   const pathname = usePathname();
   const isDetail = pathname.includes('/detail/');
 
@@ -32,7 +28,7 @@ const IntergrationDetailLayout = ({
 
   const TopSection = () => (
     <div className="p-4 rounded-md w-full h-[95px] flex items-center bg-[var(--color-bg-1)]">
-      <Icon type={icon} className="text-6xl mr-[10px] min-w-[60px]" />
+      <Icon type={icon as string} className="text-6xl mr-[10px] min-w-[60px]" />
       <div className="w-full">
         <h2 className="text-lg font-semibold mb-2">{groupId}</h2>
         <Tooltip title={desc}>

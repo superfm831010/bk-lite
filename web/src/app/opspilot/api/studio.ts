@@ -47,7 +47,7 @@ export const useStudioApi = () => {
       get(`/opspilot/bot_mgmt/bot/${botId}`)
     ]);
 
-    // 过滤掉模板技能 (is_template: true)
+    // Filter out template skills (is_template: true)
     const skillsData = skillsResponse.filter((skill: any) => !skill.is_template);
 
     return [rasaModelsData, skillsData, channelsData, botData];

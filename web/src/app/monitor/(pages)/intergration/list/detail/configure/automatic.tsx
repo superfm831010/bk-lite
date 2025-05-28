@@ -45,17 +45,9 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   const pluginName = searchParams.get('collect_type') || '';
   const objectName = searchParams.get('name') || '';
   const objectId = searchParams.get('id') || '';
-  const authPasswordRef = useRef<any>(null);
-  const privPasswordRef = useRef<any>(null);
-  const passwordRef = useRef<any>(null);
   const [dataSource, setDataSource] = useState<IntergrationMonitoredObject[]>(
     []
   );
-  const [authPasswordDisabled, setAuthPasswordDisabled] =
-    useState<boolean>(true);
-  const [privPasswordDisabled, setPrivPasswordDisabled] =
-    useState<boolean>(true);
-  const [passwordDisabled, setPasswordDisabled] = useState<boolean>(true);
   const [nodeList, setNodeList] = useState<ListItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [nodesLoading, setNodesLoading] = useState<boolean>(false);
@@ -350,66 +342,12 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     return initItem as IntergrationMonitoredObject;
   }, [collectType, groupId, pluginName]);
 
-  const handleEditAuthPassword = () => {
-    if (authPasswordDisabled) {
-      form.setFieldsValue({
-        authPassword: '',
-      });
-    }
-    setAuthPasswordDisabled(false);
-  };
-
-  const handleEditPrivPassword = () => {
-    if (privPasswordDisabled) {
-      form.setFieldsValue({
-        privPassword: '',
-      });
-    }
-    setPrivPasswordDisabled(false);
-  };
-
-  const handleEditPassword = () => {
-    if (passwordDisabled) {
-      form.setFieldsValue({
-        password: '',
-      });
-    }
-    setPasswordDisabled(false);
-  };
-
   // 使用自定义 Hook
   const { displaycolumns, formItems } = useColumnsAndFormItems({
     collectType,
     columns,
-    authPasswordRef,
-    privPasswordRef,
-    passwordRef,
-    authPasswordDisabled,
-    privPasswordDisabled,
-    passwordDisabled,
-    handleEditAuthPassword,
-    handleEditPrivPassword,
-    handleEditPassword,
     pluginName,
   });
-
-  useEffect(() => {
-    if (!authPasswordDisabled && authPasswordRef?.current) {
-      authPasswordRef.current.focus();
-    }
-  }, [authPasswordDisabled]);
-
-  useEffect(() => {
-    if (!privPasswordDisabled && privPasswordRef?.current) {
-      privPasswordRef.current.focus();
-    }
-  }, [privPasswordDisabled]);
-
-  useEffect(() => {
-    if (!passwordDisabled && passwordRef?.current) {
-      passwordRef.current.focus();
-    }
-  }, [passwordDisabled]);
 
   useEffect(() => {
     if (isLoading) return;

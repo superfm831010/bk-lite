@@ -7,7 +7,6 @@ import React, {
   useImperativeHandle,
   forwardRef,
   useMemo,
-  useEffect,
 } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { useFormItems } from '@/app/monitor/hooks/intergration';
@@ -26,19 +25,11 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   const { post } = useApiClient();
   const { getConfigContent } = useMonitorApi();
   const formRef = useRef(null);
-  const authPasswordRef = useRef<any>(null);
-  const privPasswordRef = useRef<any>(null);
-  const passwordRef = useRef<any>(null);
   const [pluginName, setPluginName] = useState<string>('');
   const [collectType, setCollectType] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [title, setTitle] = useState<string>('');
-  const [passwordDisabled, setPasswordDisabled] = useState<boolean>(true);
-  const [authPasswordDisabled, setAuthPasswordDisabled] =
-    useState<boolean>(true);
-  const [privPasswordDisabled, setPrivPasswordDisabled] =
-    useState<boolean>(true);
   const [configForm, setConfigForm] = useState<TableDataItem>({});
   const [entryForm, setEntryForm] = useState<TableDataItem>({});
   const [pageLoading, setPageLoading] = useState<boolean>(false);
@@ -57,24 +48,6 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       getContent(_form);
     },
   }));
-
-  useEffect(() => {
-    if (!authPasswordDisabled && authPasswordRef?.current) {
-      authPasswordRef.current.focus();
-    }
-  }, [authPasswordDisabled]);
-
-  useEffect(() => {
-    if (!privPasswordDisabled && privPasswordRef?.current) {
-      privPasswordRef.current.focus();
-    }
-  }, [privPasswordDisabled]);
-
-  useEffect(() => {
-    if (!passwordDisabled && passwordRef?.current) {
-      passwordRef.current.focus();
-    }
-  }, [passwordDisabled]);
 
   const getContent = async (data: any) => {
     setPageLoading(true);
@@ -103,48 +76,12 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     }
   };
 
-  const handleEditAuthPassword = () => {
-    if (authPasswordDisabled) {
-      form.setFieldsValue({
-        auth_password: '',
-      });
-    }
-    setAuthPasswordDisabled(false);
-  };
-
-  const handleEditPrivPassword = () => {
-    if (privPasswordDisabled) {
-      form.setFieldsValue({
-        priv_password: '',
-      });
-    }
-    setPrivPasswordDisabled(false);
-  };
-
-  const handleEditPassword = () => {
-    if (passwordDisabled) {
-      form.setFieldsValue({
-        password: '',
-      });
-    }
-    setPasswordDisabled(false);
-  };
-
   // 根据自定义hook，生成不同的模板
   const { formItems } = useFormItems({
     collectType,
     columns: [],
-    authPasswordRef,
-    privPasswordRef,
-    passwordRef,
-    authPasswordDisabled,
-    privPasswordDisabled,
-    passwordDisabled,
     pluginName,
     mode: 'edit',
-    handleEditAuthPassword,
-    handleEditPrivPassword,
-    handleEditPassword,
   });
 
   const initData = (row: TableDataItem, config: TableDataItem) => {
@@ -298,9 +235,6 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     form.resetFields();
     setModalVisible(false);
     setPageLoading(false);
-    setAuthPasswordDisabled(true);
-    setPrivPasswordDisabled(true);
-    setPasswordDisabled(true);
   };
 
   const handleSubmit = () => {
