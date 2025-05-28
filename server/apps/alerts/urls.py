@@ -1,0 +1,20 @@
+# -- coding: utf-8 --
+# @File: urls.py
+# @Time: 2025/5/9 14:57
+# @Author: windyzhao
+from django.urls import path
+from rest_framework import routers
+
+from apps.alerts.views.view import request_test
+from apps.alerts.views.source import receiver_data
+from apps.alerts.views.view import AlertSourceModelViewSet
+
+urlpatterns = [
+    path("api/test/", request_test),
+    path("api/receiver_data/", receiver_data),
+]
+
+router = routers.DefaultRouter()
+router.register(r"api/alert_source", AlertSourceModelViewSet, basename="alert_source")
+
+urlpatterns += router.urls

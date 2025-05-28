@@ -1,0 +1,176 @@
+# -- coding: utf-8 --
+# @File: models.py
+# @Time: 2025/5/14 16:14
+# @Author: windyzhao
+# -- coding: utf-8 --
+# @File: alert.py
+# @Time: 2025/5/9 15:25
+# @Author: windyzhao
+from django.db import models
+from django.contrib.postgres.indexes import GinIndex, BTreeIndex
+from django.contrib.postgres.search import SearchVectorField, SearchVector
+from django.db.models import JSONField
+
+from apps.core.models.maintainer_info import MaintainerInfo
+from apps.core.models.time_info import TimeInfo
+from apps.alerts.constants import AlertsSourceTypes, AlertAccessType, EventLevel, EventStatus, AlertLevel, AlertOperate, \
+    AlertStatus, EventAction
+from apps.alerts.utils.util import gen_app_secret
+
+
+# 只查询未被软删除的对象
+class SoftDeleteManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_delete=False)
+
+
+class AlertSource(MaintainerInfo, TimeInfo):
+    """告警源配置"""
+
+    name = models.CharField(max_length=100, help_text="告警源名称")
+    source_id = models.CharField(max_length=100, unique=True, db_index=True, help_text="告警源ID")
+    source_type = models.CharField(max_length=20, choices=AlertsSourceTypes.CHOICES, help_text="告警源类型")
+    config = JSONField(default=dict, help_text="告警源配置")
+    secret = models.CharField("密钥", max_length=100, default=gen_app_secret)
+    logo = models.TextField(null=True, blank=True, help_text="告警源logo")  # base64
+    access_type = models.CharField(max_length=64, choices=AlertAccessType.CHOICES, default=AlertAccessType.BUILT_IN,
+                                   help_text="告警源接入类型")
+    is_active = models.BooleanField(default=True, db_index=True, help_text="是否启用")
+    is_effective = models.BooleanField(default=True, db_index=False, help_text="是否生效")
+    description = models.TextField(null=True, blank=True, help_text="告警源描述")
+    last_active_time = models.DateTimeField(null=True, blank=True, help_text="最近活跃时间")
+    is_delete = models.BooleanField(default=False, db_index=True, help_text="是否删除")
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['name', 'source_type']),
+        ]
+
+    all_objects = models.Manager()  # 所有对象，包括被软删除的对象
+    objects = SoftDeleteManager()  # 只查询未被软删除的对象
+
+    def __str__(self):
+        return f"{self.name} ({self.source_type})"
+
+
+class Event(models.Model):
+    """原始事件"""
+
+    source = models.ForeignKey(AlertSource, on_delete=models.CASCADE, db_index=True, help_text="告警源")
+    raw_data = JSONField(help_text="原始数据")
+    received_at = models.DateTimeField(auto_now_add=True, db_index=True, help_text="接收时间")
+
+    # 标准化字段
+    title = models.CharField(max_length=200, help_text="事件标题")
+    description = models.TextField(help_text="事件描述", null=True, blank=True)
+    level = models.CharField(max_length=32, choices=EventLevel.CHOICES, db_index=True, help_text="级别")
+    start_time = models.DateTimeField(db_index=True, help_text="事件开始时间")
+    end_time = models.DateTimeField(null=True, blank=True, db_index=True, help_text="事件结束时间")
+    labels = JSONField(default=dict, help_text="事件标签")
+    action = models.CharField(max_length=32, choices=EventAction.CHOICES, default=EventAction.CREATED,
+                              help_text="事件动作")
+    rule_id = models.CharField(max_length=100, null=True, blank=True, help_text="触发该事件的规则ID")
+    event_id = models.CharField(max_length=100, unique=True, db_index=True,
+                                help_text="事件唯一ID")  # f"EVENT-{uuid.uuid4().hex}"
+    external_id = models.CharField(max_length=128, null=True, blank=True, help_text="外部事件ID")
+    item = models.CharField(max_length=128, null=True, blank=True, db_index=True, help_text="事件指标")
+    resource_id = models.CharField(max_length=64, null=True, blank=True, db_index=True, help_text="资源唯一ID")
+    resource_type = models.CharField(max_length=64, null=True, blank=True, help_text="资源类型")
+    resource_name = models.CharField(max_length=128, null=True, blank=True, help_text="资源名称")
+    status = models.CharField(max_length=32, choices=EventStatus.CHOICES, default=EventStatus.PENDING,
+                              help_text="事件状态")
+    assignee = JSONField(default=list, blank=True, help_text="事件责任人")
+    note = models.TextField(null=True, blank=True, help_text="事件备注")
+    value = models.FloatField(blank=True, null=True, verbose_name='事件值')
+
+    # 全文搜索字段
+    search_vector = SearchVectorField(null=True, blank=True)
+
+    class Meta:
+        db_table = "alerts_event"
+        indexes = [
+            models.Index(fields=['source', 'received_at']),
+            GinIndex(fields=['labels'], name='event_labels_gin'),
+            GinIndex(fields=['search_vector'], name='event_search_gin'),  # 关键优化
+        ]
+        ordering = ['-received_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.level}) at {self.received_at}"
+
+    def update_search_vector(self):
+        """更新 search_vector 字段"""
+        self.search_vector = SearchVector('title', weight='A') + \
+                             SearchVector('description', weight='B')
+        self.save(update_fields=['search_vector'])
+
+
+class Alert(models.Model):
+    """聚合后的告警"""
+
+    alert_id = models.CharField(max_length=100, unique=True, db_index=True,
+                                help_text="告警ID")  # f"ALERT-{uuid.uuid4().hex.upper()}"
+    status = models.CharField(max_length=32, choices=AlertStatus.CHOICES, default=AlertStatus.PENDING,
+                              help_text="告警状态", db_index=True)
+    level = models.CharField(max_length=32, choices=AlertLevel.CHOICES, db_index=True, help_text="级别")
+    events = models.ManyToManyField(Event)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, help_text="创建时间")
+    updated_at = models.DateTimeField(auto_now=True, db_index=True, help_text="更新时间")
+
+    # 从事件继承的字段
+    title = models.CharField(max_length=200, help_text="标题")
+    content = models.TextField(help_text="内容")
+    labels = JSONField(default=dict, help_text="标签")
+    first_event_time = models.DateTimeField(null=True, blank=True, help_text="首次事件时间")
+    last_event_time = models.DateTimeField(null=True, blank=True, help_text="最近事件时间")
+    item = models.CharField(max_length=128, null=True, blank=True, db_index=True, help_text="事件指标")
+    resource_id = models.CharField(max_length=128, null=True, blank=True, db_index=True, help_text="资源唯一ID")
+    resource_name = models.CharField(max_length=128, null=True, blank=True, help_text="资源名称")
+    resource_type = models.CharField(max_length=64, null=True, blank=True, help_text="资源类型")
+    operate = models.CharField(max_length=64, choices=AlertOperate.CHOICES, null=True, blank=True, help_text="告警操作")
+    operator = JSONField(default=list, blank=True, help_text="告警处理人")
+
+    # 全文搜索字段
+    search_vector = SearchVectorField(null=True, blank=True)
+
+    # 告警通知单独存储
+
+    class Meta:
+        db_table = "alerts_alert"
+        indexes = [
+            # 状态和严重程度组合索引
+            models.Index(fields=['status', 'level'], name='alert_status_level_idx'),
+            # 时间范围查询优化
+            BTreeIndex(fields=['created_at'], name='alert_created_btree'),
+            # JSONB字段索引
+            GinIndex(fields=['operator'], name='alert_operator_gin'),
+            # 全文搜索索引
+            GinIndex(fields=['search_vector'], name='alert_search_gin'),
+        ]
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"{self.alert_id} - {self.title} ({self.status})"
+
+    def update_search_vector(self):
+        """更新 search_vector 字段"""
+        self.search_vector = SearchVector('title', weight='A') + \
+                             SearchVector('content', weight='B')
+        self.save(update_fields=['search_vector'])
+
+
+"""
+from django.contrib.postgres.search import SearchQuery, SearchRank
+
+# 搜索包含 "error" 或 "failure" 的事件（按相关性排序）
+query = SearchQuery("error | failure")
+results = Event.objects.annotate(
+    rank=SearchRank('search_vector', query)
+).filter(search_vector=query).order_by('-rank')
+
+# 搜索特定短语（支持加权）
+results = Event.objects.filter(
+    search_vector=SearchQuery('"high priority"')
+)
+
+"""

@@ -1,0 +1,29 @@
+{
+  "source_type": "monitor",
+  "source_id": "monitor",
+  "events": [
+    {
+      "title": "CPU Usage Critical",
+      "description": "CPU usage exceeded 94%",
+      "value": 94.0,
+      "item": "cpu_usage",
+      "level": "critical",
+      "start_time": "1747982724",
+      "end_time": "1747982776",
+      "labels": {
+        "instance": "db-59",
+        "region": "us-west"
+      },
+      "annotations": {
+        "alertname": "HighCPUUsage",
+        "summary": "High CPU usage detected on db-59",
+        "severity": "critical"
+      },
+      "external_id": "c5a54b32-2736-427a-988f-3e215c526397",
+      "status": "resolved",
+      "resource_id": 59,
+      "resource_type": "host",
+      "resource_name": "db-59"
+    }
+  ]
+}
