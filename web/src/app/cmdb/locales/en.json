@@ -68,6 +68,9 @@
     "searchTxt": "Search",
     "searchTitle": "Asset Search",
     "assetSearchTxt": "Please enter the keywords...",
+    "cutomTable": {
+      "fieldSetting": "List field settings"
+    },
     "menu": {
       "log": "Log",
       "assetManage": "Model",
