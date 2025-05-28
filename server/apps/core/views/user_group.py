@@ -14,19 +14,17 @@ logger = logging.getLogger(__name__)
 class UserGroupViewSet(viewsets.ViewSet):
 
     def __init__(self, *args, **kwargs):
-        super(UserGroupViewSet, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.system_mgmt_client = SystemMgmt()
 
-    def get_first_and_max(self, params):
-        """格式化page参数, 获取first与max"""
+    def get_pagination_params(self, params):
+        """获取分页参数"""
         try:
-            page = max(1, int(params.get("page", 1)))
-            page_size = max(1, min(100, int(params.get("page_size", 20))))  # 限制最大页面大小
-            _first = (page - 1) * page_size
-            _max = page_size
-            return _first, _max
+            page = int(params.get("page", 1))
+            page_size = int(params.get("page_size", 20))
+            first = (page - 1) * page_size
+            return first, page_size
         except (ValueError, TypeError):
-            logger.warning(f"Invalid pagination parameters: page={params.get('page')}, page_size={params.get('page_size')}")
             return 0, 20
 
     @swagger_auto_schema(
@@ -41,20 +39,20 @@ class UserGroupViewSet(viewsets.ViewSet):
     @action(methods=["get"], detail=False)
     def user_list(self, request):
         try:
-            _first, _max = self.get_first_and_max(request.query_params)
-            search_term = request.query_params.get("search", "").strip()
+            first, max_size = self.get_pagination_params(request.query_params)
+            search = request.query_params.get("search", "")
             
             data = UserGroup().user_list(
                 self.system_mgmt_client, 
                 query_params={
-                    "first": _first, 
-                    "max": _max,
-                    "search": search_term
+                    "first": first, 
+                    "max": max_size,
+                    "search": search
                 }
             )
             return WebUtils.response_success(data)
         except Exception as e:
-            logger.error(f"Failed to fetch user list: {str(e)}")
+            logger.error(f"User list query failed: {e}")
             return WebUtils.response_error("获取用户列表失败")
 
     @swagger_auto_schema(
@@ -67,15 +65,15 @@ class UserGroupViewSet(viewsets.ViewSet):
     @action(methods=["get"], detail=False)
     def group_list(self, request):
         try:
-            search_term = request.query_params.get("search", "").strip()
+            search = request.query_params.get("search", "")
             
             data = UserGroup().groups_list(
                 system_mgmt_client=self.system_mgmt_client,
-                query_params=search_term
+                query_params=search
             )
             return WebUtils.response_success(data)
         except Exception as e:
-            logger.error(f"Failed to fetch group list: {str(e)}")
+            logger.error(f"Group list query failed: {e}")
             return WebUtils.response_error("获取组列表失败")
 
     @swagger_auto_schema(
@@ -88,5 +86,5 @@ class UserGroupViewSet(viewsets.ViewSet):
             data = UserGroup().user_groups_list(request)
             return WebUtils.response_success(data)
         except Exception as e:
-            logger.error(f"Failed to fetch user groups: {str(e)}")
+            logger.error(f"User groups query failed: {e}")
             return WebUtils.response_error("获取用户组列表失败")
