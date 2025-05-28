@@ -410,7 +410,7 @@ services:
       CLIENT_ID: system-manager
       DEBUG: "0"
       SECRET_KEY: ${SECRET_KEY}
-      IS_USE_CELERY: "True"
+      ENABLE_CELERY: "True"
       DB_USER: ${POSTGRES_USERNAME}
       DB_HOST: postgres
       DB_PASSWORD: ${POSTGRES_PASSWORD}
@@ -429,8 +429,6 @@ services:
       start_period: 10s
     networks:
       - prod
-    profiles:
-      - lite
 
   system-manager-web:
     image: ${DOCKER_IMAGE_SYSTEM_MANAGER_WEB}
@@ -446,8 +444,7 @@ services:
       - "traefik.http.services.system-manager-web.loadbalancer.server.port=3000"
     networks:
       - prod
-    profiles:
-      - lite
+
     depends_on:
       - system-manager
     healthcheck:
@@ -473,7 +470,7 @@ services:
       SIDECAR_INPUT_MODE: nats
       DEBUG: "0"
       SECRET_KEY: ${SECRET_KEY}
-      IS_USE_CELERY: "False"
+      ENABLE_CELERY: "False"
       DB_USER: ${POSTGRES_USERNAME}
       DB_HOST: postgres
       DB_PASSWORD: ${POSTGRES_PASSWORD}
@@ -490,8 +487,7 @@ services:
       start_period: 10s
     networks:
       - prod
-    profiles:
-      - lite
+
     depends_on:
       system-manager:
         condition: service_healthy
@@ -510,8 +506,7 @@ services:
       - "traefik.http.services.node-manager-web.loadbalancer.server.port=3000"
     networks:
       - prod
-    profiles:
-      - lite
+
     depends_on:
       - node-manager
     healthcheck:
@@ -527,7 +522,7 @@ services:
       CLIENT_ID: monitor
       DB_NAME: monitor
       VICTORIAMETRICS_HOST: http://victoria-metrics:8428
-      IS_USE_CELERY: "True"
+      ENABLE_CELERY: "True"
       BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/10
       CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/10
       CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/10
@@ -550,8 +545,6 @@ services:
         condition: service_healthy
     networks:
       - prod
-    profiles:
-      - lite
 
   monitor-web:
     image: ${DOCKER_IMAGE_MONITOR_WEB}
@@ -567,8 +560,7 @@ services:
       - "traefik.http.services.monitor-web.loadbalancer.server.port=3000"
     networks:
       - prod
-    profiles:
-      - lite
+
     depends_on:
       - monitor
     healthcheck:
@@ -595,7 +587,7 @@ services:
       NEO4J_USER: ${NEO4J_USERNAME}
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
       VICTORIAMETRICS_HOST: http://victoria-metrics:8428
-      IS_USE_CELERY: True
+      ENABLE_CELERY: True
       BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/11
       CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/11
       CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/11
@@ -603,8 +595,7 @@ services:
       CELERY_WORKER_CONCURRENCY: 1
     networks:
       - prod
-    profiles:
-      - lite
+
     depends_on:
       system-manager:
         condition: service_healthy
@@ -625,8 +616,7 @@ services:
       - "traefik.http.services.cmdb-web.loadbalancer.server.port=3000"
     networks:
       - prod
-    profiles:
-      - lite
+
     depends_on:
       - cmdb
     healthcheck:
@@ -645,13 +635,13 @@ services:
       - ./conf/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
     networks:
       - prod
-    profiles:
-      - lite
+
     restart: always
 
   fusion-collector:
     image: bklite/fusion-collector:latest
     container_name: fusion-collector
+    hostname: fusion-collector-default
     environment:
       - SERVER_URL=http://node-manager:8000/node_mgmt/open_api/node
       - SERVER_API_TOKEN=${SIDECAR_INIT_TOKEN}
@@ -661,8 +651,6 @@ services:
       - SIDECAR_NODENAME=fusion-collector
     networks:
       - prod
-    profiles:
-      - lite
     restart: always
 
   ops-console:
@@ -688,8 +676,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    profiles:
-      - lite
+
     depends_on:
       system-manager:
         condition: service_healthy
@@ -699,7 +686,7 @@ services:
     container_name: ops-console-web
     environment:
       - NEXTAPI_URL=http://ops-console:8000
-      - NEXTAUTH_URL=https://${HOST_IP}:${TRAEFIK_CONSOLE_PORT}
+      - NEXTAUTH_URL=http://${HOST_IP}:${TRAEFIK_CONSOLE_PORT}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAPI_URL=http://ops-console:8000
     restart: always
@@ -708,15 +695,13 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.ops-console-web.rule=Host(\`${HOST_IP}\`)
-      - traefik.http.routers.ops-console-web.entrypoints=ops-console-web
+      - traefik.http.routers.ops-console-web.entrypoints=opsconsole
       - traefik.http.services.ops-console-web.loadbalancer.server.port=3000
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://ops-console-web:3000/healthcheck').then(res => res.status === 200)"]
       start_period: 5s
     depends_on:
       - ops-console
-    profiles:
-      - lite
 
   stargazer:
     image: ${DOCKER_IMAGE_STARGAZER}
@@ -756,11 +741,15 @@ log "INFO" "启动系统管理服务..."
 docker-compose up -d system-manager
 
 log "INFO" "启动所有服务"
-docker-compose --profile=lite up -d
+docker-compose up -d
 sleep 10
 wait_container_health cmdb-web "CMDB"
 wait_container_health monitor-web "MONITOR"
-wait_container_health system-manager "SYSTEM_MGMT"
-wait_container_health node-manager "NODE_MGMT"
+wait_container_health system-manager-web "SYSTEM_MGMT"
+wait_container_health ops-console-web "OPS_CONSOLE"
+wait_container_health node-manager-web "NODE_MGMT"
 log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_MONITOR_PORT 访问系统"
-log "INFO" "初始用户名: admin, 初始密码: password"
+log "SUCCESS" "初始用户名: admin, 初始密码: password"
+log "SUCCESS" "控制器安装信息："
+log "SUCCESS" "Token: ${SIDECAR_INIT_TOKEN}"
+log "SUCCESS" "API_URL: http://$HOST_IP:$NODE_MANAGER_API_PORT"
