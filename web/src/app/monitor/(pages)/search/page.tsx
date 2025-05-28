@@ -42,12 +42,17 @@ const { Option } = Select;
 
 const SearchView: React.FC = () => {
   const { get, isLoading } = useApiClient();
-  const { getMonitorObject, getMonitorMetrics, getMetricsGroup, getInstanceList } = useMonitorApi();
+  const {
+    getMonitorObject,
+    getMonitorMetrics,
+    getMetricsGroup,
+    getInstanceList,
+  } = useMonitorApi();
   const { t } = useTranslation();
   const CONDITION_LIST = useConditionList();
   const searchParams = useSearchParams();
   const url_instance_id = searchParams.get('instance_id');
-  const url_obj_name = searchParams.get('monitor_object');
+  const url_obj_id = searchParams.get('monitor_object');
   const url_metric_id = searchParams.get('metric_id');
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [objLoading, setObjLoading] = useState<boolean>(false);
@@ -66,7 +71,7 @@ const SearchView: React.FC = () => {
     }[]
   >([]);
   const [labels, setLabels] = useState<string[]>([]);
-  const [object, setObject] = useState<string>('');
+  const [object, setObject] = useState<React.Key>('');
   const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [activeTab, setActiveTab] = useState<string>('area');
   const [conditions, setConditions] = useState<ConditionItem[]>([]);
@@ -109,21 +114,21 @@ const SearchView: React.FC = () => {
 
   useEffect(() => {
     if (isLoading) return;
-    if (url_obj_name && metrics.length && instances.length) {
+    if (url_obj_id && metrics.length && instances.length) {
       handleSearch('refresh', 'area');
     }
-  }, [url_obj_name, metrics, instances, isLoading]);
+  }, [url_obj_id, metrics, instances, isLoading]);
 
   const getObjects = async () => {
     try {
       setObjLoading(true);
       const data: ObjectItem[] = await getMonitorObject({
         add_instance_count: true,
-      })
+      });
       const _treeData = getTreeData(deepClone(data));
       setTreeData(_treeData);
       setObjects(data);
-      setDefaultSelectObj(url_obj_name || '');
+      setDefaultSelectObj(url_obj_id ? +url_obj_id : '');
     } finally {
       setObjLoading(false);
     }
@@ -163,7 +168,7 @@ const SearchView: React.FC = () => {
     }
   };
 
-  const getInstList = async (id: number) => {
+  const getInstList = async (id: React.Key) => {
     try {
       setInstanceLoading(true);
       const data = await getInstanceList(id, {
@@ -252,8 +257,8 @@ const SearchView: React.FC = () => {
 
   const createPolicy = () => {
     const params = new URLSearchParams({
-      monitorName: object,
-      monitorObjId: objects.find((item) => item.name === object)?.id + '',
+      monitorName: objects.find((item) => item.id === object)?.name + '',
+      monitorObjId: object + '',
       metricId: metric || '',
       instanceId: instanceId.join(','),
       type: 'add',
@@ -286,12 +291,9 @@ const SearchView: React.FC = () => {
     setObject(val);
     if (val) {
       getMetrics({
-        monitor_object_name: val,
+        monitor_object_id: val,
       });
-    }
-    const id = objects.find((item) => item.name === val)?.id || 0;
-    if (id) {
-      getInstList(id);
+      getInstList(val);
     }
   };
 
@@ -435,27 +437,26 @@ const SearchView: React.FC = () => {
   };
 
   const getTreeData = (data: ObjectItem[]): TreeItem[] => {
-    const groupedData = data.reduce(
-      (acc, item) => {
-        if (!acc[item.type]) {
-          acc[item.type] = {
-            title: item.display_type || '--',
-            key: item.type,
-            children: [],
-          };
-        }
-        acc[item.type].children.push({
-          title: (item.display_name || '--') + `(${item.instance_count || 0})`,
-          label: item.name || '--',
-          key: item.name,
+    const groupedData = data.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = {
+          title: item.display_type || '--',
+          key: item.type,
           children: [],
-        });
-        return acc;
-      },
-      {} as Record<string, TreeItem>
-    );
+        };
+      }
+      acc[item.type].children.push({
+        title: (item.display_name || '--') + `(${item.instance_count || 0})`,
+        label: item.name || '--',
+        key: item.id,
+        children: [],
+      });
+      return acc;
+    }, {} as Record<string, TreeItem>);
     if (groupedData.Other) {
-      groupedData.Other.children = groupedData.Other.children.filter((item) => item.label !== "SNMP Trap");
+      groupedData.Other.children = groupedData.Other.children.filter(
+        (item) => item.label !== 'SNMP Trap'
+      );
     }
     return Object.values(groupedData);
   };
@@ -655,16 +656,17 @@ const SearchView: React.FC = () => {
                             ?.display_name || '--'}
                         </span>
                         <span className="text-[var(--color-text-3)] text-[12px]">
-                          {`${findUnitNameById(
-                            metrics.find((item) => item.name === metric)?.unit
-                          )
-                            ? '（' +
+                          {`${
                             findUnitNameById(
-                              metrics.find((item) => item.name === metric)
-                                ?.unit
-                            ) +
-                            '）'
-                            : ''
+                              metrics.find((item) => item.name === metric)?.unit
+                            )
+                              ? '（' +
+                                findUnitNameById(
+                                  metrics.find((item) => item.name === metric)
+                                    ?.unit
+                                ) +
+                                '）'
+                              : ''
                           }`}
                         </span>
                         <Tooltip
