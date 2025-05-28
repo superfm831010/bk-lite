@@ -222,7 +222,7 @@ export const createTaskValidationRules = (context: ValidationContext) => {
         `${t('common.selectMsg')}${t('Collection.cycle')}`
       ),
     ],
-    instId: [baseValidators.required(`${t('common.selectMsg')}`)],
+    instId: [baseValidators.required(`${t('required')}`)],
     timeout: [
       baseValidators.required(
         `${t('common.inputMsg')}${t('Collection.timeout')}`
@@ -234,7 +234,7 @@ export const createTaskValidationRules = (context: ValidationContext) => {
         validator: () => {
           const selectedData = form.getFieldValue('assetInst');
           if (!selectedData?.length) {
-            return Promise.reject(new Error(t('common.selectMsg')));
+            return Promise.reject(new Error(t('required')));
           }
           return Promise.resolve();
         }
@@ -363,10 +363,10 @@ export const createTaskValidationRules = (context: ValidationContext) => {
   return baseRules;
 };
 
-export const TASK_DETAIL_CONFIG: Record<string, TabConfig> = {
+export const CREATE_TASK_DETAIL_CONFIG = (t: (key: string) => string) => ({
   add: {
     count: 0,
-    label: '新增资产',
+    label: t('Collection.execStatus.add'),
     message:
       '注：针对资产新增进行审批，审批通过后，资产的相关信息会同步更新至资产记录。',
     alertType: 'warning',
@@ -377,7 +377,7 @@ export const TASK_DETAIL_CONFIG: Record<string, TabConfig> = {
   },
   update: {
     count: 4,
-    label: '更新资产',
+    label: t('Collection.execStatus.update'),
     message: '注：展示任务执行后资产更新情况，自动更新至在资产记录。',
     alertType: 'warning',
     columns: [
@@ -387,7 +387,7 @@ export const TASK_DETAIL_CONFIG: Record<string, TabConfig> = {
   },
   relation: {
     count: 0,
-    label: '新增关联',
+    label: t('Collection.execStatus.association'),
     message: '注：展示任务执行后，新创建的资产关联情况，自动更新至在资产记录。',
     alertType: 'warning',
     columns: [
@@ -400,7 +400,7 @@ export const TASK_DETAIL_CONFIG: Record<string, TabConfig> = {
   },
   delete: {
     count: 3,
-    label: '下架资产',
+    label: t('Collection.execStatus.delete'),
     message:
       '注：展示任务执行后，采集到已下架的资产，需要手动操作“下架”，方可在资产记录更新。',
     alertType: 'warning',
@@ -409,7 +409,7 @@ export const TASK_DETAIL_CONFIG: Record<string, TabConfig> = {
       { title: '实例名', dataIndex: 'inst_name', width: 260 },
     ],
   },
-};
+});
 
 export const NETWORK_DEVICE_OPTIONS = [
   {

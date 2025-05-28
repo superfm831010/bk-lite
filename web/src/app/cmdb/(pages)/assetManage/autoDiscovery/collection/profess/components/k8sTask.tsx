@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef } from 'react';
 import BaseTaskForm, { BaseTaskRef } from './baseTask';
-import { useLocale } from '@/context/locale';
 import { useTranslation } from '@/utils/i18n';
 import { Form, Spin } from 'antd';
 import { useTaskForm } from '../hooks/useTaskForm';
@@ -26,7 +25,6 @@ const K8sTaskForm: React.FC<K8sTaskFormProps> = ({
 }) => {
   const { t } = useTranslation();
   const baseRef = useRef<BaseTaskRef>(null);
-  const localeContext = useLocale();
   const { model_id: modelId } = modelItem;
 
   const {
@@ -82,7 +80,7 @@ const K8sTaskForm: React.FC<K8sTaskFormProps> = ({
       <Form
         form={form}
         layout="horizontal"
-        labelCol={{ span: localeContext.locale === 'en' ? 6 : 5 }}
+        labelCol={{ span: 5 }}
         onFinish={onFinish}
         initialValues={K8S_FORM_INITIAL_VALUES}
       >
@@ -92,7 +90,7 @@ const K8sTaskForm: React.FC<K8sTaskFormProps> = ({
           modelItem={modelItem}
           onClose={onClose}
           submitLoading={submitLoading}
-          instPlaceholder={`${t('common.select')}${t('Collection.k8sTask.selectK8S')}`}
+          instPlaceholder={`${t('common.select')} ${t('Collection.k8sTask.selectK8S')}`}
           timeoutProps={{
             min: 0,
             defaultValue: 60,

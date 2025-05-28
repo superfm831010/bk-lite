@@ -13,17 +13,36 @@ export const authOptions: AuthOptions = {
         userData: { label: "User Data", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials) return null;
+        if (!credentials) {
+          console.error("No credentials provided");
+          return null;
+        }
 
         try {
           // If skipValidation is true, use the provided userData directly
           // This is used when the login validation has already been done in SigninClient
           if (credentials.skipValidation === 'true' && credentials.userData) {
             const userData = JSON.parse(credentials.userData);
+            console.log("Parsed userData:", userData);
+            
+            // Ensure required fields are present
+            if (!userData.id && !userData.username) {
+              console.error("Invalid userData: missing id and username");
+              return null;
+            }
+            
             return {
-              ...userData,
-              enable_otp: userData.enable_otp,
-              qrcode: userData.qrcode,
+              id: userData.id || userData.username,
+              username: userData.username,
+              token: userData.token,
+              locale: userData.locale || 'en',
+              temporary_pwd: userData.temporary_pwd || false,
+              enable_otp: userData.enable_otp || false,
+              qrcode: userData.qrcode || false,
+              provider: userData.provider,
+              wechatOpenId: userData.wechatOpenId,
+              wechatUnionId: userData.wechatUnionId,
+              wechatWorkId: userData.wechatWorkId,
             };
           }
 
@@ -41,21 +60,27 @@ export const authOptions: AuthOptions = {
           
           if (!response.ok || !responseData.result) {
             console.error("Authentication failed:", responseData);
-            throw new Error("Invalid credentials");
+            return null;
           }
           
           if (responseData.result) {
             const user = responseData.data;
             return {
-              ...user,
-              enable_otp: user.enable_otp,
-              qrcode: user.qrcode,
+              id: user.id || user.username,
+              username: user.username,
+              token: user.token,
+              locale: user.locale || 'en',
+              temporary_pwd: user.temporary_pwd || false,
+              enable_otp: user.enable_otp || false,
+              qrcode: user.qrcode || false,
             };
           }
         } catch (error) {
           console.error("Error during authentication:", error);
           return null;
         }
+        
+        return null;
       },
     }),
     WeChatProvider({
@@ -86,8 +111,29 @@ export const authOptions: AuthOptions = {
         token.wechatOpenId = user.wechatOpenId;
         token.wechatUnionId = user.wechatUnionId;
         token.wechatWorkId = user.wechatWorkId;
+
+        // If client environment and user login successful, save shared auth data
+        if (typeof window !== 'undefined') {
+          try {
+            const { saveSharedAuthData } = await import('../utils/crossDomainAuth');
+            saveSharedAuthData({
+              id: token.id as string,
+              username: token.username as string,
+              token: token.token as string || '',
+              locale: token.locale as string,
+              temporary_pwd: token.temporary_pwd as boolean || false,
+              enable_otp: token.enable_otp as boolean || false,
+              qrcode: token.qrcode as boolean || false,
+              provider: token.provider as string,
+              wechatOpenId: token.wechatOpenId as string,
+              wechatUnionId: token.wechatUnionId as string,
+              wechatWorkId: token.wechatWorkId as string,
+            });
+          } catch (error) {
+            console.error('Failed to save shared auth data:', error);
+          }
+        }
       }
-      
       return token;
     },
     async session({ session, token }) {

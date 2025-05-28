@@ -39,37 +39,117 @@ export default function WeChatProvider<P extends WechatProfile>(
     },
     token: {
       url: "https://api.weixin.qq.com/sns/oauth2/access_token",
-      params: {
-        grant_type: "authorization_code",
-        appid: options.clientId,
-        secret: options.clientSecret,
+      async request({ params }) {
+        console.log("[WeChat OAuth] Token request params:", params);
+        
+        const url = new URL("https://api.weixin.qq.com/sns/oauth2/access_token");
+        url.searchParams.set("appid", options.clientId);
+        url.searchParams.set("secret", options.clientSecret);
+        url.searchParams.set("code", params.code!);
+        url.searchParams.set("grant_type", "authorization_code");
+
+        console.log("[WeChat OAuth] Token request URL:", url.toString());
+
+        const response = await fetch(url.toString(), {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+          },
+        });
+
+        const tokens = await response.json();
+        console.log("[WeChat OAuth] Token response:", tokens);
+
+        if (tokens.errcode) {
+          throw new Error(`WeChat token error: ${tokens.errmsg} (${tokens.errcode})`);
+        }
+
+        return {
+          tokens: {
+            access_token: tokens.access_token,
+            openid: tokens.openid,
+            unionid: tokens.unionid,
+          }
+        };
       }
     },
     userinfo: {
       url: "https://api.weixin.qq.com/sns/userinfo",
-      params: {
-        openid: { param: "openid" },
-        access_token: { param: "access_token" },
-        lang: "zh_CN"
+      async request({ tokens }) {
+        console.log("[WeChat OAuth] Userinfo request with tokens:", tokens);
+        
+        const url = new URL("https://api.weixin.qq.com/sns/userinfo");
+        url.searchParams.set("access_token", tokens.access_token!);
+        url.searchParams.set("openid", (tokens as any).openid!);
+        url.searchParams.set("lang", "zh_CN");
+
+        console.log("[WeChat OAuth] Userinfo request URL:", url.toString());
+
+        const response = await fetch(url.toString(), {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+          },
+        });
+
+        const profile = await response.json();
+        console.log("[WeChat OAuth] Userinfo response:", profile);
+
+        if (profile.errcode) {
+          throw new Error(`WeChat userinfo error: ${profile.errmsg} (${profile.errcode})`);
+        }
+
+        return {
+          ...profile,
+          access_token: tokens.access_token,
+        };
       }
     },
-    profile(profile) {
-      console.log("[WeChat OAuth] Processing profile:", profile, {
+    async profile(profile) {
+      console.log("[WeChat OAuth] Processing profile:", {
         openid: profile.openid || "Not received",
         nickname: profile.nickname || "Not received",
         unionid: profile.unionid ? "Set" : "Not set"
       });
 
-      return {
-        id: profile.openid,
-        name: profile.nickname || profile.openid,
-        image: profile.headimgurl,
-        email: null,
-        username: profile.nickname || profile.openid,
-        token: profile.access_token,
-        wechatOpenId: profile.openid,
-        wechatUnionId: profile.unionid
-      };
+      try {
+        const registerResponse = await fetch('/api/proxy/core/api/wechat_user_register/', {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: profile.openid,
+            nick_name: profile.nickname || profile.openid
+          }),
+        });
+
+        const registerData = await registerResponse.json();
+        console.log("[WeChat OAuth] Register API response:", registerData);
+
+        if (!registerResponse.ok || !registerData.result) {
+          console.error("[WeChat OAuth] Register API failed:", registerData);
+          throw new Error(`WeChat user register failed: ${registerData.message || 'Unknown error'}`);
+        }
+
+        // Use data returned from registration interface
+        const userData = registerData.data;
+        return {
+          id: userData.id.toString(),
+          name: userData.username || profile.nickname || profile.openid,
+          username: userData.username,
+          image: profile.headimgurl,
+          email: null,
+          token: userData.token,
+          locale: userData.locale || 'zh',
+          wechatOpenId: profile.openid,
+          wechatUnionId: profile.unionid,
+        };
+
+      } catch (error) {
+        console.error("[WeChat OAuth] Error during user registration:", error);
+        throw error;
+      }
     },
     clientId: options.clientId || "",
     clientSecret: options.clientSecret || ""
