@@ -143,8 +143,8 @@ const SideMenu: React.FC<SideMenuProps> = ({
           {children}
         </div>
       )}
-      <nav className={`flex-1 relative rounded-md ${sideMenuStyle.nav}`}>
-        <ul className="p-3 h-full">
+      <nav className={`flex flex-1 overflow-hidden relative rounded-md ${sideMenuStyle.nav}`}>
+        <ul className="p-3 flex-1">
           {menuItems.map((item) => (
             <React.Fragment key={item.url}>
               <li
