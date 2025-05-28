@@ -29,7 +29,7 @@ import {
   TabItem,
   TimeSelectorDefaultValue,
 } from '@/app/monitor/types';
-import { MetricItem, ObectItem } from '@/app/monitor/types/monitor';
+import { MetricItem, ObjectItem } from '@/app/monitor/types/monitor';
 import { AlertOutlined } from '@ant-design/icons';
 import { FiltersConfig } from '@/app/monitor/types/monitor';
 import CustomTable from '@/components/custom-table';
@@ -95,8 +95,8 @@ const Alert: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('activeAlarms');
   const [chartData, setChartData] = useState<Record<string, any>[]>([]);
   const [pageLoading, setPageLoading] = useState<boolean>(false);
-  const [objects, setObjects] = useState<ObectItem[]>([]);
-  const [groupObjects, setGroupObjects] = useState<ObectItem[]>([]);
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
+  const [groupObjects, setGroupObjects] = useState<ObjectItem[]>([]);
   const [metrics, setMetrics] = useState<MetricItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
@@ -184,7 +184,7 @@ const Alert: React.FC = () => {
             </span>
             <span className="user-name">
               <EllipsisWithTooltip
-                className="w-[50px] overflow-hidden text-ellipsis whitespace-nowrap"
+                className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
                 text={operator}
               />
             </span>
@@ -299,7 +299,7 @@ const Alert: React.FC = () => {
   };
 
   const getObjects = async () => {
-    const data: ObectItem[] = await getMonitorObject({
+    const data: ObjectItem[] = await getMonitorObject({
       add_policy_count: true,
     });
     const groupedData = data.reduce((acc, item) => {

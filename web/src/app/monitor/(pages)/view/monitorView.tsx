@@ -34,7 +34,8 @@ const MonitorView: React.FC<ViewModalProps> = ({
   form = INIT_VIEW_MODAL_FORM,
 }) => {
   const { isLoading } = useApiClient();
-  const { getMetricsGroup, getMonitorMetrics, getInstanceQuery } = useMonitorApi();
+  const { getMetricsGroup, getMonitorMetrics, getInstanceQuery } =
+    useMonitorApi();
   const { t } = useTranslation();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -157,12 +158,12 @@ const MonitorView: React.FC<ViewModalProps> = ({
   const fetchViewData = async (data: IndexViewItem[], groupId: number) => {
     const metricList = data.find((item) => item.id === groupId)?.child || [];
     const requestQueue = metricList.map((item) =>
-      getInstanceQuery(
-        getParams(item, form?.instance_id_values || [])
-      ).then((response) => ({
-        id: item.id,
-        data: response.data.result || [],
-      }))
+      getInstanceQuery(getParams(item, form?.instance_id_values || [])).then(
+        (response) => ({
+          id: item.id,
+          data: response.data.result || [],
+        })
+      )
     );
     try {
       const results = await Promise.all(requestQueue);
@@ -276,7 +277,7 @@ const MonitorView: React.FC<ViewModalProps> = ({
 
   const linkToSearch = (row: TableDataItem) => {
     const _row = {
-      monitor_object: monitorName,
+      monitor_object: monitorObject + '',
       instance_id: form?.instance_id || '',
       metric_id: row.name,
     };
@@ -356,9 +357,10 @@ const MonitorView: React.FC<ViewModalProps> = ({
                             {item.display_name}
                           </span>
                           <span className="text-[var(--color-text-3)] text-[12px]">
-                            {`${findUnitNameById(item.unit)
-                              ? '（' + findUnitNameById(item.unit) + '）'
-                              : ''
+                            {`${
+                              findUnitNameById(item.unit)
+                                ? '（' + findUnitNameById(item.unit) + '）'
+                                : ''
                             }`}
                           </span>
                           <Tooltip

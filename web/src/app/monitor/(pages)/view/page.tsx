@@ -4,7 +4,7 @@ import { Segmented } from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
 import { deepClone } from '@/app/monitor/utils/common';
-import { ObectItem } from '@/app/monitor/types/monitor';
+import { ObjectItem } from '@/app/monitor/types/monitor';
 import { TreeItem } from '@/app/monitor/types';
 import { useTableOptions } from '@/app/monitor/hooks/view';
 import viewStyle from './index.module.scss';
@@ -16,7 +16,7 @@ const Intergration = () => {
   const { isLoading } = useApiClient();
   const { getMonitorObject } = useMonitorApi();
   const [treeData, setTreeData] = useState<TreeItem[]>([]);
-  const [objects, setObjects] = useState<ObectItem[]>([]);
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [treeLoading, setTreeLoading] = useState<boolean>(false);
   const [objectId, setObjectId] = useState<React.Key>('');
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
@@ -45,7 +45,7 @@ const Intergration = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      const data: ObectItem[] = await getMonitorObject({
+      const data: ObjectItem[] = await getMonitorObject({
         add_instance_count: true,
       });
       const _treeData = getTreeData(deepClone(data));
@@ -57,7 +57,7 @@ const Intergration = () => {
     }
   };
 
-  const getTreeData = (data: ObectItem[]): TreeItem[] => {
+  const getTreeData = (data: ObjectItem[]): TreeItem[] => {
     const groupedData = data.reduce(
       (acc, item) => {
         if (!acc[item.type]) {

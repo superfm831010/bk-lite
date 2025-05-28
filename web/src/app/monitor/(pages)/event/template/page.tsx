@@ -4,12 +4,12 @@ import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
 import templateStyle from './index.module.scss';
 import { TreeItem, TableDataItem } from '@/app/monitor/types';
-import { ObectItem } from '@/app/monitor/types/monitor';
+import { ObjectItem } from '@/app/monitor/types/monitor';
 import { STRATEGY_TEMPLATES } from '@/app/monitor/constants/monitor';
 import {
   deepClone,
   findLabelById,
-  getConfigByObjectName,
+  getIconByObjectName,
 } from '@/app/monitor/utils/common';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TreeSelector from '@/app/monitor/components/treeSelector';
@@ -27,6 +27,7 @@ const Template: React.FC = () => {
   const [tableData, setTableData] = useState<TableDataItem[]>([]);
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [objectId, setObjectId] = useState<React.Key>('');
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -55,7 +56,7 @@ const Template: React.FC = () => {
         ...item,
         id: index,
         description: item.description || '--',
-        icon: getConfigByObjectName(monitorName as string, 'icon'),
+        icon: getIconByObjectName(monitorName as string, objects),
       }));
       setTableData(list);
     } finally {
@@ -66,7 +67,8 @@ const Template: React.FC = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      const data: ObectItem[] = await getMonitorObject();
+      const data: ObjectItem[] = await getMonitorObject();
+      setObjects(data);
       const _treeData = getTreeData(deepClone(data));
       setDefaultSelectObj(objId ? +objId : data[0]?.id);
       setTreeData(_treeData);
@@ -75,7 +77,7 @@ const Template: React.FC = () => {
     }
   };
 
-  const getTreeData = (data: ObectItem[]): TreeItem[] => {
+  const getTreeData = (data: ObjectItem[]): TreeItem[] => {
     const groupedData = data.reduce((acc, item) => {
       if (STRATEGY_TEMPLATES.includes(item.name as string)) {
         if (!acc[item.type]) {
