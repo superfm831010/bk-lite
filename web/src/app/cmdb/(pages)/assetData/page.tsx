@@ -204,6 +204,7 @@ const AssetDataContent = () => {
 
   const getModelGroup = async () => {
     try {
+      setLoading(true);
       const [modeldata, groupData, assoType, instCount] = await Promise.all([
         get('/cmdb/api/model/'),
         get('/cmdb/api/classification/'),
@@ -651,11 +652,17 @@ const AssetDataContent = () => {
         },
       ];
       setColumns(tableColumns);
-      setCurrentColumns(
-        tableColumns.filter(
-          (item) => displayFieldKeys.includes(item.key) || item.key === 'action'
-        )
-      );
+      const actionCol = tableColumns.find(col => col.key === 'action');
+      const ordered = [
+        ...tableColumns
+          .filter(col => displayFieldKeys.includes(col.key as string))
+          .sort((a, b) =>
+            displayFieldKeys.indexOf(a.key as string) -
+            displayFieldKeys.indexOf(b.key as string)
+          ),
+        ...(actionCol ? [actionCol] : []),
+      ];
+      setCurrentColumns(ordered);
     }
   }, [propertyList, displayFieldKeys]);
 
