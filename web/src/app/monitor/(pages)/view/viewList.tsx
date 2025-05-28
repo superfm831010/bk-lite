@@ -357,6 +357,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       monitorObjId: objectId || '',
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
+      icon: monitorItem?.icon || '',
       instance_id: app.instance_id,
       instance_name: app.instance_name,
       instance_id_values: app.instance_id_values,

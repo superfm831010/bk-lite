@@ -43,6 +43,7 @@ import {
   deepClone,
   getConfigByPluginName,
   getConfigByObjectName,
+  getIconByObjectName,
 } from '@/app/monitor/utils/common';
 import strategyStyle from '../index.module.scss';
 import {
@@ -1083,9 +1084,9 @@ const StrategyOperation = () => {
                         <div className="w-[220px] bg-[var(--color-bg-1)] border-2 border-blue-300 shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-3 relative cursor-pointer group">
                           <div className="flex items-center space-x-4 my-1">
                             <Icon
-                              type={getConfigByObjectName(
+                              type={getIconByObjectName(
                                 monitorName as string,
-                                'icon'
+                                objects
                               )}
                               className="text-2xl"
                             />

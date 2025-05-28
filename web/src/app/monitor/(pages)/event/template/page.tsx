@@ -9,7 +9,7 @@ import { STRATEGY_TEMPLATES } from '@/app/monitor/constants/monitor';
 import {
   deepClone,
   findLabelById,
-  getConfigByObjectName,
+  getIconByObjectName,
 } from '@/app/monitor/utils/common';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TreeSelector from '@/app/monitor/components/treeSelector';
@@ -27,6 +27,7 @@ const Template: React.FC = () => {
   const [tableData, setTableData] = useState<TableDataItem[]>([]);
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [objectId, setObjectId] = useState<React.Key>('');
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -55,7 +56,7 @@ const Template: React.FC = () => {
         ...item,
         id: index,
         description: item.description || '--',
-        icon: getConfigByObjectName(monitorName as string, 'icon'),
+        icon: getIconByObjectName(monitorName as string, objects),
       }));
       setTableData(list);
     } finally {
@@ -67,6 +68,7 @@ const Template: React.FC = () => {
     try {
       setTreeLoading(true);
       const data: ObjectItem[] = await getMonitorObject();
+      setObjects(data);
       const _treeData = getTreeData(deepClone(data));
       setDefaultSelectObj(objId ? +objId : data[0]?.id);
       setTreeData(_treeData);

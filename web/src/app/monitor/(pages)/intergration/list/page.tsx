@@ -10,7 +10,7 @@ import Icon from '@/components/icon';
 import {
   deepClone,
   getConfigByPluginName,
-  getConfigByObjectName,
+  getIconByObjectName,
 } from '@/app/monitor/utils/common';
 import { useRouter } from 'next/navigation';
 import { ObjectItem, TreeSortData } from '@/app/monitor/types/monitor';
@@ -270,9 +270,9 @@ const Intergration = () => {
                 >
                   <div className="flex items-center space-x-4 my-2">
                     <Icon
-                      type={getConfigByObjectName(
+                      type={getIconByObjectName(
                         getObjectInfo().name || '',
-                        'icon'
+                        objects
                       )}
                       className="text-[48px] min-w-[48px]"
                     />

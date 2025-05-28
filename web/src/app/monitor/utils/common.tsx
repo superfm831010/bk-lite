@@ -609,3 +609,10 @@ export const getBaseInstanceColumn = (config: {
   }
   return columnItems;
 };
+
+export const getIconByObjectName = (objectName = '', objects: ObjectItem[]) => {
+  return (
+    (objects.find((item) => item.name === objectName)?.icon as string) ||
+    'shebei-shebeixinxi'
+  );
+};

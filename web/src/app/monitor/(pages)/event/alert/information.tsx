@@ -39,6 +39,7 @@ const Information: React.FC<TableDataItem> = ({
       monitorObjId: row.policy?.monitor_object,
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
+      icon: monitorItem?.icon || '',
       instance_id: row.monitor_instance_id,
       instance_name: row.monitor_instance_name,
       instance_id_values: row.instance_id_values,
