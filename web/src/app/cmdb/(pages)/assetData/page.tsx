@@ -612,7 +612,7 @@ const AssetDataContent = () => {
           title: t('action'),
           key: 'action',
           dataIndex: 'action',
-          width: 200,
+          width: 230,
           fixed: 'right',
           render: (_: unknown, record: any) => (
             <>
@@ -723,7 +723,7 @@ const AssetDataContent = () => {
           <div className="flex justify-between mb-4">
             <Space>
               <Cascader
-                placeholder={t('Model.selectOrganazationPlaceholder')}
+                placeholder={t('common.pleaseSelect')}
                 options={organizationList}
                 value={organization}
                 onChange={selectOrganization}

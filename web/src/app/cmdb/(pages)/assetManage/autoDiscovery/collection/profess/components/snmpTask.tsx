@@ -198,7 +198,7 @@ const SNMPTask: React.FC<SNMPTaskFormProps> = ({
                   rules={rules.communityString}
                   required
                 >
-                  <Input.Password placeholder={t('common.inputMsg')} />
+                  <Input.Password placeholder={t('common.pleaseInput')} />
                 </Form.Item>
               )}
 
@@ -223,7 +223,7 @@ const SNMPTask: React.FC<SNMPTaskFormProps> = ({
                     name="username"
                     rules={[{ required: true }]}
                   >
-                    <Input placeholder={t('common.inputMsg')} />
+                    <Input placeholder={t('common.pleaseInput')} />
                   </Form.Item>
 
                   <Form.Item
@@ -231,7 +231,7 @@ const SNMPTask: React.FC<SNMPTaskFormProps> = ({
                     name="authkey"
                     rules={[{ required: true }]}
                   >
-                    <Input.Password placeholder={t('common.inputMsg')} />
+                    <Input.Password placeholder={t('common.pleaseInput')} />
                   </Form.Item>
 
                   <Form.Item
@@ -264,7 +264,7 @@ const SNMPTask: React.FC<SNMPTaskFormProps> = ({
                         name="privkey"
                         rules={[{ required: true }]}
                       >
-                        <Input.Password placeholder={t('common.inputMsg')} />
+                        <Input.Password placeholder={t('common.pleaseInput')} />
                       </Form.Item>
                     </>
                   )}

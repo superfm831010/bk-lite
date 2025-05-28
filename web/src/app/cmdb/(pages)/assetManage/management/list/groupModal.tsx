@@ -116,14 +116,14 @@ const GroupMoadal = forwardRef<GroupModalRef, GroupModalProps>(
               name="classification_id"
               rules={[{ required: true, message: t('required') }]}
             >
-              <Input disabled={type === 'edit'} />
+              <Input disabled={type === 'edit'} placeholder={t('common.pleaseInput')} />
             </Form.Item>
             <Form.Item<GroupFieldType>
               label="Name"
               name="classification_name"
               rules={[{ required: true, message: t('required') }]}
             >
-              <Input />
+              <Input placeholder={t('common.pleaseInput')} />
             </Form.Item>
           </Form>
         </OperateModal>

@@ -154,7 +154,7 @@ const SQLTask: React.FC<SQLTaskFormProps> = ({
                 name="user"
                 rules={[{ required: true }]}
               >
-                <Input placeholder={t('common.inputMsg')} />
+                <Input placeholder={t('common.pleaseInput')} />
               </Form.Item>
 
               <Form.Item
@@ -162,7 +162,7 @@ const SQLTask: React.FC<SQLTaskFormProps> = ({
                 name="password"
                 rules={[{ required: true }]}
               >
-                <Input.Password placeholder={t('common.inputMsg')} />
+                <Input.Password placeholder={t('common.pleaseInput')} />
               </Form.Item>
 
               <Form.Item
