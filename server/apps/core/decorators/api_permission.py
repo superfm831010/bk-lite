@@ -10,12 +10,6 @@ from apps.core.utils.web_utils import WebUtils
 
 logger = logging.getLogger("app")
 
-# 常量定义
-ADMIN_ROLE = "admin"
-API_PASS_ATTR = "api_pass"
-CLIENT_ID_ENV = "CLIENT_ID"
-PERMISSION_DELIMITER = ","
-
 
 class HasRole(object):
     def __init__(self, roles: Union[str, List[str], None] = None):
@@ -27,11 +21,11 @@ class HasRole(object):
             return []
 
         if isinstance(roles, str):
-            if roles == ADMIN_ROLE:
-                client_id = os.getenv(CLIENT_ID_ENV, "")
+            if roles == "admin":
+                client_id = os.getenv("CLIENT_ID", "")
                 if not client_id:
                     logger.warning("CLIENT_ID environment variable is not set, using default admin role only")
-                return [ADMIN_ROLE, f"{client_id}_admin"] if client_id else [ADMIN_ROLE]
+                return ["admin", f"{client_id}_admin"] if client_id else ["admin"]
             else:
                 return [roles]
 
@@ -57,7 +51,7 @@ class HasRole(object):
 
     def _check_api_pass(self, request: Any) -> bool:
         """检查是否有API通行证"""
-        return getattr(request, API_PASS_ATTR, False)
+        return getattr(request, "api_pass", False)
 
     def _get_user_roles(self, request: Any) -> List[str]:
         """获取用户角色列表"""
@@ -122,7 +116,7 @@ class HasPermission(object):
         if not permission or not isinstance(permission, str):
             return set()
 
-        permissions = {p.strip() for p in permission.split(PERMISSION_DELIMITER) if p.strip()}
+        permissions = {p.strip() for p in permission.split(",") if p.strip()}
         return permissions
 
     def _extract_request(self, args: tuple) -> Any:
@@ -141,7 +135,7 @@ class HasPermission(object):
 
     def _check_api_pass(self, request: Any) -> bool:
         """检查是否有API通行证"""
-        return getattr(request, API_PASS_ATTR, False)
+        return getattr(request, "api_pass", False)
 
     def _is_superuser(self, request: Any) -> bool:
         """检查是否为超级用户"""

@@ -138,5 +138,7 @@ class RoleViewSet(ViewSetUtils):
         role_obj.save()
         cache_key = f"all_menus_{role_obj.app}"
         keys = RoleManage.get_cache_keys(cache_key)
+        user_menu_cache = "menus-user:"
+        keys.extend(RoleManage.get_cache_keys(user_menu_cache))
         cache.delete_many(keys)
         return JsonResponse({"result": True})

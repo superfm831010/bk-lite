@@ -1,14 +1,18 @@
+import base64
+import io
 import os
 import time
 
 import jwt
+import pyotp
+import qrcode
 from django.contrib.auth.hashers import check_password, make_password
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 import nats_client
 from apps.core.backends import cache
-from apps.system_mgmt.models import App, Channel, ChannelChoices, Group, Menu, Role, User, UserRule
+from apps.system_mgmt.models import App, Channel, ChannelChoices, Group, LoginModule, Menu, Role, User, UserRule
 from apps.system_mgmt.models.system_settings import SystemSettings
 from apps.system_mgmt.services.role_manage import RoleManage
 from apps.system_mgmt.utils.channel_utils import send_by_bot, send_email, send_wechat
@@ -27,7 +31,7 @@ def verify_token(token, client_id):
     login_expired_time_set = SystemSettings.objects.filter(key="login_expired_time").first()
     login_expired_time = 3600 * 24
     if login_expired_time_set:
-        login_expired_time = int(login_expired_time_set.value)
+        login_expired_time = int(login_expired_time_set.value) * 3600
 
     if time_now - login_expired_time > user_info["login_time"]:
         return {"result": False, "message": _("Token is invalid")}
@@ -59,6 +63,7 @@ def verify_token(token, client_id):
             "is_superuser": is_superuser,
             "group_list": groups,
             "roles": role_names,
+            "role_ids": user.role_list,
             "locale": user.locale,
             "permission": menus,
         },
@@ -72,7 +77,7 @@ def get_user_menus(client_id, roles, username, is_superuser):
     menus = []
     if not is_superuser:
         menu_ids = []
-        role_menus = Role.objects.filter(name__in=roles).values_list("menu_list", flat=True)
+        role_menus = Role.objects.filter(app=client_id, id__in=roles).values_list("menu_list", flat=True)
         for i in role_menus:
             menu_ids.extend(i)
         menus = list(Menu.objects.filter(app=client_id, id__in=list(set(menu_ids))).values_list("name", flat=True))
@@ -168,7 +173,7 @@ def init_user_default_attributes(user_id, group_name, default_group_id):
 @nats_client.register
 def get_all_groups():
     groups = Group.objects.all()
-    return_data = GroupUtils.build_group_tree(groups)
+    return_data = GroupUtils.build_group_tree(groups, True)
     return {"result": True, "data": return_data}
 
 
@@ -223,6 +228,11 @@ def login(username, password):
     algorithm = os.getenv("JWT_ALGORITHM", "HS256")
     user_obj = {"user_id": user.id, "login_time": int(time.time())}
     token = jwt.encode(payload=user_obj, key=secret_key, algorithm=algorithm)
+    enable_otp = SystemSettings.objects.filter(key="enable_otp").first()
+    if not enable_otp:
+        enable_otp = False
+    else:
+        enable_otp = enable_otp.value == "1"
     return {
         "result": True,
         "data": {
@@ -231,6 +241,8 @@ def login(username, password):
             "id": user.id,
             "locale": user.locale,
             "temporary_pwd": user.temporary_pwd,
+            "enable_otp": enable_otp,
+            "qrcode": user.otp_secret is None or user.otp_secret == "",
         },
     }
 
@@ -244,3 +256,88 @@ def reset_pwd(username, password):
     user.temporary_pwd = False
     user.save()
     return {"result": True}
+
+
+@nats_client.register
+def wechat_user_register(user_id, nick_name):
+    user, is_first_login = User.objects.update_or_create(username=user_id, defaults={"display_name": nick_name})
+    if not user.group_list:
+        default_group = Group.objects.get(name="Default", parent_id=0)
+        user.group_list = [default_group.id]
+    if not user.role_list:
+        default_role = list(
+            Role.objects.filter(name="normal", app__in=["opspilot", "ops-console"]).values_list("id", flat=True)
+        )
+        user.role_list = default_role
+    user.save()
+    secret_key = os.getenv("SECRET_KEY")
+    algorithm = os.getenv("JWT_ALGORITHM", "HS256")
+    user_obj = {"user_id": user.id, "login_time": int(time.time())}
+    token = jwt.encode(payload=user_obj, key=secret_key, algorithm=algorithm)
+    return {
+        "result": True,
+        "data": {
+            "id": user.id,
+            "username": user.username,
+            "is_first_login": is_first_login,
+            "locale": user.locale,
+            "token": token,
+        },
+    }
+
+
+@nats_client.register
+def get_wechat_settings():
+    login_module = LoginModule.objects.filter(source_type="wechat", enabled=True).first()
+    if not login_module:
+        return {"result": False, "message": _("Login module not found")}
+
+    return {
+        "result": True,
+        "data": {
+            "app_id": login_module.app_id,
+            "app_secret": login_module.decrypted_app_secret,
+            "redirect_uri": login_module.other_config.get("redirect_uri", ""),
+            "callback_url": login_module.other_config.get("callback_url", ""),
+        },
+    }
+
+
+# 生成二维码
+@nats_client.register
+def generate_qr_code(username):
+    # 查找用户
+    user = User.objects.filter(username=username).first()
+    if not user:
+        return {"result": False, "message": _("User not found")}
+    user.otp_secret = pyotp.random_base32()
+    user.save()
+    totp = pyotp.TOTP(user.otp_secret)
+    # 创建用于Authenticator应用的配置URL
+    provisioning_uri = totp.provisioning_uri(name=username, issuer_name="WeopsX")
+
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(provisioning_uri)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+    return {"result": True, "data": {"qr_code": qr_code_base64}}
+
+
+# 验证OTP代码
+@nats_client.register
+def verify_otp_code(username, otp_code):
+    user = User.objects.get(username=username)
+    totp = pyotp.TOTP(user.otp_secret)
+    if totp.verify(otp_code):
+        return {"result": True, "message": _("Verification successful")}
+    return {"result": False, "message": _("Invalid OTP code")}

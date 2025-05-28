@@ -478,3 +478,7 @@ msgstr "内置场常用的工具，包括节假日查询、当前时间查询等
 
 msgid "Enables quick search and retrieval of information through the internet to obtain real-time data."
 msgstr "能够通过互联网快速搜索和获取信息，以便获取实时数据"
+
+
+msgid "Wechat Open Platform"
+msgstr "微信开放平台"

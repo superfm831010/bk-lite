@@ -7,10 +7,6 @@ from apps.rpc.system_mgmt import SystemMgmt
 logger = logging.getLogger(__name__)
 
 class UserGroup:
-    # 常量定义，避免魔法变量
-    DEFAULT_SEARCH_QUERY = ""
-    DEFAULT_QUERY_PARAMS = {"search": DEFAULT_SEARCH_QUERY}
-
     @staticmethod
     def get_system_mgmt_client() -> SystemMgmt:
         """获取系统管理客户端"""
@@ -82,7 +78,7 @@ class UserGroup:
 
         # 使用常量替代魔法变量
         if query_params is None:
-            query_params = cls.DEFAULT_QUERY_PARAMS.copy()
+            query_params = {"search": ""}
             logger.info("Using default query params for groups search")
         
         if not isinstance(query_params, dict):

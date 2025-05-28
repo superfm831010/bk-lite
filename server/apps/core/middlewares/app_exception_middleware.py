@@ -12,12 +12,6 @@ from apps.core.utils.web_utils import WebUtils
 
 logger = logging.getLogger("app")
 
-# 常量定义
-DEFAULT_ERROR_MESSAGE = "系统异常,请联系管理员处理"
-DEFAULT_ERROR_STATUS_CODE = 500
-MAX_LOG_PARAMS_LENGTH = 1000
-SENSITIVE_FIELDS = {'password', 'token', 'secret', 'key', 'authorization'}
-
 
 class AppExceptionMiddleware(MiddlewareMixin):
     
@@ -54,8 +48,8 @@ class AppExceptionMiddleware(MiddlewareMixin):
                 f"请求路径: {getattr(request, 'path', 'unknown')}"
             )
             return WebUtils.response_error(
-                error_message=DEFAULT_ERROR_MESSAGE, 
-                status_code=DEFAULT_ERROR_STATUS_CODE
+                error_message="系统异常,请联系管理员处理", 
+                status_code=500
             )
     
     def _handle_app_exception(self, exception: BaseAppException, client_info: Dict[str, Any]) -> HttpResponse:
@@ -113,8 +107,8 @@ class AppExceptionMiddleware(MiddlewareMixin):
         )
         
         return WebUtils.response_error(
-            error_message=DEFAULT_ERROR_MESSAGE, 
-            status_code=DEFAULT_ERROR_STATUS_CODE
+            error_message="系统异常,请联系管理员处理", 
+            status_code=500
         )
     
     def _get_client_info(self, request: HttpRequest) -> Dict[str, Any]:
@@ -199,15 +193,15 @@ class AppExceptionMiddleware(MiddlewareMixin):
             # 过滤敏感字段
             safe_params = {}
             for key, value in params_dict.items():
-                if any(sensitive in key.lower() for sensitive in SENSITIVE_FIELDS):
+                if any(sensitive in key.lower() for sensitive in ['password', 'token', 'secret', 'key', 'authorization']):
                     safe_params[key] = '***FILTERED***'
                 else:
                     safe_params[key] = value
             
             # 转换为JSON字符串并限制长度
             params_str = json.dumps(safe_params, ensure_ascii=False, default=str)
-            if len(params_str) > MAX_LOG_PARAMS_LENGTH:
-                params_str = params_str[:MAX_LOG_PARAMS_LENGTH] + "...(truncated)"
+            if len(params_str) > 1000:
+                params_str = params_str[:1000] + "...(truncated)"
             
             return params_str
             

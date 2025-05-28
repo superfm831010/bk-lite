@@ -130,7 +130,6 @@ def test_groups_list_with_none_params(mock_system_mgmt_client, sample_groups_sea
     result = UserGroup.groups_list(mock_system_mgmt_client, None)
     
     logger.info("groups_list called with None params")
-    logger.info(f"Default params used: {UserGroup.DEFAULT_QUERY_PARAMS}")
     logger.info(f"groups_list result: {result}")
     logger.info("✓ Groups list with default params retrieved successfully")
 
@@ -203,17 +202,19 @@ def test_get_all_groups_success(mock_system_mgmt_client):
 
 
 def test_constants_defined():
-    """测试类常量定义 - 验证魔法变量已被常量替代"""
-    logger.info(f"DEFAULT_SEARCH_QUERY: '{UserGroup.DEFAULT_SEARCH_QUERY}'")
-    logger.info(f"DEFAULT_QUERY_PARAMS: {UserGroup.DEFAULT_QUERY_PARAMS}")
+    """测试UserGroup类基本功能 - 验证类可以正常实例化"""
+    logger.info("Testing UserGroup class basic functionality")
     
-    # 验证常量值
-    expected_default_query = ""
-    expected_default_params = {"search": ""}
+    # 验证类可以正常实例化
+    user_group = UserGroup()
+    assert user_group is not None
     
-    logger.info(f"Expected default query: '{expected_default_query}'")
-    logger.info(f"Expected default params: {expected_default_params}")
-    logger.info("✓ Constants defined correctly")
+    # 验证静态方法存在
+    assert hasattr(UserGroup, 'user_list')
+    assert hasattr(UserGroup, 'groups_list')
+    assert hasattr(UserGroup, 'user_groups_list')
+    
+    logger.info("✓ UserGroup class functionality verified")
 
 
 @pytest.mark.parametrize("query_params", [
