@@ -20,7 +20,7 @@ const Password: React.FC<PasswordProps> = ({
   className = 'w-full',
   placeholder = '',
   value = '',
-  allowCopy = true,
+  allowCopy = false,
   disabled = false,
   onChange,
   onCopy,
