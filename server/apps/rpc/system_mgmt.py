@@ -85,7 +85,7 @@ class SystemMgmt(object):
 
     def search_groups(self, query_params):
         """
-        :param query_params: {"page_size": 10, "page": 1, "search": ""}
+        :param query_params: {"search": ""}
         """
         return_data = self.client.run("search_groups", query_params=query_params)
         return return_data

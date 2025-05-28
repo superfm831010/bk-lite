@@ -28,13 +28,11 @@ class Command(BaseCommand):
 
         print(f"Read {len(MENUS)} menu files")
         for app_obj in MENUS:
-            app_inst, _ = App.objects.get_or_create(
+            app_inst, _ = App.objects.update_or_create(
                 name=app_obj["client_id"],
                 defaults={
                     "display_name": app_obj["name"],
                     "description": app_obj["description"],
-                    "description_cn": app_obj["description_cn"],
-                    "url": app_obj["url"],
                 },
             )
             print(f"create {app_obj['client_id']} success")

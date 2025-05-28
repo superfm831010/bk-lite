@@ -3,7 +3,6 @@
   "name": "Setting",
   "url": "/system-manager/user",
   "description": "Create roles for the Setting app to manage data permissions, menu permissions, and feature permissions.",
-  "description_cn": "Create roles for the Setting app to manage data permissions, menu permissions, and feature permissions.",
   "menus": [
     {
       "name": "Organization",

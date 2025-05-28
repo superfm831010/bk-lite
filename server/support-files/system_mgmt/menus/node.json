@@ -2,8 +2,7 @@
   "client_id": "node",
   "name": "Node",
   "url": "/node-manager/cloudregion",
-  "description": "Create roles for the Node app to manage data permissions, menu permissions, and feature permissions.",
-  "description_cn": "Create roles for the Node app to manage data permissions, menu permissions, and feature permissions.",
+  "description": "Used to centrally manage nodes under various cloud regions and install various probes on each node to collect monitoring data, configuration information, logs and other information",
   "menus": [
     {
       "name": "Cloud Region",

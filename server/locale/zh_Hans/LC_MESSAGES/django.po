@@ -482,3 +482,19 @@ msgstr "能够通过互联网快速搜索和获取信息，以便获取实时数
 
 msgid "Wechat Open Platform"
 msgstr "微信开放平台"
+
+msgid "OpsPilot is an AI intelligence platform, based on cutting-edge artificial intelligence technology, integrating machine learning and large model capabilities, supporting diversified scenarios."
+msgstr "OpsPilot 是AI智能平台，基于前沿人工智能技术，融合机器学习与大模型能力，支持多元化场景"
+
+
+msgid "Real-time monitoring and management platform for system operation status, providing data visualization, alert notifications, performance analysis and other functions to help quickly identify problems and ensure business stability"
+msgstr "用于实时监测和管理系统运行状态的平台，提供数据可视化、告警通知、性能分析等功能，帮助快速定位问题，保障业务稳定"
+
+msgid "Platform for centralized management of all IT assets and resources of an enterprise, helping organizations effectively track asset lifecycle, optimize resource allocation and ensure system security"
+msgstr "用于集中管理企业的所有IT资产和资源的平台，帮助组织有效地追踪资产生命周期、优化资源分配并确保系统安全"
+
+msgid "Used to centrally manage nodes under various cloud regions and install various probes on each node to collect monitoring data, configuration information, logs and other information"
+msgstr "用于集中管理各个云区域下的节点，为各个节点安装各类探针，以便进行监控数据、配置信息、日志等信息的采集"
+
+msgid "Covering user and organizational role permission management, ensuring resource access security through fine-grained permission control while improving operational efficiency. Provides flexible configuration and management to meet different business needs"
+msgstr "涵盖用户和组织角色权限管理，通过精细化权限控制，确保资源访问安全，同时提升操作效率。提供灵活的配置和管理，满足不同业务需求"
