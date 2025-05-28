@@ -22,7 +22,6 @@ export const authOptions: AuthOptions = {
           // If skipValidation is true, use the provided userData directly
           // This is used when the login validation has already been done in SigninClient
           if (credentials.skipValidation === 'true' && credentials.userData) {
-            console.log("Using skipValidation with provided userData");
             const userData = JSON.parse(credentials.userData);
             console.log("Parsed userData:", userData);
             
@@ -40,11 +39,14 @@ export const authOptions: AuthOptions = {
               temporary_pwd: userData.temporary_pwd || false,
               enable_otp: userData.enable_otp || false,
               qrcode: userData.qrcode || false,
+              provider: userData.provider,
+              wechatOpenId: userData.wechatOpenId,
+              wechatUnionId: userData.wechatUnionId,
+              wechatWorkId: userData.wechatWorkId,
             };
           }
 
           // Otherwise, perform normal login validation (for direct NextAuth usage)
-          console.log("Performing normal login validation");
           const response = await fetch(`${process.env.NEXTAPI_URL}/core/api/login/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -109,8 +111,29 @@ export const authOptions: AuthOptions = {
         token.wechatOpenId = user.wechatOpenId;
         token.wechatUnionId = user.wechatUnionId;
         token.wechatWorkId = user.wechatWorkId;
+
+        // If client environment and user login successful, save shared auth data
+        if (typeof window !== 'undefined') {
+          try {
+            const { saveSharedAuthData } = await import('../utils/crossDomainAuth');
+            saveSharedAuthData({
+              id: token.id as string,
+              username: token.username as string,
+              token: token.token as string || '',
+              locale: token.locale as string,
+              temporary_pwd: token.temporary_pwd as boolean || false,
+              enable_otp: token.enable_otp as boolean || false,
+              qrcode: token.qrcode as boolean || false,
+              provider: token.provider as string,
+              wechatOpenId: token.wechatOpenId as string,
+              wechatUnionId: token.wechatUnionId as string,
+              wechatWorkId: token.wechatWorkId as string,
+            });
+          } catch (error) {
+            console.error('Failed to save shared auth data:', error);
+          }
+        }
       }
-      
       return token;
     },
     async session({ session, token }) {
