@@ -13,7 +13,7 @@ import {
   getConfigByObjectName,
 } from '@/app/monitor/utils/common';
 import { useRouter } from 'next/navigation';
-import { ObectItem, TreeSortData } from '@/app/monitor/types/monitor';
+import { ObjectItem, TreeSortData } from '@/app/monitor/types/monitor';
 import { ModalRef, TableDataItem, TreeItem } from '@/app/monitor/types';
 import ImportModal from './importModal';
 import axios from 'axios';
@@ -38,10 +38,10 @@ const Intergration = () => {
   const [searchText, setSearchText] = useState<string>('');
   const [exportDisabled, setExportDisabled] = useState<boolean>(true);
   const [exportLoading, setExportLoading] = useState<boolean>(false);
-  const [selectedApp, setSelectedApp] = useState<ObectItem | null>(null);
+  const [selectedApp, setSelectedApp] = useState<ObjectItem | null>(null);
   const [treeData, setTreeData] = useState<TreeItem[]>([]);
-  const [objects, setObjects] = useState<ObectItem[]>([]);
-  const [pluginList, setPluginList] = useState<ObectItem[]>([]);
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
+  const [pluginList, setPluginList] = useState<ObjectItem[]>([]);
   const [treeLoading, setTreeLoading] = useState<boolean>(false);
   const [objectId, setObjectId] = useState<React.Key>('');
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
@@ -89,7 +89,7 @@ const Intergration = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      const data: ObectItem[] = await getMonitorObject();
+      const data: ObjectItem[] = await getMonitorObject();
       const _treeData = getTreeData(deepClone(data));
       setTreeData(_treeData);
       setObjects(data);
@@ -100,7 +100,7 @@ const Intergration = () => {
     }
   };
 
-  const getTreeData = (data: ObectItem[]): TreeItem[] => {
+  const getTreeData = (data: ObjectItem[]): TreeItem[] => {
     const groupedData = data.reduce((acc, item) => {
       if (!acc[item.type]) {
         acc[item.type] = {
@@ -193,7 +193,7 @@ const Intergration = () => {
     });
   };
 
-  const linkToDetial = (app: ObectItem) => {
+  const linkToDetial = (app: ObjectItem) => {
     const row: TableDataItem = {
       ...getObjectInfo(),
       plugin_name: app?.display_name,
@@ -206,7 +206,7 @@ const Intergration = () => {
     router.push(targetUrl);
   };
 
-  const onAppClick = (app: ObectItem) => {
+  const onAppClick = (app: ObjectItem) => {
     setSelectedApp(app);
     setExportDisabled(false); // Enable the export button
   };

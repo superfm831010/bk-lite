@@ -8,7 +8,7 @@ import { ModalRef, TabItem } from '@/app/monitor/types';
 import {
   ChartProps,
   ViewModalProps,
-  ObectItem,
+  ObjectItem,
 } from '@/app/monitor/types/monitor';
 import { useTranslation } from '@/utils/i18n';
 import MonitorView from './monitorView';
@@ -65,7 +65,7 @@ const ViewModal = forwardRef<ModalRef, ViewModalProps>(
 
     const linkToDetial = () => {
       const monitorItem = objects.find(
-        (item: ObectItem) => item.id === monitorObject
+        (item: ObjectItem) => item.id === monitorObject
       );
       const row: any = {
         monitorObjId: monitorObject || '',

@@ -21,7 +21,7 @@ import {
 } from '@/app/monitor/types';
 import { Dayjs } from 'dayjs';
 import {
-  ObectItem,
+  ObjectItem,
   MetricItem,
   TableDataItem,
   ConditionItem,
@@ -67,7 +67,7 @@ const SearchView: React.FC = () => {
   >([]);
   const [labels, setLabels] = useState<string[]>([]);
   const [object, setObject] = useState<string>('');
-  const [objects, setObjects] = useState<ObectItem[]>([]);
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [activeTab, setActiveTab] = useState<string>('area');
   const [conditions, setConditions] = useState<ConditionItem[]>([]);
   const beginTime: number = dayjs().subtract(15, 'minute').valueOf();
@@ -117,7 +117,7 @@ const SearchView: React.FC = () => {
   const getObjects = async () => {
     try {
       setObjLoading(true);
-      const data: ObectItem[] = await getMonitorObject({
+      const data: ObjectItem[] = await getMonitorObject({
         add_instance_count: true,
       })
       const _treeData = getTreeData(deepClone(data));
@@ -434,7 +434,7 @@ const SearchView: React.FC = () => {
     handleSearch('refresh', activeTab, _times);
   };
 
-  const getTreeData = (data: ObectItem[]): TreeItem[] => {
+  const getTreeData = (data: ObjectItem[]): TreeItem[] => {
     const groupedData = data.reduce(
       (acc, item) => {
         if (!acc[item.type]) {

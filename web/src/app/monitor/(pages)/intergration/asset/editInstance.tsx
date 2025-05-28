@@ -24,7 +24,7 @@ interface ModalProps {
 
 const EditInstance = forwardRef<ModalRef, ModalProps>(
   ({ onSuccess, organizationList }, ref) => {
-    const { updateInstanceChildConfig } = useMonitorApi();
+    const { updateMonitorInstance } = useMonitorApi();
     const { t } = useTranslation();
     const formRef = useRef<FormInstance>(null);
     const [visible, setVisible] = useState<boolean>(false);
@@ -45,8 +45,8 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
       if (visible) {
         formRef.current?.resetFields();
         formRef.current?.setFieldsValue({
-          instance_name: configForm.instance_name,
-          organization: (configForm.organization || []).map((item) =>
+          name: configForm.instance_name,
+          organizations: (configForm.organization || []).map((item) =>
             Number(item)
           ),
         });
@@ -54,13 +54,9 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
     }, [visible, configForm]);
 
     const handleOperate = async (params: InstanceInfo) => {
-      if (params) {
-        console.log(params);
-        return;
-      }
       try {
         setConfirmLoading(true);
-        await updateInstanceChildConfig(params as any);
+        await updateMonitorInstance(params);
         message.success(t('common.successfullyModified'));
         handleCancel();
         onSuccess();
@@ -75,7 +71,7 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
       formRef.current?.validateFields().then((values) => {
         handleOperate({
           ...values,
-          id: configForm.instance_id,
+          instance_id: configForm.instance_id,
         });
       });
     };
@@ -108,14 +104,14 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
           <Form ref={formRef} name="basic" layout="vertical">
             <Form.Item<InstanceInfo>
               label={t('monitor.intergrations.instanceName')}
-              name="instance_name"
+              name="name"
               rules={[{ required: true, message: t('common.required') }]}
             >
               <Input />
             </Form.Item>
             <Form.Item<InstanceInfo>
               label={t('monitor.group')}
-              name="organization"
+              name="organizations"
               rules={[{ required: true, message: t('common.required') }]}
             >
               <CustomCascader

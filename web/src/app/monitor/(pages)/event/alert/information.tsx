@@ -6,7 +6,7 @@ import { useTranslation } from '@/utils/i18n';
 import informationStyle from './index.module.scss';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import LineChart from '@/app/monitor/components/charts/lineChart';
-import { ObectItem } from '@/app/monitor/types/monitor';
+import { ObjectItem } from '@/app/monitor/types/monitor';
 import { findUnitNameById, showGroupName } from '@/app/monitor/utils/common';
 import { useCommon } from '@/app/monitor/context/common';
 import { Popconfirm, message, Button } from 'antd';
@@ -33,7 +33,7 @@ const Information: React.FC<TableDataItem> = ({
 
   const checkDetail = (row: TableDataItem) => {
     const monitorItem = objects.find(
-      (item: ObectItem) => item.id === row.policy?.monitor_object
+      (item: ObjectItem) => item.id === row.policy?.monitor_object
     );
     const params = {
       monitorObjId: row.policy?.monitor_object,
@@ -108,7 +108,7 @@ const Information: React.FC<TableDataItem> = ({
         </Descriptions.Item>
         <Descriptions.Item label={t('monitor.events.assetType')}>
           {objects.find(
-            (item: ObectItem) => item.id === formData.policy?.monitor_object
+            (item: ObjectItem) => item.id === formData.policy?.monitor_object
           )?.display_name || '--'}
         </Descriptions.Item>
         <Descriptions.Item label={t('monitor.asset')}>

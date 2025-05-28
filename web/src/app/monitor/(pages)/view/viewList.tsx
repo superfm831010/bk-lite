@@ -11,11 +11,12 @@ import {
   getK8SData,
   getConfigByPluginName,
   getConfigByObjectName,
+  getBaseInstanceColumn,
 } from '@/app/monitor/utils/common';
 import { useRouter } from 'next/navigation';
 import {
   IntergrationItem,
-  ObectItem,
+  ObjectItem,
   MetricItem,
   ViewListProps,
 } from '@/app/monitor/types/monitor';
@@ -26,7 +27,6 @@ import {
   Pagination,
   TableDataItem,
 } from '@/app/monitor/types';
-import { DERIVATIVE_OBJECTS } from '@/app/monitor/constants/monitor';
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
@@ -301,7 +301,11 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
           };
         });
         const originColumns = deepClone([
-          ...getBaseInstanceColumn(targetObject),
+          ...getBaseInstanceColumn({
+            objects,
+            row: targetObject,
+            t,
+          }),
           ...columns,
         ]);
         const indexToInsert = originColumns.length - 1;
@@ -313,51 +317,6 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     } finally {
       setTableLoading(false);
     }
-  };
-
-  const getBaseInstanceColumn = (row: TableDataItem) => {
-    const baseTarget = objects
-      .filter((item) => item.type === row.type)
-      .find((item) => item.level === 'base');
-    const title = baseTarget?.display_name || t('monitor.source');
-    const isDerivative = DERIVATIVE_OBJECTS.includes(row.name);
-    const columnItems: any = [
-      {
-        title: t('common.name'),
-        dataIndex: 'instance_name',
-        width: 160,
-        key: 'instance_name',
-        render: (_: unknown, record: TableDataItem) => {
-          const instanceName =
-            (isDerivative
-              ? record.instance_id_values?.[1]
-              : record.instance_name) || '--';
-          return (
-            <EllipsisWithTooltip
-              text={instanceName}
-              className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
-            ></EllipsisWithTooltip>
-          );
-        },
-      },
-    ];
-    if (isDerivative) {
-      columnItems.unshift({
-        title: title,
-        dataIndex: 'base_instance_name',
-        width: 160,
-        key: 'base_instance_name',
-        render: (_: unknown, record: TableDataItem) => {
-          return (
-            <EllipsisWithTooltip
-              text={record.instance_id_values?.[0] || '--'}
-              className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
-            ></EllipsisWithTooltip>
-          );
-        },
-      });
-    }
-    return columnItems;
   };
 
   const getPercent = (value: number) => {
@@ -391,7 +350,9 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
   };
 
   const linkToDetial = (app: TableDataItem) => {
-    const monitorItem = objects.find((item: ObectItem) => item.id === objectId);
+    const monitorItem = objects.find(
+      (item: ObjectItem) => item.id === objectId
+    );
     const row: any = {
       monitorObjId: objectId || '',
       name: monitorItem?.name || '',

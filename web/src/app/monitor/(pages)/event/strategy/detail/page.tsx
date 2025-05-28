@@ -36,6 +36,7 @@ import {
   IndexViewItem,
   GroupInfo,
   ChannelItem,
+  ObjectItem,
 } from '@/app/monitor/types/monitor';
 import { useCommon } from '@/app/monitor/context/common';
 import {
@@ -75,6 +76,7 @@ const StrategyOperation = () => {
     getMonitorMetrics,
     getMonitorPlugin,
     getMonitorPolicy,
+    getMonitorObject,
   } = useMonitorApi();
   const CONDITION_LIST = useConditionList();
   const METHOD_LIST = useMethodList();
@@ -114,6 +116,7 @@ const StrategyOperation = () => {
   const [conditions, setConditions] = useState<FilterItem[]>([]);
   const [noDataAlert, setNoDataAlert] = useState<number | null>(null);
   const [noDataLevel, setNoDataLevel] = useState<string>();
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [groupBy, setGroupBy] = useState<string[]>(
     getConfigByObjectName(monitorName as string, 'groupIds').default ||
       defaultGroup
@@ -150,12 +153,18 @@ const StrategyOperation = () => {
       Promise.all([
         getPlugins(),
         getChannelList(),
+        getObjects(),
         detailId && getStragyDetail(),
       ]).finally(() => {
         setPageLoading(false);
       });
     }
   }, [isLoading]);
+
+  const getObjects = async () => {
+    const data = await getMonitorObject();
+    setObjects(data);
+  };
 
   useEffect(() => {
     form.resetFields();
@@ -1373,6 +1382,7 @@ const StrategyOperation = () => {
         organizationList={organizationList}
         form={source}
         monitorObject={monitorObjId}
+        objects={objects}
         onSuccess={onChooseAssets}
       />
     </Spin>

@@ -14,7 +14,11 @@ import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import useApiClient from '@/utils/request';
 import { ModalRef, ListItem } from '@/app/monitor/types';
-import { RuleInfo, GroupingRules } from '@/app/monitor/types/monitor';
+import {
+  RuleInfo,
+  GroupingRules,
+  ObjectItem,
+} from '@/app/monitor/types/monitor';
 import { useTranslation } from '@/utils/i18n';
 import { deepClone } from '@/app/monitor/utils/common';
 import CustomCascader from '@/components/custom-cascader';
@@ -23,10 +27,11 @@ interface ModalProps {
   onSuccess: () => void;
   groupList: ListItem[];
   monitorObject: React.Key;
+  objects: ObjectItem[];
 }
 
 const RuleModal = forwardRef<ModalRef, ModalProps>(
-  ({ onSuccess, groupList, monitorObject }, ref) => {
+  ({ onSuccess, groupList, monitorObject, objects }, ref) => {
     const { post, put } = useApiClient();
     const { t } = useTranslation();
     const formRef = useRef<FormInstance>(null);
@@ -234,6 +239,7 @@ const RuleModal = forwardRef<ModalRef, ModalProps>(
             ref={instRef}
             monitorObject={monitorObject}
             organizationList={groupList}
+            objects={objects}
             list={instList}
             onSuccess={operateSelect}
           />
