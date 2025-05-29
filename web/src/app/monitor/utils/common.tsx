@@ -24,9 +24,7 @@ import {
   DERIVATIVE_OBJECTS,
 } from '@/app/monitor/constants/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
-import { message } from 'antd';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import { useTranslation } from '@/utils/i18n';
 
 // 深克隆
 export const deepClone = (obj: any, hash = new WeakMap()) => {
@@ -435,30 +433,6 @@ export const renderChart = (
     });
   });
   return result;
-};
-
-export const useHandleCopy = (value: string) => {
-  const { t } = useTranslation();
-  const handleCopy = () => {
-    try {
-      if (navigator?.clipboard?.writeText) {
-        navigator.clipboard.writeText(value);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = value;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
-      message.success(t('common.successfulCopied'));
-    } catch (error: any) {
-      message.error(error + '');
-    }
-  };
-  return {
-    handleCopy,
-  };
 };
 
 export const findTreeParentKey = (
