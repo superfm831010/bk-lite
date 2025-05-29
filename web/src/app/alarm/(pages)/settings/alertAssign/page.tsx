@@ -242,7 +242,6 @@ const AlertAssign: React.FC = () => {
             onChange={(e) => setSearchKey(e.target.value)}
             onPressEnter={handleFilterChange}
             onClear={handleFilterClear}
-            className="!rounded-l-none"
           />
         </div>
         <PermissionWrapper requiredPermissions={['Add']}>
@@ -261,7 +260,11 @@ const AlertAssign: React.FC = () => {
         onChange={handleTableChange}
         scroll={{ y: 'calc(100vh - 440px)' }}
       />
-      {operateVisible && <OperateModal />}
+      <OperateModal
+        open={operateVisible}
+        onClose={() => setOperateVisible(false)}
+        currentRow={currentRow}
+      />
     </div>
   );
 };

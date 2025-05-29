@@ -1,26 +1,25 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import AlarmFilters from '@/app/alarm/components/alarmFilters/page';
+import AlarmFilters from '@/app/alarm/components/alarmFilters';
 import CustomTable from '@/components/custom-table';
 import alertStyle from './index.module.scss';
 import TimeSelector from '@/components/time-selector';
-import type { TimeSelectorDefaultValue } from '@/app/alarm/types';
+import type { TimeSelectorDefaultValue } from '@/app/alarm/types/types';
 import type { ColumnsType } from 'antd/es/table';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
-import { Input, Button, Tag, Spin } from 'antd';
-import { TableDataItem, Pagination } from '@/app/alarm/types';
+import { Input, Button, Tag } from 'antd';
+import { TableDataItem, Pagination } from '@/app/alarm/types/types';
 import { FiltersConfig } from '@/app/alarm/types/alarms';
 import { useTranslation } from '@/utils/i18n';
 import { AlertOutlined } from '@ant-design/icons';
-import { LEVEL_MAP, useLevelList } from '@/app/alarm/constants/monitor';
-import { incidentStates } from '@/app/alarm/constants/alarm';
+import { LEVEL_MAP, useLevelList, incidentStates } from '@/app/alarm/constants/alarm';
 import { useRouter } from 'next/navigation';
 
 const IncidentsPage: React.FC = () => {
   const { getAlarmList } = useAlarmApi();
   const { t } = useTranslation();
-  const router = useRouter(); 
+  const router = useRouter();
   const LEVEL_LIST = useLevelList();
   const [searchText, setSearchText] = useState('');
   const [data, setData] = useState<TableDataItem[]>([]);
@@ -28,7 +27,6 @@ const IncidentsPage: React.FC = () => {
   const [filters, setFilters] = useState<FiltersConfig>({
     level: [],
     state: [],
-    notify: [],
     alarm_source: [],
   });
   const [pagination, setPagination] = useState<Pagination>({
@@ -46,7 +44,6 @@ const IncidentsPage: React.FC = () => {
     value: val,
     label: t(`alarms.${val}`),
   }));
-
 
   const handleRefresh = () => fetchList(1, pagination.pageSize);
 
@@ -176,17 +173,15 @@ const IncidentsPage: React.FC = () => {
             onRefresh={handleRefresh}
           />
         </div>
-        <Spin spinning={loading}>
-          <CustomTable
-            rowKey="id"
-            scroll={{ y: 'calc(100vh - 280px)', x: 'calc(100vw - 320px)' }}
-            columns={columns}
-            dataSource={data}
-            pagination={pagination}
-            loading={loading}
-            onChange={onTableChange}
-          />
-        </Spin>
+        <CustomTable
+          rowKey="id"
+          scroll={{ y: 'calc(100vh - 280px)', x: 'calc(100vw - 320px)' }}
+          columns={columns}
+          dataSource={data}
+          pagination={pagination}
+          loading={loading}
+          onChange={onTableChange}
+        />
       </div>
     </div>
   );

@@ -1,10 +1,12 @@
+'use client';
+
 import React, { useMemo, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import minMax from 'dayjs/plugin/minMax';
 import styles from './index.module.scss';
 import AlertDetail from '../../../alarms/components/alarmDetail';
-import { ModalRef } from '@/app/alarm/types';
-import { LEVEL_MAP } from '@/app/alarm/constants/monitor';
+import { ModalRef } from '@/app/alarm/types/types';
+import { LEVEL_MAP } from '@/app/alarm/constants/alarm';
 import { Tooltip, Checkbox } from 'antd';
 
 dayjs.extend(minMax);
@@ -157,7 +159,7 @@ const GanttChart: React.FC = () => {
             })}
           </div>
         </div>
-        <AlertDetail ref={detailRef} metrics={[]} userList={[]} />
+        <AlertDetail ref={detailRef} />
       </div>
     </>
   );

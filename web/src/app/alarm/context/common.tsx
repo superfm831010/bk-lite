@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { UserItem } from '@/app/alarm/types';
+import { UserItem } from '@/app/alarm/types/types';
 import useApiClient from '@/utils/request';
 import Spin from '@/components/spin';
 
@@ -24,7 +24,12 @@ const CommonContextProvider = ({ children }: { children: React.ReactNode }) => {
   const getPermissionGroups = async () => {
     setPageLoading(true);
     try {
-      const getUserList = get('/core/api/user_group/user_list/');
+      const getUserList = get('/core/api/user_group/user_list/', {
+        params: {
+          page_size: 10000,
+          page: 1,
+        },
+      });
       Promise.all([getUserList])
         .then((res) => {
           const userData: UserItem[] = res[0].users;

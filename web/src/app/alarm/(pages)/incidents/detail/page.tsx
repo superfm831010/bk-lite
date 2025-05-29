@@ -5,12 +5,11 @@ import styles from './page.module.scss';
 import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
 import GanttChart from '../components/ganttChart/page';
 import LinkModal from '../components/linkModal/page';
-import Icon from '@/components/icon';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import type { TableDataItem } from '@/app/alarm/types';
-import { UserItem } from '@/app/alarm/types';
+import type { TableDataItem } from '@/app/alarm/types/types';
+import { UserItem } from '@/app/alarm/types/types';
 import { useCommon } from '@/app/alarm/context/common';
-import { LEVEL_MAP, useLevelList } from '@/app/alarm/constants/monitor';
+import { LEVEL_MAP, useLevelList } from '@/app/alarm/constants/alarm';
 import { useTranslation } from '@/utils/i18n';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
@@ -21,6 +20,8 @@ import {
   CheckOutlined,
   CloseOutlined,
   AlertOutlined,
+  BarsOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import {
   Breadcrumb,
@@ -29,7 +30,7 @@ import {
   Timeline,
   Input,
   Button,
-  Radio,
+  Segmented,
   Dropdown,
   Select,
   Tag,
@@ -41,7 +42,7 @@ const { TabPane } = Tabs;
 const mockData: TableDataItem[] = [
   {
     id: 1,
-    level: 'critical',
+    level: 'fatal',
     first_event_time: '2023-08-01 08:00',
     last_event_time: '2023-08-01 09:30',
     title: 'CPU 使用率过高',
@@ -97,7 +98,7 @@ const IncidentDetail: React.FC = () => {
   const LEVEL_LIST = useLevelList();
 
   const detail = {
-    level: 'critical',
+    level: 'fatal',
     alertName: `告警 #${incidentName}`,
     createTime: '2023-08-01 12:00:00',
     source: 'Server A',
@@ -224,11 +225,18 @@ const IncidentDetail: React.FC = () => {
               {editingAssignee ? (
                 <>
                   <Select
+                    allowClear
+                    showSearch
                     options={userOptions}
                     value={selectedAssignees}
                     maxTagCount={1}
                     mode="multiple"
                     className="flex-1 mr-[10px]"
+                    filterOption={(input, option) =>
+                      (option?.label as string)
+                        ?.toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
                     onChange={setSelectedAssignees}
                   />
                   <Button
@@ -254,6 +262,7 @@ const IncidentDetail: React.FC = () => {
                     size="small"
                     type="link"
                     icon={<EditOutlined />}
+                    className="mr-[10px]"
                     onClick={() => setEditingAssignee(true)}
                   />
                 </>
@@ -310,19 +319,22 @@ const IncidentDetail: React.FC = () => {
                       onChange={(e) => setSearchText(e.target.value)}
                       onPressEnter={() => fetchList(1, pagination.pageSize)}
                     />
-                    <Radio.Group
-                      value={viewType}
-                      className={styles.viewTypeSwitch}
-                      optionType="button"
-                      onChange={(e) => setViewType(e.target.value)}
-                    >
-                      <Radio value="table" className={styles.typeButton}>
-                        <Icon type="jibenxinxi" className={styles.viewIcon} />
-                      </Radio>
-                      <Radio value="gantt" className={styles.typeButton}>
-                        <Icon type="bianliang" className={styles.viewIcon} />
-                      </Radio>
-                    </Radio.Group>
+                    <Segmented
+                      defaultValue="table"
+                      options={[
+                        {
+                          value: 'table',
+                          label: t('incidents.table'),
+                          icon: <AppstoreOutlined />,
+                        },
+                        {
+                          value: 'gantt',
+                          label: t('incidents.gantt'),
+                          icon: <BarsOutlined />,
+                        },
+                      ]}
+                      onChange={setViewType}
+                    />
                   </div>
                   <div>
                     <Button
@@ -341,7 +353,6 @@ const IncidentDetail: React.FC = () => {
                   <AlarmTable
                     dataSource={tableData}
                     pagination={pagination}
-                    metrics={[]}
                     loading={tabLoading}
                     tableScrollY="calc(100vh - 500px)"
                     selectedRowKeys={selectedRowKeys}

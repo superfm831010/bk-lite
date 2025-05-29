@@ -53,20 +53,4 @@
       align-items: center;
     }
   }
-  .viewTypeSwitch {
-    display: flex;
-
-    .typeButton {
-      width: 40px;
-      height: 28px;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      .viewIcon {
-        font-size: 18px;
-      }
-    }
-  }
 }

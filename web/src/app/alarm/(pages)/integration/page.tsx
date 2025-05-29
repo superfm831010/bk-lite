@@ -6,14 +6,14 @@ import { useSourceApi } from '@/app/alarm/api/sources';
 import { Drawer, message, Spin, Empty, Descriptions } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
-import { Source } from '@/app/alarm/types/integration';
+import { SourceItem } from '@/app/alarm/types/integration';
 
 const IntegrationPage: React.FC = () => {
   const { getAlertSources } = useSourceApi();
-  const [sources, setSources] = useState<any[]>([]);
+  const [sources, setSources] = useState<SourceItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [drawerVisible, setDrawerVisible] = useState<boolean>(false);
-  const [selectedSource, setSelectedSource] = useState<Source | null>(null);
+  const [selectedSource, setSelectedSource] = useState<SourceItem | null>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -48,7 +48,7 @@ const IntegrationPage: React.FC = () => {
           <div
             className={`${alertStyle.container} grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-6`}
           >
-            {sources.map((src: Source) => (
+            {sources.map((src: SourceItem) => (
               <div
                 key={src.source_id}
                 className={alertStyle.card}
@@ -59,7 +59,7 @@ const IntegrationPage: React.FC = () => {
               >
                 <div className={alertStyle.cardContent}>
                   <img
-                    src="/app/restful.png"
+                    src={src.logo || '/app/restful.png'}
                     alt={src.description}
                     className={alertStyle.logo}
                   />

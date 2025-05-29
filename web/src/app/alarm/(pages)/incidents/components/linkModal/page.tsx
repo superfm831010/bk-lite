@@ -1,8 +1,10 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import styles from './index.module.scss';
 import CustomTable from '@/components/custom-table';
 import type { ColumnsType } from 'antd/es/table';
-import type { TableDataItem } from '@/app/alarm/types';
+import type { TableDataItem } from '@/app/alarm/types/types';
 import { Drawer, Input, Button } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 

@@ -1,11 +1,29 @@
 import React from 'react';
+import LogicalRule from './ logicalRule';
+import { Drawer } from 'antd';
 
-const OperateModalPage = () => {
+interface OperateModalProps {
+  open: boolean;
+  currentRow?: any;
+  onClose: () => void;
+}
+
+const OperateModalPage: React.FC<OperateModalProps> = ({
+  open,
+  currentRow,
+  onClose,
+}) => {
+  console.log('currentRow', currentRow);
   return (
-    <div>
-      <h1>PlayGround</h1>
-      <p>This is a Example PlayGround.</p>
-    </div>
+    <Drawer
+      title={''}
+      placement="right"
+      width={720}
+      open={open}
+      onClose={onClose}
+    >
+      <LogicalRule />
+    </Drawer>
   );
 };
 

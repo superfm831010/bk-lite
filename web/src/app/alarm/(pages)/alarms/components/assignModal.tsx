@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
-import { Modal, Select } from 'antd';
+import OperateModal from '@/components/operate-modal';
+import { Select } from 'antd';
 import { useCommon } from '@/app/alarm/context/common';
-import { UserItem } from '@/app/alarm/types';
+import { UserItem } from '@/app/alarm/types/types';
+import { useTranslation } from '@/utils/i18n';
 
 interface AlarmAssignModalProps {
+  actionType?: 'dispatch' | 'assign';
   visible: boolean;
   onCancel: () => void;
-  onSuccess: (selectedUserIds: (number|string)[]) => void;
+  onSuccess: (selectedUserIds: (number | string)[]) => void;
 }
 
 const AlarmAssignModal: React.FC<AlarmAssignModalProps> = ({
   visible,
+  actionType,
   onCancel,
   onSuccess,
 }) => {
   const common = useCommon();
   const userList: UserItem[] = common?.userList || [];
-  const [selectedIds, setSelectedIds] = useState<(number|string)[]>([]);
+  const [selectedIds, setSelectedIds] = useState<(number | string)[]>([]);
+  const { t } = useTranslation();
 
   const options = userList.map((u: UserItem) => ({
     label: `${u.display_name} (${u.username})`,
@@ -30,8 +35,8 @@ const AlarmAssignModal: React.FC<AlarmAssignModalProps> = ({
   };
 
   return (
-    <Modal
-      title="分配告警给用户"
+    <OperateModal
+      title={t(`alarms.${actionType}`)}
       open={visible}
       onOk={handleOk}
       onCancel={() => {
@@ -39,15 +44,24 @@ const AlarmAssignModal: React.FC<AlarmAssignModalProps> = ({
         onCancel();
       }}
     >
-      <Select
-        mode="multiple"
-        style={{ width: '100%' }}
-        placeholder="请选择用户"
-        options={options}
-        value={selectedIds}
-        onChange={(val) => setSelectedIds(val)}
-      />
-    </Modal>
+      <div className="flex justify-between items-center mt-2 mb-4">
+        <label className="block mr-2">{t('alarms.user')}</label>
+        <Select
+          allowClear
+          showSearch
+          mode="multiple"
+          optionFilterProp="label"
+          style={{ width: '100%', flex: 1 }}
+          placeholder={t('common.pleaseSelect')} 
+          options={options}
+          value={selectedIds}
+          filterOption={(input, option) =>
+            (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+          }
+          onChange={(val) => setSelectedIds(val)}
+        />
+      </div>
+    </OperateModal>
   );
 };
 

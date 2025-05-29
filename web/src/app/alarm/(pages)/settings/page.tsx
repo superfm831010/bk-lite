@@ -5,7 +5,7 @@ import { Tabs } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import AlertAssign from './alertAssign/page';
 import ShieldStrategy from './shieldStrategy/page';
-import Introduction from '@/app/cmdb/components/introduction';
+import Introduction from '@/app/alarm/components/introduction';
 
 const SettingsPage: React.FC = () => {
   const { t } = useTranslation();

@@ -15,7 +15,7 @@ interface Config {
   event_fields_mapping: Record<string, string>;
   event_fields_desc_mapping: Record<string, string>;
 }
-export interface Source {
+export interface SourceItem {
   id: number;
   created_at: string;
   updated_at: string;

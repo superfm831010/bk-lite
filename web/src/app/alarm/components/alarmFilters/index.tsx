@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Collapse from '@/components/collapse';
 import alertStyle from './index.module.scss';
-import { Checkbox, Space } from 'antd';
+import { Checkbox, Space, Spin } from 'antd';
 import { ClearOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { FiltersConfig } from '@/app/alarm/types/alarms';
-import { LEVEL_MAP } from '@/app/alarm/constants/monitor';
+import { useSourceApi } from '@/app/alarm/api/sources';
+import { LEVEL_MAP } from '@/app/alarm/constants/alarm';
+import { SourceItem } from '@/app/alarm/types/integration';
 
 interface Props {
   filters: FiltersConfig;
@@ -23,14 +25,33 @@ const AlarmFilters: React.FC<Props> = ({
   clearFilters,
 }) => {
   const { t } = useTranslation();
+  const { getAlertSources } = useSourceApi();
+  const [sourceOptions, setSourcesOptions] = useState<SourceItem[]>([]);
+  const [loadingSources, setLoadingSources] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!filterSource) return;
+    const fetchSources = async () => {
+      setLoadingSources(true);
+      try {
+        const res = await getAlertSources();
+        if (res) setSourcesOptions(res);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingSources(false);
+      }
+    };
+    fetchSources();
+  }, [filterSource]);
 
   const filterConfigs = [
     {
       field: 'level' as keyof FiltersConfig,
       title: t('alarms.level'),
       options: [
-        { value: 'critical', label: t('alarms.critical') },
-        { value: 'error', label: t('alarms.error') },
+        { value: 'fatal', label: t('alarms.fatal') },
+        { value: 'severity', label: t('alarms.severity') },
         { value: 'warning', label: t('alarms.warning') },
       ],
     },
@@ -39,11 +60,6 @@ const AlarmFilters: React.FC<Props> = ({
       title: t('alarms.state'),
       options: stateOptions,
     },
-  ];
-
-  const groupObjects = [
-    { label: t('alarms.monitor'), value: 'monitor' },
-    { label: t('alarms.logs'), value: 'log' },
   ];
 
   return (
@@ -108,21 +124,23 @@ const AlarmFilters: React.FC<Props> = ({
                 </div>
               }
             >
-              <Checkbox.Group
-                className={alertStyle.group}
-                value={filters.alarm_source}
-                onChange={(vals) =>
-                  onFilterChange(vals as string[], 'alarm_source')
-                }
-              >
-                <Space direction="vertical">
-                  {groupObjects.map((o) => (
-                    <Checkbox key={o.value} value={o.value}>
-                      {o.label}
-                    </Checkbox>
-                  ))}
-                </Space>
-              </Checkbox.Group>
+              <Spin size="small" spinning={loadingSources}>
+                <Checkbox.Group
+                  className={alertStyle.group}
+                  value={filters.alarm_source}
+                  onChange={(vals) =>
+                    onFilterChange(vals as string[], 'alarm_source')
+                  }
+                >
+                  <Space direction="vertical">
+                    {sourceOptions.map((o: SourceItem) => (
+                      <Checkbox key={o.name} value={o.name}>
+                        {o.name}
+                      </Checkbox>
+                    ))}
+                  </Space>
+                </Checkbox.Group>
+              </Spin>
             </Collapse>
           </div>
         )}

@@ -1,46 +1,71 @@
 import React from 'react';
-import { Descriptions, Tag } from 'antd';
-import { AlertOutlined } from '@ant-design/icons';
-import { LEVEL_MAP, useLevelList } from '@/app/alarm/constants/monitor';
+import { Descriptions } from 'antd';
+import { useTranslation } from '@/utils/i18n';
+import { AlarmTableDataItem } from '@/app/alarm/types/alarms';
+import {
+  useNotifiedStateMap
+} from '@/app/alarm/constants/alarm';
 
-const BaseInfo: React.FC = () => {
-  const detail = {
-    level: 'critical' as keyof typeof LEVEL_MAP,
-    alertName: 'CPU 使用率过高',
-    createTime: '2023-08-01 12:00:00',
-    source: 'Server A',
-    state: 'new',
-    assignee: 'Alice',
-    note: '这是一个示例备注。',
-  };
-  const LEVEL_LIST = useLevelList();
-
+const BaseInfo: React.FC<{ detail: AlarmTableDataItem }> = ({ detail }) => {
+  const { t } = useTranslation();
+  const NOTIFIED_STATE: any = useNotifiedStateMap();
+  const descriptionItems = [
+    {
+      key: 'operator',
+      label: t('common.operator'),
+      value: detail.operator_user,
+    },
+    {
+      key: 'source',
+      label: t('alarms.source'),
+      value: detail.source_names,
+    },
+    {
+      key: 'notificationStatus',
+      label: t('alarms.notificationStatus'),
+      value: NOTIFIED_STATE[detail.notification_status] || '--',
+    },
+    {
+      key: 'objectType',
+      label: t('alarms.objectType'),
+      value: detail.resource_type,
+    },
+    {
+      key: 'object',
+      label: t('alarms.object'),
+      value: detail.resource_name,
+    },
+  ];
   return (
-    <Descriptions bordered size="small" column={2}>
-      <Descriptions.Item label="告警等级">
-        <Tag icon={<AlertOutlined />} color={LEVEL_MAP[detail.level] as string}>
-          {LEVEL_LIST.find((item) => item.value === detail.level)?.label ||
-            detail.level}
-        </Tag>
+    <Descriptions
+      bordered
+      size="small"
+      column={1}
+      style={{ tableLayout: 'fixed' }}
+      labelStyle={{
+        width: '120px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}
+    >
+      <Descriptions.Item
+        label={t('alarms.content')}
+        styles={{
+          content: {
+            maxHeight: '100px',
+            overflowY: 'auto',
+            wordBreak: 'break-word',
+          },
+        }}
+      >
+        {detail.content || '--'}
       </Descriptions.Item>
-      <Descriptions.Item label="告警名称">
-        {detail.alertName}
-      </Descriptions.Item>
-      <Descriptions.Item label="创建时间">
-        {detail.createTime}
-      </Descriptions.Item>
-      <Descriptions.Item label="来源">
-        {detail.source}
-      </Descriptions.Item>
-      <Descriptions.Item label="状态">
-        {detail.state}
-      </Descriptions.Item>
-      <Descriptions.Item label="处理人">
-        {detail.assignee}
-      </Descriptions.Item>
-      <Descriptions.Item label="备注" span={2}>
-        {detail.note}
-      </Descriptions.Item>
+      {descriptionItems.map((item) => (
+        <Descriptions.Item key={item.key} label={item.label}>
+          {item.value || '--'}
+        </Descriptions.Item>
+      ))}
     </Descriptions>
   );
 };

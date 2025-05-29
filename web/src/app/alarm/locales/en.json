@@ -14,9 +14,16 @@
     "linkAlert": "Link Alert",
     "unlinkAlert": "Unlink Alert",
     "copied": "Copied to clipboard",
-    "operateFailed": "Operation failed"
+    "operateFailed": "Operation failed",
+    "notNotified": "Not notified",
+    "success": "Success",
+    "fail": "Fail",
+    "partialSuccess": "Partial success"
   },
-  "incidents": {},
+  "incidents": {
+    "table": "Table",
+    "gantt": "Gantt"
+  },
   "alarms": {
     "monitor": "Monitor",
     "logs": "Logs",
@@ -25,9 +32,10 @@
     "level": "Level",
     "state": "State",
     "notify": "Notify",
-    "critical": "Critical",
-    "error": "Error",
+    "fatal": "Fatal",
+    "severity": "Severity",
     "warning": "Warning",
+    "remaining": "Remain",
     "pending": "Pending",
     "processing": "Processing",
     "notified": "Notified",
@@ -56,6 +64,7 @@
     "new": "New",
     "unassigned": "Unassigned",
     "recovered": "Recovery",
+    "resolved": "Resolved",
     "closed": "Closed",
     "close": "close",
     "assign": "assign",
@@ -83,7 +92,11 @@
     "refuse": "Refuse",
     "autoExecuteProcess": "Auto Execute Process",
     "summary": "Summary",
-    "rawData": "Raw Data"
+    "rawData": "Raw Data",
+    "user": "User",
+    "objectType": "Object Type",
+    "object": "Object",
+    "content": "内容"
   },
   "integration": {
     "secret": "Secret",

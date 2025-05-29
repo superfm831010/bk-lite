@@ -2,30 +2,28 @@
 
 import React, { useRef } from 'react';
 import CustomTable from '@/components/custom-table';
-import UserAvatar from '@/app/cmdb/components/userAvatar';
+import UserAvatar from '@/app/alarm/components/userAvatar';
 import AlertDetail from './alarmDetail';
 import AlarmAction from './alarmAction';
 import type { ColumnsType } from 'antd/es/table';
-import { getEnumValueUnit } from '@/app/alarm/utils/common';
 import { AlertOutlined } from '@ant-design/icons';
 import { Tag, Button, message } from 'antd';
-import { ModalRef } from '@/app/alarm/types';
-import { MetricItem, AlarmTableProps } from '@/app/alarm/types/alarms';
-import { TableDataItem } from '@/app/alarm/types';
+import { ModalRef } from '@/app/alarm/types/types';
+import { AlarmTableProps } from '@/app/alarm/types/alarms';
+import { TableDataItem } from '@/app/alarm/types/types';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import {
   useStateMap,
   useLevelList,
+  useNotifiedStateMap,
   LEVEL_MAP,
-} from '@/app/alarm/constants/monitor';
-
+} from '@/app/alarm/constants/alarm';
 
 const AlarmTable: React.FC<AlarmTableProps> = ({
   dataSource,
   pagination,
   loading,
-  metrics,
   tableScrollY,
   selectedRowKeys,
   onChange,
@@ -36,6 +34,7 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
   const { convertToLocalizedTime } = useLocalizedTime();
   const STATE_MAP = useStateMap();
   const LEVEL_LIST = useLevelList();
+  const NOTIFIED_STATE: any = useNotifiedStateMap();
   const detailRef = useRef<ModalRef>(null);
 
   const columns: ColumnsType<TableDataItem> = [
@@ -51,23 +50,37 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       ),
     },
     {
-      title: t('common.time'),
-      dataIndex: 'updated_at',
-      key: 'updated_at',
+      title: t('alarms.firstEventTime'),
+      dataIndex: 'first_event_time',
+      key: 'first_event_time',
       width: 160,
-      render: (_: any, { updated_at }: TableDataItem) =>
-        updated_at ? convertToLocalizedTime(updated_at) : '--',
+      render: (_: any, { first_event_time }: TableDataItem) =>
+        first_event_time ? convertToLocalizedTime(first_event_time) : '--',
     },
     {
-      title: t('alarms.alertName'),
-      dataIndex: 'content',
-      key: 'content',
-      width: 120,
+      title: t('alarms.lastEventTime'),
+      dataIndex: 'last_event_time',
+      key: 'last_event_time',
+      width: 160,
+      render: (_: any, { last_event_time }: TableDataItem) =>
+        last_event_time ? convertToLocalizedTime(last_event_time) : '--',
+    },
+    {
+      title: t('alarms.eventTitle'),
+      dataIndex: 'title',
+      key: 'title',
+      width: 280,
+    },
+    {
+      title: t('alarms.eventCount'),
+      dataIndex: 'event_count',
+      key: 'event_count',
+      width: 100,
     },
     {
       title: t('alarms.source'),
-      dataIndex: 'source',
-      key: 'source',
+      dataIndex: 'source_names',
+      key: 'source_names',
       width: 120,
     },
     {
@@ -77,31 +90,42 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       width: 80,
       render: (_: any, { status }: TableDataItem) => (
         <Tag color={status === 'new' ? 'blue' : 'var(--color-text-4)'}>
-          {STATE_MAP[status]}
+          {STATE_MAP[status as keyof typeof STATE_MAP] || '--'}
         </Tag>
       ),
     },
     {
-      title: t('alarms.notify'),
-      dataIndex: 'notify',
-      key: 'notify',
-      width: 100,
-      render: (_: any, record: TableDataItem) =>
-        t(`alarms.${record.policy?.notice ? 'notified' : 'unnotified'}`),
+      title: t('alarms.duration'),
+      dataIndex: 'duration',
+      key: 'duration',
+      width: 180,
     },
     {
       title: t('common.operator'),
-      dataIndex: 'operator',
-      key: 'operator',
+      dataIndex: 'operator_user',
+      key: 'operator_user',
       width: 100,
       render: (_: any, { operator }: TableDataItem) =>
         operator ? <UserAvatar userName={operator} /> : '--',
     },
     {
+      title: t('alarms.notificationStatus'),
+      dataIndex: 'notification_status',
+      key: 'notification_status',
+      width: 150,
+      render: (_: any, { notification_status }: TableDataItem) => {
+        return notification_status ? (
+          <Tag color={notification_status === 'success' ? 'green' : 'red'}>
+            {NOTIFIED_STATE[notification_status] || '--'}
+          </Tag>
+        ) : '--';
+      },
+    },
+    {
       title: t('common.action'),
       key: 'action',
       dataIndex: 'action',
-      width: 200,
+      width: 260,
       fixed: 'right',
       render: (_: any, record: TableDataItem) => (
         <div className="flex items-center">
@@ -134,19 +158,10 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
   ];
 
   const onOpenDetail = (row: TableDataItem) => {
-    const metricInfo =
-      metrics.find(
-        (item) => item.id === row.policy?.query_condition?.metric_id
-      ) || {};
     detailRef.current?.showModal({
-      title: t('alarms.alertDetail'),
-      type: 'add',
-      form: {
-        ...row,
-        metric: metricInfo,
-        alertTitle: row.source,
-        alertValue: getEnumValueUnit(metricInfo as MetricItem, row.value),
-      },
+      title: row.title,
+      form: row,
+      type: '',
     });
   };
 
@@ -162,12 +177,7 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
         onChange={onChange}
         rowSelection={{ selectedRowKeys, onChange: onSelectionChange }}
       />
-      <AlertDetail
-        ref={detailRef}
-        metrics={metrics}
-        userList={[]}
-        onSuccess={() => onChange('refresh')}
-      />
+      <AlertDetail ref={detailRef} onSuccess={() => onChange('refresh')} />
     </>
   );
 };
