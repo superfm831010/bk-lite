@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Input, Button, Tooltip } from 'antd';
 import { CopyOutlined, EditOutlined } from '@ant-design/icons';
-import { useHandleCopy } from '@/app/node-manager/hooks';
+import { useHandleCopy } from '@/app/monitor/hooks';
 import { useTranslation } from '@/utils/i18n';
 
 interface PasswordProps {
