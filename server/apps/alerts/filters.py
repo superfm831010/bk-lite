@@ -3,7 +3,9 @@
 # @Time: 2025/5/9 15:06
 # @Author: windyzhao
 from django_filters import FilterSet, CharFilter
-from apps.alerts.models import AlertSource, Alert
+
+from apps.alerts.constants import AlertStatus
+from apps.alerts.models import AlertSource, Alert, Event
 
 
 class AlertSourceModelFilter(FilterSet):
@@ -30,7 +32,32 @@ class AlertModelFilter(FilterSet):
     title = CharFilter(field_name="title", lookup_expr="icontains", label="名称")
     content = CharFilter(field_name="content", lookup_expr="icontains", label="内容")
     alert_id = CharFilter(field_name="alert_id", lookup_expr="exact", label="告警ID")
+    activate = CharFilter(method="filter_activate", label="是否查询历史告警")
 
     class Meta:
         model = Alert
-        fields = ["search"]
+        fields = ["title", "content", "alert_id", "activate"]
+
+    @staticmethod
+    def filter_activate(qs, field_name, value):
+        """查询类型 """
+
+        return qs.exclude(status=AlertStatus.CLOSED)
+
+
+class EventModelFilter(FilterSet):
+    # inst_id = NumberFilter(field_name="inst_id", lookup_expr="exact", label="实例ID")
+    title = CharFilter(field_name="title", lookup_expr="icontains", label="名称")
+    description = CharFilter(field_name="description", lookup_expr="icontains", label="内容")
+    event_id = CharFilter(field_name="event_id", lookup_expr="exact", label="事件ID")
+    alert_id = CharFilter(method="filter_alert_id", label="告警ID")
+
+    class Meta:
+        model = Event
+        fields = ["title", "description", "event_id", "alert_id"]
+
+    @staticmethod
+    def filter_alert_id(qs, field_name, value):
+        """查询类型"""
+        qs = qs.filter(alert__pk=int(value))
+        return qs

@@ -68,7 +68,7 @@ class EventAction:
     CLOSED = "closed"
 
     CHOICES = (
-        (CREATED, "创建"),
+        (CREATED, "产生"),
         (CLOSED, "关闭"),
     )
 

@@ -5,7 +5,7 @@
 from django.urls import path
 from rest_framework import routers
 
-from apps.alerts.views.view import request_test
+from apps.alerts.views.view import request_test, AlterModelViewSet, EventModelViewSet
 from apps.alerts.views.source import receiver_data
 from apps.alerts.views.view import AlertSourceModelViewSet
 
@@ -16,5 +16,7 @@ urlpatterns = [
 
 router = routers.DefaultRouter()
 router.register(r"api/alert_source", AlertSourceModelViewSet, basename="alert_source")
+router.register(r"api/alerts", AlterModelViewSet, basename="alerts")
+router.register(r"api/events", EventModelViewSet, basename="events")
 
 urlpatterns += router.urls

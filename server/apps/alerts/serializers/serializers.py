@@ -5,7 +5,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.alerts.models import AlertSource, Alert
+from apps.alerts.models import AlertSource, Alert, Event
 
 
 class AlertSourceModelSerializer(serializers.ModelSerializer):
@@ -24,6 +24,39 @@ class AlertSourceModelSerializer(serializers.ModelSerializer):
         }
 
 
+class EventModelSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Event model.
+    """
+
+    # 格式化时间字段
+    start_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    end_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    source_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Event
+        fields = '__all__'
+        extra_kwargs = {
+            # "events": {"write_only": True},  # events 字段只读
+            "start_time": {"read_only": True},
+            "end_time": {"read_only": True},
+            "labels": {"write_only": True},
+            # "raw_data": {"write_only": True},
+            "search_vector": {"write_only": True},
+            # "labels": {"write_only": True},
+        }
+
+    @staticmethod
+    def get_source_name(obj):
+        """
+        Get the names of the sources associated with the alert.
+        通过 Alert -> Events -> AlertSource 获取告警源名称
+        """
+        # 如果使用了注解（推荐）
+        return obj.source.name
+
+
 class AlertModelSerializer(serializers.ModelSerializer):
     """
     Serializer for Alert model.
@@ -32,16 +65,22 @@ class AlertModelSerializer(serializers.ModelSerializer):
     source_names = serializers.SerializerMethodField()
     # 持续时间
     duration = serializers.SerializerMethodField()
+    operator_user = serializers.SerializerMethodField()
+
+    # 格式化时间字段
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
 
     class Meta:
         model = Alert
-        fields = "__all__"
+        exclude = ["events"]
         extra_kwargs = {
-            "raw_data": {"write_only": True},
-            "is_delete": {"write_only": True},
-            "source": {"read_only": True},
+            # "events": {"write_only": True},  # events 字段只读
             "created_at": {"read_only": True},
             "updated_at": {"read_only": True},
+            "operator": {"write_only": True},
+            "search_vector": {"write_only": True},
+            "labels": {"write_only": True},
         }
 
     @staticmethod
@@ -49,9 +88,6 @@ class AlertModelSerializer(serializers.ModelSerializer):
         """
         当前时间- 创建时间
         """
-        """
-            当前时间- 创建时间
-            """
         if not obj.created_at:
             return "0s"
 
@@ -74,7 +110,7 @@ class AlertModelSerializer(serializers.ModelSerializer):
             result += f"{hours}h"
         if minutes > 0:
             result += f"{minutes}m"
-        if seconds > 0 or result == "":  # 如果没有其他时间单位，至少显示秒
+        if seconds > 0 or result == "":
             result += f"{seconds}s"
 
         return result
@@ -83,20 +119,40 @@ class AlertModelSerializer(serializers.ModelSerializer):
     def get_source_names(obj):
         """
         Get the names of the sources associated with the alert.
+        通过 Alert -> Events -> AlertSource 获取告警源名称
         """
-        # 如果使用了注解
-        if hasattr(obj, 'source_names_annotated'):
-            return obj.source_names_annotated or ""
-        # fallback
-        return ", ".join(source.name for source in obj.source.all())
+        # 如果使用了注解（推荐）
+        if hasattr(obj, 'source_names_annotated') and obj.source_names_annotated:
+            return obj.source_names_annotated
+
+        # fallback: 通过关联查询获取
+        try:
+            # Alert -> Events -> AlertSource
+            source_names = set()  # 使用set去重
+            for event in obj.events.all():
+                if event.source:
+                    source_names.add(event.source.name)
+            return ", ".join(sorted(source_names))
+        except Exception:
+            return ""
 
     @staticmethod
     def get_event_count(obj):
         """
         Get the count of events associated with the alert.
         """
-        # 如果使用了注解
+        # 如果使用了注解（推荐）
         if hasattr(obj, 'event_count_annotated'):
             return obj.event_count_annotated
-        # fallback
-        return len(obj.event_set.all())
+
+        # fallback: 直接计数
+        try:
+            return obj.events.count()
+        except Exception:
+            return 0
+
+    @staticmethod
+    def get_operator_user(obj):
+        if not obj.operator:
+            return ""
+        return ", ".join(obj.operator)

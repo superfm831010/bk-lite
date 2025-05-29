@@ -5,9 +5,9 @@
 from django.contrib.postgres.aggregates import StringAgg
 from django.db.models import Count
 
-from apps.alerts.filters import AlertSourceModelFilter, AlertModelFilter
-from apps.alerts.models import AlertSource, Alert
-from apps.alerts.serializers.serializers import AlertSourceModelSerializer, AlertModelSerializer
+from apps.alerts.filters import AlertSourceModelFilter, AlertModelFilter, EventModelFilter
+from apps.alerts.models import AlertSource, Alert, Event
+from apps.alerts.serializers.serializers import AlertSourceModelSerializer, AlertModelSerializer, EventModelSerializer
 from apps.core.utils.web_utils import WebUtils
 from config.drf.pagination import CustomPageNumberPagination
 from config.drf.viewsets import ModelViewSet
@@ -43,12 +43,25 @@ class AlterModelViewSet(ModelViewSet):
 
     def get_queryset(self):
         return Alert.objects.annotate(
-            event_count_annotated=Count('event_set'),
-            source_names_annotated=StringAgg('source__name', delimiter=', ', distinct=True)
-        ).prefetch_related('source')
+            event_count_annotated=Count('events'),
+            # 通过事件获取告警源名称（去重）
+            source_names_annotated=StringAgg('events__source__name', delimiter=', ', distinct=True)
+        ).prefetch_related('events__source')
 
     def list(self, request, *args, **kwargs):
         """
         List all alerts with optional filtering and pagination.
         """
         return super().list(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+
+class EventModelViewSet(ModelViewSet):
+    queryset = Event.objects.all()
+    serializer_class = EventModelSerializer
+    ordering_fields = ["received_at"]
+    ordering = ["-received_at"]
+    filterset_class = EventModelFilter
+    pagination_class = CustomPageNumberPagination
