@@ -275,7 +275,7 @@ MONITOR_OBJS = [
     },
     {
         "type": "Tencent Cloud",
-        "name": "云平台",
+        "name": "TCP",
         "default_metric": 'any({instance_type="qcloud"}) by (instance_id)',
         "instance_id_keys": ["instance_id"],
         "supplementary_indicators": [],
