@@ -145,10 +145,13 @@ class RuleGrouping:
     def get_asso_by_select_rule(self, rule):
         """根据选择类型规则获取关联信息"""
         asso_list = []
+        # 过滤掉已经被删除的实例
+        obj_instance_id_set = set(MonitorInstance.objects.filter(monitor_object_id=rule.monitor_object_id).values_list("id", flat=True))
         for instance_id in rule.grouping_rules["instances"]:
+            if instance_id not in obj_instance_id_set:
+                continue
             asso_list.extend([(instance_id, i) for i in rule.organizations])
         return asso_list
-
 
     def update_grouping(self):
         """更新监控实例分组"""
