@@ -2560,7 +2560,12 @@ rules:
     instance_type: 'qcloud',
     icon: 'zonghenengyuanfuwupingtaikuangjiaicon-',
     dashboardDisplay: [],
-    tableDiaplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'cvm_CPU_Usage' },
+      { type: 'value', key: 'cvm_MemUsage' },
+      { type: 'value', key: 'cvm_LanOuttraffic' },
+      { type: 'value', key: 'cvm_WanOuttraffic' },
+    ],
     groupIds: {},
     plugins: {
       'Tencent Cloud': {

@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Spin } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useLocale } from '@/context/locale';
-import { autoSignInFromSharedAuth } from '@/utils/crossDomainAuth';
+import { autoSignInFromSharedAuth, saveSharedAuthData } from '@/utils/crossDomainAuth';
 
 interface AuthContextType {
   token: string | null;
@@ -45,8 +45,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // If already have valid session, skip check
+      // If already have valid session, check if we need to save shared auth data
       if (status === 'authenticated' && isSessionValid) {
+        // For WeChat authentication, ensure shared auth data is saved
+        if (session.user?.provider === 'wechat') {
+          try {
+            saveSharedAuthData({
+              id: session.user.id,
+              username: session.user.username || session.user.name || '',
+              token: session.user.token || '',
+              locale: session.user.locale || 'en',
+              temporary_pwd: session.user.temporary_pwd || false,
+              enable_otp: session.user.enable_otp || false,
+              qrcode: session.user.qrcode || false,
+              provider: session.user.provider,
+              wechatOpenId: session.user.wechatOpenId,
+              wechatUnionId: session.user.wechatUnionId,
+              wechatWorkId: session.user.wechatWorkId,
+            });
+            console.log('Saved shared auth data for WeChat user');
+          } catch (error) {
+            console.error('Failed to save shared auth data for WeChat user:', error);
+          }
+        }
         setSharedAuthChecked(true);
         return;
       }
