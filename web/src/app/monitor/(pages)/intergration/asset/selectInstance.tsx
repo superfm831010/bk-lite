@@ -5,6 +5,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useEffect,
+  useMemo,
 } from 'react';
 import { Button, Input } from 'antd';
 import OperateModal from '@/components/operate-modal';
@@ -19,11 +20,13 @@ import {
   Pagination,
   TableDataItem,
 } from '@/app/monitor/types';
+import { getBaseInstanceColumn } from '@/app/monitor/utils/common';
 import { CloseOutlined } from '@ant-design/icons';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
+import { ObjectItem } from '@/app/monitor/types/monitor';
 
 const SelectInstance = forwardRef<ModalRef, ModalConfig>(
-  ({ onSuccess, monitorObject, list }, ref) => {
+  ({ onSuccess, monitorObject, list, objects }, ref) => {
     const { t } = useTranslation();
     const { getInstanceList } = useMonitorApi();
     const { convertToLocalizedTime } = useLocalizedTime();
@@ -38,24 +41,32 @@ const SelectInstance = forwardRef<ModalRef, ModalConfig>(
     const [selectedRowKeys, setSelectedRowKeys] = useState<Array<any>>([]);
     const [tableData, setTableData] = useState<TableDataItem[]>([]);
     const [searchText, setSearchText] = useState<string>('');
-    const columns: ColumnItem[] = [
-      {
-        title: t('common.name'),
-        dataIndex: 'instance_name',
-        key: 'instance_name',
-        ellipsis: true,
-      },
-      {
-        title: t('common.time'),
-        dataIndex: 'time',
-        key: 'time',
-        render: (_, { time }) => (
-          <>
-            {time ? convertToLocalizedTime(new Date(time * 1000) + '') : '--'}
-          </>
-        ),
-      },
-    ];
+
+    const columns = useMemo(() => {
+      const columnItems: ColumnItem[] = [
+        {
+          title: t('common.time'),
+          dataIndex: 'time',
+          key: 'time',
+          width: 160,
+          render: (_, { time }) => (
+            <>
+              {time ? convertToLocalizedTime(new Date(time * 1000) + '') : '--'}
+            </>
+          ),
+        },
+      ];
+      const row =
+        objects.find((item: ObjectItem) => item.id === monitorObject) || {};
+      return [
+        ...getBaseInstanceColumn({
+          objects,
+          row,
+          t,
+        }),
+        ...columnItems,
+      ];
+    }, [objects, monitorObject, t]);
 
     useEffect(() => {
       fetchData();

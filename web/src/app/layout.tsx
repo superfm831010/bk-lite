@@ -32,7 +32,8 @@ const LayoutWithProviders = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const [isAllowed, setIsAllowed] = useState(false);
 
-  const isAuthenticated = status === 'authenticated' && !!session;
+  // Consider a user with temporary_pwd as not fully authenticated
+  const isAuthenticated = status === 'authenticated' && !!session && !session.user?.temporary_pwd;
   const isAuthLoading = status === 'loading';
   
   const isLoading = isAuthLoading || (isAuthenticated && (permissionsLoading || menusLoading));
@@ -79,7 +80,7 @@ const LayoutWithProviders = ({ children }: { children: React.ReactNode }) => {
     };
 
     checkPermission();
-  }, [isLoading, pathname, isAuthenticated]);
+  }, [isLoading, pathname, isAuthenticated, status, session, router]);
 
   if (isLoading || (isAuthenticated && !isAllowed && pathname && !excludedPaths.includes(pathname) && !isLoading)) {
     return <Loader />;

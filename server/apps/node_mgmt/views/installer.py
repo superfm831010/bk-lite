@@ -24,6 +24,7 @@ class InstallerViewSet(ViewSet):
                     properties={
                         'os': openapi.Schema(type=openapi.TYPE_STRING,description="操作系统"),
                         'ip': openapi.Schema(type=openapi.TYPE_STRING,description="节点IP"),
+                        'node_name': openapi.Schema(type=openapi.TYPE_STRING,description="节点名称"),
                         'port': openapi.Schema(type=openapi.TYPE_INTEGER,description="节点端口"),
                         'username': openapi.Schema(type=openapi.TYPE_STRING,description="用户名"),
                         'password': openapi.Schema(type=openapi.TYPE_STRING,description="密码"),
@@ -151,11 +152,22 @@ class InstallerViewSet(ViewSet):
                 'os': openapi.Schema(type=openapi.TYPE_STRING, description="操作系统"),
                 'package_name': openapi.Schema(type=openapi.TYPE_STRING, description="包名称"),
                 'cloud_region_id': openapi.Schema(type=openapi.TYPE_INTEGER, description="云区域ID"),
+                'organizations': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(type=openapi.TYPE_STRING,description="所属组织id"),
+                        ),
+                'node_name': openapi.Schema(type=openapi.TYPE_STRING, description="节点名称"),
             }
         ),
         tags=['Installer']
     )
     @action(detail=False, methods=["post"], url_path="get_install_command")
     def get_install_command(self, request):
-        data = InstallerService.get_install_command(request.data["os"], request.data["package_name"], request.data["cloud_region_id"])
+        data = InstallerService.get_install_command(
+            request.data["os"],
+            request.data["package_name"],
+            request.data["cloud_region_id"],
+            request.data.get("organizations", []),
+            request.data.get("node_name", ""),
+        )
         return WebUtils.response_success(data)

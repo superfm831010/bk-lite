@@ -8,7 +8,7 @@ from apps.cmdb.language.service import SettingLanguage
 from apps.cmdb.models import DELETE_INST, UPDATE_INST
 from apps.cmdb.services.model import ModelManage
 from apps.cmdb.utils.change_record import create_change_record
-from apps.core.decorators.api_perminssion import HasRole
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.web_utils import WebUtils
 
 
@@ -27,7 +27,7 @@ class ModelViewSet(viewsets.ViewSet):
             required=["classification_id", "model_id", "model_name", "icn"],
         ),
     )
-    @HasRole(["admin"])
+    @HasPermission("model_management-Add Model")
     def create(self, request):
         result = ModelManage.create_model(request.data, username=request.user.username)
         return WebUtils.response_success(result)
@@ -36,6 +36,7 @@ class ModelViewSet(viewsets.ViewSet):
         operation_id="model_list",
         operation_description="查询模型",
     )
+    @HasPermission("model_management-View,asset_list-View,view_list-View")
     def list(self, request):
         result = ModelManage.search_model(request.user.locale)
         return WebUtils.response_success(result)
@@ -45,7 +46,7 @@ class ModelViewSet(viewsets.ViewSet):
         operation_description="删除模型",
         manual_parameters=[openapi.Parameter("id", openapi.IN_PATH, description="模型ID", type=openapi.TYPE_STRING)],
     )
-    @HasRole(["admin"])
+    @HasPermission("model_management-Delete Model")
     def destroy(self, request, pk: str):
         # 校验模型是否存在关联
         ModelManage.check_model_exist_association(pk)
@@ -73,7 +74,7 @@ class ModelViewSet(viewsets.ViewSet):
             },
         ),
     )
-    @HasRole(["admin"])
+    @HasPermission("model_management-Edit Model")
     def update(self, request, pk: str):
         model_info = ModelManage.search_model_info(pk)
         data = ModelManage.update_model(model_info.get("_id"), request.data)
@@ -102,7 +103,7 @@ class ModelViewSet(viewsets.ViewSet):
             ],
         ),
     )
-    @HasRole(["admin"])
+    @HasPermission("model_relationships-Add")
     @action(detail=False, methods=["post"], url_path="association")
     def model_association_create(self, request):
         model_asst_id = f'{request.data["src_model_id"]}_{request.data["asst_id"]}_{request.data["dst_model_id"]}'
@@ -125,7 +126,7 @@ class ModelViewSet(viewsets.ViewSet):
             )
         ],
     )
-    @HasRole(["admin"])
+    @HasPermission("model_relationships-Delete")
     @action(detail=False, methods=["delete"], url_path="association/(?P<model_asst_id>.+?)")
     def model_association_delete(self, request, model_asst_id: str):
         association_info = ModelManage.model_association_info_search(model_asst_id)
@@ -144,6 +145,7 @@ class ModelViewSet(viewsets.ViewSet):
             ),
         ],
     )
+    @HasPermission("model_relationships-View,asset_basic_information-View")
     @action(detail=False, methods=["get"], url_path="(?P<model_id>.+?)/association")
     def model_association_list(self, request, model_id: str):
         result = ModelManage.model_association_search(model_id)
@@ -176,7 +178,7 @@ class ModelViewSet(viewsets.ViewSet):
             },
         ),
     )
-    @HasRole(["admin"])
+    @HasPermission("model_attributes-Add")
     @action(detail=False, methods=["post"], url_path="(?P<model_id>.+?)/attr")
     def model_attr_create(self, request, model_id):
         result = ModelManage.create_model_attr(model_id, request.data, username=request.user.username)
@@ -207,7 +209,7 @@ class ModelViewSet(viewsets.ViewSet):
             },
         ),
     )
-    @HasRole(["admin"])
+    @HasPermission("model_attributes-Edit")
     @action(detail=False, methods=["put"], url_path="(?P<model_id>.+?)/attr_update")
     def model_attr_update(self, request, model_id):
         result = ModelManage.update_model_attr(model_id, request.data, username=request.user.username)
@@ -231,7 +233,7 @@ class ModelViewSet(viewsets.ViewSet):
             ),
         ],
     )
-    @HasRole(["admin"])
+    @HasPermission("model_attributes-Delete")
     @action(
         detail=False,
         methods=["delete"],
@@ -253,6 +255,7 @@ class ModelViewSet(viewsets.ViewSet):
             ),
         ],
     )
+    @HasPermission("model_attributes-View,asset_relationships-View,asset_list-View")
     @action(detail=False, methods=["get"], url_path="(?P<model_id>.+?)/attr_list")
     def model_attr_list(self, request, model_id: str):
         result = ModelManage.search_model_attr(model_id, request.user.locale)
@@ -262,6 +265,7 @@ class ModelViewSet(viewsets.ViewSet):
         operation_id="model_association_type",
         operation_description="查询模型关联类型",
     )
+    @HasPermission("model_attributes-View,asset_list-View,asset_basic_information-View")
     @action(detail=False, methods=["get"], url_path="model_association_type")
     def model_association_type(self, request):
         lan = SettingLanguage(request.user.locale)

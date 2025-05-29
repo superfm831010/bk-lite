@@ -45,17 +45,9 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   const pluginName = searchParams.get('collect_type') || '';
   const objectName = searchParams.get('name') || '';
   const objectId = searchParams.get('id') || '';
-  const authPasswordRef = useRef<any>(null);
-  const privPasswordRef = useRef<any>(null);
-  const passwordRef = useRef<any>(null);
   const [dataSource, setDataSource] = useState<IntergrationMonitoredObject[]>(
     []
   );
-  const [authPasswordDisabled, setAuthPasswordDisabled] =
-    useState<boolean>(true);
-  const [privPasswordDisabled, setPrivPasswordDisabled] =
-    useState<boolean>(true);
-  const [passwordDisabled, setPasswordDisabled] = useState<boolean>(true);
   const [nodeList, setNodeList] = useState<ListItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [nodesLoading, setNodesLoading] = useState<boolean>(false);
@@ -344,72 +336,18 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
         ? { ...initItem, server: null }
         : { ...initItem, host: null, port: null };
     }
-    if (collectType === 'http') {
+    if (pluginName === 'VMWare') {
       return { ...initItem, host: null };
     }
     return initItem as IntergrationMonitoredObject;
-  }, [collectType, groupId]);
-
-  const handleEditAuthPassword = () => {
-    if (authPasswordDisabled) {
-      form.setFieldsValue({
-        authPassword: '',
-      });
-    }
-    setAuthPasswordDisabled(false);
-  };
-
-  const handleEditPrivPassword = () => {
-    if (privPasswordDisabled) {
-      form.setFieldsValue({
-        privPassword: '',
-      });
-    }
-    setPrivPasswordDisabled(false);
-  };
-
-  const handleEditPassword = () => {
-    if (passwordDisabled) {
-      form.setFieldsValue({
-        password: '',
-      });
-    }
-    setPasswordDisabled(false);
-  };
+  }, [collectType, groupId, pluginName]);
 
   // 使用自定义 Hook
   const { displaycolumns, formItems } = useColumnsAndFormItems({
     collectType,
     columns,
-    authPasswordRef,
-    privPasswordRef,
-    passwordRef,
-    authPasswordDisabled,
-    privPasswordDisabled,
-    passwordDisabled,
-    handleEditAuthPassword,
-    handleEditPrivPassword,
-    handleEditPassword,
     pluginName,
   });
-
-  useEffect(() => {
-    if (!authPasswordDisabled && authPasswordRef?.current) {
-      authPasswordRef.current.focus();
-    }
-  }, [authPasswordDisabled]);
-
-  useEffect(() => {
-    if (!privPasswordDisabled && privPasswordRef?.current) {
-      privPasswordRef.current.focus();
-    }
-  }, [privPasswordDisabled]);
-
-  useEffect(() => {
-    if (!passwordDisabled && passwordRef?.current) {
-      passwordRef.current.focus();
-    }
-  }, [passwordDisabled]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -425,7 +363,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     switch (collectType) {
       case 'host':
         form.setFieldsValue({
-          metric_type: configTypes,
+          metric_type: configTypes.filter((item: string) => item !== 'gpu'),
         });
         break;
       case 'ipmi':
@@ -541,21 +479,18 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   };
 
   const getInstId = (row: IntergrationMonitoredObject) => {
+    const target: any = nodeList.find((item) => row.node_ids === item.id);
+    if (['snmp', 'ipmi'].includes(collectType)) {
+      return objectName + '-' + (row.ip || '');
+    }
+    if (pluginName === 'Tencent Cloud' || collectType === 'docker') {
+      return row.instance_name;
+    }
     switch (collectType) {
       case 'host':
-        const hostTarget: any = nodeList.find(
-          (item) => row.node_ids === item.id
-        );
-        return hostTarget?.ip + '-' + hostTarget?.cloud_region;
+        return target?.ip + '-' + target?.cloud_region;
       case 'trap':
-        const target: any = nodeList.find((item) => row.node_ids === item.id);
         return 'trap' + target?.ip + '-' + target?.cloud_region;
-      case 'snmp':
-        return objectName + '-' + (row.ip || '');
-      case 'ipmi':
-        return objectName + '-' + (row.ip || '');
-      case 'docker':
-        return row.endpoint;
       case 'database':
         return row.server || `${row.host}:${row.port}`;
       case 'http':

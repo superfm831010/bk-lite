@@ -25,6 +25,7 @@ const EntityList = <T,>({
   onCardClick,
   changeFilter,
   infoText,
+  nameField = 'name',
 }: EntityListProps<T>) => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,11 +45,12 @@ const EntityList = <T,>({
   };
 
   const filteredItems = useMemo(() => {
-    return data.filter((item) => (item as any).name?.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [data, searchTerm]);
+    return data.filter((item) => (item as any)[nameField]?.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [data, searchTerm, nameField]);
 
   const renderCard = useCallback((item: T) => {
-    const { id, name, description, icon, tagList } = item as any;
+    const { id, description, icon, tagList } = item as any;
+    const name = (item as any)[nameField];
     const singleButtonAction = singleAction ? singleAction(item) : null;
     const isSingleButtonAction = singleButtonAction && singleActionType === 'button';
     const isSingleIconAction = singleActionType === 'icon' && singleButtonAction;
@@ -62,7 +64,7 @@ const EntityList = <T,>({
         onMouseLeave={() => setHoveredCard((current) => (current === id ? null : current))}
       >
         {menuActions && (
-          <div className="absolute right-2 z-10 top-6" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute right-2 z-1 top-6" onClick={(e) => e.stopPropagation()}>
             <Dropdown overlay={menuActions(item) as React.ReactElement} trigger={['click']} placement="bottomRight">
               <div className="cursor-pointer">
                 <Icon type="sangedian-copy" className="text-xl" />
@@ -121,7 +123,7 @@ const EntityList = <T,>({
         )}
       </div>
     );
-  }, [hoveredCard]);
+  }, [hoveredCard, nameField]);
 
   return (
     <div className="w-full h-full">
@@ -167,7 +169,10 @@ const EntityList = <T,>({
                 >
                   <div
                     className="w-full h-full flex items-center justify-center"
-                    onClick={() => openModal()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      openModal();
+                    }}
                   >
                     <div className="text-center">
                       <div className="text-2xl">+</div>

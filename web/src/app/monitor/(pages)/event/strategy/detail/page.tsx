@@ -36,12 +36,14 @@ import {
   IndexViewItem,
   GroupInfo,
   ChannelItem,
+  ObjectItem,
 } from '@/app/monitor/types/monitor';
 import { useCommon } from '@/app/monitor/context/common';
 import {
   deepClone,
   getConfigByPluginName,
   getConfigByObjectName,
+  getIconByObjectName,
 } from '@/app/monitor/utils/common';
 import strategyStyle from '../index.module.scss';
 import {
@@ -75,6 +77,7 @@ const StrategyOperation = () => {
     getMonitorMetrics,
     getMonitorPlugin,
     getMonitorPolicy,
+    getMonitorObject,
   } = useMonitorApi();
   const CONDITION_LIST = useConditionList();
   const METHOD_LIST = useMethodList();
@@ -114,6 +117,7 @@ const StrategyOperation = () => {
   const [conditions, setConditions] = useState<FilterItem[]>([]);
   const [noDataAlert, setNoDataAlert] = useState<number | null>(null);
   const [noDataLevel, setNoDataLevel] = useState<string>();
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [groupBy, setGroupBy] = useState<string[]>(
     getConfigByObjectName(monitorName as string, 'groupIds').default ||
       defaultGroup
@@ -150,12 +154,18 @@ const StrategyOperation = () => {
       Promise.all([
         getPlugins(),
         getChannelList(),
+        getObjects(),
         detailId && getStragyDetail(),
       ]).finally(() => {
         setPageLoading(false);
       });
     }
   }, [isLoading]);
+
+  const getObjects = async () => {
+    const data = await getMonitorObject();
+    setObjects(data);
+  };
 
   useEffect(() => {
     form.resetFields();
@@ -608,7 +618,7 @@ const StrategyOperation = () => {
                       >
                         <Input
                           placeholder={t('monitor.events.strategyName')}
-                          className="w-[300px]"
+                          className="w-[800px]"
                         />
                       </Form.Item>
                       <Form.Item<StrategyFields>
@@ -631,7 +641,7 @@ const StrategyOperation = () => {
                         >
                           <Input
                             placeholder={t('monitor.events.alertName')}
-                            className="w-[300px]"
+                            className="w-[800px]"
                           />
                         </Form.Item>
                         <div className="text-[var(--color-text-3)] mt-[10px]">
@@ -651,7 +661,7 @@ const StrategyOperation = () => {
                       >
                         <CustomCascader
                           style={{
-                            width: '300px',
+                            width: '800px',
                           }}
                           multiple
                           placeholder={t('common.group')}
@@ -1074,9 +1084,9 @@ const StrategyOperation = () => {
                         <div className="w-[220px] bg-[var(--color-bg-1)] border-2 border-blue-300 shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-3 relative cursor-pointer group">
                           <div className="flex items-center space-x-4 my-1">
                             <Icon
-                              type={getConfigByObjectName(
+                              type={getIconByObjectName(
                                 monitorName as string,
-                                'icon'
+                                objects
                               )}
                               className="text-2xl"
                             />
@@ -1329,7 +1339,7 @@ const StrategyOperation = () => {
                               >
                                 <Select
                                   style={{
-                                    width: '300px',
+                                    width: '800px',
                                   }}
                                   showSearch
                                   allowClear
@@ -1373,6 +1383,7 @@ const StrategyOperation = () => {
         organizationList={organizationList}
         form={source}
         monitorObject={monitorObjId}
+        objects={objects}
         onSuccess={onChooseAssets}
       />
     </Spin>

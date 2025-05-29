@@ -20,3 +20,4 @@ local_settings.py
 requirements.txt
 dist
 *.log
+report.html

@@ -21,7 +21,7 @@ import {
   MetricItem,
   GroupInfo,
   IntergrationItem,
-  ObectItem,
+  ObjectItem,
   MetricListItem,
 } from '@/app/monitor/types/monitor';
 import Collapse from '@/components/collapse';
@@ -31,6 +31,7 @@ import { useSearchParams } from 'next/navigation';
 import { deepClone } from '@/app/monitor/utils/common';
 import { useUserInfoContext } from '@/context/userInfo';
 import Permission from '@/components/permission';
+import { NEED_TAGS_ENTRY_OBJECTS } from '@/app/monitor/constants/monitor';
 
 const Configure = () => {
   const { isLoading } = useApiClient();
@@ -165,16 +166,18 @@ const Configure = () => {
     setLoading(true);
     let _objId = '';
     try {
-      if (['Docker', 'Cluster', 'vCenter'].includes(groupName)) {
+      if (NEED_TAGS_ENTRY_OBJECTS.includes(groupName)) {
         const typeMaps: Record<string, string> = {
           Docker: 'Container Management',
           Cluster: 'K8S',
+          vCenter: 'VMWare',
+          云平台: 'Tencent Cloud',
         };
         const data = await getMonitorObject();
         const _items = data
-          .filter((item: ObectItem) => item.type === typeMaps[groupName])
-          .sort((a: ObectItem, b: ObectItem) => a.id - b.id)
-          .map((item: ObectItem) => ({
+          .filter((item: ObjectItem) => item.type === typeMaps[groupName])
+          .sort((a: ObjectItem, b: ObjectItem) => a.id - b.id)
+          .map((item: ObjectItem) => ({
             label: item.display_name,
             value: item.id,
           }));
@@ -396,7 +399,7 @@ const Configure = () => {
 
   return (
     <div className={metricStyle.metric}>
-      {['Docker', 'Cluster', 'vCenter'].includes(groupName) && (
+      {NEED_TAGS_ENTRY_OBJECTS.includes(groupName) && (
         <Segmented
           className="mb-[20px] custom-tabs"
           value={activeTab}
@@ -434,7 +437,7 @@ const Configure = () => {
         <div
           className={metricStyle.metricTable}
           style={{
-            height: ['Docker', 'Cluster'].includes(groupName)
+            height: NEED_TAGS_ENTRY_OBJECTS.includes(groupName)
               ? 'calc(100vh - 366px)'
               : 'calc(100vh - 316px)',
           }}

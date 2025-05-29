@@ -10,6 +10,11 @@ admin.site.site_header = admin.site.site_title
 public_router = routers.DefaultRouter()
 urlpatterns = [
     re_path(r"api/login/", index_view.login),
+    re_path(r"api/get_wechat_settings/", index_view.get_wechat_settings),
+    re_path(r"api/wechat_user_register/", index_view.wechat_user_register),
+    re_path(r"api/generate_qr_code/", index_view.generate_qr_code),
+    re_path(r"api/verify_otp_code/", index_view.verify_otp_code),
+    re_path(r"api/reset_pwd/", index_view.reset_pwd),
     re_path(r"api/login_info/", index_view.login_info),
     re_path(r"api/get_client/", index_view.get_client),
     re_path(r"api/get_my_client/", index_view.get_my_client),

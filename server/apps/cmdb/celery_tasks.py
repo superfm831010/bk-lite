@@ -17,9 +17,12 @@ def sync_collect_task(instance_id):
     """
     同步采集任务
     """
-    instance = CollectModels.objects.get(id=instance_id)
-    if instance.exec_status != CollectRunStatusType.RUNNING:
+    logger.info("==开始采集任务== task_id={}".format(instance_id))
+    instance = CollectModels.objects.filter(id=instance_id).first()
+    if not instance:
         return
+    if instance.exec_status == CollectRunStatusType.NOT_START:
+        CollectModels.objects.filter(id=instance_id).update(exec_status=CollectRunStatusType.RUNNING)
 
     try:
         if instance.is_job:
@@ -53,6 +56,8 @@ def sync_collect_task(instance_id):
     except Exception as err:
         logger.error("==保存采集结果失败== task_id={}, error={}".format(instance_id, err))
         CollectModels.objects.filter(id=instance_id).update(exec_status=CollectRunStatusType.ERROR)
+
+    logger.info("==采集任务执行结束== task_id={}".format(instance_id))
 
 
 @shared_task

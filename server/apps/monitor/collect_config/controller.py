@@ -9,9 +9,44 @@ class Controller:
     def __init__(self, data):
         self.data = data
 
-    def format_config(self, config):
-        config["id"] = str(uuid.uuid4().hex)
-        return config
+    def set_config_id(self, config):
+        config.update(id=str(uuid.uuid4().hex))
+
+    def format_child_config(self, config):
+        if config['collect_type'] == "snmp":
+            self.format_snmp_config(config)
+        elif config['collect_type'] == "http":
+            self.format_http_config(config)
+
+    def format_snmp_config(self, config):
+        if config["version"] == 2:
+            result = dict(
+                agents=[f"udp://{config['ip']}:{config['port']}"],
+                version=2,
+                community=config["community"],
+                timeout=config["timeout"],
+            )
+        elif config["version"] == 3:
+            result = dict(
+                agents=[f"udp://{config['ip']}:{config['port']}"],
+                version=3,
+                timeout=config["timeout"],
+                sec_name=config["sec_name"],
+                sec_level=config["sec_level"],
+                auth_protocol=config["auth_protocol"],
+                auth_password=config["auth_password"],
+                priv_protocol=config["priv_protocol"],
+                priv_password=config["priv_password"],
+            )
+        else:
+            raise ValueError("SNMP version error")
+        config.update(snmp_config=result)
+
+    def format_http_config(self, config):
+        url = f"${{STARGAZER_URL}}/api/monitor/{config['instance_type']}/metrics"
+        config.update(url=url)
+        if config["instance_type"] == "vmware":
+            config["custom_headers"].update(host=config["host"])
 
     def only_child_config(self):
 
@@ -33,7 +68,10 @@ class Controller:
                 node_info = {"id": node_id, "configs": []}
                 for config in configs:
                     config_info = {"collect_type": collect_type, **config, **instance}
-                    config_info = self.format_config(config_info)
+
+                    self.set_config_id(config_info)
+                    self.format_child_config(config_info)
+
                     node_info["configs"].append(config_info)
                     config_objs.append(
                         CollectConfig(
@@ -80,7 +118,7 @@ class Controller:
                 child_node_info = {"id": node_id, "configs": []}
                 for config in configs:
                     config_info = {"collect_type": collect_type, **config, **instance}
-                    config_info = self.format_config(config_info)
+                    self.set_config_id(config_info)
                     node_info["configs"].append(config_info)
 
                     child_config_info = {
@@ -90,7 +128,7 @@ class Controller:
                         "type": config_info.get("type"),
                         "interval": config_info.get("interval", 10),
                     }
-                    child_config_info = self.format_config(child_config_info)
+                    self.set_config_id(child_config_info)
                     child_node_info["configs"].append(child_config_info)
 
                     config_result["nodes"].append(node_info)

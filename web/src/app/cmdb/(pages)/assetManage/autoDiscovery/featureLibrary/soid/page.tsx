@@ -259,7 +259,7 @@ const OidLibrary: React.FC = () => {
             <Input
               allowClear
               value={searchKey}
-              placeholder={t('assetSearchTxt')}
+              placeholder={t('common.search')}
               style={{ width: 250 }}
               onChange={(e) => setSearchKey(e.target.value)}
               onPressEnter={handleFilterChange}
@@ -268,9 +268,11 @@ const OidLibrary: React.FC = () => {
             />
           </Space.Compact>
         </div>
-        <Button type="primary" onClick={() => operateMap('add')}>
-          {t('OidLibrary.newMapping')}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button type="primary" onClick={() => operateMap('add')}>
+            {t('OidLibrary.newMapping')}
+          </Button>
+        </PermissionWrapper>
       </div>
       <CustomTable
         size="middle"

@@ -1,4 +1,5 @@
 import ast
+import toml
 import os
 import re
 from jinja2 import Environment, FileSystemLoader
@@ -31,8 +32,6 @@ class ConfigService:
     def __init__(self):
         self.template_root = "apps/node_mgmt/config_template"
 
-
-
     def render_config(self, subdir: str, collect_method: str, target: str, context: dict) -> str:
         """
         渲染配置文件
@@ -42,6 +41,10 @@ class ConfigService:
         :param context: 用于模板渲染的变量字典
         :return: 渲染后的配置字符串
         """
+
+        if "snmp_config" in context:
+            context["snmp_config"] = toml.dumps(context["snmp_config"]).strip()
+
         target_dir = os.path.join(self.template_root, subdir, collect_method)
         if not os.path.isdir(target_dir):
             raise FileNotFoundError(f"Template dir '{target_dir}' not found.")

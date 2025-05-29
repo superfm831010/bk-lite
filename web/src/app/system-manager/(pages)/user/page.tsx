@@ -17,6 +17,8 @@ import styles from './index.module.scss';
 import { useGroupApi } from '@/app/system-manager/api/group/index';
 import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import OperateModal from '@/components/operate-modal';
+import PermissionWrapper from '@/components/permission';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
 const { Search } = Input;
 
@@ -33,7 +35,7 @@ const User: React.FC = () => {
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [addGroupForm] = Form.useForm();
+  const addGroupFormRef = useRef<any>(null);
   const [addGroupModalOpen, setAddGroupModalOpen] = useState(false);
   const [addSubGroupModalOpen, setAddSubGroupModalOpen] = useState(false);
   const [currentParentGroupKey, setCurrentParentGroupKey] = useState<number | null>(null);
@@ -41,7 +43,7 @@ const User: React.FC = () => {
   const [renameGroupModalOpen, setRenameGroupModalOpen] = useState(false);
   const [renameGroupLoading, setRenameGroupLoading] = useState(false);
   const [renameGroupKey, setRenameGroupKey] = useState<number | null>(null);
-  const [renameGroupForm] = Form.useForm();
+  const renameGroupFormRef = useRef<any>(null);
 
   const userModalRef = useRef<ModalRef>(null);
   const passwordModalRef = useRef<PasswordModalRef>(null);
@@ -89,20 +91,26 @@ const User: React.FC = () => {
       fixed: 'right',
       render: (key: string) => (
         <>
-          <Button type="link" className="mr-[8px]" onClick={() => handleEditUser(key)}>
-            {t('common.edit')}
-          </Button>
-          <Button type="link" className="mr-[8px]" onClick={() => openPasswordModal(key)}>
-            {t('system.common.password')}
-          </Button>
-          <Popconfirm
-            title={t('common.delConfirm')}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            onConfirm={() => showDeleteConfirm(key)}
-          >
-            <Button type="link">{t('common.delete')}</Button>
-          </Popconfirm>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button type="link" className="mr-[8px]" onClick={() => handleEditUser(key)}>
+              {t('common.edit')}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button type="link" className="mr-[8px]" onClick={() => openPasswordModal(key)}>
+              {t('system.common.password')}
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Delete']}>
+            <Popconfirm
+              title={t('common.delConfirm')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => showDeleteConfirm(key)}
+            >
+              <Button type="link">{t('common.delete')}</Button>
+            </Popconfirm>
+          </PermissionWrapper>
         </>
       ),
     },
@@ -153,14 +161,30 @@ const User: React.FC = () => {
     setIsDeleteDisabled(selectedRowKeys.length === 0);
   }, [selectedRowKeys]);
 
+  const nodeExistsInTree = (tree: TreeDataNode[], key: React.Key): boolean => {
+    for (const node of tree) {
+      if (node.key === key) return true;
+      if (node.children && node.children.length > 0) {
+        if (nodeExistsInTree(node.children, key)) return true;
+      }
+    }
+    return false;
+  };
+
   const handleTreeSelect = (selectedKeys: React.Key[]) => {
     setSelectedRowKeys([]);
-    setSelectedTreeKeys(selectedKeys.map(Number));
+    
+    if (selectedKeys.length === 0 || !nodeExistsInTree(filteredTreeData, selectedKeys[0])) {
+      setSelectedTreeKeys([]);
+    } else {
+      setSelectedTreeKeys(selectedKeys.map(Number));
+    }
+    
     fetchUsers({
       search: searchValue,
       page: currentPage,
       page_size: pageSize,
-      group_id: selectedKeys[0] as number,
+      group_id: selectedKeys.length > 0 ? selectedKeys[0] as number : undefined,
     });
   };
 
@@ -258,6 +282,18 @@ const User: React.FC = () => {
     setPageSize(pageSize);
   };
 
+  const resetAddGroupForm = () => {
+    if (addGroupFormRef.current) {
+      addGroupFormRef.current.resetFields();
+    }
+  };
+
+  const resetRenameGroupForm = () => {
+    if (renameGroupFormRef.current) {
+      renameGroupFormRef.current.resetFields();
+    }
+  };
+
   const handleAddRootGroup = () => {
     setCurrentParentGroupKey(null);
     setAddGroupModalOpen(true);
@@ -271,17 +307,19 @@ const User: React.FC = () => {
   const onAddGroup = async () => {
     setAddGroupLoading(true);
     try {
-      const values = await addGroupForm.validateFields();
+      const values = await addGroupFormRef.current?.validateFields();
       await addTeamData({
         group_name: values.name,
         parent_group_id: currentParentGroupKey || undefined,
       });
-      message.success(t('common.addSuccess'));
+      message.success(t('common.saveSuccess'));
       fetchTreeData();
       setAddGroupModalOpen(false);
       setAddSubGroupModalOpen(false);
+      // Reset after successful submission
+      resetAddGroupForm();
     } catch {
-      message.error(t('common.addFailed'));
+      message.error(t('common.saveFailed'));
     } finally {
       setAddGroupLoading(false);
     }
@@ -295,23 +333,32 @@ const User: React.FC = () => {
       case 'rename':
         const group = findNode(treeData, groupKey);
         if (group) {
-          renameGroupForm.resetFields();
           setRenameGroupKey(groupKey);
-          renameGroupForm.setFieldsValue({ renameTeam: group.title });
           setRenameGroupModalOpen(true);
+          setTimeout(() => {
+            renameGroupFormRef.current?.setFieldsValue({ renameTeam: group.title });
+          }, 0);
         }
         break;
       case 'delete':
-        confirm({
-          title: t('common.delConfirm'),
-          content: t('common.delConfirmCxt'),
-          centered: true,
-          okText: t('common.confirm'),
-          cancelText: t('common.cancel'),
-          async onOk() {
-            handleDeleteGroup(groupKey);
-          },
-        });
+        const targetGroup = findNode(treeData, groupKey);
+        if (targetGroup) {
+          const hasChildren = targetGroup.children && targetGroup.children.length > 0;
+          const confirmContent = hasChildren 
+            ? t('system.group.deleteWithChildrenWarning') + '' + t('common.delConfirmCxt')
+            : t('common.delConfirmCxt');
+            
+          confirm({
+            title: t('common.delConfirm'),
+            content: confirmContent,
+            centered: true,
+            okText: t('common.confirm'),
+            cancelText: t('common.cancel'),
+            async onOk() {
+              handleDeleteGroup(groupKey);
+            },
+          });
+        }
         break;
     }
   };
@@ -339,20 +386,20 @@ const User: React.FC = () => {
   const onRenameGroup = async () => {
     setRenameGroupLoading(true);
     try {
-      await renameGroupForm.validateFields();
-      const values = renameGroupForm.getFieldValue('renameTeam');
+      await renameGroupFormRef.current?.validateFields();
+      const values = renameGroupFormRef.current?.getFieldsValue();
       await updateGroup({
         group_id: renameGroupKey,
-        group_name: values,
+        group_name: values.renameTeam,
       });
       message.success(t('system.group.renameSuccess'));
       fetchTreeData();
       setRenameGroupModalOpen(false);
+      resetRenameGroupForm();
     } catch {
       message.error(t('system.group.renameFailed'));
     } finally {
       setRenameGroupLoading(false);
-      renameGroupForm.resetFields();
     }
   };
 
@@ -372,9 +419,30 @@ const User: React.FC = () => {
         <Menu
           onClick={({ key }) => handleGroupAction(key, groupKey)}
           items={[
-            { key: 'addSubGroup', label: t('system.group.addSubGroups') },
-            { key: 'rename', label: t('system.group.rename') },
-            { key: 'delete', label: t('common.delete') },
+            {
+              key: 'addSubGroup',
+              label: (
+                <PermissionWrapper requiredPermissions={['Add']}>
+                  {t('system.group.addSubGroups')}
+                </PermissionWrapper>
+              ),
+            },
+            {
+              key: 'rename',
+              label: (
+                <PermissionWrapper requiredPermissions={['Edit']}>
+                  {t('system.group.rename')}
+                </PermissionWrapper>
+              ),
+            },
+            {
+              key: 'delete',
+              label: (
+                <PermissionWrapper requiredPermissions={['Delete']}>
+                  {t('common.delete')}
+                </PermissionWrapper>
+              ),
+            },
           ]}
         />
       }
@@ -391,11 +459,14 @@ const User: React.FC = () => {
     nodes.map((node) => ({
       ...node,
       title: (
-        <div className="flex justify-between items-center">
-          <span className="truncate">
-            {typeof node.title === 'function' ? node.title(node) : node.title}
+        <div className="flex justify-between items-center w-full pr-1">
+          <EllipsisWithTooltip 
+            text={typeof node.title === 'function' ? String(node.title(node)) : String(node.title)}
+            className="truncate max-w-[100px] flex-1"
+          />
+          <span className="flex-shrink-0 ml-2">
+            {renderGroupActions(node.key as number)}
           </span>
-          {renderGroupActions(node.key as number)}
         </div>
       ),
       children: node.children ? renderTreeNode(node.children) : [],
@@ -415,7 +486,9 @@ const User: React.FC = () => {
           onChange={(e) => handleTreeSearchChange(e.target.value)}
           value={treeSearchValue}
         />
-        <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={handleAddRootGroup}></Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={handleAddRootGroup}></Button>
+        </PermissionWrapper>
       </div>
       <Tree
         className="w-full flex-1 overflow-auto"
@@ -439,13 +512,17 @@ const User: React.FC = () => {
           onSearch={handleUserSearch}
           placeholder={`${t('common.search')}...`}
         />
-        <Button type="primary" className="mr-2" onClick={() => openUserModal('add')}>
-          +{t('common.add')}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button type="primary" className="mr-2" onClick={() => openUserModal('add')}>
+            +{t('common.add')}
+          </Button>
+        </PermissionWrapper>
         <UserModal ref={userModalRef} treeData={treeData} onSuccess={onSuccessUserModal} />
-        <Button onClick={handleModifyDelete} disabled={isDeleteDisabled}>
-          {t('common.batchDelete')}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Delete']}>
+          <Button onClick={handleModifyDelete} disabled={isDeleteDisabled}>
+            {t('common.batchDelete')}
+          </Button>
+        </PermissionWrapper>
         <PasswordModal ref={passwordModalRef} onSuccess={() => fetchUsers({ search: searchValue, page: currentPage, page_size: pageSize })} />
       </div>
       <Spin spinning={loading}>
@@ -481,12 +558,13 @@ const User: React.FC = () => {
         onCancel={() => {
           setAddGroupModalOpen(false);
           setAddSubGroupModalOpen(false);
-          addGroupForm.resetFields();
+          resetAddGroupForm();
         }}
         okText={t('common.confirm')}
         cancelText={t('common.cancel')}
+        destroyOnClose={true}
       >
-        <Form form={addGroupForm}>
+        <Form ref={addGroupFormRef}>
           <Form.Item
             name="name"
             label={t('system.group.form.name')}
@@ -507,10 +585,11 @@ const User: React.FC = () => {
         onOk={onRenameGroup}
         onCancel={() => {
           setRenameGroupModalOpen(false);
-          renameGroupForm.resetFields();
+          resetRenameGroupForm();
         }}
+        destroyOnClose={true}
       >
-        <Form form={renameGroupForm}>
+        <Form ref={renameGroupFormRef}>
           <Form.Item
             name="renameTeam"
             label={t('system.user.form.name')}

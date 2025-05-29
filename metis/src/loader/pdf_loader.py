@@ -1,3 +1,4 @@
+import base64
 import re
 import tempfile
 from io import BytesIO
@@ -89,10 +90,13 @@ class PDFLoader:
                     xref_value = image[0]
                     base_image = pdf.extract_image(xref_value)
                     image_bytes = base_image["image"]
+
+                    image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+
                     with tempfile.NamedTemporaryFile(delete=True, suffix=".png") as tmp_file:
                         tmp_file.write(image_bytes)
                         predict_result = self.ocr.predict(tmp_file.name)
-                        metadata = {"format": "image", "page": page_number}
+                        metadata = {"format": "image", "page": page_number, "image_base64": image_base64}
                         docs.append(Document(predict_result, metadata=metadata))
                 except Exception as e:
                     logger.error(f"解析图片失败: {e}")

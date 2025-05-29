@@ -8,7 +8,8 @@ MONITOR_OBJECT_TYPE = {
     "Hardware Device": "Hardware Device",
     "Container Management": "Container Management",
     "Other": "Other",
-    "VMware": "VMware"
+    "VMware": "VMware",
+    "Tencent Cloud": "Tencent Cloud"
 }
 
 MONITOR_OBJECT = {
@@ -46,7 +47,12 @@ MONITOR_OBJECT = {
     "vCenter": "vCenter",
     "ESXI": "ESXI",
     "VM": "VM",
-    "DataStorage": "DataStorage"
+    "DataStorage": "DataStorage",
+    "JVM": "JVM",
+    "Jetty": "Jetty",
+    "WebLogic": "WebLogic",
+    "TCP": "Tencent Cloud Platform",
+    "CVM": "CVM"
 }
 
 MONITOR_OBJECT_PLUGIN = {
@@ -173,6 +179,30 @@ MONITOR_OBJECT_PLUGIN = {
     "vCenter": {
         "name": "vCenter",
         "desc": "vCenter is VMware's virtualization hub for monitoring resources (CPU/memory/storage/network), analyzing performance, and optimizing configurations. It helps identify VM/host anomalies and improves environment efficiency."
+    },
+    "JVM": {
+        "name": "JVM",
+        "desc": "Used for collecting and analyzing the runtime status, memory usage (heap, non-heap, buffer pool), thread activity, garbage collection, and system resource metrics (CPU, physical memory, swap space) of the JVM (Java Virtual Machine), helping to identify performance bottlenecks, detect memory leaks, and optimize Java application performance."
+    },
+    "ActiveMQ-JMX": {
+        "name": "ActiveMQ-JMX",
+        "desc": "This ActiveMQ plugin uses JMX for collection, obtaining key performance metrics like message queues, connection pools, and message throughput. It monitors message processing efficiency and resource usage in real-time, optimizing system performance and ensuring service stability."
+    },
+    "Jetty-JMX": {
+        "name": "Jetty-JMX",
+        "desc": "Collects key performance metrics of Jetty task processing, thread pools, network connections, HTTP configurations, and JMX self-monitoring to track server resource usage, task handling capabilities, and connection status—enabling optimized system performance and improved service stability."
+    },
+    "Tomcat-JMX": {
+        "name": "Tomcat-JMX",
+        "desc": "Collects Tomcat key performance metrics via JMX, including thread pools, HTTP connections, JVM memory, and request latency, to monitor operational status and resource efficiency for performance optimization and fault detection."
+    },
+    "WebLogic-JMX": {
+        "name": "WebLogic-JMX",
+        "desc": "This plugin uses JMX to collect WebLogic's key metrics, including thread pools, connection pools, memory, EJB, Servlet, JMS performance, and Web service response times. It enables real-time monitoring, performance optimization, and risk early warning to ensure system stability."
+    },
+        "Tencent Cloud": {
+        "name": "Tencent Cloud",
+        "desc": "It is used to collect various monitoring index data of Tencent Cloud in real - time, covering dimensions such as computing resources, network performance, and storage usage, helping users gain in - depth insights into resource status, accurately locate anomalies, and efficiently complete operation and maintenance management and cost optimization.​"
     }
 }
 
@@ -413,6 +443,59 @@ MONITOR_OBJECT_METRIC_GROUP = {
         "Disk": "Disk",
         "Network": "Network",
         "Power": "Power",
+    },
+    "JVM": {
+        "JMXselfMonitor": "JMX Self-Monitoring Information",
+        "Memory": "Memory",
+        "Thread": "Thread",
+        "OS": "Operating System",
+        "BufferPool": "Buffer Pool",
+        "GC": "Garbage Collection",
+        "MemoryPool": "Memory Pool"
+    },
+    "ActiveMQ-JMX": {
+        "Connection": "Connection",
+        "Memory": "Memory",
+        "Queue": "Queue",
+        "Message": "Message",
+        "Producer": "Producer",
+        "Consumer": "Consumer",
+        "Other": "Other",
+        "JvmMemory": "JVM Memory",
+        "JMXselfMonitor": "JMX Self-Monitoring Information"
+    },
+    "Jetty-JMX": {
+        "Queuedthreadpool": "Queued Thread Pool",
+        "JvmMemory": "JVM Memory",
+        "Httpconfiguration": "HTTP Configuration",
+        "Bufferpool": "Buffer Pool",
+        "Serverconnector": "Server Connector",
+        "Managedselector": "Managed Selector",
+        "Reservedthread": "Reserved Thread",
+        "JMXselfMonitor": "JMX Self-Monitoring Information"
+    },
+    "Tomcat-JMX": {
+        "GlobalRequestProcessor": "Global Request Processing",
+        "Threadpool": "Thread Pool",
+        "Session": "Session",
+        "JMXselfMonitor": "JMX Self-Monitoring Information"
+    },
+    "WebLogic-JMX": {
+        "Threadpool": "Thread Pool",
+        "Application": "Application",
+        "WorkManager": "Work Manager",
+        "JMS": "Messaging Service",
+        "PersistentStore": "Persistent Storage",
+        "JMXselfMonitor": "JMX Self-Monitoring Information"
+    },
+    "TCP": {
+
+    },
+    "CVM": {
+        "CPU": "CPU",
+        "Memory": "Memory",
+        "Disk": "Disk",
+        "Network": "Network"
     }
 }
 
@@ -565,6 +648,34 @@ MONITOR_OBJECT_METRIC = {
     "net.dropped_out": {
         "name": "NIC Dropped Packets",
         "desc": "Displays the number of dropped packets sent by the network interface, indicating network transmission congestion. This metric is crucial for monitoring network reliability."
+    },
+    "nvidia_smi_memory_free": {
+      "name": "GPU Memory Free",
+      "desc": "The remaining capacity of GPU memory currently unoccupied, used to assess available resources."
+    },
+    "nvidia_smi_memory_used": {
+      "name": "GPU Memory Used",
+      "desc": "The capacity of GPU memory currently occupied, reflecting the memory size used by running tasks."
+    },
+    "nvidia_smi_memory_total": {
+      "name": "GPU Memory Total",
+      "desc": "The total capacity of GPU memory, indicating the maximum memory the device supports."
+    },
+    "nvidia_smi_utilization_memory": {
+      "name": "GPU Memory Utilization",
+      "desc": "The percentage of current memory usage, indicating the utilization of GPU memory resources (0%-100%), useful for optimizing memory allocation."
+    },
+    "nvidia_smi_power_draw": {
+      "name": "GPU Power Draw",
+      "desc": "The real-time power consumption of GPU, measured in watts (W), used to monitor energy consumption level."
+    },
+    "nvidia_smi_temperature_gpu": {
+      "name": "GPU Core Temperature",
+      "desc": "The operating temperature of the GPU core, measured in degrees Celsius (°C), used to monitor device status and safety."
+    },
+    "nvidia_smi_fan_speed": {
+      "name": "GPU Fan Speed Percentage",
+      "desc": "The percentage of current GPU fan speed relative to the maximum speed (0%-100%), used to monitor cooling condition and operational status."
     }
 },
     "Website": {
@@ -1707,98 +1818,102 @@ MONITOR_OBJECT_METRIC = {
 },
 "Postgres": {
     "postgresql_active_time": {
-        "name": "Active Time",
-        "desc": "This metric indicates the total active time of PostgreSQL, reflecting the duration of database activity."
+      "name": "PostgreSQL Active Time",
+      "desc": "This metric indicates the total duration of the PostgreSQL instance in an active state, reflecting the duration of database activity."
     },
     "postgresql_blk_read_time": {
-        "name": "Block Read Time",
-        "desc": "This metric indicates the total time spent by PostgreSQL reading blocks from the disk."
+      "name": "PostgreSQL Block Read Time Rate",
+      "desc": "Indicates the rate of time spent on block read operations by the PostgreSQL instance (in seconds per second). Used for monitoring read performance."
     },
     "postgresql_blk_write_time": {
-        "name": "Block Write Time",
-        "desc": "This metric indicates the total time spent by PostgreSQL writing blocks to the disk."
+      "name": "PostgreSQL Block Write Time Rate",
+      "desc": "Indicates the rate of time spent on block write operations by the PostgreSQL instance (in seconds per second). Used for monitoring write performance."
     },
     "postgresql_blks_hit": {
-        "name": "Block Cache Hits",
-        "desc": "This metric indicates the number of times PostgreSQL queries hit the cache, reflecting cache efficiency."
+      "name": "PostgreSQL Blocks Hit Rate",
+      "desc": "Indicates the rate of block cache hits by the PostgreSQL instance (in hits per second). Used for monitoring cache efficiency."
     },
     "postgresql_blks_read": {
-        "name": "Block Reads",
-        "desc": "This metric indicates the number of blocks read by PostgreSQL from the disk."
+      "name": "PostgreSQL Blocks Read Rate",
+      "desc": "Indicates the rate of block reads by the PostgreSQL instance (in reads per second). Used for monitoring read frequency."
+    },
+    "postgresql_blks_hit_ratio": {
+      "name": "PostgreSQL Blocks Hit Ratio(5m)",
+      "desc": "Indicates the PostgreSQL instance's block cache hit ratio over the past 5 minutes, reflecting cache effectiveness. A high hit ratio means most data requests are fulfilled from the cache, reducing disk reads and improving query performance."
     },
     "postgresql_buffers_alloc": {
-        "name": "Buffers Allocated",
-        "desc": "This metric indicates the number of buffer blocks allocated by PostgreSQL to monitor memory usage."
+      "name": "PostgreSQL Buffers Allocated Rate",
+      "desc": "Indicates the rate of buffer allocations by the PostgreSQL instance (in allocations per second). Used for monitoring buffer allocation."
     },
     "postgresql_buffers_checkpoint": {
-        "name": "Checkpoint Buffers",
-        "desc": "This metric indicates the number of buffer blocks written during checkpoints in PostgreSQL."
+      "name": "PostgreSQL Buffers Checkpoint Rate",
+      "desc": "Indicates the rate of buffers at checkpoints by the PostgreSQL instance (in checkpoints per second). Used for monitoring checkpoint frequency."
     },
     "postgresql_xact_commit": {
-        "name": "Transaction Commits",
-        "desc": "This metric indicates the total number of transactions committed by PostgreSQL, reflecting the workload of the database."
+      "name": "PostgreSQL Transactions Committed Rate",
+      "desc": "Indicates the rate of transactions committed by the PostgreSQL instance (in commits per second). Used for monitoring transaction commit frequency."
     },
     "postgresql_xact_rollback": {
-        "name": "Transaction Rollbacks",
-        "desc": "This metric indicates the total number of transaction rollbacks performed by PostgreSQL."
+      "name": "PostgreSQL Transactions Rolled Back Rate",
+      "desc": "Indicates the rate of transactions rolled back by the PostgreSQL instance (in rollbacks per second). Used for monitoring transaction rollback frequency."
     },
     "postgresql_sessions": {
-        "name": "Total Sessions",
-        "desc": "This metric indicates the total number of sessions created by PostgreSQL, reflecting database connection activity."
+      "name": "PostgreSQL Active Sessions",
+      "desc": "Indicates the total number of sessions for the PostgreSQL instance (including idle connections), used for monitoring connection pool usage and identifying connection leaks or abnormal surges."
     },
     "postgresql_sessions_abandoned": {
-        "name": "Abandoned Sessions",
-        "desc": "This metric indicates the count of sessions abandoned due to prolonged inactivity."
+      "name": "PostgreSQL Abandoned Sessions Rate",
+      "desc": "Rate of sessions abnormally disconnected due to network/client issues per second, used to identify client/network instability and resource leaks."
     },
     "postgresql_sessions_killed": {
-        "name": "Killed Sessions",
-        "desc": "This metric indicates the total number of sessions terminated by an administrator or system."
+      "name": "PostgreSQL Killed Sessions Rate",
+      "desc": "Indicates the rate of killed sessions for the PostgreSQL instance (in terminations per second). Used for monitoring session termination frequency."
     }
 },
 "Redis": {
     "redis_used_memory": {
-        "name": "Used Memory",
-        "desc": "This metric indicates the memory used by the Redis allocator."
+      "name": "Used Memory",
+      "desc": "This metric indicates the memory used by the Redis allocator, including all internal data structures and caches."
     },
     "redis_mem_fragmentation_ratio": {
-        "name": "Memory Fragmentation",
-        "desc": "This metric indicates the memory fragmentation ratio of the Redis allocator."
+      "name": "Memory Fragmentation",
+      "desc": "This metric indicates the memory fragmentation ratio, reflecting memory usage efficiency."
     },
     "redis_instantaneous_ops_per_sec": {
-        "name": "Operations per Second",
-        "desc": "This metric indicates the number of commands processed per second by Redis."
+      "name": "Operations per Second",
+      "desc": "This metric indicates the number of Redis commands processed per second (QPS)."
     },
     "redis_keyspace_hits": {
-        "name": "Keyspace Hits",
-        "desc": "This metric indicates the number of cache hits."
+      "name": "Keyspace Hits",
+      "desc": "This metric indicates the number of cache hits."
     },
     "redis_keyspace_misses": {
-        "name": "Keyspace Misses",
-        "desc": "This metric indicates the number of cache misses."
+      "name": "Keyspace Misses",
+      "desc": "This metric indicates the number of cache misses."
     },
     "redis_clients": {
-        "name": "Connected Clients",
-        "desc": "This metric indicates the number of active client connections."
+      "name": "Connected Clients",
+      "desc": "This metric indicates the current number of connected clients, reflecting active connections."
     },
-    "redis_used_cpu_sys": {
-        "name": "CPU Used (System)",
-        "desc": "This metric indicates the total system CPU time consumed by the Redis process."
+    "redis_used_cpu_sys_rate": {
+      "name": "Redis System CPU Rate",
+      "desc": "Rate of CPU time consumed by Redis in system mode per second. High value (>1) may indicate heavy I/O operations, triggering an alert."
     },
     "redis_evicted_keys": {
-        "name": "Evicted Keys",
-        "desc": "This metric indicates the number of keys evicted due to memory constraints."
+      "name": "Evicted Keys",
+      "desc": "This metric indicates the number of key-value pairs evicted due to memory constraints."
     },
     "redis_connected_slaves": {
-        "name": "Connected Slaves",
-        "desc": "This metric indicates the number of replicas connected to the master node."
+      "name": "Connected Slaves",
+      "desc": "This metric indicates the current number of replicas connected to the master node."
     },
     "redis_rdb_last_save_time_elapsed": {
-        "name": "Last Save Elapsed Time",
-        "desc": "This metric indicates the time elapsed since the last successful RDB save operation."
+      "name": "Last Save Elapsed Time",
+      "desc": "This metric indicates the elapsed time since the last successful RDB save operation."
     },
     "redis_rejected_connections": {
-        "name": "Rejected Connections",
-        "desc": "This metric indicates the number of connections rejected due to server overload or policy limits."
+      "name": "Rejected Connections",
+      "desc": "This metric indicates the number of connections rejected due to server overload or policy restrictions."
     }
 },
 "Docker": {
@@ -1968,7 +2083,497 @@ MONITOR_OBJECT_METRIC = {
         "name": "Power state",
         "desc": "It indicates the current power status of a virtual machine (VM). This metric helps administrators monitor whether a VM is powered on or off. This metric is essential for tracking VM availability, optimizing resource allocation, and automating workflows in VMware environments."
     }
-}
+},
+    "JVM": {
+    "jmx_scrape_duration_seconds_gauge": {
+      "name": "JMX Scrape Duration",
+      "desc": "The duration of the most recent JMX monitoring data collection, measured in seconds, is used to evaluate the performance of data collection."
+    },
+    "jmx_scrape_error_gauge": {
+      "name": "JMX Scrape Error",
+      "desc": "Indicates whether there is a failure during the JMX scraping process. A non-zero value indicates a failure"
+    },
+    "jvm_memory_usage_init_value": {
+      "name": "JVM Memory Init",
+      "desc": "The size of memory initialized and allocated when the Java Virtual Machine starts, reflecting the initial memory configuration"
+    },
+    "jvm_memory_usage_committed_value": {
+      "name": "JVM Memory Committed",
+      "desc": "The current size of memory committed for use by the Java Virtual Machine, which can be used to assess memory resource occupancy"
+    },
+    "jvm_memory_usage_used_value": {
+      "name": "JVM Memory Used",
+      "desc": "The current actual amount of memory used by the Java Virtual Machine, directly reflecting the memory usage"
+    },
+    "jvm_memory_usage_max_value": {
+      "name": "JVM Memory Usage Max",
+      "desc": "The maximum amount of memory used by the Java Virtual Machine during operation, which can be used to detect memory pressure and leaks"
+    },
+    "jvm_threads_total_started_count_value": {
+      "name": "JVM Total Threads Started/sec",
+      "desc": "The total number of threads created and started by the Java Virtual Machine since startup, showing the scale of thread creation"
+    },
+    "jvm_threads_daemon_count_value": {
+      "name": "JVM Daemon Threads",
+      "desc": "The current number of active daemon threads in the Java Virtual Machine. Daemon threads are used to serve other threads"
+    },
+    "jvm_threads_peak_count_value": {
+      "name": "JVM Peak Threads",
+      "desc": "The peak number of threads during the operation of the Java Virtual Machine, which can assist in analyzing peak thread resource usage"
+    },
+    "jvm_threads_count_value": {
+      "name": "JVM Current Threads Count",
+      "desc": "The current number of running threads in the Java Virtual Machine, real-time reflecting thread activity"
+    },
+    "jvm_threads_current_user_time_value": {
+      "name": "JVM Thread User Time",
+      "desc": "The CPU time spent by the current threads in the Java Virtual Machine executing user code, used to analyze thread performance"
+    },
+    "jvm_os_memory_physical_free_value": {
+      "name": "Free Physical Memory",
+      "desc": "The current available size of physical memory in the system, reflecting the remaining memory resources"
+    },
+    "jvm_os_memory_physical_total_value": {
+      "name": "Total Physical Memory",
+      "desc": "The total capacity of physical memory in the system, which is a fixed parameter of the hardware configuration"
+    },
+    "jvm_os_memory_swap_free_value": {
+      "name": "Free Swap Space",
+      "desc": "The current available size of swap space in the system, used to temporarily store data when physical memory is insufficient"
+    },
+    "jvm_os_memory_swap_total_value": {
+      "name": "Total Swap Space",
+      "desc": "The total capacity of swap space in the system, determining the upper limit of expandable virtual memory"
+    },
+    "jvm_os_memory_committed_virtual_value": {
+      "name": "Committed Virtual Memory",
+      "desc": "The size of virtual memory committed for use by the Java Virtual Machine, reflecting the occupancy of virtual memory resources"
+    },
+    "jvm_os_available_processors_value": {
+      "name": "Available Processors",
+      "desc": "The current number of processor cores available for executing threads in the system, affecting the program's parallel processing ability"
+    },
+    "jvm_os_processcputime_seconds_value": {
+      "name": "JVM Process CPU Time",
+      "desc": "The CPU time consumed by the Java Virtual Machine process since startup, measuring process resource occupancy"
+    },
+    "jvm_bufferpool_count_value": {
+      "name": "BufferPool Count",
+      "desc": "The number of buffer objects in the BufferPool of Java NIO, used to monitor the scale of the resource pool"
+    },
+    "jvm_bufferpool_memoryused_value": {
+      "name": "BufferPool Memory Used",
+      "desc": "The current size of memory used by the BufferPool in Java NIO, reflecting the usage of the resource pool"
+    },
+    "jvm_bufferpool_totalcapacity_value": {
+      "name": "BufferPool Total Capacity",
+      "desc": "The total memory capacity of the BufferPool in Java NIO, showing the maximum carrying capacity of the resource pool"
+    },
+    "jvm_gc_collectiontime_seconds_value": {
+      "name": "GC Collection Time",
+      "desc": "The total cumulative time consumed by garbage collection operations in the Java Virtual Machine, used to evaluate GC performance"
+    },
+    "jvm_gc_collectioncount_value": {
+      "name": "GC Collection Count",
+      "desc": "The cumulative number of garbage collection operations in the Java Virtual Machine, reflecting the frequency of GC activities"
+    },
+    "jvm_memorypool_usage_init_value": {
+      "name": "MemoryPool Init Usage",
+      "desc": "The initialized memory usage of the memory pool in the Java Virtual Machine, reflecting the initial state of the memory pool"
+    },
+    "jvm_memorypool_usage_committed_value": {
+      "name": "MemoryPool Committed",
+      "desc": "The current committed memory usage of the memory pool in the Java Virtual Machine, showing the occupancy of memory pool resources"
+    },
+    "jvm_memorypool_usage_used_value": {
+      "name": "MemoryPool Used",
+      "desc": "The current actual memory usage of the memory pool in the Java Virtual Machine, directly reflecting the usage level of the memory pool"
+    },
+    "jvm_memorypool_usage_max_value": {
+      "name": "MemoryPool Max Usage",
+      "desc": "The maximum memory usage ever reached by the memory pool during the operation of the Java Virtual Machine, which can detect memory pool pressure"
+    }
+  },
+  "Tomcat-JMX": {
+    "tomcat_bytesreceived_increase": {
+      "name": "Received Bytes Increase",
+      "desc": "Increase in received bytes over the past 5 minutes (in kibibytes), reflecting network input rate. A continuous increase may indicate higher network input traffic, requiring attention to network bandwidth."
+    },
+    "tomcat_bytessent_increase": {
+      "name": "Sent Bytes Increase",
+      "desc": "Increase in sent bytes over the past 5 minutes (in kibibytes), reflecting network output rate. A high value may indicate significant network output traffic, requiring attention to network bandwidth."
+    },
+    "tomcat_errorcount_increase": {
+      "name": "Error Increase",
+      "desc": "Increase in errors over the past 5 minutes, reflecting changes in error frequency. A high value may indicate numerous system issues that need prompt investigation."
+    },
+    "tomcat_processingtime_increase": {
+      "name": "Total Processing Time Increase",
+      "desc": "Increase in total time (in seconds) taken to process requests over the past 5 minutes, evaluating changes in overall processing efficiency. A continuous increase may indicate growing request processing time, suggesting further analysis for potential performance bottlenecks."
+    },
+    "tomcat_maxtime_total_counter": {
+      "name": "Max Processing Time",
+      "desc": "Maximum request processing time (in seconds) for a specific port and protocol, locating slow requests. A high value may indicate a performance bottleneck, suggesting optimization of application performance."
+    },
+    "tomcat_requestcount_increase": {
+      "name": "Request Increase",
+      "desc": "Increase in requests over the past 5 minutes, reflecting traffic trends. A continuous increase may indicate higher traffic, requiring attention to system load."
+    },
+    "tomcat_threadpool_currentthreadcount_gauge": {
+      "name": "Current Threads",
+      "desc": "Current number of threads in the thread pool, monitoring concurrent load. A high value may indicate heavy thread pool load, suggesting optimization of thread pool configuration."
+    },
+    "tomcat_threadpool_utilization": {
+      "name": "Threadpool Utilization",
+      "desc": "Utilization of the thread pool, reflecting its usage. A high value may indicate the thread pool is nearing saturation, suggesting the need to increase thread pool capacity or optimize application performance."
+    },
+    "tomcat_threadpool_currentthreadsbusy_gauge": {
+      "name": "Busy Threads",
+      "desc": "Number of busy threads, determining processing capacity bottlenecks. A high value may indicate insufficient processing capacity, suggesting optimization of thread pool configuration."
+    },
+    "tomcat_threadpool_running_gauge": {
+      "name": "Running Threads",
+      "desc": "Number of actively running threads in the thread pool, reflecting actual workload. A high value may indicate heavy thread pool load, suggesting optimization of thread pool configuration."
+    },
+    "tomcat_session_processingtime_avg": {
+      "name": "Average Session Processing Time",
+      "desc": "Over the past 5 minutes, the average session processing time per second (in milliseconds). This metric reflects the average efficiency of the system in processing sessions. A lower value indicates that the system processes sessions quickly and efficiently; a higher value may indicate performance bottlenecks in the system when processing sessions."
+    },
+    "tomcat_session_sessioncounter_total_counter": {
+      "name": "Active Sessions",
+      "desc": "Total number of active sessions for a specific host, monitoring session resource usage. A high value may indicate excessive session resource usage, suggesting optimization of session management."
+    },
+    "tomcat_session_expiredsessions_total_counter": {
+      "name": "Expired Sessions",
+      "desc": "Total number of expired sessions for a specific host, detecting session timeouts. A high value may indicate frequent session timeouts, requiring a review of session configuration or resource limits."
+    },
+    "tomcat_session_rejectionrate": {
+      "name": "Session Rejection Rate",
+      "desc": "Session rejection rate, reflecting the proportion of session creation failures. A high value may indicate issues with session management, requiring a review of session configuration or resource limits."
+    },
+    "jmx_scrape_error_gauge": {
+      "name": "JMX Scrape Error",
+      "desc": "JMX scrape status: 0 for success, 1 for failure."
+    }
+  },
+  "Jetty-JMX": {
+    "jetty_queuedthreadpool_utilizationrate_value": {
+      "name": "Utilization Rate",
+      "desc": "Current utilization rate of threads performing temporary jobs in the thread pool(The ratio of currently active threads to the maximum number of threads in the thread pool), indicating resource utilization pressure."
+    },
+    "jetty_queuedthreadpool_threads_value": {
+      "name": "Thread Count",
+      "desc": "Total number of threads currently managed by the thread pool, including active and idle threads."
+    },
+    "jetty_queuedthreadpool_maxthreads_value": {
+      "name": "Maximum Threads Count",
+      "desc": "The maximum number of threads allowed in the Jetty thread pool, and the time threshold after which an idle thread will be reclaimed."
+    },
+    "jetty_queuedthreadpool_idletimeout_value": {
+      "name": "Idle Timeout for Threads",
+      "desc": "Maximum allowable idle timeout for threads in Jetty thread pools."
+    },
+    "jetty_queuedthreadpool_readythreads_value": {
+      "name": "Jetty Ready Threads",
+      "desc": "The number of ready threads in the Jetty server, used to assess idle resources in the thread pool."
+    },
+    "jvm_memory_heap_usage_used_rate": {
+      "name": "Heap Memory Usage Change Rate",
+      "desc": "The average rate of change in JVM heap memory usage over 5 minutes , measured in megabytes per minute, used to monitor the trend of heap memory usage in real-time and detect memory leaks or memory pressure issues."
+    },
+    "jvm_memory_heap_usage_max_value": {
+      "name": "Heap Memory Usage (Max)",
+      "desc": "The maximum amount of heap memory available to the JVM, used to assess the upper limit of heap memory to prevent memory overflow."
+    },
+    "jvm_memory_heap_usage_used_value": {
+      "name": "Heap Memory Usage (Used)",
+      "desc": "The portion of JVM heap memory that is currently in use, used to assess the current heap memory usage."
+    },
+    "jvm_memory_heap_usage_committed_value": {
+      "name": "Heap Memory Usage (Committed)",
+      "desc": "The portion of JVM heap memory that has been committed, used to assess the actual amount of heap memory allocated to the JVM."
+    },
+    "jvm_memory_nonheap_usage_used_rate": {
+      "name": "Non-Heap Memory Usage Change Rate",
+      "desc": "The average rate of change in JVM non-heap memory usage over 5 minutes , measured in megabytes per minute, used to monitor the trend of non-heap memory usage."
+    },
+    "jvm_memory_nonheap_usage_max_value": {
+      "name": "Non-Heap Memory Usage (Max)",
+      "desc": "The maximum amount of non-heap memory available to the JVM, used to assess the upper limit of non-heap memory."
+    },
+    "jetty_httpconfiguration_outputbuffersize_value": {
+      "name": "HTTP Output Buffer Size",
+      "desc": "Represents the output buffer size (KB) for HTTP responses in Jetty, controlling data buffering to balance performance and memory usage."
+    },
+    "jetty_httpconfiguration_idletimeout_value": {
+      "name": "HTTP Idle Timeout",
+      "desc": "Indicates the maximum keep-alive time (seconds) for HTTP connections without data transfer, releasing idle resources to prevent waste and malicious occupation."
+    },
+    "jetty_httpconfiguration_headercachesize_value": {
+      "name": "HTTP Header Cache Size",
+      "desc": "Represents the maximum number of HTTP request/response headers cached by Jetty to reduce parsing overhead and improve request processing speed."
+    },
+    "jetty_httpconfiguration_maxerrordispatches_value": {
+      "name": "Max Error Dispatches",
+      "desc": "Indicates the maximum number of error dispatches allowed in Jetty to prevent infinite loops and resource exhaustion during error handling."
+    },
+    "jetty_bufferpool_heapmemory_value": {
+      "name": "Heap Memory Reserved for Buffers",
+      "desc": "Represents the heap memory usage (MB) by Jetty's buffer pool for data block caching, monitoring memory leaks and usage."
+    },
+    "jetty_bufferpool_heapmemory_rate": {
+      "name": "Heap Memory Reserved for Buffers Rate",
+      "desc": "Represents the average rate of heap memory change (MB/s) for buffers over 5 minutes, identifying usage trends and anomalies."
+    },
+    "jetty_arraybufferpool_directmemory_value": {
+      "name": "DirectMemory Reserved for DirectBuffer",
+      "desc": "Represents the direct memory usage (MB) by Jetty's direct buffers for high-performance I/O, preventing out-of-memory errors in non-heap space."
+    },
+    "jetty_arraybufferpool_directmemory_rate": {
+      "name": "DirectMemory Reserved for DirectBuffer Rate",
+      "desc": "Represents the average rate of direct memory change (MB/s) over 5 minutes, analyzing allocation patterns and leak risks."
+    },
+    "jetty_serverconnector_idletimeout_value": {
+      "name": "Idle Timeout",
+      "desc": "Indicates the idle timeout (seconds) for network connections in Jetty, managing TCP connection lifecycles to optimize long-connection resource recycling."
+    },
+    "jetty_managedselector_selectcount_value": {
+      "name": "Selector Loop Select Count",
+      "desc": "Represents the cumulative number of select() method invocations by Jetty's selector, reflecting I/O event processing frequency and network load."
+    },
+    "jetty_managedselector_selectcount_increase": {
+      "name": "Selector Loop Select Count Increase",
+      "desc": "Represents the increase in selector select() calls over 5 minutes, eliminating counter reset effects to measure I/O trends accurately."
+    },
+    "jetty_reservedthreadexecutor_available_value": {
+      "name": "Available Reserved Threads",
+      "desc": "Represents the number of available reserved threads in Jetty's executor, monitoring high-priority task pool load to avoid processing delays."
+    },
+    "jmx_scrape_error_gauge": {
+      "name": "JMX Scrape Error",
+      "desc": "JMX scrape status: 0 for success, 1 for failure."
+    }
+  },
+  "ActiveMQ-JMX": {
+    "activemq_connections_total_counter": {
+      "name": "Total Connections",
+      "desc": "The total number of connections to the ActiveMQ broker. Monitoring this can help detect broker load and connection management efficiency."
+    },
+    "activemq_connections_total_rate": {
+      "name": "Connections Rate",
+      "desc": "Connection rate over 5 minutes, used to monitor connection establishment frequency."
+    },
+    "activemq_connections_gauge": {
+      "name": "Current Connections",
+      "desc": "The number of active connections to the ActiveMQ broker. This helps to understand real-time connection status and potential bottlenecks."
+    },
+    "activemq_topic_memory_percent_usage_value": {
+      "name": "Memory Percent Usage",
+      "desc": "Shows the percentage of memory consumption, which helps in optimizing resource allocation to prevent performance degradation."
+    },
+    "activemq_topic_memory_usage_byte_count_value": {
+      "name": "Memory Usage Byte Count",
+      "desc": "The memory occupied by undelivered messages, which helps assess the broker's memory consumption and management strategy."
+    },
+    "activemq_memory_usage_ratio_gauge": {
+      "name": "Memory Usage Ratio",
+      "desc": "The percentage of memory usage limits in the system, helpful for managing and optimizing memory use."
+    },
+    "activemq_topic_queue_size_value": {
+      "name": "Queue Size",
+      "desc": "The total amount of messages yet to be consumed, indicating the broker's workload and processing capacity."
+    },
+    "activemq_topic_enqueue_count_value": {
+      "name": "Enqueue Count",
+      "desc": "Number of messages received by the target, essential for monitoring communication traffic and flow control measures."
+    },
+    "activemq_topic_enqueue_rate": {
+      "name": "Enqueue Rate",
+      "desc": "The number of messages enqueued per unit of time, used for real-time monitoring of system load and message processing capabilities."
+    },
+    "activemq_dequeue_total_counter": {
+      "name": "Total Dequeues",
+      "desc": "Total number of messages confirmed and processed in the broker, which helps understand overall performance and efficiency."
+    },
+    "activemq_message_total_counter": {
+      "name": "Unacknowledged Messages",
+      "desc": "Total number of unacknowledged messages in the system, helping to identify potential message backlog issues."
+    },
+    "activemq_message_total_rate": {
+      "name": "Unacknowledged Message Growth Rate",
+      "desc": "The growth rate of unacknowledged messages over 5 minutes, used to monitor message backlog. If the growth rate remains high, it may indicate processing bottlenecks or message backlog issues in the system."
+    },
+    "activemq_enqueue_total_counter": {
+      "name": "Total Enqueues",
+      "desc": "Total number of messages sent to the broker, reflecting the system's load and communication frequency."
+    },
+    "activemq_topic_expired_count_value": {
+      "name": "Expired Messages Count",
+      "desc": "Shows the number of expired messages, indicating potential message processing delays or insufficient consumer processing capabilities."
+    },
+    "activemq_topic_blocked_sends_value": {
+      "name": "Blocked Sends Count",
+      "desc": "Shows the number of messages blocked due to flow control, helping to assess the system's flow control state and message sending smoothness."
+    },
+    "activemq_producer_total_counter": {
+      "name": "Total Producers",
+      "desc": "Shows the total number of producers currently connected to the ActiveMQ broker, helping to understand producer load and message sending activity."
+    },
+    "activemq_topic_producer_flow_control_value": {
+      "name": "Producer Flow Control Status",
+      "desc": "Indicates whether flow control is enabled for producers on the specified topic, with 1 for enabled and 0 for disabled, to prevent producers from overwhelming the system with too many messages."
+    },
+    "activemq_consumer_total_counter": {
+      "name": "Total Consumers",
+      "desc": "Shows the total number of consumers currently connected to the ActiveMQ broker, helping to understand consumer load and message processing capability."
+    },
+    "activemq_store_usage_ratio_gauge": {
+      "name": "Store Usage Ratio",
+      "desc": "The percentage of persistent store usage, helping to optimize storage management and resource allocation."
+    },
+    "jvm_memory_heap_usage_max_value": {
+      "name": "Heap Memory Usage (Max)",
+      "desc": "The maximum amount of heap memory available to the JVM, used to assess the upper limit of heap memory to prevent memory overflow."
+    },
+    "jvm_memory_heap_usage_used_value": {
+      "name": "Heap Memory Usage (Used)",
+      "desc": "The portion of JVM heap memory that is currently in use, used to assess the current heap memory usage."
+    },
+    "jvm_memory_nonheap_usage_used_rate": {
+      "name": "Non-Heap Memory Usage Change Rate",
+      "desc": "The average rate of change in JVM non-heap memory usage over 5 minutes , measured in megabytes per minute, used to monitor the trend of non-heap memory usage."
+    },
+    "jmx_scrape_error_gauge": {
+      "name": "JMX Scrape Error",
+      "desc": "JMX scrape status: 0 for success, 1 for failure."
+    }
+  },
+  "WebLogic-JMX": {
+    "weblogic_threadpool_throughput_value": {
+      "name": "Thread Pool Throughput",
+      "desc": "The number of requests processed per second by the thread pool, reflecting processing capacity. A higher value indicates stronger request processing capability. A significant drop in throughput may indicate performance bottlenecks or insufficient resources in the thread pool."
+    },
+    "weblogic_threadpool_pending_user_request_count_value": {
+      "name": "Pending User Requests",
+      "desc": "The length of the user request queue waiting to be processed by the thread pool. Continuous growth may lead to response delays. If this metric keeps increasing, it indicates that the thread pool cannot process requests as fast as they arrive, which may degrade user experience."
+    },
+    "weblogic_threadpool_queue_length_value": {
+      "name": "Thread Pool Queue Length",
+      "desc": "The number of tasks in the thread pool request queue, reflecting request backlog. A long queue length means many requests are waiting to be processed, which may require increasing thread pool resources or optimizing request processing logic."
+    },
+    "weblogic_threadpool_stuck_thread_count_value": {
+      "name": "Stuck Thread Count",
+      "desc": "The number of threads that have been running for a long time without completing, possibly indicating deadlocks or slow queries. When this metric is greater than 0, it is necessary to investigate whether there are code logic issues or database query performance problems."
+    },
+    "weblogic_threadpool_load_ratio": {
+      "name": "Thread Pool Load Ratio",
+      "desc": "Evaluate the load pressure of the thread pool. A value greater than 1 indicates that the request exceeds the processing capacity, and a value of 80% should trigger a severe warning. This metric helps determine whether the thread pool is overloaded, so that measures can be taken in time to prevent system crashes."
+    },
+    "weblogic_threadpool_average_utilization": {
+      "name": "Thread Pool Average Utilization",
+      "desc": "Reflect the average utilization rate of the thread pool over a period of time. High utilization may lead to thread pool overload, while low utilization may indicate resource waste. It is generally recommended to maintain it between 60% and 80%."
+    },
+    "weblogic_application_healthstatejmx_is_critical_value": {
+      "name": "Application Health Critical State",
+      "desc": "Flag indicating whether the application is in a critical abnormal state, directly reflecting business availability. When this metric is 1, it indicates that the application has a serious problem that needs to be investigated and repaired immediately."
+    },
+    "weblogic_application_overallhealthstatejmx_is_critical_value": {
+      "name": "Application Overall Health Critical State",
+      "desc": "Flag indicating whether the overall health state of the application, evaluated based on multiple metrics, is critically abnormal. When this metric is 1, it indicates that the overall health of the application is poor, which may affect the normal operation of the business."
+    },
+    "weblogic_workmanager_stuck_thread_count_value": {
+      "name": "Global WorkManager Stuck Threads",
+      "desc": "The number of stuck threads in the global work manager, used for system-level thread issue troubleshooting. When this metric is greater than 0, it is necessary to check whether there are thread blocking or resource contention issues in the system."
+    },
+    "weblogic_workmanager_pending_requests_value": {
+      "name": "Global WorkManager Pending Requests",
+      "desc": "The number of requests waiting to be processed in the global work manager. If this metric keeps increasing, it may affect the system's response speed."
+    },
+    "weblogic_jms_jmsservers_current_count_value": {
+      "name": "JMS Servers Current Count",
+      "desc": "The current number of running JMS server instances. Changes in the number may affect the performance and reliability of message delivery."
+    },
+    "weblogic_jms_connections_high_count_value": {
+      "name": "JMS Connections High Watermark",
+      "desc": "The historical highest record of JMS connections, used to evaluate the rationality of connection pool configuration. If the current number of connections is close to the peak value, it may be necessary to adjust the size of the connection pool."
+    },
+    "weblogic_jms_connections_current_count_value": {
+      "name": "JMS Current Connections",
+      "desc": "The current number of established JMS connections. Too many connections may lead to resource tension, while too few may affect the efficiency of message delivery."
+    },
+    "weblogic_persistentstore_object_count_value": {
+      "name": "Persistent Store Object Count",
+      "desc": "The current number of objects (such as messages, transaction logs) stored in the persistent store. Too many objects may lead to insufficient storage space, which requires regular cleanup."
+    },
+    "weblogic_persistentstore_physical_write_count_value": {
+      "name": "Persistent Store Physical Rate",
+      "desc": "Indicates the number of physical writes per second in the persistent store, reflecting write load. A high write frequency may lead to a decline in storage performance."
+    },
+    "weblogic_persistentstore_read_count_value": {
+      "name": "Persistent Store Reads",
+      "desc": "The number of read operations performed by the persistent store, reflecting read load. Frequent read operations may affect storage performance, and it is necessary to optimize read strategies."
+    },
+    "weblogic_persistentstore_total_io_rate_value": {
+      "name": "Persistent Store Total I/O Rate",
+      "desc": "Indicates the total number of I/O operations per second in the persistent store, including reads and writes. A high I/O frequency may lead to storage performance bottlenecks, and it is necessary to pay attention to the performance metrics of the storage system."
+    },
+    "jmx_scrape_error_gauge": {
+      "name": "JMX Scrape Error",
+      "desc": "JMX scrape status: 0 for success, 1 for failure."
+    }
+  },
+  "TCP": {
+  },
+  "CVM": {
+    "cvm_CPU_Usage": {
+        "name": "CPU Utilization",
+        "desc": "The real-time percentage of CPU occupied during machine operation."
+    },
+    "cvm_MemUsed": {
+        "name": "Memory Usage",
+        "desc": "The actual memory used by the user, excluding memory occupied by buffers and system cache. Calculated as Total Memory - Available Memory (including buffers and cached), which does not include buffers and cached."
+    },
+    "cvm_MemUsage": {
+        "name": "Memory Utilization",
+        "desc": "The actual memory utilization rate by the user, excluding memory occupied by buffers and system cache. It is the ratio of actual user memory usage to total memory, excluding cache, buffers, and free memory."
+    },
+    "cvm_CvmDiskUsage": {
+        "name": "Disk Utilization",
+        "desc": "The percentage of used disk capacity relative to total capacity (all disks)."
+    },
+    "cvm_LanOuttraffic": {
+        "name": "Internal Outbound Bandwidth",
+        "desc": "Average outbound traffic per second on the internal network interface card."
+    },
+    "cvm_LanIntraffic": {
+        "name": "Internal Inbound Bandwidth",
+        "desc": "Average inbound traffic per second on the internal network interface card."
+    },
+    "cvm_LanOutpkg": {
+        "name": "Internal Outbound Packet Rate",
+        "desc": "Average outbound packet rate per second on the internal network interface card."
+    },
+    "cvm_LanInpkg": {
+        "name": "Internal Inbound Packet Rate",
+        "desc": "Average inbound packet rate per second on the internal network interface card."
+    },
+    "cvm_WanOuttraffic": {
+        "name": "External Outbound Bandwidth",
+        "desc": "Average outbound traffic rate per second on the external network. The minimum granularity data is calculated as total traffic over 10 seconds divided by 10. This data represents the sum of outbound/inbound bandwidth from EIP+CLB+CVM on the external network."
+    },
+    "cvm_WanIntraffic": {
+        "name": "External Inbound Bandwidth",
+        "desc": "Average inbound traffic rate per second on the external network. The minimum granularity data is calculated as total traffic over 10 seconds divided by 10. This data represents the sum of outbound/inbound bandwidth from EIP+CLB+CVM on the external network."
+    },
+    "cvm_WanOutpkg": {
+        "name": "External Outbound Packet Rate",
+        "desc": "Average outbound packet rate per second on the external network interface card."
+    },
+    "cvm_WanInpkg": {
+        "name": "External Inbound Packet Rate",
+        "desc": "Average inbound packet rate per second on the external network interface card."
+    }
+  }
 }
 
 LANGUAGE_DICT = {

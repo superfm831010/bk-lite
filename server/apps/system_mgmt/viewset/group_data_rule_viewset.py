@@ -5,6 +5,7 @@ from django_filters.rest_framework import FilterSet
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
+from apps.core.decorators.api_permission import HasPermission
 from apps.rpc.node_mgmt import NodeMgmt
 from apps.rpc.opspilot import OpsPilot
 from apps.rpc.system_mgmt import SystemMgmt
@@ -22,7 +23,24 @@ class GroupDataRuleViewSet(viewsets.ModelViewSet):
     serializer_class = GroupDataRuleSerializer
     filterset_class = GroupDataRuleFilter
 
+    @HasPermission("data_permission-Delete")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+    @HasPermission("data_permission-Add")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @HasPermission("data_permission-Edit")
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @HasPermission("data_permission-View")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     @action(methods=["GET"], detail=False)
+    @HasPermission("data_permission-View")
     def get_app_data(self, request):
         params = request.GET.dict()
         client_map = {"opspilot": OpsPilot, "system-manager": SystemMgmt, "node": NodeMgmt}

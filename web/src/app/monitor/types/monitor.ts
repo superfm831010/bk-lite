@@ -34,6 +34,14 @@ export interface NodeConfigInfo {
   [key: string]: unknown;
 }
 
+export interface InstanceInfo {
+  organizations?: (string | number)[];
+  organization?: (string | number)[];
+  instance_name?: string;
+  instance_id?: string;
+  name?: string;
+}
+
 export interface GroupingRules {
   query?: string;
   instances?: string[];
@@ -50,12 +58,12 @@ export interface ObjectInstItem {
 export interface IntergrationItem {
   label: string;
   value: string;
-  list: ObectItem[];
+  list: ObjectItem[];
   name?: string;
   [key: string]: unknown;
 }
 
-export interface ObectItem {
+export interface ObjectItem {
   id: number;
   name: string;
   type: string;
@@ -65,7 +73,7 @@ export interface ObectItem {
   description: string;
   display_name?: string;
   display_type?: string;
-  options?: ObectItem[];
+  options?: ObjectItem[];
   label?: string;
   value?: string;
   [key: string]: unknown;
@@ -181,9 +189,9 @@ export interface ThresholdField {
 }
 
 export interface AlertProps {
-  objects: ObectItem[];
+  objects: ObjectItem[];
   metrics: MetricItem[];
-  groupObjects?: ObectItem[];
+  groupObjects?: ObjectItem[];
 }
 
 export interface SourceFeild {
@@ -290,12 +298,12 @@ export interface ViewModalProps {
   plugins: IntergrationItem[];
   form?: ChartProps;
   metrics?: MetricItem[];
-  objects?: ObectItem[];
+  objects?: ObjectItem[];
 }
 
 export interface ViewListProps {
   objectId: React.Key;
-  objects: ObectItem[];
+  objects: ObjectItem[];
   showTab?: boolean;
 }
 

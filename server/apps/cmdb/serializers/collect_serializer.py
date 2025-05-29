@@ -38,7 +38,7 @@ class CollectModelLIstSerializer(serializers.ModelSerializer):
         return data
 
 
-class MidModelSerializer(serializers.ModelSerializer):
+class OidModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = OidMapping
         fields = "__all__"

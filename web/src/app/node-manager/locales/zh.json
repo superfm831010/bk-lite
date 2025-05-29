@@ -39,6 +39,13 @@
         "title": "编辑云区域",
         "Introduction": "简介"
       },
+      "addform": {
+        "title": "新增云区域"
+      },
+      "deleteform": {
+        "title": "删除云区域",
+        "deleteInfo": "您确定要删除此云区域吗?"
+      },
       "node": {
         "node": "节点",
         "desc": "节点管理主要用于在每个节点上安装探针,并通过探针管理各种类型的收集器。",
@@ -88,7 +95,6 @@
         "loginPort": "登录端口",
         "loginPassword": "登录密码",
         "toInstall": "安装",
-        "autoInstall": "自动安装采集器",
         "manuallyInstall": "手动安装sidecar",
         "sidecarVersion": "控制器版本",
         "sidecarVersionDes": "请选择远程安装的控制器版本。",
@@ -105,7 +111,7 @@
         "installingTips": "仍有节点正在安装中，返回后可在列表中查看安装正常的节点。",
         "installationGuide": "安装指引",
         "log": "日志",
-        "downloadTips": "1、选择适用的版本下载控制器安装包和配置文件模板",
+        "downloadTips": "1、根据节点名称和组织，选择适用的版本下载控制器安装包和配置文件模板",
         "scriptTips": "2、执行如下脚本，进行控制器安装",
         "finishTips": "3、手动安装后，可在节点列表中查看控制器正常的节点",
         "uninstallSidecarTips": "确定卸载这些sidecar吗？",
@@ -118,7 +124,8 @@
         "active": "活跃",
         "inactive": "不活跃",
         "unknown": "未知的",
-        "stop": "停止"
+        "stop": "停止",
+        "nodeName": "节点名称"
       },
       "Configuration": {
         "system": "操作系统",

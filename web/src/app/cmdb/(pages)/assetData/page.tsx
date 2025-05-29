@@ -14,6 +14,7 @@ import {
   CascaderProps,
   Tree,
   Input,
+  Empty,
 } from 'antd';
 import CustomTable from '@/components/custom-table';
 import SearchFilter from './list/searchFilter';
@@ -44,6 +45,7 @@ import type { MenuProps } from 'antd';
 import { useRouter } from 'next/navigation';
 import PermissionWrapper from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import { useSession } from 'next-auth/react';
 
 interface ModelTabs {
   key: string;
@@ -80,7 +82,8 @@ const AssetDataContent = () => {
     searchParams.get('classificationId') || '';
   const commonContext = useCommon();
   const authContext = useAuth();
-  const token = authContext?.token || null;
+  const { data: session } = useSession();
+  const token = session?.user?.token || authContext?.token || null;
   const tokenRef = useRef(token);
   const authList = useRef(commonContext?.authOrganizations || []);
   const organizationList: Organization[] = authList.current;
@@ -115,7 +118,9 @@ const AssetDataContent = () => {
   });
   const [treeSearchText, setTreeSearchText] = useState('');
   const [filteredTreeData, setFilteredTreeData] = useState<any[]>([]);
-  const [modelInstCount, setModelInstCount] = useState<Record<string, number>>({});
+  const [modelInstCount, setModelInstCount] = useState<Record<string, number>>(
+    {}
+  );
 
   const handleExport = async (keys: string[]) => {
     try {
@@ -199,6 +204,7 @@ const AssetDataContent = () => {
 
   const getModelGroup = async () => {
     try {
+      setLoading(true);
       const [modeldata, groupData, assoType, instCount] = await Promise.all([
         get('/cmdb/api/model/'),
         get('/cmdb/api/classification/'),
@@ -239,18 +245,24 @@ const AssetDataContent = () => {
       setModelId(defaultModelId);
       setSelectedTreeKeys([defaultModelId]);
       getInitData(defaultModelId);
-      router.push(`/cmdb/assetData?modelId=${defaultModelId}&classificationId=${defaultGroupId}`);
+      router.push(
+        `/cmdb/assetData?modelId=${defaultModelId}&classificationId=${defaultGroupId}`
+      );
     } catch {
       setLoading(false);
     }
   };
 
-  const getTableParams = () => {
+  const getTableParams = (overrideQueryList?: unknown) => {
+    const activeQueryList =
+      overrideQueryList !== undefined ? overrideQueryList : queryList;
     const conditions = organization?.length
       ? [{ field: 'organization', type: 'list[]', value: organization }]
       : [];
     return {
-      query_list: queryList ? [queryList, ...conditions] : conditions,
+      query_list: activeQueryList
+        ? [activeQueryList, ...conditions]
+        : conditions,
       page: pagination.current,
       page_size: pagination.pageSize,
       order: '',
@@ -259,8 +271,8 @@ const AssetDataContent = () => {
     };
   };
 
-  const getInitData = (id: string) => {
-    const tableParmas = getTableParams();
+  const getInitData = (id: string, overrideQueryList?: unknown) => {
+    const tableParmas = getTableParams(overrideQueryList);
     const getAttrList = get(`/cmdb/api/model/${id}/attr_list/`);
     const getInstList = post('/cmdb/api/instance/search/', {
       ...tableParmas,
@@ -382,8 +394,14 @@ const AssetDataContent = () => {
     },
   ];
 
-  const updateFieldList = (id?: string) => {
-    fetchData();
+  const updateFieldList = async (id?: string) => {
+    await fetchData();
+    try {
+      const instCount = await get('/cmdb/api/instance/model_inst_count/');
+      setModelInstCount(instCount);
+    } catch {
+      console.error('Failed to fetch model instance count');
+    }
     if (id) {
       showInstanceModal({
         _id: id,
@@ -438,41 +456,50 @@ const AssetDataContent = () => {
     });
   };
 
-  const renderModelTitle = useCallback((modelName: string, modelId: string) => (
-    <div className='flex items-center'>
-      <EllipsisWithTooltip text={modelName} className={assetDataStyle.treeLabel} />
-      <span className="ml-1 text-gray-400">
-        ({modelInstCount[modelId] || 0})
-      </span>
-    </div>
-  ), [modelInstCount]);
+  const renderModelTitle = useCallback(
+    (modelName: string, modelId: string) => (
+      <div className="flex items-center">
+        <EllipsisWithTooltip
+          text={modelName}
+          className={assetDataStyle.treeLabel}
+        />
+        <span className="ml-1 text-gray-400">
+          ({modelInstCount[modelId] || 0})
+        </span>
+      </div>
+    ),
+    [modelInstCount]
+  );
 
-  const filterTreeNodes = useCallback((nodes: any[], searchText: string) => {
-    if (!searchText) return nodes;
+  const filterTreeNodes = useCallback(
+    (nodes: any[], searchText: string) => {
+      if (!searchText) return nodes;
 
-    return nodes.reduce((filtered: any[], node) => {
-      const matchesSearch = node.content
-        .toLowerCase()
-        .includes(searchText.toLowerCase());
-        
-      if (node.children) {
-        const filteredChildren = filterTreeNodes(node.children, searchText);
-        if (filteredChildren.length > 0 || matchesSearch) {
-          filtered.push({
-            ...node,
-            children: filteredChildren.map(child => ({
-              ...child,
-              title: renderModelTitle(child.content, child.key)
-            }))
-          });
+      return nodes.reduce((filtered: any[], node) => {
+        const matchesSearch = node.content
+          .toLowerCase()
+          .includes(searchText.toLowerCase());
+
+        if (node.children) {
+          const filteredChildren = filterTreeNodes(node.children, searchText);
+          if (filteredChildren.length > 0 || matchesSearch) {
+            filtered.push({
+              ...node,
+              children: filteredChildren.map((child) => ({
+                ...child,
+                title: renderModelTitle(child.content, child.key),
+              })),
+            });
+          }
+        } else if (matchesSearch) {
+          filtered.push(node);
         }
-      } else if (matchesSearch) {
-        filtered.push(node);
-      }
 
-      return filtered;
-    }, []);
-  }, [renderModelTitle]);
+        return filtered;
+      }, []);
+    },
+    [renderModelTitle]
+  );
 
   const handleTreeSearch = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -527,6 +554,7 @@ const AssetDataContent = () => {
   }, [modelGroup, renderModelTitle]);
 
   const onSelectUnified = (selectedKeys: React.Key[]) => {
+    setQueryList(null);
     if (!selectedKeys.length) return;
     const key = selectedKeys[0] as string;
     if (key.startsWith('group:')) {
@@ -545,8 +573,10 @@ const AssetDataContent = () => {
           icn: item.icn,
         }));
         setModelList(newModelList);
-        getInitData(firstModelKey);
-        router.push(`/cmdb/assetData?modelId=${firstModelKey}&classificationId=${groupIdSelected}`);
+        getInitData(firstModelKey, null);
+        router.push(
+          `/cmdb/assetData?modelId=${firstModelKey}&classificationId=${groupIdSelected}`
+        );
       }
     } else {
       setSelectedTreeKeys([key]);
@@ -560,10 +590,12 @@ const AssetDataContent = () => {
             icn: item.icn,
           }));
           setModelList(newModelList);
-          router.push(`/cmdb/assetData?modelId=${key}&classificationId=${group.classification_id}`);
+          router.push(
+            `/cmdb/assetData?modelId=${key}&classificationId=${group.classification_id}`
+          );
         }
       });
-      getInitData(key);
+      getInitData(key, null);
     }
   };
 
@@ -581,7 +613,7 @@ const AssetDataContent = () => {
           title: t('action'),
           key: 'action',
           dataIndex: 'action',
-          width: 200,
+          width: 230,
           fixed: 'right',
           render: (_: unknown, record: any) => (
             <>
@@ -620,11 +652,17 @@ const AssetDataContent = () => {
         },
       ];
       setColumns(tableColumns);
-      setCurrentColumns(
-        tableColumns.filter(
-          (item) => displayFieldKeys.includes(item.key) || item.key === 'action'
-        )
-      );
+      const actionCol = tableColumns.find(col => col.key === 'action');
+      const ordered = [
+        ...tableColumns
+          .filter(col => displayFieldKeys.includes(col.key as string))
+          .sort((a, b) =>
+            displayFieldKeys.indexOf(a.key as string) -
+            displayFieldKeys.indexOf(b.key as string)
+          ),
+        ...(actionCol ? [actionCol] : []),
+      ];
+      setCurrentColumns(ordered);
     }
   }, [propertyList, displayFieldKeys]);
 
@@ -669,26 +707,36 @@ const AssetDataContent = () => {
             />
           </div>
           <div className={assetDataStyle.treeWrapper}>
-            <Tree
-              showLine
-              selectedKeys={selectedTreeKeys}
-              expandedKeys={expandedTreeKeys}
-              onExpand={(keys) => setExpandedTreeKeys(keys as string[])}
-              onSelect={onSelectUnified}
-              treeData={filteredTreeData}
-            />
+            {filteredTreeData.length > 0 ? (
+              <Tree
+                showLine
+                selectedKeys={selectedTreeKeys}
+                expandedKeys={expandedTreeKeys}
+                onExpand={(keys) => setExpandedTreeKeys(keys as string[])}
+                onSelect={onSelectUnified}
+                treeData={filteredTreeData}
+              />
+            ) : (
+              <div className="flex justify-center items-center h-full">
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={t('common.noData')}
+                />
+              </div>
+            )}
           </div>
         </div>
         <div className={assetDataStyle.assetList}>
           <div className="flex justify-between mb-4">
             <Space>
               <Cascader
-                placeholder={t('Model.selectOrganazationPlaceholder')}
+                placeholder={t('common.pleaseSelect')}
                 options={organizationList}
                 value={organization}
                 onChange={selectOrganization}
               />
               <SearchFilter
+                key={modelId}
                 userList={userList}
                 attrList={propertyList.filter(
                   (item) => item.attr_type !== 'organization'

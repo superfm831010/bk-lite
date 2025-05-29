@@ -57,7 +57,7 @@ export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       fetchLoginInfo();
     }
-  }, [status, session]);
+  }, [status]);
 
   const setSelectedGroup = (group: Group) => {
     setSelectedGroupState(group);

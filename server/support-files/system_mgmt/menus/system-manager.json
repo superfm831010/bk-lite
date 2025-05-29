@@ -6,26 +6,11 @@
   "description_cn": "Create roles for the Setting app to manage data permissions, menu permissions, and feature permissions.",
   "menus": [
     {
-      "name": "User",
+      "name": "Organization",
       "children": [
         {
           "id": "user_list",
           "name": "User-list",
-          "operation": [
-            "View",
-            "Add",
-            "Edit",
-            "Delete"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Group",
-      "children": [
-        {
-          "id": "group_list",
-          "name": "Group-list",
           "operation": [
             "View",
             "Add",
@@ -42,7 +27,10 @@
           "id": "application_list",
           "name": "Application-list",
           "operation": [
-            "View"
+            "View",
+            "Edit",
+            "Add",
+            "Delete"
           ]
         },
         {
@@ -53,6 +41,7 @@
             "Edit",
             "Add",
             "Add user",
+            "Remove user",
             "Edit Permission",
             "Delete"
           ]
@@ -86,16 +75,10 @@
           "id": "channel_setting",
           "name": "Channel-setting",
           "operation": [
-            "Save",
-            "View"
-          ]
-        },
-        {
-          "id": "channel_template",
-          "name": "Channel-template",
-          "operation": [
             "View",
-            "Detail"
+            "Edit",
+            "Delete",
+            "Add"
           ]
         }
       ]
@@ -111,8 +94,7 @@
       "name": "normal",
       "role_name": "system-manager_normal",
       "menus": [
-        "user_list-View",
-        "group_list-View"
+        "user_list-View"
       ]
     }
   ]

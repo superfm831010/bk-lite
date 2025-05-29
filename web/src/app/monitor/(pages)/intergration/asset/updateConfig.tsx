@@ -7,7 +7,6 @@ import React, {
   useImperativeHandle,
   forwardRef,
   useMemo,
-  useEffect,
 } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { useFormItems } from '@/app/monitor/hooks/intergration';
@@ -26,19 +25,11 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   const { post } = useApiClient();
   const { getConfigContent } = useMonitorApi();
   const formRef = useRef(null);
-  const authPasswordRef = useRef<any>(null);
-  const privPasswordRef = useRef<any>(null);
-  const passwordRef = useRef<any>(null);
   const [pluginName, setPluginName] = useState<string>('');
   const [collectType, setCollectType] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [title, setTitle] = useState<string>('');
-  const [passwordDisabled, setPasswordDisabled] = useState<boolean>(true);
-  const [authPasswordDisabled, setAuthPasswordDisabled] =
-    useState<boolean>(true);
-  const [privPasswordDisabled, setPrivPasswordDisabled] =
-    useState<boolean>(true);
   const [configForm, setConfigForm] = useState<TableDataItem>({});
   const [entryForm, setEntryForm] = useState<TableDataItem>({});
   const [pageLoading, setPageLoading] = useState<boolean>(false);
@@ -57,24 +48,6 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       getContent(_form);
     },
   }));
-
-  useEffect(() => {
-    if (!authPasswordDisabled && authPasswordRef?.current) {
-      authPasswordRef.current.focus();
-    }
-  }, [authPasswordDisabled]);
-
-  useEffect(() => {
-    if (!privPasswordDisabled && privPasswordRef?.current) {
-      privPasswordRef.current.focus();
-    }
-  }, [privPasswordDisabled]);
-
-  useEffect(() => {
-    if (!passwordDisabled && passwordRef?.current) {
-      passwordRef.current.focus();
-    }
-  }, [passwordDisabled]);
 
   const getContent = async (data: any) => {
     setPageLoading(true);
@@ -103,48 +76,12 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     }
   };
 
-  const handleEditAuthPassword = () => {
-    if (authPasswordDisabled) {
-      form.setFieldsValue({
-        auth_password: '',
-      });
-    }
-    setAuthPasswordDisabled(false);
-  };
-
-  const handleEditPrivPassword = () => {
-    if (privPasswordDisabled) {
-      form.setFieldsValue({
-        priv_password: '',
-      });
-    }
-    setPrivPasswordDisabled(false);
-  };
-
-  const handleEditPassword = () => {
-    if (passwordDisabled) {
-      form.setFieldsValue({
-        password: '',
-      });
-    }
-    setPasswordDisabled(false);
-  };
-
   // 根据自定义hook，生成不同的模板
   const { formItems } = useFormItems({
     collectType,
     columns: [],
-    authPasswordRef,
-    privPasswordRef,
-    passwordRef,
-    authPasswordDisabled,
-    privPasswordDisabled,
-    passwordDisabled,
     pluginName,
     mode: 'edit',
-    handleEditAuthPassword,
-    handleEditPrivPassword,
-    handleEditPassword,
   });
 
   const initData = (row: TableDataItem, config: TableDataItem) => {
@@ -175,8 +112,20 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     if (['Hardware Server IPMI', 'Storage IPMI'].includes(config.plugin_name)) {
       Object.assign(formData, extractIPMIUrl(formData.servers?.[0] || ''));
     }
-    if (['Website', 'Ping'].includes(config.plugin_name)) {
+    if (['Website', 'Ping', 'Apache', 'Nginx'].includes(config.plugin_name)) {
       formData.monitor_url = formData.urls?.[0] || '';
+    }
+    if (['Tomcat', 'RabbitMQ', 'ActiveMQ'].includes(config.plugin_name)) {
+      formData.monitor_url = formData.url || '';
+    }
+    if (['Zookeeper', 'ClickHouse'].includes(config.plugin_name)) {
+      formData.monitor_url = formData.servers?.[0] || '';
+    }
+    if (['MongoDB', 'Redis'].includes(config.plugin_name)) {
+      Object.assign(formData, extractMongoDBUrl(formData.servers?.[0] || ''));
+    }
+    if (['VMWare', 'Tencent Cloud'].includes(config.plugin_name)) {
+      Object.assign(formData, extractVmvareUrl(formData));
     }
     if (config.collect_type === 'jmx') {
       formData.monitor_url =
@@ -186,38 +135,11 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       case 'ElasticSearch':
         formData.server = formData.servers?.[0];
         break;
-      case 'MongoDB':
-        Object.assign(formData, extractMongoDBUrl(formData.servers?.[0] || ''));
-        break;
       case 'Mysql':
         Object.assign(formData, extractMysqlUrl(formData.servers?.[0] || ''));
         break;
       case 'Postgres':
         Object.assign(formData, extractPostgresUrl(formData.address || ''));
-        break;
-      case 'Redis':
-        Object.assign(formData, extractMongoDBUrl(formData.servers?.[0] || ''));
-        break;
-      case 'Zookeeper':
-        formData.monitor_url = formData.servers?.[0] || '';
-        break;
-      case 'Apache':
-        formData.monitor_url = formData.urls?.[0] || '';
-        break;
-      case 'Tomcat':
-        formData.monitor_url = formData.url || '';
-        break;
-      case 'ClickHouse':
-        formData.monitor_url = formData.servers?.[0] || '';
-        break;
-      case 'RabbitMQ':
-        formData.monitor_url = formData.url || '';
-        break;
-      case 'ActiveMQ':
-        formData.monitor_url = formData.url || '';
-        break;
-      case 'Nginx':
-        formData.monitor_url = formData.urls?.[0] || '';
         break;
       case 'Consul':
         formData.monitor_url = formData.address || '';
@@ -232,9 +154,6 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
           (formData.tags?.instance_id || '')
             .split('-')?.[0]
             ?.replace('trap', '') || '';
-        break;
-      case 'VMWare':
-        Object.assign(formData, extractVmvareUrl(formData));
         break;
       default:
         break;
@@ -316,9 +235,6 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     form.resetFields();
     setModalVisible(false);
     setPageLoading(false);
-    setAuthPasswordDisabled(true);
-    setPrivPasswordDisabled(true);
-    setPasswordDisabled(true);
   };
 
   const handleSubmit = () => {

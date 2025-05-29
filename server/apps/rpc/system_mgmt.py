@@ -13,8 +13,36 @@ class SystemMgmt(object):
         return_data = self.client.run("login", username=username, password=password)
         return return_data
 
-    def get_client(self, client_id):
-        return_data = self.client.run("get_client", client_id)
+    def wechat_user_register(self, user_id, nick_name):
+        """
+        :param user_id: 用户ID
+        :param nick_name: 昵称
+        """
+        return_data = self.client.run("wechat_user_register", user_id=user_id, nick_name=nick_name)
+        return return_data
+
+    def get_wechat_settings(self):
+        return_data = self.client.run("get_wechat_settings")
+        return return_data
+
+    def verify_otp_code(self, username, otp_code):
+        return_data = self.client.run("verify_otp_code", username=username, otp_code=otp_code)
+        return return_data
+
+    def generate_qr_code(self, username):
+        return_data = self.client.run("generate_qr_code", username=username)
+        return return_data
+
+    def reset_pwd(self, username, password):
+        """
+        :param username: 用户名
+        :param password: 密码
+        """
+        return_data = self.client.run("reset_pwd", username=username, password=password)
+        return return_data
+
+    def get_client(self, client_id, username=""):
+        return_data = self.client.run("get_client", client_id=client_id, username=username)
         return return_data
 
     def get_client_detail(self, client_id):

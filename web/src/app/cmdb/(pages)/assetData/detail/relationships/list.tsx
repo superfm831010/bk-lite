@@ -1,4 +1,18 @@
 'use client';
+
+import { useSearchParams } from 'next/navigation';
+import { getAssetColumns } from '@/app/cmdb/utils/common';
+import { Spin, Collapse, Button, Modal, message, Empty } from 'antd';
+import { CaretRightOutlined } from '@ant-design/icons';
+import { useTranslation } from '@/utils/i18n';
+import { AssoListProps } from '@/app/cmdb/types/assetData';
+import { useRelationships } from '@/app/cmdb/context/relationships';
+import CustomTable from '@/components/custom-table';
+import useApiClient from '@/utils/request';
+import assoListStyle from './index.module.scss';
+import SelectInstance from './selectInstance';
+import PermissionWrapper from '@/components/permission';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import React, {
   useEffect,
   useState,
@@ -6,7 +20,6 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
-import { useSearchParams } from 'next/navigation';
 import {
   CrentialsAssoInstItem,
   CrentialsAssoDetailItem,
@@ -16,17 +29,6 @@ import {
   RelationListInstItem,
   RelationInstanceRef,
 } from '@/app/cmdb/types/assetManage';
-import { getAssetColumns } from '@/app/cmdb/utils/common';
-import { Spin, Collapse, Button, Modal, message, Empty } from 'antd';
-import { CaretRightOutlined } from '@ant-design/icons';
-import { useTranslation } from '@/utils/i18n';
-import { AssoListProps } from '@/app/cmdb/types/assetData';
-import CustomTable from '@/components/custom-table';
-import useApiClient from '@/utils/request';
-import assoListStyle from './index.module.scss';
-import SelectInstance from './selectInstance';
-import PermissionWrapper from '@/components/permission';
-import { useRelationships } from '@/app/cmdb/context/relationships';
 
 const { confirm } = Modal;
 
@@ -46,7 +48,13 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
     const instId: string = searchParams.get('inst_id') || '';
     const instanceRef = useRef<RelationInstanceRef>(null);
     const prevModelLenRef = useRef(0);
-    const { assoInstances, loading, selectedAssoId, fetchAssoInstances, setSelectedAssoId } = useRelationships();
+    const {
+      assoInstances,
+      loading,
+      selectedAssoId,
+      fetchAssoInstances,
+      setSelectedAssoId,
+    } = useRelationships();
 
     useEffect(() => {
       const prevLength = prevModelLenRef.current;
@@ -222,7 +230,10 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
             className="text-[var(--color-primary)]"
             onClick={() => linkToDetail(record, item)}
           >
-            {record[columns[0].dataIndex]}
+            <EllipsisWithTooltip
+              text={record[columns[0].dataIndex]}
+              className="whitespace-nowrap overflow-hidden text-ellipsis"
+            />
           </a>
         );
       }

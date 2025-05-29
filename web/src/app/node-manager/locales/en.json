@@ -39,6 +39,13 @@
         "title": "Edit Cloud Region",
         "Introduction": "Introduction"
       },
+      "addform": {
+        "title": "Add Cloud Region"
+      },
+      "deleteform": {
+        "title": "Delete Cloud Region",
+        "deleteInfo": "Are you sure you want to delete this cloud area?"
+      },
       "node": {
         "node": "Node",
         "desc": "Node management is mainly used for the installation of sidecars on each node and managing various types of collectors through the sidecars.",
@@ -88,7 +95,6 @@
         "loginPort": "Login Port",
         "loginPassword": "Login Password",
         "toInstall": "Install",
-        "autoInstall": "Automatic installation of collector",
         "manuallyInstall": "Manually Install Sidecar",
         "sidecarVersion": "Controller Version",
         "sidecarVersionDes": "Please select the Controller version for remote installation.",
@@ -98,14 +104,14 @@
         "viewGuide": "View guidance",
         "installing": "Installing",
         "uninstalling": "Uninstalling",
-        "successInstall": "installed successfully",
+        "successInstall": "Installed successfully",
         "successUninstall": "Uninstalled successfully",
         "failInstall": "Installation failed",
         "failUninstall": "Uninstallation failed",
         "installingTips": "There are still nodes being installed, and after returning, you can check the list of nodes that are installed normally.",
         "installationGuide": "Installation Guide",
         "log": "Log",
-        "downloadTips": "1. Select the appropriate version to download the controller installation package and configuration file template",
+        "downloadTips": "1. Select the appropriate version to download the controller installation package and configuration file template based on the node name and organization",
         "scriptTips": "2. Execute the following script to install the controller",
         "finishTips": "3. After manual installation, the normal nodes of the controller can be viewed in the node list",
         "uninstallSidecarTips": "Are you sure to uninstall these sidecars ?",
@@ -118,7 +124,8 @@
         "active": "active",
         "inactive": "inactive",
         "unknown": "unknown",
-        "stop": "stop"
+        "stop": "stop",
+        "nodeName": "Node Name"
       },
       "Configuration": {
         "system": "Operating System",

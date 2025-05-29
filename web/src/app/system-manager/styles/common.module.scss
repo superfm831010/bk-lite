@@ -14,3 +14,24 @@
     }
   }
 }
+
+.batchOperationMenu {
+  :global {
+    .ant-dropdown-menu-item {
+      padding: 0 !important;
+      div {
+        width: 100%;
+      }
+      .ant-dropdown-menu-title-content {
+        width: 100%;
+        display: flex;
+        > span {
+          width: 100%;
+          button {
+            justify-content: flex-start;
+          }
+        }
+      }
+    }
+  }
+}

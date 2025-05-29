@@ -10,11 +10,13 @@ import {
   getEnumColor,
   getK8SData,
   getConfigByPluginName,
+  getConfigByObjectName,
+  getBaseInstanceColumn,
 } from '@/app/monitor/utils/common';
 import { useRouter } from 'next/navigation';
 import {
   IntergrationItem,
-  ObectItem,
+  ObjectItem,
   MetricItem,
   ViewListProps,
 } from '@/app/monitor/types/monitor';
@@ -28,7 +30,6 @@ import {
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import { INDEX_CONFIG } from '@/app/monitor/constants/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import Permission from '@/components/permission';
 import { ListItem } from '@/types';
@@ -59,13 +60,6 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
   const [plugins, setPlugins] = useState<IntergrationItem[]>([]);
   const columns: ColumnItem[] = [
     {
-      title: t('common.name'),
-      dataIndex: 'instance_name',
-      width: 140,
-      ellipsis: true,
-      key: 'instance_name',
-    },
-    {
       title: t('monitor.views.reportTime'),
       dataIndex: 'time',
       key: 'time',
@@ -80,7 +74,6 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       dataIndex: 'status',
       key: 'status',
       width: 160,
-      // filters: [],
       render: (_, record) => (
         <>
           {record?.status ? t(`monitor.intergrations.${record.status}`) : '--'}
@@ -222,7 +215,8 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     const objParams = {
       monitor_object_id: objectId,
     };
-    const objName = objects.find((item) => item.id === objectId)?.name;
+    const targetObject = objects.find((item) => item.id === objectId);
+    const objName = targetObject?.name;
     const getInstList = getInstanceList(objectId, params);
     const getQueryParams = getInstanceQueryParams(objName as string, objParams);
     const getMetrics = getMonitorMetrics(objParams);
@@ -251,11 +245,8 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         total: res[0]?.count || 0,
       }));
       setMetrics(res[1] || []);
-      const _objectName = objects.find((item) => item.id === objectId)?.name;
-      if (_objectName) {
-        const filterMetrics =
-          INDEX_CONFIG.find((item) => item.name === _objectName)
-            ?.tableDiaplay || [];
+      if (objName) {
+        const filterMetrics = getConfigByObjectName(objName, 'tableDiaplay');
         const _columns = filterMetrics.map((item: any) => {
           const target = (res[1] || []).find(
             (tex: MetricItem) => tex.name === item.key
@@ -301,7 +292,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <span style={{ color }}>
                     <EllipsisWithTooltip
                       text={getEnumValueUnit(target, record[item.key])}
-                      className="w-[100px] overflow-hidden text-ellipsis whitespace-nowrap"
+                      className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
                     ></EllipsisWithTooltip>
                   </span>
                 </>
@@ -309,7 +300,14 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
             },
           };
         });
-        const originColumns = deepClone(columns);
+        const originColumns = deepClone([
+          ...getBaseInstanceColumn({
+            objects,
+            row: targetObject,
+            t,
+          }),
+          ...columns,
+        ]);
         const indexToInsert = originColumns.length - 1;
         originColumns.splice(indexToInsert, 0, ..._columns);
         setTableColumn(originColumns);
@@ -352,11 +350,14 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
   };
 
   const linkToDetial = (app: TableDataItem) => {
-    const monitorItem = objects.find((item: ObectItem) => item.id === objectId);
+    const monitorItem = objects.find(
+      (item: ObjectItem) => item.id === objectId
+    );
     const row: any = {
       monitorObjId: objectId || '',
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
+      icon: monitorItem?.icon || '',
       instance_id: app.instance_id,
       instance_name: app.instance_name,
       instance_id_values: app.instance_id_values,

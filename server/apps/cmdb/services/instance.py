@@ -12,18 +12,16 @@ from apps.core.exceptions.base_app_exception import BaseAppException
 
 class InstanceManage(object):
     @staticmethod
-    def get_permission_params(token):
+    def get_permission_params(user_groups, roles):
         """获取用户实例权限查询参数，用户用户查询实例"""
-        return ""
-
-        # obj = PermissionManage(token)
-        # permission_params = obj.get_permission_params()
-        # return permission_params
+        obj = PermissionManage(user_groups=user_groups, roles=roles)
+        permission_params = obj.get_permission_params()
+        return permission_params
 
     @staticmethod
-    def check_instances_permission(token: str, instances: list, model_id: str):
+    def check_instances_permission(user_groups: list, roles: list, instances: list, model_id: str):
         """实例权限校验，用于操作之前"""
-        permission_params = InstanceManage.get_permission_params(token)
+        permission_params = InstanceManage.get_permission_params(user_groups=user_groups, roles=roles)
         with Neo4jClient() as ag:
             inst_list, count = ag.query_entity(
                 INSTANCE,
@@ -42,7 +40,8 @@ class InstanceManage(object):
         raise BaseAppException(message)
 
     @staticmethod
-    def instance_list(token: str, model_id: str, params: list, page: int, page_size: int, order: str):
+    def instance_list(user_groups: list, roles: list, model_id: str, params: list, page: int, page_size: int,
+                      order: str):
         """实例列表"""
 
         params.append({"field": "model_id", "type": "str=", "value": model_id})
@@ -50,7 +49,7 @@ class InstanceManage(object):
         if order and order.startswith("-"):
             order = f"{order.replace('-', '')} DESC"
 
-        permission_params = InstanceManage.get_permission_params(token)
+        permission_params = InstanceManage.get_permission_params(user_groups, roles)
 
         with Neo4jClient() as ag:
             inst_list, count = ag.query_entity(
@@ -92,7 +91,7 @@ class InstanceManage(object):
         return result
 
     @staticmethod
-    def instance_update(token: str, inst_id: int, update_attr: dict, operator: str):
+    def instance_update(user_groups: list, roles: list, inst_id: int, update_attr: dict, operator: str):
         """修改实例属性"""
         inst_info = InstanceManage.query_entity_by_id(inst_id)
 
@@ -101,7 +100,7 @@ class InstanceManage(object):
 
         model_info = ModelManage.search_model_info(inst_info["model_id"])
 
-        InstanceManage.check_instances_permission(token, [inst_info], inst_info["model_id"])
+        InstanceManage.check_instances_permission(user_groups, roles, [inst_info], inst_info["model_id"])
 
         attrs = ModelManage.parse_attrs(model_info.get("attrs", "[]"))
         check_attr_map = dict(is_only={}, is_required={}, editable={})
@@ -136,7 +135,7 @@ class InstanceManage(object):
         return result[0]
 
     @staticmethod
-    def batch_instance_update(token: str, inst_ids: list, update_attr: dict, operator: str):
+    def batch_instance_update(user_groups: list, roles: list, inst_ids: list, update_attr: dict, operator: str):
         """批量修改实例属性"""
 
         inst_list = InstanceManage.query_entity_by_ids(inst_ids)
@@ -146,7 +145,7 @@ class InstanceManage(object):
 
         model_info = ModelManage.search_model_info(inst_list[0]["model_id"])
 
-        InstanceManage.check_instances_permission(token, inst_list, model_info["model_id"])
+        InstanceManage.check_instances_permission(user_groups, roles, inst_list, model_info["model_id"])
 
         attrs = ModelManage.parse_attrs(model_info.get("attrs", "[]"))
         check_attr_map = dict(is_only={}, is_required={}, editable={})
@@ -189,7 +188,7 @@ class InstanceManage(object):
         return result
 
     @staticmethod
-    def instance_batch_delete(token: str, inst_ids: list, operator: str):
+    def instance_batch_delete(user_groups: list, roles: list, inst_ids: list, operator: str):
         """批量删除实例"""
         inst_list = InstanceManage.query_entity_by_ids(inst_ids)
 
@@ -198,7 +197,7 @@ class InstanceManage(object):
 
         model_info = ModelManage.search_model_info(inst_list[0]["model_id"])
 
-        InstanceManage.check_instances_permission(token, inst_list, inst_list[0]["model_id"])
+        InstanceManage.check_instances_permission(user_groups, roles, inst_list, inst_list[0]["model_id"])
 
         with Neo4jClient() as ag:
             ag.batch_delete_entity(INSTANCE, inst_ids)
@@ -441,16 +440,16 @@ class InstanceManage(object):
         return result
 
     @staticmethod
-    def model_inst_count(token):
-        permission_params = InstanceManage.get_permission_params(token)
+    def model_inst_count(user_groups: list, roles: list):
+        permission_params = InstanceManage.get_permission_params(user_groups, roles)
         with Neo4jClient() as ag:
             data = ag.entity_count(INSTANCE, "model_id", [], permission_params=permission_params)
         return data
 
     @staticmethod
-    def fulltext_search(token, search: str):
+    def fulltext_search(user_groups: list, roles: list, search: str):
         """全文检索"""
-        permission_params = InstanceManage.get_permission_params(token)
+        permission_params = InstanceManage.get_permission_params(user_groups, roles)
         with Neo4jClient() as ag:
             data = ag.full_text(search, permission_params=permission_params)
         return data

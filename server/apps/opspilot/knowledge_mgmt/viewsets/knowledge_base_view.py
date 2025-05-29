@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.core.decorators.api_perminssion import HasRole
+from apps.core.decorators.api_permission import HasRole
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.serializers import KnowledgeBaseSerializer

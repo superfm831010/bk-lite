@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import action
 
 from apps.core.backends import cache
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.logger import logger
 from apps.system_mgmt.models import Group, Role, User, UserRule
 from apps.system_mgmt.serializers.user_serializer import UserSerializer
@@ -17,10 +18,10 @@ class UserViewSet(ViewSetUtils):
     serializer_class = UserSerializer
 
     @action(detail=False, methods=["GET"])
+    @HasPermission("user_list-View")
     def search_user_list(self, request):
         # 获取请求参数
         search = request.GET.get("search", "")
-
         group_id = request.GET.get("group_id", "")
         # 过滤用户数据
         queryset = User.objects.filter(
@@ -29,15 +30,23 @@ class UserViewSet(ViewSetUtils):
         # 如果指定了用户组ID，则过滤该组内的用户
         if group_id:
             queryset = queryset.filter(group_list__contains=int(group_id))
-        data, total = self.search_by_page(queryset, request, User.display_fields())
+        roles = Role.objects.all().values("id", "name", "app")
+        role_map = {}
+        for i in roles:
+            role_map[i["id"]] = f"{i['app']}-{i['name']}"
+        data, total = self.search_by_page(queryset.order_by("-id"), request, User.display_fields())
+        for i in data:
+            i["roles"] = [role_map.get(role_id, "") for role_id in i["role_list"]]
         return JsonResponse({"result": True, "data": {"count": total, "users": data}})
 
     @action(detail=False, methods=["GET"])
+    @HasPermission("user_list-View")
     def user_all(self, request):
         data = User.objects.all().values(*User.display_fields())
         return JsonResponse({"result": True, "data": list(data)})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("user_list-View")
     def get_user_detail(self, request):
         pk = request.data.get("user_id")
         user = User.objects.get(id=pk)
@@ -74,6 +83,7 @@ class UserViewSet(ViewSetUtils):
     #     return JsonResponse({"result": True, "data": data})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("user_list-Add")
     def create_user(self, request):
         kwargs = request.data
         rules = kwargs.pop("rules", [])
@@ -88,6 +98,7 @@ class UserViewSet(ViewSetUtils):
                     timezone=kwargs["timezone"],
                     group_list=kwargs["groups"],
                     role_list=kwargs["roles"],
+                    temporary_pwd=kwargs.get("temporary_pwd", False),
                 )
                 if rules:
                     add_rule = [UserRule(username=kwargs["username"], group_rule_id=i) for i in rules]
@@ -98,17 +109,21 @@ class UserViewSet(ViewSetUtils):
             return JsonResponse({"result": False, "message": str(e)})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("user_list-Edit")
     def reset_password(self, request):
         try:
             password = request.data.get("password")
-            # md5 加密
-            User.objects.filter(id=request.data.get("id")).update(password=make_password(password))
+            temporary_pwd = request.data.get("temporary", False)
+            User.objects.filter(id=request.data.get("id")).update(
+                password=make_password(password), temporary_pwd=temporary_pwd
+            )
             return JsonResponse({"result": True})
         except Exception as e:
             logger.exception(e)
             return JsonResponse({"result": False, "message": str(e)})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("user_list-Delete")
     def delete_user(self, request):
         user_ids = request.data.get("user_ids")
         users = User.objects.filter(id__in=user_ids)
@@ -120,6 +135,7 @@ class UserViewSet(ViewSetUtils):
         return JsonResponse({"result": True})
 
     @action(detail=False, methods=["POST"])
+    @HasPermission("user_list-Edit")
     def update_user(self, request):
         params = request.data
         pk = params.pop("user_id")
@@ -144,6 +160,7 @@ class UserViewSet(ViewSetUtils):
         return JsonResponse({"result": True})
 
     @action(detail=True, methods=["POST"])
+    @HasPermission("user_list-Edit")
     def assign_user_groups(self, request):
         pk = request.data.get("user_id")
         user = User.objects.get(id=pk)
@@ -156,6 +173,7 @@ class UserViewSet(ViewSetUtils):
         return JsonResponse({"result": True})
 
     @action(detail=True, methods=["POST"])
+    @HasPermission("user_list-Edit")
     def unassign_user_groups(self, request):
         pk = request.data.get("user_id")
         user = User.objects.get(id=pk)

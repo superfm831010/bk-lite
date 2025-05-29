@@ -2,6 +2,7 @@
   "plugin": "Host",
   "plugin_desc": "The host monitoring plugin is used to collect and analyze performance data of hosts, including CPU, memory, disk, and network usage.",
   "name": "Host",
+  "icon": "Host",
   "type": "OS",
   "description": "",
   "metrics": [
@@ -490,6 +491,83 @@
       ],
       "instance_id_keys": ["instance_id"],
       "description": "Displays the number of dropped packets sent by the network interface, indicating network transmission congestion. This metric is crucial for monitoring network reliability."
+    },
+    {
+      "metric_group": "Nvidia GPU",
+      "name": "nvidia_smi_memory_free",
+      "display_name": "GPU Memory Free",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "gibibytes",
+      "dimensions": ["index"],
+      "description": "The remaining capacity of GPU memory currently unoccupied, used to assess available resources.",
+      "query": "avg without(pstate) (nvidia_smi_memory_free{instance_type=\"os\", __$labels__})/1024"
+    },
+    {
+      "metric_group": "Nvidia GPU",
+      "name": "nvidia_smi_memory_used",
+      "display_name": "GPU Memory Used",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "gibibytes",
+      "dimensions": ["index"],
+      "description": "The capacity of GPU memory currently occupied, reflecting the memory size used by running tasks.",
+      "query": "avg without(pstate) (nvidia_smi_memory_used{instance_type=\"os\", __$labels__})/1024"
+    },
+    {
+      "metric_group": "Nvidia GPU",
+      "name": "nvidia_smi_memory_total",
+      "display_name": "GPU Memory Total",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "gibibytes",
+      "dimensions": ["index"],
+      "description": "The total capacity of GPU memory, indicating the maximum memory the device supports.",
+      "query": "avg without(pstate) (nvidia_smi_memory_total{instance_type=\"os\", __$labels__})/1024"
+    },
+    {
+      "metric_group": "Nvidia GPU",
+      "name": "nvidia_smi_utilization_memory",
+      "display_name": "GPU Memory Utilization",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": ["index"],
+      "description": "The percentage of current memory usage, indicating the utilization of GPU memory resources (0%-100%), useful for optimizing memory allocation.",
+      "query": "100 * (avg without(pstate) (nvidia_smi_memory_used{instance_type=\"os\", __$labels__} / nvidia_smi_memory_total{instance_type=\"os\", __$labels__}))"
+    },
+    {
+      "metric_group": "Nvidia GPU",
+      "name": "nvidia_smi_power_draw",
+      "display_name": "GPU Power Draw",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "watts",
+      "dimensions": ["index"],
+      "description": "The real-time power consumption of GPU, measured in watts (W), used to monitor energy consumption level.",
+      "query": "avg without(pstate) (nvidia_smi_power_draw{instance_type=\"os\", __$labels__})"
+    },
+    {
+      "metric_group": "Nvidia GPU",
+      "name": "nvidia_smi_temperature_gpu",
+      "display_name": "GPU Core Temperature",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "celsius",
+      "dimensions": ["index"],
+      "description": "The operating temperature of the GPU core, measured in degrees Celsius (°C), used to monitor device status and safety.",
+      "query": "avg without(pstate) (nvidia_smi_temperature_gpu{instance_type=\"os\", __$labels__})"
+    },
+    {
+      "metric_group": "Nvidia GPU",
+      "name": "nvidia_smi_fan_speed",
+      "display_name": "GPU Fan Speed Percentage",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": ["index"],
+      "description": "The percentage of current GPU fan speed relative to the maximum speed (0%-100%), used to monitor cooling condition and operational status.",
+      "query": "avg without(pstate) (nvidia_smi_fan_speed{instance_type=\"os\", __$labels__})"
     }
   ]
 }
