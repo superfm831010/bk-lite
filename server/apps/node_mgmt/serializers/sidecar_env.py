@@ -39,7 +39,7 @@ class EnvVariableCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SidecarEnv
-        fields = ['key', 'value', 'description', 'cloud_region_id']
+        fields = ['key', 'value', 'type', 'description', 'cloud_region_id']
 
 
 class EnvVariableUpdateSerializer(serializers.ModelSerializer):
