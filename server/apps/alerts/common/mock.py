@@ -11,7 +11,7 @@ import json
 from datetime import datetime, timedelta
 
 
-def generate_mock_events(num_events=10):
+def generate_mock_events(num_events=100):
     # 基础数据模板
     base_event = {
         "title": "CPU Usage High",
@@ -102,7 +102,7 @@ def generate_mock_events(num_events=10):
 
 if __name__ == "__main__":
     # 生成100个mock事件
-    mock_data = generate_mock_events(1)
+    mock_data = generate_mock_events(100)
 
     # 保存到JSON文件
     with open("mock_monitor_events.json", "w") as f:

@@ -118,53 +118,53 @@ def format_alert_message(rule: AlertRuleConfig, event_data: Dict[str, Any]) -> T
 RULES = {
     "window_size": "10min",
     "rules": [
-        # {
-        #     "name": "high_cpu",
-        #     "description": "CPU使用率超过85%",
-        #     "severity": "warning",
-        #     "condition": {
-        #         "type": "threshold",
-        #         "field": "cpu_usage",
-        #         "threshold": 99,
-        #         "operator": ">="
-        #     }
-        # },
-        # {
-        #     "name": "sustained_high_cpu",
-        #     "description": "CPU连续3个周期使用率超过80%",
-        #     "severity": "warning",
-        #     "condition": {
-        #         "type": "sustained",
-        #         "field": "cpu_usage",
-        #         "threshold": 80,
-        #         "operator": ">=",
-        #         "required_consecutive": 3
-        #     }
-        # },
-        # {
-        #     "name": "disk_io_latency_spike",
-        #     "description": "磁盘IO延迟大于5.0",
-        #     "severity": "severity",
-        #     "condition": {
-        #         "type": "threshold",
-        #         "field": "disk_io_latency",
-        #         "threshold": 5.0,
-        #         "operator": ">"
-        #     }
-        # },
-        # {
-        #     "name": "cpu_trend_spike",
-        #     "description": "CPU使用率突增超过20%",
-        #     "severity": "fatal",
-        #     "condition": {
-        #         "type": "trend",
-        #         "field": "cpu_usage",
-        #         "threshold": 20,
-        #         "operator": ">",
-        #         "baseline_window": 5,
-        #         "trend_method": "percentage"
-        #     }
-        # },
+        {
+            "name": "high_cpu",
+            "description": "CPU使用率超过85%",
+            "severity": "warning",
+            "condition": {
+                "type": "threshold",
+                "field": "cpu_usage",
+                "threshold": 99,
+                "operator": ">="
+            }
+        },
+        {
+            "name": "sustained_high_cpu",
+            "description": "CPU连续3个周期使用率超过80%",
+            "severity": "warning",
+            "condition": {
+                "type": "sustained",
+                "field": "cpu_usage",
+                "threshold": 80,
+                "operator": ">=",
+                "required_consecutive": 3
+            }
+        },
+        {
+            "name": "disk_io_latency_spike",
+            "description": "磁盘IO延迟大于5.0",
+            "severity": "severity",
+            "condition": {
+                "type": "threshold",
+                "field": "disk_io_latency",
+                "threshold": 5.0,
+                "operator": ">"
+            }
+        },
+        {
+            "name": "cpu_trend_spike",
+            "description": "CPU使用率突增超过20%",
+            "severity": "fatal",
+            "condition": {
+                "type": "trend",
+                "field": "cpu_usage",
+                "threshold": 20,
+                "operator": ">",
+                "baseline_window": 5,
+                "trend_method": "percentage"
+            }
+        },
         {
             "name": "prev_status_equals",
             "description": "当同一source、obj、obj_inst, metric的上一条event状态为close且本次满足条件时，创建alert并关联",

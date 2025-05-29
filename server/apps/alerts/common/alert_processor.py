@@ -14,8 +14,7 @@ from django.utils import timezone
 from apps.alerts.common.alert_engine import RuleEngine
 from apps.alerts.common.alert_rules import VALID_RULES, format_alert_message
 from apps.alerts.constants import EventLevel
-from apps.alerts.models import Event, Alert
-from apps.alerts.utils.util import split_list
+from apps.alerts.models import Event, Alert, AlertSource
 
 
 class AlertProcessor:
@@ -24,7 +23,7 @@ class AlertProcessor:
         self.window_size = window_size
         self.engine = self._init_engine()
         self.event_fields = [
-            "event_id", "external_id", "item", "received_at", "status", "level",
+            "event_id", "external_id", "item", "received_at", "status", "level", "source__name",
             "source_id", "title", "description", "resource_id", "resource_type", "resource_name", "value"
         ]
         self.now = timezone.now()
@@ -44,7 +43,8 @@ class AlertProcessor:
         start_time = self.now - datetime.timedelta(minutes=get_time)
         instances = Event.objects.filter(
             received_at__gte=start_time,
-            received_at__lt=self.now
+            received_at__lt=self.now,
+            source__is_active=True,
         ).values(*self.event_fields)
         return pd.DataFrame(list(instances))
 
@@ -60,22 +60,24 @@ class AlertProcessor:
             for rule_name, result in alerts.items():
                 if result['triggered']:
                     # 根据event_id拿出evnet的原始数据
-                    event_ids = result['event_ids']  # 事件ID列表[[], [], []]
-                    for event_id_list in event_ids:
-                        event_data = events[events['event_id'].isin(event_id_list)].to_dict('records')
-                        # 生成告警
-                        alert = {
-                            "rule_name": rule_name,
-                            "description": result['description'],
-                            "severity": result['severity'],
-                            "event_data": event_data,
-                            "event_ids": event_id_list,
-                            "created_at": self.now,
-                            "rule": result["rule"]
-                        }
-                        # 保存告警数据
-                        format_alert = self.format_event_to_alert(alert)
-                        format_alert_list.append(format_alert)
+                    for source_name, _event_dict in result['alert_sources'].items():
+                        event_ids = _event_dict['event_ids']  # 事件ID列表[[], [], []]
+                        for event_id_list in event_ids:
+                            event_data = events[events['event_id'].isin(event_id_list)].to_dict('records')
+                            # 生成告警
+                            alert = {
+                                "rule_name": rule_name,
+                                "description": result['description'],
+                                "severity": result['severity'],
+                                "event_data": event_data,
+                                "event_ids": event_id_list,
+                                "created_at": self.now,
+                                "rule": result["rule"],
+                                "source_name": source_name
+                            }
+                            # 保存告警数据
+                            format_alert = self.format_event_to_alert(alert)
+                            format_alert_list.append(format_alert)
 
             return format_alert_list
         except Exception as e:
@@ -109,15 +111,16 @@ class AlertProcessor:
                 through_model.objects.bulk_create(through_values)
 
         # 3. 触发异步任务更新搜索向量
-        if alert_ids:
-            from apps.alerts.celery_tasks import update_alert_search_vectors
-            update_alert_search_vectors.delay(alert_ids)
+        # if alert_ids:
+        #     from apps.alerts.celery_tasks import update_alert_search_vectors
+        #     update_alert_search_vectors.delay(alert_ids)
 
     def format_event_to_alert(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """格式化事件数据为告警数据"""
         events = params["event_data"]
         event_ids = params["event_ids"]
         rule = params["rule"]
+        source_name = params["source_name"]
         _instances, level = self.get_event_instances(event_ids=event_ids)
         base_event = events[0]  # 取第一个事件作为基础事件
         title, content = format_alert_message(rule=rule, event_data=base_event)
@@ -134,6 +137,7 @@ class AlertProcessor:
             "last_event_time": _instances.last().received_at,
             # event id
             "events": _instances,
+            "source_name": source_name,  # 告警源名称
         }
 
         return alert

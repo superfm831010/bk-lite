@@ -21,6 +21,7 @@ class AlertRule:
     content: str = ""
     severity: str = "medium"
     is_active: bool = True
+    alert_sources: List[str] = None  # 新增：指定适用的告警源列表，None表示适用于所有告警源
 
 
 class RuleEngine:
@@ -49,7 +50,8 @@ class RuleEngine:
                 aggregation=rule_config.get('aggregation', {}),
                 description=rule_config.get('description', ''),
                 severity=rule_config.get('severity', 'medium'),
-                is_active=rule_config.get('is_active', True)
+                is_active=rule_config.get('is_active', True),
+                alert_sources=rule_config.get('alert_sources', None)  # 新增: 支持指定适用的告警源列表
             )
         except Exception as e:
             logger.error(f"Rule {rule_config.get('name')} add failed: {e}")
@@ -190,21 +192,41 @@ class RuleEngine:
         if events.empty:
             return {}
 
-        # 只保留窗口内的数据
+            # 只保留窗口内的数据
         events = events.copy()
         events['received_at'] = pd.to_datetime(events['received_at'])
         window_end = events['received_at'].max()
         events = events[events['received_at'] >= (window_end - self.window_size)]
+        # 确保存在alert_source字段
+        events['alert_source'] = events['source__name']
 
         results = {}
         for name, rule in self.rules.items():
             if not rule.is_active:
                 continue
             try:
-                triggered, event_ids = rule.condition(events)
+                # 按告警源分组处理
+                all_triggered = False
+                all_event_ids = []
+                alert_sources_result = {}
+
+                # 按告警源分组
+                for alert_source, source_events in events.groupby('alert_source'):
+                    source_triggered, source_event_ids = rule.condition(source_events)
+                    if source_triggered:
+                        all_triggered = True
+                        # 展平事件ID列表
+                        flat_event_ids = [event_id for group in source_event_ids for event_id in group]
+                        all_event_ids.extend(flat_event_ids)
+                        alert_sources_result[alert_source] = {
+                            'event_ids': source_event_ids,
+                            'flat_event_ids': flat_event_ids
+                        }
+
                 results[name] = {
-                    'triggered': triggered,
-                    'event_ids': event_ids,
+                    'triggered': all_triggered,
+                    'event_ids': all_event_ids,  # 所有告警源的事件ID（展平）
+                    'alert_sources': alert_sources_result,  # 按告警源分组的详细结果
                     'severity': rule.severity,
                     'description': rule.description,
                     'rule': rule,

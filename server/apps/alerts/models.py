@@ -98,11 +98,17 @@ class Event(models.Model):
     def __str__(self):
         return f"{self.title} ({self.level}) at {self.received_at}"
 
-    def update_search_vector(self):
-        """更新 search_vector 字段"""
-        self.search_vector = SearchVector('title', weight='A') + \
-                             SearchVector('description', weight='B')
-        self.save(update_fields=['search_vector'])
+    # def save(self, *args, **kwargs):
+    #     super().save(*args, **kwargs)
+    #     # 自动更新搜索向量
+    #     if not self.search_vector:
+    #         self.update_search_vector()
+    #
+    # def update_search_vector(self):
+    #     """更新 search_vector 字段"""
+    #     self.search_vector = SearchVector('title', weight='A', config='chinese') + \
+    #                          SearchVector('description', weight='B', config='chinese')
+    #     self.save(update_fields=['search_vector'])
 
 
 class Alert(models.Model):
@@ -129,6 +135,7 @@ class Alert(models.Model):
     resource_type = models.CharField(max_length=64, null=True, blank=True, help_text="资源类型")
     operate = models.CharField(max_length=64, choices=AlertOperate.CHOICES, null=True, blank=True, help_text="告警操作")
     operator = JSONField(default=list, blank=True, help_text="告警处理人")
+    source_name = models.CharField(max_length=100, null=True, blank=True, help_text="告警源名称")
 
     # 全文搜索字段
     search_vector = SearchVectorField(null=True, blank=True)
@@ -152,11 +159,17 @@ class Alert(models.Model):
     def __str__(self):
         return f"{self.alert_id} - {self.title} ({self.status})"
 
-    def update_search_vector(self):
-        """更新 search_vector 字段"""
-        self.search_vector = SearchVector('title', weight='A') + \
-                             SearchVector('content', weight='B')
-        self.save(update_fields=['search_vector'])
+    # def save(self, *args, **kwargs):
+    #     super().save(*args, **kwargs)
+    #     # 自动更新搜索向量
+    #     if not self.search_vector:
+    #         self.update_search_vector()
+    #
+    # def update_search_vector(self):
+    #     """更新 search_vector 字段"""
+    #     self.search_vector = SearchVector('title', weight='A', config='chinese') + \
+    #                          SearchVector('content', weight='B', config='chinese')
+    #     self.save(update_fields=['search_vector'])
 
 
 """
