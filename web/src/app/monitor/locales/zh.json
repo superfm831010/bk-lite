@@ -223,7 +223,11 @@
       "jvm_memory_usage_used_value": "已使用内存大小",
       "jvm_memory_usage_max_value": "JVM 内存使用最大值",
       "jvm_os_memory_physical_free_value": "可用物理内存",
-      "jvm_gc_collectiontime_seconds_value": "GC 收集总时间"
+      "jvm_gc_collectiontime_seconds_value": "GC 收集总时间",
+      "cvm_CPU_Usage": "CPU 利用率",
+      "cvm_MemUsage": "内存利用率",
+      "cvm_LanOuttraffic": "内网出带宽",
+      "cvm_WanOuttraffic": "外网出带宽"
     },
     "events": {
       "event": "事件",
