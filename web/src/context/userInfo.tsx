@@ -12,6 +12,7 @@ export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { data: session, status } = useSession();
   const [selectedGroup, setSelectedGroupState] = useState<Group | null>(null);
   const [userId, setUserId] = useState<string>('');
+  const [displayName, setDisplayName] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [roles, setRoles] = useState<string[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -32,12 +33,13 @@ export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             return;
           }
           
-          const { group_list: groupList, roles, is_superuser, is_first_login, user_id } = data;
+          const { group_list: groupList, roles, is_superuser, is_first_login, user_id, display_name } = data;
           setGroups(groupList || []);
           setRoles(roles || []);
           setIsSuperUser(!!is_superuser);
           setIsFirstLogin(!!is_first_login);
           setUserId(user_id || '');
+          setDisplayName(display_name || session.user?.username || 'User');
 
           if (groupList?.length) {
             const flattenedGroups = convertTreeDataToGroupOptions(groupList);
@@ -65,7 +67,7 @@ export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <UserInfoContext.Provider value={{ loading, roles, groups, selectedGroup, flatGroups, isSuperUser, isFirstLogin, userId, setSelectedGroup }}>
+    <UserInfoContext.Provider value={{ loading, roles, groups, selectedGroup, flatGroups, isSuperUser, isFirstLogin, userId, displayName, setSelectedGroup }}>
       {children}
     </UserInfoContext.Provider>
   );

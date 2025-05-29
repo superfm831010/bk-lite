@@ -46,10 +46,8 @@ class SidecarEnvViewSet(mixins.CreateModelMixin,
     @swagger_auto_schema(
         operation_summary="部分更新环境变量",
         tags=['SidecarEnv Variable'],
-        request_body=EnvVariableUpdateSerializer
     )
     def partial_update(self, request, *args, **kwargs):
-        self.serializer_class = EnvVariableUpdateSerializer
         return super().partial_update(request, *args, **kwargs)
 
     @swagger_auto_schema(
