@@ -3,19 +3,21 @@
   "name": "Setting",
   "url": "/system-manager/user",
   "description": "Create roles for the Setting app to manage data permissions, menu permissions, and feature permissions.",
-  "description_cn": "Create roles for the Setting app to manage data permissions, menu permissions, and feature permissions.",
   "menus": [
     {
       "name": "Organization",
       "children": [
         {
-          "id": "user_list",
-          "name": "User-list",
+          "id": "user_group",
+          "name": "User&Group",
           "operation": [
             "View",
-            "Add",
-            "Edit",
-            "Delete"
+            "Add User",
+            "Edit User",
+            "Delete User",
+            "Add Group",
+            "Edit Group",
+            "Delete Group"
           ]
         }
       ]
@@ -79,6 +81,20 @@
             "Edit",
             "Delete",
             "Add"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Security Management",
+      "children": [
+        {"id": "security_management",
+          "name": "Security Management",
+          "operation": [
+            "View",
+            "Edit",
+            "Add",
+            "Delete"
           ]
         }
       ]

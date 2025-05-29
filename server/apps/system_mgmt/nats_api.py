@@ -8,7 +8,7 @@ import pyotp
 import qrcode
 from django.contrib.auth.hashers import check_password, make_password
 from django.db.models import Q
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext as _
 
 import nats_client
 from apps.core.backends import cache
@@ -59,6 +59,7 @@ def verify_token(token, client_id):
         "result": True,
         "data": {
             "username": user.username,
+            "display_name": user.display_name,
             "email": user.email,
             "is_superuser": is_superuser,
             "group_list": groups,
@@ -97,7 +98,10 @@ def get_client(client_id="", username=""):
         app_name_list = list(Role.objects.filter(id__in=user.role_list).values_list("app", flat=True).distinct())
         if "" not in app_name_list:
             app_list = app_list.filter(name__in=app_name_list)
-    return {"result": True, "data": list(app_list.values())}
+    return_data = list(app_list.values())
+    for i in return_data:
+        i["description"] = _(i["description"])
+    return {"result": True, "data": return_data}
 
 
 @nats_client.register
@@ -238,6 +242,7 @@ def login(username, password):
         "data": {
             "token": token,
             "username": username,
+            "display_name": user.display_name,
             "id": user.id,
             "locale": user.locale,
             "temporary_pwd": user.temporary_pwd,
@@ -279,6 +284,7 @@ def wechat_user_register(user_id, nick_name):
         "data": {
             "id": user.id,
             "username": user.username,
+            "display_name": user.display_name,
             "is_first_login": is_first_login,
             "locale": user.locale,
             "token": token,
@@ -290,11 +296,12 @@ def wechat_user_register(user_id, nick_name):
 def get_wechat_settings():
     login_module = LoginModule.objects.filter(source_type="wechat", enabled=True).first()
     if not login_module:
-        return {"result": False, "message": _("Login module not found")}
+        return {"result": True, "data": {"enable": False}}
 
     return {
         "result": True,
         "data": {
+            "enable": True,
             "app_id": login_module.app_id,
             "app_secret": login_module.decrypted_app_secret,
             "redirect_uri": login_module.other_config.get("redirect_uri", ""),
