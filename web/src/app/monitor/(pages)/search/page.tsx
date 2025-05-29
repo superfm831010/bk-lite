@@ -510,6 +510,7 @@ const SearchView: React.FC = () => {
                   <div className={`${searchStyle.itemOption}`}>
                     <Select
                       mode="multiple"
+                      showSearch
                       placeholder={t('monitor.instance')}
                       className={`w-[300px] ${searchStyle.sourceObject}`}
                       maxTagCount="responsive"

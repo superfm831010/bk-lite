@@ -446,6 +446,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
               <Select
                 value={colony}
                 allowClear
+                showSearch
                 style={{ width: 120 }}
                 placeholder={t('monitor.views.colony')}
                 onChange={handleColonyChange}
@@ -461,6 +462,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={namespace}
                     allowClear
+                    showSearch
                     className="mx-[10px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.namespace')}
@@ -475,6 +477,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={workload}
                     allowClear
+                    showSearch
                     className="mr-[10px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.workload')}
@@ -489,6 +492,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={node}
                     allowClear
+                    showSearch
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.node')}
                     onChange={handleNodeChange}
