@@ -65,7 +65,7 @@ class AuthBackend(ModelBackend):
 
             self._handle_user_locale(user_info)
             rules = self._get_user_rules(request, user_info)
-            
+
             return self.set_user_info(user_info, rules)
 
         except Exception as e:
@@ -110,7 +110,7 @@ class AuthBackend(ModelBackend):
 
         current_group = request.COOKIES.get(COOKIE_CURRENT_TEAM)
         username = user_info.get("username")
-        
+
         if not current_group or not username:
             return {}
 
@@ -141,14 +141,12 @@ class AuthBackend(ModelBackend):
             user.group_list = user_info.get("group_list", [])
             user.roles = user_info.get("roles", [])
             user.locale = user_info.get("locale", DEFAULT_LOCALE)
-
             user.save()
-
             # 设置运行时属性
             user.rules = rules
             user.permission = set(user_info.get("permission") or [])
             user.role_ids = user_info.get("role_ids", [])
-
+            user.display_name = user_info.get("display_name", "")
             return user
 
         except IntegrityError as e:
