@@ -21,6 +21,7 @@ import { useAuth } from '@/context/auth';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import { useSearchParams } from 'next/navigation';
 import Permission from '@/components/permission';
+import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants/monitor';
 
 const Intergration = () => {
   const { isLoading } = useApiClient();
@@ -72,7 +73,7 @@ const Intergration = () => {
   const getObjectInfo = (): Record<string, string> => {
     const target: any = objects.find((item) => item.id === objectId);
     if (target) {
-      target.icon = target.icon || 'shebei-shebeixinxi';
+      target.icon = target.icon || OBJECT_DEFAULT_ICON;
     }
     return target || {};
   };

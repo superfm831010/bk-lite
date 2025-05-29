@@ -33,6 +33,7 @@ import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import Permission from '@/components/permission';
 import { ListItem } from '@/types';
+import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants/monitor';
 const { Option } = Select;
 
 const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
@@ -357,7 +358,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       monitorObjId: objectId || '',
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
-      icon: monitorItem?.icon || 'shebei-shebeixinxi',
+      icon: monitorItem?.icon || OBJECT_DEFAULT_ICON,
       instance_id: app.instance_id,
       instance_name: app.instance_name,
       instance_id_values: app.instance_id_values,

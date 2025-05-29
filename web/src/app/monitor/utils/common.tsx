@@ -22,6 +22,7 @@ import {
   APPOINT_METRIC_IDS,
   OBJECT_CONFIG_MAP,
   DERIVATIVE_OBJECTS,
+  OBJECT_DEFAULT_ICON,
 } from '@/app/monitor/constants/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
@@ -587,6 +588,6 @@ export const getBaseInstanceColumn = (config: {
 export const getIconByObjectName = (objectName = '', objects: ObjectItem[]) => {
   return (
     (objects.find((item) => item.name === objectName)?.icon as string) ||
-    'shebei-shebeixinxi'
+    OBJECT_DEFAULT_ICON
   );
 };

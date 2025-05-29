@@ -44,7 +44,10 @@ import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EditConfig from './updateConfig';
 import EditInstance from './editInstance';
-import { NODE_STATUS_MAP } from '@/app/monitor/constants/monitor';
+import {
+  NODE_STATUS_MAP,
+  OBJECT_DEFAULT_ICON,
+} from '@/app/monitor/constants/monitor';
 const { confirm } = Modal;
 import Permission from '@/components/permission';
 
@@ -325,7 +328,7 @@ const Asset = () => {
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
       instance_id: row.instance_id,
-      icon: monitorItem?.icon || 'shebei-shebeixinxi',
+      icon: monitorItem?.icon || OBJECT_DEFAULT_ICON,
       instance_name: row.instance_name,
       instance_id_values: row.instance_id_values,
     };
