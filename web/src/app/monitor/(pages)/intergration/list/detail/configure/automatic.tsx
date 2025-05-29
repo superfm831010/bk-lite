@@ -61,6 +61,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       width: 200,
       render: (_: unknown, record: TableDataItem, index: number) => (
         <Select
+          showSearch
           loading={nodesLoading}
           value={record.node_ids}
           onChange={(val) => handleFilterNodeChange(val, index)}
@@ -80,6 +81,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       width: 200,
       render: (_: unknown, record: TableDataItem, index: number) => (
         <Select
+          showSearch
           mode="tags"
           maxTagCount="responsive"
           loading={nodesLoading}
@@ -147,6 +149,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       width: 200,
       render: (_: unknown, record: TableDataItem, index: number) => (
         <Select
+          showSearch
           mode="tags"
           maxTagCount="responsive"
           value={record.group_ids}

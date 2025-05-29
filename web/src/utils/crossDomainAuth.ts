@@ -45,6 +45,36 @@ function getBaseIdentifier(): string {
 }
 
 /**
+ * Get host identifier (hostname + port for cross-port scenarios)
+ */
+function getHostIdentifier(): string {
+  const hostname = window.location.hostname;
+  const port = window.location.port;
+  
+  // Include port if it exists and is not default
+  if (port && port !== '80' && port !== '443') {
+    return `${hostname}:${port}`;
+  }
+  
+  return hostname;
+}
+
+/**
+ * Check if cross-port sharing should be enabled
+ */
+function shouldUseCrossPortSharing(): boolean {
+  const hostname = window.location.hostname;
+  const port = window.location.port;
+  
+  // Enable cross-port for IP addresses, localhost, or domains with non-standard ports
+  return (
+    /^\d+\.\d+\.\d+\.\d+$/.test(hostname) || 
+    hostname === 'localhost' || 
+    (!!port && port !== '80' && port !== '443')
+  );
+}
+
+/**
  * Generate storage key (based on base identifier)
  */
 function getStorageKey(): string {
@@ -111,84 +141,89 @@ function deleteCrossDomainCookie(name: string): void {
 }
 
 /**
- * Cross-port storage (for IP+port and localhost+port scenarios)
+ * Cross-port storage (enhanced for all cross-port scenarios)
  */
 function setCrossPortStorage(key: string, value: string): void {
-  const hostname = window.location.hostname;
+  if (!shouldUseCrossPortSharing()) {
+    return;
+  }
   
-  // Only use cross-port storage for IP addresses and localhost
-  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) || hostname === 'localhost') {
-    try {
-      // Use hostname-based key
-      const crossPortKey = `${key}_${hostname}`;
-      localStorage.setItem(crossPortKey, value);
-      
-      // Broadcast to other ports on same host (via BroadcastChannel)
-      if (typeof BroadcastChannel !== 'undefined') {
-        const channel = new BroadcastChannel('bk_auth_sync');
-        channel.postMessage({
-          type: 'AUTH_UPDATE',
-          key: crossPortKey,
-          value: value,
-          hostname: hostname
-        });
-        channel.close();
-      }
-    } catch (error) {
-      console.warn('Failed to set cross-port storage:', error);
+  try {
+    const baseId = getBaseIdentifier();
+    const hostId = getHostIdentifier();
+    
+    // Use base identifier for cross-port key to enable sharing across ports
+    const crossPortKey = `${key}_${baseId}`;
+    localStorage.setItem(crossPortKey, value);
+    
+    // Broadcast to other ports on same base domain (via BroadcastChannel)
+    if (typeof BroadcastChannel !== 'undefined') {
+      const channel = new BroadcastChannel('bk_auth_sync');
+      channel.postMessage({
+        type: 'AUTH_UPDATE',
+        key: crossPortKey,
+        value: value,
+        baseId: baseId,
+        hostId: hostId
+      });
+      channel.close();
     }
+  } catch (error) {
+    console.warn('Failed to set cross-port storage:', error);
   }
 }
 
 /**
- * Get cross-port storage data
+ * Get cross-port storage data (enhanced for all cross-port scenarios)
  */
 function getCrossPortStorage(key: string): string | null {
-  const hostname = window.location.hostname;
-  
-  // Only try cross-port retrieval for IP addresses and localhost
-  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) || hostname === 'localhost') {
-    try {
-      const crossPortKey = `${key}_${hostname}`;
-      return localStorage.getItem(crossPortKey);
-    } catch (error) {
-      console.warn('Failed to get cross-port storage:', error);
-      return null;
-    }
+  if (!shouldUseCrossPortSharing()) {
+    return null;
   }
   
-  return null;
+  try {
+    const baseId = getBaseIdentifier();
+    const crossPortKey = `${key}_${baseId}`;
+    return localStorage.getItem(crossPortKey);
+  } catch (error) {
+    console.warn('Failed to get cross-port storage:', error);
+    return null;
+  }
 }
 
 /**
- * Clear cross-port storage data
+ * Clear cross-port storage data (enhanced for all cross-port scenarios)
  */
 function clearCrossPortStorage(key: string): void {
-  const hostname = window.location.hostname;
+  if (!shouldUseCrossPortSharing()) {
+    return;
+  }
   
-  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) || hostname === 'localhost') {
-    try {
-      const crossPortKey = `${key}_${hostname}`;
-      localStorage.removeItem(crossPortKey);
-      
-      // Broadcast clear message
-      if (typeof BroadcastChannel !== 'undefined') {
-        const channel = new BroadcastChannel('bk_auth_sync');
-        channel.postMessage({
-          type: 'AUTH_CLEAR',
-          key: crossPortKey,
-          hostname: hostname
-        });
-        channel.close();
-      }
-    } catch (error) {
-      console.warn('Failed to clear cross-port storage:', error);
+  try {
+    const baseId = getBaseIdentifier();
+    const hostId = getHostIdentifier();
+    const crossPortKey = `${key}_${baseId}`;
+    
+    localStorage.removeItem(crossPortKey);
+    
+    // Broadcast clear message
+    if (typeof BroadcastChannel !== 'undefined') {
+      const channel = new BroadcastChannel('bk_auth_sync');
+      channel.postMessage({
+        type: 'AUTH_CLEAR',
+        key: crossPortKey,
+        baseId: baseId,
+        hostId: hostId
+      });
+      channel.close();
     }
+  } catch (error) {
+    console.warn('Failed to clear cross-port storage:', error);
   }
 }
 
 /**
- * Set up cross-port listener (listen for auth data sync from other ports)
+ * Set up cross-port listener (enhanced for all cross-port scenarios)
  */
 function setupCrossPortListener(): void {
   if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
@@ -196,21 +231,36 @@ function setupCrossPortListener(): void {
   }
   
   const channel = new BroadcastChannel('bk_auth_sync');
-  const hostname = window.location.hostname;
+  const baseId = getBaseIdentifier();
   
   channel.addEventListener('message', (event) => {
-    const { type, key, value, hostname: senderHostname } = event.data;
+    const { type, key, value, baseId: senderBaseId, hostId: senderHostId, storageKeyPrefix } = event.data;
     
-    // Only handle messages from same host
-    if (senderHostname !== hostname) return;
+    // Only handle messages from same base domain (allows cross-port communication)
+    if (senderBaseId !== baseId) return;
     
     try {
       if (type === 'AUTH_UPDATE') {
         localStorage.setItem(key, value);
-        console.log('Cross-port auth data synced:', key);
+        console.log('Cross-port auth data synced:', key, 'from:', senderHostId);
       } else if (type === 'AUTH_CLEAR') {
         localStorage.removeItem(key);
-        console.log('Cross-port auth data cleared:', key);
+        console.log('Cross-port auth data cleared:', key, 'from:', senderHostId);
+      } else if (type === 'AUTH_CLEAR_ALL') {
+        // Clear all related storage keys for comprehensive logout
+        const storageKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const storageKey = localStorage.key(i);
+          if (storageKey && storageKey.includes(`${storageKeyPrefix}_`) && 
+              (storageKey.endsWith(`_${baseId}`) || storageKey.includes(`_${baseId}_`))) {
+            storageKeys.push(storageKey);
+          }
+        }
+        
+        storageKeys.forEach(storageKey => {
+          localStorage.removeItem(storageKey);
+          console.log('Cross-port auth data cleared (all):', storageKey, 'from:', senderHostId);
+        });
       }
     } catch (error) {
       console.warn('Failed to sync cross-port auth data:', error);
@@ -226,6 +276,129 @@ function setupCrossPortListener(): void {
 // Initialize cross-port listener
 if (typeof window !== 'undefined') {
   setupCrossPortListener();
+}
+
+/**
+ * Clear all related domain storage keys (for comprehensive logout)
+ */
+function clearAllRelatedStorageKeys(): void {
+  const baseId = getBaseIdentifier();
+  const hostname = window.location.hostname;
+  
+  try {
+    // Get all localStorage keys that might be related to this domain
+    const storageKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(STORAGE_KEY)) {
+        storageKeys.push(key);
+      }
+    }
+    
+    // Filter keys that are related to current domain
+    const relatedKeys = storageKeys.filter(key => {
+      // Extract domain part from key (remove STORAGE_KEY prefix and underscore replacement)
+      const keyDomain = key.replace(`${STORAGE_KEY}_`, '').replace(/_/g, '.');
+      
+      // Check if this key is related to current domain
+      if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) || hostname === 'localhost') {
+        // For IP/localhost, only clear exact matches
+        return keyDomain === hostname;
+      } else {
+        // For domains, clear both root domain and subdomains
+        return keyDomain === baseId || keyDomain.endsWith(`.${baseId}`) || baseId.endsWith(`.${keyDomain}`);
+      }
+    });
+    
+    // Clear all related keys
+    relatedKeys.forEach(key => {
+      localStorage.removeItem(key);
+      console.log('Cleared related storage key:', key);
+    });
+    
+  } catch (error) {
+    console.warn('Failed to clear related storage keys:', error);
+  }
+}
+
+/**
+ * Clear all related domain cookies (for comprehensive logout)
+ */
+function clearAllRelatedCookies(): void {
+  const hostname = window.location.hostname;
+  const baseId = getBaseIdentifier();
+  const pastDate = 'Thu, 01 Jan 1970 00:00:00 UTC';
+  
+  // Get all cookies and find related ones
+  const cookies = document.cookie.split(';');
+  const relatedCookieNames = [];
+  
+  for (const cookie of cookies) {
+    const [name] = cookie.trim().split('=');
+    if (name && name.startsWith(STORAGE_KEY)) {
+      relatedCookieNames.push(name);
+    }
+  }
+  
+  // Clear all related cookies
+  relatedCookieNames.forEach(cookieName => {
+    // Clear for current domain
+    document.cookie = `${cookieName}=; expires=${pastDate}; path=/`;
+    
+    // For non-IP/localhost domains, also clear root domain cookies
+    if (!(/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) && hostname !== 'localhost') {
+      if (baseId.includes('.') && hostname !== baseId) {
+        document.cookie = `${cookieName}=; expires=${pastDate}; path=/; domain=.${baseId}`;
+      }
+    }
+    
+    console.log('Cleared related cookie:', cookieName);
+  });
+}
+
+/**
+ * Clear all cross-port storage data (enhanced for comprehensive logout)
+ */
+function clearAllCrossPortStorage(): void {
+  const baseId = getBaseIdentifier();
+  const hostId = getHostIdentifier();
+  
+  if (!shouldUseCrossPortSharing()) {
+    return;
+  }
+  
+  try {
+    // Get all localStorage keys and find cross-port related ones
+    const storageKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.includes(`${STORAGE_KEY}_`) && 
+          (key.endsWith(`_${baseId}`) || key.includes(`_${baseId}_`))) {
+        storageKeys.push(key);
+      }
+    }
+    
+    // Clear all related cross-port keys
+    storageKeys.forEach(key => {
+      localStorage.removeItem(key);
+      console.log('Cleared cross-port storage key:', key);
+    });
+    
+    // Broadcast clear message to all ports on same base domain
+    if (typeof BroadcastChannel !== 'undefined') {
+      const channel = new BroadcastChannel('bk_auth_sync');
+      channel.postMessage({
+        type: 'AUTH_CLEAR_ALL',
+        baseId: baseId,
+        hostId: hostId,
+        storageKeyPrefix: STORAGE_KEY
+      });
+      channel.close();
+    }
+    
+  } catch (error) {
+    console.warn('Failed to clear cross-port storage:', error);
+  }
 }
 
 /**
@@ -300,22 +473,31 @@ export function getSharedAuthData(): SharedAuthData | null {
 }
 
 /**
- * Clear shared authentication state data
+ * Clear shared authentication state data (enhanced for comprehensive logout)
  */
 export function clearSharedAuthData(): void {
   const storageKey = getStorageKey();
   
   try {
-    // 1. Clear cookie
+    // 1. Clear current domain cookie
     deleteCrossDomainCookie(storageKey);
     
-    // 2. Clear localStorage
+    // 2. Clear current domain localStorage
     localStorage.removeItem(storageKey);
     
-    // 3. Clear cross-port storage
+    // 3. Clear current domain cross-port storage
     clearCrossPortStorage(storageKey);
     
-    console.log('Shared auth data cleared for:', getBaseIdentifier());
+    // 4. Enhanced: Clear all related domain storage keys
+    clearAllRelatedStorageKeys();
+    
+    // 5. Enhanced: Clear all related domain cookies
+    clearAllRelatedCookies();
+    
+    // 6. Enhanced: Clear all cross-port storage data
+    clearAllCrossPortStorage();
+    
+    console.log('All shared auth data cleared for domain and subdomains:', getBaseIdentifier());
   } catch (error) {
     console.error('Failed to clear shared auth data:', error);
   }
@@ -359,38 +541,31 @@ export async function autoSignInFromSharedAuth(callbackUrl?: string): Promise<bo
 }
 
 /**
- * Validate shared authentication token
- */
-export async function validateSharedAuthToken(token: string): Promise<boolean> {
-  try {
-    const response = await fetch('/api/proxy/core/api/validate_token/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ token })
-    });
-    
-    const data = await response.json();
-    return response.ok && data.result;
-  } catch (error) {
-    console.error('Token validation failed:', error);
-    return false;
-  }
-}
-
-/**
- * Get current configuration information (for debugging)
+ * Get current configuration information (enhanced for debugging)
  */
 export function getAuthConfig() {
   return {
     baseIdentifier: getBaseIdentifier(),
+    hostIdentifier: getHostIdentifier(),
     storageKey: getStorageKey(),
     hostname: window.location.hostname,
     port: window.location.port,
     isIP: /^\d+\.\d+\.\d+\.\d+$/.test(window.location.hostname),
     isLocalhost: window.location.hostname === 'localhost',
-    supportsBroadcastChannel: typeof BroadcastChannel !== 'undefined'
+    shouldUseCrossPortSharing: shouldUseCrossPortSharing(),
+    supportsBroadcastChannel: typeof BroadcastChannel !== 'undefined',
+    currentUrl: window.location.href,
+    scenarios: {
+      'IP + Port': /^\d+\.\d+\.\d+\.\d+$/.test(window.location.hostname) && window.location.port,
+      'Domain + Subdomain': !(/^\d+\.\d+\.\d+\.\d+$/.test(window.location.hostname)) && 
+                             window.location.hostname !== 'localhost' && 
+                             !window.location.port,
+      'Domain + Port': !(/^\d+\.\d+\.\d+\.\d+$/.test(window.location.hostname)) && 
+                       window.location.hostname !== 'localhost' && 
+                       window.location.port && 
+                       window.location.port !== '80' && 
+                       window.location.port !== '443',
+      'Localhost + Port': window.location.hostname === 'localhost' && window.location.port
+    }
   };
 }

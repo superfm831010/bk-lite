@@ -162,7 +162,11 @@ const useColumnsAndFormItems = ({
                     },
                   ]}
                 >
-                  <Select className="mr-[10px]" style={{ width: '300px' }}>
+                  <Select
+                    showSearch
+                    className="mr-[10px]"
+                    style={{ width: '300px' }}
+                  >
                     <Option value={2}>v2c</Option>
                     <Option value={3}>v3</Option>
                   </Select>
@@ -230,6 +234,7 @@ const useColumnsAndFormItems = ({
                           ]}
                         >
                           <Select
+                            showSearch
                             className="mr-[10px]"
                             style={{ width: '300px' }}
                           >
@@ -942,6 +947,7 @@ const useFormItems = ({
                     className="mr-[10px]"
                     style={{ width: '300px' }}
                     disabled={isEdit}
+                    showSearch
                   >
                     <Option value={2}>v2c</Option>
                     <Option value={3}>v3</Option>
@@ -1012,6 +1018,7 @@ const useFormItems = ({
                           <Select
                             className="mr-[10px]"
                             style={{ width: '300px' }}
+                            showSearch
                           >
                             <Option value="noAuthNoPriv">noAuthNoPriv</Option>
                             <Option value="authNoPriv">authNoPriv</Option>
