@@ -43,6 +43,7 @@ interface OriginalGroup {
   id: string;
   name: string;
   path: string;
+  hasAuth: boolean;
   subGroups: OriginalGroup[];
   access: {
     manage: boolean;
