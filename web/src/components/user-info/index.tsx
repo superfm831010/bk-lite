@@ -32,14 +32,14 @@ const UserInfo: React.FC = () => {
   const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
-  const { flatGroups, selectedGroup, setSelectedGroup } = useUserInfoContext();
+  const { flatGroups, selectedGroup, setSelectedGroup, displayName } = useUserInfoContext();
 
   const [versionVisible, setVersionVisible] = useState<boolean>(false);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const isConsole = process.env.NEXT_PUBLIC_IS_OPS_CONSOLE === 'true';
-  const username = session?.user?.username || 'Test';
+  const username = displayName || session?.user?.username || 'Test';
 
   const federatedLogout = useCallback(async () => {
     setIsLoading(true);

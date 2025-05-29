@@ -1,7 +1,7 @@
 import logging
 
 logger = logging.getLogger(__name__)
-from src.tools.time_tools import get_current_time
+from src.tools.current_time_tools import get_current_time
 
 
 def test_current_time_tool_returns_string():

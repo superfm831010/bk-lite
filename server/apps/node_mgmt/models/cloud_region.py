@@ -15,6 +15,7 @@ class CloudRegion(TimeInfo, MaintainerInfo):
 class SidecarEnv(models.Model):
     key = models.CharField(max_length=100)
     value = models.CharField(max_length=200)
+    type = models.CharField(max_length=20, default="")
     description = models.TextField(blank=True, verbose_name="描述")
     cloud_region = models.ForeignKey(CloudRegion, default=1, on_delete=models.CASCADE, verbose_name="云区域")
 

@@ -47,6 +47,7 @@ export interface UserInfoContextType {
   isSuperUser: boolean;
   isFirstLogin: boolean;
   userId: string;
+  displayName: string;
   setSelectedGroup: (group: Group) => void;
 }
 
