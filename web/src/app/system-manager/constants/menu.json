@@ -3,7 +3,7 @@
     {
       "title": "组织架构",
       "icon": "yonghu1",
-      "name": "user_list",
+      "name": "user_group",
       "url": "/system-manager/user"
     },
     {
@@ -43,7 +43,7 @@
     {
       "title": "安全管理",
       "icon": "shujumoxingguanli",
-      "name": "user_list",
+      "name": "security_management",
       "url": "/system-manager/security"
     }
   ],
@@ -51,7 +51,7 @@
     {
       "title": "Organization Structure",
       "icon": "yonghu1",
-      "name": "user_list",
+      "name": "user_group",
       "url": "/system-manager/user"
     },
     {
@@ -91,7 +91,7 @@
     {
       "title": "Security Management",
       "icon": "shujumoxingguanli",
-      "name": "user_list",
+      "name": "security_management",
       "url": "/system-manager/security"
     }
   ]
