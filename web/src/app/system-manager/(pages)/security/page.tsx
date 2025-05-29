@@ -8,6 +8,7 @@ import EntityList from '@/components/entity-list';
 import OperateModal from '@/components/operate-modal';
 import { useSecurityApi } from '@/app/system-manager/api/security';
 import { AuthSource } from '@/app/system-manager/types/security';
+import PermissionWrapper from '@/components/permission';
 import { enhanceAuthSourcesList } from '@/app/system-manager/utils/authSourceUtils';
 import wechatAuthImg from '@/app/system-manager/img/wechat_auth.png';
 
@@ -169,9 +170,11 @@ const SecurityPage: React.FC = () => {
 
   const menuActions = (item: AuthSource) => (
     <Menu>
-      <Menu.Item key="edit" onClick={() => handleEditSource(item)}>
-        {t('common.edit')}
-      </Menu.Item>
+      <PermissionWrapper requiredPermissions={['Edit']}>
+        <Menu.Item key="edit" onClick={() => handleEditSource(item)}>
+          {t('common.edit')}
+        </Menu.Item>
+      </PermissionWrapper>
     </Menu>
   );
 
@@ -212,13 +215,15 @@ const SecurityPage: React.FC = () => {
           />
         </div>
         <div className="mt-6">
-          <Button 
-            type="primary" 
-            onClick={handleSaveSettings}
-            loading={loading}
-          >
-            {t('common.save')}
-          </Button>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button 
+              type="primary" 
+              onClick={handleSaveSettings}
+              loading={loading}
+            >
+              {t('common.save')}
+            </Button>
+          </PermissionWrapper>
         </div>
       </div>
     ),
