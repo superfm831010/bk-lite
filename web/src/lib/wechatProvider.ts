@@ -105,23 +105,51 @@ export default function WeChatProvider<P extends WechatProfile>(
         };
       }
     },
-    profile(profile) {
+    async profile(profile) {
       console.log("[WeChat OAuth] Processing profile:", {
         openid: profile.openid || "Not received",
         nickname: profile.nickname || "Not received",
         unionid: profile.unionid ? "Set" : "Not set"
       });
 
-      return {
-        id: profile.openid,
-        name: profile.nickname || profile.openid,
-        image: profile.headimgurl,
-        email: null,
-        username: profile.nickname || profile.openid,
-        token: profile.access_token,
-        wechatOpenId: profile.openid,
-        wechatUnionId: profile.unionid
-      };
+      try {
+        const registerResponse = await fetch(`${process.env.NEXTAPI_URL}/core/api/wechat_user_register/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: profile.openid,
+            nick_name: profile.nickname || profile.openid
+          }),
+        });
+
+        const registerData = await registerResponse.json();
+        console.log("[WeChat OAuth] Register API response:", registerData);
+
+        if (!registerResponse.ok || !registerData.result) {
+          console.error("[WeChat OAuth] Register API failed:", registerData);
+          throw new Error(`WeChat user register failed: ${registerData.message || 'Unknown error'}`);
+        }
+
+        // Use data returned from registration interface
+        const userData = registerData.data;
+        return {
+          id: userData.id.toString(),
+          name: userData.username || profile.nickname || profile.openid,
+          username: userData.username,
+          image: profile.headimgurl,
+          email: null,
+          token: userData.token,
+          locale: userData.locale || 'zh',
+          wechatOpenId: profile.openid,
+          wechatUnionId: profile.unionid,
+        };
+
+      } catch (error) {
+        console.error("[WeChat OAuth] Error during user registration:", error);
+        throw error;
+      }
     },
     clientId: options.clientId || "",
     clientSecret: options.clientSecret || ""

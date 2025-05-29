@@ -187,7 +187,7 @@ const OperationLog: React.FC = () => {
               <label className="mr-2 whitespace-nowrap">{t('OperationLog.operator')}:</label>
               <Select
                 style={{ width: 180 }}
-                placeholder={t('common.selectMsg')}
+                placeholder={t('common.pleaseSelect')}
                 options={operators}
                 value={filters.operator}
                 onChange={(value) => handleFilterChange('operator', value)}
@@ -197,8 +197,8 @@ const OperationLog: React.FC = () => {
             <div className="flex items-center">
               <label className="mr-2 whitespace-nowrap">{t('OperationLog.operationType')}:</label>
               <Select
-                style={{ width: 120 }}
-                placeholder={t('common.selectMsg')}
+                style={{ width: 160 }}
+                placeholder={t('common.pleaseSelect')}
                 options={operationTypes}
                 value={filters.type}
                 onChange={(value) => handleFilterChange('type', value)}
@@ -209,7 +209,7 @@ const OperationLog: React.FC = () => {
               <label className="mr-2 whitespace-nowrap">{t('OperationLog.summary')}:</label>
               <Input
                 style={{ width: 220 }}
-                placeholder={t('common.inputMsg')}
+                placeholder={t('common.pleaseInput')}
                 value={inputValue}
                 onChange={handleInputChange}
                 onPressEnter={handleInputSearch}

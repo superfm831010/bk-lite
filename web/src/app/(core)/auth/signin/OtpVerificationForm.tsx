@@ -78,9 +78,15 @@ export default function OtpVerificationForm({
       </div>
       
       {qrCodeUrl && (
-        <div className="text-center mb-6">
-          <p className="text-sm text-gray-600 mb-3">Scan the QR code with your authenticator app:</p>
-          <div className="flex justify-center">
+        <div className="mb-6">
+          <p className="text-sm text-gray-600 mb-3">1. Install one of the following apps on your device:</p>
+          <div className="text-sm text-gray-500 mb-3 pl-4">
+            <div>Microsoft Authenticator</div>
+            <div>FreeOTP</div>
+            <div>Google Authenticator</div>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">2. Scan the QR code with your authenticator app:</p>
+          <div className="flex pl-4">
             <img src={`data:image/png;base64, ${qrCodeUrl}`} alt="QR Code" className="w-48 h-48 border border-gray-300 rounded-lg" />
           </div>
         </div>

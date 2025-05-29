@@ -58,6 +58,7 @@
     },
     {
       "name": "Pod",
+      "icon": "rongqi2",
       "type": "K8S",
       "level": "derivative",
       "description": "",
@@ -154,6 +155,7 @@
     },
     {
       "name": "Node",
+      "icon": "rongqi",
       "type": "K8S",
       "level": "derivative",
       "description": "",

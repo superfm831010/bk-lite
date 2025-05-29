@@ -132,14 +132,6 @@ class MonitorObjectService:
         objs = MonitorInstance.objects.filter(id=instance_id).first()
         if objs:
             raise Exception(f"实例已存在：{instance_info['instance_name']}")
-        # if "interval" not in instance_info:
-        #     instance_info["interval"] = 10
-        # MonitorInstance.objects.create(
-        #     id=instance_id,
-        #     name=instance_info["instance_name"],
-        #     interval=instance_info["interval"],
-        #     monitor_object_id=monitor_object_id,
-        # )
 
     @staticmethod
     def autodiscover_monitor_instance():
@@ -196,3 +188,18 @@ class MonitorObjectService:
             sorted_result.extend(sorted_items)
 
         return sorted_result
+
+    @staticmethod
+    def update_instance(instance_id, name, organizations):
+        """更新监控对象实例"""
+        instance = MonitorInstance.objects.filter(id=instance_id).first()
+        if not instance:
+            raise ValueError("Monitor instance does not exist")
+        if name:
+            instance.name = name
+            instance.save()
+
+        # 更新组织信息
+        instance.monitorinstanceorganization_set.all().delete()
+        for org in organizations:
+            instance.monitorinstanceorganization_set.create(organization=org)

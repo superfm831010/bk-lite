@@ -135,8 +135,10 @@ def _request(method: str, url: str, headers: Dict, params: Dict, data: Dict):
     :return:
     """
     try:
-        response = requests.request(method, url, headers=headers, params=params, json=data, verify=False)
-        logger.info(f"请求URL: {url}, 请求方法: {method}, 请求头: {headers}, 请求参数: {params}, 请求体: {data}")
+        response = requests.request(
+            method, url, headers=headers, params=params, json=data, verify=False)
+        logger.info(
+            f"请求URL: {url}, 请求方法: {method}, 请求头: {headers}, 请求参数: {params}, 请求体: {data}")
         return response.content.decode('utf-8')
     except requests.exceptions.RequestException as e:
         raise ValueError(f"请求失败: {e}")

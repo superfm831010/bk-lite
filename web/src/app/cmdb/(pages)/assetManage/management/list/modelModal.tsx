@@ -178,7 +178,7 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
             >
               <Select
                 disabled={type === 'edit'}
-                placeholder="Please select a country"
+                placeholder={t('common.pleaseSelect')}
               >
                 {groupList.map((item) => {
                   return (
@@ -197,14 +197,14 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
               name="model_id"
               rules={[{ required: true, message: t('required') }]}
             >
-              <Input disabled={type === 'edit'} />
+              <Input disabled={type === 'edit'} placeholder={t('common.pleaseInput')} />
             </Form.Item>
             <Form.Item<ModelItem>
               label={t('name')}
               name="model_name"
               rules={[{ required: true, message: t('required') }]}
             >
-              <Input />
+              <Input placeholder={t('common.pleaseInput')} />
             </Form.Item>
           </Form>
         </OperateModal>

@@ -21,7 +21,7 @@ import {
   MetricItem,
   GroupInfo,
   IntergrationItem,
-  ObectItem,
+  ObjectItem,
   MetricListItem,
 } from '@/app/monitor/types/monitor';
 import Collapse from '@/components/collapse';
@@ -175,9 +175,9 @@ const Configure = () => {
         };
         const data = await getMonitorObject();
         const _items = data
-          .filter((item: ObectItem) => item.type === typeMaps[groupName])
-          .sort((a: ObectItem, b: ObectItem) => a.id - b.id)
-          .map((item: ObectItem) => ({
+          .filter((item: ObjectItem) => item.type === typeMaps[groupName])
+          .sort((a: ObjectItem, b: ObjectItem) => a.id - b.id)
+          .map((item: ObjectItem) => ({
             label: item.display_name,
             value: item.id,
           }));

@@ -7,6 +7,7 @@ import { useTranslation } from '@/utils/i18n';
 import VersionModal from './versionModal';
 import ThemeSwitcher from '@/components/theme';
 import { useUserInfoContext } from '@/context/userInfo';
+import { clearSharedAuthData } from '@/utils/crossDomainAuth';
 
 interface GroupItemProps {
   id: string;
@@ -31,14 +32,14 @@ const UserInfo: React.FC = () => {
   const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
-  const { flatGroups, selectedGroup, setSelectedGroup } = useUserInfoContext();
+  const { flatGroups, selectedGroup, setSelectedGroup, displayName } = useUserInfoContext();
 
   const [versionVisible, setVersionVisible] = useState<boolean>(false);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const isConsole = process.env.NEXT_PUBLIC_IS_OPS_CONSOLE === 'true';
-  const username = session?.user?.username || 'Test';
+  const username = displayName || session?.user?.username || 'Test';
 
   const federatedLogout = useCallback(async () => {
     setIsLoading(true);
@@ -49,6 +50,9 @@ const UserInfo: React.FC = () => {
 
       const data = await response.json();
       if (response.ok) {
+        // Clear shared authentication data
+        clearSharedAuthData();
+        
         // Clear the session using NextAuth's signOut
         await signOut({ redirect: false });
         
@@ -65,7 +69,8 @@ const UserInfo: React.FC = () => {
       console.error('Logout error:', error);
       message.error(t('common.logoutFailed'));
       
-      // Even on error, attempt to sign out and redirect
+      // Even on error, attempt to clear shared auth and sign out
+      clearSharedAuthData();
       await signOut({ redirect: false });
       window.location.href = '/auth/signin';
     } finally {

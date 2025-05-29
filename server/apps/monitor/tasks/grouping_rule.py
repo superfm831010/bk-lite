@@ -100,14 +100,14 @@ class SyncInstance:
                 instance.is_deleted = False  # 恢复
             MonitorInstance.objects.bulk_update(update_instances, ["name", "is_deleted", "auto"], batch_size=200)
 
-        # 计算活跃实例（vm中有的即活跃）
-        alive_set = vm_all & table_alive
+        # 计算不活跃实例
+        no_alive_set = table_alive - vm_all
 
         # 查询不活跃实例
         no_alive_instances = {i["id"] for i in MonitorInstance.objects.filter(is_active=False, auto=True).values("id")}
 
-        MonitorInstance.objects.filter(id__in=alive_set).update(is_active=True)
-        MonitorInstance.objects.exclude(id__in=alive_set).update(is_active=False)
+        MonitorInstance.objects.filter(id__in=no_alive_set).update(is_active=False)
+        MonitorInstance.objects.exclude(id__in=no_alive_set).update(is_active=True)
 
         if not no_alive_instances:
             return

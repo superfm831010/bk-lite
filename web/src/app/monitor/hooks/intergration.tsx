@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Form, Checkbox, Space, Select, Input, InputNumber } from 'antd';
-import { EditOutlined } from '@ant-design/icons';
+import Password from '@/app/monitor/components/password';
 import { useTranslation } from '@/utils/i18n';
 import { getConfigByPluginName } from '@/app/monitor/utils/common';
 import {
@@ -13,31 +13,13 @@ interface UseColumnsAndFormItemsParams {
   pluginName: string;
   collectType: string;
   columns: any[];
-  authPasswordRef: React.RefObject<any>;
-  privPasswordRef: React.RefObject<any>;
-  passwordRef: React.RefObject<any>;
-  authPasswordDisabled: boolean;
-  privPasswordDisabled: boolean;
-  passwordDisabled: boolean;
   mode?: string;
-  handleEditAuthPassword: () => void;
-  handleEditPrivPassword: () => void;
-  handleEditPassword: () => void;
 }
 
 const useColumnsAndFormItems = ({
   collectType,
   pluginName,
   columns,
-  authPasswordRef,
-  privPasswordRef,
-  passwordRef,
-  authPasswordDisabled,
-  privPasswordDisabled,
-  passwordDisabled,
-  handleEditAuthPassword,
-  handleEditPrivPassword,
-  handleEditPassword,
 }: UseColumnsAndFormItemsParams) => {
   const { t } = useTranslation();
 
@@ -294,21 +276,7 @@ const useColumnsAndFormItems = ({
                             },
                           ]}
                         >
-                          <Input
-                            ref={authPasswordRef}
-                            disabled={authPasswordDisabled}
-                            className="w-[300px] mr-[10px]"
-                            type="password"
-                            suffix={
-                              <EditOutlined
-                                className="text-[var(--color-text-2)]"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditAuthPassword();
-                                }}
-                              />
-                            }
-                          />
+                          <Password className="w-[300px] mr-[10px]" />
                         </Form.Item>
                         <span className="text-[12px] text-[var(--color-text-3)]">
                           {t('monitor.intergrations.authPasswordDes')}
@@ -348,21 +316,7 @@ const useColumnsAndFormItems = ({
                             },
                           ]}
                         >
-                          <Input
-                            ref={privPasswordRef}
-                            disabled={privPasswordDisabled}
-                            className="w-[300px] mr-[10px]"
-                            type="password"
-                            suffix={
-                              <EditOutlined
-                                className="text-[var(--color-text-2)]"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditPrivPassword();
-                                }}
-                              />
-                            }
-                          />
+                          <Password className="w-[300px] mr-[10px]" />
                         </Form.Item>
                         <span className="text-[12px] text-[var(--color-text-3)]">
                           {t('monitor.intergrations.privPasswordDes')}
@@ -438,21 +392,7 @@ const useColumnsAndFormItems = ({
                     },
                   ]}
                 >
-                  <Input
-                    ref={passwordRef}
-                    disabled={passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
@@ -519,21 +459,7 @@ const useColumnsAndFormItems = ({
                         },
                       ]}
                     >
-                      <Input
-                        ref={passwordRef}
-                        disabled={passwordDisabled}
-                        className="w-[300px] mr-[10px]"
-                        type="password"
-                        suffix={
-                          <EditOutlined
-                            className="text-[var(--color-text-2)]"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditPassword();
-                            }}
-                          />
-                        }
-                      />
+                      <Password className="w-[300px] mr-[10px]" />
                     </Form.Item>
                     <span className="text-[12px] text-[var(--color-text-3)]">
                       {t('monitor.intergrations.passwordDes')}
@@ -622,21 +548,7 @@ const useColumnsAndFormItems = ({
                       },
                     ]}
                   >
-                    <Input
-                      ref={passwordRef}
-                      disabled={passwordDisabled}
-                      className="w-[300px] mr-[10px]"
-                      type="password"
-                      suffix={
-                        <EditOutlined
-                          className="text-[var(--color-text-2)]"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditPassword();
-                          }}
-                        />
-                      }
-                    />
+                    <Password className="w-[300px] mr-[10px]" />
                   </Form.Item>
                   <span className="text-[12px] text-[var(--color-text-3)]">
                     {t('monitor.intergrations.passwordDes')}
@@ -683,21 +595,7 @@ const useColumnsAndFormItems = ({
                     },
                   ]}
                 >
-                  <Input
-                    ref={passwordRef}
-                    disabled={passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
@@ -721,21 +619,7 @@ const useColumnsAndFormItems = ({
               </Form.Item>
               <Form.Item label={t('monitor.intergrations.password')}>
                 <Form.Item noStyle name="password">
-                  <Input
-                    ref={passwordRef}
-                    disabled={passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
@@ -750,20 +634,7 @@ const useColumnsAndFormItems = ({
           formItems: null,
         };
     }
-  }, [
-    collectType,
-    columns,
-    t,
-    authPasswordRef,
-    privPasswordRef,
-    passwordRef,
-    authPasswordDisabled,
-    privPasswordDisabled,
-    passwordDisabled,
-    handleEditAuthPassword,
-    handleEditPrivPassword,
-    handleEditPassword,
-  ]);
+  }, [collectType, columns, t]);
 
   return result;
 };
@@ -771,16 +642,7 @@ const useColumnsAndFormItems = ({
 const useFormItems = ({
   pluginName,
   collectType,
-  authPasswordRef,
-  privPasswordRef,
-  passwordRef,
-  authPasswordDisabled,
-  privPasswordDisabled,
-  passwordDisabled,
   mode,
-  handleEditAuthPassword,
-  handleEditPrivPassword,
-  handleEditPassword,
 }: UseColumnsAndFormItemsParams) => {
   const { t } = useTranslation();
   const middleWareFieldsMap = useMiddleWareFields();
@@ -1194,20 +1056,9 @@ const useFormItems = ({
                             },
                           ]}
                         >
-                          <Input
-                            ref={authPasswordRef}
-                            disabled={authPasswordDisabled}
+                          <Password
                             className="w-[300px] mr-[10px]"
-                            type="password"
-                            suffix={
-                              <EditOutlined
-                                className="text-[var(--color-text-2)]"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditAuthPassword();
-                                }}
-                              />
-                            }
+                            disabled={isEdit}
                           />
                         </Form.Item>
                         <span className="text-[12px] text-[var(--color-text-3)]">
@@ -1248,20 +1099,9 @@ const useFormItems = ({
                             },
                           ]}
                         >
-                          <Input
-                            ref={privPasswordRef}
-                            disabled={privPasswordDisabled}
+                          <Password
                             className="w-[300px] mr-[10px]"
-                            type="password"
-                            suffix={
-                              <EditOutlined
-                                className="text-[var(--color-text-2)]"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditPrivPassword();
-                                }}
-                              />
-                            }
+                            disabled={isEdit}
                           />
                         </Form.Item>
                         <span className="text-[12px] text-[var(--color-text-3)]">
@@ -1413,22 +1253,7 @@ const useFormItems = ({
                     },
                   ]}
                 >
-                  <Input
-                    ref={passwordRef}
-                    disabled={isEdit || passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isEdit) return;
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" disabled={isEdit} />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
@@ -1560,21 +1385,9 @@ const useFormItems = ({
                         },
                       ]}
                     >
-                      <Input
-                        ref={passwordRef}
-                        disabled={isEdit || passwordDisabled}
+                      <Password
                         className="w-[300px] mr-[10px]"
-                        type="password"
-                        suffix={
-                          <EditOutlined
-                            className="text-[var(--color-text-2)]"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (isEdit) return;
-                              handleEditPassword();
-                            }}
-                          />
-                        }
+                        disabled={isEdit}
                       />
                     </Form.Item>
                     <span className="text-[12px] text-[var(--color-text-3)]">
@@ -1671,21 +1484,9 @@ const useFormItems = ({
                       },
                     ]}
                   >
-                    <Input
-                      ref={passwordRef}
-                      disabled={isEdit || passwordDisabled}
+                    <Password
                       className="w-[300px] mr-[10px]"
-                      type="password"
-                      suffix={
-                        <EditOutlined
-                          className="text-[var(--color-text-2)]"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isEdit) return;
-                            handleEditPassword();
-                          }}
-                        />
-                      }
+                      disabled={isEdit}
                     />
                   </Form.Item>
                   <span className="text-[12px] text-[var(--color-text-3)]">
@@ -1775,22 +1576,7 @@ const useFormItems = ({
                     },
                   ]}
                 >
-                  <Input
-                    ref={passwordRef}
-                    disabled={isEdit || passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isEdit) return;
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" disabled={isEdit} />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
@@ -1856,22 +1642,7 @@ const useFormItems = ({
               </Form.Item>
               <Form.Item label={t('monitor.intergrations.password')}>
                 <Form.Item noStyle name="password">
-                  <Input
-                    ref={passwordRef}
-                    disabled={isEdit || passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isEdit) return;
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" disabled={isEdit} />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
@@ -1925,19 +1696,7 @@ const useFormItems = ({
     tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
         };
     }
-  }, [
-    collectType,
-    t,
-    authPasswordRef,
-    privPasswordRef,
-    passwordRef,
-    authPasswordDisabled,
-    privPasswordDisabled,
-    passwordDisabled,
-    handleEditAuthPassword,
-    handleEditPrivPassword,
-    handleEditPassword,
-  ]);
+  }, [collectType, t]);
 
   return result;
 };
