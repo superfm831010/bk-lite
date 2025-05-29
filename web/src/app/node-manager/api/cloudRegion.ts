@@ -17,23 +17,23 @@ const useApiCloudRegion = () => {
 
   // 创建云区域
   const createCloudRegion = async (data: {
-    name: string,
-    introduction: string,
+    name: string;
+    introduction: string;
   }) => {
-    return await post('/node_mgmt/api/cloud_region/', data)
+    return await post('/node_mgmt/api/cloud_region/', data);
   };
 
   // 删除云区域
   const deleteCloudRegion = async (id: string | number) => {
-    return await del(`/node_mgmt/api/cloud_region/${id}`)
+    return await del(`/node_mgmt/api/cloud_region/${id}`);
   };
 
   //更新云区域的介绍
   const updateCloudIntro = async (
     id: string,
     data: {
-      name?: string,
-      introduction: string 
+      name?: string;
+      introduction: string;
     }
   ) => {
     return await patch(`/node_mgmt/api/cloud_region/${id}/`, data);
@@ -226,9 +226,10 @@ const useApiCloudRegion = () => {
   //创建环境变量
   const createVariable = async (data: {
     key: string;
-    value: string;
+    value?: string;
     description?: string;
     cloud_region_id: number;
+    type?: string;
   }) => {
     return await post('/node_mgmt/api/sidecar_env/', data);
   };
@@ -238,8 +239,9 @@ const useApiCloudRegion = () => {
     id: number,
     data: {
       key: string;
-      value: string;
+      value?: string;
       description?: string;
+      type?: string;
     }
   ) => {
     return await patch(`/node_mgmt/api/sidecar_env/${id}/`, data);

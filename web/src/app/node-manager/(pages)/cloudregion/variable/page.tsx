@@ -39,7 +39,7 @@ const Variable = () => {
   }, [isLoading]);
 
   useEffect(() => {
-    if(!isLoading) getTablelist(searchText);
+    if (!isLoading) getTablelist(searchText);
   }, [pagination.current, pagination.pageSize]);
 
   const openUerModal = (type: string, form: TableDataItem) => {
@@ -85,7 +85,7 @@ const Variable = () => {
         cloud_region_id: cloudId,
         search,
         page: pagination.current,
-        page_size: pagination.pageSize
+        page_size: pagination.pageSize,
       };
       const res = await getVariableList(param);
       const tempdata = res.items.map((item: any) => {
@@ -97,8 +97,8 @@ const Variable = () => {
       });
       setPagination((prev: Pagination) => ({
         ...prev,
-        total: res?.count || 0
-      }))
+        total: res?.count || 0,
+      }));
       setData(tempdata);
     } finally {
       setLoading(false);
@@ -127,6 +127,7 @@ const Variable = () => {
                   name: '',
                   key: '',
                   value: '',
+                  type: 'str',
                   description: '',
                 });
               }}
