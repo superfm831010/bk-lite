@@ -8,7 +8,8 @@ MONITOR_OBJECT_TYPE = {
     "Hardware Device": "Hardware Device",
     "Container Management": "Container Management",
     "Other": "Other",
-    "VMware": "VMware"
+    "VMware": "VMware",
+    "Tencent Cloud": "Tencent Cloud"
 }
 
 MONITOR_OBJECT = {
@@ -49,7 +50,9 @@ MONITOR_OBJECT = {
     "DataStorage": "DataStorage",
     "JVM": "JVM",
     "Jetty": "Jetty",
-    "WebLogic": "WebLogic"
+    "WebLogic": "WebLogic",
+    "TCP": "Tencent Cloud Platform",
+    "CVM": "CVM"
 }
 
 MONITOR_OBJECT_PLUGIN = {
@@ -196,6 +199,10 @@ MONITOR_OBJECT_PLUGIN = {
     "WebLogic-JMX": {
         "name": "WebLogic-JMX",
         "desc": "This plugin uses JMX to collect WebLogic's key metrics, including thread pools, connection pools, memory, EJB, Servlet, JMS performance, and Web service response times. It enables real-time monitoring, performance optimization, and risk early warning to ensure system stability."
+    },
+        "Tencent Cloud": {
+        "name": "Tencent Cloud",
+        "desc": "It is used to collect various monitoring index data of Tencent Cloud in real - time, covering dimensions such as computing resources, network performance, and storage usage, helping users gain in - depth insights into resource status, accurately locate anomalies, and efficiently complete operation and maintenance management and cost optimization.​"
     }
 }
 
@@ -480,6 +487,15 @@ MONITOR_OBJECT_METRIC_GROUP = {
         "JMS": "Messaging Service",
         "PersistentStore": "Persistent Storage",
         "JMXselfMonitor": "JMX Self-Monitoring Information"
+    },
+    "TCP": {
+
+    },
+    "CVM": {
+        "CPU": "CPU",
+        "Memory": "Memory",
+        "Disk": "Disk",
+        "Network": "Network"
     }
 }
 
@@ -2504,6 +2520,58 @@ MONITOR_OBJECT_METRIC = {
     "jmx_scrape_error_gauge": {
       "name": "JMX Scrape Error",
       "desc": "JMX scrape status: 0 for success, 1 for failure."
+    }
+  },
+  "TCP": {
+  },
+  "CVM": {
+    "cvm_CPU_Usage": {
+        "name": "CPU Utilization",
+        "desc": "The real-time percentage of CPU occupied during machine operation."
+    },
+    "cvm_MemUsed": {
+        "name": "Memory Usage",
+        "desc": "The actual memory used by the user, excluding memory occupied by buffers and system cache. Calculated as Total Memory - Available Memory (including buffers and cached), which does not include buffers and cached."
+    },
+    "cvm_MemUsage": {
+        "name": "Memory Utilization",
+        "desc": "The actual memory utilization rate by the user, excluding memory occupied by buffers and system cache. It is the ratio of actual user memory usage to total memory, excluding cache, buffers, and free memory."
+    },
+    "cvm_CvmDiskUsage": {
+        "name": "Disk Utilization",
+        "desc": "The percentage of used disk capacity relative to total capacity (all disks)."
+    },
+    "cvm_LanOuttraffic": {
+        "name": "Internal Outbound Bandwidth",
+        "desc": "Average outbound traffic per second on the internal network interface card."
+    },
+    "cvm_LanIntraffic": {
+        "name": "Internal Inbound Bandwidth",
+        "desc": "Average inbound traffic per second on the internal network interface card."
+    },
+    "cvm_LanOutpkg": {
+        "name": "Internal Outbound Packet Rate",
+        "desc": "Average outbound packet rate per second on the internal network interface card."
+    },
+    "cvm_LanInpkg": {
+        "name": "Internal Inbound Packet Rate",
+        "desc": "Average inbound packet rate per second on the internal network interface card."
+    },
+    "cvm_WanOuttraffic": {
+        "name": "External Outbound Bandwidth",
+        "desc": "Average outbound traffic rate per second on the external network. The minimum granularity data is calculated as total traffic over 10 seconds divided by 10. This data represents the sum of outbound/inbound bandwidth from EIP+CLB+CVM on the external network."
+    },
+    "cvm_WanIntraffic": {
+        "name": "External Inbound Bandwidth",
+        "desc": "Average inbound traffic rate per second on the external network. The minimum granularity data is calculated as total traffic over 10 seconds divided by 10. This data represents the sum of outbound/inbound bandwidth from EIP+CLB+CVM on the external network."
+    },
+    "cvm_WanOutpkg": {
+        "name": "External Outbound Packet Rate",
+        "desc": "Average outbound packet rate per second on the external network interface card."
+    },
+    "cvm_WanInpkg": {
+        "name": "External Inbound Packet Rate",
+        "desc": "Average inbound packet rate per second on the external network interface card."
     }
   }
 }
