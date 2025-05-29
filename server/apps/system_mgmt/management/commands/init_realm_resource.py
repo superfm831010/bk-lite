@@ -49,6 +49,7 @@ def create_resource(app_inst: App, menus):
     create_menu_list = []
     update_menu_list = []
     exist_menus = Menu.objects.filter(app=app_inst.name)
+    delete_menus = []
     menu_map = {i.name: i for i in exist_menus}
     for i in menus:
         for child in i["children"]:
@@ -59,6 +60,7 @@ def create_resource(app_inst: App, menus):
                     update_obj.display_name = f"{child['name']}-{operate}"
                     update_obj.order = index
                     update_menu_list.append(update_obj)
+                    menu_map.pop(name)
                 else:
                     create_menu_list.append(
                         Menu(
@@ -70,6 +72,14 @@ def create_resource(app_inst: App, menus):
                         )
                     )
                 index += 1
+    for i in menu_map.values():
+        delete_menus.append(i.id)
+    Menu.objects.filter(id__in=delete_menus).delete()
+    role_list = list(Role.objects.all())
+    for i in role_list:
+        if set(i.menu_list).intersection(set(delete_menus)):
+            i.menu_list = [j for j in i.menu_list if j not in delete_menus]
+    Role.objects.bulk_update(role_list, ["menu_list"], batch_size=100)
     Menu.objects.bulk_create(create_menu_list, batch_size=100)
     Menu.objects.bulk_update(update_menu_list, ["display_name", "order"], batch_size=100)
 
