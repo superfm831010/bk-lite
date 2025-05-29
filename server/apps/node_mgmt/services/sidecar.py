@@ -6,6 +6,7 @@ from string import Template
 from django.core.cache import cache
 from django.http import JsonResponse, HttpResponse
 
+from apps.core.utils.crypto.aes_crypto import AESCryptor
 from apps.node_mgmt.default_config.nats_executor import create_nats_executor_config
 from apps.node_mgmt.default_config.telegraf import create_telegraf_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
@@ -225,7 +226,16 @@ class Sidecar:
     def get_variables(node_obj):
         """获取变量"""
         objs = SidecarEnv.objects.filter(cloud_region=node_obj.cloud_region_id)
-        variables = {obj.key: obj.value for obj in objs}
+        variables = {}
+        for obj in objs:
+            if obj.type == "secret":
+                # 如果是密文，解密后使用
+                aes_obj = AESCryptor()
+                value = aes_obj.decode(obj.value)
+                variables[obj.key] = value
+            else:
+                # 如果是普通变量，直接使用
+                variables[obj.key] = obj.value
         node_dict = {
             "node__id": node_obj.id,
             "node__cloud_region": node_obj.cloud_region_id,
