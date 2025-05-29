@@ -91,12 +91,13 @@ const ViewModal = forwardRef<ModalRef, ViewModalProps>(
           title={title}
           subTitle={viewConfig.instance_name}
           visible={groupVisible}
-          onClose={handleCancel}
+          destroyOnClose
           footer={
             <div>
               <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
+          onClose={handleCancel}
         >
           <Tabs
             activeKey={currentTab}
