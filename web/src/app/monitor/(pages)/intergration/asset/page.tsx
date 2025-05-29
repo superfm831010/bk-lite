@@ -325,7 +325,7 @@ const Asset = () => {
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
       instance_id: row.instance_id,
-      icon: monitorItem?.icon || '',
+      icon: monitorItem?.icon || 'shebei-shebeixinxi',
       instance_name: row.instance_name,
       instance_id_values: row.instance_id_values,
     };

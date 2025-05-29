@@ -71,7 +71,7 @@ const ViewModal = forwardRef<ModalRef, ViewModalProps>(
         monitorObjId: monitorObject || '',
         name: monitorName,
         monitorObjDisplayName: monitorItem?.display_name || '',
-        icon: monitorItem?.icon || '',
+        icon: monitorItem?.icon || 'shebei-shebeixinxi',
         instance_id: viewConfig.instance_id,
         instance_name: viewConfig.instance_name,
         instance_id_values: viewConfig.instance_id_values,

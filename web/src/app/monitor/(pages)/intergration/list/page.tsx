@@ -71,6 +71,9 @@ const Intergration = () => {
 
   const getObjectInfo = (): Record<string, string> => {
     const target: any = objects.find((item) => item.id === objectId);
+    if (target) {
+      target.icon = target.icon || 'shebei-shebeixinxi';
+    }
     return target || {};
   };
 
