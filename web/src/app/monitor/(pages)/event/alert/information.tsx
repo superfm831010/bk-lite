@@ -11,7 +11,11 @@ import { findUnitNameById, showGroupName } from '@/app/monitor/utils/common';
 import { useCommon } from '@/app/monitor/context/common';
 import { Popconfirm, message, Button } from 'antd';
 import useMonitorApi from '@/app/monitor/api';
-import { LEVEL_MAP, useLevelList } from '@/app/monitor/constants/monitor';
+import {
+  LEVEL_MAP,
+  useLevelList,
+  OBJECT_DEFAULT_ICON,
+} from '@/app/monitor/constants/monitor';
 import Permission from '@/components/permission';
 
 const Information: React.FC<TableDataItem> = ({
@@ -39,7 +43,7 @@ const Information: React.FC<TableDataItem> = ({
       monitorObjId: row.policy?.monitor_object,
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
-      icon: monitorItem?.icon || '',
+      icon: monitorItem?.icon || OBJECT_DEFAULT_ICON,
       instance_id: row.monitor_instance_id,
       instance_name: row.monitor_instance_name,
       instance_id_values: row.instance_id_values,

@@ -2630,6 +2630,8 @@ const DERIVATIVE_OBJECTS = [
   'CVM',
 ];
 
+const OBJECT_DEFAULT_ICON: string = 'ziyuan';
+
 export {
   UNIT_LIST,
   PERIOD_LIST,
@@ -2644,6 +2646,7 @@ export {
   STRATEGY_TEMPLATES,
   NEED_TAGS_ENTRY_OBJECTS,
   DERIVATIVE_OBJECTS,
+  OBJECT_DEFAULT_ICON,
   useMiddleWareFields,
   useInterfaceLabelMap,
   useScheduleList,
