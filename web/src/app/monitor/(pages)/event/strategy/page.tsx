@@ -15,7 +15,7 @@ import assetStyle from './index.module.scss';
 import { useTranslation } from '@/utils/i18n';
 import { ColumnItem, TreeItem, Pagination } from '@/app/monitor/types';
 import {
-  ObectItem,
+  ObjectItem,
   TableDataItem,
 } from '@/app/monitor/types/monitor';
 import CustomTable from '@/components/custom-table';
@@ -77,7 +77,7 @@ const Strategy: React.FC = () => {
             </span>
             <span className="user-name">
               <EllipsisWithTooltip
-                className="w-[50px] overflow-hidden text-ellipsis whitespace-nowrap"
+                className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
                 text={created_by}
               />
             </span>
@@ -216,7 +216,7 @@ const Strategy: React.FC = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      const data: ObectItem[] = await getMonitorObject({
+      const data: ObjectItem[] = await getMonitorObject({
         add_policy_count: true,
       })
       const _treeData = getTreeData(deepClone(data));
@@ -227,7 +227,7 @@ const Strategy: React.FC = () => {
     }
   };
 
-  const getTreeData = (data: ObectItem[]): TreeItem[] => {
+  const getTreeData = (data: ObjectItem[]): TreeItem[] => {
     const groupedData = data.reduce(
       (acc, item) => {
         if (!acc[item.type]) {

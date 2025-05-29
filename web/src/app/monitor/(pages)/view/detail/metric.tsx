@@ -294,7 +294,7 @@ const MetricViews: React.FC<ViewDetailProps> = ({
 
   const linkToSearch = (row: TableDataItem) => {
     const _row = {
-      monitor_object: monitorObjectName,
+      monitor_object: monitorObjectId + '',
       instance_id: instanceId as string,
       metric_id: row.name,
     };
