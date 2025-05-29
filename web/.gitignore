@@ -65,3 +65,5 @@ server.key
 
 .env.local
 pnpm-workspace.yaml
+
+deploy/docker-compose/conf/nats/nats.conf
