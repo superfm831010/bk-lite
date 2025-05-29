@@ -21,13 +21,13 @@ export const useColumns = ({
         title: t('node-manager.cloudregion.node.ip'),
         dataIndex: 'ip',
         key: 'ip',
-        width: 120
+        width: 120,
       },
       {
         title: t('common.name'),
         dataIndex: 'name',
         key: 'name',
-        width: 120
+        width: 120,
       },
       {
         title: t('common.actions'),
