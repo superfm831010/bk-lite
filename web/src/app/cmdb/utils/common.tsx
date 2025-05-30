@@ -1,5 +1,6 @@
 import { BUILD_IN_MODEL, CREDENTIAL_LIST } from '@/app/cmdb/constants/asset';
 import { getSvgIcon } from './utils';
+import dayjs from 'dayjs';
 import { AttrFieldType } from '@/app/cmdb/types/assetManage';
 import { Tag, Select, Input, Cascader, DatePicker } from 'antd';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
@@ -139,10 +140,9 @@ export const getAssetColumns = (config: {
 }): ColumnItem[] => {
   return config.attrList.map((item: AttrFieldType) => {
     const attrType = item.attr_type;
-    const attrName = item.attr_name;
     const attrId = item.attr_id;
     const columnItem: ColumnItem = {
-      title: attrName,
+      title: item.attr_name,
       dataIndex: attrId,
       key: attrId,
       width: 180,
@@ -172,8 +172,15 @@ export const getAssetColumns = (config: {
           ...columnItem,
           render: (_: unknown, record: any) => (
             <>
-              {findGroupNameById(config.groupList || [], record[attrId][0]) ||
-                '--'}
+              <EllipsisWithTooltip
+                className="whitespace-nowrap overflow-hidden text-ellipsis"
+                text={
+                  (findGroupNameById(
+                    config.groupList || [],
+                    record[attrId][0]
+                  ) || '--') as string
+                }
+              ></EllipsisWithTooltip>
             </>
           ),
         };
@@ -201,13 +208,20 @@ export const getAssetColumns = (config: {
       case 'time':
         return {
           ...columnItem,
-          render: (_: unknown, record: any) => (
-            <>
-              {Array.isArray(record[attrId])
-                ? record[attrId].join('-')
-                : record[attrId] || '--'}
-            </>
-          ),
+          render: (_: unknown, record: any) => {
+            const val = record[attrId];
+            if (Array.isArray(val)) {
+              return (
+                <>
+                  {dayjs(val[0]).format('YYYY-MM-DD HH:mm:ss')} -{' '}
+                  {dayjs(val[1]).format('YYYY-MM-DD HH:mm:ss')}
+                </>
+              );
+            }
+            return (
+              <> {val ? dayjs(val).format('YYYY-MM-DD HH:mm:ss') : '--'} </>
+            );
+          },
         };
       default:
         return {

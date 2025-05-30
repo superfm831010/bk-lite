@@ -12,7 +12,6 @@ import useApiClient from '@/utils/request';
 import assoListStyle from './index.module.scss';
 import SelectInstance from './selectInstance';
 import PermissionWrapper from '@/components/permission';
-import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import React, {
   useEffect,
   useState,
@@ -225,15 +224,15 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
 
       if (columns[0]) {
         columns[0].fixed = 'left';
-        columns[0].render = (_: unknown, record: any) => (
+        const originalRender = columns[0].render;
+        columns[0].render = (value: unknown, record: any) => (
           <a
             className="text-[var(--color-primary)]"
             onClick={() => linkToDetail(record, item)}
           >
-            <EllipsisWithTooltip
-              text={record[columns[0].dataIndex]}
-              className="whitespace-nowrap overflow-hidden text-ellipsis"
-            />
+            {originalRender
+              ? originalRender(value, record)
+              : record[columns[0].dataIndex]}
           </a>
         );
       }
