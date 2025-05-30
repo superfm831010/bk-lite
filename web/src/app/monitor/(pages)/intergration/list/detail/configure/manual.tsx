@@ -57,7 +57,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
 
   const initData = () => {
     form.setFieldsValue({
-      interval: 10,
+      interval: collectType === 'http' ? 60 : 10,
     });
     switch (collectType) {
       case 'host':

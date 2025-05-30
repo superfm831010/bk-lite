@@ -40,7 +40,8 @@ const HEXAGON_AREA = 6400; // 格子的面积
 
 const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
   const { isLoading } = useApiClient();
-  const { getInstanceSearch, getInstanceQueryParams, getMonitorMetrics } = useMonitorApi();
+  const { getInstanceSearch, getInstanceQueryParams, getMonitorMetrics } =
+    useMonitorApi();
   const { t } = useTranslation();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const modalRef = useRef<ModalRef>(null);
@@ -343,7 +344,10 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
           description: (
             <>
               <div>{item.instance_name}</div>
-              {`${tagetMerticItem.display_name}: ${getEnumValueUnit(tagetMerticItem, item[metricName])}`}
+              {`${tagetMerticItem.display_name}: ${getEnumValueUnit(
+                tagetMerticItem,
+                item[metricName]
+              )}`}
             </>
           ),
           fill: queryMetric
@@ -471,6 +475,7 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
           <Select
             value={colony}
             allowClear
+            showSearch
             style={{ width: 120 }}
             placeholder={t('monitor.views.colony')}
             onChange={handleColonyChange}
@@ -486,6 +491,7 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
               <Select
                 value={namespace}
                 allowClear
+                showSearch
                 className="mx-[10px]"
                 style={{ width: 120 }}
                 placeholder={t('monitor.views.namespace')}
@@ -500,6 +506,7 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
               <Select
                 value={workload}
                 allowClear
+                showSearch
                 className="mr-[10px]"
                 style={{ width: 120 }}
                 placeholder={t('monitor.views.workload')}
@@ -514,6 +521,7 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
               <Select
                 value={node}
                 allowClear
+                showSearch
                 style={{ width: 120 }}
                 placeholder={t('monitor.views.node')}
                 onChange={handleNodeChange}
@@ -535,6 +543,7 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
             <Select
               className="text-center"
               disabled
+              showSearch
               value={queryMetric}
               style={{ width: 120 }}
               suffixIcon={null}
