@@ -9,6 +9,7 @@ export interface User {
   group: string;
   roles: string[];
   username?: string;
+  display_name?: string;
 }
 
 export interface Menu {
