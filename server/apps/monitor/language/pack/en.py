@@ -1947,17 +1947,45 @@ MONITOR_OBJECT_METRIC = {
         "name": "Memory Usage Percent",
         "desc": "This metric indicates the percentage of memory usage of the container, monitoring the memory load of the container."
     },
+    "docker_container_mem_usage": {
+        "name": "Memory Usage",
+        "desc": "Amount of memory used by the container, typically shown in bytes, indicating the actual physical memory consumption."
+    },
     "docker_container_blkio_io_service_bytes_recursive_total": {
         "name": "Total Block I/O Bytes",
-        "desc": "This metric indicates the total block I/O bytes of the container, reflecting the disk I/O load of the container."
+        "desc": "Total number of bytes transferred during block I/O operations in the container, including all read and write operations."
+    },
+    "docker_container_blkio_io_service_bytes_recursive_read": {
+        "name": "Block Device Read Bytes",
+        "desc": "Number of bytes read from block devices, reflecting the load of read operations and storage performance."
+    },
+    "docker_container_blkio_io_service_bytes_recursive_write": {
+        "name": "Block Device Write Bytes",
+        "desc": "Number of bytes written to block devices, indicating the load of write operations and storage performance."
     },
     "docker_container_net_rx_bytes": {
         "name": "Received Network Bytes",
-        "desc": "This metric indicates the number of network bytes received by the container, in MiB, used to monitor the network traffic of the container."
+        "desc": "This metric indicates the number of network bytes received by the container, used to monitor the network traffic of the container."
     },
     "docker_container_net_tx_bytes": {
         "name": "Transmitted Network Bytes",
-        "desc": "This metric indicates the number of network bytes sent by the container, in MiB, used to monitor the network traffic of the container."
+        "desc": "This metric indicates the number of network bytes sent by the container, used to monitor the network traffic of the container."
+    },
+    "docker_container_net_rx_errors": {
+        "name": "Total Network Receive Errors",
+        "desc": "Total number of errors encountered by the container when receiving packets, useful for diagnosing network issues."
+    },
+    "docker_container_net_tx_errors": {
+        "name": "Total Network Transmit Errors",
+        "desc": "Total number of errors encountered by the container when sending packets, useful for identifying outbound network problems."
+    },
+    "docker_container_net_rx_packets": {
+        "name": "Total Received Packets",
+        "desc": "Total number of packets received by the container, indicating the activity level of inbound network flow."
+    },
+    "docker_container_net_tx_packets": {
+        "name": "Total Transmitted Packets",
+        "desc": "Total number of packets sent by the container, reflecting the activity level of outbound network flow."
     }
 },
 "vCenter": {

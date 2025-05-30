@@ -23,7 +23,7 @@
       "query": "interface_ifAdminStatus{instance_type=\"hardware_server\",__$labels__}",
       "display_name": "Interface Admin Status",
       "data_type": "Enum",
-      "unit": "[{\"name\":\"up\",\"id\":1,\"color\":\"#83ff4f\"},{\"name\":\"down\",\"id\":2,\"color\":\"#ff4d4f\"},{\"name\":\"testing\",\"id\":3,\"color\":\"#faad14\"}]",
+      "unit": "[{\"name\":\"up\",\"id\":1,\"color\":\"#1ac44a\"},{\"name\":\"down\",\"id\":2,\"color\":\"#ff4d4f\"},{\"name\":\"testing\",\"id\":3,\"color\":\"#faad14\"}]",
       "dimensions": [
         {
           "name": "ifDescr",
@@ -39,7 +39,7 @@
       "query": "interface_ifOperStatus{instance_type=\"hardware_server\",__$labels__}",
       "display_name": "Interface Oper Status",
       "data_type": "Enum",
-      "unit": "[{\"name\":\"up\",\"id\":1,\"color\":\"#83ff4f\"},{\"name\":\"down\",\"id\":2,\"color\":\"#ff4d4f\"},{\"name\":\"testing\",\"id\":3,\"color\":\"#faad14\"}]",
+      "unit": "[{\"name\":\"up\",\"id\":1,\"color\":\"#1ac44a\"},{\"name\":\"down\",\"id\":2,\"color\":\"#ff4d4f\"},{\"name\":\"testing\",\"id\":3,\"color\":\"#faad14\"}]",
       "dimensions": [
         {
           "name": "ifDescr",

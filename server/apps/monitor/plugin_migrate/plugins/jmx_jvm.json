@@ -22,7 +22,7 @@
       "display_name": "JMX Scrape Error",
       "instance_id_keys": ["instance_id"],
       "data_type": "Enum",
-      "unit": "[{\"name\":\"采集正常\",\"id\":0,\"color\":\"#83ff4f\"},{\"name\":\"采集报错\",\"id\":1,\"color\":\"#ff4d4f\"}]",
+      "unit": "[{\"name\":\"采集正常\",\"id\":0,\"color\":\"#1ac44a\"},{\"name\":\"采集报错\",\"id\":1,\"color\":\"#ff4d4f\"}]",
       "dimensions": ["type"],
       "description": "Indicates whether there is a failure during the JMX scraping process. A non-zero value indicates a failure",
       "query": "jmx_scrape_error_gauge{instance_type=\"jvm\",__$labels__}"
