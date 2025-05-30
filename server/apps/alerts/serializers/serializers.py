@@ -107,11 +107,11 @@ class AlertModelSerializer(serializers.ModelSerializer):
         # 构建格式化字符串
         result = ""
         if days > 0:
-            result += f"{days}d"
+            result += f"{days}d "
         if hours > 0:
-            result += f"{hours}h"
+            result += f"{hours}h "
         if minutes > 0:
-            result += f"{minutes}m"
+            result += f"{minutes}m "
         if seconds > 0 or result == "":
             result += f"{seconds}s"
 

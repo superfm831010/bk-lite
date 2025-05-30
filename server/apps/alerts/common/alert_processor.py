@@ -14,7 +14,7 @@ from django.utils import timezone
 from apps.alerts.common.alert_engine import RuleEngine
 from apps.alerts.common.alert_rules import VALID_RULES, format_alert_message
 from apps.alerts.constants import EventLevel
-from apps.alerts.models import Event, Alert, AlertSource
+from apps.alerts.models import Event, Alert
 
 
 class AlertProcessor:
@@ -109,11 +109,6 @@ class AlertProcessor:
                     for event in events
                 ]
                 through_model.objects.bulk_create(through_values)
-
-        # 3. 触发异步任务更新搜索向量
-        # if alert_ids:
-        #     from apps.alerts.celery_tasks import update_alert_search_vectors
-        #     update_alert_search_vectors.delay(alert_ids)
 
     def format_event_to_alert(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """格式化事件数据为告警数据"""

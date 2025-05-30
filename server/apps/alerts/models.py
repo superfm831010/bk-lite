@@ -8,7 +8,6 @@
 # @Author: windyzhao
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex, BTreeIndex
-from django.contrib.postgres.search import SearchVectorField, SearchVector
 from django.db.models import JSONField
 
 from apps.core.models.maintainer_info import MaintainerInfo
@@ -83,32 +82,16 @@ class Event(models.Model):
     note = models.TextField(null=True, blank=True, help_text="事件备注")
     value = models.FloatField(blank=True, null=True, verbose_name='事件值')
 
-    # 全文搜索字段
-    search_vector = SearchVectorField(null=True, blank=True)
-
     class Meta:
         db_table = "alerts_event"
         indexes = [
             models.Index(fields=['source', 'received_at']),
             GinIndex(fields=['labels'], name='event_labels_gin'),
-            GinIndex(fields=['search_vector'], name='event_search_gin'),  # 关键优化
         ]
         ordering = ['-received_at']
 
     def __str__(self):
         return f"{self.title} ({self.level}) at {self.received_at}"
-
-    # def save(self, *args, **kwargs):
-    #     super().save(*args, **kwargs)
-    #     # 自动更新搜索向量
-    #     if not self.search_vector:
-    #         self.update_search_vector()
-    #
-    # def update_search_vector(self):
-    #     """更新 search_vector 字段"""
-    #     self.search_vector = SearchVector('title', weight='A', config='chinese') + \
-    #                          SearchVector('description', weight='B', config='chinese')
-    #     self.save(update_fields=['search_vector'])
 
 
 class Alert(models.Model):
@@ -136,9 +119,8 @@ class Alert(models.Model):
     operate = models.CharField(max_length=64, choices=AlertOperate.CHOICES, null=True, blank=True, help_text="告警操作")
     operator = JSONField(default=list, blank=True, help_text="告警处理人")
     source_name = models.CharField(max_length=100, null=True, blank=True, help_text="告警源名称")
-
-    # 全文搜索字段
-    search_vector = SearchVectorField(null=True, blank=True)
+    # 核心指纹字段（用于聚合）
+    fingerprint = models.CharField(max_length=32, db_index=True, help_text="告警指纹")
 
     # 告警通知单独存储
 
@@ -151,39 +133,8 @@ class Alert(models.Model):
             BTreeIndex(fields=['created_at'], name='alert_created_btree'),
             # JSONB字段索引
             GinIndex(fields=['operator'], name='alert_operator_gin'),
-            # 全文搜索索引
-            GinIndex(fields=['search_vector'], name='alert_search_gin'),
         ]
         ordering = ['-updated_at']
 
     def __str__(self):
         return f"{self.alert_id} - {self.title} ({self.status})"
-
-    # def save(self, *args, **kwargs):
-    #     super().save(*args, **kwargs)
-    #     # 自动更新搜索向量
-    #     if not self.search_vector:
-    #         self.update_search_vector()
-    #
-    # def update_search_vector(self):
-    #     """更新 search_vector 字段"""
-    #     self.search_vector = SearchVector('title', weight='A', config='chinese') + \
-    #                          SearchVector('content', weight='B', config='chinese')
-    #     self.save(update_fields=['search_vector'])
-
-
-"""
-from django.contrib.postgres.search import SearchQuery, SearchRank
-
-# 搜索包含 "error" 或 "failure" 的事件（按相关性排序）
-query = SearchQuery("error | failure")
-results = Event.objects.annotate(
-    rank=SearchRank('search_vector', query)
-).filter(search_vector=query).order_by('-rank')
-
-# 搜索特定短语（支持加权）
-results = Event.objects.filter(
-    search_vector=SearchQuery('"high priority"')
-)
-
-"""

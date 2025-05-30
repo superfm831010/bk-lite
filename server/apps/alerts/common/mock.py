@@ -55,15 +55,15 @@ def generate_mock_events(num_events=100):
         if cpu_usage >= 95:
             level = "fatal"
         elif cpu_usage >= 90:
-            level = "critical"
+            level = "severity" #
         elif cpu_usage >= 80:
             level = "warning"
         else:
-            level = "info"
+            level = "remain" #
 
         # 服务器名称
         server_type = random.choice(server_prefixes)
-        server_num = random.randint(1, 100)
+        server_num = random.randint(1, 10)
 
         # 更新事件数据
         event["title"] = f"CPU Usage {level.capitalize()}"
@@ -72,7 +72,7 @@ def generate_mock_events(num_events=100):
         event["start_time"] = str(start_time)
         event["end_time"] = str(end_time)
         event["labels"] = {
-            "instance": f"{server_type}-{server_num}",
+            "instance": f"host-{server_num}",
             "region": random.choice(["us-east", "us-west", "eu-central", "ap-southeast"])
         }
         event["annotations"] = {
@@ -86,7 +86,7 @@ def generate_mock_events(num_events=100):
         event["item"] = "cpu_usage"
         event["resource_id"] = server_num
         event["resource_type"] = "host"
-        event["resource_name"] = f"{server_type}-{server_num}"
+        event["resource_name"] = f"host-{server_num}"
 
         events.append(event)
 
