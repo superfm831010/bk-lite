@@ -1201,7 +1201,10 @@ const StrategyOperation = () => {
                                   </span>
                                 }
                                 rules={[
-                                  { required: true, validator: validateNoData },
+                                  {
+                                    required: false,
+                                    validator: validateNoData,
+                                  },
                                 ]}
                               >
                                 <Switch
@@ -1289,9 +1292,6 @@ const StrategyOperation = () => {
                           </span>
                         }
                         name="notice"
-                        rules={[
-                          { required: true, message: t('common.required') },
-                        ]}
                       >
                         <Switch />
                       </Form.Item>
