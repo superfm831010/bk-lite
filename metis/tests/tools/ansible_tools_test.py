@@ -1,9 +1,9 @@
+from src.tools.ansible_tools_plus import ansible_adhoc
 import os
 
 import logging
 
 logger = logging.getLogger(__name__)
-from src.tools.ansible_tools import ansible_adhoc
 
 
 # def test_ansible_adhoc_module_tools():

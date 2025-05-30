@@ -357,6 +357,88 @@ function clearAllRelatedCookies(): void {
 }
 
 /**
+ * Broadcast subdomain logout to clear next-auth sessions across subdomains
+ */
+function broadcastSubdomainLogout(): void {
+  if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
+    return;
+  }
+  
+  const baseId = getBaseIdentifier();
+  const hostId = getHostIdentifier();
+  
+  try {
+    // Use a dedicated channel for subdomain logout notifications
+    const channel = new BroadcastChannel('bk_subdomain_logout');
+    channel.postMessage({
+      type: 'SUBDOMAIN_LOGOUT',
+      baseId: baseId,
+      hostId: hostId,
+      timestamp: Date.now()
+    });
+    channel.close();
+    
+    console.log('Broadcasted subdomain logout from:', hostId);
+  } catch (error) {
+    console.warn('Failed to broadcast subdomain logout:', error);
+  }
+}
+
+/**
+ * Set up subdomain logout listener
+ */
+function setupSubdomainLogoutListener(): void {
+  if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
+    return;
+  }
+  
+  const channel = new BroadcastChannel('bk_subdomain_logout');
+  const baseId = getBaseIdentifier();
+  const hostId = getHostIdentifier();
+  
+  channel.addEventListener('message', (event) => {
+    const { type, baseId: senderBaseId, hostId: senderHostId } = event.data;
+    
+    // Only handle logout messages from same base domain but different hosts
+    if (type === 'SUBDOMAIN_LOGOUT' && senderBaseId === baseId && senderHostId !== hostId) {
+      console.log('Received subdomain logout notification from:', senderHostId);
+      
+      try {
+        // Clear local storage data
+        const storageKey = getStorageKey();
+        localStorage.removeItem(storageKey);
+        
+        // Clear all related storage keys
+        clearAllRelatedStorageKeys();
+        
+        // Clear local cookies (current subdomain)
+        clearAllRelatedCookies();
+        
+        // Clear cross-port storage if applicable
+        clearAllCrossPortStorage();
+        
+        // Trigger next-auth signOut to clear session
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          // Import signOut dynamically to avoid circular dependencies
+          import('next-auth/react').then(({ signOut }) => {
+            signOut({ redirect: false }).catch(console.error);
+          }).catch(console.error);
+        }
+        
+        console.log('Local auth data cleared due to subdomain logout');
+      } catch (error) {
+        console.warn('Failed to handle subdomain logout:', error);
+      }
+    }
+  });
+  
+  // Close channel on page unload
+  window.addEventListener('beforeunload', () => {
+    channel.close();
+  });
+}
+
+/**
  * Clear all cross-port storage data (enhanced for comprehensive logout)
  */
 function clearAllCrossPortStorage(): void {
@@ -497,6 +579,9 @@ export function clearSharedAuthData(): void {
     // 6. Enhanced: Clear all cross-port storage data
     clearAllCrossPortStorage();
     
+    // 7. NEW: Broadcast logout to all subdomains to clear their next-auth sessions
+    broadcastSubdomainLogout();
+    
     console.log('All shared auth data cleared for domain and subdomains:', getBaseIdentifier());
   } catch (error) {
     console.error('Failed to clear shared auth data:', error);
@@ -568,4 +653,9 @@ export function getAuthConfig() {
       'Localhost + Port': window.location.hostname === 'localhost' && window.location.port
     }
   };
+}
+
+// Initialize subdomain logout listener
+if (typeof window !== 'undefined') {
+  setupSubdomainLogoutListener();
 }

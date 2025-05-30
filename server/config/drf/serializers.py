@@ -6,9 +6,10 @@ from rest_framework.fields import empty
 class I18nSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        for key in response.keys():
-            if isinstance(response[key], str):
-                response[key] = _(response[key])
+        if "is_build_in" in list(response.keys()):
+            for key in response.keys():
+                if isinstance(response[key], str):
+                    response[key] = _(response[key])
         return response
 
 
