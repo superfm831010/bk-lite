@@ -216,10 +216,21 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
                 showSearch
                 disabled={fieldDisabled}
                 placeholder={t('common.pleaseSelect')}
+                filterOption={(input, opt: any) => {
+                  if (typeof opt?.children?.props?.text === 'string') {
+                    return opt?.children?.props?.text
+                      ?.toLowerCase()
+                      .includes(input.toLowerCase());
+                  }
+                  return true;
+                }}
               >
                 {userList.map((opt: UserItem) => (
                   <Select.Option key={opt.id} value={opt.id}>
-                    <EllipsisWithTooltip text={`${opt.display_name} (${opt.username})`} className="whitespace-nowrap overflow-hidden text-ellipsis break-all" />
+                    <EllipsisWithTooltip
+                      text={`${opt.display_name} (${opt.username})`}
+                      className="whitespace-nowrap overflow-hidden text-ellipsis break-all"
+                    />
                   </Select.Option>
                 ))}
               </Select>
@@ -227,8 +238,17 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
           case 'enum':
             return (
               <Select
+                showSearch
                 disabled={fieldDisabled}
                 placeholder={t('common.pleaseSelect')}
+                filterOption={(input, opt: any) => {
+                  if (typeof opt?.children === 'string') {
+                    return opt?.children
+                      ?.toLowerCase()
+                      .includes(input.toLowerCase());
+                  }
+                  return true;
+                }}
               >
                 {item.option?.map((opt) => (
                   <Select.Option key={opt.id} value={opt.id}>
@@ -306,7 +326,8 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
 
     const operateAttr = async (params: AttrFieldType, confirmType?: string) => {
       try {
-        if (type === 'batchEdit') {
+        const isBatchEdit = type === 'batchEdit';
+        if (isBatchEdit) {
           const hasEnabledFields = Object.values(enabledFields).some(
             (enabled) => enabled
           );
@@ -316,15 +337,17 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
           }
         }
         setConfirmLoading(true);
-        const formData =
-          type === 'batchEdit'
-            ? Object.keys(params).reduce((acc, key) => {
-              if (enabledFields[key]) {
-                acc[key] = params[key];
-              }
-              return acc;
-            }, {} as any)
-            : params;
+        let formData = null;
+        if (isBatchEdit) {
+          formData = Object.keys(params).reduce((acc, key) => {
+            if (enabledFields[key]) {
+              acc[key] = params[key];
+            }
+            return acc;
+          }, {} as any);
+        } else {
+          formData = params;
+        }   
         const msg: string = t(
           type === 'add' ? 'successfullyAdded' : 'successfullyModified'
         );
@@ -337,7 +360,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
           instance_info: formData,
         };
         if (type !== 'add') {
-          if (type === 'batchEdit') {
+          if (isBatchEdit) {
             for (const key in formData) {
               if (
                 !formData[key] &&
