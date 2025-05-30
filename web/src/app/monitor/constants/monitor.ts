@@ -2556,7 +2556,7 @@ rules:
       },
     },
   },
-  云平台: {
+  TCP: {
     instance_type: 'qcloud',
     icon: 'zonghenengyuanfuwupingtaikuangjiaicon-',
     dashboardDisplay: [],
@@ -2618,7 +2618,7 @@ const STRATEGY_TEMPLATES = [
   'Hardware Server',
 ];
 
-const NEED_TAGS_ENTRY_OBJECTS = ['Docker', 'Cluster', 'vCenter', '云平台'];
+const NEED_TAGS_ENTRY_OBJECTS = ['Docker', 'Cluster', 'vCenter', 'TCP'];
 
 const DERIVATIVE_OBJECTS = [
   'Docker Container',
