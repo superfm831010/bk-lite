@@ -14,7 +14,7 @@ class GroupViewSet(ViewSetUtils):
     serializer_class = GroupSerializer
 
     @action(detail=False, methods=["GET"])
-    @HasPermission("user_list-View")
+    @HasPermission("user_group-View")
     def search_group_list(self, request):
         queryset = Group.objects.all()
         # 构建嵌套组结构
@@ -23,7 +23,7 @@ class GroupViewSet(ViewSetUtils):
         return JsonResponse({"result": True, "data": groups_data})
 
     @action(detail=False, methods=["GET"])
-    @HasPermission("user_list-View")
+    @HasPermission("user_group-View")
     def get_detail(self, request):
         group = Group.objects.get(id=request.GET["group_id"])
         return JsonResponse(
@@ -31,7 +31,7 @@ class GroupViewSet(ViewSetUtils):
         )
 
     @action(detail=False, methods=["POST"])
-    @HasPermission("user_list-Add")
+    @HasPermission("user_group-Add Group")
     def create_group(self, request):
         params = request.data
         if not request.user.is_superuser:
@@ -51,7 +51,7 @@ class GroupViewSet(ViewSetUtils):
         return JsonResponse({"result": True, "data": data})
 
     @action(detail=False, methods=["POST"])
-    @HasPermission("user_list-Edit")
+    @HasPermission("user_group-Edit Group")
     def update_group(self, request):
         if not request.user.is_superuser:
             groups = [i["id"] for i in request.user.group_list]
@@ -61,7 +61,7 @@ class GroupViewSet(ViewSetUtils):
         return JsonResponse({"result": True})
 
     @action(detail=False, methods=["POST"])
-    @HasPermission("user_list-Delete")
+    @HasPermission("user_group-Delete Group")
     def delete_groups(self, request):
         kwargs = request.data
         group_id = int(kwargs["id"])

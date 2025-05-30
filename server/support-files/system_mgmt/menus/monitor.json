@@ -2,8 +2,7 @@
   "client_id": "monitor",
   "name": "Monitor",
   "url": "/monitor/search",
-  "description": "Create roles for the Monitor app to manage data permissions, menu permissions, and feature permissions.",
-  "description_cn": "Create roles for the Monitor app to manage data permissions, menu permissions, and feature permissions.",
+  "description": "Real-time monitoring and management platform for system operation status, providing data visualization, alert notifications, performance analysis and other functions to help quickly identify problems and ensure business stability",
   "menus": [
     {
       "name": "Search",
@@ -54,7 +53,9 @@
         {
           "id": "template_list",
           "name": "Template",
-          "operation": ["View"]
+          "operation": [
+            "View"
+          ]
         }
       ]
     },

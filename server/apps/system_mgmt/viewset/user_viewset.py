@@ -18,7 +18,7 @@ class UserViewSet(ViewSetUtils):
     serializer_class = UserSerializer
 
     @action(detail=False, methods=["GET"])
-    @HasPermission("user_list-View")
+    @HasPermission("user_group-View")
     def search_user_list(self, request):
         # 获取请求参数
         search = request.GET.get("search", "")
@@ -40,13 +40,13 @@ class UserViewSet(ViewSetUtils):
         return JsonResponse({"result": True, "data": {"count": total, "users": data}})
 
     @action(detail=False, methods=["GET"])
-    @HasPermission("user_list-View")
+    @HasPermission("user_group-View")
     def user_all(self, request):
         data = User.objects.all().values(*User.display_fields())
         return JsonResponse({"result": True, "data": list(data)})
 
     @action(detail=False, methods=["POST"])
-    @HasPermission("user_list-View")
+    @HasPermission("user_group-View")
     def get_user_detail(self, request):
         pk = request.data.get("user_id")
         user = User.objects.get(id=pk)
@@ -83,7 +83,7 @@ class UserViewSet(ViewSetUtils):
     #     return JsonResponse({"result": True, "data": data})
 
     @action(detail=False, methods=["POST"])
-    @HasPermission("user_list-Add")
+    @HasPermission("user_group-Add User")
     def create_user(self, request):
         kwargs = request.data
         rules = kwargs.pop("rules", [])
@@ -109,7 +109,7 @@ class UserViewSet(ViewSetUtils):
             return JsonResponse({"result": False, "message": str(e)})
 
     @action(detail=False, methods=["POST"])
-    @HasPermission("user_list-Edit")
+    @HasPermission("user_group-Edit User")
     def reset_password(self, request):
         try:
             password = request.data.get("password")
@@ -123,7 +123,7 @@ class UserViewSet(ViewSetUtils):
             return JsonResponse({"result": False, "message": str(e)})
 
     @action(detail=False, methods=["POST"])
-    @HasPermission("user_list-Delete")
+    @HasPermission("user_group-Delete User")
     def delete_user(self, request):
         user_ids = request.data.get("user_ids")
         users = User.objects.filter(id__in=user_ids)
@@ -135,7 +135,7 @@ class UserViewSet(ViewSetUtils):
         return JsonResponse({"result": True})
 
     @action(detail=False, methods=["POST"])
-    @HasPermission("user_list-Edit")
+    @HasPermission("user_group-Edit User")
     def update_user(self, request):
         params = request.data
         pk = params.pop("user_id")
@@ -160,7 +160,7 @@ class UserViewSet(ViewSetUtils):
         return JsonResponse({"result": True})
 
     @action(detail=True, methods=["POST"])
-    @HasPermission("user_list-Edit")
+    @HasPermission("user_group-Edit User")
     def assign_user_groups(self, request):
         pk = request.data.get("user_id")
         user = User.objects.get(id=pk)
@@ -173,7 +173,7 @@ class UserViewSet(ViewSetUtils):
         return JsonResponse({"result": True})
 
     @action(detail=True, methods=["POST"])
-    @HasPermission("user_list-Edit")
+    @HasPermission("user_group-Edit User")
     def unassign_user_groups(self, request):
         pk = request.data.get("user_id")
         user = User.objects.get(id=pk)
