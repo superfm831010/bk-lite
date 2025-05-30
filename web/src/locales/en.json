@@ -80,6 +80,9 @@
     "preview": "Preview",
     "download": "Download",
     "officialDocument": "Official Document",
+    "total": "Total",
+    "item": "items",
+    "checked": "Checked",
     "timeSelector": {
       "15Minutes": "The past 15 minutes",
       "30Minutes": "The past 30 minutes",
