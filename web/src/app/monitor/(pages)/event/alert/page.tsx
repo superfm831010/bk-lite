@@ -19,6 +19,7 @@ import {
   deepClone,
   getRandomColor,
   getEnumValueUnit,
+  getRecentTimeRange,
 } from '@/app/monitor/utils/common';
 import {
   ColumnItem,
@@ -28,6 +29,7 @@ import {
   UserItem,
   TabItem,
   TimeSelectorDefaultValue,
+  TimeValuesProps,
 } from '@/app/monitor/types';
 import { MetricItem, ObjectItem } from '@/app/monitor/types/monitor';
 import { AlertOutlined } from '@ant-design/icons';
@@ -78,9 +80,10 @@ const Alert: React.FC = () => {
     pageSize: 20,
   });
   const [frequence, setFrequence] = useState<number>(0);
-  const beginTime: number = dayjs().subtract(10080, 'minute').valueOf();
-  const lastTime: number = dayjs().valueOf();
-  const [timeRange, setTimeRange] = useState<number[]>([beginTime, lastTime]);
+  const [timeValues, setTimeValues] = useState<TimeValuesProps>({
+    timeRange: [],
+    originValue: 10080,
+  });
   const timeDefaultValue =
     useRef<TimeSelectorDefaultValue>({
       selectValue: 10080,
@@ -242,7 +245,7 @@ const Alert: React.FC = () => {
     };
   }, [
     frequence,
-    timeRange,
+    timeValues,
     activeTab,
     filters.level,
     filters.state,
@@ -256,7 +259,7 @@ const Alert: React.FC = () => {
     getAssetInsts('refresh');
   }, [
     isLoading,
-    timeRange,
+    timeValues,
     activeTab,
     filters.level,
     filters.state,
@@ -270,7 +273,7 @@ const Alert: React.FC = () => {
     getChartData('refresh');
   }, [
     isLoading,
-    timeRange,
+    timeValues,
     filters.state,
     activeTab,
     filters.level,
@@ -339,6 +342,7 @@ const Alert: React.FC = () => {
   };
 
   const getParams = () => {
+    const recentTimeRange = getRecentTimeRange(timeValues);
     const params = {
       status_in: filters.state,
       level_in: filters.level.join(','),
@@ -346,8 +350,8 @@ const Alert: React.FC = () => {
       content: searchText,
       page: pagination.current,
       page_size: pagination.pageSize,
-      created_at_after: dayjs(timeRange[0]).toISOString(),
-      created_at_before: dayjs(timeRange[1]).toISOString(),
+      created_at_after: dayjs(recentTimeRange[0]).toISOString(),
+      created_at_before: dayjs(recentTimeRange[1]).toISOString(),
     };
     return params;
   };
@@ -475,8 +479,11 @@ const Alert: React.FC = () => {
     });
   };
 
-  const onTimeChange = (val: number[]) => {
-    setTimeRange(val);
+  const onTimeChange = (val: number[], originValue: number | null) => {
+    setTimeValues({
+      timeRange: val,
+      originValue,
+    });
   };
 
   const processDataForStackedBarChart = (
@@ -693,7 +700,7 @@ const Alert: React.FC = () => {
                   <TimeSelector
                     defaultValue={timeDefaultValue}
                     onlyRefresh={activeTab === 'activeAlarms'}
-                    onChange={(value) => onTimeChange(value)}
+                    onChange={onTimeChange}
                     onFrequenceChange={onFrequenceChange}
                     onRefresh={onRefresh}
                   />
