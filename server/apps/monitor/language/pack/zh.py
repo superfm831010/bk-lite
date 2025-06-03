@@ -1960,17 +1960,45 @@ MONITOR_OBJECT_METRIC = {
         "name": "内存使用率",
         "desc": "该指标表示容器的内存使用百分比，监控容器的内存负载情况。"
     },
+    "docker_container_mem_usage": {
+        "name": "内存使用量",
+        "desc": "容器使用的内存量，通常以字节为单位，显示容器实际占用的物理内存量。"
+    },
     "docker_container_blkio_io_service_bytes_recursive_total": {
         "name": "总块I/O字节数",
         "desc": "该指标表示容器的总块I/O字节数，反映容器的磁盘I/O负载。"
     },
+    "docker_container_blkio_io_service_bytes_recursive_read": {
+        "name": "块设备读取字节数",
+        "desc": "从块设备中读取的字节数，反映读取操作的负载和存储性能。"
+    },
+    "docker_container_blkio_io_service_bytes_recursive_write": {
+        "name": "块设备写入字节数",
+        "desc": "向块设备写入的字节数，表示写入操作的负载和存储性能。"
+    },
     "docker_container_net_rx_bytes": {
         "name": "接收网络字节数",
-        "desc": "该指标表示容器接收到的网络字节数，单位是MiB，用于监控容器的网络流量。"
+        "desc": "该指标表示容器接收到的网络字节数，用于监控容器的网络流量。"
     },
     "docker_container_net_tx_bytes": {
         "name": "发送网络字节数",
-        "desc": "该指标表示容器发送的网络字节数，单位是MiB，用于监控容器的网络流量。"
+        "desc": "该指标表示容器发送的网络字节数，用于监控容器的网络流量。"
+    },
+    "docker_container_net_rx_errors": {
+        "name": "网络接收错误总数",
+        "desc": "容器在接收数据包时遇到的错误总数，可用于诊断网络问题。"
+    },
+    "docker_container_net_tx_errors": {
+        "name": "网络发送错误总数",
+        "desc": "容器在发送数据包时遇到的错误总数，帮助识别网络发送问题。"
+    },
+    "docker_container_net_rx_packets": {
+        "name": "接收到的数据包总数",
+        "desc": "容器接收到的数据包数量，显示网络流入的活跃度。"
+    },
+    "docker_container_net_tx_packets": {
+        "name": "发送的数据包总数",
+        "desc": "容器发送的数据包数量，反映网络流出的活跃度。"
     }
 },
 "vCenter": {
