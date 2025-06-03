@@ -225,6 +225,7 @@ if [ -f ./conf/nats/nats.conf ]; then
     log "WARNING" "nats.conf文件已存在，文件将被覆盖..."
 else
     log "INFO" "创建 nats.conf 文件..."
+    mkdir -p ./conf/nats
 fi
 
 cat > ./conf/nats/nats.conf <<EOF
@@ -688,7 +689,6 @@ services:
       - NEXTAPI_URL=http://ops-console:8000
       - NEXTAUTH_URL=http://${HOST_IP}:${TRAEFIK_CONSOLE_PORT}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAPI_URL=http://ops-console:8000
     restart: always
     networks:
       - prod
