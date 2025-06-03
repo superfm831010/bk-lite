@@ -235,17 +235,40 @@ export const getFieldItem = (config: {
     switch (config.fieldItem.attr_type) {
       case 'user':
         return (
-          <Select>
+          <Select
+            showSearch
+            filterOption={(input, opt: any) => {
+              if (typeof opt?.children?.props?.text === 'string') {
+                return opt?.children?.props?.text
+                  ?.toLowerCase()
+                  .includes(input.toLowerCase());
+              }
+              return true;
+            }}
+          >
             {config.userList?.map((opt: UserItem) => (
               <Select.Option key={opt.id} value={opt.id}>
-                {opt.username}
+                <EllipsisWithTooltip
+                  text={`${opt.display_name} (${opt.username})`}
+                  className="whitespace-nowrap overflow-hidden text-ellipsis break-all"
+                />
               </Select.Option>
             ))}
           </Select>
         );
       case 'enum':
         return (
-          <Select>
+          <Select
+            showSearch
+            filterOption={(input, opt: any) => {
+              if (typeof opt?.children === 'string') {
+                return opt?.children
+                  ?.toLowerCase()
+                  .includes(input.toLowerCase());
+              }
+              return true;
+            }}
+          >
             {config.fieldItem.option?.map((opt) => (
               <Select.Option key={opt.id} value={opt.id}>
                 {opt.name}
@@ -374,4 +397,3 @@ export const filterNodesWithAllParents = (nodes: any, ids: any[]) => {
   }
   return result;
 };
-

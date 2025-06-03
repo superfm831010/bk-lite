@@ -814,7 +814,7 @@ const StrategyOperation = () => {
                                                   handleLabelChange(val, index)
                                                 }
                                               >
-                                                {labels.map((item) => (
+                                                {labels.map((item: string) => (
                                                   <Option
                                                     value={item}
                                                     key={item}
@@ -889,11 +889,12 @@ const StrategyOperation = () => {
                                       {t('common.group')}
                                     </span>
                                     <Select
-                                      allowClear
                                       style={{
                                         width: '300px',
                                         margin: '0 10px 10px 0',
                                       }}
+                                      showSearch
+                                      allowClear
                                       mode="tags"
                                       maxTagCount="responsive"
                                       placeholder={t('common.group')}
@@ -952,6 +953,7 @@ const StrategyOperation = () => {
                                     width: '300px',
                                   }}
                                   placeholder={t('monitor.events.method')}
+                                  showSearch
                                 >
                                   {METHOD_LIST.map((item: ListItem) => (
                                     <Option value={item.value} key={item.value}>
@@ -1125,6 +1127,7 @@ const StrategyOperation = () => {
                                 style={{
                                   width: '100px',
                                 }}
+                                showSearch
                                 value={item.method}
                                 placeholder={t('monitor.events.method')}
                                 onChange={(val) => {
@@ -1198,7 +1201,10 @@ const StrategyOperation = () => {
                                   </span>
                                 }
                                 rules={[
-                                  { required: true, validator: validateNoData },
+                                  {
+                                    required: false,
+                                    validator: validateNoData,
+                                  },
                                 ]}
                               >
                                 <Switch
@@ -1286,9 +1292,6 @@ const StrategyOperation = () => {
                           </span>
                         }
                         name="notice"
-                        rules={[
-                          { required: true, message: t('common.required') },
-                        ]}
                       >
                         <Switch />
                       </Form.Item>

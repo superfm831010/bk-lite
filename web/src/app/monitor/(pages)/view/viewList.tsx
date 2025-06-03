@@ -33,6 +33,7 @@ import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import Permission from '@/components/permission';
 import { ListItem } from '@/types';
+import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants/monitor';
 const { Option } = Select;
 
 const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
@@ -357,7 +358,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       monitorObjId: objectId || '',
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
-      icon: monitorItem?.icon || '',
+      icon: monitorItem?.icon || OBJECT_DEFAULT_ICON,
       instance_id: app.instance_id,
       instance_name: app.instance_name,
       instance_id_values: app.instance_id_values,
@@ -445,6 +446,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
               <Select
                 value={colony}
                 allowClear
+                showSearch
                 style={{ width: 120 }}
                 placeholder={t('monitor.views.colony')}
                 onChange={handleColonyChange}
@@ -460,6 +462,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={namespace}
                     allowClear
+                    showSearch
                     className="mx-[10px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.namespace')}
@@ -474,6 +477,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={workload}
                     allowClear
+                    showSearch
                     className="mr-[10px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.workload')}
@@ -488,6 +492,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={node}
                     allowClear
+                    showSearch
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.node')}
                     onChange={handleNodeChange}
