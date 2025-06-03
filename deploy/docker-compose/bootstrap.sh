@@ -689,7 +689,6 @@ services:
       - NEXTAPI_URL=http://ops-console:8000
       - NEXTAUTH_URL=http://${HOST_IP}:${TRAEFIK_CONSOLE_PORT}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAPI_URL=http://ops-console:8000
     restart: always
     networks:
       - prod
