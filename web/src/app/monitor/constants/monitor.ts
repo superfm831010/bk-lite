@@ -2335,7 +2335,7 @@ rules:
         collector: 'Telegraf',
         manualCfgText: `[[inputs.$config_type]]
     servers = ["tcp://$host:$port"]
-    username = ""
+    username = "$username"
     password = "$password" 
     interval = "$intervals"
     tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,

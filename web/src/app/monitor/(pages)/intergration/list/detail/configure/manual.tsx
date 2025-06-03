@@ -134,11 +134,28 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
           return (pre += _configMsg[cur]);
         }, '');
       }
+      if (pluginName === 'MongoDB' && params.password && params.username) {
+        _configMsg = insertCredentialsToMongoDB(_configMsg, params);
+      }
       setConfigMsg(replaceTemplate(_configMsg || '', params));
       message.success(t('common.successfullyAdded'));
     } finally {
       setConfirmLoading(false);
     }
+  };
+
+  const insertCredentialsToMongoDB = (
+    config: string,
+    params: TableDataItem
+  ): string => {
+    // 正则匹配 "mongodb://" 后的部分，直到 "$host:$port"
+    const regex = /(mongodb:\/\/)(\$host:\$port)/;
+    // 使用正则替换，将 username 和 password 插入到匹配的部分中
+    const updatedConfig = config.replace(
+      regex,
+      `$1${params.username}:${params.password}@$2`
+    );
+    return updatedConfig;
   };
 
   const replaceTemplate = (
