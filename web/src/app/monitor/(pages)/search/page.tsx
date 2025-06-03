@@ -18,6 +18,7 @@ import {
   ChartData,
   TimeSelectorDefaultValue,
   TreeItem,
+  TimeValuesProps,
 } from '@/app/monitor/types';
 import { Dayjs } from 'dayjs';
 import {
@@ -34,6 +35,7 @@ import {
   findUnitNameById,
   mergeViewQueryKeyValues,
   renderChart,
+  getRecentTimeRange,
 } from '@/app/monitor/utils/common';
 import { useSearchParams } from 'next/navigation';
 import dayjs from 'dayjs';
@@ -75,9 +77,10 @@ const SearchView: React.FC = () => {
   const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [activeTab, setActiveTab] = useState<string>('area');
   const [conditions, setConditions] = useState<ConditionItem[]>([]);
-  const beginTime: number = dayjs().subtract(15, 'minute').valueOf();
-  const lastTime: number = dayjs().valueOf();
-  const [timeRange, setTimeRange] = useState<number[]>([beginTime, lastTime]);
+  const [timeValues, setTimeValues] = useState<TimeValuesProps>({
+    timeRange: [],
+    originValue: 15,
+  });
   const [timeDefaultValue, setTimeDefaultValue] =
     useState<TimeSelectorDefaultValue>({
       selectValue: 15,
@@ -110,7 +113,7 @@ const SearchView: React.FC = () => {
     return () => {
       clearTimer();
     };
-  }, [activeTab, frequence, object, metric, conditions, instances, timeRange]);
+  }, [activeTab, frequence, object, metric, conditions, instances, timeValues]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -184,7 +187,7 @@ const SearchView: React.FC = () => {
     return !!metric && instanceId?.length;
   };
 
-  const getParams = (_timeRange: number[]): SearchParams => {
+  const getParams = (_timeRange: TimeValuesProps): SearchParams => {
     const metricItem = metrics.find((item) => item.name === metric);
     const _query: string = metricItem?.query || '';
     const queryValues: string[][] = instances
@@ -199,8 +202,9 @@ const SearchView: React.FC = () => {
       });
     }
     const params: SearchParams = { query: '' };
-    const startTime = _timeRange.at(0);
-    const endTime = _timeRange.at(1);
+    const recentTimeRange = getRecentTimeRange(_timeRange);
+    const startTime = recentTimeRange.at(0);
+    const endTime = recentTimeRange.at(1);
     if (startTime && endTime) {
       const MAX_POINTS = 100; // 最大数据点数
       const DEFAULT_STEP = 360; // 默认步长
@@ -237,9 +241,13 @@ const SearchView: React.FC = () => {
     return params;
   };
 
-  const onTimeChange = (val: number[]) => {
-    setTimeRange(val);
-    handleSearch('refresh', activeTab, val);
+  const onTimeChange = (val: number[], originValue: number | null) => {
+    const timeRange = {
+      timeRange: val,
+      originValue,
+    };
+    setTimeValues(timeRange);
+    handleSearch('refresh', activeTab, timeRange);
   };
 
   const clearTimer = () => {
@@ -346,7 +354,7 @@ const SearchView: React.FC = () => {
   const handleSearch = async (
     type: string,
     tab: string,
-    _timeRange = timeRange
+    _timeRange = timeValues
   ) => {
     if (type !== 'timer') {
       setChartData([]);
@@ -432,8 +440,12 @@ const SearchView: React.FC = () => {
       selectValue: 0,
     }));
     const _times = arr.map((item) => dayjs(item).valueOf());
-    setTimeRange(_times);
-    handleSearch('refresh', activeTab, _times);
+    const timeRange = {
+      timeRange: _times,
+      originValue: 0,
+    };
+    setTimeValues(timeRange);
+    handleSearch('refresh', activeTab, timeRange);
   };
 
   const getTreeData = (data: ObjectItem[]): TreeItem[] => {
@@ -466,7 +478,7 @@ const SearchView: React.FC = () => {
       <div className={searchStyle.time}>
         <TimeSelector
           defaultValue={timeDefaultValue}
-          onChange={(value) => onTimeChange(value)}
+          onChange={onTimeChange}
           onFrequenceChange={onFrequenceChange}
           onRefresh={onRefresh}
         />
