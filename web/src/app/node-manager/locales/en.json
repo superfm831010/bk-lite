@@ -153,7 +153,7 @@
       },
       "variable": {
         "value": "Value",
-        "valueType": "Value Type",
+        "valueType": "Type",
         "password": "Password",
         "desc": "Description",
         "deletevariable": "Delete Variable",
