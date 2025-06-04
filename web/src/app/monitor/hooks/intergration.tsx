@@ -513,6 +513,9 @@ const useColumnsAndFormItems = ({
           formItems: null,
         };
       case 'database':
+        const isUsernameAndPasswordRequired = !['Redis', 'MongoDB'].includes(
+          pluginName
+        );
         return {
           displaycolumns:
             pluginName === 'ElasticSearch'
@@ -520,46 +523,46 @@ const useColumnsAndFormItems = ({
               : [columns[0], columns[9], columns[10], ...columns.slice(4, 7)],
           formItems: (
             <>
-              {['Mysql', 'Postgres', 'ElasticSearch'].includes(pluginName) && (
-                <Form.Item label={t('monitor.intergrations.username')} required>
-                  <Form.Item
-                    noStyle
-                    name="username"
-                    rules={[
-                      {
-                        required: true,
-                        message: t('common.required'),
-                      },
-                    ]}
-                  >
-                    <Input className="w-[300px] mr-[10px]" />
-                  </Form.Item>
-                  <span className="text-[12px] text-[var(--color-text-3)]">
-                    {t('monitor.intergrations.usernameDes')}
-                  </span>
+              <Form.Item
+                label={t('monitor.intergrations.username')}
+                required={isUsernameAndPasswordRequired}
+              >
+                <Form.Item
+                  noStyle
+                  name="username"
+                  rules={[
+                    {
+                      required: isUsernameAndPasswordRequired,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
                 </Form.Item>
-              )}
-              {['Mysql', 'Postgres', 'Redis', 'ElasticSearch'].includes(
-                pluginName
-              ) && (
-                <Form.Item label={t('monitor.intergrations.password')} required>
-                  <Form.Item
-                    noStyle
-                    name="password"
-                    rules={[
-                      {
-                        required: true,
-                        message: t('common.required'),
-                      },
-                    ]}
-                  >
-                    <Password className="w-[300px] mr-[10px]" />
-                  </Form.Item>
-                  <span className="text-[12px] text-[var(--color-text-3)]">
-                    {t('monitor.intergrations.passwordDes')}
-                  </span>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.usernameDes')}
+                </span>
+              </Form.Item>
+              <Form.Item
+                label={t('monitor.intergrations.password')}
+                required={isUsernameAndPasswordRequired}
+              >
+                <Form.Item
+                  noStyle
+                  name="password"
+                  rules={[
+                    {
+                      required: isUsernameAndPasswordRequired,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Password className="w-[300px] mr-[10px]" />
                 </Form.Item>
-              )}
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.passwordDes')}
+                </span>
+              </Form.Item>
             </>
           ),
         };
@@ -1436,6 +1439,9 @@ const useFormItems = ({
     tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
         };
       case 'database':
+        const isUsernameAndPasswordRequired = !['Redis', 'MongoDB'].includes(
+          pluginName
+        );
         return {
           formItems: (
             <>
@@ -1458,14 +1464,17 @@ const useFormItems = ({
                   </span>
                 </Form.Item>
               )}
-              {['ElasticSearch', 'Mysql', 'Postgres'].includes(pluginName) && (
-                <Form.Item label={t('monitor.intergrations.username')} required>
+              <>
+                <Form.Item
+                  label={t('monitor.intergrations.username')}
+                  required={isUsernameAndPasswordRequired}
+                >
                   <Form.Item
                     noStyle
                     name="username"
                     rules={[
                       {
-                        required: true,
+                        required: isUsernameAndPasswordRequired,
                         message: t('common.required'),
                       },
                     ]}
@@ -1476,17 +1485,16 @@ const useFormItems = ({
                     {t('monitor.intergrations.usernameDes')}
                   </span>
                 </Form.Item>
-              )}
-              {['ElasticSearch', 'Mysql', 'Postgres', 'Redis'].includes(
-                pluginName
-              ) && (
-                <Form.Item label={t('monitor.intergrations.password')} required>
+                <Form.Item
+                  label={t('monitor.intergrations.password')}
+                  required={isUsernameAndPasswordRequired}
+                >
                   <Form.Item
                     noStyle
                     name="password"
                     rules={[
                       {
-                        required: true,
+                        required: isUsernameAndPasswordRequired,
                         message: t('common.required'),
                       },
                     ]}
@@ -1500,7 +1508,7 @@ const useFormItems = ({
                     {t('monitor.intergrations.passwordDes')}
                   </span>
                 </Form.Item>
-              )}
+              </>
               {pluginName !== 'ElasticSearch' && (
                 <>
                   <Form.Item required label={t('monitor.intergrations.host')}>
