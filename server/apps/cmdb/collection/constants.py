@@ -64,7 +64,7 @@ WORKLOAD_NAME_DICT = {
     "prometheus_remote_write_kube_daemonset_created": "daemonset",
     "prometheus_remote_write_kube_statefulset_created": "statefulset",
     "prometheus_remote_write_kube_job_info": "job_name",
-    "kube_cronjob_labels": "cronjob",
+    "prometheus_remote_write_kube_cronjob_info": "cronjob",
     "prometheus_remote_write_kube_replicaset_created": "replicaset",
 }
 # 统计副本数量的对象

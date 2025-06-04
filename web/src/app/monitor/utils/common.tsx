@@ -8,6 +8,7 @@ import {
   ChartData,
   TreeItem,
   TableDataItem,
+  TimeValuesProps,
 } from '@/app/monitor/types';
 import { Group } from '@/types';
 import {
@@ -26,6 +27,7 @@ import {
 } from '@/app/monitor/constants/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import dayjs from 'dayjs';
 
 // 深克隆
 export const deepClone = (obj: any, hash = new WeakMap()) => {
@@ -590,4 +592,15 @@ export const getIconByObjectName = (objectName = '', objects: ObjectItem[]) => {
     (objects.find((item) => item.name === objectName)?.icon as string) ||
     OBJECT_DEFAULT_ICON
   );
+};
+
+export const getRecentTimeRange = (timeValues: TimeValuesProps) => {
+  if (timeValues.originValue) {
+    const beginTime: number = dayjs()
+      .subtract(timeValues.originValue, 'minute')
+      .valueOf();
+    const lastTime: number = dayjs().valueOf();
+    return [beginTime, lastTime];
+  }
+  return timeValues.timeRange;
 };
