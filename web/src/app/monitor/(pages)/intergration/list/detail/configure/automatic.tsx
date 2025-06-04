@@ -16,7 +16,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
 import { useCommon } from '@/app/monitor/context/common';
-import { Organization, ListItem, TableDataItem } from '@/app/monitor/types';
+import { Organization, TableDataItem } from '@/app/monitor/types';
 import {
   IntergrationAccessProps,
   IntergrationMonitoredObject,
@@ -48,7 +48,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   const [dataSource, setDataSource] = useState<IntergrationMonitoredObject[]>(
     []
   );
-  const [nodeList, setNodeList] = useState<ListItem[]>([]);
+  const [nodeList, setNodeList] = useState<TableDataItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [nodesLoading, setNodesLoading] = useState<boolean>(false);
   const middleWareFieldsMap = useMiddleWareFields();
@@ -65,13 +65,14 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
           loading={nodesLoading}
           value={record.node_ids}
           onChange={(val) => handleFilterNodeChange(val, index)}
-        >
-          {getFilterNodes(record.node_ids).map((item) => (
-            <Option key={item.id} value={item.id}>
-              {item.name}
-            </Option>
-          ))}
-        </Select>
+          filterOption={(input, option: any) =>
+            (option?.label || '').toLowerCase().includes(input.toLowerCase())
+          }
+          options={getFilterNodes(record.node_ids).map((item) => ({
+            value: item.id,
+            label: `${item.name}（${item.ip}）`,
+          }))}
+        ></Select>
       ),
     },
     {
@@ -87,13 +88,14 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
           loading={nodesLoading}
           value={record.node_ids}
           onChange={(val) => handleNodeChange(val, index)}
-        >
-          {nodeList.map((item) => (
-            <Option key={item.id} value={item.id}>
-              {item.name}
-            </Option>
-          ))}
-        </Select>
+          filterOption={(input, option: any) =>
+            (option?.label || '').toLowerCase().includes(input.toLowerCase())
+          }
+          options={nodeList.map((item) => ({
+            value: item.id,
+            label: `${item.name}（${item.ip}）`,
+          }))}
+        ></Select>
       ),
     },
     {
