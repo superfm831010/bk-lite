@@ -18,7 +18,7 @@ from drf_yasg import openapi
 class NodeViewSet(mixins.DestroyModelMixin,
                   mixins.ListModelMixin,
                   GenericViewSet):
-    queryset = Node.objects.all().order_by("-created_at")
+    queryset = Node.objects.all().prefetch_related('nodeorganization_set').order_by("-created_at")
     filterset_class = NodeFilter
     pagination_class = CustomPageNumberPagination
     serializer_class = NodeSerializer
