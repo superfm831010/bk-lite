@@ -31,7 +31,9 @@
     "createdBy": "创建者",
     "createdAt": "创建时间",
     "updatedBy": "更新人",
-    "updatedAt": "更新时间"
+    "updatedAt": "更新时间",
+    "inputPassword": "请输入密码",
+    "reset": "重置"
   },
   "node-manager": {
     "cloudregion": {
@@ -151,6 +153,9 @@
       },
       "variable": {
         "value": "数值",
+        "valueType": "数值类型",
+        "string": "字符串",
+        "password": "密码",
         "desc": "描述",
         "deletevariable": "删除变量",
         "deleteinfo": "您确定要删除此变量吗？",

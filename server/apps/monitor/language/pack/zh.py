@@ -8,7 +8,8 @@ MONITOR_OBJECT_TYPE = {
     "Hardware Device": "硬件设备",
     "Container Management": "容器管理",
     "Other": "其他数据源",
-    "VMware": "VMware"
+    "VMware": "VMware",
+    "Tencent Cloud": "腾讯云"
 }
 
 MONITOR_OBJECT = {
@@ -49,7 +50,9 @@ MONITOR_OBJECT = {
     "DataStorage": "数据存储",
     "JVM": "JVM",
     "Jetty": "Jetty",
-    "WebLogic": "WebLogic"
+    "WebLogic": "WebLogic",
+    "TCP": "云平台",
+    "CVM": "云服务器"
 }
 
 MONITOR_OBJECT_PLUGIN = {
@@ -196,6 +199,10 @@ MONITOR_OBJECT_PLUGIN = {
     "WebLogic-JMX": {
         "name": "WebLogic-JMX",
         "desc": "该插件通过 JMX 采集 WebLogic 关键指标，包括线程池、连接池、内存、EJB、Servlet、JMS 性能及 Web 服务响应时间，助力实时监控、性能优化与风险预警，保障系统稳定。"
+    },
+    "Tencent Cloud": {
+        "name": "腾讯云",
+        "desc": "实时采集腾讯云各类监控指标数据，涵盖计算资源、网络性能、存储使用等维度，助力用户深入了解资源状态，精准定位异常，高效完成运维管理与成本优化。​"
     }
 }
 
@@ -490,6 +497,14 @@ MONITOR_OBJECT_METRIC_GROUP = {
         "JMS": "消息传递服务",
         "PersistentStore": "持久化存储",
         "JMXselfMonitor": "JMX 自监控信息"
+    },
+    "TCP": {
+    },
+    "CVM": {
+        "CPU": "CPU",
+        "Memory": "内存",
+        "Disk": "磁盘",
+        "Network": "网络"
     }
 }
 
@@ -1945,17 +1960,45 @@ MONITOR_OBJECT_METRIC = {
         "name": "内存使用率",
         "desc": "该指标表示容器的内存使用百分比，监控容器的内存负载情况。"
     },
+    "docker_container_mem_usage": {
+        "name": "内存使用量",
+        "desc": "容器使用的内存量，通常以字节为单位，显示容器实际占用的物理内存量。"
+    },
     "docker_container_blkio_io_service_bytes_recursive_total": {
         "name": "总块I/O字节数",
         "desc": "该指标表示容器的总块I/O字节数，反映容器的磁盘I/O负载。"
     },
+    "docker_container_blkio_io_service_bytes_recursive_read": {
+        "name": "块设备读取字节数",
+        "desc": "从块设备中读取的字节数，反映读取操作的负载和存储性能。"
+    },
+    "docker_container_blkio_io_service_bytes_recursive_write": {
+        "name": "块设备写入字节数",
+        "desc": "向块设备写入的字节数，表示写入操作的负载和存储性能。"
+    },
     "docker_container_net_rx_bytes": {
         "name": "接收网络字节数",
-        "desc": "该指标表示容器接收到的网络字节数，单位是MiB，用于监控容器的网络流量。"
+        "desc": "该指标表示容器接收到的网络字节数，用于监控容器的网络流量。"
     },
     "docker_container_net_tx_bytes": {
         "name": "发送网络字节数",
-        "desc": "该指标表示容器发送的网络字节数，单位是MiB，用于监控容器的网络流量。"
+        "desc": "该指标表示容器发送的网络字节数，用于监控容器的网络流量。"
+    },
+    "docker_container_net_rx_errors": {
+        "name": "网络接收错误总数",
+        "desc": "容器在接收数据包时遇到的错误总数，可用于诊断网络问题。"
+    },
+    "docker_container_net_tx_errors": {
+        "name": "网络发送错误总数",
+        "desc": "容器在发送数据包时遇到的错误总数，帮助识别网络发送问题。"
+    },
+    "docker_container_net_rx_packets": {
+        "name": "接收到的数据包总数",
+        "desc": "容器接收到的数据包数量，显示网络流入的活跃度。"
+    },
+    "docker_container_net_tx_packets": {
+        "name": "发送的数据包总数",
+        "desc": "容器发送的数据包数量，反映网络流出的活跃度。"
     }
 },
 "vCenter": {
@@ -2518,6 +2561,58 @@ MONITOR_OBJECT_METRIC = {
     "jmx_scrape_error_gauge": {
       "name": "JMX抓取失败的监控指标",
       "desc": "值为0时表示监控指标抓取成功，值为1时表示抓取失败。"
+    }
+  },
+  "TCP": {
+  },
+  "CVM": {
+    "cvm_CPU_Usage": {
+        "name": "CPU 利用率",
+        "desc": "机器运行期间实时占用的 CPU 百分比"
+    },
+    "cvm_MemUsed": {
+        "name": "内存使用量",
+        "desc": "用户实际使用的内存量，不包括缓冲区与系统缓存占用的内存，总内存 - 可用内存（包括 buffers 与 cached）得到内存使用量数值，不包含 buffers和 cached"
+    },
+    "cvm_MemUsage": {
+        "name": "内存利用率",
+        "desc": "用户实际内存使用率，不包括缓冲区与系统缓存占用的内存，除去缓存、buffer 和剩余，用户实际使用内存与总内存之比"
+    },
+    "cvm_CvmDiskUsage": {
+        "name": "磁盘利用率",
+        "desc": "磁盘已使用容量占总容量的百分比(所有磁盘)"
+    },
+    "cvm_LanOuttraffic": {
+        "name": "内网出带宽",
+        "desc": "内网网卡的平均每秒出流量"
+    },
+    "cvm_LanIntraffic": {
+        "name": "内网入带宽",
+        "desc": "内网网卡的平均每秒入流量"
+    },
+    "cvm_LanOutpkg": {
+        "name": "内网出包量",
+        "desc": "内网网卡网卡的平均每秒出包量"
+    },
+    "cvm_LanInpkg": {
+        "name": "内网入包量",
+        "desc": "内网网卡网卡的平均每秒入包量"
+    },
+    "cvm_WanOuttraffic": {
+        "name": "外网出带宽",
+        "desc": "外网平均每秒出流量速率，最小粒度数据为10秒总流量/10秒计算得出，该数据为 EIP+CLB+CVM 的外网出/入带宽总和"
+    },
+    "cvm_WanIntraffic": {
+        "name": "外网入带宽",
+        "desc": "外网平均每秒入流量速率，最小粒度数据为10秒总流量/10秒计算得出，该数据为 EIP+CLB+CVM 的外网出/入带宽总和"
+    },
+    "cvm_WanOutpkg": {
+        "name": "外网出包量",
+        "desc": "外网网卡网卡的平均每秒出包量"
+    },
+    "cvm_WanInpkg": {
+        "name": "外网入包量",
+        "desc": "外网网卡网卡的平均每秒入包量"
     }
   }
 }

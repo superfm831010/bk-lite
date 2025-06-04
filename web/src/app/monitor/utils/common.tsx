@@ -15,15 +15,17 @@ import {
   ChartDataItem,
   ChartProps,
   NodeWorkload,
+  ObjectItem,
 } from '@/app/monitor/types/monitor';
 import {
   UNIT_LIST,
   APPOINT_METRIC_IDS,
   OBJECT_CONFIG_MAP,
+  DERIVATIVE_OBJECTS,
+  OBJECT_DEFAULT_ICON,
 } from '@/app/monitor/constants/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
-import { message } from 'antd';
-import { useTranslation } from '@/utils/i18n';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
 // 深克隆
 export const deepClone = (obj: any, hash = new WeakMap()) => {
@@ -251,7 +253,7 @@ export const findUnitNameById = (
   return '';
 };
 
-// 柱形图或者折线图单条线时，获取其最大值、最小值、平均值和最新值、和
+// 柱形图或者折线图单条线时，获取其最大值、最小值、平均值和最新值
 export const calculateMetrics = (data: any[], key = 'value1') => {
   if (!data || data.length === 0) return {};
   const values = data.map((item) => item[key]);
@@ -434,30 +436,6 @@ export const renderChart = (
   return result;
 };
 
-export const useHandleCopy = (value: string) => {
-  const { t } = useTranslation();
-  const handleCopy = () => {
-    try {
-      if (navigator?.clipboard?.writeText) {
-        navigator.clipboard.writeText(value);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = value;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
-      message.success(t('common.successfulCopied'));
-    } catch (error: any) {
-      message.error(error + '');
-    }
-  };
-  return {
-    handleCopy,
-  };
-};
-
 export const findTreeParentKey = (
   treeData: TreeItem[],
   targetKey: React.Key
@@ -554,4 +532,62 @@ export const getConfigByObjectName = (objectName = '', key: string) => {
     }
   }
   return OBJECT_CONFIG_MAP[objectName][key];
+};
+
+// 监控实例名称处理
+
+export const getBaseInstanceColumn = (config: {
+  row: TableDataItem;
+  objects: ObjectItem[];
+  t: any;
+}) => {
+  const baseTarget = config.objects
+    .filter((item) => item.type === config.row?.type)
+    .find((item) => item.level === 'base');
+  const title = baseTarget?.display_name || config.t('monitor.source');
+  const isDerivative = DERIVATIVE_OBJECTS.includes(config.row?.name);
+  const columnItems: any = [
+    {
+      title: config.t('common.name'),
+      dataIndex: 'instance_name',
+      width: 160,
+      key: 'instance_name',
+      render: (_: unknown, record: TableDataItem) => {
+        const instanceName =
+          (isDerivative
+            ? record.instance_id_values?.[1]
+            : record.instance_name) || '--';
+        return (
+          <EllipsisWithTooltip
+            text={instanceName}
+            className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
+          ></EllipsisWithTooltip>
+        );
+      },
+    },
+  ];
+  if (isDerivative) {
+    columnItems.unshift({
+      title: title,
+      dataIndex: 'base_instance_name',
+      width: 160,
+      key: 'base_instance_name',
+      render: (_: unknown, record: TableDataItem) => {
+        return (
+          <EllipsisWithTooltip
+            text={record.instance_id_values?.[0] || '--'}
+            className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
+          ></EllipsisWithTooltip>
+        );
+      },
+    });
+  }
+  return columnItems;
+};
+
+export const getIconByObjectName = (objectName = '', objects: ObjectItem[]) => {
+  return (
+    (objects.find((item) => item.name === objectName)?.icon as string) ||
+    OBJECT_DEFAULT_ICON
+  );
 };

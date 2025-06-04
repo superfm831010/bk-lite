@@ -36,12 +36,14 @@ import {
   IndexViewItem,
   GroupInfo,
   ChannelItem,
+  ObjectItem,
 } from '@/app/monitor/types/monitor';
 import { useCommon } from '@/app/monitor/context/common';
 import {
   deepClone,
   getConfigByPluginName,
   getConfigByObjectName,
+  getIconByObjectName,
 } from '@/app/monitor/utils/common';
 import strategyStyle from '../index.module.scss';
 import {
@@ -75,6 +77,7 @@ const StrategyOperation = () => {
     getMonitorMetrics,
     getMonitorPlugin,
     getMonitorPolicy,
+    getMonitorObject,
   } = useMonitorApi();
   const CONDITION_LIST = useConditionList();
   const METHOD_LIST = useMethodList();
@@ -114,6 +117,7 @@ const StrategyOperation = () => {
   const [conditions, setConditions] = useState<FilterItem[]>([]);
   const [noDataAlert, setNoDataAlert] = useState<number | null>(null);
   const [noDataLevel, setNoDataLevel] = useState<string>();
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [groupBy, setGroupBy] = useState<string[]>(
     getConfigByObjectName(monitorName as string, 'groupIds').default ||
       defaultGroup
@@ -150,12 +154,18 @@ const StrategyOperation = () => {
       Promise.all([
         getPlugins(),
         getChannelList(),
+        getObjects(),
         detailId && getStragyDetail(),
       ]).finally(() => {
         setPageLoading(false);
       });
     }
   }, [isLoading]);
+
+  const getObjects = async () => {
+    const data = await getMonitorObject();
+    setObjects(data);
+  };
 
   useEffect(() => {
     form.resetFields();
@@ -804,7 +814,7 @@ const StrategyOperation = () => {
                                                   handleLabelChange(val, index)
                                                 }
                                               >
-                                                {labels.map((item) => (
+                                                {labels.map((item: string) => (
                                                   <Option
                                                     value={item}
                                                     key={item}
@@ -879,11 +889,12 @@ const StrategyOperation = () => {
                                       {t('common.group')}
                                     </span>
                                     <Select
-                                      allowClear
                                       style={{
                                         width: '300px',
                                         margin: '0 10px 10px 0',
                                       }}
+                                      showSearch
+                                      allowClear
                                       mode="tags"
                                       maxTagCount="responsive"
                                       placeholder={t('common.group')}
@@ -942,6 +953,7 @@ const StrategyOperation = () => {
                                     width: '300px',
                                   }}
                                   placeholder={t('monitor.events.method')}
+                                  showSearch
                                 >
                                   {METHOD_LIST.map((item: ListItem) => (
                                     <Option value={item.value} key={item.value}>
@@ -1074,9 +1086,9 @@ const StrategyOperation = () => {
                         <div className="w-[220px] bg-[var(--color-bg-1)] border-2 border-blue-300 shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-3 relative cursor-pointer group">
                           <div className="flex items-center space-x-4 my-1">
                             <Icon
-                              type={getConfigByObjectName(
+                              type={getIconByObjectName(
                                 monitorName as string,
-                                'icon'
+                                objects
                               )}
                               className="text-2xl"
                             />
@@ -1115,6 +1127,7 @@ const StrategyOperation = () => {
                                 style={{
                                   width: '100px',
                                 }}
+                                showSearch
                                 value={item.method}
                                 placeholder={t('monitor.events.method')}
                                 onChange={(val) => {
@@ -1188,7 +1201,10 @@ const StrategyOperation = () => {
                                   </span>
                                 }
                                 rules={[
-                                  { required: true, validator: validateNoData },
+                                  {
+                                    required: false,
+                                    validator: validateNoData,
+                                  },
                                 ]}
                               >
                                 <Switch
@@ -1276,9 +1292,6 @@ const StrategyOperation = () => {
                           </span>
                         }
                         name="notice"
-                        rules={[
-                          { required: true, message: t('common.required') },
-                        ]}
                       >
                         <Switch />
                       </Form.Item>
@@ -1373,6 +1386,7 @@ const StrategyOperation = () => {
         organizationList={organizationList}
         form={source}
         monitorObject={monitorObjId}
+        objects={objects}
         onSuccess={onChooseAssets}
       />
     </Spin>

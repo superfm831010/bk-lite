@@ -8,7 +8,7 @@ const useBtnPermissions = () => {
   const currentPath = usePathname();
   const { permissions } = usePermissions();
 
-  // 使用 useMemo 避免条件化 Hook 调用
+  // Use useMemo to avoid conditional Hook calls
   const hasPermission = useMemo(() => {
     if (status === 'loading' || !session || !permissions) {
       return () => false;

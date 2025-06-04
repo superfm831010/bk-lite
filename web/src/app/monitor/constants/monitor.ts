@@ -2556,11 +2556,16 @@ rules:
       },
     },
   },
-  云平台: {
+  TCP: {
     instance_type: 'qcloud',
     icon: 'zonghenengyuanfuwupingtaikuangjiaicon-',
     dashboardDisplay: [],
-    tableDiaplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'cvm_CPU_Usage' },
+      { type: 'value', key: 'cvm_MemUsage' },
+      { type: 'value', key: 'cvm_LanOuttraffic' },
+      { type: 'value', key: 'cvm_WanOuttraffic' },
+    ],
     groupIds: {},
     plugins: {
       'Tencent Cloud': {
@@ -2613,7 +2618,19 @@ const STRATEGY_TEMPLATES = [
   'Hardware Server',
 ];
 
-const NEED_TAGS_ENTRY_OBJECTS = ['Docker', 'Cluster', 'vCenter', '云平台'];
+const NEED_TAGS_ENTRY_OBJECTS = ['Docker', 'Cluster', 'vCenter', 'TCP'];
+
+const DERIVATIVE_OBJECTS = [
+  'Docker Container',
+  'ESXI',
+  'VM',
+  'DataStorage',
+  'Pod',
+  'Node',
+  'CVM',
+];
+
+const OBJECT_DEFAULT_ICON: string = 'ziyuan';
 
 export {
   UNIT_LIST,
@@ -2628,6 +2645,8 @@ export {
   OBJECT_CONFIG_MAP,
   STRATEGY_TEMPLATES,
   NEED_TAGS_ENTRY_OBJECTS,
+  DERIVATIVE_OBJECTS,
+  OBJECT_DEFAULT_ICON,
   useMiddleWareFields,
   useInterfaceLabelMap,
   useScheduleList,

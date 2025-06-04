@@ -5,6 +5,7 @@ import {
   NodeConfigInfo,
   TreeSortData,
   IntergrationMonitoredObject,
+  InstanceInfo,
 } from '@/app/monitor/types/monitor';
 
 interface OrderParam {
@@ -296,6 +297,13 @@ const useMonitorApi = () => {
     return await post('/monitor/api/node_mgmt/get_config_content/', data);
   };
 
+  const updateMonitorInstance = async (data: InstanceInfo) => {
+    return await post(
+      '/monitor/api/monitor_instance/update_monitor_instance/',
+      data
+    );
+  };
+
   return {
     getMonitorMetrics,
     getMetricsGroup,
@@ -329,6 +337,7 @@ const useMonitorApi = () => {
     deleteMonitorMetrics,
     deleteMetricsGroup,
     getConfigContent,
+    updateMonitorInstance,
   };
 };
 

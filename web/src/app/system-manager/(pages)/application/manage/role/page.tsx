@@ -473,7 +473,9 @@ const RoleManagement: React.FC = () => {
               }
             >
               {allUserList.map(user => (
-                <Option key={user.id} value={user.id} label={user.username}>{user.username}</Option>
+                <Option key={user.id} value={user.id} label={`${user.display_name}(${user.username})`}>
+                  {user.display_name}({user.username})
+                </Option>
               ))}
             </Select>
           </Form.Item>

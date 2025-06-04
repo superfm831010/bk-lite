@@ -34,6 +34,11 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-View")
     @action(methods=["post"], detail=False)
     def search(self, request):
+        """
+        TODO 搜索存在问题
+        query_list [{field: "inst_name", type: "str*", value: "allure(weops-prod)"}] 搜索失败
+        query_list [{field: "inst_name", type: "str=", value: "allure(weops-prod)"}] 搜索成果
+        """
         page, page_size = int(request.data.get("page", 1)), int(request.data.get("page_size", 10))
         insts, count = InstanceManage.instance_list(
             request.user.group_list,

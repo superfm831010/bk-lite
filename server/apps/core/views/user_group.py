@@ -39,14 +39,16 @@ class UserGroupViewSet(viewsets.ViewSet):
     @action(methods=["get"], detail=False)
     def user_list(self, request):
         try:
-            first, max_size = self.get_pagination_params(request.query_params)
+            # first, max_size = self.get_pagination_params(request.query_params)
             search = request.query_params.get("search", "")
-            
+            page = int(request.query_params.get("page", 1))
+            page_size = int(request.query_params.get("page_size", 20))
+
             data = UserGroup().user_list(
-                self.system_mgmt_client, 
+                self.system_mgmt_client,
                 query_params={
-                    "first": first, 
-                    "max": max_size,
+                    "page": page,
+                    "page_size": page_size,
                     "search": search
                 }
             )
@@ -66,7 +68,7 @@ class UserGroupViewSet(viewsets.ViewSet):
     def group_list(self, request):
         try:
             search = request.query_params.get("search", "")
-            
+
             data = UserGroup().groups_list(
                 system_mgmt_client=self.system_mgmt_client,
                 query_params=search

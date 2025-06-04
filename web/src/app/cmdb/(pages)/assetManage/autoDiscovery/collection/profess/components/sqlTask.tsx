@@ -76,11 +76,14 @@ const SQLTask: React.FC<SQLTaskFormProps> = ({
         ...(collectType === 'ip'
           ? {
             ip_range: ipRange.join('-'),
+            instances: [],
             params: {
               organization: [values.organization?.[0]],
             },
-          }
-          : { instances: instance || [] }),
+          } : { 
+            ip_range: '',
+            instances: instance || [] 
+          }),
       };
     },
   });

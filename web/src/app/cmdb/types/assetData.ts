@@ -99,6 +99,7 @@ export interface FieldModalRef {
 export interface SearchFilterProps {
   attrList: AttrFieldType[];
   organizationList: Organization[];
+  proxyOptions: { proxy_id: string; proxy_name: string }[];
   userList: UserItem[];
   showExactSearch?: boolean;
   onSearch: (condition: unknown, value: any) => void;
