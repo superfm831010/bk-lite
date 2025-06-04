@@ -162,13 +162,22 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   };
 
   const extractMongoDBUrl = (url: string) => {
-    const regex = /\/\/([^:]+):(\d+)/;
+    const regex = /\/\/(?:(.+):(.+)@)?([^:]+):(\d+)/;
     const matches = url.match(regex);
-    if (matches && matches.length >= 3) {
-      return {
-        host: matches[1],
-        port: matches[2],
-      };
+    if (matches) {
+      const [, username, password, host, port] = matches;
+      const result: any = {};
+      if (host) {
+        result.host = host;
+      }
+      if (port) {
+        result.port = port;
+      }
+      if (username && password) {
+        result.username = username;
+        result.password = password;
+      }
+      return result;
     }
     return {};
   };
