@@ -1,7 +1,7 @@
 import useApiClient from '@/utils/request';
 
 export const useAlarmApi = () => {
-  const { get } = useApiClient();
+  const { get, post } = useApiClient();
 
   const getAlarmList = async (params: any) => {
     return get('/alerts/api/alerts/', { params });
@@ -11,5 +11,9 @@ export const useAlarmApi = () => {
     return get('/alerts/api/events/', { params });
   };
 
-  return { getAlarmList, getEventList };
+  const alertActionOperate = async (actionType: string, params: any) => {
+    return post(`/alerts/api/alerts/operator/${actionType}/`, params);
+  };
+
+  return { getAlarmList, getEventList, alertActionOperate };
 };

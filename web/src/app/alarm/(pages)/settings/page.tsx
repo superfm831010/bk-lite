@@ -28,7 +28,7 @@ const SettingsPage: React.FC = () => {
         }
         message={
           activeTab === 'AlertAssign'
-            ? t('settings.alertAssignMessage')
+            ? t('settings.assignStrategyMessage')
             : t('settings.shieldStrategyMessage')
         }
       />

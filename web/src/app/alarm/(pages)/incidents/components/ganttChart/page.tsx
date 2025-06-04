@@ -6,7 +6,6 @@ import minMax from 'dayjs/plugin/minMax';
 import styles from './index.module.scss';
 import AlertDetail from '../../../alarms/components/alarmDetail';
 import { ModalRef } from '@/app/alarm/types/types';
-import { LEVEL_MAP } from '@/app/alarm/constants/alarm';
 import { Tooltip, Checkbox } from 'antd';
 
 dayjs.extend(minMax);
@@ -14,7 +13,7 @@ dayjs.extend(minMax);
 interface Task {
   id: number;
   name: string;
-  level: keyof typeof LEVEL_MAP;
+  level: string;
   start: string;
   end: string;
   details: string;
@@ -22,9 +21,7 @@ interface Task {
 
 const generateMock = (): Task[] => {
   const now = dayjs();
-  const levels = Object.keys(LEVEL_MAP) as Array<keyof typeof LEVEL_MAP>;
   return Array.from({ length: 5 }).map((_, i) => {
-    const level = levels[i % levels.length];
     const start = now.subtract(6 - i, 'hour').toISOString();
     const end = now
       .subtract(6 - i, 'hour')
@@ -33,7 +30,7 @@ const generateMock = (): Task[] => {
     return {
       id: i + 1,
       name: `告警事件${i + 1}`,
-      level,
+      level: '',
       start,
       end,
       details: `来源: Server ${String.fromCharCode(65 + (i % 3))}，次数: ${Math.ceil(
@@ -146,7 +143,7 @@ const GanttChart: React.FC = () => {
                         style={{
                           left: `${left}%`,
                           width: `${width}%`,
-                          backgroundColor: LEVEL_MAP[d.level] as string,
+                          backgroundColor: '',
                         }}
                         onClick={() => onOpenDetail(d)}
                       >

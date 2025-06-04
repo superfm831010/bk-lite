@@ -10,46 +10,35 @@ import alertStyle from './index.module.scss';
 import AlarmFilters from '@/app/alarm/components/alarmFilters';
 import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
 import SearchFilter from './components/searchFilter';
-import AlarmAssignModal from './components/assignModal';
+import AlarmAction from './components/alarmAction';
 import { SearchFilterCondition } from '@/app/alarm/types/alarms';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
 import { useTranslation } from '@/utils/i18n';
 import { AlarmTableDataItem, FiltersConfig } from '@/app/alarm/types/alarms';
-import { DownOutlined } from '@ant-design/icons';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
-import {
-  baseStates,
-  allStates,
-  batchMenuKeys,
-  LEVEL_MAP
-} from '@/app/alarm/constants/alarm';
 import { deepClone } from '@/app/alarm/utils/common';
+import { useCommon } from '@/app/alarm/context/common';
+import { Button, Checkbox, Tabs, Spin, Tooltip, Switch } from 'antd';
 import {
   Pagination,
   TableDataItem,
   TabItem,
   TimeSelectorDefaultValue,
 } from '@/app/alarm/types/types';
-import {
-  Button,
-  Checkbox,
-  Tabs,
-  Spin,
-  Tooltip,
-  Switch,
-  Dropdown,
-  MenuProps,
-} from 'antd';
+import { baseStates, allStates } from '@/app/alarm/constants/alarm';
 
 const Alert: React.FC = () => {
   const { isLoading } = useApiClient();
   const { t } = useTranslation();
+  const { levelMap } = useCommon();
+
   const { getAlarmList } = useAlarmApi();
   const { convertToLocalizedTime } = useLocalizedTime();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const beginTime: number = dayjs().subtract(10080, 'minute').valueOf();
   const lastTime: number = dayjs().valueOf();
-  const [searchCondition, setSearchCondition] = useState<SearchFilterCondition | null>(null);
+  const [searchCondition, setSearchCondition] =
+    useState<SearchFilterCondition | null>(null);
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [chartLoading, setChartLoading] = useState<boolean>(false);
   const [tableData, setTableData] = useState<AlarmTableDataItem[]>([]);
@@ -59,8 +48,6 @@ const Alert: React.FC = () => {
   const [chartData, setChartData] = useState<Record<string, any>[]>([]);
   const [myAlarms, setMyAlarms] = useState<boolean>(true);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [assignVisible, setAssignVisible] = useState(false);
-  const [actionType, setActionType] = useState<'assign' | 'dispatch'>('assign');
 
   const getSettings = () => {
     try {
@@ -120,11 +107,6 @@ const Alert: React.FC = () => {
     ? 'calc(100vh - 500px)'
     : 'calc(100vh - 400px)';
 
-  const batchMenuItems: MenuProps['items'] = batchMenuKeys.map((key) => ({
-    key,
-    label: t(`alarms.${key}`),
-  }));
-
   const isActiveAlarms = activeTab === 'activeAlarms';
 
   const stateOptions = (isActiveAlarms ? baseStates : allStates).map((val) => ({
@@ -154,6 +136,7 @@ const Alert: React.FC = () => {
     filters.alarm_source,
     pagination.current,
     pagination.pageSize,
+    myAlarms,
   ]);
 
   useEffect(() => {
@@ -168,6 +151,7 @@ const Alert: React.FC = () => {
     filters.alarm_source,
     pagination.current,
     pagination.pageSize,
+    myAlarms,
   ]);
 
   useEffect(() => {
@@ -200,10 +184,10 @@ const Alert: React.FC = () => {
       source_name: filters.alarm_source.join(','),
       page: pagination.current,
       page_size: pagination.pageSize,
-      created_at_after: dayjs(timeRange[0]).toISOString(),
-      created_at_before: dayjs(timeRange[1]).toISOString(),
-      activate: Number(isActiveAlarms),
-      mine: isActiveAlarms ? myAlarms : undefined,
+      first_event_time: dayjs(timeRange[0]).toISOString(),
+      last_event_time: dayjs(timeRange[1]).toISOString(),
+      activate: isActiveAlarms ? 1 : '',
+      my_alert: isActiveAlarms ? (myAlarms ? 1 : '') : undefined,
       [conditionValue?.field as string]: conditionValue?.value,
     };
     return params;
@@ -218,6 +202,10 @@ const Alert: React.FC = () => {
     const params: any = getParams(condition);
     try {
       setTableLoading(type !== 'timer');
+      if (activeTab === 'activeAlarms') {
+        params.first_event_time = '';
+        params.last_event_time = '';
+      }
       const data = await getAlarmList(params);
       setTableData(data.items);
       setPagination((pre) => ({
@@ -237,9 +225,9 @@ const Alert: React.FC = () => {
     chartParams.search = '';
     chartParams.type = 'count';
     if (activeTab === 'activeAlarms') {
-      chartParams.created_at_before = '';
-      chartParams.created_at_after = '';
-    } 
+      chartParams.first_event_time = '';
+      chartParams.last_event_time = '';
+    }
     try {
       setChartLoading(type !== 'timer');
       const data = await getAlarmList(chartParams);
@@ -350,13 +338,6 @@ const Alert: React.FC = () => {
     getAlarmTableData('search', condition);
   };
 
-  const handleBatchMenuClick: MenuProps['onClick'] = ({ key }) => {
-    if (['assign', 'dispatch'].includes(key)) {
-      setActionType(key as 'assign' | 'dispatch');
-      setAssignVisible(true);
-    }
-  };
-
   return (
     <div className="w-full">
       <div className={alertStyle.alert}>
@@ -408,7 +389,7 @@ const Alert: React.FC = () => {
               </div>
               {showChart && (
                 <div className={alertStyle.chart}>
-                  <StackedBarChart data={chartData} colors={LEVEL_MAP as any} />
+                  <StackedBarChart data={chartData} colors={levelMap as any} />
                 </div>
               )}
             </div>
@@ -424,15 +405,11 @@ const Alert: React.FC = () => {
                     checked={myAlarms}
                     onChange={(e) => {
                       setMyAlarms(e.target.checked);
-                      onRefresh();
                     }}
                   >
                     {t('alarms.myAlarms')}
                   </Checkbox>
                 )}
-                <span className="text-sm text-[var(--color-text-2)]">
-                  {`共检索出 ${pagination.total || 0} 条结果，共选中 ${selectedRowKeys.length} 条告警`}
-                </span>
               </div>
 
               {isActiveAlarms && (
@@ -440,21 +417,16 @@ const Alert: React.FC = () => {
                   <Button color="danger" type="dashed" variant="solid">
                     {t('alarms.declareIncident')}
                   </Button>
-                  <Dropdown
-                    menu={{
-                      items: batchMenuItems,
-                      onClick: handleBatchMenuClick,
+                  <AlarmAction
+                    rowData={tableData.filter((item) =>
+                      selectedRowKeys.includes(item.id)
+                    )}
+                    displayMode="dropdown"
+                    showAll
+                    onAction={() => {
+                      onRefresh();
                     }}
-                    trigger={['click']}
-                    placement="bottomRight"
-                    arrow
-                    overlayClassName={alertStyle.batchDropdown}
-                  >
-                    <Button type="primary">
-                      {t('alarms.batchOperations')}
-                      <DownOutlined />
-                    </Button>
-                  </Dropdown>
+                  />
                 </div>
               )}
             </div>
@@ -466,18 +438,11 @@ const Alert: React.FC = () => {
               selectedRowKeys={selectedRowKeys}
               onSelectionChange={setSelectedRowKeys}
               onChange={handleTableChange}
+              onRefresh={onRefresh}
             />
           </div>
         </div>
       </div>
-      <AlarmAssignModal
-        visible={assignVisible}
-        actionType={actionType}
-        onCancel={() => setAssignVisible(false)}
-        onSuccess={() => {
-          onRefresh();
-        }}
-      />
     </div>
   );
 };

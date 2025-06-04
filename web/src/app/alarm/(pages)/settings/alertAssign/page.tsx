@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import OperateModal from './components/operateModal';
 import CustomTable from '@/components/custom-table';
-import { AlertAssignListItem } from '@/app/alarm/types/settings';
 import PermissionWrapper from '@/components/permission';
+import { AlertAssignListItem } from '@/app/alarm/types/settings';
 import { useSettingApi } from '@/app/alarm/api/settings';
 import { Button, Input, Modal, message, Switch } from 'antd';
 import { useTranslation } from '@/utils/i18n';

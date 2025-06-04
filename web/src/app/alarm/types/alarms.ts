@@ -1,4 +1,7 @@
-import type { UserItem, Pagination, TableDataItem } from '@/app/alarm/types/types';
+import type {
+  Pagination,
+  TableDataItem,
+} from '@/app/alarm/types/types';
 export interface GroupInfo {
   name?: string;
   description?: string;
@@ -334,13 +337,10 @@ export interface ChartDataConfig {
 }
 
 export interface AlarmActionProps {
-  row: TableDataItem;
-  user: UserItem;
-  menuId: string | number;
+  rowData: TableDataItem[];
+  showAll?: boolean;  
   displayMode?: 'inline' | 'dropdown';
-  fetchAlarmExecute: (alarmId: string | number) => Promise<any>;
-  checkPermission: (opt: { id: string | number; type: string }) => boolean;
-  onSuccess: (type: string, row: TableDataItem) => void;
+  onAction: () => void;  
 }
 
 export interface AlarmTableProps {
@@ -350,6 +350,7 @@ export interface AlarmTableProps {
   tableScrollY: string;
   selectedRowKeys: React.Key[];
   onChange: (pag: any) => void;
+  onRefresh: () => void;
   onSelectionChange: (keys: React.Key[]) => void;
   extraActions?: (record: TableDataItem) => React.ReactNode;
 }
@@ -407,3 +408,5 @@ export interface SearchFilterCondition {
 export interface SearchFilterProps {
   onSearch: (condition: SearchFilterCondition, value: any) => void;
 }
+
+export type ActionType = 'close' | 'assign' | 'reassign' | 'acknowledge';

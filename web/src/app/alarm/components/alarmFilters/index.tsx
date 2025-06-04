@@ -6,8 +6,8 @@ import { ClearOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { FiltersConfig } from '@/app/alarm/types/alarms';
 import { useSourceApi } from '@/app/alarm/api/sources';
-import { LEVEL_MAP } from '@/app/alarm/constants/alarm';
 import { SourceItem } from '@/app/alarm/types/integration';
+import { useCommon } from '@/app/alarm/context/common';
 
 interface Props {
   filters: FiltersConfig;
@@ -26,6 +26,7 @@ const AlarmFilters: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const { getAlertSources } = useSourceApi();
+  const { levelList, levelMap } = useCommon();
   const [sourceOptions, setSourcesOptions] = useState<SourceItem[]>([]);
   const [loadingSources, setLoadingSources] = useState<boolean>(false);
 
@@ -49,11 +50,7 @@ const AlarmFilters: React.FC<Props> = ({
     {
       field: 'level' as keyof FiltersConfig,
       title: t('alarms.level'),
-      options: [
-        { value: 'fatal', label: t('alarms.fatal') },
-        { value: 'severity', label: t('alarms.severity') },
-        { value: 'warning', label: t('alarms.warning') },
-      ],
+      options: levelList,
     },
     {
       field: 'state' as keyof FiltersConfig,
@@ -90,13 +87,13 @@ const AlarmFilters: React.FC<Props> = ({
                 onChange={(vals) => onFilterChange(vals as string[], field)}
               >
                 <Space direction="vertical">
-                  {options.map(({ value, label }: any) => (
+                  {options.map(({ value, label }) => (
                     <Checkbox key={value} value={value}>
-                      {value && LEVEL_MAP[value] && (
+                      {levelMap[value] && (
                         <span
                           className={alertStyle.levelBar}
                           style={{
-                            backgroundColor: `${LEVEL_MAP[value]}`,
+                            backgroundColor: `${levelMap[value]}`,
                           }}
                         ></span>
                       )}

@@ -8,15 +8,6 @@ export interface ColumnItem {
   [key: string]: unknown;
 }
 
-export interface ListItem {
-  title?: string;
-  label?: string;
-  name?: string;
-  display_name?: string;
-  id?: string | number;
-  value?: string | number;
-}
-
 export interface ModalConfig {
   type: string;
   form: any;
@@ -131,4 +122,27 @@ export interface HexagonData {
   name: string;
   description: React.ReactNode | string;
   fill: string;
+}
+
+export interface LevelItem {
+    value: string | number;
+    label: string;
+    id: number;
+    level_id: number;
+    level_name: string;
+    level_display_name: string;
+    color: string;
+    icon: string;
+    description: string;
+    level_type: string;
+}
+
+export interface CommonContextType {
+    userList: UserItem[];
+    levelList: LevelItem[];
+    levelMap: Record<string, string>;
+    levelListEvent: LevelItem[];
+    levelMapEvent: Record<string, string>;
+    levelListIncident: LevelItem[];
+    levelMapIncident: Record<string, string>;
 }

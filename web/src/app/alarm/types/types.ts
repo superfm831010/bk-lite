@@ -9,15 +9,6 @@ export interface ColumnItem {
   [key: string]: unknown;
 }
 
-export interface ListItem {
-  title?: string;
-  label?: string;
-  name?: string;
-  display_name?: string;
-  id?: string | number;
-  value?: string | number;
-}
-
 export interface ModalConfig {
   type: string;
   form: any;

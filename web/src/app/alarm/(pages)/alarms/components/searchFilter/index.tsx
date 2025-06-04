@@ -65,7 +65,7 @@ const SearchFilter: React.FC<SearchFilterProps> = ({ onSearch }) => {
           <Select
             allowClear
             className="value"
-            style={{ width: 220 }}
+            style={{ width: 250 }}
             value={searchValue}
             onChange={(e) => onSearchValueChange(e)}
             onClear={() => onSearchValueChange('')}
@@ -82,7 +82,7 @@ const SearchFilter: React.FC<SearchFilterProps> = ({ onSearch }) => {
           <Input
             allowClear
             className="value"
-            style={{ width: 220 }}
+            style={{ width: 250 }}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             onClear={() => onSearchValueChange('')}

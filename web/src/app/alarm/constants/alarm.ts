@@ -1,7 +1,10 @@
 import { useTranslation } from '@/utils/i18n';
 import { useMemo } from 'react';
-import { ListItem } from '@/types';
-import { LevelMap, StateMap } from '@/app/alarm/types/alarms';
+import { StateMap } from '@/app/alarm/types/alarms';
+
+export const baseStates = ['pending', 'processing', 'unassigned'] as const;
+export const allStates = [...baseStates, 'closed', 'recovered'] as const;
+export const incidentStates = ['pending', 'processing', 'closed'] as const;
 
 const useStateMap = (): StateMap => {
   const { t } = useTranslation();
@@ -18,19 +21,6 @@ const useStateMap = (): StateMap => {
   );
 };
 
-const useLevelList = (): ListItem[] => {
-  const { t } = useTranslation();
-  return useMemo(
-    () => [
-      { label: t('alarms.fatal'), value: 'fatal' },
-      { label: t('alarms.severity'), value: 'severity' },
-      { label: t('alarms.warning'), value: 'warning' },
-      { label: t('alarms.remain'), value: 'remain' },
-    ],
-    [t]
-  );
-};
-
 const useNotifiedStateMap = () => {
   const { t } = useTranslation();
   return useMemo(() => {
@@ -43,12 +33,6 @@ const useNotifiedStateMap = () => {
   }, [t]);
 };
 
-const LEVEL_MAP: LevelMap = {
-  fatal: '#F43B2C',
-  severity: '#D97007',
-  warning: '#FFAD42',
-  remain: '#FBBF24',
-};
 
 const APPOINT_METRIC_IDS: string[] = [
   'cluster_pod_count',
@@ -156,21 +140,9 @@ const UNIT_LIST = [
   },
 ];
 
-export const baseStates = ['pending', 'processing', 'unassigned'] as const;
-export const allStates = [...baseStates, 'closed', 'recovered'] as const;
-export const batchMenuKeys = [
-  'close',
-  'assign',
-  'reassign',
-  'acknowledge',
-] as const;
-export const incidentStates = ['pending', 'processing', 'closed'] as const;
-
 export {
-  LEVEL_MAP,
   UNIT_LIST,
   APPOINT_METRIC_IDS,
-  useLevelList,
   useStateMap,
   useNotifiedStateMap,
 };

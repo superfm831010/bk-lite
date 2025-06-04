@@ -9,7 +9,6 @@ import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import type { TableDataItem } from '@/app/alarm/types/types';
 import { UserItem } from '@/app/alarm/types/types';
 import { useCommon } from '@/app/alarm/context/common';
-import { LEVEL_MAP, useLevelList } from '@/app/alarm/constants/alarm';
 import { useTranslation } from '@/utils/i18n';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
@@ -69,8 +68,7 @@ const mockData: TableDataItem[] = [
 ];
 
 const IncidentDetail: React.FC = () => {
-  const common = useCommon();
-  const userList = common?.userList || [];
+  const { levelList, levelMap, userList } = useCommon();
   const router = useRouter();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
@@ -95,7 +93,6 @@ const IncidentDetail: React.FC = () => {
     total: 0,
   });
 
-  const LEVEL_LIST = useLevelList();
 
   const detail = {
     level: 'fatal',
@@ -289,9 +286,9 @@ const IncidentDetail: React.FC = () => {
           <span className="ml-[10px] mr-[10px]">{detail.alertName}</span>
           <Tag
             icon={<AlertOutlined />}
-            color={LEVEL_MAP[detail.level] as string}
+            color={levelMap[detail.level] as string}
           >
-            {LEVEL_LIST.find((item) => item.value === detail.level)?.label ||
+            {levelList.find((item) => item.value === detail.level)?.label ||
               detail.level}
           </Tag>
         </Breadcrumb.Item>
@@ -358,6 +355,7 @@ const IncidentDetail: React.FC = () => {
                     selectedRowKeys={selectedRowKeys}
                     onChange={onTabTableChange}
                     onSelectionChange={setSelectedRowKeys}
+                    onRefresh={() => fetchList(1, pagination.pageSize)}
                     extraActions={() => (
                       <Button
                         type="link"

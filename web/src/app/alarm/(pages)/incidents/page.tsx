@@ -13,14 +13,15 @@ import { TableDataItem, Pagination } from '@/app/alarm/types/types';
 import { FiltersConfig } from '@/app/alarm/types/alarms';
 import { useTranslation } from '@/utils/i18n';
 import { AlertOutlined } from '@ant-design/icons';
-import { LEVEL_MAP, useLevelList, incidentStates } from '@/app/alarm/constants/alarm';
+import { incidentStates } from '@/app/alarm/constants/alarm';
 import { useRouter } from 'next/navigation';
+import { useCommon } from '@/app/alarm/context/common';
 
 const IncidentsPage: React.FC = () => {
   const { getAlarmList } = useAlarmApi();
   const { t } = useTranslation();
   const router = useRouter();
-  const LEVEL_LIST = useLevelList();
+  const { levelList, levelMap } = useCommon();
   const [searchText, setSearchText] = useState('');
   const [data, setData] = useState<TableDataItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -54,8 +55,8 @@ const IncidentsPage: React.FC = () => {
       key: 'level',
       width: 100,
       render: (_: any, { level }: any) => (
-        <Tag icon={<AlertOutlined />} color={LEVEL_MAP[level] as string}>
-          {LEVEL_LIST.find((item) => item.value === level)?.label || '--'}
+        <Tag icon={<AlertOutlined />} color={levelMap[level] as string}>
+          {levelList.find((item) => item.value === level)?.label || '--'}
         </Tag>
       ),
     },
