@@ -160,6 +160,7 @@ class CollectPluginTypes(object):
         (CLOUD, "云采集"),
         (PROTOCOL, "协议采集"),
         (HOST, "主机采集"),
+        (REDIS, "Redis采集"),
         (MIDDLEWARE, "中间件采集"),
         (IP, "IP采集"),
         (OTHER, "其他采集"),
