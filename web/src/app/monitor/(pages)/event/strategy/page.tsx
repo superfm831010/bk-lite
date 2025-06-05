@@ -77,14 +77,16 @@ const Strategy: React.FC = () => {
       key: 'source',
       width: 80,
       render: (_, record) => (
-        <Button
-          type="link"
-          onClick={() => {
-            openInstModal(record);
-          }}
-        >
-          {record.source.values?.length || 0}
-        </Button>
+        <Permission requiredPermissions={['Edit']}>
+          <Button
+            type="link"
+            onClick={() => {
+              openInstModal(record);
+            }}
+          >
+            {record.source.values?.length || 0}
+          </Button>
+        </Permission>
       ),
     },
     {
