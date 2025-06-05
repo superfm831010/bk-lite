@@ -228,7 +228,8 @@
       "cvm_MemUsage": "内存利用率",
       "cvm_LanOuttraffic": "内网出带宽",
       "cvm_WanOuttraffic": "外网出带宽",
-      "dashboard": "仪表盘"
+      "dashboard": "仪表盘",
+      "quickSearch": "快捷搜索"
     },
     "events": {
       "event": "事件",

@@ -199,6 +199,7 @@ const useMonitorApi = () => {
     cloud_region_id?: number;
     page?: number;
     page_size?: number;
+    is_active?: boolean;
   }) => {
     return await post('/monitor/api/node_mgmt/nodes/', data);
   };

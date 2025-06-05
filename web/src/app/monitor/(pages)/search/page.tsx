@@ -505,13 +505,18 @@ const SearchView: React.FC = () => {
             <Collapse
               title={t('monitor.search.searchCriteria')}
               icon={
-                <Button
-                  disabled={!object}
-                  onClick={createPolicy}
-                  type="link"
-                  size="small"
-                  icon={<BellOutlined />}
-                />
+                <Tooltip
+                  placement="topLeft"
+                  title={t('monitor.events.createPolicy')}
+                >
+                  <Button
+                    disabled={!object}
+                    onClick={createPolicy}
+                    type="link"
+                    size="small"
+                    icon={<BellOutlined />}
+                  />
+                </Tooltip>
               }
             >
               <div className={searchStyle.condition}>
