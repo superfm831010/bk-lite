@@ -64,7 +64,7 @@ services:
       - METRIC_OUTPUT_URL=http://victoria-metrics:8428
       - METRIC_NATS_SERVERS=nats://nats:4222
     volumes:
-      - ./conf/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
+      - ../conf/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
     networks:
       - prod
     restart: always
