@@ -227,7 +227,8 @@
       "cvm_CPU_Usage": "CPU 利用率",
       "cvm_MemUsage": "内存利用率",
       "cvm_LanOuttraffic": "内网出带宽",
-      "cvm_WanOuttraffic": "外网出带宽"
+      "cvm_WanOuttraffic": "外网出带宽",
+      "dashboard": "仪表盘"
     },
     "events": {
       "event": "事件",
@@ -322,7 +323,8 @@
       "message": "报文",
       "activeAlarmsMapTips": "展示所有符合过滤项的活跃告警分布图。",
       "historicalAlarmsMapTips": "展示所选时间范围内，符合过滤项的所有历史告警分布图。",
-      "promQLPlaceholder": "请参考Prometheus的语法撰写PromQL，通常可以查询并过滤相关的指标。"
+      "promQLPlaceholder": "请参考Prometheus的语法撰写PromQL，通常可以查询并过滤相关的指标。",
+      "monitoringTarget": "监控目标"
     },
     "intergrations": {
       "intergration": "集成",

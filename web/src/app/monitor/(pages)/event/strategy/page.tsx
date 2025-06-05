@@ -1,24 +1,24 @@
 'use client';
-import React, { useEffect, useState } from 'react';
-import {
-  Spin,
-  Input,
-  Button,
-
-  message,
-  Switch,
-  Popconfirm
-} from 'antd';
+import React, { useEffect, useState, useRef } from 'react';
+import { Spin, Input, Button, message, Switch, Popconfirm } from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
 import assetStyle from './index.module.scss';
 import { useTranslation } from '@/utils/i18n';
-import { ColumnItem, TreeItem, Pagination } from '@/app/monitor/types';
+import {
+  ColumnItem,
+  TreeItem,
+  Pagination,
+  ModalRef,
+  Organization,
+} from '@/app/monitor/types';
 import {
   ObjectItem,
   TableDataItem,
+  SourceFeild,
 } from '@/app/monitor/types/monitor';
 import CustomTable from '@/components/custom-table';
+import SelectAssets from './selectAssets';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import {
   deepClone,
@@ -30,15 +30,25 @@ import { PlusOutlined } from '@ant-design/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import Permission from '@/components/permission';
+import { useCommon } from '@/app/monitor/context/common';
 
 const Strategy: React.FC = () => {
   const { t } = useTranslation();
   const { isLoading } = useApiClient();
-  const { getMonitorPolicy, getMonitorObject, patchMonitorPolicy, deleteMonitorPolicy } = useMonitorApi();
+  const {
+    getMonitorPolicy,
+    getMonitorObject,
+    patchMonitorPolicy,
+    deleteMonitorPolicy,
+  } = useMonitorApi();
   const searchParams = useSearchParams();
   const { convertToLocalizedTime } = useLocalizedTime();
+  const commonContext = useCommon();
   const objId = searchParams.get('objId');
   const router = useRouter();
+  const instRef = useRef<ModalRef>(null);
+  const authList = useRef(commonContext?.authOrganizations || []);
+  const organizationList: Organization[] = authList.current;
   const [pagination, setPagination] = useState<Pagination>({
     current: 1,
     total: 0,
@@ -52,6 +62,7 @@ const Strategy: React.FC = () => {
   const [enableLoading, setEnableLoading] = useState<boolean>(false);
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [objectId, setObjectId] = useState<React.Key>('');
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const columns: ColumnItem[] = [
     {
@@ -59,7 +70,22 @@ const Strategy: React.FC = () => {
       dataIndex: 'name',
       key: 'name',
       width: 100,
-      ellipsis: true,
+    },
+    {
+      title: t('monitor.events.monitoringTarget'),
+      dataIndex: 'source',
+      key: 'source',
+      width: 80,
+      render: (_, record) => (
+        <Button
+          type="link"
+          onClick={() => {
+            openInstModal(record);
+          }}
+        >
+          {record.source.values?.length || 0}
+        </Button>
+      ),
     },
     {
       title: t('common.creator'),
@@ -146,9 +172,7 @@ const Strategy: React.FC = () => {
               okButtonProps={{ loading: confirmLoading }}
               onConfirm={() => deleteConfirm(record.id)}
             >
-              <Button type="link">
-                {t('common.delete')}
-              </Button>
+              <Button type="link">{t('common.delete')}</Button>
             </Popconfirm>
           </Permission>
         </>
@@ -169,6 +193,32 @@ const Strategy: React.FC = () => {
 
   const handleObjectChange = async (id: string) => {
     setObjectId(id);
+  };
+
+  const openInstModal = (row: TableDataItem) => {
+    const title = t('monitor.events.monitoringTarget');
+    instRef.current?.showModal({
+      title,
+      type: 'add',
+      form: {
+        ...row.source,
+        id: row.id,
+      },
+    });
+  };
+
+  const onChooseAssets = async (assets: SourceFeild, id: number) => {
+    setTableLoading(true);
+    patchMonitorPolicy(id, {
+      source: assets,
+    })
+      .then(() => {
+        message.success(t('common.successfullyModified'));
+        getAssetInsts(objectId);
+      })
+      .catch(() => {
+        setTableLoading(false);
+      });
   };
 
   const getParams = (text?: string) => {
@@ -218,7 +268,8 @@ const Strategy: React.FC = () => {
       setTreeLoading(true);
       const data: ObjectItem[] = await getMonitorObject({
         add_policy_count: true,
-      })
+      });
+      setObjects(data);
       const _treeData = getTreeData(deepClone(data));
       setDefaultSelectObj(objId ? +objId : data[0]?.id);
       setTreeData(_treeData);
@@ -228,25 +279,22 @@ const Strategy: React.FC = () => {
   };
 
   const getTreeData = (data: ObjectItem[]): TreeItem[] => {
-    const groupedData = data.reduce(
-      (acc, item) => {
-        if (!acc[item.type]) {
-          acc[item.type] = {
-            title: item.display_type || '--',
-            key: item.type,
-            children: [],
-          };
-        }
-        acc[item.type].children.push({
-          title: (item.display_name || '--') + `(${item.policy_count})`,
-          label: item.name || '--',
-          key: item.id,
+    const groupedData = data.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = {
+          title: item.display_type || '--',
+          key: item.type,
           children: [],
-        });
-        return acc;
-      },
-      {} as Record<string, TreeItem>
-    );
+        };
+      }
+      acc[item.type].children.push({
+        title: (item.display_name || '--') + `(${item.policy_count})`,
+        label: item.name || '--',
+        key: item.id,
+        children: [],
+      });
+      return acc;
+    }, {} as Record<string, TreeItem>);
     return Object.values(groupedData);
   };
 
@@ -257,9 +305,9 @@ const Strategy: React.FC = () => {
       message.success(t('common.successfullyDeleted'));
       getAssetInsts(objectId);
     } finally {
-      setConfirmLoading(false)
+      setConfirmLoading(false);
     }
-  }
+  };
 
   const enterText = () => {
     getAssetInsts(objectId);
@@ -327,6 +375,13 @@ const Strategy: React.FC = () => {
             onChange={handleTableChange}
           ></CustomTable>
         </div>
+        <SelectAssets
+          ref={instRef}
+          organizationList={organizationList}
+          monitorObject={objectId}
+          objects={objects}
+          onSuccess={onChooseAssets}
+        />
       </div>
     </Spin>
   );
