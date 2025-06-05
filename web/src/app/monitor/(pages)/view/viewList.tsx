@@ -36,7 +36,12 @@ import { ListItem } from '@/types';
 import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants/monitor';
 const { Option } = Select;
 
-const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
+const ViewList: React.FC<ViewListProps> = ({
+  objects,
+  objectId,
+  showTab,
+  updateTree,
+}) => {
   const { isLoading } = useApiClient();
   const {
     getMonitorMetrics,
@@ -191,6 +196,11 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       onRefresh();
     }
   }, [colony, namespace, workload, node]);
+
+  const updatePage = () => {
+    onRefresh();
+    updateTree?.();
+  };
 
   const getParams = () => {
     return {
@@ -520,7 +530,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         <TimeSelector
           onlyRefresh
           onFrequenceChange={onFrequenceChange}
-          onRefresh={onRefresh}
+          onRefresh={updatePage}
         />
       </div>
       <CustomTable
