@@ -50,26 +50,34 @@ const convertPermissionsForApi = (
     }
   }
 
-  if (config.specificData && config.specificData.length > 0) {
-    config.specificData.forEach((item: any) => {
-      const permissions: string[] = [];
+  if (config.type === 'specific') {
+    if (config.specificData && config.specificData.length > 0) {
+      config.specificData.forEach((item: any) => {
+        const permissions: string[] = [];
 
-      if (item.view) {
-        permissions.push('View');
+        if (item.view) {
+          permissions.push('View');
 
-        if (item.operate) {
-          permissions.push('Operate');
+          if (item.operate) {
+            permissions.push('Operate');
+          }
         }
-      }
 
-      if (permissions.length > 0) {
-        permissionArray.push({
-          id: item.id,
-          name: item.name,
-          permission: permissions
-        });
-      }
-    });
+        if (permissions.length > 0) {
+          permissionArray.push({
+            id: item.id,
+            name: item.name,
+            permission: permissions
+          });
+        }
+      });
+    } else {
+      permissionArray.push({
+        id: '-1',
+        name: 'specific',
+        permission: []
+      });
+    }
   }
 
   return permissionArray;
@@ -79,6 +87,7 @@ const convertApiDataToFormData = (
   items: PermissionRuleItem[]
 ): PermissionConfig => {
   const hasWildcard = items.some(item => item.id === '0');
+  const hasEmptySpecific = items.some(item => item.id === '-1');
 
   let wildcardItem;
   if (hasWildcard) {
@@ -95,7 +104,7 @@ const convertApiDataToFormData = (
       view: hasView,
       operate: hasOperate
     } : { view: true, operate: true },
-    specificData: items
+    specificData: hasEmptySpecific ? [] : items
       .filter(item => item.id !== '0')
       .map(item => {
         const hasItemView = item.permission.includes("View");
