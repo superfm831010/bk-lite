@@ -395,18 +395,28 @@ const MonitorView: React.FC<ViewModalProps> = ({
                           </Tooltip>
                         </span>
                         <div className="text-[var(--color-text-3)]">
-                          <SearchOutlined
-                            className="cursor-pointer"
-                            onClick={() => {
-                              linkToSearch(item);
-                            }}
-                          />
-                          <BellOutlined
-                            className="ml-[6px] cursor-pointer"
-                            onClick={() => {
-                              linkToPolicy(item);
-                            }}
-                          />
+                          <Tooltip
+                            placement="topRight"
+                            title={t('monitor.views.quickSearch')}
+                          >
+                            <SearchOutlined
+                              className="cursor-pointer"
+                              onClick={() => {
+                                linkToSearch(item);
+                              }}
+                            />
+                          </Tooltip>
+                          <Tooltip
+                            placement="topRight"
+                            title={t('monitor.events.createPolicy')}
+                          >
+                            <BellOutlined
+                              className="ml-[6px] cursor-pointer"
+                              onClick={() => {
+                                linkToPolicy(item);
+                              }}
+                            />
+                          </Tooltip>
                         </div>
                       </div>
                       <div className="h-[200px] mt-[10px]">

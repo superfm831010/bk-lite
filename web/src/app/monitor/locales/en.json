@@ -228,7 +228,8 @@
       "cvm_MemUsage": "Memory Utilization",
       "cvm_LanOuttraffic": "Internal Outbound Bandwidth",
       "cvm_WanOuttraffic": "External Outbound Bandwidth",
-      "dashboard": "DashBoard"
+      "dashboard": "DashBoard",
+      "quickSearch": "Quick Search"
     },
     "events": {
       "event": "Event",
