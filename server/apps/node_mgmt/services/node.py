@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from apps.node_mgmt.models import NodeCollectorInstallStatus
 from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, Action
 from apps.node_mgmt.serializers.node import NodeSerializer
+from datetime import datetime, timedelta
 
 
 class NodeService:
@@ -108,7 +109,7 @@ class NodeService:
             action.save()
 
     @staticmethod
-    def get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size):
+    def get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size, is_active):
         """获取节点列表"""
         qs = Node.objects.all()
         if cloud_region_id:
@@ -121,6 +122,15 @@ class NodeService:
             qs = qs.filter(ip__icontains=ip)
         if os:
             qs = qs.filter(operating_system__icontains=os)
+
+        # 获取当前时间前一分钟的utc时间
+        now = datetime.now(timezone.utc)
+        one_minute_ago = now - timedelta(minutes=1)
+        if is_active is True:
+            qs = qs.filter(updated_at__gte=one_minute_ago)
+        elif is_active is False:
+            qs = qs.filter(updated_at__lt=one_minute_ago)
+
         count = qs.count()
         if page_size == -1:
             nodes = qs
