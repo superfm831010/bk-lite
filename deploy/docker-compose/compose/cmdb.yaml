@@ -45,7 +45,7 @@ services:
       NEXTAPI_URL: http://cmdb:8000
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.cmdb-web.rule=Host(${HOST_IP})"
+      - "traefik.http.routers.cmdb-web.rule=Host(`${HOST_IP}`)"
       - "traefik.http.routers.cmdb-web.entrypoints=cmdb-web"
       - "traefik.http.services.cmdb-web.loadbalancer.server.port=3000"
     networks:

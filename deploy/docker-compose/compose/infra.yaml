@@ -1,6 +1,7 @@
 networks:
   prod:
     driver: bridge
+    name: bklite-prod
 
 volumes:
   redis:
@@ -21,7 +22,7 @@ services:
       - "${TRAEFIK_CONSOLE_PORT}:${TRAEFIK_CONSOLE_PORT}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./conf/traefik/dynamic.yml:/etc/traefik/dynamic.yml
+      - ../conf/traefik/dynamic.yml:/etc/traefik/dynamic.yml
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.traefik-dashboard.loadbalancer.server.port=8080"
@@ -60,7 +61,7 @@ services:
     image: ${DOCKER_IMAGE_NATS}
     restart: always
     volumes:
-      - ./conf/nats/nats.conf:/etc/nats/nats.conf
+      - ../conf/nats/nats.conf:/etc/nats/nats.conf
       - nats:/nats
     ports:
       - "4222:4222"
@@ -111,7 +112,7 @@ services:
       PGDATA: /data/postgres
     volumes:
       - postgres:/data/postgres
-      - ./conf/postgres/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+      - ../conf/postgres/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
     networks:
       - prod
     healthcheck:

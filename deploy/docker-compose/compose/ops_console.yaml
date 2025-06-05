@@ -41,7 +41,7 @@ services:
       - prod
     labels:
       - traefik.enable=true
-      - traefik.http.routers.ops-console-web.rule=Host(${HOST_IP})
+      - traefik.http.routers.ops-console-web.rule=Host(`${HOST_IP}`)
       - traefik.http.routers.ops-console-web.entrypoints=opsconsole
       - traefik.http.services.ops-console-web.loadbalancer.server.port=3000
     healthcheck:

@@ -42,7 +42,7 @@ services:
       NEXTAPI_URL: http://system-manager:8000
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.system-manager-web.rule=Host(${HOST_IP})"
+      - "traefik.http.routers.system-manager-web.rule=Host(`${HOST_IP}`)"
       - "traefik.http.routers.system-manager-web.entrypoints=system-manager-web"
       - "traefik.http.services.system-manager-web.loadbalancer.server.port=3000"
     networks:

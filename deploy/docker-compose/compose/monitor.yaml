@@ -44,7 +44,7 @@ services:
       NEXTAPI_URL: http://monitor:8000
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.monitor-web.rule=Host(${HOST_IP})"
+      - "traefik.http.routers.monitor-web.rule=Host(`${HOST_IP}`)"
       - "traefik.http.routers.monitor-web.entrypoints=monitor-web"
       - "traefik.http.services.monitor-web.loadbalancer.server.port=3000"
     networks:

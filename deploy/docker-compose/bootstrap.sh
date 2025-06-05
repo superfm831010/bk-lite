@@ -339,13 +339,9 @@ docker-compose -f compose/infra.yaml \
 log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j)..."
 docker-compose up -d traefik redis nats victoria-metrics neo4j
 
-# 获取 Docker Compose 创建的网络名称
-PROJECT_NAME=$(basename $(pwd))
-COMPOSE_NETWORK=${PROJECT_NAME}_prod
-
 # 创建 JetStream - 使用正确的网络名称
 log "INFO" "创建JetStream..."
-docker run --rm --network=${COMPOSE_NETWORK} \
+docker run --rm --network=bklite-prod \
     $DOCKER_IMAGE_NATS_CLI -s nats://nats:4222 \
     --user $NATS_ADMIN_USERNAME --password $NATS_ADMIN_PASSWORD \
     stream add metrics --subjects=metrics.* --storage=file \

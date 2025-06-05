@@ -51,7 +51,7 @@ services:
       NEXTAPI_URL: http://node-manager:8000
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.node-manager-web.rule=Host(${HOST_IP})"
+      - "traefik.http.routers.node-manager-web.rule=Host(`${HOST_IP}`)"
       - "traefik.http.routers.node-manager-web.entrypoints=node-manager-web"
       - "traefik.http.services.node-manager-web.loadbalancer.server.port=3000"
     networks:
