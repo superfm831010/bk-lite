@@ -7,7 +7,6 @@ from apps.node_mgmt.services.sidecar import Sidecar
 from apps.node_mgmt.utils.token_auth import token_auth
 
 
-
 class OpenSidecarViewSet(OpenAPIViewSet):
     @swagger_auto_schema(
         operation_id="sidecar_server_info",
