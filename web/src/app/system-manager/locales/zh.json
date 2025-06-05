@@ -207,13 +207,13 @@
       "otpSetting": "开启 OTP 认证",
       "loginExpiredTime": "登录过期时间",
       "hours": "小时",
-      "informationTip": "先进入微信一开放平台(open.weixin.qq.com),在【管理中心】创建网站应用，审核通过后即可获取开发信息。注意：创建时需要填写的\"授权回调域\"为下方【重定向 URL】不带 https前缀",
+      "informationTip": "先进入微信－开放平台（open.weixin.qq.com）,在【管理中心】创建网站应用，审核通过后即可获取开发者信息。注意：＂授权回调域＂要先在【设置与开发】-【功能设置】-【网页授权域名】中配置。",
       "loginMethodName": "登录方式名称",
       "appId": "应用 ID",
       "appSecret": "应用密钥",
       "enabled": "启用",
       "redirectUri": "重定向 URI",
-      "callbackUrl": "授权回调地址"
+      "redirectUriTip": "登录成功之后跳转的页面。格式参考（以回到工作台为例）：https://授权回调域名/ops-console/home"
     }
   }
 }
