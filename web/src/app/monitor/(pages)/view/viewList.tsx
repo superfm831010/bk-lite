@@ -46,6 +46,7 @@ const ViewList: React.FC<ViewListProps> = ({
   const {
     getMonitorMetrics,
     getInstanceList,
+    getInstanceSearch,
     getInstanceQueryParams,
     getMonitorPlugin,
   } = useMonitorApi();
@@ -228,7 +229,8 @@ const ViewList: React.FC<ViewListProps> = ({
     };
     const targetObject = objects.find((item) => item.id === objectId);
     const objName = targetObject?.name;
-    const getInstList = getInstanceList(objectId, params);
+    const request = showTab ? getInstanceSearch : getInstanceList;
+    const getInstList = request(objectId, params);
     const getQueryParams = getInstanceQueryParams(objName as string, objParams);
     const getMetrics = getMonitorMetrics(objParams);
     const getPlugins = getMonitorPlugin(objParams);
@@ -349,7 +351,8 @@ const ViewList: React.FC<ViewListProps> = ({
     }
     try {
       setTableLoading(type !== 'timer');
-      const data = await getInstanceList(objectId, params);
+      const request = showTab ? getInstanceSearch : getInstanceList;
+      const data = await request(objectId, params);
       setTableData(data.results || []);
       setPagination((prev: Pagination) => ({
         ...prev,
