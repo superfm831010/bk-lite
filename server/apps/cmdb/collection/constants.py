@@ -122,3 +122,5 @@ ALIYUN_COLLECT_CLUSTER = [
 ]
 
 HOST_COLLECT_METRIC = ["host_info_gauge"]
+
+REDIS_COLLECT_METRIC = ["redis_info_gauge"]
