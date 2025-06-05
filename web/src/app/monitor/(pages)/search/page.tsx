@@ -295,6 +295,8 @@ const SearchView: React.FC = () => {
       setInstanceId([]);
       setInstances([]);
       setConditions([]);
+      setChartData([]);
+      setTableData([]);
     }
     setObject(val);
     if (val) {
