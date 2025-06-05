@@ -281,6 +281,8 @@ const Asset = () => {
   };
 
   const handleObjectChange = (id: string) => {
+    setTableData([]);
+    setRuleList([]);
     setObjectId(id);
   };
 
