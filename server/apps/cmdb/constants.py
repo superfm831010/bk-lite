@@ -148,6 +148,7 @@ class CollectPluginTypes(object):
     CLOUD = "cloud"
     PROTOCOL = "protocol"
     HOST = "host"
+    REDIS = "redis"
     MIDDLEWARE = "middleware"
     IP = "ip"
     OTHER = "other"
@@ -232,7 +233,14 @@ COLLECT_OBJ_TREE = [
         "name": "数据库",
         "children": [
             {"id": "mysql", "model_id": "mysql", "name": "Mysql", "task_type": CollectPluginTypes.PROTOCOL,
-             "type": CollectDriverTypes.PROTOCOL}
+             "type": CollectDriverTypes.PROTOCOL},
+            {
+                "id": "redis",
+                "model_id": "redis",
+                "name": "Redis",
+                "task_type": CollectPluginTypes.REDIS,
+                "type": CollectDriverTypes.JOB,
+            }
         ],
     },
     {
