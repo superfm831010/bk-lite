@@ -355,7 +355,7 @@ class RedisNodeParams(BaseNodeParams):
 
 class NginxNodeParams(BaseNodeParams):
     def get_instance_id(self, instance):
-        pass
+        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
 
     supported_model_id = "nginx"
     plugin_name = "nginx_info"
