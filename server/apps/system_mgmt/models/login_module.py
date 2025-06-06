@@ -8,8 +8,8 @@ class LoginModule(models.Model, EncryptMixin):
     name = models.CharField(max_length=100)
     source_type = models.CharField(max_length=50, default="wechat")
     app_id = models.CharField(max_length=100, null=True, blank=True)
-    app_secret = models.CharField(max_length=100, null=True, blank=True)
-    other_config = models.JSONField(default=list)
+    app_secret = models.CharField(max_length=200, null=True, blank=True)
+    other_config = models.JSONField(default=dict)
     enabled = models.BooleanField(default=True)
     is_build_in = models.BooleanField(default=False)
 
