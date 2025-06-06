@@ -3,9 +3,14 @@ from apps.node_mgmt.models.sidecar import Node
 
 
 class NodeSerializer(serializers.ModelSerializer):
+    organization = serializers.SerializerMethodField()
+
     class Meta:
         model = Node
-        fields = ['id', 'name', 'ip', 'operating_system', 'status', 'cloud_region', 'updated_at']
+        fields = ['id', 'name', 'ip', 'operating_system', 'status', 'cloud_region', 'updated_at', 'organization']
+
+    def get_organization(self, obj):
+        return [rel.organization for rel in obj.nodeorganization_set.all()]
 
 
 class BatchBindingNodeConfigurationSerializer(serializers.Serializer):

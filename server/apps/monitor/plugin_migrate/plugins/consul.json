@@ -12,7 +12,7 @@
       "display_name": "Health Check Status",
       "instance_id_keys": ["instance_id"],
       "data_type": "Enum",
-      "unit": "[{\"name\":\"passing\",\"id\":0,\"color\":\"#83ff4f\"},{\"name\":\"warning\",\"id\":1,\"color\":\"#faad14\"},{\"name\":\"critical\",\"id\":2,\"color\":\"#ff4d4f\"}]",
+      "unit": "[{\"name\":\"passing\",\"id\":0,\"color\":\"#1ac44a\"},{\"name\":\"warning\",\"id\":1,\"color\":\"#faad14\"},{\"name\":\"critical\",\"id\":2,\"color\":\"#ff4d4f\"s}]",
       "dimensions": [],
       "description": "This metric represents the status of the health check in Consul, where 0=passing, 1=warning, 2=critical.",
       "query": "sum(consul_health_checks_status{__$labels__}) by (instance_id)"

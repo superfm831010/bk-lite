@@ -171,6 +171,7 @@ const HiveModal = forwardRef<ModalRef, HiveModalProps>(({ onConfirm }, ref) => {
             <Select
               className="w-[160px]"
               defaultValue={selected}
+              showSearch
               value={selected}
               placeholder={t('common.selectMsg')}
               onChange={handleSelectedChange}

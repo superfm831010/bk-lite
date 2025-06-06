@@ -362,11 +362,16 @@ const ProfessionalCollection: React.FC = () => {
 
   const onSelectFields = async (fields: string[]) => {
     setDisplayFieldKeys(fields);
-    setCurrentColumns(
-      allColumns.filter(
-        (col) => fields.includes(col.key as string) || col.key === 'action'
-      ) as ExtendedColumnItem[]
-    );
+    const actionCol = allColumns.find(col => col.key === 'action');
+    const ordered = [
+      ...allColumns
+        .filter(col => fields.includes(col.key as string))
+        .sort((a, b) =>
+          fields.indexOf(a.key as string) - fields.indexOf(b.key as string)
+        ),
+      ...(actionCol ? [actionCol] : []),
+    ] as ExtendedColumnItem[];
+    setCurrentColumns(ordered);
   };
 
   const actionRender = useCallback(
@@ -454,7 +459,7 @@ const ProfessionalCollection: React.FC = () => {
         title: t('Collection.table.execStatus'),
         dataIndex: 'exec_status',
         key: 'exec_status',
-        width: 120,
+        width: 160,
         filters: statusFilters,
         filterMultiple: false,
         render: (status: ExecStatusType) => {
@@ -474,7 +479,7 @@ const ProfessionalCollection: React.FC = () => {
         title: t('Collection.table.collectSummary'),
         dataIndex: 'collect_digest',
         key: 'collect_digest',
-        width: 400,
+        width: 440,
         render: (_: any, record: CollectTask) => {
           const digest = (record.message || {}) as CollectTaskMessage;
           return Object.keys(digest).length > 0 ? (
@@ -513,7 +518,7 @@ const ProfessionalCollection: React.FC = () => {
         dataIndex: 'action',
         key: 'action',
         fixed: 'right',
-        width: 230,
+        width: 260,
         render: (_, record) => actionRender(record),
       },
     ],

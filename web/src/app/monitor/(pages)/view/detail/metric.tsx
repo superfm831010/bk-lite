@@ -8,7 +8,11 @@ import LineChart from '@/app/monitor/components/charts/lineChart';
 import Collapse from '@/components/collapse';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
-import { TableDataItem, TimeSelectorDefaultValue } from '@/app/monitor/types';
+import {
+  TableDataItem,
+  TimeSelectorDefaultValue,
+  TimeValuesProps,
+} from '@/app/monitor/types';
 import {
   MetricItem,
   GroupInfo,
@@ -24,6 +28,7 @@ import {
   mergeViewQueryKeyValues,
   renderChart,
   getConfigByPluginName,
+  getRecentTimeRange,
 } from '@/app/monitor/utils/common';
 import dayjs, { Dayjs } from 'dayjs';
 import Icon from '@/components/icon';
@@ -46,9 +51,10 @@ const MetricViews: React.FC<ViewDetailProps> = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [metricId, setMetricId] = useState<number | null>();
-  const beginTime: number = dayjs().subtract(15, 'minute').valueOf();
-  const lastTime: number = dayjs().valueOf();
-  const [timeRange, setTimeRange] = useState<number[]>([beginTime, lastTime]);
+  const [timeValues, setTimeValues] = useState<TimeValuesProps>({
+    timeRange: [],
+    originValue: 15,
+  });
   const [timeDefaultValue, setTimeDefaultValue] =
     useState<TimeSelectorDefaultValue>({
       selectValue: 15,
@@ -76,11 +82,11 @@ const MetricViews: React.FC<ViewDetailProps> = ({
       }, frequence);
     }
     return () => clearTimer();
-  }, [frequence, timeRange, metricId, activeTab]);
+  }, [frequence, timeValues, metricId, activeTab]);
 
   useEffect(() => {
     handleSearch('refresh');
-  }, [timeRange]);
+  }, [timeValues]);
 
   const initPage = async () => {
     setLoading(true);
@@ -156,8 +162,9 @@ const MetricViews: React.FC<ViewDetailProps> = ({
         ])
       ),
     };
-    const startTime = timeRange.at(0);
-    const endTime = timeRange.at(1);
+    const recentTimeRange = getRecentTimeRange(timeValues);
+    const startTime = recentTimeRange.at(0);
+    const endTime = recentTimeRange.at(1);
     const MAX_POINTS = 100; // 最大数据点数
     const DEFAULT_STEP = 360; // 默认步长
     if (startTime && endTime) {
@@ -210,8 +217,11 @@ const MetricViews: React.FC<ViewDetailProps> = ({
     }
   };
 
-  const onTimeChange = (val: number[]) => {
-    setTimeRange(val);
+  const onTimeChange = (val: number[], originValue: number | null) => {
+    setTimeValues({
+      timeRange: val,
+      originValue,
+    });
   };
 
   const clearTimer = () => {
@@ -289,12 +299,15 @@ const MetricViews: React.FC<ViewDetailProps> = ({
       selectValue: 0,
     }));
     const _times = arr.map((item) => dayjs(item).valueOf());
-    setTimeRange(_times);
+    setTimeValues({
+      timeRange: _times,
+      originValue: 0,
+    });
   };
 
   const linkToSearch = (row: TableDataItem) => {
     const _row = {
-      monitor_object: monitorObjectName,
+      monitor_object: monitorObjectId + '',
       instance_id: instanceId as string,
       metric_id: row.name,
     };
@@ -343,7 +356,7 @@ const MetricViews: React.FC<ViewDetailProps> = ({
         ></Select>
         <TimeSelector
           defaultValue={timeDefaultValue}
-          onChange={(value) => onTimeChange(value)}
+          onChange={onTimeChange}
           onFrequenceChange={onFrequenceChange}
           onRefresh={onRefresh}
         />
@@ -399,18 +412,28 @@ const MetricViews: React.FC<ViewDetailProps> = ({
                           </Tooltip>
                         </span>
                         <div className="text-[var(--color-text-3)]">
-                          <SearchOutlined
-                            className="cursor-pointer"
-                            onClick={() => {
-                              linkToSearch(item);
-                            }}
-                          />
-                          <BellOutlined
-                            className="ml-[6px] cursor-pointer"
-                            onClick={() => {
-                              linkToPolicy(item);
-                            }}
-                          />
+                          <Tooltip
+                            placement="topRight"
+                            title={t('monitor.views.quickSearch')}
+                          >
+                            <SearchOutlined
+                              className="cursor-pointer"
+                              onClick={() => {
+                                linkToSearch(item);
+                              }}
+                            />
+                          </Tooltip>
+                          <Tooltip
+                            placement="topRight"
+                            title={t('monitor.events.createPolicy')}
+                          >
+                            <BellOutlined
+                              className="ml-[6px] cursor-pointer"
+                              onClick={() => {
+                                linkToPolicy(item);
+                              }}
+                            />
+                          </Tooltip>
                         </div>
                       </div>
                       <div className="h-[200px] mt-[10px]">

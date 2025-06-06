@@ -52,12 +52,27 @@ const OperationLog: React.FC = () => {
   });
 
   const operationTypes = [
-    { label: t('OperationLog.operationOpts.create_entity'), value: 'create_entity' },
-    { label: t('OperationLog.operationOpts.update_entity'), value: 'update_entity' },
-    { label: t('OperationLog.operationOpts.delete_entity'), value: 'delete_entity' },
+    {
+      label: t('OperationLog.operationOpts.create_entity'),
+      value: 'create_entity',
+    },
+    {
+      label: t('OperationLog.operationOpts.update_entity'),
+      value: 'update_entity',
+    },
+    {
+      label: t('OperationLog.operationOpts.delete_entity'),
+      value: 'delete_entity',
+    },
     { label: t('OperationLog.operationOpts.execute'), value: 'execute' },
-    { label: t('OperationLog.operationOpts.create_edge'), value: 'create_edge' },
-    { label: t('OperationLog.operationOpts.delete_edge'), value: 'delete_edge' },
+    {
+      label: t('OperationLog.operationOpts.create_edge'),
+      value: 'create_edge',
+    },
+    {
+      label: t('OperationLog.operationOpts.delete_edge'),
+      value: 'delete_edge',
+    },
   ];
 
   const operators = userList.map((user: UserItem) => {
@@ -65,7 +80,10 @@ const OperationLog: React.FC = () => {
     return {
       value: user.username,
       label: (
-        <EllipsisWithTooltip text={labelText} className="whitespace-nowrap overflow-hidden text-ellipsis break-all" />
+        <EllipsisWithTooltip
+          text={labelText}
+          className="whitespace-nowrap overflow-hidden text-ellipsis break-all"
+        />
       ),
     };
   });
@@ -82,17 +100,23 @@ const OperationLog: React.FC = () => {
         ...pagination,
         ...filters,
         ...params,
-      }
+      };
       const queryParams = {
         page: allParams.current,
         page_size: allParams.pageSize,
         operator: allParams.operator,
         type: allParams.type,
         message: allParams.message,
-        created_at_after: allParams.dateRange?.[0]?.format('YYYY-MM-DD HH:mm:ss'),
-        created_at_before: allParams.dateRange?.[1]?.format('YYYY-MM-DD HH:mm:ss'),
+        created_at_after: allParams.dateRange?.[0]?.format(
+          'YYYY-MM-DD HH:mm:ss'
+        ),
+        created_at_before: allParams.dateRange?.[1]?.format(
+          'YYYY-MM-DD HH:mm:ss'
+        ),
       };
-      const data = await get('/cmdb/api/change_record', { params: queryParams });
+      const data = await get('/cmdb/api/change_record', {
+        params: queryParams,
+      });
       setDataList(data.items || []);
       setPagination((prev) => ({
         ...prev,
@@ -107,9 +131,9 @@ const OperationLog: React.FC = () => {
   };
 
   const handleFilterChange = (key: string, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({ ...prev, current: 1 }));
-    getTableList({ 
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    getTableList({
       ...filters,
       ...pagination,
       [key]: value,
@@ -170,7 +194,7 @@ const OperationLog: React.FC = () => {
         dataIndex: 'message',
         key: 'message',
         width: 300,
-      }
+      },
     ];
   };
 
@@ -184,21 +208,34 @@ const OperationLog: React.FC = () => {
         <div className={`${styles.filterWrapper} mb-[20px]`}>
           <div className="flex items-center gap-4">
             <div className="flex items-center">
-              <label className="mr-2 whitespace-nowrap">{t('OperationLog.operator')}:</label>
+              <label className="mr-2 whitespace-nowrap">
+                {t('OperationLog.operator')}:
+              </label>
               <Select
+                allowClear
+                showSearch
                 style={{ width: 180 }}
-                placeholder={t('common.selectMsg')}
+                placeholder={t('common.pleaseSelect')}
                 options={operators}
                 value={filters.operator}
                 onChange={(value) => handleFilterChange('operator', value)}
-                allowClear
+                filterOption={(input, opt: any) => {
+                  if (typeof opt?.label?.props?.text === 'string') {
+                    return opt?.label?.props?.text
+                      ?.toLowerCase()
+                      .includes(input.toLowerCase());
+                  }
+                  return true;
+                }}
               />
             </div>
             <div className="flex items-center">
-              <label className="mr-2 whitespace-nowrap">{t('OperationLog.operationType')}:</label>
+              <label className="mr-2 whitespace-nowrap">
+                {t('OperationLog.operationType')}:
+              </label>
               <Select
-                style={{ width: 120 }}
-                placeholder={t('common.selectMsg')}
+                style={{ width: 160 }}
+                placeholder={t('common.pleaseSelect')}
                 options={operationTypes}
                 value={filters.type}
                 onChange={(value) => handleFilterChange('type', value)}
@@ -206,10 +243,12 @@ const OperationLog: React.FC = () => {
               />
             </div>
             <div className="flex items-center">
-              <label className="mr-2 whitespace-nowrap">{t('OperationLog.summary')}:</label>
+              <label className="mr-2 whitespace-nowrap">
+                {t('OperationLog.summary')}:
+              </label>
               <Input
                 style={{ width: 220 }}
-                placeholder={t('common.inputMsg')}
+                placeholder={t('common.pleaseInput')}
                 value={inputValue}
                 onChange={handleInputChange}
                 onPressEnter={handleInputSearch}
@@ -218,7 +257,9 @@ const OperationLog: React.FC = () => {
               />
             </div>
             <div className="flex items-center">
-              <label className="mr-2 whitespace-nowrap">{t('OperationLog.timeRange')}:</label>
+              <label className="mr-2 whitespace-nowrap">
+                {t('OperationLog.timeRange')}:
+              </label>
               <DatePicker.RangePicker
                 style={{ width: 380 }}
                 showTime

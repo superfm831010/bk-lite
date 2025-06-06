@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   Spin,
   Input,
@@ -24,7 +24,7 @@ import {
   TableDataItem,
 } from '@/app/monitor/types';
 import {
-  ObectItem,
+  ObjectItem,
   RuleInfo,
   ObjectInstItem,
 } from '@/app/monitor/types/monitor';
@@ -38,14 +38,19 @@ import {
   deepClone,
   showGroupName,
   getConfigByObjectName,
+  getBaseInstanceColumn,
 } from '@/app/monitor/utils/common';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EditConfig from './updateConfig';
 import EditInstance from './editInstance';
-import { NODE_STATUS_MAP } from '@/app/monitor/constants/monitor';
+import {
+  NODE_STATUS_MAP,
+  OBJECT_DEFAULT_ICON,
+} from '@/app/monitor/constants/monitor';
 const { confirm } = Modal;
 import Permission from '@/components/permission';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
 const Asset = () => {
   const { isLoading } = useApiClient();
@@ -78,69 +83,12 @@ const Asset = () => {
   const [ruleList, setRuleList] = useState<RuleInfo[]>([]);
   const [tableData, setTableData] = useState<TableDataItem[]>([]);
   const [searchText, setSearchText] = useState<string>('');
-  const [objects, setObjects] = useState<ObectItem[]>([]);
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]);
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [objectId, setObjectId] = useState<React.Key>('');
   const [frequence, setFrequence] = useState<number>(0);
   const [confirmLoading, setConfirmLoading] = useState(false);
-
-  const columns: ColumnItem[] = [
-    {
-      title: t('common.name'),
-      dataIndex: 'instance_name',
-      key: 'instance_name',
-      ellipsis: true,
-      width: 200,
-    },
-    {
-      title: t('monitor.group'),
-      dataIndex: 'organization',
-      key: 'organization',
-      width: 200,
-      render: (_, { organization }) => (
-        <>{showGroupName(organization, organizationList)}</>
-      ),
-    },
-    {
-      title: t('common.action'),
-      key: 'action',
-      dataIndex: 'action',
-      width: 140,
-      fixed: 'right',
-      render: (_, record) => (
-        <>
-          <Button type="link" onClick={() => checkDetail(record)}>
-            {t('common.detail')}
-          </Button>
-          <Permission requiredPermissions={['Edit']}>
-            <Button
-              disabled
-              type="link"
-              className="ml-[10px]"
-              onClick={() => openInstanceModal(record)}
-            >
-              {t('common.edit')}
-            </Button>
-          </Permission>
-          <Permission requiredPermissions={['Delete']}>
-            <Popconfirm
-              title={t('common.deleteTitle')}
-              description={t('common.deleteContent')}
-              okText={t('common.confirm')}
-              cancelText={t('common.cancel')}
-              okButtonProps={{ loading: confirmLoading }}
-              onConfirm={() => deleteInstConfirm(record)}
-            >
-              <Button type="link" className="ml-[10px]">
-                {t('common.remove')}
-              </Button>
-            </Popconfirm>
-          </Permission>
-        </>
-      ),
-    },
-  ];
 
   const childColumns: ColumnItem[] = [
     {
@@ -214,6 +162,69 @@ const Asset = () => {
     },
   ];
 
+  const columns = useMemo(() => {
+    const columnItems: ColumnItem[] = [
+      {
+        title: t('monitor.group'),
+        dataIndex: 'organization',
+        key: 'organization',
+        width: 160,
+        render: (_, { organization }) => (
+          <EllipsisWithTooltip
+            className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
+            text={showGroupName(organization, organizationList)}
+          />
+        ),
+      },
+      {
+        title: t('common.action'),
+        key: 'action',
+        dataIndex: 'action',
+        width: 140,
+        fixed: 'right',
+        render: (_, record) => (
+          <>
+            <Button type="link" onClick={() => checkDetail(record)}>
+              {t('common.detail')}
+            </Button>
+            <Permission requiredPermissions={['Edit']}>
+              <Button
+                type="link"
+                className="ml-[10px]"
+                onClick={() => openInstanceModal(record)}
+              >
+                {t('common.edit')}
+              </Button>
+            </Permission>
+            <Permission requiredPermissions={['Delete']}>
+              <Popconfirm
+                title={t('common.deleteTitle')}
+                description={t('common.deleteContent')}
+                okText={t('common.confirm')}
+                cancelText={t('common.cancel')}
+                okButtonProps={{ loading: confirmLoading }}
+                onConfirm={() => deleteInstConfirm(record)}
+              >
+                <Button type="link" className="ml-[10px]">
+                  {t('common.remove')}
+                </Button>
+              </Popconfirm>
+            </Permission>
+          </>
+        ),
+      },
+    ];
+    const row = objects.find((item) => item.id === objectId) || {};
+    return [
+      ...getBaseInstanceColumn({
+        objects,
+        row,
+        t,
+      }),
+      ...columnItems,
+    ];
+  }, [objects, objectId, t]);
+
   useEffect(() => {
     if (!isLoading) {
       getObjects();
@@ -270,6 +281,8 @@ const Asset = () => {
   };
 
   const handleObjectChange = (id: string) => {
+    setTableData([]);
+    setRuleList([]);
     setObjectId(id);
   };
 
@@ -313,12 +326,15 @@ const Asset = () => {
   };
 
   const checkDetail = (row: ObjectInstItem) => {
-    const monitorItem = objects.find((item: ObectItem) => item.id === objectId);
+    const monitorItem = objects.find(
+      (item: ObjectItem) => item.id === objectId
+    );
     const params: any = {
       monitorObjId: objectId || '',
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
       instance_id: row.instance_id,
+      icon: monitorItem?.icon || OBJECT_DEFAULT_ICON,
       instance_name: row.instance_name,
       instance_id_values: row.instance_id_values,
     };
@@ -384,7 +400,7 @@ const Asset = () => {
     }
   };
 
-  const getTreeData = (data: ObectItem[]): TreeItem[] => {
+  const getTreeData = (data: ObjectItem[]): TreeItem[] => {
     const groupedData = data.reduce((acc, item) => {
       if (!acc[item.type]) {
         acc[item.type] = {
@@ -480,7 +496,7 @@ const Asset = () => {
 
   const getRowxpandable = () => {
     const monitorObjName =
-      objects.find((item: ObectItem) => item.id === objectId)?.name || '';
+      objects.find((item: ObjectItem) => item.id === objectId)?.name || '';
     return ![
       'Pod',
       'Node',
@@ -647,6 +663,7 @@ const Asset = () => {
         ref={ruleRef}
         monitorObject={objectId}
         groupList={organizationList}
+        objects={objects}
         onSuccess={operateRule}
       />
       <EditConfig ref={configRef} onSuccess={() => getAssetInsts(objectId)} />

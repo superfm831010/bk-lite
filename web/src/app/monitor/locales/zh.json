@@ -98,7 +98,9 @@
     "organizations": "组织",
     "all": "全部",
     "copy": "复制",
-    "remove": "删除"
+    "remove": "删除",
+    "inputPassword": "请输入密码",
+    "reset": "重置"
   },
   "cutomTable": {
     "fieldSetting": "列表字段设置"
@@ -221,7 +223,13 @@
       "jvm_memory_usage_used_value": "已使用内存大小",
       "jvm_memory_usage_max_value": "JVM 内存使用最大值",
       "jvm_os_memory_physical_free_value": "可用物理内存",
-      "jvm_gc_collectiontime_seconds_value": "GC 收集总时间"
+      "jvm_gc_collectiontime_seconds_value": "GC 收集总时间",
+      "cvm_CPU_Usage": "CPU 利用率",
+      "cvm_MemUsage": "内存利用率",
+      "cvm_LanOuttraffic": "内网出带宽",
+      "cvm_WanOuttraffic": "外网出带宽",
+      "dashboard": "仪表盘",
+      "quickSearch": "快捷搜索"
     },
     "events": {
       "event": "事件",
@@ -316,7 +324,8 @@
       "message": "报文",
       "activeAlarmsMapTips": "展示所有符合过滤项的活跃告警分布图。",
       "historicalAlarmsMapTips": "展示所选时间范围内，符合过滤项的所有历史告警分布图。",
-      "promQLPlaceholder": "请参考Prometheus的语法撰写PromQL，通常可以查询并过滤相关的指标。"
+      "promQLPlaceholder": "请参考Prometheus的语法撰写PromQL，通常可以查询并过滤相关的指标。",
+      "monitoringTarget": "监控目标"
     },
     "intergrations": {
       "intergration": "集成",

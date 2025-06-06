@@ -8,12 +8,15 @@ import { ModalRef, TabItem } from '@/app/monitor/types';
 import {
   ChartProps,
   ViewModalProps,
-  ObectItem,
+  ObjectItem,
 } from '@/app/monitor/types/monitor';
 import { useTranslation } from '@/utils/i18n';
 import MonitorView from './monitorView';
 import MonitorAlarm from './monitorAlarm';
-import { INIT_VIEW_MODAL_FORM } from '@/app/monitor/constants/monitor';
+import {
+  INIT_VIEW_MODAL_FORM,
+  OBJECT_DEFAULT_ICON,
+} from '@/app/monitor/constants/monitor';
 
 const ViewModal = forwardRef<ModalRef, ViewModalProps>(
   ({ monitorObject, monitorName, plugins, metrics, objects = [] }, ref) => {
@@ -65,12 +68,13 @@ const ViewModal = forwardRef<ModalRef, ViewModalProps>(
 
     const linkToDetial = () => {
       const monitorItem = objects.find(
-        (item: ObectItem) => item.id === monitorObject
+        (item: ObjectItem) => item.id === monitorObject
       );
       const row: any = {
         monitorObjId: monitorObject || '',
         name: monitorName,
         monitorObjDisplayName: monitorItem?.display_name || '',
+        icon: monitorItem?.icon || OBJECT_DEFAULT_ICON,
         instance_id: viewConfig.instance_id,
         instance_name: viewConfig.instance_name,
         instance_id_values: viewConfig.instance_id_values,
@@ -87,12 +91,13 @@ const ViewModal = forwardRef<ModalRef, ViewModalProps>(
           title={title}
           subTitle={viewConfig.instance_name}
           visible={groupVisible}
-          onClose={handleCancel}
+          destroyOnClose
           footer={
             <div>
               <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
+          onClose={handleCancel}
         >
           <Tabs
             activeKey={currentTab}

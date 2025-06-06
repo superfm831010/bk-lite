@@ -47,6 +47,7 @@
     },
     {
       "name": "ESXI",
+      "icon": "ESXI",
       "type": "VMWare",
       "level": "derivative",
       "description": "",
@@ -165,6 +166,7 @@
     },
     {
       "name": "VM",
+      "icon": "xuniji",
       "type": "VMWare",
       "level": "derivative",
       "description": "",
@@ -307,7 +309,7 @@
           "query": "power_state_gauge{resource_type=\"vmware_vm\",__$labels__}",
           "display_name": "Power state",
           "data_type": "Enum",
-          "unit": "[{\"name\":\"关机\",\"id\":0,\"color\":\"#ff4d4f\"},{\"name\":\"开机\",\"id\":1,\"color\":\"#83ff4f\"}]",
+          "unit": "[{\"name\":\"关机\",\"id\":0,\"color\":\"#ff4d4f\"},{\"name\":\"开机\",\"id\":1,\"color\":\"#1ac44a\"}]",
           "dimensions": [],
           "instance_id_keys": ["instance_id", "resource_id"],
           "description": "It indicates the current power status of a virtual machine (VM). This metric helps administrators monitor whether a VM is powered on or off.This metric is essential for tracking VM availability, optimizing resource allocation, and automating workflows in VMware environments."
@@ -316,6 +318,7 @@
     },
     {
       "name": "DataStorage",
+      "icon": "yuncunchu",
       "type": "VMWare",
       "level": "derivative",
       "description": "",
@@ -348,7 +351,7 @@
           "query": "store_accessible_gauge{__$labels__}",
           "display_name": "Storage connection status",
           "data_type": "Enum",
-          "unit": "[{\"name\":\"断开\",\"id\":0,\"color\":\"#ff4d4f\"},{\"name\":\"正常\",\"id\":1,\"color\":\"#83ff4f\"}]",
+          "unit": "[{\"name\":\"断开\",\"id\":0,\"color\":\"#ff4d4f\"},{\"name\":\"正常\",\"id\":1,\"color\":\"#1ac44a\"}]",
           "dimensions": [],
           "instance_id_keys": ["instance_id", "resource_id"],
           "description": "The storage connection status indicates the connectability of the storage device and is an indicator for evaluating the health status of the storage system."

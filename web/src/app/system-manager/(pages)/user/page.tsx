@@ -20,6 +20,11 @@ import OperateModal from '@/components/operate-modal';
 import PermissionWrapper from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
+interface ExtendedTreeDataNode extends TreeDataNode {
+  hasAuth?: boolean;
+  children?: ExtendedTreeDataNode[];
+}
+
 const { Search } = Input;
 
 const User: React.FC = () => {
@@ -32,8 +37,8 @@ const User: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
-  const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
-  const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
+  const [treeData, setTreeData] = useState<ExtendedTreeDataNode[]>([]);
+  const [filteredTreeData, setFilteredTreeData] = useState<ExtendedTreeDataNode[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const addGroupFormRef = useRef<any>(null);
   const [addGroupModalOpen, setAddGroupModalOpen] = useState(false);
@@ -91,17 +96,17 @@ const User: React.FC = () => {
       fixed: 'right',
       render: (key: string) => (
         <>
-          <PermissionWrapper requiredPermissions={['Edit']}>
+          <PermissionWrapper requiredPermissions={['Edit User']}>
             <Button type="link" className="mr-[8px]" onClick={() => handleEditUser(key)}>
               {t('common.edit')}
             </Button>
           </PermissionWrapper>
-          <PermissionWrapper requiredPermissions={['Edit']}>
+          <PermissionWrapper requiredPermissions={['Edit User']}>
             <Button type="link" className="mr-[8px]" onClick={() => openPasswordModal(key)}>
               {t('system.common.password')}
             </Button>
           </PermissionWrapper>
-          <PermissionWrapper requiredPermissions={['Delete']}>
+          <PermissionWrapper requiredPermissions={['Delete User']}>
             <Popconfirm
               title={t('common.delConfirm')}
               okText={t('common.confirm')}
@@ -161,7 +166,7 @@ const User: React.FC = () => {
     setIsDeleteDisabled(selectedRowKeys.length === 0);
   }, [selectedRowKeys]);
 
-  const nodeExistsInTree = (tree: TreeDataNode[], key: React.Key): boolean => {
+  const nodeExistsInTree = (tree: ExtendedTreeDataNode[], key: React.Key): boolean => {
     for (const node of tree) {
       if (node.key === key) return true;
       if (node.children && node.children.length > 0) {
@@ -177,6 +182,10 @@ const User: React.FC = () => {
     if (selectedKeys.length === 0 || !nodeExistsInTree(filteredTreeData, selectedKeys[0])) {
       setSelectedTreeKeys([]);
     } else {
+      const selectedNode = findNode(filteredTreeData, selectedKeys[0] as number);
+      if (selectedNode && selectedNode.hasAuth === false) {
+        return;
+      }
       setSelectedTreeKeys(selectedKeys.map(Number));
     }
     
@@ -196,10 +205,11 @@ const User: React.FC = () => {
     passwordModalRef.current?.showModal({ userId });
   };
 
-  const convertGroups = (groups: OriginalGroup[]): TreeDataNode[] => {
+  const convertGroups = (groups: OriginalGroup[]): ExtendedTreeDataNode[] => {
     return groups.map((group) => ({
       key: group.id,
       title: group.name,
+      hasAuth: group.hasAuth,
       children: group.subGroups ? convertGroups(group.subGroups) : [],
     }));
   };
@@ -265,8 +275,8 @@ const User: React.FC = () => {
   };
 
   const filterTreeData = (value: string) => {
-    const filterFunc = (data: TreeDataNode[], searchQuery: string): TreeDataNode[] => {
-      return data.reduce<TreeDataNode[]>((acc, item) => {
+    const filterFunc = (data: ExtendedTreeDataNode[], searchQuery: string): ExtendedTreeDataNode[] => {
+      return data.reduce<ExtendedTreeDataNode[]>((acc, item) => {
         const children = item.children ? filterFunc(item.children, searchQuery) : [];
         if ((item.title as string).toLowerCase().includes(searchQuery.toLowerCase()) || children.length) {
           acc.push({ ...item, children });
@@ -326,6 +336,11 @@ const User: React.FC = () => {
   };
 
   const handleGroupAction = async (action: string, groupKey: number) => {
+    const node = findNode(treeData, groupKey);
+    if (node && node.hasAuth === false) {
+      return;
+    }
+
     switch (action) {
       case 'addSubGroup':
         handleAddSubGroup(groupKey);
@@ -370,12 +385,26 @@ const User: React.FC = () => {
     }
   };
 
-  const deleteGroup = async (group: TreeDataNode) => {
+  const deleteGroup = async (group: ExtendedTreeDataNode) => {
     setLoading(true);
     try {
       await deleteTeam({ id: group.key });
       message.success(t('common.delSuccess'));
-      fetchTreeData();
+      
+      const deletedKey = group.key;
+      const isSelectedDeleted = selectedTreeKeys.includes(deletedKey);
+      await fetchTreeData();
+      
+      if (isSelectedDeleted) {
+        setSelectedTreeKeys([]);
+        setSelectedRowKeys([]);
+        fetchUsers({ 
+          search: searchValue, 
+          page: currentPage, 
+          page_size: pageSize,
+          group_id: undefined
+        });
+      }
     } catch {
       message.error(t('common.delFailed'));
     } finally {
@@ -403,7 +432,7 @@ const User: React.FC = () => {
     }
   };
 
-  const findNode = (tree: TreeDataNode[], key: number): TreeDataNode | undefined => {
+  const findNode = (tree: ExtendedTreeDataNode[], key: number): ExtendedTreeDataNode | undefined => {
     for (const node of tree) {
       if (node.key === key) return node;
       if (node.children) {
@@ -413,56 +442,71 @@ const User: React.FC = () => {
     }
   };
 
-  const renderGroupActions = (groupKey: number) => (
-    <Dropdown
-      overlay={
-        <Menu
-          onClick={({ key }) => handleGroupAction(key, groupKey)}
-          items={[
-            {
-              key: 'addSubGroup',
-              label: (
-                <PermissionWrapper requiredPermissions={['Add']}>
-                  {t('system.group.addSubGroups')}
-                </PermissionWrapper>
-              ),
-            },
-            {
-              key: 'rename',
-              label: (
-                <PermissionWrapper requiredPermissions={['Edit']}>
-                  {t('system.group.rename')}
-                </PermissionWrapper>
-              ),
-            },
-            {
-              key: 'delete',
-              label: (
-                <PermissionWrapper requiredPermissions={['Delete']}>
-                  {t('common.delete')}
-                </PermissionWrapper>
-              ),
-            },
-          ]}
-        />
-      }
-      trigger={['click']}
-    >
-      <MoreOutlined
-        className="cursor-pointer"
-        onClick={(e) => e.stopPropagation()}
-      />
-    </Dropdown>
-  );
+  const renderGroupActions = (groupKey: number) => {
+    // 检查节点是否有权限
+    const node = findNode(treeData, groupKey);
+    if (node && node.hasAuth === false) {
+      return null; // 如果没有权限，不显示操作按钮
+    }
 
-  const renderTreeNode = (nodes: TreeDataNode[]): TreeDataNode[] =>
+    return (
+      <Dropdown
+        overlay={
+          <Menu
+            onClick={({ key, domEvent }) => {
+              domEvent.stopPropagation();
+              handleGroupAction(key, groupKey);
+            }}
+            items={[
+              {
+                key: 'addSubGroup',
+                label: (
+                  <PermissionWrapper requiredPermissions={['Add Group']}>
+                    {t('system.group.addSubGroups')}
+                  </PermissionWrapper>
+                ),
+              },
+              {
+                key: 'rename',
+                label: (
+                  <PermissionWrapper requiredPermissions={['Edit Group']}>
+                    {t('system.group.rename')}
+                  </PermissionWrapper>
+                ),
+              },
+              {
+                key: 'delete',
+                label: (
+                  <PermissionWrapper requiredPermissions={['Delete Group']}>
+                    {t('common.delete')}
+                  </PermissionWrapper>
+                ),
+              },
+            ]}
+          />
+        }
+        trigger={['click']}
+      >
+        <MoreOutlined
+          className="cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+        />
+      </Dropdown>
+    );
+  };
+
+  const renderTreeNode = (nodes: ExtendedTreeDataNode[]): ExtendedTreeDataNode[] =>
     nodes.map((node) => ({
       ...node,
+      selectable: node.hasAuth !== false,
       title: (
         <div className="flex justify-between items-center w-full pr-1">
           <EllipsisWithTooltip 
             text={typeof node.title === 'function' ? String(node.title(node)) : String(node.title)}
-            className="truncate max-w-[100px] flex-1"
+            className={`truncate max-w-[100px] flex-1 ${node.hasAuth === false ? 'opacity-50' : ''}`}
           />
           <span className="flex-shrink-0 ml-2">
             {renderGroupActions(node.key as number)}
@@ -486,7 +530,7 @@ const User: React.FC = () => {
           onChange={(e) => handleTreeSearchChange(e.target.value)}
           value={treeSearchValue}
         />
-        <PermissionWrapper requiredPermissions={['Add']}>
+        <PermissionWrapper requiredPermissions={['Add Group']}>
           <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={handleAddRootGroup}></Button>
         </PermissionWrapper>
       </div>
@@ -512,13 +556,13 @@ const User: React.FC = () => {
           onSearch={handleUserSearch}
           placeholder={`${t('common.search')}...`}
         />
-        <PermissionWrapper requiredPermissions={['Add']}>
+        <PermissionWrapper requiredPermissions={['Add User']}>
           <Button type="primary" className="mr-2" onClick={() => openUserModal('add')}>
             +{t('common.add')}
           </Button>
         </PermissionWrapper>
         <UserModal ref={userModalRef} treeData={treeData} onSuccess={onSuccessUserModal} />
-        <PermissionWrapper requiredPermissions={['Delete']}>
+        <PermissionWrapper requiredPermissions={['Delete User']}>
           <Button onClick={handleModifyDelete} disabled={isDeleteDisabled}>
             {t('common.batchDelete')}
           </Button>

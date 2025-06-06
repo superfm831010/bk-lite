@@ -69,12 +69,12 @@ export interface AssoListProps {
 }
 
 export interface SelectInstanceProps {
-  onSuccess?: () => void;
   userList: UserItem[];
   organizationList: Organization[];
   models: ModelItem[];
   assoTypes: AssoTypeItem[];
   needFetchAssoInstIds?: boolean;
+  onSuccess?: () => void;
 }
 
 export interface AssoTopoProps {
@@ -99,6 +99,8 @@ export interface FieldModalRef {
 export interface SearchFilterProps {
   attrList: AttrFieldType[];
   organizationList: Organization[];
+  proxyOptions: { proxy_id: string; proxy_name: string }[];
   userList: UserItem[];
+  showExactSearch?: boolean;
   onSearch: (condition: unknown, value: any) => void;
 }

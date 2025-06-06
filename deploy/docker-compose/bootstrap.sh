@@ -87,12 +87,20 @@ check_http_response() {
     log "ERROR" "经过 $max_attempts 次尝试，$service_name 仍未成功启动"
     return 1
 }
+
 if [ -f port.env ]; then
     log "SUCCESS" "port.env文件已存在，跳过文件生成步骤..."
     source port.env
 else
         # 获取本地的第一个ip为默认ip
-    DEFAULT_IP=$(hostname -I | awk '{print $1}')
+    # Get IP address - compatible with both Linux and macOS
+    if command -v hostname >/dev/null 2>&1 && hostname -I >/dev/null 2>&1; then
+        DEFAULT_IP=$(hostname -I | awk '{print $1}')
+    elif command -v ifconfig >/dev/null 2>&1; then
+        DEFAULT_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | head -1)
+    else
+        DEFAULT_IP="127.0.0.1"
+    fi
 
     # 从命令行读取HOST_IP环境变量
     read -p "输入对外访问的IP地址，默认为 [$DEFAULT_IP] " HOST_IP
@@ -147,8 +155,10 @@ else
     export SECRET_KEY=$(generate_password 32)
     export NEXTAUTH_SECRET=$(generate_password 12)
     export SIDECAR_INIT_TOKEN=$(generate_password 64)
-    export NATS_USERNAME=admin
-    export NATS_PASSWORD=$(generate_password 32)
+    export NATS_ADMIN_USERNAME=admin
+    export NATS_ADMIN_PASSWORD=$(generate_password 32)
+    export NATS_MONITOR_USERNAME=monitor
+    export NATS_MONITOR_PASSWORD=$(generate_password 32)
     export NEO4J_USERNAME=neo4j
     export NEO4J_PASSWORD=$(generate_password 32)
     export NEO4J_AUTH="${NEO4J_USERNAME}/${NEO4J_PASSWORD}"
@@ -162,8 +172,10 @@ export REDIS_PASSWORD=$REDIS_PASSWORD
 export SECRET_KEY=$SECRET_KEY
 export NEXTAUTH_SECRET=$NEXTAUTH_SECRET
 export SIDECAR_INIT_TOKEN=$SIDECAR_INIT_TOKEN
-export NATS_USERNAME=$NATS_USERNAME
-export NATS_PASSWORD=$NATS_PASSWORD
+export NATS_ADMIN_USERNAME=$NATS_ADMIN_USERNAME
+export NATS_ADMIN_PASSWORD=$NATS_ADMIN_PASSWORD
+export NATS_MONITOR_USERNAME=$NATS_MONITOR_USERNAME
+export NATS_MONITOR_PASSWORD=$NATS_MONITOR_PASSWORD
 export NEO4J_USERNAME=$NEO4J_USERNAME
 export NEO4J_PASSWORD=$NEO4J_PASSWORD
 export NEO4J_AUTH=$NEO4J_AUTH
@@ -216,461 +228,122 @@ else
     exit 1
 fi
 
-# 检查docker-compose.yml文件是否已存在
-if [ -f docker-compose.yml ]; then
-    log "INFO" "docker-compose.yml文件已存在，跳过文件生成步骤..."
+# 检查nats.conf文件是否存在
+if [ -f ./conf/nats/nats.conf ]; then
+    log "WARNING" "nats.conf文件已存在，文件将被覆盖..."
 else
-    # 创建 docker-compose.yml 文件
-    log "INFO" "创建 docker-compose.yml 文件..."
-    cat > docker-compose.yml <<EOF
-networks:
-  prod:
-    driver: bridge
-
-volumes:
-  redis:
-  nats:
-  victoria-metrics:
-  postgres:
-  neo4j:
-
-services:
-
-  traefik:
-    image: ${DOCKER_IMAGE_TRAEFIK}
-    restart: always
-    ports:
-      - "${TRAEFIK_CMDB_PORT}:${TRAEFIK_CMDB_PORT}"
-      - "${TRAEFIK_SYSTEM_MANAGER_PORT}:${TRAEFIK_SYSTEM_MANAGER_PORT}"
-      - "${TRAEFIK_NODE_MANAGER_PORT}:${TRAEFIK_NODE_MANAGER_PORT}"
-      - "${TRAEFIK_MONITOR_PORT}:${TRAEFIK_MONITOR_PORT}"
-      - "${TRAEFIK_CONSOLE_PORT}:${TRAEFIK_CONSOLE_PORT}"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./conf/traefik/dynamic.yml:/etc/traefik/dynamic.yml
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.services.traefik-dashboard.loadbalancer.server.port=8080"
-    command:
-      - "--log.level=INFO"
-      - "--api.insecure=true"
-      - "--api.dashboard=${TRAEFIK_ENABLE_DASHBOARD}"
-      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
-      - "--providers.docker.exposedByDefault=false"
-      - "--providers.file.filename=/etc/traefik/dynamic.yml"
-      - "--providers.file.watch=true"
-      - "--accesslog"
-      - "--entrypoints.cmdb-web.address=:${TRAEFIK_CMDB_PORT}"
-      - "--entrypoints.system-manager-web.address=:${TRAEFIK_SYSTEM_MANAGER_PORT}"
-      - "--entrypoints.node-manager-web.address=:${TRAEFIK_NODE_MANAGER_PORT}"
-      - "--entrypoints.monitor-web.address=:${TRAEFIK_MONITOR_PORT}"
-      - "--entrypoints.opsconsole.address=:${TRAEFIK_CONSOLE_PORT}"
-    networks:
-      - prod
-
-  redis:
-    image: ${DOCKER_IMAGE_REDIS}
-    restart: always
-    volumes:
-      - redis:/data
-    command:
-      - "redis-server"
-      - "--requirepass"
-      - "${REDIS_PASSWORD}"
-    ports:
-      - "6379:6379"
-    networks:
-      - prod
-
-  nats:
-    image: ${DOCKER_IMAGE_NATS}
-    restart: always
-    volumes:
-      - ./conf/nats/nats.conf:/etc/nats/nats.conf
-      - nats:/nats
-    ports:
-      - "4222:4222"
-    command:
-      - "-c"
-      - "/etc/nats/nats.conf"
-      - "--user"
-      - "${NATS_USERNAME}"
-      - "--pass"
-      - "${NATS_PASSWORD}"
-    networks:
-      - prod
-
-  victoria-metrics:
-    image: ${DOCKER_IMAGE_VICTORIA_METRICS}
-    restart: always
-    volumes:
-      - victoria-metrics:/victoria-metrics-data
-    ports:
-      - "8428:8428"
-    command:
-      - "--storageDataPath=/victoria-metrics-data"
-      - "--httpListenAddr=0.0.0.0:8428"
-      - "--retentionPeriod=168h"
-      - "-maxLabelsPerTimeseries=300"
-    networks:
-      - prod
-    depends_on:
-      - nats
-
-  neo4j:
-    image: ${DOCKER_NEO4J_IMAGE}
-    container_name: neo4j
-    restart: always
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-      - "7473:7473"
-    networks:
-      - prod
-    environment:
-      - NEO4J_AUTH=${NEO4J_AUTH}
-    volumes:
-      - neo4j:/data
-
-  postgres:
-    container_name: postgres
-    image: postgres:15
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      PGDATA: /data/postgres
-    volumes:
-      - postgres:/data/postgres
-    networks:
-      - prod
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USERNAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    restart: always
-
-  system-manager:
-    image: ${DOCKER_IMAGE_SYSTEM_MANAGER}
-    restart: always
-    environment:
-      NATS_SERVERS: nats://${NATS_USERNAME}:${NATS_PASSWORD}@nats:4222
-      NATS_NAMESPACE: bk-lite
-      DEFAULT_REQUEST_TIMEOUT: ${DEFAULT_REQUEST_TIMEOUT}
-      DB_NAME: system_mgmt
-      CLIENT_ID: system-manager
-      DEBUG: "0"
-      SECRET_KEY: ${SECRET_KEY}
-      IS_USE_CELERY: "True"
-      DB_USER: ${POSTGRES_USERNAME}
-      DB_HOST: postgres
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_PORT: "5432"
-      DB_ENGINE: postgresql
-      INSTALL_APPS: system_mgmt
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./keycloak_web_secret.env:/tmp/keycloak_web_secret.env
-    healthcheck:
-      test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", "http://127.0.0.1:8000/"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    networks:
-      - prod
-    profiles:
-      - lite
-
-  system-manager-web:
-    image: ${DOCKER_IMAGE_SYSTEM_MANAGER_WEB}
-    restart: always
-    environment:
-      NEXTAUTH_URL: http://${HOST_IP}:${TRAEFIK_SYSTEM_MANAGER_PORT}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXTAPI_URL: http://system-manager:8000
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.system-manager-web.rule=Host(\`${HOST_IP}\`)"
-      - "traefik.http.routers.system-manager-web.entrypoints=system-manager-web"
-      - "traefik.http.services.system-manager-web.loadbalancer.server.port=3000"
-    networks:
-      - prod
-    profiles:
-      - lite
-    depends_on:
-      - system-manager
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://system-manager-web:3000/healthcheck').then(res => res.status === 200)"]
-
-  node-manager:
-    image: ${DOCKER_IMAGE_NODE_MANAGER}
-    restart: always
-    ports:
-      - "${NODE_MANAGER_API_PORT}:8000"
-    environment:
-      NATS_SERVERS: nats://${NATS_USERNAME}:${NATS_PASSWORD}@nats:4222
-      NATS_NAMESPACE: bk-lite
-      DB_NAME: node_mgmt
-      CLIENT_ID: node_mgmt
-      SIDECAR_INIT_TOKEN: ${SIDECAR_INIT_TOKEN}
-      DEFAULT_ZONE_VAR_NATS_SERVERS: nats://${HOST_IP}:4222
-      DEFAULT_ZONE_VAR_NATS_USERNAME: ${NATS_USERNAME}
-      DEFAULT_ZONE_VAR_NATS_PASSWORD: ${NATS_PASSWORD}
-      DEFAULT_ZONE_VAR_NODE_SERVER_URL: http://${HOST_IP}:${NODE_MANAGER_API_PORT}
-      DEFAULT_ZONE_VAR_STARGAZER_URL: http://stargazer:8083
-      SIDECAR_INPUT_MODE: nats
-      DEBUG: "0"
-      SECRET_KEY: ${SECRET_KEY}
-      IS_USE_CELERY: "False"
-      DB_USER: ${POSTGRES_USERNAME}
-      DB_HOST: postgres
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_PORT: "5432"
-      DB_ENGINE: postgresql
-      INSTALL_APPS: node_mgmt
-    volumes:
-      - ./pkgs:/pkgs
-    healthcheck:
-      test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", "http://127.0.0.1:8000/"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    networks:
-      - prod
-    profiles:
-      - lite
-    depends_on:
-      system-manager:
-        condition: service_healthy
-
-  node-manager-web:
-    image: ${DOCKER_IMAGE_NODE_MANAGER_WEB}
-    restart: always
-    environment:
-      NEXTAUTH_URL: http://${HOST_IP}:${TRAEFIK_NODE_MANAGER_PORT}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXTAPI_URL: http://node-manager:8000
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.node-manager-web.rule=Host(\`${HOST_IP}\`)"
-      - "traefik.http.routers.node-manager-web.entrypoints=node-manager-web"
-      - "traefik.http.services.node-manager-web.loadbalancer.server.port=3000"
-    networks:
-      - prod
-    profiles:
-      - lite
-    depends_on:
-      - node-manager
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://node-manager-web:3000/healthcheck').then(res => res.status === 200)"]
-
-  monitor:
-    image: ${DOCKER_IMAGE_MONITOR}
-    restart: always
-    environment:
-      NATS_SERVERS: nats://${NATS_USERNAME}:${NATS_PASSWORD}@nats:4222
-      NATS_NAMESPACE: bk-lite
-      CLIENT_ID: monitor
-      DB_NAME: monitor
-      VICTORIAMETRICS_HOST: http://victoria-metrics:8428
-      IS_USE_CELERY: "True"
-      BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/10
-      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/10
-      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/10
-      DEBUG: "0"
-      SECRET_KEY: ${SECRET_KEY}
-      DB_ENGINE: postgresql
-      DB_USER: ${POSTGRES_USERNAME}
-      DB_HOST: postgres
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_PORT: "5432"
-      INSTALL_APPS: monitor
-    healthcheck:
-      test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", "http://127.0.0.1:8000/"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    depends_on:
-      system-manager:
-        condition: service_healthy
-    networks:
-      - prod
-    profiles:
-      - lite
-
-  monitor-web:
-    image: ${DOCKER_IMAGE_MONITOR_WEB}
-    restart: always
-    environment:
-      NEXTAUTH_URL: http://${HOST_IP}:${TRAEFIK_MONITOR_PORT}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXTAPI_URL: http://monitor:8000
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.monitor-web.rule=Host(\`${HOST_IP}\`)"
-      - "traefik.http.routers.monitor-web.entrypoints=monitor-web"
-      - "traefik.http.services.monitor-web.loadbalancer.server.port=3000"
-    networks:
-      - prod
-    profiles:
-      - lite
-    depends_on:
-      - monitor
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://monitor-web:3000/healthcheck').then(res => res.status === 200)"]
-  
-  cmdb:
-    image: ${DOCKER_IMAGE_CMDB}
-    restart: always
-    environment:
-      DEBUG: 0
-      INSTALL_APPS: cmdb
-      SECRET_KEY: ${SECRET_KEY}
-      DB_ENGINE: postgresql
-      DB_USER: ${POSTGRES_USERNAME}
-      DB_HOST: postgres
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_PORT: "5432"
-      NATS_SERVERS: nats://${NATS_USERNAME}:${NATS_PASSWORD}@nats:4222
-      NATS_NAMESPACE: bk-lite
-      CLIENT_ID: cmdb
-      DB_NAME: cmdb
-      NEO4J_URI: bolt://neo4j:7687
-      NEO4J_USER: ${NEO4J_USERNAME}
-      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
-      VICTORIAMETRICS_HOST: http://victoria-metrics:8428
-      IS_USE_CELERY: True
-      BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/11
-      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/11
-      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/11
-      REDIS_CACHE_URL: redis://:${REDIS_PASSWORD}@redis:6379/11
-      CELERY_WORKER_CONCURRENCY: 1
-    networks:
-      - prod
-    profiles:
-      - lite
-    depends_on:
-      system-manager:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", "http://cmdb:8000/healthcheck"]
-  
-  cmdb-web:
-    image: ${DOCKER_IMAGE_CMDB_WEB}
-    restart: always
-    environment:
-      NEXTAUTH_URL: http://${HOST_IP}:${TRAEFIK_CMDB_PORT}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXTAPI_URL: http://cmdb:8000
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.cmdb-web.rule=Host(\`${HOST_IP}\`)"
-      - "traefik.http.routers.cmdb-web.entrypoints=cmdb-web"
-      - "traefik.http.services.cmdb-web.loadbalancer.server.port=3000"
-    networks:
-      - prod
-    profiles:
-      - lite
-    depends_on:
-      - cmdb
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://cmdb-web:3000/healthcheck').then(res => res.status === 200)"]
-
-  telegraf:
-    image: bklite/telegraf
-    container_name: telegraf
-    environment:
-      - METRIC_NATS_USERNAME=admin
-      - METRIC_NATS_PASSWORD=${NATS_PASSWORD}
-      - METRIC_OUTPUT_URL=http://victoria-metrics:8428
-      - METRIC_NATS_SERVERS=nats://nats:4222
-    volumes:
-      - ./conf/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
-    networks:
-      - prod
-    profiles:
-      - lite
-    restart: always
-
-  ops-console:
-    image: ${DOCKER_IMAGE_OPSCONSOLE}
-    restart: always
-    environment:
-      NATS_SERVERS: nats://${NATS_USERNAME}:${NATS_PASSWORD}@nats:4222
-      NATS_NAMESPACE: ops-console
-      CLIENT_ID: ops-console
-      DB_NAME: ops-console
-      DB_USER: ${POSTGRES_USERNAME}
-      DB_HOST: postgres
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_ENGINE: postgresql
-      DB_PORT: "5432"
-      DEBUG: "0"
-      SECRET_KEY: ${SECRET_KEY}
-    networks:
-      - prod
-    healthcheck:
-      test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", "http://127.0.0.1:8000/"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    profiles:
-      - lite
-    depends_on:
-      system-manager:
-        condition: service_healthy
-    
-  ops-console-web:
-    image: bklite/ops-console-web
-    container_name: ops-console-web
-    environment:
-      - NEXTAPI_URL=http://ops-console:8000
-      - NEXTAUTH_URL=https://${HOST_IP}:${TRAEFIK_CONSOLE_PORT}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAPI_URL=http://ops-console:8000
-    restart: always
-    networks:
-      - prod
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.ops-console-web.rule=Host(\`${HOST_IP}\`)
-      - traefik.http.routers.ops-console-web.entrypoints=ops-console-web
-      - traefik.http.services.ops-console-web.loadbalancer.server.port=3000
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://ops-console-web:3000/healthcheck').then(res => res.status === 200)"]
-    depends_on:
-      - ops-console
-    profiles:
-      - lite
-
-  stargazer:
-    image: ${DOCKER_IMAGE_STARGAZER}
-    container_name: stargazer
-    networks:
-      - prod
-
-EOF
+    log "INFO" "创建 nats.conf 文件..."
 fi
+
+mkdir -p ./conf/nats
+cat > ./conf/nats/nats.conf <<EOF
+port: 4222
+
+monitor_port: 8222
+
+trace: true
+debug: false
+logtime: false
+
+jetstream: enabled
+jetstream {
+  store_dir=/nats/storage
+}
+
+server_name=nats-server
+authorization {  
+  default_permissions = {
+    publish =[]
+    subscribe = []
+  }
+  users = [
+    {
+      user: "${NATS_ADMIN_USERNAME}"
+      password: "${NATS_ADMIN_PASSWORD}"
+      permissions: {
+        publish = [">"]
+        subscribe = [">"]
+      }
+    },
+    {
+      user: "${NATS_MONITOR_USERNAME}"
+      password: "${NATS_MONITOR_PASSWORD}"
+      permissions: {
+        publish = ["metrics.>"]
+        subscribe = []
+      }
+    }
+  ]
+}
+EOF
+
+# 生成环境变量文件
+log "INFO" "生成 .env 文件..."
+cat > .env <<EOF
+HOST_IP=${HOST_IP}
+TRAEFIK_CMDB_PORT=${TRAEFIK_CMDB_PORT}
+TRAEFIK_SYSTEM_MANAGER_PORT=${TRAEFIK_SYSTEM_MANAGER_PORT}
+TRAEFIK_NODE_MANAGER_PORT=${TRAEFIK_NODE_MANAGER_PORT}
+TRAEFIK_MONITOR_PORT=${TRAEFIK_MONITOR_PORT}
+TRAEFIK_CONSOLE_PORT=${TRAEFIK_CONSOLE_PORT}
+NODE_MANAGER_API_PORT=${NODE_MANAGER_API_PORT}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+REDIS_PASSWORD=${REDIS_PASSWORD}
+SECRET_KEY=${SECRET_KEY}
+NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+SIDECAR_INIT_TOKEN=${SIDECAR_INIT_TOKEN}
+NATS_ADMIN_USERNAME=${NATS_ADMIN_USERNAME}
+NATS_ADMIN_PASSWORD=${NATS_ADMIN_PASSWORD}
+NATS_MONITOR_USERNAME=${NATS_MONITOR_USERNAME}
+NATS_MONITOR_PASSWORD=${NATS_MONITOR_PASSWORD}
+NEO4J_USERNAME=${NEO4J_USERNAME}
+NEO4J_PASSWORD=${NEO4J_PASSWORD}
+NEO4J_AUTH=${NEO4J_AUTH}
+DOCKER_IMAGE_TRAEFIK=${DOCKER_IMAGE_TRAEFIK}
+DOCKER_IMAGE_REDIS=${DOCKER_IMAGE_REDIS}
+DOCKER_IMAGE_NATS=${DOCKER_IMAGE_NATS}
+DOCKER_IMAGE_NATS_CLI=${DOCKER_IMAGE_NATS_CLI}
+DOCKER_IMAGE_VICTORIA_METRICS=${DOCKER_IMAGE_VICTORIA_METRICS}
+DOCKER_IMAGE_POSTGRES=${DOCKER_IMAGE_POSTGRES}
+DOCKER_IMAGE_SYSTEM_MANAGER=${DOCKER_IMAGE_SYSTEM_MANAGER}
+DOCKER_IMAGE_SYSTEM_MANAGER_WEB=${DOCKER_IMAGE_SYSTEM_MANAGER_WEB}
+DOCKER_IMAGE_NODE_MANAGER=${DOCKER_IMAGE_NODE_MANAGER}
+DOCKER_IMAGE_NODE_MANAGER_WEB=${DOCKER_IMAGE_NODE_MANAGER_WEB}
+DOCKER_IMAGE_MONITOR=${DOCKER_IMAGE_MONITOR}
+DOCKER_IMAGE_MONITOR_WEB=${DOCKER_IMAGE_MONITOR_WEB}
+DOCKER_IMAGE_OPSCONSOLE=${DOCKER_IMAGE_OPSCONSOLE}
+DOCKER_IMAGE_OPSCONSOLE_WEB=${DOCKER_IMAGE_OPSCONSOLE_WEB}
+DOCKER_IMAGE_STARGAZER=${DOCKER_IMAGE_STARGAZER}
+DOCKER_IMAGE_CMDB=${DOCKER_IMAGE_CMDB}
+DOCKER_IMAGE_CMDB_WEB=${DOCKER_IMAGE_CMDB_WEB}
+DOCKER_NEO4J_IMAGE=${DOCKER_NEO4J_IMAGE}
+DOCKER_IMAGE_FUSION_COLLECTOR=${DOCKER_IMAGE_FUSION_COLLECTOR}
+POSTGRES_USERNAME=${POSTGRES_USERNAME}
+TRAEFIK_ENABLE_DASHBOARD=${TRAEFIK_ENABLE_DASHBOARD}
+DEFAULT_REQUEST_TIMEOUT=${DEFAULT_REQUEST_TIMEOUT}
+DIST_ARCH=${DIST_ARCH}
+DOCKER_NETWORK=${DOCKER_NETWORK}
+EOF
+
+# 生成合成的docker-compose.yml文件
+log "INFO" "生成合成的 docker-compose.yml 文件..."
+docker-compose -f compose/infra.yaml \
+               -f compose/system_mgmt.yaml \
+               -f compose/cmdb.yaml \
+               -f compose/node_mgmt.yaml \
+               -f compose/monitor.yaml \
+               -f compose/ops_console.yaml \
+               config --no-interpolate > docker-compose.yaml
 
 # 按照特定顺序启动服务
 log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j)..."
 docker-compose up -d traefik redis nats victoria-metrics neo4j
 
-# 获取 Docker Compose 创建的网络名称
-PROJECT_NAME=$(basename $(pwd))
-COMPOSE_NETWORK=${PROJECT_NAME}_prod
-
 # 创建 JetStream - 使用正确的网络名称
 log "INFO" "创建JetStream..."
-docker run --rm --network=${COMPOSE_NETWORK} \
+docker run --rm --network=bklite-prod \
     $DOCKER_IMAGE_NATS_CLI -s nats://nats:4222 \
-    --user $NATS_USERNAME --password $NATS_PASSWORD \
+    --user $NATS_ADMIN_USERNAME --password $NATS_ADMIN_PASSWORD \
     stream add metrics --subjects=metrics.* --storage=file \
     --replicas=1 --retention=limits  --discard=old \
     --max-age=20m --max-bytes=104857600 --max-consumers=-1 \
@@ -682,69 +355,20 @@ log "INFO" "启动 Postgres..."
 docker-compose up -d postgres
 wait_container_health postgres "Postgres"
 
-# 创建所有必要的数据库 - 使用一条命令创建多个数据库
-log "INFO" "创建必要的数据库..."
-docker-compose exec -T postgres psql -U "$POSTGRES_USERNAME" -d postgres <<-'EOSQL'
-CREATE DATABASE system_mgmt;
-CREATE DATABASE node_mgmt;
-CREATE DATABASE monitor;
-CREATE DATABASE "ops-console";
-CREATE DATABASE keycloak;
-CREATE DATABASE cmdb;
-EOSQL
-
 # 启动服务
 log "INFO" "启动系统管理服务..."
 docker-compose up -d system-manager
-wait_container_health system-manager "系统管理服务"
 
-log "INFO" "初始化admin用户..." 
-docker-compose exec -T system-manager python manage.py create_user \
-    admin \
-    password \
-    --email=admin@bklite.net --is_superuser
-
-log "INFO" "启动系统管理Web..."
-docker-compose up -d system-manager-web
-wait_container_health system-manager-web "系统管理Web"
-
-log "INFO" "启动节点管理..."
-docker-compose up -d node-manager
-wait_container_health node-manager "节点管理"
-
-log "INFO" "启动节点管理Web..."
-docker-compose up -d node-manager-web
-wait_container_health node-manager-web "节点管理Web"
-
-log "INFO" "启动监控系统..."
-docker-compose up -d monitor
-wait_container_health monitor "监控系统"
-
-log "INFO" "启动监控系统Web..."
-docker-compose up -d monitor-web
-wait_container_health monitor-web "监控系统Web"
-
-log "INFO" "启动控制台..."
-docker-compose up -d ops-console
-wait_container_health ops-console "OpsConsole"
-
-log "INFO" "启动控制台Web..."
-docker-compose up -d ops-console-web
-wait_container_health ops-console-web "控制台Web"
-
-log "INFO" "启动CMDB..."
-docker-compose up -d cmdb
-wait_container_health cmdb "CMDB"
-
-log "INFO" "启动CMDB Web..."
-docker-compose up -d cmdb-web
-wait_container_health cmdb-web "CMDBWeb"
-
-log "INFO" "启动telegraf..."
-docker-compose up -d telegraf
-
-log "INFO" "启动stargazer..."
-docker-compose up -d stargazer
-
+log "INFO" "启动所有服务"
+docker-compose up -d
+sleep 10
+wait_container_health cmdb-web "CMDB"
+wait_container_health monitor-web "MONITOR"
+wait_container_health system-manager-web "SYSTEM_MGMT"
+wait_container_health ops-console-web "OPS_CONSOLE"
+wait_container_health node-manager-web "NODE_MGMT"
 log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_MONITOR_PORT 访问系统"
-log "INFO" "初始用户名: admin, 初始密码: password"
+log "SUCCESS" "初始用户名: admin, 初始密码: password"
+log "SUCCESS" "控制器安装信息："
+log "SUCCESS" "Token: ${SIDECAR_INIT_TOKEN}"
+log "SUCCESS" "API_URL: http://$HOST_IP:$NODE_MANAGER_API_PORT"

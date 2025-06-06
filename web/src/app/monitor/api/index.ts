@@ -5,6 +5,8 @@ import {
   NodeConfigInfo,
   TreeSortData,
   IntergrationMonitoredObject,
+  InstanceInfo,
+  SourceFeild,
 } from '@/app/monitor/types/monitor';
 
 interface OrderParam {
@@ -197,6 +199,7 @@ const useMonitorApi = () => {
     cloud_region_id?: number;
     page?: number;
     page_size?: number;
+    is_active?: boolean;
   }) => {
     return await post('/monitor/api/node_mgmt/nodes/', data);
   };
@@ -218,6 +221,7 @@ const useMonitorApi = () => {
     id: number,
     data: {
       enable?: boolean;
+      source?: SourceFeild;
     }
   ) => {
     return await patch(`/monitor/api/monitor_policy/${id}/`, data);
@@ -296,6 +300,13 @@ const useMonitorApi = () => {
     return await post('/monitor/api/node_mgmt/get_config_content/', data);
   };
 
+  const updateMonitorInstance = async (data: InstanceInfo) => {
+    return await post(
+      '/monitor/api/monitor_instance/update_monitor_instance/',
+      data
+    );
+  };
+
   return {
     getMonitorMetrics,
     getMetricsGroup,
@@ -329,6 +340,7 @@ const useMonitorApi = () => {
     deleteMonitorMetrics,
     deleteMetricsGroup,
     getConfigContent,
+    updateMonitorInstance,
   };
 };
 

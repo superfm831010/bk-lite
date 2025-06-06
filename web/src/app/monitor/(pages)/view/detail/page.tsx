@@ -9,14 +9,13 @@ import detailStyle from '../index.module.scss';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import Overview from './overview';
 import Metric from './metric';
-import { getConfigByObjectName } from '@/app/monitor/utils/common';
 
 const ViewDetail = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const desc = searchParams.get('instance_name');
-  const icon = getConfigByObjectName(searchParams.get('name') || '', 'icon');
+  const icon = searchParams.get('icon');
   const monitorObjDisplayName: string =
     searchParams.get('monitorObjDisplayName') || '';
   const monitorObjectId: React.Key = searchParams.get('monitorObjId') || '';
@@ -42,7 +41,7 @@ const ViewDetail = () => {
       <div className={detailStyle.leftSide}>
         <div className={detailStyle.topIntro}>
           <Icon
-            type={icon || 'Host'}
+            type={icon as string}
             className="mr-[10px] text-[30px] min-w-[30px]"
           />
           <span className="flex items-center">

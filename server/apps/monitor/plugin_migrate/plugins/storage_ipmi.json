@@ -12,7 +12,7 @@
       "query": "ipmi_sensor_status{name=~\"host_power\", instance_type=\"storage\",__$labels__}",
       "display_name": "Power State",
       "data_type": "Enum",
-      "unit": "[{\"name\":\"Normal\",\"id\":1,\"color\":\"#83ff4f\"},{\"name\":\"Abnormal\",\"id\":2,\"color\":\"#faad14\"}]",
+      "unit": "[{\"name\":\"Normal\",\"id\":1,\"color\":\"#1ac44a\"},{\"name\":\"Abnormal\",\"id\":2,\"color\":\"#faad14\"}]",
       "dimensions": [],
       "instance_id_keys": ["instance_id"],
       "description": "The power state indicator is used to monitor if the device is powered on. Its value can indicate whether the power is on or off. It is mainly used for remote management and monitoring of the device's power state."

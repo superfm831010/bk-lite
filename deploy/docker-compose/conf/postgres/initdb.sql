@@ -1,0 +1,5 @@
+CREATE DATABASE system_mgmt;
+CREATE DATABASE node_mgmt;
+CREATE DATABASE monitor;
+CREATE DATABASE "ops-console";
+CREATE DATABASE cmdb;

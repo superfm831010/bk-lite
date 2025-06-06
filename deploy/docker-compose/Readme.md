@@ -18,7 +18,7 @@ bash bootstrap.sh
 
 | 端口号 | 用途                                |
 | ------ | ----------------------------------- |
-| 20000  | keycloak访问端口，用于登录鉴权      |
+| 20000  | CMDB访问端口    |
 | 20001  | 系统管理访问端口                    |
 | 20002  | 节点管理访问端口                    |
 | 20003  | 监控页面访问端口                    |
@@ -32,8 +32,8 @@ bash bootstrap.sh
 ```bash
 #!/bin/bash
 # 清除现有的容器，卷和网络
-docker-compose --profile lite down --volumes
+docker-compose down --volumes
 # 清除生成的安装包，环境变量和compose文件
-rm -rvf pkgs *.env docker-compose.yml
+rm -rvf pkgs *.env docker-compose.yaml .env
 ```
 

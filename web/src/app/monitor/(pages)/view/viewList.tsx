@@ -11,11 +11,12 @@ import {
   getK8SData,
   getConfigByPluginName,
   getConfigByObjectName,
+  getBaseInstanceColumn,
 } from '@/app/monitor/utils/common';
 import { useRouter } from 'next/navigation';
 import {
   IntergrationItem,
-  ObectItem,
+  ObjectItem,
   MetricItem,
   ViewListProps,
 } from '@/app/monitor/types/monitor';
@@ -32,13 +33,20 @@ import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import Permission from '@/components/permission';
 import { ListItem } from '@/types';
+import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants/monitor';
 const { Option } = Select;
 
-const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
+const ViewList: React.FC<ViewListProps> = ({
+  objects,
+  objectId,
+  showTab,
+  updateTree,
+}) => {
   const { isLoading } = useApiClient();
   const {
     getMonitorMetrics,
     getInstanceList,
+    getInstanceSearch,
     getInstanceQueryParams,
     getMonitorPlugin,
   } = useMonitorApi();
@@ -59,13 +67,6 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
   const [plugins, setPlugins] = useState<IntergrationItem[]>([]);
   const columns: ColumnItem[] = [
     {
-      title: t('common.name'),
-      dataIndex: 'instance_name',
-      width: 140,
-      ellipsis: true,
-      key: 'instance_name',
-    },
-    {
       title: t('monitor.views.reportTime'),
       dataIndex: 'time',
       key: 'time',
@@ -80,7 +81,6 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       dataIndex: 'status',
       key: 'status',
       width: 160,
-      // filters: [],
       render: (_, record) => (
         <>
           {record?.status ? t(`monitor.intergrations.${record.status}`) : '--'}
@@ -104,7 +104,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
           </Button>
           <Permission requiredPermissions={['Detail']}>
             <Button type="link" onClick={() => linkToDetial(record)}>
-              {t('monitor.views.overview')}
+              {t('monitor.views.dashboard')}
             </Button>
           </Permission>
         </>
@@ -198,6 +198,11 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     }
   }, [colony, namespace, workload, node]);
 
+  const updatePage = () => {
+    onRefresh();
+    updateTree?.();
+  };
+
   const getParams = () => {
     return {
       page: pagination.current,
@@ -222,8 +227,10 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     const objParams = {
       monitor_object_id: objectId,
     };
-    const objName = objects.find((item) => item.id === objectId)?.name;
-    const getInstList = getInstanceList(objectId, params);
+    const targetObject = objects.find((item) => item.id === objectId);
+    const objName = targetObject?.name;
+    const request = showTab ? getInstanceSearch : getInstanceList;
+    const getInstList = request(objectId, params);
     const getQueryParams = getInstanceQueryParams(objName as string, objParams);
     const getMetrics = getMonitorMetrics(objParams);
     const getPlugins = getMonitorPlugin(objParams);
@@ -251,12 +258,8 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         total: res[0]?.count || 0,
       }));
       setMetrics(res[1] || []);
-      const _objectName = objects.find((item) => item.id === objectId)?.name;
-      if (_objectName) {
-        const filterMetrics = getConfigByObjectName(
-          _objectName,
-          'tableDiaplay'
-        );
+      if (objName) {
+        const filterMetrics = getConfigByObjectName(objName, 'tableDiaplay');
         const _columns = filterMetrics.map((item: any) => {
           const target = (res[1] || []).find(
             (tex: MetricItem) => tex.name === item.key
@@ -302,7 +305,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <span style={{ color }}>
                     <EllipsisWithTooltip
                       text={getEnumValueUnit(target, record[item.key])}
-                      className="w-[100px] overflow-hidden text-ellipsis whitespace-nowrap"
+                      className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
                     ></EllipsisWithTooltip>
                   </span>
                 </>
@@ -310,7 +313,14 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
             },
           };
         });
-        const originColumns = deepClone(columns);
+        const originColumns = deepClone([
+          ...getBaseInstanceColumn({
+            objects,
+            row: targetObject,
+            t,
+          }),
+          ...columns,
+        ]);
         const indexToInsert = originColumns.length - 1;
         originColumns.splice(indexToInsert, 0, ..._columns);
         setTableColumn(originColumns);
@@ -341,7 +351,8 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     }
     try {
       setTableLoading(type !== 'timer');
-      const data = await getInstanceList(objectId, params);
+      const request = showTab ? getInstanceSearch : getInstanceList;
+      const data = await request(objectId, params);
       setTableData(data.results || []);
       setPagination((prev: Pagination) => ({
         ...prev,
@@ -353,11 +364,14 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
   };
 
   const linkToDetial = (app: TableDataItem) => {
-    const monitorItem = objects.find((item: ObectItem) => item.id === objectId);
+    const monitorItem = objects.find(
+      (item: ObjectItem) => item.id === objectId
+    );
     const row: any = {
       monitorObjId: objectId || '',
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
+      icon: monitorItem?.icon || OBJECT_DEFAULT_ICON,
       instance_id: app.instance_id,
       instance_name: app.instance_name,
       instance_id_values: app.instance_id_values,
@@ -445,6 +459,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
               <Select
                 value={colony}
                 allowClear
+                showSearch
                 style={{ width: 120 }}
                 placeholder={t('monitor.views.colony')}
                 onChange={handleColonyChange}
@@ -460,6 +475,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={namespace}
                     allowClear
+                    showSearch
                     className="mx-[10px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.namespace')}
@@ -474,6 +490,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={workload}
                     allowClear
+                    showSearch
                     className="mr-[10px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.workload')}
@@ -488,6 +505,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={node}
                     allowClear
+                    showSearch
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.node')}
                     onChange={handleNodeChange}
@@ -515,7 +533,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         <TimeSelector
           onlyRefresh
           onFrequenceChange={onFrequenceChange}
-          onRefresh={onRefresh}
+          onRefresh={updatePage}
         />
       </div>
       <CustomTable

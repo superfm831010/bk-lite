@@ -76,11 +76,14 @@ const SQLTask: React.FC<SQLTaskFormProps> = ({
         ...(collectType === 'ip'
           ? {
             ip_range: ipRange.join('-'),
+            instances: [],
             params: {
               organization: [values.organization?.[0]],
             },
-          }
-          : { instances: instance || [] }),
+          } : { 
+            ip_range: '',
+            instances: instance || [] 
+          }),
       };
     },
   });
@@ -154,7 +157,7 @@ const SQLTask: React.FC<SQLTaskFormProps> = ({
                 name="user"
                 rules={[{ required: true }]}
               >
-                <Input placeholder={t('common.inputMsg')} />
+                <Input placeholder={t('common.pleaseInput')} />
               </Form.Item>
 
               <Form.Item
@@ -162,7 +165,7 @@ const SQLTask: React.FC<SQLTaskFormProps> = ({
                 name="password"
                 rules={[{ required: true }]}
               >
-                <Input.Password placeholder={t('common.inputMsg')} />
+                <Input.Password placeholder={t('common.pleaseInput')} />
               </Form.Item>
 
               <Form.Item

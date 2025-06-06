@@ -21,7 +21,7 @@ interface TimeSelectorProps {
   defaultValue?: TimeSelectorDefaultValue; // defaultValue为时间组合组件的默认值
   onFrequenceChange?: (frequence: number) => void;
   onRefresh?: () => void;
-  onChange?: (range: number[]) => void;
+  onChange?: (range: number[], originValue: number | null) => void;
 }
 
 const TimeSelector: React.FC<TimeSelectorProps> = ({
@@ -105,7 +105,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
     if (value) {
       setSelectValue(0);
       const rangeTime = value.map((item) => dayjs(item).valueOf());
-      onChange && onChange(rangeTime);
+      onChange?.(rangeTime, 0);
       setRangePickerVaule(value as [Dayjs, Dayjs]);
       return;
     }
@@ -115,9 +115,10 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
         .valueOf(),
       dayjs().valueOf(),
     ];
-    setSelectValue(clearable ? null : defaultValue.selectValue || 15);
+    const originValue = clearable ? null : defaultValue.selectValue || 15;
+    setSelectValue(originValue);
     setRangePickerVaule(null);
-    onChange && onChange(clearable ? [] : rangeTime);
+    onChange?.(clearable ? [] : rangeTime, originValue);
   };
 
   const handleRangePickerOk: TimeRangePickerProps['onOk'] = (value) => {
@@ -136,7 +137,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
     const rangeTime = value
       ? [dayjs().subtract(value, 'minute').valueOf(), dayjs().valueOf()]
       : [];
-    onChange && onChange(rangeTime);
+    onChange?.(rangeTime, value);
   };
 
   return (

@@ -23,6 +23,7 @@ class NodeMgmtView(ViewSet):
                 "cloud_region_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="云区域ID"),
                 "page": openapi.Schema(type=openapi.TYPE_INTEGER, description="页码"),
                 "page_size": openapi.Schema(type=openapi.TYPE_INTEGER, description="每页数据条数"),
+                "is_active": openapi.Schema(type=openapi.TYPE_BOOLEAN, description="是否活跃"),
             },
             required=["cloud_region_id", "page", "page_size"]
         ),
@@ -39,6 +40,7 @@ class NodeMgmtView(ViewSet):
             os=request.data.get("os"),
             page=request.data.get("page", 1),
             page_size=request.data.get("page_size", 10),
+            is_active=request.data.get("is_active")
         ))
         return WebUtils.response_success(data)
 

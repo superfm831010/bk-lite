@@ -6,10 +6,12 @@ from string import Template
 from django.core.cache import cache
 from django.http import JsonResponse, HttpResponse
 
+from apps.core.utils.crypto.aes_crypto import AESCryptor
 from apps.node_mgmt.default_config.nats_executor import create_nats_executor_config
 from apps.node_mgmt.default_config.telegraf import create_telegraf_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
-from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization
+from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization, \
+    CollectorConfigurationEnv
 from apps.node_mgmt.utils.sidecar import format_tags_dynamic
 
 logger = logging.getLogger("app")
@@ -70,6 +72,19 @@ class Sidecar:
             )
 
     @staticmethod
+    def update_groups(node_id: str, groups: list):
+        """
+        更新节点关联的组织
+        :param node_id: 节点ID
+        :param groups: 组织列表
+        """
+        # 删除现有的组织关联
+        NodeOrganization.objects.filter(node_id=node_id).delete()
+
+        # 重新关联新的组织
+        Sidecar.asso_groups(node_id, groups)
+
+    @staticmethod
     def update_node_client(request, node_id):
         """更新sidecar客户端信息"""
 
@@ -106,10 +121,12 @@ class Sidecar:
         # 更新或创建 Sidecar 信息
         node = Node.objects.filter(id=node_id).first()
 
+        # 处理标签数据
+        tags_data = format_tags_dynamic(request_data.get("tags", []), ["group", "cloud"])
+
         if not node:
 
             # 补充云区域关联
-            tags_data = format_tags_dynamic(request_data.get("tags", []),  ["group", "cloud"])
             clouds = tags_data.get("cloud", [])
             if clouds:
                 request_data.update(cloud_region_id=int(clouds[0]))
@@ -129,8 +146,12 @@ class Sidecar:
         else:
             # 更新时间
             request_data.update(updated_at=datetime.now(timezone.utc).isoformat())
+
             # 更新节点
             Node.objects.filter(id=node_id).update(**request_data)
+
+            # 更新组织关联(覆盖)
+            Sidecar.update_groups(node_id, tags_data.get("group", []))
 
         # 预取相关数据，减少查询次数
         new_obj = Node.objects.prefetch_related('action_set', 'collectorconfiguration_set').get(id=node_id)
@@ -222,10 +243,31 @@ class Sidecar:
         return JsonResponse(configuration, headers={'ETag': new_etag})
 
     @staticmethod
+    def get_node_config_env(node_id, configuration_id):
+        node = Node.objects.filter(id=node_id).first()
+        if not node:
+            return JsonResponse(status=404, data={}, manage="Node collector Configuration not found")
+
+        obj = CollectorConfigurationEnv.objects.filter(configuration_id=configuration_id).first()
+        if not obj:
+            return JsonResponse(status=404, data={}, manage="Configuration environment not found")
+
+        return JsonResponse(dict(id=configuration_id, env_config=obj.env_config))
+
+    @staticmethod
     def get_variables(node_obj):
         """获取变量"""
         objs = SidecarEnv.objects.filter(cloud_region=node_obj.cloud_region_id)
-        variables = {obj.key: obj.value for obj in objs}
+        variables = {}
+        for obj in objs:
+            if obj.type == "secret":
+                # 如果是密文，解密后使用
+                aes_obj = AESCryptor()
+                value = aes_obj.decode(obj.value)
+                variables[obj.key] = value
+            else:
+                # 如果是普通变量，直接使用
+                variables[obj.key] = obj.value
         node_dict = {
             "node__id": node_obj.id,
             "node__cloud_region": node_obj.cloud_region_id,

@@ -4,7 +4,7 @@ import { Segmented } from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
 import { deepClone } from '@/app/monitor/utils/common';
-import { ObectItem } from '@/app/monitor/types/monitor';
+import { ObjectItem } from '@/app/monitor/types/monitor';
 import { TreeItem } from '@/app/monitor/types';
 import { useTableOptions } from '@/app/monitor/hooks/view';
 import viewStyle from './index.module.scss';
@@ -16,7 +16,7 @@ const Intergration = () => {
   const { isLoading } = useApiClient();
   const { getMonitorObject } = useMonitorApi();
   const [treeData, setTreeData] = useState<TreeItem[]>([]);
-  const [objects, setObjects] = useState<ObectItem[]>([]);
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [treeLoading, setTreeLoading] = useState<boolean>(false);
   const [objectId, setObjectId] = useState<React.Key>('');
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
@@ -42,14 +42,15 @@ const Intergration = () => {
     setDisplayType(value);
   };
 
-  const getObjects = async () => {
+  const getObjects = async (type?: string) => {
     try {
       setTreeLoading(true);
-      const data: ObectItem[] = await getMonitorObject({
+      const data: ObjectItem[] = await getMonitorObject({
         add_instance_count: true,
       });
       const _treeData = getTreeData(deepClone(data));
       setTreeData(_treeData);
+      if (type === 'update') return;
       setObjects(data);
       setDefaultSelectObj(data[0]?.id);
     } finally {
@@ -57,30 +58,33 @@ const Intergration = () => {
     }
   };
 
-  const getTreeData = (data: ObectItem[]): TreeItem[] => {
-    const groupedData = data.reduce(
-      (acc, item) => {
-        if (!acc[item.type]) {
-          acc[item.type] = {
-            title: item.display_type || '--',
-            key: item.type,
-            children: [],
-          };
-        }
-        acc[item.type].children.push({
-          title: (item.display_name || '--') + `(${item.instance_count || 0})`,
-          label: item.name || '--',
-          key: item.id,
+  const getTreeData = (data: ObjectItem[]): TreeItem[] => {
+    const groupedData = data.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = {
+          title: item.display_type || '--',
+          key: item.type,
           children: [],
-        });
-        return acc;
-      },
-      {} as Record<string, TreeItem>
-    );
+        };
+      }
+      acc[item.type].children.push({
+        title: (item.display_name || '--') + `(${item.instance_count || 0})`,
+        label: item.name || '--',
+        key: item.id,
+        children: [],
+      });
+      return acc;
+    }, {} as Record<string, TreeItem>);
     if (groupedData.Other) {
-      groupedData.Other.children = groupedData.Other.children.filter((item) => item.label !== "SNMP Trap");
+      groupedData.Other.children = groupedData.Other.children.filter(
+        (item) => item.label !== 'SNMP Trap'
+      );
     }
     return Object.values(groupedData);
+  };
+
+  const updateTree = () => {
+    getObjects('update');
   };
 
   return (
@@ -103,7 +107,12 @@ const Intergration = () => {
           />
         )}
         {displayType === 'list' ? (
-          <ViewList objects={objects} objectId={objectId} showTab={showTab} />
+          <ViewList
+            objects={objects}
+            objectId={objectId}
+            showTab={showTab}
+            updateTree={updateTree}
+          />
         ) : (
           <ViewHive
             objects={objects}

@@ -132,3 +132,8 @@ export interface HexagonData {
   description: React.ReactNode | string;
   fill: string;
 }
+
+export interface TimeValuesProps {
+  timeRange: number[];
+  originValue: number | null;
+}

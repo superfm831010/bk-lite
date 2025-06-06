@@ -38,22 +38,19 @@ const { confirm } = Modal;
 const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
   (
     {
-      onSuccess,
       userList,
       organizationList,
       models,
       assoTypes,
       needFetchAssoInstIds,
+      onSuccess,
     },
     ref
   ) => {
+    const { t } = useTranslation();
+    const { post, get, del } = useApiClient();
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
-    const [pagination, setPagination] = useState<TablePaginationConfig>({
-      current: 1,
-      total: 0,
-      pageSize: 20,
-    });
     const [title, setTitle] = useState<string>('');
     const [assoModelId, setAssoModelId] = useState<number>(0);
     const [instId, setInstId] = useState<string>('');
@@ -64,17 +61,35 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
     const [queryList, setQueryList] = useState<unknown>(null);
     const [relationList, setRelationList] = useState<ListItem[]>([]);
     const [assoInstIds, setAssoInstIds] = useState<RelationListInstItem[]>([]);
+    const [proxyOptions, setProxyOptions] = useState<
+      { proxy_id: string; proxy_name: string }[]
+    >([]);
     const [intancePropertyList, setIntancePropertyList] = useState<
       AttrFieldType[]
     >([]);
-    const { t } = useTranslation();
-    const { post, get, del } = useApiClient();
+    const [pagination, setPagination] = useState<TablePaginationConfig>({
+      current: 1,
+      total: 0,
+      pageSize: 20,
+    });
 
     useEffect(() => {
       if (modelId) {
         fetchData();
       }
     }, [pagination?.current, pagination?.pageSize, queryList]);
+
+    useEffect(() => {
+      if (modelId === 'host') {
+        get('/cmdb/api/instance/list_proxys/', {})
+          .then((data: any[]) => {
+            setProxyOptions(data || []);
+          })
+          .catch(() => {
+            setProxyOptions([]);
+          });
+      }
+    }, [modelId]);
 
     useEffect(() => {
       if (relationList.length && assoModelId && intancePropertyList.length) {
@@ -320,7 +335,7 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
           </div>
         }
       >
-        <div className='flex flex-col'>
+        <div className="flex flex-col">
           <div className="flex items-center justify-between mb-[16px]">
             <Select
               className="w-[300px]"
@@ -338,6 +353,7 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
             <SearchFilter
               userList={userList}
               attrList={intancePropertyList}
+              proxyOptions={proxyOptions}
               organizationList={organizationList}
               onSearch={handleSearch}
             />

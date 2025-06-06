@@ -11,7 +11,9 @@ import {
   TableDataItem,
   UserItem,
   TimeSelectorDefaultValue,
+  TimeValuesProps,
 } from '@/app/monitor/types';
+import { getRecentTimeRange } from '@/app/monitor/utils/common';
 import { ViewModalProps } from '@/app/monitor/types/monitor';
 import TimeSelector from '@/components/time-selector';
 import Permission from '@/components/permission';
@@ -52,9 +54,10 @@ const Alert: React.FC<ViewModalProps> = ({
     total: 0,
     pageSize: 20,
   });
-  const beginTime: number = dayjs().subtract(10080, 'minute').valueOf();
-  const lastTime: number = dayjs().valueOf();
-  const [timeRange, setTimeRange] = useState<number[]>([beginTime, lastTime]);
+  const [timeValues, setTimeValues] = useState<TimeValuesProps>({
+    timeRange: [],
+    originValue: 10080,
+  });
   const timeDefaultValue =
     useRef<TimeSelectorDefaultValue>({
       selectValue: 10080,
@@ -150,7 +153,7 @@ const Alert: React.FC<ViewModalProps> = ({
     };
   }, [
     frequence,
-    timeRange,
+    timeValues,
     activeTab,
     searchText,
     pagination.current,
@@ -162,7 +165,7 @@ const Alert: React.FC<ViewModalProps> = ({
     getAssetInsts('refresh');
   }, [
     isLoading,
-    timeRange,
+    timeValues,
     activeTab,
     pagination.current,
     pagination.pageSize,
@@ -192,14 +195,15 @@ const Alert: React.FC<ViewModalProps> = ({
   };
 
   const getParams = () => {
+    const recentTimeRange = getRecentTimeRange(timeValues);
     return {
       monitor_instance_id: form.instance_id,
       content: searchText,
       page: pagination.current,
       page_size: pagination.pageSize,
       monitor_objects: monitorObject,
-      created_at_after: dayjs(timeRange[0]).toISOString(),
-      created_at_before: dayjs(timeRange[1]).toISOString(),
+      created_at_after: dayjs(recentTimeRange[0]).toISOString(),
+      created_at_before: dayjs(recentTimeRange[1]).toISOString(),
     };
   };
 
@@ -232,8 +236,11 @@ const Alert: React.FC<ViewModalProps> = ({
     }
   };
 
-  const onTimeChange = (val: number[]) => {
-    setTimeRange(val);
+  const onTimeChange = (val: number[], originValue: number | null) => {
+    setTimeValues({
+      timeRange: val,
+      originValue,
+    });
   };
 
   const onRefresh = () => {

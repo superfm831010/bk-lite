@@ -31,7 +31,9 @@
     "createdBy": "Created By",
     "createdAt": "Created At",
     "updatedBy": "Updated By",
-    "updatedAt": "Updated At"
+    "updatedAt": "Updated At",
+    "inputPassword": "Please input the password",
+    "reset": "Reset"
   },
   "node-manager": {
     "cloudregion": {
@@ -151,6 +153,8 @@
       },
       "variable": {
         "value": "Value",
+        "valueType": "Type",
+        "password": "Password",
         "desc": "Description",
         "deletevariable": "Delete Variable",
         "deleteinfo": "Are you sure to delete this variable?",

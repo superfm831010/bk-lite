@@ -5,7 +5,7 @@ import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import { CopyOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
-import { useHandleCopy } from '@/app/monitor/utils/common';
+import { useHandleCopy } from '@/app/monitor/hooks';
 interface CodeEditorProps {
   value?: string; // 编辑器的内容
   className?: string;

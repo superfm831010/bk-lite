@@ -110,7 +110,7 @@ const Node = () => {
   const tableColumns = useMemo(() => {
     if (!activeColumns?.length) return columns;
     const _columns = cloneDeep(columns);
-    _columns.splice(2, 0, ...activeColumns);
+    _columns.splice(3, 0, ...activeColumns);
     return _columns;
   }, [columns, nodeList, statusMap, activeColumns]);
 
@@ -302,7 +302,7 @@ const Node = () => {
     });
     if (tagList.length) {
       return (
-        <div className="flex flex-wrap justify-center">
+        <div className="flex justify-center">
           {tagList.length ? tagList : '--'}
         </div>
       );
@@ -324,7 +324,11 @@ const Node = () => {
       title: type,
       dataIndex: type,
       key: type,
-      width: 300,
+      onCell: () => ({
+        style: {
+          minWidth: 120,
+        },
+      }),
       align: 'center',
       render: (_: any, record: TableDataItem) =>
         renderColunms(record, {
@@ -337,7 +341,11 @@ const Node = () => {
         title: 'Controller',
         dataIndex: natsexecutorId,
         key: natsexecutorId,
-        width: 180,
+        onCell: () => ({
+          style: {
+            minWidth: 120,
+          },
+        }),
         render: (_: any, record: TableDataItem) => {
           const collectorTarget = (record.status?.collectors || []).find(
             (item: TableDataItem) => item.collector_id === natsexecutorId
@@ -465,7 +473,7 @@ const Node = () => {
               columns={tableColumns}
               loading={loading}
               dataSource={nodeList}
-              scroll={{ y: 'calc(100vh - 326px)', x: 'calc(100vw - 300px)' }}
+              scroll={{ y: 'calc(100vh - 326px)', x: 'max-content' }}
               rowSelection={rowSelection}
             />
             <CollectorModal

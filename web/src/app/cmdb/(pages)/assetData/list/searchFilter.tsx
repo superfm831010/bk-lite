@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import type { CheckboxProps } from 'antd';
 import searchFilterStyle from './searchFilter.module.scss';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import { Select, Input, InputNumber, Cascader, Checkbox, DatePicker } from 'antd';
+import {
+  Select,
+  Input,
+  InputNumber,
+  Cascader,
+  Checkbox,
+  DatePicker,
+} from 'antd';
 import { UserItem } from '@/app/cmdb/types/assetManage';
 import { useTranslation } from '@/utils/i18n';
 import { SearchFilterProps } from '@/app/cmdb/types/assetData';
@@ -10,7 +17,9 @@ import { SearchFilterProps } from '@/app/cmdb/types/assetData';
 const SearchFilter: React.FC<SearchFilterProps> = ({
   attrList,
   userList,
+  proxyOptions,
   organizationList,
+  showExactSearch = true,
   onSearch,
 }) => {
   const [searchAttr, setSearchAttr] = useState<string>('');
@@ -40,6 +49,8 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
       (selectedAttr?.attr_type === 'time' && !(value?.[0] && value?.[1]))
     ) {
       condition = null;
+    } else if (selectedAttr?.attr_id === 'cloud') {
+      condition.type = typeof value === 'number' ? 'int=' : 'str=';
     } else {
       switch (selectedAttr?.attr_type) {
         case 'enum':
@@ -81,6 +92,27 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
 
   const renderSearchInput = () => {
     const selectedAttr = attrList.find((attr) => attr.attr_id === searchAttr);
+    // 特殊处理-主机的云区域为下拉选项
+    if (selectedAttr?.attr_id === 'cloud' && proxyOptions.length) {
+      return (
+        <Select
+          placeholder={t('common.pleaseSelect')}
+          allowClear
+          showSearch
+          className="value"
+          style={{ width: 200 }}
+          value={searchValue}
+          onChange={(e) => onSearchValueChange(e, isExactSearch)}
+          onClear={() => onSearchValueChange('', isExactSearch)}
+        >
+          {proxyOptions.map((opt) => (
+            <Select.Option key={opt.proxy_id} value={opt.proxy_id}>
+              {opt.proxy_name}
+            </Select.Option>
+          ))}
+        </Select>
+      );
+    }
     switch (selectedAttr?.attr_type) {
       case 'user':
         return (
@@ -92,10 +124,21 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
             value={searchValue}
             onChange={(e) => onSearchValueChange(e, isExactSearch)}
             onClear={() => onSearchValueChange('', isExactSearch)}
+            filterOption={(input, opt: any) => {
+              if (typeof opt?.children?.props?.text === 'string') {
+                return opt?.children?.props?.text
+                  ?.toLowerCase()
+                  .includes(input.toLowerCase());
+              }
+              return true;
+            }}
           >
             {userList.map((opt: UserItem) => (
               <Select.Option key={opt.id} value={opt.id}>
-                <EllipsisWithTooltip text={`${opt.display_name} (${opt.username})`} className="whitespace-nowrap overflow-hidden text-ellipsis break-all" />
+                <EllipsisWithTooltip
+                  text={`${opt.display_name} (${opt.username})`}
+                  className="whitespace-nowrap overflow-hidden text-ellipsis break-all"
+                />
               </Select.Option>
             ))}
           </Select>
@@ -104,11 +147,20 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
         return (
           <Select
             allowClear
+            showSearch
             className="value"
             style={{ width: 200 }}
             value={searchValue}
             onChange={(e) => onSearchValueChange(e, isExactSearch)}
             onClear={() => onSearchValueChange('', isExactSearch)}
+            filterOption={(input, opt: any) => {
+              if (typeof opt?.children === 'string') {
+                return opt?.children
+                  ?.toLowerCase()
+                  .includes(input.toLowerCase());
+              }
+              return true;
+            }}
           >
             {selectedAttr.option?.map((opt) => (
               <Select.Option key={opt.id} value={opt.id}>
@@ -215,9 +267,11 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
         ))}
       </Select>
       {renderSearchInput()}
-      <Checkbox onChange={onExactSearchChange} className='min-w-[103px]'>
-        {t('Model.isExactSearch')}
-      </Checkbox>
+      {showExactSearch && (
+        <Checkbox onChange={onExactSearchChange}>
+          {t('Model.isExactSearch')}
+        </Checkbox>
+      )}
     </div>
   );
 };
