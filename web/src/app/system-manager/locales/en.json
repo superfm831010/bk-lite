@@ -206,13 +206,13 @@
       "otpSetting": "Enable OTP Authentication",
       "loginExpiredTime": "Login Expiration Time",
       "hours": "hours",
-      "informationTip": "Please first go to the WeChat Open Platform (open.weixin.qq.com), create a web application in the Management Center, and obtain development information after approval. Note: The 'Authorized Callback Domain' to fill in during creation is the 'Redirect URL' below without the https prefix.",
+      "informationTip": "Please first go to WeChat Open Platform (open.weixin.qq.com), create a web application in the Management Center, and obtain development information after approval. Note: The 'Authorized Callback Domain' must be configured in 'Settings and Development' - 'Function Settings' - 'Web Authorization Domain Name'.",
       "loginMethodName": "Login Method Name",
       "appId": "App ID",
       "appSecret": "App Secret",
       "enabled": "Enabled",
       "redirectUri": "Redirect URI",
-      "callbackUrl": "Callback URL"
+      "redirectUriTip": "The page to redirect to after successful login. Format example (to return to the console): https://authorized-callback-domain/ops-console/home"
     }
   }
 }
