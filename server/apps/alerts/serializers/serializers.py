@@ -5,7 +5,8 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.alerts.models import AlertSource, Alert, Event
+from apps.alerts.constants import AlertStatus
+from apps.alerts.models import AlertSource, Alert, Event, Level
 
 
 class AlertSourceModelSerializer(serializers.ModelSerializer):
@@ -90,8 +91,8 @@ class AlertModelSerializer(serializers.ModelSerializer):
         """
         当前时间- 创建时间
         """
-        if not obj.created_at:
-            return "0s"
+        if not obj.created_at or obj.status not in AlertStatus.ACTIVATE_STATUS:
+            return "--"
 
         # 计算持续时间
         now = timezone.now()
@@ -158,3 +159,9 @@ class AlertModelSerializer(serializers.ModelSerializer):
         if not obj.operator:
             return ""
         return ", ".join(obj.operator)
+
+
+class LevelModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Level
+        fields = '__all__'

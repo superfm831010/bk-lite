@@ -5,7 +5,7 @@
 from django_filters import FilterSet, CharFilter
 
 from apps.alerts.constants import AlertStatus
-from apps.alerts.models import AlertSource, Alert, Event
+from apps.alerts.models import AlertSource, Alert, Event, Level
 
 
 class AlertSourceModelFilter(FilterSet):
@@ -37,10 +37,13 @@ class AlertModelFilter(FilterSet):
     level = CharFilter(method="filter_level", label="告警级别")
     status = CharFilter(method="filter_status", label="告警状态")
     source_name = CharFilter(method="filter_source_name", label="告警源")
+    created_at_after = CharFilter(field_name="created_at", lookup_expr="gte", label="创建时间（起始）")
+    created_at_before = CharFilter(field_name="created_at", lookup_expr="lte", label="创建时间（结束）")
 
     class Meta:
         model = Alert
-        fields = ["title", "content", "alert_id", "activate", "my_alert", "level", "status", "source_name"]
+        fields = ["title", "content", "alert_id", "activate", "my_alert", "level", "status", "source_name",
+                  "created_at_after", "created_at_before"]
 
     @staticmethod
     def filter_activate(qs, field_name, value):
@@ -93,3 +96,11 @@ class EventModelFilter(FilterSet):
         """查询类型"""
         qs = qs.filter(alert__pk=int(value))
         return qs
+
+
+class LevelModelFilter(FilterSet):
+    type = CharFilter(field_name="level_type", lookup_expr="exact", label="类型")
+
+    class Meta:
+        model = Level
+        fields = ["type"]

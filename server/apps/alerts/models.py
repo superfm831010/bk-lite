@@ -12,8 +12,8 @@ from django.db.models import JSONField
 
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
-from apps.alerts.constants import AlertsSourceTypes, AlertAccessType, EventLevel, EventStatus, AlertLevel, AlertOperate, \
-    AlertStatus, EventAction
+from apps.alerts.constants import AlertsSourceTypes, AlertAccessType, EventStatus, AlertOperate, \
+    AlertStatus, EventAction, LevelType
 from apps.alerts.utils.util import gen_app_secret
 
 
@@ -62,7 +62,7 @@ class Event(models.Model):
     # 标准化字段
     title = models.CharField(max_length=200, help_text="事件标题")
     description = models.TextField(help_text="事件描述", null=True, blank=True)
-    level = models.CharField(max_length=32, choices=EventLevel.CHOICES, db_index=True, help_text="级别")
+    level = models.CharField(max_length=32, db_index=True, help_text="级别")
     start_time = models.DateTimeField(db_index=True, help_text="事件开始时间")
     end_time = models.DateTimeField(null=True, blank=True, db_index=True, help_text="事件结束时间")
     labels = JSONField(default=dict, help_text="事件标签")
@@ -99,9 +99,9 @@ class Alert(models.Model):
 
     alert_id = models.CharField(max_length=100, unique=True, db_index=True,
                                 help_text="告警ID")  # f"ALERT-{uuid.uuid4().hex.upper()}"
-    status = models.CharField(max_length=32, choices=AlertStatus.CHOICES, default=AlertStatus.PENDING,
+    status = models.CharField(max_length=32, choices=AlertStatus.CHOICES, default=AlertStatus.UNASSIGNED,
                               help_text="告警状态", db_index=True)
-    level = models.CharField(max_length=32, choices=AlertLevel.CHOICES, db_index=True, help_text="级别")
+    level = models.CharField(max_length=32, db_index=True, help_text="级别")
     events = models.ManyToManyField(Event)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True, help_text="创建时间")
     updated_at = models.DateTimeField(auto_now=True, db_index=True, help_text="更新时间")
@@ -138,3 +138,28 @@ class Alert(models.Model):
 
     def __str__(self):
         return f"{self.alert_id} - {self.title} ({self.status})"
+
+
+class Level(models.Model):
+    """事件级别配置"""
+
+    level_id = models.SmallIntegerField(help_text="级别ID")
+    level_name = models.CharField(max_length=32, help_text="级别名称")
+    level_display_name = models.CharField(max_length=32, help_text="级别中文名称")
+    color = models.CharField(max_length=16, null=True, blank=True, help_text="颜色代码")
+    icon = models.TextField(null=True, blank=True, help_text="图标base64")
+    description = models.CharField(max_length=300, null=True, blank=True, help_text="级别描述")
+    level_type = models.CharField(max_length=32, choices=LevelType.CHOICES, help_text="级别类型")
+    built_in = models.BooleanField(default=False, help_text="是否为内置级别")
+
+    class Meta:
+        db_table = "alerts_level"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['level_id', 'level_type'],
+                name='unique_level_id_level_type'
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.level_name}({self.level_id})"

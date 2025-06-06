@@ -45,8 +45,8 @@ class AlertSourceAdapter(ABC):
         """将告警字段映射到事件字段"""
         result = {}
         for key, field in self.mapping.items():
-            _value = alert.get(field)
-            if not _value:
+            _value = alert.get(field, None)
+            if _value is None:
                 continue
             if key == "start_time" or key == "end_time":
                 _value = self.timestamp_to_datetime(_value)

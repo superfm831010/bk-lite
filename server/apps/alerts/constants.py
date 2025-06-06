@@ -101,6 +101,7 @@ class AlertStatus:
         (CLOSED, "已关闭"),
         (UNASSIGNED, "未分派"),
     )
+    ACTIVATE_STATUS = (PENDING, PROCESSING, UNASSIGNED)
 
 
 class AlertOperate:
@@ -116,3 +117,113 @@ class AlertOperate:
         (REASSIGN, "转派"),
         (Assign, "分派"),
     )
+
+
+# ===
+class LevelType:
+    """级别类型"""
+    EVENT = "event"
+    ALERT = "alert"
+    INCIDENT = "incident"
+
+    CHOICES = (
+        (EVENT, "事件"),
+        (ALERT, "告警"),
+        (INCIDENT, "事故"),
+    )
+
+
+DEFAULT_LEVEL = [
+    {
+        "level_type": LevelType.EVENT,
+        "level_id": 0,
+        "level_name": "Critical",
+        "level_display_name": "致命",
+        "color": "#F43B2C",
+        "icon": "",
+        "description": "",
+    },
+    {
+        "level_type": LevelType.EVENT,
+        "level_id": 1,
+        "level_name": "Error",
+        "level_display_name": "错误",
+        "color": "#D97007",
+        "icon": "",
+        "description": "",
+    },
+    {
+        "level_type": LevelType.EVENT,
+        "level_id": 2,
+        "level_name": "Warning",
+        "level_display_name": "预警",
+        "color": "#FFAD42",
+        "icon": "",
+        "description": "",
+    },
+    {
+        "level_type": LevelType.EVENT,
+        "level_id": 3,
+        "level_name": "Info",
+        "level_display_name": "提醒",
+        "color": "#FBBF24",
+        "icon": "",
+        "description": "",
+    },
+
+    {
+        "level_type": LevelType.ALERT,
+        "level_id": 0,
+        "level_name": "Critical",
+        "level_display_name": "致命",
+        "color": "#F43B2C",
+        "icon": "",
+        "description": "",
+    },
+    {
+        "level_type": LevelType.ALERT,
+        "level_id": 1,
+        "level_name": "Error",
+        "level_display_name": "错误",
+        "color": "#D97007",
+        "icon": "",
+        "description": "",
+    },
+    {
+        "level_type": LevelType.ALERT,
+        "level_id": 2,
+        "level_name": "Warning",
+        "level_display_name": "预警",
+        "color": "#FFAD42",
+        "icon": "",
+        "description": "",
+    },
+    {
+        "level_type": LevelType.INCIDENT,
+        "level_id": 0,
+        "level_name": "Critical",
+        "level_display_name": "致命",
+        "color": "#F43B2C",
+        "icon": "",
+        "description": "",
+    },
+    {
+        "level_type": LevelType.INCIDENT,
+        "level_id": 1,
+        "level_name": "Error",
+        "level_display_name": "错误",
+        "color": "#D97007",
+        "icon": "",
+        "description": "",
+    },
+    {
+        "level_type": LevelType.INCIDENT,
+        "level_id": 2,
+        "level_name": "Warning",
+        "level_display_name": "预警",
+        "color": "#FFAD42",
+        "icon": "",
+        "description": "",
+    }
+
+]

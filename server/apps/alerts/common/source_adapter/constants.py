@@ -6,7 +6,11 @@
 DEFAULT_SOURCE_CONFIG = {
     "url": "/alerts/api/receiver_data/",
     "headers": {"SECRET": "your_source_secret"},
-    "params": {},
+    "params": {
+        "source_type": "",
+        "source_id": "",
+        "events": []
+    },
     "content_type": "application/json",
     "method": "POST",
     "timeout": 30,
@@ -41,7 +45,7 @@ DEFAULT_SOURCE_CONFIG = {
         "external_id": "事件ID，类型字符串",
         "value": "事件值，float类型",
         "action": "事件类型，类型字符串，可选值为：{'created':'创建', 'closed':'关闭'}",
-        "level": "事件级别，类型字符串，可选值为：{'remain': '提醒', 'warning': '预警', 'severity': '严重', 'fatal': '致命'}",
+        "level": "事件级别，类型字符串，可选值为：{'3': '提醒', '2': '预警', '1': '严重', '0': '致命'}",
         "start_time": "事件开始时间(时间戳，毫秒级)",
         "end_time": "事件开始时间(时间戳，毫秒级)",
         "labels": "标签，格式为字典，可选，可以包含其他的所有冗余字段，如关联的资产实例",

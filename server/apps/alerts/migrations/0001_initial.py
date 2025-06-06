@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                             ("unassigned", "未分派"),
                         ],
                         db_index=True,
-                        default="pending",
+                        default="unassigned",
                         help_text="告警状态",
                         max_length=32,
                     ),

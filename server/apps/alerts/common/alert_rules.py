@@ -14,10 +14,10 @@ class SeverityLevel(str, Enum):
 
 
 class ConditionType(str, Enum):
-    THRESHOLD = "threshold"
-    SUSTAINED = "sustained"
-    TREND = "trend"
-    PREV_FIELD = "prev_field_equals"
+    THRESHOLD = "threshold"  # 阈值告警
+    SUSTAINED = "sustained"  # 持续告警
+    TREND = "trend"  # 趋势告警
+    PREV_FIELD = "prev_field_equals"  # 前置状态告警
 
 
 class ConditionConfig(BaseModel):
@@ -35,14 +35,8 @@ class ConditionConfig(BaseModel):
 
     @validator('operator')
     def validate_operator(cls, v):
-        if v and v not in ['>', '>=', '<', '<=', '==']:
+        if v and v not in ['>', '>=', '<', '<=', '==', '!=']:  # 添加 != 支持
             raise ValueError(f"Invalid operator: {v}")
-        return v
-
-    @validator('trend_method')
-    def validate_trend_method(cls, v):
-        if v and v not in ['absolute', 'percentage']:
-            raise ValueError(f"Invalid trend method: {v}")
         return v
 
 
@@ -125,7 +119,7 @@ RULES = {
             "condition": {
                 "type": "threshold",
                 "field": "cpu_usage",
-                "threshold": 99,
+                "threshold": 85,
                 "operator": ">="
             }
         },
@@ -176,7 +170,35 @@ RULES = {
                 "prev_status_field": "status",
                 "prev_status_value": "closed"
             }
-        }
+        },
+        {
+            "name": "jenkins_single_failure",
+            "description": "Jenkins单次构建失败",
+            "severity": "warning",
+            "title": "Jenkins构建失败 - ${resource_name}",
+            "content": "流水线: ${resource_name}\n状态: 构建失败\n构建号: ${value}\n错误信息: ${description}",
+            "condition": {
+                "type": "threshold",
+                "field": "status",
+                "threshold": 0,
+                "operator": "=="
+            }
+        },
+        {
+            "name": "jenkins_sustained_failures",
+            "description": "Jenkins构建连续失败3次",
+            "severity": "fatal",
+            "title": "Jenkins流水线 ${resource_name} 连续构建失败",
+            "content": "流水线: ${resource_name}\n连续失败次数: 3次",
+            "condition": {
+                "type": "sustained",
+                "field": "build_status",
+                "threshold": 0,
+                "operator": "==",
+                "required_consecutive": 3,
+                "group_by": ["resource_id"]
+            }
+        },
     ]
 }
 

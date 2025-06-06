@@ -2,10 +2,6 @@
 # @File: alert_engine.py
 # @Time: 2025/5/21 11:02
 # @Author: windyzhao
-# -- coding: utf-8 --
-# @File: alert_engine.py
-# @Time: 2025/5/21 11:02
-# @Author: windyzhao
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Callable, Tuple, Any
@@ -13,6 +9,9 @@ from dataclasses import dataclass
 import logging
 import hashlib
 import json
+
+from apps.alerts.constants import AlertStatus
+from apps.alerts.models import Alert
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +70,7 @@ class AlertRule:
     - 确保告警的时效性和相关性
     """
 
-    max_alerts_per_group: int = 100
+    max_alerts_per_group: int = 100  # 未使用
     """
     每个分组最大告警数量限制：
 
@@ -295,8 +294,10 @@ class RuleEngine:
         # 按实例指纹分组
         grouped_events = {}
         for fingerprint, group_df in events.groupby('instance_fingerprint'):
-            # 重置索引以确保连续性
-            clean_group = group_df.drop('instance_fingerprint', axis=1).reset_index(drop=True)
+            # **关键修复：保留 instance_fingerprint 列，而不是删除它**
+            clean_group = group_df.reset_index(drop=True)
+            # 按照时间排序
+            clean_group = clean_group.sort_values(by='received_at', ascending=True)
 
             # 确保分组不为空
             if not clean_group.empty:
@@ -353,8 +354,8 @@ class RuleEngine:
         """
         # 查询该实例是否已有活跃告警
         query_conditions = {
-            'rule_name': rule.name,
-            'status__in': ['active', 'firing', 'pending'],
+            # 'rule_name': rule.name,
+            'status__in': AlertStatus.ACTIVATE_STATUS,
             'fingerprint': instance_fingerprint,  # 使用实例指纹查询
         }
 
@@ -372,9 +373,10 @@ class RuleEngine:
             # 已有活跃告警，更新现有告警
             return False, related_alerts, "update_existing"
 
-    def _query_alerts_from_db(self, query_conditions: Dict) -> List[Dict]:
+    @staticmethod
+    def _query_alerts_from_db(query_conditions: Dict) -> List[Dict]:
         """
-        从数据库查询告警实例（需要根据实际的ORM模型实现）
+        从数据库查询告警实例
 
         Args:
             query_conditions: 查询条件字典
@@ -382,14 +384,8 @@ class RuleEngine:
         Returns:
             告警实例列表
         """
-        # TODO: 根据实际的Django模型或其他ORM实现
-        # 例如：
-        # from apps.alerts.models import Alert
-        # alerts = Alert.objects.filter(**query_conditions).values()
-        # return list(alerts)
-
-        # 临时返回空列表，需要调用方实现具体的数据库查询
-        return []
+        alerts = Alert.objects.filter(**query_conditions).values()
+        return list(alerts)
 
     def _process_instance_events(self, instance_events: pd.DataFrame,
                                  instance_fingerprint: str) -> Dict[str, Dict[str, Any]]:
@@ -489,36 +485,18 @@ class RuleEngine:
                         'total_event_ids': [],
                         'severity': None,
                         'description': None,
+                        'source_name': '',
+                        'rule': ''
                     }
 
                 if rule_result['triggered']:
+                    results[rule_name]['rule'] = rule_result['rule']
                     results[rule_name]['triggered'] = True
                     results[rule_name]['instances'][instance_fingerprint] = rule_result
                     results[rule_name]['total_event_ids'].extend(rule_result['event_ids'])
                     results[rule_name]['severity'] = rule_result['severity']
                     results[rule_name]['description'] = rule_result['description']
+                    results[rule_name]['source_name'] = rule_result['instance_events']['alert_source'].iloc[0]
 
         logger.info(f"Processing completed. {len(results)} rules triggered.")
         return results
-
-    def test_demonstrate_aggregation_strategies(self):
-        """
-        演示不同聚合策略的效果（仅用于说明，实际不会调用）
-        """
-        # 假设场景：3台主机的CPU使用率都超过80%
-        events_example = """
-        host1, cpu.usage, 85%, 10:00:00
-        host2, cpu.usage, 90%, 10:00:30  
-        host3, cpu.usage, 87%, 10:01:00
-        host1, cpu.usage, 88%, 10:02:00  # 同一主机再次触发
-        """
-
-        # 现在按实例分组后的处理：
-        # 实例1: (item=cpu.usage, resource_id=host1, ...)
-        # 实例2: (item=cpu.usage, resource_id=host2, ...)
-        # 实例3: (item=cpu.usage, resource_id=host3, ...)
-
-        # 每个实例独立处理规则，确保持续条件等规则的正确性
-        # 每个实例最多产生一个告警（基于实例指纹去重）
-
-        pass
