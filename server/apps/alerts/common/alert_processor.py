@@ -125,8 +125,8 @@ class AlertProcessor:
             "resource_id": base_event["resource_id"],
             "resource_name": base_event["resource_name"],
             "resource_type": base_event["resource_type"],
-            "first_event_time": _instances.first().received_at,
-            "last_event_time": _instances.last().received_at,
+            "first_event_time": _instances.last().received_at,
+            "last_event_time": _instances.first().received_at,
             # event id
             "events": _instances,
             "source_name": source_name,  # 告警源名称
@@ -146,7 +146,7 @@ class AlertProcessor:
     def get_event_instances(self, event_ids: List[str]):
         """根据事件ID获取事件实例"""
 
-        instances = Event.objects.filter(event_id__in=event_ids)
+        instances = Event.objects.filter(event_id__in=event_ids).order_by("received_at")
 
         # 获取所有事件的级别
         event_levels = set(instances.values_list('level', flat=True))
