@@ -396,6 +396,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
         cloud_region_id: 0,
         page: 1,
         page_size: -1,
+        is_active: true,
       });
       setNodeList(data.nodes || []);
     } finally {

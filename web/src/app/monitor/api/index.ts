@@ -6,6 +6,7 @@ import {
   TreeSortData,
   IntergrationMonitoredObject,
   InstanceInfo,
+  SourceFeild,
 } from '@/app/monitor/types/monitor';
 
 interface OrderParam {
@@ -198,6 +199,7 @@ const useMonitorApi = () => {
     cloud_region_id?: number;
     page?: number;
     page_size?: number;
+    is_active?: boolean;
   }) => {
     return await post('/monitor/api/node_mgmt/nodes/', data);
   };
@@ -219,6 +221,7 @@ const useMonitorApi = () => {
     id: number,
     data: {
       enable?: boolean;
+      source?: SourceFeild;
     }
   ) => {
     return await patch(`/monitor/api/monitor_policy/${id}/`, data);

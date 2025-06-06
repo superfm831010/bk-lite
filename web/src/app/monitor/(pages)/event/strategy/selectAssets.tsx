@@ -94,16 +94,7 @@ const getParentKeys = (
 };
 
 const SelectAssets = forwardRef<ModalRef, ModalConfig>(
-  (
-    {
-      onSuccess,
-      organizationList,
-      monitorObject,
-      objects,
-      form: { type, values },
-    },
-    ref
-  ) => {
+  ({ onSuccess, organizationList, monitorObject, objects }, ref) => {
     const { t } = useTranslation();
     const { getInstanceList } = useMonitorApi();
     const { isLoading } = useApiClient();
@@ -123,6 +114,7 @@ const SelectAssets = forwardRef<ModalRef, ModalConfig>(
     const [searchText, setSearchText] = useState<string>('');
     const [selectedTreeKeys, setSelectedTreeKeys] = useState<string[]>([]);
     const [treeSearchText, setTreeSearchText] = useState<string>('');
+    const [rowId, setRowId] = useState<number>(0);
 
     const tabs: TabItem[] = [
       {
@@ -168,7 +160,7 @@ const SelectAssets = forwardRef<ModalRef, ModalConfig>(
     }, [pagination.current, pagination.pageSize]);
 
     useImperativeHandle(ref, () => ({
-      showModal: ({ title }) => {
+      showModal: ({ title, form: { type, values, id } }) => {
         // 开启弹窗的交互
         setPagination((prev: Pagination) => ({
           ...prev,
@@ -177,6 +169,7 @@ const SelectAssets = forwardRef<ModalRef, ModalConfig>(
         setTableData([]);
         setGroupVisible(true);
         setTitle(title);
+        setRowId(id);
         setActiveTab(type || 'instance');
         if (type === 'instance' || !type) {
           fetchData();
@@ -210,10 +203,13 @@ const SelectAssets = forwardRef<ModalRef, ModalConfig>(
 
     const handleSubmit = async () => {
       handleCancel();
-      onSuccess({
-        type: activeTab,
-        values: activeTab === 'instance' ? selectedRowKeys : selectedTreeKeys,
-      });
+      onSuccess(
+        {
+          type: activeTab,
+          values: activeTab === 'instance' ? selectedRowKeys : selectedTreeKeys,
+        },
+        rowId
+      );
     };
 
     const fetchData = async (type?: string) => {
