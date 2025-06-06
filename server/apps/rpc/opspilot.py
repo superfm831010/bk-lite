@@ -23,3 +23,6 @@ class OpsPilot(object):
         """
         return_data = self.client.run("get_module_data", **kwargs)
         return return_data
+
+    def create_guest_provider(self, group_id):
+        return self.client.run("create_guest_provider", group_id=group_id)
