@@ -411,7 +411,7 @@ export const renderChart = (
                     return pre.concat(item.metric[cur] as any);
                   }, [])
                 )
-            )?.instance_name || '',
+            )?.instance_name || '--',
         });
       }
       if (existing) {
