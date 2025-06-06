@@ -21,7 +21,7 @@ from apps.cmdb.collection.constants import (
     K8S_DEPLOYMENT_ANNOTATIONS, K8S_REPLICASET_ANNOTATIONS, K8S_STATEFULSET_ANNOTATIONS, K8S_DAEMONSET_ANNOTATIONS,
     K8S_JOB_ANNOTATIONS, K8S_CRONJOB_ANNOTATIONS, POD_NODE_RELATION, VMWARE_CLUSTER, VMWARE_COLLECT_MAP,
     NETWORK_COLLECT, NETWORK_INTERFACES_RELATIONS, PROTOCOL_METRIC_MAP, ALIYUN_COLLECT_CLUSTER, HOST_COLLECT_METRIC,
-    REDIS_COLLECT_METRIC,
+    REDIS_COLLECT_METRIC, MIDDLEWARE_METRIC_MAP,
 )
 from apps.cmdb.constants import INSTANCE
 from apps.cmdb.graph.neo4j import Neo4jClient
@@ -1507,4 +1507,77 @@ class RedisCollectMetrics(CollectBase):
     def prom_sql(self):
         sql = " or ".join(
             "{}{{instance_id=\"{}\"}}".format(m, f"{self.task_id}_{self.inst_name}") for m in self._metrics)
+        return sql
+
+
+class MiddlewareCollectMetrics(CollectBase):
+    @property
+    def _metrics(self):
+        return MIDDLEWARE_METRIC_MAP[self.model_id]
+
+    def format_data(self, data):
+        for index_data in data["result"]:
+            metric_name = index_data["metric"]["__name__"]
+            value = index_data["value"]
+            _time, value = value[0], value[1]
+            if not self.timestamp_gt:
+                if timestamp_gt_one_day_ago(_time):
+                    break
+                else:
+                    self.timestamp_gt = True
+
+            index_dict = dict(
+                index_key=metric_name,
+                index_value=value,
+                **index_data["metric"],
+            )
+
+            self.collection_metrics_dict[metric_name].append(index_dict)
+
+
+    def get_inst_name(self, data):
+        return  f"{data['ip_addr']}-{self.model_id}-{data['port']}"
+
+
+    @property
+    def model_field_mapping(self):
+        mapping = {
+            "nginx": {
+                "ip_addr": "ip_addr",
+                # "port": lambda data: data["listen_port"].split("&"), # Multiple ports are separated by &
+                "port": "listen_port",
+                "listen_port":"listen_port",
+                "enable_binlog": "enable_binlog",
+                "nginx_path": "nginx_path",
+                "version": "version",
+                "log_path": "log_path",
+                "config_path": "config_path",
+                "domain": "domain",
+                "include_path": "include_path",
+                "ssl_version": "ssl_version",
+                "inst_name": self.get_inst_name
+            },
+
+        }
+
+        return mapping
+    def format_metrics(self):
+        for metric_key, metrics in self.collection_metrics_dict.items():
+            result = []
+            mapping = self.model_field_mapping.get(self.model_id, {})
+            for index_data in metrics:
+                data = {}
+                for field, key_or_func in mapping.items():
+                    if isinstance(key_or_func, tuple):
+                        data[field] = key_or_func[0](index_data[key_or_func[1]])
+                    elif callable(key_or_func):
+                        data[field] = key_or_func(index_data)
+                    else:
+                        data[field] = index_data.get(key_or_func, "")
+                if data:
+                    result.append(data)
+            self.result[self.model_id] = result
+
+    def prom_sql(self):
+        sql = " or ".join(m for m in self._metrics)
         return sql

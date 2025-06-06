@@ -26,6 +26,7 @@ class CollectService(object):
             "aliyun_info": "CwAliyun",
             "host_info": "HostInfo",
             "redis_info": "RedisInfo",
+            "nginx_info": "NginxInfo",
         }
 
     def import_plugin(self, plugin_name):
