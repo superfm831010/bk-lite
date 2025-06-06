@@ -2586,6 +2586,18 @@ rules:
       },
     },
   },
+  CVM: {
+    instance_type: 'qcloud',
+    icon: 'zonghenengyuanfuwupingtaikuangjiaicon-',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'cvm_CPU_Usage' },
+      { type: 'value', key: 'cvm_MemUsage' },
+      { type: 'value', key: 'cvm_CvmDiskUsage' },
+    ],
+    groupIds: {},
+    plugins: {}
+  },
 };
 
 const NODE_STATUS_MAP: ObjectIconMap = {
