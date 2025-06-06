@@ -28,7 +28,7 @@
           "unit": "percent",
           "dimensions": [],
           "description": "The real-time percentage of CPU occupied during machine operation.",
-          "query": "CPUUsage_gauge"
+          "query": "CPUUsage_gauge{__$labels__}"
         },
         {
           "metric_group": "Memory",
@@ -39,7 +39,7 @@
           "unit": "mebibytes",
           "dimensions": [],
           "description": "The actual memory used by the user, excluding memory occupied by buffers and system cache. Calculated as Total Memory - Available Memory (including buffers and cached), which does not include buffers and cached.",
-          "query": "MemUsed_gauge"
+          "query": "MemUsed_gauge{__$labels__}"
         },
         {
           "metric_group": "Memory",
@@ -50,7 +50,7 @@
           "unit": "percent",
           "dimensions": [],
           "description": "The actual memory utilization rate by the user, excluding memory occupied by buffers and system cache. It is the ratio of actual user memory usage to total memory, excluding cache, buffers, and free memory.",
-          "query": "MemUsage_gauge"
+          "query": "MemUsage_gauge{__$labels__}"
         },
         {
           "metric_group": "Disk",
@@ -61,7 +61,7 @@
           "unit": "percent",
           "dimensions": [],
           "description": "The percentage of used disk capacity relative to total capacity (all disks).",
-          "query": "CvmDiskUsage_gauge"
+          "query": "CvmDiskUsage_gauge{__$labels__}"
         },
         {
           "metric_group": "Network",
@@ -72,7 +72,7 @@
           "unit": "Mbits",
           "dimensions": [],
           "description": "Average outbound traffic per second on the internal network interface card.",
-          "query": "LanOuttraffic_gauge"
+          "query": "LanOuttraffic_gauge{__$labels__}"
         },
         {
           "metric_group": "Network",
@@ -83,7 +83,7 @@
           "unit": "Mbits",
           "dimensions": [],
           "description": "Average inbound traffic per second on the internal network interface card.",
-          "query": "LanIntraffic_gauge"
+          "query": "LanIntraffic_gauge{__$labels__}"
         },
         {
           "metric_group": "Network",
@@ -94,7 +94,7 @@
           "unit": "pps",
           "dimensions": [],
           "description": "Average outbound packet rate per second on the internal network interface card.",
-          "query": "LanOutpkg_gauge"
+          "query": "LanOutpkg_gauge{__$labels__}"
         },
         {
           "metric_group": "Network",
@@ -105,7 +105,7 @@
           "unit": "pps",
           "dimensions": [],
           "description": "Average inbound packet rate per second on the internal network interface card.",
-          "query": "LanInpkg_gauge"
+          "query": "LanInpkg_gauge{__$labels__}"
         },
         {
           "metric_group": "Network",
@@ -116,7 +116,7 @@
           "unit": "Mbits",
           "dimensions": [],
           "description": "Average outbound traffic rate per second on the external network. The minimum granularity data is calculated as total traffic over 10 seconds divided by 10. This data represents the sum of outbound/inbound bandwidth from EIP+CLB+CVM on the external network.",
-          "query": "WanOuttraffic_gauge"
+          "query": "WanOuttraffic_gauge{__$labels__}"
         },
         {
           "metric_group": "Network",
@@ -127,7 +127,7 @@
           "unit": "Mbits",
           "dimensions": [],
           "description": "Average inbound traffic rate per second on the external network. The minimum granularity data is calculated as total traffic over 10 seconds divided by 10. This data represents the sum of outbound/inbound bandwidth from EIP+CLB+CVM on the external network.",
-          "query": "WanIntraffic_gauge"
+          "query": "WanIntraffic_gauge{__$labels__}"
         },
         {
           "metric_group": "Network",
@@ -138,7 +138,7 @@
           "unit": "pps",
           "dimensions": [],
           "description": "Average outbound packet rate per second on the external network interface card.",
-          "query": "WanOutpkg_gauge"
+          "query": "WanOutpkg_gauge{__$labels__}"
         },
         {
           "metric_group": "Network",
@@ -149,7 +149,7 @@
           "unit": "pps",
           "dimensions": [],
           "description": "Average inbound packet rate per second on the external network interface card.",
-          "query": "WanInpkg_gauge"
+          "query": "WanInpkg_gauge{__$labels__}"
         }
       ]
     }

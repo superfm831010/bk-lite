@@ -26,7 +26,8 @@ def node_list(query_data: dict):
     os = query_data.get('os')
     page = query_data.get('page', 1)
     page_size = query_data.get('page_size', 10)
-    return NodeService.get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size)
+    is_active = query_data.get('is_active')
+    return NodeService.get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size, is_active)
 
 
 @nats_client.register

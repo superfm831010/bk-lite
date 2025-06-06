@@ -95,6 +95,15 @@ class CollectorConfiguration(TimeInfo, MaintainerInfo):
         super().save(*args, **kwargs)
 
 
+class CollectorConfigurationEnv(TimeInfo, MaintainerInfo):
+    configuration = models.ForeignKey(CollectorConfiguration, on_delete=models.CASCADE, verbose_name="采集器配置")
+    env_config = JSONField(default=dict, verbose_name="环境变量配置")
+
+    class Meta:
+        verbose_name = "采集器配置环境变量"
+        verbose_name_plural = "采集器配置环境变量"
+
+
 class NodeCollectorConfiguration(models.Model):
     node = models.ForeignKey("Node", on_delete=models.CASCADE)
     collector_config = models.ForeignKey("CollectorConfiguration", on_delete=models.CASCADE)
