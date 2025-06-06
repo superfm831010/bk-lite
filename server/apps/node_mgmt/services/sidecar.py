@@ -10,7 +10,8 @@ from apps.core.utils.crypto.aes_crypto import AESCryptor
 from apps.node_mgmt.default_config.nats_executor import create_nats_executor_config
 from apps.node_mgmt.default_config.telegraf import create_telegraf_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
-from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization
+from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization, \
+    CollectorConfigurationEnv
 from apps.node_mgmt.utils.sidecar import format_tags_dynamic
 
 logger = logging.getLogger("app")
@@ -240,6 +241,18 @@ class Sidecar:
 
         # 返回配置信息和新的 ETag
         return JsonResponse(configuration, headers={'ETag': new_etag})
+
+    @staticmethod
+    def get_node_config_env(node_id, configuration_id):
+        node = Node.objects.filter(id=node_id).first()
+        if not node:
+            return JsonResponse(status=404, data={}, manage="Node collector Configuration not found")
+
+        obj = CollectorConfigurationEnv.objects.filter(configuration_id=configuration_id).first()
+        if not obj:
+            return JsonResponse(status=404, data={}, manage="Configuration environment not found")
+
+        return JsonResponse(dict(id=configuration_id, env_config=obj.env_config))
 
     @staticmethod
     def get_variables(node_obj):
