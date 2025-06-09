@@ -226,6 +226,7 @@
       "jvm_gc_collectiontime_seconds_value": "GC 收集总时间",
       "cvm_CPU_Usage": "CPU 利用率",
       "cvm_MemUsage": "内存利用率",
+      "cvm_CvmDiskUsage": "磁盘利用率",
       "cvm_LanOuttraffic": "内网出带宽",
       "cvm_WanOuttraffic": "外网出带宽",
       "dashboard": "仪表盘",

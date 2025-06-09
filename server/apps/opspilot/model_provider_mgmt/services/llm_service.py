@@ -296,7 +296,7 @@ class LLMService:
             embed_config = knowledge_base.embed_model.decrypted_embed_config
             embed_model_base_url = embed_config["base_url"]
             embed_model_api_key = embed_config["api_key"]
-            embed_model_name = embed_config["model"]
+            embed_model_name = embed_config.get("model", knowledge_base.embed_model.name)
             rerank_model_base_url = rerank_model_api_key = rerank_model_name = ""
             if knowledge_base.rerank_model:
                 rerank_config = knowledge_base.rerank_model.decrypted_rerank_config_config
@@ -324,6 +324,7 @@ class LLMService:
                 "rerank_model_api_key": rerank_model_api_key,
                 "rerank_model_name": rerank_model_name,
                 "rerank_top_k": knowledge_base.rerank_top_k,
+                "rag_recall_mode": "chunk",
             }
             naive_rag_request.append(kwargs)
 
