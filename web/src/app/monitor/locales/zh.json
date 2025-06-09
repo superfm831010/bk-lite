@@ -385,6 +385,7 @@
       "gpuDes": "监控Nvidia-GPU使用情况，包括利用率百分比、显存使用和温度等指标。",
       "ipDes": "监控对象的IP地址",
       "urlDes": "监控对象的url",
+      "childUrlDes": "子配置的url",
       "endpointDes": "监控对象的端点",
       "endpoint": "端点",
       "port": "端口",
