@@ -226,6 +226,7 @@
       "jvm_gc_collectiontime_seconds_value": "GC Collection Time",
       "cvm_CPU_Usage": "CPU Utilization",
       "cvm_MemUsage": "Memory Utilization",
+      "cvm_CvmDiskUsage": "Disk Utilization",
       "cvm_LanOuttraffic": "Internal Outbound Bandwidth",
       "cvm_WanOuttraffic": "External Outbound Bandwidth",
       "dashboard": "DashBoard",

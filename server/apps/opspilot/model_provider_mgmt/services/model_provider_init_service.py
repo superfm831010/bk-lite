@@ -151,6 +151,7 @@ class ModelProviderInitService:
 
         OCRProvider.objects.get_or_create(
             name="PaddleOCR",
+            is_build_in=True,
             defaults={
                 "team": [self.group_id],
                 "enabled": True,
@@ -159,6 +160,7 @@ class ModelProviderInitService:
 
         OCRProvider.objects.get_or_create(
             name="AzureOCR",
+            is_build_in=True,
             defaults={
                 "team": [self.group_id],
                 "enabled": True,
@@ -171,6 +173,7 @@ class ModelProviderInitService:
         )
         OCRProvider.objects.get_or_create(
             name="OlmOCR",
+            is_build_in=True,
             defaults={
                 "team": [self.group_id],
                 "enabled": True,
@@ -184,12 +187,12 @@ class ModelProviderInitService:
                 "team": [self.group_id],
                 "params": {"url": "langchain:duckduckgo", "name": "DuckDuckGo Search"},
                 "description": """
-        Perform fast web searches using DuckDuckGo.
+Perform fast web searches using DuckDuckGo.
 
-        This tool allows you to search the internet and retrieve relevant results in real time.  
-        You can specify the search query and control the number of results returned.  
-        Ideal for getting up-to-date information without tracking or ads.
-        """,
+This tool allows you to search the internet and retrieve relevant results in real time.
+You can specify the search query and control the number of results returned.
+Ideal for getting up-to-date information without tracking or ads.
+""",
                 "tags": ["search"],
                 "icon": "",
                 "is_build_in": True,
@@ -201,11 +204,11 @@ class ModelProviderInitService:
                 "team": [self.group_id],
                 "params": {"url": "langchain:current_time", "name": "Current Time Tool"},
                 "description": """
-        Provides the current date and time.
+Provides the current date and time.
 
-        Use this tool to get the exact current timestamp in `YYYY-MM-DD HH:MM:SS` format.
-        Useful for logging, scheduling, or any functionality that requires up-to-date time information.
-        """,
+Use this tool to get the exact current timestamp in `YYYY-MM-DD HH:MM:SS` format.
+Useful for logging, scheduling, or any functionality that requires up-to-date time information.
+""",
                 "tags": ["general"],
                 "icon": "",
                 "is_build_in": True,
@@ -247,23 +250,25 @@ class ModelProviderInitService:
                         {"key": "jenkins_password", "value": ""},
                     ],
                 },
-                "description": """\
-                ### Jenkins Tools
+                "description": """
+### Jenkins Tools
 
-                This toolset allows you to interact with Jenkins servers for CI/CD automation.  
-                It includes tools to:
+This toolset allows you to interact with Jenkins servers for CI/CD automation.
+It includes tools to:
 
-                - 🔍 **List available Jenkins jobs** — useful when you're unsure what to build.
-                - 🚀 **Trigger a Jenkins job build** — safely initiate a build, with validation to avoid disabled or unknown jobs.
+- 🔍 **List available Jenkins jobs** — useful when you're unsure what to build.
+- 🚀 **Trigger a Jenkins job build** — safely initiate a build, with validation to avoid disabled or unknown jobs.
 
-                **Use cases**:
-                - Discover available jobs before execution.
-                - Trigger builds programmatically with parameters.
-                - Integrate Jenkins pipelines into your LangChain workflow.
+**Use cases**:
+- Discover available jobs before execution.
+- Trigger builds programmatically with parameters.
+- Integrate Jenkins pipelines into your LangChain workflow.
 
-                Make sure to provide valid credentials and Jenkins server URL before using.
-                """,
-                "tags": ["maintenance", ],
+Make sure to provide valid credentials and Jenkins server URL before using.
+""",
+                "tags": [
+                    "maintenance",
+                ],
                 "icon": "",
                 "is_build_in": True,
             },
