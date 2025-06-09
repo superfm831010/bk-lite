@@ -21,7 +21,7 @@ services:
       SIDECAR_INPUT_MODE: nats
       DEBUG: "0"
       SECRET_KEY: ${SECRET_KEY}
-      ENABLE_CELERY: "False"
+      ENABLE_CELERY: True
       DB_USER: ${POSTGRES_USERNAME}
       DB_HOST: postgres
       DB_PASSWORD: ${POSTGRES_PASSWORD}
@@ -61,18 +61,3 @@ services:
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://node-manager-web:3000/healthcheck').then(res => res.status === 200)"]
       start_period: 5s
-
-  fusion-collector:
-    image: bklite/fusion-collector:latest
-    container_name: fusion-collector
-    hostname: fusion-collector-default
-    environment:
-      - SERVER_URL=http://node-manager:8000/node_mgmt/open_api/node
-      - SERVER_API_TOKEN=${SIDECAR_INIT_TOKEN}
-      - SIDECAR_ZONE=1
-      - SIDECAR_GROUP=1
-      - SIDECAR_NODEID=1
-      - SIDECAR_NODENAME=fusion-collector
-    networks:
-      - prod
-    restart: always
