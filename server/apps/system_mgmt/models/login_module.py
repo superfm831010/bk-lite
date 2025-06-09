@@ -18,6 +18,7 @@ class LoginModule(models.Model, EncryptMixin):
 
     def save(self, *args, **kwargs):
         config = {"app_secret": self.app_secret}
+        self.decrypt_field("app_secret", config)
         self.encrypt_field("app_secret", config)
         self.app_secret = config["app_secret"]
         super().save(*args, **kwargs)

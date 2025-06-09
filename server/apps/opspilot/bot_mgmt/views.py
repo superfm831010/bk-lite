@@ -9,6 +9,7 @@ from django.conf import settings
 from django.db.models import Count, Sum
 from django.db.models.functions import TruncDate
 from django.http import FileResponse, JsonResponse, StreamingHttpResponse
+from django.utils.translation import gettext as _
 from django_minio_backend import MinioBackend
 
 from apps.base.models import UserAPISecret
@@ -21,6 +22,7 @@ from apps.opspilot.model_provider_mgmt.models import LLMModel
 from apps.opspilot.model_provider_mgmt.services.llm_service import llm_service
 from apps.opspilot.models import Bot, BotChannel, BotConversationHistory, LLMSkill, TokenConsumption
 from apps.opspilot.quota_rule_mgmt.models import TeamTokenUseInfo
+from apps.opspilot.quota_rule_mgmt.quota_utils import QuotaUtils
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 
@@ -102,6 +104,17 @@ def validate_openai_token(token):
     return True, user
 
 
+def validate_remaining_token(skill_obj: LLMSkill):
+    try:
+        current_team = skill_obj.team[0]
+        remaining_token = QuotaUtils.get_remaining_token(current_team, skill_obj.llm_model.name)
+    except Exception as e:
+        logger.exception(e)
+        remaining_token = 1
+    if remaining_token <= 0:
+        raise Exception(_("Token used up"))
+
+
 def get_skill_and_params(kwargs, team):
     """Get skill object and prepare parameters for LLM invocation"""
     skill_id = kwargs.get("model")
@@ -109,6 +122,7 @@ def get_skill_and_params(kwargs, team):
 
     if not skill_obj:
         return None, None, {"choices": [{"message": {"role": "assistant", "content": "No skill"}}]}
+    validate_remaining_token(skill_obj)
     num = kwargs.get("conversation_window_size") or skill_obj.conversation_window_size
     chat_history = [{"message": i["content"], "event": i["role"]} for i in kwargs.get("messages", [])[-1 * num :]]
 
@@ -205,15 +219,21 @@ def openai_completions(request):
         else:
             return JsonResponse(msg)
     user = msg
-    skill_obj, params, error = get_skill_and_params(kwargs, user.team)
-    if error:
-        if skill_obj:
-            user_message = params.get("user_message")
-            insert_skill_log(current_ip, skill_obj.id, error, kwargs, False, user_message)
+    try:
+        skill_obj, params, error = get_skill_and_params(kwargs, user.team)
+        if error:
+            if skill_obj:
+                user_message = params.get("user_message")
+                insert_skill_log(current_ip, skill_obj.id, error, kwargs, False, user_message)
+            if stream_mode:
+                return generate_stream_error(error["choices"][0]["message"]["content"])
+            else:
+                return JsonResponse(error)
+    except Exception as e:
         if stream_mode:
-            return generate_stream_error(error["choices"][0]["message"]["content"])
+            return generate_stream_error(str(e))
         else:
-            return JsonResponse(error)
+            return JsonResponse({"choices": [{"message": {"role": "assistant", "content": str(e)}}]})
     params["user_id"] = user.username
     user_message = params.get("user_message")
     if not stream_mode:
@@ -479,7 +499,6 @@ def _generate_sse_stream(url, headers, chat_kwargs, skill_obj, show_think):
 
 def stream_chat(params, skill_obj, kwargs, current_ip, user_message):
     llm_model = LLMModel.objects.get(id=params["llm_model"])
-    llm_service.validate_remaining_token(llm_model)
     show_think = params.pop("show_think", True)
 
     # 处理用户消息和图片
