@@ -12,8 +12,8 @@ from typing import List, Dict, Any, Tuple
 from django.db import transaction, IntegrityError
 from django.utils import timezone
 
-from apps.alerts.common.alert_engine import RuleEngine
-from apps.alerts.common.alert_rules import VALID_RULES, format_alert_message
+from apps.alerts.common.rules.rule_manager import get_rule_manager
+from apps.alerts.common.alert_rules import format_alert_message
 from apps.alerts.constants import AlertStatus, LevelType
 from apps.alerts.models import Event, Alert, Level
 
@@ -21,10 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 class AlertProcessor:
-    def __init__(self, rules_config: Dict[str, Any] = None, window_size: str = "10min"):
-        self.rules_config = rules_config or VALID_RULES.dict()
+    def __init__(self, window_size: str = "10min"):
         self.window_size = window_size
-        self.engine = self._init_engine()
+        self.rule_manager = get_rule_manager()
         self.event_fields = [
             "event_id", "external_id", "item", "received_at", "status", "level", "source__name",
             "source_id", "title", "description", "resource_id", "resource_type", "resource_name", "value"
@@ -39,17 +38,7 @@ class AlertProcessor:
         instance = list(
             Level.objects.filter(level_type=LevelType.EVENT, level_id__lt=3).order_by("level_id").values_list(
                 "level_id", flat=True))
-        # _map = {i: i for i in instance}
         return instance
-
-    def _init_engine(self) -> RuleEngine:
-        """初始化规则引擎"""
-        engine = RuleEngine(
-            window_size=self.window_size,
-        )
-        for rule in self.rules_config['rules']:
-            engine.add_rule(rule)
-        return engine
 
     def get_events(self) -> pd.DataFrame:
         """获取事件数据"""
@@ -69,31 +58,39 @@ class AlertProcessor:
         try:
             # 1. 获取事件数据
             events = self.get_events()
-            # 2. 执行规则检测
-            logger.info("==start process events==")
-            alerts = self.engine.process_events(events)
-            logger.info("==end process events==")
-            # 3. 生成告警
-            for rule_name, result in alerts.items():
-                if result['triggered']:
-                    source_name = result["source_name"]
-                    # 根据event_id拿出evnet的原始数据
-                    for fingerprint, _event_dict in result['instances'].items():
-                        event_ids = _event_dict['event_ids']  # 事件ID列表[[], [], []]
+            
+            # 2. 使用规则管理器执行规则检测
+            logger.info("==start process events with rule manager==")
+            rule_results = self.rule_manager.execute_rules(events)
+            logger.info("==end process events with rule manager==")
+            
+            # 3. 处理规则执行结果
+            for rule_name, rule_result in rule_results.items():
+                if rule_result.triggered:
+                    rule_config = self.rule_manager.get_rule_by_name(rule_name)
+                    if not rule_config:
+                        logger.warning(f"Rule config not found for: {rule_name}")
+                        continue
+                    
+                    # 根据event_id拿出event的原始数据
+                    for fingerprint, _event_dict in rule_result.instances.items():
+                        event_ids = _event_dict['event_ids']  # 事件ID列表
                         event_data = events[events['event_id'].isin(event_ids)].to_dict('records')
-                        related_alerts = _event_dict["related_alerts"]
+                        related_alerts = _event_dict.get("related_alerts", [])
+                        
                         alert = {
                             "rule_name": rule_name,
-                            "description": result['description'],
-                            "severity": result['severity'],
+                            "description": rule_result.description,
+                            "severity": rule_result.severity,
                             "event_data": event_data,
                             "event_ids": event_ids,
                             "created_at": self.now,
-                            "rule": result["rule"],
-                            "source_name": source_name,
+                            "rule": rule_config,
+                            "source_name": rule_result.source_name,
                             "fingerprint": fingerprint,
                             "related_alerts": related_alerts
                         }
+                        
                         if related_alerts:
                             # 更新告警
                             update_alert_list.append(alert)
@@ -157,11 +154,7 @@ class AlertProcessor:
         return instances, highest_level
 
     def bulk_create_alerts(self, alerts: List[Dict[str, Any]]) -> None:
-        """
-        批量创建告警 - 防并发
-        相同指纹的历史告警：已关闭的告警可以与新的活跃告警有相同指纹
-        活跃告警唯一性：同一时间同一指纹只能有一个活跃告警
-        """
+        """批量创建告警"""
         if not alerts:
             return
 
@@ -256,3 +249,23 @@ class AlertProcessor:
 
         if update_alert_list:
             self.update_alerts(alerts=update_alert_list)
+
+    def get_rule_statistics(self) -> Dict[str, Any]:
+        """获取规则统计信息"""
+        return self.rule_manager.get_rule_statistics()
+
+    def add_custom_rule(self, rule_config: Dict[str, Any]) -> bool:
+        """添加自定义规则"""
+        return self.rule_manager.add_rule(rule_config)
+
+    def update_rule(self, rule_name: str, rule_config: Dict[str, Any]) -> bool:
+        """更新规则"""
+        return self.rule_manager.update_rule(rule_name, rule_config)
+
+    def remove_rule(self, rule_name: str) -> bool:
+        """删除规则"""
+        return self.rule_manager.remove_rule(rule_name)
+
+    def reload_rules(self):
+        """重新加载规则"""
+        self.rule_manager.reload_rules()

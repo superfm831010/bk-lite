@@ -425,7 +425,7 @@ class AlertOperator(object):
 
 class BeatUpdateAlertStatu(object):
 
-    def __init__(self, window_size: int = 5, times: int = 3):
+    def __init__(self, window_size: int = 10, times: int = 3):
         self.window_size = window_size  # 窗口大小，单位为分钟
         self.times = times  # 周期次数，默认3个周期
 
