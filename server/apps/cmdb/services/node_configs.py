@@ -390,10 +390,6 @@ class ZookeeperNodeParams(BaseNodeParams):
         super().__init__(*args, **kwargs)
         self.host_field = "ip_addr"
 
-    def get_instance_id(self, instance):
-        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
-
-
     def set_credential(self, *args, **kwargs):
         host = kwargs["host"]
         node_ip = self.instance.access_point[0]["ip"]
@@ -409,6 +405,33 @@ class ZookeeperNodeParams(BaseNodeParams):
 
     def get_instance_id(self, instance):
         return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
+
+
+class KafkaNodeParams(BaseNodeParams):
+    supported_model_id = "kafka"
+    plugin_name = "kafka_info"
+
+    interval_map = {plugin_name: 300}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.host_field = "ip_addr"
+
+    def get_instance_id(self, instance):
+        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
+
+    def set_credential(self, *args, **kwargs):
+        host = kwargs["host"]
+        node_ip = self.instance.access_point[0]["ip"]
+        credential_data = {
+            "node_id": self.instance.access_point[0]["id"],
+            "execute_timeout": self.instance.timeout,
+        }
+        if host["ip_addr"] != node_ip:
+            credential_data["username"] = self.credential.get("username", ""),
+            credential_data["password"] = self.credential.get("password", "")
+            credential_data["port"] = self.credential.get("port", 22),
+        return credential_data
 
 
 class NodeParamsFactory:

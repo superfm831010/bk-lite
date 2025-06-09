@@ -128,5 +128,6 @@ REDIS_COLLECT_METRIC = ["redis_info_gauge"]
 MIDDLEWARE_METRIC_MAP = {
     "nginx" : ["nginx_info_gauge"],
     "zookeeper": ["zookeeper_info_gauge"],
+    "kafka": ["kafka_info_gauge"],
 }
 

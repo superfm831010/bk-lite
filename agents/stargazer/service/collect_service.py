@@ -27,7 +27,8 @@ class CollectService(object):
             "host_info": "HostInfo",
             "redis_info": "RedisInfo",
             "nginx_info": "NginxInfo",
-            "zookeeper_info": "ZookeeperInfo"
+            "zookeeper_info": "ZookeeperInfo",
+            "kafka_info": "KafkaInfo"
         }
 
     def import_plugin(self, plugin_name):

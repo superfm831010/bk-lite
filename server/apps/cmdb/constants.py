@@ -260,6 +260,19 @@ COLLECT_OBJ_TREE = [
              "type": CollectDriverTypes.JOB}
         ],
     },
+    {
+        "id": "middleware",
+        "name": "中间件",
+        "children": [
+            {"id": "nginx", "model_id": "nginx", "name": "Nginx", "task_type": CollectPluginTypes.MIDDLEWARE,
+             "type": CollectDriverTypes.JOB},
+            {"id": "zookeeper", "model_id": "zookeeper", "name": "Zookeeper",
+             "task_type": CollectPluginTypes.MIDDLEWARE,
+             "type": CollectDriverTypes.JOB},
+            {"id": "kafka", "model_id": "tomcat", "kafka": "Kafka", "task_type": CollectPluginTypes.MIDDLEWARE,
+             "type": CollectDriverTypes.JOB}
+        ],
+    }
 
 ]
 

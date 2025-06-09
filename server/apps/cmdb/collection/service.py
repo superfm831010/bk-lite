@@ -1572,6 +1572,25 @@ class MiddlewareCollectMetrics(CollectBase):
                 "init_limit": "init_limit",
                 "sync_limit": "sync_limit",
                 "cluster_servers": "cluster_servers"
+            },
+            "kafka": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "install_path":"install_path",  # bin路径
+                "conf_path": "conf_path",  # 配置文件路径
+                "log_path": "log_path",  # 运行日志路径
+                "java_path": "java_path",
+                "java_version": "java_version",
+                "xms": "xms", # 初始堆内存大小
+                "xmx": "xmx", # 最大堆内存大小
+                "broker_id":"broker_id", # broker id
+                "io_threads":  "io_threads",
+                "network_threads": "network_threads",
+                "socket_receive_buffer_bytes":"socket_receive_buffer_bytes", # 接收缓冲区大小
+                "socket_request_max_bytes":"socket_request_max_bytes", # 单个请求套接字最大字节数
+                "socket_send_buffer_bytes":"socket_send_buffer_bytes", # 发送缓冲区大小
             }
 
         }
