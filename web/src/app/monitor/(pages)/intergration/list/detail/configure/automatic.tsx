@@ -140,7 +140,12 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       render: (_: unknown, record: TableDataItem, index: number) => (
         <Input
           value={record.instance_name}
-          onChange={(e) => handleInstNameChange(e, index)}
+          onChange={(e) =>
+            handleInstNameChange(e, {
+              index,
+              field: 'instance_name',
+            })
+          }
         />
       ),
     },
@@ -298,6 +303,23 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
             handleFieldAndInstNameChange(e, {
               index,
               field: 'jmx_url',
+            })
+          }
+        />
+      ),
+    },
+    {
+      title: 'ENV_PORT',
+      dataIndex: 'ENV_PORT',
+      key: 'ENV_PORT',
+      width: 200,
+      render: (_: unknown, record: TableDataItem, index: number) => (
+        <Input
+          value={record.ENV_PORT}
+          onChange={(e) =>
+            handleInstNameChange(e, {
+              index,
+              field: 'ENV_PORT',
             })
           }
         />
@@ -547,10 +569,13 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
 
   const handleInstNameChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    index: number
+    config: {
+      index: number;
+      field: string;
+    }
   ) => {
     const _dataSource = deepClone(dataSource);
-    _dataSource[index].instance_name = e.target.value;
+    _dataSource[config.index][config.field] = e.target.value;
     setDataSource(_dataSource);
   };
 

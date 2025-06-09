@@ -407,6 +407,7 @@
       "privPasswordDes": "The password used for encryption, corresponding to the chosen encryption protocol.",
       "ipDes": "IP address of the monitored object",
       "urlDes": "URL address of the monitored object",
+      "childUrlDes": "URL for sub configuration",
       "endpointDes": "Endpoint of the monitored object",
       "endpoint": "Endpoint",
       "collectionMethod": "Collection Method",

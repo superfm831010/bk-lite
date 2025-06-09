@@ -614,7 +614,12 @@ const useColumnsAndFormItems = ({
         };
       case 'jmx':
         return {
-          displaycolumns: [columns[0], columns[12], ...columns.slice(4, 7)],
+          displaycolumns: [
+            columns[0],
+            columns[12],
+            columns[13],
+            ...columns.slice(4, 7),
+          ],
           formItems: (
             <>
               <Form.Item label={t('monitor.intergrations.username')}>
@@ -1663,10 +1668,29 @@ const useFormItems = ({
                   {t('monitor.intergrations.passwordDes')}
                 </span>
               </Form.Item>
+              {isEdit && (
+                <Form.Item required label="JmxUrl">
+                  <Form.Item
+                    noStyle
+                    name="monitor_url"
+                    rules={[
+                      {
+                        required: true,
+                        message: t('common.required'),
+                      },
+                    ]}
+                  >
+                    <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                  </Form.Item>
+                  <span className="text-[12px] text-[var(--color-text-3)]">
+                    {t('monitor.intergrations.urlDes')}
+                  </span>
+                </Form.Item>
+              )}
               <Form.Item required label="URL">
                 <Form.Item
                   noStyle
-                  name="monitor_url"
+                  name="urls"
                   rules={[
                     {
                       required: true,
@@ -1678,6 +1702,14 @@ const useFormItems = ({
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.urlDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label="ENV_PORT">
+                <Form.Item noStyle name="ENV_PORT">
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.port')}
                 </span>
               </Form.Item>
             </>
