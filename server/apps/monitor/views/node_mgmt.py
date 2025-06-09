@@ -180,9 +180,8 @@ class NodeMgmtView(ViewSet):
         if base_info:
             config_obj = CollectConfig.objects.filter(id=base_info["id"]).first()
             if config_obj:
-                return WebUtils.response_error("配置不存在!")
-            content = ConfigFormat.json_to_yaml(base_info["content"])
-            env_config = base_info.get("env_config")
-            NodeMgmt().update_config_content(base_info["id"], content, env_config)
+                content = ConfigFormat.json_to_yaml(base_info["content"])
+                env_config = base_info.get("env_config")
+                NodeMgmt().update_config_content(base_info["id"], content, env_config)
 
         return WebUtils.response_success()
