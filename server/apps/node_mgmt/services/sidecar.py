@@ -248,7 +248,7 @@ class Sidecar:
         if not node:
             return JsonResponse(status=404, data={}, manage="Node collector Configuration not found")
 
-        obj = CollectorConfigurationEnv.objects.filter(configuration_id=configuration_id).first()
+        obj = CollectorConfiguration.objects.filter(id=configuration_id).first()
         if not obj:
             return JsonResponse(status=404, data={}, manage="Configuration environment not found")
 

@@ -102,12 +102,12 @@ class NodeMgmt(object):
         return_data = self.client.run("update_child_config_content", {"id": id, "content": content})
         return return_data
 
-    def update_config_content(self, id, content):
+    def update_config_content(self, id, content, env_config=None):
         """
         :param id: 配置ID
         :param content: 配置内容
         """
-        return_data = self.client.run("update_config_content", {"id": id, "content": content})
+        return_data = self.client.run("update_config_content", {"id": id, "content": content, "env_config": env_config})
         return return_data
 
     def delete_child_configs(self, ids):

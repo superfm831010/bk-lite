@@ -83,6 +83,7 @@ class CollectorConfiguration(TimeInfo, MaintainerInfo):
     nodes = models.ManyToManyField(Node, through="NodeCollectorConfiguration", blank=True,verbose_name="节点")
     cloud_region = models.ForeignKey(CloudRegion, default=1, on_delete=models.CASCADE, verbose_name="云区域")
     is_pre = models.BooleanField(default=False, verbose_name="是否预定义")
+    env_config = JSONField(default=dict, verbose_name="环境变量配置")
 
     class Meta:
         verbose_name = "采集器配置信息"
@@ -95,13 +96,13 @@ class CollectorConfiguration(TimeInfo, MaintainerInfo):
         super().save(*args, **kwargs)
 
 
-class CollectorConfigurationEnv(TimeInfo, MaintainerInfo):
-    configuration = models.ForeignKey(CollectorConfiguration, on_delete=models.CASCADE, verbose_name="采集器配置")
-    env_config = JSONField(default=dict, verbose_name="环境变量配置")
-
-    class Meta:
-        verbose_name = "采集器配置环境变量"
-        verbose_name_plural = "采集器配置环境变量"
+# class CollectorConfigurationEnv(TimeInfo, MaintainerInfo):
+#     configuration = models.ForeignKey(CollectorConfiguration, on_delete=models.CASCADE, verbose_name="采集器配置")
+#     env_config = JSONField(default=dict, verbose_name="环境变量配置")
+#
+#     class Meta:
+#         verbose_name = "采集器配置环境变量"
+#         verbose_name_plural = "采集器配置环境变量"
 
 
 class NodeCollectorConfiguration(models.Model):
