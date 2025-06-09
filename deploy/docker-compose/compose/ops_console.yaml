@@ -33,25 +33,19 @@ services:
     image: bklite/ops-console-web
     container_name: ops-console-web
     environment:
-      - NEXTAPI_URL=http://ops-console:8000
-      - NEXTAUTH_URL=http://${HOST_IP}:${TRAEFIK_CONSOLE_PORT}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      NEXTAPI_URL: http://ops-console:8000
+      NEXTAUTH_URL: http://${HOST_IP}:${TRAEFIK_CONSOLE_PORT}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
     restart: always
     networks:
       - prod
     labels:
       - traefik.enable=true
-      - traefik.http.routers.ops-console-web.rule=Host(`${HOST_IP}`)
-      - traefik.http.routers.ops-console-web.entrypoints=opsconsole
-      - traefik.http.services.ops-console-web.loadbalancer.server.port=3000
+      - traefik.http.routers.opsconsole-web.rule=Host(`${HOST_IP}`)
+      - traefik.http.routers.opsconsole-web.entrypoints=opsconsole-web
+      - traefik.http.services.opsconsole-web.loadbalancer.server.port=3000
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://ops-console-web:3000/healthcheck').then(res => res.status === 200)"]
       start_period: 5s
     depends_on:
       - ops-console
-
-  stargazer:
-    image: ${DOCKER_IMAGE_STARGAZER}
-    container_name: stargazer
-    networks:
-      - prod

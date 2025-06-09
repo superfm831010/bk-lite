@@ -1,26 +1,38 @@
 import NextAuth from "next-auth";
-import { authOptions } from "../constants/authOptions";
+import { getAuthOptions } from "../constants/authOptions";
 
-// Create NextAuth instance
-const nextAuth = NextAuth(authOptions);
+// Create NextAuth instance with dynamic auth options
+const createNextAuth = async () => {
+  const authOptions = await getAuthOptions();
+  return NextAuth(authOptions);
+};
 
-// Safely extract exports
-export const auth = nextAuth.auth;
-export const signIn = nextAuth.signIn;
-export const signOut = nextAuth.signOut;
+// Export async versions of the auth functions
+export const getAuth = async () => {
+  const nextAuth = await createNextAuth();
+  return nextAuth.auth;
+};
 
-// Safely extract handlers
-const handlers = nextAuth.handlers;
-export const GET = handlers?.GET;
-export const POST = handlers?.POST;
+export const getSignIn = async () => {
+  const nextAuth = await createNextAuth();
+  return nextAuth.signIn;
+};
+
+export const getSignOut = async () => {
+  const nextAuth = await createNextAuth();
+  return nextAuth.signOut;
+};
 
 // Export a simplified handler for direct usage in API routes
 export async function handler(req: Request) {
+  const nextAuth = await createNextAuth();
+  const handlers = nextAuth.handlers;
+  
   // Determine which method to use based on the request
-  if (req.method === "GET" && GET) {
-    return GET(req);
-  } else if (POST) {
-    return POST(req);
+  if (req.method === "GET" && handlers?.GET) {
+    return handlers.GET(req);
+  } else if (handlers?.POST) {
+    return handlers.POST(req);
   }
   
   // Fallback response

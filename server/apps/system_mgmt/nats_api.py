@@ -170,6 +170,7 @@ def search_users(query_params):
 @nats_client.register
 def init_user_default_attributes(user_id, group_name, default_group_id):
     role_obj = Role.objects.get(name="guest", app="opspilot")
+    normal_role = Role.objects.get(name="normal", app="opspilot")
     user = User.objects.get(id=user_id)
     top_group, _ = Group.objects.get_or_create(
         name=os.getenv("DEFAULT_GROUP_NAME", "Guest"), parent_id=0, defaults={"description": ""}
@@ -182,6 +183,8 @@ def init_user_default_attributes(user_id, group_name, default_group_id):
     user.timezone = "Asia/Shanghai"
     if role_obj.id not in user.role_list:
         user.role_list.append(role_obj.id)
+    if normal_role.id in user.role_list:
+        user.role_list.remove(normal_role.id)
     user.group_list.remove(int(default_group_id))
     user.group_list.append(guest_group.id)
     user.group_list.append(group_obj.id)
@@ -197,7 +200,7 @@ def create_opspilot_guest_role():
     menus = dict(Menu.objects.filter(app="opspilot").values_list("id", "name"))
     guest_menus = GUEST_MENUS[:]
     menu_list = [k for k, v in menus.items() if v in guest_menus]
-    Role.objects.get_or_create(name="guest", app="opspilot", defaults={"menu_list": menu_list})
+    Role.objects.update_or_create(name="guest", app="opspilot", defaults={"menu_list": menu_list})
     guest_group, _ = Group.objects.get_or_create(name="Guest", parent_id=0, defaults={"description": "Guest group"})
     opspilot_guest_group, _ = Group.objects.get_or_create(name="OpsPilotGuest", parent_id=0)
     return {"result": True, "data": {"group_id": opspilot_guest_group.id}}
@@ -351,12 +354,12 @@ def wechat_user_register(user_id, nick_name):
 def get_wechat_settings():
     login_module = LoginModule.objects.filter(source_type="wechat", enabled=True).first()
     if not login_module:
-        return {"result": True, "data": {"enable": False}}
+        return {"result": True, "data": {"enabled": False}}
 
     return {
         "result": True,
         "data": {
-            "enable": True,
+            "enabled": True,
             "app_id": login_module.app_id,
             "app_secret": login_module.decrypted_app_secret,
             "redirect_uri": login_module.other_config.get("redirect_uri", ""),
