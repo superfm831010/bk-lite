@@ -62,7 +62,7 @@ COLLECTORS = [
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "/usr/bin/java",
-        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_jvm.jar 40000 %s",
+        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_jvm.jar $ENV_PORT %s",
         "validation_parameters": "",
         "default_template": "",
         "introduction": "JVM-JMX is a Java Management Extensions (JMX) monitoring tool that collects and monitors JVM metrics, providing real-time performance insights."
@@ -75,7 +75,7 @@ COLLECTORS = [
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "/usr/bin/java",
-        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_tomcat.jar 40100 %s",
+        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_tomcat.jar $ENV_PORT %s",
         "validation_parameters": "",
         "default_template": "",
         "introduction": "JMX-Tomcat is a Java Management Extensions (JMX) monitoring tool that collects and monitors Tomcat server metrics, providing real-time performance insights."
@@ -88,7 +88,7 @@ COLLECTORS = [
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "/usr/bin/java",
-        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_jboss.jar 40200 %s",
+        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_jboss.jar $ENV_PORT %s",
         "validation_parameters": "",
         "default_template": "",
         "introduction": "JMX-JBoss is a Java Management Extensions (JMX) monitoring tool that collects and monitors JBoss server metrics, providing real-time performance insights."
@@ -101,7 +101,7 @@ COLLECTORS = [
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "/usr/bin/java",
-        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_jetty.jar 40300 %s",
+        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_jetty.jar $ENV_PORT %s",
         "validation_parameters": "",
         "default_template": "",
         "introduction": "JMX-Jetty is a Java Management Extensions (JMX) monitoring tool that collects and monitors Jetty server metrics, providing real-time performance insights."
@@ -114,7 +114,7 @@ COLLECTORS = [
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "/usr/bin/java",
-        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_activemq.jar 40400 %s",
+        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_activemq.jar $ENV_PORT %s",
         "validation_parameters": "",
         "default_template": "",
         "introduction": "JMX-ActiveMQ is a Java Management Extensions (JMX) monitoring tool that collects and monitors ActiveMQ server metrics, providing real-time performance insights."
@@ -127,7 +127,7 @@ COLLECTORS = [
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "/usr/bin/java",
-        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_weblogic.jar 40500 %s",
+        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_weblogic.jar $ENV_PORT %s",
         "validation_parameters": "",
         "default_template": "",
         "introduction": "JMX-WebLogic is a Java Management Extensions (JMX) monitoring tool that collects and monitors WebLogic server metrics, providing real-time performance insights."
@@ -140,7 +140,7 @@ COLLECTORS = [
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "/usr/bin/java",
-        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_tongweb6.jar 40600 %s",
+        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_tongweb6.jar $ENV_PORT %s",
         "validation_parameters": "",
         "default_template": "",
         "introduction": "JMX-TongWeb6 is a Java Management Extensions (JMX) monitoring tool that collects and monitors TongWeb6 server metrics, providing real-time performance insights."
@@ -153,7 +153,7 @@ COLLECTORS = [
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "/usr/bin/java",
-        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_tongweb7.jar 40700 %s",
+        "execute_parameters": "-jar /opt/fusion-collectors/bin/jmx_tongweb7.jar $ENV_PORT %s",
         "validation_parameters": "",
         "default_template": "",
         "introduction": "JMX-TongWeb7 is a Java Management Extensions (JMX) monitoring tool that collects and monitors TongWeb7 server metrics, providing real-time performance insights."

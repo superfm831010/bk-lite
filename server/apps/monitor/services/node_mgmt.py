@@ -56,16 +56,32 @@ class InstanceConfigService:
                 "status": config_info.get("status"),
             })
 
-        # 过滤混合配置中的子配置
-        config_map = {
-            key: list(group)
-            for key, group in itertools.groupby(
-                sorted(configs, key=lambda x: (x["collect_type"], x["config_type"])),
-                key=lambda x: (x["collect_type"], x["config_type"]))
-        }
-        results = [cs[0] if len(cs) == 1 else next(c for c in cs if not c["is_child"]) for cs in config_map.values()]
+        result = {}
+        for config in configs:
+            key = (config["collect_type"], config["config_type"])
+            if key not in result:
+                result[key] = {
+                    "instance_id": config["instance_id"],
+                    "collect_type": config["collect_type"],
+                    "config_type": config["config_type"],
+                    "agent_id": config["agent_id"],
+                    "time": config["time"],
+                    "status": config["status"],
+                    "config_ids": [config["config_id"]],
+                }
+            else:
+                result[key]["config_ids"].append(config["config_id"])
 
-        return results
+        # # 过滤混合配置中的子配置
+        # config_map = {
+        #     key: list(group)
+        #     for key, group in itertools.groupby(
+        #         sorted(configs, key=lambda x: (x["collect_type"], x["config_type"])),
+        #         key=lambda x: (x["collect_type"], x["config_type"]))
+        # }
+        # results = [cs[0] if len(cs) == 1 else next(c for c in cs if not c["is_child"]) for cs in config_map.values()]
+
+        return list(result.values())
 
     @staticmethod
     def create_monitor_instance_by_node_mgmt(data):

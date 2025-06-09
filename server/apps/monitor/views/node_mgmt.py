@@ -109,63 +109,79 @@ class NodeMgmtView(ViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "id": openapi.Schema(type=openapi.TYPE_STRING, description="配置id"),
+                "ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING), description="配置ID列表"),
             },
-            required=["id"]
+            required=["ids"]
         ),
         tags=['NodeMgmt']
     )
     @action(methods=['post'], detail=False, url_path='get_config_content')
     def get_config_content(self, request):
-        config_obj = CollectConfig.objects.filter(id=request.data["id"]).first()
-        if not config_obj:
+        config_objs = CollectConfig.objects.filter(id__in=request.data["ids"])
+        if not config_objs:
             return WebUtils.response_error("配置不存在!")
-        content_key = "content" if config_obj.is_child else "config_template"
-        if config_obj.is_child:
-            configs = NodeMgmt().get_child_configs_by_ids([request.data["id"]])
-        else:
-            configs = NodeMgmt().get_configs_by_ids([request.data["id"]])
-        config = configs[0]
-        if config_obj.file_type == "toml":
-            config["content"] = ConfigFormat.toml_to_dict(config[content_key])
-        elif config_obj.file_type == "yaml":
-            config["content"] = ConfigFormat.yaml_to_dict(config[content_key])
-        else:
-            raise ValueError("file_type must be toml or yaml")
 
-        return WebUtils.response_success(config)
+        result = {}
+        for config_obj in config_objs:
+            content_key = "content" if config_obj.is_child else "config_template"
+            if config_obj.is_child:
+                configs = NodeMgmt().get_child_configs_by_ids([config_obj.id])
+            else:
+                configs = NodeMgmt().get_configs_by_ids([config_obj.id])
+            config = configs[0]
+            if config_obj.file_type == "toml":
+                config["content"] = ConfigFormat.toml_to_dict(config[content_key])
+            elif config_obj.file_type == "yaml":
+                config["content"] = ConfigFormat.yaml_to_dict(config[content_key])
+            else:
+                raise ValueError("file_type must be toml or yaml")
+            if config_obj.is_child:
+                result["child"] = config
+            else:
+                result["base"] = config
+
+        return WebUtils.response_success(result)
 
     @swagger_auto_schema(
         operation_description="更改采集配置",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "id": openapi.Schema(type=openapi.TYPE_STRING, description="子配置id"),
-                "content": openapi.Schema(type=openapi.TYPE_OBJECT, description="子配置内容"),
-                "env_config": openapi.Schema(type=openapi.TYPE_OBJECT, description="环境变量配置"),
+                "child": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_STRING, description="配置ID"),
+                        "content": openapi.Schema(type=openapi.TYPE_OBJECT, description="配置内容"),
+                    },
+                ),
+                "base": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_STRING, description="配置ID"),
+                        "content": openapi.Schema(type=openapi.TYPE_OBJECT, description="配置内容"),
+                        "env_config": openapi.Schema(type=openapi.TYPE_OBJECT, description="环境变量配置"),
+                    },
+                ),
             },
-            required=["id", "content"]
         ),
         tags=['NodeMgmt']
     )
-    @action(methods=['post'], detail=False, url_path='update_instance_child_config')
+    @action(methods=['post'], detail=False, url_path='update_instance_collect_config')
     def update_instance_collect_config(self, request):
-        config_obj = CollectConfig.objects.filter(id=request.data["id"]).first()
-        if not config_obj:
-            return WebUtils.response_error("配置不存在!")
-        content = request.data.get("content")
 
-        if config_obj.file_type == "toml":
-            content = ConfigFormat.json_to_toml(content)
-        elif config_obj.file_type == "yaml":
-            content = ConfigFormat.json_to_yaml(content)
-        else:
-            raise ValueError("file_type must be toml or yaml")
+        child_info = request.data.get("child")
+        if child_info:
+            config_obj = CollectConfig.objects.filter(id=child_info["id"]).first()
+            if config_obj:
+                content = ConfigFormat.json_to_toml(child_info["content"])
+                NodeMgmt().update_child_config_content(child_info["id"], content)
 
-        if config_obj.is_child:
-            NodeMgmt().update_child_config_content(request.data["id"], content)
-        else:
-            env_config = request.data.get("env_config", None)
-            NodeMgmt().update_config_content(request.data["id"], content, env_config)
+        base_info = request.data.get("base")
+        if base_info:
+            config_obj = CollectConfig.objects.filter(id=base_info["id"]).first()
+            if config_obj:
+                content = ConfigFormat.json_to_yaml(base_info["content"])
+                env_config = base_info.get("env_config")
+                NodeMgmt().update_config_content(base_info["id"], content, env_config)
 
         return WebUtils.response_success()
