@@ -366,6 +366,7 @@ docker-compose -f compose/infra.yaml \
                -f compose/node_mgmt.yaml \
                -f compose/monitor.yaml \
                -f compose/ops_console.yaml \
+               -f compose/ops_pilot.yaml \
                config --no-interpolate > docker-compose.yaml
 
 # 按照特定顺序启动服务
