@@ -10,8 +10,7 @@ from apps.core.utils.crypto.aes_crypto import AESCryptor
 from apps.node_mgmt.default_config.nats_executor import create_nats_executor_config
 from apps.node_mgmt.default_config.telegraf import create_telegraf_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
-from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization, \
-    CollectorConfigurationEnv
+from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization
 from apps.node_mgmt.utils.sidecar import format_tags_dynamic
 
 logger = logging.getLogger("app")
