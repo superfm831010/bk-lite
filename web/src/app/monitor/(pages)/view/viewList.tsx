@@ -36,11 +36,17 @@ import { ListItem } from '@/types';
 import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants/monitor';
 const { Option } = Select;
 
-const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
+const ViewList: React.FC<ViewListProps> = ({
+  objects,
+  objectId,
+  showTab,
+  updateTree,
+}) => {
   const { isLoading } = useApiClient();
   const {
     getMonitorMetrics,
     getInstanceList,
+    getInstanceSearch,
     getInstanceQueryParams,
     getMonitorPlugin,
   } = useMonitorApi();
@@ -98,7 +104,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
           </Button>
           <Permission requiredPermissions={['Detail']}>
             <Button type="link" onClick={() => linkToDetial(record)}>
-              {t('monitor.views.overview')}
+              {t('monitor.views.dashboard')}
             </Button>
           </Permission>
         </>
@@ -192,6 +198,11 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     }
   }, [colony, namespace, workload, node]);
 
+  const updatePage = () => {
+    onRefresh();
+    updateTree?.();
+  };
+
   const getParams = () => {
     return {
       page: pagination.current,
@@ -218,7 +229,8 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     };
     const targetObject = objects.find((item) => item.id === objectId);
     const objName = targetObject?.name;
-    const getInstList = getInstanceList(objectId, params);
+    const request = showTab ? getInstanceSearch : getInstanceList;
+    const getInstList = request(objectId, params);
     const getQueryParams = getInstanceQueryParams(objName as string, objParams);
     const getMetrics = getMonitorMetrics(objParams);
     const getPlugins = getMonitorPlugin(objParams);
@@ -339,7 +351,8 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     }
     try {
       setTableLoading(type !== 'timer');
-      const data = await getInstanceList(objectId, params);
+      const request = showTab ? getInstanceSearch : getInstanceList;
+      const data = await request(objectId, params);
       setTableData(data.results || []);
       setPagination((prev: Pagination) => ({
         ...prev,
@@ -520,7 +533,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         <TimeSelector
           onlyRefresh
           onFrequenceChange={onFrequenceChange}
-          onRefresh={onRefresh}
+          onRefresh={updatePage}
         />
       </div>
       <CustomTable

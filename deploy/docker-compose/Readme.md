@@ -34,6 +34,6 @@ bash bootstrap.sh
 # 清除现有的容器，卷和网络
 docker-compose down --volumes
 # 清除生成的安装包，环境变量和compose文件
-rm -rvf pkgs *.env docker-compose.yml
+rm -rvf pkgs *.env docker-compose.yaml .env
 ```
 

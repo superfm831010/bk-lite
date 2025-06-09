@@ -562,7 +562,7 @@ const User: React.FC = () => {
           </Button>
         </PermissionWrapper>
         <UserModal ref={userModalRef} treeData={treeData} onSuccess={onSuccessUserModal} />
-        <PermissionWrapper requiredPermissions={['Delete']}>
+        <PermissionWrapper requiredPermissions={['Delete User']}>
           <Button onClick={handleModifyDelete} disabled={isDeleteDisabled}>
             {t('common.batchDelete')}
           </Button>

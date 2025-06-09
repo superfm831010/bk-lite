@@ -42,7 +42,7 @@ const Intergration = () => {
     setDisplayType(value);
   };
 
-  const getObjects = async () => {
+  const getObjects = async (type?: string) => {
     try {
       setTreeLoading(true);
       const data: ObjectItem[] = await getMonitorObject({
@@ -50,6 +50,7 @@ const Intergration = () => {
       });
       const _treeData = getTreeData(deepClone(data));
       setTreeData(_treeData);
+      if (type === 'update') return;
       setObjects(data);
       setDefaultSelectObj(data[0]?.id);
     } finally {
@@ -58,29 +59,32 @@ const Intergration = () => {
   };
 
   const getTreeData = (data: ObjectItem[]): TreeItem[] => {
-    const groupedData = data.reduce(
-      (acc, item) => {
-        if (!acc[item.type]) {
-          acc[item.type] = {
-            title: item.display_type || '--',
-            key: item.type,
-            children: [],
-          };
-        }
-        acc[item.type].children.push({
-          title: (item.display_name || '--') + `(${item.instance_count || 0})`,
-          label: item.name || '--',
-          key: item.id,
+    const groupedData = data.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = {
+          title: item.display_type || '--',
+          key: item.type,
           children: [],
-        });
-        return acc;
-      },
-      {} as Record<string, TreeItem>
-    );
+        };
+      }
+      acc[item.type].children.push({
+        title: (item.display_name || '--') + `(${item.instance_count || 0})`,
+        label: item.name || '--',
+        key: item.id,
+        children: [],
+      });
+      return acc;
+    }, {} as Record<string, TreeItem>);
     if (groupedData.Other) {
-      groupedData.Other.children = groupedData.Other.children.filter((item) => item.label !== "SNMP Trap");
+      groupedData.Other.children = groupedData.Other.children.filter(
+        (item) => item.label !== 'SNMP Trap'
+      );
     }
     return Object.values(groupedData);
+  };
+
+  const updateTree = () => {
+    getObjects('update');
   };
 
   return (
@@ -103,7 +107,12 @@ const Intergration = () => {
           />
         )}
         {displayType === 'list' ? (
-          <ViewList objects={objects} objectId={objectId} showTab={showTab} />
+          <ViewList
+            objects={objects}
+            objectId={objectId}
+            showTab={showTab}
+            updateTree={updateTree}
+          />
         ) : (
           <ViewHive
             objects={objects}

@@ -303,7 +303,10 @@ const StrategyOperation = () => {
     instRef.current?.showModal({
       title,
       type: 'add',
-      form: {},
+      form: {
+        ...source,
+        id: detailId,
+      },
     });
   };
 
@@ -1384,7 +1387,6 @@ const StrategyOperation = () => {
       <SelectAssets
         ref={instRef}
         organizationList={organizationList}
-        form={source}
         monitorObject={monitorObjId}
         objects={objects}
         onSuccess={onChooseAssets}

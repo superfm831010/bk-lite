@@ -50,6 +50,7 @@ import {
 } from '@/app/monitor/constants/monitor';
 const { confirm } = Modal;
 import Permission from '@/components/permission';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
 const Asset = () => {
   const { isLoading } = useApiClient();
@@ -169,7 +170,10 @@ const Asset = () => {
         key: 'organization',
         width: 160,
         render: (_, { organization }) => (
-          <>{showGroupName(organization, organizationList)}</>
+          <EllipsisWithTooltip
+            className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
+            text={showGroupName(organization, organizationList)}
+          />
         ),
       },
       {
@@ -277,6 +281,8 @@ const Asset = () => {
   };
 
   const handleObjectChange = (id: string) => {
+    setTableData([]);
+    setRuleList([]);
     setObjectId(id);
   };
 

@@ -305,6 +305,7 @@ export interface ViewListProps {
   objectId: React.Key;
   objects: ObjectItem[];
   showTab?: boolean;
+  updateTree?: () => void;
 }
 
 export interface IntergrationMonitoredObject {

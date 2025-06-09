@@ -283,7 +283,11 @@ const LineChart: React.FC<LineChartProps> = ({
                   const targetKey = Object.keys(d || {}).find((key) =>
                     key.includes('value')
                   );
-                  return targetKey ? d[targetKey] : 0;
+                  return targetKey
+                    ? isNaN(d[targetKey])
+                      ? 0
+                      : d[targetKey]
+                    : 0;
                 });
                 const yMax = Math.max(...values);
                 const yMin = Math.min(...values);
