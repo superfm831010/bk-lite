@@ -6,7 +6,6 @@ from jinja2 import Environment, FileSystemLoader
 
 from apps.node_mgmt.models import CollectorConfiguration, ChildConfig, Collector, Node, NodeCollectorConfiguration
 
-
 # key为采集器名称, value为采集器模版目录，只维护采集类的采集器
 COLLECTOR_PATH_MAP = {
     "Telegraf": "telegraf",
@@ -94,7 +93,7 @@ class ConfigService:
         collector_map = {obj.node_operating_system: obj for obj in collector_objs}
         subdir = f"config/{COLLECTOR_PATH_MAP.get(collector)}"
 
-        conf_objs = []
+        conf_objs, env_config_objs = [], []
         node_config_assos = []
         for node in nodes:
             node_id = node["id"]
@@ -111,6 +110,8 @@ class ConfigService:
 
                 node_config["instance_id"] = ast.literal_eval(node_config["instance_id"])[0]
                 content = self.render_config(subdir, node_config["collect_type"], node_config["type"], node_config)
+                # 提取配置中ENV_开头的配置
+                env_config = {k: v for k, v in node_config.items() if k.startswith("ENV_")}
 
                 conf_objs.append(CollectorConfiguration(
                     id=node_config["id"],
@@ -118,7 +119,7 @@ class ConfigService:
                     config_template=content,
                     collector_id=collector_obj.id,
                     cloud_region_id=cloud_region_id,
-
+                    env_config=env_config,
                 ))
                 node_config_assos.append(NodeCollectorConfiguration(node_id=node_id, collector_config_id=node_config["id"]))
 
@@ -149,6 +150,7 @@ class ConfigService:
                 "id": config.id,
                 "name": config.name,
                 "config_template": config.config_template,
+                "env_config": config.env_config,
             }
             for config in configs
         ]
@@ -162,14 +164,21 @@ class ConfigService:
         else:
             raise ValueError(f"ChildConfig with id {id} does not exist.")
 
-    def update_config_content(self, id, content):
+    def update_config_content(self, id, content, env_config=None):
         """更新配置内容"""
+
+        if not content and not env_config:
+            raise ValueError("Content or env_config must be provided for update.")
+
         config = CollectorConfiguration.objects.filter(id=id).first()
+
         if config:
             config.config_template = content
-            config.save()
-        else:
-            raise ValueError(f"CollectorConfiguration with id {id} does not exist.")
+
+        if env_config:
+            config.env_config = env_config
+
+        config.save()
 
     def delete_child_configs(self, ids):
         """删除子配置"""

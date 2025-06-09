@@ -136,19 +136,20 @@ class NodeMgmtView(ViewSet):
         return WebUtils.response_success(config)
 
     @swagger_auto_schema(
-        operation_description="更改子配置",
+        operation_description="更改采集配置",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
                 "id": openapi.Schema(type=openapi.TYPE_STRING, description="子配置id"),
                 "content": openapi.Schema(type=openapi.TYPE_OBJECT, description="子配置内容"),
+                "env_config": openapi.Schema(type=openapi.TYPE_OBJECT, description="环境变量配置"),
             },
             required=["id", "content"]
         ),
         tags=['NodeMgmt']
     )
     @action(methods=['post'], detail=False, url_path='update_instance_child_config')
-    def update_instance_child_config(self, request):
+    def update_instance_collect_config(self, request):
         config_obj = CollectConfig.objects.filter(id=request.data["id"]).first()
         if not config_obj:
             return WebUtils.response_error("配置不存在!")
@@ -164,6 +165,7 @@ class NodeMgmtView(ViewSet):
         if config_obj.is_child:
             NodeMgmt().update_child_config_content(request.data["id"], content)
         else:
-            NodeMgmt().update_config_content(request.data["id"], content)
+            env_config = request.data.get("env_config", None)
+            NodeMgmt().update_config_content(request.data["id"], content, env_config)
 
         return WebUtils.response_success()

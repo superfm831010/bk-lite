@@ -78,7 +78,8 @@ def update_config_content(data: dict):
     """更新配置内容"""
     id = data.get('id')
     content = data.get('content')
-    ConfigService().update_config_content(id, content)
+    env_config = data.get('env_config')
+    ConfigService().update_config_content(id, content, env_config)
 
 
 @nats_client.register
