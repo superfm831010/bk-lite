@@ -1557,6 +1557,22 @@ class MiddlewareCollectMetrics(CollectBase):
                 "ssl_version": "ssl_version",
                 "inst_name": self.get_inst_name
             },
+            "zookeeper": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "install_path":"install_path",  # bin路径
+                "log_path": "log_path",  # 运行日志路径
+                "conf_path": "conf_path", # 配置文件路径
+                "java_path": "java_path",
+                "java_version": "java_version",
+                "data_path": "data_path",
+                "tick_time": "tick_time",
+                "init_limit": "init_limit",
+                "sync_limit": "sync_limit",
+                "cluster_servers": "cluster_servers"
+            }
 
         }
 
