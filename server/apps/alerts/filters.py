@@ -86,10 +86,11 @@ class EventModelFilter(FilterSet):
     description = CharFilter(field_name="description", lookup_expr="icontains", label="内容")
     event_id = CharFilter(field_name="event_id", lookup_expr="exact", label="事件ID")
     alert_id = CharFilter(method="filter_alert_id", label="告警ID")
+    source_id = CharFilter(field_name="source__source_id", lookup_expr="exact", label="告警源ID")
 
     class Meta:
         model = Event
-        fields = ["title", "description", "event_id", "alert_id"]
+        fields = ["title", "description", "event_id", "alert_id", "source_id"]
 
     @staticmethod
     def filter_alert_id(qs, field_name, value):
