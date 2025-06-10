@@ -15,7 +15,7 @@ class Command(BaseCommand):
         sys_client = SystemMgmt()
         res = sys_client.create_opspilot_guest_role()
         opspilot_client = OpsPilot()
-        provider_res = opspilot_client.create_guest_provider(res["data"]["group_id"])
+        provider_res = opspilot_client.get_guest_provider(res["data"]["group_id"])
         if not provider_res["result"]:
             logger.error(f"Failed to create guest provider: {provider_res['message']}")
             return
