@@ -1,6 +1,5 @@
 import nats_client
 from apps.core.logger import logger
-from apps.opspilot.model_provider_mgmt.models import EmbedModelChoices, LLMModelChoices, RerankModelChoices
 from apps.opspilot.models import (
     Bot,
     EmbedProvider,
@@ -71,94 +70,38 @@ def get_module_data(module, child_module, page, page_size, group_id):
 
 
 @nats_client.register
-def create_guest_provider(group_id):
-    default_llm_model, _ = LLMModel.objects.get_or_create(
-        name="GPT-4o",
-        llm_model_type=LLMModelChoices.CHAT_GPT,
-        is_build_in=False,
-        team=[group_id],
-        defaults={
-            "llm_config": {
-                "openai_api_key": "your_openai_api_key",
-                "openai_base_url": "https://api.openai.com",
-                "temperature": 0.7,
-                "model": "gpt-4o",
-                "is_demo": False,
-            },
-        },
-    )
-    rerank_model, _ = RerankProvider.objects.get_or_create(
-        name="bce-reranker-base_v1",
-        rerank_model_type=RerankModelChoices.LANG_SERVE,
-        is_build_in=False,
-        defaults={
-            "rerank_config": {
-                "base_url": "local:bce:maidalun1020/bce-reranker-base_v1",
-                "api_key": "",
-                "model": "bce-reranker-base_v1",
-            },
-            "team": [group_id],
-        },
-    )
+def get_guest_provider(group_id):
+    default_llm_model = LLMModel.objects.get(name="GPT-4o", is_build_in=True)
+    if group_id not in default_llm_model.team:
+        default_llm_model.team.append(group_id)
+        default_llm_model.save()
+    rerank_model = RerankProvider.objects.get(name="bce-reranker-base_v1", is_build_in=True)
+    if group_id not in rerank_model.team:
+        rerank_model.team.append(group_id)
+        rerank_model.save()
 
-    embed_model_1, _ = EmbedProvider.objects.get_or_create(
-        name="bce-embedding-base_v1",
-        embed_model_type=EmbedModelChoices.LANG_SERVE,
-        is_build_in=False,
-        team=[group_id],
-        defaults={
-            "embed_config": {
-                "base_url": "local:huggingface_embedding:maidalun1020/bce-embedding-base_v1",
-                "api_key": "",
-                "model": "bce-embedding-base_v1",
-            },
-        },
-    )
-    embed_model_2, _ = EmbedProvider.objects.get_or_create(
-        name="FastEmbed(BAAI/bge-small-zh-v1.5)",
-        embed_model_type=EmbedModelChoices.LANG_SERVE,
-        is_build_in=False,
-        team=[group_id],
-        defaults={
-            "embed_config": {
-                "base_url": "local:huggingface_embedding:BAAI/bge-small-zh-v1.5",
-                "api_key": "",
-                "model": "FastEmbed(BAAI/bge-small-zh-v1.5)",
-            },
-        },
-    )
-    paddle_ocr, _ = OCRProvider.objects.get_or_create(
-        name="PaddleOCR",
-        is_build_in=False,
-        team=[group_id],
-        defaults={
-            "enabled": True,
-        },
-    )
+    embed_model_1 = EmbedProvider.objects.get(name="bce-embedding-base_v1", is_build_in=True)
+    if group_id not in embed_model_1.team:
+        embed_model_1.team.append(group_id)
+        embed_model_1.save()
+    embed_model_2 = EmbedProvider.objects.get(name="FastEmbed(BAAI/bge-small-zh-v1.5)", is_build_in=True)
+    if group_id not in embed_model_2.team:
+        embed_model_2.team.append(group_id)
+        embed_model_2.save()
 
-    azure_ocr, _ = OCRProvider.objects.get_or_create(
-        name="AzureOCR",
-        is_build_in=False,
-        team=[group_id],
-        defaults={
-            "enabled": True,
-            "ocr_config": {
-                "base_url": "http://ocr-server/azure_ocr",
-                "api_key": "",
-                "endpoint": "",
-            },
-        },
-    )
-    olm_ocr, _ = OCRProvider.objects.get_or_create(
-        name="OlmOCR",
-        is_build_in=False,
-        team=[group_id],
-        defaults={
-            "enabled": True,
-            "ocr_config": {"base_url": "http://ocr-server/olm_ocr", "api_key": ""},
-        },
-    )
+    paddle_ocr = OCRProvider.objects.get(name="PaddleOCR", is_build_in=True)
+    if group_id not in paddle_ocr.team:
+        paddle_ocr.team.append(group_id)
+        paddle_ocr.save()
 
+    azure_ocr = OCRProvider.objects.get(name="AzureOCR", is_build_in=True)
+    if group_id not in azure_ocr.team:
+        azure_ocr.team.append(group_id)
+        azure_ocr.save()
+    olm_ocr = OCRProvider.objects.get(name="OlmOCR", is_build_in=True)
+    if group_id not in olm_ocr.team:
+        olm_ocr.team.append(group_id)
+        olm_ocr.save()
     return {
         "result": True,
         "data": {
