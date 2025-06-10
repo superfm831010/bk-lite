@@ -95,8 +95,8 @@ export const useSkillApi = () => {
    * Fetches the list of skill templates.
    * @param params - Query parameters including is_template.
    */
-  const fetchSkillTemplates = async (params: { is_template: 0 | 1 }): Promise<any[]> => {
-    return get('/opspilot/model_provider_mgmt/llm/', { params });
+  const fetchSkillTemplates = async (): Promise<any[]> => {
+    return get('/opspilot/model_provider_mgmt/llm/get_template_list/');
   };
 
   /**

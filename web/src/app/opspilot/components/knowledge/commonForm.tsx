@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Select, Tooltip } from 'antd';
+import { Form, Input, Select, Tooltip, TreeSelect } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useUserInfoContext } from '@/context/userInfo';
+import { convertGroupTreeToTreeSelectData, getAllTreeKeys } from '@/utils/index';
 import Icon from '@/components/icon';
 
 const { Option } = Select;
@@ -17,7 +18,7 @@ interface CommonFormProps {
 
 const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValues, isTraining, formType, visible }) => {
   const { t } = useTranslation();
-  const { groups, selectedGroup } = useUserInfoContext();
+  const { groupTree, selectedGroup } = useUserInfoContext();
 
   const [selectedType, setSelectedType] = useState<number>(2);
 
@@ -35,6 +36,10 @@ const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValu
       icon: 'gongju'
     },
   ];
+
+  const treeSelectData = convertGroupTreeToTreeSelectData(groupTree);
+
+  const defaultExpandedKeys = getAllTreeKeys(treeSelectData);
 
   useEffect(() => {
     if (!visible) return;
@@ -109,16 +114,22 @@ const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValu
         rules={[{ required: true, message: `${t('common.selectMsg')}${t(`${formType}.form.group`)}` }]}
         initialValue={selectedGroup ? [selectedGroup?.id] : []}
       >
-        <Select
-          mode="multiple"
+        <TreeSelect
+          multiple
+          treeData={treeSelectData}
           placeholder={`${t('common.selectMsg')}${t(`${formType}.form.group`)}`}
-        >
-          {groups.map(group => (
-            <Select.Option key={group.id} value={group.id}>
-              {group.name}
-            </Select.Option>
-          ))}
-        </Select>
+          treeCheckable
+          treeCheckStrictly={true}
+          showCheckedStrategy={TreeSelect.SHOW_ALL}
+          treeDefaultExpandAll={true}
+          treeDefaultExpandedKeys={defaultExpandedKeys}
+          style={{ width: '100%' }}
+          maxTagCount="responsive"
+          onChange={(value) => {
+            const ids = Array.isArray(value) ? value.map(val => val.value) : [];
+            form.setFieldValue('team', ids);
+          }}
+        />
       </Form.Item>
       <Form.Item
         name="introduction"

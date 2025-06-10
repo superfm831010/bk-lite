@@ -36,12 +36,17 @@ export interface Group {
   id: string;
   name: string;
   children?: Group[];
+  hasAuth?: boolean;
+  parentId?: string;
+  subGroupCount?: number;
+  subGroups?: Group[];
 }
 
 export interface UserInfoContextType {
   loading: boolean;
   roles: string[];
   groups: Group[];
+  groupTree: Group[];
   selectedGroup: Group | null;
   flatGroups: Group[];
   isSuperUser: boolean;
