@@ -11,6 +11,7 @@ from django.db.models import Q
 
 import nats_client
 from apps.core.backends import cache
+from apps.core.logger import logger
 from apps.system_mgmt.models import (
     App,
     Channel,
@@ -169,30 +170,35 @@ def search_users(query_params):
 
 @nats_client.register
 def init_user_default_attributes(user_id, group_name, default_group_id):
-    role_obj = Role.objects.get(name="guest", app="opspilot")
-    normal_role = Role.objects.get(name="normal", app="opspilot")
-    user = User.objects.get(id=user_id)
-    top_group, _ = Group.objects.get_or_create(
-        name=os.getenv("DEFAULT_GROUP_NAME", "Guest"), parent_id=0, defaults={"description": ""}
-    )
-    if Group.objects.filter(parent_id=top_group.id, name=group_name).exists():
-        return {"result": False, "message": "Group already exists"}
-    guest_group, _ = Group.objects.get_or_create(name="OpsPilotGuest", parent_id=0)
-    group_obj = Group.objects.create(name=group_name, parent_id=top_group.id)
-    user.locale = "zh-Hans"
-    user.timezone = "Asia/Shanghai"
-    if role_obj.id not in user.role_list:
-        user.role_list.append(role_obj.id)
-    if normal_role.id in user.role_list:
-        user.role_list.remove(normal_role.id)
-    user.group_list.remove(int(default_group_id))
-    user.group_list.append(guest_group.id)
-    user.group_list.append(group_obj.id)
-    user.save()
-    default_rule = GroupDataRule.objects.get(name="Guest组内置规则", group_id=top_group.id)
-    UserRule.objects.create(username=user.username, group_rule_id=default_rule.id)
-    cache.delete(f"group_{user.username}")
-    return {"result": True, "data": {"group_id": group_obj.id}}
+    try:
+        role_obj = Role.objects.get(name="guest", app="opspilot")
+        normal_role = Role.objects.get(name="normal", app="opspilot")
+        user = User.objects.get(id=user_id)
+        top_group, _ = Group.objects.get_or_create(
+            name=os.getenv("DEFAULT_GROUP_NAME", "Guest"), parent_id=0, defaults={"description": ""}
+        )
+        if Group.objects.filter(parent_id=top_group.id, name=group_name).exists():
+            return {"result": False, "message": "Group already exists"}
+
+        guest_group, _ = Group.objects.get_or_create(name="OpsPilotGuest", parent_id=0)
+        group_obj = Group.objects.create(name=group_name, parent_id=top_group.id)
+        user.locale = "zh-Hans"
+        user.timezone = "Asia/Shanghai"
+        if role_obj.id not in user.role_list:
+            user.role_list.append(role_obj.id)
+        if normal_role.id in user.role_list:
+            user.role_list.remove(normal_role.id)
+        user.group_list.remove(int(default_group_id))
+        user.group_list.append(guest_group.id)
+        user.group_list.append(group_obj.id)
+        user.save()
+        default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", group_id=top_group.id)
+        UserRule.objects.create(username=user.username, group_rule_id=default_rule.id)
+        cache.delete(f"group_{user.username}")
+        return {"result": True, "data": {"group_id": group_obj.id}}
+    except Exception as e:
+        logger.exception(e)
+        return {"result": False, "message": str(e)}
 
 
 @nats_client.register
