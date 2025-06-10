@@ -101,9 +101,13 @@ export interface EntityListProps<T> {
   infoText?: string;
   nameField?: string;
   menuActions?: (item: T) => React.ReactNode;
-  singleAction?: (item: T) => { text: string, onClick: (item: T) => void };
+  singleAction?: (item: T) => { text: string; onClick: (item: T) => void };
   openModal?: (item?: T) => void;
   onSearch?: (value: string) => void;
   onCardClick?: (item: T) => void;
   changeFilter?: (value: string[]) => void;
+}
+
+export interface TimeSelectorRef {
+  getValue: () => void;
 }
