@@ -309,17 +309,17 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       ),
     },
     {
-      title: 'ENV_PORT',
-      dataIndex: 'ENV_PORT',
-      key: 'ENV_PORT',
+      title: 'ENV_LISTEN_PORT',
+      dataIndex: 'ENV_LISTEN_PORT',
+      key: 'ENV_LISTEN_PORT',
       width: 200,
       render: (_: unknown, record: TableDataItem, index: number) => (
         <Input
-          value={record.ENV_PORT}
+          value={record.ENV_LISTEN_PORT}
           onChange={(e) =>
             handleInstNameChange(e, {
               index,
-              field: 'ENV_PORT',
+              field: 'ENV_LISTEN_PORT',
             })
           }
         />

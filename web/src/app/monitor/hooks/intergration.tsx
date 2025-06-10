@@ -1704,8 +1704,8 @@ const useFormItems = ({
                   {t('monitor.intergrations.urlDes')}
                 </span>
               </Form.Item>
-              <Form.Item label="ENV_PORT">
-                <Form.Item noStyle name="ENV_PORT">
+              <Form.Item label="ENV_LISTEN_PORT">
+                <Form.Item noStyle name="LISTEN_PORT">
                   <Input className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">

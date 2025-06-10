@@ -125,7 +125,7 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       formData.monitor_url = base.jmxUrl || '';
       formData.username = base.username;
       formData.password = base.password;
-      formData.ENV_PORT = row.base.env_config.ENV_PORT || null;
+      formData.LISTEN_PORT = row.base.env_config.LISTEN_PORT || null;
     }
     switch (config.plugin_name) {
       case 'ElasticSearch':
@@ -278,8 +278,8 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
         configForm.child.content.config.timeout = params.timeout + 's';
       }
     }
-    if (params.ENV_PORT) {
-      configForm.base.env_config.ENV_PORT = params.ENV_PORT;
+    if (params.LISTEN_PORT) {
+      configForm.base.env_config.LISTEN_PORT = params.LISTEN_PORT;
     }
     configForm.child.content.config.interval = params.interval + 's';
     try {
