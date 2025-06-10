@@ -192,7 +192,7 @@ def init_user_default_attributes(user_id, group_name, default_group_id):
         user.group_list.append(guest_group.id)
         user.group_list.append(group_obj.id)
         user.save()
-        default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", group_id=top_group.id)
+        default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", group_id=guest_group.id)
         UserRule.objects.create(username=user.username, group_rule_id=default_rule.id)
         cache.delete(f"group_{user.username}")
         return {"result": True, "data": {"group_id": group_obj.id}}
