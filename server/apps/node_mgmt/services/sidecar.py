@@ -225,6 +225,7 @@ class Sidecar:
             collector_id=configuration.collector_id,
             name=configuration.name,
             template=merged_template,
+            env_config=configuration.env_config or {},
         )
         # TODO test merged_template
 
@@ -235,8 +236,13 @@ class Sidecar:
         # 更新缓存中的 ETag
         cache.set(f"configuration_etag_{configuration_id}", new_etag)
 
+        variables = Sidecar.get_variables(node)
+        # 如果配置中有 env_config，则合并到变量中
+        if configuration.get('env_config'):
+            variables.update(configuration['env_config'])
+
         # 渲染配置模板
-        configuration['template'] = Sidecar.render_template(configuration['template'], Sidecar.get_variables(node))
+        configuration['template'] = Sidecar.render_template(configuration['template'], variables)
 
         # 返回配置信息和新的 ETag
         return JsonResponse(configuration, headers={'ETag': new_etag})
@@ -288,9 +294,6 @@ class Sidecar:
         :param variables: 字典，包含变量名和对应值
         :return: 渲染后的字符串
         """
-        _variables = {
-            **variables,
-        }
         template_str = template_str.replace('node.', 'node__')
         template = Template(template_str)
-        return template.safe_substitute(_variables)
+        return template.safe_substitute(variables)

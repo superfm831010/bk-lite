@@ -110,8 +110,9 @@ class ConfigService:
 
                 node_config["instance_id"] = ast.literal_eval(node_config["instance_id"])[0]
                 content = self.render_config(subdir, node_config["collect_type"], node_config["type"], node_config)
-                # 提取配置中ENV_开头的配置
-                env_config = {k: v for k, v in node_config.items() if k.startswith("ENV_")}
+
+                # 提取配置中ENV_开头的配置, 并去除ENV_前缀后存储
+                env_config = {k[4:]: v for k, v in node_config.items() if k.startswith("ENV_")}
 
                 conf_objs.append(CollectorConfiguration(
                     id=node_config["id"],

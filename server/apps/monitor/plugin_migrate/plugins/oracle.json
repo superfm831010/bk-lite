@@ -1,0 +1,8 @@
+{
+  "plugin": "Oracle-Exporter",
+  "plugin_desc": "By collecting metrics such as Oracle database connections, SQL execution statistics, and performance indicators, this helps monitor and optimize the database's performance and stability.",
+  "name": "Oracle",
+  "type": "Database",
+  "description": "",
+  "metrics": []
+}
