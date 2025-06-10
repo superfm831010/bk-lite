@@ -1,7 +1,6 @@
 # -- coding: utf-8 --
 from django.core.management.base import BaseCommand
-from apps.alerts.common.alert_processor import AlertProcessor
-from apps.alerts.common.rules import rule_manager
+from apps.alerts.common.aggregation.alert_processor import AlertProcessor
 
 
 class Command(BaseCommand):

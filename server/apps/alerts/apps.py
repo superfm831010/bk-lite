@@ -23,7 +23,7 @@ def app_init(**kwargs):
 
     # 初始化内置告警源
     try:
-        from apps.alerts.common.init_alert_sources import init_builtin_alert_sources
+        from apps.alerts.service.init_alert_sources import init_builtin_alert_sources
         init_builtin_alert_sources()
     except Exception as e:
         logger.error(f"Failed to initialize built-in alert sources: {e}")

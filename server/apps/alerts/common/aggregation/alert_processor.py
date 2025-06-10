@@ -13,7 +13,7 @@ from django.db import transaction, IntegrityError
 from django.utils import timezone
 
 from apps.alerts.common.rules.rule_manager import get_rule_manager
-from apps.alerts.common.alert_rules import format_alert_message
+from apps.alerts.common.rules.alert_rules import format_alert_message
 from apps.alerts.constants import AlertStatus, LevelType
 from apps.alerts.models import Event, Alert, Level
 

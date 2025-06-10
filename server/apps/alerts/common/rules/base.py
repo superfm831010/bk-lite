@@ -1,6 +1,6 @@
 # -- coding: utf-8 --
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
 
@@ -47,13 +47,13 @@ class AlertRule:
     
     def get_formatted_title(self, event_data: Dict[str, Any]) -> str:
         """获取格式化后的标题"""
-        from apps.alerts.common.alert_rules import format_template_string, DEFAULT_TITLE
+        from apps.alerts.common.rules.alert_rules import format_template_string, DEFAULT_TITLE
         title = self.title or DEFAULT_TITLE
         return format_template_string(title, event_data)
     
     def get_formatted_content(self, event_data: Dict[str, Any]) -> str:
         """获取格式化后的内容"""
-        from apps.alerts.common.alert_rules import format_template_string, DEFAULT_CONTENT
+        from apps.alerts.common.rules.alert_rules import format_template_string, DEFAULT_CONTENT
         content = self.content or DEFAULT_CONTENT
         return format_template_string(content, event_data)
     

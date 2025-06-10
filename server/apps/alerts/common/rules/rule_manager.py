@@ -4,8 +4,8 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from django.core.cache import cache
 
-from apps.alerts.common.alert_rules import AlertRuleConfig, AlertRulesConfig, VALID_RULES
-from apps.alerts.common.alert_engine import RuleEngine
+from apps.alerts.common.rules.alert_rules import AlertRuleConfig, AlertRulesConfig, VALID_RULES
+from apps.alerts.common.aggregation.alert_engine import RuleEngine
 
 logger = logging.getLogger(__name__)
 

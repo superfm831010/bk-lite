@@ -116,7 +116,7 @@ class RuleEngine:
                 title=rule_config.get('title', ''),
                 content=rule_config.get('content', ''),
                 condition=condition_func,
-                aggregation=rule_config.get('aggregation', {}),
+                aggregation=rule_config.get('', {}),
                 description=rule_config.get('description', ''),
                 severity=rule_config.get('severity', 'medium'),
                 is_active=rule_config.get('is_active', True),

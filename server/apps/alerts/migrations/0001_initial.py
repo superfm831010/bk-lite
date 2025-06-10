@@ -94,6 +94,8 @@ class Migration(migrations.Migration):
                             ("log", "日志"),
                             ("monitor", "监控"),
                             ("cloud", "云监控"),
+                            ("nats", "NATS"),
+                            ("restful", "RESTFul"),
                         ],
                         help_text="告警源类型",
                         max_length=20,

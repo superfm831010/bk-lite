@@ -32,8 +32,8 @@ def request_test(requests):
 class AlertSourceModelViewSet(ModelViewSet):
     queryset = AlertSource.objects.all()
     serializer_class = AlertSourceModelSerializer
-    ordering_fields = ["updated_at"]
-    ordering = ["-updated_at"]
+    ordering_fields = ["id"]
+    ordering = ["id"]
     filterset_class = AlertSourceModelFilter
     pagination_class = CustomPageNumberPagination
 

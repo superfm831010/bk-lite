@@ -22,6 +22,8 @@ class AlertsSourceTypes:
     LOG = "log"
     MONITOR = "monitor"
     CLOUD = "cloud"
+    NATS = "nats"
+    RESTFUL = "restful"
     CHOICES = (
         (PROMETHEUS, 'Prometheus'),
         (ZABBIX, 'Zabbix'),
@@ -29,6 +31,8 @@ class AlertsSourceTypes:
         (LOG, '日志'),
         (MONITOR, '监控'),
         (CLOUD, '云监控'),
+        (NATS, 'NATS'),
+        (RESTFUL, 'RESTFul'),
     )
 
 
@@ -140,7 +144,7 @@ DEFAULT_LEVEL = [
         "level_name": "Critical",
         "level_display_name": "致命",
         "color": "#F43B2C",
-        "icon": "",
+        "icon": "huoyanhuodongtuijian",
         "description": "",
     },
     {
@@ -149,7 +153,7 @@ DEFAULT_LEVEL = [
         "level_name": "Error",
         "level_display_name": "错误",
         "color": "#D97007",
-        "icon": "",
+        "icon": "weiwangguanicon-defuben-",
         "description": "",
     },
     {
@@ -158,7 +162,7 @@ DEFAULT_LEVEL = [
         "level_name": "Warning",
         "level_display_name": "预警",
         "color": "#FFAD42",
-        "icon": "",
+        "icon": "gantanhao1",
         "description": "",
     },
     {
@@ -167,7 +171,7 @@ DEFAULT_LEVEL = [
         "level_name": "Info",
         "level_display_name": "提醒",
         "color": "#FBBF24",
-        "icon": "",
+        "icon": "tixing",
         "description": "",
     },
 
@@ -178,7 +182,7 @@ DEFAULT_LEVEL = [
         "level_display_name": "致命",
         "color": "#F43B2C",
         "icon": "",
-        "description": "",
+        "description": "critical",
     },
     {
         "level_type": LevelType.ALERT,
@@ -186,7 +190,7 @@ DEFAULT_LEVEL = [
         "level_name": "Error",
         "level_display_name": "错误",
         "color": "#D97007",
-        "icon": "",
+        "icon": "weiwangguanicon-defuben-",
         "description": "",
     },
     {
@@ -195,7 +199,7 @@ DEFAULT_LEVEL = [
         "level_name": "Warning",
         "level_display_name": "预警",
         "color": "#FFAD42",
-        "icon": "",
+        "icon": "gantanhao1",
         "description": "",
     },
     {
@@ -204,7 +208,7 @@ DEFAULT_LEVEL = [
         "level_name": "Critical",
         "level_display_name": "致命",
         "color": "#F43B2C",
-        "icon": "",
+        "icon": "huoyanhuodongtuijian",
         "description": "",
     },
     {
@@ -213,7 +217,7 @@ DEFAULT_LEVEL = [
         "level_name": "Error",
         "level_display_name": "错误",
         "color": "#D97007",
-        "icon": "",
+        "icon": "weiwangguanicon-defuben-",
         "description": "",
     },
     {
@@ -222,8 +226,53 @@ DEFAULT_LEVEL = [
         "level_name": "Warning",
         "level_display_name": "预警",
         "color": "#FFAD42",
-        "icon": "",
+        "icon": "gantanhao1",
         "description": "",
     }
 
 ]
+
+
+class AlertAssignmentMatchType:
+    """告警分派匹配类型"""
+    ALL = "all"
+    FILTER = "filter"
+
+    CHOICES = (
+        (ALL, "全部匹配"),
+        (FILTER, "过滤匹配"),
+    )
+
+
+class AlertAssignmentNotifyChannels:
+    """告警分派通知渠道"""
+    EMAIL = "email"
+    ENTERPRISE_WECHAT = "enterprise_wechat"
+
+    CHOICES = (
+        (EMAIL, "邮件"),
+        (ENTERPRISE_WECHAT, "企业微信"),
+    )
+
+
+class AlertAssignmentNotificationScenario:
+    """ 告警分派通知场景 """
+
+    ASSIGNMENT = "Assignment"
+    RECOVERED = "recovered"
+
+    CHOICES = (
+        (ASSIGNMENT, "分派"),
+        (RECOVERED, "恢复"),
+    )
+
+
+class AlertShieldMatchType:
+    """告警屏蔽匹配类型"""
+    ALL = "all"
+    FILTER = "filter"
+
+    CHOICES = (
+        (ALL, "全部匹配"),
+        (FILTER, "过滤匹配"),
+    )

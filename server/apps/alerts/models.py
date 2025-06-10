@@ -13,7 +13,8 @@ from django.db.models import JSONField
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
 from apps.alerts.constants import AlertsSourceTypes, AlertAccessType, EventStatus, AlertOperate, \
-    AlertStatus, EventAction, LevelType
+    AlertStatus, EventAction, LevelType, AlertAssignmentMatchType, AlertAssignmentNotifyChannels, \
+    AlertAssignmentNotificationScenario, AlertShieldMatchType
 from apps.alerts.utils.util import gen_app_secret
 
 
@@ -163,3 +164,44 @@ class Level(models.Model):
 
     def __str__(self):
         return f"{self.level_name}({self.level_id})"
+
+
+class AlertAssignment(MaintainerInfo, TimeInfo):
+    """
+    分派策略
+    """
+    name = models.CharField(max_length=200, unique=True, help_text="分派策略名称")
+    match_type = models.CharField(max_length=32, choices=AlertAssignmentMatchType.CHOICES, help_text="匹配类型")
+    match_rules = JSONField(default=dict, null=True, blank=True, help_text="匹配规则")
+    personnel = models.JSONField(default=list, blank=True, null=True, help_text="分派人员")
+    notify_channels = models.CharField(max_length=64, choices=AlertAssignmentNotifyChannels.CHOICES,
+                                       default=AlertAssignmentNotifyChannels.EMAIL, help_text="通知渠道")
+    notification_scenario = models.CharField(max_length=32, choices=AlertAssignmentNotificationScenario.CHOICES,
+                                             default=AlertAssignmentNotificationScenario.ASSIGNMENT,
+                                             help_text="通知场景")
+    config = JSONField(default=dict, help_text="分派配置")
+    notification_frequency = models.JSONField(default=dict, blank=True, null=True, help_text="通知频率配置")
+    is_active = models.BooleanField(default=True, db_index=True, help_text="是否启用")
+
+    class Meta:
+        db_table = "alerts_alert_assignment"
+
+    def __str__(self):
+        return self.name
+
+
+class AlertShield(MaintainerInfo, TimeInfo):
+    """
+    告警屏蔽策略
+    """
+    name = models.CharField(max_length=200, unique=True, help_text="屏蔽策略名称")
+    match_type = models.CharField(max_length=32, choices=AlertShieldMatchType.CHOICES, help_text="匹配类型")
+    match_rules = JSONField(default=dict, null=True, blank=True, help_text="匹配规则")
+    suppression_time = models.JSONField(default=dict, help_text="屏蔽时间配置")
+    is_active = models.BooleanField(default=True, db_index=True, help_text="是否启用")
+
+    class Meta:
+        db_table = "alerts_alert_shield"
+
+    def __str__(self):
+        return self.name

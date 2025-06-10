@@ -1,6 +1,6 @@
 # -- coding: utf-8 --
 from typing import List
-from .base import BaseRuleSet, AlertRule, RuleCondition, SeverityLevel, ConditionType
+from apps.alerts.common.rules.base import BaseRuleSet, AlertRule, RuleCondition, SeverityLevel, ConditionType
 
 
 class SystemMonitorRules(BaseRuleSet):
