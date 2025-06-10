@@ -25,6 +25,7 @@ def init_user_set(group_id, group_name):
             unit="MB",
             skill_count=2,
             bot_count=2,
+            token_set={"GPT-4o": {"value": "10", "unit": "thousand"}},
         )
         embed_model = EmbedProvider.objects.filter(name="FastEmbed(BAAI/bge-small-zh-v1.5)").first()
         if embed_model:
