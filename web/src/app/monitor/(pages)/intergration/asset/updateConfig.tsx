@@ -286,7 +286,7 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     ['LISTEN_PORT', 'HOST', 'PASSWORD', 'PORT', 'SERVICE_NAME', 'USER'].forEach(
       (item) => {
         if (params[item]) {
-          configForm.base.env_config[item] = params[item];
+          configForm.base.env_config[item] = String(params[item]);
         }
       }
     );
