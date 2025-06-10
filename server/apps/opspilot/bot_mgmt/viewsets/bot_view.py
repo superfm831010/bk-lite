@@ -113,9 +113,9 @@ class BotViewSet(AuthViewSet):
         return JsonResponse({"result": True})
 
     def destroy(self, request, *args, **kwargs):
-        client = PilotClient()
         obj: Bot = self.get_object()
         if obj.online:
+            client = PilotClient()
             client.stop_pilot(obj.id)
         return super().destroy(request, *args, **kwargs)
 
