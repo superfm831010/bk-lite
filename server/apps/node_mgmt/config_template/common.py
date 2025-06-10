@@ -2,14 +2,13 @@ import ast
 import toml
 import os
 import re
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, DebugUndefined
 
 from apps.node_mgmt.models import CollectorConfiguration, ChildConfig, Collector, Node, NodeCollectorConfiguration
 
 # key为采集器名称, value为采集器模版目录，只维护采集类的采集器
 COLLECTOR_PATH_MAP = {
     "Telegraf": "telegraf",
-
     "ActiveMQ-JMX": "plugins",
     "JBoss-JMX": "plugins",
     "Jetty-JMX": "plugins",
@@ -18,6 +17,7 @@ COLLECTOR_PATH_MAP = {
     "WebLogic-JMX": "plugins",
     "JVM-JMX": "plugins",
     "Tomcat-JMX": "plugins",
+    "Oracle-Exporter": "plugins",
 }
 
 
@@ -53,7 +53,7 @@ class ConfigService:
 
         for filename in os.listdir(target_dir):
             if re.match(pattern, filename):
-                env = Environment(loader=FileSystemLoader(target_dir))
+                env = Environment(loader=FileSystemLoader(target_dir), undefined=DebugUndefined)
                 env.filters['to_toml'] = to_toml_dict  # 注册自定义 filter
                 template = env.get_template(filename)
                 return template.render(context)
@@ -74,6 +74,8 @@ class ConfigService:
 
                 node_config["instance_id"] = ast.literal_eval(node_config["instance_id"])[0]
                 content = self.render_config(subdir, node_config["collect_type"], node_config["type"], node_config)
+                # 提取配置中ENV_开头的配置, 并去除ENV_前缀后存储
+                env_config = {k[4:]: v for k, v in node_config.items() if k.startswith("ENV_")}
 
                 node_objs.append(ChildConfig(
                     id=node_config["id"],
@@ -81,6 +83,7 @@ class ConfigService:
                     config_type=node_config["type"],
                     content=content,
                     collector_config_id=base_config_id,
+                    env_config=env_config,
                 ))
         if node_objs:
             ChildConfig.objects.bulk_create(node_objs, batch_size=100)
@@ -156,14 +159,20 @@ class ConfigService:
             for config in configs
         ]
 
-    def update_child_config_content(self, id, content):
+    def update_child_config_content(self, id, content, env_config=None):
         """更新子配置内容"""
+        if not content and not env_config:
+            raise ValueError("Content or env_config must be provided for update.")
+
         child_config = ChildConfig.objects.filter(id=id).first()
-        if child_config:
+
+        if env_config:
+            child_config.env_config = env_config
+
+        if content:
             child_config.content = content
-            child_config.save()
-        else:
-            raise ValueError(f"ChildConfig with id {id} does not exist.")
+
+        child_config.save()
 
     def update_config_content(self, id, content, env_config=None):
         """更新配置内容"""

@@ -168,20 +168,5 @@ class NodeMgmtView(ViewSet):
     )
     @action(methods=['post'], detail=False, url_path='update_instance_collect_config')
     def update_instance_collect_config(self, request):
-
-        child_info = request.data.get("child")
-        if child_info:
-            config_obj = CollectConfig.objects.filter(id=child_info["id"]).first()
-            if config_obj:
-                content = ConfigFormat.json_to_toml(child_info["content"])
-                NodeMgmt().update_child_config_content(child_info["id"], content)
-
-        base_info = request.data.get("base")
-        if base_info:
-            config_obj = CollectConfig.objects.filter(id=base_info["id"]).first()
-            if config_obj:
-                content = ConfigFormat.json_to_yaml(base_info["content"])
-                env_config = base_info.get("env_config")
-                NodeMgmt().update_config_content(base_info["id"], content, env_config)
-
+        InstanceConfigService.update_instance_config(request.data.get("child"), request.data.get("base"))
         return WebUtils.response_success()

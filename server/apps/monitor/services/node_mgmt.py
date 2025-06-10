@@ -2,9 +2,12 @@ import ast
 import itertools
 
 from apps.monitor.collect_config.controller import Controller
+from apps.monitor.constants import CHILD_ENVS
 from apps.monitor.models import MonitorInstance, MonitorInstanceOrganization, CollectConfig
+from apps.monitor.utils.config_format import ConfigFormat
 from apps.monitor.utils.instance import calculation_status
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
+from apps.rpc.node_mgmt import NodeMgmt
 
 
 class InstanceConfigService:
@@ -141,3 +144,24 @@ class InstanceConfigService:
 
         if old_instances:
             raise Exception(f"以下实例已存在：{'、'.join([instance['instance_name'] for instance in old_instances])}")
+
+    @staticmethod
+    def update_instance_config(child_info, base_info):
+
+        child_env = None
+
+        if base_info:
+            config_obj = CollectConfig.objects.filter(id=base_info["id"]).first()
+            if config_obj:
+                content = ConfigFormat.json_to_yaml(base_info["content"])
+                env_config = base_info.get("env_config")
+                if env_config:
+                    child_env = {k: v for k, v in env_config.items() if k in CHILD_ENVS}
+                NodeMgmt().update_config_content(base_info["id"], content, env_config)
+
+        if child_info or child_env:
+            config_obj = CollectConfig.objects.filter(id=child_info["id"]).first()
+            if not config_obj:
+                return
+            content = ConfigFormat.json_to_toml(child_info["content"]) if child_info else None
+            NodeMgmt().update_child_config_content(child_info["id"], content, child_env)
