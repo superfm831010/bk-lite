@@ -2342,6 +2342,21 @@ rules:
       },
     },
   },
+  Oracle: {
+    instance_type: 'oracle',
+    icon: 'oracle',
+    dashboardDisplay: [],
+    tableDiaplay: [],
+    groupIds: {},
+    plugins: {
+      'Oracle-Exporter': {
+        collect_type: 'exporter',
+        config_type: ['oracle'],
+        collector: 'Oracle-Exporter',
+        manualCfgText: '--',
+      },
+    },
+  },
   Postgres: {
     instance_type: 'postgres',
     icon: 'postgres',
@@ -2596,7 +2611,7 @@ rules:
       { type: 'value', key: 'cvm_CvmDiskUsage' },
     ],
     groupIds: {},
-    plugins: {}
+    plugins: {},
   },
 };
 

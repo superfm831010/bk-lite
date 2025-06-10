@@ -53,7 +53,6 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       const _PluginName = Object.keys(plugins).find(
         (key) =>
           plugins[key]?.collect_type === data.collect_type &&
-          //   plugins[key]?.collector === data.collector &&
           (plugins[key]?.config_type || []).includes(data.config_type)
       );
       setCollectType(data.collect_type);
@@ -80,6 +79,9 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       row?.child?.content?.config || {}
     );
     const base: Record<string, any> = cloneDeep(row?.base?.content || {});
+    const envConfig: Record<string, any> = cloneDeep(
+      row?.base?.env_config || {}
+    );
     if (formData.interval) {
       formData.interval = +formData.interval.replace('s', '');
     }
@@ -125,7 +127,10 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       formData.monitor_url = base.jmxUrl || '';
       formData.username = base.username;
       formData.password = base.password;
-      formData.ENV_PORT = row.base.env_config.ENV_PORT || null;
+      formData.LISTEN_PORT = envConfig.LISTEN_PORT || null;
+    }
+    if (config.collect_type === 'exporter') {
+      Object.assign(formData, envConfig);
     }
     switch (config.plugin_name) {
       case 'ElasticSearch':
@@ -278,9 +283,13 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
         configForm.child.content.config.timeout = params.timeout + 's';
       }
     }
-    if (params.ENV_PORT) {
-      configForm.base.env_config.ENV_PORT = params.ENV_PORT;
-    }
+    ['LISTEN_PORT', 'HOST', 'PASSWORD', 'PORT', 'SERVICE_NAME', 'USER'].forEach(
+      (item) => {
+        if (params[item]) {
+          configForm.base.env_config[item] = params[item];
+        }
+      }
+    );
     configForm.child.content.config.interval = params.interval + 's';
     try {
       setConfirmLoading(true);

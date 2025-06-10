@@ -410,6 +410,7 @@
       "authPasswordDes": "用于认证的密码，与选择的认证协议对应。",
       "privProtocolDes": "用于保护传输数据的加密协议。",
       "privPasswordDes": "用于加密的密码，与选择的加密协议对应。",
+      "seviceNameDes": "服务名称",
       "collectionMethod": "采集方法",
       "reportingStatus": "上报状态",
       "lastReportTime": "最后上报时间",

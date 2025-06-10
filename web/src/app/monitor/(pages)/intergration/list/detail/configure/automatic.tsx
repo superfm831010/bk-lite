@@ -141,7 +141,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
         <Input
           value={record.instance_name}
           onChange={(e) =>
-            handleInstNameChange(e, {
+            handleInputChange(e, {
               index,
               field: 'instance_name',
             })
@@ -248,7 +248,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
             handleFieldAndInstNameChange(e, {
               index,
               field: 'host',
-              dataIndex: 'host',
+              dataIndex: 'port',
             })
           }
         />
@@ -269,6 +269,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
             handlePortAndInstNameChange(val, {
               index,
               field: 'port',
+              dataIndex: 'host',
             })
           }
         />
@@ -309,17 +310,59 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       ),
     },
     {
+      title: 'ENV_LISTEN_PORT',
+      dataIndex: 'ENV_LISTEN_PORT',
+      key: 'ENV_LISTEN_PORT',
+      width: 200,
+      render: (_: unknown, record: TableDataItem, index: number) => (
+        <InputNumber
+          value={record.ENV_LISTEN_PORT}
+          className="w-full"
+          min={1}
+          precision={0}
+          onChange={(e) =>
+            handleInputChange(e, {
+              index,
+              field: 'ENV_LISTEN_PORT',
+            })
+          }
+        />
+      ),
+    },
+    {
+      title: 'ENV_HOST',
+      dataIndex: 'ENV_HOST',
+      key: 'ENV_HOST',
+      width: 200,
+      render: (_: unknown, record: TableDataItem, index: number) => (
+        <Input
+          value={record.ENV_HOST}
+          onChange={(e) =>
+            handleFieldAndInstNameChange(e, {
+              index,
+              field: 'ENV_HOST',
+              dataIndex: 'ENV_PORT',
+            })
+          }
+        />
+      ),
+    },
+    {
       title: 'ENV_PORT',
       dataIndex: 'ENV_PORT',
       key: 'ENV_PORT',
       width: 200,
       render: (_: unknown, record: TableDataItem, index: number) => (
-        <Input
+        <InputNumber
           value={record.ENV_PORT}
-          onChange={(e) =>
-            handleInstNameChange(e, {
+          className="w-full"
+          min={1}
+          precision={0}
+          onChange={(val) =>
+            handlePortAndInstNameChange(val, {
               index,
               field: 'ENV_PORT',
+              dataIndex: 'ENV_HOST',
             })
           }
         />
@@ -353,7 +396,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       return { ...initItem, ip: null };
     }
     if (collectType === 'jmx') {
-      return { ...initItem, jmx_url: null };
+      return { ...initItem, jmx_url: null, ENV_LISTEN_PORT: null };
     }
     if (collectType === 'docker') {
       return { ...initItem, endpoint: null };
@@ -362,6 +405,14 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       return pluginName === 'ElasticSearch'
         ? { ...initItem, server: null }
         : { ...initItem, host: null, port: null };
+    }
+    if (collectType === 'exporter') {
+      return {
+        ...initItem,
+        ENV_LISTEN_PORT: null,
+        ENV_HOST: null,
+        ENV_PORT: null,
+      };
     }
     if (pluginName === 'VMWare') {
       return { ...initItem, host: null };
@@ -525,6 +576,8 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
         return `vc-${row.host}`;
       case 'jmx':
         return row.jmx_url;
+      case 'exporter':
+        return `${row.ENV_HOST}:${row.ENV_PORT}`;
       default:
         return row.url;
     }
@@ -567,7 +620,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     setDataSource(_dataSource);
   };
 
-  const handleInstNameChange = (
+  const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     config: {
       index: number;
@@ -575,7 +628,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     }
   ) => {
     const _dataSource = deepClone(dataSource);
-    _dataSource[config.index][config.field] = e.target.value;
+    _dataSource[config.index][config.field] = e?.target?.value || e;
     setDataSource(_dataSource);
   };
 
@@ -584,10 +637,11 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     config: {
       index: number;
       field: string;
+      dataIndex: string;
     }
   ) => {
     const _dataSource = deepClone(dataSource);
-    const host = _dataSource[config.index].host || '';
+    const host = _dataSource[config.index][config.dataIndex] || '';
     _dataSource[config.index][config.field] = val;
     _dataSource[config.index].instance_name = `${host}:${val || ''}`;
     setDataSource(_dataSource);
@@ -602,8 +656,8 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     }
   ) => {
     const _dataSource = deepClone(dataSource);
-    if (config.dataIndex === 'host') {
-      const port = _dataSource[config.index].port || '';
+    if (['port', 'ENV_PORT'].includes(config.dataIndex as string)) {
+      const port = _dataSource[config.index][config.dataIndex as string] || '';
       _dataSource[config.index][config.field] = e.target.value;
       _dataSource[config.index].instance_name = `${e.target.value}:${port}`;
       setDataSource(_dataSource);

@@ -113,6 +113,8 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
         return `vc-${row.host}`;
       case 'docker':
         return row.endpoint;
+      case 'exporter':
+        return `${row.HOST}:${row.PORT}`;
       default:
         return row.monitor_url;
     }
