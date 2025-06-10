@@ -1,4 +1,4 @@
-import { authOptions } from "@/constants/authOptions";
+import { getAuthOptions } from "@/constants/authOptions";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import SigninClient from "./SigninClient";
@@ -24,6 +24,7 @@ interface SignInPageProp {
 }
 
 export default async function SigninPage({ searchParams }: SignInPageProp) {
+  const authOptions = await getAuthOptions();
   const session = await getServerSession(authOptions);
   if (session && session.user && session.user.id) {
     redirect(searchParams.callbackUrl || "/");

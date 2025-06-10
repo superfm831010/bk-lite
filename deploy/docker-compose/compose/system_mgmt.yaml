@@ -13,7 +13,7 @@ services:
       CLIENT_ID: system-manager
       DEBUG: "0"
       SECRET_KEY: ${SECRET_KEY}
-      ENABLE_CELERY: "True"
+      ENABLE_CELERY: True
       DB_USER: ${POSTGRES_USERNAME}
       DB_HOST: postgres
       DB_PASSWORD: ${POSTGRES_PASSWORD}

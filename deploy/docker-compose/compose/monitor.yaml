@@ -11,7 +11,7 @@ services:
       CLIENT_ID: monitor
       DB_NAME: monitor
       VICTORIAMETRICS_HOST: http://victoria-metrics:8428
-      ENABLE_CELERY: "True"
+      ENABLE_CELERY: True
       BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/10
       CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/10
       CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/10
@@ -59,12 +59,36 @@ services:
     image: bklite/telegraf
     container_name: telegraf
     environment:
-      - METRIC_NATS_USERNAME=${NATS_ADMIN_USERNAME}
-      - METRIC_NATS_PASSWORD=${NATS_ADMIN_PASSWORD}
-      - METRIC_OUTPUT_URL=http://victoria-metrics:8428
-      - METRIC_NATS_SERVERS=nats://nats:4222
+      METRIC_NATS_USERNAME: ${NATS_ADMIN_USERNAME}
+      METRIC_NATS_PASSWORD: ${NATS_ADMIN_PASSWORD}
+      METRIC_OUTPUT_URL: http://victoria-metrics:8428
+      METRIC_NATS_SERVERS: nats://nats:4222
     volumes:
       - ../conf/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
     networks:
       - prod
     restart: always
+
+
+  fusion-collector:
+    image: bklite/fusion-collector:latest
+    container_name: fusion-collector
+    hostname: fusion-collector-default
+    environment:
+      SERVER_URL: http://node-manager:8000/node_mgmt/open_api/node
+      SERVER_API_TOKEN: ${SIDECAR_INIT_TOKEN}
+      SIDECAR_ZONE: 1
+      SIDECAR_GROUP: 1
+      SIDECAR_NODEID: 1
+      SIDECAR_NODENAME: fusion-collector
+    networks:
+      - prod
+    restart: always
+
+  stargazer:
+    image: ${DOCKER_IMAGE_STARGAZER}
+    container_name: stargazer
+    environment:
+      NATS_URLS: nats://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
+    networks:
+      - prod
