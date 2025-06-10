@@ -70,7 +70,8 @@ def update_child_config_content(data: dict):
     """更新实例子配置"""
     id = data.get('id')
     content = data.get('content')
-    ConfigService().update_child_config_content(id, content)
+    env_config = data.get('env_config')
+    ConfigService().update_child_config_content(id, content, env_config)
 
 
 @nats_client.register

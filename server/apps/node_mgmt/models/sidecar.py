@@ -119,6 +119,7 @@ class ChildConfig(TimeInfo, MaintainerInfo):
     config_type = models.CharField(max_length=50, verbose_name='配置类型')
     content = models.TextField(verbose_name='内容')
     collector_config = models.ForeignKey(CollectorConfiguration, on_delete=models.CASCADE, verbose_name='采集器配置')
+    env_config = JSONField(default=dict, verbose_name="环境变量配置")
 
     class Meta:
         verbose_name = "子配置"

@@ -218,7 +218,7 @@ class Sidecar:
         for child_config in configuration.childconfig_set.all():
             # 假设子配置的 `content` 是纯文本格式，直接追加
             merged_template += f"\n# {child_config.collect_type} - {child_config.config_type}\n"
-            merged_template += child_config.content
+            merged_template += Sidecar.render_template(child_config.content, child_config.env_config)
 
         configuration = dict(
             id=configuration.id,
