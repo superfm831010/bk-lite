@@ -10,7 +10,7 @@ class EmbedModelChoices(models.TextChoices):
 
 
 class EmbedProvider(models.Model, EncryptMixin):
-    name = models.CharField(max_length=255, unique=True, verbose_name="名称")
+    name = models.CharField(max_length=255, verbose_name="名称")
     embed_model_type = models.CharField(max_length=255, choices=EmbedModelChoices.choices, verbose_name="嵌入模型")
     embed_config = models.JSONField(
         verbose_name="嵌入配置",

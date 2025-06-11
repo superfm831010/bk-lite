@@ -268,30 +268,31 @@ const SecurityPage: React.FC = () => {
               <Form.Item
                 name="name"
                 label={t('system.security.loginMethodName')}
-                rules={[{ required: true, message: `${t('common.inputMsg')} ${t('system.security.loginMethodName')}` }]}
+                rules={[{ required: true, message: `${t('common.inputMsg')}${t('system.security.loginMethodName')}` }]}
               >
-                <Input placeholder={`${t('common.inputMsg')} ${t('system.security.loginMethodName')}`} />
+                <Input placeholder={`${t('common.inputMsg')}${t('system.security.loginMethodName')}`} />
               </Form.Item>
               
               <Form.Item
                 name="app_id"
                 label={t('system.security.appId')}
-                rules={[{ required: true, message: `${t('common.inputMsg')} ${t('system.security.appId')}` }]}
+                rules={[{ required: true, message: `${t('common.inputMsg')}${t('system.security.appId')}` }]}
               >
-                <Input placeholder={`${t('common.inputMsg')} ${t('system.security.appId')}`} />
+                <Input placeholder={`${t('common.inputMsg')}${t('system.security.appId')}`} />
               </Form.Item>
               
               <Form.Item
                 name="app_secret"
                 label={t('system.security.appSecret')}
-                rules={[{ required: true, message: `${t('common.inputMsg')} ${t('system.security.appSecret')}` }]}
+                rules={[{ required: true, message: `${t('common.inputMsg')}${t('system.security.appSecret')}` }]}
               >
-                <Input.Password placeholder={`${t('common.inputMsg')} ${t('system.security.appSecret')}`} />
+                <Input.Password placeholder={`${t('common.inputMsg')}${t('system.security.appSecret')}`} />
               </Form.Item>
               
               <Form.Item
                 name="redirect_uri"
                 label={t('system.security.redirectUri')}
+                tooltip={t('system.security.redirectUriTip')}
               >
                 <Input 
                   suffix={
@@ -300,22 +301,6 @@ const SecurityPage: React.FC = () => {
                       icon={<CopyOutlined />} 
                       size="small"
                       onClick={() => copyToClipboard(form.getFieldValue('redirect_uri') || '')}
-                    />
-                  }
-                />
-              </Form.Item>
-              
-              <Form.Item
-                name="callback_url"
-                label={t('system.security.callbackUrl')}
-              >
-                <Input 
-                  suffix={
-                    <Button 
-                      type="text" 
-                      icon={<CopyOutlined />} 
-                      size="small"
-                      onClick={() => copyToClipboard(form.getFieldValue('callback_url') || '')}
                     />
                   }
                 />

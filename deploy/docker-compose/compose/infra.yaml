@@ -20,6 +20,7 @@ services:
       - "${TRAEFIK_NODE_MANAGER_PORT}:${TRAEFIK_NODE_MANAGER_PORT}"
       - "${TRAEFIK_MONITOR_PORT}:${TRAEFIK_MONITOR_PORT}"
       - "${TRAEFIK_CONSOLE_PORT}:${TRAEFIK_CONSOLE_PORT}"
+      - "${TRAEFIK_OPSPILOT_PORT}:${TRAEFIK_OPSPILOT_PORT}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ../conf/traefik/dynamic.yml:/etc/traefik/dynamic.yml
@@ -39,7 +40,8 @@ services:
       - "--entrypoints.system-manager-web.address=:${TRAEFIK_SYSTEM_MANAGER_PORT}"
       - "--entrypoints.node-manager-web.address=:${TRAEFIK_NODE_MANAGER_PORT}"
       - "--entrypoints.monitor-web.address=:${TRAEFIK_MONITOR_PORT}"
-      - "--entrypoints.opsconsole.address=:${TRAEFIK_CONSOLE_PORT}"
+      - "--entrypoints.opsconsole-web.address=:${TRAEFIK_CONSOLE_PORT}"
+      - "--entrypoints.opspilot-web.address=:${TRAEFIK_OPSPILOT_PORT}"
     networks:
       - prod
 

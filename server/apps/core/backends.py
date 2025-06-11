@@ -147,6 +147,7 @@ class AuthBackend(ModelBackend):
             user.permission = set(user_info.get("permission") or [])
             user.role_ids = user_info.get("role_ids", [])
             user.display_name = user_info.get("display_name", "")
+            user.group_tree = user_info.get("group_tree", [])
             return user
 
         except IntegrityError as e:

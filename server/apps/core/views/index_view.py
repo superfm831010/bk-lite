@@ -147,7 +147,7 @@ def reset_pwd(request):
 @api_view(["GET"])
 def login_info(request):
     try:
-        default_group = os.environ.get("DEFAULT_GROUP_NAME", "Guest")
+        default_group = os.environ.get("TOP_GROUP", "Default")
         is_first_login = _check_first_login(request.user, default_group)
 
         client = _create_system_mgmt_client()
@@ -167,6 +167,7 @@ def login_info(request):
                 "group_list": getattr(request.user, "group_list", []),
                 "roles": getattr(request.user, "roles", []),
                 "is_first_login": is_first_login,
+                "group_tree": getattr(request.user, "group_tree", []),
             },
         }
 

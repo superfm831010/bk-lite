@@ -41,6 +41,20 @@ class OpenSidecarViewSet(OpenAPIViewSet):
         return Sidecar.get_node_config(request, node_id, configuration_id)
 
     @swagger_auto_schema(
+        operation_id="sidecar_node_configuration_env",
+        operation_description="获取配置关联的环境变量配置",
+        manual_parameters=[
+            openapi.Parameter("node_id", openapi.IN_PATH, description="节点ID", type=openapi.TYPE_STRING),
+            openapi.Parameter("configuration_id", openapi.IN_PATH, description="配置ID", type=openapi.TYPE_STRING),
+        ],
+    )
+    @action(detail=False, methods=["get"],
+            url_path="node/sidecar/env_config/(?P<node_id>.+?)/(?P<configuration_id>.+?)")
+    @token_auth
+    def configuration_env(self, request, node_id, configuration_id):
+        return Sidecar.get_node_config_env(node_id, configuration_id)
+
+    @swagger_auto_schema(
         operation_id="sidecar_update_client",
         operation_description="更新sidecar客户端",
         manual_parameters=[

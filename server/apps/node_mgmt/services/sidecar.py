@@ -218,13 +218,14 @@ class Sidecar:
         for child_config in configuration.childconfig_set.all():
             # 假设子配置的 `content` 是纯文本格式，直接追加
             merged_template += f"\n# {child_config.collect_type} - {child_config.config_type}\n"
-            merged_template += child_config.content
+            merged_template += Sidecar.render_template(child_config.content, child_config.env_config)
 
         configuration = dict(
             id=configuration.id,
             collector_id=configuration.collector_id,
             name=configuration.name,
             template=merged_template,
+            env_config=configuration.env_config or {},
         )
         # TODO test merged_template
 
@@ -235,11 +236,28 @@ class Sidecar:
         # 更新缓存中的 ETag
         cache.set(f"configuration_etag_{configuration_id}", new_etag)
 
+        variables = Sidecar.get_variables(node)
+        # 如果配置中有 env_config，则合并到变量中
+        if configuration.get('env_config'):
+            variables.update(configuration['env_config'])
+
         # 渲染配置模板
-        configuration['template'] = Sidecar.render_template(configuration['template'], Sidecar.get_variables(node))
+        configuration['template'] = Sidecar.render_template(configuration['template'], variables)
 
         # 返回配置信息和新的 ETag
         return JsonResponse(configuration, headers={'ETag': new_etag})
+
+    @staticmethod
+    def get_node_config_env(node_id, configuration_id):
+        node = Node.objects.filter(id=node_id).first()
+        if not node:
+            return JsonResponse(status=404, data={}, manage="Node collector Configuration not found")
+
+        obj = CollectorConfiguration.objects.filter(id=configuration_id).first()
+        if not obj:
+            return JsonResponse(status=404, data={}, manage="Configuration environment not found")
+
+        return JsonResponse(dict(id=configuration_id, env_config=obj.env_config))
 
     @staticmethod
     def get_variables(node_obj):
@@ -276,9 +294,6 @@ class Sidecar:
         :param variables: 字典，包含变量名和对应值
         :return: 渲染后的字符串
         """
-        _variables = {
-            **variables,
-        }
         template_str = template_str.replace('node.', 'node__')
         template = Template(template_str)
-        return template.safe_substitute(_variables)
+        return template.safe_substitute(variables)

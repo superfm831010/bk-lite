@@ -2342,6 +2342,21 @@ rules:
       },
     },
   },
+  Oracle: {
+    instance_type: 'oracle',
+    icon: 'oracle',
+    dashboardDisplay: [],
+    tableDiaplay: [],
+    groupIds: {},
+    plugins: {
+      'Oracle-Exporter': {
+        collect_type: 'exporter',
+        config_type: ['oracle'],
+        collector: 'Oracle-Exporter',
+        manualCfgText: '--',
+      },
+    },
+  },
   Postgres: {
     instance_type: 'postgres',
     icon: 'postgres',
@@ -2585,6 +2600,18 @@ rules:
         config_type = "prometheus"`,
       },
     },
+  },
+  CVM: {
+    instance_type: 'qcloud',
+    icon: 'zonghenengyuanfuwupingtaikuangjiaicon-',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'cvm_CPU_Usage' },
+      { type: 'value', key: 'cvm_MemUsage' },
+      { type: 'value', key: 'cvm_CvmDiskUsage' },
+    ],
+    groupIds: {},
+    plugins: {},
   },
 };
 
