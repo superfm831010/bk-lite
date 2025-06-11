@@ -99,6 +99,7 @@ const QuotaModal: React.FC<QuotaModalProps> = ({ visible, onConfirm, onCancel, m
       rule: 'uniform',
       targetType: value
     });
+    setRule('uniform');
   };
 
   const handleSubmit = () => {

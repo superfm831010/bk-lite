@@ -78,7 +78,7 @@ const UserInfo: React.FC = () => {
     }
   }, [t]);
 
-  const handleChangeGroup = useCallback((key: string) => {
+  const handleChangeGroup = useCallback(async (key: string) => {
     const nextGroup = flatGroups.find(group => group.id === key);
     if (!nextGroup) return;
 
@@ -121,17 +121,19 @@ const UserInfo: React.FC = () => {
               <span className="text-xs text-[var(--color-text-4)]">{selectedGroup?.name}</span>
             </div>
           ),
-          children: flatGroups.map((group) => ({
-            key: group.id,
-            label: (
-              <GroupItem
-                id={group.id}
-                name={group.name}
-                isSelected={selectedGroup?.name === group.name}
-                onClick={handleChangeGroup}
-              />
-            ),
-          })),
+          children: flatGroups
+            .filter((group) => group.name !== 'OpsPilotGuest')
+            .map((group) => ({
+              key: group.id,
+              label: (
+                <GroupItem
+                  id={group.id}
+                  name={group.name}
+                  isSelected={selectedGroup?.name === group.name}
+                  onClick={handleChangeGroup}
+                />
+              ),
+            })),
         },
         { type: 'divider' }
       );

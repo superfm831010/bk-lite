@@ -2274,6 +2274,21 @@ rules:
       },
     },
   },
+  Minio: {
+    instance_type: 'minio',
+    icon: 'minio',
+    dashboardDisplay: [],
+    tableDiaplay: [],
+    groupIds: {},
+    plugins: {
+      Minio: {
+        collect_type: 'bkpull',
+        config_type: ['minio'],
+        collector: 'Telegraf',
+        manualCfgText: '--',
+      },
+    },
+  },
   MongoDB: {
     instance_type: 'mongodb',
     icon: 'mongodb',
@@ -2339,6 +2354,21 @@ rules:
     password = "$password" 
     interval = "$intervals"
     tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
+      },
+    },
+  },
+  Oracle: {
+    instance_type: 'oracle',
+    icon: 'oracle',
+    dashboardDisplay: [],
+    tableDiaplay: [],
+    groupIds: {},
+    plugins: {
+      'Oracle-Exporter': {
+        collect_type: 'exporter',
+        config_type: ['oracle'],
+        collector: 'Oracle-Exporter',
+        manualCfgText: '--',
       },
     },
   },
@@ -2585,6 +2615,18 @@ rules:
         config_type = "prometheus"`,
       },
     },
+  },
+  CVM: {
+    instance_type: 'qcloud',
+    icon: 'zonghenengyuanfuwupingtaikuangjiaicon-',
+    dashboardDisplay: [],
+    tableDiaplay: [
+      { type: 'value', key: 'cvm_CPU_Usage' },
+      { type: 'value', key: 'cvm_MemUsage' },
+      { type: 'value', key: 'cvm_CvmDiskUsage' },
+    ],
+    groupIds: {},
+    plugins: {},
   },
 };
 

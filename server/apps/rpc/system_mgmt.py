@@ -4,6 +4,7 @@ from apps.rpc.base import RpcClient
 class SystemMgmt(object):
     def __init__(self):
         self.client = RpcClient()
+        # self.client = AppClient("apps.system_mgmt.nats_api")
 
     def login(self, username, password):
         """
@@ -145,4 +146,18 @@ class SystemMgmt(object):
         :param group_name: 组名
         """
         return_data = self.client.run("get_group_id", group_name=group_name)
+        return return_data
+
+    def create_default_rule(self, llm_model, ocr_model, embed_model, rerank_model):
+        return_data = self.client.run(
+            "create_default_rule",
+            llm_model=llm_model,
+            ocr_model=ocr_model,
+            embed_model=embed_model,
+            rerank_model=rerank_model,
+        )
+        return return_data
+
+    def create_opspilot_guest_role(self):
+        return_data = self.client.run("create_opspilot_guest_role")
         return return_data

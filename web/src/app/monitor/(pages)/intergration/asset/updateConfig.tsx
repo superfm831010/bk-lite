@@ -6,7 +6,6 @@ import React, {
   useRef,
   useImperativeHandle,
   forwardRef,
-  useMemo,
 } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { useFormItems } from '@/app/monitor/hooks/intergration';
@@ -31,17 +30,11 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [title, setTitle] = useState<string>('');
   const [configForm, setConfigForm] = useState<TableDataItem>({});
-  const [entryForm, setEntryForm] = useState<TableDataItem>({});
   const [pageLoading, setPageLoading] = useState<boolean>(false);
-
-  const showInterval = useMemo(() => {
-    return !!entryForm.is_child;
-  }, [entryForm]);
 
   useImperativeHandle(ref, () => ({
     showModal: ({ form, title }) => {
       const _form = cloneDeep(form);
-      setEntryForm(_form);
       setTitle(title);
       setModalVisible(true);
       setConfirmLoading(false);
@@ -53,22 +46,19 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     setPageLoading(true);
     try {
       const res = await getConfigContent({
-        id: data.config_id,
+        ids: data.config_ids,
       });
       setConfigForm(res);
       const plugins = OBJECT_CONFIG_MAP[data.objName].plugins || {};
       const _PluginName = Object.keys(plugins).find(
         (key) =>
           plugins[key]?.collect_type === data.collect_type &&
-          plugins[key]?.collector === data.collector &&
           (plugins[key]?.config_type || []).includes(data.config_type)
       );
       setCollectType(data.collect_type);
       setPluginName(_PluginName as string);
-      const content = data.is_child ? res.content?.config : res.content;
-      initData(content || {}, {
+      initData(res || {}, {
         plugin_name: _PluginName,
-        is_child: data.is_child,
         collect_type: data.collect_type,
       });
     } finally {
@@ -85,7 +75,13 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   });
 
   const initData = (row: TableDataItem, config: TableDataItem) => {
-    const formData: Record<string, any> = cloneDeep(row);
+    const formData: Record<string, any> = cloneDeep(
+      row?.child?.content?.config || {}
+    );
+    const base: Record<string, any> = cloneDeep(row?.base?.content || {});
+    const envConfig: Record<string, any> = cloneDeep(
+      row?.base?.env_config || {}
+    );
     if (formData.interval) {
       formData.interval = +formData.interval.replace('s', '');
     }
@@ -128,8 +124,17 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       Object.assign(formData, extractVmvareUrl(formData));
     }
     if (config.collect_type === 'jmx') {
-      formData.monitor_url =
-        (config.is_child ? formData.urls?.[0] : formData.jmxUrl) || '';
+      formData.monitor_url = base.jmxUrl || '';
+      formData.username = base.username;
+      formData.password = base.password;
+      formData.LISTEN_PORT = envConfig.LISTEN_PORT || null;
+    }
+    if (config.collect_type === 'exporter') {
+      Object.assign(formData, envConfig);
+    }
+    if (config.collect_type === 'bkpull') {
+      const params = extractBkpullUrl(formData.urls?.[0] || '');
+      Object.assign(formData, params);
     }
     switch (config.plugin_name) {
       case 'ElasticSearch':
@@ -196,6 +201,18 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     };
   };
 
+  const extractBkpullUrl = (url: string) => {
+    const regex = /^https?:\/\/([^:\/]+):(\d+)/;
+    const matches = url.match(regex);
+    if (!matches || matches.length < 3) {
+      return {};
+    }
+    return {
+      host: matches[1],
+      port: matches[2],
+    };
+  };
+
   const extractPostgresUrl = (url: string) => {
     const result = {
       host: '',
@@ -253,7 +270,7 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   };
 
   const operateConfig = async (params: TableDataItem) => {
-    if (entryForm.is_child) {
+    if (collectType !== 'jmx') {
       if (
         [
           'Switch SNMP General',
@@ -269,32 +286,33 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       ) {
         delete params.monitor_ip;
         delete params.port;
-        Object.assign(configForm.content.config, params);
+        Object.assign(configForm.child.content.config, params);
       }
       switch (pluginName) {
         case 'ElasticSearch':
-          configForm.content.config.servers = [params.server];
+          configForm.child.content.config.servers = [params.server];
           break;
         default:
           break;
       }
-      configForm.content.config.interval = params.interval + 's';
       if (params.timeout) {
-        configForm.content.config.timeout = params.timeout + 's';
+        configForm.child.content.config.timeout = params.timeout + 's';
       }
     }
-    const content: any = entryForm.is_child
-      ? {
-        config: configForm.content.config,
-        plugin: configForm.content.plugin,
+    ['LISTEN_PORT', 'HOST', 'PASSWORD', 'PORT', 'SERVICE_NAME', 'USER'].forEach(
+      (item) => {
+        if (params[item]) {
+          configForm.base.env_config[item] = String(params[item]);
+        }
       }
-      : configForm.content;
+    );
+    configForm.child.content.config.interval = params.interval + 's';
     try {
       setConfirmLoading(true);
-      await post('/monitor/api/node_mgmt/update_instance_child_config/', {
-        content,
-        id: configForm.id,
-      });
+      await post(
+        '/monitor/api/node_mgmt/update_instance_collect_config/',
+        configForm
+      );
       message.success(t('common.successfullyModified'));
       handleCancel();
       onSuccess();
@@ -330,38 +348,36 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
         <div className="px-[10px]">
           <Form ref={formRef} form={form} name="basic" layout="vertical">
             {formItems}
-            {showInterval && (
-              <Form.Item required label={t('monitor.intergrations.interval')}>
-                <Form.Item
-                  noStyle
-                  name="interval"
-                  rules={[
-                    {
-                      required: true,
-                      message: t('common.required'),
-                    },
-                  ]}
-                >
-                  <InputNumber
-                    className="mr-[10px]"
-                    min={1}
-                    precision={0}
-                    addonAfter={
-                      <Select style={{ width: 116 }} defaultValue="s">
-                        {TIMEOUT_UNITS.map((item: string) => (
-                          <Option key={item} value={item}>
-                            {item}
-                          </Option>
-                        ))}
-                      </Select>
-                    }
-                  />
-                </Form.Item>
-                <span className="text-[12px] text-[var(--color-text-3)]">
-                  {t('monitor.intergrations.intervalDes')}
-                </span>
+            <Form.Item required label={t('monitor.intergrations.interval')}>
+              <Form.Item
+                noStyle
+                name="interval"
+                rules={[
+                  {
+                    required: true,
+                    message: t('common.required'),
+                  },
+                ]}
+              >
+                <InputNumber
+                  className="mr-[10px]"
+                  min={1}
+                  precision={0}
+                  addonAfter={
+                    <Select style={{ width: 116 }} defaultValue="s">
+                      {TIMEOUT_UNITS.map((item: string) => (
+                        <Option key={item} value={item}>
+                          {item}
+                        </Option>
+                      ))}
+                    </Select>
+                  }
+                />
               </Form.Item>
-            )}
+              <span className="text-[12px] text-[var(--color-text-3)]">
+                {t('monitor.intergrations.intervalDes')}
+              </span>
+            </Form.Item>
           </Form>
         </div>
       </Spin>

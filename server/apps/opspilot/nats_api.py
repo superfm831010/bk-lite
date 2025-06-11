@@ -1,5 +1,3 @@
-import copy
-
 import nats_client
 from apps.core.logger import logger
 from apps.opspilot.models import (
@@ -18,21 +16,6 @@ from apps.opspilot.models import (
 @nats_client.register
 def init_user_set(group_id, group_name):
     try:
-        llm_model_list = LLMModel.objects.filter(is_demo=True)
-        add_model_list = []
-        name_list = set()
-        for old_llm_model in llm_model_list:
-            llm_model = copy.deepcopy(old_llm_model)
-            llm_model.id = None
-            llm_model.team = [group_id]
-            llm_model.consumer_team = group_id
-            llm_model.is_build_in = False
-            llm_model.is_demo = False
-            decrypted_llm_config = llm_model.decrypted_llm_config
-            llm_model.llm_config = decrypted_llm_config
-            add_model_list.append(llm_model)
-            name_list.add(llm_model.name)
-        LLMModel.objects.bulk_create(add_model_list)
         QuotaRule.objects.create(
             name=f"group-{group_name}-llm-quota",
             target_type="group",
@@ -42,7 +25,7 @@ def init_user_set(group_id, group_name):
             unit="MB",
             skill_count=2,
             bot_count=2,
-            token_set={key: {"value": 10, "unit": "thousand"} for key in name_list},
+            token_set={"GPT-4o": {"value": "10", "unit": "thousand"}},
         )
         embed_model = EmbedProvider.objects.filter(name="FastEmbed(BAAI/bge-small-zh-v1.5)").first()
         if embed_model:
@@ -72,7 +55,7 @@ def get_module_data(module, child_module, page, page_size, group_id):
         model = model_map[module]
     else:
         model = provider_model_map[child_module]
-    queryset = model.objects.filter(team__contains=group_id)
+    queryset = model.objects.filter(team__contains=int(group_id))
     # 计算总数
     total_count = queryset.count()
     # 计算分页
@@ -84,4 +67,48 @@ def get_module_data(module, child_module, page, page_size, group_id):
     return {
         "count": total_count,
         "items": list(data_list),
+    }
+
+
+@nats_client.register
+def get_guest_provider(group_id):
+    default_llm_model = LLMModel.objects.get(name="GPT-4o", is_build_in=True)
+    if group_id not in default_llm_model.team:
+        default_llm_model.team.append(group_id)
+        default_llm_model.save()
+    rerank_model = RerankProvider.objects.get(name="bce-reranker-base_v1", is_build_in=True)
+    if group_id not in rerank_model.team:
+        rerank_model.team.append(group_id)
+        rerank_model.save()
+
+    embed_model_1 = EmbedProvider.objects.get(name="bce-embedding-base_v1", is_build_in=True)
+    if group_id not in embed_model_1.team:
+        embed_model_1.team.append(group_id)
+        embed_model_1.save()
+    embed_model_2 = EmbedProvider.objects.get(name="FastEmbed(BAAI/bge-small-zh-v1.5)", is_build_in=True)
+    if group_id not in embed_model_2.team:
+        embed_model_2.team.append(group_id)
+        embed_model_2.save()
+
+    paddle_ocr = OCRProvider.objects.get(name="PaddleOCR", is_build_in=True)
+    if group_id not in paddle_ocr.team:
+        paddle_ocr.team.append(group_id)
+        paddle_ocr.save()
+
+    azure_ocr = OCRProvider.objects.get(name="AzureOCR", is_build_in=True)
+    if group_id not in azure_ocr.team:
+        azure_ocr.team.append(group_id)
+        azure_ocr.save()
+    olm_ocr = OCRProvider.objects.get(name="OlmOCR", is_build_in=True)
+    if group_id not in olm_ocr.team:
+        olm_ocr.team.append(group_id)
+        olm_ocr.save()
+    return {
+        "result": True,
+        "data": {
+            "llm_model": {"id": default_llm_model.id, "name": default_llm_model.name},
+            "rerank_model": {"id": rerank_model.id, "name": rerank_model.name},
+            "embed_model": [{"id": model.id, "name": model.name} for model in [embed_model_1, embed_model_2]],
+            "ocr_model": [{"id": model.id, "name": model.name} for model in [paddle_ocr, azure_ocr, olm_ocr]],
+        },
     }

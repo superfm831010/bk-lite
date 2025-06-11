@@ -1,11 +1,12 @@
 import React from 'react';
-import { Form, Input as AntdInput, Switch, message, Select } from 'antd';
+import { Form, Input as AntdInput, Switch, message, Select, TreeSelect } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useUserInfoContext } from '@/context/userInfo';
 import { Model, ModelConfig } from '@/app/opspilot/types/provider';
 import { MODEL_TYPE_OPTIONS, CONFIG_MAP } from '@/app/opspilot/constants/provider';
 import OperateModal from '@/components/operate-modal';
 import EditablePasswordField from '@/components/dynamic-form/editPasswordField';
+import { convertGroupTreeToTreeSelectData, getAllTreeKeys } from '@/utils/index';
 
 interface ProviderModalProps {
   visible: boolean;
@@ -28,7 +29,10 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const { t } = useTranslation();
-  const { groups, selectedGroup } = useUserInfoContext();
+  const { selectedGroup, groupTree } = useUserInfoContext();
+
+  const treeSelectData = convertGroupTreeToTreeSelectData(groupTree);
+  const defaultExpandedKeys = getAllTreeKeys(treeSelectData);
 
   React.useEffect(() => {
     if (!visible) return;
@@ -133,27 +137,41 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
           rules={[{ required: true, message: `${t('common.selectMsg')}${t('provider.form.group')}` }]}
           initialValue={selectedGroup ? [selectedGroup?.id] : []}
         >
-          <Select
-            mode="multiple"
+          <TreeSelect
+            multiple
+            treeData={treeSelectData}
             placeholder={`${t('common.selectMsg')}${t('provider.form.group')}`}
-          >
-            {groups.map(group => (
-              <Select.Option key={group.id} value={group.id}>
-                {group.name}
-              </Select.Option>
-            ))}
-          </Select>
+            treeCheckable
+            treeCheckStrictly={true}
+            showCheckedStrategy={TreeSelect.SHOW_ALL}
+            treeDefaultExpandAll={true}
+            treeDefaultExpandedKeys={defaultExpandedKeys}
+            style={{ width: '100%' }}
+            maxTagCount="responsive"
+            onChange={(value) => {
+              const ids = Array.isArray(value) ? value.map(val => val.value) : [];
+              form.setFieldsValue({ team: ids });
+            }}
+          />
         </Form.Item>
         <Form.Item
           name="consumer_team"
           label={t('provider.form.consumerTeam')}>
-          <Select placeholder={`${t('common.selectMsg')}${t('provider.form.consumerTeam')}`}>
-            {groups.map(group => (
-              <Select.Option key={group.id} value={group.id}>
-                {group.name}
-              </Select.Option>
-            ))}
-          </Select>
+          <TreeSelect
+            treeData={treeSelectData}
+            placeholder={`${t('common.selectMsg')}${t('provider.form.consumerTeam')}`}
+            treeCheckable
+            treeCheckStrictly={true}
+            showCheckedStrategy={TreeSelect.SHOW_ALL}
+            treeDefaultExpandAll={true}
+            treeDefaultExpandedKeys={defaultExpandedKeys}
+            style={{ width: '100%' }}
+            maxTagCount="responsive"
+            onChange={(value) => {
+              const id = Array.isArray(value) ? value[0]?.value : value?.value;
+              form.setFieldsValue({ consumer_team: id });
+            }}
+          />
         </Form.Item>
       </Form>
     </OperateModal>

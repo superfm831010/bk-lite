@@ -31,9 +31,9 @@ class ChatServerHelper(object):
         return headers
 
     @classmethod
-    def post_chat_server(cls, params, url):
+    def post_chat_server(cls, params, url, stream=False):
         headers = cls.get_chat_server_header()
-        response = requests.post(url, headers=headers, json=params, verify=False)
+        response = requests.post(url, headers=headers, json=params, stream=stream, verify=False)
         if response.status_code != 200:
             raise Exception(response.text)
         result = response.json()

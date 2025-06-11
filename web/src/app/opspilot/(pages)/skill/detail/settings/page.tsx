@@ -178,6 +178,7 @@ const SkillSettingsPage: React.FC = () => {
           show_think: values.show_think,
           tools: selectedTools,
           skill_type: skillType,
+          group: values.group?.[0]
         };
         const reply = await executeLlm(payload);
         const botMessage: CustomChatMessage = {

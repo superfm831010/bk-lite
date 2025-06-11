@@ -1,0 +1,63 @@
+networks:
+  prod:
+
+services:
+  node-manager:
+    image: ${DOCKER_IMAGE_NODE_MANAGER}
+    restart: always
+    ports:
+      - "${NODE_MANAGER_API_PORT}:8000"
+    environment:
+      NATS_SERVERS: nats://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
+      NATS_NAMESPACE: bk-lite
+      DB_NAME: node_mgmt
+      CLIENT_ID: node_mgmt
+      SIDECAR_INIT_TOKEN: ${SIDECAR_INIT_TOKEN}
+      DEFAULT_ZONE_VAR_NATS_SERVERS: ${HOST_IP}:4222
+      DEFAULT_ZONE_VAR_NATS_USERNAME: ${NATS_MONITOR_USERNAME}
+      DEFAULT_ZONE_VAR_NATS_PASSWORD: ${NATS_MONITOR_PASSWORD}
+      DEFAULT_ZONE_VAR_NODE_SERVER_URL: http://${HOST_IP}:${NODE_MANAGER_API_PORT}
+      DEFAULT_ZONE_VAR_STARGAZER_URL: http://stargazer:8083
+      SIDECAR_INPUT_MODE: nats
+      DEBUG: "0"
+      SECRET_KEY: ${SECRET_KEY}
+      ENABLE_CELERY: True
+      DB_USER: ${POSTGRES_USERNAME}
+      DB_HOST: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_PORT: "5432"
+      DB_ENGINE: postgresql
+      INSTALL_APPS: node_mgmt
+    volumes:
+      - ../pkgs:/pkgs
+    healthcheck:
+      test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", "http://127.0.0.1:8000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - prod
+    depends_on:
+      system-manager:
+        condition: service_healthy
+
+  node-manager-web:
+    image: ${DOCKER_IMAGE_NODE_MANAGER_WEB}
+    restart: always
+    environment:
+      NEXTAUTH_URL: http://${HOST_IP}:${TRAEFIK_NODE_MANAGER_PORT}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAPI_URL: http://node-manager:8000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.node-manager-web.rule=Host(`${HOST_IP}`)"
+      - "traefik.http.routers.node-manager-web.entrypoints=node-manager-web"
+      - "traefik.http.services.node-manager-web.loadbalancer.server.port=3000"
+    networks:
+      - prod
+    depends_on:
+      - node-manager
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://node-manager-web:3000/healthcheck').then(res => res.status === 200)"]
+      start_period: 5s

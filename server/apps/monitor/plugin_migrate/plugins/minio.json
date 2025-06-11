@@ -1,0 +1,8 @@
+{
+  "plugin": "Minio",
+  "plugin_desc": "Minio is a high performance, distributed object storage service.",
+  "name": "Minio",
+  "type": "Middleware",
+  "description": "",
+  "metrics": []
+}

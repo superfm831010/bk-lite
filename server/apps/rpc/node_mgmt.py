@@ -4,6 +4,7 @@ from apps.rpc.base import RpcClient
 class NodeMgmt(object):
     def __init__(self):
         self.client = RpcClient()
+        # self.client = AppClient("apps.node_mgmt.nats.node")
 
     def cloud_region_list(self):
         """
@@ -94,20 +95,20 @@ class NodeMgmt(object):
         return_data = self.client.run("get_configs_by_ids", ids)
         return return_data
 
-    def update_child_config_content(self, id, content):
+    def update_child_config_content(self, id, content, env_config=None):
         """
         :param id: 子配置ID
         :param content: 子配置内容
         """
-        return_data = self.client.run("update_child_config_content", {"id": id, "content": content})
+        return_data = self.client.run("update_child_config_content", {"id": id, "content": content, "env_config": env_config})
         return return_data
 
-    def update_config_content(self, id, content):
+    def update_config_content(self, id, content, env_config=None):
         """
         :param id: 配置ID
         :param content: 配置内容
         """
-        return_data = self.client.run("update_config_content", {"id": id, "content": content})
+        return_data = self.client.run("update_config_content", {"id": id, "content": content, "env_config": env_config})
         return return_data
 
     def delete_child_configs(self, ids):

@@ -70,7 +70,8 @@ const Template: React.FC = () => {
       const data: ObjectItem[] = await getMonitorObject();
       setObjects(data);
       const _treeData = getTreeData(deepClone(data));
-      setDefaultSelectObj(objId ? +objId : data[0]?.id);
+      const defaulltId = (_treeData[0]?.children || [])[0]?.key;
+      setDefaultSelectObj(objId ? +objId : defaulltId);
       setTreeData(_treeData);
     } finally {
       setTreeLoading(false);

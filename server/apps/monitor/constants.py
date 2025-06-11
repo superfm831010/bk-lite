@@ -287,6 +287,20 @@ MONITOR_OBJS = [
         "instance_id_keys": ["instance_id", "resource_id"],
         "supplementary_indicators": ["cvm_CPU_Usage", "cvm_MemUsage", "cvm_LanOuttraffic", "cvm_WanOuttraffic"],
     },
+    {
+        "type": "Database",
+        "name": "Oracle",
+        "default_metric": 'any({instance_type="oracle"}) by (instance_id)',
+        "instance_id_keys": ["instance_id"],
+        "supplementary_indicators": [],
+    },
+    {
+        "type": "Middleware",
+        "name": "Minio",
+        "default_metric": 'any({instance_type="minio"}) by (instance_id)',
+        "instance_id_keys": ["instance_id"],
+        "supplementary_indicators": [],
+    },
 ]
 
 # 阀值对比方法
@@ -311,3 +325,5 @@ LEVEL_WEIGHT = {
 OBJ_ORDER = "OBJ_ORDER"
 
 STARGAZER_URL = os.getenv("STARGAZER_URL", "http://stargazer:8083")
+
+CHILD_ENVS = {"ENV_LISTEN_PORT", "LISTEN_PORT"}

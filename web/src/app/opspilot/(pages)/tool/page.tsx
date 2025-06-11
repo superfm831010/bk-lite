@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Form, message, Button, Menu, Modal } from 'antd';
+import { Form, message, Button, Menu, Modal, TreeSelect } from 'antd';
 import { Store } from 'antd/lib/form/interface';
 import { useTranslation } from '@/utils/i18n';
 import EntityList from '@/components/entity-list';
@@ -12,11 +12,12 @@ import PermissionWrapper from "@/components/permission";
 import styles from '@/app/opspilot/styles/common.module.scss';
 import { useToolApi } from '@/app/opspilot/api/tool';
 import VariableList from '@/app/opspilot/components/tool/variableList';
+import { convertGroupTreeToTreeSelectData, getAllTreeKeys } from '@/utils/index';
 
 const ToolListPage: React.FC = () => {
   const { useForm } = Form;
   const { t } = useTranslation();
-  const { groups, selectedGroup } = useUserInfoContext();
+  const { selectedGroup, groupTree } = useUserInfoContext();
   const { fetchTools, createTool, updateTool, deleteTool } = useToolApi();
   const [loading, setLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
@@ -27,6 +28,9 @@ const ToolListPage: React.FC = () => {
   const [allTags, setAllTags] = useState<TagOption[]>([]);
 
   const [form] = useForm();
+
+  const treeSelectData = convertGroupTreeToTreeSelectData(groupTree);
+  const defaultExpandedKeys = getAllTreeKeys(treeSelectData);
 
   const formFields = [
     {
@@ -74,11 +78,27 @@ const ToolListPage: React.FC = () => {
     },
     {
       name: 'team',
-      type: 'select',
+      type: 'custom',
       label: t('common.group'),
-      placeholder: `${t('common.selectMsg')}${t('common.group')}`,
-      options: groups.map((group: any) => ({ value: group.id, label: group.name })),
-      mode: 'multiple',
+      component: (
+        <TreeSelect
+          multiple
+          treeData={treeSelectData}
+          placeholder={`${t('common.selectMsg')}${t('common.group')}`}
+          treeCheckable
+          treeCheckStrictly={true}
+          showCheckedStrategy={TreeSelect.SHOW_ALL}
+          treeDefaultExpandAll={true}
+          treeDefaultExpandedKeys={defaultExpandedKeys}
+          style={{ width: '100%' }}
+          maxTagCount="responsive"
+          value={form.getFieldValue('team') || []}
+          onChange={(value) => {
+            const ids = Array.isArray(value) ? value.map(val => val.value) : [];
+            form.setFieldsValue({ team: ids });
+          }}
+        />
+      ),
       rules: [{ required: true, message: `${t('common.selectMsg')}${t('common.group')}` }],
     },
     {

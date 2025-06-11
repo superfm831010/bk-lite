@@ -110,7 +110,7 @@ const Node = () => {
   const tableColumns = useMemo(() => {
     if (!activeColumns?.length) return columns;
     const _columns = cloneDeep(columns);
-    _columns.splice(2, 0, ...activeColumns);
+    _columns.splice(3, 0, ...activeColumns);
     return _columns;
   }, [columns, nodeList, statusMap, activeColumns]);
 

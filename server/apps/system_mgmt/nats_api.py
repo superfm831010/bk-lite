@@ -8,12 +8,24 @@ import pyotp
 import qrcode
 from django.contrib.auth.hashers import check_password, make_password
 from django.db.models import Q
-from django.utils.translation import gettext as _
 
 import nats_client
 from apps.core.backends import cache
-from apps.system_mgmt.models import App, Channel, ChannelChoices, Group, LoginModule, Menu, Role, User, UserRule
+from apps.core.logger import logger
+from apps.system_mgmt.models import (
+    App,
+    Channel,
+    ChannelChoices,
+    Group,
+    GroupDataRule,
+    LoginModule,
+    Menu,
+    Role,
+    User,
+    UserRule,
+)
 from apps.system_mgmt.models.system_settings import SystemSettings
+from apps.system_mgmt.opspilot_menus import GUEST_MENUS
 from apps.system_mgmt.services.role_manage import RoleManage
 from apps.system_mgmt.utils.channel_utils import send_by_bot, send_email, send_wechat
 from apps.system_mgmt.utils.group_utils import GroupUtils
@@ -22,7 +34,7 @@ from apps.system_mgmt.utils.group_utils import GroupUtils
 @nats_client.register
 def verify_token(token, client_id):
     if not token:
-        return {"result": False, "message": _("Token is missing")}
+        return {"result": False, "message": "Token is missing"}
     token = token.split("Basic ")[-1]
     secret_key = os.getenv("SECRET_KEY")
     algorithm = os.getenv("JWT_ALGORITHM", "HS256")
@@ -34,10 +46,10 @@ def verify_token(token, client_id):
         login_expired_time = int(login_expired_time_set.value) * 3600
 
     if time_now - login_expired_time > user_info["login_time"]:
-        return {"result": False, "message": _("Token is invalid")}
+        return {"result": False, "message": "Token is invalid"}
     user = User.objects.filter(id=user_info["user_id"]).first()
     if not user:
-        return {"result": False, "message": _("User not found")}
+        return {"result": False, "message": "User not found"}
     role_list = Role.objects.filter(id__in=user.role_list).filter(Q(app=client_id) | Q(app=""))
     role_names = list(role_list.values_list("name", flat=True))
     is_superuser = "admin" in role_names
@@ -46,6 +58,9 @@ def verify_token(token, client_id):
         group_list = group_list.filter(id__in=user.group_list)
     # groups = GroupUtils.build_group_tree(group_list)
     groups = list(group_list.values("id", "name", "parent_id"))
+    queryset = Group.objects.all()
+    # 构建嵌套组结构
+    groups_data = GroupUtils.build_group_tree(queryset, is_superuser, [i["id"] for i in groups])
     menus = cache.get(f"menus-user:{user.id}-app:{client_id}")
     if not menus:
         if not is_superuser:
@@ -63,6 +78,7 @@ def verify_token(token, client_id):
             "email": user.email,
             "is_superuser": is_superuser,
             "group_list": groups,
+            "group_tree": groups_data,
             "roles": role_names,
             "role_ids": user.role_list,
             "locale": user.locale,
@@ -94,13 +110,11 @@ def get_client(client_id="", username=""):
     if username:
         user = User.objects.filter(username=username).first()
         if not user:
-            return {"result": False, "message": _("User not found")}
+            return {"result": False, "message": "User not found"}
         app_name_list = list(Role.objects.filter(id__in=user.role_list).values_list("app", flat=True).distinct())
         if "" not in app_name_list:
             app_list = app_list.filter(name__in=app_name_list)
     return_data = list(app_list.values())
-    for i in return_data:
-        i["description"] = _(i["description"])
     return {"result": True, "data": return_data}
 
 
@@ -108,7 +122,7 @@ def get_client(client_id="", username=""):
 def get_client_detail(client_id):
     app_obj = App.objects.filter(name=client_id).first()
     if not app_obj:
-        return {"result": False, "message": _("Client not found")}
+        return {"result": False, "message": "Client not found"}
     return {
         "result": True,
         "data": {
@@ -149,29 +163,79 @@ def search_users(query_params):
     start = (page - 1) * page_size
     end = page * page_size
     total = queryset.count()
-    data = queryset.values(*User.display_fields())[start:end]
+    display_fields = User.display_fields() + ["group_list"]
+    data = queryset.values(*display_fields)[start:end]
     return {"result": True, "data": {"count": total, "users": list(data)}}
 
 
 @nats_client.register
 def init_user_default_attributes(user_id, group_name, default_group_id):
-    role_obj = Role.objects.get(name="normal", app="opspilot")
-    user = User.objects.get(id=user_id)
-    top_group, _ = Group.objects.get_or_create(
-        name=os.getenv("TOP_GROUP", "Default"), parent_id=0, defaults={"description": ""}
+    try:
+        role_obj = Role.objects.get(name="guest", app="opspilot")
+        normal_role = Role.objects.get(name="normal", app="opspilot")
+        user = User.objects.get(id=user_id)
+        top_group, _ = Group.objects.get_or_create(
+            name=os.getenv("DEFAULT_GROUP_NAME", "Guest"), parent_id=0, defaults={"description": ""}
+        )
+        if Group.objects.filter(parent_id=top_group.id, name=group_name).exists():
+            return {"result": False, "message": "Group already exists"}
+
+        guest_group, _ = Group.objects.get_or_create(name="OpsPilotGuest", parent_id=0)
+        group_obj = Group.objects.create(name=group_name, parent_id=top_group.id)
+        user.locale = "zh-Hans"
+        user.timezone = "Asia/Shanghai"
+        if role_obj.id not in user.role_list:
+            user.role_list.append(role_obj.id)
+        if normal_role.id in user.role_list:
+            user.role_list.remove(normal_role.id)
+        user.group_list.remove(int(default_group_id))
+        user.group_list.append(guest_group.id)
+        user.group_list.append(group_obj.id)
+        user.save()
+        default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", group_id=guest_group.id)
+        UserRule.objects.create(username=user.username, group_rule_id=default_rule.id)
+        cache.delete(f"group_{user.username}")
+        return {"result": True, "data": {"group_id": group_obj.id}}
+    except Exception as e:
+        logger.exception(e)
+        return {"result": False, "message": str(e)}
+
+
+@nats_client.register
+def create_opspilot_guest_role():
+    menus = dict(Menu.objects.filter(app="opspilot").values_list("id", "name"))
+    guest_menus = GUEST_MENUS[:]
+    menu_list = [k for k, v in menus.items() if v in guest_menus]
+    Role.objects.update_or_create(name="guest", app="opspilot", defaults={"menu_list": menu_list})
+    guest_group, _ = Group.objects.get_or_create(name="Guest", parent_id=0, defaults={"description": "Guest group"})
+    opspilot_guest_group, _ = Group.objects.get_or_create(name="OpsPilotGuest", parent_id=0)
+    return {"result": True, "data": {"group_id": opspilot_guest_group.id}}
+
+
+@nats_client.register
+def create_default_rule(llm_model, ocr_model, embed_model, rerank_model):
+    guest_group = Group.objects.get(name="OpsPilotGuest", parent_id=0)
+    GroupDataRule.objects.get_or_create(
+        name="OpsPilot内置规则",
+        app="opspilot",
+        defaults=dict(
+            group_id=guest_group.id,
+            description="Guest组数据权限规则",
+            group_name=guest_group.name,
+            rules={
+                "skill": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
+                "tools": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
+                "provider": {
+                    "llm_model": [{"id": llm_model["id"], "name": llm_model["name"], "permission": ["View"]}],
+                    "ocr_model": [{"id": i["id"], "name": i["name"], "permission": ["View"]} for i in ocr_model],
+                    "embed_model": [{"id": i["id"], "name": i["name"], "permission": ["View"]} for i in embed_model],
+                    "rerank_model": [{"id": rerank_model["id"], "name": rerank_model["name"], "permission": ["View"]}],
+                },
+                "knowledge": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
+            },
+        ),
     )
-    if Group.objects.filter(parent_id=top_group.id, name=group_name).exists():
-        return {"result": False, "message": _("Group already exists")}
-    group_obj = Group.objects.create(name=group_name, parent_id=top_group.id)
-    user.locale = "zh-Hans"
-    user.timezone = "Asia/Shanghai"
-    if role_obj.id not in user.role_list:
-        user.role_list.append(role_obj.id)
-    user.group_list.remove(int(default_group_id))
-    user.group_list.append(group_obj.id)
-    user.save()
-    cache.delete(f"group_{user.username}")
-    return {"result": True, "data": {"group_id": group_obj.id}}
+    return {"result": True}
 
 
 @nats_client.register
@@ -193,7 +257,7 @@ def search_channel_list(channel_type):
 def send_msg_with_channel(channel_id, title, content, receivers):
     channel_obj = Channel.objects.filter(id=channel_id).first()
     if not channel_obj:
-        return {"result": False, "message": _("Channel not found")}
+        return {"result": False, "message": "Channel not found"}
     if channel_obj.channel_type == ChannelChoices.EMAIL:
         return send_email(channel_obj, title, content, receivers)
     elif channel_obj.channel_type == ChannelChoices.ENTERPRISE_WECHAT_BOT:
@@ -221,13 +285,13 @@ def get_group_id(group_name):
 def login(username, password):
     user = User.objects.filter(username=username).first()
     if not user:
-        return {"result": False, "message": _("Username or password is incorrect")}
+        return {"result": False, "message": "Username or password is incorrect"}
 
     # 使用 check_password 验证密码是否匹配
     if not check_password(password, user.password):
-        return {"result": False, "message": _("Username or password is incorrect")}
+        return {"result": False, "message": "Username or password is incorrect"}
     if user.disabled:
-        return {"result": False, "message": _("User is disabled")}
+        return {"result": False, "message": "User is disabled"}
     secret_key = os.getenv("SECRET_KEY")
     algorithm = os.getenv("JWT_ALGORITHM", "HS256")
     user_obj = {"user_id": user.id, "login_time": int(time.time())}
@@ -256,7 +320,7 @@ def login(username, password):
 def reset_pwd(username, password):
     user = User.objects.filter(username=username).first()
     if not user:
-        return {"result": False, "message": _("Username not exists")}
+        return {"result": False, "message": "Username not exists"}
     user.password = make_password(password)
     user.temporary_pwd = False
     user.save()
@@ -296,12 +360,12 @@ def wechat_user_register(user_id, nick_name):
 def get_wechat_settings():
     login_module = LoginModule.objects.filter(source_type="wechat", enabled=True).first()
     if not login_module:
-        return {"result": True, "data": {"enable": False}}
+        return {"result": True, "data": {"enabled": False}}
 
     return {
         "result": True,
         "data": {
-            "enable": True,
+            "enabled": True,
             "app_id": login_module.app_id,
             "app_secret": login_module.decrypted_app_secret,
             "redirect_uri": login_module.other_config.get("redirect_uri", ""),
@@ -316,7 +380,7 @@ def generate_qr_code(username):
     # 查找用户
     user = User.objects.filter(username=username).first()
     if not user:
-        return {"result": False, "message": _("User not found")}
+        return {"result": False, "message": "User not found"}
     user.otp_secret = pyotp.random_base32()
     user.save()
     totp = pyotp.TOTP(user.otp_secret)
@@ -346,5 +410,5 @@ def verify_otp_code(username, otp_code):
     user = User.objects.get(username=username)
     totp = pyotp.TOTP(user.otp_secret)
     if totp.verify(otp_code):
-        return {"result": True, "message": _("Verification successful")}
-    return {"result": False, "message": _("Invalid OTP code")}
+        return {"result": True, "message": "Verification successful"}
+    return {"result": False, "message": "Invalid OTP code"}
