@@ -41,7 +41,7 @@ class QuotaUtils(object):
             file_list = FileKnowledge.objects.filter(knowledge_document__created_by=self.username)
         else:
             file_size_list = file_size_map["shared"]
-            file_list = FileKnowledge.objects.filter(knowledge_document__knowledge_base__team=self.team)
+            file_list = FileKnowledge.objects.filter(knowledge_document__knowledge_base__team__contains=self.team)
         used_file_size_list = [i.file.size for i in file_list if i.file] + [0]
         used_file_size = sum(used_file_size_list) / 1024 / 1024
         return (

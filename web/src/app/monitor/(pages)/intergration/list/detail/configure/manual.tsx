@@ -102,13 +102,14 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     if (pluginName === 'Tencent Cloud') {
       return row.monitor_url;
     }
+    if (['bkpull', 'database'].includes(collectType)) {
+      return row.server || `${row.host}:${row.port}`;
+    }
     switch (collectType) {
       case 'host':
         return row.monitor_ip;
       case 'trap':
         return 'trap' + row.monitor_ip;
-      case 'database':
-        return row.server || `${row.host}:${row.port}`;
       case 'http':
         return `vc-${row.host}`;
       case 'docker':

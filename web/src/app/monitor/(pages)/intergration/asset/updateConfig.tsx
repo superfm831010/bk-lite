@@ -132,6 +132,10 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     if (config.collect_type === 'exporter') {
       Object.assign(formData, envConfig);
     }
+    if (config.collect_type === 'bkpull') {
+      const params = extractBkpullUrl(formData.urls?.[0] || '');
+      Object.assign(formData, params);
+    }
     switch (config.plugin_name) {
       case 'ElasticSearch':
         formData.server = formData.servers?.[0];
@@ -194,6 +198,18 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       password: matches[2],
       host: matches[3],
       port: matches[4],
+    };
+  };
+
+  const extractBkpullUrl = (url: string) => {
+    const regex = /^https?:\/\/([^:\/]+):(\d+)/;
+    const matches = url.match(regex);
+    if (!matches || matches.length < 3) {
+      return {};
+    }
+    return {
+      host: matches[1],
+      port: matches[2],
     };
   };
 

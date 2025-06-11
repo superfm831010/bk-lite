@@ -4,6 +4,7 @@ from apps.rpc.base import RpcClient
 class SystemMgmt(object):
     def __init__(self):
         self.client = RpcClient()
+        # self.client = AppClient("apps.system_mgmt.nats_api")
 
     def login(self, username, password):
         """

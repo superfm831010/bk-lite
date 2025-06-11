@@ -310,7 +310,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       ),
     },
     {
-      title: 'ENV_LISTEN_PORT',
+      title: t('monitor.intergrations.listeningPort'),
       dataIndex: 'ENV_LISTEN_PORT',
       key: 'ENV_LISTEN_PORT',
       width: 200,
@@ -330,7 +330,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       ),
     },
     {
-      title: 'ENV_HOST',
+      title: t('monitor.intergrations.host'),
       dataIndex: 'ENV_HOST',
       key: 'ENV_HOST',
       width: 200,
@@ -348,7 +348,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       ),
     },
     {
-      title: 'ENV_PORT',
+      title: t('monitor.intergrations.port'),
       dataIndex: 'ENV_PORT',
       key: 'ENV_PORT',
       width: 200,
@@ -401,7 +401,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     if (collectType === 'docker') {
       return { ...initItem, endpoint: null };
     }
-    if (collectType === 'database') {
+    if (['database', 'bkpull'].includes(collectType)) {
       return pluginName === 'ElasticSearch'
         ? { ...initItem, server: null }
         : { ...initItem, host: null, port: null };
@@ -578,6 +578,8 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
         return row.jmx_url;
       case 'exporter':
         return `${row.ENV_HOST}:${row.ENV_PORT}`;
+      case 'bkpull':
+        return `${row.host}:${row.port}`;
       default:
         return row.url;
     }
