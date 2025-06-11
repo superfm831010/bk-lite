@@ -107,9 +107,19 @@ if DEBUG:
 APPS_DIR = os.path.join(BASE_DIR, "apps")
 if os.path.exists(APPS_DIR):
     install_apps = os.getenv("INSTALL_APPS", "").split(",")
-    app_folders = [
-        name for name in os.listdir(APPS_DIR) if os.path.isdir(os.path.join(APPS_DIR, name)) and name in install_apps
-    ]
+    if install_apps:
+        app_folders = [
+            name
+            for name in os.listdir(APPS_DIR)
+            if os.path.isdir(os.path.join(APPS_DIR, name)) and name in install_apps
+        ]
+    else:
+        exclude_apps = ["base", "core", "rpc"]
+        app_folders = [
+            name
+            for name in os.listdir(APPS_DIR)
+            if os.path.isdir(os.path.join(APPS_DIR, name)) and name not in exclude_apps
+        ]
 else:
     app_folders = []
 INSTALLED_APPS += tuple(f"apps.{app}" for app in app_folders)
