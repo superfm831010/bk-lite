@@ -2274,6 +2274,21 @@ rules:
       },
     },
   },
+  Minio: {
+    instance_type: 'minio',
+    icon: 'minio',
+    dashboardDisplay: [],
+    tableDiaplay: [],
+    groupIds: {},
+    plugins: {
+      Minio: {
+        collect_type: 'bkpull',
+        config_type: ['minio'],
+        collector: 'Telegraf',
+        manualCfgText: '--',
+      },
+    },
+  },
   MongoDB: {
     instance_type: 'mongodb',
     icon: 'mongodb',
