@@ -1,9 +1,10 @@
-from apps.rpc.base import RpcClient
+from apps.rpc.base import AppClient
 
 
 class NodeMgmt(object):
     def __init__(self):
-        self.client = RpcClient()
+        # self.client = RpcClient()
+        self.client = AppClient("apps.node_mgmt.nats.node")
 
     def cloud_region_list(self):
         """
