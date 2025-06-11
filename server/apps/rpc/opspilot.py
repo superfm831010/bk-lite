@@ -1,9 +1,10 @@
-from apps.rpc.base import RpcClient
+from apps.rpc.base import AppClient
 
 
 class OpsPilot(object):
     def __init__(self):
-        self.client = RpcClient()
+        # self.client = RpcClient()
+        self.client = AppClient("apps.opspilot.nats_api")
 
     def init_user_set(self, group_id, group_name):
         """

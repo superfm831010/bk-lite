@@ -174,6 +174,7 @@ class LLMService:
         """
         llm_model = LLMModel.objects.get(id=kwargs["llm_model"])
         show_think = kwargs.pop("show_think", True)
+        group = kwargs.pop("group", 0)
         # 处理用户消息和图片
         chat_kwargs, doc_map, title_map = self.format_chat_server_kwargs(kwargs, llm_model)
 
@@ -185,7 +186,6 @@ class LLMService:
         data = result["message"]
 
         # 更新团队令牌使用信息
-        group = llm_model.consumer_team or llm_model.team[0]
         used_token = result["prompt_tokens"] + result["completion_tokens"]
         team_info, is_created = TeamTokenUseInfo.objects.get_or_create(
             group=group, llm_model=llm_model.name, defaults={"used_token": used_token}

@@ -30,6 +30,7 @@ class SkillExecuteService:
             "bot_id": bot.id,
             "show_think": llm_skill.show_think,
             "tools": llm_skill.tools,
+            "group": llm_skill.team[0],
         }
         result = llm_service.chat(params)
         content = result["content"]
