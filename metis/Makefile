@@ -24,7 +24,7 @@ sync-db:
 	sanic server:bootstrap exec sync_db
 
 dev:
-	sanic server:bootstrap --factory --debug --host=0.0.0.0 --port=18082
+	TRANSFORMERS_OFFLINE="true" HF_DATASETS_OFFLINE="1" sanic server:bootstrap --factory --debug --host=0.0.0.0 --port=18082
 
 test:
 	pytest -n auto
