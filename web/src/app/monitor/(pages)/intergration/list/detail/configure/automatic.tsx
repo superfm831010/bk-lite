@@ -310,7 +310,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       ),
     },
     {
-      title: 'ENV_LISTEN_PORT',
+      title: t('monitor.intergrations.listeningPort'),
       dataIndex: 'ENV_LISTEN_PORT',
       key: 'ENV_LISTEN_PORT',
       width: 200,
@@ -330,7 +330,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       ),
     },
     {
-      title: 'ENV_HOST',
+      title: t('monitor.intergrations.host'),
       dataIndex: 'ENV_HOST',
       key: 'ENV_HOST',
       width: 200,
@@ -348,7 +348,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       ),
     },
     {
-      title: 'ENV_PORT',
+      title: t('monitor.intergrations.port'),
       dataIndex: 'ENV_PORT',
       key: 'ENV_PORT',
       width: 200,
