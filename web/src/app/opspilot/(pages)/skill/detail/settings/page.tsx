@@ -334,7 +334,9 @@ const SkillSettingsPage: React.FC = () => {
                     <p className="pb-4 text-xs text-[var(--color-text-4)]">{t('skill.ragTip')}</p>
                     {ragEnabled && (
                       <div className="pb-2">
-                        <Form.Item label={t('skill.ragSource')}>
+                        <Form.Item
+                          label={t('skill.ragSource')}
+                          tooltip={t('skill.form.ragSourceTip')}>
                           <Switch size="small" className="ml-2" checked={showRagSource} onChange={setRagSourceStatus}/>
                         </Form.Item>
                         <Form.Item label={t('skill.knowledgeBase')} tooltip={t('skill.knowledgeBaseTip')}>
