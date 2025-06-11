@@ -12,7 +12,7 @@ from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequ
 from src.entity.rag.base.index_delete_request import IndexDeleteRequest
 
 
-class BaseNativeRag(ABC):
+class BaseRag(ABC):
     """
     原生检索增强生成(RAG)系统的抽象基类。
     定义了所有RAG实现必须支持的基本接口。

@@ -12,6 +12,10 @@ class CoreSettings(BaseSettings):
     supabase_url: str = ''
     supabase_key: str = ''
 
+    neo4j_host: str = ''
+    neo4j_username: str = ''
+    neo4j_password: str = ''
+
     def is_debug_mode(self) -> bool:
         return self.mode == 'DEBUG'
 
@@ -20,6 +24,9 @@ class CoreSettings(BaseSettings):
 
     def supabase_enabled(self) -> bool:
         return bool(self.supabase_url and self.supabase_key)
+
+    def graphiti_enabled(self) -> bool:
+        return bool(self.neo4j_host and self.neo4j_username and self.neo4j_password)
 
     class Config:
         env_file = ".env"

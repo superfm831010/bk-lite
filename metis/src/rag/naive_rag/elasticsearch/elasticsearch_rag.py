@@ -17,12 +17,12 @@ from src.entity.rag.base.document_list_request import DocumentListRequest
 from src.entity.rag.base.document_metadata_update_request import DocumentMetadataUpdateRequest
 from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
 from src.entity.rag.base.index_delete_request import IndexDeleteRequest
-from src.rag.naive_rag.base_native_rag import BaseNativeRag
+from src.rag.base_rag import BaseRag
 from src.rag.naive_rag.elasticsearch.elasticsearch_query_builder import ElasticsearchQueryBuilder
 from src.rerank.rerank_manager import ReRankManager
 
 
-class ElasticSearchRag(BaseNativeRag):
+class ElasticSearchRag(BaseRag):
     def __init__(self):
         self.es = elasticsearch.Elasticsearch(hosts=[core_settings.elasticsearch_url],
                                               basic_auth=("elastic", core_settings.elasticsearch_password))
