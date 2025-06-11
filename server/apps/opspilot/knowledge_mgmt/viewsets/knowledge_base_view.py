@@ -9,7 +9,7 @@ from apps.core.decorators.api_permission import HasRole
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.serializers import KnowledgeBaseSerializer
-from apps.opspilot.models import EmbedProvider, KnowledgeBase, KnowledgeDocument, RerankProvider
+from apps.opspilot.models import EmbedProvider, KnowledgeBase, KnowledgeDocument
 from apps.opspilot.tasks import retrain_all
 
 
@@ -25,13 +25,11 @@ class KnowledgeBaseViewSet(AuthViewSet):
         params = request.data
         if not params.get("team"):
             return JsonResponse({"result": False, "message": _("The team field is required.")})
-        rerank_model = RerankProvider.objects.get(name="bce-reranker-base_v1")
         if "embed_model" not in params:
             params["embed_model"] = EmbedProvider.objects.get(name="FastEmbed(BAAI/bge-small-zh-v1.5)").id
         if KnowledgeBase.objects.filter(name=params["name"]).exists():
             return JsonResponse({"result": False, "message": _("The knowledge base name already exists.")})
         params["created_by"] = request.user.username
-        params["rerank_model"] = rerank_model.id
         if params.get("enable_rerank") is None:
             params["enable_rerank"] = False
         if params.get("rag_k") is None:

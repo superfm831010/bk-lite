@@ -296,7 +296,7 @@ const useMonitorApi = () => {
     return await del(`/monitor/api/metrics_group/${id}/`);
   };
 
-  const getConfigContent = async (data: { id: number }) => {
+  const getConfigContent = async (data: { ids: string[] }) => {
     return await post('/monitor/api/node_mgmt/get_config_content/', data);
   };
 

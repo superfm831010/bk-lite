@@ -151,7 +151,7 @@ const Asset = () => {
           <Permission requiredPermissions={['Edit']}>
             <Button
               type="link"
-              disabled={!record.config_id}
+              disabled={!record.config_ids?.length}
               onClick={() => openConfigModal(record)}
             >
               {t('monitor.intergrations.updateConfigration')}

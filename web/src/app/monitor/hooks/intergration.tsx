@@ -614,7 +614,12 @@ const useColumnsAndFormItems = ({
         };
       case 'jmx':
         return {
-          displaycolumns: [columns[0], columns[12], ...columns.slice(4, 7)],
+          displaycolumns: [
+            columns[0],
+            columns[12],
+            columns[13],
+            ...columns.slice(4, 7),
+          ],
           formItems: (
             <>
               <Form.Item label={t('monitor.intergrations.username')}>
@@ -631,6 +636,69 @@ const useColumnsAndFormItems = ({
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
+                </span>
+              </Form.Item>
+            </>
+          ),
+        };
+      case 'exporter':
+        return {
+          displaycolumns: [
+            columns[0],
+            ...columns.slice(13, 16),
+            ...columns.slice(4, 7),
+          ],
+          formItems: (
+            <>
+              <Form.Item label="ENV_USER" required>
+                <Form.Item
+                  noStyle
+                  name="ENV_USER"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.usernameDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label="ENV_PASSWORD" required>
+                <Form.Item
+                  noStyle
+                  name="ENV_PASSWORD"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Password className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.passwordDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label="ENV_SERVICE_NAME" required>
+                <Form.Item
+                  noStyle
+                  name="ENV_SERVICE_NAME"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.seviceNameDes')}
                 </span>
               </Form.Item>
             </>
@@ -1663,7 +1731,7 @@ const useFormItems = ({
                   {t('monitor.intergrations.passwordDes')}
                 </span>
               </Form.Item>
-              <Form.Item required label="URL">
+              <Form.Item required label="JmxUrl">
                 <Form.Item
                   noStyle
                   name="monitor_url"
@@ -1678,6 +1746,174 @@ const useFormItems = ({
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.urlDes')}
+                </span>
+              </Form.Item>
+              {isEdit && (
+                <Form.Item required label="URL">
+                  <Form.Item
+                    noStyle
+                    name="urls"
+                    rules={[
+                      {
+                        required: true,
+                        message: t('common.required'),
+                      },
+                    ]}
+                  >
+                    <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                  </Form.Item>
+                  <span className="text-[12px] text-[var(--color-text-3)]">
+                    {t('monitor.intergrations.childUrlDes')}
+                  </span>
+                </Form.Item>
+              )}
+              <Form.Item label="ENV_LISTEN_PORT">
+                <Form.Item noStyle name="LISTEN_PORT">
+                  <InputNumber
+                    className="w-[300px] mr-[10px]"
+                    min={1}
+                    precision={0}
+                  />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.port')}
+                </span>
+              </Form.Item>
+            </>
+          ),
+          configText: getConfigByPluginName(pluginName, 'manualCfgText'),
+        };
+      case 'exporter':
+        return {
+          formItems: (
+            <>
+              {isEdit && (
+                <Form.Item required label="URL">
+                  <Form.Item
+                    noStyle
+                    name="urls"
+                    rules={[
+                      {
+                        required: true,
+                        message: t('common.required'),
+                      },
+                    ]}
+                  >
+                    <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                  </Form.Item>
+                  <span className="text-[12px] text-[var(--color-text-3)]">
+                    {t('monitor.intergrations.childUrlDes')}
+                  </span>
+                </Form.Item>
+              )}
+              <Form.Item label="ENV_USER" required>
+                <Form.Item
+                  noStyle
+                  name="USER"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.usernameDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label="ENV_PASSWORD" required>
+                <Form.Item
+                  noStyle
+                  name="PASSWORD"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Password className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.passwordDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label="ENV_SERVICE_NAME" required>
+                <Form.Item
+                  noStyle
+                  name="SERVICE_NAME"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.seviceNameDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label="ENV_LISTEN_PORT" required>
+                <Form.Item
+                  noStyle
+                  name="LISTEN_PORT"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    className="w-[300px] mr-[10px]"
+                    min={1}
+                    precision={0}
+                  />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.port')}
+                </span>
+              </Form.Item>
+              <Form.Item label="ENV_HOST" required>
+                <Form.Item
+                  noStyle
+                  name="HOST"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.commonHostDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label="ENV_PORT" required>
+                <Form.Item
+                  noStyle
+                  name="PORT"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    className="w-[300px] mr-[10px]"
+                    min={1}
+                    precision={0}
+                  />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.commonPortDes')}
                 </span>
               </Form.Item>
             </>
