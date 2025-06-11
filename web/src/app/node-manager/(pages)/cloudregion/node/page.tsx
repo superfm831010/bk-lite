@@ -58,7 +58,7 @@ const Node = () => {
   const searchParams = useSearchParams();
   const { isLoading, del } = useApiClient();
   const { getNodeList } = useApiCloudRegion();
-  const { getCollectorlist } = useApiCollector();
+  const { getCollectorlist, deleteCollector } = useApiCollector();
   const sidecarItems = useSidecarItems();
   const collectorItems = useCollectorItems();
   const statusMap = useTelegrafMap();
@@ -89,6 +89,16 @@ const Node = () => {
       const params = new URLSearchParams(data);
       const targetUrl = `/node-manager/cloudregion/configuration?${params.toString()}`;
       router.push(targetUrl);
+    },
+    deleteNode: async (row: TableDataItem) => {
+      try {
+        setLoading(true);
+        await deleteCollector({ id: row.id + '888' });
+        message.success(t('common.successfullyDeleted'));
+        getNodes('refresh');
+      } catch {
+        setLoading(false);
+      }
     },
   });
 
@@ -319,7 +329,7 @@ const Node = () => {
       selectedsystem === 'linux'
         ? 'natsexecutor_linux'
         : 'natsexecutor_windows';
-    const plugins = ['Telegraf', 'Export', 'JMX', 'BK-pull'];
+    const plugins = ['Telegraf', 'Export', 'JMX'];
     const columnItems: any = plugins.map((type: string) => ({
       title: type,
       dataIndex: type,
