@@ -11,13 +11,8 @@ packages:
 EOF
 
 RUN cat > .env.local <<EOF
-NEXTAPI_INSTALL_APP="opspilot"
-NEXT_PUBLIC_CLIENT_ID="opspilot"
-NEXTAPI_URL="http://opspilot:8000"
+NEXTAPI_URL="http://bklite-server:8000"
 EOF
-
-RUN cd ./src/app && \
-    find . -mindepth 1 -maxdepth 1 -type d ! \( -name \(core\) -o -name no-permission -o -name "opspilot" \) -print0 | xargs -0 rm -rf
 
 RUN pnpm install
 RUN pnpm run build
