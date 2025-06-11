@@ -19,6 +19,7 @@ import {
   deepClone,
   getRandomColor,
   getEnumValueUnit,
+  getRecentTimeRange,
 } from '@/app/monitor/utils/common';
 import {
   ColumnItem,
@@ -28,8 +29,9 @@ import {
   UserItem,
   TabItem,
   TimeSelectorDefaultValue,
+  TimeValuesProps,
 } from '@/app/monitor/types';
-import { MetricItem, ObectItem } from '@/app/monitor/types/monitor';
+import { MetricItem, ObjectItem } from '@/app/monitor/types/monitor';
 import { AlertOutlined } from '@ant-design/icons';
 import { FiltersConfig } from '@/app/monitor/types/monitor';
 import CustomTable from '@/components/custom-table';
@@ -78,9 +80,10 @@ const Alert: React.FC = () => {
     pageSize: 20,
   });
   const [frequence, setFrequence] = useState<number>(0);
-  const beginTime: number = dayjs().subtract(10080, 'minute').valueOf();
-  const lastTime: number = dayjs().valueOf();
-  const [timeRange, setTimeRange] = useState<number[]>([beginTime, lastTime]);
+  const [timeValues, setTimeValues] = useState<TimeValuesProps>({
+    timeRange: [],
+    originValue: 10080,
+  });
   const timeDefaultValue =
     useRef<TimeSelectorDefaultValue>({
       selectValue: 10080,
@@ -95,8 +98,8 @@ const Alert: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('activeAlarms');
   const [chartData, setChartData] = useState<Record<string, any>[]>([]);
   const [pageLoading, setPageLoading] = useState<boolean>(false);
-  const [objects, setObjects] = useState<ObectItem[]>([]);
-  const [groupObjects, setGroupObjects] = useState<ObectItem[]>([]);
+  const [objects, setObjects] = useState<ObjectItem[]>([]);
+  const [groupObjects, setGroupObjects] = useState<ObjectItem[]>([]);
   const [metrics, setMetrics] = useState<MetricItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
@@ -184,7 +187,7 @@ const Alert: React.FC = () => {
             </span>
             <span className="user-name">
               <EllipsisWithTooltip
-                className="w-[50px] overflow-hidden text-ellipsis whitespace-nowrap"
+                className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
                 text={operator}
               />
             </span>
@@ -242,7 +245,7 @@ const Alert: React.FC = () => {
     };
   }, [
     frequence,
-    timeRange,
+    timeValues,
     activeTab,
     filters.level,
     filters.state,
@@ -256,7 +259,7 @@ const Alert: React.FC = () => {
     getAssetInsts('refresh');
   }, [
     isLoading,
-    timeRange,
+    timeValues,
     activeTab,
     filters.level,
     filters.state,
@@ -270,7 +273,7 @@ const Alert: React.FC = () => {
     getChartData('refresh');
   }, [
     isLoading,
-    timeRange,
+    timeValues,
     filters.state,
     activeTab,
     filters.level,
@@ -299,7 +302,7 @@ const Alert: React.FC = () => {
   };
 
   const getObjects = async () => {
-    const data: ObectItem[] = await getMonitorObject({
+    const data: ObjectItem[] = await getMonitorObject({
       add_policy_count: true,
     });
     const groupedData = data.reduce((acc, item) => {
@@ -339,6 +342,7 @@ const Alert: React.FC = () => {
   };
 
   const getParams = () => {
+    const recentTimeRange = getRecentTimeRange(timeValues);
     const params = {
       status_in: filters.state,
       level_in: filters.level.join(','),
@@ -346,8 +350,8 @@ const Alert: React.FC = () => {
       content: searchText,
       page: pagination.current,
       page_size: pagination.pageSize,
-      created_at_after: dayjs(timeRange[0]).toISOString(),
-      created_at_before: dayjs(timeRange[1]).toISOString(),
+      created_at_after: dayjs(recentTimeRange[0]).toISOString(),
+      created_at_before: dayjs(recentTimeRange[1]).toISOString(),
     };
     return params;
   };
@@ -475,8 +479,11 @@ const Alert: React.FC = () => {
     });
   };
 
-  const onTimeChange = (val: number[]) => {
-    setTimeRange(val);
+  const onTimeChange = (val: number[], originValue: number | null) => {
+    setTimeValues({
+      timeRange: val,
+      originValue,
+    });
   };
 
   const processDataForStackedBarChart = (
@@ -693,7 +700,7 @@ const Alert: React.FC = () => {
                   <TimeSelector
                     defaultValue={timeDefaultValue}
                     onlyRefresh={activeTab === 'activeAlarms'}
-                    onChange={(value) => onTimeChange(value)}
+                    onChange={onTimeChange}
                     onFrequenceChange={onFrequenceChange}
                     onRefresh={onRefresh}
                   />

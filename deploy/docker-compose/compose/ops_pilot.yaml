@@ -1,0 +1,151 @@
+networks:
+  prod:
+
+volumes:
+  minio:
+  rabbitmq:
+  elasticsearch:
+
+services:
+  minio:
+    image: ${DOCKER_IMAGE_MINIO}
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio:/data
+    networks:
+      - prod
+    profiles:
+      - opspilot
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/ready"]
+  
+  rabbitmq:
+    image: ${DOCKER_IMAGE_RABBITMQ}
+    restart: always
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASSWORD}
+    ports:
+      - "5672:5672"
+    profiles:
+      - opspilot
+    networks:
+      - prod
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+  
+  elasticsearch:
+    image: ${DOCKER_IMAGE_ELASTICSEARCH}
+    restart: always
+    volumes:
+      - elasticsearch:/usr/share/elasticsearch/data
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: true
+      xpack.security.transport.ssl.enabled: false
+      xpack.security.http.ssl.enabled: false
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+      ES_JAVA_OPTS: -Xms2g -Xmx2g
+    networks:
+      - prod
+    profiles:
+      - opspilot
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-u", "${ELASTIC_PASSWORD}:", "http://127.0.0.1:9200/_cluster/health"]
+  
+  metis:
+    image: ${DOCKER_IMAGE_METIS}
+    restart: always
+    environment:
+      DB_URI: postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@postgres:5432/metis
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD}
+      SECRET_KEY: ${SECRET_KEY}
+      MODE: DEBUG
+      TRANSFORMERS_OFFLINE: true
+      HF_DATASETS_OFFLINE: true
+      ADMIN_PASSWORD: password
+    profiles:
+      - opspilot
+    networks:
+      - prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      system-manager:
+        condition: service_healthy
+  opspilot:
+    image: ${DOCKER_IMAGE_OPSPILOT}
+    restart: always
+    environment:
+      DEBUG: 0
+      DB_ENGINE: postgresql
+      DB_NAME: opspilot
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      ENABLE_CELERY: True
+      SECRET_KEY: ${SECRET_KEY}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_EXTERNAL_ENDPOINT_USE_HTTPS: false
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD}
+      CELERY_BROKER_URL: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASSWORD}@rabbitmq:5672/
+      BROKER_URL: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASSWORD}@rabbitmq:5672/
+      CONVERSATION_MQ_HOST: ${HOST_IP}
+      CONVERSATION_MQ_PORT: 5672
+      CONVERSATION_MQ_USER: ${RABBITMQ_DEFAULT_USER}
+      CONVERSATION_MQ_PASSWORD: ${RABBITMQ_DEFAULT_PASSWORD}
+      NATS_SERVERS: nats://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
+      NATS_NAMESPACE: bk-lite
+      CLIENT_ID: opspilot
+      MUNCHKIN_BASE_URL: http://${HOST_IP}:${TRAEFIK_OPSPILOT_PORT}
+      METIS_SERVER_URL: http://metis:18083
+      INSTALL_APPS: opspilot
+      PILOT_RUNTIME: docker
+      ADMIN_PASSWORD: password
+    networks:
+      - prod
+    profiles:
+      - opspilot
+    depends_on:
+      system-manager:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", "http://127.0.0.1:8000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  ops-pilot-web:
+    image: ${DOCKER_IMAGE_OPSPILOT_WEB}
+    environment:
+      NEXTAUTH_URL: http://${HOST_IP}:${TRAEFIK_OPSPILOT_PORT}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAPI_URL: http://opspilot:8000
+    restart: always
+    profiles:
+      - opspilot
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.opspilot-web.rule=Host(`${HOST_IP}`)"
+      - "traefik.http.routers.opspilot-web.entrypoints=opspilot-web"
+      - "traefik.http.services.opspilot-web.loadbalancer.server.port=3000"    
+    networks:
+      - prod
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://ops-pilot-web:3000/healthcheck').then(res => res.status === 200)"]
+      start_period: 5s
+    depends_on:
+      opspilot:
+        condition: service_healthy

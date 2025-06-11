@@ -275,7 +275,7 @@ MONITOR_OBJS = [
     },
     {
         "type": "Tencent Cloud",
-        "name": "云平台",
+        "name": "TCP",
         "default_metric": 'any({instance_type="qcloud"}) by (instance_id)',
         "instance_id_keys": ["instance_id"],
         "supplementary_indicators": [],
@@ -283,7 +283,21 @@ MONITOR_OBJS = [
     {
         "type": "Tencent Cloud",
         "name": "CVM",
-        "default_metric": 'any({resource_type="qcloud_cvm"}) by (instance_id)',
+        "default_metric": 'any({resource_type="qcloud_cvm"}) by (instance_id, resource_id)',
+        "instance_id_keys": ["instance_id", "resource_id"],
+        "supplementary_indicators": ["cvm_CPU_Usage", "cvm_MemUsage", "cvm_LanOuttraffic", "cvm_WanOuttraffic"],
+    },
+    {
+        "type": "Database",
+        "name": "Oracle",
+        "default_metric": 'any({instance_type="oracle"}) by (instance_id)',
+        "instance_id_keys": ["instance_id"],
+        "supplementary_indicators": [],
+    },
+    {
+        "type": "Middleware",
+        "name": "Minio",
+        "default_metric": 'any({instance_type="minio"}) by (instance_id)',
         "instance_id_keys": ["instance_id"],
         "supplementary_indicators": [],
     },
@@ -311,3 +325,5 @@ LEVEL_WEIGHT = {
 OBJ_ORDER = "OBJ_ORDER"
 
 STARGAZER_URL = os.getenv("STARGAZER_URL", "http://stargazer:8083")
+
+CHILD_ENVS = {"ENV_LISTEN_PORT", "LISTEN_PORT"}

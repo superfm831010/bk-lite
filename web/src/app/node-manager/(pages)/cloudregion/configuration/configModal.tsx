@@ -297,7 +297,11 @@ const ConfigModal = forwardRef<ModalRef, ModalSuccess>(
                         },
                       ]}
                     >
-                      <Select disabled={type !== 'add'} placeholder={t('common.selectMsg')}>
+                      <Select
+                        disabled={type !== 'add'}
+                        placeholder={t('common.selectMsg')}
+                        showSearch
+                      >
                         {collectorList.map((item: TableDataItem) => (
                           <Option key={item.id} value={item.id}>
                             {item.name}

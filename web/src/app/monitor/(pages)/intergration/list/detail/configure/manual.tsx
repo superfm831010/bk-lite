@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Button, message, InputNumber, Select } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import {
@@ -28,14 +28,6 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   const pluginName = searchParams.get('collect_type') || '';
   const objId = searchParams.get('id') || '';
   const objectName = searchParams.get('name') || '';
-  const authPasswordRef = useRef<any>(null);
-  const privPasswordRef = useRef<any>(null);
-  const passwordRef = useRef<any>(null);
-  const [authPasswordDisabled, setAuthPasswordDisabled] =
-    useState<boolean>(true);
-  const [privPasswordDisabled, setPrivPasswordDisabled] =
-    useState<boolean>(true);
-  const [passwordDisabled, setPasswordDisabled] = useState<boolean>(true);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [configMsg, setConfigMsg] = useState<string>('');
 
@@ -51,66 +43,12 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     return getConfigByPluginName(pluginName, 'config_type');
   }, [pluginName]);
 
-  const handleEditAuthPassword = () => {
-    if (authPasswordDisabled) {
-      form.setFieldsValue({
-        authPassword: '',
-      });
-    }
-    setAuthPasswordDisabled(false);
-  };
-
-  const handleEditPrivPassword = () => {
-    if (privPasswordDisabled) {
-      form.setFieldsValue({
-        privPassword: '',
-      });
-    }
-    setPrivPasswordDisabled(false);
-  };
-
-  const handleEditPassword = () => {
-    if (passwordDisabled) {
-      form.setFieldsValue({
-        password: '',
-      });
-    }
-    setPasswordDisabled(false);
-  };
-
   // 使用自定义 Hook
   const { formItems, configText } = useFormItems({
     collectType,
     columns: [],
-    authPasswordRef,
-    privPasswordRef,
-    passwordRef,
-    authPasswordDisabled,
-    privPasswordDisabled,
-    passwordDisabled,
-    handleEditAuthPassword,
-    handleEditPrivPassword,
-    handleEditPassword,
     pluginName,
   });
-
-  useEffect(() => {
-    if (!authPasswordDisabled && authPasswordRef?.current) {
-      authPasswordRef.current.focus();
-    }
-  }, [authPasswordDisabled]);
-
-  useEffect(() => {
-    if (!privPasswordDisabled && privPasswordRef?.current) {
-      privPasswordRef.current.focus();
-    }
-  }, [privPasswordDisabled]);
-
-  useEffect(() => {
-    if (!passwordDisabled && passwordRef?.current) {
-      passwordRef.current.focus();
-    }
-  }, [passwordDisabled]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -119,7 +57,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
 
   const initData = () => {
     form.setFieldsValue({
-      interval: 10,
+      interval: collectType === 'http' ? 60 : 10,
     });
     switch (collectType) {
       case 'host':
@@ -164,17 +102,20 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     if (pluginName === 'Tencent Cloud') {
       return row.monitor_url;
     }
+    if (['bkpull', 'database'].includes(collectType)) {
+      return row.server || `${row.host}:${row.port}`;
+    }
     switch (collectType) {
       case 'host':
         return row.monitor_ip;
       case 'trap':
         return 'trap' + row.monitor_ip;
-      case 'database':
-        return row.server || `${row.host}:${row.port}`;
       case 'http':
         return `vc-${row.host}`;
       case 'docker':
         return row.endpoint;
+      case 'exporter':
+        return `${row.HOST}:${row.PORT}`;
       default:
         return row.monitor_url;
     }
@@ -196,11 +137,28 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
           return (pre += _configMsg[cur]);
         }, '');
       }
+      if (pluginName === 'MongoDB' && params.password && params.username) {
+        _configMsg = insertCredentialsToMongoDB(_configMsg, params);
+      }
       setConfigMsg(replaceTemplate(_configMsg || '', params));
       message.success(t('common.successfullyAdded'));
     } finally {
       setConfirmLoading(false);
     }
+  };
+
+  const insertCredentialsToMongoDB = (
+    config: string,
+    params: TableDataItem
+  ): string => {
+    // 正则匹配 "mongodb://" 后的部分，直到 "$host:$port"
+    const regex = /(mongodb:\/\/)(\$host:\$port)/;
+    // 使用正则替换，将 username 和 password 插入到匹配的部分中
+    const updatedConfig = config.replace(
+      regex,
+      `$1${params.username}:${params.password}@$2`
+    );
+    return updatedConfig;
   };
 
   const replaceTemplate = (

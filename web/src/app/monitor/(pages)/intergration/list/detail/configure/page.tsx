@@ -20,35 +20,37 @@ const Configure: React.FC = () => {
     setActiveTab(val);
   };
 
-  const showInterval = useMemo(() => {
-    return getConfigByPluginName(pluginName, 'collect_type') !== 'jmx';
-  }, [pluginName]);
-
   const isK8s = useMemo(() => {
     return getConfigByPluginName(pluginName, 'collect_type') === 'k8s';
   }, [pluginName]);
 
   return (
     <>
-      {!isK8s ?
+      {!isK8s ? (
         <div className={configureStyle.configure}>
           <Segmented
             className="mb-[20px]"
             value={activeTab}
             options={[
-              { label: t('monitor.intergrations.automatic'), value: 'automatic' },
+              {
+                label: t('monitor.intergrations.automatic'),
+                value: 'automatic',
+              },
               { label: t('monitor.intergrations.manual'), value: 'manual' },
             ]}
             onChange={onTabChange}
           />
           <Spin spinning={pageLoading}>
             {activeTab === 'manual' ? (
-              <ManualConfiguration showInterval={showInterval} />
+              <ManualConfiguration />
             ) : (
-              <AutomaticConfiguration showInterval={showInterval} />
+              <AutomaticConfiguration />
             )}
           </Spin>
-        </div> : t('monitor.intergrations.note')}
+        </div>
+      ) : (
+        t('monitor.intergrations.note')
+      )}
     </>
   );
 };

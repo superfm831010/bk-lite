@@ -4,7 +4,7 @@ from django.db import models
 class GroupDataRule(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
-    group_id = models.CharField(max_length=100)
+    group_id = models.IntegerField(default=0)
     group_name = models.CharField(max_length=100)
     rules = models.JSONField(default=dict)
     app = models.CharField(max_length=50, default="")

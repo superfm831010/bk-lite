@@ -1,0 +1,125 @@
+networks:
+  prod:
+    driver: bridge
+    name: bklite-prod
+
+volumes:
+  redis:
+  nats:
+  victoria-metrics:
+  postgres:
+  neo4j:
+
+services:
+  traefik:
+    image: ${DOCKER_IMAGE_TRAEFIK}
+    restart: always
+    ports:
+      - "${TRAEFIK_CMDB_PORT}:${TRAEFIK_CMDB_PORT}"
+      - "${TRAEFIK_SYSTEM_MANAGER_PORT}:${TRAEFIK_SYSTEM_MANAGER_PORT}"
+      - "${TRAEFIK_NODE_MANAGER_PORT}:${TRAEFIK_NODE_MANAGER_PORT}"
+      - "${TRAEFIK_MONITOR_PORT}:${TRAEFIK_MONITOR_PORT}"
+      - "${TRAEFIK_CONSOLE_PORT}:${TRAEFIK_CONSOLE_PORT}"
+      - "${TRAEFIK_OPSPILOT_PORT}:${TRAEFIK_OPSPILOT_PORT}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../conf/traefik/dynamic.yml:/etc/traefik/dynamic.yml
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.traefik-dashboard.loadbalancer.server.port=8080"
+    command:
+      - "--log.level=INFO"
+      - "--api.insecure=true"
+      - "--api.dashboard=${TRAEFIK_ENABLE_DASHBOARD}"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      - "--providers.file.watch=true"
+      - "--accesslog"
+      - "--entrypoints.cmdb-web.address=:${TRAEFIK_CMDB_PORT}"
+      - "--entrypoints.system-manager-web.address=:${TRAEFIK_SYSTEM_MANAGER_PORT}"
+      - "--entrypoints.node-manager-web.address=:${TRAEFIK_NODE_MANAGER_PORT}"
+      - "--entrypoints.monitor-web.address=:${TRAEFIK_MONITOR_PORT}"
+      - "--entrypoints.opsconsole-web.address=:${TRAEFIK_CONSOLE_PORT}"
+      - "--entrypoints.opspilot-web.address=:${TRAEFIK_OPSPILOT_PORT}"
+    networks:
+      - prod
+
+  redis:
+    image: ${DOCKER_IMAGE_REDIS}
+    restart: always
+    volumes:
+      - redis:/data
+    command:
+      - "redis-server"
+      - "--requirepass"
+      - "${REDIS_PASSWORD}"
+    ports:
+      - "6379:6379"
+    networks:
+      - prod
+
+  nats:
+    image: ${DOCKER_IMAGE_NATS}
+    restart: always
+    volumes:
+      - ../conf/nats/nats.conf:/etc/nats/nats.conf
+      - nats:/nats
+    ports:
+      - "4222:4222"
+    command:
+      - "-c"
+      - "/etc/nats/nats.conf"
+    networks:
+      - prod
+
+  victoria-metrics:
+    image: ${DOCKER_IMAGE_VICTORIA_METRICS}
+    restart: always
+    volumes:
+      - victoria-metrics:/victoria-metrics-data
+    ports:
+      - "8428:8428"
+    command:
+      - "--storageDataPath=/victoria-metrics-data"
+      - "--httpListenAddr=0.0.0.0:8428"
+      - "--retentionPeriod=168h"
+      - "-maxLabelsPerTimeseries=300"
+    networks:
+      - prod
+    depends_on:
+      - nats
+
+  neo4j:
+    image: ${DOCKER_NEO4J_IMAGE}
+    container_name: neo4j
+    restart: always
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+      - "7473:7473"
+    networks:
+      - prod
+    environment:
+      - NEO4J_AUTH=${NEO4J_AUTH}
+    volumes:
+      - neo4j:/data
+
+  postgres:
+    container_name: postgres
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+      - ../conf/postgres/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+    networks:
+      - prod
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USERNAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: always

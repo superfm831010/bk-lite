@@ -6,12 +6,16 @@ import { useTranslation } from '@/utils/i18n';
 import informationStyle from './index.module.scss';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import LineChart from '@/app/monitor/components/charts/lineChart';
-import { ObectItem } from '@/app/monitor/types/monitor';
+import { ObjectItem } from '@/app/monitor/types/monitor';
 import { findUnitNameById, showGroupName } from '@/app/monitor/utils/common';
 import { useCommon } from '@/app/monitor/context/common';
 import { Popconfirm, message, Button } from 'antd';
 import useMonitorApi from '@/app/monitor/api';
-import { LEVEL_MAP, useLevelList } from '@/app/monitor/constants/monitor';
+import {
+  LEVEL_MAP,
+  useLevelList,
+  OBJECT_DEFAULT_ICON,
+} from '@/app/monitor/constants/monitor';
 import Permission from '@/components/permission';
 
 const Information: React.FC<TableDataItem> = ({
@@ -33,12 +37,13 @@ const Information: React.FC<TableDataItem> = ({
 
   const checkDetail = (row: TableDataItem) => {
     const monitorItem = objects.find(
-      (item: ObectItem) => item.id === row.policy?.monitor_object
+      (item: ObjectItem) => item.id === row.policy?.monitor_object
     );
     const params = {
       monitorObjId: row.policy?.monitor_object,
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
+      icon: monitorItem?.icon || OBJECT_DEFAULT_ICON,
       instance_id: row.monitor_instance_id,
       instance_name: row.monitor_instance_name,
       instance_id_values: row.instance_id_values,
@@ -108,7 +113,7 @@ const Information: React.FC<TableDataItem> = ({
         </Descriptions.Item>
         <Descriptions.Item label={t('monitor.events.assetType')}>
           {objects.find(
-            (item: ObectItem) => item.id === formData.policy?.monitor_object
+            (item: ObjectItem) => item.id === formData.policy?.monitor_object
           )?.display_name || '--'}
         </Descriptions.Item>
         <Descriptions.Item label={t('monitor.asset')}>

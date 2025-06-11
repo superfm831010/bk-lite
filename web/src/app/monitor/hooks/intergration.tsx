@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Form, Checkbox, Space, Select, Input, InputNumber } from 'antd';
-import { EditOutlined } from '@ant-design/icons';
+import Password from '@/app/monitor/components/password';
 import { useTranslation } from '@/utils/i18n';
 import { getConfigByPluginName } from '@/app/monitor/utils/common';
 import {
@@ -13,31 +13,13 @@ interface UseColumnsAndFormItemsParams {
   pluginName: string;
   collectType: string;
   columns: any[];
-  authPasswordRef: React.RefObject<any>;
-  privPasswordRef: React.RefObject<any>;
-  passwordRef: React.RefObject<any>;
-  authPasswordDisabled: boolean;
-  privPasswordDisabled: boolean;
-  passwordDisabled: boolean;
   mode?: string;
-  handleEditAuthPassword: () => void;
-  handleEditPrivPassword: () => void;
-  handleEditPassword: () => void;
 }
 
 const useColumnsAndFormItems = ({
   collectType,
   pluginName,
   columns,
-  authPasswordRef,
-  privPasswordRef,
-  passwordRef,
-  authPasswordDisabled,
-  privPasswordDisabled,
-  passwordDisabled,
-  handleEditAuthPassword,
-  handleEditPrivPassword,
-  handleEditPassword,
 }: UseColumnsAndFormItemsParams) => {
   const { t } = useTranslation();
 
@@ -180,7 +162,11 @@ const useColumnsAndFormItems = ({
                     },
                   ]}
                 >
-                  <Select className="mr-[10px]" style={{ width: '300px' }}>
+                  <Select
+                    showSearch
+                    className="mr-[10px]"
+                    style={{ width: '300px' }}
+                  >
                     <Option value={2}>v2c</Option>
                     <Option value={3}>v3</Option>
                   </Select>
@@ -248,6 +234,7 @@ const useColumnsAndFormItems = ({
                           ]}
                         >
                           <Select
+                            showSearch
                             className="mr-[10px]"
                             style={{ width: '300px' }}
                           >
@@ -294,21 +281,7 @@ const useColumnsAndFormItems = ({
                             },
                           ]}
                         >
-                          <Input
-                            ref={authPasswordRef}
-                            disabled={authPasswordDisabled}
-                            className="w-[300px] mr-[10px]"
-                            type="password"
-                            suffix={
-                              <EditOutlined
-                                className="text-[var(--color-text-2)]"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditAuthPassword();
-                                }}
-                              />
-                            }
-                          />
+                          <Password className="w-[300px] mr-[10px]" />
                         </Form.Item>
                         <span className="text-[12px] text-[var(--color-text-3)]">
                           {t('monitor.intergrations.authPasswordDes')}
@@ -348,21 +321,7 @@ const useColumnsAndFormItems = ({
                             },
                           ]}
                         >
-                          <Input
-                            ref={privPasswordRef}
-                            disabled={privPasswordDisabled}
-                            className="w-[300px] mr-[10px]"
-                            type="password"
-                            suffix={
-                              <EditOutlined
-                                className="text-[var(--color-text-2)]"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditPrivPassword();
-                                }}
-                              />
-                            }
-                          />
+                          <Password className="w-[300px] mr-[10px]" />
                         </Form.Item>
                         <span className="text-[12px] text-[var(--color-text-3)]">
                           {t('monitor.intergrations.privPasswordDes')}
@@ -438,21 +397,7 @@ const useColumnsAndFormItems = ({
                     },
                   ]}
                 >
-                  <Input
-                    ref={passwordRef}
-                    disabled={passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
@@ -519,21 +464,7 @@ const useColumnsAndFormItems = ({
                         },
                       ]}
                     >
-                      <Input
-                        ref={passwordRef}
-                        disabled={passwordDisabled}
-                        className="w-[300px] mr-[10px]"
-                        type="password"
-                        suffix={
-                          <EditOutlined
-                            className="text-[var(--color-text-2)]"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditPassword();
-                            }}
-                          />
-                        }
-                      />
+                      <Password className="w-[300px] mr-[10px]" />
                     </Form.Item>
                     <span className="text-[12px] text-[var(--color-text-3)]">
                       {t('monitor.intergrations.passwordDes')}
@@ -582,6 +513,9 @@ const useColumnsAndFormItems = ({
           formItems: null,
         };
       case 'database':
+        const isUsernameAndPasswordRequired = !['Redis', 'MongoDB'].includes(
+          pluginName
+        );
         return {
           displaycolumns:
             pluginName === 'ElasticSearch'
@@ -589,60 +523,46 @@ const useColumnsAndFormItems = ({
               : [columns[0], columns[9], columns[10], ...columns.slice(4, 7)],
           formItems: (
             <>
-              {['Mysql', 'Postgres', 'ElasticSearch'].includes(pluginName) && (
-                <Form.Item label={t('monitor.intergrations.username')} required>
-                  <Form.Item
-                    noStyle
-                    name="username"
-                    rules={[
-                      {
-                        required: true,
-                        message: t('common.required'),
-                      },
-                    ]}
-                  >
-                    <Input className="w-[300px] mr-[10px]" />
-                  </Form.Item>
-                  <span className="text-[12px] text-[var(--color-text-3)]">
-                    {t('monitor.intergrations.usernameDes')}
-                  </span>
+              <Form.Item
+                label={t('monitor.intergrations.username')}
+                required={isUsernameAndPasswordRequired}
+              >
+                <Form.Item
+                  noStyle
+                  name="username"
+                  rules={[
+                    {
+                      required: isUsernameAndPasswordRequired,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
                 </Form.Item>
-              )}
-              {['Mysql', 'Postgres', 'Redis', 'ElasticSearch'].includes(
-                pluginName
-              ) && (
-                <Form.Item label={t('monitor.intergrations.password')} required>
-                  <Form.Item
-                    noStyle
-                    name="password"
-                    rules={[
-                      {
-                        required: true,
-                        message: t('common.required'),
-                      },
-                    ]}
-                  >
-                    <Input
-                      ref={passwordRef}
-                      disabled={passwordDisabled}
-                      className="w-[300px] mr-[10px]"
-                      type="password"
-                      suffix={
-                        <EditOutlined
-                          className="text-[var(--color-text-2)]"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditPassword();
-                          }}
-                        />
-                      }
-                    />
-                  </Form.Item>
-                  <span className="text-[12px] text-[var(--color-text-3)]">
-                    {t('monitor.intergrations.passwordDes')}
-                  </span>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.usernameDes')}
+                </span>
+              </Form.Item>
+              <Form.Item
+                label={t('monitor.intergrations.password')}
+                required={isUsernameAndPasswordRequired}
+              >
+                <Form.Item
+                  noStyle
+                  name="password"
+                  rules={[
+                    {
+                      required: isUsernameAndPasswordRequired,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Password className="w-[300px] mr-[10px]" />
                 </Form.Item>
-              )}
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.passwordDes')}
+                </span>
+              </Form.Item>
             </>
           ),
         };
@@ -683,21 +603,7 @@ const useColumnsAndFormItems = ({
                     },
                   ]}
                 >
-                  <Input
-                    ref={passwordRef}
-                    disabled={passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
@@ -708,7 +614,12 @@ const useColumnsAndFormItems = ({
         };
       case 'jmx':
         return {
-          displaycolumns: [columns[0], columns[12], ...columns.slice(4, 7)],
+          displaycolumns: [
+            columns[0],
+            columns[12],
+            columns[13],
+            ...columns.slice(4, 7),
+          ],
           formItems: (
             <>
               <Form.Item label={t('monitor.intergrations.username')}>
@@ -721,21 +632,7 @@ const useColumnsAndFormItems = ({
               </Form.Item>
               <Form.Item label={t('monitor.intergrations.password')}>
                 <Form.Item noStyle name="password">
-                  <Input
-                    ref={passwordRef}
-                    disabled={passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
@@ -744,26 +641,85 @@ const useColumnsAndFormItems = ({
             </>
           ),
         };
+      case 'exporter':
+        return {
+          displaycolumns: [
+            columns[0],
+            ...columns.slice(13, 16),
+            ...columns.slice(4, 7),
+          ],
+          formItems: (
+            <>
+              <Form.Item label={t('monitor.intergrations.username')} required>
+                <Form.Item
+                  noStyle
+                  name="ENV_USER"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.usernameDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label={t('monitor.intergrations.password')} required>
+                <Form.Item
+                  noStyle
+                  name="ENV_PASSWORD"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Password className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.passwordDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label={t('monitor.intergrations.seviceName')} required>
+                <Form.Item
+                  noStyle
+                  name="ENV_SERVICE_NAME"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.seviceNameDes')}
+                </span>
+              </Form.Item>
+            </>
+          ),
+        };
+      case 'bkpull':
+        return {
+          displaycolumns: [
+            columns[0],
+            ...columns.slice(9, 11),
+            ...columns.slice(4, 7),
+          ],
+          formItems: null,
+        };
       default:
         return {
           displaycolumns: [columns[0], ...columns.slice(3, 7)],
           formItems: null,
         };
     }
-  }, [
-    collectType,
-    columns,
-    t,
-    authPasswordRef,
-    privPasswordRef,
-    passwordRef,
-    authPasswordDisabled,
-    privPasswordDisabled,
-    passwordDisabled,
-    handleEditAuthPassword,
-    handleEditPrivPassword,
-    handleEditPassword,
-  ]);
+  }, [collectType, columns, t]);
 
   return result;
 };
@@ -771,16 +727,7 @@ const useColumnsAndFormItems = ({
 const useFormItems = ({
   pluginName,
   collectType,
-  authPasswordRef,
-  privPasswordRef,
-  passwordRef,
-  authPasswordDisabled,
-  privPasswordDisabled,
-  passwordDisabled,
   mode,
-  handleEditAuthPassword,
-  handleEditPrivPassword,
-  handleEditPassword,
 }: UseColumnsAndFormItemsParams) => {
   const { t } = useTranslation();
   const middleWareFieldsMap = useMiddleWareFields();
@@ -1080,6 +1027,7 @@ const useFormItems = ({
                     className="mr-[10px]"
                     style={{ width: '300px' }}
                     disabled={isEdit}
+                    showSearch
                   >
                     <Option value={2}>v2c</Option>
                     <Option value={3}>v3</Option>
@@ -1150,6 +1098,7 @@ const useFormItems = ({
                           <Select
                             className="mr-[10px]"
                             style={{ width: '300px' }}
+                            showSearch
                           >
                             <Option value="noAuthNoPriv">noAuthNoPriv</Option>
                             <Option value="authNoPriv">authNoPriv</Option>
@@ -1194,20 +1143,9 @@ const useFormItems = ({
                             },
                           ]}
                         >
-                          <Input
-                            ref={authPasswordRef}
-                            disabled={authPasswordDisabled}
+                          <Password
                             className="w-[300px] mr-[10px]"
-                            type="password"
-                            suffix={
-                              <EditOutlined
-                                className="text-[var(--color-text-2)]"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditAuthPassword();
-                                }}
-                              />
-                            }
+                            disabled={isEdit}
                           />
                         </Form.Item>
                         <span className="text-[12px] text-[var(--color-text-3)]">
@@ -1248,20 +1186,9 @@ const useFormItems = ({
                             },
                           ]}
                         >
-                          <Input
-                            ref={privPasswordRef}
-                            disabled={privPasswordDisabled}
+                          <Password
                             className="w-[300px] mr-[10px]"
-                            type="password"
-                            suffix={
-                              <EditOutlined
-                                className="text-[var(--color-text-2)]"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditPrivPassword();
-                                }}
-                              />
-                            }
+                            disabled={isEdit}
                           />
                         </Form.Item>
                         <span className="text-[12px] text-[var(--color-text-3)]">
@@ -1413,22 +1340,7 @@ const useFormItems = ({
                     },
                   ]}
                 >
-                  <Input
-                    ref={passwordRef}
-                    disabled={isEdit || passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isEdit) return;
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" disabled={isEdit} />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
@@ -1560,21 +1472,9 @@ const useFormItems = ({
                         },
                       ]}
                     >
-                      <Input
-                        ref={passwordRef}
-                        disabled={isEdit || passwordDisabled}
+                      <Password
                         className="w-[300px] mr-[10px]"
-                        type="password"
-                        suffix={
-                          <EditOutlined
-                            className="text-[var(--color-text-2)]"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (isEdit) return;
-                              handleEditPassword();
-                            }}
-                          />
-                        }
+                        disabled={isEdit}
                       />
                     </Form.Item>
                     <span className="text-[12px] text-[var(--color-text-3)]">
@@ -1616,6 +1516,9 @@ const useFormItems = ({
     tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
         };
       case 'database':
+        const isUsernameAndPasswordRequired = !['Redis', 'MongoDB'].includes(
+          pluginName
+        );
         return {
           formItems: (
             <>
@@ -1638,14 +1541,17 @@ const useFormItems = ({
                   </span>
                 </Form.Item>
               )}
-              {['ElasticSearch', 'Mysql', 'Postgres'].includes(pluginName) && (
-                <Form.Item label={t('monitor.intergrations.username')} required>
+              <>
+                <Form.Item
+                  label={t('monitor.intergrations.username')}
+                  required={isUsernameAndPasswordRequired}
+                >
                   <Form.Item
                     noStyle
                     name="username"
                     rules={[
                       {
-                        required: true,
+                        required: isUsernameAndPasswordRequired,
                         message: t('common.required'),
                       },
                     ]}
@@ -1656,43 +1562,30 @@ const useFormItems = ({
                     {t('monitor.intergrations.usernameDes')}
                   </span>
                 </Form.Item>
-              )}
-              {['ElasticSearch', 'Mysql', 'Postgres', 'Redis'].includes(
-                pluginName
-              ) && (
-                <Form.Item label={t('monitor.intergrations.password')} required>
+                <Form.Item
+                  label={t('monitor.intergrations.password')}
+                  required={isUsernameAndPasswordRequired}
+                >
                   <Form.Item
                     noStyle
                     name="password"
                     rules={[
                       {
-                        required: true,
+                        required: isUsernameAndPasswordRequired,
                         message: t('common.required'),
                       },
                     ]}
                   >
-                    <Input
-                      ref={passwordRef}
-                      disabled={isEdit || passwordDisabled}
+                    <Password
                       className="w-[300px] mr-[10px]"
-                      type="password"
-                      suffix={
-                        <EditOutlined
-                          className="text-[var(--color-text-2)]"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isEdit) return;
-                            handleEditPassword();
-                          }}
-                        />
-                      }
+                      disabled={isEdit}
                     />
                   </Form.Item>
                   <span className="text-[12px] text-[var(--color-text-3)]">
                     {t('monitor.intergrations.passwordDes')}
                   </span>
                 </Form.Item>
-              )}
+              </>
               {pluginName !== 'ElasticSearch' && (
                 <>
                   <Form.Item required label={t('monitor.intergrations.host')}>
@@ -1775,22 +1668,7 @@ const useFormItems = ({
                     },
                   ]}
                 >
-                  <Input
-                    ref={passwordRef}
-                    disabled={isEdit || passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isEdit) return;
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" disabled={isEdit} />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
@@ -1856,28 +1734,13 @@ const useFormItems = ({
               </Form.Item>
               <Form.Item label={t('monitor.intergrations.password')}>
                 <Form.Item noStyle name="password">
-                  <Input
-                    ref={passwordRef}
-                    disabled={isEdit || passwordDisabled}
-                    className="w-[300px] mr-[10px]"
-                    type="password"
-                    suffix={
-                      <EditOutlined
-                        className="text-[var(--color-text-2)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isEdit) return;
-                          handleEditPassword();
-                        }}
-                      />
-                    }
-                  />
+                  <Password className="w-[300px] mr-[10px]" disabled={isEdit} />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.passwordDes')}
                 </span>
               </Form.Item>
-              <Form.Item required label="URL">
+              <Form.Item required label="JmxUrl">
                 <Form.Item
                   noStyle
                   name="monitor_url"
@@ -1892,6 +1755,243 @@ const useFormItems = ({
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.urlDes')}
+                </span>
+              </Form.Item>
+              {isEdit && (
+                <Form.Item required label="URL">
+                  <Form.Item
+                    noStyle
+                    name="urls"
+                    rules={[
+                      {
+                        required: true,
+                        message: t('common.required'),
+                      },
+                    ]}
+                  >
+                    <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                  </Form.Item>
+                  <span className="text-[12px] text-[var(--color-text-3)]">
+                    {t('monitor.intergrations.childUrlDes')}
+                  </span>
+                </Form.Item>
+              )}
+              <Form.Item label={t('monitor.intergrations.listeningPort')}>
+                <Form.Item noStyle name="LISTEN_PORT">
+                  <InputNumber
+                    className="w-[300px] mr-[10px]"
+                    min={1}
+                    precision={0}
+                  />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.listeningPortDes')}
+                </span>
+              </Form.Item>
+            </>
+          ),
+          configText: getConfigByPluginName(pluginName, 'manualCfgText'),
+        };
+      case 'exporter':
+        return {
+          formItems: (
+            <>
+              {isEdit && (
+                <Form.Item required label="URL">
+                  <Form.Item
+                    noStyle
+                    name="urls"
+                    rules={[
+                      {
+                        required: true,
+                        message: t('common.required'),
+                      },
+                    ]}
+                  >
+                    <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                  </Form.Item>
+                  <span className="text-[12px] text-[var(--color-text-3)]">
+                    {t('monitor.intergrations.childUrlDes')}
+                  </span>
+                </Form.Item>
+              )}
+              <Form.Item label={t('monitor.intergrations.username')} required>
+                <Form.Item
+                  noStyle
+                  name="USER"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.usernameDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label={t('monitor.intergrations.password')} required>
+                <Form.Item
+                  noStyle
+                  name="PASSWORD"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Password className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.passwordDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label={t('monitor.intergrations.seviceName')} required>
+                <Form.Item
+                  noStyle
+                  name="SERVICE_NAME"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.seviceNameDes')}
+                </span>
+              </Form.Item>
+              <Form.Item
+                label={t('monitor.intergrations.listeningPort')}
+                required
+              >
+                <Form.Item
+                  noStyle
+                  name="LISTEN_PORT"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    className="w-[300px] mr-[10px]"
+                    min={1}
+                    precision={0}
+                  />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.listeningPortDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label={t('monitor.intergrations.host')} required>
+                <Form.Item
+                  noStyle
+                  name="HOST"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.commonHostDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label={t('monitor.intergrations.port')} required>
+                <Form.Item
+                  noStyle
+                  name="PORT"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    className="w-[300px] mr-[10px]"
+                    min={1}
+                    precision={0}
+                  />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.commonPortDes')}
+                </span>
+              </Form.Item>
+            </>
+          ),
+          configText: getConfigByPluginName(pluginName, 'manualCfgText'),
+        };
+      case 'bkpull':
+        return {
+          formItems: (
+            <>
+              {isEdit && (
+                <Form.Item required label="URL">
+                  <Form.Item
+                    noStyle
+                    name="urls"
+                    rules={[
+                      {
+                        required: true,
+                        message: t('common.required'),
+                      },
+                    ]}
+                  >
+                    <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                  </Form.Item>
+                  <span className="text-[12px] text-[var(--color-text-3)]">
+                    {t('monitor.intergrations.childUrlDes')}
+                  </span>
+                </Form.Item>
+              )}
+              <Form.Item label={t('monitor.intergrations.host')} required>
+                <Form.Item
+                  noStyle
+                  name="host"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.commonHostDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label={t('monitor.intergrations.port')} required>
+                <Form.Item
+                  noStyle
+                  name="port"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    className="w-[300px] mr-[10px]"
+                    min={1}
+                    precision={0}
+                    disabled={isEdit}
+                  />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.commonPortDes')}
                 </span>
               </Form.Item>
             </>
@@ -1925,19 +2025,7 @@ const useFormItems = ({
     tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`,
         };
     }
-  }, [
-    collectType,
-    t,
-    authPasswordRef,
-    privPasswordRef,
-    passwordRef,
-    authPasswordDisabled,
-    privPasswordDisabled,
-    passwordDisabled,
-    handleEditAuthPassword,
-    handleEditPrivPassword,
-    handleEditPassword,
-  ]);
+  }, [collectType, t]);
 
   return result;
 };

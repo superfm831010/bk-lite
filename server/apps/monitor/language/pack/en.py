@@ -8,7 +8,8 @@ MONITOR_OBJECT_TYPE = {
     "Hardware Device": "Hardware Device",
     "Container Management": "Container Management",
     "Other": "Other",
-    "VMware": "VMware"
+    "VMware": "VMware",
+    "Tencent Cloud": "Tencent Cloud"
 }
 
 MONITOR_OBJECT = {
@@ -49,7 +50,9 @@ MONITOR_OBJECT = {
     "DataStorage": "DataStorage",
     "JVM": "JVM",
     "Jetty": "Jetty",
-    "WebLogic": "WebLogic"
+    "WebLogic": "WebLogic",
+    "TCP": "Tencent Cloud Platform",
+    "CVM": "CVM"
 }
 
 MONITOR_OBJECT_PLUGIN = {
@@ -196,6 +199,10 @@ MONITOR_OBJECT_PLUGIN = {
     "WebLogic-JMX": {
         "name": "WebLogic-JMX",
         "desc": "This plugin uses JMX to collect WebLogic's key metrics, including thread pools, connection pools, memory, EJB, Servlet, JMS performance, and Web service response times. It enables real-time monitoring, performance optimization, and risk early warning to ensure system stability."
+    },
+        "Tencent Cloud": {
+        "name": "Tencent Cloud",
+        "desc": "It is used to collect various monitoring index data of Tencent Cloud in real - time, covering dimensions such as computing resources, network performance, and storage usage, helping users gain in - depth insights into resource status, accurately locate anomalies, and efficiently complete operation and maintenance management and cost optimization.​"
     }
 }
 
@@ -480,6 +487,15 @@ MONITOR_OBJECT_METRIC_GROUP = {
         "JMS": "Messaging Service",
         "PersistentStore": "Persistent Storage",
         "JMXselfMonitor": "JMX Self-Monitoring Information"
+    },
+    "TCP": {
+
+    },
+    "CVM": {
+        "CPU": "CPU",
+        "Memory": "Memory",
+        "Disk": "Disk",
+        "Network": "Network"
     }
 }
 
@@ -1931,17 +1947,45 @@ MONITOR_OBJECT_METRIC = {
         "name": "Memory Usage Percent",
         "desc": "This metric indicates the percentage of memory usage of the container, monitoring the memory load of the container."
     },
+    "docker_container_mem_usage": {
+        "name": "Memory Usage",
+        "desc": "Amount of memory used by the container, typically shown in bytes, indicating the actual physical memory consumption."
+    },
     "docker_container_blkio_io_service_bytes_recursive_total": {
         "name": "Total Block I/O Bytes",
-        "desc": "This metric indicates the total block I/O bytes of the container, reflecting the disk I/O load of the container."
+        "desc": "Total number of bytes transferred during block I/O operations in the container, including all read and write operations."
+    },
+    "docker_container_blkio_io_service_bytes_recursive_read": {
+        "name": "Block Device Read Bytes",
+        "desc": "Number of bytes read from block devices, reflecting the load of read operations and storage performance."
+    },
+    "docker_container_blkio_io_service_bytes_recursive_write": {
+        "name": "Block Device Write Bytes",
+        "desc": "Number of bytes written to block devices, indicating the load of write operations and storage performance."
     },
     "docker_container_net_rx_bytes": {
         "name": "Received Network Bytes",
-        "desc": "This metric indicates the number of network bytes received by the container, in MiB, used to monitor the network traffic of the container."
+        "desc": "This metric indicates the number of network bytes received by the container, used to monitor the network traffic of the container."
     },
     "docker_container_net_tx_bytes": {
         "name": "Transmitted Network Bytes",
-        "desc": "This metric indicates the number of network bytes sent by the container, in MiB, used to monitor the network traffic of the container."
+        "desc": "This metric indicates the number of network bytes sent by the container, used to monitor the network traffic of the container."
+    },
+    "docker_container_net_rx_errors": {
+        "name": "Total Network Receive Errors",
+        "desc": "Total number of errors encountered by the container when receiving packets, useful for diagnosing network issues."
+    },
+    "docker_container_net_tx_errors": {
+        "name": "Total Network Transmit Errors",
+        "desc": "Total number of errors encountered by the container when sending packets, useful for identifying outbound network problems."
+    },
+    "docker_container_net_rx_packets": {
+        "name": "Total Received Packets",
+        "desc": "Total number of packets received by the container, indicating the activity level of inbound network flow."
+    },
+    "docker_container_net_tx_packets": {
+        "name": "Total Transmitted Packets",
+        "desc": "Total number of packets sent by the container, reflecting the activity level of outbound network flow."
     }
 },
 "vCenter": {
@@ -2504,6 +2548,58 @@ MONITOR_OBJECT_METRIC = {
     "jmx_scrape_error_gauge": {
       "name": "JMX Scrape Error",
       "desc": "JMX scrape status: 0 for success, 1 for failure."
+    }
+  },
+  "TCP": {
+  },
+  "CVM": {
+    "cvm_CPU_Usage": {
+        "name": "CPU Utilization",
+        "desc": "The real-time percentage of CPU occupied during machine operation."
+    },
+    "cvm_MemUsed": {
+        "name": "Memory Usage",
+        "desc": "The actual memory used by the user, excluding memory occupied by buffers and system cache. Calculated as Total Memory - Available Memory (including buffers and cached), which does not include buffers and cached."
+    },
+    "cvm_MemUsage": {
+        "name": "Memory Utilization",
+        "desc": "The actual memory utilization rate by the user, excluding memory occupied by buffers and system cache. It is the ratio of actual user memory usage to total memory, excluding cache, buffers, and free memory."
+    },
+    "cvm_CvmDiskUsage": {
+        "name": "Disk Utilization",
+        "desc": "The percentage of used disk capacity relative to total capacity (all disks)."
+    },
+    "cvm_LanOuttraffic": {
+        "name": "Internal Outbound Bandwidth",
+        "desc": "Average outbound traffic per second on the internal network interface card."
+    },
+    "cvm_LanIntraffic": {
+        "name": "Internal Inbound Bandwidth",
+        "desc": "Average inbound traffic per second on the internal network interface card."
+    },
+    "cvm_LanOutpkg": {
+        "name": "Internal Outbound Packet Rate",
+        "desc": "Average outbound packet rate per second on the internal network interface card."
+    },
+    "cvm_LanInpkg": {
+        "name": "Internal Inbound Packet Rate",
+        "desc": "Average inbound packet rate per second on the internal network interface card."
+    },
+    "cvm_WanOuttraffic": {
+        "name": "External Outbound Bandwidth",
+        "desc": "Average outbound traffic rate per second on the external network. The minimum granularity data is calculated as total traffic over 10 seconds divided by 10. This data represents the sum of outbound/inbound bandwidth from EIP+CLB+CVM on the external network."
+    },
+    "cvm_WanIntraffic": {
+        "name": "External Inbound Bandwidth",
+        "desc": "Average inbound traffic rate per second on the external network. The minimum granularity data is calculated as total traffic over 10 seconds divided by 10. This data represents the sum of outbound/inbound bandwidth from EIP+CLB+CVM on the external network."
+    },
+    "cvm_WanOutpkg": {
+        "name": "External Outbound Packet Rate",
+        "desc": "Average outbound packet rate per second on the external network interface card."
+    },
+    "cvm_WanInpkg": {
+        "name": "External Inbound Packet Rate",
+        "desc": "Average inbound packet rate per second on the external network interface card."
     }
   }
 }

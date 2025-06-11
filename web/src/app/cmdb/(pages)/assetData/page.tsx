@@ -111,6 +111,9 @@ const AssetDataContent = () => {
   const [organization, setOrganization] = useState<string[]>([]);
   const [selectedTreeKeys, setSelectedTreeKeys] = useState<string[]>([]);
   const [expandedTreeKeys, setExpandedTreeKeys] = useState<string[]>([]);
+  const [proxyOptions, setProxyOptions] = useState<
+    { proxy_id: string; proxy_name: string }[]
+  >([]);
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
     total: 0,
@@ -121,6 +124,18 @@ const AssetDataContent = () => {
   const [modelInstCount, setModelInstCount] = useState<Record<string, number>>(
     {}
   );
+
+  useEffect(() => {
+    if (modelId === 'host') {
+      get('/cmdb/api/instance/list_proxys/', {})
+        .then((data: any[]) => {
+          setProxyOptions(data || []);
+        })
+        .catch(() => {
+          setProxyOptions([]);
+        });
+    }
+  }, [modelId]);
 
   const handleExport = async (keys: string[]) => {
     try {
@@ -204,6 +219,7 @@ const AssetDataContent = () => {
 
   const getModelGroup = async () => {
     try {
+      setLoading(true);
       const [modeldata, groupData, assoType, instCount] = await Promise.all([
         get('/cmdb/api/model/'),
         get('/cmdb/api/classification/'),
@@ -553,49 +569,29 @@ const AssetDataContent = () => {
   }, [modelGroup, renderModelTitle]);
 
   const onSelectUnified = (selectedKeys: React.Key[]) => {
-    setQueryList(null);
     if (!selectedKeys.length) return;
     const key = selectedKeys[0] as string;
-    if (key.startsWith('group:')) {
-      const groupIdSelected = key.split(':')[1];
-      setGroupId(groupIdSelected);
-      const group = modelGroup.find(
-        (item) => item.classification_id === groupIdSelected
-      );
-      if (group && group.list.length) {
-        const firstModelKey = group.list[0].model_id;
-        setSelectedTreeKeys([firstModelKey]);
-        setModelId(firstModelKey);
+    if (key === modelId) return;
+    if (key.startsWith('group:')) return;
+
+    setQueryList(null);
+    setSelectedTreeKeys([key]);
+    setModelId(key);
+    modelGroup.forEach((group) => {
+      if (group.list.some((item) => item.model_id === key)) {
+        setGroupId(group.classification_id);
         const newModelList = group.list.map((item) => ({
           key: item.model_id,
           label: item.model_name,
           icn: item.icn,
         }));
         setModelList(newModelList);
-        getInitData(firstModelKey, null);
         router.push(
-          `/cmdb/assetData?modelId=${firstModelKey}&classificationId=${groupIdSelected}`
+          `/cmdb/assetData?modelId=${key}&classificationId=${group.classification_id}`
         );
       }
-    } else {
-      setSelectedTreeKeys([key]);
-      setModelId(key);
-      modelGroup.forEach((group) => {
-        if (group.list.some((item) => item.model_id === key)) {
-          setGroupId(group.classification_id);
-          const newModelList = group.list.map((item) => ({
-            key: item.model_id,
-            label: item.model_name,
-            icn: item.icn,
-          }));
-          setModelList(newModelList);
-          router.push(
-            `/cmdb/assetData?modelId=${key}&classificationId=${group.classification_id}`
-          );
-        }
-      });
-      getInitData(key, null);
-    }
+    });
+    getInitData(key, null);
   };
 
   useEffect(() => {
@@ -651,11 +647,17 @@ const AssetDataContent = () => {
         },
       ];
       setColumns(tableColumns);
-      setCurrentColumns(
-        tableColumns.filter(
-          (item) => displayFieldKeys.includes(item.key) || item.key === 'action'
-        )
-      );
+      const actionCol = tableColumns.find(col => col.key === 'action');
+      const ordered = [
+        ...tableColumns
+          .filter(col => displayFieldKeys.includes(col.key as string))
+          .sort((a, b) =>
+            displayFieldKeys.indexOf(a.key as string) -
+            displayFieldKeys.indexOf(b.key as string)
+          ),
+        ...(actionCol ? [actionCol] : []),
+      ];
+      setCurrentColumns(ordered);
     }
   }, [propertyList, displayFieldKeys]);
 
@@ -730,6 +732,7 @@ const AssetDataContent = () => {
               />
               <SearchFilter
                 key={modelId}
+                proxyOptions={proxyOptions}
                 userList={userList}
                 attrList={propertyList.filter(
                   (item) => item.attr_type !== 'organization'

@@ -362,11 +362,16 @@ const ProfessionalCollection: React.FC = () => {
 
   const onSelectFields = async (fields: string[]) => {
     setDisplayFieldKeys(fields);
-    setCurrentColumns(
-      allColumns.filter(
-        (col) => fields.includes(col.key as string) || col.key === 'action'
-      ) as ExtendedColumnItem[]
-    );
+    const actionCol = allColumns.find(col => col.key === 'action');
+    const ordered = [
+      ...allColumns
+        .filter(col => fields.includes(col.key as string))
+        .sort((a, b) =>
+          fields.indexOf(a.key as string) - fields.indexOf(b.key as string)
+        ),
+      ...(actionCol ? [actionCol] : []),
+    ] as ExtendedColumnItem[];
+    setCurrentColumns(ordered);
   };
 
   const actionRender = useCallback(

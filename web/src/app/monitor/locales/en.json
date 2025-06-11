@@ -98,7 +98,9 @@
     "organizations": "Organizations",
     "all": "All",
     "copy": "Copy",
-    "remove": "Remove"
+    "remove": "Remove",
+    "inputPassword": "Please input the password",
+    "reset": "Reset"
   },
   "cutomTable": {
     "fieldSetting": "List field settings"
@@ -221,7 +223,14 @@
       "jvm_memory_usage_used_value": "JVM Memory Used",
       "jvm_memory_usage_max_value": "JVM Memory Usage Max",
       "jvm_os_memory_physical_free_value": "Free Physical Memory",
-      "jvm_gc_collectiontime_seconds_value": "GC Collection Time"
+      "jvm_gc_collectiontime_seconds_value": "GC Collection Time",
+      "cvm_CPU_Usage": "CPU Utilization",
+      "cvm_MemUsage": "Memory Utilization",
+      "cvm_CvmDiskUsage": "Disk Utilization",
+      "cvm_LanOuttraffic": "Internal Outbound Bandwidth",
+      "cvm_WanOuttraffic": "External Outbound Bandwidth",
+      "dashboard": "DashBoard",
+      "quickSearch": "Quick Search"
     },
     "events": {
       "event": "Event",
@@ -316,7 +325,8 @@
       "message": "Message",
       "activeAlarmsMapTips": "Display a map of the distribution of all active alarms that meet the filtering criteria.",
       "historicalAlarmsMapTips": "Displays a graph of the distribution of all historical alarms that match the filter for the selected time range.",
-      "promQLPlaceholder": "Please refer to the syntax of Prometheus to write PromQL, which can usually query and filter relevant metrics."
+      "promQLPlaceholder": "Please refer to the syntax of Prometheus to write PromQL, which can usually query and filter relevant metrics.",
+      "monitoringTarget": "Monitoring target"
     },
     "intergrations": {
       "intergration": "Intergration",
@@ -343,7 +353,7 @@
       "collectionNode": "Collection Node",
       "url": "URL",
       "interval": "Interval",
-      "intervalDes": "Collection frequency of the monitored object",
+      "intervalDes": "The time interval for collecting monitoring data (unit: seconds).",
       "instanceName": "Instance Name",
       "number": "Number",
       "enum": "Enum",
@@ -395,9 +405,12 @@
       "authPasswordDes": "The password used for authentication, corresponding to the chosen authentication protocol.",
       "privProtocolDes": "The encryption protocol to use, for securing the data transmitted.",
       "privPasswordDes": "The password used for encryption, corresponding to the chosen encryption protocol.",
-      "ipDes": "IP address of the monitored object",
-      "urlDes": "URL address of the monitored object",
-      "endpointDes": "Endpoint of the monitored object",
+      "seviceName": "Sevice Name",
+      "seviceNameDes": "The service name to be monitored should be consistent with the actual running service.",
+      "ipDes": "The IP address of the target host being monitored is used to identify the source of data collection.",
+      "urlDes": "Monitor the target website links to detect their availability and performance.",
+      "childUrlDes": "URL for sub configuration",
+      "endpointDes": "The network address of the host where the monitored Docker container is located is used to accurately locate and collect performance data.",
       "endpoint": "Endpoint",
       "collectionMethod": "Collection Method",
       "reportingStatus": "Reporting Status",
@@ -413,6 +426,8 @@
       "addressDes": "access address",
       "commonPortDes": "Port for communication with devices",
       "commonHostDes": "Host for communication with devices",
+      "listeningPort": "Listening port",
+      "listeningPortDes": "Specify the port number that the program should listen on during runtime to receive external requests and connections.",
       "color": "Color",
       "note": "The monitoring data of K8S only supports active reporting, and is not supported to be accessed here for the time being."
     }

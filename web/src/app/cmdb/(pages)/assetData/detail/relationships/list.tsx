@@ -1,4 +1,17 @@
 'use client';
+
+import { useSearchParams } from 'next/navigation';
+import { getAssetColumns } from '@/app/cmdb/utils/common';
+import { Spin, Collapse, Button, Modal, message, Empty } from 'antd';
+import { CaretRightOutlined } from '@ant-design/icons';
+import { useTranslation } from '@/utils/i18n';
+import { AssoListProps } from '@/app/cmdb/types/assetData';
+import { useRelationships } from '@/app/cmdb/context/relationships';
+import CustomTable from '@/components/custom-table';
+import useApiClient from '@/utils/request';
+import assoListStyle from './index.module.scss';
+import SelectInstance from './selectInstance';
+import PermissionWrapper from '@/components/permission';
 import React, {
   useEffect,
   useState,
@@ -6,7 +19,6 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
-import { useSearchParams } from 'next/navigation';
 import {
   CrentialsAssoInstItem,
   CrentialsAssoDetailItem,
@@ -16,17 +28,6 @@ import {
   RelationListInstItem,
   RelationInstanceRef,
 } from '@/app/cmdb/types/assetManage';
-import { getAssetColumns } from '@/app/cmdb/utils/common';
-import { Spin, Collapse, Button, Modal, message, Empty } from 'antd';
-import { CaretRightOutlined } from '@ant-design/icons';
-import { useTranslation } from '@/utils/i18n';
-import { AssoListProps } from '@/app/cmdb/types/assetData';
-import CustomTable from '@/components/custom-table';
-import useApiClient from '@/utils/request';
-import assoListStyle from './index.module.scss';
-import SelectInstance from './selectInstance';
-import PermissionWrapper from '@/components/permission';
-import { useRelationships } from '@/app/cmdb/context/relationships';
 
 const { confirm } = Modal;
 
@@ -46,7 +47,13 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
     const instId: string = searchParams.get('inst_id') || '';
     const instanceRef = useRef<RelationInstanceRef>(null);
     const prevModelLenRef = useRef(0);
-    const { assoInstances, loading, selectedAssoId, fetchAssoInstances, setSelectedAssoId } = useRelationships();
+    const {
+      assoInstances,
+      loading,
+      selectedAssoId,
+      fetchAssoInstances,
+      setSelectedAssoId,
+    } = useRelationships();
 
     useEffect(() => {
       const prevLength = prevModelLenRef.current;
@@ -217,12 +224,15 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
 
       if (columns[0]) {
         columns[0].fixed = 'left';
-        columns[0].render = (_: unknown, record: any) => (
+        const originalRender = columns[0].render;
+        columns[0].render = (value: unknown, record: any) => (
           <a
             className="text-[var(--color-primary)]"
             onClick={() => linkToDetail(record, item)}
           >
-            {record[columns[0].dataIndex]}
+            {originalRender
+              ? originalRender(value, record)
+              : record[columns[0].dataIndex]}
           </a>
         );
       }

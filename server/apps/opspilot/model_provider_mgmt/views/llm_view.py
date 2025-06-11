@@ -33,6 +33,12 @@ class LLMViewSet(AuthViewSet):
     filterset_class = LLMFilter
     permission_key = "skill"
 
+    @action(methods=["GET"], detail=False)
+    def get_template_list(self, request):
+        skill_list = LLMSkill.objects.filter(is_template=True)
+        serializer = self.get_serializer(skill_list, many=True)
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         params = request.data
         if not request.user.is_superuser:

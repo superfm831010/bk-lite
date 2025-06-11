@@ -12,7 +12,7 @@ from .exceptions import NatsClientException
 from .types import ResponseType
 from .utils import parse_arguments
 
-DEFAULT_REQUEST_TIMEOUT = 1
+DEFAULT_REQUEST_TIMEOUT = 60
 
 
 async def get_nc_client(nc: Client = None):

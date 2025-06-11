@@ -17,7 +17,11 @@ import {
   InterfaceTableItem,
   ViewDetailProps,
 } from '@/app/monitor/types/monitor';
-import { TableDataItem, TimeSelectorDefaultValue } from '@/app/monitor/types';
+import {
+  TableDataItem,
+  TimeSelectorDefaultValue,
+  TimeValuesProps,
+} from '@/app/monitor/types';
 import { useTranslation } from '@/utils/i18n';
 import {
   deepClone,
@@ -27,6 +31,7 @@ import {
   mergeViewQueryKeyValues,
   renderChart,
   getConfigByObjectName,
+  getRecentTimeRange,
 } from '@/app/monitor/utils/common';
 import dayjs, { Dayjs } from 'dayjs';
 import { useInterfaceLabelMap } from '@/app/monitor/constants/monitor';
@@ -46,9 +51,10 @@ const Overview: React.FC<ViewDetailProps> = ({
   const INTERFACE_LABEL_MAP = useInterfaceLabelMap();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const beginTime: number = dayjs().subtract(15, 'minute').valueOf();
-  const lastTime: number = dayjs().valueOf();
-  const [timeRange, setTimeRange] = useState<number[]>([beginTime, lastTime]);
+  const [timeValues, setTimeValues] = useState<TimeValuesProps>({
+    timeRange: [],
+    originValue: 15,
+  });
   const [frequence, setFrequence] = useState<number>(0);
   const [metricData, setMetricData] = useState<MetricItem[]>([]);
   const [originMetricData, setOriginMetricData] = useState<MetricItem[]>([]);
@@ -66,11 +72,11 @@ const Overview: React.FC<ViewDetailProps> = ({
       }, frequence);
     }
     return () => clearTimer();
-  }, [frequence, timeRange]);
+  }, [frequence, timeValues]);
 
   useEffect(() => {
     handleSearch('refresh');
-  }, [timeRange]);
+  }, [timeValues]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -128,8 +134,9 @@ const Overview: React.FC<ViewDetailProps> = ({
         ])
       ),
     };
-    const startTime = timeRange.at(0);
-    const endTime = timeRange.at(1);
+    const recentTimeRange = getRecentTimeRange(timeValues);
+    const startTime = recentTimeRange.at(0);
+    const endTime = recentTimeRange.at(1);
     const MAX_POINTS = 100; // 最大数据点数
     const DEFAULT_STEP = 360; // 默认步长
     if (startTime && endTime) {
@@ -148,8 +155,10 @@ const Overview: React.FC<ViewDetailProps> = ({
   const fetchViewData = async (data: MetricItem[], type?: string) => {
     setLoading(type !== 'timer');
     const requestQueue = data.map((item: MetricItem) =>
-      getInstanceQuery(getParams(item))
-        .then((response) => ({ id: item.id, data: response.data.result || [] }))
+      getInstanceQuery(getParams(item)).then((response) => ({
+        id: item.id,
+        data: response.data.result || [],
+      }))
     );
     try {
       const results = await Promise.all(requestQueue);
@@ -219,8 +228,11 @@ const Overview: React.FC<ViewDetailProps> = ({
     return Object.values(mergedData);
   };
 
-  const onTimeChange = (val: number[]) => {
-    setTimeRange(val);
+  const onTimeChange = (val: number[], originValue: number | null) => {
+    setTimeValues({
+      timeRange: val,
+      originValue,
+    });
   };
 
   const clearTimer = () => {
@@ -248,7 +260,10 @@ const Overview: React.FC<ViewDetailProps> = ({
       selectValue: 0,
     }));
     const _times = arr.map((item) => dayjs(item).valueOf());
-    setTimeRange(_times);
+    setTimeValues({
+      timeRange: _times,
+      originValue: 0,
+    });
   };
 
   const getGuageLabel = (arr: ChartDataItem[]) => {
@@ -386,7 +401,7 @@ const Overview: React.FC<ViewDetailProps> = ({
       <div className="flex justify-end mb-[15px]">
         <TimeSelector
           defaultValue={timeDefaultValue}
-          onChange={(value) => onTimeChange(value)}
+          onChange={onTimeChange}
           onFrequenceChange={onFrequenceChange}
           onRefresh={onRefresh}
         />

@@ -2,8 +2,7 @@
   "client_id": "opspilot",
   "name": "OpsPilot",
   "url": "/opspilot/studio",
-  "description": "Create roles for the OpsPilot app to manage data permissions, menu permissions, and feature permissions.",
-  "description_cn": "Create roles for the OpsPilot app to manage data permissions, menu permissions, and feature permissions.",
+  "description": "OpsPilot is an AI intelligence platform, based on cutting-edge artificial intelligence technology, integrating machine learning and large model capabilities, supporting diversified scenarios.",
   "menus": [
     {
       "name": "Studio",

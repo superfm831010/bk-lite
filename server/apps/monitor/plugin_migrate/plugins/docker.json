@@ -5,7 +5,7 @@
   "objects": [
     {
       "name": "Docker",
-      "icon": "Docker",
+      "icon": "Docker",  
       "type": "Container Management",
       "level": "base",
       "description": "",
@@ -47,6 +47,7 @@
     },
     {
       "name": "Docker Container",
+      "icon": "Docker",  
       "type": "Container Management",
       "level": "derivative",
       "description": "",
@@ -57,7 +58,7 @@
           "display_name": "Status",
           "instance_id_keys": ["instance_id", "container_name"],
           "data_type": "Enum",
-          "unit": "[{\"name\":\"正常\",\"id\":0,\"color\":\"#83ff4f\"},{\"name\":\"异常\",\"id\":1,\"color\":\"#ff4d4f\"}]",
+          "unit": "[{\"name\":\"正常\",\"id\":0,\"color\":\"#1ac44a\"},{\"name\":\"异常\",\"id\":1,\"color\":\"#ff4d4f\"}]",
           "dimensions": [],
           "description": "This metric indicates the state of the container, where 0 means the container is normal",
           "query": "max(docker_container_status_container_id{container_status=\"running\",__$labels__}) by (instance_id,container_name)"
@@ -69,12 +70,7 @@
           "instance_id_keys": ["instance_id", "container_name"],
           "data_type": "Number",
           "unit": "short",
-          "dimensions": [
-            {
-              "name": "container_name",
-              "description": "container_name"
-            }
-          ],
+          "dimensions": [],
           "description": "This metric indicates the number of container restarts, helping monitor if the container is frequently restarting",
           "query": "docker_container_status_restart_count{__$labels__}"
         },
@@ -85,12 +81,7 @@
           "instance_id_keys": ["instance_id", "container_name"],
           "data_type": "Number",
           "unit": "percent",
-          "dimensions": [
-            {
-              "name": "container_name",
-              "description": "container_name"
-            }
-          ],
+          "dimensions": [],
           "description": "This metric indicates the percentage of CPU usage of the container, monitoring the CPU load of the container",
           "query": "sum(docker_container_cpu_usage_percent{__$labels__}) by (instance_id, container_name)"
         },
@@ -101,14 +92,20 @@
           "instance_id_keys": ["instance_id", "container_name"],
           "data_type": "Number",
           "unit": "percent",
-          "dimensions": [
-            {
-              "name": "container_name",
-              "description": "container_name"
-            }
-          ],
+          "dimensions": [],
           "description": "This metric indicates the percentage of memory usage of the container, monitoring the memory load of the container",
           "query": "sum(docker_container_mem_usage_percent{__$labels__}) by (instance_id, container_name)"
+        },
+        {
+          "metric_group": "Memory",
+          "name": "docker_container_mem_usage",
+          "display_name": "Memory Usage",
+          "instance_id_keys": ["instance_id", "container_name"],
+          "data_type": "Number",
+          "unit": "mebibytes",
+          "dimensions": [],
+          "description": "Amount of memory used by the container, typically shown in bytes, indicating the actual physical memory consumption.",
+          "query": "sum(docker_container_mem_usage{__$labels__}) by (instance_id, container_name)/1024/1024"
         },
         {
           "metric_group": "IO",
@@ -117,14 +114,31 @@
           "instance_id_keys": ["instance_id", "container_name"],
           "data_type": "Number",
           "unit": "decbytes",
-          "dimensions": [
-            {
-              "name": "container_name",
-              "description": "container_name"
-            }
-          ],
+          "dimensions": [],
           "description": "This metric indicates the total block I/O bytes of the container, reflecting the disk I/O load of the container",
           "query": "rate(docker_container_blkio_io_service_bytes_recursive_total{__$labels__}[5m])"
+        },
+        {
+          "metric_group": "IO",
+          "name": "docker_container_blkio_io_service_bytes_recursive_read",
+          "display_name": "Block Device Read Bytes",
+          "instance_id_keys": ["instance_id", "container_name"],
+          "data_type": "Number",
+          "unit": "decbytes",
+          "dimensions": [],
+          "description": "Number of bytes read from block devices, reflecting the load of read operations and storage performance.",
+          "query": "rate(docker_container_blkio_io_service_bytes_recursive_read{__$labels__}[5m])"
+        },
+        {
+          "metric_group": "IO",
+          "name": "docker_container_blkio_io_service_bytes_recursive_write",
+          "display_name": "Block Device Write Bytes",
+          "instance_id_keys": ["instance_id", "container_name"],
+          "data_type": "Number",
+          "unit": "decbytes",
+          "dimensions": [],
+          "description": "Number of bytes written to block devices, indicating the load of write operations and storage performance.",
+          "query": "rate(docker_container_blkio_io_service_bytes_recursive_write{__$labels__}[6m])"
         },
         {
           "metric_group": "Net",
@@ -133,12 +147,7 @@
           "instance_id_keys": ["instance_id", "container_name"],
           "data_type": "Number",
           "unit": "mebibytes",
-          "dimensions": [
-            {
-              "name": "container_name",
-              "description": "container_name"
-            }
-          ],
+          "dimensions": [],
           "description": "This metric indicates the number of network bytes received by the container, in MiB, used to monitor the network traffic of the container",
           "query": "rate(docker_container_net_rx_bytes{__$labels__}[5m])/1024/1024"
         },
@@ -149,14 +158,53 @@
           "instance_id_keys": ["instance_id", "container_name"],
           "data_type": "Number",
           "unit": "mebibytes",
-          "dimensions": [
-            {
-              "name": "container_name",
-              "description": "container_name"
-            }
-          ],
+          "dimensions": [],
           "description": "This metric indicates the number of network bytes sent by the container, in MiB, used to monitor the network traffic of the container",
           "query": "rate(docker_container_net_tx_bytes{__$labels__}[5m])/1024/1024"
+        },
+        {
+          "metric_group": "Net",
+          "name": "docker_container_net_rx_errors",
+          "display_name": "Total Network Receive Errors",
+          "instance_id_keys": ["instance_id", "container_name"],
+          "data_type": "Number",
+          "unit": "count",
+          "dimensions": [],
+          "description": "Total number of errors encountered by the container when receiving packets, useful for diagnosing network issues.",
+          "query": "rate(docker_container_net_rx_errors{__$labels__}[5m])"
+        },
+        {
+          "metric_group": "Net",
+          "name": "docker_container_net_tx_errors",
+          "display_name": "Total Network Transmit Errors",
+          "instance_id_keys": ["instance_id", "container_name"],
+          "data_type": "Number",
+          "unit": "count",
+          "dimensions": [],
+          "description": "Total number of errors encountered by the container when sending packets, useful for identifying outbound network problems.",
+          "query": "rate(docker_container_net_tx_errors{__$labels__}[5m])"
+        },
+        {
+          "metric_group": "Net",
+          "name": "docker_container_net_rx_packets",
+          "display_name": "Total Received Packets",
+          "instance_id_keys": ["instance_id", "container_name"],
+          "data_type": "Number",
+          "unit": "count",
+          "dimensions": [],
+          "description": "Total number of packets received by the container, indicating the activity level of inbound network flow.",
+          "query": "rate(docker_container_net_rx_packets{__$labels__}[5m])"
+        },
+        {
+          "metric_group": "Net",
+          "name": "docker_container_net_tx_packets",
+          "display_name": "Total Transmitted Packets",
+          "instance_id_keys": ["instance_id", "container_name"],
+          "data_type": "Number",
+          "unit": "count",
+          "dimensions": [],
+          "description": "Total number of packets sent by the container, reflecting the activity level of outbound network flow.",
+          "query": "rate(docker_container_net_tx_packets{__$labels__}[5m])"
         }
       ]
     }
