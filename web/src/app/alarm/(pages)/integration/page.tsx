@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import alertStyle from './page.module.scss';
 import { useSourceApi } from '@/app/alarm/api/sources';
-import { Drawer, message, Spin, Empty, Descriptions } from 'antd';
-import { CopyOutlined } from '@ant-design/icons';
+import { Spin, Empty } from 'antd';
+import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
 import { SourceItem } from '@/app/alarm/types/integration';
 
@@ -12,9 +12,8 @@ const IntegrationPage: React.FC = () => {
   const { getAlertSources } = useSourceApi();
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [drawerVisible, setDrawerVisible] = useState<boolean>(false);
-  const [selectedSource, setSelectedSource] = useState<SourceItem | null>(null);
   const { t } = useTranslation();
+  const router = useRouter();
 
   useEffect(() => {
     getSourcesList();
@@ -34,38 +33,39 @@ const IntegrationPage: React.FC = () => {
     }
   };
 
-  const copySecret = (text: string) => {
-    navigator.clipboard.writeText(text);
-    message.success(t('common.copied'));
-  };
-
   return (
     <div className="w-full flex-1">
       <Spin spinning={loading}>
         {!loading && sources.length === 0 ? (
           <Empty description={t('common.noData')} className="mt-[24vh]" />
         ) : (
-          <div
-            className={`${alertStyle.container} grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-6`}
-          >
+          <div className={alertStyle.container}>
             {sources.map((src: SourceItem) => (
               <div
                 key={src.source_id}
                 className={alertStyle.card}
-                onClick={() => {
-                  setSelectedSource(src);
-                  setDrawerVisible(true);
-                }}
+                onClick={() =>
+                  router.push(`/alarm/integration/detail?source_id=${src.id}`)
+                }
               >
                 <div className={alertStyle.cardContent}>
-                  <img
-                    src={src.logo || '/app/restful.png'}
-                    alt={src.description}
-                    className={alertStyle.logo}
-                  />
-                  <span className={alertStyle.name}>{src.name}</span>
+                  <div className="flex items-center gap-3 mb-2 px-8 py-4 rounded bg-[#99aaf2]">
+                    <img
+                      src={src.logo || ''}
+                      alt={src.description}
+                      className={alertStyle.logo}
+                    />
+                    <span className={alertStyle.name}>{src.name}</span>
+                  </div>
                   <span className={alertStyle.info}>
-                    {t('integration.description')}：{src.description}
+                    {t('integration.eventCount')}：
+                    {[undefined, null, ''].includes(src.event_count as any)
+                      ? '--'
+                      : src.event_count}
+                  </span>
+                  <span className={alertStyle.info}>
+                    {t('integration.lastEventTime')}：
+                    {src.last_event_time || '--'}
                   </span>
                 </div>
               </div>
@@ -73,63 +73,6 @@ const IntegrationPage: React.FC = () => {
           </div>
         )}
       </Spin>
-
-      <Drawer
-        title={selectedSource?.name}
-        placement="right"
-        width={620}
-        onClose={() => setDrawerVisible(false)}
-        open={drawerVisible}
-      >
-        {selectedSource && (
-          <>
-            <h4 className="mb-2 font-medium pl-2 border-l-4 border-blue-400 inline-block leading-tight">
-              {t('integration.baseInfo')}
-            </h4>
-            <Descriptions bordered size="small" column={1} labelStyle={{ width: 120 }}>
-              <Descriptions.Item label="ID">
-                {selectedSource.source_id}
-              </Descriptions.Item>
-              <Descriptions.Item label={t('integration.description')}>
-                {selectedSource.description}
-              </Descriptions.Item>
-              <Descriptions.Item label={t('integration.secret')}>
-                {'******************'}
-                <CopyOutlined
-                  className="ml-[10px]"
-                  onClick={() => copySecret(selectedSource.secret)}
-                />
-              </Descriptions.Item>
-            </Descriptions>
-
-            <h4 className="mt-6 mb-2 font-medium pl-2 border-l-4 border-blue-400 inline-block leading-tight">
-              {t('integration.eventFieldsMapping')}
-            </h4>
-            <Descriptions bordered size="small" column={1} labelStyle={{ width: 120 }}>
-              {Object.entries(selectedSource.config.event_fields_mapping).map(
-                ([field, val]) => (
-                  <Descriptions.Item key={field} label={field}>
-                    {val}
-                  </Descriptions.Item>
-                )
-              )}
-            </Descriptions>
-
-            <h4 className="mt-6 mb-2 font-medium pl-2 border-l-4 border-blue-400 inline-block leading-tight">
-              {t('integration.eventFieldsDescription')}
-            </h4>
-            <Descriptions bordered size="small" column={1} labelStyle={{ width: 120 }}>
-              {Object.entries(selectedSource.config.event_fields_desc_mapping).map(
-                ([field, desc]) => (
-                  <Descriptions.Item key={field} label={field}>
-                    {desc}
-                  </Descriptions.Item>
-                )
-              )}
-            </Descriptions>
-          </>
-        )}
-      </Drawer>
     </div>
   );
 };

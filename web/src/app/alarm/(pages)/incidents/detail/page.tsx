@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Icon from '@/components/icon';
 import styles from './page.module.scss';
-import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
-import GanttChart from '../components/ganttChart/page';
-import LinkModal from '../components/linkModal/page';
+import AlarmTable from '@/app/alarm/components/alarmTable';
+import GanttChart from '../components/ganttChart';
+import LinkModal from '../components/linkModal';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import type { TableDataItem } from '@/app/alarm/types/types';
+import { AlarmTableDataItem } from '@/app/alarm/types/alarms';
+import { useAlarmApi } from '@/app/alarm/api/alarms';
 import { UserItem } from '@/app/alarm/types/types';
 import { useCommon } from '@/app/alarm/context/common';
 import { useTranslation } from '@/utils/i18n';
@@ -18,7 +20,6 @@ import {
   EditOutlined,
   CheckOutlined,
   CloseOutlined,
-  AlertOutlined,
   BarsOutlined,
   AppstoreOutlined,
 } from '@ant-design/icons';
@@ -38,42 +39,14 @@ import {
 
 const { TabPane } = Tabs;
 
-const mockData: TableDataItem[] = [
-  {
-    id: 1,
-    level: 'fatal',
-    first_event_time: '2023-08-01 08:00',
-    last_event_time: '2023-08-01 09:30',
-    title: 'CPU 使用率过高',
-    count: 3,
-    source: 'Server A',
-    status: 'abnormal',
-    duration: '1h30m',
-    operator: 'Alice',
-    notify_status: 'notified',
-  },
-  {
-    id: 2,
-    level: 'warning',
-    first_event_time: '2023-08-01 10:00',
-    last_event_time: '2023-08-01 10:20',
-    title: '内存使用率临界',
-    count: 1,
-    source: 'Server B',
-    status: 'autoexecute_executing',
-    duration: '20m',
-    operator: 'Bob',
-    notify_status: 'unnotified',
-  },
-];
-
 const IncidentDetail: React.FC = () => {
-  const { levelList, levelMap, userList } = useCommon();
-  const router = useRouter();
   const { t } = useTranslation();
+  const { levelListIncident, levelMapIncident, userList } = useCommon();
+  const { getAlarmList } = useAlarmApi();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const incidentName = searchParams.get('name') || '';
-  const [tableData, setTableData] = useState<any[]>([]);
+  const [tableData, setTableData] = useState<AlarmTableDataItem[]>([]);
   const [tabLoading, setTabLoading] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
   const [viewType, setViewType] = useState<'table' | 'gantt'>('table');
@@ -92,7 +65,6 @@ const IncidentDetail: React.FC = () => {
     pageSize: 10,
     total: 0,
   });
-
 
   const detail = {
     level: 'fatal',
@@ -126,12 +98,9 @@ const IncidentDetail: React.FC = () => {
   ) => {
     setTabLoading(true);
     try {
-      const res = {
-        items: mockData,
-        total: mockData.length,
-      };
+      const res = await getAlarmList({ page, page_size: pageSize });
       setTableData(res.items || []);
-      setPagination({ current: page, pageSize, total: res.total || 0 });
+      setPagination({ current: page, pageSize, total: res.count || 0 });
     } finally {
       setTabLoading(false);
     }
@@ -180,7 +149,7 @@ const IncidentDetail: React.FC = () => {
     console.log('Unlinking records:', selectedRowKeys);
   };
 
-  const handleLink = (record?: TableDataItem) => {
+  const handleLink = (record?: AlarmTableDataItem) => {
     console.log('Linking record:', record);
     setOperateVisible(true);
   };
@@ -284,12 +253,22 @@ const IncidentDetail: React.FC = () => {
         />
         <Breadcrumb.Item>
           <span className="ml-[10px] mr-[10px]">{detail.alertName}</span>
-          <Tag
-            icon={<AlertOutlined />}
-            color={levelMap[detail.level] as string}
-          >
-            {levelList.find((item) => item.value === detail.level)?.label ||
-              detail.level}
+          <Tag color={levelMapIncident[detail.level] as string}>
+            <div className="flex items-center">
+              <Icon
+                type={
+                  levelListIncident.find(
+                    (item) => item.level_id === Number(detail.level)
+                  )?.icon || ''
+                }
+                className="mr-1"
+              />
+              {
+                levelListIncident.find(
+                  (item) => item.level_id === Number(detail.level)
+                )?.level_display_name
+              }
+            </div>
           </Tag>
         </Breadcrumb.Item>
       </Breadcrumb>
@@ -351,7 +330,7 @@ const IncidentDetail: React.FC = () => {
                     dataSource={tableData}
                     pagination={pagination}
                     loading={tabLoading}
-                    tableScrollY="calc(100vh - 500px)"
+                    tableScrollY="calc(100vh - 470px)"
                     selectedRowKeys={selectedRowKeys}
                     onChange={onTabTableChange}
                     onSelectionChange={setSelectedRowKeys}
@@ -359,7 +338,7 @@ const IncidentDetail: React.FC = () => {
                     extraActions={() => (
                       <Button
                         type="link"
-                        className="ml-[8px]"
+                        className="mr-[8px]"
                         onClick={() => handleUnlink()}
                       >
                         {t('common.unlinkAlert')}
@@ -367,7 +346,7 @@ const IncidentDetail: React.FC = () => {
                     )}
                   />
                 ) : (
-                  <GanttChart />
+                  <GanttChart alarmData={tableData} />
                 )}
               </div>
             </TabPane>

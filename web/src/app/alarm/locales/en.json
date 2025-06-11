@@ -21,7 +21,8 @@
         "fail": "Fail",
         "partialSuccess": "Partial success",
         "advanced": "Advanced",
-        "partialFailure": "Partial failure"
+        "partialFailure": "Partial failure",
+        "successOperate": "Successfully"
     },
     "incidents": {
         "table": "Table",
@@ -85,7 +86,6 @@
         "notificationStatus": "Notification Status",
         "declareIncident": "Declare Incident",
         "confirmOperate": "Confirm to",
-        "successOperate": "Successfully",
         "claim": "Claim",
         "assign": "Assign",
         "toOrder": "Create Order",
@@ -103,11 +103,13 @@
         "metricValue": "Metric Value"
     },
     "integration": {
-        "secret": "Secret",
+        "description": "Description",
         "baseInfo": "Base Info",
-        "description": "description",
         "eventFieldsMapping": "Event Fields Mapping",
-        "eventFieldsDescription": "Event Fields Description"
+        "eventFieldsDescription": "Event Fields Description",
+        "eventTab": "Event",
+        "guideTab": "Guide",
+        "timeRange": "Time Range"
     },
     "settings": {
         "alertAssign": "Alert Assignment",
@@ -135,7 +137,6 @@
             "ruleFilter": "Filter",
             "editTitle": "Edit Assignment Strategy",
             "addTitle": "Add Assignment Strategy",
-            "formName": "Name",
             "formMatchingRules": "Matching Rules",
             "formPersonnelSelect": "Personnel",
             "formNotifyMethod": "Notification Method",

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Icon from '@/components/icon';
 import AlarmFilters from '@/app/alarm/components/alarmFilters';
 import CustomTable from '@/components/custom-table';
 import alertStyle from './index.module.scss';
@@ -12,7 +13,6 @@ import { Input, Button, Tag } from 'antd';
 import { TableDataItem, Pagination } from '@/app/alarm/types/types';
 import { FiltersConfig } from '@/app/alarm/types/alarms';
 import { useTranslation } from '@/utils/i18n';
-import { AlertOutlined } from '@ant-design/icons';
 import { incidentStates } from '@/app/alarm/constants/alarm';
 import { useRouter } from 'next/navigation';
 import { useCommon } from '@/app/alarm/context/common';
@@ -54,11 +54,19 @@ const IncidentsPage: React.FC = () => {
       dataIndex: 'level',
       key: 'level',
       width: 100,
-      render: (_: any, { level }: any) => (
-        <Tag icon={<AlertOutlined />} color={levelMap[level] as string}>
-          {levelList.find((item) => item.value === level)?.label || '--'}
-        </Tag>
-      ),
+      render: (_: any, { level }: TableDataItem) => {
+        const target = levelList.find(
+          (item) => item.level_id === Number(level)
+        );
+        return (
+          <Tag color={levelMap[level || '']}>
+            <div className="flex items-center">
+              <Icon type={target?.icon || ''} className="mr-1" />
+              {target?.level_display_name || '--'}
+            </div>
+          </Tag>
+        );
+      },
     },
     {
       title: t('alarms.createTime'),

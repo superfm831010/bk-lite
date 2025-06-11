@@ -6,35 +6,10 @@ import {
   SearchFilterCondition,
 } from '@/app/alarm/types/alarms';
 
-const SearchFilter: React.FC<SearchFilterProps> = ({ onSearch }) => {
+const SearchFilter: React.FC<SearchFilterProps> = ({ onSearch, attrList }) => {
   const [searchAttr, setSearchAttr] = useState<string>('');
   const [searchValue, setSearchValue] = useState<any>('');
-  const attrList = [
-    {
-      attr_id: 'alert_id',
-      attr_name: '告警ID',
-      attr_type: 'str',
-      is_required: false,
-      editable: false,
-      option: [],
-    },
-    {
-      attr_id: 'title',
-      attr_name: '告警名称',
-      attr_type: 'str',
-      is_required: false,
-      editable: false,
-      option: [],
-    },
-    {
-      attr_id: 'content',
-      attr_name: '告警内容',
-      attr_type: 'str',
-      is_required: false,
-      editable: false,
-      option: [],
-    },
-  ];
+
   useEffect(() => {
     if (attrList.length) {
       setSearchAttr(attrList[0].attr_id);

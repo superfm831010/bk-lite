@@ -4,15 +4,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import OperateModal from './components/operateModal';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
+import UserAvatar from '@/app/alarm/components/userAvatar';
+import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { AlertAssignListItem } from '@/app/alarm/types/settings';
 import { useSettingApi } from '@/app/alarm/api/settings';
 import { Button, Input, Modal, message, Switch } from 'antd';
 import { useTranslation } from '@/utils/i18n';
+import dayjs from 'dayjs';
+import { typeLabel, weekMap } from '@/app/alarm/constants/settings';
 
 const AlertAssign: React.FC = () => {
   const { t } = useTranslation();
-  const { getAlertAssignList, delAlertAssign } = useSettingApi();
+  const { getAssignmentList, deleteAssignment } = useSettingApi();
   const listCount = useRef<number>(0);
+  const { convertToLocalizedTime } = useLocalizedTime();
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [operateVisible, setOperateVisible] = useState<boolean>(false);
   const [searchKey, setSearchKey] = useState<string>('');
@@ -33,15 +38,7 @@ const AlertAssign: React.FC = () => {
 
   const handleEdit = (type: 'add' | 'edit', row?: AlertAssignListItem) => {
     if (type === 'edit' && row) {
-      setCurrentRow({
-        id: row.id,
-        assignName: row.assignName,
-        assignPersonnel: row.assignPersonnel,
-        assignTime: row.assignTime,
-        assignStatus: row.assignStatus,
-        assignCreateTime: row.assignCreateTime,
-        built_in: row.built_in,
-      });
+      setCurrentRow(row);
     } else {
       setCurrentRow(null);
     }
@@ -57,7 +54,7 @@ const AlertAssign: React.FC = () => {
       centered: true,
       onOk: async () => {
         try {
-          await delAlertAssign(row.id);
+          await deleteAssignment(row.id);
           message.success(t('successfullyDeleted'));
           if (pagination.current > 1 && listCount.current === 1) {
             setPagination((prev) => ({ ...prev, current: prev.current - 1 }));
@@ -83,9 +80,9 @@ const AlertAssign: React.FC = () => {
       const queryParams = {
         page: params.current || pagination.current,
         page_size: params.pageSize || pagination.pageSize,
-        searchVal,
+        name: searchVal || undefined,
       };
-      const data: any = await getAlertAssignList({ params: queryParams });
+      const data: any = await getAssignmentList(queryParams);
       setDataList(data.items || []);
       listCount.current = data.items?.length || 0;
       setPagination((prev) => ({
@@ -116,12 +113,11 @@ const AlertAssign: React.FC = () => {
     });
   };
 
-  const handleTableChange = (newPagination: any, filters: any) => {
+  const handleTableChange = (newPagination: any) => {
     const curPage = newPagination;
     setPagination(curPage);
     getTableList({
       ...curPage,
-      device_type: filters.device_type,
     });
   };
 
@@ -143,37 +139,62 @@ const AlertAssign: React.FC = () => {
     return [
       {
         title: t('settings.assignName'),
-        dataIndex: 'assignName',
-        key: 'assignName',
+        dataIndex: 'name',
+        key: 'name',
+        width: 150,
       },
       {
         title: t('settings.assignPersonnel'),
-        dataIndex: 'assignPersonnel',
-        key: 'assignPersonnel',
+        dataIndex: 'personnel',
+        key: 'personnel',
+        width: 200,
+        render: (_: any, { personnel }: AlertAssignListItem) =>
+          personnel ? <UserAvatar userName={personnel.join(',')} /> : '--',
       },
       {
         title: t('settings.assignTime'),
-        dataIndex: 'assignTime',
         key: 'assignTime',
+        width: 200,
+        render: (_: any, row: AlertAssignListItem) => {
+          const { type, start_time, end_time, week_month } = row.config as any;
+          const fmt = (t: any, pattern = 'HH:mm:ss') =>
+            dayjs(t).format(pattern);
+          if (type === 'one') {
+            return `${fmt(start_time, 'YYYY-MM-DD HH:mm:ss')}-${fmt(end_time, 'YYYY-MM-DD HH:mm:ss')}`;
+          }
+          let label = typeLabel[type] || '';
+          if (type === 'week') {
+            label += ` ${(week_month || []).map((d: number) => weekMap[d]).join(',')}`;
+          } else if (type === 'month') {
+            label += ` ${(week_month || []).map((d: number) => `${d}日`).join(',')}`;
+          }
+          return `${label} ${fmt(start_time)}-${fmt(end_time)}`;
+        },
       },
       {
         title: t('settings.assignStatus'),
         dataIndex: 'assignStatus',
         key: 'assignStatus',
+        width: 120,
       },
       {
         title: t('settings.assignCreateTime'),
-        dataIndex: 'assignCreateTime',
-        key: 'assignCreateTime',
+        dataIndex: 'created_at',
+        key: 'created_at',
+        width: 180,
+        render: (val: string) => {
+          return convertToLocalizedTime(val, 'YYYY-MM-DD HH:mm:ss');
+        },
       },
       {
         title: t('settings.assignStartStop'),
-        dataIndex: 'built_in',
-        key: 'built_in',
+        dataIndex: 'is_active',
+        key: 'is_active',
+        width: 120,
         render: (val: boolean, row: AlertAssignListItem) => (
           <Switch
             checked={val}
-            disabled={row.built_in}
+            disabled={row.is_active}
             onChange={(checked) => handleStatusToggle(row, checked)}
           />
         ),
@@ -181,14 +202,13 @@ const AlertAssign: React.FC = () => {
       {
         title: t('settings.assignActions'),
         key: 'operation',
-        width: 140,
+        width: 160,
         render: (text: any, row: AlertAssignListItem) => (
           <div className="flex gap-4">
             <PermissionWrapper requiredPermissions={['Edit']}>
               <Button
                 type="link"
                 size="small"
-                disabled={row.built_in}
                 onClick={() => handleEdit('edit', row)}
               >
                 {t('edit')}
@@ -198,7 +218,6 @@ const AlertAssign: React.FC = () => {
               <Button
                 type="link"
                 size="small"
-                disabled={row.built_in}
                 onClick={() => handleDelete(row)}
               >
                 {t('delete')}
@@ -213,22 +232,6 @@ const AlertAssign: React.FC = () => {
   useEffect(() => {
     setColumns(buildColumns());
   }, []);
-
-  console.log('currentRow', currentRow);
-  //   const handleModalClose = () => {
-  //     setOperateVisible(false);
-  //     setCurrentRow(null);
-  //   };
-
-  //   const handleModalSubmit = () => {
-  //     const newPagination = pagination;
-  //     if (!currentRow) {
-  //       newPagination.current = 1;
-  //     }
-  //     handleModalClose();
-  //     setPagination(newPagination);
-  //     getTableList(newPagination);
-  //   };
 
   return (
     <div className="oid-library-container p-4 bg-white rounded-lg shadow">
@@ -264,6 +267,10 @@ const AlertAssign: React.FC = () => {
         open={operateVisible}
         onClose={() => setOperateVisible(false)}
         currentRow={currentRow}
+        onSuccess={() => {
+          setPagination((prev) => ({ ...prev, current: 1 }));
+          getTableList({ current: 1, pageSize: pagination.pageSize });
+        }}
       />
     </div>
   );

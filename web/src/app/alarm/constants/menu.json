@@ -2,13 +2,12 @@
   "zh": [
     {
       "title": "事件",
-      "icon": "search-f",
+      "icon": "shiguanli",
       "url": "/alarm/incidents",
       "name": "incidents",
       "children": [
         {
           "title": "事件详情",
-          "icon": "search-f",
           "url": "/alarm/incidents/detail",
           "name": "incident_detail"
         }
@@ -16,19 +15,26 @@
     },
     {
       "title": "告警",
-      "icon": "search-f",
+      "icon": "ic24_incidents2",
       "url": "/alarm/alarms",
       "name": "alarms"
     },
     {
       "title": "集成",
-      "icon": "search-f",
+      "icon": "jiekoukaifa",
       "url": "/alarm/integration",
-      "name": "integration"
+      "name": "integration",
+      "children": [
+        {
+          "title": "集成详情",
+          "url": "/alarm/integration/detail",
+          "name": "integration_detail"
+        }
+      ]
     },
     {
       "title": "设置",
-      "icon": "search-f",
+      "icon": "settings-fill",
       "url": "/alarm/settings",
       "name": "settings"
     }
@@ -36,13 +42,12 @@
   "en": [
     {
       "title": "Incident",
-      "icon": "search-f",
+      "icon": "shiguanli",
       "url": "/alarm/incidents",
       "name": "incidents",
       "children": [
         {
           "title": "Incident Detail",
-          "icon": "search-f",
           "url": "/alarm/incidents/detail",
           "name": "incident_detail"
         }
@@ -50,19 +55,26 @@
     },
     {
       "title": "Alarms",
-      "icon": "search-f",
+      "icon": "ic24_incidents2",
       "url": "/alarm/alarms",
       "name": "alarms"
     },
     {
       "title": "Integration",
-      "icon": "search-f",
+      "icon": "jiekoukaifa",
       "url": "/alarm/integration",
-      "name": "integration"
+      "name": "integration",
+      "children": [
+        {
+          "title": "Integration Detail",
+          "url": "/alarm/integration/[sourceId]",
+          "name": "integration_detail"
+        }
+      ]
     },
     {
       "title": "Settings",
-      "icon": "search-f",
+      "icon": "settings-fill",
       "url": "/alarm/settings",
       "name": "settings"
     }

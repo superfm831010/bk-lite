@@ -44,6 +44,7 @@ export interface AlarmTableDataItem {
   resource_type: string;
   operate: string | null;
   notification_status: string;
+  [key: string]: string | number | null | undefined;
 }
 export interface RuleInfo {
   type?: string;
@@ -406,7 +407,15 @@ export interface SearchFilterCondition {
   value: any;
 }
 export interface SearchFilterProps {
-  onSearch: (condition: SearchFilterCondition, value: any) => void;
+    onSearch: (condition: SearchFilterCondition, rawValue?: any) => void;
+    attrList: Array<{
+        attr_id: string;
+        attr_name: string;
+        attr_type: string;
+        is_required?: boolean;
+        editable?: boolean;
+        option?: any[];
+    }>;
 }
 
 export type ActionType = 'close' | 'assign' | 'reassign' | 'acknowledge';

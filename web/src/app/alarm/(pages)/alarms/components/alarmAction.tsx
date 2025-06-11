@@ -28,7 +28,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
       item.operator_user
         .split(',')
         .map((name: string) => name.trim())
-        .includes(username || '')
+        .includes(username)
     );
 
   const allTypes: ActionType[] = ['assign', 'acknowledge', 'reassign', 'close'];

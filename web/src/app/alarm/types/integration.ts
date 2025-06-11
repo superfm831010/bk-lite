@@ -7,6 +7,7 @@ interface AuthConfig {
 }
 interface Config {
   url: string;
+  params: Record<string, any>;
   auth: AuthConfig;
   method: string;
   headers: Record<string, any>;
@@ -17,6 +18,8 @@ interface Config {
 }
 export interface SourceItem {
   id: number;
+  event_count: number | null | undefined | string;
+  last_event_time: string;
   created_at: string;
   updated_at: string;
   created_by: string;

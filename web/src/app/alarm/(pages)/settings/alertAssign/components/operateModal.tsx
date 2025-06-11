@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import './operateModal.scss';
 import MatchRule from './matchRule';
-import EffectiveTime from './effectiveTime';
+import EffectiveTime, { defaultEffectiveTime } from './effectiveTime';
+import Icon from '@/components/icon';
 import { useCommon } from '@/app/alarm/context/common';
 import { useTranslation } from '@/utils/i18n';
 import { CaretRightOutlined } from '@ant-design/icons';
+import { useSettingApi } from '@/app/alarm/api/settings';
 import {
   Tag,
   Form,
@@ -15,36 +18,114 @@ import {
   Radio,
   Collapse,
   InputNumber,
+  message,
 } from 'antd';
 
 interface OperateModalProps {
   open: boolean;
   currentRow?: any;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 const OperateModalPage: React.FC<OperateModalProps> = ({
   open,
   currentRow,
   onClose,
+  onSuccess,
 }) => {
   const { t } = useTranslation();
-  const { levelList, levelMap } = useCommon();
-  const personnelOptions = [
-    { label: 'Alice', value: 'alice' },
-    { label: 'Bob', value: 'bob' },
-  ];
+  const { levelList, levelMap, userList } = useCommon();
+  const { createAssignment, updateAssignment } = useSettingApi();
+
+  const personnelOptions = userList.map(({ display_name, username }) => ({
+    label: `${display_name} (${username})`,
+    value: username,
+  }));
+
   const notifyOptions = [
     { label: '邮件', value: 'email' },
     { label: '微信', value: 'wechat' },
   ];
   const [form] = Form.useForm();
-  const ruleType = Form.useWatch('matchingRules', form);
-
-  const onFinish = (values: any) => {
-    console.log('提交数据：', values, currentRow);
+  const handleClose = () => {
+    form.resetFields();
     onClose();
   };
+
+  useEffect(() => {
+    if (open) {
+      if (currentRow) {
+        form.setFieldsValue({
+          ...currentRow,
+          notification_frequency: currentRow.notification_frequency,
+          match_rules:
+            currentRow.match_type === 'filter'
+              ? currentRow.match_rules
+              : undefined,
+          config: {
+            ...currentRow.config,
+            start_time: currentRow.config?.start_time,
+            end_time: currentRow.config?.end_time,
+          },
+        });
+      } else {
+        form.resetFields();
+        form.setFieldsValue({ config: defaultEffectiveTime });
+      }
+    }
+  }, [open, currentRow, form]);
+
+  const ruleType = Form.useWatch('match_type', form);
+
+  const onFinish = async (values: any) => {
+    try {
+      const params = getParams(values);
+      if (currentRow?.id) {
+        await updateAssignment(currentRow.id, params);
+      } else {
+        await createAssignment(params);
+      }
+      message.success(
+        currentRow ? t('common.successOperate') : t('common.addSuccess')
+      );
+      form.resetFields();
+      onClose();
+      onSuccess && onSuccess();
+    } catch {
+      message.error(t('common.operateFailed'));
+    }
+  };
+
+  const getParams = (values: any) => {
+    const params: any = {
+      name: values.name,
+      match_type: values.match_type,
+      notify_channels: values.notify_channels,
+      personnel: values.personnel,
+      config: values.config || defaultEffectiveTime,
+    };
+    if (values.match_type === 'filter') {
+      params.match_rules = values.match_rules;
+    }
+    if (values.notification_scenario) {
+      params.notification_scenario = values.notification_scenario;
+    }
+    if (values.notification_frequency) {
+      const freqObj: Record<string, any> = {};
+      Object.entries(values.notification_frequency).forEach(
+        ([levelId, val]: any) => {
+          freqObj[levelId] = {
+            interval_minutes: val.interval_minutes,
+            max_count: 0,
+          };
+        }
+      );
+      params.notification_frequency = freqObj;
+    }
+    return params;
+  };
+
   return (
     <Drawer
       title={
@@ -55,13 +136,13 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
       placement="right"
       width={720}
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       footer={
         <div style={{ textAlign: 'right' }}>
           <Button type="primary" onClick={() => form.submit()}>
             {t('settings.assignStrategy.submit')}
           </Button>
-          <Button style={{ marginLeft: 8 }} onClick={onClose}>
+          <Button style={{ marginLeft: 8 }} onClick={handleClose}>
             {t('common.cancel')}
           </Button>
         </div>
@@ -75,7 +156,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
       >
         <Form.Item
           name="name"
-          label={t('settings.assignStrategy.formName')}
+          label={t('settings.assignName')}
           rules={[
             {
               required: true,
@@ -83,29 +164,52 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
             },
           ]}
         >
-          <Input />
+          <Input placeholder={t('common.inputMsg')} />
         </Form.Item>
         <Form.Item
-          initialValue="ALL"
-          name="matchingRules"
+          initialValue="all"
+          name="match_type"
           label={t('settings.assignStrategy.formMatchingRules')}
-          rules={[
-            {
-              required: true,
-              message: t('common.inputMsg'),
-            },
-          ]}
+          rules={[{ required: true, message: t('common.inputMsg') }]}
         >
-          <Radio.Group className="mt-1 ml-4">
-            <Radio value="ALL">{t('settings.assignStrategy.ruleAll')}</Radio>
-            <Radio value="Filter">
+          <Radio.Group className="mt-1">
+            <Radio value="all">{t('settings.assignStrategy.ruleAll')}</Radio>
+            <Radio value="filter">
               {t('settings.assignStrategy.ruleFilter')}
             </Radio>
           </Radio.Group>
         </Form.Item>
 
-        {ruleType === 'Filter' && (
-          <Form.Item style={{ marginLeft: '94px', marginTop: '-10px' }}>
+        {ruleType === 'filter' && (
+          <Form.Item
+            name="match_rules"
+            validateTrigger={[]}
+            style={{
+              marginLeft: '110px',
+              marginTop: '-10px',
+              marginBottom: '26px',
+            }}
+            rules={[
+              {
+                validator: (_, value: any[][]) => {
+                  if (!Array.isArray(value) || value.length === 0) {
+                    return Promise.reject(new Error(t('common.inputMsg')));
+                  }
+                  for (const orGroup of value) {
+                    if (!Array.isArray(orGroup) || orGroup.length === 0) {
+                      return Promise.reject(new Error(t('common.inputMsg')));
+                    }
+                    for (const item of orGroup) {
+                      if (!item.key || !item.operator || !item.value) {
+                        return Promise.reject(new Error(t('common.inputMsg')));
+                      }
+                    }
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
             <MatchRule />
           </Form.Item>
         )}
@@ -127,14 +231,10 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
           />
         </Form.Item>
         <Form.Item
-          name="notifyMethods"
+          name="notify_channels"
           label={t('settings.assignStrategy.formNotifyMethod')}
-          rules={[
-            {
-              required: true,
-              message: t('common.selectMsg'),
-            },
-          ]}
+          initialValue={['email']}
+          rules={[{ required: true, message: t('common.selectMsg') }]}
         >
           <Checkbox.Group options={notifyOptions} />
         </Form.Item>
@@ -156,20 +256,17 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
             key="advanced"
           >
             <Form.Item
-              name="effectiveTime"
+              name="config"
+              initialValue={defaultEffectiveTime}
               label={t('settings.assignStrategy.effectiveTime')}
-              rules={[
-                {
-                  required: true,
-                  message: t('common.selectMsg'),
-                },
-              ]}
+              rules={[{ required: true, message: t('common.selectMsg') }]}
             >
               <EffectiveTime />
             </Form.Item>
             <Form.Item
-              name="notificationScenario"
+              name="notification_scenario"
               label={t('settings.assignStrategy.notificationScenario')}
+              initialValue={['assignment']}
             >
               <Checkbox.Group
                 options={[
@@ -185,7 +282,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
               />
             </Form.Item>
             <Form.Item
-              name="notificationFrequency"
+              name="notification_frequency"
               label={t('settings.assignStrategy.notificationFrequency')}
             >
               <div className="mt-[5px]">
@@ -196,18 +293,32 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
                   {t('settings.assignStrategy.notRespondMsg')}
                 </span>
                 <div className="flex flex-col">
-                  {levelList.map(({ level_display_name, level_id }) => (
+                  {levelList.map(({ level_display_name, level_id, icon }) => (
                     <div key={level_id} className="flex items-center mb-2">
                       <Tag color={levelMap[level_id]}>
-                        {level_display_name || '--'}
+                        <div className="flex items-center">
+                          <Icon type={icon} className="mr-1" />
+                          {level_display_name || '--'}
+                        </div>
                       </Tag>
                       <span>{t('settings.assignStrategy.notifyEvery')}</span>
-                      <InputNumber
-                        className="ml-2 w-[150px]"
-                        defaultValue={30}
-                        min={0}
-                        addonAfter={t('settings.assignStrategy.frequencyUnit')}
-                      />
+                      <Form.Item
+                        name={[
+                          'notification_frequency',
+                          level_id,
+                          'interval_minutes',
+                        ]}
+                        initialValue={30}
+                        noStyle
+                      >
+                        <InputNumber
+                          className="ml-2 w-[150px]"
+                          min={0}
+                          addonAfter={t(
+                            'settings.assignStrategy.frequencyUnit'
+                          )}
+                        />
+                      </Form.Item>
                     </div>
                   ))}
                 </div>

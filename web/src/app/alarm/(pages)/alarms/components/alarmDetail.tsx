@@ -1,9 +1,9 @@
 'use client';
 
 import BaseInfo from './baseInfo';
-import CustomTable from '@/components/custom-table';
+import EventTable from '@/app/alarm/components/eventTable';
 import AlarmAction from './alarmAction';
-import { ColumnsType } from 'antd/es/table';
+import Icon from '@/components/icon';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
@@ -15,11 +15,7 @@ import {
   EventItem,
   AlarmTableDataItem,
 } from '@/app/alarm/types/alarms';
-import {
-  AlertOutlined,
-  CopyOutlined,
-  ClockCircleOutlined,
-} from '@ant-design/icons';
+import { CopyOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import React, {
   useState,
   forwardRef,
@@ -38,7 +34,7 @@ import {
 const AlertDetail = forwardRef<ModalRef, ModalConfig>(
   ({ handleAction }, ref) => {
     const STATE_MAP = useStateMap();
-    const { levelList, levelMap, levelListEvent, levelMapEvent } = useCommon();
+    const { levelList, levelMap } = useCommon();
     const { t } = useTranslation();
     const { convertToLocalizedTime } = useLocalizedTime();
     const { getEventList } = useAlarmApi();
@@ -48,8 +44,6 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const [activeTab, setActiveTab] = useState<string>('baseInfo');
     const [recordLoading, setRecordLoading] = useState<boolean>(false);
     const [eventLoading, setEventLoading] = useState<boolean>(false);
-    const [rawVisible, setRawVisible] = useState<boolean>(false);
-    const [rawData, setRawData] = useState<any>({});
     const [eventList, setEventList] = useState<EventItem[]>([]);
     const [timeLineData, setTimeLineData] = useState<TimeLineItem[]>([]);
     const timelineRef = useRef<HTMLDivElement>(null);
@@ -75,11 +69,6 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
         label: t('alarms.changes'),
       },
     ];
-
-    const handleShowRaw = (record: AlarmTableDataItem) => {
-      setRawData(record);
-      setRawVisible(true);
-    };
 
     useEffect(() => {
       if (!groupVisible || !formData.id) {
@@ -109,80 +98,21 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
       }
     }, [pagination.current, pagination.pageSize, activeTab]);
 
-    const eventColumns: ColumnsType<any> = [
-      { title: 'ID', dataIndex: 'id', key: 'id', width: 110 },
-      {
-        title: t('alarms.level'),
-        dataIndex: 'level',
-        key: 'level',
-        width: 110,
-        render: (_: any, { level }) => {
-          const target = levelListEvent.find(
-            (item) => item.level_id === Number(level)
-          );
-          return (
-            <Tag icon={<AlertOutlined />} color={levelMapEvent[level || '']}>
-              {target?.level_display_name || '--'}
-            </Tag>
-          );
-        },
-      },
-      {
-        title: t('common.time'),
-        dataIndex: 'start_time',
-        key: 'start_time',
-        width: 180,
-        render: (text: string) => (text ? convertToLocalizedTime(text) : '--'),
-      },
-      {
-        title: t('alarms.event'),
-        dataIndex: 'title',
-        key: 'title',
-        width: 220,
-      },
-      {
-        title: t('alarms.object'),
-        dataIndex: 'resource_type',
-        key: 'resource_type',
-        width: 120,
-      },
-      {
-        title: t('alarms.metricName'),
-        dataIndex: 'item',
-        key: 'item',
-        width: 120,
-      },
-      {
-        title: t('alarms.metricValue'),
-        dataIndex: 'value',
-        key: 'value',
-        width: 120,
-      },
-      {
-        title: t('alarms.source'),
-        dataIndex: 'source_name',
-        key: 'source_name',
-        width: 120,
-      },
-      {
-        title: t('common.action'),
-        key: 'action',
-        fixed: 'right',
-        width: 100,
-        render: (_: any, record: AlarmTableDataItem) => (
-          <Button type="link" onClick={() => handleShowRaw(record)}>
-            {t('alarms.rawData')}
-          </Button>
-        ),
-      },
-    ];
-
     useImperativeHandle(ref, () => ({
-      showModal: ({ title, form }) => {
+      showModal: ({
+        title,
+        form,
+        defaultTab = 'baseInfo',
+      }: {
+        title: string;
+        form: AlarmTableDataItem;
+        defaultTab?: string;
+      }) => {
         setEventList([]);
         setGroupVisible(true);
         setTitle(title);
         setFormData(form);
+        setActiveTab(defaultTab);
       },
     }));
 
@@ -298,13 +228,20 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
         <div>
           <div className="flex justify-between">
             <div>
-              <Tag
-                icon={<AlertOutlined />}
-                color={levelMap[formData.level] as string}
-              >
-                {levelList.find(
-                  (item) => item.level_id === Number(formData.level)
-                )?.level_display_name || '--'}
+              <Tag color={levelMap[formData.level] as string}>
+                <div className="flex items-center">
+                  <Icon
+                    type={
+                      levelList.find(
+                        (item) => item.level_id === Number(formData.level)
+                      )?.icon || ''
+                    }
+                    className="mr-1 text-sm"
+                  />
+                  {levelList.find(
+                    (item) => item.level_id === Number(formData.level)
+                  )?.level_display_name || '--'}
+                </div>
               </Tag>
               <b>{formData.content || '--'}</b>
             </div>
@@ -350,10 +287,12 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
             </li>
             <li>
               <Tag>
-                <span className="mr-3">
-                  <ClockCircleOutlined className="mr-[4px]" />
-                  {formData.duration}
-                </span>
+                <ClockCircleOutlined className="mr-[4px]" />
+                {formData.duration}
+              </Tag>
+            </li>
+            <li>
+              <Tag>
                 {formData.first_event_time && formData.last_event_time && (
                   <span>
                     {formData.first_event_time
@@ -375,17 +314,11 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
           {isBaseInfo && <BaseInfo detail={formData} />}
           {isEventTab && (
             <div className="pt-[10px]">
-              <CustomTable
-                rowKey="id"
-                scroll={{ y: 'calc(100vh - 400px)' }}
-                loading={eventLoading}
-                columns={eventColumns}
+              <EventTable
                 dataSource={eventList}
-                pagination={{
-                  current: pagination.current,
-                  pageSize: pagination.pageSize,
-                  total: pagination.total,
-                }}
+                loading={eventLoading}
+                pagination={pagination}
+                tableScrollY="calc(100vh - 400px)"
                 onChange={(pag) =>
                   setPagination((prev) => ({
                     ...prev,
@@ -394,14 +327,6 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
                   }))
                 }
               />
-              <Drawer
-                title={t('alarms.rawData')}
-                open={rawVisible}
-                width={600}
-                onClose={() => setRawVisible(false)}
-              >
-                <pre>{JSON.stringify(rawData, null, 2)}</pre>
-              </Drawer>
             </div>
           )}
 

@@ -2,132 +2,103 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './match.module.scss';
+import { SourceItem } from '@/app/alarm/types/integration';
+import { useSourceApi } from '@/app/alarm/api/sources';
 import { useTranslation } from '@/utils/i18n';
-import { useSettingApi } from '@/app/alarm/api/settings';
 import { Select, Button, Input } from 'antd';
 import { PlusCircleOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { useCommon } from '@/app/alarm/context/common';
+import {
+  ruleList,
+  initialConditionLists,
+} from '@/app/alarm/constants/settings';
 
 const { Option } = Select;
 
 interface PolicyItem {
-  target_key: string;
-  condition: string;
-  target_value: string;
-  event_choose_list: { key: string; value: string }[];
+  key: string | undefined;
+  operator: string | undefined;
+  value: string | undefined;
 }
 
-const RulesMatch: React.FC = () => {
-  const { getAlarmSource, getConditionList, getRuleList } = useSettingApi();
+interface MatchRuleProps {
+  value?: PolicyItem[][];
+  onChange?: (val: PolicyItem[][]) => void;
+}
+
+const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
+  const { getAlertSources } = useSourceApi();
   const { levelList } = useCommon();
   const { t } = useTranslation();
-  const [showSelect, setShowSelect] = useState(true);
-  const [sourceList, setSourceList] = useState<any[]>([]);
-  const [conditionList, setConditionList] = useState<any[]>([]);
-  const [ruleList, setRuleList] = useState<any[]>([]);
-  const [policyList, setPolicyList] = useState<PolicyItem[][]>([
-    [
-      {
-        target_key: '',
-        condition: '',
-        target_value: '',
-        event_choose_list: [],
-      },
-    ],
-  ]);
+  const [sourceList, setSourceList] = useState<SourceItem[]>([]);
+  const [policyList, setPolicyList] = useState<PolicyItem[][]>(
+    value || [
+      [
+        {
+          key: undefined,
+          operator: undefined,
+          value: undefined,
+        },
+      ],
+    ]
+  );
   const policyItem: PolicyItem[] = [
     {
-      target_key: '',
-      condition: '',
-      target_value: '',
-      event_choose_list: [],
+      key: undefined,
+      operator: undefined,
+      value: undefined,
     },
   ];
 
-  const conDisabledList = [
-    'bk_biz_name',
-    'bk_biz_id',
-    'source_id',
-    'level',
-    'source_name',
-    'event_id',
-    'alarm_time',
-    'item',
-    'action',
-  ];
-
-  const valueInputList = [
-    'bk_biz_name',
-    'bk_biz_id',
-    'source_id',
-    'level',
-    'source_name',
-  ];
+  useEffect(() => {
+    if (value) {
+      setPolicyList(value);
+    }
+  }, [value]);
 
   useEffect(() => {
-    fetchRuleList();
-    fetchConditionList();
+    fetchAlarmSource();
   }, []);
 
-  const changeSelect = async (
-    val: string,
-    index: number,
-    ind: number,
-    type?: any
-  ) => {
+  const changeSelect = async (val: string, index: number, ind: number) => {
     const updatedPolicyList = [...policyList];
     const item = updatedPolicyList[index][ind];
-    item.target_key = val;
-
-    if (!type) {
-      item.condition = '';
-    }
-    setShowSelect(false);
-
-    if (val === 'level') {
-      item.event_choose_list = levelList.map((el: any) => ({
-        value: el.value,
-        key: el.label,
-      }));
-    } else if (val === 'source_name' || val === 'source_id') {
-      if (sourceList.length === 0) {
-        await fetchAlarmSource();
-      }
-      item.event_choose_list = sourceList;
-    } else if (val === 'bk_biz_name' || val === 'bk_biz_id') {
-      item.event_choose_list = normalBusinessList.map((el) => ({
-        value: el.bk_biz_id,
-        key: el.bk_biz_name,
-      }));
-    }
+    item.key = val;
+    item.operator = undefined;
+    item.value = undefined;
     setPolicyList(updatedPolicyList);
-    setShowSelect(true);
+    onChange?.(updatedPolicyList);
   };
 
   const addOr = () => {
-    setPolicyList([...policyList, JSON.parse(JSON.stringify(policyItem))]);
+    const updated = [...policyList, JSON.parse(JSON.stringify(policyItem))];
+    setPolicyList(updated);
+    onChange?.(updated);
   };
 
   const deleteOr = (index: number) => {
-    const updatedPolicyList = [...policyList];
-    updatedPolicyList.splice(index, 1);
-    setPolicyList(updatedPolicyList);
+    const updated = [...policyList];
+    updated.splice(index, 1);
+    setPolicyList(updated);
+    onChange?.(updated);
   };
 
   const addAnd = (index: number) => {
-    const updatedPolicyList = [...policyList];
-    updatedPolicyList[index].push({ ...policyItem[0] });
-    setPolicyList(updatedPolicyList);
+    const updated = [...policyList];
+    updated[index].push({ ...policyItem[0] });
+    setPolicyList(updated);
+    onChange?.(updated);
   };
 
   const deleteAnd = (index: number, ind: number) => {
-    const updatedPolicyList = [...policyList];
-    updatedPolicyList[index].splice(ind, 1);
-    setPolicyList(updatedPolicyList);
+    const updated = [...policyList];
+    updated[index].splice(ind, 1);
+    setPolicyList(updated);
+    onChange?.(updated);
   };
 
   const fetchAlarmSource = async () => {
-    const data: any = await getAlarmSource({});
+    const data: any = await getAlertSources();
     if (data) {
       setSourceList(data);
     } else {
@@ -135,32 +106,9 @@ const RulesMatch: React.FC = () => {
     }
   };
 
-  const fetchConditionList = async () => {
-    const data: any = await getConditionList({});
-    if (data) {
-      setConditionList(data);
-    } else {
-      console.error('获取条件列表失败');
-    }
-  };
-
-  const fetchRuleList = async () => {
-    const data: any = await getRuleList({});
-    if (data) {
-      setRuleList(data);
-    } else {
-      console.error('获取规则列表失败');
-    }
-  };
-
-  const normalBusinessList = [
-    { bk_biz_id: '1', bk_biz_name: '业务A' },
-    { bk_biz_id: '2', bk_biz_name: '业务B' },
-  ];
-
   return (
-    <div className="pl-[2px] border-l border-[#c4c6cc] w-full ml-[13px]">
-      {policyList.map((orItem, index) => (
+    <div className="pl-[2px] border-l border-[#c4c6cc] w-full ml-[13px] mb-[6px]">
+      {policyList.map?.((orItem, index) => (
         <div key={index} className="relative -left-[15px] pb-[15px]">
           <div className={`absolute text-center ${styles.ruleOr}`}>或</div>
           <div className="bg-gray-100 ml-[33px] relative top-[17px]">
@@ -169,12 +117,11 @@ const RulesMatch: React.FC = () => {
                 <div key={ind} className="relative">
                   <div className={`ml-[10px] flex items-center`}>
                     <div className={styles.ruleAnd}>且</div>
-                    <div className={styles.ruleItem}>
+                    <div className={`${styles.ruleItem} mr-[6px]`}>
                       <div className={styles.keySelect}>
                         <Select
                           allowClear
-                          value={i.target_key}
-                          disabled={false}
+                          value={i.key}
                           placeholder={`${t('common.selectMsg')}`}
                           onChange={(value) => changeSelect(value, index, ind)}
                         >
@@ -188,66 +135,62 @@ const RulesMatch: React.FC = () => {
                       <div className={styles.condSelect}>
                         <Select
                           allowClear
-                          value={i.condition}
-                          disabled={false}
+                          value={i.operator}
                           placeholder={`${t('common.selectMsg')}`}
                           onChange={(value) => {
                             const updatedPolicyList = [...policyList];
-                            updatedPolicyList[index][ind].condition = value;
+                            updatedPolicyList[index][ind].operator = value;
                             setPolicyList(updatedPolicyList);
+                            onChange?.(updatedPolicyList);
                           }}
                         >
-                          {conditionList.map((item) => (
-                            <Option
-                              key={item.name}
-                              value={item.name}
-                              disabled={
-                                conDisabledList.includes(i.target_key) &&
-                                !['term', 'must_not_term'].includes(item.name)
-                              }
-                            >
-                              {item.desc}
-                            </Option>
-                          ))}
+                          {(initialConditionLists[i.key as string] || []).map(
+                            (item) => (
+                              <Option key={item.name} value={item.name}>
+                                {item.desc}
+                              </Option>
+                            )
+                          )}
                         </Select>
                       </div>
                       <div className={styles.valueInput}>
-                        {valueInputList.includes(i.target_key) && showSelect ? (
+                        {['level_id', 'source_id'].includes(i.key as string) ? (
                           <Select
-                            value={i.target_value}
+                            value={i.value}
                             showSearch
                             placeholder={`${t('common.selectMsg')}`}
                             onChange={(value) => {
                               const updatedPolicyList = [...policyList];
-                              updatedPolicyList[index][ind].target_value =
-                                value;
+                              updatedPolicyList[index][ind].value = value;
                               setPolicyList(updatedPolicyList);
+                              onChange?.(updatedPolicyList);
                             }}
                           >
-                            {i.event_choose_list.map((ite) => (
-                              <Option
-                                key={ite.key}
-                                value={
-                                  ['bk_biz_name', 'source_name'].includes(
-                                    i.target_key
-                                  )
-                                    ? ite.key
-                                    : ite.value
-                                }
-                              >
-                                {ite.key}
-                              </Option>
-                            ))}
+                            {i.key === 'level_id' &&
+                              levelList.map(
+                                ({ level_id, level_display_name }) => (
+                                  <Option key={level_id} value={level_id}>
+                                    {level_display_name}
+                                  </Option>
+                                )
+                              )}
+                            {i.key === 'source_id' &&
+                              sourceList.map((source) => (
+                                <Option key={source.id} value={source.id}>
+                                  {source.name}
+                                </Option>
+                              ))}
                           </Select>
                         ) : (
                           <Input
-                            value={i.target_value}
+                            value={i.value}
                             placeholder={t('common.inputMsg')}
                             onChange={(e) => {
                               const updatedPolicyList = [...policyList];
-                              updatedPolicyList[index][ind].target_value =
+                              updatedPolicyList[index][ind].value =
                                 e.target.value;
                               setPolicyList(updatedPolicyList);
+                              onChange?.(updatedPolicyList);
                             }}
                           />
                         )}
@@ -255,11 +198,6 @@ const RulesMatch: React.FC = () => {
                       <span className={styles.action}>
                         <PlusCircleOutlined
                           title="新增"
-                          style={{
-                            fontSize: '16px',
-                            color: '#979BA5',
-                            cursor: 'pointer',
-                          }}
                           onClick={() => addAnd(index)}
                         />
                       </span>
@@ -267,11 +205,6 @@ const RulesMatch: React.FC = () => {
                         {orItem.length > 1 && (
                           <MinusCircleOutlined
                             title="删除"
-                            style={{
-                              fontSize: '16px',
-                              color: '#979BA5',
-                              cursor: 'pointer',
-                            }}
                             onClick={() => deleteAnd(index, ind)}
                           />
                         )}
@@ -286,12 +219,13 @@ const RulesMatch: React.FC = () => {
               ))}
             </div>
           </div>
-          {policyList.length > 1 && (
-            <MinusCircleOutlined
-              onClick={() => deleteOr(index)}
-              className="absolute right-[-5px] top-[10px] text-[18px] text-[#979BA5] cursor-pointer z-10"
-            />
-          )}
+          <span
+            className={`${styles.action} absolute right-[-5px] top-[6px] z-10`}
+          >
+            {policyList.length > 1 && (
+              <MinusCircleOutlined onClick={() => deleteOr(index)} />
+            )}
+          </span>
         </div>
       ))}
       <div className="relative -left-[15px] transform translate-y-[5px]">

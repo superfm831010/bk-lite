@@ -3,13 +3,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Icon from '@/components/icon';
 import useApiClient from '@/utils/request';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import TimeSelector from '@/components/time-selector';
 import StackedBarChart from '@/app/alarm/components/stackedBarChart';
 import alertStyle from './index.module.scss';
 import AlarmFilters from '@/app/alarm/components/alarmFilters';
-import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
-import SearchFilter from './components/searchFilter';
+import AlarmTable from '@/app/alarm/components/alarmTable';
+import SearchFilter from '../../components/searchFilter';
 import AlarmAction from './components/alarmAction';
 import { SearchFilterCondition } from '@/app/alarm/types/alarms';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
@@ -18,20 +18,27 @@ import { AlarmTableDataItem, FiltersConfig } from '@/app/alarm/types/alarms';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { deepClone } from '@/app/alarm/utils/common';
 import { useCommon } from '@/app/alarm/context/common';
+import { baseStates, allStates } from '@/app/alarm/constants/alarm';
 import { Button, Checkbox, Tabs, Spin, Tooltip, Switch } from 'antd';
+import { processDataForStackedBarChart } from '@/app/alarm/utils/alarmChart';
 import {
   Pagination,
-  TableDataItem,
   TabItem,
   TimeSelectorDefaultValue,
 } from '@/app/alarm/types/types';
-import { baseStates, allStates } from '@/app/alarm/constants/alarm';
+
+const getSettings = () => {
+  try {
+    return JSON.parse(localStorage.getItem('alarmSettings') || '{}');
+  } catch {
+    return {};
+  }
+};
 
 const Alert: React.FC = () => {
   const { isLoading } = useApiClient();
   const { t } = useTranslation();
-  const { levelMap } = useCommon();
-
+  const { levelList, levelMap } = useCommon();
   const { getAlarmList } = useAlarmApi();
   const { convertToLocalizedTime } = useLocalizedTime();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -46,19 +53,18 @@ const Alert: React.FC = () => {
   const [timeRange, setTimeRange] = useState<number[]>([beginTime, lastTime]);
   const [activeTab, setActiveTab] = useState<string>('activeAlarms');
   const [chartData, setChartData] = useState<Record<string, any>[]>([]);
-  const [myAlarms, setMyAlarms] = useState<boolean>(true);
+  const [myAlarms, setMyAlarms] = useState<boolean>(() => {
+    const { myAlarms } = getSettings();
+    return myAlarms !== undefined ? myAlarms : true;
+  });
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  const getSettings = () => {
-    try {
-      return JSON.parse(localStorage.getItem('alarmSettings') || '{}');
-    } catch {
-      return {};
-    }
-  };
-
   const saveSettings = (
-    settings: Partial<{ pageSize: number; showChart: boolean }>
+    settings: Partial<{
+      pageSize: number;
+      showChart: boolean;
+      myAlarms: boolean;
+    }>
   ) => {
     localStorage.setItem(
       'alarmSettings',
@@ -168,6 +174,7 @@ const Alert: React.FC = () => {
   ]);
 
   const changeTab = (val: string) => {
+    setChartData([]);
     setActiveTab(val);
   };
 
@@ -184,8 +191,8 @@ const Alert: React.FC = () => {
       source_name: filters.alarm_source.join(','),
       page: pagination.current,
       page_size: pagination.pageSize,
-      first_event_time: dayjs(timeRange[0]).toISOString(),
-      last_event_time: dayjs(timeRange[1]).toISOString(),
+      created_at_after: dayjs(timeRange[0]).toISOString(),
+      created_at_before: dayjs(timeRange[1]).toISOString(),
       activate: isActiveAlarms ? 1 : '',
       my_alert: isActiveAlarms ? (myAlarms ? 1 : '') : undefined,
       [conditionValue?.field as string]: conditionValue?.value,
@@ -203,8 +210,8 @@ const Alert: React.FC = () => {
     try {
       setTableLoading(type !== 'timer');
       if (activeTab === 'activeAlarms') {
-        params.first_event_time = '';
-        params.last_event_time = '';
+        params.created_at_after = '';
+        params.created_at_before = '';
       }
       const data = await getAlarmList(params);
       setTableData(data.items);
@@ -223,17 +230,18 @@ const Alert: React.FC = () => {
     delete chartParams.page;
     delete chartParams.page_size;
     chartParams.search = '';
-    chartParams.type = 'count';
     if (activeTab === 'activeAlarms') {
-      chartParams.first_event_time = '';
-      chartParams.last_event_time = '';
+      chartParams.created_at_after = '';
+      chartParams.created_at_before = '';
     }
     try {
       setChartLoading(type !== 'timer');
       const data = await getAlarmList(chartParams);
       setChartData(
         processDataForStackedBarChart(
-          (data.items || []).filter((item: TableDataItem) => !!item.level)
+          (data || []).filter((item: AlarmTableDataItem) => !!item.level),
+          levelList,
+          convertToLocalizedTime
         ) as any
       );
     } finally {
@@ -252,68 +260,6 @@ const Alert: React.FC = () => {
 
   const onTimeChange = (val: number[]) => {
     setTimeRange(val);
-  };
-
-  const processDataForStackedBarChart = (
-    data: TableDataItem,
-    desiredSegments = 12
-  ) => {
-    if (!data?.length) return [];
-    // 1. 找到最早时间和最晚时间
-    const timestamps = data.map((item: TableDataItem) =>
-      dayjs(item.created_at)
-    );
-    const minTime = timestamps.reduce(
-      (min: Dayjs, curr: Dayjs) => (curr.isBefore(min) ? curr : min),
-      timestamps[0]
-    ); // 最早时间
-    const maxTime = timestamps.reduce(
-      (max: Dayjs, curr: Dayjs) => (curr.isAfter(max) ? curr : max),
-      timestamps[0]
-    ); // 最晚时间
-    // 2. 计算时间跨度（以分钟为单位）
-    const totalMinutes = maxTime.diff(minTime, 'minute');
-    // 3. 动态计算时间区间（每段的分钟数）
-    const intervalMinutes = Math.max(
-      Math.ceil(totalMinutes / desiredSegments),
-      1
-    ); // 确保 intervalMinutes 至少为 1
-    // 4. 按动态时间区间划分数据
-    const groupedData = data.reduce(
-      (acc: TableDataItem, curr: TableDataItem) => {
-        // 根据 created_at 时间戳，计算所属时间区间
-        const timestamp = dayjs(curr.created_at).startOf('minute'); // 转为分钟级别时间戳
-        const roundedTime = convertToLocalizedTime(
-          minTime.add(
-            Math.floor(timestamp.diff(minTime, 'minute') / intervalMinutes) *
-              intervalMinutes,
-            'minute'
-          )
-        );
-        if (!acc[roundedTime]) {
-          acc[roundedTime] = {
-            time: roundedTime,
-            fatal: 0,
-            severity: 0,
-            warning: 0,
-          };
-        }
-        // 根据 level 统计数量
-        if (curr.level === 'fatal') {
-          acc[roundedTime].fatal += 1;
-        } else if (curr.level === 'severity') {
-          acc[roundedTime].severity += 1;
-        } else if (curr.level === 'warning') {
-          acc[roundedTime].warning += 1;
-        }
-        return acc;
-      },
-      {}
-    );
-    // 5. 将分组后的对象转为数组
-    return Object.values(groupedData).sort(
-      (a: any, b: any) => dayjs(b.time).valueOf() - dayjs(a.time).valueOf()
-    );
   };
 
   const onFilterChange = (
@@ -337,6 +283,12 @@ const Alert: React.FC = () => {
     setPagination((prev) => ({ ...prev, current: 1 }));
     getAlarmTableData('search', condition);
   };
+
+  const alarmAttrList = [
+    { attr_id: 'alert_id', attr_name: '告警ID', attr_type: 'str', option: [] },
+    { attr_id: 'title', attr_name: '告警名称', attr_type: 'str', option: [] },
+    { attr_id: 'content', attr_name: '告警内容', attr_type: 'str', option: [] },
+  ];
 
   return (
     <div className="w-full">
@@ -398,13 +350,18 @@ const Alert: React.FC = () => {
             <Tabs activeKey={activeTab} items={tabList} onChange={changeTab} />
             <div className="flex items-center justify-between mb-[16px] min-w-[900px]">
               <div className="flex items-center space-x-4">
-                <SearchFilter onSearch={onFilterSearch} />
+                <SearchFilter
+                  attrList={alarmAttrList}
+                  onSearch={onFilterSearch}
+                />
                 {isActiveAlarms && (
                   <Checkbox
                     className="ml-2"
                     checked={myAlarms}
                     onChange={(e) => {
-                      setMyAlarms(e.target.checked);
+                      const checked = e.target.checked;
+                      setMyAlarms(checked);
+                      saveSettings({ myAlarms: checked });
                     }}
                   >
                     {t('alarms.myAlarms')}
@@ -412,23 +369,21 @@ const Alert: React.FC = () => {
                 )}
               </div>
 
-              {isActiveAlarms && (
-                <div className="flex items-center space-x-4">
-                  <Button color="danger" type="dashed" variant="solid">
-                    {t('alarms.declareIncident')}
-                  </Button>
-                  <AlarmAction
-                    rowData={tableData.filter((item) =>
-                      selectedRowKeys.includes(item.id)
-                    )}
-                    displayMode="dropdown"
-                    showAll
-                    onAction={() => {
-                      onRefresh();
-                    }}
-                  />
-                </div>
-              )}
+              <div className="flex items-center space-x-4">
+                <Button color="danger" type="dashed" variant="solid">
+                  {t('alarms.declareIncident')}
+                </Button>
+                <AlarmAction
+                  rowData={tableData.filter((item) =>
+                    selectedRowKeys.includes(item.id)
+                  )}
+                  displayMode="dropdown"
+                  showAll
+                  onAction={() => {
+                    onRefresh();
+                  }}
+                />
+              </div>
             </div>
             <AlarmTable
               dataSource={tableData}

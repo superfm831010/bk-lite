@@ -1,55 +1,42 @@
-'use client';
-
-import React, { useState } from 'react';
-import dayjs, { Dayjs } from 'dayjs';
+import React from 'react';
+import dayjs from 'dayjs';
 import { Select, DatePicker, TimePicker } from 'antd';
+import { timeInterval, weekList } from '@/app/alarm/constants/settings';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-const EffectiveTime: React.FC = () => {
-  const [form, setForm] = useState<{
-    period: string;
-    weekDays: number[];
-    monthDays: number[];
-    onceTime: [Dayjs, Dayjs];
-    clockTime: [string, string];
-  }>({
-    period: 'everyday',
-    weekDays: [1, 2, 3],
-    monthDays: [1],
-    onceTime: [dayjs(), dayjs().add(1, 'day')],
-    clockTime: ['00:00:00', '23:59:59'],
-  });
+export interface EffectiveTimeValue {
+  type: 'one' | 'day' | 'week' | 'month';
+  week_month: number[];
+  start_time: dayjs.Dayjs | string;
+  end_time: dayjs.Dayjs | string;
+}
 
-  const timeInterval = [
-    { name: '单次', value: 'once' },
-    { name: '每天', value: 'everyday' },
-    { name: '每周', value: 'every_week' },
-    { name: '每月', value: 'every_month' },
-  ];
+interface EffectiveTimeProps {
+  value?: EffectiveTimeValue;
+  onChange?: (val: EffectiveTimeValue) => void;
+}
 
-  const weekList = [
-    { name: '星期一', value: 1 },
-    { name: '星期二', value: 2 },
-    { name: '星期三', value: 3 },
-    { name: '星期四', value: 4 },
-    { name: '星期五', value: 5 },
-    { name: '星期六', value: 6 },
-    { name: '星期天', value: 7 },
-  ];
+const defaultValue: EffectiveTimeValue = {
+  type: 'day',
+  week_month: [],
+  start_time: dayjs('00:00:00', 'HH:mm:ss'),
+  end_time: dayjs('23:59:59', 'HH:mm:ss'),
+};
 
-  const onFormChange = (key: string, value: any) => {
-    setForm((prevForm) => ({ ...prevForm, [key]: value }));
+const EffectiveTime: React.FC<EffectiveTimeProps> = ({ value, onChange }) => {
+  const form = value || defaultValue;
+  const isEditing = !!value;
+
+  const triggerChange = (changed: Partial<EffectiveTimeValue>) => {
+    onChange?.({ ...form, ...changed });
   };
 
   return (
     <div className="flex" id="effective-time">
-      <div className="flex-1">
-        <Select
-          value={form.period}
-          onChange={(value) => onFormChange('period', value)}
-        >
+      <div className="flex-1 mr-[6px]">
+        <Select value={form.type} onChange={(v) => triggerChange({ type: v })}>
           {timeInterval.map((item) => (
             <Option key={item.value} value={item.value}>
               {item.name}
@@ -57,13 +44,13 @@ const EffectiveTime: React.FC = () => {
           ))}
         </Select>
       </div>
-      <div className="flex-[3] flex">
-        {form.period === 'every_week' && (
+      <div className="flex-[4] flex">
+        {form.type === 'week' && (
           <Select
             mode="multiple"
             maxTagCount={1}
-            value={form.weekDays}
-            onChange={(value) => onFormChange('weekDays', value)}
+            value={form.week_month}
+            onChange={(v) => triggerChange({ week_month: v })}
             className="flex-1"
           >
             {weekList.map((item) => (
@@ -73,40 +60,62 @@ const EffectiveTime: React.FC = () => {
             ))}
           </Select>
         )}
-
-        {form.period === 'every_month' && (
+        {form.type === 'month' && (
           <Select
             mode="multiple"
             maxTagCount={2}
-            value={form.monthDays}
-            onChange={(value) => onFormChange('monthDays', value)}
+            value={form.week_month}
+            onChange={(v) => triggerChange({ week_month: v })}
             className="flex-1"
           >
-            {[...Array(31)].map((_, index) => (
-              <Option key={index + 1} value={index + 1}>
-                {index + 1}
+            {[...Array(31)].map((_, i) => (
+              <Option key={i + 1} value={i + 1}>
+                {i + 1}
               </Option>
             ))}
           </Select>
         )}
-        {form.period !== 'once' && (
+        {form.type !== 'one' && (
           <TimePicker.RangePicker
-            className="flex-1"
-            value={[
-              dayjs(form.clockTime[0], 'HH:mm:ss'),
-              dayjs(form.clockTime[1], 'HH:mm:ss'),
-            ]}
-            onChange={(_, timeString) => onFormChange('clockTime', timeString)}
+            allowClear={false}
+            format="HH:mm:ss"
+            className="flex-1 ml-[6px]"
+            value={
+              isEditing
+                ? [
+                  dayjs(form.start_time, 'HH:mm:ss'),
+                  dayjs(form.end_time, 'HH:mm:ss'),
+                ]
+                : [dayjs().startOf('day'), dayjs().endOf('day')]
+            }
+            onChange={(_, dateStrings) =>
+              triggerChange({
+                start_time: dateStrings[0],
+                end_time: dateStrings[1],
+              })
+            }
           />
         )}
-        {form.period === 'once' && (
+        {form.type === 'one' && (
           <RangePicker
             showTime
-            value={form.onceTime}
-            className="flex-1"
-            onChange={(dates) => {
-              if (dates && dates.length === 2) {
-                onFormChange('onceTime', dates as [Dayjs, Dayjs]);
+            format="YYYY-MM-DD HH:mm:ss"
+            allowClear={false}
+            className="flex-1 ml-[6px]"
+            value={
+              form.start_time && form.end_time
+                ? [
+                  dayjs(form.start_time as string, 'YYYY-MM-DD HH:mm:ss'),
+                  dayjs(form.end_time as string, 'YYYY-MM-DD HH:mm:ss'),
+                ]
+                : [dayjs().startOf('day'), dayjs().add(1, 'month').endOf('day')]
+            }
+            onChange={(_, dateStrings) => {
+              if (dateStrings?.length === 2) {
+                triggerChange({
+                  start_time: dateStrings[0],
+                  end_time: dateStrings[1],
+                });
               }
             }}
           />
@@ -117,3 +126,5 @@ const EffectiveTime: React.FC = () => {
 };
 
 export default EffectiveTime;
+
+export { defaultValue as defaultEffectiveTime };

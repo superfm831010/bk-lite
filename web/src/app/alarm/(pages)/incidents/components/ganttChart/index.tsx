@@ -5,72 +5,50 @@ import dayjs from 'dayjs';
 import minMax from 'dayjs/plugin/minMax';
 import styles from './index.module.scss';
 import AlertDetail from '../../../alarms/components/alarmDetail';
+import { AlarmTableDataItem } from '@/app/alarm/types/alarms';
 import { ModalRef } from '@/app/alarm/types/types';
 import { Tooltip, Checkbox } from 'antd';
-
+import { useCommon } from '@/app/alarm/context/common';
 dayjs.extend(minMax);
 
-interface Task {
-  id: number;
-  name: string;
-  level: string;
-  start: string;
-  end: string;
-  details: string;
+interface GanttChartProps {
+  alarmData: AlarmTableDataItem[];
 }
 
-const generateMock = (): Task[] => {
-  const now = dayjs();
-  return Array.from({ length: 5 }).map((_, i) => {
-    const start = now.subtract(6 - i, 'hour').toISOString();
-    const end = now
-      .subtract(6 - i, 'hour')
-      .add(Math.random() * 4 + 1, 'hour')
-      .toISOString();
-    return {
-      id: i + 1,
-      name: `告警事件${i + 1}`,
-      level: '',
-      start,
-      end,
-      details: `来源: Server ${String.fromCharCode(65 + (i % 3))}，次数: ${Math.ceil(
-        Math.random() * 5
-      )}，时长: ${dayjs(end).diff(dayjs(start), 'minute')}m`,
-    };
-  });
-};
-
-const GanttChart: React.FC = () => {
+export default function GanttChart({ alarmData }: GanttChartProps) {
+  const { levelMap } = useCommon();
   const detailRef = useRef<ModalRef>(null);
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
-  const data = useMemo(generateMock, []);
+
   const times = useMemo(() => {
-    const starts = data.map((d) => dayjs(d.start));
-    const ends = data.map((d) => dayjs(d.end));
-    const min = dayjs.min(...starts) ?? dayjs(data[0].start);
-    const max = dayjs.max(...ends) ?? dayjs(data[0].end);
+    const starts = alarmData.map((d) => dayjs(d.first_event_time));
+    const ends = alarmData.map((d) => dayjs(d.last_event_time));
+    const min = dayjs.min(...starts) ?? dayjs(alarmData[0].first_event_time);
+    const max = dayjs.max(...ends) ?? dayjs(alarmData[0].last_event_time);
     const total = max.diff(min);
     return { min, max, total };
-  }, [data]);
+  }, [alarmData]);
 
   const ticks = useMemo(() => {
-    const hourMs = 60 * 60 * 1000;
-    const count = Math.ceil(times.total / hourMs);
+    const totalMs = times.total;
+    const minTicks = 6;
+    const count = Math.max(minTicks, minTicks);
+    const intervalMs = totalMs / count;
     return Array.from({ length: count + 1 }).map((_, i) => {
-      const tm = times.min.add(i, 'hour');
-      const left = (tm.diff(times.min) / times.total) * 100;
+      const tm = dayjs(times.min.valueOf() + intervalMs * i);
+      const left = (tm.diff(times.min) / totalMs) * 100;
       return { label: tm.format('MM-DD HH:mm'), left };
     });
   }, [times]);
 
-  const onOpenDetail = (task: Task) => {
+  const onOpenDetail = (task: any) => {
     detailRef.current?.showModal({
-      title: task.name,
+      title: task.title,
       type: 'add',
       form: {
         id: task.id,
         level: task.level,
-        content: task.name,
+        content: task.title,
       },
     });
   };
@@ -80,6 +58,16 @@ const GanttChart: React.FC = () => {
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
+
+  const sortedData = useMemo(
+    () =>
+      [...alarmData].sort(
+        (a: any, b: any) =>
+          new Date(a.first_event_time).getTime() -
+          new Date(b.first_event_time).getTime()
+      ),
+    [alarmData]
+  );
 
   return (
     <>
@@ -110,9 +98,11 @@ const GanttChart: React.FC = () => {
             ))}
           </div>
           <div className={styles.chartContent}>
-            {data.map((d) => {
-              const s = dayjs(d.start).diff(times.min);
-              const w = dayjs(d.end).diff(dayjs(d.start));
+            {sortedData.map((d) => {
+              const s = dayjs(d.first_event_time).diff(times.min);
+              const w = dayjs(d.last_event_time).diff(
+                dayjs(d.first_event_time)
+              );
               const left = (s / times.total) * 100;
               const width = (w / times.total) * 100;
               return (
@@ -124,30 +114,34 @@ const GanttChart: React.FC = () => {
                   />
                   <div className={styles.barContainer}>
                     <Tooltip
+                      placement="top"
                       title={
                         <>
-                          <div>{d.name}</div>
-                          <div>
-                            开始: {dayjs(d.start).format('YYYY-MM-DD HH:mm')}
-                          </div>
-                          <div>
-                            结束: {dayjs(d.end).format('YYYY-MM-DD HH:mm')}
-                          </div>
-                          <div>{d.details}</div>
+                          <div>{d.title}</div>
+                          <div>开始: {d.first_event_time}</div>
+                          <div>结束: {d.last_event_time}</div>
+                          <div>操作者: {d.operator_user}</div>
                         </>
                       }
-                      placement="top"
                     >
                       <div
                         className={styles.bar}
                         style={{
                           left: `${left}%`,
                           width: `${width}%`,
-                          backgroundColor: '',
+                          backgroundColor: levelMap[d.level] as string,
                         }}
                         onClick={() => onOpenDetail(d)}
+                      ></div>
+
+                      <div
+                        className={styles.title}
+                        style={{
+                          left: `${left}%`,
+                          right: 0,
+                        }}
                       >
-                        {d.name}
+                        {d.title}
                       </div>
                     </Tooltip>
                   </div>
@@ -160,6 +154,4 @@ const GanttChart: React.FC = () => {
       </div>
     </>
   );
-};
-
-export default GanttChart;
+}
