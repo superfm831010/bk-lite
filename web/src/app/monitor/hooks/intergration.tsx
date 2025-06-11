@@ -704,6 +704,15 @@ const useColumnsAndFormItems = ({
             </>
           ),
         };
+      case 'bkpull':
+        return {
+          displaycolumns: [
+            columns[0],
+            ...columns.slice(9, 11),
+            ...columns.slice(4, 7),
+          ],
+          formItems: null,
+        };
       default:
         return {
           displaycolumns: [columns[0], ...columns.slice(3, 7)],
@@ -1913,6 +1922,72 @@ const useFormItems = ({
                     className="w-[300px] mr-[10px]"
                     min={1}
                     precision={0}
+                  />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.commonPortDes')}
+                </span>
+              </Form.Item>
+            </>
+          ),
+          configText: getConfigByPluginName(pluginName, 'manualCfgText'),
+        };
+      case 'bkpull':
+        return {
+          formItems: (
+            <>
+              {isEdit && (
+                <Form.Item required label="URL">
+                  <Form.Item
+                    noStyle
+                    name="urls"
+                    rules={[
+                      {
+                        required: true,
+                        message: t('common.required'),
+                      },
+                    ]}
+                  >
+                    <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                  </Form.Item>
+                  <span className="text-[12px] text-[var(--color-text-3)]">
+                    {t('monitor.intergrations.childUrlDes')}
+                  </span>
+                </Form.Item>
+              )}
+              <Form.Item label={t('monitor.intergrations.host')} required>
+                <Form.Item
+                  noStyle
+                  name="host"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                </Form.Item>
+                <span className="text-[12px] text-[var(--color-text-3)]">
+                  {t('monitor.intergrations.commonHostDes')}
+                </span>
+              </Form.Item>
+              <Form.Item label={t('monitor.intergrations.port')} required>
+                <Form.Item
+                  noStyle
+                  name="port"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('common.required'),
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    className="w-[300px] mr-[10px]"
+                    min={1}
+                    precision={0}
+                    disabled={isEdit}
                   />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
