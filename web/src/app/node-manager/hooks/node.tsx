@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import { Button } from 'antd';
+import { Button, Popconfirm } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { TableDataItem } from '@/app/node-manager/types';
 import { useUserInfoContext } from '@/context/userInfo';
@@ -8,10 +8,12 @@ import Permission from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 interface HookParams {
   checkConfig: (row: TableDataItem) => void;
+  deleteNode: (row: TableDataItem) => void;
 }
 
 export const useColumns = ({
   checkConfig,
+  deleteNode,
 }: HookParams): TableColumnsType<TableDataItem> => {
   const { showGroupNames } = useGroupNames();
   const { t } = useTranslation();
@@ -49,15 +51,35 @@ export const useColumns = ({
         width: 120,
         fixed: 'right',
         render: (key, item) => (
-          <Permission requiredPermissions={['View']}>
-            <Button type="link" onClick={() => checkConfig(item)}>
-              {t('node-manager.cloudregion.node.checkConfig')}
-            </Button>
-          </Permission>
+          <>
+            <Permission requiredPermissions={['View']}>
+              <Button type="link" onClick={() => checkConfig(item)}>
+                {t('node-manager.cloudregion.node.checkConfig')}
+              </Button>
+            </Permission>
+            {false && (
+              <Permission requiredPermissions={['Delete']}>
+                <Popconfirm
+                  className="ml-[10px]"
+                  title={t(`common.prompt`)}
+                  description={t(`common.deleteTips`)}
+                  okText={t('common.confirm')}
+                  cancelText={t('common.cancel')}
+                  onConfirm={() => {
+                    deleteNode(item);
+                  }}
+                >
+                  <Button type="link" disabled={!item.active}>
+                    {t('common.delete')}
+                  </Button>
+                </Popconfirm>
+              </Permission>
+            )}
+          </>
         ),
       },
     ],
-    [checkConfig, t]
+    [checkConfig, deleteNode, t]
   );
   return columns;
 };

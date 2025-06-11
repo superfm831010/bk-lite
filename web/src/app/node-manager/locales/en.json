@@ -33,7 +33,8 @@
     "updatedBy": "Updated By",
     "updatedAt": "Updated At",
     "inputPassword": "Please input the password",
-    "reset": "Reset"
+    "reset": "Reset",
+    "deleteTips": "Are you sure you want to modify this item?"
   },
   "node-manager": {
     "cloudregion": {
