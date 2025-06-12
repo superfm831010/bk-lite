@@ -269,7 +269,7 @@ COLLECT_OBJ_TREE = [
             {"id": "zookeeper", "model_id": "zookeeper", "name": "Zookeeper",
              "task_type": CollectPluginTypes.MIDDLEWARE,
              "type": CollectDriverTypes.JOB},
-            {"id": "kafka", "model_id": "tomcat", "kafka": "Kafka", "task_type": CollectPluginTypes.MIDDLEWARE,
+            {"id": "kafka", "model_id": "kafka", "name": "Kafka", "task_type": CollectPluginTypes.MIDDLEWARE,
              "type": CollectDriverTypes.JOB}
         ],
     }
