@@ -122,6 +122,11 @@ const useApiCloudRegion = () => {
     return await get('/node_mgmt/api/node/enum/');
   };
 
+  //删除节点
+  const delNode = async (id: React.Key) => {
+    return await del(`/node_mgmt/api/node/${id}/`);
+  };
+
   //配置文件的模块
   //获取配置文件列表
   const getConfiglist = async (params: ConfigListParams) => {
@@ -282,6 +287,7 @@ const useApiCloudRegion = () => {
     getInstallCommand,
     getAssoNodes,
     cancelApply,
+    delNode,
   };
 };
 export default useApiCloudRegion;
