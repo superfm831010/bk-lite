@@ -48,7 +48,7 @@ export const useColumns = ({
         title: t('common.actions'),
         key: 'action',
         dataIndex: 'action',
-        width: 120,
+        width: 200,
         fixed: 'right',
         render: (key, item) => (
           <>
@@ -57,24 +57,22 @@ export const useColumns = ({
                 {t('node-manager.cloudregion.node.checkConfig')}
               </Button>
             </Permission>
-            {false && (
-              <Permission requiredPermissions={['Delete']}>
-                <Popconfirm
-                  className="ml-[10px]"
-                  title={t(`common.prompt`)}
-                  description={t(`common.deleteTips`)}
-                  okText={t('common.confirm')}
-                  cancelText={t('common.cancel')}
-                  onConfirm={() => {
-                    deleteNode(item);
-                  }}
-                >
-                  <Button type="link" disabled={!item.active}>
-                    {t('common.delete')}
-                  </Button>
-                </Popconfirm>
-              </Permission>
-            )}
+            <Permission requiredPermissions={['Delete']}>
+              <Popconfirm
+                className="ml-[10px]"
+                title={t(`common.prompt`)}
+                description={t(`node-manager.cloudregion.node.deleteNodeTips`)}
+                okText={t('common.confirm')}
+                cancelText={t('common.cancel')}
+                onConfirm={() => {
+                  deleteNode(item);
+                }}
+              >
+                <Button type="link" disabled={item.active}>
+                  {t('common.delete')}
+                </Button>
+              </Popconfirm>
+            </Permission>
           </>
         ),
       },
