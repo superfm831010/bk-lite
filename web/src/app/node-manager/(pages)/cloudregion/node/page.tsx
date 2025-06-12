@@ -57,8 +57,8 @@ const Node = () => {
   const cloudId = useCloudId();
   const searchParams = useSearchParams();
   const { isLoading, del } = useApiClient();
-  const { getNodeList } = useApiCloudRegion();
-  const { getCollectorlist, deleteCollector } = useApiCollector();
+  const { getNodeList, delNode } = useApiCloudRegion();
+  const { getCollectorlist } = useApiCollector();
   const sidecarItems = useSidecarItems();
   const collectorItems = useCollectorItems();
   const statusMap = useTelegrafMap();
@@ -93,7 +93,7 @@ const Node = () => {
     deleteNode: async (row: TableDataItem) => {
       try {
         setLoading(true);
-        await deleteCollector({ id: row.id + '888' });
+        await delNode(row.id as string);
         message.success(t('common.successfullyDeleted'));
         getNodes('refresh');
       } catch {
