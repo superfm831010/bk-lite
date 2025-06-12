@@ -1966,7 +1966,7 @@ const useFormItems = ({
                     },
                   ]}
                 >
-                  <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                  <Input className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.commonHostDes')}
@@ -1987,7 +1987,6 @@ const useFormItems = ({
                     className="w-[300px] mr-[10px]"
                     min={1}
                     precision={0}
-                    disabled={isEdit}
                   />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
