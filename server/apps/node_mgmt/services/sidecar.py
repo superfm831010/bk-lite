@@ -258,7 +258,7 @@ class Sidecar:
         if not obj:
             return JsonResponse(status=404, data={}, manage="Configuration environment not found")
 
-        return JsonResponse(dict(id=configuration_id, env_config=obj.env_config))
+        return JsonResponse(dict(id=configuration_id, env_config={k: str(v) for k, v in obj.env_config.items()}))
 
     @staticmethod
     def get_variables(node_obj):
