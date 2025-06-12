@@ -4,7 +4,7 @@ import React, { useState, useEffect, FC } from 'react';
 import dayjs from 'dayjs';
 import SearchFilter from '@/app/alarm/components/searchFilter';
 import EventTable from '@/app/alarm/components/eventTable';
-import { Empty, Descriptions, message, Tabs, DatePicker, Spin } from 'antd';
+import CustomBreadcrumb from '@/app/alarm/components/customBreadcrumb';
 import { CopyOutlined } from '@ant-design/icons';
 import { useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
@@ -12,6 +12,7 @@ import { SourceItem } from '@/app/alarm/types/integration';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
 import { EventItem } from '@/app/alarm/types/alarms';
 import { useSourceApi } from '@/app/alarm/api/sources';
+import { Empty, Descriptions, message, Tabs, DatePicker, Spin } from 'antd';
 
 const IntegrationDetail: FC = () => {
   const { t } = useTranslation();
@@ -119,7 +120,7 @@ const IntegrationDetail: FC = () => {
   );
 
   const renderGuideTab = () => (
-    <div className="p-4 max-h-[calc(100vh-290px)] overflow-y-auto">
+    <div className="p-4 max-h-[calc(100vh-330px)] overflow-y-auto">
       <h4 className="mb-2 font-medium pl-2 border-l-4 border-blue-400 inline-block leading-tight">
         {t('integration.baseInfo')}
       </h4>
@@ -197,6 +198,8 @@ const IntegrationDetail: FC = () => {
 
   return (
     <div className="w-full flex-1">
+      <CustomBreadcrumb />
+
       <Spin spinning={loading}>
         {!source ? (
           <div className="mt-[24vh]">
@@ -230,7 +233,7 @@ const IntegrationDetail: FC = () => {
                     dataSource={eventList}
                     loading={eventLoading}
                     pagination={pagination}
-                    tableScrollY="calc(100vh - 440px)"
+                    tableScrollY="calc(100vh - 490px)"
                     onChange={(pag) =>
                       setPagination({
                         current: pag.current || 1,

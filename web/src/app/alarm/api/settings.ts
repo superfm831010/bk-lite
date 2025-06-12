@@ -1,7 +1,7 @@
 import useApiClient from '@/utils/request';
 
 export const useSettingApi = () => {
-  const { get, post, del, put } = useApiClient();
+  const { get, post, del, put, patch } = useApiClient();
 
   const getAssignmentList = (params: any) =>
     get('/alerts/api/assignment/', { params });
@@ -18,11 +18,15 @@ export const useSettingApi = () => {
   const deleteAssignment = (id: string | number) =>
     del(`/alerts/api/assignment/${id}/`);
 
+  const patchAssignment = (id: string | number, params: any) =>
+    patch(`/alerts/api/assignment/${id}/`, params);
+
   return {
     getAssignmentList,
     getAssignment,
     createAssignment,
     updateAssignment,
     deleteAssignment,
+    patchAssignment,
   };
 };

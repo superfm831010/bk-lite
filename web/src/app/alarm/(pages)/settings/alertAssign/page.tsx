@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import dayjs from 'dayjs';
 import OperateModal from './components/operateModal';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
@@ -10,12 +11,12 @@ import { AlertAssignListItem } from '@/app/alarm/types/settings';
 import { useSettingApi } from '@/app/alarm/api/settings';
 import { Button, Input, Modal, message, Switch } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import dayjs from 'dayjs';
 import { typeLabel, weekMap } from '@/app/alarm/constants/settings';
 
 const AlertAssign: React.FC = () => {
   const { t } = useTranslation();
-  const { getAssignmentList, deleteAssignment } = useSettingApi();
+  const { getAssignmentList, deleteAssignment, patchAssignment } =
+    useSettingApi();
   const listCount = useRef<number>(0);
   const { convertToLocalizedTime } = useLocalizedTime();
   const [tableLoading, setTableLoading] = useState<boolean>(false);
@@ -106,10 +107,12 @@ const AlertAssign: React.FC = () => {
   };
 
   const handleFilterClear = () => {
-    setPagination({ ...pagination, current: 1 });
+    setSearchKey('');
+    setPagination((prev) => ({ ...prev, current: 1 }));
     getTableList({
-      ...pagination,
       current: 1,
+      pageSize: pagination.pageSize,
+      searchKey: '',
     });
   };
 
@@ -126,12 +129,17 @@ const AlertAssign: React.FC = () => {
     checked: boolean
   ) => {
     try {
-      message.success(
-        checked ? t('settings.enableSuccess') : t('settings.disableSuccess')
-      );
+      const data = await patchAssignment(row.id, { is_active: checked });
+      if (!data) {
+        message.error(t('common.operateFailed'));
+      } else {
+        message.success(
+          checked ? t('settings.enableSuccess') : t('settings.disableSuccess')
+        );
+      }
       getTableList();
     } catch {
-      message.error(t('common.operateFailed'));
+      console.error(t('common.operateFailed'));
     }
   };
 
@@ -147,35 +155,50 @@ const AlertAssign: React.FC = () => {
         title: t('settings.assignPersonnel'),
         dataIndex: 'personnel',
         key: 'personnel',
-        width: 200,
+        width: 180,
+        shouldCellUpdate: (
+          prev: AlertAssignListItem,
+          next: AlertAssignListItem
+        ) => prev.personnel.join(',') !== next.personnel.join(','),
         render: (_: any, { personnel }: AlertAssignListItem) =>
           personnel ? <UserAvatar userName={personnel.join(',')} /> : '--',
       },
       {
         title: t('settings.assignTime'),
         key: 'assignTime',
-        width: 200,
+        width: 220,
         render: (_: any, row: AlertAssignListItem) => {
           const { type, start_time, end_time, week_month } = row.config as any;
+          let label = typeLabel[type] || '';
+
           const fmt = (t: any, pattern = 'HH:mm:ss') =>
-            dayjs(t).format(pattern);
+            dayjs(t, pattern).format(pattern);
+
           if (type === 'one') {
             return `${fmt(start_time, 'YYYY-MM-DD HH:mm:ss')}-${fmt(end_time, 'YYYY-MM-DD HH:mm:ss')}`;
-          }
-          let label = typeLabel[type] || '';
-          if (type === 'week') {
+          } else if (type === 'week') {
             label += ` ${(week_month || []).map((d: number) => weekMap[d]).join(',')}`;
           } else if (type === 'month') {
             label += ` ${(week_month || []).map((d: number) => `${d}日`).join(',')}`;
           }
-          return `${label} ${fmt(start_time)}-${fmt(end_time)}`;
+          return `${label} ${fmt(start_time)} - ${fmt(end_time)}`;
         },
       },
       {
         title: t('settings.assignStatus'),
         dataIndex: 'assignStatus',
         key: 'assignStatus',
-        width: 120,
+        width: 100,
+        render: (_: any, row: AlertAssignListItem) => {
+          const { is_active } = row;
+          return is_active ? (
+            <span style={{ color: '#00ba6c' }}>{t('settings.effective')}</span>
+          ) : (
+            <span style={{ color: '#CE241B' }}>
+              {t('settings.ineffective')}
+            </span>
+          );
+        },
       },
       {
         title: t('settings.assignCreateTime'),
@@ -190,11 +213,10 @@ const AlertAssign: React.FC = () => {
         title: t('settings.assignStartStop'),
         dataIndex: 'is_active',
         key: 'is_active',
-        width: 120,
+        width: 110,
         render: (val: boolean, row: AlertAssignListItem) => (
           <Switch
             checked={val}
-            disabled={row.is_active}
             onChange={(checked) => handleStatusToggle(row, checked)}
           />
         ),
@@ -202,7 +224,7 @@ const AlertAssign: React.FC = () => {
       {
         title: t('settings.assignActions'),
         key: 'operation',
-        width: 160,
+        width: 130,
         render: (text: any, row: AlertAssignListItem) => (
           <div className="flex gap-4">
             <PermissionWrapper requiredPermissions={['Edit']}>

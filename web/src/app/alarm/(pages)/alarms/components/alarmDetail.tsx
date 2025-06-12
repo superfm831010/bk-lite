@@ -257,11 +257,14 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
               <AlarmAction
                 rowData={[formData]}
                 displayMode="dropdown"
-                onAction={handleAction}
+                onAction={() => {
+                  handleAction?.();
+                  handleCancel();
+                }}
               />
             </div>
           </div>
-          <ul className="flex mt-[10px] mb-[14px] space-x-4">
+          <ul className="flex mt-[10px] mb-[14px] space-x-2">
             <li>
               <Tag>{STATE_MAP[formData.status as keyof StateMap] || '--'}</Tag>
             </li>
@@ -318,7 +321,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
                 dataSource={eventList}
                 loading={eventLoading}
                 pagination={pagination}
-                tableScrollY="calc(100vh - 400px)"
+                tableScrollY="calc(100vh - 410px)"
                 onChange={(pag) =>
                   setPagination((prev) => ({
                     ...prev,

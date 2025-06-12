@@ -130,7 +130,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
     <Drawer
       title={
         currentRow
-          ? t('settings.assignStrategy.editTitle')
+          ? t('settings.assignStrategy.editTitle') + ` - ${currentRow.name}`
           : t('settings.assignStrategy.addTitle')
       }
       placement="right"
@@ -200,7 +200,11 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
                       return Promise.reject(new Error(t('common.inputMsg')));
                     }
                     for (const item of orGroup) {
-                      if (!item.key || !item.operator || !item.value) {
+                      if (
+                        !item.key ||
+                        !item.operator ||
+                        (!item.value && item.value !== 0)
+                      ) {
                         return Promise.reject(new Error(t('common.inputMsg')));
                       }
                     }
@@ -239,6 +243,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
           <Checkbox.Group options={notifyOptions} />
         </Form.Item>
         <Collapse
+          defaultActiveKey={[]}
           ghost
           expandIcon={({ isActive }) => (
             <CaretRightOutlined

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Icon from '@/components/icon';
+import commonStyles from '@/app/alarm/components/customBreadcrumb/index.module.scss';
 import styles from './page.module.scss';
 import AlarmTable from '@/app/alarm/components/alarmTable';
 import GanttChart from '../components/ganttChart';
@@ -15,7 +16,6 @@ import { useTranslation } from '@/utils/i18n';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeftOutlined,
   DownOutlined,
   EditOutlined,
   CheckOutlined,
@@ -246,11 +246,10 @@ const IncidentDetail: React.FC = () => {
 
   return (
     <div className={styles.detailContainer}>
-      <Breadcrumb className={styles.breadcrumb}>
-        <ArrowLeftOutlined
-          onClick={() => router.back()}
-          className={styles.backIcon}
-        />
+      <Breadcrumb className={commonStyles.breadcrumb}>
+        <div onClick={() => router.back()} className={commonStyles.backIcon}>
+          <Icon type="xiangzuojiantou" />
+        </div>
         <Breadcrumb.Item>
           <span className="ml-[10px] mr-[10px]">{detail.alertName}</span>
           <Tag color={levelMapIncident[detail.level] as string}>

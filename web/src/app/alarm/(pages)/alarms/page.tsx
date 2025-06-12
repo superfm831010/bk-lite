@@ -166,7 +166,6 @@ const Alert: React.FC = () => {
   }, [
     isLoading,
     timeRange,
-    showChart,
     activeTab,
     filters.state,
     filters.level,
@@ -224,6 +223,8 @@ const Alert: React.FC = () => {
     }
   };
 
+  const lastChartParamsRef = useRef<string>('');
+
   const getChartData = async (type: string) => {
     const params = getParams();
     const chartParams = deepClone(params);
@@ -234,6 +235,13 @@ const Alert: React.FC = () => {
       chartParams.created_at_after = '';
       chartParams.created_at_before = '';
     }
+    // 参数序列化对比，若无变化则跳过
+    const key = JSON.stringify(chartParams);
+    if (type === 'toggle' && key === lastChartParamsRef.current) {
+      return;
+    }
+    lastChartParamsRef.current = key;
+
     try {
       setChartLoading(type !== 'timer');
       const data = await getAlarmList(chartParams);
@@ -327,6 +335,9 @@ const Alert: React.FC = () => {
                     onChange={(checked) => {
                       saveSettings({ showChart: checked });
                       setShowChart(checked);
+                      if (checked) {
+                        getChartData('toggle');
+                      }
                     }}
                     className="ml-2"
                   />

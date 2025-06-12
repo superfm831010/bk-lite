@@ -134,6 +134,8 @@
         "assignActions": "操作",
         "enableSuccess": "启用成功",
         "disableSuccess": "停用成功",
+        "effective": "生效",
+        "ineffective": "未启用",
         "assignStrategy": {
             "ruleAll": "全部",
             "ruleFilter": "筛选",

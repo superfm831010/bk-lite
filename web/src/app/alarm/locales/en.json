@@ -98,7 +98,7 @@
         "user": "User",
         "objectType": "Object Type",
         "object": "Object",
-        "content": "内容",
+        "content": "Content",
         "metricName": "Metric Name",
         "metricValue": "Metric Value"
     },
@@ -132,6 +132,8 @@
         "assignActions": "Actions",
         "enableSuccess": "Enable successfully",
         "disableSuccess": "Disable successfully",
+        "effective": "Effective",
+        "ineffective": "Ineffective",
         "assignStrategy": {
             "ruleAll": "All",
             "ruleFilter": "Filter",
