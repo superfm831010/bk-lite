@@ -33,7 +33,8 @@
     "updatedBy": "更新人",
     "updatedAt": "更新时间",
     "inputPassword": "请输入密码",
-    "reset": "重置"
+    "reset": "重置",
+    "deleteTips": "您确定要修改此项吗？"
   },
   "node-manager": {
     "cloudregion": {
@@ -127,7 +128,8 @@
         "inactive": "不活跃",
         "unknown": "未知的",
         "stop": "停止",
-        "nodeName": "节点名称"
+        "nodeName": "节点名称",
+        "deleteNodeTips": "自动安装的节点，建议通过卸载控制器进行删除，手动删除节点后，若后续该节点sidecar正常上报，则会自动更新在该列表中。"
       },
       "Configuration": {
         "system": "操作系统",

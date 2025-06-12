@@ -142,6 +142,7 @@ def get_skill_and_params(kwargs, team):
         "show_think": skill_obj.show_think,
         "tools": skill_obj.tools,
         "skill_type": skill_obj.skill_type,
+        "group": skill_obj.team[0],
     }
 
     return skill_obj, params, None
@@ -500,7 +501,7 @@ def _generate_sse_stream(url, headers, chat_kwargs, skill_obj, show_think):
 def stream_chat(params, skill_obj, kwargs, current_ip, user_message):
     llm_model = LLMModel.objects.get(id=params["llm_model"])
     show_think = params.pop("show_think", True)
-
+    group = params.pop("group", 0)
     # 处理用户消息和图片
     chat_kwargs, doc_map, title_map = llm_service.format_chat_server_kwargs(params, llm_model)
 
@@ -578,7 +579,6 @@ def stream_chat(params, skill_obj, kwargs, current_ip, user_message):
         # 发送最终的完成标志
         final_chunk = _create_stream_chunk("", skill_obj, "stop")
         yield f"data: {json.dumps(final_chunk)}\n\n"
-        group = llm_model.consumer_team or llm_model.team[0]
         used_token = prompt_tokens + completion_tokens
         team_info, is_created = TeamTokenUseInfo.objects.get_or_create(
             group=group, llm_model=llm_model.name, defaults={"used_token": used_token}

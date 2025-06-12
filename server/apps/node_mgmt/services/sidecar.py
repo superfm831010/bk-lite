@@ -7,6 +7,7 @@ from django.core.cache import cache
 from django.http import JsonResponse, HttpResponse
 
 from apps.core.utils.crypto.aes_crypto import AESCryptor
+from apps.node_mgmt.constants import CACHE_TIMEOUT
 from apps.node_mgmt.default_config.nats_executor import create_nats_executor_config
 from apps.node_mgmt.default_config.telegraf import create_telegraf_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
@@ -56,7 +57,7 @@ class Sidecar:
         new_etag = Sidecar.generate_etag(_collectors.decode('utf-8'))
 
         # 更新缓存中的 ETag
-        cache.set('collectors_etag', new_etag)
+        cache.set('collectors_etag', new_etag, CACHE_TIMEOUT)
 
         # 返回采集器列表和新的 ETag
         return JsonResponse({'collectors': collectors}, headers={'ETag': new_etag})
@@ -179,7 +180,7 @@ class Sidecar:
         _response_data = JsonResponse(response_data).content
         new_etag = Sidecar.generate_etag(_response_data.decode('utf-8'))
         # 更新缓存中的ETag
-        cache.set(f"node_etag_{node_id}", new_etag)
+        cache.set(f"node_etag_{node_id}", new_etag, CACHE_TIMEOUT)
 
         # 返回响应
         return JsonResponse(status=202, data=response_data, headers={'ETag': new_etag})
@@ -234,7 +235,7 @@ class Sidecar:
         new_etag = Sidecar.generate_etag(_configuration.decode('utf-8'))
 
         # 更新缓存中的 ETag
-        cache.set(f"configuration_etag_{configuration_id}", new_etag)
+        cache.set(f"configuration_etag_{configuration_id}", new_etag, CACHE_TIMEOUT)
 
         variables = Sidecar.get_variables(node)
         # 如果配置中有 env_config，则合并到变量中

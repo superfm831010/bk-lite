@@ -178,6 +178,7 @@ const SkillSettingsPage: React.FC = () => {
           show_think: values.show_think,
           tools: selectedTools,
           skill_type: skillType,
+          group: values.group?.[0]
         };
         const reply = await executeLlm(payload);
         const botMessage: CustomChatMessage = {
@@ -333,7 +334,9 @@ const SkillSettingsPage: React.FC = () => {
                     <p className="pb-4 text-xs text-[var(--color-text-4)]">{t('skill.ragTip')}</p>
                     {ragEnabled && (
                       <div className="pb-2">
-                        <Form.Item label={t('skill.ragSource')}>
+                        <Form.Item
+                          label={t('skill.ragSource')}
+                          tooltip={t('skill.form.ragSourceTip')}>
                           <Switch size="small" className="ml-2" checked={showRagSource} onChange={setRagSourceStatus}/>
                         </Form.Item>
                         <Form.Item label={t('skill.knowledgeBase')} tooltip={t('skill.knowledgeBaseTip')}>

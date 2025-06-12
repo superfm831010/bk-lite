@@ -132,6 +132,10 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     if (config.collect_type === 'exporter') {
       Object.assign(formData, envConfig);
     }
+    if (config.collect_type === 'bkpull') {
+      const params = extractBkpullUrl(formData.urls?.[0] || '');
+      Object.assign(formData, params);
+    }
     switch (config.plugin_name) {
       case 'ElasticSearch':
         formData.server = formData.servers?.[0];
@@ -197,6 +201,18 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     };
   };
 
+  const extractBkpullUrl = (url: string) => {
+    const regex = /^https?:\/\/([^:\/]+):(\d+)/;
+    const matches = url.match(regex);
+    if (!matches || matches.length < 3) {
+      return {};
+    }
+    return {
+      host: matches[1],
+      port: matches[2],
+    };
+  };
+
   const extractPostgresUrl = (url: string) => {
     const result = {
       host: '',
@@ -253,35 +269,43 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     });
   };
 
+  const replaceMinioUrls = (
+    urls: string[],
+    { host, port }: { host: string; port: string }
+  ) => {
+    const regex = /^(https?:\/\/)[^\/:]+(?::\d+)?(\/minio\/.*)$/;
+    return urls.map((url) => {
+      return url.replace(regex, `$1${host}:${port}$2`);
+    });
+  };
+
   const operateConfig = async (params: TableDataItem) => {
-    if (collectType !== 'jmx') {
-      if (
-        [
-          'Switch SNMP General',
-          'Firewall SNMP General',
-          'Detection Device SNMP General',
-          'Loadbalance SNMP General',
-          'Router SNMP General',
-          'Scanning Device SNMP General',
-          'Bastion Host SNMP General',
-          'Storage SNMP General',
-          'Hardware Server SNMP General',
-        ].includes(pluginName)
-      ) {
-        delete params.monitor_ip;
-        delete params.port;
-        Object.assign(configForm.child.content.config, params);
-      }
-      switch (pluginName) {
-        case 'ElasticSearch':
-          configForm.child.content.config.servers = [params.server];
-          break;
-        default:
-          break;
-      }
-      if (params.timeout) {
-        configForm.child.content.config.timeout = params.timeout + 's';
-      }
+    if (
+      [
+        'Switch SNMP General',
+        'Firewall SNMP General',
+        'Detection Device SNMP General',
+        'Loadbalance SNMP General',
+        'Router SNMP General',
+        'Scanning Device SNMP General',
+        'Bastion Host SNMP General',
+        'Storage SNMP General',
+        'Hardware Server SNMP General',
+      ].includes(pluginName)
+    ) {
+      delete params.monitor_ip;
+      delete params.port;
+      Object.assign(configForm.child.content.config, params);
+    }
+    if (pluginName === 'ElasticSearch') {
+      configForm.child.content.config.servers = [params.server];
+    }
+    if (collectType === 'bkpull') {
+      const urls = configForm.child.content.config.urls;
+      configForm.child.content.config.urls = replaceMinioUrls(urls, {
+        host: params.host,
+        port: params.port,
+      });
     }
     ['LISTEN_PORT', 'HOST', 'PASSWORD', 'PORT', 'SERVICE_NAME', 'USER'].forEach(
       (item) => {
@@ -290,6 +314,9 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
         }
       }
     );
+    if (params.timeout) {
+      configForm.child.content.config.timeout = params.timeout + 's';
+    }
     configForm.child.content.config.interval = params.interval + 's';
     try {
       setConfirmLoading(true);

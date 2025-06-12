@@ -116,14 +116,10 @@ const ProviderPage: React.FC = () => {
 
     setModalLoading(true);
     try {
-      const result = await addProvider(type, payload);
-      if (result && result.id) {
-        message.success(t('common.saveSuccess'));
-        fetchModelsData(type);
-        setIsAddModalVisible(false);
-      } else {
-        message.error(t('common.saveFailed'));
-      }
+      await addProvider(type, payload);
+      message.success(t('common.saveSuccess'));
+      fetchModelsData(type);
+      setIsAddModalVisible(false);
     } catch {
       message.error(t('common.saveFailed'));
     } finally {

@@ -17,6 +17,7 @@
           "name": "Cloud Region-Node",
           "operation": [
             "View",
+            "Delete",
             "InstallController",
             "UninstallController",
             "OperateCollector"

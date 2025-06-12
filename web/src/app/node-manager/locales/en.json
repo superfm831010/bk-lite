@@ -33,7 +33,8 @@
     "updatedBy": "Updated By",
     "updatedAt": "Updated At",
     "inputPassword": "Please input the password",
-    "reset": "Reset"
+    "reset": "Reset",
+    "deleteTips": "Are you sure you want to modify this item?"
   },
   "node-manager": {
     "cloudregion": {
@@ -127,7 +128,8 @@
         "inactive": "inactive",
         "unknown": "unknown",
         "stop": "stop",
-        "nodeName": "Node Name"
+        "nodeName": "Node Name",
+        "deleteNodeTips": "For nodes that are automatically installed, it is recommended to uninstall the controller for deletion. After manually deleting the node, if the node's side car reports normally in the future, it will be automatically updated in the list."
       },
       "Configuration": {
         "system": "Operating System",

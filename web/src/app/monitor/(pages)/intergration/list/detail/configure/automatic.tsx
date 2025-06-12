@@ -401,7 +401,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     if (collectType === 'docker') {
       return { ...initItem, endpoint: null };
     }
-    if (collectType === 'database') {
+    if (['database', 'bkpull'].includes(collectType)) {
       return pluginName === 'ElasticSearch'
         ? { ...initItem, server: null }
         : { ...initItem, host: null, port: null };
@@ -578,6 +578,8 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
         return row.jmx_url;
       case 'exporter':
         return `${row.ENV_HOST}:${row.ENV_PORT}`;
+      case 'bkpull':
+        return `${row.host}:${row.port}`;
       default:
         return row.url;
     }
