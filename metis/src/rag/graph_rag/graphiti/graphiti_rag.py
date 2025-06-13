@@ -51,6 +51,7 @@ class GraphitiRAG():
         )
         await graphiti.build_indices_and_constraints()
 
+    # async def build_communities(self,req:):
     async def ingest(self, req: GraphRagDocumentIngestRequest):
         llm_client = AsyncOpenAI(
             api_key=req.openai_api_key,
