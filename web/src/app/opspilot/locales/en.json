@@ -350,6 +350,7 @@
   "chat": {
     "test": "Test",
     "sendFailed": "Failed to send message",
+    "connectionError": "Connection error, please try again later",
     "copied": "Copied to clipboard",
     "copyFailed": "Could not copy message",
     "regenerateFailed": "Failed to regenerate message",
