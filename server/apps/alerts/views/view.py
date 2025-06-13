@@ -4,10 +4,8 @@
 # @Author: windyzhao
 from django.contrib.postgres.aggregates import StringAgg
 from django.db.models import Count
-from django.http import JsonResponse
 from rest_framework.decorators import action
 
-from apps.alerts.constants import AlertOperate
 from apps.alerts.filters import AlertSourceModelFilter, AlertModelFilter, EventModelFilter, LevelModelFilter
 from apps.alerts.models import AlertSource, Alert, Event, Level
 from apps.alerts.serializers.serializers import AlertSourceModelSerializer, AlertModelSerializer, EventModelSerializer, \
@@ -48,11 +46,12 @@ class AlterModelViewSet(ModelViewSet):
     pagination_class = CustomPageNumberPagination
 
     def get_queryset(self):
-        return Alert.objects.annotate(
+        queryset = Alert.objects.annotate(
             event_count_annotated=Count('events'),
             # 通过事件获取告警源名称（去重）
             source_names_annotated=StringAgg('events__source__name', delimiter=', ', distinct=True)
         ).prefetch_related('events__source')
+        return queryset
 
     def list(self, request, *args, **kwargs):
         """
@@ -103,4 +102,6 @@ class LevelModelViewSet(ModelViewSet):
     queryset = Level.objects.all()
     serializer_class = LevelModelSerializer
     filterset_class = LevelModelFilter
+    ordering_fields = ["level_id"]
+    ordering = ["level_id"]
     pagination_class = CustomPageNumberPagination

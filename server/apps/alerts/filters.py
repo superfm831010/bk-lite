@@ -5,7 +5,7 @@
 from django_filters import FilterSet, CharFilter
 
 from apps.alerts.constants import AlertStatus
-from apps.alerts.models import AlertSource, Alert, Event, Level
+from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment
 
 
 class AlertSourceModelFilter(FilterSet):
@@ -92,7 +92,8 @@ class EventModelFilter(FilterSet):
 
     class Meta:
         model = Event
-        fields = ["title", "description", "event_id", "alert_id", "source_id", "received_at_after", "received_at_before"]
+        fields = ["title", "description", "event_id", "alert_id", "source_id", "received_at_after",
+                  "received_at_before"]
 
     @staticmethod
     def filter_alert_id(qs, field_name, value):
@@ -107,3 +108,11 @@ class LevelModelFilter(FilterSet):
     class Meta:
         model = Level
         fields = ["type"]
+
+
+class AlertAssignmentModelFilter(FilterSet):
+    name = CharFilter(field_name="name", lookup_expr="icontains", label="名称")
+
+    class Meta:
+        model = AlertAssignment
+        fields = ["name"]

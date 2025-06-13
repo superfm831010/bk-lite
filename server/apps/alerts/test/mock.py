@@ -3,11 +3,6 @@
 # @Time: 2025/5/30 17:32
 # @Author: windyzhao
 
-# -- coding: utf-8 --
-# @File: mock.py
-# @Time: 2025/5/20 11:24
-# @Author: windyzhao
-
 
 import random
 import time
@@ -98,8 +93,8 @@ def generate_mock_events(num_events=100):
 
     # 构建最终数据结构
     result = {
-        "source_type": "monitor",
-        "source_id": "monitor",
+        "source_type": "restful",
+        "source_id": "restful",
         "events": events
     }
 
@@ -240,8 +235,8 @@ def generate_jenkins_failure_events(num_pipelines=5):
 
     # 构建最终数据结构
     result = {
-        "source_type": "monitor",
-        "source_id": "monitor",
+        "source_type": "restful",
+        "source_id": "restful",
         "events": events
     }
 
@@ -250,20 +245,20 @@ def generate_jenkins_failure_events(num_pipelines=5):
 
 if __name__ == "__main__":
     # 生成100个mock事件
-    # mock_data = generate_mock_events(20)
-    #
-    # # 保存到JSON文件
-    # with open("mock_monitor_events.json", "w") as f:
-    #     json.dump(mock_data, f, indent=2)
-    #
-    # print("Mock数据已生成并保存到 mock_monitor_events.json 文件")
-
-    # 生成Jenkins失败事件数据，包含0.0和负数测试
-    jenkins_data = generate_jenkins_failure_events(2)
+    mock_data = generate_mock_events(20)
 
     # 保存到JSON文件
-    with open("mock_jenkins_failure_events.json", "w", encoding='utf-8') as f:
-        json.dump(jenkins_data, f, indent=2, ensure_ascii=False)
+    with open("mock_monitor_events.json", "w") as f:
+        json.dump(mock_data, f, indent=2)
 
-    print("Jenkins失败事件Mock数据已生成并保存到 mock_jenkins_failure_events.json 文件")
-    print("数据包含：负数值、0.0值和正数值的测试用例")
+    print("Mock数据已生成并保存到 mock_monitor_events.json 文件")
+    #
+    # # 生成Jenkins失败事件数据，包含0.0和负数测试
+    # jenkins_data = generate_jenkins_failure_events(2)
+    #
+    # # 保存到JSON文件
+    # with open("mock_jenkins_failure_events.json", "w", encoding='utf-8') as f:
+    #     json.dump(jenkins_data, f, indent=2, ensure_ascii=False)
+    #
+    # print("Jenkins失败事件Mock数据已生成并保存到 mock_jenkins_failure_events.json 文件")
+    # print("数据包含：负数值、0.0值和正数值的测试用例")

@@ -181,8 +181,8 @@ DEFAULT_LEVEL = [
         "level_name": "Critical",
         "level_display_name": "致命",
         "color": "#F43B2C",
-        "icon": "",
-        "description": "critical",
+        "icon": "huoyanhuodongtuijian",
+        "description": "",
     },
     {
         "level_type": LevelType.ALERT,
@@ -258,7 +258,7 @@ class AlertAssignmentNotifyChannels:
 class AlertAssignmentNotificationScenario:
     """ 告警分派通知场景 """
 
-    ASSIGNMENT = "Assignment"
+    ASSIGNMENT = "assignment"
     RECOVERED = "recovered"
 
     CHOICES = (

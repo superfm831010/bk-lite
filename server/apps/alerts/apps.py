@@ -37,8 +37,8 @@ def adapters(**kwargs):
     """注册告警源适配器"""
     try:
         from apps.alerts.common.source_adapter.base import AlertSourceAdapterFactory
-        from apps.alerts.common.source_adapter.monitor import MonitorAdapter
-        AlertSourceAdapterFactory.register_adapter('monitor', MonitorAdapter)
+        from apps.alerts.common.source_adapter.restful import RestFulAdapter
+        AlertSourceAdapterFactory.register_adapter('restful', RestFulAdapter)
     except Exception as e:
         logger.error(f"Failed to register alert source adapter: {e}")
         pass

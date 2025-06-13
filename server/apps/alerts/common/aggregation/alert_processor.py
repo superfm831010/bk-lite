@@ -2,7 +2,6 @@
 # @File: alert_processor.py
 # @Time: 2025/5/21 11:03
 # @Author: windyzhao
-import logging
 import uuid
 
 import pandas as pd
@@ -12,12 +11,12 @@ from typing import List, Dict, Any, Tuple
 from django.db import transaction, IntegrityError
 from django.utils import timezone
 
+from apps.alerts.common.assignment import execute_auto_assignment_for_alerts
 from apps.alerts.common.rules.rule_manager import get_rule_manager
 from apps.alerts.common.rules.alert_rules import format_alert_message
 from apps.alerts.constants import AlertStatus, LevelType
 from apps.alerts.models import Event, Alert, Level
-
-logger = logging.getLogger(__name__)
+from apps.core.logger import logger
 
 
 class AlertProcessor:
@@ -58,12 +57,12 @@ class AlertProcessor:
         try:
             # 1. 获取事件数据
             events = self.get_events()
-            
+
             # 2. 使用规则管理器执行规则检测
             logger.info("==start process events with rule manager==")
             rule_results = self.rule_manager.execute_rules(events)
             logger.info("==end process events with rule manager==")
-            
+
             # 3. 处理规则执行结果
             for rule_name, rule_result in rule_results.items():
                 if rule_result.triggered:
@@ -71,13 +70,13 @@ class AlertProcessor:
                     if not rule_config:
                         logger.warning(f"Rule config not found for: {rule_name}")
                         continue
-                    
+
                     # 根据event_id拿出event的原始数据
                     for fingerprint, _event_dict in rule_result.instances.items():
                         event_ids = _event_dict['event_ids']  # 事件ID列表
                         event_data = events[events['event_id'].isin(event_ids)].to_dict('records')
                         related_alerts = _event_dict.get("related_alerts", [])
-                        
+
                         alert = {
                             "rule_name": rule_name,
                             "description": rule_result.description,
@@ -90,7 +89,7 @@ class AlertProcessor:
                             "fingerprint": fingerprint,
                             "related_alerts": related_alerts
                         }
-                        
+
                         if related_alerts:
                             # 更新告警
                             update_alert_list.append(alert)
@@ -135,10 +134,11 @@ class AlertProcessor:
     def get_max_level(self, event_levels):
         # TODO 目前的规则是取事件级别列表获取最高级别 后续会自定义取级别的规则
         # 根据事件级别列表获取最高级别 若列表为空则返回默认Alert的最低等级的level
+        print("event_levels", event_levels)
         highest_level = min(event_levels)
         if highest_level not in self.level_priority:
             highest_level = self.level_priority[-1]
-        return highest_level
+        return int(highest_level)
 
     def get_event_instances(self, event_ids: List[str]):
         """根据事件ID获取事件实例"""
@@ -153,10 +153,13 @@ class AlertProcessor:
 
         return instances, highest_level
 
-    def bulk_create_alerts(self, alerts: List[Dict[str, Any]]) -> None:
+    def bulk_create_alerts(self, alerts: List[Dict[str, Any]]) -> List[str]:
         """批量创建告警"""
+
+        result = []
+
         if not alerts:
-            return
+            return result
 
         with transaction.atomic():
             for alert in alerts:
@@ -172,7 +175,8 @@ class AlertProcessor:
 
                     if existing_active_alert:
                         # 已有活跃告警，更新它
-                        existing_active_alert.level = self.get_max_level([existing_active_alert.level, alert['level']])
+                        existing_active_alert.level = self.get_max_level(
+                            [int(existing_active_alert.level), int(alert['level'])])
                         existing_active_alert.last_event_time = alert.get('last_event_time',
                                                                           existing_active_alert.last_event_time)
                         existing_active_alert.save(update_fields=['level', 'last_event_time'])
@@ -190,6 +194,7 @@ class AlertProcessor:
                             ]
                             through_model.objects.bulk_create(through_values)
                             logger.info(f"Created new alert with fingerprint: {fingerprint}")
+                            result.append(alert_obj.alert_id)
                         except IntegrityError:
                             # 如果有唯一约束冲突，重新查询并更新
                             existing_alert = Alert.objects.filter(
@@ -203,6 +208,8 @@ class AlertProcessor:
                 except Exception as err:
                     import traceback
                     logger.error("Error processing alert: {}".format(traceback.format_exc()))
+
+        return result
 
     def update_alerts(self, alerts: List[Dict[str, Any]]) -> None:
         """
@@ -225,7 +232,7 @@ class AlertProcessor:
                         instances, level = self.get_event_instances(event_ids=event_ids)
                         last_event_time = instances.last().received_at
                         # 等级取最高的level
-                        alert_obj.level = self.get_max_level([alert_obj.level, level])
+                        alert_obj.level = self.get_max_level([int(alert_obj.level), level])
                         alert_obj.last_event_time = last_event_time
                         alert_obj.save(update_fields=['level', 'last_event_time'])
                         alert_obj.events.add(*instances)
@@ -238,17 +245,6 @@ class AlertProcessor:
                 except Exception as err:
                     import traceback
                     logger.error(f"Error updating alert {fingerprint}: {traceback.format_exc()}")
-
-    def main(self):
-        """主流程方法"""
-        add_alert_list, update_alert_list = self.process()
-        logger.info("==add_alert_list data={}==".format(add_alert_list))
-        logger.info("==update_alert_list data={}==".format(update_alert_list))
-        if add_alert_list:
-            self.bulk_create_alerts(alerts=add_alert_list)
-
-        if update_alert_list:
-            self.update_alerts(alerts=update_alert_list)
 
     def get_rule_statistics(self) -> Dict[str, Any]:
         """获取规则统计信息"""
@@ -269,3 +265,26 @@ class AlertProcessor:
     def reload_rules(self):
         """重新加载规则"""
         self.rule_manager.reload_rules()
+
+    @staticmethod
+    def alert_auto_assign(alert_id_list) -> None:
+        """
+        自动分配告警处理人
+        """
+        try:
+            execute_auto_assignment_for_alerts(alert_id_list)
+        except Exception as err:
+            import traceback
+            logger.error(f"Error in auto assignment for alerts {alert_id_list}: {traceback.format_exc()}")
+
+    def main(self):
+        """主流程方法"""
+        add_alert_list, update_alert_list = self.process()
+        logger.info("==add_alert_list data={}==".format(add_alert_list))
+        logger.info("==update_alert_list data={}==".format(update_alert_list))
+        if add_alert_list:
+            self.bulk_create_alerts(alerts=add_alert_list)
+            self.alert_auto_assign(alert_id_list=[alert['alert_id'] for alert in add_alert_list])
+
+        if update_alert_list:
+            self.update_alerts(alerts=update_alert_list)

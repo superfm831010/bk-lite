@@ -1,0 +1,107 @@
+{
+    "client_id": "alarm",
+    "name": "Alarm",
+    "url": "/alarm/search",
+    "description": "Create roles for the Alarm app to manage data permissions, menu permissions, and feature permissions.",
+    "menus": [
+      {
+        "name": "Incidents",
+        "children": [
+          {
+            "id": "incidents",
+            "display_name": "Incidents",
+            "name": "incidents",
+            "operation": [
+                "View",
+                "Add",
+                "Edit",
+                "Delete"
+            ]
+          }, 
+          {
+            "id": "incident_detail",
+            "display_name": "Incident Detail",
+            "name": "incident_detail",
+            "operation": [
+                "View",
+                "Add",
+                "Edit",
+                "Delete"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Alarms",
+        "children": [
+          {
+            "id": "alarms",
+            "display_name": "Alarms",
+            "name": "alarms",
+            "operation": [
+                "View",
+                "Add",
+                "Edit",
+                "Delete"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Integration",
+        "children": [
+          {
+            "id": "integration",
+            "display_name": "Integration",
+            "name": "integration",
+            "operation": [
+                "View",
+                "Add",
+                "Edit",
+                "Delete"
+            ]
+          },
+            {
+                "id": "integration_detail",
+                "display_name": "Integration Detail",
+                "name": "integration_detail",
+                "operation": [
+                    "View",
+                    "Add",
+                    "Edit",
+                    "Delete"
+                ]
+            }
+        ]
+      },
+      {
+        "name": "Settings",
+        "children": [
+          {
+            "id": "settings",
+            "display_name": "Settings",
+            "name": "settings",
+            "operation": [
+                "View",
+                "Add",
+                "Edit",
+                "Delete"
+            ]
+          }
+        ]
+      }
+    ],
+    "roles": [
+      {
+        "name": "admin",
+        "role_name": "alarm_admin",
+        "menus": []
+      },
+      {
+        "name": "normal",
+        "role_name": "alarm_normal",
+        "menus": ["alarms-View"]
+      }
+    ]
+  }
+  

@@ -3,15 +3,13 @@
 # @Time: 2025/5/28 16:31
 # @Author: windyzhao
 
-import logging
 from datetime import timedelta
 from django.utils import timezone
 from django.db import transaction
 
-from apps.alerts.models import Alert
+from apps.alerts.models import Alert, AlertAssignment
 from apps.alerts.constants import AlertStatus, AlertOperate
-
-logger = logging.getLogger(__name__)
+from apps.core.logger import logger
 
 
 class AlertOperator(object):
@@ -65,22 +63,38 @@ class AlertOperator(object):
                 "data": {}
             }
 
+    def _create_reminder_record(self, alert: Alert, assignment_id: str):
+        """创建提醒记录"""
+        try:
+            from apps.alerts.service.reminder_service import ReminderService
+            assignment = AlertAssignment.objects.get(id=assignment_id, is_active=True)
+            ReminderService.create_reminder_task(alert, assignment)
+        except AlertAssignment.DoesNotExist:
+            logger.error(f"分派策略不存在: assignment_id={assignment_id}")
+        except Exception as e:
+            import traceback
+            logger.error(f"创建提醒记录失败:{traceback.format_exc()}")
+
+    def _stop_reminder_tasks(self, alert: Alert):
+        """停止告警的提醒任务"""
+        try:
+            from apps.alerts.service.reminder_service import ReminderService
+            ReminderService.stop_reminder_task(alert)
+        except Exception as e:
+            logger.error(f"停止提醒任务失败: {str(e)}")
+
     def _assign_alert(self, alert_id: str, data: dict) -> dict:
         """
         分派告警：未分派 -> 待响应
-        :param alert_id: 告警ID
-        :param data: 包含分派人信息的数据
-        :return: 操作结果
         """
         logger.info(f"开始分派告警: alert_id={alert_id}")
 
         with transaction.atomic():
             alert = self.get_alert(alert_id)
             if not isinstance(alert, Alert):
-                # 如果获取告警失败，返回错误信息
                 return alert
 
-            # 检查当前状态是否为未分派
+            # 检查当前状态
             if alert.status != AlertStatus.UNASSIGNED:
                 logger.warning(f"告警状态不符合分派条件: alert_id={alert_id}, current_status={alert.status}")
                 return {
@@ -91,8 +105,9 @@ class AlertOperator(object):
 
             # 获取分派人信息
             assignee = data.get('assignee', [])
+            assignment_id = data.get('assignment_id')  # 分派策略ID
+
             if not assignee:
-                logger.warning(f"分派操作缺少处理人信息: alert_id={alert_id}")
                 return {
                     "result": False,
                     "message": "请指定处理人",
@@ -105,6 +120,10 @@ class AlertOperator(object):
             alert.operator = assignee
             alert.updated_at = timezone.now()
             alert.save()
+
+            # 创建提醒记录
+            # if assignment_id:
+            #     self._create_reminder_record(alert, assignment_id)
 
             logger.info(
                 f"告警分派成功: alert_id={alert_id}, assignee={assignee}, 状态变更: {AlertStatus.UNASSIGNED} -> {AlertStatus.PENDING}")
@@ -162,6 +181,9 @@ class AlertOperator(object):
 
             logger.info(
                 f"告警认领成功: alert_id={alert_id}, user={self.user}, 状态变更: {AlertStatus.PENDING} -> {AlertStatus.PROCESSING}")
+
+            # 停止相关的提醒任务
+            self._stop_reminder_tasks(alert)
 
             return {
                 "result": True,
