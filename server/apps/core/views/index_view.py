@@ -73,6 +73,7 @@ def login(request):
         data = _parse_request_data(request)
         username = data.get("username", "").strip()
         password = data.get("password", "")
+        c_url = data.get("redirect_url", "").strip()  # 获取回调URL
 
         if not username or not password:
             return JsonResponse({"result": False, "message": _("Username or password cannot be empty")})
@@ -82,6 +83,13 @@ def login(request):
 
         if not res.get("result"):
             logger.warning(f"Login failed for user: {username}")
+        else:
+            # 登录成功时，如果有c_url参数，添加到响应中
+            if c_url:
+                if "data" not in res:
+                    res["data"] = {}
+                res["data"]["redirect_url"] = c_url
+                logger.info(f"Login successful for user: {username}, redirect to: {c_url}")
 
         return JsonResponse(res)
     except Exception as e:
