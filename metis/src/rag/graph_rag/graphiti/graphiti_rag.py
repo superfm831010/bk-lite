@@ -1,10 +1,12 @@
 from typing import List
 from xml.dom.minidom import Document
 
+from pydantic import BaseModel
 from src.rag.graph_rag.graphiti.metis_embedder import MetisEmbedder
 from src.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderConfig
 from src.rag.graph_rag.graphiti.metis_raranker_config import MetisRerankerConfig
 from src.rag.graph_rag.graphiti.metis_reranker_client import MetisRerankerClient
+from src.summarize.summarize_manager import SummarizeManager
 from tqdm import tqdm
 from graphiti_core import Graphiti
 from src.core.env.core_settings import core_settings
@@ -86,12 +88,17 @@ class GraphitiRAG():
             cross_encoder=rerank_client
         )
 
-        for i, doc in tqdm(enumerate(req.docs)):
+        for doc in tqdm(req.docs):
+            source_description = SummarizeManager.summarize(content=doc.page_content,
+                                                            model='local:textrank',
+                                                            openai_api_base='',
+                                                            openai_api_key='')
+
             await graphiti_instance.add_episode(
                 name=doc.metadata['chunk_id'],
                 episode_body=doc.page_content,
                 source=EpisodeType.text,
-                source_description="description",
+                source_description=source_description,
                 reference_time=datetime.now(timezone.utc),
             )
 

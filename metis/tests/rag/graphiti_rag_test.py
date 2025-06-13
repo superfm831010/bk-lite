@@ -2,6 +2,7 @@
 import os
 import pytest
 from src.chunk.fixed_size_chunk import FixedSizeChunk
+from src.chunk.recursive_chunk import RecursiveChunk
 from src.entity.rag.base.document_ingest_request import GraphRagDocumentIngestRequest
 from src.loader.text_loader import TextLoader
 from src.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
@@ -18,16 +19,16 @@ async def test_setup_graph():
 async def test_ingest():
     rag = GraphitiRAG()
 
-    chunk = FixedSizeChunk()
-    loader = TextLoader(path='./tests/assert/full_text_loader.txt')
+    chunk = RecursiveChunk(chunk_size=1024, chunk_overlap=128)
+    loader = TextLoader(path='./tests/assert/content.txt')
     docs = loader.load()
     rs = chunk.chunk(docs)
 
     request = GraphRagDocumentIngestRequest(
         openai_api_key=os.getenv('OPENAI_API_KEY'),
         openai_api_base=os.getenv('OPENAI_BASE_URL'),
-        openai_model='gpt-4o',
-        openai_small_model='gpt-4o',
+        openai_model='gpt-4.1-mini',
+        openai_small_model='gpt-4.1-nano',
         docs=rs,
         index_name="test_index",
         index_mode='overwrite',
