@@ -43,6 +43,7 @@ class KubernetesClient(object):
             "bot_domain": bot.bot_domain or "",
             "enable_nodeport": bot.enable_node_port,
             "web_nodeport": bot.node_port,
+            "bot_namespace": settings.KUBE_NAMESPACE,
         }
         try:
             logger.info(f"当前工作目录: {os.getcwd()}")
