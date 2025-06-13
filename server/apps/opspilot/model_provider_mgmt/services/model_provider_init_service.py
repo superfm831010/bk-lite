@@ -21,7 +21,8 @@ class ModelProviderInitService:
         self.owner = owner
         self.group_id = self.get_group_id()
 
-    def get_group_id(self):
+    @staticmethod
+    def get_group_id():
         client = SystemMgmt()
         res = client.get_group_id("Default")
         if not res["result"]:

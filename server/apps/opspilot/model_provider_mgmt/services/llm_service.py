@@ -132,14 +132,8 @@ class LLMService:
 
         user_message, image_data = self._process_user_message_and_images(kwargs["user_message"])
         # 处理聊天历史
-        chat_history = self._process_chat_history(kwargs["chat_history"], kwargs["conversation_window_size"])
-        tool_map = {i["id"]: {u["key"]: u["value"] for u in i["kwargs"] if u["key"]} for i in kwargs.get("tools", [])}
-        tools = list(SkillTools.objects.filter(id__in=list(tool_map.keys())).values_list("params", flat=True))
-        for i in tools:
-            i.pop("kwargs", None)
+        chat_history = self._process_chat_history(kwargs["chat_history"], kwargs.get("conversation_window_size", 10))
         extra_config = {}
-        for i in tool_map.values():
-            extra_config.update(i)
         # 构建聊天参数
         chat_kwargs = {
             "openai_api_base": llm_model.decrypted_llm_config["openai_base_url"],
@@ -157,8 +151,20 @@ class LLMService:
         }
         if kwargs.get("thread_id"):
             chat_kwargs["thread_id"] = str(kwargs["thread_id"])
+        if kwargs["enable_rag_knowledge_source"]:
+            extra_config = {"enable_rag_source": True, "enable_rag_strict_mode": False}
         if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
+            tool_map = {
+                i["id"]: {u["key"]: u["value"] for u in i["kwargs"] if u["key"]} for i in kwargs.get("tools", [])
+            }
+            tools = list(SkillTools.objects.filter(id__in=list(tool_map.keys())).values_list("params", flat=True))
+            for i in tools:
+                i.pop("kwargs", None)
+            for i in tool_map.values():
+                extra_config.update(i)
             chat_kwargs.update({"tools_servers": tools})
+            chat_kwargs.update({"extra_config": extra_config})
+        elif extra_config:
             chat_kwargs.update({"extra_config": extra_config})
         return chat_kwargs, doc_map, title_map
 
