@@ -4,7 +4,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Spin } from 'antd';
-import { useTranslation } from '@/utils/i18n';
 import { useLocale } from '@/context/locale';
 
 interface AuthContextType {
@@ -28,19 +27,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
-  const { t } = useTranslation();
   const { setLocale } = useLocale();
 
   const authPaths = ['/auth/signin', '/auth/signout', '/auth/callback'];
-  const isSessionValid = session && session.user && session.user.id;
+  const isSessionValid = session && session.user && (session.user.id || session.user.username);
 
   // Process session changes
   useEffect(() => {
-    if (!session || !isSessionValid) {
+    // If session is loading, do nothing
+    if (status === 'loading') {
+      return;
+    }
+
+    // If current path is auth-related page, allow access
+    if (pathname && authPaths.includes(pathname)) {
+      return;
+    }
+
+    // If no valid session, redirect to login page
+    if (status === 'unauthenticated' || !isSessionValid) {
       setToken(null);
       setIsAuthenticated(false);
       
       if (pathname && !authPaths.includes(pathname)) {
+        console.log('No valid session, redirecting to signin');
         router.push('/auth/signin');
       }
       return;
@@ -55,12 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLocale(userLocale);
       }
       localStorage.setItem('locale', userLocale);
-    } else {
-      if (pathname && !authPaths.includes(pathname)) {
-        router.push('/auth/signin');
-      }
     }
-  }, [status, session, pathname, setLocale, t]);
+  }, [status, session, pathname, setLocale, router]);
 
   // Show loading state until session state is determined
   if (status === 'loading' && pathname && !authPaths.includes(pathname)) {
