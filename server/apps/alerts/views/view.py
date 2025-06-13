@@ -28,6 +28,9 @@ def request_test(requests):
 
 
 class AlertSourceModelViewSet(ModelViewSet):
+    """
+    告警源
+    """
     queryset = AlertSource.objects.all()
     serializer_class = AlertSourceModelSerializer
     ordering_fields = ["id"]
@@ -37,6 +40,9 @@ class AlertSourceModelViewSet(ModelViewSet):
 
 
 class AlterModelViewSet(ModelViewSet):
+    """
+    告警视图集
+    """
     # -level 告警等级排序
     queryset = Alert.objects.all()
     serializer_class = AlertModelSerializer
@@ -89,6 +95,9 @@ class AlterModelViewSet(ModelViewSet):
 
 
 class EventModelViewSet(ModelViewSet):
+    """
+    事件视图集
+    """
     queryset = Event.objects.all()
     serializer_class = EventModelSerializer
     ordering_fields = ["received_at"]
@@ -98,6 +107,9 @@ class EventModelViewSet(ModelViewSet):
 
 
 class LevelModelViewSet(ModelViewSet):
+    """
+    告警等级视图集
+    """
     # TODO 创建的时候动态增加level_id 锁表
     queryset = Level.objects.all()
     serializer_class = LevelModelSerializer

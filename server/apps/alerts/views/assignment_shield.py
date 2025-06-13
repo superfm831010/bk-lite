@@ -11,6 +11,9 @@ from apps.core.logger import logger
 
 
 class AlertAssignmentModelViewSet(ModelViewSet):
+    """
+    告警分派策略视图集
+    """
     queryset = AlertAssignment.objects.all()
     serializer_class = AlertAssignmentModelSerializer
     ordering_fields = ["created_at"]
