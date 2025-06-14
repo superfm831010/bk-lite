@@ -42,12 +42,13 @@ _procs() {
     for pid in $pids; do
         local cmdline=$(ps -p $pid -o args=)
         local exe=$(readlink -f /proc/$pid/exe)
-        local install_path=$(dirname $exe | sed 's/\/bin$//')
+        local install_path=$(dirname $exe | sed 's/\bin$//')
         local redis_cli=$(ps -p $pid -o comm= | sed 's/redis-server$/redis-cli/')
 
-        # 正则表达式以匹配 IP 和端口
-        local ipport=$(echo $cmdline | grep -oP '([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|\*):[0-9]+')
-
+        # 修改正则表达式以匹配 IP 和端口
+        # local ipport=$(echo $cmdline | grep -oP '([0-9]+.[0-9]+.[0-9]+.[0-9]+|*):[0-9]+')
+        local ipport=$(echo "$cmdline" | grep -oP '(?:[0-9]{1,3}.){3}[0-9]{1,3}(?::[0-9]+)?')
+        
         if [ -n "$ipport" ]; then
             local redis_ip=$(echo $ipport | cut -d: -f1)
             local redis_port=$(echo $ipport | cut -d: -f2)
@@ -64,12 +65,12 @@ _procs() {
 discover_redis() {
     local procs=($(_procs))
     if [ ${#procs[@]} -eq 0 ]; then
-        echo "WARN: 没有发现 Redis 服务."
+        echo "{}"
         exit 0
     fi
 
     # 获取主机内网 IP 地址
-    host_innerip=$(hostname -I | awk '{print $1}')  # 获取第一个内网 IP 地址
+    bk_host_innerip=$(hostname -I | awk '{print $1}')  # 获取第一个内网 IP 地址
 
     for proc in "${procs[@]}"; do
         local pid=$(echo $proc | cut -d: -f1)
@@ -80,21 +81,21 @@ discover_redis() {
 
         local version=$(run_cmd "$redis_cli --version" | awk '{print $2}')
 
-        # Get Redis Max Clients
+        # 新增逻辑：获取最大连接数
         local max_clients=$(run_cmd "$redis_cli config get maxclients" | grep -A1 "maxclients" | tail -n1)
 
-        # Get Redis Max Memory
+        # 新增逻辑：获取最大内存
         local max_memory=$(run_cmd "$redis_cli config get maxmemory" | grep -A1 "maxmemory" | tail -n1)
 
-        # Get Redis Role
+        # 新增逻辑：获取数据库角色
         local role=$(run_cmd "$redis_cli info replication" | grep "role:" | awk -F: '{print $2}' | tr -d '\r')
 
-        inst_name="${host_innerip}-redis-${port}"
+        bk_inst_name="${bk_host_innerip}-redis-${port}"
 
         # 修复 JSON 格式化问题，确保变量值正确插入
-        redis_info=$(printf '{"inst_name":"%s","obj_id":"redis","ip_addr":"%s","port":"%s","version":"%s","install_path":"%s","max_clients":"%s","max_memory":"%s","role":"%s"}' \
-            "$inst_name" \
-            "$host_innerip" \
+        redis_info=$(printf '{"bk_inst_name":"%s","bk_obj_id":"redis","ip_addr":"%s","port":"%s","version":"%s","install_path":"%s","max_clients":"%s","max_memory":"%s","role":"%s"}' \
+            "$bk_inst_name" \
+            "$bk_host_innerip" \
             "$port" \
             "$version" \
             "$install_path" \
@@ -102,6 +103,7 @@ discover_redis() {
             "$max_memory" \
             "$role"
         )
+
         echo "$redis_info"
     done
 }
@@ -134,8 +136,10 @@ discover_redis
         """
         script_params = {
             "command": self.command,
+            "port": self.port,
         }
         if self.username:
+            script_params["user"] = self.username
             script_params["username"] = self.username
             script_params["password"] = self.password
             script_params["host"] = self.host

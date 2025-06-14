@@ -1477,7 +1477,7 @@ class RedisCollectMetrics(CollectBase):
     @property
     def model_field_mapping(self):
         mapping = {
-            "inst_name": lambda data:  f"{data['id_addr']}-redis-{data['port']}",
+            "inst_name": lambda data:  f"{data['ip_addr']}-redis-{data['port']}",
             "ip_addr": "ip_addr",
             "port": "port",
             "version": "version",
