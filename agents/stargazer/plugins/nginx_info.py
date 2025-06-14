@@ -28,7 +28,7 @@ class NginxInfo:
     def script(self) -> str:
         result = """
 #!/bin/bash
-host_innerip=$(hostname -I | awk '{print $1}')  # 获取第一个内网 IP 地址
+bk_host_innerip=$(hostname -I | awk '{print $1}')  # 获取第一个内网 IP 地址
 
 # Function to get process port numbers
 Get_Port_Join_Str() {
@@ -70,7 +70,6 @@ Get_Nginx_Version(){
     fi
     echo "$nginx_version"
 }
-
 # Function to get document root
 Get_DocumentRoot(){
     if [ -f "$1" ]; then
@@ -96,7 +95,6 @@ Get_Domain(){
     fi
     echo "$domain"
 }
-
 # Function to get include path from Nginx configuration
 Get_Include_Path(){
     if [ -f "$1" ]; then
@@ -118,7 +116,6 @@ Get_SSL_Version(){
     fi
     echo "$ssl_version"
 }
-
 Cover_Nginx(){
     inst_name_array=()
 
@@ -127,16 +124,16 @@ Cover_Nginx(){
     do
         Get_Port_Join_Str "$pid"
         exe_path=$(readlink /proc/"$pid"/exe)
-        if [[ "${inst_name_array[*]}" =~ $host_innerip-nginx-$port_str ]]; then
+        if [[ "${inst_name_array[*]}" =~ $bk_host_innerip-nginx-$port_str ]]; then
             continue
         fi
-        inst_name_array[${#inst_name_array[@]}]="$host_innerip-nginx-$port_str"
+        inst_name_array[${#inst_name_array[@]}]="$bk_host_innerip-nginx-$port_str"
         # Get Nginx version
         nginx_version=$(Get_Nginx_Version "$exe_path")
         # Get Nginx installation path
         install_path=$(dirname $(dirname "$exe_path"))
         # Get document root
-        nginx_conf=$(echo "$cmdline" | grep -oP '(?<=-c\s)(\S+)')
+        nginx_conf=$(echo "$cmdline" | grep -oP '(?<=-c )($\\S+)')
         if [ -n "$nginx_conf" ]; then
             if [[ "$nginx_conf" != /* ]]; then
                 nginx_conf="$install_path/$nginx_conf"
@@ -154,17 +151,18 @@ Cover_Nginx(){
         # Get SSL version
         ssl_version=$(Get_SSL_Version)
         # =============can extend key=================
-        json_template='{ \"inst_name\": \"%s-nginx-%s\", \"obj_id\": \"nginx\", \"ip_addr\": \"%s\", \"listen_port\": \"%s\", \"nginx_path\": \"%s\", \"version\": \"%s\", \"log_path\": \"%s\", \"config_path\": \"%s\", \"domain\": \"%s\", \"include_path\": \"%s\", \"ssl_version\": \"%s\"}'
+        json_template='{ \"bk_inst_name\": \"%s-nginx-%s\", \"bk_obj_id\": \"nginx\", \"ip_addr\": \"%s\", \"listen_port\": \"%s\", \"nginx_path\": \"%s\", \"version\": \"%s\", \"log_path\": \"%s\", \"config_path\": \"%s\", \"domain\": \"%s\", \"include_path\": \"%s\", \"ssl_version\": \"%s\"}'
         # Replace newlines with spaces in multi-line fields
-        log_path=$(echo "$log_path" | tr '\n' ' ' | sed 's/\s*$//')
-        domain=$(echo "$domain" | tr '\n' ' ' | sed 's/\s*$//')
-        include_path=$(echo "$include_path" | tr '\n' ' ' | sed 's/\s*$//')
-        json_string=$(printf "$json_template" "$host_innerip" "$port_str" "$host_innerip" "$port_str" "$exe_path" "$nginx_version" "$log_path" "$nginx_conf" "$domain" "$include_path" "$ssl_version")
+        log_path=$(echo "$log_path" | tr '\n' ' ' | sed 's/ *$//')
+        domain=$(echo "$domain" | tr '\n' ' ' | sed 's/ *$//')
+        include_path=$(echo "$include_path" | tr '\n' ' ' | sed 's/ *$//')
+        json_string=$(printf "$json_template" "$bk_host_innerip" "$port_str" "$bk_host_innerip" "$port_str" "$exe_path" "$nginx_version" "$log_path" "$nginx_conf" "$domain" "$include_path" "$ssl_version")
         echo "$json_string"
     done
 }
 
 Cover_Nginx
+
     """
         return result
 
@@ -191,8 +189,10 @@ Cover_Nginx
         """
         script_params = {
             "command": self.command,
+            "port": self.port,
         }
         if self.username:
+            script_params["user"] = self.username
             script_params["username"] = self.username
             script_params["password"] = self.password
             script_params["host"] = self.host

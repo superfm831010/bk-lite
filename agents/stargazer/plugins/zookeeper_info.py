@@ -167,8 +167,10 @@ Cover_Zookeeper
         """
         script_params = {
             "command": self.command,
+            "port": self.port,
         }
         if self.username:
+            script_params["user"] = self.username
             script_params["username"] = self.username
             script_params["password"] = self.password
             script_params["host"] = self.host
