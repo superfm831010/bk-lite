@@ -3,7 +3,7 @@ import os
 import pytest
 from src.chunk.fixed_size_chunk import FixedSizeChunk
 from src.chunk.recursive_chunk import RecursiveChunk
-from src.entity.rag.base.document_ingest_request import GraphRagDocumentIngestRequest
+from src.entity.rag.graphiti.document_ingest_request import GraphitiRagDocumentIngestRequest
 from src.loader.text_loader import TextLoader
 from src.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
 from langchain_core.documents import Document
@@ -24,7 +24,7 @@ async def test_ingest():
     docs = loader.load()
     rs = chunk.chunk(docs)
 
-    request = GraphRagDocumentIngestRequest(
+    request = GraphitiRagDocumentIngestRequest(
         openai_api_key=os.getenv('OPENAI_API_KEY'),
         openai_api_base=os.getenv('OPENAI_BASE_URL'),
         openai_model='gpt-4.1-mini',
