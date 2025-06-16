@@ -44,11 +44,9 @@ else
 fi
 
 if [[ $OPSPILOT_ENABLED == "true" ]]; then
-    log "INFO" "OpsPilot 功能已启用，正在检查 OpsPilot 环境变量..."
     export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,opspilot"
     export COMPOSE_CMD="docker-compose -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/opspilot.yaml config --no-interpolate"
 else
-    log "INFO" "OpsPilot 功能未启用，安装默认应用..."
     export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt"
     export COMPOSE_CMD="docker-compose -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml config --no-interpolate"
 fi
