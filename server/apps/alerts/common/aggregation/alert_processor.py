@@ -14,7 +14,7 @@ from django.utils import timezone
 from apps.alerts.common.assignment import execute_auto_assignment_for_alerts
 from apps.alerts.common.rules.rule_manager import get_rule_manager
 from apps.alerts.common.rules.alert_rules import format_alert_message
-from apps.alerts.constants import AlertStatus, LevelType
+from apps.alerts.constants import AlertStatus, LevelType, EventStatus
 from apps.alerts.models import Event, Alert, Level
 from apps.core.logger import logger
 
@@ -47,7 +47,7 @@ class AlertProcessor:
             received_at__gte=start_time,
             received_at__lt=self.now,
             source__is_active=True,
-        ).values(*self.event_fields)
+        ).exclude(status=EventStatus.SHIELD).values(*self.event_fields)
         return pd.DataFrame(list(instances))
 
     def process(self) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:

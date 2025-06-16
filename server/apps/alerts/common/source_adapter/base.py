@@ -70,6 +70,7 @@ class AlertSourceAdapter(ABC):
             except Exception as e:
                 logger.error(f"Failed to transform alert: {alert}, error: {e}")
         self.bulk_save_events(events)
+        return event
 
     def add_base_fields(self, event: Event, alert: Dict[str, Any]):
         """添加基础字段"""
@@ -86,12 +87,6 @@ class AlertSourceAdapter(ABC):
                 Event.objects.bulk_create(event_batch, ignore_conflicts=True)  # 跳过唯一性约束
             logger.info(f"Bulk saved {len(events)} events.")
 
-            try:
-                execute_shield_check_for_events([i.event_id for i in events])
-            except Exception as err:
-                import traceback
-                logger.error(f"Shield check failed for events:{traceback.format_exc()}")
-
     def _transform_alert_to_event(self, alert: Dict[str, Any]) -> Event:
         """将单个告警数据转换为Event对象"""
         data = self.mapping_fields_to_event(alert)
@@ -106,11 +101,23 @@ class AlertSourceAdapter(ABC):
         # 转为 aware datetime（带时区）
         return timezone.make_aware(dt, timezone.get_current_timezone())
 
+    @staticmethod
+    def event_operator(events):
+        """
+        event的自动屏蔽
+        """
+        try:
+            execute_shield_check_for_events([i.event_id for i in events])
+        except Exception as err:
+            import traceback
+            logger.error(f"Shield check failed for events:{traceback.format_exc()}")
+
     def main(self, alerts=None):
         """使适配器实例可调用"""
         if not alerts:
             alerts = self.alerts
-        self.create_events(alerts)
+        events = self.create_events(alerts)
+        self.event_operator(events)
 
 
 class AlertSourceAdapterFactory:
