@@ -34,6 +34,26 @@ log() {
     echo -e "${color}[$(date +'%Y-%m-%d %H:%M:%S')] [$level] $message${NC}"
 }
 
+# 检查是否添加--opspilot参数
+if [[ "$@" == *"--opspilot"* ]]; then
+    export OPSPILOT_ENABLED=true
+    log "INFO" "检测到 --opspilot 参数，启用 OpsPilot 功能"
+else
+    export OPSPILOT_ENABLED=false
+    log "INFO" "未检测到 --opspilot 参数，禁用 OpsPilot 功能"
+fi
+
+if [[ $OPSPILOT_ENABLED == "true" ]]; then
+    log "INFO" "OpsPilot 功能已启用，正在检查 OpsPilot 环境变量..."
+    export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,opspilot"
+    export COMPOSE_CMD="docker-compose -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/opspilot.yaml config --no-interpolate"
+else
+    log "INFO" "OpsPilot 功能未启用，安装默认应用..."
+    export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt"
+    export COMPOSE_CMD="docker-compose -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml config --no-interpolate"
+fi
+
+
 # Function to validate environment variables
 validate_env_var() {
     local var_name="$1"
@@ -106,44 +126,14 @@ else
     read -p "输入对外访问的IP地址，默认为 [$DEFAULT_IP] " HOST_IP
     export HOST_IP=${HOST_IP:-$DEFAULT_IP}
 
-    DEFAULT_TRAEFIK_CMDB_PORT=20000
-    read -p "输入CMDB端口，默认为 [$DEFAULT_TRAEFIK_CMDB_PORT] " TRAEFIK_CMDB_PORT
-    export TRAEFIK_CMDB_PORT=${TRAEFIK_CMDB_PORT:-$DEFAULT_TRAEFIK_CMDB_PORT}
-
-    DEFAULT_TRAEFIK_SYSTEM_MANAGER_PORT=20001
-    read -p "输入系统管理端口，默认为 [$DEFAULT_TRAEFIK_SYSTEM_MANAGER_PORT] " TRAEFIK_SYSTEM_MANAGER_PORT
-    export TRAEFIK_SYSTEM_MANAGER_PORT=${TRAEFIK_SYSTEM_MANAGER_PORT:-$DEFAULT_TRAEFIK_SYSTEM_MANAGER_PORT}
-
-    DEFAULT_TRAEFIK_NODE_MANAGER_PORT=20002
-    read -p "输入节点管理端口，默认为 [$DEFAULT_TRAEFIK_NODE_MANAGER_PORT] " TRAEFIK_NODE_MANAGER_PORT
-    export TRAEFIK_NODE_MANAGER_PORT=${TRAEFIK_NODE_MANAGER_PORT:-$DEFAULT_TRAEFIK_NODE_MANAGER_PORT}
-
-    DEFAULT_TRAEFIK_MONITOR_PORT=20003
-    read -p "输入监控端口，默认为 [$DEFAULT_TRAEFIK_MONITOR_PORT] " TRAEFIK_MONITOR_PORT
-    export TRAEFIK_MONITOR_PORT=${TRAEFIK_MONITOR_PORT:-$DEFAULT_TRAEFIK_MONITOR_PORT}
-
-    DEFAULT_TRAEFIK_CONSOLE_PORT=20004
-    read -p "输入控制台端口，默认为 [$DEFAULT_TRAEFIK_CONSOLE_PORT] " TRAEFIK_CONSOLE_PORT
-    export TRAEFIK_CONSOLE_PORT=${TRAEFIK_CONSOLE_PORT:-$DEFAULT_TRAEFIK_CONSOLE_PORT}
-
-    DEFAULT_NODE_MANAGER_API_PORT=20005
-    read -p "输入节点管理API端口，默认为 [$DEFAULT_NODE_MANAGER_API_PORT] " NODE_MANAGER_API_PORT
-    export NODE_MANAGER_API_PORT=${NODE_MANAGER_API_PORT:-$DEFAULT_NODE_MANAGER_API_PORT}
-
-    DEFAULT_OPSPILOT_PORT=20006
-    read -p "输入OpsPilot端口，默认为 [$DEFAULT_OPSPILOT_PORT] " TRAEFIK_OPSPILOT_PORT
-    export TRAEFIK_OPSPILOT_PORT=${TRAEFIK_OPSPILOT_PORT:-$DEFAULT_OPSPILOT_PORT}
+    DEFAULT_TRAEFIK_WEB_PORT=80
+    read -p "输入访问端口，默认为 [$DEFAULT_TRAEFIK_WEB_PORT] " TRAEFIK_WEB_PORT
+    export TRAEFIK_WEB_PORT=${TRAEFIK_WEB_PORT:-$DEFAULT_TRAEFIK_WEB_PORT}
 
     # 将输入的配置写入port.env
     cat > port.env <<EOF
 HOST_IP=${HOST_IP}
-TRAEFIK_CMDB_PORT=${TRAEFIK_CMDB_PORT}
-TRAEFIK_SYSTEM_MANAGER_PORT=${TRAEFIK_SYSTEM_MANAGER_PORT}
-TRAEFIK_NODE_MANAGER_PORT=${TRAEFIK_NODE_MANAGER_PORT}
-TRAEFIK_MONITOR_PORT=${TRAEFIK_MONITOR_PORT}
-TRAEFIK_CONSOLE_PORT=${TRAEFIK_CONSOLE_PORT}
-NODE_MANAGER_API_PORT=${NODE_MANAGER_API_PORT}
-TRAEFIK_OPSPILOT_PORT=${TRAEFIK_OPSPILOT_PORT}
+TRAEFIK_WEB_PORT=${TRAEFIK_WEB_PORT}
 EOF
 fi
 
@@ -205,29 +195,19 @@ DOCKER_IMAGE_NATS=nats:2.10.25
 DOCKER_IMAGE_NATS_CLI=bitnami/natscli:0.1.6
 DOCKER_IMAGE_VICTORIA_METRICS=victoriametrics/victoria-metrics:v1.106.1
 DOCKER_IMAGE_POSTGRES=postgres:15
-DOCKER_IMAGE_SYSTEM_MANAGER=bklite/system-manager
-DOCKER_IMAGE_SYSTEM_MANAGER_WEB=bklite/system-manager-web
-DOCKER_IMAGE_NODE_MANAGER=bklite/node-manager
-DOCKER_IMAGE_NODE_MANAGER_WEB=bklite/node-manager-web
-DOCKER_IMAGE_MONITOR=bklite/monitor
-DOCKER_IMAGE_MONITOR_WEB=bklite/monitor-web
+DOCKER_IMAGE_SERVER=bklite/server
+DOCKER_IMAGE_WEB=bklite/web
 DOCKER_NETWORK=prod
 DIST_ARCH=arm64
 POSTGRES_USERNAME=postgres
 TRAEFIK_ENABLE_DASHBOARD=false
 DEFAULT_REQUEST_TIMEOUT=10
-DOCKER_IMAGE_OPSCONSOLE=bklite/ops-console
-DOCKER_IMAGE_OPSCONSOLE_WEB=bklite/opsconsole-web
 DOCKER_IMAGE_STARGAZER=bklite/stargazer
-DOCKER_IMAGE_CMDB=bklite/cmdb
-DOCKER_IMAGE_CMDB_WEB=bklite/cmdb-web
 DOCKER_NEO4J_IMAGE=neo4j:4.4.43
 DOCKER_IMAGE_MINIO=minio/minio:RELEASE.2024-05-01T01-11-10Z-cpuv1
 DOCKER_IMAGE_RABBITMQ=rabbitmq:management
 DOCKER_IMAGE_ELASTICSEARCH=elasticsearch:8.11.4
 DOCKER_IMAGE_METIS=bklite/metis
-DOCKER_IMAGE_OPSPILOT=bklite/ops-pilot
-DOCKER_IMAGE_OPSPILOT_WEB=bklite/ops-pilot-web
 
 # 采集器镜像
 # TODO: 不同OS/架构支持
@@ -238,15 +218,15 @@ log "INFO" "开始生成控制器和采集器包..."
 # 获取当前cpu架构
 CPU_ARCH=$(uname -m)
 if [[ "$CPU_ARCH" == "x86_64" ]]; then
-    [ -d pkgs ] && rm -rvf pkgs
-    mkdir -p pkgs/controller
-    mkdir -p pkgs/collector
-    docker run --rm -v $PWD/pkgs:/pkgs --entrypoint=/bin/bash $DOCKER_IMAGE_FUSION_COLLECTOR -c "tar -czvf /pkgs/controller/lite_controller_linux_amd64.tar.gz . ;cp -av bin/* /pkgs/collector/"
+   [ -d pkgs ] && rm -rvf pkgs
+   mkdir -p pkgs/controller
+   mkdir -p pkgs/collector
+   docker run --rm -v $PWD/pkgs:/pkgs --entrypoint=/bin/bash $DOCKER_IMAGE_FUSION_COLLECTOR -c "tar -czvf /pkgs/controller/lite_controller_linux_amd64.tar.gz . ;cp -av bin/* /pkgs/collector/"
 elif [[ "$CPU_ARCH" == "aarch64" ]]; then
-    log "WARNING" "当前CPU架构为arm64，暂时无内置采集器"
+   log "WARNING" "当前CPU架构为arm64，暂时无内置采集器"
 else
-    log "ERROR" "不支持的CPU架构: $CPU_ARCH"
-    exit 1
+   log "ERROR" "不支持的CPU架构: $CPU_ARCH"
+   exit 1
 fi
 
 # 检查nats.conf文件是否存在
@@ -302,13 +282,7 @@ EOF
 log "INFO" "生成 .env 文件..."
 cat > .env <<EOF
 HOST_IP=${HOST_IP}
-TRAEFIK_CMDB_PORT=${TRAEFIK_CMDB_PORT}
-TRAEFIK_SYSTEM_MANAGER_PORT=${TRAEFIK_SYSTEM_MANAGER_PORT}
-TRAEFIK_NODE_MANAGER_PORT=${TRAEFIK_NODE_MANAGER_PORT}
-TRAEFIK_MONITOR_PORT=${TRAEFIK_MONITOR_PORT}
-TRAEFIK_CONSOLE_PORT=${TRAEFIK_CONSOLE_PORT}
-TRAEFIK_OPSPILOT_PORT=${TRAEFIK_OPSPILOT_PORT}
-NODE_MANAGER_API_PORT=${NODE_MANAGER_API_PORT}
+TRAEFIK_WEB_PORT=${TRAEFIK_WEB_PORT}
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 REDIS_PASSWORD=${REDIS_PASSWORD}
 SECRET_KEY=${SECRET_KEY}
@@ -332,42 +306,26 @@ DOCKER_IMAGE_NATS=${DOCKER_IMAGE_NATS}
 DOCKER_IMAGE_NATS_CLI=${DOCKER_IMAGE_NATS_CLI}
 DOCKER_IMAGE_VICTORIA_METRICS=${DOCKER_IMAGE_VICTORIA_METRICS}
 DOCKER_IMAGE_POSTGRES=${DOCKER_IMAGE_POSTGRES}
-DOCKER_IMAGE_SYSTEM_MANAGER=${DOCKER_IMAGE_SYSTEM_MANAGER}
-DOCKER_IMAGE_SYSTEM_MANAGER_WEB=${DOCKER_IMAGE_SYSTEM_MANAGER_WEB}
-DOCKER_IMAGE_NODE_MANAGER=${DOCKER_IMAGE_NODE_MANAGER}
-DOCKER_IMAGE_NODE_MANAGER_WEB=${DOCKER_IMAGE_NODE_MANAGER_WEB}
-DOCKER_IMAGE_MONITOR=${DOCKER_IMAGE_MONITOR}
-DOCKER_IMAGE_MONITOR_WEB=${DOCKER_IMAGE_MONITOR_WEB}
-DOCKER_IMAGE_OPSCONSOLE=${DOCKER_IMAGE_OPSCONSOLE}
-DOCKER_IMAGE_OPSCONSOLE_WEB=${DOCKER_IMAGE_OPSCONSOLE_WEB}
+DOCKER_IMAGE_SERVER=${DOCKER_IMAGE_SERVER}
+DOCKER_IMAGE_WEB=${DOCKER_IMAGE_WEB}
 DOCKER_IMAGE_STARGAZER=${DOCKER_IMAGE_STARGAZER}
-DOCKER_IMAGE_CMDB=${DOCKER_IMAGE_CMDB}
-DOCKER_IMAGE_CMDB_WEB=${DOCKER_IMAGE_CMDB_WEB}
 DOCKER_NEO4J_IMAGE=${DOCKER_NEO4J_IMAGE}
 DOCKER_IMAGE_FUSION_COLLECTOR=${DOCKER_IMAGE_FUSION_COLLECTOR}
 DOCKER_IMAGE_MINIO=minio/minio:RELEASE.2024-05-01T01-11-10Z-cpuv1
 DOCKER_IMAGE_RABBITMQ=rabbitmq:management
 DOCKER_IMAGE_ELASTICSEARCH=elasticsearch:8.11.4
 DOCKER_IMAGE_METIS=bklite/metis
-DOCKER_IMAGE_OPSPILOT=bklite/ops-pilot
-DOCKER_IMAGE_OPSPILOT_WEB=bklite/ops-pilot-web
 POSTGRES_USERNAME=${POSTGRES_USERNAME}
 TRAEFIK_ENABLE_DASHBOARD=${TRAEFIK_ENABLE_DASHBOARD}
 DEFAULT_REQUEST_TIMEOUT=${DEFAULT_REQUEST_TIMEOUT}
 DIST_ARCH=${DIST_ARCH}
 DOCKER_NETWORK=${DOCKER_NETWORK}
+INSTALL_APPS="${INSTALL_APPS}"
 EOF
 
 # 生成合成的docker-compose.yml文件
 log "INFO" "生成合成的 docker-compose.yml 文件..."
-docker-compose -f compose/infra.yaml \
-               -f compose/system_mgmt.yaml \
-               -f compose/cmdb.yaml \
-               -f compose/node_mgmt.yaml \
-               -f compose/monitor.yaml \
-               -f compose/ops_console.yaml \
-               -f compose/ops_pilot.yaml \
-               config --no-interpolate > docker-compose.yaml
+$COMPOSE_CMD > docker-compose.yml
 
 # 按照特定顺序启动服务
 log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j)..."
@@ -391,18 +349,12 @@ wait_container_health postgres "Postgres"
 
 # 启动服务
 log "INFO" "启动系统管理服务..."
-docker-compose up -d system-manager
+docker-compose up -d server
 
 log "INFO" "启动所有服务"
 docker-compose up -d
 sleep 10
-wait_container_health cmdb-web "CMDB"
-wait_container_health monitor-web "MONITOR"
-wait_container_health system-manager-web "SYSTEM_MGMT"
-wait_container_health ops-console-web "OPS_CONSOLE"
-wait_container_health node-manager-web "NODE_MGMT"
-log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_MONITOR_PORT 访问系统"
+log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_WEB_PORT 访问系统"
 log "SUCCESS" "初始用户名: admin, 初始密码: password"
 log "SUCCESS" "控制器安装信息："
 log "SUCCESS" "Token: ${SIDECAR_INIT_TOKEN}"
-log "SUCCESS" "API_URL: http://$HOST_IP:$NODE_MANAGER_API_PORT"

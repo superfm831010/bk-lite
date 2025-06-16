@@ -2,59 +2,6 @@ networks:
   prod:
 
 services:
-  monitor:
-    image: ${DOCKER_IMAGE_MONITOR}
-    restart: always
-    environment:
-      NATS_SERVERS: nats://${NATS_ADMIN_USERNAME}:${NATS_ADMIN_PASSWORD}@nats:4222
-      NATS_NAMESPACE: bk-lite
-      CLIENT_ID: monitor
-      DB_NAME: monitor
-      VICTORIAMETRICS_HOST: http://victoria-metrics:8428
-      ENABLE_CELERY: True
-      BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/10
-      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/10
-      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/10
-      DEBUG: "0"
-      SECRET_KEY: ${SECRET_KEY}
-      DB_ENGINE: postgresql
-      DB_USER: ${POSTGRES_USERNAME}
-      DB_HOST: postgres
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_PORT: "5432"
-      INSTALL_APPS: monitor
-    healthcheck:
-      test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", "http://127.0.0.1:8000/"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    depends_on:
-      system-manager:
-        condition: service_healthy
-    networks:
-      - prod
-
-  monitor-web:
-    image: ${DOCKER_IMAGE_MONITOR_WEB}
-    restart: always
-    environment:
-      NEXTAUTH_URL: http://${HOST_IP}:${TRAEFIK_MONITOR_PORT}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXTAPI_URL: http://monitor:8000
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.monitor-web.rule=Host(`${HOST_IP}`)"
-      - "traefik.http.routers.monitor-web.entrypoints=monitor-web"
-      - "traefik.http.services.monitor-web.loadbalancer.server.port=3000"
-    networks:
-      - prod
-    depends_on:
-      - monitor
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://monitor-web:3000/healthcheck').then(res => res.status === 200)"]
-      start_period: 5s
-
   telegraf:
     image: bklite/telegraf
     container_name: telegraf
@@ -75,7 +22,7 @@ services:
     container_name: fusion-collector
     hostname: fusion-collector-default
     environment:
-      SERVER_URL: http://node-manager:8000/node_mgmt/open_api/node
+      SERVER_URL: http://server:8000/node_mgmt/open_api/node
       SERVER_API_TOKEN: ${SIDECAR_INIT_TOKEN}
       SIDECAR_ZONE: 1
       SIDECAR_GROUP: 1
