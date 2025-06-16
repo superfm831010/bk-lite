@@ -38,5 +38,7 @@ async def test_ingest():
         rerank_model_api_key='',
         rerank_model_base_url='local:bce:maidalun1020/bce-reranker-base_v1',
         rerank_model_name='bce-reranker-base_v1',
+        rebuild_community=True,
+        group_id='test_group',
     )
     await rag.ingest(request)
