@@ -32,7 +32,7 @@ from apps.system_mgmt.utils.group_utils import GroupUtils
 
 
 @nats_client.register
-def verify_token(token, client_id):
+def verify_token(token):
     if not token:
         return {"result": False, "message": "Token is missing"}
     token = token.split("Basic ")[-1]
@@ -50,8 +50,8 @@ def verify_token(token, client_id):
     user = User.objects.filter(id=user_info["user_id"]).first()
     if not user:
         return {"result": False, "message": "User not found"}
-    role_list = Role.objects.filter(id__in=user.role_list).filter(Q(app=client_id) | Q(app=""))
-    role_names = list(role_list.values_list("name", flat=True))
+    role_list = Role.objects.filter(id__in=user.role_list)
+    role_names = [f"{role.app}--{role.name}" if role.app else role.name for role in role_list]
     is_superuser = "admin" in role_names
     group_list = Group.objects.all()
     if not is_superuser:
@@ -61,15 +61,18 @@ def verify_token(token, client_id):
     queryset = Group.objects.all()
     # 构建嵌套组结构
     groups_data = GroupUtils.build_group_tree(queryset, is_superuser, [i["id"] for i in groups])
-    menus = cache.get(f"menus-user:{user.id}-app:{client_id}")
+    menus = cache.get(f"menus-user:{user.id}")
     if not menus:
+        menus = {}
         if not is_superuser:
             menu_list = role_list.values_list("menu_list", flat=True)
             menu_ids = []
             for i in menu_list:
                 menu_ids.extend(i)
-            menus = list(Menu.objects.filter(app=client_id, id__in=list(set(menu_ids))).values_list("name", flat=True))
-        cache.set(f"menus-user:{user.id}-app:{client_id}", menus, 60 * 30)
+            menu_data = Menu.objects.filter(id__in=list(set(menu_ids))).values_list("app", "name")
+            for app, name in menu_data:
+                menus.setdefault(app, []).append(name)
+        cache.set(f"menus-user:{user.id}", menus, 60 * 30)
     return {
         "result": True,
         "data": {
@@ -266,11 +269,11 @@ def send_msg_with_channel(channel_id, title, content, receivers):
 
 
 @nats_client.register
-def get_user_rules(app, group_id, username):
-    rules = UserRule.objects.filter(username=username, group_rule__group_id=group_id, group_rule__app=app).first()
+def get_user_rules(group_id, username):
+    rules = UserRule.objects.filter(username=username, group_rule__group_id=group_id)
     if not rules:
         return {}
-    return rules.group_rule.rules
+    return {i.group_rule.app: i.group_rule.rules for i in rules}
 
 
 @nats_client.register

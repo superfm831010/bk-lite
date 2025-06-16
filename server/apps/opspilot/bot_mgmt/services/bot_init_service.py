@@ -5,7 +5,7 @@ from apps.opspilot.models import RasaModel
 
 class BotInitService:
     def __init__(self, owner):
-        self.owner = owner.username
+        self.owner = owner
 
     def init(self):
         rasa_model, created = RasaModel.objects.update_or_create(

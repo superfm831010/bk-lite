@@ -36,6 +36,8 @@ class KnowledgeBaseViewSet(AuthViewSet):
             params["rag_k"] = 10
         if params.get("rag_num_candidates") is None:
             params["rag_num_candidates"] = 50
+        if not params.get("team"):
+            params["team"] = [int(request.COOKIES.get("current_team"))]
         serializer = self.get_serializer(data=params)
         serializer.is_valid(raise_exception=True)
         with atomic():

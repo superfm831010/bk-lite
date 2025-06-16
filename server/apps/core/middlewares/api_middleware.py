@@ -1,4 +1,5 @@
 import logging
+
 from django.conf import settings
 from django.contrib import auth
 from django.utils.deprecation import MiddlewareMixin
@@ -35,20 +36,20 @@ class APISecretMiddleware(MiddlewareMixin):
         except Exception as e:
             logger.error("API令牌验证异常: %s", str(e))
             return WebUtils.response_error(
-                error_message=_(self.TOKEN_MISSING_MSG),
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+                error_message=_(self.TOKEN_MISSING_MSG), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    def _get_client_ip(self, request):
+    @staticmethod
+    def _get_client_ip(request):
         """获取客户端IP地址"""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
-            return x_forwarded_for.split(',')[0].strip()
-        return request.META.get('REMOTE_ADDR', 'unknown')
+            return x_forwarded_for.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR", "unknown")
 
     def _get_api_token(self, request):
         """从请求头中获取API令牌"""
-        header_name = getattr(settings, 'API_TOKEN_HEADER_NAME', None)
+        header_name = getattr(settings, "API_TOKEN_HEADER_NAME", None)
         if not header_name:
             logger.error("API_TOKEN_HEADER_NAME配置缺失")
             return None
@@ -71,7 +72,4 @@ class APISecretMiddleware(MiddlewareMixin):
         client_ip = self._get_client_ip(request)
         logger.warning("API令牌验证失败 - IP: %s, 路径: %s", client_ip, request.path)
 
-        return WebUtils.response_error(
-            error_message=_(self.TOKEN_MISSING_MSG),
-            status_code=status.HTTP_403_FORBIDDEN
-        )
+        return WebUtils.response_error(error_message=_(self.TOKEN_MISSING_MSG), status_code=status.HTTP_403_FORBIDDEN)
