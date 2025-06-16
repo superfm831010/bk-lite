@@ -2,27 +2,30 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# 设置Node.js最大堆内存为4GB
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 RUN npm install -g pnpm
 ADD . .
+
+RUN cat > pnpm-workspace.yaml <<EOF
+packages:
+  - 'src/app/*'
+EOF
+
+RUN cat > .env.local <<EOF
+NEXTAPI_URL="http://bklite-server:8000"
+EOF
+
 RUN pnpm install
-
-RUN cat > ./.env.local << 'EOL'
-NEXTAUTH_URL="http://your-nextauth-url"
-NEXTAUTH_SECRET="random secret"
-NEXTAPI_URL="http://system-manager:8000"
-NEXTAPI_INSTALL_APP="system-manager"
-NEXT_PUBLIC_CLIENT_ID="system-manager"
-NEXT_PUBLIC_IS_OPS_CONSOLE="false"
-NEXT_PUBLIC_IS_DEMO_ENV="false"
-EOL
-
-RUN cd ./src/app && \
-    find . -mindepth 1 -maxdepth 1 -type d ! \( -name \(core\) -o -name no-permission -o -name "system-manager" \) -print0 | xargs -0 rm -rf
-
 RUN pnpm run build
 
 FROM node:18-alpine
 RUN npm install -g pnpm
+
+# 在生产环境也设置内存限制
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+
 WORKDIR /app
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public

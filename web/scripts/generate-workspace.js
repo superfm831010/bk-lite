@@ -7,8 +7,10 @@ console.log('=== Generating pnpm-workspace.yaml ===');
 
 // Load environment variables
 require('dotenv').config({ path: path.join(__dirname, '../.env.local') });
-const activeApps = process.env.NEXTAPI_INSTALL_APP?.split(',')
-  .map(app => app.trim().replace(/[()]/g, '')) || ['*'];
+const activeApps = process.env.NEXTAPI_INSTALL_APP 
+? process.env.NEXTAPI_INSTALL_APP.split(',')
+    .map(app => app.trim().replace(/[()]/g, ''))
+: ['*'];
 console.log('Active applications:', activeApps);
 
 // Generate workspace configuration

@@ -59,7 +59,7 @@
       "unit": "ms",
       "dimensions": [],
       "description": "The average latency of database commands, used to assess database performance.",
-      "query": "sum(rate(mongodb_latency_commands{__$labels__}[5m])) by (instance_id)"
+      "query": "sum(rate(mongodb_latency_commands{__$labels__}[5m])) by (instance_id)/ 1e6"
     },
     {
       "metric_group": "Memory",

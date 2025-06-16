@@ -52,7 +52,9 @@ MONITOR_OBJECT = {
     "Jetty": "Jetty",
     "WebLogic": "WebLogic",
     "TCP": "Tencent Cloud Platform",
-    "CVM": "CVM"
+    "CVM": "CVM",
+    "Oracle": "Oracle",
+    "Minio": "Minio"
 }
 
 MONITOR_OBJECT_PLUGIN = {
@@ -200,9 +202,17 @@ MONITOR_OBJECT_PLUGIN = {
         "name": "WebLogic-JMX",
         "desc": "This plugin uses JMX to collect WebLogic's key metrics, including thread pools, connection pools, memory, EJB, Servlet, JMS performance, and Web service response times. It enables real-time monitoring, performance optimization, and risk early warning to ensure system stability."
     },
-        "Tencent Cloud": {
+    "Tencent Cloud": {
         "name": "Tencent Cloud",
         "desc": "It is used to collect various monitoring index data of Tencent Cloud in real - time, covering dimensions such as computing resources, network performance, and storage usage, helping users gain in - depth insights into resource status, accurately locate anomalies, and efficiently complete operation and maintenance management and cost optimization.​"
+    },
+    "Oracle-Exporter": {
+        "name": "Oracle-Exporter",
+        "desc": "It is used to collect metrics on Oracle's uptime, operation counts, transaction commits/rollbacks, and various wait times in real-time via the exporter method, assisting users in health checks and performance tuning.​"
+    },
+    "Minio": {
+        "name": "Minio",
+        "desc": "Collects key metrics of the Minio object storage system, including runtime status, storage capacity, usage, replication, inter-node communication, and S3 requests, enabling real-time monitoring of storage health, performance optimization, and anomaly detection. ​"
     }
 }
 
@@ -496,6 +506,29 @@ MONITOR_OBJECT_METRIC_GROUP = {
         "Memory": "Memory",
         "Disk": "Disk",
         "Network": "Network"
+    },
+    "Oracle-Exporter": {
+        "Base": "Base",
+        "Activity": "Activity",
+        "Wait": "Wait",
+        "SGA": "SGA",
+        "PGA": "PGA",
+        "Tablespace": "Tablespace",
+        "RAC": "RAC",
+        "Process": "Process",
+        "selfMonitor": "selfMonitor"
+    },
+    "Minio": {
+        "Audit": "Audit",
+        "ClusterCapacity": "Cluster Capacity",
+        "ClusterDrive": "Cluster Drive",
+        "ClusterHealth": "Cluster Health",
+        "S3Request": "S3 Request",
+        "BucketUsage": "Bucket Usage",
+        "BucketRequests": "Bucket Requests",
+        "DriveResource": "Drive Resource",
+        "NetworkInterface": "Network Interface",
+        "CPU": "CPU"
     }
 }
 
@@ -1947,17 +1980,45 @@ MONITOR_OBJECT_METRIC = {
         "name": "Memory Usage Percent",
         "desc": "This metric indicates the percentage of memory usage of the container, monitoring the memory load of the container."
     },
+    "docker_container_mem_usage": {
+        "name": "Memory Usage",
+        "desc": "Amount of memory used by the container, typically shown in bytes, indicating the actual physical memory consumption."
+    },
     "docker_container_blkio_io_service_bytes_recursive_total": {
         "name": "Total Block I/O Bytes",
-        "desc": "This metric indicates the total block I/O bytes of the container, reflecting the disk I/O load of the container."
+        "desc": "Total number of bytes transferred during block I/O operations in the container, including all read and write operations."
+    },
+    "docker_container_blkio_io_service_bytes_recursive_read": {
+        "name": "Block Device Read Bytes",
+        "desc": "Number of bytes read from block devices, reflecting the load of read operations and storage performance."
+    },
+    "docker_container_blkio_io_service_bytes_recursive_write": {
+        "name": "Block Device Write Bytes",
+        "desc": "Number of bytes written to block devices, indicating the load of write operations and storage performance."
     },
     "docker_container_net_rx_bytes": {
         "name": "Received Network Bytes",
-        "desc": "This metric indicates the number of network bytes received by the container, in MiB, used to monitor the network traffic of the container."
+        "desc": "This metric indicates the number of network bytes received by the container, used to monitor the network traffic of the container."
     },
     "docker_container_net_tx_bytes": {
         "name": "Transmitted Network Bytes",
-        "desc": "This metric indicates the number of network bytes sent by the container, in MiB, used to monitor the network traffic of the container."
+        "desc": "This metric indicates the number of network bytes sent by the container, used to monitor the network traffic of the container."
+    },
+    "docker_container_net_rx_errors": {
+        "name": "Total Network Receive Errors",
+        "desc": "Total number of errors encountered by the container when receiving packets, useful for diagnosing network issues."
+    },
+    "docker_container_net_tx_errors": {
+        "name": "Total Network Transmit Errors",
+        "desc": "Total number of errors encountered by the container when sending packets, useful for identifying outbound network problems."
+    },
+    "docker_container_net_rx_packets": {
+        "name": "Total Received Packets",
+        "desc": "Total number of packets received by the container, indicating the activity level of inbound network flow."
+    },
+    "docker_container_net_tx_packets": {
+        "name": "Total Transmitted Packets",
+        "desc": "Total number of packets sent by the container, reflecting the activity level of outbound network flow."
     }
 },
 "vCenter": {
@@ -2572,6 +2633,326 @@ MONITOR_OBJECT_METRIC = {
     "cvm_WanInpkg": {
         "name": "External Inbound Packet Rate",
         "desc": "Average inbound packet rate per second on the external network interface card."
+    }
+  },
+  "Oracle-Exporter": {
+    "oracledb_up_gauge": {
+      "name": "OracleDb Status",
+      "desc": "The current Oracle database is running in the current state, 0 is normal, and 1 is abnormal."
+    },
+    "oracledb_uptime_seconds_gauge": {
+      "name": "OracleDb Instance Uptime",
+      "desc": "The duration for which the Oracle database has been running."
+    },
+    "oracledb_activity_execute_rate": {
+      "name": "OracleDb Execution Rate",
+      "desc": "Monitors the rate of SQL executions over a period (e.g., 5m) to reflect load changes."
+    },
+    "oracledb_activity_parse_rate": {
+      "name": "OracleDb Parse Count Rate",
+      "desc": "Monitors the rate of SQL parses in a period (e.g., 5m) to help identify frequent parsing issues."
+    },
+    "oracledb_activity_user_commits_rate": {
+      "name": "OracleDb User Commits Rate",
+      "desc": "Monitors the rate of user transaction commits over a period (e.g., 5m) to reflect transactional activity."
+    },
+    "oracledb_activity_user_rollbacks_rate": {
+      "name": "OracleDb User Rollbacks Rate",
+      "desc": "Monitors the rate of user transaction rollbacks over a period (e.g., 5m) to identify unusual transactions."
+    },
+    "oracledb_wait_time_application_gauge": {
+      "name": "OracleDb Application Wait Time",
+      "desc": "The waiting time for communication between the database client application and the database."
+    },
+    "oracledb_wait_time_commit_gauge": {
+      "name": "OracleDb Commit Wait Time",
+      "desc": "The time waiting for transaction commit completion."
+    },
+    "oracledb_wait_time_concurrency_gauge": {
+      "name": "OracleDb Concurrency Wait Time",
+      "desc": "The waiting time caused by database resource contention, such as waiting for locks."
+    },
+    "oracledb_wait_time_configuration_gauge": {
+      "name": "OracleDb Configuration Wait Time",
+      "desc": "The time waiting for system resource configuration, such as waiting for parameter changes to take effect."
+    },
+    "oracledb_wait_time_network_gauge": {
+      "name": "OracleDb Network Wait Time",
+      "desc": "The time waiting for network transmission, such as waiting for data to be sent from the client to the server."
+    },
+    "oracledb_wait_time_other_gauge": {
+      "name": "OracleDb Other Wait Time",
+      "desc": "The waiting time that cannot be classified into other waiting times."
+    },
+    "oracledb_wait_time_system_io_gauge": {
+      "name": "OracleDb System I/O Wait Time",
+      "desc": "The time waiting for the system to perform I/O operations, such as waiting for data to be read from the disk."
+    },
+    "oracledb_wait_time_user_io_gauge": {
+      "name": "OracleDb User I/O Wait Time",
+      "desc": "The time waiting for the user I/O operation to complete."
+    },
+    "oracledb_resource_utilization_rate": {
+      "name": "OracleDb Resource Utilization rate",
+      "desc": "The utilization rate of a resource in the current Oracle DB instance, which reflects the percentage of resources such as sessions, processes, memory, and so on that resource limits are used. If the value is negative（-）, the resource is not restricted, that is, the resource can be used indefinitely. In this case, it doesn't make much sense to monitor metrics for that dimension."
+    },
+    "oracledb_process_count_gauge": {
+      "name": "OracleDb Processes",
+      "desc": "The number of currently active database processes."
+    },
+    "oracledb_sessions_value_gauge": {
+      "name": "OracleDb Sessions",
+      "desc": "The current number of open sessions in the database. Dimension meaning: Status: Session status, such as ACTION, INACTIVE, BLOCKED, KILLED, etc. Type: Session type, such as Backend, CDB, PDB, SYS, USER, etc."
+    },
+    "oracledb_sga_total_gauge": {
+      "name": "OracleDb SGA Total Size",
+      "desc": "SGA is a shared memory area allocated in memory by an Oracle database instance to store global data and information to support the operation and access of the database instance. This metric is used to represent the total memory size of SGA and is used to measure the overall resource allocation scale of SGA."
+    },
+    "oracledb_sga_free_gauge": {
+      "name": "OracleDb SGA Free Size",
+      "desc": "Represents the amount of memory currently available for the Oracle Database SGA, reflecting the amount of unused idle resources in the SGA."
+    },
+    "oracledb_sga_used_percent_gauge": {
+      "name": "OracleDb SGA Usage Percentage",
+      "desc": "Represents the memory usage of the Oracle Database SGA and is used to evaluate the efficiency of the SGA's resources."
+    },
+    "oracledb_pga_total_gauge": {
+      "name": "OracleDb PGA Total Size",
+      "desc": "A PGA is an independently allocated area of memory for each user process or server process in an Oracle database instance that stores data and information for sessions or operations. This metric is used to represent the total memory size of the PGA and reflect the overall resource allocation scale of the PGA."
+    },
+    "oracledb_pga_used_gauge": {
+      "name": "OracleDb PGA Used Size",
+      "desc": "Represents the amount of memory currently used by the Oracle Database PGA, reflecting the actual consumption of PGA resources."
+    },
+    "oracledb_pga_used_percent_gauge": {
+      "name": "OracleDb PGA Usage Percentage",
+      "desc": "Represents the memory usage of the Oracle Database PGA, which is a measure of how efficiently the PGA resources are being utilized."
+    },
+    "oracledb_tablespace_bytes_gauge": {
+      "name": "OracleDb Table Used Space",
+      "desc": "The total size of the used disk space in the specified tablespace."
+    },
+    "oracledb_tablespace_max_bytes_gauge": {
+      "name": "OracleDb Table Maximum Capacity",
+      "desc": "The maximum disk space limit of the specified tablespace."
+    },
+    "oracledb_tablespace_free_gauge": {
+      "name": "OracleDb Table Available Space",
+      "desc": "The size of the remaining disk space in the specified tablespace."
+    },
+    "oracledb_tablespace_used_percent_gauge": {
+      "name": "OracleDb Tablespace Usage Percentage",
+      "desc": "The percentage of the used capacity of the specified tablespace."
+    },
+    "oracledb_rac_node_gauge": {
+      "name": "OracleDb RAC Node Count",
+      "desc": "The current number of Oracle database cluster nodes."
+    },
+    "process_cpu_seconds_total_counter": {
+      "name": "OracleDb Monitoring Probe Process CPU Time",
+      "desc": "The total amount of CPU time used by the Oracle Database Monitoring Probe process."
+    },
+    "process_max_fds_gauge": {
+      "name": "OracleDb Monitoring Probe Process Max File Descriptors",
+      "desc": "The maximum number of file descriptors that can be opened by the Oracle Database Monitoring Probe process."
+    },
+    "process_open_fds_gauge": {
+      "name": "OracleDb Monitoring Probe Process Open File Descriptors",
+      "desc": "The number of file descriptors that are currently open by the Oracle Database Monitoring Probe process."
+    },
+    "process_resident_memory_bytes_gauge": {
+      "name": "OracleDb Monitoring Probe Process Resident Memory",
+      "desc": "The size of the current resident memory of the Oracle Database monitoring probe process."
+    },
+    "process_virtual_memory_bytes_gauge": {
+      "name": "OracleDb Monitoring Probe Process Virtual Memory",
+      "desc": "The current virtual memory size of the Oracle Database Monitoring Probe process."
+    },
+    "oracledb_exporter_last_scrape_duration_seconds_gauge": {
+      "name": "OracleDb Exporter Last Scrape Duration",
+      "desc": "The time spent on the most recent collection of indicators from the Oracle database."
+    },
+    "oracledb_exporter_last_scrape_error_gauge": {
+      "name": "OracleDb Exporter Last Scrape Status",
+      "desc": "Whether an error occurred when the OracleDB monitoring probe collected indicators in the most recent time."
+    },
+    "oracledb_exporter_scrapes_total_counter": {
+      "name": "OracleDb Exporter Scrape Metrics Total",
+      "desc": "The total number of times of collecting indicators since the OracleDB monitoring probe was started, and if the process is restarted, it will be recalculated."
+    }
+  },
+  "Minio": {
+    "minio_audit_failed_messages_counter": {
+      "name": "Unsent Msgs Total",
+      "desc": "Counts unsent messages to detect sending failures and ensure message delivery integrity."
+    },
+    "minio_audit_target_queue_length_gauge": {
+      "name": "Unsent Msgs in Target Queue",
+      "desc": "Reflects message backlog in target queue for optimizing message processing."
+    },
+    "minio_audit_total_messages_counter": {
+      "name": "Total Sent Msgs",
+      "desc": "Evaluates sending success rate with unsent messages to measure stability."
+    },
+    "minio_audit_delivery_success_rate": {
+      "name": "Message delivery success rate",
+      "desc": "The success rate of sending messages is used to measure the reliability and stability of audit message sending."
+    },
+    "minio_cluster_capacity_usable_free_bytes_gauge": {
+      "name": "Cluster Usable Free Cap",
+      "desc": "Reflects available storage for data storage planning."
+    },
+    "minio_cluster_capacity_usable_total_bytes_gauge": {
+      "name": "Cluster Used Cap",
+      "desc": "Counts used storage for calculating utilization rate."
+    },
+    "minio_cluster_capacity_storage_utilization": {
+      "name": "Cluster storage capacity utilization",
+      "desc": "Collect statistics on the percentage of used capacity in the cluster storage capacity to the total capacity, monitor the storage resource usage, and evaluate the remaining storage resources."
+    },
+    "minio_cluster_drive_offline_total_gauge": {
+      "name": "Total Offline Drives",
+      "desc": "Counts offline drives to troubleshoot issues affecting performance and data availability."
+    },
+    "minio_cluster_drive_online_total_gauge": {
+      "name": "Total Online Drives",
+      "desc": "Evaluates available storage devices to ensure cluster operation."
+    },
+    "minio_cluster_drive_total_gauge": {
+      "name": "Total Drives in Cluster",
+      "desc": "Evaluates overall storage device status with online and offline counts."
+    },
+    "minio_cluster_drive_offline_rate": {
+      "name": "Cluster drive offline rate",
+      "desc": "The ratio of the number of offline drives to the total number of drives, a measure of the reliability and availability of storage devices, can affect data redundancy when thresholds such as 5% are exceeded."
+    },
+    "minio_cluster_nodes_offline_total_gauge": {
+      "name": "Total Offline Nodes",
+      "desc": "Counts offline nodes to address issues affecting performance and redundancy."
+    },
+    "minio_cluster_nodes_online_total_gauge": {
+      "name": "Total Online Nodes",
+      "desc": "Evaluates available cluster resources to ensure service capacity."
+    },
+    "minio_cluster_nodes_offline_rate": {
+      "name": "Cluster nodes offline rate",
+      "desc": "The percentage of the number of offline nodes in the total number of nodes reflects the health status of the cluster nodes and is used to evaluate the stability of the cluster nodes."
+    },
+    "minio_cluster_write_quorum_gauge": {
+      "name": "Cluster Max Write Acks",
+      "desc": "Ensures data write consistency and reliability, affecting write performance."
+    },
+    "minio_cluster_health_status_gauge": {
+      "name": "Cluster Health Status",
+      "desc": "Reflects overall cluster health for quick status check. 0 = Unhealthy, 1 = Healthy"
+    },
+    "minio_s3_traffic_sent_bytes_rate": {
+      "name": "S3 Traffic Sent Rate",
+      "desc": "Calculates the average rate of data sent in S3 requests over the past 5 minutes, reflecting data upload performance."
+    },
+    "minio_s3_traffic_received_bytes_rate": {
+      "name": "S3 Traffic Received Rate",
+      "desc": "Calculates the average rate of data received in S3 requests over the past 5 minutes, reflecting data download performance."
+    },
+    "minio_s3_requests_waiting_total_gauge": {
+      "name": "Total Waiting S3 Requests",
+      "desc": "Displays the number of S3 requests waiting to be processed, optimizes request processing efficiency, and directly reflects whether the system is saturated."
+    },
+    "minio_s3_requests_total_rate": {
+      "name": "S3 Requests Rate",
+      "desc": "Calculates the average processing rate of S3 requests over the last 5 minutes, reflecting system throughput and service load and performance baselines."
+    },
+    "minio_s3_requests_errors_total_rate": {
+      "name": "S3 Requests Error Rate",
+      "desc": "Calculates the average rate of errors in S3 requests over the past 5 minutes, reflecting system stability."
+    },
+    "minio_s3_requests_rejected_invalid_total_rate": {
+      "name": "S3 Invalid Requests Rate",
+      "desc": "Calculates the average rate of S3 requests rejected due to invalid format or parameters over the past 5 minutes, reflecting client request quality."
+    },
+    "minio_s3_requests_rejected_auth_total_rate": {
+      "name": "S3 Auth Failure Rate",
+      "desc": "Calculates the average rate of S3 requests rejected due to authentication failures over the past 5 minutes, reflecting authentication issues."
+    },
+    "minio_bucket_usage_object_total_gauge": {
+      "name": "Total Objects in Bucket",
+      "desc": "Statistics on the number of objects in a specified bucket are used to understand the data scale of the bucket and evaluate the bucket usage."
+    },
+    "minio_bucket_usage_total_bytes_gauge": {
+      "name": "Total Bucket Size",
+      "desc": "Statistics on the amount of storage space occupied by a specified bucket can be used to monitor storage resource consumption and plan storage capacity."
+    },
+    "minio_bucket_requests_4xx_errors_total_rate": {
+      "name": "Total Bucket S3 Request Error Rate (4xx)",
+      "desc": "The rate per second of client errors (e.g., 403/404) in S3 requests received by the bucket over the past 5 minutes, reflecting the real-time frequency of client request legitimacy issues."
+    },
+    "minio_bucket_requests_inflight_total_gauge": {
+      "name": "Bucket Total Running S3 Requests",
+      "desc": "Statistics on the number of S3 requests processed by a specified bucket can be used to monitor the request processing progress and optimize system performance."
+    },
+    "minio_bucket_requests_total_rate": {
+      "name": "Bucket S3 Total Requests Rate",
+      "desc": "The growth rate per second of the total number of S3 requests received by a bucket reflects the intensity of request traffic and the frequency of business access to the bucket."
+    },
+    "minio_bucket_traffic_received_rate": {
+      "name": "Bucket Traffic Receive Rate",
+      "desc": "The average amount of data traffic received by the compute bucket per second over a 5-minute period, converted to MB/s units, is used to monitor bandwidth usage for data downloads or reads."
+    },
+    "minio_node_drive_total_inodes_gauge": {
+      "name": "Total Inodes of Drive",
+      "desc": "Counts the total number of inodes on a specified drive to measure its file-storage capacity limit and evaluate the scale of storage resources."
+    },
+    "minio_node_drive_used_inodes_utilization": {
+      "name": "Drive inode utilization",
+      "desc": "Statistics on the percentage of inodes used by a specified drive can be used to understand the degree of drive usage and assist in storage resource management."
+    },
+    "minio_node_drive_reads_per_sec_gauge": {
+      "name": "Drive Reads per Second",
+      "desc": "Counts the number of read operations per second on a specified drive to evaluate its read performance and troubleshoot read-related performance issues."
+    },
+    "minio_node_drive_reads_kb_per_sec_gauge": {
+      "name": "Drive Read Kilobytes per Second",
+      "desc": "Counts the amount of data read per second (in kilobytes) on a specified drive, directly reflecting its read bandwidth to optimize data-reading strategies."
+    },
+    "minio_node_drive_writes_per_sec_gauge": {
+      "name": "Drive Writes per Second",
+      "desc": "Counts the number of write operations per second on a specified drive to evaluate its write performance and analyze the impact of write operations on the system."
+    },
+    "minio_node_drive_writes_kb_per_sec_gauge": {
+      "name": "Drive Write Kilobytes per Second",
+      "desc": "Counts the amount of data written per second (in kilobytes) on a specified drive, reflecting its write bandwidth to improve data-writing efficiency."
+    },
+    "minio_node_drive_perc_util_gauge": {
+      "name": "Drive Busy Time Utilization",
+      "desc": "Counts the percentage of time a specified drive is busy to evaluate its load and allocate storage tasks reasonably."
+    },
+    "minio_node_if_rx_bytes_rate": {
+      "name": "The amount of data received per second",
+      "desc": "Statistics on the amount of data received per second by a specified server network interface in the past five minutes are used to monitor network traffic inflow and evaluate network bandwidth usage."
+    },
+    "minio_node_if_rx_errors_rate": {
+      "name": "Receive error rate (per second)",
+      "desc": "Statistics on the number of errors that occur when receiving data per second on a specified server network interface in the past 5 minutes is used to troubleshoot network receiving faults and ensure network data transmission quality."
+    },
+    "minio_node_if_tx_bytes_rate": {
+      "name": "The amount of data transferred per second",
+      "desc": "Statistics on the amount of data transmitted per second on a specified server network interface in the past five minutes are used to monitor network traffic outflow and evaluate network bandwidth efficiency."
+    },
+    "minio_node_if_tx_errors_rate": {
+      "name": "Transmission error rate (per second)",
+      "desc": "Statistics on the number of errors that occur during data transmission per second on the network interface of a specified server in the past 5 minutes are used to troubleshoot network transmission faults and improve network communication reliability."
+    },
+    "minio_node_cpu_avg_load1_gauge": {
+      "name": "CPU 1-Minute Average Load",
+      "desc": "Calculate the average load of the CPU in the past 1 minute, reflecting the number of processes waiting for CPU resources (including running and waiting processes), the larger the value, the more CPU tension, for real-time monitoring of real-time pressure and detection of performance problems."
+    },
+    "minio_node_cpu_avg_load5_gauge": {
+      "name": "CPU 5-Minute Average Load",
+      "desc": "Calculate the average CPU load over the past 5 minutes, reflecting the number of processes waiting for CPU resources (including running and waiting processes), which is used to evaluate short-term load trends and assist in performance optimization decisions."
+    },
+    "minio_node_cpu_avg_load15_gauge": {
+      "name": "CPU 15-Minute Average Load",
+      "desc": "The average CPU load in the past 15 minutes is calculated, reflecting the number of processes waiting for CPU resources (including running and waiting processes), which is used to analyze the long-term load and plan system resources."
     }
   }
 }

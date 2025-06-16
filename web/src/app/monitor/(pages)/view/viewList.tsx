@@ -33,13 +33,20 @@ import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import Permission from '@/components/permission';
 import { ListItem } from '@/types';
+import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants/monitor';
 const { Option } = Select;
 
-const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
+const ViewList: React.FC<ViewListProps> = ({
+  objects,
+  objectId,
+  showTab,
+  updateTree,
+}) => {
   const { isLoading } = useApiClient();
   const {
     getMonitorMetrics,
     getInstanceList,
+    getInstanceSearch,
     getInstanceQueryParams,
     getMonitorPlugin,
   } = useMonitorApi();
@@ -97,7 +104,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
           </Button>
           <Permission requiredPermissions={['Detail']}>
             <Button type="link" onClick={() => linkToDetial(record)}>
-              {t('monitor.views.overview')}
+              {t('monitor.views.dashboard')}
             </Button>
           </Permission>
         </>
@@ -191,6 +198,11 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     }
   }, [colony, namespace, workload, node]);
 
+  const updatePage = () => {
+    onRefresh();
+    updateTree?.();
+  };
+
   const getParams = () => {
     return {
       page: pagination.current,
@@ -217,7 +229,8 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     };
     const targetObject = objects.find((item) => item.id === objectId);
     const objName = targetObject?.name;
-    const getInstList = getInstanceList(objectId, params);
+    const request = showTab ? getInstanceSearch : getInstanceList;
+    const getInstList = request(objectId, params);
     const getQueryParams = getInstanceQueryParams(objName as string, objParams);
     const getMetrics = getMonitorMetrics(objParams);
     const getPlugins = getMonitorPlugin(objParams);
@@ -338,7 +351,8 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
     }
     try {
       setTableLoading(type !== 'timer');
-      const data = await getInstanceList(objectId, params);
+      const request = showTab ? getInstanceSearch : getInstanceList;
+      const data = await request(objectId, params);
       setTableData(data.results || []);
       setPagination((prev: Pagination) => ({
         ...prev,
@@ -357,7 +371,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
       monitorObjId: objectId || '',
       name: monitorItem?.name || '',
       monitorObjDisplayName: monitorItem?.display_name || '',
-      icon: monitorItem?.icon || '',
+      icon: monitorItem?.icon || OBJECT_DEFAULT_ICON,
       instance_id: app.instance_id,
       instance_name: app.instance_name,
       instance_id_values: app.instance_id_values,
@@ -445,6 +459,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
               <Select
                 value={colony}
                 allowClear
+                showSearch
                 style={{ width: 120 }}
                 placeholder={t('monitor.views.colony')}
                 onChange={handleColonyChange}
@@ -460,6 +475,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={namespace}
                     allowClear
+                    showSearch
                     className="mx-[10px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.namespace')}
@@ -474,6 +490,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={workload}
                     allowClear
+                    showSearch
                     className="mr-[10px]"
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.workload')}
@@ -488,6 +505,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
                   <Select
                     value={node}
                     allowClear
+                    showSearch
                     style={{ width: 120 }}
                     placeholder={t('monitor.views.node')}
                     onChange={handleNodeChange}
@@ -515,7 +533,7 @@ const ViewList: React.FC<ViewListProps> = ({ objects, objectId, showTab }) => {
         <TimeSelector
           onlyRefresh
           onFrequenceChange={onFrequenceChange}
-          onRefresh={onRefresh}
+          onRefresh={updatePage}
         />
       </div>
       <CustomTable

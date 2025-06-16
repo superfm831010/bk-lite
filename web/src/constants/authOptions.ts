@@ -2,8 +2,31 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { AuthOptions } from "next-auth";
 import WeChatProvider from "../lib/wechatProvider";
 
-export const authOptions: AuthOptions = {
-  providers: [
+async function getWeChatConfig() {
+  try {
+    const response = await fetch(`${process.env.NEXTAPI_URL}/core/api/get_wechat_settings/`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    
+    const responseData = await response.json();
+    
+    if (!response.ok || !responseData.result) {
+      console.error("Failed to get WeChat settings:", responseData);
+      return null;
+    }
+    console.log("WeChat settings fetched successfully:", responseData.data);
+    return responseData.data;
+  } catch (error) {
+    console.error("Error fetching WeChat settings:", error);
+    return null;
+  }
+}
+
+export async function getAuthOptions(): Promise<AuthOptions> {
+  const wechatConfig = await getWeChatConfig();
+  
+  const providers = [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -83,10 +106,143 @@ export const authOptions: AuthOptions = {
         return null;
       },
     }),
-    WeChatProvider({
-      clientId: process.env.WECHAT_APP_ID || "",
-      clientSecret: process.env.WECHAT_APP_SECRET || "",
-      redirectUri: `${process.env.WECHAT_APP_REDIRECT_URI}/api/auth/callback/wechat`,
+  ];
+
+  if (wechatConfig) {
+    providers.push(
+      WeChatProvider({
+        clientId: wechatConfig.app_id || process.env.WECHAT_APP_ID || "",
+        clientSecret: wechatConfig.app_secret || process.env.WECHAT_APP_SECRET || "",
+        redirectUri: `${wechatConfig.redirect_uri || process.env.WECHAT_APP_REDIRECT_URI}/api/auth/callback/wechat`,
+      }) as unknown as any
+    );
+  }
+
+  return {
+    providers,
+    pages: {
+      signIn: '/auth/signin',
+      signOut: '/auth/signout',
+    },
+    session: {
+      strategy: "jwt",
+      maxAge: 60 * 60 * 24,
+    },
+    callbacks: {
+      async jwt({ token, user, account }) {
+        if (user) {
+          token.id = user.id;
+          token.username = user.username || user.name || '';
+          token.locale = user.locale || 'en';
+          token.token = user.token;
+          token.temporary_pwd = user.temporary_pwd;
+          token.enable_otp = user.enable_otp;
+          token.qrcode = user.qrcode;
+          token.provider = account?.provider;
+          token.wechatOpenId = user.wechatOpenId;
+          token.wechatUnionId = user.wechatUnionId;
+          token.wechatWorkId = user.wechatWorkId;
+        }
+        return token;
+      },
+      async session({ session, token }) {
+        session.user = {
+          id: token.id || '',
+          username: token.username,
+          locale: token.locale,
+          token: token.token,
+          temporary_pwd: token.temporary_pwd,
+          enable_otp: token.enable_otp,
+          qrcode: token.qrcode,
+          provider: token.provider,
+          wechatOpenId: token.wechatOpenId,
+          wechatUnionId: token.wechatUnionId,
+          wechatWorkId: token.wechatWorkId,
+        };
+        return session;
+      },
+    },
+  };
+}
+
+// 为了向后兼容，保留一个默认的 authOptions，但只包含基本的 CredentialsProvider
+export const authOptions: AuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
+        skipValidation: { label: "Skip Validation", type: "text" },
+        userData: { label: "User Data", type: "text" },
+      },
+      async authorize(credentials) {
+        if (!credentials) {
+          console.error("No credentials provided");
+          return null;
+        }
+
+        try {
+          // If skipValidation is true, use the provided userData directly
+          if (credentials.skipValidation === 'true' && credentials.userData) {
+            const userData = JSON.parse(credentials.userData);
+            
+            if (!userData.id && !userData.username) {
+              console.error("Invalid userData: missing id and username");
+              return null;
+            }
+            
+            return {
+              id: userData.id || userData.username,
+              username: userData.username,
+              token: userData.token,
+              locale: userData.locale || 'en',
+              temporary_pwd: userData.temporary_pwd || false,
+              enable_otp: userData.enable_otp || false,
+              qrcode: userData.qrcode || false,
+              provider: userData.provider,
+              wechatOpenId: userData.wechatOpenId,
+              wechatUnionId: userData.wechatUnionId,
+              wechatWorkId: userData.wechatWorkId,
+            };
+          }
+
+          // Otherwise, perform normal login validation
+          const response = await fetch(`${process.env.NEXTAPI_URL}/core/api/login/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: credentials.username,
+              password: credentials.password,
+            }),
+          });
+          
+          const responseData = await response.json();
+          
+          if (!response.ok || !responseData.result) {
+            console.error("Authentication failed:", responseData);
+            return null;
+          }
+          
+          if (responseData.result) {
+            const user = responseData.data;
+            return {
+              id: user.id || user.username,
+              username: user.username,
+              token: user.token,
+              locale: user.locale || 'en',
+              temporary_pwd: user.temporary_pwd || false,
+              enable_otp: user.enable_otp || false,
+              qrcode: user.qrcode || false,
+            };
+          }
+        } catch (error) {
+          console.error("Error during authentication:", error);
+          return null;
+        }
+        
+        return null;
+      },
     }),
   ],
   pages: {
@@ -111,28 +267,6 @@ export const authOptions: AuthOptions = {
         token.wechatOpenId = user.wechatOpenId;
         token.wechatUnionId = user.wechatUnionId;
         token.wechatWorkId = user.wechatWorkId;
-
-        // If client environment and user login successful, save shared auth data
-        if (typeof window !== 'undefined') {
-          try {
-            const { saveSharedAuthData } = await import('../utils/crossDomainAuth');
-            saveSharedAuthData({
-              id: token.id as string,
-              username: token.username as string,
-              token: token.token as string || '',
-              locale: token.locale as string,
-              temporary_pwd: token.temporary_pwd as boolean || false,
-              enable_otp: token.enable_otp as boolean || false,
-              qrcode: token.qrcode as boolean || false,
-              provider: token.provider as string,
-              wechatOpenId: token.wechatOpenId as string,
-              wechatUnionId: token.wechatUnionId as string,
-              wechatWorkId: token.wechatWorkId as string,
-            });
-          } catch (error) {
-            console.error('Failed to save shared auth data:', error);
-          }
-        }
       }
       return token;
     },

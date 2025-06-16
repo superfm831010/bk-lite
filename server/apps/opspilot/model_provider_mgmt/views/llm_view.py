@@ -6,9 +6,10 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.core.decorators.api_permission import HasRole
 from apps.core.logger import logger
 from apps.core.utils.viewset_utils import AuthViewSet
+from apps.opspilot.bot_mgmt.views import validate_remaining_token
+from apps.opspilot.enum import SkillTypeChoices
 from apps.opspilot.knowledge_mgmt.models import KnowledgeBase
 from apps.opspilot.model_provider_mgmt.models import LLMModel, LLMSkill
 from apps.opspilot.model_provider_mgmt.models.llm_skill import SkillRequestLog, SkillTools
@@ -18,8 +19,8 @@ from apps.opspilot.model_provider_mgmt.serializers.llm_serializer import (
     SkillRequestLogSerializer,
     SkillToolsSerializer,
 )
-from apps.opspilot.model_provider_mgmt.services.llm_service import llm_service
 from apps.opspilot.quota_rule_mgmt.quota_utils import get_quota_client
+from apps.opspilot.utils.sse_chat import stream_chat
 
 
 class LLMFilter(FilterSet):
@@ -32,6 +33,12 @@ class LLMViewSet(AuthViewSet):
     queryset = LLMSkill.objects.all()
     filterset_class = LLMFilter
     permission_key = "skill"
+
+    @action(methods=["GET"], detail=False)
+    def get_template_list(self, request):
+        skill_list = LLMSkill.objects.filter(is_template=True)
+        serializer = self.get_serializer(skill_list, many=True)
+        return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         params = request.data
@@ -77,7 +84,6 @@ class LLMViewSet(AuthViewSet):
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
-    @HasRole()
     def execute(self, request):
         """
         {
@@ -89,18 +95,41 @@ class LLMViewSet(AuthViewSet):
             "rag_score_threshold": [{"knowledge_base": 1, "score": 0.7}], # RAG分数阈值
             "chat_history": "abc", # 对话历史
             "conversation_window_size": 10, # 对话窗口大小
-            "show_think": True # 是否展示think的内容
+            "show_think": True, # 是否展示think的内容
+            "group": 1,
+            "skill_name": "test"
         }
         """
         params = request.data
         params["username"] = request.user.username
         params["user_id"] = request.user.id
+        skill_type = SkillTypeChoices.KNOWLEDGE_TOOL
+        skill_obj = LLMSkill.objects.get(id=int(params["skill_id"]))
+        if params.get("tools"):
+            skill_type = SkillTypeChoices.BASIC_TOOL
         try:
-            return_data = llm_service.chat(params)
+            # 获取客户端IP
+            current_ip = request.META.get("HTTP_X_FORWARDED_FOR")
+            if current_ip:
+                current_ip = current_ip.split(",")[0].strip()
+            else:
+                current_ip = request.META.get("REMOTE_ADDR", "")
+
+            # 验证配额限制（如果不是超级用户）
+            if not request.user.is_superuser:
+                validate_remaining_token(skill_obj)
+                # 这里可以添加具体的配额检查逻辑
+            params["skill_type"] = skill_type
+            params["tools"] = params.get("tools", [])
+            # 调用stream_chat函数返回流式响应
+            return stream_chat(params, skill_obj.name, {}, current_ip, params["user_message"])
+        except LLMSkill.DoesNotExist:
+            return JsonResponse({"result": False, "message": _("Skill not found.")})
+        except LLMModel.DoesNotExist:
+            return JsonResponse({"result": False, "message": _("LLM Model not found.")})
         except Exception as e:
             logger.exception(e)
             return JsonResponse({"result": False, "message": str(e)})
-        return JsonResponse({"result": True, "data": return_data})
 
 
 class LLMModelViewSet(AuthViewSet):

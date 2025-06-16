@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from django.conf import settings
-from django.utils.translation import gettext as _
 
 from apps.core.logger import logger
 from apps.opspilot.enum import SkillTypeChoices
@@ -17,7 +16,6 @@ from apps.opspilot.models import (
     TeamTokenUseInfo,
     TokenConsumption,
 )
-from apps.opspilot.quota_rule_mgmt.quota_utils import QuotaUtils
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 
@@ -125,41 +123,6 @@ class LLMService:
 
         return processed_history
 
-    def format_stream_chat_params(self, kwargs: Dict[str, Any]) -> Tuple[Dict, Dict, TeamTokenUseInfo, Dict]:
-        """
-        格式化流式聊天所需的参数
-
-        Args:
-            kwargs: 包含聊天所需参数的字典
-
-        Returns:
-            文档映射、标题映射、团队令牌使用信息和聊天参数
-        """
-        llm_model = LLMModel.objects.get(id=kwargs["llm_model"])
-        self.validate_remaining_token(llm_model)
-        # 处理用户消息和图片
-        chat_kwargs, doc_map, title_map = self.format_chat_server_kwargs(kwargs, llm_model)
-        # 获取或创建团队令牌使用信息
-        group = llm_model.consumer_team or llm_model.team[0]
-        team_info, _ = TeamTokenUseInfo.objects.get_or_create(
-            group=group, llm_model=llm_model.name, defaults={"used_token": 0}
-        )
-
-        return doc_map, title_map, team_info, chat_kwargs
-
-    @staticmethod
-    def validate_remaining_token(llm_model):
-        try:
-            current_team = llm_model.consumer_team
-            if not current_team:
-                current_team = llm_model.team[0] if llm_model.team else ""
-            remaining_token = QuotaUtils.get_remaining_token(current_team, llm_model.name)
-        except Exception as e:
-            logger.exception(e)
-            remaining_token = 1
-        if remaining_token <= 0:
-            raise Exception(_("Token used up"))
-
     def format_chat_server_kwargs(self, kwargs, llm_model):
         title_map = doc_map = {}
         naive_rag_request = []
@@ -169,14 +132,8 @@ class LLMService:
 
         user_message, image_data = self._process_user_message_and_images(kwargs["user_message"])
         # 处理聊天历史
-        chat_history = self._process_chat_history(kwargs["chat_history"], kwargs["conversation_window_size"])
-        tool_map = {i["id"]: {u["key"]: u["value"] for u in i["kwargs"] if u["key"]} for i in kwargs.get("tools", [])}
-        tools = list(SkillTools.objects.filter(id__in=list(tool_map.keys())).values_list("params", flat=True))
-        for i in tools:
-            i.pop("kwargs", None)
+        chat_history = self._process_chat_history(kwargs["chat_history"], kwargs.get("conversation_window_size", 10))
         extra_config = {}
-        for i in tool_map.values():
-            extra_config.update(i)
         # 构建聊天参数
         chat_kwargs = {
             "openai_api_base": llm_model.decrypted_llm_config["openai_base_url"],
@@ -194,8 +151,20 @@ class LLMService:
         }
         if kwargs.get("thread_id"):
             chat_kwargs["thread_id"] = str(kwargs["thread_id"])
+        if kwargs["enable_rag_knowledge_source"]:
+            extra_config = {"enable_rag_source": True, "enable_rag_strict_mode": False}
         if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
+            tool_map = {
+                i["id"]: {u["key"]: u["value"] for u in i["kwargs"] if u["key"]} for i in kwargs.get("tools", [])
+            }
+            tools = list(SkillTools.objects.filter(id__in=list(tool_map.keys())).values_list("params", flat=True))
+            for i in tools:
+                i.pop("kwargs", None)
+            for i in tool_map.values():
+                extra_config.update(i)
             chat_kwargs.update({"tools_servers": tools})
+            chat_kwargs.update({"extra_config": extra_config})
+        elif extra_config:
             chat_kwargs.update({"extra_config": extra_config})
         return chat_kwargs, doc_map, title_map
 
@@ -210,8 +179,8 @@ class LLMService:
             处理后的数据、文档映射和标题映射
         """
         llm_model = LLMModel.objects.get(id=kwargs["llm_model"])
-        self.validate_remaining_token(llm_model)
         show_think = kwargs.pop("show_think", True)
+        group = kwargs.pop("group", 0)
         # 处理用户消息和图片
         chat_kwargs, doc_map, title_map = self.format_chat_server_kwargs(kwargs, llm_model)
 
@@ -223,7 +192,6 @@ class LLMService:
         data = result["message"]
 
         # 更新团队令牌使用信息
-        group = llm_model.consumer_team or llm_model.team[0]
         used_token = result["prompt_tokens"] + result["completion_tokens"]
         team_info, is_created = TeamTokenUseInfo.objects.get_or_create(
             group=group, llm_model=llm_model.name, defaults={"used_token": used_token}
@@ -296,7 +264,7 @@ class LLMService:
             embed_config = knowledge_base.embed_model.decrypted_embed_config
             embed_model_base_url = embed_config["base_url"]
             embed_model_api_key = embed_config["api_key"]
-            embed_model_name = embed_config["model"]
+            embed_model_name = embed_config.get("model", knowledge_base.embed_model.name)
             rerank_model_base_url = rerank_model_api_key = rerank_model_name = ""
             if knowledge_base.rerank_model:
                 rerank_config = knowledge_base.rerank_model.decrypted_rerank_config_config
@@ -324,6 +292,7 @@ class LLMService:
                 "rerank_model_api_key": rerank_model_api_key,
                 "rerank_model_name": rerank_model_name,
                 "rerank_top_k": knowledge_base.rerank_top_k,
+                "rag_recall_mode": "chunk",
             }
             naive_rag_request.append(kwargs)
 

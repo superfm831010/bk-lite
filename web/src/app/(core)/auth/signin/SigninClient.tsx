@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import PasswordResetForm from "./PasswordResetForm";
 import OtpVerificationForm from "./OtpVerificationForm";
-import { saveSharedAuthData, autoSignInFromSharedAuth, clearSharedAuthData } from "@/utils/crossDomainAuth";
+import { saveAuthToken } from "@/utils/crossDomainAuth";
 
 interface SigninClientProps {
   searchParams: {
@@ -26,6 +26,13 @@ interface LoginResponse {
   locale?: string;
 }
 
+interface WeChatSettings {
+  enabled: boolean;
+  app_id?: string;
+  app_secret?: string;
+  redirect_uri?: string;
+}
+
 export default function SigninClient({ searchParams: { callbackUrl, error }, signinErrors }: SigninClientProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -35,28 +42,42 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
   const [authStep, setAuthStep] = useState<AuthStep>('login');
   const [loginData, setLoginData] = useState<LoginResponse>({});
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
-  const [checkingSharedAuth, setCheckingSharedAuth] = useState(true);
+  const [wechatSettings, setWechatSettings] = useState<WeChatSettings | null>(null);
+  const [loadingWechatSettings, setLoadingWechatSettings] = useState(true);
 
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     setIsWechatBrowser(userAgent.includes('micromessenger') || userAgent.includes('wechat'));
     
-    // Check for shared authentication state
-    checkForSharedAuth();
+    // Fetch WeChat settings
+    fetchWechatSettings();
   }, []);
 
-  const checkForSharedAuth = async () => {
+  const fetchWechatSettings = async () => {
     try {
-      const autoSignInSuccess = await autoSignInFromSharedAuth(callbackUrl);
-      if (autoSignInSuccess) {
-        // Auto sign-in successful, redirect directly
-        window.location.href = callbackUrl || "/";
-        return;
+      setLoadingWechatSettings(true);
+      const response = await fetch('/api/proxy/core/api/get_wechat_settings/', {
+        method: "GET",
+        headers: { 
+          "Content-Type": "application/json" 
+        },
+      });
+      
+      const responseData = await response.json();
+      
+      if (response.ok && responseData.result) {
+        setWechatSettings({
+          enabled: true,
+          ...responseData.data
+        });
+      } else {
+        setWechatSettings({ enabled: false });
       }
     } catch (error) {
-      console.error('Auto sign-in failed:', error);
+      console.error("Failed to fetch WeChat settings:", error);
+      setWechatSettings({ enabled: false });
     } finally {
-      setCheckingSharedAuth(false);
+      setLoadingWechatSettings(false);
     }
   };
 
@@ -66,7 +87,6 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
     setFormError("");
     
     try {
-      // Use fetch directly instead of useApiClient to avoid automatic signIn() call
       const response = await fetch('/api/proxy/core/api/login/', {
         method: "POST",
         headers: { 
@@ -89,16 +109,13 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
       const userData = responseData.data;
       setLoginData(userData);
       
-      // Check if temporary password needs to be reset
       if (userData.temporary_pwd) {
         setAuthStep('reset-password');
         setIsLoading(false);
         return;
       }
       
-      // Check if OTP verification is needed
       if (userData.enable_otp) {
-        // Generate QR code if needed
         if (userData.qrcode) {
           try {
             const qrResponse = await fetch(`/api/proxy/core/api/generate_qr_code/?username=${encodeURIComponent(userData.username)}`, {
@@ -120,7 +137,6 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
         return;
       }
       
-      // All validations passed, now create NextAuth session
       await completeAuthentication(userData);
       
     } catch (error) {
@@ -133,9 +149,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
   const handlePasswordResetComplete = async (updatedLoginData: LoginResponse) => {
     setLoginData(updatedLoginData);
     
-    // Check if OTP verification is needed after password reset
     if (updatedLoginData.enable_otp) {
-      // Generate QR code if needed
       if (updatedLoginData.qrcode) {
         try {
           const qrResponse = await fetch(`/api/proxy/core/api/generate_qr_code/?username=${encodeURIComponent(updatedLoginData.username || '')}`, {
@@ -156,7 +170,6 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
       return;
     }
     
-    // Password reset complete and no OTP needed, create NextAuth session
     await completeAuthentication(updatedLoginData);
   };
 
@@ -166,7 +179,6 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
 
   const completeAuthentication = async (userData: LoginResponse) => {
     try {
-      // Ensure all required fields are present for NextAuth
       const userDataForAuth = {
         id: userData.id || userData.username || 'unknown',
         username: userData.username,
@@ -179,22 +191,22 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
 
       console.log('Completing authentication with user data:', userDataForAuth);
 
-      // Save shared authentication state data
-      saveSharedAuthData({
-        id: userDataForAuth.id,
-        username: userDataForAuth.username || '',
-        token: userDataForAuth.token || '',
-        locale: userDataForAuth.locale,
-        temporary_pwd: userDataForAuth.temporary_pwd,
-        enable_otp: userDataForAuth.enable_otp,
-        qrcode: userDataForAuth.qrcode,
-      });
+      if (userData.token) {
+        saveAuthToken({
+          id: userDataForAuth.id,
+          username: userDataForAuth.username || '',
+          token: userData.token,
+          locale: userDataForAuth.locale,
+          temporary_pwd: userDataForAuth.temporary_pwd,
+          enable_otp: userDataForAuth.enable_otp,
+          qrcode: userDataForAuth.qrcode,
+        });
+      }
 
-      // Pass the already validated user data to NextAuth
       const result = await signIn("credentials", {
         redirect: false,
         username: userDataForAuth.username,
-        password: password, // Use the original password since validation is already done
+        password: password,
         skipValidation: 'true',
         userData: JSON.stringify(userDataForAuth),
         callbackUrl: callbackUrl || "/",
@@ -206,23 +218,18 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
         console.error('SignIn error:', result.error);
         setFormError(result.error);
         setIsLoading(false);
-        // Clear potentially invalid shared authentication state
-        clearSharedAuthData();
       } else if (result?.ok) {
         console.log('SignIn successful, redirecting to:', callbackUrl || "/");
-        // Use window.location.href for a clean redirect
         window.location.href = callbackUrl || "/";
       } else {
         console.error('SignIn failed with unknown error');
         setFormError("Authentication failed");
         setIsLoading(false);
-        clearSharedAuthData();
       }
     } catch (error) {
       console.error("Failed to complete authentication:", error);
       setFormError("Authentication failed");
       setIsLoading(false);
-      clearSharedAuthData();
     }
   };
 
@@ -273,7 +280,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
           <span className="flex items-center justify-center">
             <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             Signing in...
           </span>
@@ -301,37 +308,58 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
     />
   );
 
-  // If checking shared authentication state, show loading status
-  if (checkingSharedAuth) {
-    return (
-      <div className="flex w-[calc(100%+2rem)] h-screen -m-4">
-        <div 
-          className="w-3/5 hidden md:block bg-gradient-to-br from-blue-500 to-indigo-700"
-          style={{
-            backgroundImage: "url('/system-login-bg.jpg')",
-            backgroundSize: "cover",
-            backgroundPosition: "center"
-          }}
-        >
-        </div>
-        
-        <div className="w-full md:w-2/5 flex items-center justify-center p-8 bg-gray-50">
-          <div className="w-full max-w-md text-center">
-            <div className="flex justify-center mb-6">
-              <Image src="/logo-site.png" alt="Logo" width={60} height={60} className="h-14 w-auto" />
+  const renderWechatLoginSection = () => {
+    if (loadingWechatSettings) {
+      return (
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
             </div>
-            <div className="flex items-center justify-center space-x-2">
-              <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span className="text-lg text-gray-600">Checking authentication...</span>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
             </div>
           </div>
+          
+          <div className="mt-6">
+            <div className="w-full h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+          </div>
         </div>
+      );
+    }
+
+    if (!wechatSettings?.enabled) {
+      return null;
+    }
+
+    return (
+      <div className="mt-6">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+          </div>
+        </div>
+        
+        <div className="mt-6">
+          <button
+            onClick={handleWechatSignIn}
+            className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          >
+            Sign in with WeChat
+          </button>
+        </div>
+        
+        {isWechatBrowser && (
+          <div className="mt-4 text-center text-sm text-green-600">
+            You are using WeChat browser, for best experience use the WeChat login.
+          </div>
+        )}
       </div>
     );
-  }
+  };
 
   return (
     <div className="flex w-[calc(100%+2rem)] h-screen -m-4">
@@ -379,33 +407,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
           {authStep === 'reset-password' && renderPasswordResetForm()}
           {authStep === 'otp-verification' && renderOtpVerificationForm()}
           
-          {authStep === 'login' && (
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
-                </div>
-              </div>
-              
-              <div className="mt-6">
-                <button
-                  onClick={handleWechatSignIn}
-                  className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                >
-                  Sign in with WeChat
-                </button>
-              </div>
-              
-              {isWechatBrowser && (
-                <div className="mt-4 text-center text-sm text-green-600">
-                  You are using WeChat browser, for best experience use the WeChat login.
-                </div>
-              )}
-            </div>
-          )}
+          {authStep === 'login' && renderWechatLoginSection()}
         </div>
       </div>
     </div>

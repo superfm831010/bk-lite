@@ -45,3 +45,5 @@ CONTROLLER_DIR_DELETE_COMMAND = {
     LINUX_OS: "rm -rf /opt/fusion-collectors",
     WINDOWS_OS: "powershell -command \"Remove-Item -Path {} -Recurse\"",
 }
+
+CACHE_TIMEOUT = 60 * 5  # 5分钟

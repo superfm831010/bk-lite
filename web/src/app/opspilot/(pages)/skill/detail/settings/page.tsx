@@ -3,12 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Select, Switch, Button, InputNumber, Slider, Spin, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { v4 as uuidv4 } from 'uuid';
 import useGroups from '@/app/opspilot/hooks/useGroups';
 import styles from './index.module.scss';
 import { useSearchParams } from 'next/navigation';
-import { CustomChatMessage } from '@/app/opspilot/types/global';
-import CustomChat from '@/app/opspilot/components/custom-chat';
+import CustomChatSSE from '@/app/opspilot/components/custom-chat-sse';
 import PermissionWrapper from '@/components/permission';
 import KnowledgeBaseSelector from '@/app/opspilot/components/skill/knowledgeBaseSelector';
 import { KnowledgeBase, RagScoreThresholdItem, KnowledgeBaseRagSource } from '@/app/opspilot/types/skill';
@@ -24,7 +22,7 @@ const SkillSettingsPage: React.FC = () => {
   const [isDeepSeek, setIsDeepSeek] = useState(false);
   const { groups, loading: groupsLoading } = useGroups();
   const { t } = useTranslation();
-  const { fetchSkillDetail, fetchKnowledgeBases, fetchLlmModels, saveSkillDetail, executeLlm } = useSkillApi();
+  const { fetchSkillDetail, fetchKnowledgeBases, fetchLlmModels, saveSkillDetail } = useSkillApi();
   const searchParams = useSearchParams();
   const id = searchParams ? searchParams.get('id') : null;
 
@@ -152,48 +150,40 @@ const SkillSettingsPage: React.FC = () => {
     }
   };
 
-  const handleSendMessage = async (newMessage: CustomChatMessage[], lastUserMessage?: CustomChatMessage): Promise<CustomChatMessage[]> => {
-    return new Promise(async (resolve) => {
-      const message = lastUserMessage || [...newMessage].reverse().find(message => message.role === 'user');
-      if (!message) {
-        resolve(newMessage);
-        return;
-      }
-      try {
-        const values = await form.validateFields();
-        const ragScoreThreshold = selectedKnowledgeBases.map(id => ({
-          knowledge_base: id,
-          score: ragSources.find(base => base.id === id)?.score || 0.7,
-        }));
-        const payload = {
-          user_message: message?.content || '',
-          llm_model: values.llmModel,
-          skill_prompt: values.prompt,
-          enable_rag: ragEnabled,
-          enable_rag_knowledge_source: showRagSource,
-          rag_score_threshold: ragScoreThreshold,
-          chat_history: quantity ? newMessage.slice(0, quantity).map(msg => ({ message: msg.content, event: msg.role })) : [],
-          conversation_window_size: chatHistoryEnabled ? quantity : undefined,
-          temperature: temperature,
-          show_think: values.show_think,
-          tools: selectedTools,
-          skill_type: skillType,
-        };
-        const reply = await executeLlm(payload);
-        const botMessage: CustomChatMessage = {
-          id: uuidv4(),
-          content: reply.content,
-          role: 'bot',
-          createAt: new Date().toISOString(),
-          updateAt: new Date().toISOString(),
-          knowledgeBase: reply.citing_knowledge || null,
-        };
-        resolve([...newMessage, botMessage]);
-      } catch (error) {
-        console.error(t('common.fetchFailed'), error);
-        resolve(newMessage);
-      }
-    });
+  const handleSendMessage = async (userMessage: string): Promise<{ url: string; payload: any }> => {
+    try {
+      const values = await form.validateFields();
+      const ragScoreThreshold = selectedKnowledgeBases.map(id => ({
+        knowledge_base: id,
+        score: ragSources.find(base => base.id === id)?.score || 0.7,
+      }));
+      
+      const payload = {
+        user_message: userMessage,
+        llm_model: values.llmModel,
+        skill_prompt: values.prompt,
+        enable_rag: ragEnabled,
+        enable_rag_knowledge_source: showRagSource,
+        rag_score_threshold: ragScoreThreshold,
+        chat_history: quantity ? [] : [], // 这里可以根据需要传入聊天历史
+        conversation_window_size: chatHistoryEnabled ? quantity : undefined,
+        temperature: temperature,
+        show_think: values.show_think,
+        tools: selectedTools,
+        skill_type: skillType,
+        group: values.group?.[0],
+        skill_name: values.name,
+        skill_id: id,
+      };
+      
+      return {
+        url: '/api/proxy/opspilot/model_provider_mgmt/llm/execute/?stream=1',
+        payload
+      };
+    } catch (error) {
+      console.error(t('common.fetchFailed'), error);
+      throw error;
+    }
   };
 
   const handleTemperatureChange = (value: number | null) => {
@@ -333,7 +323,9 @@ const SkillSettingsPage: React.FC = () => {
                     <p className="pb-4 text-xs text-[var(--color-text-4)]">{t('skill.ragTip')}</p>
                     {ragEnabled && (
                       <div className="pb-2">
-                        <Form.Item label={t('skill.ragSource')}>
+                        <Form.Item
+                          label={t('skill.ragSource')}
+                          tooltip={t('skill.ragSourceTip')}>
                           <Switch size="small" className="ml-2" checked={showRagSource} onChange={setRagSourceStatus}/>
                         </Form.Item>
                         <Form.Item label={t('skill.knowledgeBase')} tooltip={t('skill.knowledgeBaseTip')}>
@@ -378,7 +370,7 @@ const SkillSettingsPage: React.FC = () => {
             </div>
           </div>
           <div className="w-1/2 space-y-4">
-            <CustomChat handleSendMessage={handleSendMessage} />
+            <CustomChatSSE handleSendMessage={handleSendMessage} />
           </div>
         </div>
       )}

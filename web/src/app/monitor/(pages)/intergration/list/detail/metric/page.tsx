@@ -171,7 +171,7 @@ const Configure = () => {
           Docker: 'Container Management',
           Cluster: 'K8S',
           vCenter: 'VMWare',
-          云平台: 'Tencent Cloud',
+          TCP: 'Tencent Cloud',
         };
         const data = await getMonitorObject();
         const _items = data

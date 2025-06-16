@@ -33,14 +33,14 @@ def _safe_get_user_id_by_username(client, username):
     try:
         res = client.search_users({"search": username})
         users_list = res.get("data", {}).get("users", [])
-        
+
         if not users_list:
             return None
 
         for user in users_list:
             if user.get("username") == username:
                 return user.get("id")
-        
+
         return None
     except Exception as e:
         logger.error(f"Error searching for user {username}: {e}")
@@ -73,16 +73,24 @@ def login(request):
         data = _parse_request_data(request)
         username = data.get("username", "").strip()
         password = data.get("password", "")
+        c_url = data.get("redirect_url", "").strip()  # 获取回调URL
 
         if not username or not password:
             return JsonResponse({"result": False, "message": _("Username or password cannot be empty")})
 
         client = _create_system_mgmt_client()
         res = client.login(username, password)
-        
+
         if not res.get("result"):
             logger.warning(f"Login failed for user: {username}")
-        
+        else:
+            # 登录成功时，如果有c_url参数，添加到响应中
+            if c_url:
+                if "data" not in res:
+                    res["data"] = {}
+                res["data"]["redirect_url"] = c_url
+                logger.info(f"Login successful for user: {username}, redirect to: {c_url}")
+
         return JsonResponse(res)
     except Exception as e:
         logger.error(f"Login error: {e}")
@@ -101,10 +109,10 @@ def wechat_user_register(request):
 
         client = _create_system_mgmt_client()
         res = client.wechat_user_register(user_id, nick_name)
-        
+
         if not res.get("result"):
             logger.warning(f"WeChat registration failed for user_id: {user_id}")
-        
+
         return JsonResponse(res)
     except Exception as e:
         logger.error(f"WeChat registration error: {e}")
@@ -134,10 +142,10 @@ def reset_pwd(request):
 
         client = _create_system_mgmt_client()
         res = client.reset_pwd(username, password)
-        
+
         if not res.get("result"):
             logger.warning(f"Password reset failed for user: {username}")
-        
+
         return JsonResponse(res)
     except Exception as e:
         logger.error(f"Password reset error: {e}")
@@ -147,7 +155,7 @@ def reset_pwd(request):
 @api_view(["GET"])
 def login_info(request):
     try:
-        default_group = os.environ.get("DEFAULT_GROUP_NAME", "Guest")
+        default_group = os.environ.get("TOP_GROUP", "Default")
         is_first_login = _check_first_login(request.user, default_group)
 
         client = _create_system_mgmt_client()
@@ -162,10 +170,12 @@ def login_info(request):
             "data": {
                 "user_id": user_id,
                 "username": request.user.username,
+                "display_name": getattr(request.user, "display_name", request.user.username),
                 "is_superuser": getattr(request.user, "is_superuser", False),
                 "group_list": getattr(request.user, "group_list", []),
                 "roles": getattr(request.user, "roles", []),
                 "is_first_login": is_first_login,
+                "group_tree": getattr(request.user, "group_tree", []),
             },
         }
 
@@ -185,10 +195,10 @@ def generate_qr_code(request):
 
         client = _create_system_mgmt_client()
         res = client.generate_qr_code(username)
-        
+
         if not res.get("result"):
             logger.warning(f"QR code generation failed for user: {username}")
-        
+
         return JsonResponse(res)
     except Exception as e:
         logger.error(f"QR code generation error: {e}")
@@ -207,10 +217,10 @@ def verify_otp_code(request):
 
         client = _create_system_mgmt_client()
         res = client.verify_otp_code(username, otp_code)
-        
+
         if not res.get("result"):
             logger.warning(f"OTP verification failed for user: {username}")
-        
+
         return JsonResponse(res)
     except Exception as e:
         logger.error(f"OTP verification error: {e}")
@@ -240,7 +250,7 @@ def get_my_client(request):
 
 def get_client_detail(request):
     client_name = request.GET.get("name", "")
-    
+
     if not client_name:
         return JsonResponse({"result": False, "message": "Client name is required"})
 
@@ -255,7 +265,7 @@ def get_client_detail(request):
 
 def get_user_menus(request):
     client_name = request.GET.get("name", "")
-    
+
     if not client_name:
         return JsonResponse({"result": False, "message": "Client name is required"})
 

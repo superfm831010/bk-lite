@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Any, Dict, Optional
 
 from django.contrib.auth.backends import ModelBackend
@@ -65,7 +64,7 @@ class AuthBackend(ModelBackend):
 
             self._handle_user_locale(user_info)
             rules = self._get_user_rules(request, user_info)
-            
+
             return self.set_user_info(user_info, rules)
 
         except Exception as e:
@@ -76,9 +75,7 @@ class AuthBackend(ModelBackend):
         """使用SystemMgmt验证token"""
         try:
             client = SystemMgmt()
-            app = os.getenv(CLIENT_ID_ENV_KEY, "")
-            result = client.verify_token(token, app)
-
+            result = client.verify_token(token)
             if not result.get("result"):
                 return None
 
@@ -110,14 +107,13 @@ class AuthBackend(ModelBackend):
 
         current_group = request.COOKIES.get(COOKIE_CURRENT_TEAM)
         username = user_info.get("username")
-        
+
         if not current_group or not username:
             return {}
 
         try:
             client = SystemMgmt()
-            app = os.getenv(CLIENT_ID_ENV_KEY, "")
-            rules = client.get_user_rules(app, current_group, username)
+            rules = client.get_user_rules(current_group, username)
             return rules or {}
         except Exception as e:
             logger.error(f"Failed to get user rules for {username}: {e}")
@@ -138,17 +134,17 @@ class AuthBackend(ModelBackend):
             user.email = user_info.get("email", "")
             user.is_superuser = bool(user_info.get("is_superuser", False))
             user.is_staff = user.is_superuser
+            user.is_active = True
             user.group_list = user_info.get("group_list", [])
             user.roles = user_info.get("roles", [])
             user.locale = user_info.get("locale", DEFAULT_LOCALE)
-
             user.save()
-
             # 设置运行时属性
             user.rules = rules
-            user.permission = set(user_info.get("permission") or [])
+            user.permission = {key: set(value) for key, value in user_info.get("permission", {}).items()}
             user.role_ids = user_info.get("role_ids", [])
-
+            user.display_name = user_info.get("display_name", "")
+            user.group_tree = user_info.get("group_tree", [])
             return user
 
         except IntegrityError as e:

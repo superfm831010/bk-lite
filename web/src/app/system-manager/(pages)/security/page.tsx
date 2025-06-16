@@ -8,6 +8,7 @@ import EntityList from '@/components/entity-list';
 import OperateModal from '@/components/operate-modal';
 import { useSecurityApi } from '@/app/system-manager/api/security';
 import { AuthSource } from '@/app/system-manager/types/security';
+import PermissionWrapper from '@/components/permission';
 import { enhanceAuthSourcesList } from '@/app/system-manager/utils/authSourceUtils';
 import wechatAuthImg from '@/app/system-manager/img/wechat_auth.png';
 
@@ -169,9 +170,11 @@ const SecurityPage: React.FC = () => {
 
   const menuActions = (item: AuthSource) => (
     <Menu>
-      <Menu.Item key="edit" onClick={() => handleEditSource(item)}>
-        {t('common.edit')}
-      </Menu.Item>
+      <PermissionWrapper requiredPermissions={['Edit']}>
+        <Menu.Item key="edit" onClick={() => handleEditSource(item)}>
+          {t('common.edit')}
+        </Menu.Item>
+      </PermissionWrapper>
     </Menu>
   );
 
@@ -212,13 +215,15 @@ const SecurityPage: React.FC = () => {
           />
         </div>
         <div className="mt-6">
-          <Button 
-            type="primary" 
-            onClick={handleSaveSettings}
-            loading={loading}
-          >
-            {t('common.save')}
-          </Button>
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button 
+              type="primary" 
+              onClick={handleSaveSettings}
+              loading={loading}
+            >
+              {t('common.save')}
+            </Button>
+          </PermissionWrapper>
         </div>
       </div>
     ),
@@ -263,30 +268,31 @@ const SecurityPage: React.FC = () => {
               <Form.Item
                 name="name"
                 label={t('system.security.loginMethodName')}
-                rules={[{ required: true, message: `${t('common.inputMsg')} ${t('system.security.loginMethodName')}` }]}
+                rules={[{ required: true, message: `${t('common.inputMsg')}${t('system.security.loginMethodName')}` }]}
               >
-                <Input placeholder={`${t('common.inputMsg')} ${t('system.security.loginMethodName')}`} />
+                <Input placeholder={`${t('common.inputMsg')}${t('system.security.loginMethodName')}`} />
               </Form.Item>
               
               <Form.Item
                 name="app_id"
                 label={t('system.security.appId')}
-                rules={[{ required: true, message: `${t('common.inputMsg')} ${t('system.security.appId')}` }]}
+                rules={[{ required: true, message: `${t('common.inputMsg')}${t('system.security.appId')}` }]}
               >
-                <Input placeholder={`${t('common.inputMsg')} ${t('system.security.appId')}`} />
+                <Input placeholder={`${t('common.inputMsg')}${t('system.security.appId')}`} />
               </Form.Item>
               
               <Form.Item
                 name="app_secret"
                 label={t('system.security.appSecret')}
-                rules={[{ required: true, message: `${t('common.inputMsg')} ${t('system.security.appSecret')}` }]}
+                rules={[{ required: true, message: `${t('common.inputMsg')}${t('system.security.appSecret')}` }]}
               >
-                <Input.Password placeholder={`${t('common.inputMsg')} ${t('system.security.appSecret')}`} />
+                <Input.Password placeholder={`${t('common.inputMsg')}${t('system.security.appSecret')}`} />
               </Form.Item>
               
               <Form.Item
                 name="redirect_uri"
                 label={t('system.security.redirectUri')}
+                tooltip={t('system.security.redirectUriTip')}
               >
                 <Input 
                   suffix={
@@ -295,22 +301,6 @@ const SecurityPage: React.FC = () => {
                       icon={<CopyOutlined />} 
                       size="small"
                       onClick={() => copyToClipboard(form.getFieldValue('redirect_uri') || '')}
-                    />
-                  }
-                />
-              </Form.Item>
-              
-              <Form.Item
-                name="callback_url"
-                label={t('system.security.callbackUrl')}
-              >
-                <Input 
-                  suffix={
-                    <Button 
-                      type="text" 
-                      icon={<CopyOutlined />} 
-                      size="small"
-                      onClick={() => copyToClipboard(form.getFieldValue('callback_url') || '')}
                     />
                   }
                 />

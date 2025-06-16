@@ -31,7 +31,10 @@
     "createdBy": "创建者",
     "createdAt": "创建时间",
     "updatedBy": "更新人",
-    "updatedAt": "更新时间"
+    "updatedAt": "更新时间",
+    "inputPassword": "请输入密码",
+    "reset": "重置",
+    "deleteTips": "您确定要修改此项吗？"
   },
   "node-manager": {
     "cloudregion": {
@@ -125,7 +128,8 @@
         "inactive": "不活跃",
         "unknown": "未知的",
         "stop": "停止",
-        "nodeName": "节点名称"
+        "nodeName": "节点名称",
+        "deleteNodeTips": "自动安装的节点，建议通过卸载控制器进行删除，手动删除节点后，若后续该节点sidecar正常上报，则会自动更新在该列表中。"
       },
       "Configuration": {
         "system": "操作系统",
@@ -151,6 +155,9 @@
       },
       "variable": {
         "value": "数值",
+        "valueType": "类型",
+        "string": "字符串",
+        "password": "密码",
         "desc": "描述",
         "deletevariable": "删除变量",
         "deleteinfo": "您确定要删除此变量吗？",

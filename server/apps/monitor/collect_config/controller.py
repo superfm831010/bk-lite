@@ -1,8 +1,11 @@
 import uuid
 
 from apps.monitor.collect_config.constants import ONLY_CHILD_CONFIG, CONFIG_AND_CHILD_CONFIG, ONLY_CONFIG
+from apps.monitor.constants import CHILD_ENVS
 from apps.monitor.models import CollectConfig
 from apps.rpc.node_mgmt import NodeMgmt
+
+
 
 
 class Controller:
@@ -128,6 +131,12 @@ class Controller:
                         "type": config_info.get("type"),
                         "interval": config_info.get("interval", 10),
                     }
+
+                    # 共享变量同步到子配置
+                    for k, v in config_info.items():
+                        if k in CHILD_ENVS:
+                            child_config_info[k] = v
+
                     self.set_config_id(child_config_info)
                     child_node_info["configs"].append(child_config_info)
 

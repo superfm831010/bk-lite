@@ -8,6 +8,7 @@ import {
   ChartData,
   TreeItem,
   TableDataItem,
+  TimeValuesProps,
 } from '@/app/monitor/types';
 import { Group } from '@/types';
 import {
@@ -22,11 +23,11 @@ import {
   APPOINT_METRIC_IDS,
   OBJECT_CONFIG_MAP,
   DERIVATIVE_OBJECTS,
+  OBJECT_DEFAULT_ICON,
 } from '@/app/monitor/constants/monitor';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
-import { message } from 'antd';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import { useTranslation } from '@/utils/i18n';
+import dayjs from 'dayjs';
 
 // 深克隆
 export const deepClone = (obj: any, hash = new WeakMap()) => {
@@ -390,30 +391,28 @@ export const renderChart = (
   data.forEach((item, index) => {
     item.values.forEach(([timestamp, value]) => {
       const existing = result.find((entry) => entry.time === timestamp);
-      let detailValue = Object.entries(item.metric)
+      const detailValue = Object.entries(item.metric)
         .map(([key, dimenValue]) => ({
           name: key,
           label: target.find((sec) => sec.name === key)?.description || key,
           value: dimenValue,
         }))
         .filter((item) => target.find((tex) => tex.name === item.name));
-      if ((!target.length || !detailValue.length) && config[0]?.showInstName) {
-        detailValue = [
-          {
-            name: 'instance_name',
-            label: 'Instance',
-            value:
-              config.find(
-                (detail) =>
-                  JSON.stringify(detail.instance_id_values) ===
-                  JSON.stringify(
-                    detail.instance_id_keys.reduce((pre, cur) => {
-                      return pre.concat(item.metric[cur] as any);
-                    }, [])
-                  )
-              )?.instance_name || '',
-          },
-        ];
+      if (config[0]?.showInstName) {
+        detailValue.unshift({
+          name: 'instance_name',
+          label: 'Instance',
+          value:
+            config.find(
+              (detail) =>
+                JSON.stringify(detail.instance_id_values) ===
+                JSON.stringify(
+                  detail.instance_id_keys.reduce((pre, cur) => {
+                    return pre.concat(item.metric[cur] as any);
+                  }, [])
+                )
+            )?.instance_name || '--',
+        });
       }
       if (existing) {
         existing[`value${index + 1}`] = parseFloat(value);
@@ -435,30 +434,6 @@ export const renderChart = (
     });
   });
   return result;
-};
-
-export const useHandleCopy = (value: string) => {
-  const { t } = useTranslation();
-  const handleCopy = () => {
-    try {
-      if (navigator?.clipboard?.writeText) {
-        navigator.clipboard.writeText(value);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = value;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
-      message.success(t('common.successfulCopied'));
-    } catch (error: any) {
-      message.error(error + '');
-    }
-  };
-  return {
-    handleCopy,
-  };
 };
 
 export const findTreeParentKey = (
@@ -613,6 +588,17 @@ export const getBaseInstanceColumn = (config: {
 export const getIconByObjectName = (objectName = '', objects: ObjectItem[]) => {
   return (
     (objects.find((item) => item.name === objectName)?.icon as string) ||
-    'shebei-shebeixinxi'
+    OBJECT_DEFAULT_ICON
   );
+};
+
+export const getRecentTimeRange = (timeValues: TimeValuesProps) => {
+  if (timeValues.originValue) {
+    const beginTime: number = dayjs()
+      .subtract(timeValues.originValue, 'minute')
+      .valueOf();
+    const lastTime: number = dayjs().valueOf();
+    return [beginTime, lastTime];
+  }
+  return timeValues.timeRange;
 };

@@ -5,7 +5,7 @@ from apps.opspilot.models import Channel
 
 class ChannelInitService:
     def __init__(self, owner):
-        self.owner = owner.username
+        self.owner = owner
 
     def init(self):
         logger.info("初始化企业微信应用通道")

@@ -11,6 +11,8 @@ ONLY_CHILD_CONFIG = {
     ("Telegraf", "database"): "toml",
     ("Telegraf", "http"): "toml",
     ("Telegraf", "jmx"): "toml",
+    ("Telegraf", "exporter"): "toml",
+    ("Telegraf", "bkpull"): "toml",
 }
 CONFIG_AND_CHILD_CONFIG = {
     ("ActiveMQ-JMX", "jmx"): "yaml",
@@ -21,4 +23,5 @@ CONFIG_AND_CHILD_CONFIG = {
     ("WebLogic-JMX", "jmx"): "yaml",
     ("JVM-JMX", "jmx"): "yaml",
     ("Tomcat-JMX", "jmx"): "yaml",
+    ("Oracle-Exporter", "exporter"): "yaml",
 }

@@ -43,7 +43,6 @@ import {
   deepClone,
   getConfigByPluginName,
   getConfigByObjectName,
-  getIconByObjectName,
 } from '@/app/monitor/utils/common';
 import strategyStyle from '../index.module.scss';
 import {
@@ -303,7 +302,10 @@ const StrategyOperation = () => {
     instRef.current?.showModal({
       title,
       type: 'add',
-      form: {},
+      form: {
+        ...source,
+        id: detailId,
+      },
     });
   };
 
@@ -814,7 +816,7 @@ const StrategyOperation = () => {
                                                   handleLabelChange(val, index)
                                                 }
                                               >
-                                                {labels.map((item) => (
+                                                {labels.map((item: string) => (
                                                   <Option
                                                     value={item}
                                                     key={item}
@@ -889,11 +891,12 @@ const StrategyOperation = () => {
                                       {t('common.group')}
                                     </span>
                                     <Select
-                                      allowClear
                                       style={{
                                         width: '300px',
                                         margin: '0 10px 10px 0',
                                       }}
+                                      showSearch
+                                      allowClear
                                       mode="tags"
                                       maxTagCount="responsive"
                                       placeholder={t('common.group')}
@@ -952,6 +955,7 @@ const StrategyOperation = () => {
                                     width: '300px',
                                   }}
                                   placeholder={t('monitor.events.method')}
+                                  showSearch
                                 >
                                   {METHOD_LIST.map((item: ListItem) => (
                                     <Option value={item.value} key={item.value}>
@@ -1083,13 +1087,7 @@ const StrategyOperation = () => {
                       >
                         <div className="w-[220px] bg-[var(--color-bg-1)] border-2 border-blue-300 shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-3 relative cursor-pointer group">
                           <div className="flex items-center space-x-4 my-1">
-                            <Icon
-                              type={getIconByObjectName(
-                                monitorName as string,
-                                objects
-                              )}
-                              className="text-2xl"
-                            />
+                            <Icon type="yuzhiguanli" className="text-2xl" />
                             <h2 className="text-[16px] font-bold m-0">
                               {t('monitor.events.threshold')}
                             </h2>
@@ -1125,6 +1123,7 @@ const StrategyOperation = () => {
                                 style={{
                                   width: '100px',
                                 }}
+                                showSearch
                                 value={item.method}
                                 placeholder={t('monitor.events.method')}
                                 onChange={(val) => {
@@ -1198,7 +1197,10 @@ const StrategyOperation = () => {
                                   </span>
                                 }
                                 rules={[
-                                  { required: true, validator: validateNoData },
+                                  {
+                                    required: false,
+                                    validator: validateNoData,
+                                  },
                                 ]}
                               >
                                 <Switch
@@ -1286,9 +1288,6 @@ const StrategyOperation = () => {
                           </span>
                         }
                         name="notice"
-                        rules={[
-                          { required: true, message: t('common.required') },
-                        ]}
                       >
                         <Switch />
                       </Form.Item>
@@ -1381,7 +1380,6 @@ const StrategyOperation = () => {
       <SelectAssets
         ref={instRef}
         organizationList={organizationList}
-        form={source}
         monitorObject={monitorObjId}
         objects={objects}
         onSuccess={onChooseAssets}

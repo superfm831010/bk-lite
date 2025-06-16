@@ -4,6 +4,7 @@ from apps.rpc.base import RpcClient
 class SystemMgmt(object):
     def __init__(self):
         self.client = RpcClient()
+        # self.client = AppClient("apps.system_mgmt.nats_api")
 
     def login(self, username, password):
         """
@@ -64,12 +65,12 @@ class SystemMgmt(object):
         )
         return return_data
 
-    def verify_token(self, token, client_id):
+    def verify_token(self, token):
         """
         :param token: 用户登录的token
         :param client_id: 当前APP的ID
         """
-        return_data = self.client.run("verify_token", token=token, client_id=client_id)
+        return_data = self.client.run("verify_token", token=token)
         return return_data
 
     def get_group_users(self, group):
@@ -85,7 +86,7 @@ class SystemMgmt(object):
 
     def search_groups(self, query_params):
         """
-        :param query_params: {"page_size": 10, "page": 1, "search": ""}
+        :param query_params: {"search": ""}
         """
         return_data = self.client.run("search_groups", query_params=query_params)
         return return_data
@@ -131,13 +132,12 @@ class SystemMgmt(object):
         )
         return return_data
 
-    def get_user_rules(self, app, group_id, username):
+    def get_user_rules(self, group_id, username):
         """
-        :param app: 应用
         :param group_id: 组ID
         :param username: 用户名
         """
-        return_data = self.client.run("get_user_rules", app=app, group_id=group_id, username=username)
+        return_data = self.client.run("get_user_rules", group_id=group_id, username=username)
         return return_data
 
     def get_group_id(self, group_name):
@@ -145,4 +145,18 @@ class SystemMgmt(object):
         :param group_name: 组名
         """
         return_data = self.client.run("get_group_id", group_name=group_name)
+        return return_data
+
+    def create_default_rule(self, llm_model, ocr_model, embed_model, rerank_model):
+        return_data = self.client.run(
+            "create_default_rule",
+            llm_model=llm_model,
+            ocr_model=ocr_model,
+            embed_model=embed_model,
+            rerank_model=rerank_model,
+        )
+        return return_data
+
+    def create_opspilot_guest_role(self):
+        return_data = self.client.run("create_opspilot_guest_role")
         return return_data

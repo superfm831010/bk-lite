@@ -12,10 +12,12 @@ export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { data: session, status } = useSession();
   const [selectedGroup, setSelectedGroupState] = useState<Group | null>(null);
   const [userId, setUserId] = useState<string>('');
+  const [displayName, setDisplayName] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [roles, setRoles] = useState<string[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [flatGroups, setFlatGroups] = useState<Group[]>([]);
+  const [groupTree, setGroupTree] = useState<Group[]>([]);
   const [isSuperUser, setIsSuperUser] = useState<boolean>(true);
   const [isFirstLogin, setIsFirstLogin] = useState<boolean>(true);
 
@@ -32,21 +34,29 @@ export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             return;
           }
           
-          const { group_list: groupList, roles, is_superuser, is_first_login, user_id } = data;
+          const { group_list: groupList, group_tree: groupTreeData, roles, is_superuser, is_first_login, user_id, display_name } = data;
           setGroups(groupList || []);
+          setGroupTree(groupTreeData || []);
           setRoles(roles || []);
           setIsSuperUser(!!is_superuser);
           setIsFirstLogin(!!is_first_login);
           setUserId(user_id || '');
+          setDisplayName(display_name || session.user?.username || 'User');
 
           if (groupList?.length) {
             const flattenedGroups = convertTreeDataToGroupOptions(groupList);
             setFlatGroups(flattenedGroups);
 
             const groupIdFromCookie = Cookies.get('current_team');
-            const initialGroup = flattenedGroups.find((group: Group) => group.id === groupIdFromCookie) || flattenedGroups[0];
-            setSelectedGroupState(initialGroup);
-            Cookies.set('current_team', initialGroup.id);
+            const initialGroup = flattenedGroups.find((group: Group) => String(group.id) === String(groupIdFromCookie));
+            
+            if (initialGroup) {
+              setSelectedGroupState(initialGroup);
+            } else {
+              const defaultGroup = flattenedGroups[0];
+              setSelectedGroupState(defaultGroup);
+              Cookies.set('current_team', defaultGroup.id);
+            }
           }
         } catch (err) {
           console.error('Failed to fetch login_info:', err);
@@ -65,7 +75,7 @@ export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <UserInfoContext.Provider value={{ loading, roles, groups, selectedGroup, flatGroups, isSuperUser, isFirstLogin, userId, setSelectedGroup }}>
+    <UserInfoContext.Provider value={{ loading, roles, groups, groupTree, selectedGroup, flatGroups, isSuperUser, isFirstLogin, userId, displayName, setSelectedGroup }}>
       {children}
     </UserInfoContext.Provider>
   );

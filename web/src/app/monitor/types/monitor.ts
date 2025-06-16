@@ -305,6 +305,7 @@ export interface ViewListProps {
   objectId: React.Key;
   objects: ObjectItem[];
   showTab?: boolean;
+  updateTree?: () => void;
 }
 
 export interface IntergrationMonitoredObject {
@@ -313,6 +314,7 @@ export interface IntergrationMonitoredObject {
   instance_name?: string | null;
   group_ids: string[];
   url?: string | null;
+  urls?: string | string[] | null;
   ip?: string | null;
   instance_id?: string;
   instance_type?: string;
@@ -321,6 +323,8 @@ export interface IntergrationMonitoredObject {
   host?: string | null;
   port?: string | null;
   jmx_url?: string | null;
+  ENV_PORT?: string | null;
+  ENV_HOST?: string | null;
 }
 
 export interface MetricListItem {

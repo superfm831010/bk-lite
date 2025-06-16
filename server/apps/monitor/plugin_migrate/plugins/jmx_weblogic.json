@@ -78,7 +78,7 @@
     "display_name": "Application Health Critical State",
     "instance_id_keys": ["instance_id"],
     "data_type": "Enum",
-    "unit": "[{\"name\":\"健康\",\"id\":0,\"color\":\"#83ff4f\"},{\"name\":\"异常\",\"id\":1,\"color\":\"#ff4d4f\"}]",
+    "unit": "[{\"name\":\"健康\",\"id\":0,\"color\":\"#1ac44a\"},{\"name\":\"异常\",\"id\":1,\"color\":\"#ff4d4f\"}]",
     "dimensions": ["name", "runtime"],
     "description": "Flag indicating whether the application is in a critical abnormal state, directly reflecting business availability. When this metric is 1, it indicates that the application has a serious problem that needs to be investigated and repaired immediately.",
     "query": "weblogic_application_healthstatejmx_is_critical_value{__$labels__}"
@@ -89,7 +89,7 @@
     "display_name": "Application Overall Health Critical State",
     "instance_id_keys": ["instance_id"],
     "data_type": "Enum",
-    "unit": "[{\"name\":\"健康\",\"id\":0,\"color\":\"#83ff4f\"},{\"name\":\"异常\",\"id\":1,\"color\":\"#ff4d4f\"}]",
+    "unit": "[{\"name\":\"健康\",\"id\":0,\"color\":\"#1ac44a\"},{\"name\":\"异常\",\"id\":1,\"color\":\"#ff4d4f\"}]",
     "dimensions": ["name", "runtime"],
     "description": "Flag indicating whether the overall health state of the application, evaluated based on multiple metrics, is critically abnormal. When this metric is 1, it indicates that the overall health of the application is poor, which may affect the normal operation of the business.",
     "query": "weblogic_application_overallhealthstatejmx_is_critical_value{__$labels__}"
@@ -199,7 +199,7 @@
     "display_name": "JMX Scrape Error",
     "instance_id_keys": ["instance_id"],
     "data_type": "Enum",
-    "unit": "[{\"name\":\"成功\",\"id\":0,\"color\":\"#83ff4f\"},{\"name\":\"失败\",\"id\":1,\"color\":\"#ff4d4f\"}]",
+    "unit": "[{\"name\":\"成功\",\"id\":0,\"color\":\"#1ac44a\"},{\"name\":\"失败\",\"id\":1,\"color\":\"#ff4d4f\"}]",
     "dimensions": [],
     "description": "JMX scrape status: 0 for success, 1 for failure.",
     "query": "jmx_scrape_error_gauge{instance_type=\"weblogic\",__$labels__}"

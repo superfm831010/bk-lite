@@ -4,6 +4,7 @@ from apps.rpc.base import RpcClient
 class OpsPilot(object):
     def __init__(self):
         self.client = RpcClient()
+        # self.client = AppClient("apps.opspilot.nats_api")
 
     def init_user_set(self, group_id, group_name):
         """
@@ -23,3 +24,6 @@ class OpsPilot(object):
         """
         return_data = self.client.run("get_module_data", **kwargs)
         return return_data
+
+    def get_guest_provider(self, group_id):
+        return self.client.run("get_guest_provider", group_id=group_id)

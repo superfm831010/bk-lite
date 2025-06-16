@@ -28,7 +28,7 @@ const SkillPage: React.FC = () => {
       if (isTemplateModalVisible) {
         setLoading(true);
         try {
-          const data = await fetchSkillTemplates({ is_template: 1 });
+          const data = await fetchSkillTemplates();
           setTemplates(data);
         } finally {
           setLoading(false);

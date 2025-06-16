@@ -10,7 +10,7 @@ class RerankModelChoices(models.TextChoices):
 
 
 class RerankProvider(models.Model, EncryptMixin):
-    name = models.CharField(max_length=255, unique=True, verbose_name="名称")
+    name = models.CharField(max_length=255, verbose_name="名称")
     rerank_model_type = models.CharField(max_length=255, choices=RerankModelChoices.choices, verbose_name="模型类型")
     rerank_config = models.JSONField(
         verbose_name="Rerank配置",

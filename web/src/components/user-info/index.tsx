@@ -7,7 +7,7 @@ import { useTranslation } from '@/utils/i18n';
 import VersionModal from './versionModal';
 import ThemeSwitcher from '@/components/theme';
 import { useUserInfoContext } from '@/context/userInfo';
-import { clearSharedAuthData } from '@/utils/crossDomainAuth';
+import { clearAuthToken } from '@/utils/crossDomainAuth';
 
 interface GroupItemProps {
   id: string;
@@ -32,14 +32,14 @@ const UserInfo: React.FC = () => {
   const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
-  const { flatGroups, selectedGroup, setSelectedGroup } = useUserInfoContext();
+  const { flatGroups, selectedGroup, setSelectedGroup, displayName } = useUserInfoContext();
 
   const [versionVisible, setVersionVisible] = useState<boolean>(false);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const isConsole = process.env.NEXT_PUBLIC_IS_OPS_CONSOLE === 'true';
-  const username = session?.user?.username || 'Test';
+  const username = displayName || session?.user?.username || 'Test';
 
   const federatedLogout = useCallback(async () => {
     setIsLoading(true);
@@ -50,8 +50,8 @@ const UserInfo: React.FC = () => {
 
       const data = await response.json();
       if (response.ok) {
-        // Clear shared authentication data
-        clearSharedAuthData();
+        // Clear authentication token from cookie
+        clearAuthToken();
         
         // Clear the session using NextAuth's signOut
         await signOut({ redirect: false });
@@ -69,8 +69,8 @@ const UserInfo: React.FC = () => {
       console.error('Logout error:', error);
       message.error(t('common.logoutFailed'));
       
-      // Even on error, attempt to clear shared auth and sign out
-      clearSharedAuthData();
+      // Even on error, attempt to clear token and sign out
+      clearAuthToken();
       await signOut({ redirect: false });
       window.location.href = '/auth/signin';
     } finally {
@@ -78,7 +78,7 @@ const UserInfo: React.FC = () => {
     }
   }, [t]);
 
-  const handleChangeGroup = useCallback((key: string) => {
+  const handleChangeGroup = useCallback(async (key: string) => {
     const nextGroup = flatGroups.find(group => group.id === key);
     if (!nextGroup) return;
 
@@ -121,17 +121,19 @@ const UserInfo: React.FC = () => {
               <span className="text-xs text-[var(--color-text-4)]">{selectedGroup?.name}</span>
             </div>
           ),
-          children: flatGroups.map((group) => ({
-            key: group.id,
-            label: (
-              <GroupItem
-                id={group.id}
-                name={group.name}
-                isSelected={selectedGroup?.name === group.name}
-                onClick={handleChangeGroup}
-              />
-            ),
-          })),
+          children: flatGroups
+            .filter((group) => group.name !== 'OpsPilotGuest')
+            .map((group) => ({
+              key: group.id,
+              label: (
+                <GroupItem
+                  id={group.id}
+                  name={group.name}
+                  isSelected={selectedGroup?.name === group.name}
+                  onClick={handleChangeGroup}
+                />
+              ),
+            })),
         },
         { type: 'divider' }
       );

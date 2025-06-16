@@ -26,7 +26,8 @@ def node_list(query_data: dict):
     os = query_data.get('os')
     page = query_data.get('page', 1)
     page_size = query_data.get('page_size', 10)
-    return NodeService.get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size)
+    is_active = query_data.get('is_active')
+    return NodeService.get_node_list(organization_ids, cloud_region_id, name, ip, os, page, page_size, is_active)
 
 
 @nats_client.register
@@ -69,7 +70,8 @@ def update_child_config_content(data: dict):
     """更新实例子配置"""
     id = data.get('id')
     content = data.get('content')
-    ConfigService().update_child_config_content(id, content)
+    env_config = data.get('env_config')
+    ConfigService().update_child_config_content(id, content, env_config)
 
 
 @nats_client.register
@@ -77,7 +79,8 @@ def update_config_content(data: dict):
     """更新配置内容"""
     id = data.get('id')
     content = data.get('content')
-    ConfigService().update_config_content(id, content)
+    env_config = data.get('env_config')
+    ConfigService().update_config_content(id, content, env_config)
 
 
 @nats_client.register

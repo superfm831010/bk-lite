@@ -6,6 +6,8 @@ from string import Template
 from django.core.cache import cache
 from django.http import JsonResponse, HttpResponse
 
+from apps.core.utils.crypto.aes_crypto import AESCryptor
+from apps.node_mgmt.constants import CACHE_TIMEOUT
 from apps.node_mgmt.default_config.nats_executor import create_nats_executor_config
 from apps.node_mgmt.default_config.telegraf import create_telegraf_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
@@ -55,7 +57,7 @@ class Sidecar:
         new_etag = Sidecar.generate_etag(_collectors.decode('utf-8'))
 
         # 更新缓存中的 ETag
-        cache.set('collectors_etag', new_etag)
+        cache.set('collectors_etag', new_etag, CACHE_TIMEOUT)
 
         # 返回采集器列表和新的 ETag
         return JsonResponse({'collectors': collectors}, headers={'ETag': new_etag})
@@ -68,6 +70,19 @@ class Sidecar:
                 ignore_conflicts=True,
                 batch_size=100,
             )
+
+    @staticmethod
+    def update_groups(node_id: str, groups: list):
+        """
+        更新节点关联的组织
+        :param node_id: 节点ID
+        :param groups: 组织列表
+        """
+        # 删除现有的组织关联
+        NodeOrganization.objects.filter(node_id=node_id).delete()
+
+        # 重新关联新的组织
+        Sidecar.asso_groups(node_id, groups)
 
     @staticmethod
     def update_node_client(request, node_id):
@@ -106,10 +121,12 @@ class Sidecar:
         # 更新或创建 Sidecar 信息
         node = Node.objects.filter(id=node_id).first()
 
+        # 处理标签数据
+        tags_data = format_tags_dynamic(request_data.get("tags", []), ["group", "cloud"])
+
         if not node:
 
             # 补充云区域关联
-            tags_data = format_tags_dynamic(request_data.get("tags", []),  ["group", "cloud"])
             clouds = tags_data.get("cloud", [])
             if clouds:
                 request_data.update(cloud_region_id=int(clouds[0]))
@@ -129,8 +146,12 @@ class Sidecar:
         else:
             # 更新时间
             request_data.update(updated_at=datetime.now(timezone.utc).isoformat())
+
             # 更新节点
             Node.objects.filter(id=node_id).update(**request_data)
+
+            # 更新组织关联(覆盖)
+            Sidecar.update_groups(node_id, tags_data.get("group", []))
 
         # 预取相关数据，减少查询次数
         new_obj = Node.objects.prefetch_related('action_set', 'collectorconfiguration_set').get(id=node_id)
@@ -159,7 +180,7 @@ class Sidecar:
         _response_data = JsonResponse(response_data).content
         new_etag = Sidecar.generate_etag(_response_data.decode('utf-8'))
         # 更新缓存中的ETag
-        cache.set(f"node_etag_{node_id}", new_etag)
+        cache.set(f"node_etag_{node_id}", new_etag, CACHE_TIMEOUT)
 
         # 返回响应
         return JsonResponse(status=202, data=response_data, headers={'ETag': new_etag})
@@ -198,13 +219,14 @@ class Sidecar:
         for child_config in configuration.childconfig_set.all():
             # 假设子配置的 `content` 是纯文本格式，直接追加
             merged_template += f"\n# {child_config.collect_type} - {child_config.config_type}\n"
-            merged_template += child_config.content
+            merged_template += Sidecar.render_template(child_config.content, child_config.env_config)
 
         configuration = dict(
             id=configuration.id,
             collector_id=configuration.collector_id,
             name=configuration.name,
             template=merged_template,
+            env_config=configuration.env_config or {},
         )
         # TODO test merged_template
 
@@ -213,19 +235,45 @@ class Sidecar:
         new_etag = Sidecar.generate_etag(_configuration.decode('utf-8'))
 
         # 更新缓存中的 ETag
-        cache.set(f"configuration_etag_{configuration_id}", new_etag)
+        cache.set(f"configuration_etag_{configuration_id}", new_etag, CACHE_TIMEOUT)
+
+        variables = Sidecar.get_variables(node)
+        # 如果配置中有 env_config，则合并到变量中
+        if configuration.get('env_config'):
+            variables.update(configuration['env_config'])
 
         # 渲染配置模板
-        configuration['template'] = Sidecar.render_template(configuration['template'], Sidecar.get_variables(node))
+        configuration['template'] = Sidecar.render_template(configuration['template'], variables)
 
         # 返回配置信息和新的 ETag
         return JsonResponse(configuration, headers={'ETag': new_etag})
 
     @staticmethod
+    def get_node_config_env(node_id, configuration_id):
+        node = Node.objects.filter(id=node_id).first()
+        if not node:
+            return JsonResponse(status=404, data={}, manage="Node collector Configuration not found")
+
+        obj = CollectorConfiguration.objects.filter(id=configuration_id).first()
+        if not obj:
+            return JsonResponse(status=404, data={}, manage="Configuration environment not found")
+
+        return JsonResponse(dict(id=configuration_id, env_config={k: str(v) for k, v in obj.env_config.items()}))
+
+    @staticmethod
     def get_variables(node_obj):
         """获取变量"""
         objs = SidecarEnv.objects.filter(cloud_region=node_obj.cloud_region_id)
-        variables = {obj.key: obj.value for obj in objs}
+        variables = {}
+        for obj in objs:
+            if obj.type == "secret":
+                # 如果是密文，解密后使用
+                aes_obj = AESCryptor()
+                value = aes_obj.decode(obj.value)
+                variables[obj.key] = value
+            else:
+                # 如果是普通变量，直接使用
+                variables[obj.key] = obj.value
         node_dict = {
             "node__id": node_obj.id,
             "node__cloud_region": node_obj.cloud_region_id,
@@ -247,9 +295,6 @@ class Sidecar:
         :param variables: 字典，包含变量名和对应值
         :return: 渲染后的字符串
         """
-        _variables = {
-            **variables,
-        }
         template_str = template_str.replace('node.', 'node__')
         template = Template(template_str)
-        return template.safe_substitute(_variables)
+        return template.safe_substitute(variables)
