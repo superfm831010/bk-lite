@@ -22,3 +22,26 @@ export interface AlertAssignListItem {
     >;
     is_active: boolean;
 }
+
+export interface AlertShieldListItem {
+    id: number;
+    created_at: string;
+    updated_at: string;
+    created_by: string;
+    updated_by: string;
+    name: string;
+    match_type: string;
+    match_rules: Array<Array<{
+        key: string;
+        value: string;
+        operator: string;
+    }>>;
+    suppression_time: {
+        type: string;
+        end_time: string;
+        start_time: string;
+        week_month: string[];
+    };
+    is_active: boolean;
+}
+

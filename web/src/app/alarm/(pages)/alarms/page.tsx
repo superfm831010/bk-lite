@@ -173,6 +173,7 @@ const Alert: React.FC = () => {
   ]);
 
   const changeTab = (val: string) => {
+    setPagination((prev) => ({ ...prev, current: 1 }));
     setChartData([]);
     setActiveTab(val);
   };

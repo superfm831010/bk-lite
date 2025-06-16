@@ -20,6 +20,7 @@ const AlertAssign: React.FC = () => {
   const listCount = useRef<number>(0);
   const { convertToLocalizedTime } = useLocalizedTime();
   const [tableLoading, setTableLoading] = useState<boolean>(false);
+  const [loadingIds, setLoadingIds] = useState<Record<number, boolean>>({});
   const [operateVisible, setOperateVisible] = useState<boolean>(false);
   const [searchKey, setSearchKey] = useState<string>('');
   const [dataList, setDataList] = useState<AlertAssignListItem[]>([]);
@@ -128,6 +129,7 @@ const AlertAssign: React.FC = () => {
     row: AlertAssignListItem,
     checked: boolean
   ) => {
+    setLoadingIds((ids) => ({ ...ids, [row.id]: true }));
     try {
       const data = await patchAssignment(row.id, { is_active: checked });
       if (!data) {
@@ -140,6 +142,12 @@ const AlertAssign: React.FC = () => {
       getTableList();
     } catch {
       console.error(t('common.operateFailed'));
+    } finally {
+      setLoadingIds((ids) => {
+        const nxt = { ...ids };
+        delete nxt[row.id];
+        return nxt;
+      });
     }
   };
 
@@ -159,7 +167,7 @@ const AlertAssign: React.FC = () => {
         shouldCellUpdate: (
           prev: AlertAssignListItem,
           next: AlertAssignListItem
-        ) => prev.personnel.join(',') !== next.personnel.join(','),
+        ) => prev?.personnel?.join(',') !== next?.personnel?.join(','),
         render: (_: any, { personnel }: AlertAssignListItem) =>
           personnel ? <UserAvatar userName={personnel.join(',')} /> : '--',
       },
@@ -216,6 +224,7 @@ const AlertAssign: React.FC = () => {
         width: 110,
         render: (val: boolean, row: AlertAssignListItem) => (
           <Switch
+            loading={!!loadingIds[row.id]}
             checked={val}
             onChange={(checked) => handleStatusToggle(row, checked)}
           />
@@ -253,7 +262,7 @@ const AlertAssign: React.FC = () => {
 
   useEffect(() => {
     setColumns(buildColumns());
-  }, []);
+  }, [loadingIds]);
 
   return (
     <div className="oid-library-container p-4 bg-white rounded-lg shadow">
@@ -283,7 +292,7 @@ const AlertAssign: React.FC = () => {
         dataSource={dataList}
         pagination={pagination}
         onChange={handleTableChange}
-        scroll={{ y: 'calc(100vh - 440px)' }}
+        scroll={{ y: 'calc(100vh - 450px)' }}
       />
       <OperateModal
         open={operateVisible}

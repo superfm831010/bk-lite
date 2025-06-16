@@ -16,6 +16,7 @@ import { useTranslation } from '@/utils/i18n';
 import { incidentStates } from '@/app/alarm/constants/alarm';
 import { useRouter } from 'next/navigation';
 import { useCommon } from '@/app/alarm/context/common';
+import { KeepAlive } from 'react-activation';
 
 const IncidentsPage: React.FC = () => {
   const { getAlarmList } = useAlarmApi();
@@ -196,4 +197,12 @@ const IncidentsPage: React.FC = () => {
   );
 };
 
-export default IncidentsPage;
+const Incidents = () => {
+  return (
+    <KeepAlive id="/alarm/incidents" name="/alarm/incidents">
+      <IncidentsPage />
+    </KeepAlive>
+  );
+};
+
+export default Incidents;

@@ -41,8 +41,10 @@
     overflow: hidden;
 
     .bar {
+      position: relative;
       top: 0;
       bottom: 0;
+      overflow: visible;
       height: 100%;
       border-radius: 4px;
       display: flex;
@@ -51,15 +53,12 @@
       padding: 0 6px;
       font-size: 12px;
       white-space: nowrap;
-      overflow: hidden;
       text-overflow: ellipsis;
       cursor: pointer;
-    }
-    .title {
-      top: 0;
-      bottom: 0;
-      position: absolute;
-      color: #333;
+      .title {
+        position: absolute;
+        color: #666;
+      }
     }
   }
 }

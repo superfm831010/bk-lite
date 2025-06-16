@@ -26,7 +26,7 @@
       "name": "integration",
       "children": [
         {
-          "title": "集成详情",
+          "title": "告警源详情",
           "url": "/alarm/integration/detail",
           "name": "integration_detail"
         }
@@ -66,8 +66,8 @@
       "name": "integration",
       "children": [
         {
-          "title": "Integration Detail",
-          "url": "/alarm/integration/[sourceId]",
+          "title": "Source Detail",
+          "url": "/alarm/integration/detail",
           "name": "integration_detail"
         }
       ]

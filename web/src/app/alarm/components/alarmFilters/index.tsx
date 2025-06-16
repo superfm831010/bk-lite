@@ -5,7 +5,7 @@ import { Checkbox, Space, Spin } from 'antd';
 import { ClearOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { FiltersConfig } from '@/app/alarm/types/alarms';
-import { useSourceApi } from '@/app/alarm/api/sources';
+import { useSourceApi } from '@/app/alarm/api/integration';
 import { SourceItem } from '@/app/alarm/types/integration';
 import { useCommon } from '@/app/alarm/context/common';
 

@@ -11,7 +11,7 @@ import { useTranslation } from '@/utils/i18n';
 import { SourceItem } from '@/app/alarm/types/integration';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
 import { EventItem } from '@/app/alarm/types/alarms';
-import { useSourceApi } from '@/app/alarm/api/sources';
+import { useSourceApi } from '@/app/alarm/api/integration';
 import { Empty, Descriptions, message, Tabs, DatePicker, Spin } from 'antd';
 
 const IntegrationDetail: FC = () => {
@@ -35,18 +35,18 @@ const IntegrationDetail: FC = () => {
     value: string;
   } | null>(null);
 
-  const source_id = searchParams.get('source_id');
+  const sourceItemId = searchParams.get('sourceItemId');
 
   useEffect(() => {
-    if (source_id) {
+    if (sourceItemId) {
       getSourceDetail();
     }
-  }, [source_id]);
+  }, [sourceItemId]);
 
   const getSourceDetail = async () => {
     setLoading(true);
     try {
-      const res = await getAlertSourcesDetail(source_id as string);
+      const res = await getAlertSourcesDetail(sourceItemId as string);
       if (res) {
         setSource(res);
       }
@@ -66,9 +66,9 @@ const IntegrationDetail: FC = () => {
     setEventLoading(true);
     try {
       const params: any = {
+        source_id: source?.source_id,
         page: pagination.current,
         page_size: pagination.pageSize,
-        source_id: source?.source_id,
         received_at_before: timeRange?.[1]?.toISOString(),
         received_at_after: timeRange?.[0]?.toISOString(),
       };
@@ -84,11 +84,12 @@ const IntegrationDetail: FC = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'event') {
+    if (activeTab === 'event' && source?.source_id) {
       fetchEventList();
     }
   }, [
     activeTab,
+    source,
     pagination.current,
     pagination.pageSize,
     searchCondition,
@@ -192,7 +193,7 @@ const IntegrationDetail: FC = () => {
     </div>
   );
 
-  if (!source_id) {
+  if (!sourceItemId) {
     return <Empty description={t('common.noData')} />;
   }
 

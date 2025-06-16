@@ -1,10 +1,12 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import Spin from '@/components/spin';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { UserItem } from '@/app/alarm/types/types';
 import { CommonContextType, LevelItem } from '@/app/alarm/types/index';
 import { useCommonApi } from '@/app/alarm/api/common';
-import Spin from '@/components/spin';
+import { useAliveController } from 'react-activation';
+import { usePathname } from 'next/navigation';
 
 const CommonContext = createContext<CommonContextType | null>(null);
 
@@ -22,6 +24,27 @@ const CommonContextProvider = ({ children }: { children: React.ReactNode }) => {
   >({});
   const [pageLoading, setPageLoading] = useState(false);
   const { getUserList, getLevelList } = useCommonApi();
+  const { drop } = useAliveController();
+  const pathname = usePathname();
+  const prevPathRef = useRef<string>(pathname);
+
+  useEffect(() => {
+    if (!drop) return;
+    const prev = prevPathRef.current;
+    const curr = pathname;
+    const isMain = (p: string) =>
+      ['/alarm/incidents', '/alarm/integration'].includes(p);
+
+    const isDetail = (p: string) =>
+      p.startsWith('/alarm/incidents/') || p.startsWith('/alarm/integration/');
+    if (
+      !(isMain(prev) && isDetail(curr)) &&
+      !(isDetail(prev) && isMain(curr))
+    ) {
+      drop(prev);
+    }
+    prevPathRef.current = curr;
+  }, [pathname]);
 
   useEffect(() => {
     const fetchAll = async () => {

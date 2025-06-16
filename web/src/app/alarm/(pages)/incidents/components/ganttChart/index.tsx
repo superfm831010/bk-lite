@@ -15,7 +15,7 @@ interface GanttChartProps {
   alarmData: AlarmTableDataItem[];
 }
 
-export default function GanttChart({ alarmData }: GanttChartProps) {
+export default function GanttChart({ alarmData = [] }: GanttChartProps) {
   const { levelMap } = useCommon();
   const detailRef = useRef<ModalRef>(null);
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
@@ -103,8 +103,15 @@ export default function GanttChart({ alarmData }: GanttChartProps) {
               const w = dayjs(d.last_event_time).diff(
                 dayjs(d.first_event_time)
               );
-              const left = (s / times.total) * 100;
-              const width = (w / times.total) * 100;
+              // 防止 total 为 0 并限制 0–100%
+              const rawLeft = times.total > 0 ? (s / times.total) * 100 : 0;
+              const clampedLeft = Math.min(Math.max(rawLeft, 0), 100);
+              const rawWidth = times.total > 0 ? (w / times.total) * 100 : 0;
+              const clampedWidth = Math.min(
+                Math.max(rawWidth, 0),
+                100 - clampedLeft
+              );
+
               return (
                 <div key={d.id} className={styles.alarmRow}>
                   <Checkbox
@@ -127,21 +134,21 @@ export default function GanttChart({ alarmData }: GanttChartProps) {
                       <div
                         className={styles.bar}
                         style={{
-                          left: `${left}%`,
-                          width: `${width}%`,
+                          left: `${Math.min(clampedLeft, 99)}%`,
+                          width: `${clampedWidth}%`,
                           backgroundColor: levelMap[d.level] as string,
                         }}
                         onClick={() => onOpenDetail(d)}
-                      ></div>
-
-                      <div
-                        className={styles.title}
-                        style={{
-                          left: `${left}%`,
-                          right: 0,
-                        }}
                       >
-                        {d.title}
+                        <div
+                          className={styles.title}
+                          style={{
+                            [clampedLeft < 50 ? 'left' : 'right']:
+                              clampedLeft < 50 ? '8px' : 'calc(100% + 2px)',
+                          }}
+                        >
+                          {d.title}
+                        </div>
                       </div>
                     </Tooltip>
                   </div>

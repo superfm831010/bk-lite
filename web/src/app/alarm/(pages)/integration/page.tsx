@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import alertStyle from './page.module.scss';
-import { useSourceApi } from '@/app/alarm/api/sources';
+import { useSourceApi } from '@/app/alarm/api/integration';
 import { Spin, Empty } from 'antd';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
@@ -36,37 +35,47 @@ const IntegrationPage: React.FC = () => {
   return (
     <div className="w-full flex-1">
       <Spin spinning={loading}>
-        {!loading && sources.length === 0 ? (
-          <Empty description={t('common.noData')} className="mt-[24vh]" />
+        {!sources.length ? (
+          <div className="mt-[24vh]">
+            {!loading && <Empty description={t('common.noData')} />}
+          </div>
         ) : (
-          <div className={alertStyle.container}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
             {sources.map((src: SourceItem) => (
               <div
-                key={src.source_id}
-                className={alertStyle.card}
+                key={src.id}
+                className="p-4 rounded-xl relative shadow-md hover:shadow-lg transition-shadow cursor-pointer bg-white"
                 onClick={() =>
-                  router.push(`/alarm/integration/detail?source_id=${src.id}`)
+                  router.push(
+                    `/alarm/integration/detail?sourceItemId=${src.id}`
+                  )
                 }
               >
-                <div className={alertStyle.cardContent}>
-                  <div className="flex items-center gap-3 mb-2 px-8 py-4 rounded bg-[#99aaf2]">
+                {/* header 区域 */}
+                <div className="flex items-center mb-4">
+                  <div className="flex items-center gap-3 p-[6px] bg-[#99aaf2] rounded">
                     <img
                       src={src.logo || ''}
                       alt={src.description}
-                      className={alertStyle.logo}
+                      className="w-7 h-7"
                     />
-                    <span className={alertStyle.name}>{src.name}</span>
                   </div>
-                  <span className={alertStyle.info}>
+                  <span className="font-semibold text-sm truncate ml-2">
+                    {src.name}
+                  </span>
+                </div>
+                {/* 信息区 */}
+                <div className="text-xs text-sm text-[var(--color-text-3)] space-y-2">
+                  <div>
                     {t('integration.eventCount')}：
                     {[undefined, null, ''].includes(src.event_count as any)
                       ? '--'
                       : src.event_count}
-                  </span>
-                  <span className={alertStyle.info}>
+                  </div>
+                  <div>
                     {t('integration.lastEventTime')}：
                     {src.last_event_time || '--'}
-                  </span>
+                  </div>
                 </div>
               </div>
             ))}

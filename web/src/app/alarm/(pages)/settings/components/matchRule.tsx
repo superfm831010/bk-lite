@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './match.module.scss';
 import { SourceItem } from '@/app/alarm/types/integration';
-import { useSourceApi } from '@/app/alarm/api/sources';
+import { useSourceApi } from '@/app/alarm/api/integration';
 import { useTranslation } from '@/utils/i18n';
 import { Select, Button, Input } from 'antd';
 import { PlusCircleOutlined, MinusCircleOutlined } from '@ant-design/icons';

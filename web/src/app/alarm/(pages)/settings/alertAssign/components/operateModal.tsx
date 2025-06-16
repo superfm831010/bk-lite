@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './operateModal.scss';
-import MatchRule from './matchRule';
-import EffectiveTime, { defaultEffectiveTime } from './effectiveTime';
+import MatchRule from '@/app/alarm/(pages)/settings/components/matchRule';
+import EffectiveTime, {
+  defaultEffectiveTime,
+} from '@/app/alarm/(pages)/settings/components/effectiveTime';
 import Icon from '@/components/icon';
 import { useCommon } from '@/app/alarm/context/common';
 import { useTranslation } from '@/utils/i18n';
@@ -48,6 +50,8 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
     { label: '微信', value: 'wechat' },
   ];
   const [form] = Form.useForm();
+  const [submitLoading, setSubmitLoading] = useState(false);
+
   const handleClose = () => {
     form.resetFields();
     onClose();
@@ -79,6 +83,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
   const ruleType = Form.useWatch('match_type', form);
 
   const onFinish = async (values: any) => {
+    setSubmitLoading(true);
     try {
       const params = getParams(values);
       if (currentRow?.id) {
@@ -94,6 +99,8 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
       onSuccess && onSuccess();
     } catch {
       message.error(t('common.operateFailed'));
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
@@ -139,7 +146,11 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
       onClose={handleClose}
       footer={
         <div style={{ textAlign: 'right' }}>
-          <Button type="primary" onClick={() => form.submit()}>
+          <Button
+            type="primary"
+            loading={submitLoading}
+            onClick={() => form.submit()}
+          >
             {t('settings.assignStrategy.submit')}
           </Button>
           <Button style={{ marginLeft: 8 }} onClick={handleClose}>

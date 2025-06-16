@@ -21,6 +21,21 @@ export const useSettingApi = () => {
   const patchAssignment = (id: string | number, params: any) =>
     patch(`/alerts/api/assignment/${id}/`, params);
 
+  const getShieldList = (params: any) => get('/alerts/api/shield/', { params });
+
+  const getShield = (id: string | number) => get(`/alerts/api/shield/${id}/`);
+
+  const createShield = (params: any) => post('/alerts/api/shield/', params);
+
+  const updateShield = (id: string | number, params: any) =>
+    put(`/alerts/api/shield/${id}/`, params);
+
+  const deleteShield = (id: string | number) =>
+    del(`/alerts/api/shield/${id}/`);
+
+  const patchShield = (id: string | number, params: any) =>
+    patch(`/alerts/api/shield/${id}/`, params);
+
   return {
     getAssignmentList,
     getAssignment,
@@ -28,5 +43,11 @@ export const useSettingApi = () => {
     updateAssignment,
     deleteAssignment,
     patchAssignment,
+    getShieldList,
+    getShield,
+    createShield,
+    updateShield,
+    deleteShield,
+    patchShield,
   };
 };

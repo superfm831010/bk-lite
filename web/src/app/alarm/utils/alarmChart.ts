@@ -51,44 +51,63 @@ export function processDataForStackedBarChart(
     intervalCount = Math.ceil(totalDays / desiredSegments);
   }
 
-  // 4. 分桶聚合
+  // 4. 构造均匀时间刻度分段，并初始化所有分段数据为 0
+  // 4.1 计算总分段数
+  const totalUnits =
+    intervalUnit === 'second'
+      ? totalSeconds
+      : intervalUnit === 'minute'
+        ? totalMinutes
+        : intervalUnit === 'hour'
+          ? totalHours
+          : totalDays;
+  const segmentsCount = Math.ceil(totalUnits / intervalCount);
   const grouped: Record<string, any> = {};
+  for (let i = 0; i <= segmentsCount; i++) {
+    const bucketTime = minTime.add(i * intervalCount, intervalUnit);
+    const localTime = convertToLocalizedTime(bucketTime.toISOString());
+    const fmt =
+      intervalUnit === 'day'
+        ? dayjs(localTime).format('YYYY-MM-DD')
+        : intervalUnit === 'hour'
+          ? dayjs(localTime).format('YYYY-MM-DD HH:00')
+          : intervalUnit === 'minute'
+            ? dayjs(localTime).format('YYYY-MM-DD HH:mm')
+            : dayjs(localTime).format('YYYY-MM-DD HH:mm:ss');
+    grouped[fmt] = {
+      time: fmt,
+      ...levelList.reduce(
+        (acc, lvl) => {
+          acc[lvl.level_display_name] = 0;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
+    };
+  }
+
+  // 5. 遍历数据，累加到对应分段
   data.forEach((item) => {
     const bucketIndex = Math.floor(
       dayjs(item.first_event_time).diff(minTime, intervalUnit) / intervalCount
     );
-    const bucketStart = minTime
-      .add(bucketIndex * intervalCount, intervalUnit)
-      .toISOString();
-    const local = convertToLocalizedTime(bucketStart);
-    const fmt =
+    const bucketStart = minTime.add(bucketIndex * intervalCount, intervalUnit);
+    const localBucket = convertToLocalizedTime(bucketStart.toISOString());
+    const bucketKey =
       intervalUnit === 'day'
-        ? dayjs(local).format('YYYY-MM-DD')
+        ? dayjs(localBucket).format('YYYY-MM-DD')
         : intervalUnit === 'hour'
-          ? dayjs(local).format('YYYY-MM-DD HH:00')
+          ? dayjs(localBucket).format('YYYY-MM-DD HH:00')
           : intervalUnit === 'minute'
-            ? dayjs(local).format('YYYY-MM-DD HH:mm')
-            : dayjs(local).format('YYYY-MM-DD HH:mm:ss');
-
-    if (!grouped[fmt]) {
-      grouped[fmt] = {
-        time: fmt,
-        ...levelList.reduce(
-          (acc, lvl) => {
-            acc[lvl.level_display_name] = 0;
-            return acc;
-          },
-          {} as Record<string, number>
-        ),
-      };
-    }
+            ? dayjs(localBucket).format('YYYY-MM-DD HH:mm')
+            : dayjs(localBucket).format('YYYY-MM-DD HH:mm:ss');
     const lvl = levelList.find((l) => l.level_id === Number(item.level));
-    if (lvl) {
-      grouped[fmt][lvl.level_display_name] += 1;
+    if (lvl && grouped[bucketKey]) {
+      grouped[bucketKey][lvl.level_display_name] += 1;
     }
   });
 
-  // 5. 排序并返回数组
+  // 6. 排序并返回数组
   return Object.values(grouped).sort(
     (a: any, b: any) => dayjs(a.time).valueOf() - dayjs(b.time).valueOf()
   );

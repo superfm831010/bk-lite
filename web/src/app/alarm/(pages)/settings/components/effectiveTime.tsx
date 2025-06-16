@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import dayjs from 'dayjs';
 import { Select, DatePicker, TimePicker } from 'antd';
 import { timeInterval, weekList } from '@/app/alarm/constants/settings';
@@ -9,8 +9,8 @@ const { RangePicker } = DatePicker;
 export interface EffectiveTimeValue {
   type: 'one' | 'day' | 'week' | 'month';
   week_month: number[];
-  start_time: dayjs.Dayjs | string;
-  end_time: dayjs.Dayjs | string;
+  start_time: string;
+  end_time: string;
 }
 
 interface EffectiveTimeProps {
@@ -21,13 +21,18 @@ interface EffectiveTimeProps {
 const defaultValue: EffectiveTimeValue = {
   type: 'day',
   week_month: [],
-  start_time: dayjs('00:00:00', 'HH:mm:ss'),
-  end_time: dayjs('23:59:59', 'HH:mm:ss'),
+  start_time: '00:00:00',
+  end_time: '23:59:59',
 };
 
 const EffectiveTime: React.FC<EffectiveTimeProps> = ({ value, onChange }) => {
   const form = value || defaultValue;
-  const isEditing = !!value;
+
+  useEffect(() => {
+    if (!value) {
+      onChange?.(defaultValue);
+    }
+  }, [value, onChange]);
 
   const triggerChange = (changed: Partial<EffectiveTimeValue>) => {
     onChange?.({ ...form, ...changed });
@@ -80,14 +85,10 @@ const EffectiveTime: React.FC<EffectiveTimeProps> = ({ value, onChange }) => {
             allowClear={false}
             format="HH:mm:ss"
             className="flex-1 ml-[6px]"
-            value={
-              isEditing
-                ? [
-                  dayjs(form.start_time, 'HH:mm:ss'),
-                  dayjs(form.end_time, 'HH:mm:ss'),
-                ]
-                : [dayjs().startOf('day'), dayjs().endOf('day')]
-            }
+            value={[
+              dayjs(form.start_time, 'HH:mm:ss'),
+              dayjs(form.end_time, 'HH:mm:ss'),
+            ]}
             onChange={(_, dateStrings) =>
               triggerChange({
                 start_time: dateStrings[0],
@@ -105,8 +106,8 @@ const EffectiveTime: React.FC<EffectiveTimeProps> = ({ value, onChange }) => {
             value={
               form.start_time && form.end_time
                 ? [
-                  dayjs(form.start_time as string, 'YYYY-MM-DD HH:mm:ss'),
-                  dayjs(form.end_time as string, 'YYYY-MM-DD HH:mm:ss'),
+                  dayjs(form.start_time, 'YYYY-MM-DD HH:mm:ss'),
+                  dayjs(form.end_time, 'YYYY-MM-DD HH:mm:ss'),
                 ]
                 : [dayjs().startOf('day'), dayjs().add(1, 'month').endOf('day')]
             }
