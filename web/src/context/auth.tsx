@@ -4,9 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Spin } from 'antd';
-import { useTranslation } from '@/utils/i18n';
 import { useLocale } from '@/context/locale';
-import { autoSignInFromSharedAuth, saveSharedAuthData } from '@/utils/crossDomainAuth';
 
 interface AuthContextType {
   token: string | null;
@@ -27,85 +25,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: session, status } = useSession();
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [sharedAuthChecked, setSharedAuthChecked] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
-  const { t } = useTranslation();
   const { setLocale } = useLocale();
 
   const authPaths = ['/auth/signin', '/auth/signout', '/auth/callback'];
-  const isSessionValid = session && session.user && session.user.id;
+  const isSessionValid = session && session.user && (session.user.id || session.user.username);
 
-  // Check shared authentication state
+  // Process session changes
   useEffect(() => {
-    const checkSharedAuth = async () => {
-      // If currently on auth-related pages, skip check
-      if (pathname && authPaths.includes(pathname)) {
-        setSharedAuthChecked(true);
-        return;
-      }
-
-      // If already have valid session, check if we need to save shared auth data
-      if (status === 'authenticated' && isSessionValid) {
-        // For WeChat authentication, ensure shared auth data is saved
-        if (session.user?.provider === 'wechat') {
-          try {
-            saveSharedAuthData({
-              id: session.user.id,
-              username: session.user.username || session.user.name || '',
-              token: session.user.token || '',
-              locale: session.user.locale || 'en',
-              temporary_pwd: session.user.temporary_pwd || false,
-              enable_otp: session.user.enable_otp || false,
-              qrcode: session.user.qrcode || false,
-              provider: session.user.provider,
-              wechatOpenId: session.user.wechatOpenId,
-              wechatUnionId: session.user.wechatUnionId,
-              wechatWorkId: session.user.wechatWorkId,
-            });
-            console.log('Saved shared auth data for WeChat user');
-          } catch (error) {
-            console.error('Failed to save shared auth data for WeChat user:', error);
-          }
-        }
-        setSharedAuthChecked(true);
-        return;
-      }
-
-      // If NextAuth is still loading, wait
-      if (status === 'loading') {
-        return;
-      }
-
-      try {
-        // Try auto sign-in from shared authentication state
-        const autoSignInSuccess = await autoSignInFromSharedAuth();
-        if (autoSignInSuccess) {
-          // Auto sign-in successful, wait for session update
-          console.log('Auto sign-in from shared auth successful');
-          return;
-        }
-      } catch (error) {
-        console.error('Error checking shared auth:', error);
-      } finally {
-        setSharedAuthChecked(true);
-      }
-    };
-
-    checkSharedAuth();
-  }, [status, pathname, isSessionValid]);
-
-  // Only process session after shared authentication check is complete
-  useEffect(() => {
-    if (!sharedAuthChecked) {
+    // If session is loading, do nothing
+    if (status === 'loading') {
       return;
     }
 
-    if (!session || !isSessionValid) {
+    // If current path is auth-related page, allow access
+    if (pathname && authPaths.includes(pathname)) {
+      return;
+    }
+
+    // If no valid session, redirect to login page
+    if (status === 'unauthenticated' || !isSessionValid) {
       setToken(null);
       setIsAuthenticated(false);
       
       if (pathname && !authPaths.includes(pathname)) {
+        console.log('No valid session, redirecting to signin');
         router.push('/auth/signin');
       }
       return;
@@ -120,16 +65,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLocale(userLocale);
       }
       localStorage.setItem('locale', userLocale);
-    } else {
-      console.warn(t('common.noUserSession'));
-      if (pathname && !authPaths.includes(pathname)) {
-        router.push('/auth/signin');
-      }
     }
-  }, [status, session, pathname, sharedAuthChecked, setLocale, t]);
+  }, [status, session, pathname, setLocale, router]);
 
-  // Show loading state until shared authentication check is complete and session state is determined
-  if (!sharedAuthChecked || (status === 'loading' && pathname && !authPaths.includes(pathname))) {
+  // Show loading state until session state is determined
+  if (status === 'loading' && pathname && !authPaths.includes(pathname)) {
     return <Spin />;
   }
 

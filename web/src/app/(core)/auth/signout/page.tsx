@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut, useSession } from "next-auth/react";
+import { clearAuthToken } from '@/utils/crossDomainAuth';
 
 export default function SignoutPage() {
   const { data: session, status } = useSession();
@@ -17,6 +18,9 @@ export default function SignoutPage() {
         method: "POST",
       });
       
+      // Clear authentication token from cookie
+      clearAuthToken();
+      
       // Use NextAuth's signOut to clear the client session
       await signOut({ redirect: false });
       
@@ -24,7 +28,8 @@ export default function SignoutPage() {
       router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
-      // Still try to sign out even if the API call fails
+      // Still try to clear token and sign out even if the API call fails
+      clearAuthToken();
       await signOut({ redirect: false });
       router.push("/");
     } finally {

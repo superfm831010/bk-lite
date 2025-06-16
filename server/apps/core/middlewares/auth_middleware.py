@@ -17,7 +17,7 @@ class AuthMiddleware(MiddlewareMixin):
         "/admin/",
         "/accounts/",
     ]
-    
+
     # 错误消息常量
     TOKEN_REQUIRED_MSG = "please provide Token"
     AUTH_FAILED_MSG = "Authentication failed"
@@ -31,7 +31,7 @@ class AuthMiddleware(MiddlewareMixin):
 
             # 执行Token认证
             return self._authenticate_token(request)
-            
+
         except Exception as e:
             logger.error("Authentication error for %s: %s", request.path, str(e))
             return WebUtils.response_401(_(self.AUTH_FAILED_MSG))
@@ -39,17 +39,16 @@ class AuthMiddleware(MiddlewareMixin):
     def _is_exempt(self, request, view):
         """检查请求是否豁免认证"""
         # 检查API和登录豁免标记
-        if (getattr(view, "api_exempt", False) or 
-            getattr(view, "login_exempt", False) or 
-            getattr(request, "api_pass", False)):
+        if (
+            getattr(view, "api_exempt", False)
+            or getattr(view, "login_exempt", False)
+            or getattr(request, "api_pass", False)
+        ):
             return True
-        
+
         # 检查路径豁免
         request_path = request.path
-        return any(
-            request_path == path.rstrip('/') or request_path.startswith(path)
-            for path in self.EXEMPT_PATHS
-        )
+        return any(request_path == path.rstrip("/") or request_path.startswith(path) for path in self.EXEMPT_PATHS)
 
     def _authenticate_token(self, request):
         """执行Token认证"""
@@ -65,26 +64,27 @@ class AuthMiddleware(MiddlewareMixin):
             if not user:
                 logger.warning("Token authentication failed for %s", request.path)
                 return WebUtils.response_401(_(self.TOKEN_REQUIRED_MSG))
-            
+
             # 登录用户并确保session有效
             auth.login(request, user)
             if not request.session.session_key:
                 request.session.cycle_key()
-            
+
             return None
-                
+
         except Exception as e:
             logger.error("Token authentication error for %s: %s", request.path, str(e))
             return WebUtils.response_401(_(self.TOKEN_REQUIRED_MSG))
 
-    def _extract_token(self, request):
+    @staticmethod
+    def _extract_token(request):
         """从请求头中提取Token"""
         token_header = request.META.get(settings.AUTH_TOKEN_HEADER_NAME)
         if not token_header:
             return None
-        
+
         # 处理Bearer格式或直接返回token
         if token_header.startswith("Bearer "):
             return token_header[7:].strip()
-        
+
         return token_header.strip()

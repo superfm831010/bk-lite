@@ -152,6 +152,8 @@ def get_client_ip(request):
 
 
 def insert_skill_log(current_ip, skill_id, response_detail, request_detail, state=True, user_message=""):
+    if skill_id is None:
+        return
     SkillRequestLog.objects.create(
         skill_id=skill_id,
         response_detail=response_detail,
