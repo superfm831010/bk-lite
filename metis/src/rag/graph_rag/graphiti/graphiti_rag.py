@@ -1,16 +1,18 @@
 from typing import List
 from xml.dom.minidom import Document
 
+from pydantic import BaseModel
+from src.entity.rag.graphiti.document_ingest_request import GraphitiRagDocumentIngestRequest
 from src.rag.graph_rag.graphiti.metis_embedder import MetisEmbedder
 from src.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderConfig
 from src.rag.graph_rag.graphiti.metis_raranker_config import MetisRerankerConfig
 from src.rag.graph_rag.graphiti.metis_reranker_client import MetisRerankerClient
+from src.summarize.summarize_manager import SummarizeManager
 from tqdm import tqdm
 from graphiti_core import Graphiti
 from src.core.env.core_settings import core_settings
 from src.entity.rag.base.document_count_request import DocumentCountRequest
 from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
-from src.entity.rag.base.document_ingest_request import GraphRagDocumentIngestRequest
 from graphiti_core.nodes import EpisodeType
 from src.entity.rag.base.document_list_request import DocumentListRequest
 from src.entity.rag.base.document_metadata_update_request import DocumentMetadataUpdateRequest
@@ -49,7 +51,10 @@ class GraphitiRAG():
         )
         await graphiti.build_indices_and_constraints()
 
-    async def ingest(self, req: GraphRagDocumentIngestRequest):
+    async def build_communities(self, graphiti_instance: Graphiti, group_ids: List[str]):
+        await graphiti_instance.build_communities(group_ids=group_ids)
+
+    async def ingest(self, req: GraphitiRagDocumentIngestRequest):
         llm_client = AsyncOpenAI(
             api_key=req.openai_api_key,
             base_url=req.openai_api_base,
@@ -86,14 +91,23 @@ class GraphitiRAG():
             cross_encoder=rerank_client
         )
 
-        for i, doc in tqdm(enumerate(req.docs)):
+        for doc in tqdm(req.docs):
+            source_description = SummarizeManager.summarize(content=doc.page_content,
+                                                            model='local:textrank',
+                                                            openai_api_base='',
+                                                            openai_api_key='')
+
             await graphiti_instance.add_episode(
                 name=doc.metadata['chunk_id'],
                 episode_body=doc.page_content,
                 source=EpisodeType.text,
-                source_description="description",
+                source_description=source_description,
                 reference_time=datetime.now(timezone.utc),
+                group_id=req.group_id,
             )
+
+        if req.rebuild_community:
+            await self.build_communities(graphiti_instance, [req.group_id])
 
     def search(self, req: DocumentRetrieverRequest) -> List[Document]:
         pass

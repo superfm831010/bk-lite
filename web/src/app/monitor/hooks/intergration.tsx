@@ -1757,7 +1757,7 @@ const useFormItems = ({
                   {t('monitor.intergrations.urlDes')}
                 </span>
               </Form.Item>
-              {isEdit && (
+              {/* {isEdit && (
                 <Form.Item required label="URL">
                   <Form.Item
                     noStyle
@@ -1775,7 +1775,7 @@ const useFormItems = ({
                     {t('monitor.intergrations.childUrlDes')}
                   </span>
                 </Form.Item>
-              )}
+              )} */}
               <Form.Item label={t('monitor.intergrations.listeningPort')}>
                 <Form.Item noStyle name="LISTEN_PORT">
                   <InputNumber
@@ -1796,7 +1796,7 @@ const useFormItems = ({
         return {
           formItems: (
             <>
-              {isEdit && (
+              {/* {isEdit && (
                 <Form.Item required label="URL">
                   <Form.Item
                     noStyle
@@ -1814,7 +1814,7 @@ const useFormItems = ({
                     {t('monitor.intergrations.childUrlDes')}
                   </span>
                 </Form.Item>
-              )}
+              )} */}
               <Form.Item label={t('monitor.intergrations.username')} required>
                 <Form.Item
                   noStyle
@@ -1936,7 +1936,7 @@ const useFormItems = ({
         return {
           formItems: (
             <>
-              {isEdit && (
+              {/* {isEdit && (
                 <Form.Item required label="URL">
                   <Form.Item
                     noStyle
@@ -1954,7 +1954,7 @@ const useFormItems = ({
                     {t('monitor.intergrations.childUrlDes')}
                   </span>
                 </Form.Item>
-              )}
+              )} */}
               <Form.Item label={t('monitor.intergrations.host')} required>
                 <Form.Item
                   noStyle
@@ -1966,7 +1966,7 @@ const useFormItems = ({
                     },
                   ]}
                 >
-                  <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                  <Input className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.commonHostDes')}
@@ -1987,7 +1987,6 @@ const useFormItems = ({
                     className="w-[300px] mr-[10px]"
                     min={1}
                     precision={0}
-                    disabled={isEdit}
                   />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">

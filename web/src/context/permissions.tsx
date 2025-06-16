@@ -89,21 +89,33 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
 
   const filterMenusByPermission = (
     permissionMap: { [key: string]: string[] },
-    menus: MenuItem[]
+    menus: MenuItem[],
+    routeClientId?: string
   ): MenuItem[] => {
     return menus
       .filter((menu) => {
         const hasPermission = permissionMap.hasOwnProperty(menu.name) || menu.isNotMenuItem;
         if (!hasPermission) {
           console.warn(`No permission for menu: ${menu.name}`);
+          return false;
         }
-        return hasPermission;
+        
+        // Filter by routeClientId if provided and menu has URL
+        if (routeClientId && menu.url) {
+          const urlContainsClientId = menu.url.includes(`/${routeClientId}/`);
+          if (!urlContainsClientId) {
+            console.warn(`Menu ${menu.name} URL does not contain routeClientId: ${routeClientId}`);
+            return false;
+          }
+        }
+        
+        return true;
       })
       .map((menu) => ({
         ...menu,
         operation: permissionMap[menu.name],
         children: menu.children
-          ? filterMenusByPermission(permissionMap, menu.children)
+          ? filterMenusByPermission(permissionMap, menu.children, routeClientId)
           : []
       }));
   };
@@ -122,7 +134,7 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
         }
         
         const permissionMap = collectPermissionOperations(allMenuData);
-        const filteredMenus = filterMenusByPermission(permissionMap, configMenus);
+        const filteredMenus = filterMenusByPermission(permissionMap, configMenus, routeClientId);
         const parsedPermissions = extractPermissions(filteredMenus);
         setMenuItems(filteredMenus);
         setPermissions(parsedPermissions);
