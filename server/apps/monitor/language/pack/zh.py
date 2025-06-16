@@ -52,7 +52,9 @@ MONITOR_OBJECT = {
     "Jetty": "Jetty",
     "WebLogic": "WebLogic",
     "TCP": "云平台",
-    "CVM": "云服务器"
+    "CVM": "云服务器",
+    "Oracle": "Oracle",
+    "Minio": "Minio"
 }
 
 MONITOR_OBJECT_PLUGIN = {
@@ -203,6 +205,14 @@ MONITOR_OBJECT_PLUGIN = {
     "Tencent Cloud": {
         "name": "腾讯云",
         "desc": "实时采集腾讯云各类监控指标数据，涵盖计算资源、网络性能、存储使用等维度，助力用户深入了解资源状态，精准定位异常，高效完成运维管理与成本优化。​"
+    },
+    "Oracle-Exporter": {
+        "name": "Oracle-Exporter",
+        "desc": "用于通过 exporter 方式，实时采集 Oracle 运行时长、操作次数、事务提交回滚及各类等待时间等指标，助力用户进行健康检查与性能调优。​"
+    },
+    "Minio": {
+        "name": "Minio",
+        "desc": "用于采集MinIO对象存储系统的运行状态、存储容量、使用情况、复制、节点间通信和S3请求等关键指标，帮助用户实时监控对象存储健康状态、优化性能及定位异常问题。​"
     }
 }
 
@@ -505,6 +515,29 @@ MONITOR_OBJECT_METRIC_GROUP = {
         "Memory": "内存",
         "Disk": "磁盘",
         "Network": "网络"
+    },
+    "Oracle-Exporter": {
+        "Base": "基础信息",
+        "Activity": "数据库活动",
+        "Wait": "等待时间",
+        "SGA": "系统全局区域",
+        "PGA": "程序全局区域",
+        "Tablespace": "表空间",
+        "RAC": "集群",
+        "Process": "进程",
+        "selfMonitor": "自监控信息"
+    },
+    "Minio": {
+        "Audit": "审计",
+        "ClusterCapacity": "集群容量",
+        "ClusterDrive": "集群驱动器",
+        "ClusterHealth": "集群健康",
+        "S3Request": "S3 请求",
+        "BucketUsage": "存储桶使用量",
+        "BucketRequests": "存储桶请求",
+        "DriveResource": "驱动器资源",
+        "NetworkInterface": "网络接口",
+        "CPU": "CPU"
     }
 }
 
@@ -2613,6 +2646,326 @@ MONITOR_OBJECT_METRIC = {
     "cvm_WanInpkg": {
         "name": "外网入包量",
         "desc": "外网网卡网卡的平均每秒入包量"
+    }
+  },
+  "Oracle-Exporter": {
+    "oracledb_up_gauge": {
+      "name": "Oracle数据库运行状态",
+      "desc": "当前Oracle数据库运行状态，0为正常运行，1为运行异常。"
+    },
+    "oracledb_uptime_seconds_gauge": {
+      "name": "Oracle数据库实例已运行时间",
+      "desc": "Oracle数据库已运行时长"
+    },
+    "oracledb_activity_execute_rate": {
+      "name": "Oracle数据库执行速率",
+      "desc": "监控一段时间内（如过去5分钟）SQL执行的速率，反映数据库负载的变化趋势。"
+    },
+    "oracledb_activity_parse_rate": {
+      "name": "Oracle数据库解析速率",
+      "desc": "监控一段时间内（如过去5分钟）SQL解析的速率，帮助发现频繁解析情况。"
+    },
+    "oracledb_activity_user_commits_rate": {
+      "name": "Oracle数据库用户提交速率",
+      "desc": "监控一段时间内（如过去5分钟）用户事务提交的速率，反映数据库事务活动情况。"
+    },
+    "oracledb_activity_user_rollbacks_rate": {
+      "name": "Oracle数据库用户回滚速率",
+      "desc": "监控一段时间内（如过去5分钟）用户事务回滚的速率，帮助发现异常事务。"
+    },
+    "oracledb_wait_time_application_gauge": {
+      "name": "Oracle数据库应用类等待时间",
+      "desc": "数据库客户端应用程序与数据库的通信等待时间。"
+    },
+    "oracledb_wait_time_commit_gauge": {
+      "name": "Oracle数据库提交等待时间",
+      "desc": "等待事务提交完成的时间。"
+    },
+    "oracledb_wait_time_concurrency_gauge": {
+      "name": "Oracle数据库并发等待时间",
+      "desc": "由于数据库资源争用而导致的等待时间，例如等待锁。"
+    },
+    "oracledb_wait_time_configuration_gauge": {
+      "name": "Oracle数据库配置等待时间",
+      "desc": "等待系统资源配置的时间，例如等待参数更改生效的时间。"
+    },
+    "oracledb_wait_time_network_gauge": {
+      "name": "Oracle数据库网络等待时间",
+      "desc": "等待网络传输的时间，例如等待数据从客户端发送到服务器。"
+    },
+    "oracledb_wait_time_other_gauge": {
+      "name": "Oracle数据库其他等待时间",
+      "desc": "无法归类到其他等待时间中的等待时间。"
+    },
+    "oracledb_wait_time_system_io_gauge": {
+      "name": "Oracle数据库系统I/O等待时间",
+      "desc": "等待系统进行I/O操作的时间，例如等待从磁盘读取数据的时间。"
+    },
+    "oracledb_wait_time_user_io_gauge": {
+      "name": "Oracle数据库用户I/O等待时间",
+      "desc": "等待用户I/O操作完成的时间。"
+    },
+    "oracledb_resource_utilization_rate": {
+      "name": "Oracle数据库资源使用率",
+      "desc": "当前 Oracle 数据库实例中某种资源的使用率，可以反映会话、进程、内存等资源对其资源限定值的使用百分比。当值为负数（-）时，表示该资源没有被限制，即该资源可以无限制地使用。这种情况下，监控该维度的指标的意义不大。"
+    },
+    "oracledb_process_count_gauge": {
+      "name": "Oracle数据库进程数",
+      "desc": "当前活动的数据库进程数"
+    },
+    "oracledb_sessions_value_gauge": {
+      "name": "Oracle数据库会话数",
+      "desc": "数据库当前打开的会话数。维度含义：status：会话状态，例如 ACTIVE, INACTIVE, BLOCKED, KILLED 等等。type：会话类型，例如 BACKGROUND, CDB, PDB, SYS, USER 等等。"
+    },
+    "oracledb_sga_total_gauge": {
+      "name": "Oracle数据库SGA总大小",
+      "desc": "SGA是Oracle数据库实例在内存中分配的一块共享内存区域，用于存储全局数据和信息，以支持数据库实例的运行和访问。本指标用于表示SGA的总内存大小，用于衡量 SGA 的整体资源分配规模。"
+    },
+    "oracledb_sga_free_gauge": {
+      "name": "Oracle数据库SGA可用大小",
+      "desc": "表示 Oracle 数据库 SGA 当前可用的内存大小，反映 SGA 中未被使用的空闲资源量。"
+    },
+    "oracledb_sga_used_percent_gauge": {
+      "name": "Oracle数据库SGA使用率",
+      "desc": "表示 Oracle 数据库 SGA 的内存使用率，用于评估 SGA 资源的利用效率。"
+    },
+    "oracledb_pga_total_gauge": {
+      "name": "Oracle数据库PGA总大小",
+      "desc": "PGA是Oracle数据库实例中每个用户进程或服务器进程独立分配的内存区域，用于存储会话或操作的数据和信息。本指标用于表示PGA的总内存大小，体现 PGA 的整体资源分配规模。"
+    },
+    "oracledb_pga_used_gauge": {
+      "name": "Oracle数据库PGA已使用大小",
+      "desc": "表示 Oracle 数据库 PGA 当前已使用的内存大小，反映 PGA 资源的实际消耗情况。"
+    },
+    "oracledb_pga_used_percent_gauge": {
+      "name": "Oracle数据库PGA使用率",
+      "desc": "表示 Oracle 数据库 PGA 的内存使用率，用于衡量 PGA 资源的利用效率。"
+    },
+    "oracledb_tablespace_bytes_gauge": {
+      "name": "Oracle数据库表已使用容量大小",
+      "desc": "指定表空间中已使用的磁盘空间的总大小。"
+    },
+    "oracledb_tablespace_max_bytes_gauge": {
+      "name": "Oracle数据库表最大容量限制",
+      "desc": "指定表空间的最大磁盘空间限制。"
+    },
+    "oracledb_tablespace_free_gauge": {
+      "name": "Oracle数据库表可用容量大小",
+      "desc": "指定表空间中剩余的磁盘空间的大小。"
+    },
+    "oracledb_tablespace_used_percent_gauge": {
+      "name": "Oracle数据库表空间使用率",
+      "desc": "指定表空间已使用容量的百分比。"
+    },
+    "oracledb_rac_node_gauge": {
+      "name": "Oracle数据库RAC节点数量",
+      "desc": "当前Oracle数据库集群节点数量。"
+    },
+    "process_cpu_seconds_total_counter": {
+      "name": "Oracle数据库监控探针进程CPU秒数总计",
+      "desc": "Oracle数据库监控探针进程已使用的CPU时间总量。"
+    },
+    "process_max_fds_gauge": {
+      "name": "Oracle数据库监控探针进程最大文件描述符数",
+      "desc": "Oracle数据库监控探针进程能够打开的最大文件描述符数。"
+    },
+    "process_open_fds_gauge": {
+      "name": "Oracle数据库监控探针进程打开文件描述符数",
+      "desc": "Oracle数据库监控探针进程当前打开的文件描述符数。"
+    },
+    "process_resident_memory_bytes_gauge": {
+      "name": "Oracle数据库监控探针进程常驻内存大小",
+      "desc": "Oracle数据库监控探针进程当前常驻内存的大小。"
+    },
+    "process_virtual_memory_bytes_gauge": {
+      "name": "Oracle数据库监控探针进程虚拟内存大小",
+      "desc": "Oracle数据库监控探针进程当前虚拟内存的大小。"
+    },
+    "oracledb_exporter_last_scrape_duration_seconds_gauge": {
+      "name": "Oracle数据库监控探针最近一次抓取时长",
+      "desc": "最近一次从Oracle数据库抓取指标所花费的时间。"
+    },
+    "oracledb_exporter_last_scrape_error_gauge": {
+      "name": "Oracle数据库监控探针最近一次抓取状态",
+      "desc": "OracleDB监控探针在最近一次抓取指标时是否出现错误。"
+    },
+    "oracledb_exporter_scrapes_total_counter": {
+      "name": "Oracle数据库监控探针抓取指标总数",
+      "desc": "从OracleDB监控探针启动以来抓取指标的总次数，若进程重启将重新计算。"
+    }
+  },
+  "Minio": {
+    "minio_audit_failed_messages_counter": {
+      "name": "未发送的消息总数",
+      "desc": "统计未发送消息数量，用于发现消息发送故障，保障消息传递完整性。"
+    },
+    "minio_audit_target_queue_length_gauge": {
+      "name": "目标队列中未发送的消息数",
+      "desc": "反映目标队列消息积压情况，帮助优化消息处理流程。"
+    },
+    "minio_audit_total_messages_counter": {
+      "name": "发送的消息总数",
+      "desc": "结合未发送消息数评估发送成功率，衡量消息发送稳定性。"
+    },
+    "minio_audit_delivery_success_rate": {
+      "name": "消息发送成功率",
+      "desc": "发送消息的成功率，用于衡量审计消息发送的可靠性、稳定性。"
+    },
+    "minio_cluster_capacity_usable_free_bytes_gauge": {
+      "name": "集群可使用容量",
+      "desc": "反映实际可用存储资源，便于规划数据存储。"
+    },
+    "minio_cluster_capacity_usable_total_bytes_gauge": {
+      "name": "集群已使用容量",
+      "desc": "统计已用存储量，用于计算存储利用率。"
+    },
+    "minio_cluster_capacity_storage_utilization": {
+      "name": "集群存储容量利用率",
+      "desc": "统计集群存储容量中已使用容量占总容量的百分比，监控存储资源使用情况，评估剩余存储资源。"
+    },
+    "minio_cluster_drive_offline_total_gauge": {
+      "name": "集群中处于脱机状态的驱动器总数",
+      "desc": "统计脱机驱动器数量，排查影响集群性能和数据可用性的问题。"
+    },
+    "minio_cluster_drive_online_total_gauge": {
+      "name": "集群中在线的驱动器总数",
+      "desc": "评估集群可用存储设备数量，保障集群正常运行。"
+    },
+    "minio_cluster_drive_total_gauge": {
+      "name": "集群中的驱动器总数",
+      "desc": "结合在线、脱机数量评估存储设备整体状况。"
+    },
+    "minio_cluster_drive_offline_rate": {
+      "name": "集群驱动器离线率",
+      "desc": "离线驱动器数量与总驱动器数量的比率,衡量存储设备的可靠性和可用性,超过阈值（如 5%）时可能影响数据冗余."
+    },
+    "minio_cluster_nodes_offline_total_gauge": {
+      "name": "集群中处于离线状态的节点数量",
+      "desc": "统计离线节点数，处理影响集群性能和冗余的问题。"
+    },
+    "minio_cluster_nodes_online_total_gauge": {
+      "name": "集群中处于在线状态的节点数量",
+      "desc": "评估集群可用资源，保障服务能力。"
+    },
+    "minio_cluster_nodes_offline_rate": {
+      "name": "集群节点离线率",
+      "desc": "离线节点数量占总节点数量的百分比，反映集群节点的健康状况,用于评估集群节点的稳定性。"
+    },
+    "minio_cluster_write_quorum_gauge": {
+      "name": "集群最大写入确认数",
+      "desc": "保障数据写入一致性和可靠性，影响写入性能。"
+    },
+    "minio_cluster_health_status_gauge": {
+      "name": "集群健康状态",
+      "desc": "综合反映集群健康状况，快速了解运行状态。0 = 不健康，1 = 健康"
+    },
+    "minio_s3_traffic_sent_bytes_rate": {
+      "name": "S3 发送流量速率",
+      "desc": "计算过去 5 分钟内 S3 请求发送数据的平均速率，反映数据上传性能。"
+    },
+    "minio_s3_traffic_received_bytes_rate": {
+      "name": "S3 接收流量速率",
+      "desc": "计算过去 5 分钟内 S3 请求接收数据的平均速率，反映数据下载性能。"
+    },
+    "minio_s3_requests_waiting_total_gauge": {
+      "name": "S3 等待请求总数",
+      "desc": "显示等待处理的 S3 请求数，优化请求处理效率，直接反映系统处理能力是否饱和。"
+    },
+    "minio_s3_requests_total_rate": {
+      "name": "S3 请求速率",
+      "desc": "计算过去 5 分钟内 S3 请求的平均处理速率，反映系统吞吐量以及服务负载和性能基线。"
+    },
+    "minio_s3_requests_errors_total_rate": {
+      "name": "S3 请求错误速率",
+      "desc": "过去 5 分钟内 S3 请求中发生错误的平均速率，反映系统稳定性。"
+    },
+    "minio_s3_requests_rejected_invalid_total_rate": {
+      "name": "S3 无效请求速率",
+      "desc": "过去 5 分钟内因格式或参数错误被拒绝的 S3 请求平均速率，反映客户端请求质量。"
+    },
+    "minio_s3_requests_rejected_auth_total_rate": {
+      "name": "S3 认证失败速率",
+      "desc": "过去 5 分钟内因认证失败被拒绝的 S3 请求平均速率，反映身份验证问题。"
+    },
+    "minio_bucket_usage_object_total_gauge": {
+      "name": "存储桶对象总数",
+      "desc": "统计指定存储桶内的对象数量，用于了解存储桶的数据规模，评估存储桶的使用情况。"
+    },
+    "minio_bucket_usage_total_bytes_gauge": {
+      "name": "存储桶总大小",
+      "desc": "统计指定存储桶所占用的存储空间大小，用于监控存储资源消耗，规划存储容量。"
+    },
+    "minio_bucket_requests_4xx_errors_total_rate": {
+      "name": "存储桶 S3 请求错误总率(4xx)",
+      "desc": "存储桶收到的 S3 请求中客户端错误（如 403/404）过去5分钟中的每秒发生率，反映客户端请求合法性问题的实时频率。"
+    },
+    "minio_bucket_requests_inflight_total_gauge": {
+      "name": "存储桶正在运行的 S3 请求总数",
+      "desc": "统计指定存储桶正在处理的 S3 请求数量，用于监控请求处理进度，优化系统性能。"
+    },
+    "minio_bucket_requests_total_rate": {
+      "name": "存储桶 S3 请求总数速率",
+      "desc": "存储桶收到的 S3 请求总数的每秒增长率，反映存储桶的请求流量强度和业务访问频率。"
+    },
+    "minio_bucket_traffic_received_rate": {
+      "name": "存储桶接收流量速率",
+      "desc": "计算存储桶 5 分钟内平均每秒接收的数据流量，转换为 MB/s 单位，用于监控数据下载或读取的带宽使用情况。"
+    },
+    "minio_node_drive_total_inodes_gauge": {
+      "name": "驱动器 inode 总数",
+      "desc": "统计指定驱动器的 inode 总数，用于衡量驱动器存储文件的能力上限，可评估存储资源规模。"
+    },
+    "minio_node_drive_used_inodes_utilization": {
+      "name": "驱动器inode 使用率",
+      "desc": "统计指定驱动器已使用的 inode 百分比，可了解驱动器的使用程度，辅助存储资源管理。"
+    },
+    "minio_node_drive_reads_per_sec_gauge": {
+      "name": "驱动器每秒读取次数",
+      "desc": "统计指定驱动器每秒的读取操作次数，用于评估驱动器的读取性能，排查读取相关的性能问题。"
+    },
+    "minio_node_drive_reads_kb_per_sec_gauge": {
+      "name": "驱动器每秒读取兆字节数",
+      "desc": "统计指定驱动器每秒读取的数据量（以千字节为单位），直观反映驱动器的读取带宽，帮助优化数据读取策略。"
+    },
+    "minio_node_drive_writes_per_sec_gauge": {
+      "name": "驱动器每秒写入次数",
+      "desc": "统计指定驱动器每秒的写入操作次数，用于评估驱动器的写入性能，分析写入操作对系统的影响。"
+    },
+    "minio_node_drive_writes_kb_per_sec_gauge": {
+      "name": "驱动器上每秒写入的兆字节数",
+      "desc": "统计指定驱动器每秒写入的数据量（以千字节为单位），反映驱动器的写入带宽，有助于优化数据写入效率。"
+    },
+    "minio_node_drive_perc_util_gauge": {
+      "name": "驱动器处于繁忙状态的时间使用率",
+      "desc": "统计指定驱动器处于繁忙状态的时间百分比，用于评估驱动器的负载情况，合理分配存储任务。"
+    },
+    "minio_node_if_rx_bytes_rate": {
+      "name": "每秒接收的数据量",
+      "desc": "统计指定服务器网络接口过去5分钟内,每秒接收多少数据量，用于监控网络流量流入情况，评估网络带宽使用。"
+    },
+    "minio_node_if_rx_errors_rate": {
+      "name": "接收错误率（每秒）",
+      "desc": "统计指定服务器网络接口过去5分钟内,每秒接收数据时出现的错误数量，用于排查网络接收故障，保障网络数据传输质量。"
+    },
+    "minio_node_if_tx_bytes_rate": {
+      "name": "每秒传输的数据量",
+      "desc": "统计指定服务器网络接口过去5分钟内,每秒传输多少数据量用于监控网络流量流出情况，评估网络带宽使用效率。"
+    },
+    "minio_node_if_tx_errors_rate": {
+      "name": "传输错误率（每秒）",
+      "desc": "统计指定服务器网络接口过去5分钟内,每秒传输数据时出现的错误数量，用于排查网络传输故障，提高网络通信可靠性。"
+    },
+    "minio_node_cpu_avg_load1_gauge": {
+      "name": "CPU 一分钟平均负载",
+      "desc": "计算 CPU 过去 1 分钟平均负载，反映等待 CPU 资源的进程数（含运行中与等待进程），数值越大 CPU 越紧张，用于实时监控即时压力、发现性能问题。"
+    },
+    "minio_node_cpu_avg_load5_gauge": {
+      "name": "CPU 五分钟平均负载",
+      "desc": "计算 CPU 过去 5 分钟平均负载，反映等待 CPU 资源的进程数（含运行中与等待进程），用于评估短期负载趋势、辅助性能优化决策。"
+    },
+    "minio_node_cpu_avg_load15_gauge": {
+      "name": "CPU 十五分钟平均负载",
+      "desc": "计算 CPU 过去 15 分钟平均负载，反映等待 CPU 资源的进程数（含运行中与等待进程），用于分析长期负载情况、规划系统资源。"
     }
   }
 }
