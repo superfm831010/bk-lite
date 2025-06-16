@@ -25,7 +25,7 @@ class AlertProcessor:
         self.rule_manager = get_rule_manager()
         self.event_fields = [
             "event_id", "external_id", "item", "received_at", "status", "level", "source__name",
-            "source_id", "title", "description", "resource_id", "resource_type", "resource_name", "value"
+            "source_id", "title", "rule_id", "description", "resource_id", "resource_type", "resource_name", "value"
         ]
         self.now = timezone.now()
         # 定义级别优先级映射（数字越大优先级越高）

@@ -107,6 +107,7 @@ class RuleEngine:
     def __init__(self, window_size: str = "10min"):
         self.window_size = pd.to_timedelta(window_size)  # 事件处理窗口
         self.rules: Dict[str, AlertRule] = {}
+        self.required_fields = ['item', 'resource_id', 'resource_type', 'alert_source', 'rule_id']
 
     def add_rule(self, rule_config: dict):
         try:
@@ -277,8 +278,8 @@ class RuleEngine:
         events = events.copy()
 
         # 确保必要的字段存在
-        required_fields = ['item', 'resource_id', 'resource_type', 'alert_source']
-        missing_fields = [field for field in required_fields if field not in events.columns]
+
+        missing_fields = [field for field in self.required_fields if field not in events.columns]
         if missing_fields:
             logger.warning(f"Missing required fields for grouping: {missing_fields}")
             # 为缺失的字段填充默认值
