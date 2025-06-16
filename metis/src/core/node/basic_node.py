@@ -23,7 +23,8 @@ class BasicNode:
     def prompt_message_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
         if config["configurable"]["graph_request"].system_message_prompt:
             state["messages"].append(
-                SystemMessage(content=config["configurable"]["graph_request"].system_message_prompt)
+                SystemMessage(
+                    content=config["configurable"]["graph_request"].system_message_prompt)
             )
         return state
 
@@ -34,10 +35,12 @@ class BasicNode:
                     if chat.image_data:
                         state['messages'].append(HumanMessage(content=[
                             {"type": "text", "text": "describe the weather in this image"},
-                            {"type": "image_url", "image_url": {"url": chat.image_data}},
+                            {"type": "image_url", "image_url": {
+                                "url": chat.image_data}},
                         ]))
                     else:
-                        state['messages'].append(HumanMessage(content=chat.message))
+                        state['messages'].append(
+                            HumanMessage(content=chat.message))
                 elif chat.event == 'assistant':
                     state['messages'].append(AIMessage(content=chat.message))
         return state
@@ -102,11 +105,13 @@ class BasicNode:
                         """
             selected_knowledge_prompt += f"请找出与用户问题相关的知识库id号,用户的问题是:{config["configurable"]["graph_request"].user_message}"
             selected_km_response = llm.invoke(selected_knowledge_prompt)
-            selected_knowledge_ids = json_repair.loads(selected_km_response.content)
+            selected_knowledge_ids = json_repair.loads(
+                selected_km_response.content)
 
         for rag_search_request in naive_rag_request:
             if len(selected_knowledge_ids) != 0 and rag_search_request.index_name not in selected_knowledge_ids:
-                logger.info(f"智能知识路由判断:[{rag_search_request.index_name}]不适合当前问题,跳过检索")
+                logger.info(
+                    f"智能知识路由判断:[{rag_search_request.index_name}]不适合当前问题,跳过检索")
             elasticsearch_rag = ElasticSearchRag()
             rag_result = elasticsearch_rag.search(rag_search_request)
 
@@ -126,35 +131,32 @@ class BasicNode:
 
             if 'enable_rag_source' in config["configurable"] and config["configurable"]["enable_rag_source"]:
                 rag_message += f"""
-                在回复中,请使用XML格式返回参考资料,并且在每个参考资料的前面加上序号,例如:[1]、[2]、[3]等，指观点引用自哪份材料。
-                在回复我的信息最后进行补充：
+                在回复中,请使用以下格式返回参考资料的引用:
+                    [[1]](ref_id:1|segment_id:1|chunk_id:abc|chunk_number:1|knowledge_id:1|segment_number:1)
+                    [[2]]](ref_id:2|segment_id:2|chunk_id:def|chunk_number:2|knowledge_id:0|segment_number:12)
+
+                引用格式说明:
+                - 使用数字作为引用标识，简洁明了
+                - 使用竖线 | 分隔各个参数
+                - 保持参数顺序一致: ref_id|segment_id|chunk_id|chunk_number|knowledge_id|segment_number
                 
-                Example:
-                    bklite 是一个AI First的知识管理平台[1]，致力于帮助用户更高效地获取和管理知识。
-                    它的协议是MIT[12]协议
-                    ------------------
-                    参考资料:
-                        <result>
-                            <rag>
-                                <ref_id>1</ref_id>
-                                <knowledge_id>1</knowledge_id>
-                                <segment_number>1</segment_number>
-                                <chunk_number>1</chunk_number>
-                                <chunk_id>1</chunk_id>
-                                <segment_id>1</segment_id>
-                                <title>知识标题</title>
-                            </rag>
-                            <rag>
-                                <ref_id>12</ref_id>
-                                <knowledge_id>0</knowledge_id>
-                                <segment_number>13</segment_number>
-                                <chunk_number>1</chunk_number>
-                                <chunk_id>133</chunk_id>
-                                <segment_id>5</segment_id>
-                                <title>知识标题</title>
-                            </rag>                            
-                        </result>
+                在回答内容中的适当位置插入引用链接，格式示例:
+                    bklite 是一个AI First的知识管理平台[[1]](ref_id:1|segment_id:1|chunk_id:abc|chunk_number:1|knowledge_id:1|segment_number:1)，致力于帮助用户更高效地获取和管理知识。
+                    它的协议是MIT[[2]](ref_id:1|segment_id:1|chunk_id:abc|chunk_number:1|knowledge_id:1|segment_number:1)[[2]](ref_id:2|segment_id:2|chunk_id:def|chunk_number:2|knowledge_id:0|segment_number:12)协议
+
+                注意事项:
+                - 每个引用链接都要包含完整的参数信息
+                - 引用文本使用简洁的数字标识，如"1"、"2"等
+                - 在句子中合适的位置插入引用，不要影响阅读体验
                 
+                在回复的最后，请添加一个"参考资料"部分,格式如下:
+                
+                参考资料: 
+                    - [1] 知识标题1
+                    - [2] 知识标题2
+                    - [3] 知识标题3
+                
+                其中数字与正文中的引用标识保持一致，标题为对应参考资料的title字段内容。
             """
 
             if 'enable_rag_strict_mode' in config["configurable"] and config["configurable"]["enable_rag_strict_mode"]:
@@ -167,5 +169,6 @@ class BasicNode:
         return state
 
     def user_message_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
-        state["messages"].append(HumanMessage(content=config["configurable"]["graph_request"].user_message))
+        state["messages"].append(HumanMessage(
+            content=config["configurable"]["graph_request"].user_message))
         return state

@@ -65,12 +65,12 @@ class SystemMgmt(object):
         )
         return return_data
 
-    def verify_token(self, token, client_id):
+    def verify_token(self, token):
         """
         :param token: 用户登录的token
         :param client_id: 当前APP的ID
         """
-        return_data = self.client.run("verify_token", token=token, client_id=client_id)
+        return_data = self.client.run("verify_token", token=token)
         return return_data
 
     def get_group_users(self, group):
@@ -132,13 +132,12 @@ class SystemMgmt(object):
         )
         return return_data
 
-    def get_user_rules(self, app, group_id, username):
+    def get_user_rules(self, group_id, username):
         """
-        :param app: 应用
         :param group_id: 组ID
         :param username: 用户名
         """
-        return_data = self.client.run("get_user_rules", app=app, group_id=group_id, username=username)
+        return_data = self.client.run("get_user_rules", group_id=group_id, username=username)
         return return_data
 
     def get_group_id(self, group_name):

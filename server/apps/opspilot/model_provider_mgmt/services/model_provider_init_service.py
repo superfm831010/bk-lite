@@ -1,6 +1,3 @@
-from rest_framework.authtoken.models import Token
-
-from apps.base.models import User
 from apps.opspilot.model_provider_mgmt.models import LLMSkill
 from apps.opspilot.model_provider_mgmt.services.skill_init_json import SKILL_LIST
 from apps.opspilot.models import (
@@ -17,11 +14,12 @@ from apps.rpc.system_mgmt import SystemMgmt
 
 
 class ModelProviderInitService:
-    def __init__(self, owner: User):
+    def __init__(self, owner):
         self.owner = owner
         self.group_id = self.get_group_id()
 
-    def get_group_id(self):
+    @staticmethod
+    def get_group_id():
         client = SystemMgmt()
         res = client.get_group_id("Default")
         if not res["result"]:
@@ -29,7 +27,7 @@ class ModelProviderInitService:
         return res["data"]
 
     def init(self):
-        if self.owner.username == "admin":
+        if self.owner == "admin":
             RerankProvider.objects.get_or_create(
                 name="bce-reranker-base_v1",
                 rerank_model_type=RerankModelChoices.LANG_SERVE,
@@ -87,8 +85,6 @@ class ModelProviderInitService:
                     },
                 },
             )
-
-        Token.objects.get_or_create(user=self.owner)
 
         OCRProvider.objects.get_or_create(
             name="PaddleOCR",
