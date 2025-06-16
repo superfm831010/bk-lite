@@ -9,6 +9,7 @@ from typing import Dict, Any, List
 
 from django.utils import timezone
 
+from apps.alerts.common.shield import execute_shield_check_for_events
 from apps.alerts.models import AlertSource, Event
 from apps.alerts.common.source_adapter import logger
 from apps.alerts.utils.util import split_list
@@ -84,6 +85,12 @@ class AlertSourceAdapter(ABC):
             for event_batch in bulk_create_events:
                 Event.objects.bulk_create(event_batch, ignore_conflicts=True)  # 跳过唯一性约束
             logger.info(f"Bulk saved {len(events)} events.")
+
+            try:
+                execute_shield_check_for_events([i.event_id for i in events])
+            except Exception as err:
+                import traceback
+                logger.error(f"Shield check failed for events:{traceback.format_exc()}")
 
     def _transform_alert_to_event(self, alert: Dict[str, Any]) -> Event:
         """将单个告警数据转换为Event对象"""

@@ -57,12 +57,14 @@ class EventStatus:
     RESOLVED = "resolved"
     PROCESSING = "processing"
     CLOSED = "closed"
+    SHIELD = "shield"
 
     CHOICES = (
         (PENDING, "待响应"),
         (PROCESSING, "处理中"),
         (RESOLVED, "已处理"),
         (CLOSED, "已关闭"),
+        (SHIELD, "已屏蔽"),
     )
 
 

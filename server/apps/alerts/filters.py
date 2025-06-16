@@ -5,7 +5,7 @@
 from django_filters import FilterSet, CharFilter
 
 from apps.alerts.constants import AlertStatus
-from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment
+from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment, AlertShield
 
 
 class AlertSourceModelFilter(FilterSet):
@@ -115,4 +115,12 @@ class AlertAssignmentModelFilter(FilterSet):
 
     class Meta:
         model = AlertAssignment
+        fields = ["name"]
+
+
+class AlertShieldModelFilter(FilterSet):
+    name = CharFilter(field_name="name", lookup_expr="icontains", label="名称")
+
+    class Meta:
+        model = AlertShield
         fields = ["name"]

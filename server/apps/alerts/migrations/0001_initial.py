@@ -8,7 +8,6 @@ import django.db.models.manager
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -72,7 +71,7 @@ class Migration(migrations.Migration):
                 ("source_name", models.CharField(blank=True, help_text="告警源名称", max_length=100, null=True)),
                 ("fingerprint", models.CharField(db_index=True, help_text="告警指纹", max_length=32)),
             ],
-            options={"db_table": "alerts_alert", "ordering": ["-updated_at"],},
+            options={"db_table": "alerts_alert", "ordering": ["-updated_at"], },
         ),
         migrations.CreateModel(
             name="AlertSource",
@@ -104,7 +103,8 @@ class Migration(migrations.Migration):
                 ("config", models.JSONField(default=dict, help_text="告警源配置")),
                 (
                     "secret",
-                    models.CharField(default=apps.alerts.utils.util.gen_app_secret, max_length=100, verbose_name="密钥"),
+                    models.CharField(default=apps.alerts.utils.util.gen_app_secret, max_length=100,
+                                     verbose_name="密钥"),
                 ),
                 ("logo", models.TextField(blank=True, help_text="告警源logo", null=True)),
                 (
@@ -122,7 +122,7 @@ class Migration(migrations.Migration):
                 ("last_active_time", models.DateTimeField(blank=True, help_text="最近活跃时间", null=True)),
                 ("is_delete", models.BooleanField(db_index=True, default=False, help_text="是否删除")),
             ],
-            managers=[("all_objects", django.db.models.manager.Manager()),],
+            managers=[("all_objects", django.db.models.manager.Manager()), ],
         ),
         migrations.CreateModel(
             name="Event",
@@ -166,7 +166,8 @@ class Migration(migrations.Migration):
                 (
                     "status",
                     models.CharField(
-                        choices=[("pending", "待响应"), ("processing", "处理中"), ("resolved", "已处理"), ("closed", "已关闭")],
+                        choices=[("pending", "待响应"), ("processing", "处理中"), ("resolved", "已处理"),
+                                 ("closed", "已关闭"), ("shield", "已屏蔽")],
                         default="pending",
                         help_text="事件状态",
                         max_length=32,
@@ -182,13 +183,13 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"db_table": "alerts_event", "ordering": ["-received_at"],},
+            options={"db_table": "alerts_event", "ordering": ["-received_at"], },
         ),
         migrations.AddIndex(
             model_name="alertsource",
             index=models.Index(fields=["name", "source_type"], name="alerts_aler_name_8938e7_idx"),
         ),
-        migrations.AddField(model_name="alert", name="events", field=models.ManyToManyField(to="alerts.event"),),
+        migrations.AddField(model_name="alert", name="events", field=models.ManyToManyField(to="alerts.event"), ),
         migrations.AddIndex(
             model_name="event",
             index=models.Index(fields=["source", "received_at"], name="alerts_even_source__4b038c_idx"),

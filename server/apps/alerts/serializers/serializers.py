@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.alerts.constants import AlertStatus
-from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment
+from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment, AlertShield
 
 
 class AlertSourceModelSerializer(serializers.ModelSerializer):
@@ -193,6 +193,22 @@ class AlertAssignmentModelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AlertAssignment
+        fields = "__all__"
+        extra_kwargs = {
+            # 'alert_id': {'read_only': True},
+            # 'status': {'required': True},
+            # 'operator': {'required': True},
+        }
+
+
+class AlertShieldModelSerializer(serializers.ModelSerializer):
+    """
+    Serializer for AlertAssignment model.
+    This serializer is used to assign alerts to users or teams.
+    """
+
+    class Meta:
+        model = AlertShield
         fields = "__all__"
         extra_kwargs = {
             # 'alert_id': {'read_only': True},

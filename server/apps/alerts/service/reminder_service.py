@@ -103,7 +103,8 @@ class ReminderService:
                     now = timezone.now()
                     # 如果下次提醒时间还没到，按新频率重新计算
                     if reminder.next_reminder_time > now:
-                        time_since_last = now - reminder.last_reminder_time if reminder.last_reminder_time else timedelta(0)
+                        time_since_last = now - reminder.last_reminder_time if reminder.last_reminder_time else timedelta(
+                            0)
                         remaining_time = timedelta(minutes=new_frequency) - time_since_last
                         if remaining_time.total_seconds() > 0:
                             reminder.next_reminder_time = now + remaining_time
@@ -141,7 +142,7 @@ class ReminderService:
 
                 try:
                     # 发送提醒通知
-                    if cls._send_reminder_notification(reminder):
+                    if cls._send_reminder_notification(assignment=reminder.assignment, alert=reminder.alert):
                         # 更新提醒记录
                         reminder.reminder_count += 1
                         reminder.last_reminder_time = now
@@ -168,33 +169,33 @@ class ReminderService:
         }
 
     @classmethod
-    def _send_reminder_notification(cls, reminder: AlertReminderTask) -> bool:
+    def _send_reminder_notification(cls, assignment: AlertAssignment, alert: Alert) -> bool:
         """发送提醒通知"""
         try:
-            username_list = reminder.assignment.personnel
+            username_list = assignment.personnel
             if not username_list:
-                logger.warning(f"提醒任务 {reminder.id} 没有配置接收人员，无法发送通知")
+                logger.warning(f"提醒任务 {assignment.id} 没有配置接收人员，无法发送通知")
                 return False
 
-            channel_list = reminder.assignment.notify_channels
+            channel_list = assignment.notify_channels
             if isinstance(channel_list, str):
                 try:
                     channel_list = json.loads(channel_list)
                 except json.JSONDecodeError:
-                    logger.error(f"提醒任务 {reminder.id} 的通知渠道配置错误: {channel_list}")
+                    logger.error(f"提醒任务 {assignment.id} 的通知渠道配置错误: {channel_list}")
                     channel_list = []
 
             if not channel_list:
-                logger.warning(f"提醒任务 {reminder.id} 没有配置通知渠道，无法发送通知")
+                logger.warning(f"提醒任务 {assignment.id} 没有配置通知渠道，无法发送通知")
                 return False
 
-            title = cls.format_title(reminder.alert)
-            content = cls.format_content(reminder.alert)
+            title = cls.format_title(alert)
+            content = cls.format_content(alert)
             for channel in channel_list:
                 sync_notify.delay(username_list, channel, title, content)
 
         except Exception as e:
-            logger.error(f"发送提醒通知失败: reminder_id={reminder.id}, error={str(e)}")
+            logger.error(f"发送提醒通知失败: reminder_id={assignment.id}, error={str(e)}")
             return False
 
     @staticmethod
