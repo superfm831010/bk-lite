@@ -89,6 +89,7 @@ const Asset = () => {
   const [objectId, setObjectId] = useState<React.Key>('');
   const [frequence, setFrequence] = useState<number>(0);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const deleteModalRef = useRef<any>(null);
 
   const childColumns: ColumnItem[] = [
     {
@@ -424,22 +425,48 @@ const Asset = () => {
   };
 
   const showDeleteConfirm = (row: RuleInfo) => {
-    confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+    deleteModalRef.current = confirm({
+      title: t('common.prompt'),
+      content: t('monitor.intergrations.deleteRuleTips'),
       centered: true,
-      onOk() {
-        return new Promise(async (resolve) => {
-          try {
-            await deleteInstanceGroupRule(row.id as number);
-            message.success(t('common.successfullyDeleted'));
-            getRuleList(objectId);
-          } finally {
-            resolve(true);
-          }
-        });
-      },
+      footer: (
+        <div className="flex justify-end mt-[10px]">
+          <Button
+            className="mr-[10px]"
+            type="primary"
+            loading={confirmLoading}
+            onClick={() => deleteRule(row, false)}
+          >
+            {t('monitor.intergrations.deleteRules')}
+          </Button>
+          <Button
+            className="mr-[10px]"
+            type="primary"
+            loading={confirmLoading}
+            onClick={() => deleteRule(row, true)}
+          >
+            {t('monitor.intergrations.deleteGroup')}
+          </Button>
+          <Button onClick={() => deleteModalRef.current?.destroy()}>
+            {t('common.cancel')}
+          </Button>
+        </div>
+      ),
     });
+  };
+
+  const deleteRule = async (row: any, type: boolean) => {
+    setConfirmLoading(true);
+    try {
+      await deleteInstanceGroupRule(row.id as number, {
+        del_instance_org: type,
+      });
+      message.success(t('common.successfullyDeleted'));
+      deleteModalRef.current?.destroy();
+      getRuleList(objectId);
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
   const deleteInstConfirm = async (row: any) => {
