@@ -96,9 +96,11 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
       setSelectedIcon(initialData.icon || undefined);
       setTags(initialData.tags || []);
     } else if (visible) {
-      form.resetFields();
-      setSelectedIcon(undefined);
-      setTags([]);
+      Promise.resolve().then(() => {
+        form.resetFields();
+        setSelectedIcon(undefined);
+        setTags([]);
+      });
     }
   }, [visible, initialData, form]);
 

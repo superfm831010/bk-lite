@@ -53,7 +53,8 @@ export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             if (initialGroup) {
               setSelectedGroupState(initialGroup);
             } else {
-              const defaultGroup = flattenedGroups[0];
+              const filteredGroups = flattenedGroups.filter((group: Group) => group.name !== 'OpsPilotGuest');
+              const defaultGroup = filteredGroups[0];
               setSelectedGroupState(defaultGroup);
               Cookies.set('current_team', defaultGroup.id);
             }
