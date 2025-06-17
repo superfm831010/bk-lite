@@ -73,5 +73,6 @@ class MonitorObjectOrganizationRuleVieSet(viewsets.ModelViewSet):
         ],
     )
     def destroy(self, request, *args, **kwargs):
-        OrganizationRule.del_organization_rule(rule_id=kwargs.get('id'), del_instance_org=request.query_params.get('del_instance_org', False))
+        del_instance_org = request.query_params.get('del_instance_org', "false").lower() in ['true', '1', 'yes']
+        OrganizationRule.del_organization_rule(rule_id=kwargs.get('pk'), del_instance_org=del_instance_org)
         return WebUtils.response_success()
