@@ -24,7 +24,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "percent",
-      "dimensions": ["instance_id"],
+      "dimensions": [
+        {
+          "name": "instance_id",
+          "description": "The unique identifier for the Redis instance."
+        }
+      ],
       "description": "This metric indicates the memory fragmentation ratio of the Redis allocator.",
       "query": "redis_mem_fragmentation_ratio{__$labels__}"
     },
@@ -35,7 +40,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "ops",
-      "dimensions": ["instance_id"],
+      "dimensions": [
+        {
+          "name": "instance_id",
+          "description": "The unique identifier for the Redis instance."
+        }
+      ],
       "description": "This metric indicates the total number of commands processed by Redis per second.",
       "query": "sum(redis_instantaneous_ops_per_sec{__$labels__}) by (instance_id)"
     },
@@ -68,7 +78,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": ["instance_id"],
+      "dimensions": [
+        {
+          "name": "instance_id",
+          "description": "The unique identifier for the Redis instance."
+        }
+      ],
       "description": "This metric indicates the number of currently connected clients to Redis.",
       "query": "redis_clients{__$labels__}"
     },
@@ -79,7 +94,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "s",
-      "dimensions": ["instance_id"],
+      "dimensions": [
+        {
+          "name": "instance_id",
+          "description": "The unique identifier for the Redis instance."
+        }
+      ],
       "description": "Rate of CPU time consumed by Redis in system mode per second. High value (>1) may indicate heavy I/O operations, triggering an alert.",
       "query": "last_over_time(rate(redis_used_cpu_sys{__$labels__}[1s])[5m])"
     },
@@ -101,7 +121,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": ["instance_id"],
+      "dimensions": [
+        {
+          "name": "instance_id",
+          "description": "The unique identifier for the Redis instance."
+        }
+      ],
       "description": "This metric indicates the number of connected replicas to the Redis master.",
       "query": "redis_connected_slaves{__$labels__}"
     },
@@ -112,7 +137,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "s",
-      "dimensions": ["instance_id"],
+      "dimensions": [
+        {
+          "name": "instance_id",
+          "description": "The unique identifier for the Redis instance."
+        }
+      ],
       "description": "This metric indicates the elapsed time since the last successful RDB save operation.",
       "query": "redis_rdb_last_save_time_elapsed{__$labels__}"
     },

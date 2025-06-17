@@ -24,7 +24,20 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "d",
-    "dimensions": ["inst_id", "instance_name", "node_name"],
+    "dimensions": [
+        {
+            "name": "inst_id",
+            "description": "Instance ID"
+        },
+        {
+            "name": "instance_name",
+            "description": "Instance Name"
+        },
+        {
+            "name": "node_name",
+            "description": "Node Name"
+        }
+    ],
     "description": "The duration for which the Oracle database has been running.",
     "query": "oracledb_uptime_seconds_gauge{__$labels__}/60/60/24"
   },
@@ -167,7 +180,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "percent",
-    "dimensions": ["resource_name"],
+    "dimensions": [
+      {
+        "name": "resource_name",
+        "description": "Resource Name"
+      }
+    ],
     "description": "The utilization rate of a resource in the current Oracle DB instance, which reflects the percentage of resources such as sessions, processes, memory, and so on that resource limits are used. If the value is negative（-）, the resource is not restricted, that is, the resource can be used indefinitely. In this case, it doesn't make much sense to monitor metrics for that dimension.",
     "query": "clamp_min(oracledb_resource_current_utilization_gauge{__$labels__}/oracledb_resource_limit_value_gauge{__$labels__}*100, -1)"
   },
@@ -189,7 +207,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["status", "type"],
+    "dimensions": [
+        {
+            "name": "status",
+            "description": "Session status, such as ACTION, INACTIVE, BLOCKED, KILLED, etc."
+        },
+        {
+            "name": "type",
+            "description": "Session type, such as Backend, CDB, PDB, SYS, USER, etc."
+        }
+    ],
     "description": "The current number of open sessions in the database. Dimension meaning: Status: Session status, such as ACTION, INACTIVE, BLOCKED, KILLED, etc. Type: Session type, such as Backend, CDB, PDB, SYS, USER, etc.",
     "query": "oracledb_sessions_value_gauge{__$labels__}"
   },
@@ -266,7 +293,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "mebibytes",
-    "dimensions": ["tablespace", "type"],
+    "dimensions": [
+        {
+            "name": "tablespace",
+            "description": "Tablespace Name"
+        },
+        {
+            "name": "type",
+            "description": "Tablespace Type, such as SYSTEM, UNDO, TEMP, etc."
+        }
+    ],
     "description": "The total size of the used disk space in the specified tablespace.",
     "query": "oracledb_tablespace_bytes_gauge{__$labels__}/1024/1024"
   },
@@ -277,7 +313,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "mebibytes",
-    "dimensions": ["tablespace", "type"],
+    "dimensions": [
+        {
+            "name": "tablespace",
+            "description": "Tablespace Name"
+        },
+        {
+            "name": "type",
+            "description": "Tablespace Type, such as SYSTEM, UNDO, TEMP, etc."
+        }
+    ],
     "description": "The maximum disk space limit of the specified tablespace.",
     "query": "oracledb_tablespace_max_bytes_gauge{__$labels__}/1024/1024"
   },
@@ -288,7 +333,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "mebibytes",
-    "dimensions": ["tablespace", "type"],
+    "dimensions": [
+        {
+            "name": "tablespace",
+            "description": "Tablespace Name"
+        },
+        {
+            "name": "type",
+            "description": "Tablespace Type, such as SYSTEM, UNDO, TEMP, etc."
+        }
+    ],
     "description": "The size of the remaining disk space in the specified tablespace.",
     "query": "oracledb_tablespace_free_gauge{__$labels__}/1024/1024"
   },
@@ -299,7 +353,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "percent",
-    "dimensions": ["tablespace", "type"],
+    "dimensions": [
+        {
+            "name": "tablespace",
+            "description": "Tablespace Name"
+        },
+        {
+            "name": "type",
+            "description": "Tablespace Type, such as SYSTEM, UNDO, TEMP, etc."
+        }
+    ],
     "description": "The percentage of the used capacity of the specified tablespace.",
     "query": "oracledb_tablespace_used_percent_gauge{__$labels__}"
   },
