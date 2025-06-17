@@ -3,8 +3,10 @@ import logging
 from celery import shared_task
 
 from apps.monitor.constants import MONITOR_OBJS
-from apps.monitor.models.monitor_object import MonitorInstanceGroupingRule, MonitorInstanceOrganization, MonitorObject, \
+from apps.monitor.models import Metric
+from apps.monitor.models.monitor_object import MonitorObjectOrganizationRule, MonitorInstanceOrganization, MonitorObject, \
     MonitorInstance
+from apps.monitor.tasks.task_utils.metric_query import format_to_vm_filter
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
 
 logger = logging.getLogger("app")
@@ -123,9 +125,23 @@ class SyncInstance:
 
 class RuleGrouping:
     def __init__(self):
-        self.rules = MonitorInstanceGroupingRule.objects.select_related("monitor_object")
+        self.rules = MonitorObjectOrganizationRule.objects.select_related("monitor_object")
 
-    def get_asso_by_condition_rule(self, rule):
+    @staticmethod
+    def get_query(rule):
+        metric = Metric.objects.filter(id=rule["metric_id"]).first()
+        query = metric.query
+        # 纬度条件
+        vm_filter_str = format_to_vm_filter(rule.get("filter", []))
+        vm_filter_str = f"{vm_filter_str}" if vm_filter_str else ""
+        # 去掉label尾部多余的逗号
+        if vm_filter_str.endswith(","):
+            vm_filter_str = vm_filter_str[:-1]
+        query = query.replace("__$labels__", vm_filter_str)
+        return query
+
+    @staticmethod
+    def get_asso_by_condition_rule(rule):
         """根据条件类型规则获取关联信息"""
         obj_metric_map = {i["name"]: i for i in MONITOR_OBJS}
         obj_metric_map = obj_metric_map.get(rule.monitor_object.name)
@@ -133,7 +149,9 @@ class RuleGrouping:
         if not obj_metric_map:
             raise ValueError("Monitor object default metric does not exist")
         asso_list = []
-        metrics = VictoriaMetricsAPI().query(rule.grouping_rules["query"])
+        # 获取query
+        query = RuleGrouping.get_query(rule.rule)
+        metrics = VictoriaMetricsAPI().query(query)
         for metric_info in metrics.get("data", {}).get("result", []):
             instance_id = str(tuple([metric_info["metric"].get(i) for i in obj_metric_map["instance_id_keys"]]))
             if instance_id not in obj_instance_id_set:
@@ -157,12 +175,13 @@ class RuleGrouping:
         """更新监控实例分组"""
         monitor_inst_asso_set = set()
         for rule in self.rules:
-            if rule.type == MonitorInstanceGroupingRule.CONDITION:
-                asso_list = self.get_asso_by_condition_rule(rule)
-            elif rule.type == MonitorInstanceGroupingRule.SELECT:
-                asso_list = self.get_asso_by_select_rule(rule)
-            else:
-                continue
+            # if rule.type == MonitorObjectOrganizationRule.CONDITION:
+            #     asso_list = self.get_asso_by_condition_rule(rule)
+            # elif rule.type == MonitorObjectOrganizationRule.SELECT:
+            #     asso_list = self.get_asso_by_select_rule(rule)
+            # else:
+            #     continue
+            asso_list = RuleGrouping.get_asso_by_condition_rule(rule)
             for instance_id, organization in asso_list:
                 monitor_inst_asso_set.add((instance_id, organization))
 

@@ -2,11 +2,12 @@ import ast
 import uuid
 from collections import defaultdict
 
+from django.db import transaction
 from django.db.models import Prefetch
 
 from apps.monitor.constants import MONITOR_OBJS, OBJ_ORDER
 from apps.monitor.models.monitor_metrics import Metric
-from apps.monitor.models.monitor_object import MonitorInstance, MonitorObject
+from apps.monitor.models.monitor_object import MonitorInstance, MonitorObject, MonitorInstanceOrganization
 from apps.monitor.models.setting import Setting
 from apps.monitor.utils.instance import calculation_status
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
@@ -203,3 +204,52 @@ class MonitorObjectService:
         instance.monitorinstanceorganization_set.all().delete()
         for org in organizations:
             instance.monitorinstanceorganization_set.create(organization=org)
+
+
+    @staticmethod
+    def remove_instances_organizations(instance_ids, organizations):
+        """删除监控对象实例组织"""
+        if not instance_ids or not organizations:
+            return
+
+        MonitorInstanceOrganization.objects.filter(
+            monitor_instance_id__in=instance_ids,
+            organization__in=organizations
+        ).delete()
+
+    @staticmethod
+    def add_instances_organizations(instance_ids, organizations):
+        """添加监控对象实例组织"""
+        if not instance_ids or not organizations:
+            return
+
+        creates = []
+        for instance_id in instance_ids:
+            for org in organizations:
+                creates.append(MonitorInstanceOrganization(
+                    monitor_instance_id=instance_id,
+                    organization=org
+                ))
+        MonitorInstanceOrganization.objects.bulk_create(creates, ignore_conflicts=True)
+
+    @staticmethod
+    def set_instances_organizations(instance_ids, organizations):
+        """设置监控对象实例组织"""
+        if not instance_ids or not organizations:
+            return
+
+        with transaction.atomic():
+            # 删除旧的组织关联
+            MonitorInstanceOrganization.objects.filter(
+                monitor_instance_id__in=instance_ids
+            ).delete()
+
+            # 添加新的组织关联
+            creates = []
+            for instance_id in instance_ids:
+                for org in organizations:
+                    creates.append(MonitorInstanceOrganization(
+                        monitor_instance_id=instance_id,
+                        organization=org
+                    ))
+            MonitorInstanceOrganization.objects.bulk_create(creates, ignore_conflicts=True)
