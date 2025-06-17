@@ -43,6 +43,9 @@ INSTALL_APPS=${INSTALL_APPS:-""}
 # 去除空白字符
 INSTALL_APPS=$(echo "$INSTALL_APPS" | tr -d ' ')
 
+# 检查是否包含 opspilot 模块
+opspilot_installed=false
+
 # 如果 INSTALL_APPS 为空，执行所有初始化
 if [ -z "$INSTALL_APPS" ]; then
     init_system_mgmt
@@ -50,6 +53,7 @@ if [ -z "$INSTALL_APPS" ]; then
     init_monitor
     init_node_mgmt
     init_opspilot
+    opspilot_installed=true
 else
     # 按逗号分割 INSTALL_APPS
     IFS=',' read -ra APPS <<< "$INSTALL_APPS"
@@ -73,12 +77,19 @@ else
                 ;;
             "opspilot")
                 init_opspilot
+                opspilot_installed=true
                 ;;
             *)
                 echo "未知模块: $app"
                 ;;
         esac
     done
+fi
+
+# 如果没有安装 opspilot 模块，删除 consumer.conf 文件
+if [ "$opspilot_installed" = false ]; then
+    echo "未安装 opspilot 模块，删除 consumer.conf 配置文件..."
+    rm -f /etc/supervisor/conf.d/consumer.conf
 fi
 
 supervisord -n
