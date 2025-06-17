@@ -48,16 +48,16 @@ def receiver_data(request):
         if not events:
             return JsonResponse({"status": "error", "message": "Missing events."}, status=400)
 
-        alert_source = AlertSource.objects.filter(source_id=source_id, source_type=source_type).first()
-        if not alert_source:
+        event_source = AlertSource.objects.filter(source_id=source_id, source_type=source_type).first()
+        if not event_source:
             return JsonResponse({"status": "error", "message": "Invalid source_id or source_type."}, status=400)
 
         if not secret:
             return JsonResponse({"status": "error", "message": "Missing secret."}, status=400)
 
         # 对接到
-        adapter_class = AlertSourceAdapterFactory.get_adapter(alert_source)
-        adapter = adapter_class(alert_source=alert_source, secret=secret, events=events)
+        adapter_class = AlertSourceAdapterFactory.get_adapter(event_source)
+        adapter = adapter_class(alert_source=event_source, secret=secret, events=events)
 
         # 验证密钥
         if not adapter.authenticate():

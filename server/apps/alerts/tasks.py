@@ -78,3 +78,19 @@ def sync_notify(username_list, channel, title, content):
 
     notify = Notify(username_list=username_list, channel=channel, title=title, content=content)
     return notify.notify()
+
+
+@shared_task
+def sync_shield(event_list):
+    """
+    异步屏蔽事件
+    """
+    logger.info("== 开始执行屏蔽事件任务 ==")
+    try:
+        from apps.alerts.common.shield import execute_shield_check_for_events
+        result = execute_shield_check_for_events(event_list)
+        logger.info(f"== 屏蔽事件任务完成 == 处理了{len(event_list)}条事件")
+        return result
+    except Exception as e:
+        logger.error(f"屏蔽事件任务失败: {str(e)}")
+        return {"result": False, "error": str(e)}

@@ -10,16 +10,10 @@ from typing import Dict, Any, List
 from django.utils import timezone
 
 from apps.alerts.common.shield import execute_shield_check_for_events
-from apps.alerts.models import AlertSource, Event
+from apps.alerts.constants import LevelType
+from apps.alerts.models import AlertSource, Event, Level
 from apps.alerts.common.source_adapter import logger
 from apps.alerts.utils.util import split_list
-
-
-class AuthenticationSourceError(Exception):
-    """自定义认证异常"""
-
-    def __init__(self, msg):
-        self.message = msg
 
 
 class AlertSourceAdapter(ABC):
@@ -31,6 +25,18 @@ class AlertSourceAdapter(ABC):
         self.secret = secret
         self.events = events
         self.mapping = self.alert_source.config.get("event_fields_mapping", {})
+        self.unique_fields = ["title", "start_time"]
+        self.info_level, self.levels = self.get_event_level()  # 默认级别为最低级别
+
+    @staticmethod
+    def get_event_level() -> tuple:
+        """获取事件级别"""
+        instance = list(
+            Level.objects.filter(level_type=LevelType.EVENT).order_by("level_id").values_list(
+                "level_id", flat=True)
+        )
+
+        return str(max(instance)), [str(i) for i in instance]
 
     @abstractmethod
     def authenticate(self, *args, **kwargs) -> bool:
@@ -42,14 +48,29 @@ class AlertSourceAdapter(ABC):
         """从告警源获取告警数据"""
         pass
 
-    def mapping_fields_to_event(self, alert: Dict[str, Any]) -> Dict[str, Any]:
+    def mapping_fields_to_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
         """将告警字段映射到事件字段"""
         result = {}
         for key, field in self.mapping.items():
-            _value = alert.get(field, None)
-            if _value is None:
-                continue
-            if key == "start_time" or key == "end_time":
+            _value = event.get(field, None)
+            if key in self.unique_fields:
+                # 如果是唯一字段但是没有传递 丢弃
+                if not _value:
+                    return {}
+            elif key == "level":
+                # 如果是级别字段没有传递默认给 info
+                if not _value or _value not in self.levels:
+                    _value = self.info_level
+            else:
+                if not _value:
+                    # 去元数据里找
+                    label = event.get("labels", {})
+                    _value = label.get(field, None)
+                    if not _value:
+                        # 如果元数据里也没有，直接跳过
+                        continue
+
+            if _value and key == "start_time" or key == "end_time":
                 _value = self.timestamp_to_datetime(_value)
 
             if key == "value":
@@ -88,9 +109,9 @@ class AlertSourceAdapter(ABC):
             logger.info(f"Bulk saved {len(events)} events.")
             return bulk_create_events
 
-    def _transform_alert_to_event(self, alert: Dict[str, Any]) -> Event:
+    def _transform_alert_to_event(self, add_event: Dict[str, Any]) -> Event:
         """将单个告警数据转换为Event对象"""
-        data = self.mapping_fields_to_event(alert)
+        data = self.mapping_fields_to_event(add_event)
         event = Event(**data)
         return event
 
@@ -98,9 +119,13 @@ class AlertSourceAdapter(ABC):
     def timestamp_to_datetime(timestamp: str) -> datetime:
         """将时间戳转换为datetime对象"""
         # 先转为 naive datetime timestamp 微妙
-        dt = datetime.datetime.fromtimestamp(int(timestamp) / 1000 if len(timestamp) == 13 else int(timestamp))
-        # 转为 aware datetime（带时区）
-        return timezone.make_aware(dt, timezone.get_current_timezone())
+        try:
+            dt = datetime.datetime.fromtimestamp(int(timestamp) / 1000 if len(timestamp) == 13 else int(timestamp))
+            # 转为 aware datetime（带时区）
+            return timezone.make_aware(dt, timezone.get_current_timezone())
+        except Exception as e:
+            logger.error(f"Failed to convert timestamp {timestamp} to datetime: {e}")
+            return timezone.now()
 
     @staticmethod
     def event_operator(events_list):

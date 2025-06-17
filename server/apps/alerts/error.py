@@ -3,6 +3,13 @@
 # @Time: 2025/6/17 14:27
 # @Author: windyzhao
 
+class AuthenticationSourceError(Exception):
+    """自定义认证异常"""
+
+    def __init__(self, msg):
+        self.message = msg
+
+
 class ShieldNotFoundError(Exception):
     """自定义异常：没有活跃的屏蔽策略"""
 

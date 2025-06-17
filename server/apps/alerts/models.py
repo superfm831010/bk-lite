@@ -65,7 +65,7 @@ class Event(models.Model):
     level = models.CharField(max_length=32, db_index=True, help_text="级别")
     start_time = models.DateTimeField(db_index=True, help_text="事件开始时间")
     end_time = models.DateTimeField(null=True, blank=True, db_index=True, help_text="事件结束时间")
-    labels = JSONField(default=dict, help_text="事件标签")
+    labels = JSONField(default=dict, help_text="事件元数据")
     action = models.CharField(max_length=32, choices=EventAction.CHOICES, default=EventAction.CREATED,
                               help_text="事件动作")
     rule_id = models.CharField(max_length=100, null=True, blank=True, help_text="触发该事件的规则ID")
@@ -79,7 +79,7 @@ class Event(models.Model):
     status = models.CharField(max_length=32, choices=EventStatus.CHOICES, default=EventStatus.PENDING,
                               help_text="事件状态")
     assignee = JSONField(default=list, blank=True, help_text="事件责任人")
-    note = models.TextField(null=True, blank=True, help_text="事件备注")
+    # note = models.TextField(null=True, blank=True, help_text="事件备注")
     value = models.FloatField(blank=True, null=True, verbose_name='事件值')
 
     class Meta:

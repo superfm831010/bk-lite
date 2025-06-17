@@ -5,7 +5,8 @@
 from abc import ABC
 from typing import Dict, Any, List
 
-from apps.alerts.common.source_adapter.base import AlertSourceAdapter, AuthenticationSourceError
+from apps.alerts.common.source_adapter.base import AlertSourceAdapter
+from apps.alerts.error import AuthenticationSourceError
 
 
 class RestFulAdapter(AlertSourceAdapter, ABC):

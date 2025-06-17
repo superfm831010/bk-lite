@@ -359,7 +359,7 @@ class EventShieldOperator(object):
                 current_weekday = str(current_time.weekday() + 1)  # Monday is 1
 
                 # 如果不是指定的周几，直接返回False
-                if current_weekday not in week_day:
+                if int(current_weekday) not in week_day:
                     return False
 
                 # 检查时间范围
@@ -385,7 +385,7 @@ class EventShieldOperator(object):
                 current_day = str(current_time.day)
 
                 # 如果不是指定的日期，直接返回False
-                if current_day not in month_day:
+                if int(current_day) not in month_day:
                     return False
 
                 # 检查时间范围

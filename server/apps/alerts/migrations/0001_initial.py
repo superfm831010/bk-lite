@@ -143,7 +143,7 @@ class Migration(migrations.Migration):
                 ),
                 ("start_time", models.DateTimeField(db_index=True, help_text="事件开始时间")),
                 ("end_time", models.DateTimeField(blank=True, db_index=True, help_text="事件结束时间", null=True)),
-                ("labels", models.JSONField(default=dict, help_text="事件标签")),
+                ("labels", models.JSONField(default=dict, help_text="事件元数据")),
                 (
                     "action",
                     models.CharField(
@@ -174,7 +174,6 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("assignee", models.JSONField(blank=True, default=list, help_text="事件责任人")),
-                ("note", models.TextField(blank=True, help_text="事件备注", null=True)),
                 ("value", models.FloatField(blank=True, null=True, verbose_name="事件值")),
                 (
                     "source",
