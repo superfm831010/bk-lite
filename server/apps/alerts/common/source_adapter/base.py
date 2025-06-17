@@ -29,7 +29,7 @@ class AlertSourceAdapter(ABC):
         self.alert_source = alert_source
         self.config = alert_source.config
         self.secret = secret
-        self.alerts = events
+        self.events = events
         self.mapping = self.alert_source.config.get("event_fields_mapping", {})
 
     @abstractmethod
@@ -59,18 +59,18 @@ class AlertSourceAdapter(ABC):
 
         return result
 
-    def create_events(self, alerts):
+    def create_events(self, add_events):
         """将原始告警数据转换为Event对象"""
         events = []
-        for alert in alerts:
+        for add_event in add_events:
             try:
-                event = self._transform_alert_to_event(alert)
-                self.add_base_fields(event, alert)
+                event = self._transform_alert_to_event(add_event)
+                self.add_base_fields(event, add_event)
                 events.append(event)
             except Exception as e:
-                logger.error(f"Failed to transform alert: {alert}, error: {e}")
-        self.bulk_save_events(events)
-        return event
+                logger.error(f"Failed to transform alert: {add_event}, error: {e}")
+        bulk_events = self.bulk_save_events(events)
+        return bulk_events
 
     def add_base_fields(self, event: Event, alert: Dict[str, Any]):
         """添加基础字段"""
@@ -86,6 +86,7 @@ class AlertSourceAdapter(ABC):
             for event_batch in bulk_create_events:
                 Event.objects.bulk_create(event_batch, ignore_conflicts=True)  # 跳过唯一性约束
             logger.info(f"Bulk saved {len(events)} events.")
+            return bulk_create_events
 
     def _transform_alert_to_event(self, alert: Dict[str, Any]) -> Event:
         """将单个告警数据转换为Event对象"""
@@ -102,22 +103,23 @@ class AlertSourceAdapter(ABC):
         return timezone.make_aware(dt, timezone.get_current_timezone())
 
     @staticmethod
-    def event_operator(events):
+    def event_operator(events_list):
         """
         event的自动屏蔽
         """
-        try:
-            execute_shield_check_for_events([i.event_id for i in events])
-        except Exception as err:
-            import traceback
-            logger.error(f"Shield check failed for events:{traceback.format_exc()}")
+        for event_list in events_list:
+            try:
+                execute_shield_check_for_events([i.event_id for i in event_list])
+            except Exception as err:
+                import traceback
+                logger.error(f"Shield check failed for events:{traceback.format_exc()}")
 
-    def main(self, alerts=None):
+    def main(self, events=None):
         """使适配器实例可调用"""
-        if not alerts:
-            alerts = self.alerts
-        events = self.create_events(alerts)
-        self.event_operator(events)
+        if not events:
+            events = self.events
+        bulk_events = self.create_events(events)
+        self.event_operator(bulk_events)
 
 
 class AlertSourceAdapterFactory:

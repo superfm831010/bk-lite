@@ -11,17 +11,10 @@ from django.db.models import Q
 from django.utils import timezone
 from django.db import transaction
 
+from apps.alerts.error import ShieldNotFoundError, EventNotFoundError
 from apps.alerts.models import AlertShield, Event
 from apps.alerts.constants import AlertShieldMatchType, EventStatus
 from apps.core.logger import logger
-
-
-class NoShieldsError(Exception):
-    """自定义异常：没有活跃的屏蔽策略"""
-
-    def __init__(self, message="No active shields found"):
-        self.message = message
-        super().__init__(self.message)
 
 
 class EventShieldOperator(object):
@@ -33,17 +26,19 @@ class EventShieldOperator(object):
     def __init__(self, event_id_list: List[str]):
         self.active_shields = self.get_shields()
         if not self.active_shields:
-            raise NoShieldsError()
-
+            raise ShieldNotFoundError()
+        self.event_received_at = None
         self.event_id_list = event_id_list
         self.events = self.get_event_map()
+        if not self.events:
+            raise EventNotFoundError()
         # 字段映射到模型字段
         self.field_mapping = {
-            "source_id": "source_name",
+            "source_id": "source__source_id",
             "level_id": "level",
             "resource_type": "resource_type",
             "resource_id": "resource_id",
-            "content": "content",
+            "content": "description",
             "title": "title",
             "event_id": "event_id"
         }
@@ -52,6 +47,7 @@ class EventShieldOperator(object):
         """获取事件实例映射"""
         result = {}
         events = Event.objects.filter(event_id__in=self.event_id_list)
+        self.event_received_at = events[0].received_at if events else timezone.now()
         for event in events:
             result[event.id] = event
         return result
@@ -127,7 +123,6 @@ class EventShieldOperator(object):
         """
 
         time_matched_shields = []
-
         for shield in self.active_shields:
             if self._check_time_range(shield.suppression_time):
                 time_matched_shields.append(shield)
@@ -322,7 +317,8 @@ class EventShieldOperator(object):
             return True
 
         time_type = suppression_time.get("type", "one")
-        current_time = timezone.now()
+        # current_time = timezone.now()
+        current_time = self.event_received_at  # 使用事件接收时间作为当前时间
 
         try:
             if time_type == "one":
@@ -447,12 +443,20 @@ def execute_shield_check_for_events(event_ids: List[str]) -> Dict[str, Any]:
         }
     try:
         operator = EventShieldOperator(event_ids)
-    except NoShieldsError:
+    except ShieldNotFoundError:
         logger.warning("No active shields found, skipping shield check")
         return {
             "total_events": len(event_ids),
             "shielded_events": 0,
             "unshielded_events": len(event_ids),
+            "shield_results": []
+        }
+    except EventNotFoundError:
+        logger.warning("No events found for shielding, skipping shield check")
+        return {
+            "total_events": 0,
+            "shielded_events": 0,
+            "unshielded_events": 0,
             "shield_results": []
         }
     result = operator.execute_shield_check()

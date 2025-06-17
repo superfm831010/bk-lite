@@ -9,6 +9,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.db import transaction
 
+from apps.alerts.error import AlertNotFoundError
 from apps.alerts.models import Alert, AlertAssignment
 from apps.alerts.constants import AlertStatus, AlertAssignmentMatchType
 from apps.alerts.service.alter_operator import AlertOperator
@@ -58,6 +59,8 @@ class AlertAssignmentOperator:
     def __init__(self, alert_id_list: List[str]):
         self.alert_id_list = alert_id_list
         self.alerts = self.get_alert_map()
+        if not self.alerts:
+            raise AlertNotFoundError("No alerts found for the provided alert_id_list")
         # 字段映射到模型字段
         self.field_mapping = {
             "source_id": "source_name",
@@ -93,8 +96,8 @@ class AlertAssignmentOperator:
                 "assignment_results": []
             }
 
-        # 获取所有活跃的分派策略，并预先过滤时间范围
-        active_assignments = self._get_time_matched_assignments()
+        # 获取所有活跃的分派策略
+        active_assignments = AlertAssignment.objects.filter(is_active=True).order_by('created_at')
 
         results = {
             "total_alerts": len(self.alerts),
@@ -109,7 +112,7 @@ class AlertAssignmentOperator:
         # 按分派策略批量处理告警
         for assignment in active_assignments:
             try:
-                # 批量查找匹配该分派策略的告警（排除已分派的）
+                # 批量查找匹配该分派策略的告警（包含时间范围和内容过滤，排除已分派的）
                 matched_alert_ids = self._batch_find_matching_alerts(assignment, assigned_alert_ids)
 
                 if not matched_alert_ids:
@@ -134,24 +137,6 @@ class AlertAssignmentOperator:
         logger.info(f"Assignment completed: {results}")
         return results
 
-    def _get_time_matched_assignments(self) -> List[AlertAssignment]:
-        """
-        获取时间范围匹配的分派策略列表
-        
-        Returns:
-            时间范围内的分派策略列表
-        """
-        active_assignments = AlertAssignment.objects.filter(is_active=True).order_by('created_at')
-        time_matched_assignments = []
-
-        for assignment in active_assignments:
-            if self._check_time_range(assignment.config):
-                time_matched_assignments.append(assignment)
-            else:
-                logger.debug(f"Assignment {assignment.id} time range not matched, skipping")
-
-        return time_matched_assignments
-
     def _batch_find_matching_alerts(self, assignment: AlertAssignment, excluded_ids: set = None) -> List[int]:
         """
         批量查找匹配指定分派策略的告警ID列表
@@ -173,13 +158,26 @@ class AlertAssignmentOperator:
         if excluded_ids:
             base_queryset = base_queryset.exclude(id__in=excluded_ids)
 
+        # 首先按照Alert的created_at时间过滤符合分派策略时间范围的告警
+        time_matched_alert_ids = []
+        for alert in base_queryset:
+            if self._check_time_range(assignment.config, alert.created_at):
+                time_matched_alert_ids.append(alert.id)
+
+        if not time_matched_alert_ids:
+            logger.debug(f"No alerts match time range for assignment {assignment.id}")
+            return []
+
+        # 重新构建查询集，只包含时间范围匹配的告警
+        time_filtered_queryset = Alert.objects.filter(id__in=time_matched_alert_ids)
+
         if assignment.match_type == AlertAssignmentMatchType.ALL:
-            # 全部匹配，返回所有未分派的告警
-            return list(base_queryset.values_list('id', flat=True))
+            # 全部匹配，返回所有时间范围匹配且未分派的告警
+            return time_matched_alert_ids
 
         elif assignment.match_type == AlertAssignmentMatchType.FILTER:
             # 过滤匹配，使用ORM查询
-            return self._orm_filter_alerts(base_queryset, assignment.match_rules or [])
+            return self._orm_filter_alerts(time_filtered_queryset, assignment.match_rules or [])
 
         return []
 
@@ -345,12 +343,13 @@ class AlertAssignmentOperator:
 
         return results
 
-    def _check_time_range(self, config: Dict[str, Any]) -> bool:
+    def _check_time_range(self, config: Dict[str, Any], alert_created_at: datetime = None) -> bool:
         """
-        检查当前时间是否在配置的时间范围内
+        检查指定时间（默认当前时间或Alert的created_at）是否在配置的时间范围内
 
         Args:
             config: 配置信息
+            alert_created_at: Alert的创建时间，如果为None则使用当前时间
 
         Returns:
             bool: 是否在时间范围内
@@ -359,7 +358,7 @@ class AlertAssignmentOperator:
             return True
 
         time_type = config.get("type", "one")
-        current_time = timezone.now()
+        check_time = alert_created_at if alert_created_at else timezone.now()
 
         try:
             if time_type == "one":
@@ -379,7 +378,7 @@ class AlertAssignmentOperator:
                 start_time = timezone.make_aware(start_time)
                 end_time = timezone.make_aware(end_time)
 
-                return start_time <= current_time <= end_time
+                return start_time <= check_time <= end_time
 
             elif time_type == "day":
                 # 每日时间范围
@@ -391,13 +390,13 @@ class AlertAssignmentOperator:
                     logger.warning("Day-time range missing start_time or end_time")
                     return False
 
-                current_time_str = current_time.strftime("%H:%M:%S")
-                return start_time_str <= current_time_str <= end_time_str
+                check_time_str = check_time.strftime("%H:%M:%S")
+                return start_time_str <= check_time_str <= end_time_str
 
             elif time_type == "week":
                 # 每周时间范围：先检查是否是指定的周几，再检查时间范围
                 week_day = config.get("week_month")
-                current_weekday = str(current_time.weekday() + 1)  # Monday is 1
+                current_weekday = str(check_time.weekday() + 1)  # Monday is 1
 
                 # 如果不是指定的周几，直接返回False
                 if current_weekday not in week_day:
@@ -417,13 +416,13 @@ class AlertAssignmentOperator:
                 if len(end_time_str) > 8:  # 包含日期的格式
                     end_time_str = end_time_str.split(" ")[1] if " " in end_time_str else end_time_str[-8:]
 
-                current_time_str = current_time.strftime("%H:%M:%S")
-                return start_time_str <= current_time_str <= end_time_str
+                check_time_str = check_time.strftime("%H:%M:%S")
+                return start_time_str <= check_time_str <= end_time_str
 
             elif time_type == "month":
                 # 每月时间范围：先检查是否是指定的日期，再检查时间范围
                 month_day = config.get("week_month")
-                current_day = str(current_time.day)
+                current_day = str(check_time.day)
 
                 # 如果不是指定的日期，直接返回False
                 if current_day not in month_day:
@@ -443,8 +442,8 @@ class AlertAssignmentOperator:
                 if len(end_time_str) > 8:  # 包含日期的格式
                     end_time_str = end_time_str.split(" ")[1] if " " in end_time_str else end_time_str[-8:]
 
-                current_time_str = current_time.strftime("%H:%M:%S")
-                return start_time_str <= current_time_str <= end_time_str
+                check_time_str = check_time.strftime("%H:%M:%S")
+                return start_time_str <= check_time_str <= end_time_str
 
         except ValueError as e:
             logger.error(f"Error parsing time format: {str(e)}")
