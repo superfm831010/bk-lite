@@ -22,9 +22,10 @@ export interface MetricInfo {
 export interface RuleInfo {
   type?: string;
   name?: string;
-  grouping_rules?: GroupingRules;
+  rule?: GroupingRules;
   organizations?: string[];
   monitor_object?: number;
+  metric?: number;
   id?: number;
 }
 
@@ -43,8 +44,9 @@ export interface InstanceInfo {
 }
 
 export interface GroupingRules {
-  query?: string;
-  instances?: string[];
+  type?: string;
+  metric_id?: number;
+  filter?: FilterItem[];
 }
 
 export interface ObjectInstItem {
