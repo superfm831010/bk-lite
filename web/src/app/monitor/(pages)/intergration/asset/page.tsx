@@ -4,7 +4,6 @@ import {
   Spin,
   Input,
   Button,
-  Modal,
   message,
   Tooltip,
   Dropdown,
@@ -46,11 +45,11 @@ import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EditConfig from './updateConfig';
 import EditInstance from './editInstance';
+import DeleteRule from './deleteRuleModal';
 import {
   NODE_STATUS_MAP,
   OBJECT_DEFAULT_ICON,
 } from '@/app/monitor/constants/monitor';
-const { confirm } = Modal;
 import Permission from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import type { TableProps, MenuProps } from 'antd';
@@ -65,7 +64,6 @@ const Asset = () => {
     getInstanceGroupRule,
     getMonitorObject,
     getInstanceChildConfig,
-    deleteInstanceGroupRule,
     deleteMonitorInstance,
   } = useMonitorApi();
   const { t } = useTranslation();
@@ -77,7 +75,7 @@ const Asset = () => {
   const ruleRef = useRef<ModalRef>(null);
   const configRef = useRef<ModalRef>(null);
   const instanceRef = useRef<ModalRef>(null);
-  const deleteModalRef = useRef<any>(null);
+  const deleteModalRef = useRef<ModalRef>(null);
   const assetMenuItems = useAssetMenuItems();
   const [pagination, setPagination] = useState<Pagination>({
     current: 1,
@@ -452,48 +450,11 @@ const Asset = () => {
   };
 
   const showDeleteConfirm = (row: RuleInfo) => {
-    deleteModalRef.current = confirm({
+    deleteModalRef.current?.showModal({
       title: t('common.prompt'),
-      content: t('monitor.intergrations.deleteRuleTips'),
-      centered: true,
-      footer: (
-        <div className="flex justify-end mt-[10px]">
-          <Button
-            className="mr-[10px]"
-            type="primary"
-            loading={confirmLoading}
-            onClick={() => deleteRule(row, false)}
-          >
-            {t('monitor.intergrations.deleteRules')}
-          </Button>
-          <Button
-            className="mr-[10px]"
-            type="primary"
-            loading={confirmLoading}
-            onClick={() => deleteRule(row, true)}
-          >
-            {t('monitor.intergrations.deleteGroup')}
-          </Button>
-          <Button onClick={() => deleteModalRef.current?.destroy()}>
-            {t('common.cancel')}
-          </Button>
-        </div>
-      ),
+      form: row,
+      type: 'delete',
     });
-  };
-
-  const deleteRule = async (row: any, type: boolean) => {
-    setConfirmLoading(true);
-    try {
-      await deleteInstanceGroupRule(row.id as number, {
-        del_instance_org: type,
-      });
-      message.success(t('common.successfullyDeleted'));
-      deleteModalRef.current?.destroy();
-      getRuleList(objectId);
-    } finally {
-      setConfirmLoading(false);
-    }
   };
 
   const deleteInstConfirm = async (row: any) => {
@@ -747,6 +708,7 @@ const Asset = () => {
         onSuccess={operateRule}
       />
       <EditConfig ref={configRef} onSuccess={() => getAssetInsts(objectId)} />
+      <DeleteRule ref={deleteModalRef} onSuccess={operateRule} />
       <EditInstance
         ref={instanceRef}
         organizationList={organizationList}
