@@ -5,7 +5,7 @@ from celery.app import shared_task
 from datetime import datetime, timezone
 
 from django.db.models import F
-from apps.monitor.constants import LEVEL_WEIGHT
+from apps.monitor.constants import LEVEL_WEIGHT, THRESHOLD, NO_DATA
 from apps.monitor.models import MonitorPolicy, MonitorInstanceOrganization, MonitorAlert, MonitorEvent, MonitorInstance, \
     Metric, MonitorEventRawData
 from apps.monitor.tasks.task_utils.metric_query import format_to_vm_filter
@@ -297,7 +297,7 @@ class MonitorPolicyScan:
         ids = [i.id for i in self.active_alerts if i.alert_type == "alert"]
 
         MonitorAlert.objects.filter(id__in=ids, info_event_count__gte=self.policy.recovery_condition).update(
-            status="recovered", end_event_time=datetime.now(timezone.utc), operator="system")
+            status="recovered", end_event_time=self.policy.last_run_time, operator="system")
 
     def recovery_no_data_alert(self):
         """无数据告警恢复"""
@@ -311,7 +311,7 @@ class MonitorPolicyScan:
             monitor_instance_id__in=instance_ids,
             alert_type="no_data",
             status="new",
-        ).update(status="recovered", end_event_time=datetime.now(timezone.utc), operator="system")
+        ).update(status="recovered", end_event_time=self.policy.last_run_time, operator="system")
 
     def create_events(self, events):
         """创建事件"""
@@ -334,6 +334,7 @@ class MonitorPolicyScan:
                     level=event["level"],
                     content=event["content"],
                     notice_result=True,
+                    event_time=self.policy.last_run_time,
                 )
             )
 
@@ -440,7 +441,7 @@ class MonitorPolicyScan:
                     value=value,
                     content=content,
                     status="new",
-                    start_event_time=event_obj.created_at,
+                    start_event_time=event_obj.event_time,
                     operator="",
                 ))
 
@@ -470,23 +471,31 @@ class MonitorPolicyScan:
 
         self.set_monitor_obj_instance_key()
 
-        # 告警事件
-        alert_events, info_events = self.alert_event()
+        if THRESHOLD in self.policy.enable_alert:
+            # 告警事件
+            alert_events, info_events = self.alert_event()
+            # 正常、异常事件计数
+            self.count_events(alert_events, info_events)
+            # 告警恢复
+            self.recovery_alert()
+        else:
+            alert_events = []
 
-        # 正常、异常事件计数
-        self.count_events(alert_events, info_events)
+        if NO_DATA in self.policy.enable_alert:
+            # 无数据事件
+            no_data_events = self.no_data_event()
+            # 无数据告警恢复
+            self.recovery_no_data_alert()
+        else:
+            no_data_events = []
 
-        # 无数据事件
-        no_data_events = self.no_data_event()
+        events = alert_events + no_data_events
 
-        # 告警恢复
-        self.recovery_alert()
-
-        # 无数据告警恢复
-        self.recovery_no_data_alert()
+        if not events:
+            return
 
         # 告警事件记录
-        event_objs = self.create_events(alert_events + no_data_events)
+        event_objs = self.create_events(events)
         self.handle_alert_events(event_objs)
 
         # 事件通知

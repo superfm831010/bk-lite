@@ -342,3 +342,7 @@ DEFAULT_OBJ_ORDER = [
   {"name_list": ["TCP", "CVM"], "type": "Tencent Cloud"},
   {"name_list": ["JVM", "SNMP Trap"], "type": "Other"}
 ]
+
+# 阈值告警类型， 无数据告警类型
+THRESHOLD = "threshold"
+NO_DATA = "no_data"
