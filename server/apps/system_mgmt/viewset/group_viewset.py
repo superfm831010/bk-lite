@@ -16,9 +16,11 @@ class GroupViewSet(ViewSetUtils):
     @action(detail=False, methods=["GET"])
     @HasPermission("user_group-View")
     def search_group_list(self, request):
-        queryset = Group.objects.all()
         # 构建嵌套组结构
         groups = [i["id"] for i in request.user.group_list]
+        queryset = Group.objects.all()
+        if not request.user.is_superuser:
+            queryset = queryset.filter(id__in=groups).exclude(name="OpsPilotGuest", parent_id=0)
         groups_data = GroupUtils.build_group_tree(queryset, request.user.is_superuser, groups)
         return JsonResponse({"result": True, "data": groups_data})
 

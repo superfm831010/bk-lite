@@ -4,7 +4,7 @@ from django.utils.translation import gettext as _
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.knowledge_mgmt.serializers import FileKnowledgeSerializer
 from apps.opspilot.knowledge_mgmt.utils import KnowledgeDocumentUtils
 from apps.opspilot.models import FileKnowledge

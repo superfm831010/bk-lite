@@ -100,7 +100,9 @@
     "copy": "复制",
     "remove": "删除",
     "inputPassword": "请输入密码",
-    "reset": "重置"
+    "reset": "重置",
+    "prompt": "提示",
+    "batchEdit": "批量编辑"
   },
   "cutomTable": {
     "fieldSetting": "列表字段设置"
@@ -362,6 +364,8 @@
       "condition": "条件",
       "rule": "规则",
       "ruleTips": "用于设置访问资产所有权组织的规则对于每个资产模型是唯一的",
+      "ruleModalTips": "设定分组规则后，规则将会定时执行，符合规则的资产将会自动追加对应的分组内。",
+      "deleteRuleTips": "分组规则删除后，请确定是否将符合该规则所有资产的分组进行清空?",
       "generateConfiguration": "生成配置",
       "originalValue": "原始值",
       "mappedValue": "映射值",
@@ -429,7 +433,9 @@
       "listeningPort": "监听端口",
       "listeningPortDes": "指定程序运行时应监听的端口号，用于接受外部请求和连接。",
       "color": "颜色",
-      "note": "K8S的监控数据仅支持主动上报，暂不支持在此处接入。"
+      "note": "K8S的监控数据仅支持主动上报，暂不支持在此处接入。",
+      "deleteRules": "仅删除规则",
+      "deleteGroup": "删除并清空分组"
     }
   }
 }

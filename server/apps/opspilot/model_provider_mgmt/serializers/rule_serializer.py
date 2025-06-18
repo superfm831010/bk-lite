@@ -1,9 +1,8 @@
-from rest_framework import serializers
-
 from apps.opspilot.models import SkillRule
+from config.drf.serializers import UsernameSerializer
 
 
-class RuleSerializer(serializers.ModelSerializer):
+class RuleSerializer(UsernameSerializer):
     class Meta:
         model = SkillRule
         fields = "__all__"

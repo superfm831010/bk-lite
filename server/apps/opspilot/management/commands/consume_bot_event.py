@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.management import BaseCommand
 from django.db import close_old_connections
 
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.bot_mgmt.utils import get_user_info
 from apps.opspilot.enum import ChannelChoices
 from apps.opspilot.models import Bot, BotConversationHistory, ChannelUser

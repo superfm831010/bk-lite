@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 
 from apps.core.backends import cache
 from apps.core.decorators.api_permission import HasPermission
-from apps.core.logger import logger
+from apps.core.logger import system_logger as logger
 from apps.system_mgmt.models import Group, Role, User, UserRule
 from apps.system_mgmt.serializers.user_serializer import UserSerializer
 from apps.system_mgmt.services.role_manage import RoleManage

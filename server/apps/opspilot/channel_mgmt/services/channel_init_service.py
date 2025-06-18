@@ -1,4 +1,4 @@
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.enum import ChannelChoices
 from apps.opspilot.models import Channel
 
