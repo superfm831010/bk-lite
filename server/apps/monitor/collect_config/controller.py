@@ -6,8 +6,6 @@ from apps.monitor.models import CollectConfig
 from apps.rpc.node_mgmt import NodeMgmt
 
 
-
-
 class Controller:
     def __init__(self, data):
         self.data = data
