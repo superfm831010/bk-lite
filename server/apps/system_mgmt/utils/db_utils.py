@@ -1,6 +1,6 @@
 from django.db import connection
 
-from apps.core.logger import logger
+from apps.core.logger import system_logger as logger
 
 
 class SQLExecute(object):

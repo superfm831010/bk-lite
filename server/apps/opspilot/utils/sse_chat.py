@@ -6,7 +6,7 @@ import requests
 from django.conf import settings
 from django.http import StreamingHttpResponse
 
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.bot_mgmt.utils import insert_skill_log
 from apps.opspilot.enum import SkillTypeChoices
 from apps.opspilot.model_provider_mgmt.models import LLMModel

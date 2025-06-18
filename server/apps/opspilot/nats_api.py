@@ -1,5 +1,5 @@
 import nats_client
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.models import (
     Bot,
     EmbedProvider,

@@ -1,11 +1,9 @@
-import os
 from typing import Any, Dict, List
 
 import docker
 from django.conf import settings
 
-from apps.core.logger import logger
-from apps.opspilot.utils.template_loader import core_template
+from apps.core.logger import opspilot_logger as logger
 
 
 class DockerClient(object):
@@ -51,25 +49,22 @@ class DockerClient(object):
             ports["5005/tcp"] = bot.node_port
 
         # 配置标签
-        labels = {
-            "app": "pilot",
-            "bot-id": str(bot.id)
-        }
+        labels = {"app": "pilot", "bot-id": str(bot.id)}
 
         # 配置extra_hosts
-        extra_hosts = {
-            "rabbitmq-service": settings.CONVERSATION_MQ_HOST
-        }
+        extra_hosts = {"rabbitmq-service": settings.CONVERSATION_MQ_HOST}
 
         # 如果存在bot_domain，添加Traefik相关标签
         if bot.bot_domain:
-            labels.update({
-                "traefik.enable": "true",
-                f"traefik.http.routers.pilot-{bot.id}.rule": f"Host(`{bot.bot_domain}`)",
-                f"traefik.http.routers.pilot-{bot.id}.entrypoints": "https",
-                f"traefik.http.routers.pilot-{bot.id}.tls": "true",
-                f"traefik.http.services.pilot-{bot.id}.loadbalancer.server.port": "5005"
-            })
+            labels.update(
+                {
+                    "traefik.enable": "true",
+                    f"traefik.http.routers.pilot-{bot.id}.rule": f"Host(`{bot.bot_domain}`)",
+                    f"traefik.http.routers.pilot-{bot.id}.entrypoints": "https",
+                    f"traefik.http.routers.pilot-{bot.id}.tls": "true",
+                    f"traefik.http.services.pilot-{bot.id}.loadbalancer.server.port": "5005",
+                }
+            )
 
         # 启动命令
         command = "/bin/sh -c 'mkdir -p data && python3 cli.py get_bot_config_data && supervisord -n'"
@@ -89,7 +84,7 @@ class DockerClient(object):
                 restart_policy={"Name": "always"},
                 network="traefik",
                 command=command,
-                extra_hosts=extra_hosts
+                extra_hosts=extra_hosts,
             )
 
             logger.info(f"启动Pilot[{bot.id}]容器成功，容器ID: {container.id}")
@@ -120,11 +115,7 @@ class DockerClient(object):
         try:
             containers = self.client.containers.list(all=True, filters={"label": "app=pilot"})
             container_list = [
-                {
-                    "name": container.name,
-                    "status": container.status,
-                    "id": container.id[:12]
-                }
+                {"name": container.name, "status": container.status, "id": container.id[:12]}
                 for container in containers
             ]
             logger.info(f"共找到 {len(container_list)} 个Pilot容器")

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from django.conf import settings
 
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.enum import SkillTypeChoices
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
 from apps.opspilot.models import (

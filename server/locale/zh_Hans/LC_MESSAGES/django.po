@@ -486,7 +486,6 @@ msgstr "微信开放平台"
 msgid "OpsPilot is an AI intelligence platform, based on cutting-edge artificial intelligence technology, integrating machine learning and large model capabilities, supporting diversified scenarios."
 msgstr "OpsPilot 是AI智能平台，基于前沿人工智能技术，融合机器学习与大模型能力，支持多元化场景"
 
-
 msgid "Real-time monitoring and management platform for system operation status, providing data visualization, alert notifications, performance analysis and other functions to help quickly identify problems and ensure business stability"
 msgstr "用于实时监测和管理系统运行状态的平台，提供数据可视化、告警通知、性能分析等功能，帮助快速定位问题，保障业务稳定"
 
