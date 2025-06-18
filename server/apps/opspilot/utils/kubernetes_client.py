@@ -5,7 +5,7 @@ import yaml
 from django.conf import settings
 from kubernetes import client, config
 
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.utils.template_loader import core_template
 
 

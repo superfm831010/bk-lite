@@ -2,8 +2,24 @@ from django.utils.translation import gettext as _
 from rest_framework import serializers
 from rest_framework.fields import empty
 
+from apps.system_mgmt.models import User
 
-class I18nSerializer(serializers.ModelSerializer):
+
+class UsernameSerializer(serializers.ModelSerializer):
+    def __init__(self, instance=None, data=empty, **kwargs):
+        super().__init__(instance=instance, data=data, **kwargs)
+        self.user_map = dict(User.objects.all().values_list("username", "display_name"))
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        if "created_by" in list(response.keys()):
+            response["created_by"] = self.user_map.get(response["created_by"], response["created_by"])
+        if "updated_by" in list(response.keys()):
+            response["updated_by"] = self.user_map.get(response["updated_by"], response["updated_by"])
+        return response
+
+
+class I18nSerializer(UsernameSerializer):
     def to_representation(self, instance):
         response = super().to_representation(instance)
         if "is_build_in" in list(response.keys()):
@@ -26,7 +42,7 @@ class TeamSerializer(I18nSerializer):
         return [self.group_map.get(i) for i in instance.team if i in self.group_map]
 
 
-class AuthSerializer(serializers.ModelSerializer):
+class AuthSerializer(UsernameSerializer):
     permissions = serializers.SerializerMethodField()
 
     def __init__(self, instance=None, data=empty, **kwargs):
