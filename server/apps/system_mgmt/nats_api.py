@@ -11,7 +11,7 @@ from django.db.models import Q
 
 import nats_client
 from apps.core.backends import cache
-from apps.core.logger import logger
+from apps.core.logger import system_logger as logger
 from apps.system_mgmt.models import (
     App,
     Channel,
@@ -117,7 +117,7 @@ def get_client(client_id="", username=""):
         app_name_list = list(Role.objects.filter(id__in=user.role_list).values_list("app", flat=True).distinct())
         if "" not in app_name_list:
             app_list = app_list.filter(name__in=app_name_list)
-    return_data = list(app_list.values())
+    return_data = list(app_list.order_by("name").values())
     return {"result": True, "data": return_data}
 
 
