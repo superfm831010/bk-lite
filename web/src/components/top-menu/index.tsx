@@ -155,7 +155,7 @@ const TopMenu = () => {
       <div className="flex items-center justify-between px-4 w-full h-full">
         <div className="flex items-center space-x-2">
           <Image src="/logo-site.png" className="block w-auto h-10" alt="logo" width={100} height={40} />
-          <div className="font-medium">WeOps X</div>
+          <div className="font-medium">Blueking Lite</div>
           {!isConsole && (
             <Popover content={renderContent} title={t('common.appList')} trigger="hover">
               <div className={`flex items-center justify-center cursor-pointer rounded-[10px] px-3 py-2 ${styles.nav}`}>
