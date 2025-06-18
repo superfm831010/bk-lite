@@ -283,6 +283,16 @@ const useMonitorApi = () => {
     return await del(`/monitor/api/organization_rule/${id}/`, { params });
   };
 
+  const setInstancesGroup = async (data: {
+    instance_ids: React.Key[];
+    organizations: React.Key[];
+  }) => {
+    return await post(
+      `/monitor/api/monitor_instance/set_instances_organizations/`,
+      data
+    );
+  };
+
   const deleteMonitorInstance = async (data: {
     instance_ids: any;
     clean_child_config: boolean;
@@ -346,6 +356,7 @@ const useMonitorApi = () => {
     deleteMetricsGroup,
     getConfigContent,
     updateMonitorInstance,
+    setInstancesGroup,
   };
 };
 

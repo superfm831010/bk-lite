@@ -7,6 +7,8 @@ import {
   TIMEOUT_UNITS,
   useMiddleWareFields,
 } from '@/app/monitor/constants/monitor';
+import PermissionWrapper from '@/components/permission';
+import type { MenuProps } from 'antd';
 const { Option } = Select;
 
 interface UseColumnsAndFormItemsParams {
@@ -2029,4 +2031,23 @@ const useFormItems = ({
   return result;
 };
 
-export { useColumnsAndFormItems, useFormItems };
+const useAssetMenuItems = (): MenuProps['items'] => {
+  const { t } = useTranslation();
+  return useMemo(
+    () => [
+      {
+        label: (
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['Edit']}
+          >
+            {t('common.batchEdit')}
+          </PermissionWrapper>
+        ),
+        key: 'batchEdit',
+      },
+    ],
+    [t]
+  );
+};
+export { useColumnsAndFormItems, useFormItems, useAssetMenuItems };

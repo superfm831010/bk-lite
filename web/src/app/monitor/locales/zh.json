@@ -101,7 +101,8 @@
     "remove": "删除",
     "inputPassword": "请输入密码",
     "reset": "重置",
-    "prompt": "提示"
+    "prompt": "提示",
+    "batchEdit": "批量编辑"
   },
   "cutomTable": {
     "fieldSetting": "列表字段设置"

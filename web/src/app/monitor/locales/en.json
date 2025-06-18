@@ -101,7 +101,8 @@
     "remove": "Remove",
     "inputPassword": "Please input the password",
     "reset": "Reset",
-    "prompt": "Prompt"
+    "prompt": "Prompt",
+    "batchEdit": "Batch Edit"
   },
   "cutomTable": {
     "fieldSetting": "List field settings"
