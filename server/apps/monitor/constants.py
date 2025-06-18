@@ -327,3 +327,18 @@ OBJ_ORDER = "OBJ_ORDER"
 STARGAZER_URL = os.getenv("STARGAZER_URL", "http://stargazer:8083")
 
 CHILD_ENVS = {"ENV_LISTEN_PORT", "LISTEN_PORT"}
+
+# 对象默认顺序
+DEFAULT_OBJ_ORDER = [
+  {"name_list": ["Host"], "type": "OS"},
+  {"name_list": ["Website", "Ping"], "type": "Web"},
+  {"name_list": ["ElasticSearch", "Mongodb", "Mysql", "Postgres", "Redis", "Oracle"], "type": "Database"},
+  {"name_list": ["RabbitMQ", "Nginx", "Apache", "ClickHouse", "Consul", "Tomcat", "Zookeeper", "ActiveMQ", "MinIO", "Jetty", "WebLogic"], "type": "Middleware"},
+  {"name_list": ["Switch", "Router", "Firewall", "Loadbalance", "Detection Device", "Scanning Device"], "type": "Network Device"},
+  {"name_list": ["Bastion Host", "Storage", "Hardware Server"], "type": "Hardware Device"},
+  {"name_list": ["Docker", "Docker Container"], "type": "Container Management"},
+  {"name_list": ["Cluster", "Pod", "Node"], "type": "K8S"},
+  {"name_list": ["vCenter", "ESXI", "VM", "DataStorage"], "type": "VMWare"},
+  {"name_list": ["TCP", "CVM"], "type": "Tencent Cloud"},
+  {"name_list": ["JVM", "SNMP Trap"], "type": "Other"}
+]
