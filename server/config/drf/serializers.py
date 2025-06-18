@@ -55,8 +55,9 @@ class AuthSerializer(UsernameSerializer):
 
         if hasattr(self, "permission_key") and app_name:
             # 获取应用下的规则
+            app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console"}
+            app_name = app_name_map.get(app_name, app_name)
             app_rules = request.user.rules.get(app_name, {})
-
             if "." in self.permission_key:
                 keys = self.permission_key.split(".")
                 rules = app_rules.get(keys[0], {}).get(keys[1], [])

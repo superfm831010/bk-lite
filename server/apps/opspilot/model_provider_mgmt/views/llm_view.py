@@ -51,6 +51,7 @@ class LLMViewSet(AuthViewSet):
         if validate_msg:
             message = _(f"A skill with the same name already exists in group {validate_msg}.")
             return JsonResponse({"result": False, "message": message})
+        params["team"] = params.get("team", []) or [int(request.COOKIES.get("current_team"))]
         params["enable_conversation_history"] = True
         serializer = self.get_serializer(data=params)
         serializer.is_valid(raise_exception=True)
@@ -121,6 +122,7 @@ class LLMViewSet(AuthViewSet):
                 # 这里可以添加具体的配额检查逻辑
             params["skill_type"] = skill_type
             params["tools"] = params.get("tools", [])
+            params["group"] = params["group"] if params.get("group") else skill_obj.team[0]
             # 调用stream_chat函数返回流式响应
             return stream_chat(params, skill_obj.name, {}, current_ip, params["user_message"])
         except LLMSkill.DoesNotExist:
