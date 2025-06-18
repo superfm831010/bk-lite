@@ -69,6 +69,10 @@ const QuotaModal: React.FC<QuotaModalProps> = ({ visible, onConfirm, onCancel, m
         });
         setRule(initialValues.rule_type);
         setTargetType(initialValues.targetType);
+        
+        if (initialValues.targetType === 'group' && initialValues.targetList) {
+          fetchModelList(initialValues.targetList);
+        }
       } else if (mode === 'add') {
         form.resetFields();
         setTargetType('user');
@@ -190,8 +194,18 @@ const QuotaModal: React.FC<QuotaModalProps> = ({ visible, onConfirm, onCancel, m
           <Radio.Group
             disabled={targetType === 'user'}
             onChange={(e) => {
-              setRule(e.target.value);
-              form.setFieldsValue({ rule: e.target.value });
+              const newRule = e.target.value;
+              setRule(newRule);
+              form.setFieldsValue({ rule: newRule });
+              
+              if (targetType === 'group' && newRule === 'shared') {
+                const currentTokenSet = form.getFieldValue('token_set');
+                if (!currentTokenSet || currentTokenSet.length === 0) {
+                  form.setFieldsValue({
+                    token_set: [{ model: '', value: '', unit: 'thousand' }]
+                  });
+                }
+              }
             }}>
             <Radio value="uniform">
               {t('settings.manageQuota.form.uniform')}
