@@ -41,6 +41,7 @@ export interface InstanceInfo {
   instance_name?: string;
   instance_id?: string;
   name?: string;
+  keys?: React.Key[];
 }
 
 export interface GroupingRules {

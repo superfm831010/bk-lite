@@ -6,6 +6,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useEffect,
+  useMemo,
 } from 'react';
 import { Button, Form, message, Input } from 'antd';
 import OperateModal from '@/components/operate-modal';
@@ -24,18 +25,24 @@ interface ModalProps {
 
 const EditInstance = forwardRef<ModalRef, ModalProps>(
   ({ onSuccess, organizationList }, ref) => {
-    const { updateMonitorInstance } = useMonitorApi();
+    const { updateMonitorInstance, setInstancesGroup } = useMonitorApi();
     const { t } = useTranslation();
     const formRef = useRef<FormInstance>(null);
     const [visible, setVisible] = useState<boolean>(false);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [configForm, setConfigForm] = useState<InstanceInfo>({});
     const [title, setTitle] = useState<string>('');
+    const [modalType, setModalType] = useState<string>('');
+
+    const isEdit = useMemo(() => {
+      return modalType === 'edit';
+    }, [modalType]);
 
     useImperativeHandle(ref, () => ({
-      showModal: ({ title, form }) => {
+      showModal: ({ title, form, type }) => {
         // 开启弹窗的交互
         setTitle(title);
+        setModalType(type);
         setConfigForm(deepClone(form));
         setVisible(true);
       },
@@ -53,10 +60,11 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
       }
     }, [visible, configForm]);
 
-    const handleOperate = async (params: InstanceInfo) => {
+    const handleOperate = async (params: any) => {
       try {
         setConfirmLoading(true);
-        await updateMonitorInstance(params);
+        const request = isEdit ? updateMonitorInstance : setInstancesGroup;
+        await request(params);
         message.success(t('common.successfullyModified'));
         handleCancel();
         onSuccess();
@@ -69,10 +77,14 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
 
     const handleSubmit = () => {
       formRef.current?.validateFields().then((values) => {
-        handleOperate({
-          ...values,
-          instance_id: configForm.instance_id,
-        });
+        let params = { ...values, instance_id: configForm.instance_id };
+        if (!isEdit) {
+          params = {
+            instance_ids: configForm.keys,
+            organizations: values.organizations,
+          };
+        }
+        handleOperate(params);
       });
     };
 
@@ -102,13 +114,15 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
           }
         >
           <Form ref={formRef} name="basic" layout="vertical">
-            <Form.Item<InstanceInfo>
-              label={t('monitor.intergrations.instanceName')}
-              name="name"
-              rules={[{ required: true, message: t('common.required') }]}
-            >
-              <Input />
-            </Form.Item>
+            {isEdit && (
+              <Form.Item<InstanceInfo>
+                label={t('monitor.intergrations.instanceName')}
+                name="name"
+                rules={[{ required: true, message: t('common.required') }]}
+              >
+                <Input />
+              </Form.Item>
+            )}
             <Form.Item<InstanceInfo>
               label={t('monitor.group')}
               name="organizations"
