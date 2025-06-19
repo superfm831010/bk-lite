@@ -1,9 +1,10 @@
 from rest_framework import serializers
 
 from apps.opspilot.models import KnowledgeDocument
+from config.drf.serializers import UsernameSerializer
 
 
-class KnowledgeDocumentSerializer(serializers.ModelSerializer):
+class KnowledgeDocumentSerializer(UsernameSerializer):
     train_status_display = serializers.SerializerMethodField()
 
     class Meta:

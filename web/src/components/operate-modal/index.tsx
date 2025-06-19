@@ -1,20 +1,22 @@
-import React from "react";
-import { Modal, ModalProps } from "antd";
-import customModalStyle from "./index.module.scss";
+import React from 'react';
+import { Modal, ModalProps } from 'antd';
+import customModalStyle from './index.module.scss';
 
 interface CustomModalProps
-  extends Omit<ModalProps, "title" | "footer" | "centered" | "subTitle"> {
+  extends Omit<ModalProps, 'title' | 'footer' | 'centered' | 'subTitle'> {
   title?: React.ReactNode;
   footer?: React.ReactNode;
   subTitle?: string;
   centered?: boolean;
+  customHeaderClass?: string;
 }
 
 const OperateModal: React.FC<CustomModalProps> = ({
   title,
   footer,
   centered = true,
-  subTitle = "",
+  subTitle = '',
+  customHeaderClass = customModalStyle.customModalHeader,
   ...modalProps
 }) => {
   return (
@@ -23,26 +25,26 @@ const OperateModal: React.FC<CustomModalProps> = ({
       className={customModalStyle.customModal}
       classNames={{
         body: customModalStyle.customModalBody,
-        header: customModalStyle.customModalHeader,
+        header: customHeaderClass,
         footer: customModalStyle.customModalFooter,
         content: customModalStyle.customModalContent,
       }}
       title={
-        <>
-          <span>{title}</span>
+        <div className="flex items-center">
+          {title}
           {subTitle && (
             <span
               style={{
-                color: "var(--color-text-3)",
-                fontSize: "12px",
-                fontWeight: "normal",
+                color: 'var(--color-text-3)',
+                fontSize: '12px',
+                fontWeight: 'normal',
               }}
             >
-              {" "}
+              {' '}
               - {subTitle}
             </span>
           )}
-        </>
+        </div>
       }
       footer={footer}
       centered={centered}

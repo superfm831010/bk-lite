@@ -1,6 +1,4 @@
 import ast
-import itertools
-
 from apps.monitor.collect_config.controller import Controller
 from apps.monitor.constants import CHILD_ENVS
 from apps.monitor.models import MonitorInstance, MonitorInstanceOrganization, CollectConfig
