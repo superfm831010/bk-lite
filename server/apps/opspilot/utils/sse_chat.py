@@ -234,9 +234,10 @@ def _generate_sse_stream(url, headers, chat_kwargs, skill_name, show_think):
     in_think_block = False
     is_first_content = True
     has_think_tags = True
+    sse_headers = {**headers, "Accept": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive"}
 
     try:
-        res = requests.post(url, headers=headers, json=chat_kwargs, timeout=300, verify=False, stream=True)
+        res = requests.post(url, headers=sse_headers, json=chat_kwargs, timeout=300, verify=False, stream=True)
         res.raise_for_status()
 
         for line in res.iter_lines(decode_unicode=True):
@@ -328,6 +329,8 @@ def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=N
     response = StreamingHttpResponse(generate_stream(), content_type="text/event-stream")
     response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Headers"] = "Cache-Control"
 
     def log_after_response():
         if final_content or total_prompt_tokens or total_completion_tokens:
