@@ -1,9 +1,6 @@
-import logging
 import uuid
-
 from celery.app import shared_task
 from datetime import datetime, timezone
-
 from django.db.models import F
 from apps.monitor.constants import LEVEL_WEIGHT, THRESHOLD, NO_DATA
 from apps.monitor.models import MonitorPolicy, MonitorInstanceOrganization, MonitorAlert, MonitorEvent, MonitorInstance, \
@@ -12,8 +9,7 @@ from apps.monitor.tasks.task_utils.metric_query import format_to_vm_filter
 from apps.monitor.tasks.task_utils.policy_calculate import vm_to_dataframe, calculate_alerts
 from apps.monitor.utils.system_mgmt_api import SystemMgmtUtils
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
-
-logger = logging.getLogger("app")
+from apps.core.logger import celery_logger as logger
 
 
 @shared_task

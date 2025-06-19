@@ -1,9 +1,8 @@
-import logging
-
 from django.core.management import BaseCommand
+
+from apps.core.logger import monitor_logger as logger
 from apps.monitor.plugin_migrate.service import migrate_plugin
 
-logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = "监控插件初始化"

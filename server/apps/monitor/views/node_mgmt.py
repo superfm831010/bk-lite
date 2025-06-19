@@ -1,5 +1,3 @@
-import logging
-
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
@@ -10,8 +8,7 @@ from apps.monitor.models import CollectConfig
 from apps.monitor.services.node_mgmt import InstanceConfigService
 from apps.monitor.utils.config_format import ConfigFormat
 from apps.rpc.node_mgmt import NodeMgmt
-
-logger = logging.getLogger("app")
+from apps.core.logger import monitor_logger as logger
 
 
 class NodeMgmtView(ViewSet):

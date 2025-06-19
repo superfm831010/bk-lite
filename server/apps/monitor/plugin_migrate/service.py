@@ -1,9 +1,8 @@
 import os
 import json
-import logging
-from apps.monitor.services.plugin import MonitorPluginService
 
-logger = logging.getLogger(__name__)
+from apps.core.logger import monitor_logger as logger
+from apps.monitor.services.plugin import MonitorPluginService
 
 
 def migrate_plugin():

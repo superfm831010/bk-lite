@@ -2,16 +2,13 @@ import base64
 import hashlib
 import hmac
 import json
-import logging
-
 from django.core.cache import cache
 from django.http import JsonResponse
 from functools import wraps
 from apps.node_mgmt.models.sidecar import SidecarApiToken
 from config.components.base import SECRET_KEY
 from config.components.drf import AUTH_TOKEN_HEADER_NAME
-
-logger = logging.getLogger("app")
+from apps.core.logger import node_logger as logger
 
 
 def token_auth(view_func):

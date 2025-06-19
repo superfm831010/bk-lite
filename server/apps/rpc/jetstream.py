@@ -1,11 +1,8 @@
-import logging
 import nats
 from nats.js.api import ObjectMeta
 from nats.js.errors import BucketNotFoundError
-
 from config.components.nats import NATS_SERVERS, NATS_NAMESPACE
-
-logger = logging.getLogger("app")
+from apps.core.logger import logger
 
 
 class JetStreamService:
