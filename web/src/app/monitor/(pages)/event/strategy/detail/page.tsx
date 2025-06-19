@@ -45,25 +45,20 @@ import {
   getConfigByObjectName,
 } from '@/app/monitor/utils/common';
 import strategyStyle from '../index.module.scss';
-import {
-  PlusOutlined,
-  CloseOutlined,
-  ArrowLeftOutlined,
-} from '@ant-design/icons';
+import { PlusOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import SelectAssets from '../selectAssets';
+import SelectCards from './selectCard';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useConditionList } from '@/app/monitor/constants/monitor';
 import { useUserInfoContext } from '@/context/userInfo';
 import {
   useScheduleList,
-  COMPARISON_METHOD,
   useMethodList,
-  LEVEL_MAP,
   useLevelList,
   SCHEDULE_UNIT_MAP,
 } from '@/app/monitor/constants/monitor';
+import ThresholdList from './thresholdList';
+import ConditionSelector from './conditionSelector';
 const { Option } = Select;
-import Icon from '@/components/icon';
 const defaultGroup = ['instance_id'];
 const { TextArea } = Input;
 
@@ -78,7 +73,6 @@ const StrategyOperation = () => {
     getMonitorPolicy,
     getMonitorObject,
   } = useMonitorApi();
-  const CONDITION_LIST = useConditionList();
   const METHOD_LIST = useMethodList();
   const LEVEL_LIST = useLevelList();
   const SCHEDULE_LIST = useScheduleList();
@@ -101,7 +95,6 @@ const StrategyOperation = () => {
   const detailName = searchParams.get('name') || '--';
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
-  const [openNoData, setOpenNoData] = useState<boolean>(false);
   const [source, setSource] = useState<SourceFeild>({
     type: '',
     values: [],
@@ -113,9 +106,10 @@ const StrategyOperation = () => {
   const [unit, setUnit] = useState<string>('min');
   const [periodUnit, setPeriodUnit] = useState<string>('min');
   const [nodataUnit, setNodataUnit] = useState<string>('min');
+  const [noDataRecoveryUnit, setNoDataRecoveryUnit] = useState<string>('min');
   const [conditions, setConditions] = useState<FilterItem[]>([]);
   const [noDataAlert, setNoDataAlert] = useState<number | null>(null);
-  const [noDataLevel, setNoDataLevel] = useState<string>();
+  const [noDataRecovery, setNoDataRecovery] = useState<number | null>(null);
   const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [groupBy, setGroupBy] = useState<string[]>(
     getConfigByObjectName(monitorName as string, 'groupIds').default ||
@@ -146,6 +140,7 @@ const StrategyOperation = () => {
   const [originMetricData, setOriginMetricData] = useState<IndexViewItem[]>([]);
   const [initMetricData, setInitMetricData] = useState<MetricItem[]>([]);
   const [channelList, setChannelList] = useState<ChannelItem[]>([]);
+  const [enableAlerts, setEnableAlerts] = useState<string[]>(['threshold']);
 
   useEffect(() => {
     if (!isLoading) {
@@ -242,11 +237,12 @@ const StrategyOperation = () => {
       period,
       threshold: thresholdList,
       no_data_period,
-      no_data_level,
       recovery_condition,
       group_by,
       query_condition,
       collect_type,
+      enable_alerts,
+      no_data_recovery_period,
     } = data;
     form.setFieldsValue({
       ...data,
@@ -277,10 +273,11 @@ const StrategyOperation = () => {
     }
     setNoDataAlert(no_data_period?.value || null);
     setNodataUnit(no_data_period?.type || '');
-    setNoDataLevel(no_data_level || '');
-    setOpenNoData(!!no_data_period?.value);
+    setNoDataRecovery(no_data_recovery_period?.value || null);
+    setNoDataRecoveryUnit(no_data_recovery_period?.type || '');
     setUnit(schedule?.type || '');
     setPeriodUnit(period?.type || '');
+    setEnableAlerts(enable_alerts?.length ? enable_alerts : ['threshold']);
   };
 
   const feedbackThreshold = (data: TableDataItem) => {
@@ -332,7 +329,11 @@ const StrategyOperation = () => {
   };
 
   const validateThreshold = async () => {
+    if (!enableAlerts.length) {
+      return Promise.reject(new Error(t('common.required')));
+    }
     if (
+      enableAlerts.includes('threshold') &&
       threshold.length &&
       (threshold.some((item) => {
         return !item.method;
@@ -346,9 +347,16 @@ const StrategyOperation = () => {
     return Promise.resolve();
   };
 
-  const validateNoData = async () => {
-    if (openNoData && (!noDataAlert || !noDataLevel)) {
-      return Promise.reject(new Error(t('monitor.events.conditionValidate')));
+  const validateNoDataAlert = async () => {
+    if (!noDataAlert || !nodataUnit) {
+      return Promise.reject(new Error(t('common.required')));
+    }
+    return Promise.resolve();
+  };
+
+  const validateNoDataRecoveryAlert = async () => {
+    if (!noDataRecovery || !noDataRecoveryUnit) {
+      return Promise.reject(new Error(t('common.required')));
     }
     return Promise.resolve();
   };
@@ -406,20 +414,8 @@ const StrategyOperation = () => {
     setFormData(data);
   };
 
-  const handleLabelChange = (val: string, index: number) => {
-    const _conditions = deepClone(conditions);
-    _conditions[index].name = val;
-    setConditions(_conditions);
-  };
-
   const handleGroupByChange = (val: string[]) => {
     setGroupBy(val);
-  };
-
-  const handleConditionChange = (val: string, index: number) => {
-    const _conditions = deepClone(conditions);
-    _conditions[index].method = val;
-    setConditions(_conditions);
   };
 
   const handleUnitChange = (val: string) => {
@@ -441,51 +437,21 @@ const StrategyOperation = () => {
     setNoDataAlert(null);
   };
 
-  const handleThresholdMethodChange = (val: string, index: number) => {
-    const _conditions = deepClone(threshold);
-    _conditions[index].method = val;
-    setThreshold(_conditions);
-  };
-
-  const handleValueChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    index: number
-  ) => {
-    const _conditions = deepClone(conditions);
-    _conditions[index].value = e.target.value;
-    setConditions(_conditions);
-  };
-
   const handleNoDataAlertChange = (e: number | null) => {
     setNoDataAlert(e);
   };
 
-  const handleThresholdValueChange = (e: number | null, index: number) => {
-    const _conditions = deepClone(threshold);
-    _conditions[index].value = e;
-    setThreshold(_conditions);
+  const handleNodataRecoveryUnitChange = (val: string) => {
+    setNoDataRecoveryUnit(val);
+    setNoDataRecovery(null);
   };
 
-  const addConditionItem = () => {
-    const _conditions = deepClone(conditions);
-    _conditions.push({
-      name: null,
-      method: null,
-      value: '',
-    });
-    setConditions(_conditions);
+  const handleNoDataRecoveryChange = (e: number | null) => {
+    setNoDataRecovery(e);
   };
 
-  const deleteConditionItem = (index: number) => {
-    const _conditions = deepClone(conditions);
-    _conditions.splice(index, 1);
-    setConditions(_conditions);
-  };
-
-  const handleNoDataChange = (bool: boolean) => {
-    setOpenNoData(bool);
-    setNoDataAlert(null);
-    setNoDataLevel('');
+  const handleThresholdChange = (value: ThresholdField[]) => {
+    setThreshold(value);
   };
 
   const goBack = () => {
@@ -497,56 +463,60 @@ const StrategyOperation = () => {
 
   const createStrategy = () => {
     form?.validateFields().then((values) => {
-      const _values = deepClone(values);
+      const params = deepClone(values);
       const target: any = pluginList.find(
-        (item) => item.value === _values.collect_type
+        (item) => item.value === params.collect_type
       );
       const isTrapPlugin = target?.name === 'SNMP Trap';
       if (isTrapPlugin) {
-        _values.query_condition = {
+        params.query_condition = {
           type: 'pmq',
-          query: _values.query,
+          query: params.query,
         };
-        _values.source = {};
-        _values.algorithm = 'last_over_time';
+        params.source = {};
+        params.algorithm = 'last_over_time';
       } else {
-        _values.query_condition = {
+        params.query_condition = {
           type: 'metric',
           metric_id: metrics.find((item) => item.name === metric)?.id,
           filter: conditions,
         };
-        _values.source = source;
+        params.source = source;
       }
-      _values.threshold = threshold.filter(
+      params.threshold = threshold.filter(
         (item) => !!item.value || item.value === 0
       );
-      _values.monitor_object = monitorObjId;
-      _values.schedule = {
+      params.monitor_object = monitorObjId;
+      params.schedule = {
         type: unit,
         value: values.schedule,
       };
-      _values.period = {
+      params.period = {
         type: periodUnit,
         value: values.period,
       };
-      if (openNoData) {
-        _values.no_data_period = _values.no_data_recovery_period = {
+      if (enableAlerts.includes('no_data')) {
+        params.no_data_period = {
           type: nodataUnit,
           value: noDataAlert,
         };
-        _values.no_data_level = noDataLevel;
+        params.no_data_recovery_period = {
+          type: noDataRecoveryUnit,
+          value: noDataRecovery,
+        };
       } else {
-        _values.no_data_period = _values.no_data_recovery_period = {};
+        params.no_data_period = params.no_data_recovery_period = {};
       }
-      if (_values.notice_type_id) {
-        _values.notice_type =
-          channelList.find((item) => item.id === _values.notice_type_id)
+      if (params.notice_type_id) {
+        params.notice_type =
+          channelList.find((item) => item.id === params.notice_type_id)
             ?.channel_type || '';
       }
-      _values.recovery_condition = _values.recovery_condition || 0;
-      _values.group_by = groupBy;
-      _values.enable = true;
-      operateStrategy(_values);
+      params.enable_alerts = enableAlerts;
+      params.recovery_condition = params.recovery_condition || 0;
+      params.group_by = groupBy;
+      params.enable = true;
+      operateStrategy(params);
     });
   };
 
@@ -766,156 +736,20 @@ const StrategyOperation = () => {
                                   { validator: validateMetric, required: true },
                                 ]}
                               >
-                                <div className={strategyStyle.condition}>
-                                  <Select
-                                    allowClear
-                                    style={{
-                                      width: '300px',
-                                      margin: '0 20px 10px 0',
-                                    }}
-                                    placeholder={t('monitor.metric')}
-                                    showSearch
-                                    value={metric}
-                                    loading={metricsLoading}
-                                    options={originMetricData.map((item) => ({
-                                      label: item.display_name,
-                                      title: item.name,
-                                      options: (item.child || []).map(
-                                        (tex) => ({
-                                          label: tex.display_name,
-                                          value: tex.name,
-                                        })
-                                      ),
-                                    }))}
-                                    onChange={handleMetricChange}
-                                  />
-                                  <div className={strategyStyle.conditionItem}>
-                                    {conditions.length ? (
-                                      <ul className={strategyStyle.conditions}>
-                                        <li
-                                          className={
-                                            strategyStyle.conditionTitle
-                                          }
-                                        >
-                                          <span>{t('monitor.filter')}</span>
-                                        </li>
-                                        {conditions.map(
-                                          (conditionItem, index) => (
-                                            <li
-                                              className={`${strategyStyle.itemOption} ${strategyStyle.filter}`}
-                                              key={index}
-                                            >
-                                              <Select
-                                                className={
-                                                  strategyStyle.filterLabel
-                                                }
-                                                placeholder={t('monitor.label')}
-                                                showSearch
-                                                value={conditionItem.name}
-                                                onChange={(val) =>
-                                                  handleLabelChange(val, index)
-                                                }
-                                              >
-                                                {labels.map((item: string) => (
-                                                  <Option
-                                                    value={item}
-                                                    key={item}
-                                                  >
-                                                    {item}
-                                                  </Option>
-                                                ))}
-                                              </Select>
-                                              <Select
-                                                style={{
-                                                  width: '100px',
-                                                }}
-                                                placeholder={t('monitor.term')}
-                                                value={conditionItem.method}
-                                                onChange={(val) =>
-                                                  handleConditionChange(
-                                                    val,
-                                                    index
-                                                  )
-                                                }
-                                              >
-                                                {CONDITION_LIST.map(
-                                                  (item: ListItem) => (
-                                                    <Option
-                                                      value={item.id}
-                                                      key={item.id}
-                                                    >
-                                                      {item.name}
-                                                    </Option>
-                                                  )
-                                                )}
-                                              </Select>
-                                              <Input
-                                                style={{
-                                                  width: '150px',
-                                                }}
-                                                placeholder={t('monitor.value')}
-                                                value={conditionItem.value}
-                                                onChange={(e) =>
-                                                  handleValueChange(e, index)
-                                                }
-                                              ></Input>
-                                              <Button
-                                                icon={<CloseOutlined />}
-                                                onClick={() =>
-                                                  deleteConditionItem(index)
-                                                }
-                                              />
-                                              <Button
-                                                icon={<PlusOutlined />}
-                                                onClick={addConditionItem}
-                                              />
-                                            </li>
-                                          )
-                                        )}
-                                      </ul>
-                                    ) : (
-                                      <div className="flex items-center mr-[20px]">
-                                        <span className="mr-[10px]">
-                                          {t('monitor.filter')}
-                                        </span>
-                                        <Button
-                                          disabled={!metric}
-                                          icon={<PlusOutlined />}
-                                          onClick={addConditionItem}
-                                        />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div>
-                                    <span className="mr-[10px]">
-                                      {t('common.group')}
-                                    </span>
-                                    <Select
-                                      style={{
-                                        width: '300px',
-                                        margin: '0 10px 10px 0',
-                                      }}
-                                      showSearch
-                                      allowClear
-                                      mode="tags"
-                                      maxTagCount="responsive"
-                                      placeholder={t('common.group')}
-                                      value={groupBy}
-                                      onChange={handleGroupByChange}
-                                    >
-                                      {(
-                                        getConfigByObjectName(
-                                          monitorName as string,
-                                          'groupIds'
-                                        ).list || defaultGroup
-                                      ).map((item: string) => (
-                                        <Option value={item} key={item}>
-                                          {item}
-                                        </Option>
-                                      ))}
-                                    </Select>
-                                  </div>
-                                </div>
+                                <ConditionSelector
+                                  data={{
+                                    metric,
+                                    filters: conditions,
+                                    group: groupBy,
+                                  }}
+                                  metricData={originMetricData}
+                                  labels={labels}
+                                  loading={metricsLoading}
+                                  monitorName={monitorName as string}
+                                  onMetricChange={handleMetricChange}
+                                  onFiltersChange={setConditions}
+                                  onGroupChange={handleGroupByChange}
+                                />
                                 <div className="text-[var(--color-text-3)]">
                                   {t('monitor.events.setDimensions')}
                                 </div>
@@ -1085,71 +919,32 @@ const StrategyOperation = () => {
                           { validator: validateThreshold, required: true },
                         ]}
                       >
-                        <div className="w-[220px] bg-[var(--color-bg-1)] border-2 border-blue-300 shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-3 relative cursor-pointer group">
-                          <div className="flex items-center space-x-4 my-1">
-                            <Icon type="yuzhiguanli" className="text-2xl" />
-                            <h2 className="text-[16px] font-bold m-0">
-                              {t('monitor.events.threshold')}
-                            </h2>
-                          </div>
-                          <p
-                            className={`text-[var(--color-text-3)] text-[13px]`}
-                          >
-                            {t('monitor.events.setThreshold')}
-                          </p>
+                        <SelectCards
+                          value={enableAlerts}
+                          onChange={(val) => setEnableAlerts(val)}
+                          data={[
+                            {
+                              value: 'threshold',
+                              icon: 'yuzhiguanli',
+                              title: t('monitor.events.threshold'),
+                              content: t('monitor.events.setThreshold'),
+                            },
+                            {
+                              value: 'no_data',
+                              icon: 'yuzhiguanli',
+                              title: t('monitor.events.nodata'),
+                              content: t('monitor.events.setThreshold'),
+                            },
+                          ]}
+                        />
+                        <div>
+                          {enableAlerts.includes('threshold') && (
+                            <ThresholdList
+                              data={threshold}
+                              onChange={handleThresholdChange}
+                            />
+                          )}
                         </div>
-                        {threshold.map((item, index) => (
-                          <div
-                            key={item.level}
-                            className="bg-[var(--color-bg-1)] border shadow-sm p-3 mt-[10px] w-[800px]"
-                          >
-                            <div
-                              className="flex items-center space-x-4 my-1 font-[800]"
-                              style={{
-                                borderLeft: `4px solid ${
-                                  LEVEL_MAP[item.level]
-                                }`,
-                                paddingLeft: '10px',
-                              }}
-                            >
-                              {t(`monitor.events.${item.level}`)}
-                            </div>
-                            <div className="flex items-center">
-                              <span className="mr-[10px]">
-                                {t('monitor.events.whenResultIs')}
-                              </span>
-                              <Select
-                                className={strategyStyle.filterLabel}
-                                style={{
-                                  width: '100px',
-                                }}
-                                showSearch
-                                value={item.method}
-                                placeholder={t('monitor.events.method')}
-                                onChange={(val) => {
-                                  handleThresholdMethodChange(val, index);
-                                }}
-                              >
-                                {COMPARISON_METHOD.map((item: ListItem) => (
-                                  <Option value={item.value} key={item.value}>
-                                    {item.label}
-                                  </Option>
-                                ))}
-                              </Select>
-                              <InputNumber
-                                style={{
-                                  width: '200px',
-                                  borderRadius: '0 6px 6px 0',
-                                }}
-                                min={0}
-                                value={item.value}
-                                onChange={(e) =>
-                                  handleThresholdValueChange(e, index)
-                                }
-                              />
-                            </div>
-                          </div>
-                        ))}
                       </Form.Item>
                       <Form.Item
                         noStyle
@@ -1160,95 +955,105 @@ const StrategyOperation = () => {
                         {({ getFieldValue }) =>
                           isTrap(getFieldValue) ? null : (
                             <>
-                              <Form.Item<StrategyFields>
-                                label={
-                                  <span className="w-[100px]">
-                                    {t('monitor.events.recovery')}
-                                  </span>
-                                }
-                              >
-                                {t('monitor.events.recoveryCondition')}
-                                <Form.Item
-                                  name="recovery_condition"
-                                  noStyle
-                                  rules={[
-                                    {
-                                      required: false,
-                                      message: t('common.required'),
-                                    },
-                                  ]}
+                              {enableAlerts.includes('threshold') && (
+                                <Form.Item<StrategyFields>
+                                  label={
+                                    <span className="w-[100px]">
+                                      {t('monitor.events.recovery')}
+                                    </span>
+                                  }
                                 >
-                                  <InputNumber
-                                    className="mx-[10px] w-[100px]"
-                                    min={1}
-                                    precision={0}
-                                  />
-                                </Form.Item>
-                                {t('monitor.events.consecutivePeriods')}
-                                <div className="text-[var(--color-text-3)] mt-[10px]">
-                                  {t('monitor.events.setRecovery')}
-                                </div>
-                              </Form.Item>
-                              <Form.Item<StrategyFields>
-                                name="no_data_period"
-                                label={
-                                  <span className="w-[100px]">
-                                    {t('monitor.events.nodata')}
-                                  </span>
-                                }
-                                rules={[
-                                  {
-                                    required: false,
-                                    validator: validateNoData,
-                                  },
-                                ]}
-                              >
-                                <Switch
-                                  checked={openNoData}
-                                  onChange={handleNoDataChange}
-                                />
-                                {openNoData && (
-                                  <div className="mt-[10px]">
-                                    {t('monitor.events.reportedFor')}
+                                  {t('monitor.events.recoveryCondition')}
+                                  <Form.Item
+                                    name="recovery_condition"
+                                    noStyle
+                                    rules={[
+                                      {
+                                        required: false,
+                                        message: t('common.required'),
+                                      },
+                                    ]}
+                                  >
                                     <InputNumber
-                                      className="mx-[10px]"
-                                      min={
-                                        SCHEDULE_UNIT_MAP[`${nodataUnit}Min`]
-                                      }
-                                      max={
-                                        SCHEDULE_UNIT_MAP[`${nodataUnit}Max`]
-                                      }
-                                      value={noDataAlert}
+                                      className="mx-[10px] w-[100px]"
+                                      min={1}
                                       precision={0}
-                                      addonAfter={
-                                        <Select
-                                          value={nodataUnit}
-                                          style={{ width: 120 }}
-                                          onChange={handleNodataUnitChange}
-                                        >
-                                          {SCHEDULE_LIST.map((item) => (
-                                            <Option
-                                              key={item.value}
-                                              value={item.value}
-                                            >
-                                              {item.label}
-                                            </Option>
-                                          ))}
-                                        </Select>
-                                      }
-                                      onChange={handleNoDataAlertChange}
                                     />
-                                    {t('monitor.events.nodataPeriods')}
+                                  </Form.Item>
+                                  {t('monitor.events.consecutivePeriods')}
+                                  <div className="text-[var(--color-text-3)] mt-[10px]">
+                                    {t('monitor.events.setRecovery')}
+                                  </div>
+                                </Form.Item>
+                              )}
+                              {enableAlerts.includes('no_data') && (
+                                <>
+                                  <Form.Item<StrategyFields>
+                                    name="no_data_period"
+                                    label={
+                                      <span className="w-[100px]">
+                                        {t('monitor.intergrations.condition')}
+                                      </span>
+                                    }
+                                    rules={[
+                                      {
+                                        required: true,
+                                        validator: validateNoDataAlert,
+                                      },
+                                    ]}
+                                  >
+                                    <div className="flex items-center">
+                                      {t('monitor.events.reportedFor')}
+                                      <InputNumber
+                                        className="mx-[10px]"
+                                        min={
+                                          SCHEDULE_UNIT_MAP[`${nodataUnit}Min`]
+                                        }
+                                        max={
+                                          SCHEDULE_UNIT_MAP[`${nodataUnit}Max`]
+                                        }
+                                        value={noDataAlert}
+                                        precision={0}
+                                        addonAfter={
+                                          <Select
+                                            value={nodataUnit}
+                                            style={{ width: 120 }}
+                                            onChange={handleNodataUnitChange}
+                                          >
+                                            {SCHEDULE_LIST.map((item) => (
+                                              <Option
+                                                key={item.value}
+                                                value={item.value}
+                                              >
+                                                {item.label}
+                                              </Option>
+                                            ))}
+                                          </Select>
+                                        }
+                                        onChange={handleNoDataAlertChange}
+                                      />
+                                      {t('monitor.events.nodataPeriods')}
+                                    </div>
+                                  </Form.Item>
+                                  <Form.Item<StrategyFields>
+                                    name="no_data_level"
+                                    label={
+                                      <span className="w-[100px]">
+                                        {t('monitor.events.alarmLevel')}
+                                      </span>
+                                    }
+                                    rules={[
+                                      {
+                                        required: true,
+                                        message: t('common.required'),
+                                      },
+                                    ]}
+                                  >
                                     <Select
-                                      value={noDataLevel}
                                       style={{
                                         width: '100px',
-                                        margin: '0 10px',
                                       }}
                                       placeholder={t('monitor.events.level')}
-                                      onChange={(val: string) =>
-                                        setNoDataLevel(val)
-                                      }
                                     >
                                       {LEVEL_LIST.map((item: ListItem) => (
                                         <Option
@@ -1259,16 +1064,64 @@ const StrategyOperation = () => {
                                         </Option>
                                       ))}
                                     </Select>
-                                    {t('monitor.events.nodataRecoverCondition')}
-                                    {` ${noDataAlert || ''} ${
-                                      SCHEDULE_LIST.find(
-                                        (item) => item.value === nodataUnit
-                                      )?.label
-                                    } `}
-                                    {t('monitor.events.nodataRecover')}
-                                  </div>
-                                )}
-                              </Form.Item>
+                                  </Form.Item>
+                                  <Form.Item<StrategyFields>
+                                    name="no_data_recovery_period"
+                                    label={
+                                      <span className="w-[100px]">
+                                        {t('monitor.events.noDataRecovery')}
+                                      </span>
+                                    }
+                                    rules={[
+                                      {
+                                        required: true,
+                                        validator: validateNoDataRecoveryAlert,
+                                      },
+                                    ]}
+                                  >
+                                    <div className="flex items-center">
+                                      {t(
+                                        'monitor.events.nodataRecoverCondition'
+                                      )}
+                                      <InputNumber
+                                        className="mx-[10px]"
+                                        min={
+                                          SCHEDULE_UNIT_MAP[
+                                            `${noDataRecoveryUnit}Min`
+                                          ]
+                                        }
+                                        max={
+                                          SCHEDULE_UNIT_MAP[
+                                            `${noDataRecoveryUnit}Max`
+                                          ]
+                                        }
+                                        value={noDataRecovery}
+                                        precision={0}
+                                        addonAfter={
+                                          <Select
+                                            value={noDataRecoveryUnit}
+                                            style={{ width: 120 }}
+                                            onChange={
+                                              handleNodataRecoveryUnitChange
+                                            }
+                                          >
+                                            {SCHEDULE_LIST.map((item) => (
+                                              <Option
+                                                key={item.value}
+                                                value={item.value}
+                                              >
+                                                {item.label}
+                                              </Option>
+                                            ))}
+                                          </Select>
+                                        }
+                                        onChange={handleNoDataRecoveryChange}
+                                      />
+                                      {t('monitor.events.nodataRecover')}
+                                    </div>
+                                  </Form.Item>
+                                </>
+                              )}
                             </>
                           )
                         }
