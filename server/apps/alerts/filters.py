@@ -5,7 +5,7 @@
 from django_filters import FilterSet, CharFilter
 
 from apps.alerts.constants import AlertStatus
-from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment, AlertShield
+from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment, AlertShield, Incident
 
 
 class AlertSourceModelFilter(FilterSet):
@@ -39,11 +39,12 @@ class AlertModelFilter(FilterSet):
     source_name = CharFilter(method="filter_source_name", label="告警源")
     created_at_after = CharFilter(field_name="created_at", lookup_expr="gte", label="创建时间（起始）")
     created_at_before = CharFilter(field_name="created_at", lookup_expr="lte", label="创建时间（结束）")
+    incident_id = CharFilter(field_name="incident__id", lookup_expr="exact", label="事故ID")
 
     class Meta:
         model = Alert
         fields = ["title", "content", "alert_id", "activate", "my_alert", "level", "status", "source_name",
-                  "created_at_after", "created_at_before"]
+                  "created_at_after", "created_at_before", "incident_id"]
 
     @staticmethod
     def filter_activate(qs, field_name, value):
@@ -124,3 +125,32 @@ class AlertShieldModelFilter(FilterSet):
     class Meta:
         model = AlertShield
         fields = ["name"]
+
+
+class IncidentModelFilter(FilterSet):
+    title = CharFilter(field_name="title", lookup_expr="icontains", label="标题")
+    incident_id = CharFilter(field_name="incident_id", lookup_expr="exact", label="事故ID")
+    level = CharFilter(method="filter_level", label="告警级别")
+    status = CharFilter(method="filter_status", label="告警状态")
+
+    class Meta:
+        model = Incident
+        fields = ["title", "level", "status", "incident_id"]
+
+    @staticmethod
+    def filter_level(qs, field_name, value):
+        """支持多选的告警级别过滤"""
+        if value:
+            # 支持逗号分隔的多个值
+            levels = [level.strip() for level in value.split(',')]
+            return qs.filter(level__in=levels)
+        return qs
+
+    @staticmethod
+    def filter_status(qs, field_name, value):
+        """支持多选的告警状态过滤"""
+        if value:
+            # 支持逗号分隔的多个值
+            statuses = [status.strip() for status in value.split(',')]
+            return qs.filter(status__in=statuses)
+        return qs

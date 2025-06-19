@@ -125,6 +125,39 @@ class AlertOperate:
     )
 
 
+class IncidentStatus:
+    """事故状态"""
+    PENDING = "pending"
+    RESOLVED = "resolved"
+    PROCESSING = "processing"
+    CLOSED = "closed"
+    UNASSIGNED = "unassigned"
+
+    CHOICES = (
+        (PENDING, "待响应"),
+        (PROCESSING, "处理中"),
+        (RESOLVED, "已处理"),
+        (CLOSED, "已关闭"),
+        (UNASSIGNED, "未分派"),
+    )
+    ACTIVATE_STATUS = (PENDING, PROCESSING, UNASSIGNED)
+
+
+class IncidentOperate:
+    """告警事件操作"""
+    ACKNOWLEDGE = "acknowledge"
+    CLOSE = "close"
+    REASSIGN = "reassign"
+    Assign = "assign"
+
+    CHOICES = (
+        (ACKNOWLEDGE, "认领"),
+        (CLOSE, "关闭"),
+        (REASSIGN, "转派"),
+        (Assign, "分派"),
+    )
+
+
 # ===
 class LevelType:
     """级别类型"""

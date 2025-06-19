@@ -2,14 +2,19 @@
 # @File: view.py
 # @Time: 2025/5/9 15:14
 # @Author: windyzhao
+import uuid
+
 from django.contrib.postgres.aggregates import StringAgg
 from django.db.models import Count
+from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.response import Response
 
-from apps.alerts.filters import AlertSourceModelFilter, AlertModelFilter, EventModelFilter, LevelModelFilter
-from apps.alerts.models import AlertSource, Alert, Event, Level
+from apps.alerts.filters import AlertSourceModelFilter, AlertModelFilter, EventModelFilter, LevelModelFilter, \
+    IncidentModelFilter
+from apps.alerts.models import AlertSource, Alert, Event, Level, Incident
 from apps.alerts.serializers.serializers import AlertSourceModelSerializer, AlertModelSerializer, EventModelSerializer, \
-    LevelModelSerializer
+    LevelModelSerializer, IncidentModelSerializer
 from apps.alerts.service.alter_operator import AlertOperator
 from apps.core.utils.web_utils import WebUtils
 from config.drf.pagination import CustomPageNumberPagination
@@ -117,3 +122,31 @@ class LevelModelViewSet(ModelViewSet):
     ordering_fields = ["level_id"]
     ordering = ["level_id"]
     pagination_class = CustomPageNumberPagination
+
+
+class IncidentModelViewSet(ModelViewSet):
+    """
+    事故视图集
+    """
+    queryset = Incident.objects.all()
+    serializer_class = IncidentModelSerializer
+    ordering_fields = ["created_at", "id"]  # 允许按创建时间和ID排序 ?ordering=-id
+    ordering = ["-created_at"]  # 默认按创建时间降序排序
+    filterset_class = IncidentModelFilter
+    pagination_class = CustomPageNumberPagination
+
+    def get_queryset(self):
+        queryset = Incident.objects.annotate(
+            alert_count=Count('alert')
+        ).prefetch_related('alert')
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        incident_id = f"INCIDENT-{uuid.uuid4().hex}"
+        data["incident_id"] = incident_id
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

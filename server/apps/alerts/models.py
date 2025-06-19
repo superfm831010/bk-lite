@@ -13,7 +13,7 @@ from django.db.models import JSONField
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
 from apps.alerts.constants import AlertsSourceTypes, AlertAccessType, EventStatus, AlertOperate, \
-    AlertStatus, EventAction, LevelType, AlertAssignmentMatchType, AlertShieldMatchType
+    AlertStatus, EventAction, LevelType, AlertAssignmentMatchType, AlertShieldMatchType, IncidentStatus, IncidentOperate
 from apps.alerts.utils.util import gen_app_secret
 
 
@@ -138,6 +138,43 @@ class Alert(models.Model):
 
     def __str__(self):
         return f"{self.alert_id} - {self.title} ({self.status})"
+
+    @property
+    def format_created_at(self):
+        """格式化创建时间"""
+        return self.created_at.strftime("%Y-%m-%d %H:%M:%S")
+
+
+class Incident(MaintainerInfo):
+    """聚合后的告警（事件）"""
+
+    incident_id = models.CharField(max_length=100, unique=True, db_index=True, help_text="事故ID")
+    status = models.CharField(max_length=32, choices=IncidentStatus.CHOICES, default=IncidentStatus.PENDING,
+                              help_text="事件状态", db_index=True)
+    level = models.CharField(max_length=32, db_index=True, help_text="级别")
+    alert = models.ManyToManyField(Alert)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, help_text="创建时间")
+    updated_at = models.DateTimeField(auto_now=True, db_index=True, help_text="更新时间")
+    title = models.CharField(max_length=256, help_text="标题")
+    content = models.TextField(null=True, blank=True, help_text="内容")
+    note = models.TextField(null=True, blank=True, help_text="事件备注")
+    labels = JSONField(default=dict, help_text="标签")
+    operate = models.CharField(max_length=64, choices=IncidentOperate.CHOICES, null=True, blank=True, help_text="操作")
+    operator = JSONField(default=list, blank=True, help_text="处理人")
+    # 核心指纹字段（用于聚合）
+    fingerprint = models.CharField(max_length=32, null=True, blank=True, db_index=True, help_text="事件指纹")
+
+    class Meta:
+        db_table = "alerts_incident"
+        indexes = [
+            # 时间范围查询优化
+            BTreeIndex(fields=['created_at'], name='incident_created_btree'),
+            # JSONB字段索引
+            GinIndex(fields=['operator'], name='incident_operator_gin'),
+        ]
+
+    def __str__(self):
+        return f"{self.incident_id} - {self.title} ({self.status})"
 
     @property
     def format_created_at(self):
