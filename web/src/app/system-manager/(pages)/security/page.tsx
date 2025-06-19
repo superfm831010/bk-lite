@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Switch, message, Form, Input, Segmented, Menu, InputNumber, Button, Alert } from 'antd';
-import { CopyOutlined } from '@ant-design/icons';
+import { Switch, message, Form, Segmented, Menu, InputNumber, Button, Alert } from 'antd';
+import { PlusOutlined, CopyOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import EntityList from '@/components/entity-list';
 import OperateModal from '@/components/operate-modal';
+import DynamicForm from '@/components/dynamic-form';
 import { useSecurityApi } from '@/app/system-manager/api/security';
 import { AuthSource } from '@/app/system-manager/types/security';
 import PermissionWrapper from '@/components/permission';
@@ -26,8 +27,8 @@ const SecurityPage: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingSource, setEditingSource] = useState<AuthSource | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
-  const [form] = Form.useForm();
-  const { getSystemSettings, updateOtpSettings, getAuthSources, updateAuthSource } = useSecurityApi();
+  const [dynamicForm] = Form.useForm();
+  const { getSystemSettings, updateOtpSettings, getAuthSources, updateAuthSource, createAuthSource } = useSecurityApi();
 
   useEffect(() => {
     fetchSystemSettings();
@@ -100,24 +101,114 @@ const SecurityPage: React.FC = () => {
     }
   };
 
-  const handleEditSource = (source: AuthSource) => {
-    setEditingSource(source);
-    form.setFieldsValue({
-      name: source.name,
-      app_id: source.app_id,
-      app_secret: source.app_secret,
-      enabled: source.enabled,
-      redirect_uri: source.other_config.redirect_uri,
-      callback_url: source.other_config.callback_url
-    });
+  const getNewAuthSourceFormFields = () => [
+    {
+      name: 'name',
+      type: 'input',
+      label: t('system.security.authSourceName'),
+      placeholder: `${t('common.inputMsg')}${t('system.security.authSourceName')}`,
+      rules: [{ required: true, message: `${t('common.inputMsg')}${t('system.security.authSourceName')}` }]
+    },
+    {
+      name: 'source_type',
+      type: 'select',
+      label: t('system.security.authSourceType'),
+      placeholder: `${t('common.select')}${t('system.security.authSourceType')}`,
+      options: [
+        { value: 'bklite', label: 'BK-Lite认证源' }
+      ],
+      rules: [{ required: true, message: `${t('common.select')}${t('system.security.authSourceType')}` }]
+    },
+    {
+      name: 'namespace',
+      type: 'input',
+      label: t('system.security.namespace'),
+      placeholder: `${t('common.inputMsg')}${t('system.security.namespace')}`
+    },
+    {
+      name: 'domain',
+      type: 'input',
+      label: t('system.security.domain'),
+      placeholder: `${t('common.inputMsg')}${t('system.security.domain')}`
+    },
+    {
+      name: 'org_root_dn',
+      type: 'input',
+      label: t('system.security.orgRootDn'),
+      placeholder: `${t('common.inputMsg')}${t('system.security.orgRootDn')}`
+    },
+    {
+      name: 'user_init_role',
+      type: 'input',
+      label: t('system.security.userInitRole'),
+      placeholder: `${t('common.inputMsg')}${t('system.security.userInitRole')}`
+    },
+    {
+      name: 'sync_enabled',
+      type: 'switch',
+      label: t('system.security.syncEnabled'),
+      size: 'small',
+      initialValue: false
+    },
+    {
+      name: 'description',
+      type: 'textarea',
+      label: t('common.description'),
+      placeholder: `${t('common.inputMsg')}${t('common.description')}`,
+      rows: 4
+    }
+  ];
+
+  const getWeChatFormFields = () => [
+    {
+      name: 'name',
+      type: 'input',
+      label: t('system.security.loginMethodName'),
+      placeholder: `${t('common.inputMsg')}${t('system.security.loginMethodName')}`,
+      rules: [{ required: true, message: `${t('common.inputMsg')}${t('system.security.loginMethodName')}` }]
+    },
+    {
+      name: 'app_id',
+      type: 'input',
+      label: t('system.security.appId'),
+      placeholder: `${t('common.inputMsg')}${t('system.security.appId')}`,
+      rules: [{ required: true, message: `${t('common.inputMsg')}${t('system.security.appId')}` }]
+    },
+    {
+      name: 'app_secret',
+      type: 'editablePwd',
+      label: t('system.security.appSecret'),
+      placeholder: `${t('common.inputMsg')}${t('system.security.appSecret')}`,
+      rules: [{ required: true, message: `${t('common.inputMsg')}${t('system.security.appSecret')}` }]
+    },
+    {
+      name: 'redirect_uri',
+      type: 'input',
+      label: t('system.security.redirectUri'),
+      placeholder: `${t('common.inputMsg')}${t('system.security.redirectUri')}`,
+      suffix: <CopyOutlined onClick={() => copyToClipboard(dynamicForm.getFieldValue('redirect_uri'))} />
+    },
+    {
+      name: 'enabled',
+      type: 'switch',
+      label: t('system.security.enabled'),
+      initialValue: true,
+      size: 'small'
+    }
+  ];
+
+  const handleAddAuthSource = () => {
+    setEditingSource(null);
+    dynamicForm.resetFields();
     setIsModalVisible(true);
   };
 
-  const handleModalOk = async () => {
+  const handleAuthSourceSubmit = async () => {
     try {
       setModalLoading(true);
-      const values = await form.validateFields();
+      
       if (editingSource) {
+        const values = await dynamicForm.validateFields();
         const updateData = {
           name: values.name,
           app_id: values.app_id,
@@ -141,23 +232,68 @@ const SecurityPage: React.FC = () => {
         ));
         
         message.success(t('common.updateSuccess'));
-        setIsModalVisible(false);
-        setEditingSource(null);
-        form.resetFields();
+      } else {
+        const values = await dynamicForm.validateFields();
+        const createData = {
+          name: values.name,
+          source_type: values.source_type,
+          namespace: values.namespace,
+          domain: values.domain,
+          org_root_dn: values.org_root_dn,
+          user_init_role: values.user_init_role,
+          sync_enabled: values.sync_enabled || false,
+          description: values.description
+        };
+        
+        const newSource = await createAuthSource(createData);
+        const enhancedSource = enhanceAuthSourcesList([newSource])[0];
+        
+        setAuthSources([...authSources, enhancedSource]);
+        message.success(t('common.createSuccess'));
       }
+      
+      setIsModalVisible(false);
+      setEditingSource(null);
+      dynamicForm.resetFields();
     } catch (error) {
-      console.error('Failed to update auth source:', error);
-      message.error(t('common.updateFailed'));
+      console.error('Failed to save auth source:', error);
+      message.error(editingSource ? t('common.updateFailed') : t('common.createFailed'));
     } finally {
       setModalLoading(false);
     }
   };
 
   const handleModalCancel = () => {
-    if (modalLoading) return; // 防止在loading时关闭
+    if (modalLoading) return;
     setIsModalVisible(false);
     setEditingSource(null);
-    form.resetFields();
+    dynamicForm.resetFields();
+  };
+
+  const handleEditSource = (source: AuthSource) => {
+    setEditingSource(source);
+    
+    if (source.source_type === 'wechat') {
+      dynamicForm.setFieldsValue({
+        name: source.name,
+        app_id: source.app_id,
+        app_secret: source.app_secret,
+        enabled: source.enabled,
+        redirect_uri: source.other_config.redirect_uri,
+        callback_url: source.other_config.callback_url
+      });
+    } else {
+      dynamicForm.setFieldsValue({
+        name: source.name,
+        source_type: source.source_type,
+      });
+    }
+    
+    setIsModalVisible(true);
+  };
+
+  const handleSearch = (searchTerm: string) => {
+    console.log('Searching for:', searchTerm);
   };
 
   const copyToClipboard = (text: string) => {
@@ -185,10 +321,22 @@ const SecurityPage: React.FC = () => {
   const getAuthImageSrc = (sourceType: string) => {
     const imageMap: Record<string, string> = {
       wechat: wechatAuthImg.src,
-      // 添加其他认证方式的图片
     };
     return imageMap[sourceType] || undefined;
   };
+
+  const operateSection = (
+    <PermissionWrapper requiredPermissions={['Add']}>
+      <Button 
+        type="primary" 
+        icon={<PlusOutlined />}
+        onClick={handleAddAuthSource}
+        className="ml-2"
+      >
+        {t('common.add')}
+      </Button>
+    </PermissionWrapper>
+  );
 
   const tabContent = {
     '1': (
@@ -231,9 +379,11 @@ const SecurityPage: React.FC = () => {
       <EntityList
         data={authSources}
         loading={authSourcesLoading}
-        search={false}
+        search
+        onSearch={handleSearch}
         menuActions={menuActions}
         onCardClick={handleEditSource}
+        operateSection={operateSection}
       />
     )
   };
@@ -253,82 +403,43 @@ const SecurityPage: React.FC = () => {
       {tabContent[activeTab as '1' | '2']}
 
       <OperateModal
-        title={t('common.edit')}
+        title={editingSource ? t('common.edit') : t('common.add')}
         open={isModalVisible}
-        onOk={handleModalOk}
+        onOk={handleAuthSourceSubmit}
         onCancel={handleModalCancel}
-        width={800}
+        width={editingSource?.source_type === 'wechat' ? 1000 : 800}
         confirmLoading={modalLoading}
         maskClosable={!modalLoading}
       >
-        <Alert type="info" showIcon message={t('system.security.informationTip')} className='mb-4'  />
-        <div className="flex gap-6">
-          <div className="flex-1">
-            <Form form={form} layout="vertical">
-              <Form.Item
-                name="name"
-                label={t('system.security.loginMethodName')}
-                rules={[{ required: true, message: `${t('common.inputMsg')}${t('system.security.loginMethodName')}` }]}
-              >
-                <Input placeholder={`${t('common.inputMsg')}${t('system.security.loginMethodName')}`} />
-              </Form.Item>
-              
-              <Form.Item
-                name="app_id"
-                label={t('system.security.appId')}
-                rules={[{ required: true, message: `${t('common.inputMsg')}${t('system.security.appId')}` }]}
-              >
-                <Input placeholder={`${t('common.inputMsg')}${t('system.security.appId')}`} />
-              </Form.Item>
-              
-              <Form.Item
-                name="app_secret"
-                label={t('system.security.appSecret')}
-                rules={[{ required: true, message: `${t('common.inputMsg')}${t('system.security.appSecret')}` }]}
-              >
-                <Input.Password placeholder={`${t('common.inputMsg')}${t('system.security.appSecret')}`} />
-              </Form.Item>
-              
-              <Form.Item
-                name="redirect_uri"
-                label={t('system.security.redirectUri')}
-                tooltip={t('system.security.redirectUriTip')}
-              >
-                <Input 
-                  suffix={
-                    <Button 
-                      type="text" 
-                      icon={<CopyOutlined />} 
-                      size="small"
-                      onClick={() => copyToClipboard(form.getFieldValue('redirect_uri') || '')}
-                    />
-                  }
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="enabled"
-                label={t('system.security.enabled')}
-                valuePropName="checked"
-              >
-                <Switch size="small" />
-              </Form.Item>
-            </Form>
-          </div>
-          
-          <div className="w-64 flex justify-center items-start pt-8">
-            {editingSource && getAuthImageSrc(editingSource.source_type) && (
-              <img 
-                src={getAuthImageSrc(editingSource.source_type)}
-                alt={`${editingSource.source_type} auth`}
-                className="max-w-full h-auto"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
+        {editingSource?.source_type === 'wechat' && (
+          <div className="flex">
+            <div className="flex-1">
+              <Alert type="info" showIcon message={t('system.security.informationTip')} className='mb-4' />
+              <DynamicForm
+                form={dynamicForm}
+                fields={getWeChatFormFields()}
               />
-            )}
+            </div>
+            <div className="w-64 flex justify-center items-start pt-8">
+              {editingSource && getAuthImageSrc(editingSource.source_type) && (
+                <img 
+                  src={getAuthImageSrc(editingSource.source_type)}
+                  alt={`${editingSource.source_type} auth`}
+                  className="max-w-full h-auto"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
+        {!editingSource?.source_type && (
+          <DynamicForm
+            form={dynamicForm}
+            fields={getNewAuthSourceFormFields()}
+          />
+        )}
       </OperateModal>
     </div>
   );
