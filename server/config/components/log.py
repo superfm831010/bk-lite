@@ -43,6 +43,11 @@ LOGGING = {
             "formatter": "verbose",
             "filename": os.path.join(log_dir, "db.log"),
         },
+        "alert": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "verbose",
+            "filename": os.path.join(log_dir, "alert.log"),
+        },
         "cmdb": {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "verbose",
