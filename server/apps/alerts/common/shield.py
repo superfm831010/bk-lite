@@ -14,7 +14,7 @@ from django.db import transaction
 from apps.alerts.error import ShieldNotFoundError, EventNotFoundError
 from apps.alerts.models import AlertShield, Event
 from apps.alerts.constants import AlertShieldMatchType, EventStatus
-from apps.core.logger import logger
+from apps.core.logger import alert_logger as logger
 
 
 class EventShieldOperator(object):

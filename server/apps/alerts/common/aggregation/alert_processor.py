@@ -16,7 +16,7 @@ from apps.alerts.common.rules.rule_manager import get_rule_manager
 from apps.alerts.common.rules.alert_rules import format_alert_message
 from apps.alerts.constants import AlertStatus, LevelType, EventStatus
 from apps.alerts.models import Event, Alert, Level
-from apps.core.logger import logger
+from apps.core.logger import alert_logger as logger
 
 
 class AlertProcessor:

@@ -3,7 +3,7 @@
 # @Time: 2025/6/11 14:06
 # @Author: windyzhao
 from apps.alerts.utils.system_mgmt_util import SystemMgmtUtils
-from apps.core.logger import logger
+from apps.core.logger import alert_logger as logger
 
 
 class Notify:

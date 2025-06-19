@@ -5,7 +5,7 @@
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate
 
-from apps.core.logger import logger
+from apps.core.logger import alert_logger as logger
 
 
 class AlertsConfig(AppConfig):

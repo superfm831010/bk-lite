@@ -7,7 +7,7 @@ from apps.alerts.serializers.serializers import AlertAssignmentModelSerializer, 
 from config.drf.pagination import CustomPageNumberPagination
 from config.drf.viewsets import ModelViewSet
 from apps.alerts.models import AlertAssignment, AlertReminderTask, AlertShield
-from apps.core.logger import logger
+from apps.core.logger import alert_logger as logger
 
 
 class AlertAssignmentModelViewSet(ModelViewSet):

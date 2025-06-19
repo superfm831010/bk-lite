@@ -16,7 +16,7 @@ from apps.alerts.models import AlertSource, Alert, Event, Level, Incident
 from apps.alerts.serializers.serializers import AlertSourceModelSerializer, AlertModelSerializer, EventModelSerializer, \
     LevelModelSerializer, IncidentModelSerializer
 from apps.alerts.service.alter_operator import AlertOperator
-from apps.core.logger import logger
+from apps.core.logger import alert_logger as logger
 from apps.core.utils.web_utils import WebUtils
 from config.drf.pagination import CustomPageNumberPagination
 from config.drf.viewsets import ModelViewSet

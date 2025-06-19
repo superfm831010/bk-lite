@@ -14,7 +14,7 @@ from apps.alerts.models import Alert, AlertAssignment
 from apps.alerts.constants import AlertStatus, AlertAssignmentMatchType
 from apps.alerts.service.alter_operator import AlertOperator
 from apps.alerts.service.reminder_service import ReminderService
-from apps.core.logger import logger
+from apps.core.logger import alert_logger as logger
 
 
 class AlertAssignmentOperator:

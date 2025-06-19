@@ -9,7 +9,7 @@ from django.db import transaction
 
 from apps.alerts.models import Alert, AlertAssignment
 from apps.alerts.constants import AlertStatus, AlertOperate
-from apps.core.logger import logger
+from apps.core.logger import alert_logger as logger
 
 
 class AlertOperator(object):

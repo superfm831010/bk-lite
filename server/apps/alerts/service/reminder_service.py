@@ -13,7 +13,7 @@ from typing import Dict, Any, Optional
 from apps.alerts.constants import LevelType
 from apps.alerts.models import Alert, AlertReminderTask, AlertAssignment, Level
 from apps.alerts.tasks import sync_notify
-from apps.core.logger import logger
+from apps.core.logger import alert_logger as logger
 
 
 class ReminderService:

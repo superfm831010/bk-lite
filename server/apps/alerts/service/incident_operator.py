@@ -4,7 +4,7 @@
 # @Author: windyzhao
 
 from apps.alerts.models import Incident
-from apps.core.logger import logger
+from apps.core.logger import alert_logger as logger
 from apps.alerts.constants import IncidentStatus, IncidentOperate
 
 

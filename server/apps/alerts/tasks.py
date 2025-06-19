@@ -7,7 +7,7 @@ from celery import shared_task
 from apps.alerts.common.aggregation.alert_processor import AlertProcessor
 from apps.alerts.common.notify.notify import Notify
 from apps.alerts.service.alter_operator import BeatUpdateAlertStatu
-from apps.core.logger import logger
+from apps.core.logger import alert_logger as logger
 
 
 @shared_task
