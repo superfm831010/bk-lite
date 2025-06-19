@@ -1,32 +1,33 @@
 export const getDefaultExtractionMethod = (extension: string): string => {
-  const extensionMapping: Record<string, string> = {
-    docx: 'chapter',
-    pdf: 'fullText',
-    xlsx: 'worksheet',
-    csv: 'worksheet',
-    txt: 'fullText',
-    md: 'fullText',
-    link: 'fullText',
-    text: 'fullText',
-  };
-  return extensionMapping[extension] || 'fullText';
+  const ext = extension.toLowerCase();
+  
+  if (ext === 'docx' || ext === 'doc') {
+    return 'chapter';
+  } else if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
+    return 'row';
+  } else if (ext === 'pdf') {
+    return 'page';
+  } else {
+    return 'fullText';
+  }
 };
 
-
-export const getExtractionMethodMap = (extension: string): string => {
-  const extensionMapping: Record<string, string> = {
+export const getExtractionMethodMap = (method: string): string => {
+  const methodMapping: Record<string, string> = {
     fullText: 'full',
     chapter: 'paragraph',
+    page: 'page',
     worksheet: 'excel_full_content_parse',
     row: 'excel_header_row_parse',
   };
-  return extensionMapping[extension] || 'full';
+  return methodMapping[method] || 'full';
 };
 
 export const getReverseExtractionMethodMap = (value: string): string => {
   const reverseMapping: Record<string, string> = {
     full: 'fullText',
     paragraph: 'chapter',
+    page: 'page',
     excel_full_content_parse: 'worksheet',
     excel_header_row_parse: 'row',
   };

@@ -116,6 +116,7 @@ const DocumentsPage: React.FC = () => {
         const modeMap: { [key: string]: string } = {
           'full': t('knowledge.documents.fullTextExtraction'),
           'paragraph': t('knowledge.documents.chapterExtraction'),
+          'page': t('knowledge.documents.pageExtraction'),
           'excel_full_content_parse': t('knowledge.documents.worksheetExtraction'),
           'excel_header_row_parse': t('knowledge.documents.rowExtraction'),
         };
