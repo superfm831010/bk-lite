@@ -471,7 +471,7 @@ class MonitorPolicyScan:
 
         self.set_monitor_obj_instance_key()
 
-        if THRESHOLD in self.policy.enable_alert:
+        if THRESHOLD in self.policy.enable_alerts:
             # 告警事件
             alert_events, info_events = self.alert_event()
             # 正常、异常事件计数
@@ -481,7 +481,7 @@ class MonitorPolicyScan:
         else:
             alert_events = []
 
-        if NO_DATA in self.policy.enable_alert:
+        if NO_DATA in self.policy.enable_alerts:
             # 无数据事件
             no_data_events = self.no_data_event()
             # 无数据告警恢复
