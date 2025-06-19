@@ -212,7 +212,14 @@
       "appSecret": "App Secret",
       "enabled": "Enabled",
       "redirectUri": "Redirect URI",
-      "redirectUriTip": "The page to redirect to after successful login. Format example (to return to the console): https://authorized-callback-domain/ops-console/home"
+      "redirectUriTip": "The page to redirect to after successful login. Format example (to return to the console): https://authorized-callback-domain/ops-console/home",
+      "authSourceName": "Authentication Source Name",
+      "authSourceType": "Authentication Source Type",
+      "namespace": "Namespace",
+      "domain": "Domain",
+      "orgRootDn": "Organization Root DN",
+      "userInitRole": "User Initial Role",
+      "syncEnabled": "Scheduled Sync"
     }
   }
 }

@@ -51,10 +51,29 @@ export const useSecurityApi = () => {
     return await patch(`/system_mgmt/login_module/${id}/`, data);
   }
 
+  /**
+   * Create auth source
+   * @param data - New auth source data
+   * @returns Promise with created auth source
+   */
+  async function createAuthSource(data: {
+    name: string;
+    source_type: string;
+    namespace?: string;
+    domain?: string;
+    org_root_dn?: string;
+    user_init_role?: string;
+    sync_enabled?: boolean;
+    description?: string;
+  }): Promise<any> {
+    return await post('/system_mgmt/login_module/', data);
+  }
+
   return {
     getSystemSettings,
     updateOtpSettings,
     getAuthSources,
-    updateAuthSource
+    updateAuthSource,
+    createAuthSource
   };
 };
