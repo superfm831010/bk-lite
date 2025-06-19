@@ -19,7 +19,6 @@ import useMonitorApi from '@/app/monitor/api';
 import { useTranslation } from '@/utils/i18n';
 import {
   ModalRef,
-  Organization,
   ListItem,
   UserItem,
   SegmentedItem,
@@ -80,9 +79,7 @@ const StrategyOperation = () => {
   const searchParams = useSearchParams();
   const [form] = Form.useForm();
   const router = useRouter();
-  const authList = useRef(commonContext?.authOrganizations || []);
   const users = useRef(commonContext?.userList || []);
-  const organizationList: Organization[] = authList.current;
   const userList: UserItem[] = users.current;
   const instRef = useRef<ModalRef>(null);
   const userContext = useUserInfoContext();
@@ -1227,7 +1224,6 @@ const StrategyOperation = () => {
       </div>
       <SelectAssets
         ref={instRef}
-        organizationList={organizationList}
         monitorObject={monitorObjId}
         objects={objects}
         onSuccess={onChooseAssets}
