@@ -19,13 +19,12 @@ import useMonitorApi from '@/app/monitor/api';
 import { useTranslation } from '@/utils/i18n';
 import {
   ModalRef,
-  Organization,
   ListItem,
   UserItem,
   SegmentedItem,
   TableDataItem,
 } from '@/app/monitor/types';
-import CustomCascader from '@/components/custom-cascader';
+import GroupTreeSelector from '@/components/group-tree-select';
 import {
   StrategyFields,
   SourceFeild,
@@ -80,9 +79,7 @@ const StrategyOperation = () => {
   const searchParams = useSearchParams();
   const [form] = Form.useForm();
   const router = useRouter();
-  const authList = useRef(commonContext?.authOrganizations || []);
   const users = useRef(commonContext?.userList || []);
-  const organizationList: Organization[] = authList.current;
   const userList: UserItem[] = users.current;
   const instRef = useRef<ModalRef>(null);
   const userContext = useUserInfoContext();
@@ -631,17 +628,12 @@ const StrategyOperation = () => {
                           { required: true, message: t('common.required') },
                         ]}
                       >
-                        <CustomCascader
+                        <GroupTreeSelector
                           style={{
                             width: '800px',
+                            marginRight: '8px',
                           }}
-                          multiple
                           placeholder={t('common.group')}
-                          className="mr-[8px]"
-                          showSearch
-                          maxTagCount="responsive"
-                          options={organizationList}
-                          allowClear
                         />
                       </Form.Item>
                     </>
@@ -1232,7 +1224,6 @@ const StrategyOperation = () => {
       </div>
       <SelectAssets
         ref={instRef}
-        organizationList={organizationList}
         monitorObject={monitorObjId}
         objects={objects}
         onSuccess={onChooseAssets}
