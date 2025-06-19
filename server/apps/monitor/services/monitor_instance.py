@@ -2,6 +2,7 @@ import ast
 
 from django.db.models import Prefetch
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.constants import MONITOR_OBJS
 from apps.monitor.models import Metric, MonitorInstance
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
@@ -49,7 +50,7 @@ class InstanceSearch:
         obj_metric_map = {i["name"]: i for i in MONITOR_OBJS}
         obj_metric_map = obj_metric_map.get(self.monitor_obj.name)
         if not obj_metric_map:
-            raise ValueError("Monitor object default metric does not exist")
+            raise BaseAppException("Monitor object default metric does not exist")
         return obj_metric_map
 
     def search(self):

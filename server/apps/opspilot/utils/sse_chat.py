@@ -6,7 +6,7 @@ import requests
 from django.conf import settings
 from django.http import StreamingHttpResponse
 
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.bot_mgmt.utils import insert_skill_log
 from apps.opspilot.enum import SkillTypeChoices
 from apps.opspilot.model_provider_mgmt.models import LLMModel
@@ -34,71 +34,63 @@ def generate_stream_error(message):
     return response
 
 
+def _process_think_buffer(think_buffer, in_think_block):
+    """处理思考缓冲区，返回可输出的内容"""
+    output_chunks = []
+
+    while think_buffer:
+        if not in_think_block:
+            think_start_pos = think_buffer.find("<think>")
+            if think_start_pos != -1:
+                # 输出思考标签前的内容
+                if think_start_pos > 0:
+                    output_chunks.append(think_buffer[:think_start_pos])
+                in_think_block = True
+                think_buffer = think_buffer[think_start_pos + 7 :]
+            else:
+                # 保留最后8个字符防止标签分割
+                if len(think_buffer) > 8:
+                    output_chunks.append(think_buffer[:-8])
+                    think_buffer = think_buffer[-8:]
+                break
+        else:
+            think_end_pos = think_buffer.find("</think>")
+            if think_end_pos != -1:
+                in_think_block = False
+                think_buffer = think_buffer[think_end_pos + 8 :]
+            else:
+                think_buffer = ""
+                break
+
+    return "".join(output_chunks), think_buffer, in_think_block
+
+
 def _process_think_content(content_chunk, think_buffer, in_think_block, is_first_content, show_think, has_think_tags):
     """处理思考过程相关的内容过滤"""
     if show_think:
-        # 显示思考过程，直接返回内容
         return content_chunk, think_buffer, in_think_block, False, has_think_tags
 
-    # 如果是第一次接收内容，检查是否包含 <think> 标签
+    # 首次内容检查是否包含think标签
     if is_first_content:
         think_buffer += content_chunk
-        # 检查整个缓冲区是否包含 <think> 标签
         if "<think>" not in think_buffer:
-            # 如果没有 <think> 标签，直接返回内容，后续也不再检查
             return think_buffer, "", in_think_block, False, False
         else:
-            # 有 <think> 标签，启用过滤机制
             has_think_tags = True
-            # 检查是否以 <think> 开头
             if think_buffer.lstrip().startswith("<think>"):
                 in_think_block = True
                 think_start = think_buffer.find("<think>")
                 think_buffer = think_buffer[think_start + 7 :]
                 return "", think_buffer, in_think_block, False, has_think_tags
 
-    # 如果确定没有 think 标签，直接返回内容
     if not has_think_tags:
         return content_chunk, think_buffer, in_think_block, False, has_think_tags
 
-    # 隐藏思考过程的处理逻辑
+    # 处理思考内容
     think_buffer += content_chunk
-    output_chunks = []
+    output_content, think_buffer, in_think_block = _process_think_buffer(think_buffer, in_think_block)
 
-    # 处理缓冲区内容
-    while think_buffer:
-        if not in_think_block:
-            # 不在思考块中，查找 <think> 开始标签
-            think_start_pos = think_buffer.find("<think>")
-            if think_start_pos != -1:
-                # 发送思考标签之前的内容
-                before_think = think_buffer[:think_start_pos]
-                if before_think:
-                    output_chunks.append(before_think)
-                # 进入思考块
-                in_think_block = True
-                think_buffer = think_buffer[think_start_pos + 7 :]
-            else:
-                # 没有找到 <think> 标签，保留一些字符以防标签被分割
-                if len(think_buffer) > 8:
-                    send_content = think_buffer[:-8]
-                    think_buffer = think_buffer[-8:]
-                    if send_content:
-                        output_chunks.append(send_content)
-                break
-        else:
-            # 在思考块中，查找 </think> 结束标签
-            think_end_pos = think_buffer.find("</think>")
-            if think_end_pos != -1:
-                # 找到结束标签，退出思考块
-                in_think_block = False
-                think_buffer = think_buffer[think_end_pos + 8 :]
-            else:
-                # 还在思考块中，清空缓冲区（不发送内容）
-                think_buffer = ""
-                break
-
-    return "".join(output_chunks), think_buffer, in_think_block, False, has_think_tags
+    return output_content, think_buffer, in_think_block, False, has_think_tags
 
 
 def _create_stream_chunk(content, skill_name, finish_reason=None):
@@ -241,124 +233,159 @@ def _generate_sse_stream(url, headers, chat_kwargs, skill_name, show_think):
     think_buffer = ""
     in_think_block = False
     is_first_content = True
-    has_think_tags = True  # 默认假设有 think 标签，在第一次处理时会确定
+    has_think_tags = True
+    sse_headers = {**headers, "Accept": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive"}
 
-    # 发起SSE请求
-    res = requests.post(url, headers=headers, json=chat_kwargs, timeout=300, verify=False, stream=True)
-    res.raise_for_status()
+    try:
+        res = requests.post(url, headers=sse_headers, json=chat_kwargs, timeout=300, verify=False, stream=True)
+        res.raise_for_status()
 
-    for line in res.iter_lines(decode_unicode=True):
-        result = _process_sse_line(
-            line,
-            accumulated_content,
-            prompt_tokens,
-            completion_tokens,
-            think_buffer,
-            in_think_block,
-            is_first_content,
-            show_think,
-            has_think_tags,
-        )
-        (
-            accumulated_content,
-            prompt_tokens,
-            completion_tokens,
-            think_buffer,
-            in_think_block,
-            is_first_content,
-            output,
-            has_think_tags,
-        ) = result
+        for line in res.iter_lines(decode_unicode=True):
+            result = _process_sse_line(
+                line,
+                accumulated_content,
+                prompt_tokens,
+                completion_tokens,
+                think_buffer,
+                in_think_block,
+                is_first_content,
+                show_think,
+                has_think_tags,
+            )
+            (
+                accumulated_content,
+                prompt_tokens,
+                completion_tokens,
+                think_buffer,
+                in_think_block,
+                is_first_content,
+                output,
+                has_think_tags,
+            ) = result
 
-        if output == "DONE":
-            break
-        elif output and output != "":
-            # 生成并发送流式响应块
-            stream_chunk = _create_stream_chunk(output, skill_name)
+            if output == "DONE":
+                break
+            elif output:
+                stream_chunk = _create_stream_chunk(output, skill_name)
+                yield f"data: {json.dumps(stream_chunk)}\n\n"
+
+        # 处理剩余缓冲区内容
+        if not show_think and not in_think_block and think_buffer:
+            stream_chunk = _create_stream_chunk(think_buffer, skill_name)
             yield f"data: {json.dumps(stream_chunk)}\n\n"
 
-    # 处理剩余的缓冲区内容
-    if not show_think and not in_think_block and think_buffer:
-        stream_chunk = _create_stream_chunk(think_buffer, skill_name)
-        yield f"data: {json.dumps(stream_chunk)}\n\n"
+        # 发送完成标志
+        final_chunk = _create_stream_chunk("", skill_name, "stop")
+        yield f"data: {json.dumps(final_chunk)}\n\n"
 
-    return accumulated_content, prompt_tokens, completion_tokens
+        # 使用特殊标识返回统计信息
+        yield ("STATS", accumulated_content, prompt_tokens, completion_tokens)
+
+    except Exception as e:
+        logger.error(f"SSE stream error: {e}")
+        error_chunk = _create_error_chunk(f"流式处理错误: {str(e)}", skill_name)
+        yield f"data: {json.dumps(error_chunk)}\n\n"
+        yield ("STATS", "", 0, 0)
 
 
 def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=None):
     llm_model = LLMModel.objects.get(id=params["llm_model"])
     show_think = params.pop("show_think", True)
     group = params.pop("group", 0)
-    # 处理用户消息和图片
+
     chat_kwargs, doc_map, title_map = llm_service.format_chat_server_kwargs(params, llm_model)
-    # 选择正确的SSE端点
+
     url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_chatbot_workflow_sse"
-    if (
-        params.get(
-            "skill_type",
-        )
-        == SkillTypeChoices.BASIC_TOOL
-    ):
+    if params.get("skill_type") == SkillTypeChoices.BASIC_TOOL:
         url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_react_agent_sse"
 
+    final_content = ""
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+
     def generate_stream():
+        nonlocal final_content, total_prompt_tokens, total_completion_tokens
+
         try:
             headers = ChatServerHelper.get_chat_server_header()
+            stream_gen = _generate_sse_stream(url, headers, chat_kwargs, skill_name, show_think)
 
-            # 生成流式内容并收集最终数据
-            stream_generator = _generate_sse_stream(url, headers, chat_kwargs, skill_name, show_think)
-            accumulated_content = ""
-            prompt_tokens = 0
-            completion_tokens = 0
-
-            # 处理流式数据
-            for chunk in stream_generator:
-                if isinstance(chunk, tuple):  # 最终返回的统计数据
-                    accumulated_content, prompt_tokens, completion_tokens = chunk
-                else:  # 流式响应块
+            for chunk in stream_gen:
+                if isinstance(chunk, tuple) and chunk[0] == "STATS":
+                    # 收集统计信息
+                    _, final_content, total_prompt_tokens, total_completion_tokens = chunk
+                    logger.info(
+                        f"Token statistics - prompt: {total_prompt_tokens}, completion: {total_completion_tokens}"
+                    )
+                else:
+                    # 发送流式数据
                     yield chunk
 
-            # 处理最终内容（移除思考过程）
-            final_content = accumulated_content
-            if not show_think:
-                final_content = re.sub(r"<think>.*?</think>", "", accumulated_content, flags=re.DOTALL).strip()
-
-            # 记录日志
-            log_data = {
-                "id": skill_name,
-                "object": "chat.completion",
-                "created": int(time.time()),
-                "model": skill_name,
-                "usage": {
-                    "prompt_tokens": prompt_tokens,
-                    "completion_tokens": completion_tokens,
-                    "total_tokens": prompt_tokens + completion_tokens,
-                },
-                "choices": [
-                    {
-                        "message": {"role": "assistant", "content": final_content},
-                        "finish_reason": "stop",
-                        "index": 0,
-                    }
-                ],
-            }
-            insert_skill_log(current_ip, skill_id, log_data, kwargs, user_message=user_message)
-        except requests.exceptions.RequestException as e:
-            logger.error(f"SSE request failed: {e}")
-            error_chunk = _create_error_chunk(f"连接错误: {str(e)}", skill_name)
-            yield f"data: {json.dumps(error_chunk)}\n\n"
-            return
-
         except Exception as e:
-            logger.error(f"Stream processing error: {e}")
-            error_chunk = _create_error_chunk(f"处理错误: {str(e)}", skill_name)
+            logger.error(f"Stream chat error: {e}")
+            error_chunk = _create_error_chunk(f"聊天错误: {str(e)}", skill_name)
             yield f"data: {json.dumps(error_chunk)}\n\n"
-            return
 
-        # 发送最终的完成标志
-        final_chunk = _create_stream_chunk("", skill_name, "stop")
-        yield f"data: {json.dumps(final_chunk)}\n\n"
-        used_token = prompt_tokens + completion_tokens
+    response = StreamingHttpResponse(generate_stream(), content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Headers"] = "Cache-Control"
+
+    def log_after_response():
+        if final_content or total_prompt_tokens or total_completion_tokens:
+            final_stats = {
+                "content": final_content,
+                "prompt_tokens": total_prompt_tokens,
+                "completion_tokens": total_completion_tokens,
+            }
+            _log_and_update_tokens(
+                final_stats, skill_name, skill_id, current_ip, kwargs, user_message, show_think, group, llm_model
+            )
+
+    response.streaming_content = _wrap_generator_with_callback(response.streaming_content, log_after_response)
+
+    return response
+
+
+def _wrap_generator_with_callback(generator, callback):
+    """包装生成器，在完成后执行回调"""
+    try:
+        for item in generator:
+            yield item
+    finally:
+        callback()
+
+
+def _log_and_update_tokens(
+    final_stats, skill_name, skill_id, current_ip, kwargs, user_message, show_think, group, llm_model
+):
+    """异步记录日志和更新token使用量"""
+    try:
+        # 处理最终内容
+        final_content = final_stats["content"]
+        if not show_think:
+            final_content = re.sub(r"<think>.*?</think>", "", final_content, flags=re.DOTALL).strip()
+
+        # 记录日志
+        log_data = {
+            "id": skill_name,
+            "object": "chat.completion",
+            "created": int(time.time()),
+            "model": skill_name,
+            "usage": {
+                "prompt_tokens": final_stats["prompt_tokens"],
+                "completion_tokens": final_stats["completion_tokens"],
+                "total_tokens": final_stats["prompt_tokens"] + final_stats["completion_tokens"],
+            },
+            "choices": [
+                {"message": {"role": "assistant", "content": final_content}, "finish_reason": "stop", "index": 0}
+            ],
+        }
+        insert_skill_log(current_ip, skill_id, log_data, kwargs, user_message=user_message)
+
+        # 更新token使用量
+        used_token = final_stats["prompt_tokens"] + final_stats["completion_tokens"]
         team_info, is_created = TeamTokenUseInfo.objects.get_or_create(
             group=group, llm_model=llm_model.name, defaults={"used_token": used_token}
         )
@@ -366,7 +393,5 @@ def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=N
             team_info.used_token += used_token
             team_info.save()
 
-    response = StreamingHttpResponse(generate_stream(), content_type="text/event-stream")
-    response["Cache-Control"] = "no-cache"
-    response["X-Accel-Buffering"] = "no"
-    return response
+    except Exception as e:
+        logger.error(f"Log and token update error: {e}")

@@ -1,18 +1,17 @@
-import logging
 import uuid
-
 from celery.app import shared_task
 from datetime import datetime, timezone
-
 from django.db.models import F
-from apps.monitor.constants import LEVEL_WEIGHT
+
+from apps.core.exceptions.base_app_exception import BaseAppException
+from apps.monitor.constants import LEVEL_WEIGHT, THRESHOLD, NO_DATA
 from apps.monitor.models import MonitorPolicy, MonitorInstanceOrganization, MonitorAlert, MonitorEvent, MonitorInstance, \
     Metric, MonitorEventRawData
+from apps.monitor.tasks.task_utils.metric_query import format_to_vm_filter
 from apps.monitor.tasks.task_utils.policy_calculate import vm_to_dataframe, calculate_alerts
 from apps.monitor.utils.system_mgmt_api import SystemMgmtUtils
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
-
-logger = logging.getLogger("app")
+from apps.core.logger import celery_logger as logger
 
 
 @shared_task
@@ -22,7 +21,7 @@ def scan_policy_task(policy_id):
 
     policy_obj = MonitorPolicy.objects.filter(id=policy_id).select_related("monitor_object").first()
     if not policy_obj:
-        raise ValueError(f"No MonitorPolicy found with id {policy_id}")
+        raise BaseAppException(f"No MonitorPolicy found with id {policy_id}")
 
     if policy_obj.enable:
         if not policy_obj.last_run_time:
@@ -75,7 +74,7 @@ def _count(metric_query, start, end, step, group_by):
 
 def last_over_time(metric_query, start, end, step, group_by):
     query = f"any(last_over_time({metric_query})) by ({group_by})"
-    metrics = VictoriaMetricsAPI().query(query, step)
+    metrics = VictoriaMetricsAPI().query(query, step, end)
     for data in metrics.get("data", {}).get("result", []):
         data["values"] = [data["value"]]
     return metrics
@@ -108,7 +107,7 @@ def sum_over_time(metric_query, start, end, step, group_by):
 def period_to_seconds(period):
     """周期转换为秒"""
     if not period:
-        raise ValueError("policy period is empty")
+        raise BaseAppException("policy period is empty")
     if period["type"] == "min":
         return period["value"] * 60
     elif period["type"] == "hour":
@@ -116,7 +115,7 @@ def period_to_seconds(period):
     elif period["type"] == "day":
         return period["value"] * 86400
     else:
-        raise ValueError(f"invalid period type: {period['type']}")
+        raise BaseAppException(f"invalid period type: {period['type']}")
 
 
 METHOD = {
@@ -165,31 +164,10 @@ class MonitorPolicyScan:
         objs = MonitorInstance.objects.filter(monitor_object_id=self.policy.monitor_object_id, id__in=instance_list, is_deleted=False)
         return {i.id: i.name for i in objs}
 
-    def format_to_vm_filter(self, conditions):
-        """
-        将纬度条件格式化为 VictoriaMetrics 的标准语法。
-
-        Args:
-            conditions (list): 包含过滤条件的字典列表，每个字典格式为：
-                {"name": <纬度名称>, "value": <值>, "method": <运算符>}
-
-        Returns:
-            str: 格式化后的 VictoriaMetrics 过滤条件语法。
-        """
-        vm_filters = []
-        for condition in conditions:
-            name = condition.get("name")
-            value = condition.get("value")
-            method = condition.get("method")
-            vm_filters.append(f'{name}{method}"{value}"')
-
-        # 使用逗号连接多个条件
-        return ",".join(vm_filters)
-
     def for_mat_period(self, period, points=1):
         """格式化周期"""
         if not period:
-            raise ValueError("policy period is empty")
+            raise BaseAppException("policy period is empty")
         if period["type"] == "min":
             return f'{int(period["value"]/points)}{"m"}'
         elif period["type"] == "hour":
@@ -197,7 +175,7 @@ class MonitorPolicyScan:
         elif period["type"] == "day":
             return f'{int(period["value"]/points)}{"d"}'
         else:
-            raise ValueError(f"invalid period type: {period['type']}")
+            raise BaseAppException(f"invalid period type: {period['type']}")
 
     def format_pmq(self):
         """格式化PMQ"""
@@ -210,7 +188,7 @@ class MonitorPolicyScan:
             query = self.metric.query
             # 纬度条件
             _filter = query_condition.get("filter", [])
-            vm_filter_str = self.format_to_vm_filter(_filter)
+            vm_filter_str = format_to_vm_filter(_filter)
             vm_filter_str = f"{vm_filter_str}" if vm_filter_str else ""
             # 去掉label尾部多余的逗号
             if vm_filter_str.endswith(","):
@@ -229,7 +207,7 @@ class MonitorPolicyScan:
         step = self.for_mat_period(period, points)
         method = METHOD.get(self.policy.algorithm)
         if not method:
-            raise ValueError("invalid algorithm method")
+            raise BaseAppException("invalid algorithm method")
         group_by = ",".join(self.instance_id_keys)
         return method(query, start_timestamp, end_timestamp, step, group_by)
 
@@ -243,7 +221,7 @@ class MonitorPolicyScan:
         else:
             self.metric = Metric.objects.filter(id=self.policy.query_condition["metric_id"]).first()
             if not self.metric:
-                raise ValueError(f"metric does not exist [{self.policy.query_condition['metric_id']}]")
+                raise BaseAppException(f"metric does not exist [{self.policy.query_condition['metric_id']}]")
 
             self.instance_id_keys = self.metric.instance_id_keys
 
@@ -317,7 +295,7 @@ class MonitorPolicyScan:
         ids = [i.id for i in self.active_alerts if i.alert_type == "alert"]
 
         MonitorAlert.objects.filter(id__in=ids, info_event_count__gte=self.policy.recovery_condition).update(
-            status="recovered", end_event_time=datetime.now(timezone.utc), operator="system")
+            status="recovered", end_event_time=self.policy.last_run_time, operator="system")
 
     def recovery_no_data_alert(self):
         """无数据告警恢复"""
@@ -331,7 +309,7 @@ class MonitorPolicyScan:
             monitor_instance_id__in=instance_ids,
             alert_type="no_data",
             status="new",
-        ).update(status="recovered", end_event_time=datetime.now(timezone.utc), operator="system")
+        ).update(status="recovered", end_event_time=self.policy.last_run_time, operator="system")
 
     def create_events(self, events):
         """创建事件"""
@@ -354,6 +332,7 @@ class MonitorPolicyScan:
                     level=event["level"],
                     content=event["content"],
                     notice_result=True,
+                    event_time=self.policy.last_run_time,
                 )
             )
 
@@ -460,7 +439,7 @@ class MonitorPolicyScan:
                     value=value,
                     content=content,
                     status="new",
-                    start_event_time=event_obj.created_at,
+                    start_event_time=event_obj.event_time,
                     operator="",
                 ))
 
@@ -490,23 +469,31 @@ class MonitorPolicyScan:
 
         self.set_monitor_obj_instance_key()
 
-        # 告警事件
-        alert_events, info_events = self.alert_event()
+        if THRESHOLD in self.policy.enable_alerts:
+            # 告警事件
+            alert_events, info_events = self.alert_event()
+            # 正常、异常事件计数
+            self.count_events(alert_events, info_events)
+            # 告警恢复
+            self.recovery_alert()
+        else:
+            alert_events = []
 
-        # 正常、异常事件计数
-        self.count_events(alert_events, info_events)
+        if NO_DATA in self.policy.enable_alerts:
+            # 无数据事件
+            no_data_events = self.no_data_event()
+            # 无数据告警恢复
+            self.recovery_no_data_alert()
+        else:
+            no_data_events = []
 
-        # 无数据事件
-        no_data_events = self.no_data_event()
+        events = alert_events + no_data_events
 
-        # 告警恢复
-        self.recovery_alert()
-
-        # 无数据告警恢复
-        self.recovery_no_data_alert()
+        if not events:
+            return
 
         # 告警事件记录
-        event_objs = self.create_events(alert_events + no_data_events)
+        event_objs = self.create_events(events)
         self.handle_alert_events(event_objs)
 
         # 事件通知

@@ -13,9 +13,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         LoginModule.objects.get_or_create(
-            name="Wechat Open Platform",
+            is_build_in=True,
             source_type="wechat",
             defaults={
+                "name": "微信开放平台",
                 "app_id": "",
                 "app_secret": "",
                 "other_config": {
@@ -23,7 +24,6 @@ class Command(BaseCommand):
                     "callback_url": "",
                 },
                 "enabled": True,
-                "is_build_in": True,
             },
         )
 

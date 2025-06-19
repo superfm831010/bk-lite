@@ -1,12 +1,8 @@
-import logging
-
 import nats_client
-
 from apps.node_mgmt.config_template.common import ConfigService
 from apps.node_mgmt.models import CloudRegion
 from apps.node_mgmt.services.node import NodeService
-
-logger = logging.getLogger("app")
+from apps.core.logger import node_logger as logger
 
 
 @nats_client.register

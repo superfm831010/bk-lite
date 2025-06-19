@@ -46,3 +46,13 @@
 .custom-tabs .ant-segmented-item-selected {
     color: var(--color-primary);
 }
+
+.customMenu .ant-dropdown-menu-item {
+    padding: 0 !important;
+}
+
+.customMenu .customMenuItem {
+    display: inline-block;
+    width: 100%;
+    padding: 5px 12px;
+}

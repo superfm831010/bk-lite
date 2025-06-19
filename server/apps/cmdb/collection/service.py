@@ -26,7 +26,7 @@ from apps.cmdb.collection.constants import (
 from apps.cmdb.constants import INSTANCE
 from apps.cmdb.graph.neo4j import Neo4jClient
 from apps.cmdb.models import OidMapping
-from apps.core.logger import logger
+from apps.core.logger import cmdb_logger as logger
 
 
 # 指标纳管（纳管控制器）

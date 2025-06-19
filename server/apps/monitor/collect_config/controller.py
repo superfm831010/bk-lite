@@ -1,11 +1,10 @@
 import uuid
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.collect_config.constants import ONLY_CHILD_CONFIG, CONFIG_AND_CHILD_CONFIG, ONLY_CONFIG
 from apps.monitor.constants import CHILD_ENVS
 from apps.monitor.models import CollectConfig
 from apps.rpc.node_mgmt import NodeMgmt
-
-
 
 
 class Controller:
@@ -42,7 +41,7 @@ class Controller:
                 priv_password=config["priv_password"],
             )
         else:
-            raise ValueError("SNMP version error")
+            raise BaseAppException("SNMP version error")
         config.update(snmp_config=result)
 
     def format_http_config(self, config):
@@ -186,4 +185,4 @@ class Controller:
         elif (collector, collect_type) in CONFIG_AND_CHILD_CONFIG:
             self.config_and_child_config()
         else:
-            raise ValueError("Unsupported collector or collect type")
+            raise BaseAppException("Unsupported collector or collect type")

@@ -15,12 +15,7 @@ services:
     image: ${DOCKER_IMAGE_TRAEFIK}
     restart: always
     ports:
-      - "${TRAEFIK_CMDB_PORT}:${TRAEFIK_CMDB_PORT}"
-      - "${TRAEFIK_SYSTEM_MANAGER_PORT}:${TRAEFIK_SYSTEM_MANAGER_PORT}"
-      - "${TRAEFIK_NODE_MANAGER_PORT}:${TRAEFIK_NODE_MANAGER_PORT}"
-      - "${TRAEFIK_MONITOR_PORT}:${TRAEFIK_MONITOR_PORT}"
-      - "${TRAEFIK_CONSOLE_PORT}:${TRAEFIK_CONSOLE_PORT}"
-      - "${TRAEFIK_OPSPILOT_PORT}:${TRAEFIK_OPSPILOT_PORT}"
+      - "${TRAEFIK_WEB_PORT}:${TRAEFIK_WEB_PORT}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ../conf/traefik/dynamic.yml:/etc/traefik/dynamic.yml
@@ -36,12 +31,7 @@ services:
       - "--providers.file.filename=/etc/traefik/dynamic.yml"
       - "--providers.file.watch=true"
       - "--accesslog"
-      - "--entrypoints.cmdb-web.address=:${TRAEFIK_CMDB_PORT}"
-      - "--entrypoints.system-manager-web.address=:${TRAEFIK_SYSTEM_MANAGER_PORT}"
-      - "--entrypoints.node-manager-web.address=:${TRAEFIK_NODE_MANAGER_PORT}"
-      - "--entrypoints.monitor-web.address=:${TRAEFIK_MONITOR_PORT}"
-      - "--entrypoints.opsconsole-web.address=:${TRAEFIK_CONSOLE_PORT}"
-      - "--entrypoints.opspilot-web.address=:${TRAEFIK_OPSPILOT_PORT}"
+      - "--entrypoints.web.address=:${TRAEFIK_WEB_PORT}"
     networks:
       - prod
 

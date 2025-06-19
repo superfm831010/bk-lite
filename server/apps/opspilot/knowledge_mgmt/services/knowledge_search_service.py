@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 from django.conf import settings
 
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.knowledge_mgmt.models import KnowledgeBase
 from apps.opspilot.models import EmbedProvider, RerankProvider
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper

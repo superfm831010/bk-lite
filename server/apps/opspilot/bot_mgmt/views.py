@@ -11,7 +11,7 @@ from django.utils.translation import gettext as _
 from django_minio_backend import MinioBackend
 
 from apps.base.models import UserAPISecret
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.core.utils.exempt import api_exempt
 from apps.opspilot.bot_mgmt.services.skill_excute_service import SkillExecuteService
 from apps.opspilot.bot_mgmt.utils import get_client_ip, insert_skill_log, set_time_range
@@ -141,7 +141,7 @@ def format_knowledge_sources(content, skill_obj, doc_map=None, title_map=None):
 
 def get_chat_msg(current_ip, kwargs, params, skill_obj, user_message):
     data, doc_map, title_map = llm_service.invoke_chat(params)
-    content = format_knowledge_sources(data["message"], skill_obj.enable_rag_knowledge_source, doc_map, title_map)
+    content = format_knowledge_sources(data["message"], skill_obj, doc_map, title_map)
     return_data = {
         "id": skill_obj.name,
         "object": "chat.completion",

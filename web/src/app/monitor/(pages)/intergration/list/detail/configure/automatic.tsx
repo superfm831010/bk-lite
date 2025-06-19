@@ -15,8 +15,7 @@ import {
 import { useSearchParams, useRouter } from 'next/navigation';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
-import { useCommon } from '@/app/monitor/context/common';
-import { Organization, TableDataItem } from '@/app/monitor/types';
+import { TableDataItem } from '@/app/monitor/types';
 import {
   IntergrationAccessProps,
   IntergrationMonitoredObject,
@@ -24,6 +23,7 @@ import {
 import { useUserInfoContext } from '@/context/userInfo';
 import { useColumnsAndFormItems } from '@/app/monitor/hooks/intergration';
 import Permission from '@/components/permission';
+import GroupTreeSelector from '@/components/group-tree-select';
 
 const { Option } = Select;
 
@@ -35,13 +35,10 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   const searchParams = useSearchParams();
   const { isLoading } = useApiClient();
   const { getMonitorNodeList, updateNodeChildConfig } = useMonitorApi();
-  const commonContext = useCommon();
   const router = useRouter();
   const userContext = useUserInfoContext();
   const currentGroup = useRef(userContext?.selectedGroup);
   const groupId = [currentGroup?.current?.id || ''];
-  const authList = useRef(commonContext?.authOrganizations || []);
-  const organizationList: Organization[] = authList.current;
   const pluginName = searchParams.get('collect_type') || '';
   const objectName = searchParams.get('name') || '';
   const objectId = searchParams.get('id') || '';
@@ -155,19 +152,10 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
       key: 'group_ids',
       width: 200,
       render: (_: unknown, record: TableDataItem, index: number) => (
-        <Select
-          showSearch
-          mode="tags"
-          maxTagCount="responsive"
+        <GroupTreeSelector
           value={record.group_ids}
           onChange={(val) => handleGroupChange(val, index)}
-        >
-          {organizationList.map((item) => (
-            <Option key={item.value} value={item.value}>
-              {item.label}
-            </Option>
-          ))}
-        </Select>
+        />
       ),
     },
     {
@@ -616,7 +604,7 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
     setDataSource(_dataSource);
   };
 
-  const handleGroupChange = (val: string[], index: number) => {
+  const handleGroupChange = (val: number[], index: number) => {
     const _dataSource = deepClone(dataSource);
     _dataSource[index].group_ids = val;
     setDataSource(_dataSource);

@@ -1,17 +1,15 @@
-import logging
-
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.viewsets import ViewSet
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.models import CollectConfig
 from apps.monitor.services.node_mgmt import InstanceConfigService
 from apps.monitor.utils.config_format import ConfigFormat
 from apps.rpc.node_mgmt import NodeMgmt
-
-logger = logging.getLogger("app")
+from apps.core.logger import monitor_logger as logger
 
 
 class NodeMgmtView(ViewSet):
@@ -134,7 +132,7 @@ class NodeMgmtView(ViewSet):
             elif config_obj.file_type == "yaml":
                 config["content"] = ConfigFormat.yaml_to_dict(config[content_key])
             else:
-                raise ValueError("file_type must be toml or yaml")
+                raise BaseAppException("file_type must be toml or yaml")
             if config_obj.is_child:
                 result["child"] = config
             else:

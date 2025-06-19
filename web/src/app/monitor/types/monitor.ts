@@ -22,9 +22,10 @@ export interface MetricInfo {
 export interface RuleInfo {
   type?: string;
   name?: string;
-  grouping_rules?: GroupingRules;
+  rule?: GroupingRules;
   organizations?: string[];
   monitor_object?: number;
+  metric?: number;
   id?: number;
 }
 
@@ -40,11 +41,13 @@ export interface InstanceInfo {
   instance_name?: string;
   instance_id?: string;
   name?: string;
+  keys?: React.Key[];
 }
 
 export interface GroupingRules {
-  query?: string;
-  instances?: string[];
+  type?: string;
+  metric_id?: number;
+  filter?: FilterItem[];
 }
 
 export interface ObjectInstItem {
@@ -231,6 +234,7 @@ export interface StrategyFields {
   monitor_object?: number;
   id?: number;
   group_by?: string[];
+  enable_alerts?: string[];
   query_condition?: {
     type: string;
     query?: string;

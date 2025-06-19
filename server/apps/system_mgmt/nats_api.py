@@ -11,7 +11,7 @@ from django.db.models import Q
 
 import nats_client
 from apps.core.backends import cache
-from apps.core.logger import logger
+from apps.core.logger import system_logger as logger
 from apps.system_mgmt.models import (
     App,
     Channel,
@@ -52,13 +52,14 @@ def verify_token(token):
         return {"result": False, "message": "User not found"}
     role_list = Role.objects.filter(id__in=user.role_list)
     role_names = [f"{role.app}--{role.name}" if role.app else role.name for role in role_list]
-    is_superuser = "admin" in role_names
+    is_superuser = "admin" in role_names or "system-manager--admin" in role_names
     group_list = Group.objects.all()
     if not is_superuser:
         group_list = group_list.filter(id__in=user.group_list)
     # groups = GroupUtils.build_group_tree(group_list)
     groups = list(group_list.values("id", "name", "parent_id"))
     queryset = Group.objects.all()
+
     # 构建嵌套组结构
     groups_data = GroupUtils.build_group_tree(queryset, is_superuser, [i["id"] for i in groups])
     menus = cache.get(f"menus-user:{user.id}")
@@ -117,7 +118,7 @@ def get_client(client_id="", username=""):
         app_name_list = list(Role.objects.filter(id__in=user.role_list).values_list("app", flat=True).distinct())
         if "" not in app_name_list:
             app_list = app_list.filter(name__in=app_name_list)
-    return_data = list(app_list.values())
+    return_data = list(app_list.order_by("name").values())
     return {"result": True, "data": return_data}
 
 
