@@ -10,7 +10,7 @@ from django_minio_backend import MinioBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.serializers import KnowledgeDocumentSerializer

@@ -2,11 +2,12 @@ import ast
 import uuid
 from collections import defaultdict
 
+from django.db import transaction
 from django.db.models import Prefetch
 
-from apps.monitor.constants import MONITOR_OBJS, OBJ_ORDER
+from apps.monitor.constants import MONITOR_OBJS, OBJ_ORDER, DEFAULT_OBJ_ORDER
 from apps.monitor.models.monitor_metrics import Metric
-from apps.monitor.models.monitor_object import MonitorInstance, MonitorObject
+from apps.monitor.models.monitor_object import MonitorInstance, MonitorObject, MonitorInstanceOrganization
 from apps.monitor.models.setting import Setting
 from apps.monitor.utils.instance import calculation_status
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
@@ -150,14 +151,12 @@ class MonitorObjectService:
         :return: 排序后的数据列表
         """
 
-        # 1. 预处理：如果 group_order 或 item_order 为空，设为默认值
         order_obj = Setting.objects.filter(name=OBJ_ORDER).first()
-        item_order, group_order = {}, []
-        if order_obj:
-            item_order = {i["type"]: i["name_list"] for i in order_obj.value}
-            group_order = [i["type"] for i in order_obj.value]
+        order_obj_value = order_obj.value if order_obj else DEFAULT_OBJ_ORDER
+        item_order = {i["type"]: i["name_list"] for i in order_obj_value}
+        group_order = [i["type"] for i in order_obj_value]
 
-        # 2. 按 type 分组
+        # 按 type 分组
         grouped_data = defaultdict(list)
         group_appearance_order = []  # 记录 type 出现顺序
         for item in data:
@@ -165,20 +164,19 @@ class MonitorObjectService:
             if item["type"] not in group_appearance_order:
                 group_appearance_order.append(item["type"])  # 记录出现顺序
 
-        # 3. 确定分组排序
+        # 确定分组排序
         if group_order:
             sorted_groups = sorted(grouped_data.keys(),
                                    key=lambda g: (group_order.index(g) if g in group_order else float('inf')))
         else:
             sorted_groups = group_appearance_order  # 按出现顺序排序（可改成 sorted(grouped_data.keys()) 变成字母序）
 
-        # 4. 结果存储
         sorted_result = []
 
         for group in sorted_groups:
             items = grouped_data[group]
 
-            # 5. 确定子数据排序
+            # 确定子数据排序
             if group in item_order and item_order[group]:
                 sorted_items = sorted(items, key=lambda x: (
                     item_order[group].index(x["name"]) if x["name"] in item_order[group] else float('inf')))
@@ -203,3 +201,52 @@ class MonitorObjectService:
         instance.monitorinstanceorganization_set.all().delete()
         for org in organizations:
             instance.monitorinstanceorganization_set.create(organization=org)
+
+
+    @staticmethod
+    def remove_instances_organizations(instance_ids, organizations):
+        """删除监控对象实例组织"""
+        if not instance_ids or not organizations:
+            return
+
+        MonitorInstanceOrganization.objects.filter(
+            monitor_instance_id__in=instance_ids,
+            organization__in=organizations
+        ).delete()
+
+    @staticmethod
+    def add_instances_organizations(instance_ids, organizations):
+        """添加监控对象实例组织"""
+        if not instance_ids or not organizations:
+            return
+
+        creates = []
+        for instance_id in instance_ids:
+            for org in organizations:
+                creates.append(MonitorInstanceOrganization(
+                    monitor_instance_id=instance_id,
+                    organization=org
+                ))
+        MonitorInstanceOrganization.objects.bulk_create(creates, ignore_conflicts=True)
+
+    @staticmethod
+    def set_instances_organizations(instance_ids, organizations):
+        """设置监控对象实例组织"""
+        if not instance_ids or not organizations:
+            return
+
+        with transaction.atomic():
+            # 删除旧的组织关联
+            MonitorInstanceOrganization.objects.filter(
+                monitor_instance_id__in=instance_ids
+            ).delete()
+
+            # 添加新的组织关联
+            creates = []
+            for instance_id in instance_ids:
+                for org in organizations:
+                    creates.append(MonitorInstanceOrganization(
+                        monitor_instance_id=instance_id,
+                        organization=org
+                    ))
+            MonitorInstanceOrganization.objects.bulk_create(creates, ignore_conflicts=True)

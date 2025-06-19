@@ -82,13 +82,6 @@ class TencentCloudManager(BasePlugin):
     def get_credentials(self) -> credential.Credential:
         return credential.Credential(self.secret_id, self.secret_key)
 
-    def get_qcloud(self) -> List[Dict]:
-        organization_api_info = self.get_tencent_client("").organization.call_json("DescribeOrganization", {})
-        organization_info = organization_api_info.get("Response", {})
-
-        return [{"inst_name": f"{organization_info.get('NickName', '')}_{organization_info.get('OrgId')}",
-                 "organization": organization_info.get("NickName", "")}]
-
     def get_qcloud_region(self) -> List[Dict]:
         """获取腾讯云区域信息"""
         return self.get_tencent_client(region="").cvm.call_json("DescribeRegions", {}).get("Response", {}).get(
@@ -121,19 +114,19 @@ class TencentCloudManager(BasePlugin):
             cvm_info = self.get_tencent_client(region=region).cvm.call_json("DescribeInstances", {})
             instances = cvm_info.get("Response", {}).get("InstanceSet", [])
             result.extend([{
-                "inst_name": instance.get("InstanceName"),
-                "inst_id": instance.get("InstanceId"),
-                "inner_ip": instance.get("PrivateIpAddresses") or [],  # 内网IP
-                "outer_ip": instance.get("PublicIpAddresses") or [],  # 公网IP
+                "resource_name": instance.get("InstanceName"),
+                "resource_id": instance.get("InstanceId"),
+                "ip_addr": instance.get("PrivateIpAddresses") or [],  # 内网IP
+                "public_ip": instance.get("PublicIpAddresses") or [],  # 公网IP
                 "region": region,  # 地域
                 "zone": instance.get("Placement", {}).get("Zone"),  # 可用区
                 "vpc": instance.get("VirtualPrivateCloud", {}),  # 虚拟私有网 VPC
                 "status": instance.get("InstanceState"),  # 状态
-                "spec": instance.get("InstanceType"),  # 规格
+                "instance_type": instance.get("InstanceType"),  # 规格
                 "os_name": instance.get("OsName"),
-                "vcpu": instance.get("CPU"),  # vCPU数" 核
-                "memory": instance.get("Memory", 0) * 1024,  # 内存容量(MB)
-                "pay_type": instance.get("InstanceChargeType"),
+                "vcpus": instance.get("CPU"),  # vCPU数" 核
+                "memory_mb": instance.get("Memory", 0) * 1024,  # 内存容量(MB)
+                "charge_type": instance.get("InstanceChargeType"),
             } for instance in instances])
 
         return result
@@ -145,18 +138,18 @@ class TencentCloudManager(BasePlugin):
             rocketmq_info = self.get_tencent_client(region=region).tdmq.call_json("DescribeRocketMQClusters", {})
             clusters = rocketmq_info.get("Response", {}).get("ClusterList", [])
             result.extend([{
-                "inst_name": cluster.get("Info", {}).get("ClusterName"),
-                "inst_id": cluster.get("Info", {}).get("ClusterId"),
+                "resource_name": cluster.get("Info", {}).get("ClusterName"),
+                "resource_id": cluster.get("Info", {}).get("ClusterId"),
                 "region": region,  # 地域
                 "zone": self.zone_id_zone_map.get(cluster.get("Info").get("ZoneId")),
                 "status": cluster.get("Status"),
-                "topic_total": cluster.get("Config").get("MaxTopicNum"),  # Topic 总数量
-                "topic_used": cluster.get("Config").get("UsedTopicNum"),
-                "tps_total": cluster.get("Config").get("MaxTpsLimit"),  # 集群 TPS 数量
-                "ns_total": cluster.get("Config").get("MaxNamespaceNum"),  # 命名空间数量
-                "ns_used": cluster.get("Config").get("UsedNamespaceNum"),  # 已用命名空间数量"
-                "group_total": cluster.get("Config").get("MaxGroupNum"),  # Group 数量
-                "group_used": cluster.get("Config").get("UsedGroupNum"),  # 已用Group 数量
+                "topic_num": cluster.get("Config").get("MaxTopicNum"),  # Topic 总数量
+                "used_topic_num": cluster.get("Config").get("UsedTopicNum"),
+                "tpsper_name_space": cluster.get("Config").get("MaxTpsLimit"),  # 集群 TPS 数量
+                "name_space_num": cluster.get("Config").get("MaxNamespaceNum"),  # 命名空间数量
+                "used_name_space_num": cluster.get("Config").get("UsedNamespaceNum"),  # 已用命名空间数量"
+                "group_num": cluster.get("Config").get("MaxGroupNum"),  # Group 数量
+                "used_group_num": cluster.get("Config").get("UsedGroupNum"),  # 已用Group 数量
             } for cluster in clusters])
         return result
 
@@ -167,15 +160,15 @@ class TencentCloudManager(BasePlugin):
             mysql_info = self.get_tencent_client(region=region).cdb.call_json("DescribeDBInstances", {})
             instances = mysql_info.get("Response", {}).get("Items", [])
             result.extend([{
-                "inst_name": instance.get("InstanceName"),
-                "inst_id": instance.get("InstanceId"),
-                "ip": instance.get("Vip"),
+                "resource_name": instance.get("InstanceName"),
+                "resource_id": instance.get("InstanceId"),
+                "ip_addr": instance.get("Vip"),
                 "region": region,  # 地域
                 "zone": instance.get("Zone"),
                 "status": mysql_status_map.get(instance.get("Status"), "未知"),
-                "disk": instance.get("Volume"),
-                "memory": instance.get("Memory"),
-                "pay_type": mysql_pay_type_map.get(instance.get("PayType"), "未知"),
+                "volume": instance.get("Volume"),
+                "memory_mb": instance.get("Memory"),
+                "charge_type": mysql_pay_type_map.get(instance.get("PayType"), "未知"),
             }] for instance in instances)
         return result
 
@@ -196,25 +189,25 @@ class TencentCloudManager(BasePlugin):
             redis_info = self.get_tencent_client(region=region).redis.call_json("DescribeInstances", {})
             instances = redis_info.get("Response", {}).get("InstanceSet", [])
             result.extend([{
-                "inst_name": instance.get("InstanceName"),
-                "inst_id": instance.get("InstanceId"),
-                "ip": instance.get("WanIp"),
+                "resource_name": instance.get("InstanceName"),
+                "resource_id": instance.get("InstanceId"),
+                "ip_addr": instance.get("WanIp"),
                 "vpc": instance.get("VpcId"),
                 "region": redis_region_map.get(instance.get("RegionId")),  # 地域
                 "zone": self.zone_id_zone_map.get(instance.get("ZoneId")),
                 "port": instance.get("Port"),
-                "outer_addr": instance.get("WanAddress"),  # 外网地址
+                "wan_address": instance.get("WanAddress"),  # 外网地址
                 "status": redis_status_map.get(instance.get("Status"), "未知"),  # 实例状态
                 "sub_status": redis_sub_status_map.get(instance.get("SubStatus"), "未知"),  # 流程中的实例返回的子状态
-                "product_version": instance.get("ProductType"),  # 产品版本/产品类型
+                "engine": instance.get("Engine"),  # 产品版本/产品类型
                 "version": instance.get("CurrentRedisVersion"),  # 兼容版本
-                "arch": redis_type_map.get(instance.get("Type")),  # 架构版本
-                "memory": instance.get("Size"),
+                "Type": redis_type_map.get(instance.get("Type")),  # 架构版本
+                "memory_mb": instance.get("Size"),
                 "shard_size": instance.get("RedisShardSize"),  # 分片大小
                 "shard_num": instance.get("RedisShardNum"),  # 分片数量
-                "replica_num": instance.get("RedisReplicasNum"),  # 副本数量
-                "max_conn": instance.get("ClientLimit"),  # 最大连接数
-                "max_net": instance.get("NetLimit"),  # 最大网络吞吐(Mb/s)
+                "replicas_num": instance.get("RedisReplicasNum"),  # 副本数量
+                "client_limit": instance.get("ClientLimit"),  # 最大连接数
+                "net_limit": instance.get("NetLimit"),  # 最大网络吞吐(Mb/s)
             } for instance in instances])
         return result
 
@@ -226,27 +219,27 @@ class TencentCloudManager(BasePlugin):
             mongodb_info = self.get_tencent_client(region=region).mongodb.call_json("DescribeDBInstances", {})
             instances = mongodb_info.get("Response", {}).get("InstanceDetails", [])
             result.extend([{
-                "inst_name": instance.get("InstanceName"),
-                "inst_id": instance.get("InstanceId"),
-                "ip": instance.get("Vip"),
-                "tags": instance.get("Tags"),
+                "resource_name": instance.get("InstanceName"),
+                "resource_id": instance.get("InstanceId"),
+                "ip_addr": instance.get("Vip"),
+                "tag": instance.get("Tags"),
                 "project_id": instance.get("ProjectId"),
                 "vpc": instance.get("VpcId"),
                 "region": instance.get("Region"),
                 "zone": instance.get("Zone"),
                 "port": instance.get("Vport"),
                 "status": mongodb_status_map.get(instance.get("Status"), "未知"),
-                "inst_type": mongodb_inst_type_map.get(instance.get("InstanceType"), "未知"),
+                "cluster_type": mongodb_inst_type_map.get(instance.get("InstanceType"), "未知"),
                 "machine_type": instance.get("MachineType"),  # 配置类型
                 "version": instance.get("MongoVersion"),  # 版本与引擎
                 "cpu": instance.get("CpuNum"),
-                "memory": instance.get("Memory"),
-                "disk": instance.get("Volume"),
-                "slave_num": instance.get("SecondaryNum"),
-                "mongo_cpu": instance.get("MongosCpuNum"),
-                "mongo_memory": instance.get("MongosMemory"),
-                "mongo_node_num": instance.get("MongosNodeNum"),
-                "pay_type": mongodb_pay_type_map.get(instance.get("PayMode"), "未知"),
+                "memory_mb": instance.get("Memory"),
+                "volume_mb": instance.get("Volume"),
+                "secondary_num": instance.get("SecondaryNum"),
+                "mongos_cpu": instance.get("MongosCpuNum"),
+                "mongos_memory_mb": instance.get("MongosMemory"),
+                "mongos_node_num": instance.get("MongosNodeNum"),
+                "charge_type": mongodb_pay_type_map.get(instance.get("PayMode"), "未知"),
             } for instance in instances])
         return result
 
@@ -260,9 +253,9 @@ class TencentCloudManager(BasePlugin):
             pgsql_info = self.get_tencent_client(region=region).postgres.call_json("DescribeDBInstances", {})
             instances = pgsql_info.get("Response", {}).get("DBInstanceSet", [])
             result.extend([{
-                "inst_name": instance.get("DBInstanceName"),
-                "inst_id": instance.get("DBInstanceId"),
-                "tags": instance.get("TagList"),
+                "resource_name": instance.get("DBInstanceName"),
+                "resource_id": instance.get("DBInstanceId"),
+                "tag": instance.get("TagList"),
                 "project_id": instance.get("ProjectId"),
                 "vpc": instance.get("VpcId"),
                 "region": instance.get("Region"),
@@ -270,13 +263,13 @@ class TencentCloudManager(BasePlugin):
                 "status": pgsql_status_map.get(instance.get("DBInstanceStatus"), "未知"),
                 "charset": instance.get("DBCharset"),  # 字符集
                 "engine": instance.get("DBEngine"),
-                "arch": instance.get("DBInstanceType"),
+                "mode": instance.get("DBInstanceType"), # 架构
                 "version": instance.get("DBVersion"),
                 "kernel_version": instance.get("DBKernelVersion"),
                 "cpu": instance.get("DBInstanceCpu"),
-                "memory": instance.get("DBInstanceMemory"),
-                "disk": instance.get("DBInstanceStorage"),
-                "pay_type": pgsql_pay_type_map.get(instance.get("PayType"), "未知"),
+                "memory_mb": instance.get("DBInstanceMemory") * 1024,
+                "volume_mb": instance.get("DBInstanceStorage") * 1024,
+                "charge_type": pgsql_pay_type_map.get(instance.get("PayType"), "未知"),
             } for instance in instances])
         return result
 
@@ -288,22 +281,22 @@ class TencentCloudManager(BasePlugin):
             pulsar_info = self.get_tencent_client(region=region).tdmq.call_json("DescribeClusters", {})
             instances = pulsar_info.get("Response", {}).get("Instances", [])
             result.extend([{
-                "inst_name": instance.get("ClusterName"),
-                "inst_id": instance.get("ClusterId"),
-                "tags": instance.get("Tags"),
+                "resource_name": instance.get("ClusterName"),
+                "resource_id": instance.get("ClusterId"),
+                "tag": instance.get("Tags"),
                 "project_id": instance.get("ProjectId"),
                 "region": region,
                 "status": pulsar_status_map.get(instance.get("Status"), "未知"),
                 "version": instance.get("Version"),
-                "inner_addr": instance.get("VpcEndPoint"),  # 内网接入地址
-                "outer_addr": instance.get("PublicEndPoint"),  # 公网接入地址
-                "ns_total": instance.get("MaxNamespaceNum"),  # 最大命名空间数
-                "topic_total": instance.get("MaxTopicNum"),  # 最大Topic数
-                "qps": instance.get("MaxQps"),
-                "msg_rtt": instance.get("MessageRetentionTime"),  # 最大消息保留时间(s)
-                "storage": instance.get("MaxStorageCapacity"),
-                "max_delay": instance.get("MaxMessageDelayInSeconds"),  # 最长消息延迟(s)
-                "pay_type": pulsar_pay_type_map.get(instance.get("PayMode"), "未知"),
+                "vpc_endpoint": instance.get("VpcEndPoint"),  # 内网接入地址
+                "public_endpoint": instance.get("PublicEndPoint"),  # 公网接入地址
+                "max_namespace_num": instance.get("MaxNamespaceNum"),  # 最大命名空间数
+                "max_topic_num": instance.get("MaxTopicNum"),  # 最大Topic数
+                "max_qps": instance.get("MaxQps"),
+                "max_retention_s": instance.get("MessageRetentionTime"),  # 最大消息保留时间(s)
+                "max_storage_mb": instance.get("MaxStorageCapacity"),
+                "max_delay_s": instance.get("MaxMessageDelayInSeconds"),  # 最长消息延迟(s)
+                "charge_type": pulsar_pay_type_map.get(instance.get("PayMode"), "未知"),
             } for instance in instances])
         return result
 
@@ -314,14 +307,14 @@ class TencentCloudManager(BasePlugin):
             cmq_info = self.get_tencent_client(region=region).cmq.call_json("DescribeQueueDetail", {})
             instances = cmq_info.get("Response", {}).get("QueueSet", [])
             result.extend([{
-                "inst_name": instance.get("QueueName"),
-                "inst_id": instance.get("QueueId"),
-                "tags": instance.get("Tags"),
+                "resource_name": instance.get("QueueName"),
+                "resource_id": instance.get("QueueId"),
+                "tag": instance.get("Tags"),
                 "region": region,
                 "status": cmq_status_map.get(instance.get("Migrate"), "未知"),
-                "max_unack_time": instance.get("msgRetentionSeconds"),  # 消息最大未确认时间(s)
-                "msg_receive_wait": instance.get("PollingWaitSeconds"),  # 消息接收长轮询等待时间(s)
-                "msg_hidden_time": instance.get("visibilityTimeout"),  # 取出消息隐藏时长(s)
+                "max_delay_s": instance.get("msgRetentionSeconds"),  # 消息最大未确认时间(s)
+                "polling_wait_s": instance.get("PollingWaitSeconds"),  # 消息接收长轮询等待时间(s)
+                "visibility_timeout_s": instance.get("visibilityTimeout"),  # 取出消息隐藏时长(s)
                 "msg_max_len": instance.get("maxMsgSize"),  # 消息最大长度(B)
                 "qps": instance.get("Qps"),  # QPS限制
             } for instance in instances])
@@ -334,14 +327,14 @@ class TencentCloudManager(BasePlugin):
             topic_info = self.get_tencent_client(region=region).cmq.call_json("DescribeTopicDetail", {})
             instances = topic_info.get("Response", {}).get("TopicSet", [])
             result.extend([{
-                "inst_name": instance.get("TopicName"),
-                "inst_id": instance.get("TopicId"),
-                "tags": instance.get("Tags"),
+                "resource_name": instance.get("TopicName"),
+                "resource_id": instance.get("TopicId"),
+                "tag": instance.get("Tags"),
                 "region": region,
                 "status": cmq_topic_status_map.get(instance.get("Migrate"), "未知"),
-                "msg_life": instance.get("MsgRetentionSeconds"),  # 消息生命周期
-                "msg_max_len": instance.get("MaxMsgSize"),  # 消息最大长度(B)
-                "msg_filter_type": cmq_topic_filter_type_map.get(instance.get("FilterType"), "未知"),  # 消息过滤类型
+                "max_retention_s": instance.get("MsgRetentionSeconds"),  # 消息生命周期
+                "max_message_b": instance.get("MaxMsgSize"),  # 消息最大长度(B)
+                "filter_type": cmq_topic_filter_type_map.get(instance.get("FilterType"), "未知"),  # 消息过滤类型
                 "qps": instance.get("Qps"),  # QPS限制
             } for instance in instances])
         return result
@@ -353,21 +346,21 @@ class TencentCloudManager(BasePlugin):
             clb_info = self.get_tencent_client(region=region).clb.call_json("DescribeLoadBalancers", {})
             instances = clb_info.get("Response", {}).get("LoadBalancerSet", [])
             result.extend([{
-                "inst_name": instance.get("LoadBalancerName"),
-                "inst_id": instance.get("LoadBalancerId"),
-                "tags": instance.get("Tags"),
+                "resource_name": instance.get("LoadBalancerName"),
+                "resource_id": instance.get("LoadBalancerId"),
+                "tag": instance.get("Tags"),
                 "project_id": instance.get("ProjectId"),
-                "sg_id_list": instance.get("SecurityGroup"),
-                "vpc_id": instance.get("VpcId"),
+                "security_group_id": instance.get("SecurityGroup"),
+                "vpc": instance.get("VpcId"),
                 "region": region,
                 "master_zone": instance.get("MasterZone"),
-                "backup_zone_list": instance.get("BackupZoneSet"),
+                "backup_zone": instance.get("BackupZoneSet"),
                 "status": clb_status_map.get(instance.get("Status"), "未知"),
                 "domain": instance.get("Domain"),
-                "vip_list": instance.get("LoadBalancerVips"),
-                "net_type": clb_net_type_map.get(instance.get("LoadBalancerType"), "未知"),
+                "ip_addr": instance.get("LoadBalancerVips"),
+                "type": clb_net_type_map.get(instance.get("LoadBalancerType"), "未知"),
                 "isp": clb_isp_map.get(instance.get("LoadBalancerType"), "未知"),
-                "pay_type": clb_pay_type_map.get(instance.get("PrepaidAttributes", {}).get("RenewFlag"), "未知"),
+                "charge_type": clb_pay_type_map.get(instance.get("PrepaidAttributes", {}).get("RenewFlag"), "未知"),
             } for instance in instances])
         return result
 
@@ -378,17 +371,17 @@ class TencentCloudManager(BasePlugin):
             eip_info = self.get_tencent_client(region=region).vpc.call_json("DescribeAddresses", {})
             instances = eip_info.get("Response", {}).get("AddressSet", [])
             result.extend([{
-                "inst_name": instance.get("AddressName"),
-                "inst_id": instance.get("AddressId"),
-                "tags": instance.get("TagSet"),
+                "resource_name": instance.get("AddressName"),
+                "resource_id": instance.get("AddressId"),
+                "tag": instance.get("TagSet"),
                 "region": region,
                 "status": eip_status_map.get(instance.get("AddressStatus"), "未知"),
                 "type": eip_type_map.get(instance.get("AddressType"), "未知"),
-                "public_ip": instance.get("AddressIp"),  # 公网IP地址
-                "res_type": eip_res_type_map.get(instance.get("InstanceType"), "未知"),
-                "res_id": instance.get("InstanceId"),
-                "isp_type": eip_isp_map.get(instance.get("InternetServiceProvider"), "未知"),  # 线路类型
-                "pay_type": eip_pay_type_map.get(instance.get("InternetChargeType"), "未知"),
+                "ip_addr": instance.get("AddressIp"),  # 公网IP地址
+                "instance_type": eip_res_type_map.get(instance.get("InstanceType"), "未知"),
+                "instance_id": instance.get("InstanceId"),
+                "isp": eip_isp_map.get(instance.get("InternetServiceProvider"), "未知"),  # 线路类型
+                "charge_type": eip_pay_type_map.get(instance.get("InternetChargeType"), "未知"),
             } for instance in instances])
         return result
 
@@ -399,8 +392,8 @@ class TencentCloudManager(BasePlugin):
             buckets = self.get_tencent_cos_client(region=region).list_buckets().get("Buckets",{}).get("Bucket")
             for bucket in buckets:
                 result.append({
-                    "inst_name": bucket.get("Name"),
-                    "inst_id": bucket.get("Name"),
+                    "resource_name": bucket.get("Name"),
+                    "resource_id": bucket.get("Name"),
                     "region": bucket.get("Location"),
                 })
         return result
@@ -412,16 +405,16 @@ class TencentCloudManager(BasePlugin):
             cfs_info = self.get_tencent_client(region=region).cfs.call_json("DescribeCfsFileSystems", {})
             instances = cfs_info.get("Response", {}).get("FileSystems", [])
             result.extend([{
-                "inst_name": instance.get("FsName"),
-                "inst_id": instance.get("FileSystemId"),
-                "tags": instance.get("Tags"),
+                "resource_name": instance.get("FsName"),
+                "resource_id": instance.get("FileSystemId"),
+                "tag": instance.get("Tags"),
                 "region": region,
                 "zone": instance.get("Zone"),
                 "status": cfs_status_map.get(instance.get("LifeCycleState"), "未知"),
                 "protocol": instance.get("Protocol"),
-                "storage_type": cfs_storage_type_map.get(instance.get("StorageType"), "未知"),
-                "throughput": instance.get("BandwidthLimit"),  # 吞吐上限(MiB/s)
-                "capacity": instance.get("Capacity"),
+                "type": cfs_storage_type_map.get(instance.get("StorageType"), "未知"),
+                "net_limit": instance.get("BandwidthLimit"),  # 吞吐上限(MiB/s)
+                "size_gib": instance.get("Capacity"),
             } for instance in instances])
         return result
 
@@ -429,16 +422,15 @@ class TencentCloudManager(BasePlugin):
         """资源名、资源ID、域名后缀、状态、到期时间"""
         domain_info = self.get_tencent_client("").domain.call_json("DescribeDomainNameList", {})
         return [{
-            "inst_name": instance.get("DomainName"),
-            "inst_id": instance.get("DomainId"),
-            "domain_suffix": instance.get("CodeTld"),  # 域名后缀
+            "resource_name": instance.get("DomainName"),
+            "resource_id": instance.get("DomainId"),
+            "tld": instance.get("CodeTld"),  # 域名后缀
             "status": domain_status_map.get(instance.get("BuyStatus"), "未知"),
-            "expire_time": instance.get("ExpirationDate"),  # 到期时间
+            "expired_time": instance.get("ExpirationDate"),  # 到期时间
         } for instance in domain_info.get("DomainList", [])]
 
     def exec_script(self):
         return {
-            "qcloud": self.get_qcloud(),
             "qcloud_cvm": self.get_qcloud_cvm(),
             "qcloud_rocketmq": self.get_qcloud_rocketmq(),
             "qcloud_mysql": self.get_qcloud_mysql(),
@@ -489,5 +481,5 @@ if __name__ == '__main__':
     client = manager.get_tencent_client("")
 
     # print(manager.get_qcloud_cvm())
-    print(manager.get_qcloud_bucket())
-    # print(client.organization.call_json("DescribeOrganization",{}))
+    # print(manager.get_qcloud_bucket())
+    print(client.organization.call_json("DescribeOrganization",{}))

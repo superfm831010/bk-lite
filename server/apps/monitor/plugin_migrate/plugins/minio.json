@@ -13,7 +13,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server", "target_id"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      },
+      {
+        "name": "target_id",
+        "description": "target_id"
+      }
+    ],
     "description": "Counts unsent messages to detect sending failures and ensure message delivery integrity.",
     "query": "minio_audit_failed_messages_counter{__$labels__}"
   },
@@ -24,7 +33,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server", "target_id"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      },
+      {
+        "name": "target_id",
+        "description": "target_id"
+      }
+    ],
     "description": "Reflects message backlog in target queue for optimizing message processing.",
     "query": "minio_audit_target_queue_length_gauge{__$labels__}"
   },
@@ -35,7 +53,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server", "target_id"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      },
+      {
+        "name": "target_id",
+        "description": "target_id"
+      }
+    ],
     "description": "Evaluates sending success rate with unsent messages to measure stability.",
     "query": "minio_audit_total_messages_counter{__$labels__}"
   },
@@ -46,7 +73,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "percent",
-    "dimensions": ["server", "target_id"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      },
+      {
+        "name": "target_id",
+        "description": "target_id"
+      }
+    ],
     "description": "The success rate of sending messages is used to measure the reliability and stability of audit message sending.",
     "query": "minio_audit_total_messages_counter{__$labels__}/(minio_audit_total_messages_counter{__$labels__}+minio_audit_failed_messages_counter{__$labels__})*100"
   },
@@ -57,7 +93,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "mebibytes",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Reflects available storage for data storage planning.",
     "query": "minio_cluster_capacity_usable_free_bytes_gauge{__$labels__}/1024/1024"
   },
@@ -68,7 +109,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "mebibytes",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Counts used storage for calculating utilization rate.",
     "query": "minio_cluster_capacity_usable_total_bytes_gauge{__$labels__}/1024/1024"
   },
@@ -79,7 +125,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "percent",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Collect statistics on the percentage of used capacity in the cluster storage capacity to the total capacity, monitor the storage resource usage, and evaluate the remaining storage resources.",
     "query": "minio_cluster_capacity_usable_total_bytes_gauge{__$labels__} /(minio_cluster_capacity_usable_total_bytes_gauge{__$labels__}+minio_cluster_capacity_usable_free_bytes_gauge{__$labels__})* 100"
   },
@@ -90,7 +141,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Counts offline drives to troubleshoot issues affecting performance and data availability.",
     "query": "minio_cluster_drive_offline_total_gauge{__$labels__}"
   },
@@ -101,7 +157,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Evaluates available storage devices to ensure cluster operation.",
     "query": "minio_cluster_drive_online_total_gauge{__$labels__}"
   },
@@ -112,7 +173,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Evaluates overall storage device status with online and offline counts.",
     "query": "minio_cluster_drive_total_gauge{__$labels__}"
   },
@@ -123,7 +189,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "percent",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "The ratio of the number of offline drives to the total number of drives, a measure of the reliability and availability of storage devices, can affect data redundancy when thresholds such as 5% are exceeded.",
     "query": "minio_cluster_drive_offline_total_gauge{__$labels__}/minio_cluster_drive_total_gauge{__$labels__}*100"
   },
@@ -134,7 +205,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Counts offline nodes to address issues affecting performance and redundancy.",
     "query": "minio_cluster_nodes_offline_total_gauge{__$labels__}"
   },
@@ -145,7 +221,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Evaluates available cluster resources to ensure service capacity.",
     "query": "minio_cluster_nodes_online_total_gauge{__$labels__}"
   },
@@ -156,7 +237,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "percent",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "The percentage of the number of offline nodes in the total number of nodes reflects the health status of the cluster nodes and is used to evaluate the stability of the cluster nodes.",
     "query": "minio_cluster_nodes_offline_total_gauge{__$labels__}/(minio_cluster_nodes_offline_total_gauge{__$labels__}+minio_cluster_nodes_online_total_gauge{__$labels__})*100"
   },
@@ -167,7 +253,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Ensures data write consistency and reliability, affecting write performance.",
     "query": "minio_cluster_write_quorum_gauge{__$labels__}"
   },
@@ -178,7 +269,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Enum",
     "unit": "[{\"name\":\"健康\",\"id\":1,\"color\":\"#1ac44a\"},{\"name\":\"不健康\",\"id\":0,\"color\":\"#ff4d4f\"}]",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Reflects overall cluster health for quick status check.",
     "query": "minio_cluster_health_status_gauge{__$labels__}"
   },
@@ -189,7 +285,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "Bps",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Calculates the average rate of data sent in S3 requests over the past 5 minutes, reflecting data upload performance.",
     "query": "rate(minio_s3_traffic_sent_bytes_counter{__$labels__}[5m])"
   },
@@ -200,7 +301,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "Bps",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Calculates the average rate of data received in S3 requests over the past 5 minutes, reflecting data download performance.",
     "query": "rate(minio_s3_traffic_received_bytes_counter{__$labels__}[5m])"
   },
@@ -211,7 +317,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Displays the number of S3 requests waiting to be processed, optimizes request processing efficiency, and directly reflects whether the system is saturated.",
     "query": "minio_s3_requests_waiting_total_gauge{__$labels__}"
   },
@@ -222,7 +333,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "reqps",
-    "dimensions": ["server", "api"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      },
+      {
+        "name": "api",
+        "description": "api"
+      }
+    ],
     "description": "Calculates the average processing rate of S3 requests over the last 5 minutes, reflecting system throughput and service load and performance baselines.",
     "query": "rate(minio_s3_requests_total_counter{__$labels__}[5m])"
   },
@@ -233,7 +353,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "reqps",
-    "dimensions": ["server", "api"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      },
+      {
+        "name": "api",
+        "description": "api"
+      }
+    ],
     "description": "Calculates the average rate of errors in S3 requests over the past 5 minutes, reflecting system stability.",
     "query": "rate(minio_s3_requests_errors_total_counter{__$labels__}[5m])"
   },
@@ -244,7 +373,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "reqps",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Calculates the average rate of S3 requests rejected due to invalid format or parameters over the past 5 minutes, reflecting client request quality.",
     "query": "rate(minio_s3_requests_rejected_invalid_total_counter{__$labels__}[5m])"
   },
@@ -255,7 +389,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "reqps",
-    "dimensions": ["server"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      }
+    ],
     "description": "Calculates the average rate of S3 requests rejected due to authentication failures over the past 5 minutes, reflecting authentication issues.",
     "query": "rate(minio_s3_requests_rejected_auth_total_counter{__$labels__}[5m])"
   },
@@ -266,7 +405,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server", "bucket"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      },
+      {
+        "name": "bucket",
+        "description": "bucket"
+      }
+    ],
     "description": "Statistics on the number of objects in a specified bucket are used to understand the data scale of the bucket and evaluate the bucket usage.",
     "query": "minio_bucket_usage_object_total_gauge{__$labels__}"
   },
@@ -277,7 +425,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "mebibytes",
-    "dimensions": ["server", "bucket"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      },
+      {
+        "name": "bucket",
+        "description": "bucket"
+      }
+    ],
     "description": "Statistics on the amount of storage space occupied by a specified bucket can be used to monitor storage resource consumption and plan storage capacity.",
     "query": "minio_bucket_usage_total_bytes_gauge{__$labels__}/1024/1024"
   },
@@ -288,7 +445,20 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "reqps",
-    "dimensions": ["server", "bucket", "api"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      },
+      {
+        "name": "bucket",
+        "description": "bucket"
+      },
+      {
+        "name": "api",
+        "description": "api"
+      }
+    ],
     "description": "The rate per second of client errors (e.g., 403/404) in S3 requests received by the bucket over the past 5 minutes, reflecting the real-time frequency of client request legitimacy issues.",
     "query": "rate(minio_bucket_requests_4xx_errors_total_counter{__$labels__}[5m])"
   },
@@ -299,7 +469,20 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server", "bucket", "api"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "bucket",
+            "description": "bucket"
+        },
+        {
+            "name": "api",
+            "description": "api"
+        }
+    ],
     "description": "Statistics on the number of S3 requests processed by a specified bucket can be used to monitor the request processing progress and optimize system performance.",
     "query": "minio_bucket_requests_inflight_total_gauge{__$labels__}"
   },
@@ -310,7 +493,20 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "reqps",
-    "dimensions": ["server", "bucket", "api"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "bucket",
+            "description": "bucket"
+        },
+        {
+            "name": "api",
+            "description": "api"
+        }
+    ],
     "description": "The growth rate per second of the total number of S3 requests received by a bucket reflects the intensity of request traffic and the frequency of business access to the bucket.",
     "query": "rate(minio_bucket_requests_total_counter{__$labels__}[5m])"
   },
@@ -321,7 +517,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "MBs",
-    "dimensions": ["server", "bucket"],
+    "dimensions": [
+      {
+        "name": "server",
+        "description": "server"
+      },
+      {
+        "name": "bucket",
+        "description": "bucket"
+      }
+    ],
     "description": "The average amount of data traffic received by the compute bucket per second over a 5-minute period, converted to MB/s units, is used to monitor bandwidth usage for data downloads or reads.",
     "query": "rate(minio_bucket_traffic_received_bytes_gauge{__$labels__}[5m]) / (1024*1024)"
   },
@@ -332,7 +537,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server", "drive"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "drive",
+            "description": "drive"
+        }
+    ],
     "description": "Counts the total number of inodes on a specified drive to measure its file - storage capacity limit and evaluate the scale of storage resources.",
     "query": "minio_node_drive_total_inodes_gauge{__$labels__}"
   },
@@ -343,7 +557,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "percent",
-    "dimensions": ["server", "drive"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "drive",
+            "description": "drive"
+        }
+    ],
     "description": "Statistics on the percentage of inodes used by a specified drive can be used to understand the degree of drive usage and assist in storage resource management.",
     "query": "(minio_node_drive_used_inodes_gauge{__$labels__} / minio_node_drive_total_inodes_gauge{__$labels__}) * 100"
   },
@@ -354,7 +577,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "cps",
-    "dimensions": ["server", "drive"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "drive",
+            "description": "drive"
+        }
+    ],
     "description": "Counts the number of read operations per second on a specified drive to evaluate its read performance and troubleshoot read - related performance issues.",
     "query": "minio_node_drive_reads_per_sec_gauge{__$labels__}"
   },
@@ -365,7 +597,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "MBs",
-    "dimensions": ["server", "drive"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "drive",
+            "description": "drive"
+        }
+    ],
     "description": "Counts the amount of data read per second (in kilobytes) on a specified drive, directly reflecting its read bandwidth to optimize data - reading strategies.",
     "query": "minio_node_drive_reads_kb_per_sec_gauge{__$labels__}/1024"
   },
@@ -376,7 +617,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "cps",
-    "dimensions": ["server", "drive"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "drive",
+            "description": "drive"
+        }
+    ],
     "description": "Counts the number of write operations per second on a specified drive to evaluate its write performance and analyze the impact of write operations on the system.",
     "query": "minio_node_drive_writes_per_sec_gauge{__$labels__}"
   },
@@ -387,7 +637,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "MBs",
-    "dimensions": ["server", "drive"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "drive",
+            "description": "drive"
+        }
+    ],
     "description": "Counts the amount of data written per second (in kilobytes) on a specified drive, reflecting its write bandwidth to improve data - writing efficiency.",
     "query": "minio_node_drive_writes_kb_per_sec_gauge{__$labels__}/1024"
   },
@@ -398,7 +657,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "percent",
-    "dimensions": ["server", "drive"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "drive",
+            "description": "drive"
+        }
+    ],
     "description": "Counts the percentage of time a specified drive is busy to evaluate its load and allocate storage tasks reasonably.",
     "query": "minio_node_drive_perc_util_gauge{__$labels__}"
   },
@@ -409,7 +677,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "KBs",
-    "dimensions": ["server", "interface"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "interface",
+            "description": "interface"
+        }
+    ],
     "description": "Statistics on the amount of data received per second by a specified server network interface in the past five minutes are used to monitor network traffic inflow and evaluate network bandwidth usage.",
     "query": "rate(minio_node_if_rx_bytes_gauge{__$labels__}[5m])"
   },
@@ -420,7 +697,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "cps",
-    "dimensions": ["server", "interface"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "interface",
+            "description": "interface"
+        }
+    ],
     "description": "Statistics on the number of errors that occur when receiving data per second on a specified server network interface in the past 5 minutes is used to troubleshoot network receiving faults and ensure network data transmission quality.",
     "query": "rate(minio_node_if_rx_errors_gauge{__$labels__}[5m])"
   },
@@ -431,7 +717,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "KBs",
-    "dimensions": ["server", "interface"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "interface",
+            "description": "interface"
+        }
+    ],
     "description": "Statistics on the amount of data transmitted per second on a specified server network interface in the past five minutes are used to monitor network traffic outflow and evaluate network bandwidth efficiency.",
     "query": "rate(minio_node_if_tx_bytes_gauge{__$labels__}[5m])"
   },
@@ -442,7 +737,16 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "cps",
-    "dimensions": ["server", "interface"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        },
+        {
+            "name": "interface",
+            "description": "interface"
+        }
+    ],
     "description": "Statistics on the number of errors that occur during data transmission per second on the network interface of a specified server in the past 5 minutes are used to troubleshoot network transmission faults and improve network communication reliability.",
     "query": "rate(minio_node_if_tx_errors_gauge{__$labels__}[5m])"
   },
@@ -453,7 +757,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        }
+    ],
     "description": "Calculate the average load of the CPU in the past 1 minute, reflecting the number of processes waiting for CPU resources (including running and waiting processes), the larger the value, the more CPU tension, for real-time monitoring of real-time pressure and detection of performance problems.",
     "query": "minio_node_cpu_avg_load1_gauge{__$labels__}"
   },
@@ -464,7 +773,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        }
+    ],
     "description": "Calculate the average CPU load over the past 5 minutes, reflecting the number of processes waiting for CPU resources (including running and waiting processes), which is used to evaluate short-term load trends and assist in performance optimization decisions.",
     "query": "minio_node_cpu_avg_load5_gauge{__$labels__}"
   },
@@ -475,7 +789,12 @@
     "instance_id_keys": ["instance_id"],
     "data_type": "Number",
     "unit": "short",
-    "dimensions": ["server"],
+    "dimensions": [
+        {
+            "name": "server",
+            "description": "server"
+        }
+    ],
     "description": "The average CPU load in the past 15 minutes is calculated, reflecting the number of processes waiting for CPU resources (including running and waiting processes), which is used to analyze the long-term load and plan system resources.",
     "query": "minio_node_cpu_avg_load15_gauge{__$labels__}"
   }

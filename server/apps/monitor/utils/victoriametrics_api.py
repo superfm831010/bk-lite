@@ -9,10 +9,12 @@ class VictoriaMetricsAPI:
         self.username = VICTORIAMETRICS_USER
         self.password = VICTORIAMETRICS_PWD
 
-    def query(self, query, step="5m"):
+    def query(self, query, step="5m", time=None):
         params = {"query": query}
         if step:
             params["step"] = step
+        if time:
+            params["time"] = time
         response = requests.get(
             f"{self.host}/api/v1/query",
             params=params,

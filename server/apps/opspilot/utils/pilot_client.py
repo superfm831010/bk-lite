@@ -1,8 +1,8 @@
-from apps.core.logger import logger
-from apps.opspilot.models import Bot
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.config import PILOT_RUNTIME
-from apps.opspilot.utils.kubernetes_client import KubernetesClient
+from apps.opspilot.models import Bot
 from apps.opspilot.utils.docker_client import DockerClient
+from apps.opspilot.utils.kubernetes_client import KubernetesClient
 
 
 class PilotClient(object):

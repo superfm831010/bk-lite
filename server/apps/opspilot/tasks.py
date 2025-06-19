@@ -5,7 +5,7 @@ from celery import shared_task
 from django.conf import settings
 from tqdm import tqdm
 
-from apps.core.logger import celery_logger as logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService

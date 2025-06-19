@@ -1,5 +1,5 @@
 .sideMenuLayout {
-  height: var(--custom-height, calc(100vh - 90px));
+  height: var(--custom-height, calc(100vh - 90px)) !important;
   overflow: hidden;
   .sectionContainer {
     background: var(--color-components-side-nav-bg);

@@ -13,7 +13,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "percent",
-      "dimensions": ["id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        }
+      ],
       "description": "Current utilization rate of threads performing temporary jobs in the thread pool (The ratio of currently active threads to the maximum number of threads in the thread pool), indicating resource utilization pressure.",
       "query": "jetty_queuedthreadpool_utilizationrate_value{__$labels__} * 100"
     },
@@ -24,7 +29,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": ["id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        }
+      ],
       "description": "Total number of threads currently managed by the thread pool, including active and idle threads.",
       "query": "jetty_queuedthreadpool_threads_value{__$labels__}"
     },
@@ -35,7 +45,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": ["id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        }
+      ],
       "description": "The maximum number of threads allowed in the Jetty thread pool, and the time threshold after which an idle thread will be reclaimed.",
       "query": "jetty_queuedthreadpool_maxthreads_value{__$labels__}"
     },
@@ -46,7 +61,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "s",
-      "dimensions": ["id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        }
+      ],
       "description": "Maximum allowable idle timeout for threads in Jetty thread pools.",
       "query": "jetty_queuedthreadpool_idletimeout_value{__$labels__} / 1000"
     },
@@ -57,7 +77,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": ["id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        }
+      ],
       "description": "The number of ready threads in the Jetty server, used to assess idle resources in the thread pool.",
       "query": "jetty_queuedthreadpool_readythreads_value{__$labels__}"
     },
@@ -134,7 +159,16 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "kibibytes",
-      "dimensions": ["context", "id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        },
+        {
+          "name": "context",
+          "description": "context"
+        }
+      ],
       "description": "Represents the output buffer size (KB) for HTTP responses in Jetty, controlling data buffering to balance performance and memory usage.",
       "query": "jetty_httpconfiguration_outputbuffersize_value{__$labels__} / 1024"
     },
@@ -145,7 +179,16 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "s",
-      "dimensions": ["context", "id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        },
+        {
+          "name": "context",
+          "description": "context"
+        }
+      ],
       "description": "Indicates the maximum keep-alive time (seconds) for HTTP connections without data transfer, releasing idle resources to prevent waste and malicious occupation.",
       "query": "jetty_httpconfiguration_idletimeout_value{__$labels__} / 1000"
     },
@@ -156,7 +199,16 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "bytes",
-      "dimensions": ["context", "id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        },
+        {
+          "name": "context",
+          "description": "context"
+        }
+      ],
       "description": "Represents the maximum number of HTTP request/response headers cached by Jetty to reduce parsing overhead and improve request processing speed.",
       "query": "jetty_httpconfiguration_headercachesize_value{__$labels__}"
     },
@@ -167,7 +219,16 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": ["context", "id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        },
+        {
+          "name": "context",
+          "description": "context"
+        }
+      ],
       "description": "Indicates the maximum number of error dispatches allowed in Jetty to prevent infinite loops and resource exhaustion during error handling.",
       "query": "jetty_httpconfiguration_maxerrordispatches_value{__$labels__}"
     },
@@ -200,7 +261,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "mebibytes",
-      "dimensions": ["id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        }
+      ],
       "description": "Represents the direct memory usage (MB) by Jetty's direct buffers for high-performance I/O, preventing out-of-memory errors in non-heap space.",
       "query": "jetty_arraybufferpool_directmemory_value{__$labels__} / (1024*1024)"
     },
@@ -211,7 +277,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "MBs",
-      "dimensions": ["id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        }
+      ],
       "description": "Represents the average rate of direct memory change (MB/s) over 5 minutes, analyzing allocation patterns and leak risks.",
       "query": "rate(jetty_arraybufferpool_directmemory_value{__$labels__}[5m]) / (1024*1024)"
     },
@@ -222,7 +293,16 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "s",
-      "dimensions": ["context", "id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        },
+        {
+          "name": "context",
+          "description": "context"
+        }
+      ],
       "description": "Indicates the idle timeout (seconds) for network connections in Jetty, managing TCP connection lifecycles to optimize long-connection resource recycling.",
       "query": "jetty_serverconnector_idletimeout_value{__$labels__} / 1000"
     },
@@ -233,7 +313,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": ["id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        }
+      ],
       "description": "Represents the cumulative number of select() method invocations by Jetty's selector, reflecting I/O event processing frequency and network load.",
       "query": "jetty_managedselector_selectcount_value{__$labels__}"
     },
@@ -244,7 +329,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": ["id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        }
+      ],
       "description": "Represents the increase in selector select() calls over 5 minutes, eliminating counter reset effects to measure I/O trends accurately.",
       "query": "increase(jetty_managedselector_selectcount_value{__$labels__}[5m])"
     },
@@ -255,7 +345,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "short",
-      "dimensions": ["id"],
+      "dimensions": [
+        {
+          "name": "id",
+          "description": "ID"
+        }
+      ],
       "description": "Represents the number of available reserved threads in Jetty's executor, monitoring high-priority task pool load to avoid processing delays.",
       "query": "jetty_reservedthreadexecutor_available_value{__$labels__}"
     },
