@@ -5,7 +5,8 @@ from collections import defaultdict
 from django.db import transaction
 from django.db.models import Prefetch
 
-from apps.monitor.constants import MONITOR_OBJS, OBJ_ORDER
+from apps.core.exceptions.base_app_exception import BaseAppException
+from apps.monitor.constants import MONITOR_OBJS, OBJ_ORDER, DEFAULT_OBJ_ORDER
 from apps.monitor.models.monitor_metrics import Metric
 from apps.monitor.models.monitor_object import MonitorInstance, MonitorObject, MonitorInstanceOrganization
 from apps.monitor.models.setting import Setting
@@ -56,11 +57,11 @@ class MonitorObjectService:
 
         monitor_obj = MonitorObject.objects.filter(id=monitor_object_id).first()
         if not monitor_obj:
-            raise ValueError("Monitor object does not exist")
+            raise BaseAppException("Monitor object does not exist")
         obj_metric_map = {i["name"]: i for i in MONITOR_OBJS}
         obj_metric_map = obj_metric_map.get(monitor_obj.name)
         if not obj_metric_map:
-            raise ValueError("Monitor object default metric does not exist")
+            raise BaseAppException("Monitor object default metric does not exist")
         instance_map = MonitorObjectService.get_instances_by_metric(obj_metric_map.get("default_metric", ""), obj_metric_map.get("instance_id_keys"))
         result = []
 
@@ -132,7 +133,7 @@ class MonitorObjectService:
         instance_id = str(tuple([instance_info["instance_id"]]))
         objs = MonitorInstance.objects.filter(id=instance_id).first()
         if objs:
-            raise Exception(f"实例已存在：{instance_info['instance_name']}")
+            raise BaseAppException(f"实例已存在：{instance_info['instance_name']}")
 
     @staticmethod
     def autodiscover_monitor_instance():
@@ -151,14 +152,12 @@ class MonitorObjectService:
         :return: 排序后的数据列表
         """
 
-        # 1. 预处理：如果 group_order 或 item_order 为空，设为默认值
         order_obj = Setting.objects.filter(name=OBJ_ORDER).first()
-        item_order, group_order = {}, []
-        if order_obj:
-            item_order = {i["type"]: i["name_list"] for i in order_obj.value}
-            group_order = [i["type"] for i in order_obj.value]
+        order_obj_value = order_obj.value if order_obj else DEFAULT_OBJ_ORDER
+        item_order = {i["type"]: i["name_list"] for i in order_obj_value}
+        group_order = [i["type"] for i in order_obj_value]
 
-        # 2. 按 type 分组
+        # 按 type 分组
         grouped_data = defaultdict(list)
         group_appearance_order = []  # 记录 type 出现顺序
         for item in data:
@@ -166,20 +165,19 @@ class MonitorObjectService:
             if item["type"] not in group_appearance_order:
                 group_appearance_order.append(item["type"])  # 记录出现顺序
 
-        # 3. 确定分组排序
+        # 确定分组排序
         if group_order:
             sorted_groups = sorted(grouped_data.keys(),
                                    key=lambda g: (group_order.index(g) if g in group_order else float('inf')))
         else:
             sorted_groups = group_appearance_order  # 按出现顺序排序（可改成 sorted(grouped_data.keys()) 变成字母序）
 
-        # 4. 结果存储
         sorted_result = []
 
         for group in sorted_groups:
             items = grouped_data[group]
 
-            # 5. 确定子数据排序
+            # 确定子数据排序
             if group in item_order and item_order[group]:
                 sorted_items = sorted(items, key=lambda x: (
                     item_order[group].index(x["name"]) if x["name"] in item_order[group] else float('inf')))
@@ -195,7 +193,7 @@ class MonitorObjectService:
         """更新监控对象实例"""
         instance = MonitorInstance.objects.filter(id=instance_id).first()
         if not instance:
-            raise ValueError("Monitor instance does not exist")
+            raise BaseAppException("Monitor instance does not exist")
         if name:
             instance.name = name
             instance.save()

@@ -3,6 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import ValidationError
 from rest_framework.viewsets import GenericViewSet
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.node_mgmt.filters.cloud_region import CloudRegionFilter
 from apps.node_mgmt.models import Node
 from apps.node_mgmt.serializers.cloud_region import CloudRegionSerializer, CloudRegionUpdateSerializer
@@ -42,7 +43,7 @@ class CloudRegionViewSet(mixins.ListModelMixin,
         cloud_region_id = kwargs.get('pk')
         cloud_region = CloudRegion.objects.filter(id=cloud_region_id).first()
         if cloud_region and cloud_region.name == 'default':
-            raise ValidationError("default云区域禁止编辑")
+            raise BaseAppException("默认云区域禁止编辑")
         return super().partial_update(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -71,5 +72,5 @@ class CloudRegionViewSet(mixins.ListModelMixin,
         # 校验云区域下是否存在节点
         cloud_region_id = kwargs.get('pk')
         if Node.objects.filter(cloud_region_id=cloud_region_id).exists():
-            raise ValidationError("该云区域下存在节点，无法删除")
+            raise BaseAppException("该云区域下存在节点，无法删除")
         return super().destroy(request, *args, **kwargs)

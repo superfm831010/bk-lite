@@ -1,8 +1,5 @@
-import logging
-
 from apps.node_mgmt.models import Collector, CollectorConfiguration
-
-logger = logging.getLogger("app")
+from apps.core.logger import node_logger as logger
 
 
 NATS_EXECUTOR_CONFIG = """

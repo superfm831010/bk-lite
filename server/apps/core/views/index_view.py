@@ -271,14 +271,15 @@ def get_user_menus(request):
 
     if not client_name:
         return JsonResponse({"result": False, "message": "Client name is required"})
-
+    app_admin = f"{client_name}--admin"
+    is_superuser = request.user.is_superuser or app_admin in request.user.roles
     try:
         client = _create_system_mgmt_client()
         return_data = client.get_user_menus(
             client_id=client_name,
             roles=request.user.role_ids,
             username=request.user.username,
-            is_superuser=request.user.is_superuser,
+            is_superuser=is_superuser,
         )
         return JsonResponse(return_data)
     except Exception as e:

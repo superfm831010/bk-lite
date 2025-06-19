@@ -1,14 +1,10 @@
-import logging
 import os
-
 from django.core.management import BaseCommand
-
 from apps.node_mgmt.models.sidecar import SidecarApiToken
 from apps.node_mgmt.node_init.cloud_init import cloud_init
 from apps.node_mgmt.node_init.collector_init import collector_init
 from apps.node_mgmt.node_init.controller_init import controller_init
-
-logger = logging.getLogger(__name__)
+from apps.core.logger import node_logger as logger
 
 
 class Command(BaseCommand):
