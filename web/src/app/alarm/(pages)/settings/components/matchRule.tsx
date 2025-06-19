@@ -28,7 +28,7 @@ interface MatchRuleProps {
 
 const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
   const { getAlertSources } = useSourceApi();
-  const { levelList } = useCommon();
+  const { levelListEvent } = useCommon();
   const { t } = useTranslation();
   const [sourceList, setSourceList] = useState<SourceItem[]>([]);
   const [policyList, setPolicyList] = useState<PolicyItem[][]>(
@@ -51,8 +51,18 @@ const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
   ];
 
   useEffect(() => {
-    if (value) {
+    if (value?.length) {
       setPolicyList(value);
+    } else {
+      setPolicyList([
+        [
+          {
+            key: undefined,
+            operator: undefined,
+            value: undefined,
+          },
+        ],
+      ]);
     }
   }, [value]);
 
@@ -167,7 +177,7 @@ const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
                             }}
                           >
                             {i.key === 'level_id' &&
-                              levelList.map(
+                              levelListEvent.map(
                                 ({ level_id, level_display_name }) => (
                                   <Option key={level_id} value={level_id}>
                                     {level_display_name}

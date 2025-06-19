@@ -2,14 +2,15 @@
 
 import React, { useRef } from 'react';
 import CustomTable from '@/components/custom-table';
-import AlarmAction from '../../(pages)/alarms/components/alarmAction';
-import AlertDetail from '../../(pages)/alarms/components/alarmDetail';
+import AlarmAction from './alarmAction';
+import AlertDetail from './alarmDetail';
 import Icon from '@/components/icon';
 import UserAvatar from '@/app/alarm/components/userAvatar';
 import type { ColumnsType } from 'antd/es/table';
 import { Tag, Button } from 'antd';
 import { AlarmTableProps } from '@/app/alarm/types/alarms';
 import { TableDataItem } from '@/app/alarm/types/types';
+import { AlarmTableDataItem } from '@/app/alarm/types/alarms';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { ModalRef } from '@/app/alarm/types/types';
@@ -34,14 +35,14 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
   const NOTIFIED_STATE: any = useNotifiedStateMap();
   const detailRef = useRef<ModalRef>(null);
 
-  const columns: ColumnsType<TableDataItem> = [
+  const columns: ColumnsType<AlarmTableDataItem> = [
     {
       title: t('alarms.level'),
       dataIndex: 'level',
       key: 'level',
       width: 110,
       fixed: 'left',
-      render: (_: any, { level }: TableDataItem) => {
+      render: (_: any, { level }: AlarmTableDataItem) => {
         const target = levelList.find(
           (item) => item.level_id === Number(level)
         );
@@ -60,7 +61,7 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       dataIndex: 'first_event_time',
       key: 'first_event_time',
       width: 190,
-      render: (_: any, { first_event_time }: TableDataItem) =>
+      render: (_: any, { first_event_time }: AlarmTableDataItem) =>
         first_event_time ? convertToLocalizedTime(first_event_time) : '--',
     },
     {
@@ -68,7 +69,7 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       dataIndex: 'last_event_time',
       key: 'last_event_time',
       width: 190,
-      render: (_: any, { last_event_time }: TableDataItem) =>
+      render: (_: any, { last_event_time }: AlarmTableDataItem) =>
         last_event_time ? convertToLocalizedTime(last_event_time) : '--',
     },
     {
@@ -82,7 +83,7 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       dataIndex: 'event_count',
       key: 'event_count',
       width: 110,
-      render: (_: any, record: TableDataItem) => (
+      render: (_: any, record: AlarmTableDataItem) => (
         <Button type="link" onClick={() => onOpenDetail(record, 'event')}>
           <span className="text-blue-500">{record.event_count}</span>
         </Button>
@@ -99,7 +100,7 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (_: any, { status }: TableDataItem) => (
+      render: (_: any, { status }: AlarmTableDataItem) => (
         <span>{STATE_MAP[status as keyof typeof STATE_MAP] || '--'}</span>
       ),
     },
@@ -114,7 +115,9 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       dataIndex: 'operator_user',
       key: 'operator_user',
       width: 200,
-      render: (_: any, { operator_user }: TableDataItem) =>
+      shouldCellUpdate: (prev: AlarmTableDataItem, next: AlarmTableDataItem) =>
+        prev?.operator_user !== next?.operator_user,
+      render: (_: any, { operator_user }: AlarmTableDataItem) =>
         operator_user ? <UserAvatar userName={operator_user} /> : '--',
     },
     {
@@ -122,7 +125,7 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       dataIndex: 'notification_status',
       key: 'notification_status',
       width: 150,
-      render: (_: any, { notification_status }: TableDataItem) => {
+      render: (_: any, { notification_status }: AlarmTableDataItem) => {
         return notification_status ? (
           <Tag color={notification_status === 'success' ? 'green' : 'red'}>
             {NOTIFIED_STATE[notification_status] || '--'}
@@ -136,8 +139,8 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       title: t('common.action'),
       key: 'action',
       fixed: 'right',
-      width: 200,
-      render: (_: any, record: TableDataItem) => (
+      width: 220,
+      render: (_: any, record: AlarmTableDataItem) => (
         <div className="flex items-center">
           <Button
             className="mr-[12px]"
@@ -154,7 +157,7 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
   ];
 
   const onOpenDetail = (
-    row: TableDataItem,
+    row: AlarmTableDataItem,
     defaultTab: string = 'baseInfo'
   ) => {
     detailRef.current?.showModal({
@@ -169,7 +172,7 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
     <>
       <CustomTable
         scroll={{ y: tableScrollY, x: 'calc(100vw - 320px)' }}
-        columns={columns}
+        columns={columns as ColumnsType<TableDataItem>}
         dataSource={dataSource}
         pagination={pagination}
         loading={loading}

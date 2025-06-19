@@ -108,13 +108,13 @@ const IntegrationDetail: FC = () => {
 
   const IntegrationHeader = () => (
     <div className="flex items-center">
-      <div className="inline-flex items-center gap-4 mr-4 px-8 py-4 rounded bg-[#99aaf2] text-white">
+      <div className="inline-flex items-center gap-3 mr-4 px-6 py-4 rounded bg-[#99aaf2] text-white">
         <img
           src={source?.logo || ''}
           alt={source?.description}
-          className="h-[44px] rounded"
+          className="h-[40px] rounded"
         />
-        <span className="text-[28px] font-semibold">{source?.name}</span>
+        <span className="text-[24px] font-semibold">{source?.name}</span>
       </div>
       <span className="text-[15px]">{source?.description}</span>
     </div>
@@ -224,9 +224,10 @@ const IntegrationDetail: FC = () => {
                       <DatePicker.RangePicker
                         showTime={{ format: 'HH:mm:ss' }}
                         value={timeRange}
-                        onChange={(vals) =>
-                          setTimeRange(vals as [dayjs.Dayjs, dayjs.Dayjs])
-                        }
+                        onChange={(vals) => {
+                          setTimeRange(vals as [dayjs.Dayjs, dayjs.Dayjs]);
+                          setPagination((prev) => ({ ...prev, current: 1 }));
+                        }}
                       />
                     </div>
                   </div>

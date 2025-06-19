@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import MatchRule from '@/app/alarm/(pages)/settings/components/matchRule';
 import EffectiveTime, {
@@ -181,7 +183,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
           initialValue={defaultEffectiveTime}
           rules={[{ required: true, message: t('common.selectMsg') }]}
         >
-          <EffectiveTime />
+          <EffectiveTime open={open} />
         </Form.Item>
       </Form>
     </Drawer>

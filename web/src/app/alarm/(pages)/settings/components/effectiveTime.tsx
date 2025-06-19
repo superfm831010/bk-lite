@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import dayjs from 'dayjs';
 import { Select, DatePicker, TimePicker } from 'antd';
 import { timeInterval, weekList } from '@/app/alarm/constants/settings';
@@ -14,6 +14,7 @@ export interface EffectiveTimeValue {
 }
 
 interface EffectiveTimeProps {
+  open: boolean;
   value?: EffectiveTimeValue;
   onChange?: (val: EffectiveTimeValue) => void;
 }
@@ -25,8 +26,19 @@ const defaultValue: EffectiveTimeValue = {
   end_time: '23:59:59',
 };
 
-const EffectiveTime: React.FC<EffectiveTimeProps> = ({ value, onChange }) => {
+const EffectiveTime: React.FC<EffectiveTimeProps> = ({
+  open,
+  value,
+  onChange,
+}) => {
   const form = value || defaultValue;
+  const typeChangeRef = useRef(true);
+
+  useEffect(() => {
+    if (open) {
+      typeChangeRef.current = true;
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!value) {
@@ -37,6 +49,28 @@ const EffectiveTime: React.FC<EffectiveTimeProps> = ({ value, onChange }) => {
   const triggerChange = (changed: Partial<EffectiveTimeValue>) => {
     onChange?.({ ...form, ...changed });
   };
+
+  // 仅在用户切换 type 时初始化时间，首次渲染跳过
+  useEffect(() => {
+    if (typeChangeRef.current) {
+      typeChangeRef.current = false;
+      return;
+    }
+    if (form.type === 'one') {
+      triggerChange({
+        start_time: dayjs().startOf('day').format('YYYY-MM-DD HH:mm:ss'),
+        end_time: dayjs()
+          .add(1, 'month')
+          .endOf('day')
+          .format('YYYY-MM-DD HH:mm:ss'),
+      });
+    } else {
+      triggerChange({
+        start_time: '00:00:00',
+        end_time: '23:59:59',
+      });
+    }
+  }, [form.type]);
 
   return (
     <div className="flex" id="effective-time">

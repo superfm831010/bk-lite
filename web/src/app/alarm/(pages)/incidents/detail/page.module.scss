@@ -1,11 +1,11 @@
 .detailContainer {
-  width: 100%;
   display: flex;
   flex-direction: column;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 16px;
   background: #fff;
+  overflow: hidden;
   .detailContent {
     flex: 1;
     display: flex;

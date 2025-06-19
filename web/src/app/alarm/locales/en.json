@@ -85,6 +85,8 @@
         "eventCount": "Event Count",
         "notificationStatus": "Notification Status",
         "declareIncident": "Declare Incident",
+        "createIncident": "Create Incident",
+        "linkIncident": "Link Incident",
         "confirmOperate": "Confirm to",
         "claim": "Claim",
         "assign": "Assign",
@@ -100,7 +102,9 @@
         "object": "Object",
         "content": "Content",
         "metricName": "Metric Name",
-        "metricValue": "Metric Value"
+        "metricValue": "Metric Value",
+        "incident": "Incident",
+        "title": "Title"
     },
     "integration": {
         "description": "Description",
@@ -114,8 +118,10 @@
     "settings": {
         "alertAssign": "Alert Assignment",
         "shieldStrategy": "Shielding Strategy",
+        "correlationRules": "Correlation Rules",
         "assignStrategyMessage": "You can configure an automatic dispatch strategy to assign alerts that meet the filtering criteria to designated personnel and choose the notification method.",
         "shieldStrategyMessage": "By implementing a blocking strategy, you can manage the sending of alarm information more efficiently, improving the efficiency and user experience of the alarm system.",
+        "correlationRulesMessage": "Explore the correlation between low-level events and aggregate them into high-level events. Here, you can define aggregation rules from ‘Event’ to ‘Alert’ and ‘Alert’ to ‘Incident’ to reduce the amount of information that needs to be processed and improve the information value of individual events.",
         "alertAssignTableName": "Name",
         "alertAssignTablePersonnel": "Personnel",
         "alertAssignTableAffectiveTime": "Affective Time",
@@ -134,6 +140,14 @@
         "disableSuccess": "Disable successfully",
         "effective": "Effective",
         "ineffective": "Ineffective",
+        "correlation": {
+            "example": "Example",
+            "describe": "Describe",
+            "type": "Type",
+            "scope": "Scope",
+            "lastUpdateTime": "Last Update Time",
+            "explain": "Explain"
+        },
         "assignStrategy": {
             "ruleAll": "All",
             "ruleFilter": "Filter",

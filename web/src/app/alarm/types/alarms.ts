@@ -1,7 +1,4 @@
-import type {
-  Pagination,
-  TableDataItem,
-} from '@/app/alarm/types/types';
+import type { Pagination, TableDataItem } from '@/app/alarm/types/types';
 export interface GroupInfo {
   name?: string;
   description?: string;
@@ -339,14 +336,15 @@ export interface ChartDataConfig {
 
 export interface AlarmActionProps {
   rowData: TableDataItem[];
-  showAll?: boolean;  
+  btnSize?: 'small' | 'middle' | 'large';
+  showAll?: boolean;
   displayMode?: 'inline' | 'dropdown';
-  onAction: () => void;  
+  onAction: () => void;
 }
 
 export interface AlarmTableProps {
   dataSource: TableDataItem[];
-  pagination: Pagination;
+  pagination?: Pagination;
   loading: boolean;
   tableScrollY: string;
   selectedRowKeys: React.Key[];
@@ -407,15 +405,20 @@ export interface SearchFilterCondition {
   value: any;
 }
 export interface SearchFilterProps {
-    onSearch: (condition: SearchFilterCondition, rawValue?: any) => void;
-    attrList: Array<{
-        attr_id: string;
-        attr_name: string;
-        attr_type: string;
-        is_required?: boolean;
-        editable?: boolean;
-        option?: any[];
-    }>;
+  onSearch: (condition: SearchFilterCondition, rawValue?: any) => void;
+  attrList: Array<{
+    attr_id: string;
+    attr_name: string;
+    attr_type: string;
+    is_required?: boolean;
+    editable?: boolean;
+    option?: any[];
+  }>;
 }
 
-export type ActionType = 'close' | 'assign' | 'reassign' | 'acknowledge';
+export type ActionType =
+  | 'close'
+  | 'assign'
+  | 'reassign'
+  | 'acknowledge'
+  | 'open';

@@ -1,25 +1,21 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import dayjs from 'dayjs';
 import OperateModal from './components/operateModal';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
 import Introduction from '@/app/alarm/components/introduction';
-import { useLocalizedTime } from '@/hooks/useLocalizedTime';
+import { Tabs } from 'antd';
 import { AlertShieldListItem } from '@/app/alarm/types/settings';
 import { useSettingApi } from '@/app/alarm/api/settings';
-import { Button, Input, Modal, message, Switch } from 'antd';
+import { Button, Input, Modal, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { typeLabel, weekMap } from '@/app/alarm/constants/settings';
 
-const ShieldStrategy: React.FC = () => {
+const CorrelationRules: React.FC = () => {
   const { t } = useTranslation();
-  const { getShieldList, deleteShield, patchShield } = useSettingApi();
+  const { getShieldList, deleteShield } = useSettingApi();
   const listCount = useRef<number>(0);
-  const { convertToLocalizedTime } = useLocalizedTime();
   const [tableLoading, setTableLoading] = useState<boolean>(false);
-  const [loadingIds, setLoadingIds] = useState<Record<number, boolean>>({});
   const [operateVisible, setOperateVisible] = useState<boolean>(false);
   const [searchKey, setSearchKey] = useState<string>('');
   const [dataList, setDataList] = useState<AlertShieldListItem[]>([]);
@@ -32,6 +28,7 @@ const ShieldStrategy: React.FC = () => {
     total: 0,
     pageSize: 20,
   });
+  const [activeTab, setActiveTab] = useState<'Event' | 'Alert'>('Event');
 
   useEffect(() => {
     getTableList();
@@ -124,32 +121,6 @@ const ShieldStrategy: React.FC = () => {
     });
   };
 
-  const handleStatusToggle = async (
-    row: AlertShieldListItem,
-    checked: boolean
-  ) => {
-    setLoadingIds((ids) => ({ ...ids, [row.id]: true }));
-    try {
-      const data = await patchShield(row.id, { is_active: checked });
-      if (!data) {
-        message.error(t('common.operateFailed'));
-      } else {
-        message.success(
-          checked ? t('settings.enableSuccess') : t('settings.disableSuccess')
-        );
-      }
-      getTableList();
-    } catch {
-      console.error(t('common.operateFailed'));
-    } finally {
-      setLoadingIds((ids) => {
-        const nxt = { ...ids };
-        delete nxt[row.id];
-        return nxt;
-      });
-    }
-  };
-
   const buildColumns = () => {
     return [
       {
@@ -159,64 +130,22 @@ const ShieldStrategy: React.FC = () => {
         width: 150,
       },
       {
-        title: t('settings.assignTime'),
-        key: 'suppression_time',
-        width: 220,
-        render: (_: any, row: AlertShieldListItem) => {
-          const { type, start_time, end_time, week_month } =
-            row.suppression_time as any;
-          let label = typeLabel[type] || '';
-
-          const fmt = (t: any, pattern = 'HH:mm:ss') =>
-            dayjs(t, pattern).format(pattern);
-
-          if (type === 'one') {
-            return `${fmt(start_time, 'YYYY-MM-DD HH:mm:ss')}-${fmt(end_time, 'YYYY-MM-DD HH:mm:ss')}`;
-          } else if (type === 'week') {
-            label += ` ${(week_month || []).map((d: number) => weekMap[d]).join(',')}`;
-          } else if (type === 'month') {
-            label += ` ${(week_month || []).map((d: number) => `${d}日`).join(',')}`;
-          }
-          return `${label} ${fmt(start_time)} - ${fmt(end_time)}`;
-        },
+        title: t('settings.correlation.type'),
+        dataIndex: 'type',
+        key: 'type',
+        width: 150,
       },
       {
-        title: t('settings.assignStatus'),
-        dataIndex: 'assignStatus',
-        key: 'assignStatus',
-        width: 100,
-        render: (_: any, row: AlertShieldListItem) => {
-          const { is_active } = row;
-          return is_active ? (
-            <span style={{ color: '#00ba6c' }}>{t('settings.effective')}</span>
-          ) : (
-            <span style={{ color: '#CE241B' }}>
-              {t('settings.ineffective')}
-            </span>
-          );
-        },
+        title: t('settings.correlation.scope'),
+        dataIndex: 'scope',
+        key: 'scope',
+        width: 150,
       },
       {
-        title: t('settings.assignCreateTime'),
-        dataIndex: 'created_at',
-        key: 'created_at',
-        width: 180,
-        render: (val: string) => {
-          return convertToLocalizedTime(val, 'YYYY-MM-DD HH:mm:ss');
-        },
-      },
-      {
-        title: t('settings.assignStartStop'),
-        dataIndex: 'is_active',
-        key: 'is_active',
-        width: 110,
-        render: (val: boolean, row: AlertShieldListItem) => (
-          <Switch
-            loading={!!loadingIds[row.id]}
-            checked={val}
-            onChange={(checked) => handleStatusToggle(row, checked)}
-          />
-        ),
+        title: t('settings.correlation.lastUpdateTime'),
+        dataIndex: 'last_update_time',
+        key: 'last_update_time',
+        width: 150,
       },
       {
         title: t('settings.assignActions'),
@@ -250,55 +179,73 @@ const ShieldStrategy: React.FC = () => {
 
   useEffect(() => {
     setColumns(buildColumns());
-  }, [loadingIds, searchKey, pagination]);
+  }, [searchKey, pagination]);
 
   return (
     <>
       <Introduction
-        title={t('settings.shieldStrategy')}
-        message={t('settings.shieldStrategyMessage')}
+        title={t('settings.correlationRules')}
+        message={t('settings.correlationRulesMessage')}
       />
       <div className="p-4 bg-white rounded-lg shadow">
-        <div className="nav-box flex justify-between mb-[20px]">
-          <div className="flex items-center">
-            <Input
-              allowClear
-              value={searchKey}
-              placeholder={t('common.searchPlaceHolder')}
-              style={{ width: 250 }}
-              onChange={(e) => setSearchKey(e.target.value)}
-              onPressEnter={handleFilterChange}
-              onClear={handleFilterClear}
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key as 'Event' | 'Alert')}
+          className="mb-4"
+          items={[
+            { key: 'Event', label: t('alarms.event') },
+            { key: 'Alert', label: t('alarms.alert') },
+          ]}
+        />
+        {activeTab === 'Event' && (
+          <div>
+            <div className="nav-box flex justify-between mb-[20px]">
+              <div className="flex items-center">
+                <Input
+                  allowClear
+                  value={searchKey}
+                  placeholder={t('common.searchPlaceHolder')}
+                  style={{ width: 250 }}
+                  onChange={(e) => setSearchKey(e.target.value)}
+                  onPressEnter={handleFilterChange}
+                  onClear={handleFilterClear}
+                />
+              </div>
+              <PermissionWrapper requiredPermissions={['Add']}>
+                <Button type="primary" onClick={() => handleEdit('add')}>
+                  {t('common.addNew')}
+                </Button>
+              </PermissionWrapper>
+            </div>
+            <CustomTable
+              size="middle"
+              rowKey="id"
+              loading={tableLoading}
+              columns={columns}
+              dataSource={dataList}
+              pagination={pagination}
+              onChange={handleTableChange}
+              scroll={{ y: 'calc(100vh - 520px)' }}
+            />
+            <OperateModal
+              open={operateVisible}
+              onClose={() => setOperateVisible(false)}
+              currentRow={currentRow}
+              onSuccess={() => {
+                setPagination((prev) => ({ ...prev, current: 1 }));
+                getTableList({ current: 1, pageSize: pagination.pageSize });
+              }}
             />
           </div>
-          <PermissionWrapper requiredPermissions={['Add']}>
-            <Button type="primary" onClick={() => handleEdit('add')}>
-              {t('common.addNew')}
-            </Button>
-          </PermissionWrapper>
-        </div>
-        <CustomTable
-          size="middle"
-          rowKey="id"
-          loading={tableLoading}
-          columns={columns}
-          dataSource={dataList}
-          pagination={pagination}
-          onChange={handleTableChange}
-          scroll={{ y: 'calc(100vh - 440px)' }}
-        />
-        <OperateModal
-          open={operateVisible}
-          onClose={() => setOperateVisible(false)}
-          currentRow={currentRow}
-          onSuccess={() => {
-            setPagination((prev) => ({ ...prev, current: 1 }));
-            getTableList({ current: 1, pageSize: pagination.pageSize });
-          }}
-        />
+        )}
+        {activeTab === 'Alert' && (
+          <div className="p-4 bg-white rounded-lg shadow text-center">
+            {t('settings.correlationAlertPlaceholder')}
+          </div>
+        )}
       </div>
     </>
   );
 };
 
-export default ShieldStrategy;
+export default CorrelationRules;

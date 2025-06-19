@@ -11,6 +11,7 @@ import { useSession } from 'next-auth/react';
 
 const AlarmAction: React.FC<AlarmActionProps> = ({
   rowData,
+  btnSize = 'middle',
   displayMode = 'inline',
   showAll = false,
   onAction,
@@ -25,13 +26,19 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
 
   const isMine = () =>
     rowData.every((item) =>
-      item.operator_user
-        .split(',')
+      item?.operator_user
+        ?.split(',')
         .map((name: string) => name.trim())
         .includes(username)
     );
 
-  const allTypes: ActionType[] = ['assign', 'acknowledge', 'reassign', 'close'];
+  const allTypes: ActionType[] = [
+    'assign',
+    'acknowledge',
+    'reassign',
+    'close',
+    'open',
+  ];
 
   const statusActionMap: Record<string, ActionType[]> = {
     unassigned: ['assign'],
@@ -45,6 +52,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
     acknowledge: ['pending'],
     reassign: ['processing'],
     close: ['processing'],
+    open: ['closed'],
   };
 
   const availableTypes = showAll
@@ -54,36 +62,36 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
       : [];
 
   const handleOperate = (type: ActionType) => {
-    if (type === 'acknowledge' || type === 'close') {
-      Modal.confirm({
-        title: `${t(`alarms.${type}`)}${t('alarms.alert')}`,
-        content: `${t('common.confirm')}${t(`alarms.${type}`)}${t('alarms.alert')} ？`,
-        okText: t('confirm'),
-        cancelText: t('cancel'),
-        centered: true,
-        onOk: async () => {
-          try {
-            const data = await alertActionOperate(type, {
-              alert_id: alertIds,
-              assignee: [],
-            });
-            if (Object.values(data).some((res: any) => !res.result)) {
-              message.error(
-                `${t(`alarms.${type}`)}${t(`alarms.alert`)}${t('common.partialFailure')}`
-              );
-            } else {
-              message.success(t(`alarms.${type}`) + t('common.success'));
-              onAction();
-            }
-          } catch (err) {
-            console.error(err);
-          }
-        },
-      });
-    } else {
+    if (!['acknowledge', 'close'].includes(type)) {
       setActionType(type);
       setAssignVisible(true);
+      return;
     }
+    Modal.confirm({
+      title: `${t(`alarms.${type}`)}${t('alarms.alert')}`,
+      content: `${t('common.confirm')}${t(`alarms.${type}`)}${t('alarms.alert')} ？`,
+      okText: t('confirm'),
+      cancelText: t('cancel'),
+      centered: true,
+      onOk: async () => {
+        try {
+          const data = await alertActionOperate(type, {
+            alert_id: alertIds,
+            assignee: [],
+          });
+          if (Object.values(data).some((res: any) => !res.result)) {
+            message.error(
+              `${t(`alarms.${type}`)}${t(`alarms.alert`)}${t('common.partialFailure')}`
+            );
+          } else {
+            message.success(t(`alarms.${type}`) + t('common.success'));
+            onAction();
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      },
+    });
   };
 
   const actionButtons = (
@@ -98,6 +106,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
         return (
           <Button
             key={type}
+            size={btnSize}
             type="link"
             className="mr10"
             disabled={disabled}
@@ -147,7 +156,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
 
   const dropdown = menuItems.length ? (
     <Dropdown overlay={<Menu items={menuItems} />} trigger={['click']}>
-      <Button type="primary">
+      <Button size={btnSize} type="primary">
         {t('common.actions')}
         <DownOutlined />
       </Button>

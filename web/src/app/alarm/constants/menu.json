@@ -36,7 +36,27 @@
       "title": "设置",
       "icon": "settings-fill",
       "url": "/alarm/settings",
-      "name": "settings"
+      "name": "settings",
+      "children": [
+        {
+          "title": "相关性规则",
+          "url": "/alarm/settings/correlationRules",
+          "name": "correlationRules",
+          "icon": "shujumoxingguanli"
+        },
+        {
+          "title": "告警分派",
+          "url": "/alarm/settings/alertAssign",
+          "name": "alertAssign",
+          "icon": "shujumoxingguanli"
+        },
+        {
+          "title": "屏蔽策略",
+          "url": "/alarm/settings/shieldStrategy",
+          "name": "shieldStrategy",
+          "icon": "shujumoxingguanli"
+        }
+      ]
     }
   ],
   "en": [
@@ -76,7 +96,27 @@
       "title": "Settings",
       "icon": "settings-fill",
       "url": "/alarm/settings",
-      "name": "settings"
+      "name": "settings",
+      "children": [
+        {
+          "title": "Correlation Rules",
+          "url": "/alarm/settings/correlationRules",
+          "name": "correlationRules",
+          "icon": "shujumoxingguanli"
+        },
+        {
+          "title": "Alert Assignment",
+          "url": "/alarm/settings/alertAssign",
+          "name": "alertAssign",
+          "icon": "shujumoxingguanli"
+        },
+        {
+          "title": "Shield Strategy",
+          "url": "/alarm/settings/shieldStrategy",
+          "name": "shieldStrategy",
+          "icon": "shujumoxingguanli"
+        }
+      ]
     }
   ]
 }

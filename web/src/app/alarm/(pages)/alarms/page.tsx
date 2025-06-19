@@ -8,9 +8,10 @@ import TimeSelector from '@/components/time-selector';
 import StackedBarChart from '@/app/alarm/components/stackedBarChart';
 import alertStyle from './index.module.scss';
 import AlarmFilters from '@/app/alarm/components/alarmFilters';
-import AlarmTable from '@/app/alarm/components/alarmTable';
+import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
 import SearchFilter from '../../components/searchFilter';
 import AlarmAction from './components/alarmAction';
+import DeclareIncident from './components/declareIncident';
 import { SearchFilterCondition } from '@/app/alarm/types/alarms';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
 import { useTranslation } from '@/utils/i18n';
@@ -19,7 +20,7 @@ import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { deepClone } from '@/app/alarm/utils/common';
 import { useCommon } from '@/app/alarm/context/common';
 import { baseStates, allStates } from '@/app/alarm/constants/alarm';
-import { Button, Checkbox, Tabs, Spin, Tooltip, Switch } from 'antd';
+import { Checkbox, Tabs, Spin, Tooltip, Switch } from 'antd';
 import { processDataForStackedBarChart } from '@/app/alarm/utils/alarmChart';
 import {
   Pagination,
@@ -195,6 +196,7 @@ const Alert: React.FC = () => {
       created_at_before: dayjs(timeRange[1]).toISOString(),
       activate: isActiveAlarms ? 1 : '',
       my_alert: isActiveAlarms ? (myAlarms ? 1 : '') : undefined,
+      has_incident: '',
       [conditionValue?.field as string]: conditionValue?.value,
     };
     return params;
@@ -263,6 +265,7 @@ const Alert: React.FC = () => {
   };
 
   const onRefresh = () => {
+    setSelectedRowKeys([]);
     getAlarmTableData('refresh');
     showChart && getChartData('refresh');
   };
@@ -382,9 +385,14 @@ const Alert: React.FC = () => {
               </div>
 
               <div className="flex items-center space-x-4">
-                <Button color="danger" type="dashed" variant="solid">
-                  {t('alarms.declareIncident')}
-                </Button>
+                <DeclareIncident
+                  rowData={tableData.filter((item) =>
+                    selectedRowKeys.includes(item.id)
+                  )}
+                  onSuccess={() => {
+                    onRefresh();
+                  }}
+                />
                 <AlarmAction
                   rowData={tableData.filter((item) =>
                     selectedRowKeys.includes(item.id)

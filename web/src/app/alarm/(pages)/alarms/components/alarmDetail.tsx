@@ -4,6 +4,7 @@ import BaseInfo from './baseInfo';
 import EventTable from '@/app/alarm/components/eventTable';
 import AlarmAction from './alarmAction';
 import Icon from '@/components/icon';
+import DeclareIncident from './declareIncident';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
@@ -246,14 +247,14 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
               <b>{formData.content || '--'}</b>
             </div>
             <div>
-              <Button
-                color="danger"
-                type="dashed"
-                variant="solid"
-                className="mr-[16px]"
-              >
-                {t('alarms.declareIncident')}
-              </Button>
+              <span className="mr-2">
+                <DeclareIncident
+                  rowData={[formData]}
+                  onSuccess={() => {
+                    handleAction();
+                  }}
+                />
+              </span>
               <AlarmAction
                 rowData={[formData]}
                 displayMode="dropdown"

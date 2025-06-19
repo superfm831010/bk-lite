@@ -45,7 +45,7 @@ export const ruleList = [
 
 export const typeLabel: Record<string, string> = {
   one: '单次',
-  day: '每日',
+  day: '每天',
   week: '每周',
   month: '每月',
 };

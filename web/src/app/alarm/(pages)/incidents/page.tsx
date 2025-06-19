@@ -6,11 +6,11 @@ import AlarmFilters from '@/app/alarm/components/alarmFilters';
 import CustomTable from '@/components/custom-table';
 import alertStyle from './index.module.scss';
 import TimeSelector from '@/components/time-selector';
-import type { TimeSelectorDefaultValue } from '@/app/alarm/types/types';
 import type { ColumnsType } from 'antd/es/table';
-import { useAlarmApi } from '@/app/alarm/api/alarms';
+import { useIncidentsApi } from '@/app/alarm/api/incidents';
 import { Input, Button, Tag } from 'antd';
-import { TableDataItem, Pagination } from '@/app/alarm/types/types';
+import { Pagination, TimeSelectorDefaultValue } from '@/app/alarm/types/types';
+import { IncidentTableDataItem } from '@/app/alarm/types/incidents';
 import { FiltersConfig } from '@/app/alarm/types/alarms';
 import { useTranslation } from '@/utils/i18n';
 import { incidentStates } from '@/app/alarm/constants/alarm';
@@ -19,12 +19,12 @@ import { useCommon } from '@/app/alarm/context/common';
 import { KeepAlive } from 'react-activation';
 
 const IncidentsPage: React.FC = () => {
-  const { getAlarmList } = useAlarmApi();
+  const { getIncidentList } = useIncidentsApi();
   const { t } = useTranslation();
   const router = useRouter();
   const { levelList, levelMap } = useCommon();
   const [searchText, setSearchText] = useState('');
-  const [data, setData] = useState<TableDataItem[]>([]);
+  const [data, setData] = useState<IncidentTableDataItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<FiltersConfig>({
     level: [],
@@ -47,15 +47,17 @@ const IncidentsPage: React.FC = () => {
     label: t(`alarms.${val}`),
   }));
 
-  const handleRefresh = () => fetchList(1, pagination.pageSize);
+  const handleRefresh = () => {
+    fetchIncidentList();
+  };
 
-  const columns: ColumnsType<TableDataItem> = [
+  const columns: ColumnsType<IncidentTableDataItem> = [
     {
       title: t('alarms.level'),
       dataIndex: 'level',
       key: 'level',
       width: 100,
-      render: (_: any, { level }: TableDataItem) => {
+      render: (_: any, { level }: IncidentTableDataItem) => {
         const target = levelList.find(
           (item) => item.level_id === Number(level)
         );
@@ -71,68 +73,73 @@ const IncidentsPage: React.FC = () => {
     },
     {
       title: t('alarms.createTime'),
-      dataIndex: 'firstAlertTime',
-      key: 'firstAlertTime',
+      dataIndex: 'created_at',
+      key: 'created_at',
       width: 140,
     },
     {
       title: t('alarms.alertName'),
-      dataIndex: 'alertName',
-      key: 'alertName',
-      width: 140,
+      dataIndex: 'title',
+      key: 'title',
+      width: 180,
     },
     {
       title: t('alarms.source'),
-      dataIndex: 'source',
-      key: 'source',
+      dataIndex: 'sources',
+      key: 'sources',
       width: 140,
     },
     {
       title: t('alarms.state'),
-      dataIndex: 'state',
-      key: 'state',
-      width: 140,
+      dataIndex: 'status',
+      key: 'status',
+      width: 120,
+      render: (val: string) => t(`alarms.${val}`),
     },
     {
       title: t('alarms.duration'),
       dataIndex: 'duration',
       key: 'duration',
-      width: 140,
+      width: 120,
     },
     {
       title: t('alarms.assignee'),
-      dataIndex: 'operator',
-      key: 'operator',
-      width: 140,
+      dataIndex: 'operator_users',
+      key: 'operator_users',
+      width: 200,
     },
     {
       title: t('common.action'),
-      dataIndex: 'action',
       key: 'action',
-      width: 120,
       fixed: 'right',
-      render: (_: any, record: any) => (
-        <Button
-          type="link"
-          onClick={() => {
-            router.push(`/alarm/incidents/detail?name=${record.content}`);
-          }}
-        >
-          {t('common.detail')}
-        </Button>
+      width: 100,
+      render: (_: any, record: IncidentTableDataItem) => (
+        <div className="flex items-center">
+          <Button
+            type="link"
+            onClick={() => {
+              router.push(`/alarm/incidents/detail?incident_id=${record.id}`);
+            }}
+          >
+            {t('common.detail')}
+          </Button>
+        </div>
       ),
     },
   ];
 
-  const fetchList = async (page?: number, pageSize?: number) => {
+  const fetchIncidentList = async (
+    page?: number,
+    pageSize?: number,
+    titleSearch?: string
+  ) => {
     setLoading(true);
-    const res: any = await getAlarmList({
-      search: searchText,
+    const res: any = await getIncidentList({
+      title: titleSearch !== undefined ? titleSearch : searchText,
       page: page ?? pagination.current,
       page_size: pageSize ?? pagination.pageSize,
-      level_in: filters.level.join(','),
-      status_in: filters.state.join(','),
-      alarm_source: filters.alarm_source.join(','),
+      level: filters.level.join(','),
+      status: filters.state.join(','),
     });
     setData(res.items);
     setPagination((p) => ({
@@ -145,8 +152,9 @@ const IncidentsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchList(1, pagination.pageSize);
-  }, [filters, searchText]);
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    fetchIncidentList(1, pagination.pageSize);
+  }, [filters]);
 
   const onFilterChange = (vals: string[], field: keyof FiltersConfig) => {
     setFilters((prev) => ({ ...prev, [field]: vals }));
@@ -154,7 +162,19 @@ const IncidentsPage: React.FC = () => {
   const clearFilters = (field: keyof FiltersConfig) => {
     setFilters((prev) => ({ ...prev, [field]: [] }));
   };
-  const onTableChange = (pag: any) => fetchList(pag.current, pag.pageSize);
+  const onTableChange = (pag: any) =>
+    fetchIncidentList(pag.current, pag.pageSize);
+
+  const handleSearch = () => {
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    fetchIncidentList(1, pagination.pageSize);
+  };
+
+  const handleSearchClear = () => {
+    setSearchText('');
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    fetchIncidentList(1, pagination.pageSize, '');
+  };
 
   return (
     <div className={alertStyle.container}>
@@ -175,7 +195,8 @@ const IncidentsPage: React.FC = () => {
             placeholder={t('common.searchPlaceHolder')}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            onPressEnter={() => fetchList(1, pagination.pageSize)}
+            onPressEnter={handleSearch}
+            onClear={handleSearchClear}
           />
           <TimeSelector
             defaultValue={timeDefaultValue}

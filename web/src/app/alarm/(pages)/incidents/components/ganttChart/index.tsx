@@ -9,6 +9,8 @@ import { AlarmTableDataItem } from '@/app/alarm/types/alarms';
 import { ModalRef } from '@/app/alarm/types/types';
 import { Tooltip, Checkbox } from 'antd';
 import { useCommon } from '@/app/alarm/context/common';
+import { Empty } from 'antd';
+import { useTranslation } from '@/utils/i18n';
 dayjs.extend(minMax);
 
 interface GanttChartProps {
@@ -16,15 +18,16 @@ interface GanttChartProps {
 }
 
 export default function GanttChart({ alarmData = [] }: GanttChartProps) {
-  const { levelMap } = useCommon();
   const detailRef = useRef<ModalRef>(null);
+  const { levelMap } = useCommon();
+  const { t } = useTranslation();
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
 
   const times = useMemo(() => {
     const starts = alarmData.map((d) => dayjs(d.first_event_time));
     const ends = alarmData.map((d) => dayjs(d.last_event_time));
-    const min = dayjs.min(...starts) ?? dayjs(alarmData[0].first_event_time);
-    const max = dayjs.max(...ends) ?? dayjs(alarmData[0].last_event_time);
+    const min = dayjs.min(...starts) || dayjs();
+    const max = dayjs.max(...ends) || dayjs();
     const total = max.diff(min);
     return { min, max, total };
   }, [alarmData]);
@@ -68,6 +71,15 @@ export default function GanttChart({ alarmData = [] }: GanttChartProps) {
       ),
     [alarmData]
   );
+
+  if (!sortedData?.length) {
+    return (
+      <Empty
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+        description={t('common.noData')}
+      />
+    );
+  }
 
   return (
     <>

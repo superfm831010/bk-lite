@@ -74,7 +74,7 @@
         "reassign": "转派",
         "acknowledge": "认领",
         "createTime": "创建时间",
-        "assignee": "分派人",
+        "assignee": "受理人",
         "duration": "持续时间",
         "note": "备注",
         "alert": "告警",
@@ -85,6 +85,8 @@
         "eventCount": "事件数量",
         "notificationStatus": "通知情况",
         "declareIncident": "升级为事件",
+        "createIncident": "创建事件",
+        "linkIncident": "关联事件",
         "confirmOperate": "确认操作",
         "claim": "认领",
         "assign": "分派",
@@ -100,7 +102,9 @@
         "object": "对象",
         "content": "内容",
         "metricName": "指标",
-        "metricValue": "指标值"
+        "metricValue": "指标值",
+        "incident": "事件",
+        "title": "标题"
     },
     "integration": {
         "description": "描述",
@@ -116,8 +120,10 @@
     "settings": {
         "alertAssign": "告警分派",
         "shieldStrategy": "屏蔽策略",
+        "correlationRules": "相关性规则",
         "assignStrategyMessage": "您可以配置自动分派策略，让符合筛选条件的告警，分派给指定人员，并可选择通知方式。",
         "shieldStrategyMessage": "通过屏蔽策略，您可以更加高效地管理告警信息的发送，提高告警系统的效率和用户体验。",
+        "correlationRulesMessage": "挖掘低层次事件的关联性，从而聚合为高层次事件，在这里您可以定义Event到Alert、Alert到Incident的聚合规则，以减少需要处理的信息量，提高单个事件的信息价值。",
         "alertAssignTableName": "名称",
         "alertAssignTablePersonnel": "人员",
         "alertAssignTableAffectiveTime": "生效时间",
@@ -136,6 +142,14 @@
         "disableSuccess": "停用成功",
         "effective": "生效",
         "ineffective": "未启用",
+        "correlation": {
+            "example": "示例",
+            "describe": "描述",
+            "type": "类型",
+            "scope": "作用范围",
+            "lastUpdateTime": "策略修改时间",
+            "explain": "说明"
+        },
         "assignStrategy": {
             "ruleAll": "全部",
             "ruleFilter": "筛选",

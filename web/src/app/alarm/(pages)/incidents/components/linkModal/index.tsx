@@ -1,99 +1,152 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import styles from './index.module.scss';
-import CustomTable from '@/components/custom-table';
-import type { ColumnsType } from 'antd/es/table';
+import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
 import type { TableDataItem } from '@/app/alarm/types/types';
 import { Drawer, Input, Button } from 'antd';
 import { useTranslation } from '@/utils/i18n';
+import { useAlarmApi } from '@/app/alarm/api/alarms';
 
 interface OperateModalProps {
   visible: boolean;
+  confirmLoading?: boolean;
   onClose: () => void;
   onLink: (selectedKeys: React.Key[]) => void;
 }
 
 const OperateModal: React.FC<OperateModalProps> = ({
   visible,
+  confirmLoading = false,
   onClose,
   onLink,
 }) => {
   const { t } = useTranslation();
-  const label = t('common.linkAlert');
-  const [search, setSearch] = useState('');
+  const { getAlarmList } = useAlarmApi();
+  const [alarmTableList, setAlarmTableList] = useState<TableDataItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [searchText, setSearchText] = useState('');
   const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
-
-  const alarmTableList: TableDataItem[] = []
-
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
-    total: alarmTableList.length,
+    total: 0,
   });
 
+  const fetchAlarmList = async (pag?: {
+    current?: number;
+    pageSize?: number;
+    title?: string;
+  }) => {
+    try {
+      setLoading(true);
+      const current = pag?.current ?? pagination.current;
+      const pageSizeVal = pag?.pageSize ?? pagination.pageSize;
+      const title = pag?.title ?? searchText;
+      const res: any = await getAlarmList({
+        page: current,
+        page_size: pageSizeVal,
+        title,
+        has_incident: false,
+      });
+      setAlarmTableList(res.items || []);
+      setLoading(false);
+      setPagination({
+        current,
+        pageSize: pageSizeVal,
+        total: res.count || 0,
+      });
+    } catch (error) {
+      setLoading(false);
+      console.error('Error fetching alarm list:', error);
+    }
+  };
+
   useEffect(() => {
-    setPagination((prev) => ({ ...prev, total: alarmTableList.length }));
-  }, [alarmTableList.length]);
+    if (visible) {
+      setSearchText('');
+      setSelectedKeys([]);
+      fetchAlarmList({ current: 1, pageSize: pagination.pageSize, title: '' });
+    }
+  }, [visible]);
 
-  const columns: ColumnsType<TableDataItem> = [
-    { title: t('alarms.eventTitle'), dataIndex: 'title', key: 'title' },
-    { title: t('alarms.level'), dataIndex: 'level', key: 'level' },
-    { title: t('alarms.source'), dataIndex: 'source', key: 'source' },
-    {
-      title: t('common.action'),
-      key: 'action',
-      fixed: 'right',
-      render: (_: any, record: TableDataItem) => (
-        <Button
-          type="link"
-          onClick={() => onLink([record.id as any])}
-        >
-          {label}
-        </Button>
-      ),
-    },
-  ];
-
-  const onTabTableChange = (pagination: any) => {
-    setPagination((prev) => ({ ...prev, current: pagination.current }));
+  const onTableChange = (pag: { current: number; pageSize: number }) => {
+    fetchAlarmList({
+      current: pag.current,
+      pageSize: pag.pageSize,
+      title: searchText,
+    });
   };
 
   return (
     <Drawer
-      title={label}
-      width={660}
+      title={t('common.linkAlert')}
+      width={740}
       onClose={onClose}
       open={visible}
-      className={styles.drawer}
     >
-      <div className={styles.header}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          gap: 8,
+          justifyContent: 'space-between',
+        }}
+      >
         <Input
+          style={{ width: 250 }}
           placeholder={t('common.searchPlaceHolder')}
           allowClear
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ width: 240 }}
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          onPressEnter={() => {
+            fetchAlarmList({
+              current: 1,
+              pageSize: pagination.pageSize,
+              title: searchText,
+            });
+          }}
+          onClear={() => {
+            setSearchText('');
+            fetchAlarmList({
+              current: 1,
+              pageSize: pagination.pageSize,
+              title: '',
+            });
+          }}
         />
         <Button
           type="primary"
           disabled={!selectedKeys.length}
           onClick={() => onLink(selectedKeys)}
+          loading={confirmLoading}
         >
-          {label}
+          {t('common.linkAlert')}
         </Button>
       </div>
-      <CustomTable
-        rowKey="id"
-        columns={columns}
+      <AlarmTable
         dataSource={alarmTableList}
         pagination={pagination}
-        scroll={{ y: 'calc(100vh - 260px)', x: 'calc(50vw - 320px)' }}
-        onChange={onTabTableChange}
-        rowSelection={{
-          selectedRowKeys: selectedKeys,
-          onChange: (keys: React.Key[]) => setSelectedKeys(keys),
-        }}
+        loading={loading}
+        tableScrollY="calc(100vh - 260px)"
+        selectedRowKeys={selectedKeys}
+        onSelectionChange={setSelectedKeys}
+        onChange={onTableChange}
+        onRefresh={() =>
+          fetchAlarmList({
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            title: searchText,
+          })
+        }
+        extraActions={(record) => (
+          <Button
+            className="mr-2"
+            type="link"
+            onClick={() => onLink([record.id as number])}
+          >
+            {t('common.linkAlert')}
+          </Button>
+        )}
       />
     </Drawer>
   );

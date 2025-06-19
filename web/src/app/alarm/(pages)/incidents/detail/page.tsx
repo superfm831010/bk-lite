@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Icon from '@/components/icon';
 import commonStyles from '@/app/alarm/components/customBreadcrumb/index.module.scss';
 import styles from './page.module.scss';
-import AlarmTable from '@/app/alarm/components/alarmTable';
+import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
 import GanttChart from '../components/ganttChart';
 import LinkModal from '../components/linkModal';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import AlarmAction from '@/app/alarm/(pages)/alarms/components/alarmAction';
 import { AlarmTableDataItem } from '@/app/alarm/types/alarms';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
 import { UserItem } from '@/app/alarm/types/types';
@@ -15,13 +16,15 @@ import { useCommon } from '@/app/alarm/context/common';
 import { useTranslation } from '@/utils/i18n';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
+import { useIncidentsApi } from '@/app/alarm/api/incidents';
+import { message, Spin } from 'antd';
+import { IncidentTableDataItem } from '@/app/alarm/types/incidents';
 import {
-  DownOutlined,
   EditOutlined,
   CheckOutlined,
   CloseOutlined,
-  BarsOutlined,
   AppstoreOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import {
   Breadcrumb,
@@ -31,10 +34,9 @@ import {
   Input,
   Button,
   Segmented,
-  Dropdown,
   Select,
   Tag,
-  type MenuProps,
+  Empty,
 } from 'antd';
 
 const { TabPane } = Tabs;
@@ -43,9 +45,10 @@ const IncidentDetail: React.FC = () => {
   const { t } = useTranslation();
   const { levelListIncident, levelMapIncident, userList } = useCommon();
   const { getAlarmList } = useAlarmApi();
+  const { getIncidentDetail, modifyIncidentDetail } = useIncidentsApi();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const incidentName = searchParams.get('name') || '';
+  const incidentId = searchParams.get('incident_id') || '';
   const [tableData, setTableData] = useState<AlarmTableDataItem[]>([]);
   const [tabLoading, setTabLoading] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
@@ -56,51 +59,44 @@ const IncidentDetail: React.FC = () => {
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [preAssignees, setPreAssignees] = useState<string[]>([]);
   const [assigneeDisplay, setAssigneeDisplay] = useState<string>('');
-  const [pagination, setPagination] = useState<{
-    current: number;
-    pageSize: number;
-    total: number;
-  }>({
-    current: 1,
-    pageSize: 10,
-    total: 0,
-  });
-
-  const detail = {
-    level: 'fatal',
-    alertName: `告警 #${incidentName}`,
-    createTime: '2023-08-01 12:00:00',
-    source: 'Server A',
-    state: 'new',
-    assignee: '',
-    note: '这是一个示例备注。',
-  };
+  const [incidentDetail, setIncidentDetail] = useState<IncidentTableDataItem>();
+  const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
+  const [assigneeLoading, setAssigneeLoading] = useState(false);
+  const [unlinkLoading, setUnlinkLoading] = useState(false);
+  const [rowUnlinkKey, setRowUnlinkKey] = useState<React.Key | null>(null);
+  const [linkingLoading, setLinkingLoading] = useState(false);
 
   const timeline = [
     { time: '2023-08-01 12:00', event: '触发告警' },
     { time: '2023-08-01 12:05', event: '认领告警' },
   ];
 
-  const descFields = [
-    { label: t('alarms.createTime'), value: detail.createTime },
-    { label: t('alarms.source'), value: detail.source },
-    {
-      label: t('alarms.state'),
-      value: t(`alarms.${detail.state}`) || detail.state,
-    },
-    { label: t('alarms.assignee'), value: detail.assignee },
-    { label: t('alarms.note'), value: detail.note },
-  ];
+  useEffect(() => {
+    fetchAlarmList();
+    fetchIncidentDetail();
+  }, [incidentId]);
 
-  const fetchList = async (
-    page = pagination.current,
-    pageSize = pagination.pageSize
-  ) => {
+  const fetchIncidentDetail = async () => {
+    setLoadingDetail(true);
+    try {
+      const res = await getIncidentDetail(incidentId);
+      setIncidentDetail(res);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const fetchAlarmList = async (titleSearch?: string) => {
     setTabLoading(true);
     try {
-      const res = await getAlarmList({ page, page_size: pageSize });
+      const res = await getAlarmList({
+        page: 1,
+        page_size: 10000,
+        incident_id: incidentId,
+        title: titleSearch === undefined ? searchText : titleSearch,
+        has_incident: '',
+      });
       setTableData(res.items || []);
-      setPagination({ current: page, pageSize, total: res.count || 0 });
     } finally {
       setTabLoading(false);
     }
@@ -108,79 +104,109 @@ const IncidentDetail: React.FC = () => {
 
   const userOptions = userList.map((u: UserItem) => ({
     label: `${u.display_name} (${u.username})`,
-    value: u.id,
+    value: u.username,
   }));
 
   useEffect(() => {
-    fetchList(1, pagination.pageSize);
-  }, []);
-
-  useEffect(() => {
-    if (detail.assignee) {
-      setSelectedAssignees(detail.assignee.split(','));
-      setPreAssignees(detail.assignee.split(','));
+    if (incidentDetail?.operator_users) {
+      setSelectedAssignees(incidentDetail?.operator_users.split(','));
+      setPreAssignees(incidentDetail?.operator_users.split(','));
+      setAssigneeDisplay(incidentDetail?.operator_users);
     }
-  }, [detail.assignee]);
+  }, [incidentDetail?.operator_users]);
 
-  const confirmAssignee = () => {
-    const nameStr = selectedAssignees.map((id) => {
-      const user = userList.find((u: UserItem) => u.id === id);
-      return user ? `${user.display_name} (${user.username})` : '';
-    });
-    setPreAssignees(selectedAssignees);
-    setAssigneeDisplay(nameStr.join(', '));
-    setEditingAssignee(false);
+  const confirmAssignee = async () => {
+    setAssigneeLoading(true);
+    try {
+      await modifyIncidentDetail(incidentId, { operator: selectedAssignees });
+      message.success(t('common.saveSuccess'));
+      setPreAssignees(selectedAssignees);
+      setAssigneeDisplay(selectedAssignees.join(', '));
+      setEditingAssignee(false);
+      fetchIncidentDetail();
+    } catch {
+      message.error(t('common.saveFailed'));
+    } finally {
+      setAssigneeLoading(false);
+    }
   };
   const cancelAssignee = () => {
     setSelectedAssignees(preAssignees);
     setEditingAssignee(false);
   };
 
-  const onTabTableChange = (pag: any) => {
-    setPagination({
-      current: pag.current,
-      pageSize: pag.pageSize,
-      total: pag.total,
-    });
-    fetchList(pag.current, pag.pageSize);
+  const onTabTableChange = () => {
+    fetchAlarmList();
   };
 
-  const handleUnlink = () => {
-    console.log('Unlinking records:', selectedRowKeys);
+  const handleUnlink = async (keys?: React.Key[]) => {
+    const isRow = !!keys;
+    if (isRow) setRowUnlinkKey(keys![0]);
+    else setUnlinkLoading(true);
+
+    try {
+      const toRemove = keys ?? selectedRowKeys;
+      if (!toRemove.length) return;
+      const remainingIds = tableData
+        .map((i) => i.id)
+        .filter((id) => !toRemove.includes(id));
+      await modifyIncidentDetail(incidentId, { aler: remainingIds });
+      message.success(t('common.unlinkAlert') + t('common.success'));
+      if (!isRow) setSelectedRowKeys([]);
+      fetchAlarmList();
+    } catch {
+      console.error(t('common.unlinkFailed'));
+    } finally {
+      if (isRow) setRowUnlinkKey(null);
+      else setUnlinkLoading(false);
+    }
   };
 
-  const handleLink = (record?: AlarmTableDataItem) => {
-    console.log('Linking record:', record);
+  const handleLink = () => {
     setOperateVisible(true);
   };
 
-  const statusMenuItems: MenuProps['items'] = [
-    { key: 'acknowledge', label: `${t('alarms.acknowledge')}` },
-    { key: 'close', label: `${t('common.close')}` },
-    { key: 'open', label: `${t('common.open')}` },
-  ];
+  const handleLinkConfirm = async (selectedKeys: React.Key[]) => {
+    setLinkingLoading(true);
+    try {
+      const existingIds = tableData.map((i) => i.id);
+      const newIds = Array.from(
+        new Set([...existingIds, ...(selectedKeys as number[])])
+      );
+      await modifyIncidentDetail(incidentId, { alert: newIds });
+      message.success(t('common.linkAlert') + t('common.success'));
+      setOperateVisible(false);
+      fetchAlarmList();
+    } catch {
+      console.error(t('common.linkFailed'));
+    } finally {
+      setLinkingLoading(false);
+    }
+  };
+
+  const onRefresh = () => {
+    fetchIncidentDetail();
+    fetchAlarmList();
+  };
 
   const renderDescItems = () =>
-    descFields.map(({ label, value }, idx) => {
-      if (label === t('alarms.state')) {
+    descFields.map(({ label, key }, idx) => {
+      if (key === 'status') {
         return (
           <Descriptions.Item label={label} key={idx}>
-            <div className={styles.descContent}>
-              {value}
-              <Dropdown
-                menu={{ items: statusMenuItems }}
-                placement="bottomRight"
-              >
-                <Button size="small" type="primary" style={{ marginLeft: 12 }}>
-                  {t('common.action')}
-                  <DownOutlined />
-                </Button>
-              </Dropdown>
+            <div className={`${styles.descContent} flex items-start`}>
+              <span className="mr-4">{incidentDetail?.[key] || '--'}</span>
+              <AlarmAction
+                btnSize="small"
+                displayMode="dropdown"
+                rowData={[incidentDetail || ({} as IncidentTableDataItem)]}
+                onAction={fetchIncidentDetail}
+              />
             </div>
           </Descriptions.Item>
         );
       }
-      if (label === t('alarms.assignee')) {
+      if (key === 'operator_users') {
         return (
           <Descriptions.Item label={label} key={idx}>
             <div
@@ -210,6 +236,7 @@ const IncidentDetail: React.FC = () => {
                     type="link"
                     icon={<CheckOutlined />}
                     onClick={confirmAssignee}
+                    loading={assigneeLoading}
                   />
                   <Button
                     size="small"
@@ -239,48 +266,82 @@ const IncidentDetail: React.FC = () => {
       }
       return (
         <Descriptions.Item label={label} key={idx}>
-          <div className={styles.descContent}>{value}</div>
+          <div className={styles.descContent}>
+            {incidentDetail?.[key] || '--'}
+          </div>
         </Descriptions.Item>
       );
     });
 
+  const descFields = [
+    { label: t('alarms.createTime'), key: 'created_at' },
+    { label: t('alarms.source'), key: 'sources' },
+    {
+      label: t('alarms.state'),
+      key: 'status',
+    },
+    { label: t('alarms.assignee'), key: 'operator_users' },
+    { label: t('alarms.note'), key: 'note' },
+  ];
+
   return (
     <div className={styles.detailContainer}>
-      <Breadcrumb className={commonStyles.breadcrumb}>
-        <div onClick={() => router.back()} className={commonStyles.backIcon}>
-          <Icon type="xiangzuojiantou" />
-        </div>
-        <Breadcrumb.Item>
-          <span className="ml-[10px] mr-[10px]">{detail.alertName}</span>
-          <Tag color={levelMapIncident[detail.level] as string}>
-            <div className="flex items-center">
-              <Icon
-                type={
-                  levelListIncident.find(
-                    (item) => item.level_id === Number(detail.level)
-                  )?.icon || ''
-                }
-                className="mr-1"
-              />
-              {
-                levelListIncident.find(
-                  (item) => item.level_id === Number(detail.level)
-                )?.level_display_name
+      <div style={{ position: 'relative', marginBottom: '16px' }}>
+        <Breadcrumb className={commonStyles.breadcrumb}>
+          <div onClick={() => router.back()} className={commonStyles.backIcon}>
+            <Icon type="xiangzuojiantou" />
+          </div>
+          <Breadcrumb.Item>
+            <span className="ml-[10px] mr-[10px]">{incidentDetail?.title}</span>
+            <Tag
+              color={
+                levelMapIncident[incidentDetail?.level as string] as string
               }
-            </div>
-          </Tag>
-        </Breadcrumb.Item>
-      </Breadcrumb>
-
+            >
+              <div className="flex items-center">
+                <Icon
+                  type={
+                    levelListIncident.find(
+                      (item) => item.level_id === Number(incidentDetail?.level)
+                    )?.icon || ''
+                  }
+                  className="mr-1"
+                />
+                {
+                  levelListIncident.find(
+                    (item) => item.level_id === Number(incidentDetail?.level)
+                  )?.level_display_name
+                }
+              </div>
+            </Tag>
+          </Breadcrumb.Item>
+        </Breadcrumb>
+        <Button
+          type="text"
+          icon={<ReloadOutlined />}
+          onClick={onRefresh}
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+          }}
+        />
+      </div>
       <div className={styles.detailContent}>
-        <Descriptions
-          column={{ xs: 1, sm: 2, md: 3, lg: 3, xl: 4, xxl: 4 }}
-          size="default"
-          className={styles.descriptions}
-        >
-          {renderDescItems()}
-        </Descriptions>
-        <div className={styles.tabsWrapper}>
+        {loadingDetail ? (
+          <div className="flex justify-center mt-[2vh]">
+            <Spin spinning={loadingDetail}></Spin>
+          </div>
+        ) : (
+          <Descriptions
+            column={{ xs: 1, sm: 2, md: 3, lg: 3, xl: 4, xxl: 4 }}
+            size="default"
+            className={styles.descriptions}
+          >
+            {renderDescItems()}
+          </Descriptions>
+        )}
+        <div className={`${styles.tabsWrapper} w-full`}>
           <Tabs defaultActiveKey="alert">
             <TabPane tab={t('alarms.alert')} key="alert">
               <div className={styles.tabContent}>
@@ -292,7 +353,13 @@ const IncidentDetail: React.FC = () => {
                       placeholder={t('common.searchPlaceHolder')}
                       value={searchText}
                       onChange={(e) => setSearchText(e.target.value)}
-                      onPressEnter={() => fetchList(1, pagination.pageSize)}
+                      onPressEnter={() => {
+                        fetchAlarmList();
+                      }}
+                      onClear={() => {
+                        setSearchText('');
+                        fetchAlarmList('');
+                      }}
                     />
                     <Segmented
                       defaultValue="table"
@@ -304,8 +371,12 @@ const IncidentDetail: React.FC = () => {
                         },
                         {
                           value: 'gantt',
-                          label: t('incidents.gantt'),
-                          icon: <BarsOutlined />,
+                          label: (
+                            <span className="inline-flex items-center">
+                              <Icon type="gantetu" className="mr-1" />
+                              {t('incidents.gantt')}
+                            </span>
+                          ),
                         },
                       ]}
                       onChange={setViewType}
@@ -319,7 +390,12 @@ const IncidentDetail: React.FC = () => {
                     >
                       {t('common.linkAlert')}
                     </Button>
-                    <Button type="primary" onClick={() => handleUnlink()}>
+                    <Button
+                      disabled={!selectedRowKeys.length}
+                      type="primary"
+                      onClick={() => handleUnlink()}
+                      loading={unlinkLoading}
+                    >
                       {t('common.unlinkAlert')}
                     </Button>
                   </div>
@@ -327,18 +403,18 @@ const IncidentDetail: React.FC = () => {
                 {viewType === 'table' ? (
                   <AlarmTable
                     dataSource={tableData}
-                    pagination={pagination}
                     loading={tabLoading}
-                    tableScrollY="calc(100vh - 470px)"
+                    tableScrollY="calc(100vh - 410px)"
                     selectedRowKeys={selectedRowKeys}
                     onChange={onTabTableChange}
                     onSelectionChange={setSelectedRowKeys}
-                    onRefresh={() => fetchList(1, pagination.pageSize)}
-                    extraActions={() => (
+                    onRefresh={() => fetchAlarmList()}
+                    extraActions={(record) => (
                       <Button
                         type="link"
-                        className="mr-[8px]"
-                        onClick={() => handleUnlink()}
+                        className="mr-[12px]"
+                        onClick={() => handleUnlink([record.id as number])}
+                        loading={rowUnlinkKey === record.id}
                       >
                         {t('common.unlinkAlert')}
                       </Button>
@@ -350,14 +426,21 @@ const IncidentDetail: React.FC = () => {
               </div>
             </TabPane>
             <TabPane tab={t('alarms.changes')} key="timeline">
-              <Timeline className={styles.timelineContent}>
-                {timeline.map((item, idx) => (
-                  <Timeline.Item key={idx}>
-                    <span className="font-medium">{item.time}</span> -{' '}
-                    {item.event}
-                  </Timeline.Item>
-                ))}
-              </Timeline>
+              {timeline?.length ? (
+                <Timeline className={styles.timelineContent}>
+                  {timeline.map((item, idx) => (
+                    <Timeline.Item key={idx}>
+                      <span className="font-medium">{item.time}</span> -{' '}
+                      {item.event}
+                    </Timeline.Item>
+                  ))}
+                </Timeline>
+              ) : (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={t('common.noData')}
+                />
+              )}
             </TabPane>
           </Tabs>
         </div>
@@ -365,9 +448,8 @@ const IncidentDetail: React.FC = () => {
       <LinkModal
         visible={operateVisible}
         onClose={() => setOperateVisible(false)}
-        onLink={() => {
-          setOperateVisible(false);
-        }}
+        onLink={handleLinkConfirm}
+        confirmLoading={linkingLoading}
       />
     </div>
   );

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import './operateModal.scss';
 import MatchRule from '@/app/alarm/(pages)/settings/components/matchRule';
@@ -277,12 +279,13 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
               label={t('settings.assignStrategy.effectiveTime')}
               rules={[{ required: true, message: t('common.selectMsg') }]}
             >
-              <EffectiveTime />
+              <EffectiveTime open={open} />
             </Form.Item>
             <Form.Item
               name="notification_scenario"
               label={t('settings.assignStrategy.notificationScenario')}
               initialValue={['assignment']}
+              rules={[{ required: true, message: t('common.selectMsg') }]}
             >
               <Checkbox.Group
                 options={[
@@ -324,7 +327,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
                           level_id,
                           'interval_minutes',
                         ]}
-                        initialValue={30}
+                        initialValue={0}
                         noStyle
                       >
                         <InputNumber

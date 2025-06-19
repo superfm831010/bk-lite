@@ -6,6 +6,7 @@ import OperateModal from './components/operateModal';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
 import UserAvatar from '@/app/alarm/components/userAvatar';
+import Introduction from '@/app/alarm/components/introduction';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { AlertAssignListItem } from '@/app/alarm/types/settings';
 import { useSettingApi } from '@/app/alarm/api/settings';
@@ -262,48 +263,54 @@ const AlertAssign: React.FC = () => {
 
   useEffect(() => {
     setColumns(buildColumns());
-  }, [loadingIds]);
+  }, [loadingIds, searchKey, pagination]);
 
   return (
-    <div className="oid-library-container p-4 bg-white rounded-lg shadow">
-      <div className="nav-box flex justify-between mb-[20px]">
-        <div className="flex items-center">
-          <Input
-            allowClear
-            value={searchKey}
-            placeholder={t('common.searchPlaceHolder')}
-            style={{ width: 250 }}
-            onChange={(e) => setSearchKey(e.target.value)}
-            onPressEnter={handleFilterChange}
-            onClear={handleFilterClear}
-          />
+    <>
+      <Introduction
+        title={t('settings.alertAssign')}
+        message={t('settings.assignStrategyMessage')}
+      />
+      <div className="oid-library-container p-4 bg-white rounded-lg shadow">
+        <div className="nav-box flex justify-between mb-[20px]">
+          <div className="flex items-center">
+            <Input
+              allowClear
+              value={searchKey}
+              placeholder={t('common.searchPlaceHolder')}
+              style={{ width: 250 }}
+              onChange={(e) => setSearchKey(e.target.value)}
+              onPressEnter={handleFilterChange}
+              onClear={handleFilterClear}
+            />
+          </div>
+          <PermissionWrapper requiredPermissions={['Add']}>
+            <Button type="primary" onClick={() => handleEdit('add')}>
+              {t('common.addNew')}
+            </Button>
+          </PermissionWrapper>
         </div>
-        <PermissionWrapper requiredPermissions={['Add']}>
-          <Button type="primary" onClick={() => handleEdit('add')}>
-            {t('common.addNew')}
-          </Button>
-        </PermissionWrapper>
+        <CustomTable
+          size="middle"
+          rowKey="id"
+          loading={tableLoading}
+          columns={columns}
+          dataSource={dataList}
+          pagination={pagination}
+          onChange={handleTableChange}
+          scroll={{ y: 'calc(100vh - 440px)' }}
+        />
+        <OperateModal
+          open={operateVisible}
+          onClose={() => setOperateVisible(false)}
+          currentRow={currentRow}
+          onSuccess={() => {
+            setPagination((prev) => ({ ...prev, current: 1 }));
+            getTableList({ current: 1, pageSize: pagination.pageSize });
+          }}
+        />
       </div>
-      <CustomTable
-        size="middle"
-        rowKey="id"
-        loading={tableLoading}
-        columns={columns}
-        dataSource={dataList}
-        pagination={pagination}
-        onChange={handleTableChange}
-        scroll={{ y: 'calc(100vh - 450px)' }}
-      />
-      <OperateModal
-        open={operateVisible}
-        onClose={() => setOperateVisible(false)}
-        currentRow={currentRow}
-        onSuccess={() => {
-          setPagination((prev) => ({ ...prev, current: 1 }));
-          getTableList({ current: 1, pageSize: pagination.pageSize });
-        }}
-      />
-    </div>
+    </>
   );
 };
 
