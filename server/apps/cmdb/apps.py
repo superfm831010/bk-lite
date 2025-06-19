@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate
-from apps.core.logger import logger
+from apps.core.logger import cmdb_logger as logger
 
 
 class CmdbConfig(AppConfig):
