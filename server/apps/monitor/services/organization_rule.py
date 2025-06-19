@@ -1,5 +1,6 @@
 from django.db import transaction
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.models import MonitorObjectOrganizationRule, MonitorInstanceOrganization
 from apps.monitor.tasks.grouping_rule import RuleGrouping
 

@@ -1,5 +1,6 @@
 from celery import shared_task
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.logger import celery_logger as logger
 from apps.monitor.constants import MONITOR_OBJS
 from apps.monitor.models import Metric

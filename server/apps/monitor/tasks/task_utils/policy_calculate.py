@@ -1,6 +1,7 @@
 import pandas as pd
 from string import Template
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.constants import THRESHOLD_METHODS
 
 

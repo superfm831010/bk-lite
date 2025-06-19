@@ -3,6 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.models import MonitorInstance, MonitorObject, CollectConfig
 from apps.monitor.services.monitor_instance import InstanceSearch
