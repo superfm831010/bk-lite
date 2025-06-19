@@ -25,7 +25,7 @@ import {
   SegmentedItem,
   TableDataItem,
 } from '@/app/monitor/types';
-import CustomCascader from '@/components/custom-cascader';
+import GroupTreeSelector from '@/components/group-tree-select';
 import {
   StrategyFields,
   SourceFeild,
@@ -631,17 +631,12 @@ const StrategyOperation = () => {
                           { required: true, message: t('common.required') },
                         ]}
                       >
-                        <CustomCascader
+                        <GroupTreeSelector
                           style={{
                             width: '800px',
+                            marginRight: '8px',
                           }}
-                          multiple
                           placeholder={t('common.group')}
-                          className="mr-[8px]"
-                          showSearch
-                          maxTagCount="responsive"
-                          options={organizationList}
-                          allowClear
                         />
                       </Form.Item>
                     </>
