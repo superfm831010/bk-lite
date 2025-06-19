@@ -5,6 +5,8 @@ import json
 from django.core.cache import cache
 from django.http import JsonResponse
 from functools import wraps
+
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.node_mgmt.models.sidecar import SidecarApiToken
 from config.components.base import SECRET_KEY
 from config.components.drf import AUTH_TOKEN_HEADER_NAME
@@ -77,6 +79,6 @@ def decode_token(token: str, secret: str = SECRET_KEY):
     if hmac.compare_digest(signature, expected_signature):
         return json.loads(json_data)
     else:
-        raise ValueError("无效的 token")
+        raise BaseAppException("无效的 token")
 
 

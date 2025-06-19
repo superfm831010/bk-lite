@@ -44,7 +44,7 @@ def calculate_alerts(alert_name, df, thresholds, n=1):
         for threshold_info in thresholds:
             method = THRESHOLD_METHODS.get(threshold_info["method"])
             if not method:
-                raise ValueError(f"Invalid threshold method: {threshold_info['method']}")
+                raise BaseAppException(f"Invalid threshold method: {threshold_info['method']}")
 
             # 解析值并检查是否满足阈值
             if all(method(float(v[1]), threshold_info["value"]) for v in values):

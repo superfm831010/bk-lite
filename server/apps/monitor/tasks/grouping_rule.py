@@ -144,7 +144,7 @@ class RuleGrouping:
         obj_metric_map = obj_metric_map.get(rule.monitor_object.name)
         obj_instance_id_set = set(MonitorInstance.objects.filter(monitor_object_id=rule.monitor_object_id).values_list("id", flat=True))
         if not obj_metric_map:
-            raise ValueError("Monitor object default metric does not exist")
+            raise BaseAppException("Monitor object default metric does not exist")
         asso_list = []
         # 获取query
         query = RuleGrouping.get_query(rule.rule)

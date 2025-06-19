@@ -98,7 +98,7 @@ class MonitorPolicyVieSet(viewsets.ModelViewSet):
                 minute=0, hour=0, day_of_month=f'*/{value}', month_of_year='*', day_of_week='*'
             )[0]
         else:
-            raise ValueError('Invalid schedule type')
+            raise BaseAppException('Invalid schedule type')
 
     def update_or_create_task(self, policy_id, schedule):
         task_name = f'scan_policy_task_{policy_id}'

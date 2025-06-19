@@ -4,6 +4,7 @@ import os
 import re
 from jinja2 import Environment, FileSystemLoader, DebugUndefined
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.node_mgmt.models import CollectorConfiguration, ChildConfig, Collector, Node, NodeCollectorConfiguration
 
 # key为采集器名称, value为采集器模版目录，只维护采集类的采集器
@@ -46,7 +47,7 @@ class ConfigService:
 
         target_dir = os.path.join(self.template_root, subdir, collect_method)
         if not os.path.isdir(target_dir):
-            raise FileNotFoundError(f"Template dir '{target_dir}' not found.")
+            raise BaseAppException(f"Template dir '{target_dir}' not found.")
 
         # 文件名格式：target.文件类型.j2，例如 jvm.yaml.j2
         pattern = rf"^{re.escape(target)}\.\w+\.j2$"
@@ -58,7 +59,7 @@ class ConfigService:
                 template = env.get_template(filename)
                 return template.render(context)
 
-        raise FileNotFoundError(f"No template matching '{target}.*.j2' in '{target_dir}'")
+        raise BaseAppException(f"No template matching '{target}.*.j2' in '{target_dir}'")
 
     def batch_add_child_config(self, collector, nodes: list):
         """批量添加子配置"""
@@ -92,7 +93,7 @@ class ConfigService:
         """批量添加配置"""
         collector_objs = Collector.objects.filter(name=collector)
         if not collector_objs:
-            raise ValueError(f"Collector '{collector}' not found")
+            raise BaseAppException(f"Collector '{collector}' not found")
         collector_map = {obj.node_operating_system: obj for obj in collector_objs}
         subdir = f"config/{COLLECTOR_PATH_MAP.get(collector)}"
 
@@ -104,7 +105,7 @@ class ConfigService:
 
             node_obj = Node.objects.filter(id=node_id).values("cloud_region_id", "operating_system").first()
             if not node_obj:
-                raise ValueError(f"Node '{node_id}' not found")
+                raise BaseAppException(f"Node '{node_id}' not found")
             cloud_region_id = node_obj["cloud_region_id"]
             os = node_obj["operating_system"]
             collector_obj = collector_map.get(os)
@@ -162,7 +163,7 @@ class ConfigService:
     def update_child_config_content(self, id, content, env_config=None):
         """更新子配置内容"""
         if not content and not env_config:
-            raise ValueError("Content or env_config must be provided for update.")
+            raise BaseAppException("Content or env_config must be provided for update.")
 
         child_config = ChildConfig.objects.filter(id=id).first()
 
@@ -178,7 +179,7 @@ class ConfigService:
         """更新配置内容"""
 
         if not content and not env_config:
-            raise ValueError("Content or env_config must be provided for update.")
+            raise BaseAppException("Content or env_config must be provided for update.")
 
         config = CollectorConfiguration.objects.filter(id=id).first()
 

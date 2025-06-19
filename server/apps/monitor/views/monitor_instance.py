@@ -72,7 +72,7 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
     def monitor_instance_search(self, request, monitor_object_id):
         monitor_obj = MonitorObject.objects.filter(id=monitor_object_id).first()
         if not monitor_obj:
-            raise ValueError("Monitor object does not exist")
+            raise BaseAppException("Monitor object does not exist")
         search_obj = InstanceSearch(
             monitor_obj,
             dict(group_list=[i["id"] for i in request.user.group_list],
