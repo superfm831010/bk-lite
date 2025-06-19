@@ -1,5 +1,6 @@
 from celery import shared_task
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.node_mgmt.constants import CONTROLLER_INSTALL_DIR, COLLECTOR_INSTALL_DIR, LINUX_OS, \
     CONTROLLER_DIR_DELETE_COMMAND, NODE_SERVER_URL_KEY
 from apps.node_mgmt.models import ControllerTask, CollectorTask, PackageVersion, Node, NodeCollectorInstallStatus, \
@@ -15,10 +16,10 @@ def install_controller(task_id):
     """安装控制器"""
     task_obj = ControllerTask.objects.filter(id=task_id).first()
     if not task_obj:
-        raise ValueError("Task not found")
+        raise BaseAppException("Task not found")
     package_obj = PackageVersion.objects.filter(id=task_obj.package_version_id).first()
     if not package_obj:
-        raise ValueError("Package version not found")
+        raise BaseAppException("Package version not found")
     file_key = f"{package_obj.os}/{package_obj.object}/{package_obj.version}/{package_obj.name}"
     task_obj.status = "running"
     task_obj.save()
@@ -148,10 +149,10 @@ def install_collector(task_id):
     """安装采集器"""
     task_obj = CollectorTask.objects.filter(id=task_id).first()
     if not task_obj:
-        raise ValueError("Task not found")
+        raise BaseAppException("Task not found")
     package_obj = PackageVersion.objects.filter(id=task_obj.package_version_id).first()
     if not package_obj:
-        raise ValueError("Package version not found")
+        raise BaseAppException("Package version not found")
     file_key = f"{package_obj.os}/{package_obj.object}/{package_obj.version}/{package_obj.name}"
     task_obj.status = "running"
     task_obj.save()

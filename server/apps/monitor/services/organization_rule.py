@@ -1,5 +1,6 @@
 from django.db import transaction
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.models import MonitorObjectOrganizationRule, MonitorInstanceOrganization
 from apps.monitor.tasks.grouping_rule import RuleGrouping
 
@@ -13,7 +14,7 @@ class OrganizationRule:
             # 检查规则是否存在
             rule = MonitorObjectOrganizationRule.objects.select_related("monitor_object").filter(id=rule_id).first()
             if not rule:
-                raise ValueError(f"规则 ID {rule_id} 不存在")
+                raise BaseAppException(f"规则 ID {rule_id} 不存在")
 
             # 删除关联的监控实例组织
             if del_instance_org:
