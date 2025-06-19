@@ -16,6 +16,7 @@ from apps.alerts.models import AlertSource, Alert, Event, Level, Incident
 from apps.alerts.serializers.serializers import AlertSourceModelSerializer, AlertModelSerializer, EventModelSerializer, \
     LevelModelSerializer, IncidentModelSerializer
 from apps.alerts.service.alter_operator import AlertOperator
+from apps.core.logger import logger
 from apps.core.utils.web_utils import WebUtils
 from config.drf.pagination import CustomPageNumberPagination
 from config.drf.viewsets import ModelViewSet
@@ -60,7 +61,8 @@ class AlterModelViewSet(ModelViewSet):
         queryset = Alert.objects.annotate(
             event_count_annotated=Count('events'),
             # 通过事件获取告警源名称（去重）
-            source_names_annotated=StringAgg('events__source__name', delimiter=', ', distinct=True)
+            source_names_annotated=StringAgg('events__source__name', delimiter=', ', distinct=True),
+            incident_count=Count('incident', distinct=True),
         ).prefetch_related('events__source')
         return queryset
 
@@ -145,6 +147,21 @@ class IncidentModelViewSet(ModelViewSet):
         data = request.data
         incident_id = f"INCIDENT-{uuid.uuid4().hex}"
         data["incident_id"] = incident_id
+        if not data["alert"]:
+            return Response(
+                {"detail": "must provide at least one alert to create an incident."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        else:
+            not_incident_alert_ids = list(
+                Alert.objects.filter(id__in=data["alert"], incident__isnull=False).values_list('id', flat=True))
+            data["alert"] = list(not_incident_alert_ids)
+            has_incident_alert_ids = set(data["alert"]) - set(not_incident_alert_ids)
+            if has_incident_alert_ids:
+                logger.warning(
+                    f"Some alerts {has_incident_alert_ids} are already associated with an incident. "
+                    "They will not be included in the new incident."
+                )
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)

@@ -91,6 +91,7 @@ class AlertModelSerializer(serializers.ModelSerializer):
     updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     first_event_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     last_event_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    has_incident = serializers.SerializerMethodField()
 
     class Meta:
         model = Alert
@@ -178,6 +179,18 @@ class AlertModelSerializer(serializers.ModelSerializer):
             return ""
         return ", ".join(obj.operator)
 
+    @staticmethod
+    def get_has_incident(obj):
+        """
+        Check if the alert is associated with any incident.
+        """
+        # 如果使用了注解（推荐）
+        if hasattr(obj, 'incident_count'):
+            return obj.incident_count > 0
+
+        # fallback: 直接计数
+        return obj.incident.exists() if hasattr(obj, 'incident') else False
+
 
 class LevelModelSerializer(serializers.ModelSerializer):
     class Meta:
@@ -221,11 +234,14 @@ class IncidentModelSerializer(serializers.ModelSerializer):
     duration = serializers.SerializerMethodField()
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
-    # 多对多字段处理
+    # 多对多字段处理 一个alert只能属于一个incident
     alert = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Alert.objects.all(),
-        required=False
+        required=False,
+        error_messages={
+            'does_not_exist': '告警ID {pk_value} 已关联Incident或者不存在，请重新检查告警',
+        }
     )
     sources = serializers.SerializerMethodField()
     alert_count = serializers.SerializerMethodField()
@@ -317,7 +333,7 @@ class IncidentModelSerializer(serializers.ModelSerializer):
         # 如果使用了注解（推荐）
         if hasattr(obj, 'alert_count'):
             return obj.alert_count
-        
+
         # fallback: 直接计数
         return obj.alert.count() if obj.alert else 0
 
@@ -328,13 +344,13 @@ class IncidentModelSerializer(serializers.ModelSerializer):
         """
         if not obj.operator:
             return ""
-        
+
         # 如果 operator 是列表，转换为逗号分隔的字符串
         if isinstance(obj.operator, list):
             return ", ".join(str(op) for op in obj.operator if op)
-        
+
         # 如果 operator 是字符串，直接返回
         if isinstance(obj.operator, str):
             return obj.operator
-        
+
         return ""

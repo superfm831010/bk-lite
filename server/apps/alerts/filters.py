@@ -40,6 +40,7 @@ class AlertModelFilter(FilterSet):
     created_at_after = CharFilter(field_name="created_at", lookup_expr="gte", label="创建时间（起始）")
     created_at_before = CharFilter(field_name="created_at", lookup_expr="lte", label="创建时间（结束）")
     incident_id = CharFilter(field_name="incident__id", lookup_expr="exact", label="事故ID")
+    has_incident = CharFilter(method="filter_incident", label="是否有事故")
 
     class Meta:
         model = Alert
@@ -78,6 +79,14 @@ class AlertModelFilter(FilterSet):
             # 支持逗号分隔的多个值
             source_names = [source.strip() for source in value.split(',')]
             return qs.filter(source_name__in=source_names)
+        return qs
+
+    def filter_incident(self, qs, field_name, value):
+        """过滤是否有事故"""
+        if value.lower() == "true":
+            return qs.filter(incidents__isnull=False)
+        elif value.lower() == "false":
+            return qs.filter(incidents__isnull=True)
         return qs
 
 
