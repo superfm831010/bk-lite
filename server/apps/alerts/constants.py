@@ -131,30 +131,28 @@ class IncidentStatus:
     RESOLVED = "resolved"
     PROCESSING = "processing"
     CLOSED = "closed"
-    UNASSIGNED = "unassigned"
 
     CHOICES = (
         (PENDING, "待响应"),
         (PROCESSING, "处理中"),
         (RESOLVED, "已处理"),
         (CLOSED, "已关闭"),
-        (UNASSIGNED, "未分派"),
     )
-    ACTIVATE_STATUS = (PENDING, PROCESSING, UNASSIGNED)
+    ACTIVATE_STATUS = (PENDING, PROCESSING)
 
 
 class IncidentOperate:
-    """告警事件操作"""
+    """事故操作"""
     ACKNOWLEDGE = "acknowledge"
     CLOSE = "close"
     REASSIGN = "reassign"
-    Assign = "assign"
+    ASSIGN = "assign"  # 修正拼写错误
 
     CHOICES = (
         (ACKNOWLEDGE, "认领"),
         (CLOSE, "关闭"),
         (REASSIGN, "转派"),
-        (Assign, "分派"),
+        (ASSIGN, "分派"),  # 修正拼写错误
     )
 
 

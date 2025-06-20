@@ -84,9 +84,9 @@ class AlertModelFilter(FilterSet):
     def filter_incident(self, qs, field_name, value):
         """过滤是否有事故"""
         if value.lower() == "true":
-            return qs.filter(incidents__isnull=False)
+            return qs.filter(incident__isnull=False)
         elif value.lower() == "false":
-            return qs.filter(incidents__isnull=True)
+            return qs.filter(incident__isnull=True)
         return qs
 
 

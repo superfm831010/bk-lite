@@ -91,7 +91,7 @@ class AlertModelSerializer(serializers.ModelSerializer):
     updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     first_event_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     last_event_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
-    has_incident = serializers.SerializerMethodField()
+    incident_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Alert
@@ -180,16 +180,15 @@ class AlertModelSerializer(serializers.ModelSerializer):
         return ", ".join(obj.operator)
 
     @staticmethod
-    def get_has_incident(obj):
+    def get_incident_name(obj):
         """
-        Check if the alert is associated with any incident.
+        获取关联的事故标题
         """
-        # 如果使用了注解（推荐）
-        if hasattr(obj, 'incident_count'):
-            return obj.incident_count > 0
 
-        # fallback: 直接计数
-        return obj.incident.exists() if hasattr(obj, 'incident') else False
+        if hasattr(obj, 'incident_title_annotated'):
+            return obj.incident_title_annotated
+
+        return ""
 
 
 class LevelModelSerializer(serializers.ModelSerializer):

@@ -105,7 +105,6 @@ class AlertOperator(object):
 
             # 获取分派人信息
             assignee = data.get('assignee', [])
-            assignment_id = data.get('assignment_id')  # 分派策略ID
 
             if not assignee:
                 return {
@@ -122,8 +121,9 @@ class AlertOperator(object):
             alert.save()
 
             # 创建提醒记录
-            # if assignment_id:
-            #     self._create_reminder_record(alert, assignment_id)
+            assignment_id = data.get('assignment_id')  # 分派策略ID
+            if assignment_id:
+                self._create_reminder_record(alert, assignment_id)
 
             logger.info(
                 f"告警分派成功: alert_id={alert_id}, assignee={assignee}, 状态变更: {AlertStatus.UNASSIGNED} -> {AlertStatus.PENDING}")

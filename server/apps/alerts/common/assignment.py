@@ -311,8 +311,9 @@ class AlertAssignmentOperator:
                         # 创建提醒记录（如果配置了通知频率）
                         if assignment.notification_frequency:
                             operator._create_reminder_record(alert, str(assignment.id))
-                            # 分派成功后 立即发送提醒通知
-                            ReminderService._send_reminder_notification(assignment=assignment, alert=alert)
+
+                        # 分派成功后 立即发送提醒通知
+                        ReminderService._send_reminder_notification(assignment=assignment, alert=alert)
 
                         results.append({
                             "alert_id": alert.id,

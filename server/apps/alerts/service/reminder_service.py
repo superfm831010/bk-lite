@@ -192,7 +192,7 @@ class ReminderService:
             title = cls.format_title(alert)
             content = cls.format_content(alert)
             for channel in channel_list:
-                sync_notify.delay(username_list, channel, title, content)
+                transaction.on_commit(lambda: sync_notify.delay(username_list, channel, title, content))
 
         except Exception as e:
             logger.error(f"发送提醒通知失败: reminder_id={assignment.id}, error={str(e)}")

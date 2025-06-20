@@ -16,6 +16,7 @@ from apps.alerts.models import AlertSource, Alert, Event, Level, Incident
 from apps.alerts.serializers.serializers import AlertSourceModelSerializer, AlertModelSerializer, EventModelSerializer, \
     LevelModelSerializer, IncidentModelSerializer
 from apps.alerts.service.alter_operator import AlertOperator
+from apps.alerts.service.incident_operator import IncidentOperator
 from apps.core.logger import alert_logger as logger
 from apps.core.utils.web_utils import WebUtils
 from config.drf.pagination import CustomPageNumberPagination
@@ -62,7 +63,8 @@ class AlterModelViewSet(ModelViewSet):
             event_count_annotated=Count('events'),
             # 通过事件获取告警源名称（去重）
             source_names_annotated=StringAgg('events__source__name', delimiter=', ', distinct=True),
-            incident_count=Count('incident', distinct=True),
+            incident_title_annotated=StringAgg('incident__title', delimiter=', ', distinct=True)
+            # incident_count=Count('incident', distinct=True),
         ).prefetch_related('events__source')
         return queryset
 
@@ -162,8 +164,40 @@ class IncidentModelViewSet(ModelViewSet):
                     f"Some alerts {has_incident_alert_ids} are already associated with an incident. "
                     "They will not be included in the new incident."
                 )
+        if not data["operator"]:
+            data["operator"] = self.request.user.username
+
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @action(methods=['post'], detail=False, url_path='operator/(?P<operator_action>[^/.]+)', url_name='operator')
+    def operator(self, request, operator_action, *args, **kwargs):
+        """
+        事故操作方法
+        """
+        incident_id_list = request.data.get("incident_id", [])
+        if not incident_id_list:
+            return WebUtils.response_error(error_message="incident_id参数不能为空")
+
+        operator = IncidentOperator(user=self.request.user.username)
+        result_list = {}
+        status_list = []
+
+        for incident_id in incident_id_list:
+            result = operator.operate(action=operator_action, incident_id=incident_id, data=request.data)
+            result_list[incident_id] = result
+            status_list.append(result["result"])
+
+        if all(status_list):
+            return WebUtils.response_success(result_list)
+        elif not any(status_list):
+            return WebUtils.response_error(
+                response_data=result_list,
+                error_message="操作失败，请检查日志!",
+                status_code=500
+            )
+        else:
+            return WebUtils.response_success(response_data=result_list, message="部分操作成功")
