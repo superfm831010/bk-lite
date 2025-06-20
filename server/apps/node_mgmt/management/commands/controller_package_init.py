@@ -1,9 +1,6 @@
-import logging
 from django.core.management import BaseCommand
 from apps.node_mgmt.management.utils import package_version_upload
-
-
-logger = logging.getLogger(__name__)
+from apps.core.logger import node_logger as logger
 
 
 class Command(BaseCommand):

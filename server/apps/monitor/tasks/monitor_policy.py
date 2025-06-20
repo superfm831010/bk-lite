@@ -1,10 +1,9 @@
-import logging
 import uuid
-
 from celery.app import shared_task
 from datetime import datetime, timezone
-
 from django.db.models import F
+
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.constants import LEVEL_WEIGHT, THRESHOLD, NO_DATA
 from apps.monitor.models import MonitorPolicy, MonitorInstanceOrganization, MonitorAlert, MonitorEvent, MonitorInstance, \
     Metric, MonitorEventRawData
@@ -12,8 +11,7 @@ from apps.monitor.tasks.task_utils.metric_query import format_to_vm_filter
 from apps.monitor.tasks.task_utils.policy_calculate import vm_to_dataframe, calculate_alerts
 from apps.monitor.utils.system_mgmt_api import SystemMgmtUtils
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
-
-logger = logging.getLogger("app")
+from apps.core.logger import celery_logger as logger
 
 
 @shared_task
@@ -23,7 +21,7 @@ def scan_policy_task(policy_id):
 
     policy_obj = MonitorPolicy.objects.filter(id=policy_id).select_related("monitor_object").first()
     if not policy_obj:
-        raise ValueError(f"No MonitorPolicy found with id {policy_id}")
+        raise BaseAppException(f"No MonitorPolicy found with id {policy_id}")
 
     if policy_obj.enable:
         if not policy_obj.last_run_time:
@@ -109,7 +107,7 @@ def sum_over_time(metric_query, start, end, step, group_by):
 def period_to_seconds(period):
     """周期转换为秒"""
     if not period:
-        raise ValueError("policy period is empty")
+        raise BaseAppException("policy period is empty")
     if period["type"] == "min":
         return period["value"] * 60
     elif period["type"] == "hour":
@@ -117,7 +115,7 @@ def period_to_seconds(period):
     elif period["type"] == "day":
         return period["value"] * 86400
     else:
-        raise ValueError(f"invalid period type: {period['type']}")
+        raise BaseAppException(f"invalid period type: {period['type']}")
 
 
 METHOD = {
@@ -169,7 +167,7 @@ class MonitorPolicyScan:
     def for_mat_period(self, period, points=1):
         """格式化周期"""
         if not period:
-            raise ValueError("policy period is empty")
+            raise BaseAppException("policy period is empty")
         if period["type"] == "min":
             return f'{int(period["value"]/points)}{"m"}'
         elif period["type"] == "hour":
@@ -177,7 +175,7 @@ class MonitorPolicyScan:
         elif period["type"] == "day":
             return f'{int(period["value"]/points)}{"d"}'
         else:
-            raise ValueError(f"invalid period type: {period['type']}")
+            raise BaseAppException(f"invalid period type: {period['type']}")
 
     def format_pmq(self):
         """格式化PMQ"""
@@ -209,7 +207,7 @@ class MonitorPolicyScan:
         step = self.for_mat_period(period, points)
         method = METHOD.get(self.policy.algorithm)
         if not method:
-            raise ValueError("invalid algorithm method")
+            raise BaseAppException("invalid algorithm method")
         group_by = ",".join(self.instance_id_keys)
         return method(query, start_timestamp, end_timestamp, step, group_by)
 
@@ -223,7 +221,7 @@ class MonitorPolicyScan:
         else:
             self.metric = Metric.objects.filter(id=self.policy.query_condition["metric_id"]).first()
             if not self.metric:
-                raise ValueError(f"metric does not exist [{self.policy.query_condition['metric_id']}]")
+                raise BaseAppException(f"metric does not exist [{self.policy.query_condition['metric_id']}]")
 
             self.instance_id_keys = self.metric.instance_id_keys
 
@@ -471,7 +469,7 @@ class MonitorPolicyScan:
 
         self.set_monitor_obj_instance_key()
 
-        if THRESHOLD in self.policy.enable_alert:
+        if THRESHOLD in self.policy.enable_alerts:
             # 告警事件
             alert_events, info_events = self.alert_event()
             # 正常、异常事件计数
@@ -481,7 +479,7 @@ class MonitorPolicyScan:
         else:
             alert_events = []
 
-        if NO_DATA in self.policy.enable_alert:
+        if NO_DATA in self.policy.enable_alerts:
             # 无数据事件
             no_data_events = self.no_data_event()
             # 无数据告警恢复

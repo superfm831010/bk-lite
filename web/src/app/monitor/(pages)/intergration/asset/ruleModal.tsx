@@ -26,7 +26,7 @@ import {
 import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { deepClone } from '@/app/monitor/utils/common';
-import CustomCascader from '@/components/custom-cascader';
+import GroupTreeSelector from '@/components/group-tree-select';
 import useMonitorApi from '@/app/monitor/api';
 import { useConditionList } from '@/app/monitor/constants/monitor';
 import strategyStyle from './index.module.scss';
@@ -40,7 +40,7 @@ interface ModalProps {
 }
 
 const RuleModal = forwardRef<ModalRef, ModalProps>(
-  ({ onSuccess, groupList, monitorObject }, ref) => {
+  ({ onSuccess, monitorObject }, ref) => {
     const { post, put } = useApiClient();
     const { t } = useTranslation();
     const { getMetricsGroup, getMonitorMetrics } = useMonitorApi();
@@ -399,12 +399,7 @@ const RuleModal = forwardRef<ModalRef, ModalProps>(
               name="organizations"
               rules={[{ required: true, message: t('common.required') }]}
             >
-              <CustomCascader
-                multiple
-                showSearch
-                maxTagCount="responsive"
-                options={groupList}
-              />
+              <GroupTreeSelector />
             </Form.Item>
           </Form>
         </OperateModal>

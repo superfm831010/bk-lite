@@ -44,6 +44,12 @@ export interface InstanceInfo {
   keys?: React.Key[];
 }
 
+export interface InstanceItem {
+  instance_id: string;
+  instance_name: string;
+  instance_id_values: string[];
+}
+
 export interface GroupingRules {
   type?: string;
   metric_id?: number;
@@ -234,6 +240,7 @@ export interface StrategyFields {
   monitor_object?: number;
   id?: number;
   group_by?: string[];
+  enable_alerts?: string[];
   query_condition?: {
     type: string;
     query?: string;
