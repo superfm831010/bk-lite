@@ -29,3 +29,14 @@ class LoginModuleSerializer(serializers.ModelSerializer):
         if "display_name" in data:
             del data["display_name"]
         return data
+
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        instance.create_sync_periodic_task()
+        return instance
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        if instance.source_type == "bk_lite":
+            instance.create_sync_periodic_task()
+        return instance
