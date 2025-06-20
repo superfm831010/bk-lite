@@ -29,6 +29,7 @@ import {
   SearchParams,
   IndexViewItem,
   GroupInfo,
+  InstanceItem,
 } from '@/app/monitor/types/monitor';
 import {
   deepClone,
@@ -65,13 +66,7 @@ const SearchView: React.FC = () => {
   const [instanceId, setInstanceId] = useState<string[]>(
     url_instance_id ? [url_instance_id] : []
   );
-  const [instances, setInstances] = useState<
-    {
-      instance_id: string;
-      instance_name: string;
-      instance_id_values: string[];
-    }[]
-  >([]);
+  const [instances, setInstances] = useState<InstanceItem[]>([]);
   const [labels, setLabels] = useState<string[]>([]);
   const [object, setObject] = useState<React.Key>('');
   const [objects, setObjects] = useState<ObjectItem[]>([]);
