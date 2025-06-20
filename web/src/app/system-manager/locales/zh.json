@@ -213,7 +213,14 @@
       "appSecret": "应用密钥",
       "enabled": "启用",
       "redirectUri": "重定向 URI",
-      "redirectUriTip": "登录成功之后跳转的页面。格式参考（以回到工作台为例）：https://授权回调域名/ops-console/home"
+      "redirectUriTip": "登录成功之后跳转的页面。格式参考（以回到工作台为例）：https://授权回调域名/ops-console/home",
+      "authSourceName": "认证源名称",
+      "authSourceType": "认证源类型",
+      "namespace": "命名空间",
+      "domain": "域",
+      "orgRootDn": "组织根目录",
+      "userInitRole": "用户初始化角色",
+      "syncEnabled": "定时同步"
     }
   }
 }
