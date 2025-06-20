@@ -94,6 +94,8 @@
       "30Days": "最近30天",
       "custom": "自定义",
       "off": "关闭"
-    }
+    },
+    "copySuccess": "复制成功",
+    "copyFailed": "复制失败"
   }
 }

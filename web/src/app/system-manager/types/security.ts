@@ -2,11 +2,17 @@ export interface AuthSource {
   id: number;
   name: string;
   source_type: string;
-  app_id: string;
-  app_secret: string;
+  app_id?: string;
+  app_secret?: string;
   other_config: {
-    callback_url: string;
-    redirect_uri: string;
+    callback_url?: string;
+    redirect_uri?: string;
+    namespace?: string;
+    root_group?: string;
+    domain?: string;
+    default_roles?: number[];
+    sync?: boolean;
+    sync_time?: string;
   };
   enabled: boolean;
   is_build_in: boolean;

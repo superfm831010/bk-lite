@@ -94,6 +94,8 @@
       "30Days": "The past 30 days",
       "custom": "Custom",
       "off": "off"
-    }
+    },
+    "copySuccess": "Copied successfully",
+    "copyFailed": "Failed to copy"
   }
 }
