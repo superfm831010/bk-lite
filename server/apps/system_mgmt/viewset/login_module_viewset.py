@@ -4,6 +4,7 @@ from rest_framework import viewsets
 
 from apps.system_mgmt.models import Group, LoginModule, User
 from apps.system_mgmt.serializers.login_module_serializer import LoginModuleSerializer
+from apps.system_mgmt.tasks import sync_user_and_group_by_login_module
 
 
 class LoginModuleViewSet(viewsets.ModelViewSet):
@@ -74,3 +75,8 @@ class LoginModuleViewSet(viewsets.ModelViewSet):
             User.objects.filter(domain=domain).delete()
             Group.objects.filter(description=top_group.description).delete()
         return super().destroy(request, *args, **kwargs)
+
+    def sync_data(self, request, *args, **kwargs):
+        obj = self.get_object()
+        sync_user_and_group_by_login_module.delay(obj.id)
+        return JsonResponse({"result": True, "message": _("Sync task has been initiated.")})
