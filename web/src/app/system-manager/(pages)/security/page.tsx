@@ -32,7 +32,7 @@ const SecurityPage: React.FC = () => {
   const [editingSource, setEditingSource] = useState<AuthSource | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [dynamicForm] = Form.useForm();
-  const { getSystemSettings, updateOtpSettings, getAuthSources, updateAuthSource, createAuthSource } = useSecurityApi();
+  const { getSystemSettings, updateOtpSettings, getAuthSources, updateAuthSource, createAuthSource, syncAuthSource } = useSecurityApi();
   const { clientData } = useClientData();
   const { getRoleList } = useUserApi();
   const [roleTreeData, setRoleTreeData] = useState<TreeDataNode[]>([]);
@@ -146,7 +146,6 @@ const SecurityPage: React.FC = () => {
         let updateData: any;
         
         if (editingSource.source_type === 'wechat') {
-          // 微信类型的更新数据
           updateData = {
             name: values.name,
             app_id: values.app_id,
@@ -158,7 +157,6 @@ const SecurityPage: React.FC = () => {
             enabled: values.enabled
           };
         } else {
-          // bk_lite 等其他类型的更新数据
           updateData = {
             name: values.name,
             source_type: values.source_type,
@@ -241,14 +239,10 @@ const SecurityPage: React.FC = () => {
         callback_url: source.other_config.callback_url
       });
     } else {
-      // 对于 bk_lite 等其他类型的认证源，设置完整的表单数据
       const { other_config } = source;
-      
-      // 先设置默认角色状态
       const defaultRoles = other_config?.default_roles || [];
       setSelectedRoles(defaultRoles);
       
-      // 然后设置表单值
       dynamicForm.setFieldsValue({
         name: source.name,
         source_type: source.source_type,
@@ -258,15 +252,38 @@ const SecurityPage: React.FC = () => {
         sync: other_config?.sync || false,
         sync_time: other_config?.sync_time || '00:00',
         enabled: source.enabled,
-        default_roles: defaultRoles // 确保表单字段也设置了默认角色
+        default_roles: defaultRoles
       });
     }
     
     setIsModalVisible(true);
   };
 
-  const handleSearch = (searchTerm: string) => {
-    console.log('Searching for:', searchTerm);
+  const handleAuthSourceToggle = async (source: AuthSource, enabled: boolean) => {
+    try {
+      const updateData = { ...source, enabled };
+      await updateAuthSource(source.id, updateData);
+      setAuthSources(authSources.map(item => 
+        item.id === source.id 
+          ? { ...item, enabled }
+          : item
+      ));
+      
+      message.success(t('common.saveSuccess'));
+    } catch (error) {
+      console.error('Failed to update auth source status:', error);
+      message.error(t('common.saveFailed'));
+    }
+  };
+
+  const handleSyncAuthSource = async (source: AuthSource) => {
+    try {
+      await syncAuthSource(source.id);
+      message.success(t('system.security.syncSuccess'));
+    } catch (error) {
+      console.error('Failed to sync auth source:', error);
+      message.error(t('system.security.syncFailed'));
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -300,11 +317,16 @@ const SecurityPage: React.FC = () => {
 
   const menuActions = (item: AuthSource) => (
     <Menu>
-      <PermissionWrapper requiredPermissions={['Edit']}>
-        <Menu.Item key="edit" onClick={() => handleEditSource(item)}>
+      <Menu.Item key="edit" onClick={() => handleEditSource(item)}>
+        <PermissionWrapper requiredPermissions={['Edit']}>
           {t('common.edit')}
-        </Menu.Item>
-      </PermissionWrapper>
+        </PermissionWrapper>
+      </Menu.Item>
+      <Menu.Item key="sync" onClick={() => handleSyncAuthSource(item)}>
+        <PermissionWrapper requiredPermissions={['Edit']}>
+          {t('system.security.syncNow')}
+        </PermissionWrapper>
+      </Menu.Item>
     </Menu>
   );
 
@@ -374,10 +396,20 @@ const SecurityPage: React.FC = () => {
         data={authSources}
         loading={authSourcesLoading}
         search
-        onSearch={handleSearch}
         menuActions={menuActions}
         onCardClick={handleEditSource}
         operateSection={operateSection}
+        descSlot={(item: AuthSource) => (
+          <div className="flex items-center justify-end">
+            <div onClick={(e) => e.stopPropagation()}>
+              <Switch
+                size="small"
+                checked={item.enabled}
+                onChange={(checked) => handleAuthSourceToggle(item, checked)}
+              />
+            </div>
+          </div>
+        )}
       />
     )
   };
