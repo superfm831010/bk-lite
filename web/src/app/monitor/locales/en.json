@@ -248,6 +248,7 @@
       "warning": "Warning",
       "new": "New",
       "recovery": "Recovery",
+      "noDataRecovery": "NoData Recovery",
       "closed": "Closed",
       "notified": "Notified",
       "unnotified": "Unnotified",
@@ -292,8 +293,8 @@
       "setRecovery": "When the conditions are met, the generated alerts will be automatically resolved.",
       "nodata": "No Data",
       "reportedFor": "When there is no data reported for",
-      "nodataPeriods": ", a 'No Data' alert will be generated, with a level of",
-      "nodataRecoverCondition": ".When data reporting returns to normal within the",
+      "nodataPeriods": ", a 'No Data' alert will be generated.",
+      "nodataRecoverCondition": "When data reporting returns to normal within the",
       "nodataRecover": ",the 'No Data Alert' will automatically recover.",
       "notification": "Notification",
       "email": "Email",
@@ -328,7 +329,8 @@
       "activeAlarmsMapTips": "Display a map of the distribution of all active alarms that meet the filtering criteria.",
       "historicalAlarmsMapTips": "Displays a graph of the distribution of all historical alarms that match the filter for the selected time range.",
       "promQLPlaceholder": "Please refer to the syntax of Prometheus to write PromQL, which can usually query and filter relevant metrics.",
-      "monitoringTarget": "Monitoring target"
+      "monitoringTarget": "Monitoring target",
+      "alarmLevel": "Alarm Level"
     },
     "intergrations": {
       "intergration": "Intergration",

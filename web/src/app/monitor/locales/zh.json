@@ -248,6 +248,7 @@
       "warning": "警告",
       "new": "新",
       "recovery": "自动恢复",
+      "noDataRecovery": "无数据自动恢复",
       "closed": "手动关闭",
       "notified": "已通知",
       "unnotified": "未通知",
@@ -292,8 +293,8 @@
       "setRecovery": "当满足条件时，生成的告警将自动解决。",
       "nodata": "无数据",
       "reportedFor": "当没有数据报告连续",
-      "nodataPeriods": "，将生成“无数据”告警，级别为",
-      "nodataRecoverCondition": "。当数据报告在",
+      "nodataPeriods": "，将生成“无数据”告警。",
+      "nodataRecoverCondition": "当数据报告在",
       "nodataRecover": "内恢复正常时，“无数据告警” 将自动恢复。",
       "notification": "通知",
       "email": "电子邮件",
@@ -328,7 +329,8 @@
       "activeAlarmsMapTips": "展示所有符合过滤项的活跃告警分布图。",
       "historicalAlarmsMapTips": "展示所选时间范围内，符合过滤项的所有历史告警分布图。",
       "promQLPlaceholder": "请参考Prometheus的语法撰写PromQL，通常可以查询并过滤相关的指标。",
-      "monitoringTarget": "监控目标"
+      "monitoringTarget": "监控目标",
+      "alarmLevel": "告警级别"
     },
     "intergrations": {
       "intergration": "集成",

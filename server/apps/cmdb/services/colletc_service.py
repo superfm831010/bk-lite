@@ -11,7 +11,7 @@ from apps.cmdb.models import CREATE_INST, UPDATE_INST, DELETE_INST
 from apps.cmdb.services.node_configs import NodeParamsFactory
 from apps.cmdb.services.sync_collect import ProtocolCollect
 from apps.cmdb.utils.change_record import create_change_record
-from apps.core.logger import logger
+from apps.core.logger import cmdb_logger as logger
 from apps.core.utils.celery_utils import crontab_format, CeleryUtils
 from apps.rpc.node_mgmt import NodeMgmt
 from apps.rpc.stargazer import Stargazer

@@ -234,6 +234,7 @@ export interface StrategyFields {
   monitor_object?: number;
   id?: number;
   group_by?: string[];
+  enable_alerts?: string[];
   query_condition?: {
     type: string;
     query?: string;
