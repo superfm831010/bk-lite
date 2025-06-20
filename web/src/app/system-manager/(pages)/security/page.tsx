@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Switch, message, Form, Segmented, Menu, InputNumber, Button, Alert } from 'antd';
-import { PlusOutlined, CopyOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import EntityList from '@/components/entity-list';
 import OperateModal from '@/components/operate-modal';
