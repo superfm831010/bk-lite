@@ -16,6 +16,10 @@ class RpcClient(object):
         return_data = asyncio.run(nats_client.request(self.namespace, method_name, *args, **kwargs))
         return return_data
 
+    def request(self, method_name, **kwargs):
+        return_data = asyncio.run(nats_client.nat_request(self.namespace, method_name, **kwargs))
+        return return_data
+
 
 class AppClient(object):
     def __init__(self, path):

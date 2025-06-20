@@ -13,7 +13,7 @@ def sync_user_and_group_by_login_module(login_module_id):
     logger.info(f"Syncing user and group for login module {login_module_id} - {login_module.name}")
     namespace = login_module.other_config.get("namespace", "")
     client = RpcClient(namespace)
-    result = client.run("sync_data")
+    result = client.request("sync_data")
     if not result["result"]:
         logger.error(f"Failed to sync data for login module {login_module_id}: {result['message']}")
     user_list = result["data"]["user_list"]

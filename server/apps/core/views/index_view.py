@@ -309,7 +309,7 @@ def bk_lite_login(username, password, domain):
         return JsonResponse(res)
     namespace = res["data"]
     client = RpcClient(namespace)
-    res = client.run("login", username=username, password=password)
+    res = client.request("login", username=username, password=password)
     if not res["result"]:
         return JsonResponse(res)
     login_res = system_client.bk_lite_user_login(res["data"]["username"], domain)
