@@ -45,7 +45,7 @@ fi
 
 if [[ $OPSPILOT_ENABLED == "true" ]]; then
     export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,opspilot"
-    export COMPOSE_CMD="docker-compose -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/opspilot.yaml config --no-interpolate"
+    export COMPOSE_CMD="docker-compose -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/ops_pilot.yaml config --no-interpolate"
 else
     export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt"
     export COMPOSE_CMD="docker-compose -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml config --no-interpolate"
