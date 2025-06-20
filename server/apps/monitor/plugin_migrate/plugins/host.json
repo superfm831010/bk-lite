@@ -193,7 +193,7 @@
     {
       "metric_group": "Disk",
       "name": "disk.is_use",
-      "query": "avg(disk_used_percent{instance_type=\"os\", __$labels__}) by (instance_id)",
+      "query": "any(disk_used_percent{instance_type=\"os\", __$labels__}) by (instance_id)",
       "display_name": "Disk Usage Rate",
       "data_type": "Number",
       "unit": "percent",
