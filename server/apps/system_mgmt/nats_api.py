@@ -287,37 +287,14 @@ def get_group_id(group_name):
 
 @nats_client.register
 def login(username, password):
-    user = User.objects.filter(username=username).first()
+    user = User.objects.filter(username=username, domain="domain.com").first()
     if not user:
         return {"result": False, "message": "Username or password is incorrect"}
 
     # 使用 check_password 验证密码是否匹配
     if not check_password(password, user.password):
         return {"result": False, "message": "Username or password is incorrect"}
-    if user.disabled:
-        return {"result": False, "message": "User is disabled"}
-    secret_key = os.getenv("SECRET_KEY")
-    algorithm = os.getenv("JWT_ALGORITHM", "HS256")
-    user_obj = {"user_id": user.id, "login_time": int(time.time())}
-    token = jwt.encode(payload=user_obj, key=secret_key, algorithm=algorithm)
-    enable_otp = SystemSettings.objects.filter(key="enable_otp").first()
-    if not enable_otp:
-        enable_otp = False
-    else:
-        enable_otp = enable_otp.value == "1"
-    return {
-        "result": True,
-        "data": {
-            "token": token,
-            "username": username,
-            "display_name": user.display_name,
-            "id": user.id,
-            "locale": user.locale,
-            "temporary_pwd": user.temporary_pwd,
-            "enable_otp": enable_otp,
-            "qrcode": user.otp_secret is None or user.otp_secret == "",
-        },
-    }
+    return get_user_login_token(user, username)
 
 
 @nats_client.register
@@ -416,3 +393,56 @@ def verify_otp_code(username, otp_code):
     if totp.verify(otp_code):
         return {"result": True, "message": "Verification successful"}
     return {"result": False, "message": "Invalid OTP code"}
+
+
+@nats_client.register
+def get_namespace_by_domain(domain):
+    login_module = LoginModule.objects.filter(source_type="bk_lite", other_config__contains={"domain": domain}).first()
+    if not login_module:
+        return {"result": False, "message": "Login module not found"}
+    namespace = login_module.other_config.get("namespace", "")
+    return {"result": True, "data": namespace}
+
+
+@nats_client.register
+def bk_lite_user_login(username, domain):
+    user = User.objects.filter(username=username, domain=domain).first()
+    if not user:
+        return {"result": False, "message": "Username or password is incorrect"}
+    return get_user_login_token(user, username)
+
+
+def get_user_login_token(user, username):
+    if user.disabled:
+        return {"result": False, "message": "User is disabled"}
+    secret_key = os.getenv("SECRET_KEY")
+    algorithm = os.getenv("JWT_ALGORITHM", "HS256")
+    user_obj = {"user_id": user.id, "login_time": int(time.time())}
+    token = jwt.encode(payload=user_obj, key=secret_key, algorithm=algorithm)
+    enable_otp = SystemSettings.objects.filter(key="enable_otp").first()
+    if not enable_otp:
+        enable_otp = False
+    else:
+        enable_otp = enable_otp.value == "1"
+    return {
+        "result": True,
+        "data": {
+            "token": token,
+            "username": username,
+            "display_name": user.display_name,
+            "id": user.id,
+            "locale": user.locale,
+            "temporary_pwd": user.temporary_pwd,
+            "enable_otp": enable_otp,
+            "qrcode": user.otp_secret is None or user.otp_secret == "",
+        },
+    }
+
+
+@nats_client.register
+def get_login_module_domain_list():
+    login_module_list = list(
+        LoginModule.objects.filter(source_type="bk_lite").values_list("other_config__domain", flat=True)
+    )
+    login_module_list.insert(0, "domain.com")
+    return {"result": True, "data": login_module_list}

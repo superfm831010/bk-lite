@@ -8,6 +8,7 @@ from django.utils.translation import gettext as _
 from rest_framework.decorators import api_view
 
 from apps.core.utils.exempt import api_exempt
+from apps.rpc.base import RpcClient
 from apps.rpc.system_mgmt import SystemMgmt
 
 logger = logging.getLogger(__name__)
@@ -73,14 +74,16 @@ def login(request):
         data = _parse_request_data(request)
         username = data.get("username", "").strip()
         password = data.get("password", "")
+        domain = data.get("domain", "")
         c_url = data.get("redirect_url", "").strip()  # 获取回调URL
 
         if not username or not password:
             return JsonResponse({"result": False, "message": _("Username or password cannot be empty")})
-
-        client = _create_system_mgmt_client()
-        res = client.login(username, password)
-
+        if domain == "domain.com":
+            client = SystemMgmt()
+            res = client.login(username, password)
+        else:
+            res = bk_lite_login(username, password, domain)
         if not res.get("result"):
             logger.warning(f"Login failed for user: {username}")
         else:
@@ -90,7 +93,6 @@ def login(request):
                     res["data"] = {}
                 res["data"]["redirect_url"] = c_url
                 logger.info(f"Login successful for user: {username}, redirect to: {c_url}")
-
         return JsonResponse(res)
     except Exception as e:
         logger.error(f"Login error: {e}")
@@ -298,3 +300,24 @@ def get_all_groups(request):
     except Exception as e:
         logger.error(f"Error retrieving all groups: {e}")
         return JsonResponse({"result": False, "message": _("System error occurred")})
+
+
+def bk_lite_login(username, password, domain):
+    system_client = SystemMgmt()
+    res = system_client.get_namespace_by_domain(domain)
+    if not res["result"]:
+        return JsonResponse(res)
+    namespace = res["data"]
+    client = RpcClient(namespace)
+    res = client.request("login", username=username, password=password)
+    if not res["result"]:
+        return JsonResponse(res)
+    login_res = system_client.bk_lite_user_login(res["data"]["username"], domain)
+    return login_res
+
+
+@api_exempt
+def get_domain_list(request):
+    client = SystemMgmt()
+    res = client.get_login_module_domain_list()
+    return JsonResponse(res)

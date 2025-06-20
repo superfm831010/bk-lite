@@ -327,8 +327,11 @@ def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=N
             yield f"data: {json.dumps(error_chunk)}\n\n"
 
     response = StreamingHttpResponse(generate_stream(), content_type="text/event-stream")
-    response["Cache-Control"] = "no-cache"
-    response["X-Accel-Buffering"] = "no"
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response["X-Accel-Buffering"] = "no"  # Nginx
+    # response["Pragma"] = "no-cache"
+    # response["Expires"] = "0"
+    # response["X-Buffering"] = "no"  # Apache
     response["Access-Control-Allow-Origin"] = "*"
     response["Access-Control-Allow-Headers"] = "Cache-Control"
 
