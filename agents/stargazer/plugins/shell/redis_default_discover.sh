@@ -61,11 +61,11 @@ discover_redis() {
 
         local role=$(run_cmd "$redis_cli info replication" | grep "role:" | awk -F: '{print $2}' | tr -d '\r')
 
-        bk_inst_name="${bk_host_innerip}-redis-${port}"
+        inst_name="${bk_host_innerip}-redis-${port}"
 
         # 修复 JSON 格式化问题，确保变量值正确插入
-        redis_info=$(printf '{"bk_inst_name":"%s","bk_obj_id":"redis","ip_addr":"%s","port":"%s","version":"%s","install_path":"%s","max_clients":"%s","max_memory":"%s","role":"%s"}' \
-            "$bk_inst_name" \
+        redis_info=$(printf '{"inst_name":"%s","bk_obj_id":"redis","ip_addr":"%s","port":"%s","version":"%s","install_path":"%s","max_conn":"%s","max_mem":"%s","database_role":"%s"}' \
+            "$inst_name" \
             "$bk_host_innerip" \
             "$port" \
             "$version" \

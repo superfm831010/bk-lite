@@ -134,7 +134,7 @@ Cover_Nginx(){
         # Get SSL version
         ssl_version=$(Get_SSL_Version)
         # =============can extend key=================
-        json_template='{ \"bk_inst_name\": \"%s-nginx-%s\", \"bk_obj_id\": \"nginx\", \"ip_addr\": \"%s\", \"listen_port\": \"%s\", \"nginx_path\": \"%s\", \"version\": \"%s\", \"log_path\": \"%s\", \"config_path\": \"%s\", \"domain\": \"%s\", \"include_path\": \"%s\", \"ssl_version\": \"%s\"}'
+        json_template='{ \"inst_name\": \"%s-nginx-%s\", \"bk_obj_id\": \"nginx\", \"ip_addr\": \"%s\", \"port\": \"%s\", \"bin_path\": \"%s\", \"version\": \"%s\", \"log_path\": \"%s\", \"conf_path\": \"%s\", \"server_name\": \"%s\", \"include\": \"%s\", \"ssl_version\": \"%s\"}'
         # Replace newlines with spaces in multi-line fields
         log_path=$(echo "$log_path" | tr '\n' ' ' | sed 's/ *$//')
         domain=$(echo "$domain" | tr '\n' ' ' | sed 's/ *$//')
