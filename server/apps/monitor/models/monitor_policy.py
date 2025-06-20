@@ -39,6 +39,7 @@ class MonitorPolicy(TimeInfo, MaintainerInfo):
 
     # 是否启动策略
     enable = models.BooleanField(default=True, verbose_name="是否启用")
+    enable_alerts = models.JSONField(default=list, verbose_name="启用的告警类型")
     last_run_time = models.DateTimeField(blank=True, null=True, verbose_name="最后一次执行时间")
 
     class Meta:
@@ -62,6 +63,8 @@ class MonitorEvent(models.Model):
     policy_id = models.IntegerField(db_index=True, verbose_name='监控策略ID')
     monitor_instance_id = models.CharField(db_index=True, max_length=100, verbose_name='监控对象实例ID')
     created_at = models.DateTimeField(db_index=True, auto_now_add=True, verbose_name="事件生成时间" )
+    # 事件发生时间
+    event_time = models.DateTimeField(blank=True, null=True, verbose_name='事件发生时间')
     value = models.FloatField(blank=True, null=True, verbose_name='事件值')
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, verbose_name='事件级别')
     content = models.TextField(blank=True, verbose_name='事件内容')

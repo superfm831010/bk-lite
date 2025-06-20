@@ -2,8 +2,8 @@ import { Group } from '@/types/index'
 
 interface TreeSelectDataItem {
   title: string;
-  value: string;
-  key: string;
+  value: number;
+  key: number;
   disabled: boolean;
   children?: TreeSelectDataItem[];
 }
@@ -17,9 +17,9 @@ export const convertGroupTreeToTreeSelectData = (groupTree: Group[]): TreeSelect
   const convert = (groups: Group[]): TreeSelectDataItem[] => {
     return groups.map(group => ({
       title: group.name,
-      value: group.id,
-      key: group.id,
-      disabled: !group.hasAuth, // hasAuth 为 false 时禁用
+      value: Number(group.id),
+      key: Number(group.id),
+      disabled: !group.hasAuth,
       children: group.subGroups && group.subGroups.length > 0 
         ? convert(group.subGroups) 
         : undefined
@@ -34,8 +34,8 @@ export const convertGroupTreeToTreeSelectData = (groupTree: Group[]): TreeSelect
  * @param treeData 树形数据
  * @returns 所有节点的 key 数组
  */
-export const getAllTreeKeys = (treeData: any[]): string[] => {
-  const keys: string[] = [];
+export const getAllTreeKeys = (treeData: any[]): number[] => {
+  const keys: number[] = [];
   const traverse = (nodes: any[]) => {
     nodes.forEach(node => {
       keys.push(node.key);

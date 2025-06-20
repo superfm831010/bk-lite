@@ -24,7 +24,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "mss",
-      "dimensions": ["db"],
+      "dimensions": [
+        {
+          "name": "db",
+          "description": "The name of the database within the PostgreSQL instance."
+        }
+      ],
       "description": "Indicates the rate of time spent on block read operations by the PostgreSQL instance (in seconds per second). Used for monitoring read performance.",
       "query": "rate(postgresql_blk_read_time{__$labels__}[5m])"
     },
@@ -35,7 +40,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "mss",
-      "dimensions": ["db"],
+      "dimensions": [
+        {
+          "name": "db",
+          "description": "The name of the database within the PostgreSQL instance."
+        }
+      ],
       "description": "Indicates the rate of time spent on block write operations by the PostgreSQL instance (in seconds per second). Used for monitoring write performance.",
       "query": "rate(postgresql_blk_write_time{__$labels__}[5m])"
     },
@@ -46,7 +56,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "cps",
-      "dimensions": ["db"],
+      "dimensions": [
+        {
+          "name": "db",
+          "description": "The name of the database within the PostgreSQL instance."
+        }
+      ],
       "description": "Indicates the rate of block cache hits by the PostgreSQL instance (in hits per second). Used for monitoring cache efficiency.",
       "query": "rate(postgresql_blks_hit{__$labels__}[5m])"
     },
@@ -57,7 +72,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "cps",
-      "dimensions": ["db"],
+      "dimensions": [
+        {
+          "name": "db",
+          "description": "The name of the database within the PostgreSQL instance."
+        }
+      ],
       "description": "Indicates the rate of block reads by the PostgreSQL instance (in reads per second). Used for monitoring read frequency.",
       "query": "rate(postgresql_blks_read{__$labels__}[5m])"
     },
@@ -68,7 +88,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "percent",
-      "dimensions": ["db"],
+      "dimensions": [
+        {
+          "name": "db",
+          "description": "The name of the database within the PostgreSQL instance."
+        }
+      ],
       "description": "Indicates the PostgreSQL instance's block cache hit ratio over the past 5 minutes, reflecting cache effectiveness. A high hit ratio means most data requests are fulfilled from the cache, reducing disk reads and improving query performance.",
       "query": "(rate(postgresql_blks_hit{__$labels__}[5m]) / (rate(postgresql_blks_hit{__$labels__}[5m]) + rate(postgresql_blks_read{__$labels__}[5m]))) * 100"
     },
@@ -101,7 +126,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "cps",
-      "dimensions": ["db"],
+      "dimensions": [
+        {
+          "name": "db",
+          "description": "The name of the database within the PostgreSQL instance."
+        }
+      ],
       "description": "Indicates the rate of transactions committed by the PostgreSQL instance (in commits per second). Used for monitoring transaction commit frequency.",
       "query": "rate(postgresql_xact_commit{__$labels__}[5m])"
     },
@@ -112,7 +142,12 @@
       "instance_id_keys": ["instance_id"],
       "data_type": "Number",
       "unit": "cps",
-      "dimensions": ["db"],
+      "dimensions": [
+        {
+          "name": "db",
+          "description": "The name of the database within the PostgreSQL instance."
+        }
+      ],
       "description": "Indicates the rate of transactions rolled back by the PostgreSQL instance (in rollbacks per second). Used for monitoring transaction rollback frequency.",
       "query": "rate(postgresql_xact_rollback{__$labels__}[5m])"
     },

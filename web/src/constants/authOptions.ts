@@ -107,16 +107,13 @@ export async function getAuthOptions(): Promise<AuthOptions> {
       },
     }),
   ];
-
-  if (wechatConfig) {
-    providers.push(
-      WeChatProvider({
-        clientId: wechatConfig.app_id || process.env.WECHAT_APP_ID || "",
-        clientSecret: wechatConfig.app_secret || process.env.WECHAT_APP_SECRET || "",
-        redirectUri: `${wechatConfig.redirect_uri || process.env.WECHAT_APP_REDIRECT_URI}/api/auth/callback/wechat`,
-      }) as unknown as any
-    );
-  }
+  providers.push(
+    WeChatProvider({
+      clientId: wechatConfig?.app_id || process.env.WECHAT_APP_ID || "",
+      clientSecret: wechatConfig?.app_secret || process.env.WECHAT_APP_SECRET || "",
+      redirectUri: `${wechatConfig?.redirect_uri || process.env.WECHAT_APP_REDIRECT_URI}/api/auth/callback/wechat`,
+    }) as unknown as any
+  );
 
   return {
     providers,
@@ -142,28 +139,6 @@ export async function getAuthOptions(): Promise<AuthOptions> {
           token.wechatOpenId = user.wechatOpenId;
           token.wechatUnionId = user.wechatUnionId;
           token.wechatWorkId = user.wechatWorkId;
-
-          // If client environment and user login successful, save shared auth data
-          if (typeof window !== 'undefined') {
-            try {
-              const { saveSharedAuthData } = await import('../utils/crossDomainAuth');
-              saveSharedAuthData({
-                id: token.id as string,
-                username: token.username as string,
-                token: token.token as string || '',
-                locale: token.locale as string,
-                temporary_pwd: token.temporary_pwd as boolean || false,
-                enable_otp: token.enable_otp as boolean || false,
-                qrcode: token.qrcode as boolean || false,
-                provider: token.provider as string,
-                wechatOpenId: token.wechatOpenId as string,
-                wechatUnionId: token.wechatUnionId as string,
-                wechatWorkId: token.wechatWorkId as string,
-              });
-            } catch (error) {
-              console.error('Failed to save shared auth data:', error);
-            }
-          }
         }
         return token;
       },
@@ -289,28 +264,6 @@ export const authOptions: AuthOptions = {
         token.wechatOpenId = user.wechatOpenId;
         token.wechatUnionId = user.wechatUnionId;
         token.wechatWorkId = user.wechatWorkId;
-
-        // If client environment and user login successful, save shared auth data
-        if (typeof window !== 'undefined') {
-          try {
-            const { saveSharedAuthData } = await import('../utils/crossDomainAuth');
-            saveSharedAuthData({
-              id: token.id as string,
-              username: token.username as string,
-              token: token.token as string || '',
-              locale: token.locale as string,
-              temporary_pwd: token.temporary_pwd as boolean || false,
-              enable_otp: token.enable_otp as boolean || false,
-              qrcode: token.qrcode as boolean || false,
-              provider: token.provider as string,
-              wechatOpenId: token.wechatOpenId as string,
-              wechatUnionId: token.wechatUnionId as string,
-              wechatWorkId: token.wechatWorkId as string,
-            });
-          } catch (error) {
-            console.error('Failed to save shared auth data:', error);
-          }
-        }
       }
       return token;
     },

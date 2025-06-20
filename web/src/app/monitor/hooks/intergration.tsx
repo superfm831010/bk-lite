@@ -7,6 +7,8 @@ import {
   TIMEOUT_UNITS,
   useMiddleWareFields,
 } from '@/app/monitor/constants/monitor';
+import PermissionWrapper from '@/components/permission';
+import type { MenuProps } from 'antd';
 const { Option } = Select;
 
 interface UseColumnsAndFormItemsParams {
@@ -1966,7 +1968,7 @@ const useFormItems = ({
                     },
                   ]}
                 >
-                  <Input className="w-[300px] mr-[10px]" disabled={isEdit} />
+                  <Input className="w-[300px] mr-[10px]" />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
                   {t('monitor.intergrations.commonHostDes')}
@@ -1987,7 +1989,6 @@ const useFormItems = ({
                     className="w-[300px] mr-[10px]"
                     min={1}
                     precision={0}
-                    disabled={isEdit}
                   />
                 </Form.Item>
                 <span className="text-[12px] text-[var(--color-text-3)]">
@@ -2030,4 +2031,23 @@ const useFormItems = ({
   return result;
 };
 
-export { useColumnsAndFormItems, useFormItems };
+const useAssetMenuItems = (): MenuProps['items'] => {
+  const { t } = useTranslation();
+  return useMemo(
+    () => [
+      {
+        label: (
+          <PermissionWrapper
+            className="customMenuItem"
+            requiredPermissions={['Edit']}
+          >
+            {t('common.batchEdit')}
+          </PermissionWrapper>
+        ),
+        key: 'batchEdit',
+      },
+    ],
+    [t]
+  );
+};
+export { useColumnsAndFormItems, useFormItems, useAssetMenuItems };

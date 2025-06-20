@@ -138,7 +138,7 @@ const useMonitorApi = () => {
       monitor_object_id?: React.Key;
     } = {}
   ) => {
-    return await get(`/monitor/api/monitor_instance_group_rule/`, {
+    return await get(`/monitor/api/organization_rule/`, {
       params,
     });
   };
@@ -274,8 +274,23 @@ const useMonitorApi = () => {
     return await del(`/monitor/api/monitor_policy/${id}/`);
   };
 
-  const deleteInstanceGroupRule = async (id: number | string) => {
-    return await del(`/monitor/api/monitor_instance_group_rule/${id}/`);
+  const deleteInstanceGroupRule = async (
+    id: number | string,
+    params: {
+      del_instance_org: boolean;
+    }
+  ) => {
+    return await del(`/monitor/api/organization_rule/${id}/`, { params });
+  };
+
+  const setInstancesGroup = async (data: {
+    instance_ids: React.Key[];
+    organizations: React.Key[];
+  }) => {
+    return await post(
+      `/monitor/api/monitor_instance/set_instances_organizations/`,
+      data
+    );
   };
 
   const deleteMonitorInstance = async (data: {
@@ -341,6 +356,7 @@ const useMonitorApi = () => {
     deleteMetricsGroup,
     getConfigContent,
     updateMonitorInstance,
+    setInstancesGroup,
   };
 };
 

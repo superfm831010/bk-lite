@@ -12,6 +12,7 @@ import OperateModal from '@/app/monitor/components/operate-drawer';
 import { useTranslation } from '@/utils/i18n';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
+import { convertGroupTreeToTreeSelectData } from '@/utils';
 import CustomTable from '@/components/custom-table';
 import {
   ColumnItem,
@@ -26,17 +27,7 @@ import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import selectInstanceStyle from './selectInstance.module.scss';
 import { getBaseInstanceColumn } from '@/app/monitor/utils/common';
 import { ObjectItem } from '@/app/monitor/types/monitor';
-
-const convertCascaderToTreeData = (cascaderData: any) => {
-  return cascaderData.map((item: any) => {
-    const { label, value, children } = item;
-    return {
-      title: label,
-      key: value,
-      children: children ? convertCascaderToTreeData(children) : [],
-    };
-  });
-};
+import { useUserInfoContext } from '@/context/userInfo';
 
 const filterTreeData = (treeData: any, searchText: string) => {
   if (!searchText) return treeData;
@@ -94,11 +85,12 @@ const getParentKeys = (
 };
 
 const SelectAssets = forwardRef<ModalRef, ModalConfig>(
-  ({ onSuccess, organizationList, monitorObject, objects }, ref) => {
+  ({ onSuccess, monitorObject, objects }, ref) => {
     const { t } = useTranslation();
     const { getInstanceList } = useMonitorApi();
     const { isLoading } = useApiClient();
     const { convertToLocalizedTime } = useLocalizedTime();
+    const { groupTree } = useUserInfoContext();
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
     const [pagination, setPagination] = useState<Pagination>({
       current: 1,
@@ -153,6 +145,14 @@ const SelectAssets = forwardRef<ModalRef, ModalConfig>(
       ];
     }, [objects, monitorObject, t]);
 
+    const treeData = useMemo(() => {
+      return convertGroupTreeToTreeSelectData(groupTree);
+    }, [groupTree]);
+
+    const filteredTreeData = useMemo(() => {
+      return filterTreeData(treeData, treeSearchText);
+    }, [treeData, treeSearchText]);
+
     useEffect(() => {
       if (!isLoading) {
         fetchData();
@@ -197,9 +197,6 @@ const SelectAssets = forwardRef<ModalRef, ModalConfig>(
       selectedRowKeys,
       onChange: onSelectChange,
     };
-
-    const treeData = convertCascaderToTreeData(organizationList);
-    const filteredTreeData = filterTreeData(treeData, treeSearchText);
 
     const handleSubmit = async () => {
       handleCancel();

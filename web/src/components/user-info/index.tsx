@@ -7,7 +7,7 @@ import { useTranslation } from '@/utils/i18n';
 import VersionModal from './versionModal';
 import ThemeSwitcher from '@/components/theme';
 import { useUserInfoContext } from '@/context/userInfo';
-import { clearSharedAuthData } from '@/utils/crossDomainAuth';
+import { clearAuthToken } from '@/utils/crossDomainAuth';
 
 interface GroupItemProps {
   id: string;
@@ -38,7 +38,6 @@ const UserInfo: React.FC = () => {
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const isConsole = process.env.NEXT_PUBLIC_IS_OPS_CONSOLE === 'true';
   const username = displayName || session?.user?.username || 'Test';
 
   const federatedLogout = useCallback(async () => {
@@ -50,8 +49,8 @@ const UserInfo: React.FC = () => {
 
       const data = await response.json();
       if (response.ok) {
-        // Clear shared authentication data
-        clearSharedAuthData();
+        // Clear authentication token from cookie
+        clearAuthToken();
         
         // Clear the session using NextAuth's signOut
         await signOut({ redirect: false });
@@ -69,8 +68,8 @@ const UserInfo: React.FC = () => {
       console.error('Logout error:', error);
       message.error(t('common.logoutFailed'));
       
-      // Even on error, attempt to clear shared auth and sign out
-      clearSharedAuthData();
+      // Even on error, attempt to clear token and sign out
+      clearAuthToken();
       await signOut({ redirect: false });
       window.location.href = '/auth/signin';
     } finally {
@@ -99,54 +98,48 @@ const UserInfo: React.FC = () => {
         key: 'themeSwitch',
         label: <ThemeSwitcher />,
       },
+      {
+        key: 'version',
+        label: (
+          <div className="w-full flex justify-between items-center">
+            <span>{t('common.version')}</span>
+            <span className="text-xs text-[var(--color-text-4)]">3.1.0</span>
+          </div>
+        ),
+      },
+      { type: 'divider' },
+      {
+        key: 'groups',
+        label: (
+          <div className="w-full flex justify-between items-center">
+            <span>{t('common.group')}</span>
+            <span className="text-xs text-[var(--color-text-4)]">{selectedGroup?.name}</span>
+          </div>
+        ),
+        children: flatGroups
+          .filter((group) => group.name !== 'OpsPilotGuest')
+          .map((group) => ({
+            key: group.id,
+            label: (
+              <GroupItem
+                id={group.id}
+                name={group.name}
+                isSelected={selectedGroup?.name === group.name}
+                onClick={handleChangeGroup}
+              />
+            ),
+          })),
+      },
+      { type: 'divider' },
+      {
+        key: 'logout',
+        label: t('common.logout'),
+        disabled: isLoading,
+      },
     ];
 
-    if (!isConsole) {
-      items.push(
-        {
-          key: 'version',
-          label: (
-            <div className="w-full flex justify-between items-center">
-              <span>{t('common.version')}</span>
-              <span className="text-xs text-[var(--color-text-4)]">3.1.0</span>
-            </div>
-          ),
-        },
-        { type: 'divider' },
-        {
-          key: 'groups',
-          label: (
-            <div className="w-full flex justify-between items-center">
-              <span>{t('common.group')}</span>
-              <span className="text-xs text-[var(--color-text-4)]">{selectedGroup?.name}</span>
-            </div>
-          ),
-          children: flatGroups
-            .filter((group) => group.name !== 'OpsPilotGuest')
-            .map((group) => ({
-              key: group.id,
-              label: (
-                <GroupItem
-                  id={group.id}
-                  name={group.name}
-                  isSelected={selectedGroup?.name === group.name}
-                  onClick={handleChangeGroup}
-                />
-              ),
-            })),
-        },
-        { type: 'divider' }
-      );
-    }
-
-    items.push({
-      key: 'logout',
-      label: t('common.logout'),
-      disabled: isLoading,
-    });
-
     return items;
-  }, [t, selectedGroup, flatGroups, handleChangeGroup, isLoading, isConsole]);
+  }, [t, selectedGroup, flatGroups, handleChangeGroup, isLoading]);
 
   const handleMenuClick = ({ key }: any) => {
     if (key === 'version') setVersionVisible(true);

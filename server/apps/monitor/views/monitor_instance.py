@@ -3,14 +3,12 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.utils.web_utils import WebUtils
-from apps.monitor.filters.monitor_object import MonitorInstanceGroupingRuleFilter
-from apps.monitor.models import MonitorInstanceGroupingRule, MonitorInstance, MonitorObject, CollectConfig
-from apps.monitor.serializers.monitor_object import MonitorInstanceGroupingRuleSerializer
+from apps.monitor.models import MonitorInstance, MonitorObject, CollectConfig
 from apps.monitor.services.monitor_instance import InstanceSearch
 from apps.monitor.services.monitor_object import MonitorObjectService
 from apps.rpc.node_mgmt import NodeMgmt
-from config.drf.pagination import CustomPageNumberPagination
 
 
 class MonitorInstanceVieSet(viewsets.ViewSet):
@@ -75,7 +73,7 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
     def monitor_instance_search(self, request, monitor_object_id):
         monitor_obj = MonitorObject.objects.filter(id=monitor_object_id).first()
         if not monitor_obj:
-            raise ValueError("Monitor object does not exist")
+            raise BaseAppException("Monitor object does not exist")
         search_obj = InstanceSearch(
             monitor_obj,
             dict(group_list=[i["id"] for i in request.user.group_list],
@@ -192,51 +190,64 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
         )
         return WebUtils.response_success()
 
-
-class MonitorInstanceGroupingRuleVieSet(viewsets.ModelViewSet):
-    queryset = MonitorInstanceGroupingRule.objects.all()
-    serializer_class = MonitorInstanceGroupingRuleSerializer
-    filterset_class = MonitorInstanceGroupingRuleFilter
-    pagination_class = CustomPageNumberPagination
+    @swagger_auto_schema(
+        operation_id="instances_remove_organizations",
+        operation_description="删除监控对象实例组织",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "instance_ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING), description="监控实例ID列表"),
+                "organizations": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING), description="组织ID列表"),
+            },
+            required=["instance_ids", "organizations"]
+        )
+    )
+    @action(methods=['post'], detail=False, url_path='instances_remove_organizations')
+    def instances_remove_organizations(self, request):
+        """删除监控对象实例组织"""
+        instance_ids = request.data.get("instance_ids", [])
+        organizations = request.data.get("organizations", [])
+        MonitorObjectService.remove_instances_organizations(instance_ids, organizations)
+        return WebUtils.response_success()
 
     @swagger_auto_schema(
-        operation_id="monitor_instance_grouping_rule_list",
-        operation_description="监控实例分组规则列表",
+        operation_id="instances_add_organizations",
+        operation_description="添加监控对象实例组织",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "instance_ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING), description="监控实例ID列表"),
+                "organizations": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING), description="组织ID列表"),
+            },
+            required=["instance_ids", "organizations"]
+        )
     )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+    @action(methods=['post'], detail=False, url_path='instances_add_organizations')
+    def instances_add_organizations(self, request):
+        """添加监控对象实例组织"""
+        instance_ids = request.data.get("instance_ids", [])
+        organizations = request.data.get("organizations", [])
+        MonitorObjectService.add_instances_organizations(instance_ids, organizations)
+        return WebUtils.response_success()
 
     @swagger_auto_schema(
-        operation_id="monitor_instance_grouping_rule_create",
-        operation_description="创建监控实例分组规则",
+        operation_id="set_instances_organizations",
+        operation_description="设置监控对象实例组织",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "instance_ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING),
+                                               description="监控实例ID列表"),
+                "organizations": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING),
+                                                description="组织ID列表"),
+            },
+            required=["instance_ids", "organizations"]
+        )
     )
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_id="monitor_instance_grouping_rule_update",
-        operation_description="更新监控实例分组规则",
-    )
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_id="monitor_instance_grouping_rule_partial_update",
-        operation_description="部分更新监控实例分组规则",
-    )
-    def partial_update(self, request, *args, **kwargs):
-        return super().partial_update(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_id="monitor_instance_grouping_rule_retrieve",
-        operation_description="查询监控实例分组规则",
-    )
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_id="monitor_instance_grouping_rule_del",
-        operation_description="删除监控实例分组规则",
-    )
-    def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
+    @action(methods=['post'], detail=False, url_path='set_instances_organizations')
+    def set_instances_organizations(self, request):
+        """设置监控对象实例组织"""
+        instance_ids = request.data.get("instance_ids", [])
+        organizations = request.data.get("organizations", [])
+        MonitorObjectService.set_instances_organizations(instance_ids, organizations)
+        return WebUtils.response_success()

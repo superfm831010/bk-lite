@@ -1,11 +1,8 @@
 import hashlib
-import logging
 from datetime import datetime, timezone
 from string import Template
-
 from django.core.cache import cache
 from django.http import JsonResponse, HttpResponse
-
 from apps.core.utils.crypto.aes_crypto import AESCryptor
 from apps.node_mgmt.constants import CACHE_TIMEOUT
 from apps.node_mgmt.default_config.nats_executor import create_nats_executor_config
@@ -13,8 +10,7 @@ from apps.node_mgmt.default_config.telegraf import create_telegraf_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
 from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization
 from apps.node_mgmt.utils.sidecar import format_tags_dynamic
-
-logger = logging.getLogger("app")
+from apps.core.logger import node_logger as logger
 
 
 class Sidecar:
@@ -258,7 +254,7 @@ class Sidecar:
         if not obj:
             return JsonResponse(status=404, data={}, manage="Configuration environment not found")
 
-        return JsonResponse(dict(id=configuration_id, env_config=obj.env_config))
+        return JsonResponse(dict(id=configuration_id, env_config={k: str(v) for k, v in obj.env_config.items()}))
 
     @staticmethod
     def get_variables(node_obj):

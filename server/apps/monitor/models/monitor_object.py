@@ -43,22 +43,9 @@ class MonitorInstanceOrganization(TimeInfo, MaintainerInfo):
         unique_together = ('monitor_instance', 'organization')
 
 
-class MonitorInstanceGroupingRule(TimeInfo, MaintainerInfo):
-
-    SELECT = 'select'
-    CONDITION = 'condition'
-    RULE_TYPE_CHOICES = (
-        (SELECT, 'Select'),
-        (CONDITION, 'Condition'),
-    )
-
+class MonitorObjectOrganizationRule(TimeInfo, MaintainerInfo):
     monitor_object = models.ForeignKey(MonitorObject, on_delete=models.CASCADE, verbose_name='监控对象')
     name = models.CharField(max_length=100, verbose_name='分组规则名称')
-    type = models.CharField(max_length=30, choices=RULE_TYPE_CHOICES, verbose_name='分组规则类型')
     organizations = models.JSONField(default=list, verbose_name='所属组织')
-    grouping_rules = models.JSONField(default=dict, verbose_name='分组规则详情')
-
-
-    class Meta:
-        verbose_name = '监控实例分组规则'
-        verbose_name_plural = '监控实例分组规则'
+    rule = models.JSONField(default=dict, verbose_name='分组规则详情')
+    is_active = models.BooleanField(default=True, verbose_name='是否启用')

@@ -4,12 +4,12 @@ import {
   Spin,
   Input,
   Button,
-  Modal,
   message,
   Tooltip,
   Dropdown,
   Tag,
   Popconfirm,
+  Space,
 } from 'antd';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
@@ -30,10 +30,11 @@ import {
 } from '@/app/monitor/types/monitor';
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, DownOutlined } from '@ant-design/icons';
 import Icon from '@/components/icon';
 import RuleModal from './ruleModal';
 import { useCommon } from '@/app/monitor/context/common';
+import { useAssetMenuItems } from '@/app/monitor/hooks/intergration';
 import {
   deepClone,
   showGroupName,
@@ -44,13 +45,17 @@ import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EditConfig from './updateConfig';
 import EditInstance from './editInstance';
+import DeleteRule from './deleteRuleModal';
 import {
   NODE_STATUS_MAP,
   OBJECT_DEFAULT_ICON,
 } from '@/app/monitor/constants/monitor';
-const { confirm } = Modal;
 import Permission from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import type { TableProps, MenuProps } from 'antd';
+
+type TableRowSelection<T extends object = object> =
+  TableProps<T>['rowSelection'];
 
 const Asset = () => {
   const { isLoading } = useApiClient();
@@ -59,7 +64,6 @@ const Asset = () => {
     getInstanceGroupRule,
     getMonitorObject,
     getInstanceChildConfig,
-    deleteInstanceGroupRule,
     deleteMonitorInstance,
   } = useMonitorApi();
   const { t } = useTranslation();
@@ -71,6 +75,8 @@ const Asset = () => {
   const ruleRef = useRef<ModalRef>(null);
   const configRef = useRef<ModalRef>(null);
   const instanceRef = useRef<ModalRef>(null);
+  const deleteModalRef = useRef<ModalRef>(null);
+  const assetMenuItems = useAssetMenuItems();
   const [pagination, setPagination] = useState<Pagination>({
     current: 1,
     total: 0,
@@ -89,6 +95,21 @@ const Asset = () => {
   const [objectId, setObjectId] = useState<React.Key>('');
   const [frequence, setFrequence] = useState<number>(0);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+
+  const handleAssetMenuClick: MenuProps['onClick'] = (e) => {
+    openInstanceModal(
+      {
+        keys: selectedRowKeys,
+      },
+      e.key
+    );
+  };
+
+  const assetMenuProps = {
+    items: assetMenuItems,
+    onClick: handleAssetMenuClick,
+  };
 
   const childColumns: ColumnItem[] = [
     {
@@ -191,7 +212,7 @@ const Asset = () => {
               <Button
                 type="link"
                 className="ml-[10px]"
-                onClick={() => openInstanceModal(record)}
+                onClick={() => openInstanceModal(record, 'edit')}
               >
                 {t('common.edit')}
               </Button>
@@ -224,6 +245,11 @@ const Asset = () => {
       ...columnItems,
     ];
   }, [objects, objectId, t]);
+
+  const enableOperateAsset = useMemo(() => {
+    if (!selectedRowKeys.length) return true;
+    return false;
+  }, [selectedRowKeys]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -317,10 +343,10 @@ const Asset = () => {
     });
   };
 
-  const openInstanceModal = (row = {}) => {
+  const openInstanceModal = (row = {}, type: string) => {
     instanceRef.current?.showModal({
-      title: t('common.edit'),
-      type: 'edit',
+      title: t(`common.${type}`),
+      type,
       form: row,
     });
   };
@@ -424,21 +450,10 @@ const Asset = () => {
   };
 
   const showDeleteConfirm = (row: RuleInfo) => {
-    confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
-      centered: true,
-      onOk() {
-        return new Promise(async (resolve) => {
-          try {
-            await deleteInstanceGroupRule(row.id as number);
-            message.success(t('common.successfullyDeleted'));
-            getRuleList(objectId);
-          } finally {
-            resolve(true);
-          }
-        });
-      },
+    deleteModalRef.current?.showModal({
+      title: t('common.prompt'),
+      form: row,
+      type: 'delete',
     });
   };
 
@@ -508,6 +523,16 @@ const Asset = () => {
     ].includes(monitorObjName);
   };
 
+  //判断是否禁用按钮
+  const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
+    setSelectedRowKeys(newSelectedRowKeys);
+  };
+
+  const rowSelection: TableRowSelection<TableDataItem> = {
+    selectedRowKeys,
+    onChange: onSelectChange,
+  };
+
   return (
     <div className={assetStyle.asset}>
       <div className={assetStyle.tree}>
@@ -529,11 +554,26 @@ const Asset = () => {
             onPressEnter={() => getAssetInsts(objectId)}
             onClear={clearText}
           ></Input>
-          <TimeSelector
-            onlyRefresh
-            onFrequenceChange={onFrequenceChange}
-            onRefresh={onRefresh}
-          />
+          <div className="flex">
+            <Dropdown
+              className="mr-[8px]"
+              overlayClassName="customMenu"
+              menu={assetMenuProps}
+              disabled={enableOperateAsset}
+            >
+              <Button>
+                <Space>
+                  {t('common.action')}
+                  <DownOutlined />
+                </Space>
+              </Button>
+            </Dropdown>
+            <TimeSelector
+              onlyRefresh
+              onFrequenceChange={onFrequenceChange}
+              onRefresh={onRefresh}
+            />
+          </div>
         </div>
         <CustomTable
           scroll={{ y: 'calc(100vh - 320px)', x: 'calc(100vh - 480px)' }}
@@ -560,6 +600,7 @@ const Asset = () => {
           }}
           rowKey="instance_id"
           onChange={handleTableChange}
+          rowSelection={rowSelection}
         ></CustomTable>
       </div>
       <Spin spinning={ruleLoading}>
@@ -667,6 +708,7 @@ const Asset = () => {
         onSuccess={operateRule}
       />
       <EditConfig ref={configRef} onSuccess={() => getAssetInsts(objectId)} />
+      <DeleteRule ref={deleteModalRef} onSuccess={operateRule} />
       <EditInstance
         ref={instanceRef}
         organizationList={organizationList}

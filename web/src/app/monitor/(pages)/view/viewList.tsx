@@ -33,7 +33,10 @@ import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import Permission from '@/components/permission';
 import { ListItem } from '@/types';
-import { OBJECT_DEFAULT_ICON } from '@/app/monitor/constants/monitor';
+import {
+  OBJECT_DEFAULT_ICON,
+  DERIVATIVE_OBJECTS,
+} from '@/app/monitor/constants/monitor';
 const { Option } = Select;
 
 const ViewList: React.FC<ViewListProps> = ({
@@ -123,6 +126,10 @@ const ViewList: React.FC<ViewListProps> = ({
     return objects.find((item) => item.id === objectId)?.name === 'Pod';
   }, [objects, objectId]);
 
+  const isNode = useMemo(() => {
+    return objects.find((item) => item.id === objectId)?.name === 'Node';
+  }, [objects, objectId]);
+
   const namespaceList = useMemo(() => {
     if (queryData.length && colony) {
       return queryData.find((item) => item.id === colony)?.child || [];
@@ -154,6 +161,16 @@ const ViewList: React.FC<ViewListProps> = ({
     return [];
   }, [namespaceList, namespace]);
 
+  const showMultipleConditions = useMemo(() => {
+    const objectNames = DERIVATIVE_OBJECTS.filter(
+      (item) => !['Pod', 'Node'].includes(item)
+    );
+    const currentObjectName = objects.find(
+      (item) => item.id === objectId
+    )?.name;
+    return objectNames.includes(currentObjectName as string) || showTab;
+  }, [objects, objectId]);
+
   useEffect(() => {
     if (isLoading) return;
     if (objectId && objects?.length) {
@@ -163,6 +180,11 @@ const ViewList: React.FC<ViewListProps> = ({
         current: 1,
       }));
       getColoumnAndData();
+      if (!colony) {
+        onRefresh();
+      } else {
+        setColony(null);
+      }
     }
   }, [objectId, objects, isLoading]);
 
@@ -223,45 +245,32 @@ const ViewList: React.FC<ViewListProps> = ({
   };
 
   const getColoumnAndData = async () => {
-    const params = getParams();
     const objParams = {
       monitor_object_id: objectId,
     };
     const targetObject = objects.find((item) => item.id === objectId);
     const objName = targetObject?.name;
-    const request = showTab ? getInstanceSearch : getInstanceList;
-    const getInstList = request(objectId, params);
     const getQueryParams = getInstanceQueryParams(objName as string, objParams);
     const getMetrics = getMonitorMetrics(objParams);
     const getPlugins = getMonitorPlugin(objParams);
     setTableLoading(true);
     try {
-      const res = await Promise.all([
-        getInstList,
-        getMetrics,
-        getPlugins,
-        getQueryParams,
-      ]);
-      const k8sQuery = res[3];
+      const res = await Promise.all([getMetrics, getPlugins, getQueryParams]);
+      const k8sQuery = res[2];
       const queryForm = isPod
         ? getK8SData(k8sQuery || {})
         : (k8sQuery || []).map((item: string) => ({ id: item, child: [] }));
       setQueryData(queryForm);
-      const _plugins = res[2].map((item: IntergrationItem) => ({
+      const _plugins = res[1].map((item: IntergrationItem) => ({
         label: getConfigByPluginName(item.name, 'collect_type'),
         value: item.id,
       }));
       setPlugins(_plugins);
-      setTableData(res[0]?.results || []);
-      setPagination((prev: Pagination) => ({
-        ...prev,
-        total: res[0]?.count || 0,
-      }));
-      setMetrics(res[1] || []);
+      setMetrics(res[0] || []);
       if (objName) {
         const filterMetrics = getConfigByObjectName(objName, 'tableDiaplay');
         const _columns = filterMetrics.map((item: any) => {
-          const target = (res[1] || []).find(
+          const target = (res[0] || []).find(
             (tex: MetricItem) => tex.name === item.key
           );
           if (item.type === 'progress') {
@@ -351,7 +360,9 @@ const ViewList: React.FC<ViewListProps> = ({
     }
     try {
       setTableLoading(type !== 'timer');
-      const request = showTab ? getInstanceSearch : getInstanceList;
+      const request = showMultipleConditions
+        ? getInstanceSearch
+        : getInstanceList;
       const data = await request(objectId, params);
       setTableData(data.results || []);
       setPagination((prev: Pagination) => ({
@@ -451,7 +462,7 @@ const ViewList: React.FC<ViewListProps> = ({
     <div className="w-full">
       <div className="flex justify-between mb-[10px]">
         <div className="flex items-center">
-          {showTab && (
+          {showMultipleConditions && (
             <div>
               <span className="text-[14px] mr-[10px]">
                 {t('monitor.views.filterOptions')}
@@ -460,8 +471,12 @@ const ViewList: React.FC<ViewListProps> = ({
                 value={colony}
                 allowClear
                 showSearch
-                style={{ width: 120 }}
-                placeholder={t('monitor.views.colony')}
+                style={{ width: isPod ? 120 : 240 }}
+                placeholder={
+                  isNode || isPod
+                    ? t('monitor.views.colony')
+                    : t('monitor.instance')
+                }
                 onChange={handleColonyChange}
               >
                 {queryData.map((item) => (
@@ -470,7 +485,7 @@ const ViewList: React.FC<ViewListProps> = ({
                   </Option>
                 ))}
               </Select>
-              {isPod && (
+              {showTab && isPod && (
                 <>
                   <Select
                     value={namespace}
