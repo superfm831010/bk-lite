@@ -147,6 +147,7 @@ class MonitorEventVieSet(viewsets.ViewSet):
                 "created_at": i.created_at,
                 "monitor_instance_id": i.monitor_instance_id,
                 "policy_id": i.policy_id,
+                "event_time": i.event_time,
             }
             for i in events
         ]
