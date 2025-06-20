@@ -26,6 +26,7 @@ const EntityList = <T,>({
   changeFilter,
   infoText,
   nameField = 'name',
+  descSlot,
 }: EntityListProps<T>) => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,6 +97,11 @@ const EntityList = <T,>({
           <p
             className={`text-xs mt-3 text-sm max-h-[66px] ${(isSingleButtonAction && hoveredCard === id) ? 'line-clamp-2' : 'line-clamp-3'} ${styles.desc}`}>{description}</p>
         </div>
+        {descSlot && (
+          <div className="mt-2">
+            {descSlot(item)}
+          </div>
+        )}
         {(tagList && tagList.length > 0) || infoText ? (
           <div className="mt-2 flex justify-between items-end">
             <div>

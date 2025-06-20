@@ -224,7 +224,10 @@
       "syncTime": "同步时间",
       "everyday": "每天",
       "selectTime": "选择时间",
-      "syncOnce": "定时同步一次"
+      "syncOnce": "定时同步一次",
+      "syncNow": "立即同步",
+      "syncSuccess": "同步成功",
+      "syncFailed": "同步失败"
     }
   }
 }

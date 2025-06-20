@@ -224,6 +224,9 @@
       "everyday": "Every day",
       "selectTime": "Select Time",
       "syncOnce": "scheduled sync once",
+      "syncNow": "Sync Now",
+      "syncSuccess": "Sync completed successfully",
+      "syncFailed": "Sync failed"
     }
   }
 }
