@@ -24,6 +24,9 @@ client_version_map = {
     "cfs": "2019-07-19",  # 文件存储 腾讯云文件系统
     "domain": "2018-08-08",  # 域名
 }
+product_available_region_list_map = {
+    "cmq":["ap-beijing","ap-chongqing", "ap-guangzhou", "ap-shanghai"]
+}
 mysql_status_map = {
     0: "创建中",
     1: "运行中",

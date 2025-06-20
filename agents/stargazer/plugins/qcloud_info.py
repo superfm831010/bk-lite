@@ -3,6 +3,7 @@
 # @Time：2025/6/16 15:14
 # @Author：bennie
 import logging
+from concurrent.futures.thread import ThreadPoolExecutor
 from functools import cached_property
 
 from tencentcloud.common import credential
@@ -18,7 +19,7 @@ from plugins.constains import client_version_map, mysql_pay_type_map, redis_regi
     redis_type_map, mongodb_inst_type_map, mongodb_pay_type_map, pulsar_pay_type_map, cmq_status_map, \
     cmq_topic_status_map, cmq_topic_filter_type_map, clb_status_map, clb_net_type_map, clb_isp_map, clb_pay_type_map, \
     eip_status_map, eip_res_type_map, eip_isp_map, cfs_status_map, cfs_storage_type_map, domain_status_map, \
-    eip_type_map, eip_pay_type_map
+    eip_type_map, eip_pay_type_map, product_available_region_list_map
 from qcloud_cos import CosConfig
 from qcloud_cos import CosS3Client
 
@@ -135,22 +136,28 @@ class TencentCloudManager(BasePlugin):
         """资源名、资源ID、地域、可用区、状态、Topic 总数量、已用Topic 数量、集群 TPS 数量、命名空间数量、Group 数量"""
         result = []
         for region in self.available_region_list:
-            rocketmq_info = self.get_tencent_client(region=region).tdmq.call_json("DescribeRocketMQClusters", {})
-            clusters = rocketmq_info.get("Response", {}).get("ClusterList", [])
-            result.extend([{
-                "resource_name": cluster.get("Info", {}).get("ClusterName"),
-                "resource_id": cluster.get("Info", {}).get("ClusterId"),
-                "region": region,  # 地域
-                "zone": self.zone_id_zone_map.get(cluster.get("Info").get("ZoneId")),
-                "status": cluster.get("Status"),
-                "topic_num": cluster.get("Config").get("MaxTopicNum"),  # Topic 总数量
-                "used_topic_num": cluster.get("Config").get("UsedTopicNum"),
-                "tpsper_name_space": cluster.get("Config").get("MaxTpsLimit"),  # 集群 TPS 数量
-                "name_space_num": cluster.get("Config").get("MaxNamespaceNum"),  # 命名空间数量
-                "used_name_space_num": cluster.get("Config").get("UsedNamespaceNum"),  # 已用命名空间数量"
-                "group_num": cluster.get("Config").get("MaxGroupNum"),  # Group 数量
-                "used_group_num": cluster.get("Config").get("UsedGroupNum"),  # 已用Group 数量
-            } for cluster in clusters])
+            offset = 0
+            limit=100
+            while True:
+                rocketmq_info = self.get_tencent_client(region=region).tdmq.call_json("DescribeRocketMQClusters", {"Limit":limit, "Offset": offset})
+                clusters = rocketmq_info.get("Response", {}).get("ClusterList", [])
+                offset += limit
+                if not clusters:
+                    break
+                result.extend([{
+                    "resource_name": cluster.get("Info", {}).get("ClusterName"),
+                    "resource_id": cluster.get("Info", {}).get("ClusterId"),
+                    "region": region,  # 地域
+                    "zone": self.zone_id_zone_map.get(cluster.get("Info").get("ZoneId")),
+                    "status": cluster.get("Status"),
+                    "topic_num": cluster.get("Config").get("MaxTopicNum"),  # Topic 总数量
+                    "used_topic_num": cluster.get("Config").get("UsedTopicNum"),
+                    "tpsper_name_space": cluster.get("Config").get("MaxTpsLimit"),  # 集群 TPS 数量
+                    "name_space_num": cluster.get("Config").get("MaxNamespaceNum"),  # 命名空间数量
+                    "used_name_space_num": cluster.get("Config").get("UsedNamespaceNum"),  # 已用命名空间数量"
+                    "group_num": cluster.get("Config").get("MaxGroupNum"),  # Group 数量
+                    "used_group_num": cluster.get("Config").get("UsedGroupNum"),  # 已用Group 数量
+                } for cluster in clusters])
         return result
 
     def get_qcloud_mysql(self):
@@ -303,7 +310,7 @@ class TencentCloudManager(BasePlugin):
     def get_qcloud_cmq(self):
         """资源名、资源ID、标签、地域、状态、消息最大未确认时间(s)、消息接收长轮询等待时间(s)、取出消息隐藏时长(s)、消息最大长度(B)、QPS限制"""
         result = []
-        for region in self.available_region_list:
+        for region in product_available_region_list_map.get("cmq", []):
             cmq_info = self.get_tencent_client(region=region).cmq.call_json("DescribeQueueDetail", {})
             instances = cmq_info.get("Response", {}).get("QueueSet", [])
             result.extend([{
@@ -323,7 +330,7 @@ class TencentCloudManager(BasePlugin):
     def get_qcloud_cmq_topic(self):
         """资源名、资源ID、标签、地域、状态、消息生命周期、消息最大长度(B)、消息过滤类型、QPS限制"""
         result = []
-        for region in self.available_region_list:
+        for region in product_available_region_list_map.get("cmq", []):
             topic_info = self.get_tencent_client(region=region).cmq.call_json("DescribeTopicDetail", {})
             instances = topic_info.get("Response", {}).get("TopicSet", [])
             result.extend([{
@@ -353,14 +360,14 @@ class TencentCloudManager(BasePlugin):
                 "security_group_id": instance.get("SecurityGroup"),
                 "vpc": instance.get("VpcId"),
                 "region": region,
-                "master_zone": instance.get("MasterZone"),
-                "backup_zone": instance.get("BackupZoneSet"),
+                "master_zone": instance.get("MasterZone", {}).get("Zone"),
+                "backup_zone": ",".join([zone.get("Zone") for zone in instance.get("BackupZoneSet", []) if zone.get("Zone")]),
                 "status": clb_status_map.get(instance.get("Status"), "未知"),
                 "domain": instance.get("Domain"),
-                "ip_addr": instance.get("LoadBalancerVips"),
+                "ip_addr": ",".join([ip for ip in instance.get("LoadBalancerVips") if ip]),
                 "type": clb_net_type_map.get(instance.get("LoadBalancerType"), "未知"),
-                "isp": clb_isp_map.get(instance.get("LoadBalancerType"), "未知"),
-                "charge_type": clb_pay_type_map.get(instance.get("PrepaidAttributes", {}).get("RenewFlag"), "未知"),
+                "isp": clb_isp_map.get(instance.get("VipIsp"), "未知"),
+                "charge_type": instance.get("ChargeType"),
             } for instance in instances])
         return result
 
@@ -371,7 +378,7 @@ class TencentCloudManager(BasePlugin):
             eip_info = self.get_tencent_client(region=region).vpc.call_json("DescribeAddresses", {})
             instances = eip_info.get("Response", {}).get("AddressSet", [])
             result.extend([{
-                "resource_name": instance.get("AddressName"),
+                "resource_name": instance.get("AddressName") or "未命名", # 防止None导致字段丢失
                 "resource_id": instance.get("AddressId"),
                 "tag": instance.get("TagSet"),
                 "region": region,
