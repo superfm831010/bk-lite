@@ -59,12 +59,15 @@ export const useSecurityApi = () => {
   async function createAuthSource(data: {
     name: string;
     source_type: string;
-    namespace?: string;
-    domain?: string;
-    org_root_dn?: string;
-    user_init_role?: string;
-    sync_enabled?: boolean;
-    description?: string;
+    other_config: {
+      namespace?: string;
+      root_group?: string;
+      domain?: string;
+      default_roles?: number[];
+      sync?: boolean;
+      sync_time?: string;
+    };
+    enabled?: boolean;
   }): Promise<any> {
     return await post('/system_mgmt/login_module/', data);
   }
