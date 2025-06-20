@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from django.utils.translation import gettext as _
+from django_celery_beat.models import PeriodicTask
 from rest_framework import viewsets
 
 from apps.system_mgmt.models import Group, LoginModule, User
@@ -74,6 +75,9 @@ class LoginModuleViewSet(viewsets.ModelViewSet):
             top_group = Group.objects.get(parent_id=0, name=group_name)
             User.objects.filter(domain=domain).delete()
             Group.objects.filter(description=top_group.description).delete()
+            task_name = f"sync_user_group_{obj.name}"
+            PeriodicTask.objects.filter(name=task_name).delete()
+
         return super().destroy(request, *args, **kwargs)
 
     def sync_data(self, request, *args, **kwargs):
