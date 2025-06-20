@@ -1482,9 +1482,9 @@ class RedisCollectMetrics(CollectBase):
             "port": "port",
             "version": "version",
             "install_path": "install_path",
-            "max_clients": "max_clients",
-            "max_memory": "max_memory",
-            "role": "role",
+            "max_conn": "max_conn",
+            "max_mem": "max_mem",
+            "database_role": "database_role",
         }
 
         return mapping
@@ -1543,15 +1543,13 @@ class MiddlewareCollectMetrics(CollectBase):
             "nginx": {
                 "ip_addr": "ip_addr",
                 # "port": lambda data: data["listen_port"].split("&"), # Multiple ports are separated by &
-                "port": "listen_port",
-                "listen_port": "listen_port",
-                "enable_binlog": "enable_binlog",
-                "nginx_path": "nginx_path",
+                "port": "port",
+                "bin_path": "bin_path",
                 "version": "version",
                 "log_path": "log_path",
-                "config_path": "config_path",
-                "domain": "domain",
-                "include_path": "include_path",
+                "conf_path": "conf_path",
+                "server_name": "server_name",
+                "include": "include",
                 "ssl_version": "ssl_version",
                 "inst_name": self.get_inst_name
             },
@@ -1565,11 +1563,11 @@ class MiddlewareCollectMetrics(CollectBase):
                 "conf_path": "conf_path",  # 配置文件路径
                 "java_path": "java_path",
                 "java_version": "java_version",
-                "data_path": "data_path",
+                "data_dir": "data_dir",
                 "tick_time": "tick_time",
                 "init_limit": "init_limit",
                 "sync_limit": "sync_limit",
-                "cluster_servers": "cluster_servers"
+                "server": "server"
             },
             "kafka": {
                 "inst_name": self.get_inst_name,
