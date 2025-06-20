@@ -216,10 +216,14 @@
       "authSourceName": "Authentication Source Name",
       "authSourceType": "Authentication Source Type",
       "namespace": "Namespace",
+      "rootGroup": "Root Group",
       "domain": "Domain",
-      "orgRootDn": "Organization Root DN",
-      "userInitRole": "User Initial Role",
-      "syncEnabled": "Scheduled Sync"
+      "defaultRoles": "Default Roles",
+      "syncEnabled": "Scheduled Sync",
+      "syncTime": "Sync Time",
+      "everyday": "Every day",
+      "selectTime": "Select Time",
+      "syncOnce": "scheduled sync once",
     }
   }
 }
