@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 
-class IndexDeleteRequest(BaseModel):
+class DocumentListRequest(BaseModel):
     group_id: str
