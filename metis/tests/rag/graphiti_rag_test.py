@@ -1,5 +1,8 @@
 
 import os
+
+from src.chunk.full_chunk import FullChunk
+from tqdm import tqdm
 import pytest
 from src.chunk.fixed_size_chunk import FixedSizeChunk
 from src.chunk.recursive_chunk import RecursiveChunk
@@ -11,6 +14,7 @@ from src.entity.rag.graphiti.document_retriever_request import DocumentRetriever
 from src.loader.text_loader import TextLoader
 from src.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
 from langchain_core.documents import Document
+import glob
 
 
 @pytest.mark.asyncio
