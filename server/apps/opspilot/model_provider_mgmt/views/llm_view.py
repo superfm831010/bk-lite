@@ -98,6 +98,7 @@ class LLMViewSet(AuthViewSet):
             "conversation_window_size": 10, # 对话窗口大小
             "show_think": True, # 是否展示think的内容
             "group": 1,
+            "enable_rag_strict_mode": False,
             "skill_name": "test"
         }
         """

@@ -19,10 +19,10 @@ class MaintainerViewSet(viewsets.ModelViewSet):
 
             user = getattr(request, "user", None)
             username = getattr(user, "username", self.DEFAULT_USERNAME)
-
+            domain = getattr(user, "domain", "domain.com")
             model = serializer.Meta.model
             if hasattr(model, "created_by"):
-                serializer.save(created_by=username, updated_by=username)
+                serializer.save(created_by=username, updated_by=username, domain=domain, updated_by_domain=domain)
 
         except Exception as e:
             logger.error(f"Error in perform_create: {e}")
@@ -39,10 +39,11 @@ class MaintainerViewSet(viewsets.ModelViewSet):
 
             user = getattr(request, "user", None)
             username = getattr(user, "username", self.DEFAULT_USERNAME)
+            domain = getattr(user, "domain", "domain.com")
 
             model = serializer.Meta.model
             if hasattr(model, "updated_by"):
-                serializer.save(updated_by=username)
+                serializer.save(updated_by=username, updated_by_domain=domain)
 
         except Exception as e:
             logger.error(f"Error in perform_update: {e}")
