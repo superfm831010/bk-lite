@@ -1,3 +1,4 @@
+import uuid
 import mlflow
 import mlflow.sklearn
 import pandas as pd
@@ -70,7 +71,8 @@ class RandomForestAnomalyDetector:
         freq: str = 'infer',
         window: int = 30,
         random_state: int = 42,
-        hyperopt_config: Optional[Dict[str, Any]] = None
+        hyperopt_config: Optional[Dict[str, Any]] = None,
+        task_id: Optional[str] = str(uuid.uuid4())
     ) -> None:
         """
         训练随机森林模型并记录到MLflow
@@ -170,7 +172,7 @@ class RandomForestAnomalyDetector:
 
             return {"loss": current_loss, "status": STATUS_OK, "model": model, "val_f1": f1}
 
-        with mlflow.start_run():
+        with mlflow.start_run(run_name=task_id):
 
             try:
                 fmin(

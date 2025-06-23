@@ -4,7 +4,7 @@ from sanic import Blueprint
 from src.api.agent.chatbot_workflow import chatbot_workflow_api_router
 from src.api.agent.react_agent import react_agent_api_router
 from src.api.rag.naive_rag import naive_rag_api_router
-from src.api.mlops.anomaly_detection_api import anomaly_detection_api_router
+from src.api.mlops.anomaly_detection.random_forest.anomaly_detection_api import anomaly_detection_api_router
 from src.api.rag.rag_enhance import rag_enhance_api_router
 
 BLUEPRINTS = []
