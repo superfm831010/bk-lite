@@ -34,6 +34,20 @@ log() {
     echo -e "${color}[$(date +'%Y-%m-%d %H:%M:%S')] [$level] $message${NC}"
 }
 
+DOCKER_COMPOSE_CMD=""
+
+if command -v docker-compose >/dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+    log "INFO" "检测到 docker-compose 命令，使用 docker-compose 进行部署"
+# 当docker compose version 返回0时，表示安装了docker compose v2
+elif docker compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker compose"
+    log "INFO" "检测到 docker compose 命令，使用 docker compose 进行部署"
+else
+    log "ERROR" "未找到 docker-compose 或 docker compose 命令，请安装 docker-compose或将docker升级到最新版本"
+    exit 1
+fi
+
 # 检查是否添加--opspilot参数
 if [[ "$@" == *"--opspilot"* ]]; then
     export OPSPILOT_ENABLED=true
@@ -45,10 +59,10 @@ fi
 
 if [[ $OPSPILOT_ENABLED == "true" ]]; then
     export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,opspilot"
-    export COMPOSE_CMD="docker-compose -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/ops_pilot.yaml config --no-interpolate"
+    export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/ops_pilot.yaml config --no-interpolate"
 else
     export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt"
-    export COMPOSE_CMD="docker-compose -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml config --no-interpolate"
+    export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml config --no-interpolate"
 fi
 
 
@@ -73,7 +87,7 @@ wait_container_health() {
     local container_name="$1"
     local service_name="$2"
     log "INFO" "等待 $service_name 启动..."
-    until [ "$(docker-compose ps $container_name --format "{{.Health}}" 2>/dev/null)" == "healthy" ]; do
+    until [ "$($DOCKER_COMPOSE_CMD ps $container_name --format "{{.Health}}" 2>/dev/null)" == "healthy" ]; do
         log "INFO" "等待 $service_name 启动..."
         sleep 5
     done
@@ -321,13 +335,13 @@ DOCKER_NETWORK=${DOCKER_NETWORK}
 INSTALL_APPS="${INSTALL_APPS}"
 EOF
 
-# 生成合成的docker-compose.yml文件
-log "INFO" "生成合成的 docker-compose.yml 文件..."
-$COMPOSE_CMD > docker-compose.yml
+# 生成合成的docker-compose.yaml文件
+log "INFO" "生成合成的 docker-compose.yaml 文件..."
+$COMPOSE_CMD > docker-compose.yaml
 
 # 按照特定顺序启动服务
 log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j)..."
-docker-compose up -d traefik redis nats victoria-metrics neo4j
+${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics neo4j
 
 # 创建 JetStream - 使用正确的网络名称
 log "INFO" "创建JetStream..."
@@ -342,15 +356,15 @@ docker run --rm --network=bklite-prod \
 
 # 启动 Postgres 并等待服务就绪
 log "INFO" "启动 Postgres..."
-docker-compose up -d postgres
+${DOCKER_COMPOSE_CMD} up -d postgres
 wait_container_health postgres "Postgres"
 
 # 启动服务
 log "INFO" "启动系统管理服务..."
-docker-compose up -d server
+${DOCKER_COMPOSE_CMD} up -d server
 
 log "INFO" "启动所有服务"
-docker-compose up -d
+${DOCKER_COMPOSE_CMD} up -d
 sleep 10
 log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_WEB_PORT 访问系统"
 log "SUCCESS" "初始用户名: admin, 初始密码: password"
