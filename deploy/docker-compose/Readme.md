@@ -20,6 +20,9 @@ bash bootstrap.sh
 > 如需体验ops-pilot, 执行下述动作
 ```bash
 bash bootstrap.sh --opspilot
+docker-compose --profile opspilot up -d
+# 当使用plugin形式安装compose时
+# docker compose --profile opspilot up -d
 ```
 
 > 需在deploy/compose目录下执行
