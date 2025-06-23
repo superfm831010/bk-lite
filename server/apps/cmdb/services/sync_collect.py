@@ -6,7 +6,7 @@ from apps.cmdb.constants import CollectPluginTypes
 from apps.cmdb.models.collect_model import CollectModels
 from apps.cmdb.collection.service import MetricsCannula, CollectK8sMetrics, CollectVmwareMetrics, \
     CollectNetworkMetrics, ProtocolCollectMetrics, AliyunCollectMetrics, HostCollectMetrics, RedisCollectMetrics, \
-    MiddlewareCollectMetrics
+    MiddlewareCollectMetrics, QCloudCollectMetrics
 
 
 class ProtocolCollect(object):
@@ -18,6 +18,7 @@ class ProtocolCollect(object):
     def collect_cloud_manage(self):
         data = {
             "aliyun_account": self.collect_aliyun,
+            "qcloud": self.collect_qcloud,
         }
         return data
 
@@ -58,6 +59,8 @@ class ProtocolCollect(object):
     def collect_aliyun(self):
         data = AliyunCollect(self.task.id)()
         return data
+    def collect_qcloud(self):
+        return QCloudCollect(self.task.id)()
 
     def main(self):
         if self.task.is_cloud:
@@ -164,6 +167,8 @@ class ProtocolTaskCollect(BaseCollect):
 class AliyunCollect(BaseCollect):
     COLLECT_PLUGIN = AliyunCollectMetrics
 
+class QCloudCollect(BaseCollect):
+    COLLECT_PLUGIN = QCloudCollectMetrics
 
 # ======
 

@@ -28,7 +28,8 @@ class CollectService(object):
             "redis_info": "RedisInfo",
             "nginx_info": "NginxInfo",
             "zookeeper_info": "ZookeeperInfo",
-            "kafka_info": "KafkaInfo"
+            "kafka_info": "KafkaInfo",
+            "qcloud_info": "TencentCloudManager",
         }
 
     def import_plugin(self, plugin_name):

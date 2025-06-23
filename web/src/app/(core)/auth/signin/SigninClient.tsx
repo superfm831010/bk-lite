@@ -2,6 +2,7 @@
 import { signIn } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { Select } from "antd";
 import PasswordResetForm from "./PasswordResetForm";
 import OtpVerificationForm from "./OtpVerificationForm";
 import { saveAuthToken } from "@/utils/crossDomainAuth";
@@ -36,6 +37,9 @@ interface WeChatSettings {
 export default function SigninClient({ searchParams: { callbackUrl, error }, signinErrors }: SigninClientProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [domain, setDomain] = useState("");
+  const [domainList, setDomainList] = useState<string[]>([]);
+  const [loadingDomains, setLoadingDomains] = useState(true);
   const [formError, setFormError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isWechatBrowser, setIsWechatBrowser] = useState(false);
@@ -49,9 +53,40 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
     const userAgent = navigator.userAgent.toLowerCase();
     setIsWechatBrowser(userAgent.includes('micromessenger') || userAgent.includes('wechat'));
     
-    // Fetch WeChat settings
+    // Fetch WeChat settings and domain list
     fetchWechatSettings();
+    fetchDomainList();
   }, []);
+
+  const fetchDomainList = async () => {
+    try {
+      setLoadingDomains(true);
+      const response = await fetch('/api/proxy/core/api/get_domain_list/', {
+        method: "GET",
+        headers: { 
+          "Content-Type": "application/json" 
+        },
+      });
+      
+      const responseData = await response.json();
+      
+      if (response.ok && responseData.result && Array.isArray(responseData.data)) {
+        setDomainList(responseData.data);
+        // Set default domain if available
+        if (responseData.data.length > 0) {
+          setDomain(responseData.data[0]);
+        }
+      } else {
+        console.error("Failed to fetch domain list:", responseData);
+        setDomainList([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch domain list:", error);
+      setDomainList([]);
+    } finally {
+      setLoadingDomains(false);
+    }
+  };
 
   const fetchWechatSettings = async () => {
     try {
@@ -95,6 +130,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
         body: JSON.stringify({
           username,
           password,
+          domain,
         }),
       });
       
@@ -245,6 +281,59 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
 
   const renderLoginForm = () => (
     <form onSubmit={handleLoginSubmit} className="flex flex-col space-y-6 w-full">
+      {/* Domain Selection */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <label htmlFor="domain" className="text-sm font-medium text-gray-700">Domain</label>
+          {loadingDomains && (
+            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+          )}
+        </div>
+        <Select
+          id="domain"
+          value={domain || undefined}
+          onChange={setDomain}
+          placeholder={loadingDomains ? 'Loading domains...' : 'Select a domain'}
+          loading={loadingDomains}
+          disabled={loadingDomains}
+          className="w-full"
+          size="middle"
+          style={{ height: '48px' }}
+          dropdownStyle={{ 
+            borderRadius: '8px',
+            boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+          }}
+          options={domainList.map(domainItem => ({
+            label: domainItem,
+            value: domainItem,
+          }))}
+          notFoundContent={
+            loadingDomains ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mr-2"></div>
+                Loading...
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-4 text-gray-500">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                No domains available
+              </div>
+            )
+          }
+        />
+        {/* Error state indicator */}
+        {!loadingDomains && domainList.length === 0 && (
+          <p className="text-sm text-amber-600 flex items-center mt-1">
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            No domains available
+          </p>
+        )}
+      </div>
+
       <div className="space-y-2">
         <label htmlFor="username" className="text-sm font-medium text-gray-700">Username</label>
         <input
@@ -280,7 +369,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
           <span className="flex items-center justify-center">
             <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             Signing in...
           </span>

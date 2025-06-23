@@ -106,7 +106,7 @@ Cover_Zookeeper(){
         inst_name_array[${#inst_name_array[@]}]=$inst_name
 
         # 输出 JSON 格式数据
-        printf '{ "inst_name": "%s", "obj_id": "zookeeper", "install_path": "%s", "port": "%s", "user": "%s", "log_path": "%s", "conf_path": "%s", "java_path": "%s", "ip_addr": "%s", "java_version": "%s", "version": "%s", "data_path": "%s", "tick_time": "%s", "init_limit": "%s", "sync_limit": "%s", "cluster_servers": "%s" }\n' \
+        printf '{ "inst_name": "%s", "obj_id": "zookeeper", "install_path": "%s", "port": "%s", "user": "%s", "log_path": "%s", "conf_path": "%s", "java_path": "%s", "ip_addr": "%s", "java_version": "%s", "version": "%s", "data_dir": "%s", "tick_time": "%s", "init_limit": "%s", "sync_limit": "%s", "server": "%s" }\n' \
         "$inst_name" "$install_path" "$port" "$user" "$log_dir_path" "$cfg_path" "$exe" "$host_innerip" "$java_version" "$version" "$data_path" "$tick_time" "$init_limit" "$sync_limit" "$cluster_servers"
     done
 }
