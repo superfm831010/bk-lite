@@ -1,4 +1,4 @@
-from apps.core.logger import opspilot_logger as logger
+from apps.core.logger import system_mgmt_logger as logger
 
 
 class GroupUtils(object):

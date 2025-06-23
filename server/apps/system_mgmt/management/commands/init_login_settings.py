@@ -2,7 +2,7 @@ import os
 
 from django.core.management import BaseCommand
 
-from apps.core.logger import system_logger as logger
+from apps.core.logger import system_mgmt_logger as logger
 from apps.system_mgmt.models import Role, SystemSettings
 from apps.system_mgmt.models.login_module import LoginModule
 
@@ -56,4 +56,4 @@ def init_canway_login_module():
     )
 
     if login_module.other_config.get("sync", False):
-        login_module.create_sync_periodic_task(login_module)
+        login_module.create_sync_periodic_task()

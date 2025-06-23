@@ -11,7 +11,7 @@ from django.db.models import Q
 
 import nats_client
 from apps.core.backends import cache
-from apps.core.logger import system_logger as logger
+from apps.core.logger import system_mgmt_logger as logger
 from apps.system_mgmt.models import (
     App,
     Channel,

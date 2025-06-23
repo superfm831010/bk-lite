@@ -1,6 +1,6 @@
 from celery import shared_task
 
-from apps.core.logger import system_logger as logger
+from apps.core.logger import system_mgmt_logger as logger
 from apps.rpc.base import RpcClient
 from apps.system_mgmt.models import Group, LoginModule, User
 

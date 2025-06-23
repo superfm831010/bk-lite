@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.functional import cached_property
 
-from apps.core.logger import system_logger as logger
+from apps.core.logger import system_mgmt_logger as logger
 from apps.core.mixinx import EncryptMixin
 
 
