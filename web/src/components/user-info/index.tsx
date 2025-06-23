@@ -32,7 +32,7 @@ const UserInfo: React.FC = () => {
   const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
-  const { flatGroups, selectedGroup, setSelectedGroup, displayName } = useUserInfoContext();
+  const { flatGroups, selectedGroup, setSelectedGroup, displayName, isSuperUser } = useUserInfoContext();
 
   const [versionVisible, setVersionVisible] = useState<boolean>(false);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
@@ -117,7 +117,7 @@ const UserInfo: React.FC = () => {
           </div>
         ),
         children: flatGroups
-          .filter((group) => group.name !== 'OpsPilotGuest')
+          .filter((group) => isSuperUser || group.name !== 'OpsPilotGuest')
           .map((group) => ({
             key: group.id,
             label: (

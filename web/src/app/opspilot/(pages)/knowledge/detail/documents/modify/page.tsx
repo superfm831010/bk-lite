@@ -384,7 +384,7 @@ const KnowledgeModifyPage = () => {
         )}
         <div className="fixed bottom-10 right-10 z-50 flex space-x-2">
           {currentStep > 0 && currentStep < steps.length - 1 && (
-            <Button onClick={handlePrevious} disabled={isUpdate && currentStep === 1}>
+            <Button onClick={handlePrevious} disabled={isUpdate && type === 'file' && currentStep === 1}>
               {t('common.pre')}
             </Button>
           )}
