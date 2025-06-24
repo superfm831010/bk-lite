@@ -1,6 +1,5 @@
 import hashlib
 
-from django.conf import settings
 from django.db import transaction
 from django.http import FileResponse, JsonResponse
 from django.utils.translation import gettext as _
@@ -25,7 +24,7 @@ from apps.opspilot.models import (
     WebPageKnowledge,
 )
 from apps.opspilot.tasks import general_embed, general_embed_by_document_list
-from apps.opspilot.utils.chat_server_helper import ChatServerHelper
+from apps.opspilot.utils.chunk_helper import ChunkHelper
 
 
 class ObjFilter(FilterSet):
@@ -100,20 +99,12 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
     @action(methods=["GET"], detail=True)
     def get_detail(self, request, *args, **kwargs):
         instance: KnowledgeDocument = self.get_object()
-        url = f"{settings.METIS_SERVER_URL}/api/rag/list_rag_document"
-        count_url = f"{settings.METIS_SERVER_URL}/api/rag/count_index_document"
-        search_text = request.GET.get("search_text", "")
         page = int(request.GET.get("page", 1))
         page_size = int(request.GET.get("page_size", 10))
-        query = {
-            "index_name": instance.knowledge_index_name(),
-            "page": page,
-            "size": page_size,
-            "metadata_filter": {},
-            "query": search_text,
-        }
-        res = ChatServerHelper.post_chat_server(query, url)
-        count_res = ChatServerHelper.post_chat_server(query, count_url)
+        search_text = request.GET.get("search_text", "")
+        res = ChunkHelper.get_document_es_chunk(
+            instance, page, page_size, search_text, metadata_filter={"knowledge_id": str(instance.id)}
+        )
         return JsonResponse(
             {
                 "result": True,
@@ -121,7 +112,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
                     "items": [
                         {"id": i["metadata"]["chunk_id"], "content": i["page_content"]} for i in res["documents"]
                     ],
-                    "count": count_res["count"],
+                    "count": res["count"],
                 },
             }
         )

@@ -26,6 +26,8 @@ class WebPageKnowledge(models.Model, PeriodicTaskUtils):
         return {
             "url": self.url,
             "max_depth": self.max_depth,
+            "sync_enabled": self.sync_enabled,
+            "sync_time": self.sync_time,
         }
 
     def create_sync_periodic_task(self):
