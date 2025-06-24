@@ -5,7 +5,8 @@
 from django_filters import FilterSet, CharFilter
 
 from apps.alerts.constants import AlertStatus
-from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment, AlertShield, Incident
+from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment, AlertShield, Incident, \
+    CorrelationRules, AggregationRules
 
 
 class AlertSourceModelFilter(FilterSet):
@@ -163,3 +164,21 @@ class IncidentModelFilter(FilterSet):
             statuses = [status.strip() for status in value.split(',')]
             return qs.filter(status__in=statuses)
         return qs
+
+
+class CorrelationRulesModelFilter(FilterSet):
+    name = CharFilter(field_name="name", lookup_expr="icontains", label="标题")
+    rule_type = CharFilter(field_name="rule_type", lookup_expr="exact", label="类型")
+
+    class Meta:
+        model = CorrelationRules
+        fields = ["name", "rule_type"]
+
+
+class AggregationRulesModelFilter(FilterSet):
+    name = CharFilter(field_name="name", lookup_expr="icontains", label="标题")
+    type = CharFilter(field_name="type", lookup_expr="exact", label="类型")
+
+    class Meta:
+        model = AggregationRules
+        fields = ["name", "type"]

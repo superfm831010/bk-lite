@@ -16,22 +16,31 @@ class ConditionType(str, Enum):
     SUSTAINED = "sustained"
     TREND = "trend"
     PREV_FIELD = "prev_field_equals"
+    LEVEL_FILTER = "level_filter"
+    WEBSITE_MONITORING = "website_monitoring"
 
 
 @dataclass
 class RuleCondition:
     """规则条件配置"""
-    type: ConditionType
-    field: str
-    threshold: float = None
-    operator: str = None
-    required_consecutive: int = None
-    baseline_window: int = None
-    trend_method: str = "absolute"
-    group_by: List[str] = None
-    prev_status_field: str = None
-    prev_status_value: str = None
-    min_data_points: int = 2
+    type: ConditionType  # 条件类型，如阈值、持续性、趋势等
+    field: str  # 监控字段名，用于从事件数据中提取值进行判断
+    threshold: float = None  # 阈值，用于阈值类型条件的数值比较
+    operator: str = None  # 比较操作符，如 '>', '<', '>=', '<=', '=', '!='
+    required_consecutive: int = None  # 持续性条件所需的连续触发次数
+    baseline_window: int = None  # 基线窗口大小（分钟），用于趋势分析的历史数据范围
+    trend_method: str = "absolute"  # 趋势计算方法：absolute(绝对值) 或 percentage(百分比)
+    group_by: List[str] = None  # 分组字段列表，用于按指定字段对事件进行分组处理
+    prev_status_field: str = None  # 前置状态字段名，用于状态变化检测
+    prev_status_value: str = None  # 前置状态期望值，与当前状态比较判断是否发生变化
+    min_data_points: int = 2  # 最小数据点数量，趋势分析所需的最少历史数据点
+    # 扩展字段
+    level_threshold: str = None  # 级别阈值，用于级别过滤条件的严重程度判断
+    aggregation_key: List[str] = None  # 聚合键列表，用于事件聚合时的分组依据
+    target_value: str = None  # 目标值，用于特定条件类型的期望值比较
+    status_field: str = None  # 状态字段名，用于监控状态变化的字段
+    abnormal_status: str = None  # 异常状态值，定义触发告警的异常状态
+    immediate_alert: bool = False  # 是否立即告警，跳过持续性检查直接触发
 
 
 @dataclass
@@ -44,19 +53,19 @@ class AlertRule:
     title: str = None
     content: str = None
     condition: RuleCondition = None
-    
+
     def get_formatted_title(self, event_data: Dict[str, Any]) -> str:
         """获取格式化后的标题"""
         from apps.alerts.common.rules.alert_rules import format_template_string, DEFAULT_TITLE
         title = self.title or DEFAULT_TITLE
         return format_template_string(title, event_data)
-    
+
     def get_formatted_content(self, event_data: Dict[str, Any]) -> str:
         """获取格式化后的内容"""
         from apps.alerts.common.rules.alert_rules import format_template_string, DEFAULT_CONTENT
         content = self.content or DEFAULT_CONTENT
         return format_template_string(content, event_data)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""
         return {
@@ -80,18 +89,3 @@ class AlertRule:
                 "min_data_points": self.condition.min_data_points,
             } if self.condition else None
         }
-
-
-class BaseRuleSet(ABC):
-    """规则集基类"""
-    
-    @abstractmethod
-    def get_rules(self) -> List[AlertRule]:
-        """获取规则列表"""
-        pass
-    
-    @property
-    @abstractmethod
-    def window_size(self) -> str:
-        """时间窗口大小"""
-        pass

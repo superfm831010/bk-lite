@@ -12,7 +12,6 @@ from typing import Dict, Any, Optional
 
 from apps.alerts.constants import LevelType
 from apps.alerts.models import Alert, AlertReminderTask, AlertAssignment, Level
-from apps.alerts.tasks import sync_notify
 from apps.core.logger import alert_logger as logger
 
 
@@ -191,8 +190,14 @@ class ReminderService:
 
             title = cls.format_title(alert)
             content = cls.format_content(alert)
+
+            # 移动导入到函数内部避免循环导入
+            from apps.alerts.tasks import sync_notify
+
             for channel in channel_list:
                 transaction.on_commit(lambda: sync_notify.delay(username_list, channel, title, content))
+
+            return True
 
         except Exception as e:
             logger.error(f"发送提醒通知失败: reminder_id={assignment.id}, error={str(e)}")

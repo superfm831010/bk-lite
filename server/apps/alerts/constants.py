@@ -309,3 +309,36 @@ class AlertShieldMatchType:
         (ALL, "全部匹配"),
         (FILTER, "过滤匹配"),
     )
+
+
+class CorrelationRulesScope:
+    """关联规则作用范围"""
+    ALL = "all"
+    FILTER = "filter"
+
+    CHOICES = (
+        (ALL, "全部匹配"),
+        (FILTER, "过滤匹配"),
+    )
+
+
+class CorrelationRulesType:
+    """规则适用类型"""
+    ALERT = "alert"
+    EVENT = "event"
+
+    CHOICES = (
+        (ALERT, "告警"),
+        (EVENT, "事件"),
+    )
+
+
+class AggregationRuleType:
+    """规则适用类型"""
+    ALERT = "alert"
+    INCIDENT = "incident"
+
+    CHOICES = (
+        (ALERT, "告警"),
+        (INCIDENT, "事故"),
+    )

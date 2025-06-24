@@ -245,7 +245,7 @@ def generate_jenkins_failure_events(num_pipelines=5):
 
 if __name__ == "__main__":
     # 生成100个mock事件
-    mock_data = generate_mock_events(1)
+    mock_data = generate_mock_events(50)
 
     # 保存到JSON文件
     with open("mock_monitor_events.json", "w") as f:

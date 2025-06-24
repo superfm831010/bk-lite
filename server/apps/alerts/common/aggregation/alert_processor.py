@@ -22,7 +22,8 @@ from apps.core.logger import alert_logger as logger
 class AlertProcessor:
     def __init__(self, window_size: str = "10min"):
         self.window_size = window_size
-        self.rule_manager = get_rule_manager()
+        # 获取支持数据库规则的规则管理器
+        self.rule_manager = get_rule_manager(window_size=self.window_size)
         self.event_fields = [
             "event_id", "external_id", "item", "received_at", "status", "level", "source__name",
             "source_id", "title", "rule_id", "description", "resource_id", "resource_type", "resource_name", "value"
@@ -64,11 +65,11 @@ class AlertProcessor:
             logger.info("==end process events with rule manager==")
 
             # 3. 处理规则执行结果
-            for rule_name, rule_result in rule_results.items():
+            for rule_id, rule_result in rule_results.items():
                 if rule_result.triggered:
-                    rule_config = self.rule_manager.get_rule_by_name(rule_name)
+                    rule_config = self.rule_manager.get_rule_by_id(rule_id)
                     if not rule_config:
-                        logger.warning(f"Rule config not found for: {rule_name}")
+                        logger.warning(f"Rule config not found for: {rule_id}")
                         continue
 
                     # 根据event_id拿出event的原始数据
@@ -78,7 +79,7 @@ class AlertProcessor:
                         related_alerts = _event_dict.get("related_alerts", [])
 
                         alert = {
-                            "rule_name": rule_name,
+                            "rule_name": rule_id,
                             "description": rule_result.description,
                             "severity": rule_result.severity,
                             "event_data": event_data,
@@ -103,18 +104,50 @@ class AlertProcessor:
             logger.error(f"Processing failed: {str(e)}")
             return [], []
 
+    def get_max_level(self, event_levels):
+        # 对于高等级事件聚合规则，取最低等级（数字最小）
+        # 对于其他规则，取最高等级（数字最小）
+        logger.debug(f"Processing event levels: {event_levels}")
+        highest_level = min(event_levels)
+        if highest_level not in self.level_priority:
+            highest_level = self.level_priority[-1]
+        return int(highest_level)
+
+    def get_min_level(self, event_levels):
+        logger.debug(f"Processing event levels: {event_levels}")
+        low_level = max(event_levels)
+        if low_level not in self.level_priority:
+            low_level = self.level_priority[1]
+        return int(low_level)
+
+    def _get_level_for_aggregation_rule(self, rule_name: str, event_levels):
+        """根据规则类型获取告警等级"""
+        if rule_name == "high_level_event_aggregation":
+            # 高等级事件聚合：取最低等级作为告警等级
+            return max(event_levels) if event_levels else self.level_priority[-1]
+        else:
+            # 其他规则：取最高等级
+            return self.get_max_level(event_levels)
+
     def format_event_to_alert(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """格式化事件数据为告警数据"""
         events = params["event_data"]
         event_ids = params["event_ids"]
         rule = params["rule"]
+        rule_name = params["rule_name"]
         source_name = params["source_name"]
-        _instances, level = self.get_event_instances(event_ids=event_ids)
+        _instances, level = self.get_event_instances(event_ids=event_ids, level_max=False)
+
+        # 根据规则类型调整等级获取逻辑
+        event_levels = set(_instances.values_list('level', flat=True))
+        if rule_name in ["high_level_event_aggregation"]:
+            level = self.get_max_level(list(event_levels))
+
         base_event = events[0]  # 取第一个事件作为基础事件
         title, content = format_alert_message(rule=rule, event_data=base_event)
         alert = {
             "alert_id": f"ALERT-{uuid.uuid4().hex.upper()}",
-            "level": level,  # 告警级别 event里最高的level
+            "level": level,
             "title": title,
             "content": content,
             "item": base_event["item"],
@@ -123,24 +156,14 @@ class AlertProcessor:
             "resource_type": base_event["resource_type"],
             "first_event_time": _instances.last().received_at,
             "last_event_time": _instances.first().received_at,
-            # event id
             "events": _instances,
-            "source_name": source_name,  # 告警源名称
+            "source_name": source_name,
             "fingerprint": params["fingerprint"]
         }
 
         return alert
 
-    def get_max_level(self, event_levels):
-        # TODO 目前的规则是取事件级别列表获取最高级别 后续会自定义取级别的规则
-        # 根据事件级别列表获取最高级别 若列表为空则返回默认Alert的最低等级的level
-        print("event_levels", event_levels)
-        highest_level = min(event_levels)
-        if highest_level not in self.level_priority:
-            highest_level = self.level_priority[-1]
-        return int(highest_level)
-
-    def get_event_instances(self, event_ids: List[str]):
+    def get_event_instances(self, event_ids: List[str], level_max: bool = True):
         """根据事件ID获取事件实例"""
 
         instances = Event.objects.filter(event_id__in=event_ids).order_by("received_at")
@@ -149,9 +172,12 @@ class AlertProcessor:
         event_levels = set(instances.values_list('level', flat=True))
 
         # 根据优先级排序找出最高级别
-        highest_level = self.get_max_level(event_levels)
+        if level_max:
+            level = self.get_max_level(event_levels)
+        else:
+            level = self.get_min_level(event_levels)
 
-        return instances, highest_level
+        return instances, level
 
     def bulk_create_alerts(self, alerts: List[Dict[str, Any]]) -> List[str]:
         """批量创建告警"""
@@ -229,10 +255,10 @@ class AlertProcessor:
                     if active_alerts.exists():
                         # 更新现有活跃告警
                         alert_obj = active_alerts.first()
-                        instances, level = self.get_event_instances(event_ids=event_ids)
+                        instances, level = self.get_event_instances(event_ids=event_ids, level_max=False)
                         last_event_time = instances.last().received_at
-                        # 等级取最高的level
-                        alert_obj.level = self.get_max_level([int(alert_obj.level), level])
+                        # alert_obj.level = self.get_max_level([int(alert_obj.level), level])
+                        alert_obj.level = self.get_min_level([int(alert_obj.level), level])
                         alert_obj.last_event_time = last_event_time
                         alert_obj.save(update_fields=['level', 'last_event_time'])
                         alert_obj.events.add(*instances)
@@ -265,6 +291,14 @@ class AlertProcessor:
     def reload_rules(self):
         """重新加载规则"""
         self.rule_manager.reload_rules()
+
+    def reload_database_rules(self):
+        """重新加载数据库规则"""
+        try:
+            self.rule_manager.reload_rules_from_database()
+            logger.info("告警处理器成功重新加载数据库规则")
+        except Exception as e:
+            logger.error(f"告警处理器重新加载数据库规则失败: {str(e)}")
 
     @staticmethod
     def alert_auto_assign(alert_id_list) -> None:

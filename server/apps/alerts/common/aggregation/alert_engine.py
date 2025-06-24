@@ -6,14 +6,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Callable, Tuple, Any
 from dataclasses import dataclass
-import logging
 import hashlib
 import json
 
 from apps.alerts.constants import AlertStatus
 from apps.alerts.models import Alert
-
-logger = logging.getLogger(__name__)
+from apps.core.logger import alert_logger as logger
 
 
 @dataclass
@@ -22,6 +20,7 @@ class AlertRule:
     condition: Callable[[pd.DataFrame], Tuple[bool, List[str]]]
     aggregation: Dict[str, List[str]]
     description: str
+    rule_id: str
     title: str = ""
     content: str = ""
     severity: str = "medium"
@@ -112,8 +111,9 @@ class RuleEngine:
     def add_rule(self, rule_config: dict):
         try:
             condition_func = self._create_condition(rule_config)
-            self.rules[rule_config['name']] = AlertRule(
+            self.rules[rule_config['rule_id']] = AlertRule(
                 name=rule_config['name'],
+                rule_id=rule_config['rule_id'],
                 title=rule_config.get('title', ''),
                 content=rule_config.get('content', ''),
                 condition=condition_func,
@@ -135,16 +135,19 @@ class RuleEngine:
         condition_type = rule_config['condition']['type']
         config = rule_config['condition']
 
-        if condition_type == 'threshold':
-            return self._create_threshold_condition(config)
-        elif condition_type == 'sustained':
-            return self._create_sustained_condition(config)
-        elif condition_type == 'trend':
-            return self._create_trend_condition(config)
-        elif condition_type == 'prev_field_equals':
-            return self._create_status_condition(config)
-        else:
+        condition_map = {
+            'threshold': self._create_threshold_condition,
+            'sustained': self._create_sustained_condition, 
+            'trend': self._create_trend_condition,
+            'prev_field_equals': self._create_status_condition,
+            'level_filter': self._create_level_filter_condition,
+            'website_monitoring': self._create_website_monitoring_condition
+        }
+        
+        if condition_type not in condition_map:
             raise ValueError(f"Unknown condition type: {condition_type}")
+        
+        return condition_map[condition_type](config)
 
     def _create_threshold_condition(self, config: dict) -> Callable:
         # 创建阈值条件函数
@@ -259,6 +262,88 @@ class RuleEngine:
                     event_groups.append([group['event_id'].iloc[-1]])
             return len(event_groups) > 0, event_groups
 
+        return condition
+
+    def _create_website_monitoring_condition(self, config: dict) -> Callable:
+        """创建网站拨测条件函数"""
+        field = config['field']
+        target_value = config['target_value']
+        status_field = config.get('status_field', 'status')
+        abnormal_status = config.get('abnormal_status', '异常')
+        aggregation_key = config.get('aggregation_key', ['resource_id'])
+        immediate_alert = config.get('immediate_alert', True)
+        
+        def condition(df: pd.DataFrame) -> Tuple[bool, List[List[str]]]:
+            if df.empty:
+                return False, []
+            
+            # 过滤网站拨测类型的事件
+            website_df = df[df[field] == target_value]
+            if website_df.empty:
+                return False, []
+            
+            # 过滤异常状态的事件
+            abnormal_df = website_df[website_df[status_field] == abnormal_status]
+            if abnormal_df.empty:
+                return False, []
+            
+            event_groups = []
+            
+            if immediate_alert:
+                # 立即告警模式：每个异常事件都产生告警，但按网站聚合
+                grouped = abnormal_df.groupby(aggregation_key)
+                for group_key, group_df in grouped:
+                    # 每个网站的所有异常事件作为一个组
+                    event_ids = group_df['event_id'].tolist()
+                    event_groups.append(event_ids)
+            else:
+                # 普通模式：每个异常事件单独处理
+                for _, row in abnormal_df.iterrows():
+                    event_groups.append([row['event_id']])
+            
+            return len(event_groups) > 0, event_groups
+        
+        return condition
+
+    def _create_level_filter_condition(self, config: dict) -> Callable:
+        """创建等级过滤条件函数"""
+        level_threshold = config['level_threshold']
+        operator = config.get('operator', '>=')
+        aggregation_key = config.get('aggregation_key', ['resource_type', 'resource_id', 'item'])
+        
+        # 定义等级优先级映射
+        level_priority = {'info': 0, 'warning': 1, 'severity': 2, 'fatal': 3}
+        threshold_priority = level_priority.get(level_threshold, 1)
+        
+        def condition(df: pd.DataFrame) -> Tuple[bool, List[List[str]]]:
+            if df.empty:
+                return False, []
+            
+            # 过滤符合等级条件的事件
+            df['level_priority'] = df['level'].map(level_priority).fillna(0)
+            if operator == '>=':
+                filtered_df = df[df['level_priority'] >= threshold_priority]
+            elif operator == '>':
+                filtered_df = df[df['level_priority'] > threshold_priority]
+            elif operator == "<=":
+                filtered_df = df[df['level_priority'] <= threshold_priority]
+            else:
+                filtered_df = df[df['level_priority'] == threshold_priority]
+            
+            if filtered_df.empty:
+                return False, []
+            
+            # 按聚合维度分组
+            event_groups = []
+            grouped = filtered_df.groupby(aggregation_key)
+            
+            for group_key, group_df in grouped:
+                # 每个分组作为一个事件组
+                event_ids = group_df['event_id'].tolist()
+                event_groups.append(event_ids)
+            
+            return len(event_groups) > 0, event_groups
+        
         return condition
 
     def group_events_by_instance(self, events: pd.DataFrame) -> Dict[str, pd.DataFrame]:
@@ -402,7 +487,7 @@ class RuleEngine:
         """
         results = {}
 
-        for name, rule in self.rules.items():
+        for rule_id, rule in self.rules.items():
             if not rule.is_active:
                 continue
 
@@ -419,7 +504,7 @@ class RuleEngine:
                         instance_events, instance_fingerprint, rule
                     )
 
-                    results[name] = {
+                    results[rule_id] = {
                         'triggered': True,
                         'event_ids': flat_event_ids,
                         'instance_fingerprint': instance_fingerprint,
@@ -432,11 +517,11 @@ class RuleEngine:
                         'operation_type': operation_type,
                     }
                 else:
-                    results[name] = {'triggered': False}
+                    results[rule_id] = {'triggered': False}
 
             except Exception as e:
-                logger.error(f"Rule {name} evaluation failed for instance {instance_fingerprint}: {e}")
-                results[name] = {'triggered': False, 'error': str(e)}
+                logger.error(f"Rule {rule_id} evaluation failed for instance {instance_fingerprint}: {e}")
+                results[rule_id] = {'triggered': False, 'error': str(e)}
 
         return results
 

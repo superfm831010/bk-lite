@@ -3,8 +3,12 @@
 # @Time: 2025/5/21 10:58
 # @Author: windyzhao
 from typing import List, Dict, Any, Tuple
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, ValidationError
 from enum import Enum
+from apps.core.logger import alert_logger as logger
+
+DEFAULT_TITLE = "【${resource_type}】${resource_name}发生${item} 异常"
+DEFAULT_CONTENT = "【${resource_type}】${resource_name}发生${item} 异常"
 
 
 class SeverityLevel(str, Enum):
@@ -17,7 +21,10 @@ class ConditionType(str, Enum):
     THRESHOLD = "threshold"  # 阈值告警
     SUSTAINED = "sustained"  # 持续告警
     TREND = "trend"  # 趋势告警
-    PREV_FIELD = "prev_field_equals"  # 前置状态告警
+    PREV_FIELD_EQUALS = "prev_field_equals"  # 前置状态告警
+    # 添加缺失的枚举值
+    LEVEL_FILTER = "level_filter"
+    WEBSITE_MONITORING = "website_monitoring"
 
 
 class ConditionConfig(BaseModel):
@@ -31,7 +38,13 @@ class ConditionConfig(BaseModel):
     group_by: List[str] = None
     prev_status_field: str = None
     prev_status_value: str = None
-    min_data_points: int = 2
+    # 添加缺失的字段
+    level_threshold: str = None
+    aggregation_key: List[str] = None
+    target_value: str = None
+    status_field: str = None
+    abnormal_status: str = None
+    immediate_alert: bool = False
 
     @validator('operator')
     def validate_operator(cls, v):
@@ -42,6 +55,7 @@ class ConditionConfig(BaseModel):
 
 class AlertRuleConfig(BaseModel):
     name: str
+    rule_id: str
     description: str
     severity: SeverityLevel = SeverityLevel.WARNING
     is_active: bool = True
@@ -53,10 +67,6 @@ class AlertRuleConfig(BaseModel):
 class AlertRulesConfig(BaseModel):
     window_size: str = "10min"
     rules: List[AlertRuleConfig]
-
-
-DEFAULT_TITLE = "【${resource_type}】${resource_name}发生${item} 异常"
-DEFAULT_CONTENT = "【${resource_type}】${resource_name}发生${item} 异常"
 
 
 def format_template_string(template: str, data: Dict[str, Any]) -> str:
@@ -109,104 +119,19 @@ def format_alert_message(rule: AlertRuleConfig, event_data: Dict[str, Any]) -> T
     return formatted_title, formatted_content
 
 
-RULES = {
-    "window_size": "10min",
-    "rules": [
-        {
-            "name": "high_cpu",
-            "description": "CPU使用率超过85%",
-            "severity": "warning",
-            "condition": {
-                "type": "threshold",
-                "field": "cpu_usage",
-                "threshold": 85,
-                "operator": ">="
-            }
-        },
-        {
-            "name": "sustained_high_cpu",
-            "description": "CPU连续3个周期使用率超过80%",
-            "severity": "warning",
-            "condition": {
-                "type": "sustained",
-                "field": "cpu_usage",
-                "threshold": 80,
-                "operator": ">=",
-                "required_consecutive": 3
-            }
-        },
-        {
-            "name": "disk_io_latency_spike",
-            "description": "磁盘IO延迟大于5.0",
-            "severity": "severity",
-            "condition": {
-                "type": "threshold",
-                "field": "disk_io_latency",
-                "threshold": 5.0,
-                "operator": ">"
-            }
-        },
-        {
-            "name": "cpu_trend_spike",
-            "description": "CPU使用率突增超过20%",
-            "severity": "fatal",
-            "condition": {
-                "type": "trend",
-                "field": "cpu_usage",
-                "threshold": 20,
-                "operator": ">",
-                "baseline_window": 5,
-                "trend_method": "percentage"
-            }
-        },
-        {
-            "name": "prev_status_equals",
-            "description": "当同一source、obj、obj_inst, metric的上一条event状态为close且本次满足条件时，创建alert并关联",
-            "severity": "fatal",
-            "condition": {
-                "field": "",
-                "type": "prev_field_equals",
-                "group_by": ["source_id", "resource_type", "resource_id", "item"],
-                "prev_status_field": "status",
-                "prev_status_value": "closed"
-            }
-        },
-        {
-            "name": "jenkins_single_failure",
-            "description": "Jenkins单次构建失败",
-            "severity": "warning",
-            "title": "Jenkins构建失败 - ${resource_name}",
-            "content": "流水线: ${resource_name}\n状态: 构建失败\n构建号: ${value}\n错误信息: ${description}",
-            "condition": {
-                "type": "threshold",
-                "field": "status",
-                "threshold": 0,
-                "operator": "=="
-            }
-        },
-        {
-            "name": "jenkins_sustained_failures",
-            "description": "Jenkins构建连续失败3次",
-            "severity": "fatal",
-            "title": "Jenkins流水线 ${resource_name} 连续构建失败",
-            "content": "流水线: ${resource_name}\n连续失败次数: 3次",
-            "condition": {
-                "type": "sustained",
-                "field": "build_status",
-                "threshold": 0,
-                "operator": "==",
-                "required_consecutive": 3,
-                "group_by": ["resource_id"]
-            }
-        },
-    ]
-}
-
-
 def load_rules(config: Dict[str, Any]) -> AlertRulesConfig:
     """加载并验证规则配置"""
-    return AlertRulesConfig(**config)
-
-
-# 验证规则
-VALID_RULES = load_rules(RULES)
+    try:
+        logger.info("开始加载告警规则配置")
+        config = AlertRulesConfig(**config)
+        logger.info(f"成功加载 {len(config.rules)} 条告警规则")
+        return config
+    except ValidationError as e:
+        logger.error(f"告警规则配置验证失败: {e}")
+        # 记录详细的验证错误信息
+        for error in e.errors():
+            logger.error(f"验证错误 - 字段: {error['loc']}, 错误类型: {error['type']}, 输入值: {error['input']}")
+        raise
+    except Exception as e:
+        logger.error(f"加载告警规则配置时发生未知错误: {e}")
+        raise

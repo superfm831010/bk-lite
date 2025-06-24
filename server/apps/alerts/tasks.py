@@ -4,7 +4,6 @@
 # @Author: windyzhao
 from celery import shared_task
 
-from apps.alerts.common.aggregation.alert_processor import AlertProcessor
 from apps.alerts.common.notify.notify import Notify
 from apps.alerts.service.alter_operator import BeatUpdateAlertStatu
 from apps.core.logger import alert_logger as logger
@@ -16,10 +15,23 @@ def event_aggregation_alert(window_size="10min"):
     每分钟执行的聚合任务
     """
     logger.info("event aggregation alert task start!")
-    processor = AlertProcessor(window_size=window_size)
-    processor.main()
-    logger.info("event aggregation alert task end!")
+    try:
+        # 移动导入到函数内部避免循环导入
+        from apps.alerts.common.aggregation.alert_processor import AlertProcessor
 
+        processor = AlertProcessor(window_size=window_size)
+        
+        # 重新加载数据库规则，确保使用最新规则
+        logger.info("开始重新加载数据库规则")
+        processor.reload_database_rules()
+        
+        # 执行聚合处理
+        processor.main()
+        logger.info("event aggregation alert task end!")
+        
+    except Exception as e:
+        logger.error(f"聚合任务执行失败: {str(e)}")
+        raise
 
 @shared_task
 def beat_close_alert():

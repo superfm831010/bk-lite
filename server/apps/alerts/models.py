@@ -13,7 +13,8 @@ from django.db.models import JSONField
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
 from apps.alerts.constants import AlertsSourceTypes, AlertAccessType, EventStatus, AlertOperate, \
-    AlertStatus, EventAction, LevelType, AlertAssignmentMatchType, AlertShieldMatchType, IncidentStatus, IncidentOperate
+    AlertStatus, EventAction, LevelType, AlertAssignmentMatchType, AlertShieldMatchType, IncidentStatus, \
+    IncidentOperate, CorrelationRulesScope, CorrelationRulesType, AggregationRuleType
 from apps.alerts.utils.util import gen_app_secret
 
 
@@ -276,3 +277,40 @@ class AlertReminderTask(models.Model):
 
     def __str__(self):
         return f"ReminderTask for Alert {self.alert.alert_id}"
+
+
+class AggregationRules(MaintainerInfo, TimeInfo):
+    """聚合规则模型"""
+    rule_id = models.CharField(max_length=100, unique=True, db_index=True, help_text="规则ID")
+    name = models.CharField(max_length=100, help_text="规则名称")
+    description = models.TextField(null=True, blank=True, help_text="规则描述")
+    is_active = models.BooleanField(default=True, db_index=True, help_text="是否启用")
+    template_title = models.CharField(max_length=200, null=True, blank=True, help_text="模板标题")
+    template_content = models.TextField(null=True, blank=True, help_text="模板内容")
+    severity = models.CharField(max_length=32, default="warning", help_text="严重程度")
+    condition = JSONField(default=list, help_text="规则条件配置")  # [dict, ...]
+    type = models.CharField(max_length=32, choices=AggregationRuleType.CHOICES, default=AggregationRuleType.ALERT,
+                            help_text="聚合类型")
+
+    class Meta:
+        db_table = 'alerts_aggregation_rules'
+        verbose_name = '聚合规则'
+        verbose_name_plural = '聚合规则'
+
+
+class CorrelationRules(MaintainerInfo, TimeInfo):
+    """关联规则模型"""
+    name = models.CharField(max_length=100, unique=True, help_text="关联规则名称")
+    aggregation_rules = models.ManyToManyField(AggregationRules, related_name='correlation_rules',
+                                               help_text="关联的聚合规则")
+    scope = models.CharField(max_length=20, choices=CorrelationRulesScope.CHOICES, help_text="作用范围")
+    rule_type = models.CharField(max_length=20, choices=CorrelationRulesType.CHOICES, help_text="规则类型")
+    description = models.TextField(null=True, blank=True, verbose_name="描述")
+
+    class Meta:
+        db_table = 'alerts_correlation_rules'
+        verbose_name = '关联规则'
+        verbose_name_plural = '关联规则'
+
+    def __str__(self):
+        return self.name

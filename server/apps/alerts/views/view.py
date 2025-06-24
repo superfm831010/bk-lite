@@ -64,7 +64,6 @@ class AlterModelViewSet(ModelViewSet):
             # 通过事件获取告警源名称（去重）
             source_names_annotated=StringAgg('events__source__name', delimiter=', ', distinct=True),
             incident_title_annotated=StringAgg('incident__title', delimiter=', ', distinct=True)
-            # incident_count=Count('incident', distinct=True),
         ).prefetch_related('events__source')
         return queryset
 
