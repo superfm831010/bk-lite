@@ -25,9 +25,9 @@ class NatsService:
         cloud_region_map = {i["id"]: (i["cloud_region_id"], i["operating_system"]) for i in cloud_regions}
 
         collectors = Collector.objects.filter(name__in=[i["collector_name"] for i in configs]).values(
-            "collector_name", "node_operating_system", "id"
+            "name", "node_operating_system", "id"
         )
-        collector_map = {(i["collector_name"], i["node_operating_system"]): i["id"] for i in collectors}
+        collector_map = {(i["name"], i["node_operating_system"]): i["id"] for i in collectors}
 
         conf_objs, node_config_assos = [], []
         for config in configs:
