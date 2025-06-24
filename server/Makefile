@@ -13,6 +13,7 @@ install:
 							./requirements/requirements-node_mgmt.txt \
 							./requirements/requirements-opspilot.txt \
 							./requirements/requirements-system_mgmt.txt \
+							./requirements/requirements-mlops.txt \
 							-v --output-file ./requirements.txt
 	./.venv/bin/pip-sync -v
 
