@@ -28,6 +28,7 @@ class User(models.Model):
             "disabled",
             "locale",
             "timezone",
+            "domain",
             "role_list",
         ]
 

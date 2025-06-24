@@ -24,6 +24,7 @@ class User(AbstractUser):
     group_list = models.JSONField(default=list)
     roles = models.JSONField(default=list)
     locale = models.CharField(max_length=32, default="zh-CN")
+    domain = models.CharField(max_length=100, default="domain.com")
     # rules = models.JSONField(default=dict)
 
     class Meta(AbstractUser.Meta):

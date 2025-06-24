@@ -11,7 +11,7 @@ from django.db.models import Q
 
 import nats_client
 from apps.core.backends import cache
-from apps.core.logger import system_logger as logger
+from apps.core.logger import system_mgmt_logger as logger
 from apps.system_mgmt.models import (
     App,
     Channel,
@@ -79,6 +79,7 @@ def verify_token(token):
         "data": {
             "username": user.username,
             "display_name": user.display_name,
+            "domain": user.domain,
             "email": user.email,
             "is_superuser": is_superuser,
             "group_list": groups,
@@ -107,12 +108,12 @@ def get_user_menus(client_id, roles, username, is_superuser):
 
 
 @nats_client.register
-def get_client(client_id="", username=""):
+def get_client(client_id="", username="", domain="domain.com"):
     app_list = App.objects.all()
     if client_id:
         app_list = app_list.filter(name__in=client_id.split(";"))
     if username:
-        user = User.objects.filter(username=username).first()
+        user = User.objects.filter(username=username, domain=domain).first()
         if not user:
             return {"result": False, "message": "User not found"}
         app_name_list = list(Role.objects.filter(id__in=user.role_list).values_list("app", flat=True).distinct())
@@ -431,6 +432,7 @@ def get_user_login_token(user, username):
             "username": username,
             "display_name": user.display_name,
             "id": user.id,
+            "domain": user.domain,
             "locale": user.locale,
             "temporary_pwd": user.temporary_pwd,
             "enable_otp": enable_otp,

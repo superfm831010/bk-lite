@@ -139,7 +139,8 @@ class AuthBackend(ModelBackend):
             return None
 
         try:
-            user, created = User.objects.get_or_create(username=username)
+            domain = user_info.get("domain", "domain.com")
+            user, created = User.objects.get_or_create(username=username, domain=domain)
             is_superuser = self.get_is_superuser(request, user_info)
             # 更新用户基本信息
             user.email = user_info.get("email", "")
