@@ -71,10 +71,10 @@ class Controller:
             node_ids = instance.pop("node_ids")
             for node_id in node_ids:
                 node_info = {"node_id": node_id}
-                self.set_config_id(node_info)
                 for config in self.data["configs"]:
-                    configs.append(
-                        {"collector": collector, "collect_type": collect_type, **node_info, **config, **instance})
+                    _config = {"collector": collector, "collect_type": collect_type, **node_info, **config, **instance}
+                    self.set_config_id(_config)
+                    configs.append(_config)
         return configs
 
     def controller(self):
