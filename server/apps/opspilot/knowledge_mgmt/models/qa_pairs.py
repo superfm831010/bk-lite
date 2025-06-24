@@ -17,7 +17,5 @@ class QAPairs(MaintainerInfo, TimeInfo):
 
     # 问答对相关字段
     qa_count = models.IntegerField(default=0, verbose_name="问答对数量")
-    document_list = models.JSONField(
-        default=list,
-        verbose_name="选择的文档列表",
-    )
+    document_id = models.IntegerField(default=0, verbose_name="文档ID")
+    document_source = models.CharField(max_length=50, default="file", verbose_name="文档来源")
