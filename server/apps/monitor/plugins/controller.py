@@ -86,7 +86,7 @@ class Controller:
             templates = self.get_template_info_by_type(template_dir, config_info["type"])
             env_config = {k[4:]: v for k, v in config_info.items() if k.startswith("ENV_")}
             for template in templates:
-                is_child = True if template["file_type"] == "child" else False
+                is_child = True if template["config_type"] == "child" else False
 
                 # 生成配置
                 template_config = self.render_template(
