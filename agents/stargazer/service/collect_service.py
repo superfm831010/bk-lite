@@ -31,6 +31,7 @@ class CollectService(object):
             "kafka_info": "KafkaInfo",
             "qcloud_info": "TencentCloudManager",
             "etcd_info": "EtcdInfo",
+            "rabbitmq_info": "RabbitMQInfo",
         }
 
     def import_plugin(self, plugin_name):

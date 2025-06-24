@@ -1601,6 +1601,18 @@ class MiddlewareCollectMetrics(CollectBase):
                 "peer_port": "peer_port",  # 集群通讯端口
                 "install_path": "install_path",
             },
+            "rabbitmq": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "allport": "allport",
+                "node_name": "node_name",
+                "log_path": "log_path",
+                "conf_path": "conf_path",
+                "version": "version",
+                "enabled_plugin_file": "enabled_plugin_file",
+                "erlang_version": "erlang_version",
+            }
 
         }
 

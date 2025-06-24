@@ -7,6 +7,6 @@ from plugins.base import BaseSSHPlugin
 
 
 class EtcdInfo(BaseSSHPlugin):
-    """Class for collecting host information."""
+    """Class for collecting etcd information."""
     default_script_path = "plugins/shell/etcd_default_discover.sh"
     plugin_type = "etcd"
