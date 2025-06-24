@@ -6,6 +6,7 @@ from django.conf import settings
 from tqdm import tqdm
 
 from apps.core.logger import opspilot_logger as logger
+from apps.opspilot.knowledge_mgmt.models import QAPairs
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
@@ -199,3 +200,11 @@ def sync_web_page_knowledge(web_page_knowledge_id):
     web_page.knowledge_document.train_status = DocumentStatus.CHUNKING
     web_page.knowedge_document.save()
     general_embed_by_document_list(document_list, username=KnowledgeDocument.created_by)
+
+
+@shared_task
+def create_qa_pairs(qa_paris_id):
+    qa_paris_obj = QAPairs.objects.filter(id=qa_paris_id).first()
+    if not qa_paris_obj:
+        logger.info(f"QAPairs with ID {qa_paris_id} not found.")
+        return
