@@ -1,7 +1,7 @@
 from django.core.management import BaseCommand
 
 from apps.core.logger import monitor_logger as logger
-from apps.monitor.plugin_migrate.service import migrate_plugin
+from apps.monitor.plugins.plugin_migrate import migrate_plugin
 
 
 class Command(BaseCommand):
