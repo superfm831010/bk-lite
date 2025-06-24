@@ -32,6 +32,7 @@ export async function getAuthOptions(): Promise<AuthOptions> {
       credentials: {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
+        domain: { label: "Domain", type: "text" },
         skipValidation: { label: "Skip Validation", type: "text" },
         userData: { label: "User Data", type: "text" },
       },
@@ -76,6 +77,7 @@ export async function getAuthOptions(): Promise<AuthOptions> {
             body: JSON.stringify({
               username: credentials.username,
               password: credentials.password,
+              domain: credentials.domain,
             }),
           });
           
@@ -170,6 +172,7 @@ export const authOptions: AuthOptions = {
       credentials: {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
+        domain: { label: "Domain", type: "text" },
         skipValidation: { label: "Skip Validation", type: "text" },
         userData: { label: "User Data", type: "text" },
       },
@@ -211,6 +214,7 @@ export const authOptions: AuthOptions = {
             body: JSON.stringify({
               username: credentials.username,
               password: credentials.password,
+              domain: credentials.domain,
             }),
           });
           

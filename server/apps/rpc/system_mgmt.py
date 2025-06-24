@@ -42,8 +42,8 @@ class SystemMgmt(object):
         return_data = self.client.run("reset_pwd", username=username, password=password)
         return return_data
 
-    def get_client(self, client_id, username=""):
-        return_data = self.client.run("get_client", client_id=client_id, username=username)
+    def get_client(self, client_id, username="", domain="domain.com"):
+        return_data = self.client.run("get_client", client_id=client_id, username=username, domain=domain)
         return return_data
 
     def get_client_detail(self, client_id):
@@ -160,3 +160,14 @@ class SystemMgmt(object):
     def create_opspilot_guest_role(self):
         return_data = self.client.run("create_opspilot_guest_role")
         return return_data
+
+    def get_namespace_by_domain(self, domain):
+        return_data = self.client.run("get_namespace_by_domain", domain=domain)
+        return return_data
+
+    def bk_lite_user_login(self, username, domain):
+        return_data = self.client.run("bk_lite_user_login", username=username, domain=domain)
+        return return_data
+
+    def get_login_module_domain_list(self):
+        return self.client.run("get_login_module_domain_list")

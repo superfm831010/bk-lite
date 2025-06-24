@@ -211,6 +211,8 @@ class ElasticSearchRag(BaseRag):
         for doc in docs:
             if 'vector' in doc.metadata.get('_source', {}):
                 del doc.metadata['_source']['vector']
+            if 'qa_answer' in doc.metadata.get('_source', {})['metadata']:
+                doc.page_content += f"\n{doc.metadata['_source']['metadata']['qa_answer']}"
         return docs
 
     def _rerank_results(self, req: DocumentRetrieverRequest, search_result: List[Document]) -> List[Document]:
@@ -328,8 +330,6 @@ class ElasticSearchRag(BaseRag):
 
         # 重排序处理
         search_result = self._rerank_results(req, search_result)
-
-        logger.info(search_result)
         search_result = [doc for doc in search_result if doc.metadata.get(
             # Consider relevance_score for threshold
             '_score', doc.metadata.get('relevance_score', 0)) >= (req.threshold / 10)]
@@ -455,7 +455,6 @@ class ElasticSearchRag(BaseRag):
         # 5. 将ElasticSearch格式转换为Document格式
         docs_result = []
         for hit in search_result:
-            source = hit['_source']
             doc = Document(page_content=source['text'], metadata=hit)
             docs_result.append(doc)
 

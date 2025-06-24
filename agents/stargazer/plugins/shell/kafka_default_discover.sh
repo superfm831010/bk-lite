@@ -44,8 +44,8 @@ generate_unknown_instance() {
 
     cat <<EOF
 {
-    "bk_inst_name": "$inst_name",
-    "bk_obj_id": "kafka",
+    "inst_name": "$inst_name",
+    "obj_id": "kafka",
     "ip_addr": "$innerip",
     "port": "unknown",
     "version": "unknown",
@@ -195,8 +195,8 @@ main() {
         # 生成JSON输出
         cat <<EOF
 {
-    "bk_inst_name": "$inst_name",
-    "bk_obj_id": "kafka",
+    "inst_name": "$inst_name",
+    "obj_id": "kafka",
     "ip_addr": "$innerip",
     "port": "$port",
     "version": "$kafka_version",

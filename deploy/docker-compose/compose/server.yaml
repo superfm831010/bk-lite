@@ -58,6 +58,6 @@ services:
       - prod
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.sidecar.rule=Host(`${HOST_IP}`) and PathPrefix(`/node_mgmt`)"
+      - "traefik.http.routers.sidecar.rule=Host(`${HOST_IP}`) && PathPrefix(`/node_mgmt`)"
       - "traefik.http.routers.sidecar.entrypoints=web"
       - "traefik.http.services.sidecar.loadbalancer.server.port=8000"

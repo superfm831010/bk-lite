@@ -249,7 +249,11 @@ COLLECT_OBJ_TREE = [
         "name": "云平台",
         "children": [
             {"id": "aliyun", "model_id": "aliyun_account", "name": "阿里云", "task_type": CollectPluginTypes.CLOUD,
-             "type": CollectDriverTypes.PROTOCOL}
+             "type": CollectDriverTypes.PROTOCOL},
+            {
+              "id": "qcloud", "model_id": "qcloud", "name": "腾讯云", "task_type": CollectPluginTypes.CLOUD,
+              "type": CollectDriverTypes.PROTOCOL
+            },
         ],
     },
     {

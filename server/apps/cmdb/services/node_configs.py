@@ -10,7 +10,7 @@ class BaseNodeParams(metaclass=ABCMeta):
     PLUGIN_MAP = {}  # 插件名称映射
     _registry = {}  # 自动收集支持的 model_id 对应的子类
     BASE_INTERVAL_MAP = {"vmware_vc": 300, "network": 300, "network_topo": 300, "mysql_info": 300,
-                         "aliyun_account": 300}  # 默认的采集间隔时间
+                         "aliyun_account": 300, "qcloud":300,}  # 默认的采集间隔时间
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -432,6 +432,31 @@ class KafkaNodeParams(BaseNodeParams):
             credential_data["password"] = self.credential.get("password", "")
             credential_data["port"] = self.credential.get("port", 22),
         return credential_data
+
+class QCloudNodeParams(BaseNodeParams):
+    supported_model_id = "qcloud"
+    plugin_name = "qcloud_info"
+
+    interval_map = {plugin_name: 300}
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.PLUGIN_MAP.update({self.model_id: "qcloud_info"})
+
+
+    def set_credential(self, *args, **kwargs):
+        """
+        生成 Tencent Cloud 的凭据
+        """
+        return {
+            "secret_id": self.credential.get("accessKey", ""),
+            "secret_key": self.credential.get("secretSecret", ""),
+        }
+
+    def get_instance_id(self, instance):
+        """
+        获取实例 ID
+        """
+        return f"{self.instance.id}_{instance['inst_name']}"
 
 
 class NodeParamsFactory:

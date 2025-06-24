@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Switch, message, Form, Segmented, Menu, InputNumber, Button, Alert } from 'antd';
-import { PlusOutlined, CopyOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import EntityList from '@/components/entity-list';
 import OperateModal from '@/components/operate-modal';
@@ -12,6 +12,10 @@ import { AuthSource } from '@/app/system-manager/types/security';
 import PermissionWrapper from '@/components/permission';
 import { enhanceAuthSourcesList } from '@/app/system-manager/utils/authSourceUtils';
 import wechatAuthImg from '@/app/system-manager/img/wechat_auth.png';
+import type { DataNode as TreeDataNode } from 'antd/lib/tree';
+import { useUserApi } from '@/app/system-manager/api/user/index';
+import { useClientData } from '@/context/client';
+import { getNewAuthSourceFormFields, getWeChatFormFields } from '@/app/system-manager/components/security/authSourceFormConfig';
 
 const SecurityPage: React.FC = () => {
   const { t } = useTranslation();
@@ -28,10 +32,15 @@ const SecurityPage: React.FC = () => {
   const [editingSource, setEditingSource] = useState<AuthSource | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [dynamicForm] = Form.useForm();
-  const { getSystemSettings, updateOtpSettings, getAuthSources, updateAuthSource, createAuthSource } = useSecurityApi();
+  const { getSystemSettings, updateOtpSettings, getAuthSources, updateAuthSource, createAuthSource, syncAuthSource } = useSecurityApi();
+  const { clientData } = useClientData();
+  const { getRoleList } = useUserApi();
+  const [roleTreeData, setRoleTreeData] = useState<TreeDataNode[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
 
   useEffect(() => {
     fetchSystemSettings();
+    fetchRoleInfo();
   }, []);
 
   useEffect(() => {
@@ -62,7 +71,6 @@ const SecurityPage: React.FC = () => {
       setAuthSourcesLoading(true);
       const data = await getAuthSources();
       const enhancedData = enhanceAuthSourcesList(data || []);
-      console.log('Fetched auth sources:', enhancedData);
       setAuthSources(enhancedData);
       setAuthSourcesLoaded(true);
     } catch (error) {
@@ -71,6 +79,26 @@ const SecurityPage: React.FC = () => {
       setAuthSourcesLoaded(true);
     } finally {
       setAuthSourcesLoading(false);
+    }
+  };
+
+  const fetchRoleInfo = async () => {
+    try {
+      const roleData = await getRoleList({ client_list: clientData });
+      setRoleTreeData(
+        roleData.map((item: any) => ({
+          key: item.id,
+          title: item.name,
+          selectable: false,
+          children: item.children.map((child: any) => ({
+            key: child.id,
+            title: child.name,
+            selectable: true,
+          })),
+        }))
+      );
+    } catch {
+      message.error(t('common.fetchFailed'));
     }
   };
 
@@ -101,104 +129,9 @@ const SecurityPage: React.FC = () => {
     }
   };
 
-  const getNewAuthSourceFormFields = () => [
-    {
-      name: 'name',
-      type: 'input',
-      label: t('system.security.authSourceName'),
-      placeholder: `${t('common.inputMsg')}${t('system.security.authSourceName')}`,
-      rules: [{ required: true, message: `${t('common.inputMsg')}${t('system.security.authSourceName')}` }]
-    },
-    {
-      name: 'source_type',
-      type: 'select',
-      label: t('system.security.authSourceType'),
-      placeholder: `${t('common.select')}${t('system.security.authSourceType')}`,
-      options: [
-        { value: 'bklite', label: 'BK-Lite认证源' }
-      ],
-      rules: [{ required: true, message: `${t('common.select')}${t('system.security.authSourceType')}` }]
-    },
-    {
-      name: 'namespace',
-      type: 'input',
-      label: t('system.security.namespace'),
-      placeholder: `${t('common.inputMsg')}${t('system.security.namespace')}`
-    },
-    {
-      name: 'domain',
-      type: 'input',
-      label: t('system.security.domain'),
-      placeholder: `${t('common.inputMsg')}${t('system.security.domain')}`
-    },
-    {
-      name: 'org_root_dn',
-      type: 'input',
-      label: t('system.security.orgRootDn'),
-      placeholder: `${t('common.inputMsg')}${t('system.security.orgRootDn')}`
-    },
-    {
-      name: 'user_init_role',
-      type: 'input',
-      label: t('system.security.userInitRole'),
-      placeholder: `${t('common.inputMsg')}${t('system.security.userInitRole')}`
-    },
-    {
-      name: 'sync_enabled',
-      type: 'switch',
-      label: t('system.security.syncEnabled'),
-      size: 'small',
-      initialValue: false
-    },
-    {
-      name: 'description',
-      type: 'textarea',
-      label: t('common.description'),
-      placeholder: `${t('common.inputMsg')}${t('common.description')}`,
-      rows: 4
-    }
-  ];
-
-  const getWeChatFormFields = () => [
-    {
-      name: 'name',
-      type: 'input',
-      label: t('system.security.loginMethodName'),
-      placeholder: `${t('common.inputMsg')}${t('system.security.loginMethodName')}`,
-      rules: [{ required: true, message: `${t('common.inputMsg')}${t('system.security.loginMethodName')}` }]
-    },
-    {
-      name: 'app_id',
-      type: 'input',
-      label: t('system.security.appId'),
-      placeholder: `${t('common.inputMsg')}${t('system.security.appId')}`,
-      rules: [{ required: true, message: `${t('common.inputMsg')}${t('system.security.appId')}` }]
-    },
-    {
-      name: 'app_secret',
-      type: 'editablePwd',
-      label: t('system.security.appSecret'),
-      placeholder: `${t('common.inputMsg')}${t('system.security.appSecret')}`,
-      rules: [{ required: true, message: `${t('common.inputMsg')}${t('system.security.appSecret')}` }]
-    },
-    {
-      name: 'redirect_uri',
-      type: 'input',
-      label: t('system.security.redirectUri'),
-      placeholder: `${t('common.inputMsg')}${t('system.security.redirectUri')}`,
-      suffix: <CopyOutlined onClick={() => copyToClipboard(dynamicForm.getFieldValue('redirect_uri'))} />
-    },
-    {
-      name: 'enabled',
-      type: 'switch',
-      label: t('system.security.enabled'),
-      initialValue: true,
-      size: 'small'
-    }
-  ];
-
   const handleAddAuthSource = () => {
     setEditingSource(null);
+    setSelectedRoles([]);
     dynamicForm.resetFields();
     setIsModalVisible(true);
   };
@@ -209,16 +142,35 @@ const SecurityPage: React.FC = () => {
       
       if (editingSource) {
         const values = await dynamicForm.validateFields();
-        const updateData = {
-          name: values.name,
-          app_id: values.app_id,
-          app_secret: values.app_secret,
-          other_config: {
-            callback_url: values.callback_url || editingSource.other_config.callback_url,
-            redirect_uri: values.redirect_uri
-          },
-          enabled: values.enabled
-        };
+        
+        let updateData: any;
+        
+        if (editingSource.source_type === 'wechat') {
+          updateData = {
+            name: values.name,
+            app_id: values.app_id,
+            app_secret: values.app_secret,
+            other_config: {
+              callback_url: values.callback_url || editingSource.other_config.callback_url,
+              redirect_uri: values.redirect_uri
+            },
+            enabled: values.enabled
+          };
+        } else {
+          updateData = {
+            name: values.name,
+            source_type: values.source_type,
+            other_config: {
+              namespace: values.namespace,
+              root_group: values.root_group,
+              domain: values.domain,
+              default_roles: values.default_roles || selectedRoles,
+              sync: values.sync || false,
+              sync_time: values.sync_time || "00:00"
+            },
+            enabled: values.enabled
+          };
+        }
         
         await updateAuthSource(editingSource.id, updateData);
         
@@ -237,23 +189,27 @@ const SecurityPage: React.FC = () => {
         const createData = {
           name: values.name,
           source_type: values.source_type,
-          namespace: values.namespace,
-          domain: values.domain,
-          org_root_dn: values.org_root_dn,
-          user_init_role: values.user_init_role,
-          sync_enabled: values.sync_enabled || false,
-          description: values.description
+          other_config: {
+            namespace: values.namespace,
+            root_group: values.root_group,
+            domain: values.domain,
+            default_roles: values.default_roles,
+            sync: values.sync || false,
+            sync_time: values.sync_time || "00:00"
+          },
+          enabled: values.enabled || true
         };
         
         const newSource = await createAuthSource(createData);
         const enhancedSource = enhanceAuthSourcesList([newSource])[0];
         
         setAuthSources([...authSources, enhancedSource]);
-        message.success(t('common.createSuccess'));
+        message.success(t('common.saveSuccess'));
       }
       
       setIsModalVisible(false);
       setEditingSource(null);
+      setSelectedRoles([]);
       dynamicForm.resetFields();
     } catch (error) {
       console.error('Failed to save auth source:', error);
@@ -283,34 +239,94 @@ const SecurityPage: React.FC = () => {
         callback_url: source.other_config.callback_url
       });
     } else {
+      const { other_config } = source;
+      const defaultRoles = other_config?.default_roles || [];
+      setSelectedRoles(defaultRoles);
+      
       dynamicForm.setFieldsValue({
         name: source.name,
         source_type: source.source_type,
+        namespace: other_config?.namespace,
+        root_group: other_config?.root_group,
+        domain: other_config?.domain,
+        sync: other_config?.sync || false,
+        sync_time: other_config?.sync_time || '00:00',
+        enabled: source.enabled,
+        default_roles: defaultRoles
       });
     }
     
     setIsModalVisible(true);
   };
 
-  const handleSearch = (searchTerm: string) => {
-    console.log('Searching for:', searchTerm);
+  const handleAuthSourceToggle = async (source: AuthSource, enabled: boolean) => {
+    try {
+      const updateData = { ...source, enabled };
+      await updateAuthSource(source.id, updateData);
+      setAuthSources(authSources.map(item => 
+        item.id === source.id 
+          ? { ...item, enabled }
+          : item
+      ));
+      
+      message.success(t('common.saveSuccess'));
+    } catch (error) {
+      console.error('Failed to update auth source status:', error);
+      message.error(t('common.saveFailed'));
+    }
+  };
+
+  const handleSyncAuthSource = async (source: AuthSource) => {
+    try {
+      await syncAuthSource(source.id);
+      message.success(t('system.security.syncSuccess'));
+    } catch (error) {
+      console.error('Failed to sync auth source:', error);
+      message.error(t('system.security.syncFailed'));
+    }
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      message.success(t('common.copySuccess'));
-    }).catch(() => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          message.success(t('common.copySuccess'));
+        }).catch(() => {
+          message.error(t('common.copyFailed'));
+        });
+      } else {
+        // Fallback: use traditional document.execCommand
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (successful) {
+          message.success(t('common.copySuccess'));
+        } else {
+          message.error(t('common.copyFailed'));
+        }
+      }
+    } catch (error) {
+      console.error('Copy failed:', error);
       message.error(t('common.copyFailed'));
-    });
+    }
   };
 
   const menuActions = (item: AuthSource) => (
     <Menu>
-      <PermissionWrapper requiredPermissions={['Edit']}>
-        <Menu.Item key="edit" onClick={() => handleEditSource(item)}>
+      <Menu.Item key="edit" onClick={() => handleEditSource(item)}>
+        <PermissionWrapper requiredPermissions={['Edit']}>
           {t('common.edit')}
-        </Menu.Item>
-      </PermissionWrapper>
+        </PermissionWrapper>
+      </Menu.Item>
+      <Menu.Item key="sync" onClick={() => handleSyncAuthSource(item)}>
+        <PermissionWrapper requiredPermissions={['Edit']}>
+          {t('system.security.syncNow')}
+        </PermissionWrapper>
+      </Menu.Item>
     </Menu>
   );
 
@@ -380,10 +396,20 @@ const SecurityPage: React.FC = () => {
         data={authSources}
         loading={authSourcesLoading}
         search
-        onSearch={handleSearch}
         menuActions={menuActions}
         onCardClick={handleEditSource}
         operateSection={operateSection}
+        descSlot={(item: AuthSource) => (
+          <div className="flex items-center justify-end">
+            <div onClick={(e) => e.stopPropagation()}>
+              <Switch
+                size="small"
+                checked={item.enabled}
+                onChange={(checked) => handleAuthSourceToggle(item, checked)}
+              />
+            </div>
+          </div>
+        )}
       />
     )
   };
@@ -412,32 +438,49 @@ const SecurityPage: React.FC = () => {
         maskClosable={!modalLoading}
       >
         {editingSource?.source_type === 'wechat' && (
-          <div className="flex">
-            <div className="flex-1">
-              <Alert type="info" showIcon message={t('system.security.informationTip')} className='mb-4' />
-              <DynamicForm
-                form={dynamicForm}
-                fields={getWeChatFormFields()}
-              />
-            </div>
-            <div className="w-64 flex justify-center items-start pt-8">
-              {editingSource && getAuthImageSrc(editingSource.source_type) && (
-                <img 
-                  src={getAuthImageSrc(editingSource.source_type)}
-                  alt={`${editingSource.source_type} auth`}
-                  className="max-w-full h-auto"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
+          <div className="w-full">
+            <Alert type="info" showIcon message={t('system.security.informationTip')} className='mb-4' />
+            <div className="flex">
+              <div className="flex-1">
+                <DynamicForm
+                  form={dynamicForm}
+                  fields={getWeChatFormFields({
+                    t,
+                    dynamicForm,
+                    copyToClipboard,
+                    roleTreeData,
+                    selectedRoles,
+                    setSelectedRoles
+                  })}
                 />
-              )}
+              </div>
+              <div className="w-64 flex justify-center items-start ml-4">
+                {editingSource && getAuthImageSrc(editingSource.source_type) && (
+                  <img 
+                    src={getAuthImageSrc(editingSource.source_type)}
+                    alt={`${editingSource.source_type} auth`}
+                    className="max-w-full h-auto"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                )}
+              </div>
             </div>
           </div>
         )}
-        {!editingSource?.source_type && (
+        {(!editingSource || editingSource?.source_type !== 'wechat') && (
           <DynamicForm
             form={dynamicForm}
-            fields={getNewAuthSourceFormFields()}
+            fields={getNewAuthSourceFormFields({
+              t,
+              roleTreeData,
+              selectedRoles,
+              setSelectedRoles,
+              dynamicForm,
+              copyToClipboard,
+              isBuiltIn: editingSource?.is_build_in || false
+            })}
           />
         )}
       </OperateModal>

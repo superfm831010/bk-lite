@@ -38,16 +38,7 @@ export const useSecurityApi = () => {
    * @param data - Updated auth source data
    * @returns Promise with updated auth source
    */
-  async function updateAuthSource(id: number, data: {
-    name: string;
-    app_id: string;
-    app_secret: string;
-    other_config: {
-      callback_url: string;
-      redirect_uri: string;
-    };
-    enabled: boolean;
-  }): Promise<any> {
+  async function updateAuthSource(id: number, data: any): Promise<any> {
     return await patch(`/system_mgmt/login_module/${id}/`, data);
   }
 
@@ -59,14 +50,26 @@ export const useSecurityApi = () => {
   async function createAuthSource(data: {
     name: string;
     source_type: string;
-    namespace?: string;
-    domain?: string;
-    org_root_dn?: string;
-    user_init_role?: string;
-    sync_enabled?: boolean;
-    description?: string;
+    other_config: {
+      namespace?: string;
+      root_group?: string;
+      domain?: string;
+      default_roles?: number[];
+      sync?: boolean;
+      sync_time?: string;
+    };
+    enabled?: boolean;
   }): Promise<any> {
     return await post('/system_mgmt/login_module/', data);
+  }
+
+  /**
+   * Sync auth source data
+   * @param id - Auth source ID
+   * @returns Promise with sync result
+   */
+  async function syncAuthSource(id: number): Promise<any> {
+    return await patch(`/system_mgmt/login_module/${id}/sync_data/`);
   }
 
   return {
@@ -74,6 +77,7 @@ export const useSecurityApi = () => {
     updateOtpSettings,
     getAuthSources,
     updateAuthSource,
-    createAuthSource
+    createAuthSource,
+    syncAuthSource
   };
 };
