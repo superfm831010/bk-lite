@@ -324,8 +324,6 @@ LEVEL_WEIGHT = {
 # 对象顺序key
 OBJ_ORDER = "OBJ_ORDER"
 
-STARGAZER_URL = os.getenv("STARGAZER_URL", "http://stargazer:8083")
-
 CHILD_ENVS = {"ENV_LISTEN_PORT", "LISTEN_PORT"}
 
 # 对象默认顺序
