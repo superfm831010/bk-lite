@@ -31,6 +31,7 @@ const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
   const { levelListEvent } = useCommon();
   const { t } = useTranslation();
   const [sourceList, setSourceList] = useState<SourceItem[]>([]);
+  const [sourceLoading, setSourceLoading] = useState<boolean>(false);
   const [policyList, setPolicyList] = useState<PolicyItem[][]>(
     value || [
       [
@@ -108,11 +109,13 @@ const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
   };
 
   const fetchAlarmSource = async () => {
-    const data: any = await getAlertSources();
-    if (data) {
-      setSourceList(data);
-    } else {
-      console.error('获取告警源列表失败');
+    setSourceLoading(true);
+    try {
+      const data: any = await getAlertSources();
+      if (data) setSourceList(data);
+      else console.error('获取告警源列表失败');
+    } finally {
+      setSourceLoading(false);
     }
   };
 
@@ -168,6 +171,7 @@ const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
                           <Select
                             value={i.value}
                             showSearch
+                            loading={i.key === 'source_id' && sourceLoading}
                             placeholder={`${t('common.selectMsg')}`}
                             onChange={(value) => {
                               const updatedPolicyList = [...policyList];

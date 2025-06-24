@@ -1,28 +1,26 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import OperateModal from './components/operateModal';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
 import Introduction from '@/app/alarm/components/introduction';
 import { Tabs } from 'antd';
-import { AlertShieldListItem } from '@/app/alarm/types/settings';
+import { CorrelationRule } from '@/app/alarm/types/settings';
 import { useSettingApi } from '@/app/alarm/api/settings';
 import { Button, Input, Modal, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 
-const CorrelationRules: React.FC = () => {
+const CorrelationRulesPage: React.FC = () => {
   const { t } = useTranslation();
-  const { getShieldList, deleteShield } = useSettingApi();
+  const { getCorrelationRuleList, deleteCorrelationRule } = useSettingApi();
   const listCount = useRef<number>(0);
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [operateVisible, setOperateVisible] = useState<boolean>(false);
   const [searchKey, setSearchKey] = useState<string>('');
-  const [dataList, setDataList] = useState<AlertShieldListItem[]>([]);
+  const [dataList, setDataList] = useState<CorrelationRule[]>([]);
   const [columns, setColumns] = useState<any[]>([]);
-  const [currentRow, setCurrentRow] = useState<AlertShieldListItem | null>(
-    null
-  );
+  const [currentRow, setCurrentRow] = useState<CorrelationRule | null>(null);
   const [pagination, setPagination] = useState({
     current: 1,
     total: 0,
@@ -34,7 +32,7 @@ const CorrelationRules: React.FC = () => {
     getTableList();
   }, []);
 
-  const handleEdit = (type: 'add' | 'edit', row?: AlertShieldListItem) => {
+  const handleEdit = (type: 'add' | 'edit', row?: CorrelationRule) => {
     if (type === 'edit' && row) {
       setCurrentRow(row);
     } else {
@@ -43,7 +41,7 @@ const CorrelationRules: React.FC = () => {
     setOperateVisible(true);
   };
 
-  const handleDelete = async (row: AlertShieldListItem) => {
+  const handleDelete = async (row: CorrelationRule) => {
     Modal.confirm({
       title: t('deleteTitle'),
       content: t('deleteContent'),
@@ -52,7 +50,7 @@ const CorrelationRules: React.FC = () => {
       centered: true,
       onOk: async () => {
         try {
-          await deleteShield(row.id);
+          await deleteCorrelationRule(row.id);
           message.success(t('successfullyDeleted'));
           if (pagination.current > 1 && listCount.current === 1) {
             setPagination((prev) => ({ ...prev, current: prev.current - 1 }));
@@ -64,7 +62,7 @@ const CorrelationRules: React.FC = () => {
             getTableList();
           }
         } catch {
-          message.error(t('AlertAssign.operateFailed'));
+          message.error(t('common.operateFailed'));
         }
       },
     });
@@ -80,7 +78,7 @@ const CorrelationRules: React.FC = () => {
         page_size: params.pageSize || pagination.pageSize,
         name: searchVal || undefined,
       };
-      const data: any = await getShieldList(queryParams);
+      const data: any = await getCorrelationRuleList(queryParams);
       setDataList(data.items || []);
       listCount.current = data.items?.length || 0;
       setPagination((prev) => ({
@@ -124,15 +122,15 @@ const CorrelationRules: React.FC = () => {
   const buildColumns = () => {
     return [
       {
-        title: t('settings.assignName'),
+        title: t('settings.name'),
         dataIndex: 'name',
         key: 'name',
         width: 150,
       },
       {
         title: t('settings.correlation.type'),
-        dataIndex: 'type',
-        key: 'type',
+        dataIndex: 'rule_names',
+        key: 'rule_names',
         width: 150,
       },
       {
@@ -140,18 +138,21 @@ const CorrelationRules: React.FC = () => {
         dataIndex: 'scope',
         key: 'scope',
         width: 150,
+        render: (text: string) => {
+          return text === 'all' ? t('common.all') : '';
+        },
       },
       {
         title: t('settings.correlation.lastUpdateTime'),
-        dataIndex: 'last_update_time',
-        key: 'last_update_time',
+        dataIndex: 'updated_at',
+        key: 'updated_at',
         width: 150,
       },
       {
         title: t('settings.assignActions'),
         key: 'operation',
         width: 130,
-        render: (text: any, row: AlertShieldListItem) => (
+        render: (text: any, row: CorrelationRule) => (
           <div className="flex gap-4">
             <PermissionWrapper requiredPermissions={['Edit']}>
               <Button
@@ -187,11 +188,10 @@ const CorrelationRules: React.FC = () => {
         title={t('settings.correlationRules')}
         message={t('settings.correlationRulesMessage')}
       />
-      <div className="p-4 bg-white rounded-lg shadow">
+      <div className="p-4 pt-0 bg-white rounded-lg shadow">
         <Tabs
           activeKey={activeTab}
           onChange={(key) => setActiveTab(key as 'Event' | 'Alert')}
-          className="mb-4"
           items={[
             { key: 'Event', label: t('alarms.event') },
             { key: 'Alert', label: t('alarms.alert') },
@@ -199,7 +199,7 @@ const CorrelationRules: React.FC = () => {
         />
         {activeTab === 'Event' && (
           <div>
-            <div className="nav-box flex justify-between mb-[20px]">
+            <div className="nav-box flex justify-between mb-[14px]">
               <div className="flex items-center">
                 <Input
                   allowClear
@@ -225,7 +225,7 @@ const CorrelationRules: React.FC = () => {
               dataSource={dataList}
               pagination={pagination}
               onChange={handleTableChange}
-              scroll={{ y: 'calc(100vh - 520px)' }}
+              scroll={{ y: 'calc(100vh - 480px)' }}
             />
             <OperateModal
               open={operateVisible}
@@ -248,4 +248,4 @@ const CorrelationRules: React.FC = () => {
   );
 };
 
-export default CorrelationRules;
+export default CorrelationRulesPage;

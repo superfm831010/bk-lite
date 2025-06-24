@@ -6,6 +6,7 @@ import AlarmFilters from '@/app/alarm/components/alarmFilters';
 import CustomTable from '@/components/custom-table';
 import alertStyle from './index.module.scss';
 import TimeSelector from '@/components/time-selector';
+import UserAvatar from '@/app/alarm/components/userAvatar';
 import type { ColumnsType } from 'antd/es/table';
 import { useIncidentsApi } from '@/app/alarm/api/incidents';
 import { Input, Button, Tag } from 'antd';
@@ -16,7 +17,7 @@ import { useTranslation } from '@/utils/i18n';
 import { incidentStates } from '@/app/alarm/constants/alarm';
 import { useRouter } from 'next/navigation';
 import { useCommon } from '@/app/alarm/context/common';
-import { KeepAlive } from 'react-activation';
+import { KeepAlive, useActivate } from 'react-activation';
 
 const IncidentsPage: React.FC = () => {
   const { getIncidentList } = useIncidentsApi();
@@ -78,7 +79,7 @@ const IncidentsPage: React.FC = () => {
       width: 140,
     },
     {
-      title: t('alarms.alertName'),
+      title: t('alarms.incidentName'),
       dataIndex: 'title',
       key: 'title',
       width: 180,
@@ -87,6 +88,12 @@ const IncidentsPage: React.FC = () => {
       title: t('alarms.source'),
       dataIndex: 'sources',
       key: 'sources',
+      width: 140,
+    },
+    {
+      title: t('incidents.alarmCount'),
+      dataIndex: 'alert_count',
+      key: 'alert_count',
       width: 140,
     },
     {
@@ -107,6 +114,12 @@ const IncidentsPage: React.FC = () => {
       dataIndex: 'operator_users',
       key: 'operator_users',
       width: 200,
+      shouldCellUpdate: (
+        prev: IncidentTableDataItem,
+        next: IncidentTableDataItem
+      ) => prev?.operator_user !== next?.operator_user,
+      render: (_: any, { operator_user }: IncidentTableDataItem) =>
+        operator_user ? <UserAvatar userName={operator_user} /> : '--',
     },
     {
       title: t('common.action'),
@@ -155,6 +168,10 @@ const IncidentsPage: React.FC = () => {
     setPagination((prev) => ({ ...prev, current: 1 }));
     fetchIncidentList(1, pagination.pageSize);
   }, [filters]);
+
+  useActivate(() => {
+    fetchIncidentList();
+  });
 
   const onFilterChange = (vals: string[], field: keyof FiltersConfig) => {
     setFilters((prev) => ({ ...prev, [field]: vals }));

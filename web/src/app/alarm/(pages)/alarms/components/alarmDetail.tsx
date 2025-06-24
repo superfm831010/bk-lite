@@ -248,12 +248,14 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
             </div>
             <div>
               <span className="mr-2">
-                <DeclareIncident
-                  rowData={[formData]}
-                  onSuccess={() => {
-                    handleAction();
-                  }}
-                />
+                {!formData.incident_name && (
+                  <DeclareIncident
+                    rowData={[formData]}
+                    onSuccess={() => {
+                      handleAction();
+                    }}
+                  />
+                )}
               </span>
               <AlarmAction
                 rowData={[formData]}

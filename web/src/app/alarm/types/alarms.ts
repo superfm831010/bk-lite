@@ -339,6 +339,7 @@ export interface AlarmActionProps {
   btnSize?: 'small' | 'middle' | 'large';
   showAll?: boolean;
   displayMode?: 'inline' | 'dropdown';
+  from?: 'alarm' | 'incident';
   onAction: () => void;
 }
 
@@ -421,4 +422,4 @@ export type ActionType =
   | 'assign'
   | 'reassign'
   | 'acknowledge'
-  | 'open';
+  | 'reopen';

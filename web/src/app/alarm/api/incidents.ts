@@ -19,10 +19,15 @@ export const useIncidentsApi = () => {
     return patch(`/alerts/api/incident/${id}/`, params);
   };
 
+  const incidentActionOperate = async (actionType: string, params: any) => {
+    return post(`/alerts/api/incident/operator/${actionType}/`, params);
+  };
+
   return {
     getIncidentList,
     getIncidentDetail,
     createIncidentDetail,
     modifyIncidentDetail,
+    incidentActionOperate,
   };
 };

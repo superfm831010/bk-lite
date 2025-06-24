@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
+import SearchFilter from '@/app/alarm/components/searchFilter';
 import type { TableDataItem } from '@/app/alarm/types/types';
-import { Drawer, Input, Button } from 'antd';
+import { Drawer, Button } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
 
@@ -24,7 +25,6 @@ const OperateModal: React.FC<OperateModalProps> = ({
   const { getAlarmList } = useAlarmApi();
   const [alarmTableList, setAlarmTableList] = useState<TableDataItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [searchText, setSearchText] = useState('');
   const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -32,22 +32,44 @@ const OperateModal: React.FC<OperateModalProps> = ({
     total: 0,
   });
 
-  const fetchAlarmList = async (pag?: {
-    current?: number;
-    pageSize?: number;
-    title?: string;
-  }) => {
+  const alarmAttrList = [
+    {
+      attr_id: 'alert_id',
+      attr_name: t('alarms.alertId'),
+      attr_type: 'str',
+      option: [],
+    },
+    {
+      attr_id: 'title',
+      attr_name: t('alarms.alertName'),
+      attr_type: 'str',
+      option: [],
+    },
+    {
+      attr_id: 'content',
+      attr_name: t('alarms.alertContent'),
+      attr_type: 'str',
+      option: [],
+    },
+  ];
+
+  const fetchAlarmList = async (
+    pag?: { current?: number; pageSize?: number },
+    condition?: { field: string; value: string }
+  ) => {
     try {
       setLoading(true);
       const current = pag?.current ?? pagination.current;
       const pageSizeVal = pag?.pageSize ?? pagination.pageSize;
-      const title = pag?.title ?? searchText;
-      const res: any = await getAlarmList({
+      const params: any = {
         page: current,
         page_size: pageSizeVal,
-        title,
         has_incident: false,
-      });
+      };
+      if (condition) {
+        params[condition.field] = condition.value;
+      }
+      const res: any = await getAlarmList(params);
       setAlarmTableList(res.items || []);
       setLoading(false);
       setPagination({
@@ -63,18 +85,14 @@ const OperateModal: React.FC<OperateModalProps> = ({
 
   useEffect(() => {
     if (visible) {
-      setSearchText('');
+      setAlarmTableList([]);
       setSelectedKeys([]);
-      fetchAlarmList({ current: 1, pageSize: pagination.pageSize, title: '' });
+      fetchAlarmList({ current: 1, pageSize: pagination.pageSize });
     }
   }, [visible]);
 
   const onTableChange = (pag: { current: number; pageSize: number }) => {
-    fetchAlarmList({
-      current: pag.current,
-      pageSize: pag.pageSize,
-      title: searchText,
-    });
+    fetchAlarmList({ current: pag.current, pageSize: pag.pageSize });
   };
 
   return (
@@ -92,28 +110,18 @@ const OperateModal: React.FC<OperateModalProps> = ({
           justifyContent: 'space-between',
         }}
       >
-        <Input
-          style={{ width: 250 }}
-          placeholder={t('common.searchPlaceHolder')}
-          allowClear
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          onPressEnter={() => {
-            fetchAlarmList({
-              current: 1,
-              pageSize: pagination.pageSize,
-              title: searchText,
-            });
-          }}
-          onClear={() => {
-            setSearchText('');
-            fetchAlarmList({
-              current: 1,
-              pageSize: pagination.pageSize,
-              title: '',
-            });
-          }}
-        />
+        {visible && (
+          <SearchFilter
+            attrList={alarmAttrList}
+            onSearch={(condition) => {
+              setSelectedKeys([]);
+              fetchAlarmList(
+                { current: 1, pageSize: pagination.pageSize },
+                condition
+              );
+            }}
+          />
+        )}
         <Button
           type="primary"
           disabled={!selectedKeys.length}
@@ -135,7 +143,6 @@ const OperateModal: React.FC<OperateModalProps> = ({
           fetchAlarmList({
             current: pagination.current,
             pageSize: pagination.pageSize,
-            title: searchText,
           })
         }
         extraActions={(record) => (

@@ -28,15 +28,23 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
   const [visible, setVisible] = useState(false);
   const [mode, setMode] = useState<'create' | 'link'>('create');
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [incidentLoading, setIncidentLoading] = useState(false);
   const [incidentOptions, setIncidentOptions] = useState<
     IncidentTableDataItem[]
   >([]);
 
   useEffect(() => {
     if (visible) {
-      getIncidentList({ page: -1 }).then((res) => {
-        setIncidentOptions(res);
-      });
+      setIncidentLoading(true);
+      getIncidentList({ page: -1 })
+        .then((res) => {
+          setIncidentOptions(res);
+        })
+        .finally(() => {
+          setIncidentLoading(false);
+        });
+    } else {
+      setIncidentOptions([]);
     }
   }, [visible]);
 
@@ -64,6 +72,9 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
           alert: alert_ids,
         });
         message.success(t('alarms.linkIncident') + t('common.success'));
+        rowData.forEach((r) => {
+          r.has_incident = true;
+        });
       }
       onSuccess({ mode, ...values });
       form.resetFields();
@@ -81,14 +92,22 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
     setVisible(false);
   };
 
+  const handleDeclare = () => {
+    if (rowData.some((r) => !!r.incident_name)) {
+      message.error(t('alarms.declareIncidentErrorMsg'));
+      return;
+    }
+    setVisible(true);
+  };
+
   return (
     <>
       <Button
         color="danger"
         type="dashed"
         variant="solid"
-        disabled={rowData.length === 0 || rowData.some((r) => r.has_incident)}
-        onClick={() => setVisible(true)}
+        disabled={rowData.length === 0}
+        onClick={handleDeclare}
       >
         {t('alarms.declareIncident')}
       </Button>
@@ -169,6 +188,7 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
                 allowClear
                 showSearch
                 placeholder={t('common.selectMsg')}
+                loading={incidentLoading}
                 optionLabelProp="label"
               >
                 {incidentOptions.map((inc) => (

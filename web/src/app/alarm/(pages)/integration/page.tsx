@@ -33,7 +33,7 @@ const IntegrationPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full flex-1">
+    <div className="w-full flex-1 h-[calc(100vh-56px)] overflow-y-auto">
       <Spin spinning={loading}>
         {!sources.length ? (
           <div className="mt-[24vh]">
@@ -60,7 +60,7 @@ const IntegrationPage: React.FC = () => {
                       className="w-7 h-7"
                     />
                   </div>
-                  <span className="font-semibold text-sm truncate ml-2">
+                  <span className="font-semibold text-base truncate ml-2">
                     {src.name}
                   </span>
                 </div>

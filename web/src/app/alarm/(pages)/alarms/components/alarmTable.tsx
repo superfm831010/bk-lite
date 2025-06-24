@@ -79,6 +79,12 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       width: 290,
     },
     {
+      title: t('alarms.incidentName'),
+      dataIndex: 'incident_name',
+      key: 'incident_name',
+      width: 290,
+    },
+    {
       title: t('alarms.eventCount'),
       dataIndex: 'event_count',
       key: 'event_count',

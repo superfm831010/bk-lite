@@ -7,6 +7,7 @@ import { useTranslation } from '@/utils/i18n';
 import { DownOutlined } from '@ant-design/icons';
 import { AlarmActionProps, ActionType } from '@/app/alarm/types/alarms';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
+import { useIncidentsApi } from '@/app/alarm/api/incidents';
 import { useSession } from 'next-auth/react';
 
 const AlarmAction: React.FC<AlarmActionProps> = ({
@@ -14,14 +15,20 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
   btnSize = 'middle',
   displayMode = 'inline',
   showAll = false,
+  from = 'alarm',
   onAction,
 }) => {
+  const idKeyMap = {
+    alarm: 'alert_id',
+    incident: 'incident_id',
+  };
   const { t } = useTranslation();
   const { data: session } = useSession();
   const { alertActionOperate } = useAlarmApi();
+  const { incidentActionOperate } = useIncidentsApi();
   const [assignVisible, setAssignVisible] = useState(false);
   const [actionType, setActionType] = useState<ActionType>('assign');
-  const alertIds = rowData.map((item) => item.alert_id);
+  const idList = rowData.map((item) => item[idKeyMap[from]]);
   const username = session?.user?.username;
 
   const isMine = () =>
@@ -32,28 +39,43 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
         .includes(username)
     );
 
-  const allTypes: ActionType[] = [
-    'assign',
-    'acknowledge',
-    'reassign',
-    'close',
-    'open',
-  ];
-
-  const statusActionMap: Record<string, ActionType[]> = {
-    unassigned: ['assign'],
-    pending: ['acknowledge'],
-    processing: ['reassign', 'close'],
-    closed: [],
+  const apiNameMap = {
+    alarm: alertActionOperate,
+    incident: incidentActionOperate,
   };
 
-  const validStatusMap: Record<ActionType, string[]> = {
-    assign: ['unassigned'],
-    acknowledge: ['pending'],
-    reassign: ['processing'],
-    close: ['processing'],
-    open: ['closed'],
-  };
+  const allTypes: ActionType[] =
+    from === 'alarm'
+      ? ['assign', 'acknowledge', 'reassign', 'close']
+      : ['acknowledge', 'close', 'reopen'];
+
+  const statusActionMap: Record<string, ActionType[]> =
+    from === 'alarm'
+      ? {
+        unassigned: ['assign'],
+        pending: ['acknowledge'],
+        processing: ['reassign', 'close'],
+        closed: [],
+      }
+      : {
+        pending: ['acknowledge'],
+        processing: ['close'],
+        closed: ['reopen'],
+      };
+
+  const validStatusMap: Record<string, string[]> =
+    from === 'alarm'
+      ? {
+        assign: ['unassigned'],
+        acknowledge: ['pending'],
+        reassign: ['processing'],
+        close: ['processing'],
+      }
+      : {
+        acknowledge: ['pending'],
+        close: ['processing'],
+        reopen: ['closed'],
+      };
 
   const availableTypes = showAll
     ? allTypes
@@ -62,21 +84,22 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
       : [];
 
   const handleOperate = (type: ActionType) => {
-    if (!['acknowledge', 'close'].includes(type)) {
+    if (!['acknowledge', 'close', 'reopen'].includes(type)) {
       setActionType(type);
       setAssignVisible(true);
       return;
     }
+    const fromLabel = `${from === 'alarm' ? t('alarms.alert') : t('alarms.incident')}`;
     Modal.confirm({
-      title: `${t(`alarms.${type}`)}${t('alarms.alert')}`,
-      content: `${t('common.confirm')}${t(`alarms.${type}`)}${t('alarms.alert')} ？`,
+      title: `${t(`alarms.${type}`)}${fromLabel}`,
+      content: `${t('common.confirm')}${t(`alarms.${type}`)}${fromLabel}？`,
       okText: t('confirm'),
       cancelText: t('cancel'),
       centered: true,
       onOk: async () => {
         try {
-          const data = await alertActionOperate(type, {
-            alert_id: alertIds,
+          const data = await apiNameMap[from](type, {
+            [idKeyMap[from]]: idList,
             assignee: [],
           });
           if (Object.values(data).some((res: any) => !res.result)) {
@@ -98,9 +121,10 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
     <>
       {availableTypes.map((type) => {
         const allStatusValid = rowData.every((item) =>
-          validStatusMap[type].includes(item.status)
+          validStatusMap[type]?.includes(item.status)
         );
-        const needMine = ['acknowledge', 'reassign'].includes(type);
+        const needMine =
+          from === 'alarm' && ['acknowledge', 'reassign'].includes(type);
         const disabled =
           !rowData.length || !allStatusValid || (needMine && !isMine());
         return (
@@ -169,7 +193,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
     <>
       {displayMode === 'dropdown' && dropdown ? dropdown : inline}
       <AlarmAssignModal
-        alertIds={alertIds}
+        alertIds={idList}
         visible={assignVisible}
         actionType={actionType}
         onCancel={() => setAssignVisible(false)}

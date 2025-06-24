@@ -1,5 +1,5 @@
 .chartWrapper {
-  padding: 16px 60px;
+  padding: 16px 60px 0 60px;
   position: relative;
   overflow: hidden;
 }
@@ -22,15 +22,22 @@
     transform: translateX(-50%);
     font-size: 12px;
     color: #999;
+    width: max-content;
   }
 }
 
 .chartContent {
+  overflow-x: visible;
+  overflow-y: auto;
+  margin-right: -10px;
+  margin-left: -30px;
+  padding-left: 30px;
+  max-height: calc(100vh - 416px);
   .alarmRow {
     position: relative;
     .alarmCheckbox {
       position: absolute;
-      left: -40px;
+      left: -30px;
     }
   }
   .barContainer {

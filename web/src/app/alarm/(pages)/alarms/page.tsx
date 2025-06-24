@@ -297,9 +297,24 @@ const Alert: React.FC = () => {
   };
 
   const alarmAttrList = [
-    { attr_id: 'alert_id', attr_name: '告警ID', attr_type: 'str', option: [] },
-    { attr_id: 'title', attr_name: '告警名称', attr_type: 'str', option: [] },
-    { attr_id: 'content', attr_name: '告警内容', attr_type: 'str', option: [] },
+    {
+      attr_id: 'alert_id',
+      attr_name: t('alarms.alertId'),
+      attr_type: 'str',
+      option: [],
+    },
+    {
+      attr_id: 'title',
+      attr_name: t('alarms.alertName'),
+      attr_type: 'str',
+      option: [],
+    },
+    {
+      attr_id: 'content',
+      attr_name: t('alarms.alertContent'),
+      attr_type: 'str',
+      option: [],
+    },
   ];
 
   return (
@@ -386,17 +401,21 @@ const Alert: React.FC = () => {
 
               <div className="flex items-center space-x-4">
                 <DeclareIncident
-                  rowData={tableData.filter((item) =>
-                    selectedRowKeys.includes(item.id)
-                  )}
+                  rowData={
+                    tableData?.filter((item) =>
+                      selectedRowKeys.includes(item.id)
+                    ) || []
+                  }
                   onSuccess={() => {
                     onRefresh();
                   }}
                 />
                 <AlarmAction
-                  rowData={tableData.filter((item) =>
-                    selectedRowKeys.includes(item.id)
-                  )}
+                  rowData={
+                    tableData?.filter((item) =>
+                      selectedRowKeys.includes(item.id)
+                    ) || []
+                  }
                   displayMode="dropdown"
                   showAll
                   onAction={() => {

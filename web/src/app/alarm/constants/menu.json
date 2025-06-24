@@ -1,13 +1,13 @@
 {
   "zh": [
     {
-      "title": "事件",
+    "title": "事故",
       "icon": "shiguanli",
       "url": "/alarm/incidents",
       "name": "incidents",
       "children": [
         {
-          "title": "事件详情",
+        "title": "事故详情",
           "url": "/alarm/incidents/detail",
           "name": "incident_detail"
         }
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "title": "设置",
+    "title": "配置",
       "icon": "settings-fill",
       "url": "/alarm/settings",
       "name": "settings",

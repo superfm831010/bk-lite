@@ -22,11 +22,13 @@
         "partialSuccess": "部分成功",
         "advanced": "高级",
         "partialFailure": "部分失败",
-        "successOperate": "操作成功"
+        "successOperate": "操作成功",
+        "all": "全部"
     },
     "incidents": {
         "table": "表格",
-        "gantt": "甘特图"
+        "gantt": "甘特图",
+        "alarmCount": "告警数量"
     },
     "alarms": {
         "monitor": "监控",
@@ -65,6 +67,7 @@
         "batchOperations": "批量操作",
         "pending": "待响应",
         "processing": "处理中",
+        "reopen": "重新打开",
         "new": "新",
         "unassigned": "未分派",
         "recovered": "已恢复",
@@ -74,7 +77,7 @@
         "reassign": "转派",
         "acknowledge": "认领",
         "createTime": "创建时间",
-        "assignee": "受理人",
+        "assignee": "处理人",
         "duration": "持续时间",
         "note": "备注",
         "alert": "告警",
@@ -84,9 +87,11 @@
         "eventTitle": "标题",
         "eventCount": "事件数量",
         "notificationStatus": "通知情况",
-        "declareIncident": "升级为事件",
-        "createIncident": "创建事件",
-        "linkIncident": "关联事件",
+        "incidentName": "事故名称",
+        "declareIncident": "升级为事故",
+        "declareIncidentErrorMsg": "你选择的alert已关联incident",
+        "createIncident": "创建事故",
+        "linkIncident": "关联事故",
         "confirmOperate": "确认操作",
         "claim": "认领",
         "assign": "分派",
@@ -103,8 +108,10 @@
         "content": "内容",
         "metricName": "指标",
         "metricValue": "指标值",
-        "incident": "事件",
-        "title": "标题"
+        "incident": "事故",
+        "title": "标题",
+        "alertId": "告警ID",
+        "alertContent": "告警内容"
     },
     "integration": {
         "description": "描述",
@@ -131,6 +138,7 @@
         "alertAssignTableCreateTime": "创建时间",
         "alertAssignTableStartStop": "启停",
         "alertAssignTableActions": "操作",
+        "name": "名称",
         "assignName": "策略名称",
         "assignPersonnel": "分派人员",
         "assignTime": "生效时间",
@@ -145,9 +153,11 @@
         "correlation": {
             "example": "示例",
             "describe": "描述",
+            "dimDescribeContent": "规则定义： \n1，过滤方式：event等级高于“warning”\n2，汇聚维度：event的对象实例\n3，聚合策略：按照event相同对象实例进行聚合，alert等级为event的最低等级。\n常用于单种运维对象的性能判断需要多个维度结合分析的场景，例如：服务器的性能异常、数据库的性能异常等",
+            "bizDescribeContent": "规则定义：\n1，过滤方式：event类型为网站拨测\n2，聚合策略：当拨测异常时，立刻产生alert，同一个网站event进行关联聚合\n常用于网站拨测的场景",
             "type": "类型",
             "scope": "作用范围",
-            "lastUpdateTime": "策略修改时间",
+            "lastUpdateTime": "修改时间",
             "explain": "说明"
         },
         "assignStrategy": {

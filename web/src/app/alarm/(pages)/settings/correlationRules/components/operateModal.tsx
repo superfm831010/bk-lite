@@ -1,15 +1,19 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import type { AlertShieldListItem } from '@/app/alarm/types/settings';
-import { Drawer, Form, Input, Button, Select } from 'antd';
+import React, { useEffect, useState } from 'react';
+import type {
+  AggregationRule,
+  CorrelationRule,
+} from '@/app/alarm/types/settings';
+import { Drawer, Form, Input, Button, Select, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
+import { useSettingApi } from '@/app/alarm/api/settings';
 
 interface OperateModalProps {
   open: boolean;
-  currentRow?: AlertShieldListItem | null;
+  currentRow?: CorrelationRule | null;
   onClose: () => void;
-  onSuccess: (name: string) => void;
+  onSuccess: () => void;
 }
 
 const OperateModal: React.FC<OperateModalProps> = ({
@@ -20,25 +24,87 @@ const OperateModal: React.FC<OperateModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
-  const selectedType = Form.useWatch('type', form);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [aggOptions, setAggOptions] = useState<
+    { label: string; value: string; id: number; disabled?: boolean }[]
+  >([]);
+  const [optionsLoading, setOptionsLoading] = useState(false);
+  const selectedType = Form.useWatch('ruleId', form);
+  const { getAggregationRule, createCorrelationRule, updateCorrelationRule } =
+    useSettingApi();
+  const locale = localStorage.getItem('locale') || 'en';
   const imageMap: Record<string, string> = {
-    dim_aggregate: '/app/dim_aggregate.png',
-    biz_availability: '/app/biz_availability.png',
+    high_level_event_aggregation: '/app/high_level_event_aggregation.png',
+    website_monitoring_alert: '/app/website_monitoring_alert.png',
   };
 
   useEffect(() => {
     if (open) {
-      if (currentRow) {
-        form.setFieldsValue({ name: currentRow.name });
-      } else {
-        form.resetFields();
-      }
+      form.resetFields();
+      fetchAggregationRule();
     }
-  }, [open, currentRow, form]);
+  }, [open, form]);
 
-  const handleFinish = (values: any) => {
-    onSuccess(values.name);
-    form.resetFields();
+  useEffect(() => {
+    if (open && currentRow && aggOptions.length) {
+      const initialRuleId = aggOptions.find(
+        (opt) => opt.id === currentRow.aggregation_rules?.[0]
+      )?.value;
+      form.setFieldsValue({
+        name: currentRow.name,
+        ruleId: initialRuleId,
+      });
+    }
+  }, [aggOptions, open, currentRow, form]);
+
+  const fetchAggregationRule = async () => {
+    setOptionsLoading(true);
+    try {
+      const res = await getAggregationRule({
+        page: 1,
+        page_size: 10000,
+        type: 'alert',
+      });
+      setAggOptions(
+        (res?.items || []).map((item: AggregationRule) => ({
+          id: item.id,
+          value: item.rule_id,
+          label: locale === 'zh' ? item.description : item.name,
+          disabled: !!item.correlation_name,
+        }))
+      );
+    } catch {
+      setAggOptions([]);
+    } finally {
+      setOptionsLoading(false);
+    }
+  };
+
+  const handleFinish = async (values: any) => {
+    setSubmitLoading(true);
+    const selectedOpt = aggOptions.find((opt) => opt.value === values.ruleId);
+    const params = {
+      name: values.name,
+      aggregation_rules: [selectedOpt?.id],
+      scope: 'all',
+      rule_type: 'alert',
+    };
+    try {
+      if (currentRow?.id) {
+        await updateCorrelationRule(currentRow.id, params);
+        message.success(t('common.successOperate'));
+      } else {
+        await createCorrelationRule(params);
+        message.success(t('common.successOperate'));
+      }
+      form.resetFields();
+      onSuccess();
+      onClose();
+    } catch {
+      message.error(t('common.operateFailed'));
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   return (
@@ -48,16 +114,21 @@ const OperateModal: React.FC<OperateModalProps> = ({
           ? `${t('settings.correlationRules')} - ${currentRow.name}`
           : t('settings.correlationRules')
       }
-      width={720}
+      width={700}
       open={open}
       onClose={onClose}
       footer={
-        <div style={{ textAlign: 'right' }}>
-          <Button onClick={onClose} style={{ marginRight: 8 }}>
-            {t('common.cancel')}
+        <div>
+          <Button
+            type="primary"
+            loading={submitLoading}
+            style={{ marginRight: 8 }}
+            onClick={() => form.submit()}
+          >
+            {t('common.confirm')}
           </Button>
-          <Button type="primary" onClick={() => form.submit()}>
-            {currentRow ? t('common.confirm') : t('common.confirm')}
+          <Button onClick={onClose} disabled={submitLoading}>
+            {t('common.cancel')}
           </Button>
         </div>
       }
@@ -65,7 +136,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
       <Form
         form={form}
         layout="horizontal"
-        labelCol={{ span: 4 }}
+        labelCol={{ span: 3 }}
         onFinish={handleFinish}
       >
         <Form.Item
@@ -77,40 +148,49 @@ const OperateModal: React.FC<OperateModalProps> = ({
         </Form.Item>
 
         <Form.Item
-          name="type"
+          name="ruleId"
           label={t('settings.correlation.type')}
           rules={[{ required: true, message: t('common.selectMsg') }]}
         >
           <Select
+            loading={optionsLoading}
             placeholder={t('common.selectMsg')}
-            options={[
-              { label: '对象维度聚合', value: 'dim_aggregate' },
-              { label: '业务可用性-拨测', value: 'biz_availability' },
-            ]}
+            options={aggOptions}
+            disabled={!!currentRow}
           />
         </Form.Item>
-        <Form.Item label={t('settings.correlation.explain')} className="mb-6">
-          <div className="border border-gray-300 p-4 rounded-lg space-y-4">
-            <div>
-              <div className="font-medium mb-2">
-                {t('settings.correlation.example')}
+        {selectedType && imageMap[selectedType] ? (
+          <Form.Item
+            label={t('settings.correlation.explain')}
+            className="ml-10"
+            labelCol={{ span: 24 }}
+          >
+            <div className="border border-gray-300 p-4 rounded-lg space-y-4">
+              <div>
+                <div className="font-medium mb-2">
+                  {t('settings.correlation.example')}
+                </div>
+                <img
+                  src={imageMap[selectedType || 'high_level_event_aggregation']}
+                  alt={selectedType}
+                  className="w-full h-auto"
+                />
               </div>
-              <img
-                src={imageMap[selectedType] ?? ''}
-                alt={selectedType}
-                className="w-full h-auto"
-              />
-            </div>
-            <div>
-              <div className="font-medium mb-2">
-                {t('settings.correlation.describe')}
+              <div>
+                <div className="font-medium mb-2">
+                  {t('settings.correlation.describe')}
+                </div>
+                <p style={{ whiteSpace: 'pre-line' }}>
+                  {selectedType === 'high_level_event_aggregation'
+                    ? t('settings.correlation.dimDescribeContent')
+                    : t('settings.correlation.bizDescribeContent')}
+                </p>
               </div>
-              <p>Mock description text to be replaced later.</p>
             </div>
-          </div>
-        </Form.Item>
+          </Form.Item>
+        ) : null}
         <Form.Item name="scope" label={t('settings.correlation.scope')}>
-          <span>All</span>
+          <span>{t('common.all')}</span>
         </Form.Item>
       </Form>
     </Drawer>

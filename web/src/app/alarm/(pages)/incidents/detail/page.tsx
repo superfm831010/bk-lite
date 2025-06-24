@@ -2,23 +2,24 @@
 
 import React, { useState, useEffect } from 'react';
 import Icon from '@/components/icon';
-import commonStyles from '@/app/alarm/components/customBreadcrumb/index.module.scss';
+import CustomBreadcrumb from '@/app/alarm/components/customBreadcrumb';
 import styles from './page.module.scss';
 import AlarmTable from '@/app/alarm/(pages)/alarms/components/alarmTable';
 import GanttChart from '../components/ganttChart';
 import LinkModal from '../components/linkModal';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import AlarmAction from '@/app/alarm/(pages)/alarms/components/alarmAction';
+import SearchFilter from '@/app/alarm/components/searchFilter';
 import { AlarmTableDataItem } from '@/app/alarm/types/alarms';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
 import { UserItem } from '@/app/alarm/types/types';
 import { useCommon } from '@/app/alarm/context/common';
 import { useTranslation } from '@/utils/i18n';
 import { useSearchParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
 import { useIncidentsApi } from '@/app/alarm/api/incidents';
-import { message, Spin } from 'antd';
+import { message, Spin, Modal } from 'antd';
 import { IncidentTableDataItem } from '@/app/alarm/types/incidents';
+import { useStateMap } from '@/app/alarm/constants/alarm';
 import {
   EditOutlined,
   CheckOutlined,
@@ -46,12 +47,11 @@ const IncidentDetail: React.FC = () => {
   const { levelListIncident, levelMapIncident, userList } = useCommon();
   const { getAlarmList } = useAlarmApi();
   const { getIncidentDetail, modifyIncidentDetail } = useIncidentsApi();
-  const router = useRouter();
+  const STATE_MAP = useStateMap();
   const searchParams = useSearchParams();
   const incidentId = searchParams.get('incident_id') || '';
   const [tableData, setTableData] = useState<AlarmTableDataItem[]>([]);
   const [tabLoading, setTabLoading] = useState<boolean>(false);
-  const [searchText, setSearchText] = useState<string>('');
   const [viewType, setViewType] = useState<'table' | 'gantt'>('table');
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [operateVisible, setOperateVisible] = useState(false);
@@ -65,10 +65,35 @@ const IncidentDetail: React.FC = () => {
   const [unlinkLoading, setUnlinkLoading] = useState(false);
   const [rowUnlinkKey, setRowUnlinkKey] = useState<React.Key | null>(null);
   const [linkingLoading, setLinkingLoading] = useState(false);
+  const [editingNote, setEditingNote] = useState(false);
+  const [noteValue, setNoteValue] = useState('');
+  const [preNote, setPreNote] = useState('');
+  const [noteLoading, setNoteLoading] = useState(false);
 
   const timeline = [
     { time: '2023-08-01 12:00', event: '触发告警' },
     { time: '2023-08-01 12:05', event: '认领告警' },
+  ];
+
+  const alarmAttrList = [
+    {
+      attr_id: 'alert_id',
+      attr_name: t('alarms.alertId'),
+      attr_type: 'str',
+      option: [],
+    },
+    {
+      attr_id: 'title',
+      attr_name: t('alarms.alertName'),
+      attr_type: 'str',
+      option: [],
+    },
+    {
+      attr_id: 'content',
+      attr_name: t('alarms.alertContent'),
+      attr_type: 'str',
+      option: [],
+    },
   ];
 
   useEffect(() => {
@@ -86,16 +111,24 @@ const IncidentDetail: React.FC = () => {
     }
   };
 
-  const fetchAlarmList = async (titleSearch?: string) => {
+  const fetchAlarmList = async (
+    titleSearch?: string,
+    condition?: { field: string; value: string }
+  ) => {
     setTabLoading(true);
     try {
-      const res = await getAlarmList({
+      const params: any = {
         page: 1,
         page_size: 10000,
         incident_id: incidentId,
-        title: titleSearch === undefined ? searchText : titleSearch,
         has_incident: '',
-      });
+      };
+      if (condition) {
+        params[condition.field] = condition.value;
+      } else {
+        params.title = titleSearch === undefined ? '' : titleSearch;
+      }
+      const res = await getAlarmList(params);
       setTableData(res.items || []);
     } finally {
       setTabLoading(false);
@@ -109,11 +142,21 @@ const IncidentDetail: React.FC = () => {
 
   useEffect(() => {
     if (incidentDetail?.operator_users) {
-      setSelectedAssignees(incidentDetail?.operator_users.split(','));
-      setPreAssignees(incidentDetail?.operator_users.split(','));
+      const trimmedUsers = incidentDetail.operator_users
+        .split(',')
+        .map((user) => user.trim());
+      setSelectedAssignees(trimmedUsers);
+      setPreAssignees(trimmedUsers);
       setAssigneeDisplay(incidentDetail?.operator_users);
     }
   }, [incidentDetail?.operator_users]);
+
+  useEffect(() => {
+    if (incidentDetail) {
+      setNoteValue(incidentDetail.note || '');
+      setPreNote(incidentDetail.note || '');
+    }
+  }, [incidentDetail?.note]);
 
   const confirmAssignee = async () => {
     setAssigneeLoading(true);
@@ -121,9 +164,8 @@ const IncidentDetail: React.FC = () => {
       await modifyIncidentDetail(incidentId, { operator: selectedAssignees });
       message.success(t('common.saveSuccess'));
       setPreAssignees(selectedAssignees);
-      setAssigneeDisplay(selectedAssignees.join(', '));
+      setAssigneeDisplay(selectedAssignees.join(','));
       setEditingAssignee(false);
-      fetchIncidentDetail();
     } catch {
       message.error(t('common.saveFailed'));
     } finally {
@@ -135,31 +177,58 @@ const IncidentDetail: React.FC = () => {
     setEditingAssignee(false);
   };
 
+  const confirmNote = async () => {
+    setNoteLoading(true);
+    try {
+      await modifyIncidentDetail(incidentId, { note: noteValue });
+      message.success(t('common.saveSuccess'));
+      setPreNote(noteValue);
+      setEditingNote(false);
+    } catch {
+      message.error(t('common.saveFailed'));
+    } finally {
+      setNoteLoading(false);
+    }
+  };
+  const cancelNote = () => {
+    setNoteValue(preNote);
+    setEditingNote(false);
+  };
+
   const onTabTableChange = () => {
     fetchAlarmList();
   };
 
-  const handleUnlink = async (keys?: React.Key[]) => {
-    const isRow = !!keys;
-    if (isRow) setRowUnlinkKey(keys![0]);
-    else setUnlinkLoading(true);
+  const handleUnlink = (keys?: React.Key[]) => {
+    Modal.confirm({
+      title: t('common.unlinkAlert'),
+      content: `${t('common.confirm')}${t('common.unlinkAlert')}`,
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      centered: true,
+      onOk: async () => {
+        const isRow = !!keys;
+        if (isRow) setRowUnlinkKey(keys![0]);
+        else setUnlinkLoading(true);
 
-    try {
-      const toRemove = keys ?? selectedRowKeys;
-      if (!toRemove.length) return;
-      const remainingIds = tableData
-        .map((i) => i.id)
-        .filter((id) => !toRemove.includes(id));
-      await modifyIncidentDetail(incidentId, { aler: remainingIds });
-      message.success(t('common.unlinkAlert') + t('common.success'));
-      if (!isRow) setSelectedRowKeys([]);
-      fetchAlarmList();
-    } catch {
-      console.error(t('common.unlinkFailed'));
-    } finally {
-      if (isRow) setRowUnlinkKey(null);
-      else setUnlinkLoading(false);
-    }
+        try {
+          const toRemove = keys ?? selectedRowKeys;
+          if (!toRemove.length) return;
+          const remainingIds = tableData
+            .map((i) => i.id)
+            .filter((id) => !toRemove.includes(id));
+          await modifyIncidentDetail(incidentId, { alert: remainingIds });
+          message.success(t('common.unlinkAlert') + t('common.success'));
+          if (!isRow) setSelectedRowKeys([]);
+          fetchAlarmList();
+        } catch {
+          console.error(t('common.unlinkFailed'));
+        } finally {
+          if (isRow) setRowUnlinkKey(null);
+          else setUnlinkLoading(false);
+        }
+      },
+    });
   };
 
   const handleLink = () => {
@@ -195,8 +264,12 @@ const IncidentDetail: React.FC = () => {
         return (
           <Descriptions.Item label={label} key={idx}>
             <div className={`${styles.descContent} flex items-start`}>
-              <span className="mr-4">{incidentDetail?.[key] || '--'}</span>
+              <span className="mr-4">
+                {STATE_MAP[incidentDetail?.[key] as keyof typeof STATE_MAP] ||
+                  '--'}
+              </span>
               <AlarmAction
+                from="incident"
                 btnSize="small"
                 displayMode="dropdown"
                 rowData={[incidentDetail || ({} as IncidentTableDataItem)]}
@@ -235,8 +308,9 @@ const IncidentDetail: React.FC = () => {
                     size="small"
                     type="link"
                     icon={<CheckOutlined />}
-                    onClick={confirmAssignee}
                     loading={assigneeLoading}
+                    disabled={!selectedAssignees.length}
+                    onClick={confirmAssignee}
                   />
                   <Button
                     size="small"
@@ -248,7 +322,7 @@ const IncidentDetail: React.FC = () => {
               ) : (
                 <>
                   <EllipsisWithTooltip
-                    className="whitespace-nowrap overflow-hidden text-ellipsis mr-[10px]"
+                    className="whitespace-nowrap overflow-hidden text-ellipsis mr-[6px]"
                     text={assigneeDisplay || '--'}
                   ></EllipsisWithTooltip>
                   <Button
@@ -257,6 +331,51 @@ const IncidentDetail: React.FC = () => {
                     icon={<EditOutlined />}
                     className="mr-[10px]"
                     onClick={() => setEditingAssignee(true)}
+                  />
+                </>
+              )}
+            </div>
+          </Descriptions.Item>
+        );
+      }
+      if (key === 'note') {
+        return (
+          <Descriptions.Item label={label} key={idx}>
+            <div className={styles.descContent + ' flex-1 flex items-center'}>
+              {editingNote ? (
+                <>
+                  <Input.TextArea
+                    rows={3}
+                    style={{ width: '220px', marginRight: '10px' }}
+                    value={noteValue}
+                    onChange={(e) => setNoteValue(e.target.value)}
+                  />
+                  <Button
+                    size="small"
+                    type="link"
+                    icon={<CheckOutlined />}
+                    onClick={confirmNote}
+                    loading={noteLoading}
+                    disabled={noteValue === preNote}
+                  />
+                  <Button
+                    size="small"
+                    type="link"
+                    icon={<CloseOutlined />}
+                    onClick={cancelNote}
+                  />
+                </>
+              ) : (
+                <>
+                  <EllipsisWithTooltip
+                    className="whitespace-nowrap overflow-hidden text-ellipsis mr-[6px] max-w-[280px]"
+                    text={preNote || '--'}
+                  />
+                  <Button
+                    size="small"
+                    type="link"
+                    icon={<EditOutlined />}
+                    onClick={() => setEditingNote(true)}
                   />
                 </>
               )}
@@ -287,35 +406,33 @@ const IncidentDetail: React.FC = () => {
   return (
     <div className={styles.detailContainer}>
       <div style={{ position: 'relative', marginBottom: '16px' }}>
-        <Breadcrumb className={commonStyles.breadcrumb}>
-          <div onClick={() => router.back()} className={commonStyles.backIcon}>
-            <Icon type="xiangzuojiantou" />
-          </div>
+        <CustomBreadcrumb>
           <Breadcrumb.Item>
             <span className="ml-[10px] mr-[10px]">{incidentDetail?.title}</span>
-            <Tag
-              color={
-                levelMapIncident[incidentDetail?.level as string] as string
-              }
-            >
-              <div className="flex items-center">
-                <Icon
-                  type={
-                    levelListIncident.find(
-                      (item) => item.level_id === Number(incidentDetail?.level)
-                    )?.icon || ''
-                  }
-                  className="mr-1"
-                />
-                {
-                  levelListIncident.find(
-                    (item) => item.level_id === Number(incidentDetail?.level)
-                  )?.level_display_name
+            {incidentDetail && (
+              <Tag
+                color={
+                  levelMapIncident[incidentDetail?.level as string] as string
                 }
-              </div>
-            </Tag>
+              >
+                <div className="flex items-center">
+                  <Icon
+                    type={
+                      levelListIncident.find(
+                        (item) =>
+                          item.level_id === Number(incidentDetail?.level)
+                      )?.icon || ''
+                    }
+                    className="mr-1"
+                  />
+                  {levelListIncident.find(
+                    (item) => item.level_id === Number(incidentDetail?.level)
+                  )?.level_display_name || '--'}
+                </div>
+              </Tag>
+            )}
           </Breadcrumb.Item>
-        </Breadcrumb>
+        </CustomBreadcrumb>
         <Button
           type="text"
           icon={<ReloadOutlined />}
@@ -329,7 +446,7 @@ const IncidentDetail: React.FC = () => {
       </div>
       <div className={styles.detailContent}>
         {loadingDetail ? (
-          <div className="flex justify-center mt-[2vh]">
+          <div className="flex justify-center pt-[20px] h-[72px] ">
             <Spin spinning={loadingDetail}></Spin>
           </div>
         ) : (
@@ -347,21 +464,15 @@ const IncidentDetail: React.FC = () => {
               <div className={styles.tabContent}>
                 <div className={styles.filterRow}>
                   <div className={styles.switchWrapper}>
-                    <Input
-                      allowClear
-                      className="w-[300px] mr-[20px]"
-                      placeholder={t('common.searchPlaceHolder')}
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                      onPressEnter={() => {
-                        fetchAlarmList();
-                      }}
-                      onClear={() => {
-                        setSearchText('');
-                        fetchAlarmList('');
+                    <SearchFilter
+                      attrList={alarmAttrList}
+                      onSearch={(condition) => {
+                        setSelectedRowKeys([]);
+                        fetchAlarmList(undefined, condition);
                       }}
                     />
                     <Segmented
+                      className="ml-[12px]"
                       defaultValue="table"
                       options={[
                         {
@@ -404,7 +515,7 @@ const IncidentDetail: React.FC = () => {
                   <AlarmTable
                     dataSource={tableData}
                     loading={tabLoading}
-                    tableScrollY="calc(100vh - 410px)"
+                    tableScrollY="calc(100vh - 430px)"
                     selectedRowKeys={selectedRowKeys}
                     onChange={onTabTableChange}
                     onSelectionChange={setSelectedRowKeys}
@@ -421,7 +532,12 @@ const IncidentDetail: React.FC = () => {
                     )}
                   />
                 ) : (
-                  <GanttChart alarmData={tableData} />
+                  <GanttChart
+                    loading={tabLoading}
+                    alarmData={tableData}
+                    selectedTasks={selectedRowKeys as number[]}
+                    onSelectionChange={(keys) => setSelectedRowKeys(keys)}
+                  />
                 )}
               </div>
             </TabPane>

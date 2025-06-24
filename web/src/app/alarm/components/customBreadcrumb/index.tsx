@@ -14,9 +14,13 @@ interface Crumb {
 }
 
 const PageBreadcrumb: React.FC<Props> = ({ children }) => {
-  const locale = localStorage.getItem('locale') || 'en';
   const router = useRouter();
   const pathname = usePathname();
+  const parentPath =
+    pathname.lastIndexOf('/') > 0
+      ? pathname.substring(0, pathname.lastIndexOf('/'))
+      : '/';
+  const locale = localStorage.getItem('locale') || 'en';
   const zhMenus = menu[locale === 'en' ? 'en' : 'zh'] || [];
   const crumbs: Crumb[] = [];
 
@@ -40,7 +44,7 @@ const PageBreadcrumb: React.FC<Props> = ({ children }) => {
   return (
     <Breadcrumb className={commonStyles.breadcrumb}>
       <Breadcrumb.Item
-        onClick={() => router.back()}
+        onClick={() => router.push(parentPath)}
         className={commonStyles.backIcon}
       >
         <Icon type="xiangzuojiantou" />

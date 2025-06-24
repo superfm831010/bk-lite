@@ -22,11 +22,13 @@
         "partialSuccess": "Partial success",
         "advanced": "Advanced",
         "partialFailure": "Partial failure",
-        "successOperate": "Successfully"
+        "successOperate": "Successfully",
+        "all": "All"
     },
     "incidents": {
         "table": "Table",
-        "gantt": "Gantt"
+        "gantt": "Gantt",
+        "alarmCount": "Alert Count"
     },
     "alarms": {
         "monitor": "Monitor",
@@ -41,7 +43,8 @@
         "warning": "Warning",
         "remaining": "Remain",
         "pending": "Pending",
-        "processing": "Processing",
+        "processing": "Processing", 
+        "reopen": "Reopen",
         "notified": "Notified",
         "unnotified": "Unnotified",
         "alertName": "Alert Name",
@@ -83,8 +86,10 @@
         "lastEventTime": "Last Event Time",
         "eventTitle": "Title",
         "eventCount": "Event Count",
+        "incidentName": "Incident Name",
         "notificationStatus": "Notification Status",
         "declareIncident": "Declare Incident",
+        "declareIncidentErrorMsg": "The selected alert is already linked to an incident",
         "createIncident": "Create Incident",
         "linkIncident": "Link Incident",
         "confirmOperate": "Confirm to",
@@ -104,7 +109,9 @@
         "metricName": "Metric Name",
         "metricValue": "Metric Value",
         "incident": "Incident",
-        "title": "Title"
+        "title": "Title",
+        "alertId": "Alert ID",
+        "alertContent": "Alert Content"
     },
     "integration": {
         "description": "Description",
@@ -129,6 +136,7 @@
         "alertAssignTableCreateTime": "Create Time",
         "alertAssignTableStartStop": "Start/Stop",
         "alertAssignTableActions": "Actions",
+        "name": "Name",
         "assignName": "Name",
         "assignPersonnel": "Personnel",
         "assignTime": "Affective Time",
@@ -143,6 +151,8 @@
         "correlation": {
             "example": "Example",
             "describe": "Describe",
+            "dimDescribeContent": "Rule definition: \n1. Filtering method: event level higher than \"warning\"\n2. Aggregation dimension: Object instances of events\n3. Aggregation strategy: Aggregate based on the same object instance of the event, with the alert level being the lowest level of the event.\nCommonly used in scenarios where performance evaluation of a single operational object requires a combination of multiple dimensions for analysis, such as abnormal server performance, abnormal database performance, etc",
+            "bizDescribeContent": "Rule definition:\n1. Filtering method: Event type is website call test\n2. Aggregation strategy: When there is an abnormal dial test, an alert is immediately generated, and events on the same website are associated and aggregated \nCommonly used scenarios for website testing",
             "type": "Type",
             "scope": "Scope",
             "lastUpdateTime": "Last Update Time",

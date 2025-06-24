@@ -45,3 +45,27 @@ export interface AlertShieldListItem {
     is_active: boolean;
 }
 
+export interface AggregationRule {
+    id: number;
+    created_at: string;
+    updated_at: string;
+    created_by: string;
+    updated_by: string;
+    rule_id: string;
+    name: string;
+    description: string;
+    [key: string]: any;
+}
+export interface CorrelationRule {
+    id: number;
+    created_at: string;
+    updated_at: string;
+    created_by: string;
+    updated_by: string;
+    name: string;
+    type: string;
+    scope: string;
+    description: string | null;
+    aggregation_rules: number[];
+    [key: string]: any;
+}

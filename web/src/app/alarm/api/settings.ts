@@ -36,6 +36,19 @@ export const useSettingApi = () => {
   const patchShield = (id: string | number, params: any) =>
     patch(`/alerts/api/shield/${id}/`, params);
 
+  const getAggregationRule = (params: any) => get(`/alerts/api/aggregation_rule/`, { params });
+
+  const getCorrelationRuleList = (params: any) => get(`/alerts/api/correlation_rule/`, { params });
+
+  const createCorrelationRule = (params: any) =>
+    post('/alerts/api/correlation_rule/', params);
+
+  const updateCorrelationRule = (id: string | number, params: any) =>
+    put(`/alerts/api/correlation_rule/${id}/`, params);
+
+  const deleteCorrelationRule = (id: string | number) =>
+    del(`/alerts/api/correlation_rule/${id}/`);
+
   return {
     getAssignmentList,
     getAssignment,
@@ -49,5 +62,10 @@ export const useSettingApi = () => {
     updateShield,
     deleteShield,
     patchShield,
+    getAggregationRule,
+    getCorrelationRuleList,
+    createCorrelationRule,
+    updateCorrelationRule,
+    deleteCorrelationRule,
   };
 };
