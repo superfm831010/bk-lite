@@ -4,6 +4,7 @@ from src.entity.mlops.base.data_point import DataPoint
 
 
 class AnomalyDetectionPredictRequest(BaseModel):
+    algorithm: str = Field(..., description="异常检测算法名称")
     model_name: str = Field(..., description="模型名称")
     model_version: Optional[str] = Field(
         default="latest", description="模型版本，默认为latest")

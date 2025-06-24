@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import tempfile
 import uuid
@@ -5,7 +6,6 @@ from sanic import Blueprint, json
 from sanic_ext import validate
 from sanic.log import logger
 
-from src.api.mlops.utils import Utils
 from src.core.sanic_plus.auth.api_auth import auth
 from src.entity.mlops.anomaly_detection.anomaly_detection_predict_request import AnomalyDetectionPredictRequest
 from src.entity.mlops.anomaly_detection.anomaly_detection_train_request import AnomalyDetectionTrainRequest
@@ -17,6 +17,22 @@ anomaly_detection_api_router = Blueprint(
     "anomaly_detection", url_prefix="/anomaly_detection")
 
 
+def save_data_to_csv(data_points, temp_dir: str, filename: str) -> str:
+    """将数据点保存为CSV文件"""
+    df = pd.DataFrame([point.dict() for point in data_points])
+    file_path = os.path.join(temp_dir, filename)
+    df.to_csv(file_path, index=False)
+    return file_path
+
+
+def load_detector(algorithm: str):
+    """根据算法名称加载相应的检测器"""
+    if algorithm == "RandomForest":
+        return RandomForestAnomalyDetector()
+    else:
+        raise ValueError(f"不支持的算法: {algorithm}")
+
+
 async def train_model_background(app, task_id: str, request: AnomalyDetectionTrainRequest):
     """Sanic后台训练任务"""
     try:
@@ -25,17 +41,16 @@ async def train_model_background(app, task_id: str, request: AnomalyDetectionTra
         # 创建临时目录保存数据
         with tempfile.TemporaryDirectory() as temp_dir:
             # 保存数据为CSV文件
-            train_path = Utils.save_data_to_csv(
+            train_path = save_data_to_csv(
                 request.train_data, temp_dir, "train.csv")
-            val_path = Utils.save_data_to_csv(
+            val_path = save_data_to_csv(
                 request.val_data, temp_dir, "val.csv")
-            test_path = Utils.save_data_to_csv(
+            test_path = save_data_to_csv(
                 request.test_data, temp_dir, "test.csv")
 
             # 创建检测器并训练
-            if request.algorithm == "RandomForest":
-                detector = RandomForestAnomalyDetector()
-
+            logger.info(f"使用算法 {request.algorithm} 训练模型")
+            detector = load_detector(request.algorithm)
             detector.train(
                 request.experiment_name,
                 train_path,
@@ -73,6 +88,7 @@ async def train(request, body: AnomalyDetectionTrainRequest):
             status="started",
             message="训练任务已启动"
         )
+
         return json(response.model_dump())
 
     except Exception as e:
@@ -89,19 +105,14 @@ async def predict(_, body: AnomalyDetectionPredictRequest):
         # 准备输入数据
         input_df = pd.DataFrame([point.model_dump() for point in body.data])
         input_df['timestamp'] = pd.to_datetime(input_df['timestamp'])
-
-        # 重置索引确保连续整数索引
         input_df = input_df.reset_index(drop=True)
 
         # 创建检测器并预测
-        detector = RandomForestAnomalyDetector()
+        detector = load_detector(body.algorithm)
 
         # 使用模型版本构建模型名称
-        model_name = body.model_name
-        if body.model_version != "latest":
-            model_name = f"{body.model_name}/{body.model_version}"
-
-        result_df = detector.predict(input_df, model_name=model_name)
+        result_df = detector.predict(
+            input_df, model_name=body.model_name, model_version=body.model_version)
 
         # 重置结果DataFrame的索引
         result_df = result_df.reset_index(drop=True)
@@ -132,7 +143,7 @@ async def predict(_, body: AnomalyDetectionPredictRequest):
             len(predictions) if predictions else 0.0
         )
 
-        return json(response.dict())
+        return json(response.model_dump())
 
     except Exception as e:
         logger.error(f"异常检测预测失败: {e}")
