@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sanic.log import logger
 
 
-class AiopsUtils:
+class MLOpsUtils:
     @classmethod
     def log_importance_features(cls, model, feature_columns):
         if hasattr(model, 'feature_importances_'):

@@ -8,25 +8,21 @@ from sanic import Blueprint, json
 from sanic_ext import validate
 
 from src.core.sanic_plus.auth.api_auth import auth
-from src.enhance.qa_enhance import QAEnhance
 from src.entity.rag.base.document_count_request import DocumentCountRequest
 from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
 from src.entity.rag.base.document_list_request import DocumentListRequest
 from src.entity.rag.base.document_metadata_update_request import DocumentMetadataUpdateRequest
 from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
 from src.entity.rag.base.index_delete_request import IndexDeleteRequest
-from src.entity.rag.enhance.qa_enhance_request import QAEnhanceRequest
-from src.entity.rag.enhance.summarize_enhance_request import SummarizeEnhanceRequest
 from src.loader.raw_loader import RawLoader
 from src.loader.website_loader import WebSiteLoader
 from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
 from src.services.rag_service import RagService
-from src.summarize.summarize_manager import SummarizeManager
 
-rag_api_router = Blueprint("rag", url_prefix="/rag")
+naive_rag_api_router = Blueprint("naive_rag_api_router", url_prefix="/rag")
 
 
-@rag_api_router.post("/naive_rag_test")
+@naive_rag_api_router.post("/naive_rag_test")
 @auth.login_required
 @validate(json=DocumentRetrieverRequest)
 def naive_rag_test(request, body: DocumentRetrieverRequest):
@@ -46,7 +42,7 @@ def naive_rag_test(request, body: DocumentRetrieverRequest):
     return json({"status": "success", "message": "", "documents": [doc.dict() for doc in documents]})
 
 
-@rag_api_router.post("/count_index_document")
+@naive_rag_api_router.post("/count_index_document")
 @auth.login_required
 @validate(json=DocumentCountRequest)
 async def count_index_document(request, body: DocumentCountRequest):
@@ -58,47 +54,7 @@ async def count_index_document(request, body: DocumentCountRequest):
     return json({"status": "success", "message": "", "count": count})
 
 
-@rag_api_router.post("/summarize_enhance")
-@auth.login_required
-@validate(json=SummarizeEnhanceRequest)
-async def summarize_enhance(request, body: SummarizeEnhanceRequest):
-    """
-    文本摘要增强
-    :param request:
-    :param body:
-    :return:
-    """
-    """
-    文本摘要增强
-    :param request:
-    :param body:
-    :return:
-    """
-    result = SummarizeManager.summarize(
-        body.content, body.model, body.openai_api_base, body.openai_api_key)
-    return json({"status": "success", "message": result})
-
-
-@rag_api_router.post("/qa_pair_generate")
-@auth.login_required
-@validate(json=QAEnhanceRequest)
-async def qa_pair_generate(request, body: QAEnhanceRequest):
-    """
-    QA 问答对生成
-    :param request:
-    :return:
-    """
-    """
-    生成问答对
-    :param request:
-    :return:
-    """
-    qa_enhance = QAEnhance(body)
-    result = qa_enhance.generate_qa()
-    return json({"status": "success", "message": result})
-
-
-@rag_api_router.post("/custom_content_ingest")
+@naive_rag_api_router.post("/custom_content_ingest")
 @auth.login_required
 async def custom_content_ingest(request):
     start_time = time.time()
@@ -110,7 +66,7 @@ async def custom_content_ingest(request):
 
     content = request.form.get('content')
     content_preview = content[:100] + \
-                      '...' if len(content) > 100 else content
+        '...' if len(content) > 100 else content
     chunk_mode = request.form.get('chunk_mode')
     is_preview = request.form.get('preview', 'false').lower() == 'true'
     metadata = js.loads(request.form.get('metadata', '{}'))
@@ -167,7 +123,7 @@ async def custom_content_ingest(request):
     return json({"status": "success", "message": "", "chunks_size": len(chunked_docs)})
 
 
-@rag_api_router.post("/website_ingest")
+@naive_rag_api_router.post("/website_ingest")
 @auth.login_required
 async def website_ingest(request):
     start_time = time.time()
@@ -235,7 +191,7 @@ async def website_ingest(request):
     return json({"status": "success", "message": "", "chunks_size": len(chunked_docs)})
 
 
-@rag_api_router.post("/file_ingest")
+@naive_rag_api_router.post("/file_ingest")
 @auth.login_required
 async def file_ingest(request):
     start_time = time.time()
@@ -327,7 +283,7 @@ async def file_ingest(request):
     return json({"status": "success", "message": "", "chunks_size": len(chunked_docs)})
 
 
-@rag_api_router.post("/delete_index")
+@naive_rag_api_router.post("/delete_index")
 @validate(json=IndexDeleteRequest)
 @auth.login_required
 async def delete_index(request, body: IndexDeleteRequest):
@@ -341,7 +297,7 @@ async def delete_index(request, body: IndexDeleteRequest):
     return json({"status": "success", "message": ""})
 
 
-@rag_api_router.post("/delete_doc")
+@naive_rag_api_router.post("/delete_doc")
 @auth.login_required
 @validate(json=DocumentDeleteRequest)
 async def delete_doc(request, body: DocumentDeleteRequest):
@@ -362,7 +318,7 @@ async def delete_doc(request, body: DocumentDeleteRequest):
     return json({"status": "success", "message": ""})
 
 
-@rag_api_router.post("/list_rag_document")
+@naive_rag_api_router.post("/list_rag_document")
 @auth.login_required
 @validate(json=DocumentListRequest)
 async def list_rag_document(request, body: DocumentListRequest):
@@ -383,7 +339,7 @@ async def list_rag_document(request, body: DocumentListRequest):
     return json({"status": "success", "message": "", "documents": [doc.dict() for doc in documents]})
 
 
-@rag_api_router.post("/update_rag_document_metadata")
+@naive_rag_api_router.post("/update_rag_document_metadata")
 @auth.login_required
 @validate(json=DocumentMetadataUpdateRequest)
 async def update_rag_document_metadata(request, body: DocumentMetadataUpdateRequest):
