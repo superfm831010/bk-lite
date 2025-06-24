@@ -129,6 +129,7 @@ MIDDLEWARE_METRIC_MAP = {
     "nginx" : ["nginx_info_gauge"],
     "zookeeper": ["zookeeper_info_gauge"],
     "kafka": ["kafka_info_gauge"],
+    "etcd": ["etcd_info_gauge"],
 }
 
 # Tencent cloud

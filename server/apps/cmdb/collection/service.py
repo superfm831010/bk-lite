@@ -21,7 +21,7 @@ from apps.cmdb.collection.constants import (
     K8S_DEPLOYMENT_ANNOTATIONS, K8S_REPLICASET_ANNOTATIONS, K8S_STATEFULSET_ANNOTATIONS, K8S_DAEMONSET_ANNOTATIONS,
     K8S_JOB_ANNOTATIONS, K8S_CRONJOB_ANNOTATIONS, POD_NODE_RELATION, VMWARE_CLUSTER, VMWARE_COLLECT_MAP,
     NETWORK_COLLECT, NETWORK_INTERFACES_RELATIONS, PROTOCOL_METRIC_MAP, ALIYUN_COLLECT_CLUSTER, HOST_COLLECT_METRIC,
-    REDIS_COLLECT_METRIC, MIDDLEWARE_METRIC_MAP, QCLOUD_COLLECT_CLUSTER,
+    REDIS_COLLECT_METRIC, MIDDLEWARE_METRIC_MAP, QCLOUD_COLLECT_CLUSTER, ETCD_COLLECT_METRIC,
 )
 from apps.cmdb.constants import INSTANCE
 from apps.cmdb.graph.neo4j import Neo4jClient
@@ -1449,6 +1449,7 @@ class HostCollectMetrics(CollectBase):
                     result.append(data)
             self.result[self.model_id] = result
 
+
 class RedisCollectMetrics(CollectBase):
     @property
     def _metrics(self):
@@ -1477,7 +1478,7 @@ class RedisCollectMetrics(CollectBase):
     @property
     def model_field_mapping(self):
         mapping = {
-            "inst_name": lambda data:  f"{data['ip_addr']}-redis-{data['port']}",
+            "inst_name": lambda data: f"{data['ip_addr']}-redis-{data['port']}",
             "ip_addr": "ip_addr",
             "port": "port",
             "version": "version",
@@ -1488,6 +1489,7 @@ class RedisCollectMetrics(CollectBase):
         }
 
         return mapping
+
     def format_metrics(self):
         for metric_key, metrics in self.collection_metrics_dict.items():
             result = []
@@ -1513,6 +1515,7 @@ class RedisCollectMetrics(CollectBase):
 class MiddlewareCollectMetrics(CollectBase):
     @property
     def _metrics(self):
+        assert self.model_id in MIDDLEWARE_METRIC_MAP, f"{self.model_id} needs to be defined in MIDDLEWARE_METRIC_MAP"
         return MIDDLEWARE_METRIC_MAP[self.model_id]
 
     def format_data(self, data):
@@ -1587,7 +1590,17 @@ class MiddlewareCollectMetrics(CollectBase):
                 "socket_receive_buffer_bytes": "socket_receive_buffer_bytes",  # 接收缓冲区大小
                 "socket_request_max_bytes": "socket_request_max_bytes",  # 单个请求套接字最大字节数
                 "socket_send_buffer_bytes": "socket_send_buffer_bytes",  # 发送缓冲区大小
-            }
+            },
+            "etcd": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "data_dir": "data_dir",  # 快照文件路径
+                "conf_file_path": "conf_file_path",
+                "peer_port": "peer_port",  # 集群通讯端口
+                "install_path": "install_path",
+            },
 
         }
 
@@ -1868,7 +1881,7 @@ class QCloudCollectMetrics(CollectBase):
                 "status": "status",
                 "protocol": "protocol",
                 "type": "type",
-                "net_limit": (int,"net_limit"),
+                "net_limit": (int, "net_limit"),
                 "size_gib": (int, "size_gib"),
             },
             "qcloud_domain": {
