@@ -10,3 +10,5 @@ RUN apt-get update && \
 WORKDIR /app
 RUN pip install playwright==1.51.0
 RUN playwright install chromium
+
+ADD ./models /app/models
