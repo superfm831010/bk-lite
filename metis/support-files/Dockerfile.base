@@ -8,4 +8,5 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+RUN pip install playwright==1.51.0
 RUN playwright install chromium
