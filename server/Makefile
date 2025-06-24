@@ -26,6 +26,17 @@ migrate:
 	python manage.py migrate
 	python manage.py createcachetable django_cache
 
+server-init:
+	python manage.py init_realm_resource
+	python manage.py init_login_settings 
+	python manage.py create_user admin password --email=admin@bklite.net --is_superuser 
+	python manage.py model_init
+	python manage.py plugin_init 
+	python manage.py node_init
+	python manage.py init_bot 
+	python manage.py init_channel 
+	python manage.py init_llm 
+	
 setup-dev-user:
 	DJANGO_SUPERUSER_USERNAME=admin DJANGO_SUPERUSER_EMAIL=admin@example.com DJANGO_SUPERUSER_PASSWORD=password python manage.py createsuperuser --noinput
 
