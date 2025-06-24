@@ -11,6 +11,7 @@ interface TreeTransferProps {
   onChange: (newKeys: number[]) => void;
   onChangeRule?: (newKey: number, newRules: number[]) => void;
   mode?: 'group' | 'role';
+  disabled?: boolean; // 新增 disabled 字段
 }
 
 // 增加事件处理函数接口
@@ -202,7 +203,15 @@ const transformRightTree = (
   }));
 };
 
-const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, groupRules = {}, onChange, onChangeRule, mode = 'role' }) => {
+const RoleTransfer: React.FC<TreeTransferProps> = ({ 
+  treeData, 
+  selectedKeys, 
+  groupRules = {}, 
+  onChange, 
+  onChangeRule, 
+  mode = 'role',
+  disabled = false 
+}) => {
   const [isPermissionModalVisible, setIsPermissionModalVisible] = useState<boolean>(false);
   const [currentNode, setCurrentNode] = useState<TreeDataNode | null>(null);
   const [currentRules, setCurrentRules] = useState<number[]>([]);
@@ -273,8 +282,11 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, gro
         className="tree-transfer"
         render={(item) => item.title}
         showSelectAll={false}
+        disabled={disabled}
         onChange={(nextTargetKeys) => {
-          onChange(nextTargetKeys as number[]);
+          if (!disabled) {
+            onChange(nextTargetKeys as number[]);
+          }
         }}
       >
         {({ direction }) => {
@@ -288,9 +300,12 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, gro
                   expandedKeys={leftExpandedKeys}
                   checkedKeys={selectedKeys}
                   treeData={treeData}
+                  disabled={disabled}
                   onCheck={(checkedKeys, info) => {
-                    const newKeys = info.checkedNodes.map((node: any) => node.key);
-                    onChange(newKeys);
+                    if (!disabled) {
+                      const newKeys = info.checkedNodes.map((node: any) => node.key);
+                      onChange(newKeys);
+                    }
                   }}
                 />
               </div>
@@ -303,6 +318,7 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({ treeData, selectedKeys, gro
                   selectable={false}
                   expandedKeys={rightExpandedKeys}
                   treeData={rightTransformedData}
+                  disabled={disabled}
                 />
               </div>
             );

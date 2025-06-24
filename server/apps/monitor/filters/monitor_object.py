@@ -1,6 +1,6 @@
 from django_filters import FilterSet, CharFilter
 
-from apps.monitor.models.monitor_object import MonitorObject, MonitorInstanceGroupingRule
+from apps.monitor.models.monitor_object import MonitorObject, MonitorObjectOrganizationRule
 
 
 class MonitorObjectFilter(FilterSet):
@@ -12,11 +12,10 @@ class MonitorObjectFilter(FilterSet):
         fields = ["name", "type"]
 
 
-class MonitorInstanceGroupingRuleFilter(FilterSet):
+class MonitorObjectOrganizationRuleFilter(FilterSet):
     monitor_object_id = CharFilter(field_name="monitor_object_id", lookup_expr="exact", label="监控对象id")
     name = CharFilter(field_name="name", lookup_expr="icontains", label="分组规则名称")
 
-
     class Meta:
-        model = MonitorInstanceGroupingRule
+        model = MonitorObjectOrganizationRule
         fields = ["monitor_object_id", "name"]

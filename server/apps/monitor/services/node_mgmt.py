@@ -1,6 +1,6 @@
 import ast
-import itertools
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.collect_config.controller import Controller
 from apps.monitor.constants import CHILD_ENVS
 from apps.monitor.models import MonitorInstance, MonitorInstanceOrganization, CollectConfig
@@ -143,7 +143,7 @@ class InstanceConfigService:
         Controller(data).main()
 
         if old_instances:
-            raise Exception(f"以下实例已存在：{'、'.join([instance['instance_name'] for instance in old_instances])}")
+            raise BaseAppException(f"以下实例已存在：{'、'.join([instance['instance_name'] for instance in old_instances])}")
 
     @staticmethod
     def update_instance_config(child_info, base_info):

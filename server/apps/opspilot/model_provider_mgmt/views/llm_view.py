@@ -6,7 +6,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.bot_mgmt.views import validate_remaining_token
 from apps.opspilot.enum import SkillTypeChoices
@@ -51,6 +51,7 @@ class LLMViewSet(AuthViewSet):
         if validate_msg:
             message = _(f"A skill with the same name already exists in group {validate_msg}.")
             return JsonResponse({"result": False, "message": message})
+        params["team"] = params.get("team", []) or [int(request.COOKIES.get("current_team"))]
         params["enable_conversation_history"] = True
         serializer = self.get_serializer(data=params)
         serializer.is_valid(raise_exception=True)
@@ -97,6 +98,7 @@ class LLMViewSet(AuthViewSet):
             "conversation_window_size": 10, # 对话窗口大小
             "show_think": True, # 是否展示think的内容
             "group": 1,
+            "enable_rag_strict_mode": False,
             "skill_name": "test"
         }
         """
@@ -121,6 +123,7 @@ class LLMViewSet(AuthViewSet):
                 # 这里可以添加具体的配额检查逻辑
             params["skill_type"] = skill_type
             params["tools"] = params.get("tools", [])
+            params["group"] = params["group"] if params.get("group") else skill_obj.team[0]
             # 调用stream_chat函数返回流式响应
             return stream_chat(params, skill_obj.name, {}, current_ip, params["user_message"])
         except LLMSkill.DoesNotExist:
@@ -140,13 +143,7 @@ class LLMModelViewSet(AuthViewSet):
 
     @action(methods=["POST"], detail=False)
     def search_by_groups(self, request):
-        group_id = request.data.get("group_id", "")
-        if not group_id:
-            return JsonResponse({"result": False, "message": _("No Group ID")})
-        teams = [i["id"] for i in request.user.group_list]
-        if group_id not in teams:
-            return JsonResponse({"result": False, "message": _("Group does not exist.")})
-        model_list = LLMModel.objects.filter(team__contains=group_id).values_list("name", flat=True)
+        model_list = LLMModel.objects.all().values_list("name", flat=True)
         return JsonResponse({"result": True, "data": list(model_list)})
 
     def create(self, request, *args, **kwargs):

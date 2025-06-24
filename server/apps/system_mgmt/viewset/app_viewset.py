@@ -8,7 +8,7 @@ from apps.system_mgmt.serializers.app_serializer import AppSerializer
 
 
 class AppViewSet(viewsets.ModelViewSet):
-    queryset = App.objects.all()
+    queryset = App.objects.all().order_by("name")
     serializer_class = AppSerializer
 
     @HasPermission("application_list-Delete")

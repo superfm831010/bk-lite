@@ -32,6 +32,7 @@ export async function getAuthOptions(): Promise<AuthOptions> {
       credentials: {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
+        domain: { label: "Domain", type: "text" },
         skipValidation: { label: "Skip Validation", type: "text" },
         userData: { label: "User Data", type: "text" },
       },
@@ -76,6 +77,7 @@ export async function getAuthOptions(): Promise<AuthOptions> {
             body: JSON.stringify({
               username: credentials.username,
               password: credentials.password,
+              domain: credentials.domain,
             }),
           });
           
@@ -107,16 +109,13 @@ export async function getAuthOptions(): Promise<AuthOptions> {
       },
     }),
   ];
-
-  if (wechatConfig) {
-    providers.push(
-      WeChatProvider({
-        clientId: wechatConfig.app_id || process.env.WECHAT_APP_ID || "",
-        clientSecret: wechatConfig.app_secret || process.env.WECHAT_APP_SECRET || "",
-        redirectUri: `${wechatConfig.redirect_uri || process.env.WECHAT_APP_REDIRECT_URI}/api/auth/callback/wechat`,
-      }) as unknown as any
-    );
-  }
+  providers.push(
+    WeChatProvider({
+      clientId: wechatConfig?.app_id || process.env.WECHAT_APP_ID || "",
+      clientSecret: wechatConfig?.app_secret || process.env.WECHAT_APP_SECRET || "",
+      redirectUri: `${wechatConfig?.redirect_uri || process.env.WECHAT_APP_REDIRECT_URI}/api/auth/callback/wechat`,
+    }) as unknown as any
+  );
 
   return {
     providers,
@@ -173,6 +172,7 @@ export const authOptions: AuthOptions = {
       credentials: {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
+        domain: { label: "Domain", type: "text" },
         skipValidation: { label: "Skip Validation", type: "text" },
         userData: { label: "User Data", type: "text" },
       },
@@ -214,6 +214,7 @@ export const authOptions: AuthOptions = {
             body: JSON.stringify({
               username: credentials.username,
               password: credentials.password,
+              domain: credentials.domain,
             }),
           });
           

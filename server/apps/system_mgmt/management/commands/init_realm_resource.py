@@ -33,6 +33,8 @@ class Command(BaseCommand):
                 defaults={
                     "display_name": app_obj["name"],
                     "description": app_obj["description"],
+                    "is_build_in": True,
+                    "url": app_obj["url"],
                 },
             )
             print(f"create {app_obj['client_id']} success")

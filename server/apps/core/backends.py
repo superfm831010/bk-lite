@@ -65,7 +65,7 @@ class AuthBackend(ModelBackend):
             self._handle_user_locale(user_info)
             rules = self._get_user_rules(request, user_info)
 
-            return self.set_user_info(user_info, rules)
+            return self.set_user_info(request, user_info, rules)
 
         except Exception as e:
             logger.error(f"Token authentication failed: {e}")
@@ -120,7 +120,18 @@ class AuthBackend(ModelBackend):
             return {}
 
     @staticmethod
-    def set_user_info(user_info: Dict[str, Any], rules: Dict[str, Any]) -> Optional[User]:
+    def get_is_superuser(request, user_info) -> bool:
+        """检查用户是否为超级用户"""
+        is_superuser = bool(user_info.get("is_superuser", False))
+        if is_superuser:
+            return True
+        app_name = request.path.strip("/").split("/", 1)[0]
+        app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console"}
+        app_name = app_name_map.get(app_name, app_name)
+        app_admin = f"{app_name}--admin"
+        return app_admin in user_info.get("roles", [])
+
+    def set_user_info(self, request, user_info: Dict[str, Any], rules: Dict[str, Any]) -> Optional[User]:
         """设置用户信息"""
         username = user_info.get("username")
         if not username:
@@ -128,11 +139,12 @@ class AuthBackend(ModelBackend):
             return None
 
         try:
-            user, created = User.objects.get_or_create(username=username)
-
+            domain = user_info.get("domain", "domain.com")
+            user, created = User.objects.get_or_create(username=username, domain=domain)
+            is_superuser = self.get_is_superuser(request, user_info)
             # 更新用户基本信息
             user.email = user_info.get("email", "")
-            user.is_superuser = bool(user_info.get("is_superuser", False))
+            user.is_superuser = is_superuser
             user.is_staff = user.is_superuser
             user.is_active = True
             user.group_list = user_info.get("group_list", [])

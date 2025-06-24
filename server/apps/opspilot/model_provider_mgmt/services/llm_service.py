@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from django.conf import settings
 
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.enum import SkillTypeChoices
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
 from apps.opspilot.models import (
@@ -152,7 +152,9 @@ class LLMService:
         if kwargs.get("thread_id"):
             chat_kwargs["thread_id"] = str(kwargs["thread_id"])
         if kwargs["enable_rag_knowledge_source"]:
-            extra_config = {"enable_rag_source": True, "enable_rag_strict_mode": False}
+            extra_config.update({"enable_rag_source": True})
+        if kwargs.get("enable_rag_strict_mode"):
+            extra_config.update({"enable_rag_strict_mode": kwargs["enable_rag_strict_mode"]})
         if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
             tool_map = {
                 i["id"]: {u["key"]: u["value"] for u in i["kwargs"] if u["key"]} for i in kwargs.get("tools", [])

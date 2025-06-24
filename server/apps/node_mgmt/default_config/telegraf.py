@@ -1,8 +1,6 @@
-import logging
 import os
 from apps.node_mgmt.models import Collector, CollectorConfiguration
-
-logger = logging.getLogger("app")
+from apps.core.logger import node_logger as logger
 
 
 default_sidecar_mode = os.getenv("SIDECAR_INPUT_MODE", "nats")

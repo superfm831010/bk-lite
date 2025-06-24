@@ -126,8 +126,6 @@ const TopMenu = () => {
     window.open('https://wd.canway.net/?cat=27', '_blank');
   };
 
-  const isConsole = process.env.NEXT_PUBLIC_IS_OPS_CONSOLE === 'true';
-
   const renderContent = loading ? (
     <div className="flex justify-center items-center h-32">
       <Spin tip="Loading..." />
@@ -155,15 +153,13 @@ const TopMenu = () => {
       <div className="flex items-center justify-between px-4 w-full h-full">
         <div className="flex items-center space-x-2">
           <Image src="/logo-site.png" className="block w-auto h-10" alt="logo" width={100} height={40} />
-          <div className="font-medium">WeOps X</div>
-          {!isConsole && (
-            <Popover content={renderContent} title={t('common.appList')} trigger="hover">
-              <div className={`flex items-center justify-center cursor-pointer rounded-[10px] px-3 py-2 ${styles.nav}`}>
-                <Icon type="caidandaohang" className="mr-1" />
-                <CaretDownFilled className={`text-sm ${styles.icons}`} />
-              </div>
-            </Popover>
-          )}
+          <div className="font-medium">Blueking Lite</div>
+          <Popover content={renderContent} title={t('common.appList')} trigger="hover">
+            <div className={`flex items-center justify-center cursor-pointer rounded-[10px] px-3 py-2 ${styles.nav}`}>
+              <Icon type="caidandaohang" className="mr-1" />
+              <CaretDownFilled className={`text-sm ${styles.icons}`} />
+            </div>
+          </Popover>
         </div>
         <div className="flex items-center flex-shrink-0 space-x-2">
           {hasViewedTour && (

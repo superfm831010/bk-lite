@@ -36,7 +36,7 @@ const Configure: React.FC = () => {
                 label: t('monitor.intergrations.automatic'),
                 value: 'automatic',
               },
-              //   { label: t('monitor.intergrations.manual'), value: 'manual' },
+              { label: t('monitor.intergrations.manual'), value: 'manual' },
             ]}
             onChange={onTabChange}
           />

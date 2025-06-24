@@ -1,11 +1,9 @@
-import logging
 from pathlib import Path
-
 from django.core.files.base import ContentFile
 from apps.node_mgmt.models import PackageVersion
 from apps.node_mgmt.services.package import PackageService
+from apps.core.logger import node_logger as logger
 
-logger = logging.getLogger(__name__)
 
 
 def package_version_upload(_type, options):

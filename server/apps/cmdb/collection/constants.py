@@ -122,3 +122,20 @@ ALIYUN_COLLECT_CLUSTER = [
 ]
 
 HOST_COLLECT_METRIC = ["host_info_gauge"]
+
+REDIS_COLLECT_METRIC = ["redis_info_gauge"]
+
+MIDDLEWARE_METRIC_MAP = {
+    "nginx" : ["nginx_info_gauge"],
+    "zookeeper": ["zookeeper_info_gauge"],
+    "kafka": ["kafka_info_gauge"],
+}
+
+# Tencent cloud
+QCLOUD_COLLECT_CLUSTER = [
+    "qcloud_cvm_info_gauge","qcloud_rocketmq_info_gauge","qcloud_mysql_info_gauge",
+    "qcloud_redis_info_gauge","qcloud_mongodb_info_gauge","qcloud_pgsql_info_gauge",
+    "qcloud_pulsar_cluster_info_gauge","qcloud_cmq_info_gauge","qcloud_cmq_topic_info_gauge",
+    "qcloud_clb_info_gauge","qcloud_eip_info_gauge","qcloud_bucket_info_gauge","qcloud_filesystem_info_gauge",
+    "qcloud_domain_info_gauge"
+]

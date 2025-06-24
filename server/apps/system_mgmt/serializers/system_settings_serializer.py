@@ -1,9 +1,9 @@
 from rest_framework import serializers
 
-from apps.system_mgmt.models import User
+from apps.system_mgmt.models import SystemSettings
 
 
 class SystemSettingsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = SystemSettings
         fields = "__all__"

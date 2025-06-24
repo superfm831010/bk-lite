@@ -1,10 +1,10 @@
 from django.db import models
 from django.utils.functional import cached_property
 
-from apps.core.mixinx import EncryptMixin
+from apps.core.mixinx import EncryptMixin, PeriodicTaskUtils
 
 
-class LoginModule(models.Model, EncryptMixin):
+class LoginModule(models.Model, EncryptMixin, PeriodicTaskUtils):
     name = models.CharField(max_length=100)
     source_type = models.CharField(max_length=50, default="wechat")
     app_id = models.CharField(max_length=100, null=True, blank=True)
@@ -28,3 +28,10 @@ class LoginModule(models.Model, EncryptMixin):
         config = {"app_secret": self.app_secret}
         self.decrypt_field("app_secret", config)
         return config["app_secret"]
+
+    def create_sync_periodic_task(self):
+        sync_time = self.other_config.get("sync_time", "00:00")
+        task_name = f"sync_user_group_{self.name}"
+        task_args = f"[{self.id}]"
+        task_path = "apps.system_mgmt.tasks.sync_user_and_group_by_login_module"
+        self.create_periodic_task(sync_time, task_name, task_args, task_path)

@@ -10,7 +10,6 @@ import {
   TreeItem,
   Pagination,
   ModalRef,
-  Organization,
 } from '@/app/monitor/types';
 import {
   ObjectItem,
@@ -30,7 +29,6 @@ import { PlusOutlined } from '@ant-design/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import Permission from '@/components/permission';
-import { useCommon } from '@/app/monitor/context/common';
 
 const Strategy: React.FC = () => {
   const { t } = useTranslation();
@@ -43,12 +41,9 @@ const Strategy: React.FC = () => {
   } = useMonitorApi();
   const searchParams = useSearchParams();
   const { convertToLocalizedTime } = useLocalizedTime();
-  const commonContext = useCommon();
   const objId = searchParams.get('objId');
   const router = useRouter();
   const instRef = useRef<ModalRef>(null);
-  const authList = useRef(commonContext?.authOrganizations || []);
-  const organizationList: Organization[] = authList.current;
   const [pagination, setPagination] = useState<Pagination>({
     current: 1,
     total: 0,
@@ -379,7 +374,6 @@ const Strategy: React.FC = () => {
         </div>
         <SelectAssets
           ref={instRef}
-          organizationList={organizationList}
           monitorObject={objectId}
           objects={objects}
           onSuccess={onChooseAssets}

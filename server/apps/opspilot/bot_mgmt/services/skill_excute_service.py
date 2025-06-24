@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from apps.core.logger import logger
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.bot_mgmt.utils import get_user_info
 from apps.opspilot.model_provider_mgmt.models import LLMSkill, SkillRule
 from apps.opspilot.model_provider_mgmt.services.llm_service import llm_service
@@ -21,6 +21,7 @@ class SkillExecuteService:
             "skill_prompt": skill_prompt,  # Prompt
             "enable_rag": llm_skill.enable_rag,  # 是否启用RAG
             "enable_rag_knowledge_source": llm_skill.enable_rag_knowledge_source,  # 是否显示RAG知识来源
+            "enable_rag_strict_mode": llm_skill.enable_rag_strict_mode,  # 是否显示RAG知识来源
             "rag_score_threshold": rag_score_threshold,  # RAG分数阈值
             "chat_history": chat_history,  # 对话历史
             "conversation_window_size": 10,  # 对话窗口大小
@@ -32,6 +33,7 @@ class SkillExecuteService:
             "tools": llm_skill.tools,
             "group": llm_skill.team[0],
         }
+
         result = llm_service.chat(params)
         content = result["content"]
         if llm_skill.enable_rag_knowledge_source:

@@ -16,6 +16,8 @@ class CoreSettings(BaseSettings):
     neo4j_username: str = ''
     neo4j_password: str = ''
 
+    mlflow_tracking_uri: str = ''
+
     def is_debug_mode(self) -> bool:
         return self.mode == 'DEBUG'
 

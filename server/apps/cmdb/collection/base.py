@@ -9,7 +9,7 @@ import requests
 
 from apps.cmdb.constants import VICTORIAMETRICS_HOST
 from apps.cmdb.models import CollectModels
-from apps.core.logger import logger
+from apps.core.logger import cmdb_logger as logger
 
 
 def timestamp_gt_one_day_ago(collect_timestamp):

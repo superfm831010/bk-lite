@@ -32,13 +32,12 @@ const UserInfo: React.FC = () => {
   const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
-  const { flatGroups, selectedGroup, setSelectedGroup, displayName } = useUserInfoContext();
+  const { flatGroups, selectedGroup, setSelectedGroup, displayName, isSuperUser } = useUserInfoContext();
 
   const [versionVisible, setVersionVisible] = useState<boolean>(false);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const isConsole = process.env.NEXT_PUBLIC_IS_OPS_CONSOLE === 'true';
   const username = displayName || session?.user?.username || 'Test';
 
   const federatedLogout = useCallback(async () => {
@@ -99,54 +98,48 @@ const UserInfo: React.FC = () => {
         key: 'themeSwitch',
         label: <ThemeSwitcher />,
       },
+      {
+        key: 'version',
+        label: (
+          <div className="w-full flex justify-between items-center">
+            <span>{t('common.version')}</span>
+            <span className="text-xs text-[var(--color-text-4)]">3.1.0</span>
+          </div>
+        ),
+      },
+      { type: 'divider' },
+      {
+        key: 'groups',
+        label: (
+          <div className="w-full flex justify-between items-center">
+            <span>{t('common.group')}</span>
+            <span className="text-xs text-[var(--color-text-4)]">{selectedGroup?.name}</span>
+          </div>
+        ),
+        children: flatGroups
+          .filter((group) => isSuperUser || group.name !== 'OpsPilotGuest')
+          .map((group) => ({
+            key: group.id,
+            label: (
+              <GroupItem
+                id={group.id}
+                name={group.name}
+                isSelected={selectedGroup?.name === group.name}
+                onClick={handleChangeGroup}
+              />
+            ),
+          })),
+      },
+      { type: 'divider' },
+      {
+        key: 'logout',
+        label: t('common.logout'),
+        disabled: isLoading,
+      },
     ];
 
-    if (!isConsole) {
-      items.push(
-        {
-          key: 'version',
-          label: (
-            <div className="w-full flex justify-between items-center">
-              <span>{t('common.version')}</span>
-              <span className="text-xs text-[var(--color-text-4)]">3.1.0</span>
-            </div>
-          ),
-        },
-        { type: 'divider' },
-        {
-          key: 'groups',
-          label: (
-            <div className="w-full flex justify-between items-center">
-              <span>{t('common.group')}</span>
-              <span className="text-xs text-[var(--color-text-4)]">{selectedGroup?.name}</span>
-            </div>
-          ),
-          children: flatGroups
-            .filter((group) => group.name !== 'OpsPilotGuest')
-            .map((group) => ({
-              key: group.id,
-              label: (
-                <GroupItem
-                  id={group.id}
-                  name={group.name}
-                  isSelected={selectedGroup?.name === group.name}
-                  onClick={handleChangeGroup}
-                />
-              ),
-            })),
-        },
-        { type: 'divider' }
-      );
-    }
-
-    items.push({
-      key: 'logout',
-      label: t('common.logout'),
-      disabled: isLoading,
-    });
-
     return items;
-  }, [t, selectedGroup, flatGroups, handleChangeGroup, isLoading, isConsole]);
+  }, [t, selectedGroup, flatGroups, handleChangeGroup, isLoading]);
 
   const handleMenuClick = ({ key }: any) => {
     if (key === 'version') setVersionVisible(true);

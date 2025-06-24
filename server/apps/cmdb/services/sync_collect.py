@@ -5,7 +5,8 @@
 from apps.cmdb.constants import CollectPluginTypes
 from apps.cmdb.models.collect_model import CollectModels
 from apps.cmdb.collection.service import MetricsCannula, CollectK8sMetrics, CollectVmwareMetrics, \
-    CollectNetworkMetrics, ProtocolCollectMetrics, AliyunCollectMetrics, HostCollectMetrics
+    CollectNetworkMetrics, ProtocolCollectMetrics, AliyunCollectMetrics, HostCollectMetrics, RedisCollectMetrics, \
+    MiddlewareCollectMetrics, QCloudCollectMetrics
 
 
 class ProtocolCollect(object):
@@ -17,6 +18,7 @@ class ProtocolCollect(object):
     def collect_cloud_manage(self):
         data = {
             "aliyun_account": self.collect_aliyun,
+            "qcloud": self.collect_qcloud,
         }
         return data
 
@@ -57,6 +59,8 @@ class ProtocolCollect(object):
     def collect_aliyun(self):
         data = AliyunCollect(self.task.id)()
         return data
+    def collect_qcloud(self):
+        return QCloudCollect(self.task.id)()
 
     def main(self):
         if self.task.is_cloud:
@@ -163,6 +167,8 @@ class ProtocolTaskCollect(BaseCollect):
 class AliyunCollect(BaseCollect):
     COLLECT_PLUGIN = AliyunCollectMetrics
 
+class QCloudCollect(BaseCollect):
+    COLLECT_PLUGIN = QCloudCollectMetrics
 
 # ======
 
@@ -176,6 +182,8 @@ class JobCollect(object):
     def collect_manage(self):
         result = {
             CollectPluginTypes.HOST: self.collect_host,
+            CollectPluginTypes.REDIS: self.collect_redis,
+            CollectPluginTypes.MIDDLEWARE: self.collect_middleware
         }
         return result
 
@@ -187,9 +195,24 @@ class JobCollect(object):
         data = HostCollect(self.task.id)()
         return data
 
+    def collect_redis(self):
+        data = RedisCollect(self.task.id)()
+        return data
+
+    def collect_middleware(self):
+        data = MiddlewareCollect(self.task.id)()
+        return data
+
     def main(self):
         return self.collect_manage[self.task.task_type]()
 
 
 class HostCollect(BaseCollect):
     COLLECT_PLUGIN = HostCollectMetrics
+
+
+class RedisCollect(BaseCollect):
+    COLLECT_PLUGIN = RedisCollectMetrics
+
+class MiddlewareCollect(BaseCollect):
+    COLLECT_PLUGIN = MiddlewareCollectMetrics

@@ -6,7 +6,7 @@ import requests
 from wechatpy import WeChatClientException
 from wechatpy.enterprise import WeChatClient
 
-from apps.core.logger import logger
+from apps.core.logger import system_mgmt_logger as logger
 from apps.system_mgmt.models import Channel
 
 
