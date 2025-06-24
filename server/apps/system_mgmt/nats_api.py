@@ -272,7 +272,9 @@ def send_msg_with_channel(channel_id, title, content, receivers):
 
 @nats_client.register
 def get_user_rules(group_id, username):
-    rules = UserRule.objects.filter(username=username, group_rule__group_id=group_id)
+    rules = UserRule.objects.filter(username=username).filter(
+        Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
+    )
     if not rules:
         return {}
     return {i.group_rule.app: i.group_rule.rules for i in rules}
