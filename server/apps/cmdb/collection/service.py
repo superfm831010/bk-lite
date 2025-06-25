@@ -21,7 +21,7 @@ from apps.cmdb.collection.constants import (
     K8S_DEPLOYMENT_ANNOTATIONS, K8S_REPLICASET_ANNOTATIONS, K8S_STATEFULSET_ANNOTATIONS, K8S_DAEMONSET_ANNOTATIONS,
     K8S_JOB_ANNOTATIONS, K8S_CRONJOB_ANNOTATIONS, POD_NODE_RELATION, VMWARE_CLUSTER, VMWARE_COLLECT_MAP,
     NETWORK_COLLECT, NETWORK_INTERFACES_RELATIONS, PROTOCOL_METRIC_MAP, ALIYUN_COLLECT_CLUSTER, HOST_COLLECT_METRIC,
-    REDIS_COLLECT_METRIC, MIDDLEWARE_METRIC_MAP, QCLOUD_COLLECT_CLUSTER, ETCD_COLLECT_METRIC,
+    REDIS_COLLECT_METRIC, MIDDLEWARE_METRIC_MAP, QCLOUD_COLLECT_CLUSTER,
 )
 from apps.cmdb.constants import INSTANCE
 from apps.cmdb.graph.neo4j import Neo4jClient
@@ -1612,6 +1612,19 @@ class MiddlewareCollectMetrics(CollectBase):
                 "version": "version",
                 "enabled_plugin_file": "enabled_plugin_file",
                 "erlang_version": "erlang_version",
+            },
+            "tomcat": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "catalina_path": "catalina_path",
+                "version": "version",
+                "xms": "xms",
+                "xmx":"xmx",
+                "max_perm_size":"max_perm_size",
+                "permsize": "permsize",
+                "log_path": "log_path",
+                "java_version": "java_version",
             }
 
         }

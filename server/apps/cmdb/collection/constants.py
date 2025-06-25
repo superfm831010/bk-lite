@@ -130,7 +130,8 @@ MIDDLEWARE_METRIC_MAP = {
     "zookeeper": ["zookeeper_info_gauge"],
     "kafka": ["kafka_info_gauge"],
     "etcd": ["etcd_info_gauge"],
-    "rabbitmq": ["rabbitmq_info_gauge"]
+    "rabbitmq": ["rabbitmq_info_gauge"],
+    "tomcat": ["tomcat_info_gauge"],
 }
 
 # Tencent cloud

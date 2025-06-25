@@ -279,6 +279,8 @@ COLLECT_OBJ_TREE = [
              "type": CollectDriverTypes.JOB},
             {"id": "rabbitmq", "model_id": "rabbitmq", "name": "RabbitMQ", "task_type": CollectPluginTypes.MIDDLEWARE,
              "type": CollectDriverTypes.JOB},
+            {"id": "tomcat", "model_id": "tomcat", "name": "Tomcat", "task_type": CollectPluginTypes.MIDDLEWARE,
+             "type": CollectDriverTypes.JOB},
         ],
     }
 
