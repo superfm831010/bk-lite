@@ -8,6 +8,7 @@ export interface Tool {
   tagList: string[];
   is_build_in: boolean;
   params: any;
+  permissions?: string[];
 }
 
 export interface FormValues {
