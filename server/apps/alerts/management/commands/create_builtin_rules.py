@@ -136,15 +136,18 @@ INIT_RULES = [
         'description': '高等级事件聚合规则',
         'template_title': '【${resource_type}】${resource_name} 发生告警',
         'template_content': '资源类型: ${resource_type}\n资源名称: ${resource_name}\n详情: ${description}',
-        'severity': "warning",  # warning
+        'severity': "warning",
         'is_active': True,
         'condition': [
             {
                 'type': 'level_filter',
-                'field': 'level',
-                'level_threshold': 'warning',
+                'filter': {},
+                'target_field': 'level',
+                'target_field_value': 'warning',
+                'target_value_field': 'level',
+                'target_value': 'warning',
                 'operator': '<=',
-                'aggregation_key': ['resource_type', 'resource_id', 'resource_name'],
+                'aggregation_key': ['resource_type', 'resource_id', 'resource_name']
             }
         ]
     },
@@ -153,19 +156,21 @@ INIT_RULES = [
         'name': 'Website Monitoring Alert',
         'description': '网站拨测异常告警',
         'template_title': '网站拨测异常 - ${resource_name}',
-        'template_content': '网站: ${resource_name}\n拨测状态: 异常\n响应时间: ${value}ms\n异常详情: ${description}',
-        'severity': "warning",  # fatal
+        'template_content': '网站: ${resource_name}\n拨测状态: 异常\nstatus值: ${value}\n异常详情: ${description}',
+        'severity': "warning",
         'is_active': True,
         'condition': [
             {
-                'type': 'website_monitoring',
-                'field': 'resource_type',
-                'target_value': '网站拨测',
+                'type': 'filter_and_check',
+                'filter': {
+                    'resource_type': '网站拨测'
+                },
+                'target_field': 'item',
+                'target_field_value': 'status',
+                'target_value_field': 'value',
+                'target_value': 0,  # 保持为数字类型
                 'operator': '==',
-                'status_field': 'status',
-                'abnormal_status': '异常',
-                'aggregation_key': ['resource_id'],
-                'immediate_alert': True
+                'aggregation_key': ['resource_id']
             }
         ]
     }

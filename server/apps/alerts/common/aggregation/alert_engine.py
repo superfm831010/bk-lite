@@ -97,7 +97,9 @@ class RuleEngine:
         '>=': np.greater_equal,
         '<': np.less,
         '<=': np.less_equal,
-        '==': np.equal
+        '==': np.equal,
+        'in': lambda x, y: np.isin(x, y),  # 添加in操作符支持
+        'not_in': lambda x, y: ~np.isin(x, y)  # 添加not_in操作符支持
     }
 
     # 定义实例分组字段
@@ -137,16 +139,17 @@ class RuleEngine:
 
         condition_map = {
             'threshold': self._create_threshold_condition,
-            'sustained': self._create_sustained_condition, 
+            'sustained': self._create_sustained_condition,
             'trend': self._create_trend_condition,
             'prev_field_equals': self._create_status_condition,
             'level_filter': self._create_level_filter_condition,
-            'website_monitoring': self._create_website_monitoring_condition
+            'website_monitoring': self._create_website_monitoring_condition,
+            'filter_and_check': self._create_filter_and_check_condition  # 新增
         }
-        
+
         if condition_type not in condition_map:
             raise ValueError(f"Unknown condition type: {condition_type}")
-        
+
         return condition_map[condition_type](config)
 
     def _create_threshold_condition(self, config: dict) -> Callable:
@@ -266,29 +269,29 @@ class RuleEngine:
 
     def _create_website_monitoring_condition(self, config: dict) -> Callable:
         """创建网站拨测条件函数"""
-        field = config['field']
-        target_value = config['target_value']
-        status_field = config.get('status_field', 'status')
-        abnormal_status = config.get('abnormal_status', '异常')
+        resource_type_field = config['resource_type_field']
+        target_resource_type = config['target_resource_type']
+        status_field = config['status_field']
+        abnormal_value = config['abnormal_value']
         aggregation_key = config.get('aggregation_key', ['resource_id'])
         immediate_alert = config.get('immediate_alert', True)
-        
+
         def condition(df: pd.DataFrame) -> Tuple[bool, List[List[str]]]:
             if df.empty:
                 return False, []
-            
+
             # 过滤网站拨测类型的事件
-            website_df = df[df[field] == target_value]
+            website_df = df[df[resource_type_field] == target_resource_type]
             if website_df.empty:
                 return False, []
-            
-            # 过滤异常状态的事件
-            abnormal_df = website_df[website_df[status_field] == abnormal_status]
+
+            # 过滤异常状态的事件 - 改为基于数值判断
+            abnormal_df = website_df[website_df[status_field] == abnormal_value]
             if abnormal_df.empty:
                 return False, []
-            
+
             event_groups = []
-            
+
             if immediate_alert:
                 # 立即告警模式：每个异常事件都产生告警，但按网站聚合
                 grouped = abnormal_df.groupby(aggregation_key)
@@ -300,50 +303,126 @@ class RuleEngine:
                 # 普通模式：每个异常事件单独处理
                 for _, row in abnormal_df.iterrows():
                     event_groups.append([row['event_id']])
-            
+
             return len(event_groups) > 0, event_groups
-        
+
         return condition
 
     def _create_level_filter_condition(self, config: dict) -> Callable:
         """创建等级过滤条件函数"""
-        level_threshold = config['level_threshold']
-        operator = config.get('operator', '>=')
-        aggregation_key = config.get('aggregation_key', ['resource_type', 'resource_id', 'item'])
-        
-        # 定义等级优先级映射
-        level_priority = {'info': 0, 'warning': 1, 'severity': 2, 'fatal': 3}
-        threshold_priority = level_priority.get(level_threshold, 1)
-        
+        filter_criteria = config.get('filter', {})
+        target_field = config.get('target_field')
+        target_field_value = config.get('target_field_value')
+        target_value_field = config.get('target_value_field', 'level')
+        target_value = config.get('target_value')
+        operator = config.get('operator', '<=')
+        aggregation_key = config.get('aggregation_key', ['resource_id'])
+
+        # 等级优先级映射
+        level_priority = {'info': 3, 'warning': 2, 'error': 1, 'critical': 0}
+        threshold_priority = level_priority.get(target_value, 1)
+
         def condition(df: pd.DataFrame) -> Tuple[bool, List[List[str]]]:
             if df.empty:
                 return False, []
-            
-            # 过滤符合等级条件的事件
-            df['level_priority'] = df['level'].map(level_priority).fillna(0)
-            if operator == '>=':
-                filtered_df = df[df['level_priority'] >= threshold_priority]
-            elif operator == '>':
-                filtered_df = df[df['level_priority'] > threshold_priority]
-            elif operator == "<=":
-                filtered_df = df[df['level_priority'] <= threshold_priority]
-            else:
-                filtered_df = df[df['level_priority'] == threshold_priority]
-            
+
+            # 应用过滤条件
+            filtered_df = df.copy()
+            for key, value in filter_criteria.items():
+                if key in filtered_df.columns:
+                    filtered_df = filtered_df[filtered_df[key] == value]
+
             if filtered_df.empty:
                 return False, []
-            
-            # 按聚合维度分组
+
+            # 等级映射
+            filtered_df['level_priority'] = filtered_df[target_value_field].map(level_priority).fillna(0)
+
+            if operator == '>=':
+                result_df = filtered_df[filtered_df['level_priority'] >= threshold_priority]
+            elif operator == '>':
+                result_df = filtered_df[filtered_df['level_priority'] > threshold_priority]
+            elif operator == '<=':
+                result_df = filtered_df[filtered_df['level_priority'] <= threshold_priority]
+            elif operator == '<':
+                result_df = filtered_df[filtered_df['level_priority'] < threshold_priority]
+            else:  # '=='
+                result_df = filtered_df[filtered_df['level_priority'] == threshold_priority]
+
+            if result_df.empty:
+                return False, []
+
+            # 按聚合键分组
             event_groups = []
-            grouped = filtered_df.groupby(aggregation_key)
-            
+            grouped = result_df.groupby(aggregation_key)
             for group_key, group_df in grouped:
-                # 每个分组作为一个事件组
                 event_ids = group_df['event_id'].tolist()
                 event_groups.append(event_ids)
-            
+
             return len(event_groups) > 0, event_groups
-        
+
+        return condition
+
+    def _create_filter_and_check_condition(self, config: dict) -> Callable:
+        """创建通用过滤检查条件"""
+        filter_criteria = config.get('filter', {})
+        target_field = config.get('target_field')
+        target_field_value = config.get('target_field_value')
+        target_value_field = config.get('target_value_field', 'value')
+        target_value = config.get('target_value')
+        operator = config.get('operator', '==')
+        aggregation_key = config.get('aggregation_key', ['resource_id'])
+
+        def condition(df: pd.DataFrame) -> Tuple[bool, List[List[str]]]:
+            if df.empty:
+                return False, []
+
+            # 应用过滤条件
+            filtered_df = df.copy()
+            for key, value in filter_criteria.items():
+                if key in filtered_df.columns:
+                    filtered_df = filtered_df[filtered_df[key] == value]
+
+            if filtered_df.empty:
+                return False, []
+
+            # 如果指定了target_field检查
+            if target_field and target_field_value:
+                filtered_df = filtered_df[filtered_df[target_field] == target_field_value]
+
+            if filtered_df.empty:
+                return False, []
+
+            # 检查目标值条件
+            if target_field in filtered_df.columns:
+                if operator in ['in', 'not_in']:
+                    # 处理数组值比较
+                    if operator == 'in':
+                        mask = filtered_df[target_field].isin(target_value)
+                    else:  # not_in
+                        mask = ~filtered_df[target_field].isin(target_value)
+                else:
+                    # 处理单值比较
+                    op_func = self.OPERATORS[operator]
+                    if target_value_field in filtered_df.columns:
+                        mask = op_func(filtered_df[target_value_field], target_value)
+                    else:
+                        # 如果没有指定target_value_field，直接比较target_field
+                        mask = op_func(filtered_df[target_field], target_value)
+
+                matched_df = filtered_df[mask]
+
+                if not matched_df.empty:
+                    # 按聚合键分组
+                    event_groups = []
+                    grouped = matched_df.groupby(aggregation_key)
+                    for group_key, group_df in grouped:
+                        event_ids = group_df['event_id'].tolist()
+                        event_groups.append(event_ids)
+                    return True, event_groups
+
+            return False, []
+
         return condition
 
     def group_events_by_instance(self, events: pd.DataFrame) -> Dict[str, pd.DataFrame]:

@@ -243,15 +243,92 @@ def generate_jenkins_failure_events(num_pipelines=5):
     return result
 
 
+def generate_website_monitoring_events(num_websites=3):
+    """生成网站拨测监控事件"""
+    base_event = {
+        "title": "网站拨测异常",
+        "description": "网站拨测状态异常",
+        "value": 0,
+        "item": "status",
+        "level": "1",
+        "start_time": "",
+        "end_time": "",
+        "labels": {
+            "url": ""
+        },
+        "annotations": {
+            "alertname": "WebsiteMonitoring"
+        },
+        "external_id": "",
+        "status": "firing",
+        "resource_id": 1,
+        "resource_type": "网站拨测",
+        "resource_name": "",
+    }
+
+    websites = [
+        {"name": "主站", "url": "https://www.example.com"},
+        {"name": "API服务", "url": "https://api.example.com"},
+        {"name": "管理后台", "url": "https://admin.example.com"}
+    ]
+
+    events = []
+    current_time = int(time.time())
+
+    for i in range(min(num_websites, len(websites))):
+        website = websites[i]
+
+        # 生成异常事件 (value=0)
+        event = base_event.copy()
+        event["labels"] = event["labels"].copy()
+        event["annotations"] = event["annotations"].copy()
+
+        event_time = current_time - random.randint(60, 300)
+        duration = random.randint(30, 120)
+
+        event["title"] = f"网站拨测异常 - {website['name']}"
+        event["description"] = f"网站: {website['name']}\n拨测状态: 异常\nURL: {website['url']}"
+        event["start_time"] = str(event_time)
+        event["end_time"] = str(event_time + duration)
+        event["labels"]["url"] = website["url"]
+        event["external_id"] = str(uuid.uuid4())
+        event["value"] = 0  # 异常状态
+        event["resource_id"] = i + 1
+        event["resource_name"] = website["name"]
+
+        events.append(event)
+
+        # 生成正常事件 (value=1)
+        normal_event = event.copy()
+        normal_event["labels"] = normal_event["labels"].copy()
+
+        normal_time = current_time - random.randint(3600, 7200)
+        normal_event["title"] = f"网站拨测正常 - {website['name']}"
+        normal_event["description"] = f"网站: {website['name']}\n拨测状态: 正常"
+        normal_event["start_time"] = str(normal_time)
+        normal_event["end_time"] = str(normal_time + 30)
+        normal_event["external_id"] = str(uuid.uuid4())
+        normal_event["value"] = 1  # 正常状态
+        normal_event["level"] = "3"
+
+        events.append(normal_event)
+
+    return {
+        "source_type": "restful",
+        "source_id": "restful",
+        "events": events
+    }
+
+
 if __name__ == "__main__":
     # 生成100个mock事件
     mock_data = generate_mock_events(50)
 
     # 保存到JSON文件
-    with open("mock_monitor_events.json", "w") as f:
-        json.dump(mock_data, f, indent=2)
-
-    print("Mock数据已生成并保存到 mock_monitor_events.json 文件")
+    # with open("mock_monitor_events.json", "w") as f:
+    #     json.dump(mock_data, f, indent=2)
+    #
+    # print("Mock数据已生成并保存到 mock_monitor_events.json 文件")
     #
     # # 生成Jenkins失败事件数据，包含0.0和负数测试
     # jenkins_data = generate_jenkins_failure_events(2)
@@ -262,3 +339,11 @@ if __name__ == "__main__":
     #
     # print("Jenkins失败事件Mock数据已生成并保存到 mock_jenkins_failure_events.json 文件")
     # print("数据包含：负数值、0.0值和正数值的测试用例")
+
+    # 生成网站拨测事件数据
+    website_data = generate_website_monitoring_events(3)
+
+    with open("mock_website_monitoring_events.json", "w", encoding='utf-8') as f:
+        json.dump(website_data, f, indent=2, ensure_ascii=False)
+
+    print("网站拨测事件Mock数据已生成并保存到 mock_website_monitoring_events.json 文件")

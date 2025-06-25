@@ -2,7 +2,7 @@
 # @File: alert_rules.py
 # @Time: 2025/5/21 10:58
 # @Author: windyzhao
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Union
 from pydantic import BaseModel, validator, ValidationError
 from enum import Enum
 from apps.core.logger import alert_logger as logger
@@ -22,9 +22,9 @@ class ConditionType(str, Enum):
     SUSTAINED = "sustained"  # 持续告警
     TREND = "trend"  # 趋势告警
     PREV_FIELD_EQUALS = "prev_field_equals"  # 前置状态告警
-    # 添加缺失的枚举值
     LEVEL_FILTER = "level_filter"
     WEBSITE_MONITORING = "website_monitoring"
+    FILTER_AND_CHECK = "filter_and_check"  # 通用过滤检查
 
 
 class ConditionConfig(BaseModel):
@@ -41,15 +41,25 @@ class ConditionConfig(BaseModel):
     # 添加缺失的字段
     level_threshold: str = None
     aggregation_key: List[str] = None
-    target_value: str = None
     status_field: str = None
     abnormal_status: str = None
     immediate_alert: bool = False
 
+    # 新增通用过滤检查字段 - 支持任意类型
+    filter: Dict[str, Any] = None  # 过滤条件字典
+    target_field: str = None  # 目标检查字段
+    target_field_value: Union[str, int, float, bool, None] = None  # 目标字段的期望值
+    target_value_field: str = None  # 目标值字段
+    target_value: Union[str, int, float, bool, None] = None  # 目标值，用于特定条件类型的期望值比较
+
     @validator('operator')
     def validate_operator(cls, v):
-        if v and v not in ['>', '>=', '<', '<=', '==', '!=']:  # 添加 != 支持
+        if v and v not in ['>', '>=', '<', '<=', '==', '!=', 'in', 'not_in']:  # 添加 in 和 not_in 支持
             raise ValueError(f"Invalid operator: {v}")
+        return v
+
+    @validator('target_field')
+    def validate_target_field(cls, v):
         return v
 
 

@@ -272,10 +272,7 @@ class EventShieldOperator(object):
                 updated_count = Event.objects.filter(
                     id__in=event_ids,
                     status=EventStatus.PENDING
-                ).update(
-                    status=EventStatus.SHIELD,
-                    updated_at=timezone.now()
-                )
+                ).update(status=EventStatus.SHIELD)
 
                 # 为每个成功屏蔽的事件记录结果
                 for event_info in events_to_shield:

@@ -1,6 +1,6 @@
 # -- coding: utf-8 --
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 from dataclasses import dataclass
 from enum import Enum
 
@@ -18,6 +18,7 @@ class ConditionType(str, Enum):
     PREV_FIELD = "prev_field_equals"
     LEVEL_FILTER = "level_filter"
     WEBSITE_MONITORING = "website_monitoring"
+    FILTER_AND_CHECK = "filter_and_check"  # 新增通用过滤检查类型
 
 
 @dataclass
@@ -37,10 +38,37 @@ class RuleCondition:
     # 扩展字段
     level_threshold: str = None  # 级别阈值，用于级别过滤条件的严重程度判断
     aggregation_key: List[str] = None  # 聚合键列表，用于事件聚合时的分组依据
-    target_value: str = None  # 目标值，用于特定条件类型的期望值比较
     status_field: str = None  # 状态字段名，用于监控状态变化的字段
     abnormal_status: str = None  # 异常状态值，定义触发告警的异常状态
     immediate_alert: bool = False  # 是否立即告警，跳过持续性检查直接触发
+
+    # 新增通用过滤检查字段 - 支持任意类型
+    filter: Dict[str, Any] = None  # 过滤条件字典
+    target_field: str = None  # 目标检查字段
+    target_field_value: Union[str, int, float, bool, None] = None  # 目标字段的期望值
+    target_value_field: str = None  # 目标值字段
+    target_value: Union[str, int, float, bool, None] = None  # 目标值，用于特定条件类型的期望值比较
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典格式"""
+        return {
+            "type": self.type.value,
+            "field": self.field,
+            "threshold": self.threshold,
+            "operator": self.operator,
+            "required_consecutive": self.required_consecutive,
+            "baseline_window": self.baseline_window,
+            "trend_method": self.trend_method,
+            "group_by": self.group_by,
+            "prev_status_field": self.prev_status_field,
+            "prev_status_value": self.prev_status_value,
+            "min_data_points": self.min_data_points,
+            "filter": self.filter,
+            "target_field": self.target_field,
+            "target_field_value": self.target_field_value,
+            "target_value_field": self.target_value_field,
+            "target_value": self.target_value,
+        }
 
 
 @dataclass
@@ -75,17 +103,5 @@ class AlertRule:
             "is_active": self.is_active,
             "title": self.title,
             "content": self.content,
-            "condition": {
-                "type": self.condition.type.value,
-                "field": self.condition.field,
-                "threshold": self.condition.threshold,
-                "operator": self.condition.operator,
-                "required_consecutive": self.condition.required_consecutive,
-                "baseline_window": self.condition.baseline_window,
-                "trend_method": self.condition.trend_method,
-                "group_by": self.condition.group_by,
-                "prev_status_field": self.condition.prev_status_field,
-                "prev_status_value": self.condition.prev_status_value,
-                "min_data_points": self.condition.min_data_points,
-            } if self.condition else None
+            "condition": self.condition.to_dict() if self.condition else None
         }

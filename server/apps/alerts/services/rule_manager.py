@@ -88,6 +88,8 @@ class DatabaseRuleManager:
             self._add_level_filter_config(converted_condition, condition_data)
         elif condition_type == "website_monitoring":
             self._add_website_monitoring_config(converted_condition, condition_data)
+        elif condition_type == "filter_and_check":
+            self._add_filter_and_check_config(converted_condition, condition_data)
 
         return converted_condition
 
@@ -126,18 +128,35 @@ class DatabaseRuleManager:
     def _add_level_filter_config(self, condition: Dict, data: Dict):
         """添加等级过滤条件配置"""
         condition.update({
-            "level_threshold": data.get("level_threshold", "warning"),
-            "operator": data.get("operator", ">="),
-            "aggregation_key": data.get("aggregation_key", ["resource_type", "resource_id", "item"]),
+            'filter': data.get('filter', {}),
+            'target_field': data.get('target_field'),
+            'target_field_value': data.get('target_field_value'),
+            'target_value_field': data.get('target_value_field', 'value'),
+            'target_value': data.get('target_value'),
+            'operator': data.get('operator', '=='),
+            'aggregation_key': data.get('aggregation_key', ['resource_id'])
+        })
+
+    def _add_filter_and_check_config(self, condition: Dict, data: Dict):
+        """添加通用过滤检查配置"""
+        condition.update({
+            'filter': data.get('filter', {}),
+            'target_field': data.get('target_field'),
+            'target_field_value': data.get('target_field_value'),
+            'target_value_field': data.get('target_value_field', 'value'),
+            'target_value': data.get('target_value'),
+            'operator': data.get('operator', '=='),
+            'aggregation_key': data.get('aggregation_key', ['resource_id'])
         })
 
     def _add_website_monitoring_config(self, condition: Dict, data: Dict):
-        """添加网站监控条件配置"""
+        """添加网站监控配置（保持向后兼容）"""
         condition.update({
-            "target_value": data.get("target_value", "网站拨测"),
-            "operator": data.get("operator", "=="),
-            "status_field": data.get("status_field", "status"),
-            "abnormal_status": data.get("abnormal_status", "异常"),
-            "aggregation_key": data.get("aggregation_key", ["resource_id"]),
-            "immediate_alert": data.get("immediate_alert", True)
+            'filter': data.get('filter', {}),
+            'target_field': data.get('target_field'),
+            'target_field_value': data.get('target_field_value'),
+            'target_value_field': data.get('target_value_field', 'value'),
+            'target_value': data.get('target_value'),
+            'operator': data.get('operator', '=='),
+            'aggregation_key': data.get('aggregation_key', ['resource_id'])
         })
