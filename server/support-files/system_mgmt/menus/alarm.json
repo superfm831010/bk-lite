@@ -1,107 +1,171 @@
 {
     "client_id": "alarm",
     "name": "Alarm",
-    "url": "/alarm/search",
+    "url": "/alarm/incidents",
     "description": "Create roles for the Alarm app to manage data permissions, menu permissions, and feature permissions.",
     "menus": [
-      {
-        "name": "Incidents",
-        "children": [
-          {
-            "id": "incidents",
-            "display_name": "Incidents",
-            "name": "incidents",
-            "operation": [
-                "View",
-                "Add",
-                "Edit",
-                "Delete"
+        {
+            "name": "Incidents",
+            "children": [
+                {
+                    "id": "incidents",
+                    "display_name": "Incidents",
+                    "name": "incidents",
+                    "operation": [
+                        "View",
+                        "Edit",
+                        "Delete"
+                    ]
+                },
+                {
+                    "id": "incident_detail",
+                    "display_name": "Incident Detail",
+                    "name": "incident_detail",
+                    "operation": [
+                        "View",
+                        "Edit",
+                        "Delete"
+                    ]
+                }
             ]
-          }, 
-          {
-            "id": "incident_detail",
-            "display_name": "Incident Detail",
-            "name": "incident_detail",
-            "operation": [
-                "View",
-                "Add",
-                "Edit",
-                "Delete"
+        },
+        {
+            "name": "Alarms",
+            "children": [
+                {
+                    "id": "alarms",
+                    "display_name": "Alarms",
+                    "name": "alarms",
+                    "operation": [
+                        "View",
+                        "Edit",
+                        "Delete"
+                    ]
+                }
             ]
-          }
-        ]
-      },
-      {
-        "name": "Alarms",
-        "children": [
-          {
-            "id": "alarms",
-            "display_name": "Alarms",
-            "name": "alarms",
-            "operation": [
-                "View",
-                "Add",
-                "Edit",
-                "Delete"
+        },
+        {
+            "name": "Integration",
+            "children": [
+                {
+                    "id": "integration",
+                    "display_name": "Integration",
+                    "name": "integration",
+                    "operation": [
+                        "View"
+                    ]
+                },
+                {
+                    "id": "integration_detail",
+                    "display_name": "Integration Detail",
+                    "name": "integration_detail",
+                    "operation": [
+                        "View"
+                    ]
+                }
             ]
-          }
-        ]
-      },
-      {
-        "name": "Integration",
-        "children": [
-          {
-            "id": "integration",
-            "display_name": "Integration",
-            "name": "integration",
-            "operation": [
-                "View",
-                "Add",
-                "Edit",
-                "Delete"
+        },
+        {
+            "name": "Settings",
+            "children": [
+                {
+                    "id": "settings",
+                    "display_name": "Settings",
+                    "name": "settings",
+                    "operation": [
+                        "View"
+                    ]
+                },
+                {
+                    "id": "correlationRules",
+                    "display_name": "Correlation Rules",
+                    "name": "correlationRules",
+                    "operation": [
+                        "View",
+                        "Add",
+                        "Edit",
+                        "Delete"
+                    ]
+                },
+                {
+                    "id": "alertAssign",
+                    "display_name": "Alert Assign",
+                    "name": "alertAssign",
+                    "operation": [
+                        "View",
+                        "Add",
+                        "Edit",
+                        "Delete"
+                    ]
+                },
+                {
+                    "id": "shieldStrategy",
+                    "display_name": "Shield Strategy",
+                    "name": "shieldStrategy",
+                    "operation": [
+                        "View",
+                        "Add",
+                        "Edit",
+                        "Delete"
+                    ]
+                },
+                {
+                    "id": "globalConfig",
+                    "display_name": "Global Configuration",
+                    "name": "globalConfig",
+                    "operation": [
+                        "View",
+                        "Edit"
+                    ]
+                }
             ]
-          },
-            {
-                "id": "integration_detail",
-                "display_name": "Integration Detail",
-                "name": "integration_detail",
-                "operation": [
-                    "View",
-                    "Add",
-                    "Edit",
-                    "Delete"
-                ]
-            }
-        ]
-      },
-      {
-        "name": "Settings",
-        "children": [
-          {
-            "id": "settings",
-            "display_name": "Settings",
-            "name": "settings",
-            "operation": [
-                "View",
-                "Add",
-                "Edit",
-                "Delete"
-            ]
-          }
-        ]
-      }
+        }
     ],
     "roles": [
-      {
-        "name": "admin",
-        "role_name": "alarm_admin",
-        "menus": []
-      },
-      {
-        "name": "normal",
-        "role_name": "alarm_normal",
-        "menus": ["alarms-View"]
-      }
+        {
+            "name": "admin",
+            "role_name": "alarm_admin",
+            "menus": []
+        },
+        {
+            "name": "manager",
+            "role_name": "alarm_manager",
+            "menus": [
+                "incidents-View",
+                "incidents-Edit",
+                "incidents-Delete",
+                "integration-View",
+                "integration-Detail",
+                "correlationRules-View",
+                "correlationRules-Add",
+                "correlationRules-Edit",
+                "correlationRules-Delete",
+                "alertAssign-View",
+                "alertAssign-Add",
+                "alertAssign-Edit",
+                "alertAssign-Delete",
+                "shieldStrategy-View",
+                "shieldStrategy-Add",
+                "shieldStrategy-Edit",
+                "shieldStrategy-Delete",
+                "alarms-View",
+                "alarms-Edit",
+                "alarms-Delete",
+                "globalConfig-View",
+                "globalConfig-Edit"
+            ]
+        },
+        {
+            "name": "normal",
+            "role_name": "alarm_normal",
+            "menus": [
+                "incidents-View",
+                "integration-View",
+                "correlationRules-View",
+                "alertAssign-View",
+                "shieldStrategy-View",
+                "alarms-View"
+            ]
+        }
     ]
-  }
-  
+}
