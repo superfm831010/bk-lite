@@ -108,6 +108,25 @@ const DocumentsPage: React.FC = () => {
         return <Tag color={color}>{text}</Tag>;
       },
     },
+    ...(activeTabKey === 'web_page' ? [{
+      title: t('knowledge.documents.syncEnabled'),
+      key: 'sync_enabled',
+      dataIndex: 'sync_enabled',
+      render: (_: any, record: TableData) => {
+        const syncEnabled = record.sync_enabled;
+        const syncTime = record.sync_time;
+        
+        if (syncEnabled && syncTime) {
+          return (
+            <div>
+              { syncTime && <div className="text-xs text-gray-500 mt-1">【{t('knowledge.documents.everyday')} {syncTime}】</div> }
+            </div>
+          );
+        } else {
+          return <div className="text-xs text-gray-500 mt-1">【未定时同步】</div>;
+        }
+      },
+    }] : []),
     {
       title: t('knowledge.documents.extractionMethod'),
       key: 'mode',

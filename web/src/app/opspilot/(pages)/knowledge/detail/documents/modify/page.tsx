@@ -54,7 +54,7 @@ const KnowledgeModifyPage = () => {
     }[];
   } | null>(null);
   const [preprocessConfig, setPreprocessConfig] = useState<any>(null);
-  const [webLinkData, setWebLinkData] = useState<{ name: string, link: string, deep: number }>({ name: '', link: '', deep: 1 });
+  const [webLinkData, setWebLinkData] = useState<{ name: string, link: string, deep: number, sync_enabled?: boolean, sync_time?: string }>({ name: '', link: '', deep: 1 });
   const [manualData, setManualData] = useState<{ name: string, content: string }>({ name: '', content: '' });
   const [pageLoading, setPageLoading] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
@@ -132,6 +132,8 @@ const KnowledgeModifyPage = () => {
           name: webLinkData.name,
           url: webLinkData.link,
           max_depth: webLinkData.deep,
+          sync_enabled: webLinkData.sync_enabled,
+          sync_time: webLinkData.sync_time,
         };
         if (documentIds.length) {
           await updateDocumentBaseInfo(documentIds[0], params);
@@ -224,7 +226,7 @@ const KnowledgeModifyPage = () => {
           const defaultConfig = {
             knowledge_source_type: type || 'file',
             knowledge_document_list: documentIds,
-            general_parse_chunk_size: 256,
+            general_parse_chunk_size: 512,
             general_parse_chunk_overlap: 0,
             semantic_chunk_parse_embedding_model: null,
             chunk_type: 'fixed_size',
@@ -251,6 +253,8 @@ const KnowledgeModifyPage = () => {
           name: data.name,
           link: data.url,
           deep: data.max_depth,
+          sync_enabled: data.sync_enabled,
+          sync_time: data.sync_time
         });
         setIsStepValid(data.name.trim() !== '' && data.url.trim() !== '');
       } else if (type === 'manual') {

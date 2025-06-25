@@ -204,21 +204,21 @@ def sync_web_page_knowledge(web_page_knowledge_id):
 
 
 @shared_task
-def create_qa_pairs(qa_paris_id):
-    qa_paris_obj = QAPairs.objects.filter(id=qa_paris_id).first()
-    if not qa_paris_obj:
-        logger.info(f"QAPairs with ID {qa_paris_id} not found.")
+def create_qa_pairs(qa_pairs_id):
+    qa_pairs_obj = QAPairs.objects.filter(id=qa_pairs_id).first()
+    if not qa_pairs_obj:
+        logger.info(f"QAPairs with ID {qa_pairs_id} not found.")
         return
-    qa_paris_obj = QAPairs.objects.get(id=qa_paris_id)
+    qa_pairs_obj = QAPairs.objects.get(id=qa_pairs_id)
     url = f"{settings.METIS_SERVER_URL}/api/rag/qa_pair_generate"
-    llm_model = qa_paris_obj.llm_model
-    content_list, document = get_qa_content(qa_paris_obj)
+    llm_model = qa_pairs_obj.llm_model
+    content_list, document = get_qa_content(qa_pairs_obj)
     knowledge_base_id = document.knowledge_index_name()
     embed_config = document.knowledge_base.embed_model.decrypted_embed_config
     embed_model_name = document.knowledge_base.embed_model.name
     for i in content_list:
         params = {
-            "size": qa_paris_obj.qa_count,
+            "size": qa_pairs_obj.qa_count,
             "content": i["content"],
             "openai_api_base": llm_model.decrypted_llm_config["openai_base_url"],
             "openai_api_key": llm_model.decrypted_llm_config["openai_api_key"],
@@ -228,7 +228,7 @@ def create_qa_pairs(qa_paris_id):
         if res.get("status", "fail") != "success":
             logger.error(f"Failed to create QA pairs for Chunk ID {i['chunk_id']}.")
             continue
-        ChunkHelper.create_qa_pairs(res["message"], i, knowledge_base_id, embed_config, embed_model_name)
+        ChunkHelper.create_qa_pairs(res["message"], i, knowledge_base_id, embed_config, embed_model_name, qa_pairs_id)
 
 
 def get_qa_content(qa_pairs_obj: QAPairs):
@@ -237,7 +237,7 @@ def get_qa_content(qa_pairs_obj: QAPairs):
     if not document:
         raise Exception(f"KnowledgeDocument with ID {qa_pairs_obj.document_id} not found.")
     res = client.get_document_es_chunk(
-        document, 1, 10000, metadata_filter={"knowledge_id": str(document.id)}, get_count=False
+        document.knowledge_index_name(), 1, 10000, metadata_filter={"knowledge_id": str(document.id)}, get_count=False
     )
     if res.get("status") != "success":
         raise Exception(f"Failed to get document chunk for document ID {qa_pairs_obj.document_id}.")

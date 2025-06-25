@@ -12,7 +12,7 @@ interface StudioCardProps extends Studio {
 
 const StudioCard: React.FC<StudioCardProps> = (props) => {
   const { t } = useTranslation();
-  const { id, name, introduction, created_by, team_name, team, index, llm_model_name, skill_type, onMenuClick } = props;
+  const { id, name, introduction, created_by, team_name, team, index, llm_model_name, skill_type, permissions, onMenuClick } = props;
   const iconTypeMapping: [string, string] = ['jiqirenjiaohukapian', 'jiqiren'];
 
   const skillTypeMapping = {
@@ -32,6 +32,7 @@ const StudioCard: React.FC<StudioCardProps> = (props) => {
       index={index}
       modelName={llm_model_name}
       skillType={skillType}
+      permissions={permissions}
       onMenuClick={onMenuClick}
       redirectUrl="/opspilot/skill/detail"
       iconTypeMapping={iconTypeMapping}
