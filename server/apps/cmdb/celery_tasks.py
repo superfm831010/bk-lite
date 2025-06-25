@@ -1,5 +1,5 @@
 # -- coding: utf-8 --
-# @File: celery_tasks.py
+# @File: tasks.py
 # @Time: 2025/3/3 15:34
 # @Author: windyzhao
 from datetime import datetime, timedelta

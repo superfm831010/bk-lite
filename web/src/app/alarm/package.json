@@ -1,0 +1,14 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@ant-design/charts": "^2.2.3",
+    "react-activation": "^0.13.0",
+    "recharts": "^2.15.0"
+  }
+}

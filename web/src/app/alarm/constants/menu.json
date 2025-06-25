@@ -1,0 +1,134 @@
+{
+  "zh": [
+    {
+      "title": "事故",
+      "icon": "shiguanli",
+      "url": "/alarm/incidents",
+      "name": "incidents",
+      "children": [
+        {
+          "title": "事故详情",
+          "url": "/alarm/incidents/detail",
+          "name": "incident_detail"
+        }
+      ]
+    },
+    {
+      "title": "告警",
+      "icon": "ic24_incidents2",
+      "url": "/alarm/alarms",
+      "name": "alarms"
+    },
+    {
+      "title": "集成",
+      "icon": "jiekoukaifa",
+      "url": "/alarm/integration",
+      "name": "integration",
+      "children": [
+        {
+          "title": "告警源详情",
+          "url": "/alarm/integration/detail",
+          "name": "integration_detail"
+        }
+      ]
+    },
+    {
+      "title": "配置",
+      "icon": "settings-fill",
+      "url": "/alarm/settings",
+      "name": "settings",
+      "children": [
+        {
+          "title": "相关性规则",
+          "url": "/alarm/settings/correlationRules",
+          "name": "correlationRules",
+          "icon": "guize1"
+        },
+        {
+          "title": "告警分派",
+          "url": "/alarm/settings/alertAssign",
+          "name": "alertAssign",
+          "icon": "gaojingfenpai"
+        },
+        {
+          "title": "屏蔽策略",
+          "url": "/alarm/settings/shieldStrategy",
+          "name": "shieldStrategy",
+          "icon": "gaojingpingbi"
+        },
+        {
+          "title": "全局配置",
+          "url": "/alarm/settings/globalConfig",
+          "name": "globalConfig",
+          "icon": "shujumoxingguanli"
+        }
+      ]
+    }
+  ],
+  "en": [
+    {
+      "title": "Incident",
+      "icon": "shiguanli",
+      "url": "/alarm/incidents",
+      "name": "incidents",
+      "children": [
+        {
+          "title": "Incident Detail",
+          "url": "/alarm/incidents/detail",
+          "name": "incident_detail"
+        }
+      ]
+    },
+    {
+      "title": "Alarms",
+      "icon": "ic24_incidents2",
+      "url": "/alarm/alarms",
+      "name": "alarms"
+    },
+    {
+      "title": "Integration",
+      "icon": "jiekoukaifa",
+      "url": "/alarm/integration",
+      "name": "integration",
+      "children": [
+        {
+          "title": "Source Detail",
+          "url": "/alarm/integration/detail",
+          "name": "integration_detail"
+        }
+      ]
+    },
+    {
+      "title": "Settings",
+      "icon": "settings-fill",
+      "url": "/alarm/settings",
+      "name": "settings",
+      "children": [
+        {
+          "title": "Correlation Rules",
+          "url": "/alarm/settings/correlationRules",
+          "name": "correlationRules",
+          "icon": "guize1"
+        },
+        {
+          "title": "Alert Assignment",
+          "url": "/alarm/settings/alertAssign",
+          "name": "alertAssign",
+          "icon": "gaojingfenpai"
+        },
+        {
+          "title": "Shield Strategy",
+          "url": "/alarm/settings/shieldStrategy",
+          "name": "shieldStrategy",
+          "icon": "gaojingpingbi"
+        },
+        {
+          "title": "Global Configuration",
+          "url": "/alarm/settings/globalConfig",
+          "name": "globalConfig",
+          "icon": "gaojingfenpai"
+        }
+      ]
+    }
+  ]
+}

@@ -43,6 +43,14 @@ LOGGING = {
             "formatter": "verbose",
             "filename": os.path.join(log_dir, "db.log"),
         },
+        "alert": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "verbose",
+            "filename": os.path.join(log_dir, "alert.log"),
+            "maxBytes": 100 * 1024 * 1024,  # 添加文件大小限制
+            "backupCount": 5,               # 添加备份文件数量
+            "encoding": "utf-8",            # 添加编码格式
+        },
         "cmdb": {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "verbose",
@@ -90,6 +98,7 @@ LOGGING = {
         "ops-console": {"handlers": ["ops-console", "console"], "level": "DEBUG", "propagate": True},
         "system-manager": {"handlers": ["system-manager", "console"], "level": "DEBUG", "propagate": True},
         "opspilot": {"handlers": ["opspilot", "console"], "level": "DEBUG", "propagate": True},
+        "alert": {"handlers": ["alert", "console"], "level": "DEBUG", "propagate": True},
         "celery": {"handlers": ["root"], "level": "INFO", "propagate": True},
     },
 }

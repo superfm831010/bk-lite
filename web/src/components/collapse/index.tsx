@@ -6,7 +6,7 @@ import {
 } from '@ant-design/icons';
 
 interface AccordionProps {
-  title: string;
+  title: string | ReactNode;
   children: ReactNode;
   className?: string;
   titleClassName?: string;
