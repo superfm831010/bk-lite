@@ -1,7 +1,7 @@
 [
   {
     "id": "exporter_elasticsearch_linux",
-    "name": "Elasticsearch-Exporter",
+    "name": "ElasticSearch-Exporter",
     "controller_default_run": false,
     "icon": "",
     "node_operating_system": "linux",
