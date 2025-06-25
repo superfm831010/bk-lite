@@ -56,12 +56,18 @@ const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading
   const menu = (model: Model) => (
     <Menu className={`${comStyles.menuContainer}`}>
       <Menu.Item key="edit">
-        <PermissionWrapper className='w-full' requiredPermissions={['Setting']}>
+        <PermissionWrapper 
+          className='w-full' 
+          requiredPermissions={['Setting']}
+          instPermissions={model.permissions || []}>
           <span className='block w-full' onClick={() => handleMenuClick('edit', model)}>{t('common.edit')}</span>
         </PermissionWrapper>
       </Menu.Item>
       {model.is_build_in === false && (<Menu.Item key="delete">
-        <PermissionWrapper className='w-full' requiredPermissions={['Delete']}>
+        <PermissionWrapper 
+          className='w-full' 
+          requiredPermissions={['Delete']}
+          instPermissions={model.permissions || []}>
           <span className='block w-full' onClick={() => handleMenuClick('delete', model)}>{t('common.delete')}</span>
         </PermissionWrapper>
       </Menu.Item>)}

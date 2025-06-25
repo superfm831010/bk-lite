@@ -76,6 +76,21 @@ const ConfigComponent: React.FC<ConfigProps> = ({ configData, setConfigData }) =
       <div className="mb-4 flex">
         <label className="block text-sm font-medium mb-1 w-32">{t('knowledge.retrievalSetting')}</label>
         <div className="flex-1">
+          <div className="flex items-center justify-between mb-4">
+            <label className="text-sm w-[100px] relative mr-4">
+              {t('knowledge.chunkCount')}
+              <Tooltip title={`${t('knowledge.chunkCountTip')}`}>
+                <QuestionCircleOutlined className="absolute top-0 right-0 -mt-1 -mr-1 cursor-pointer"/>
+              </Tooltip>
+            </label>
+            <InputNumber
+              className='flex-1'
+              min={0}
+              value={configData.resultCount}
+              onChange={(value) => setConfigData(prevData => ({...prevData, resultCount: value}))}
+              style={{width: '100%'}}
+            />
+          </div>
           <div className="p-4 pb-0 border rounded-md mb-4">
             <div className="flex items-center mb-4 justify-between">
               <h3 className="font-medium text-sm">{t('knowledge.textSearch')}</h3>
@@ -169,21 +184,6 @@ const ConfigComponent: React.FC<ConfigProps> = ({ configData, setConfigData }) =
                 </div>
               </>
             )}
-          </div>
-          <div className="flex items-center justify-between mb-4">
-            <label className="text-sm w-[100px] relative mr-4">
-              {t('knowledge.chunkCount')}
-              <Tooltip title={`${t('knowledge.chunkCountTip')}`}>
-                <QuestionCircleOutlined className="absolute top-0 right-0 -mt-1 -mr-1 cursor-pointer"/>
-              </Tooltip>
-            </label>
-            <InputNumber
-              className='flex-1'
-              min={0}
-              value={configData.resultCount}
-              onChange={(value) => setConfigData(prevData => ({...prevData, resultCount: value}))}
-              style={{width: '100%'}}
-            />
           </div>
         </div>
       </div>
