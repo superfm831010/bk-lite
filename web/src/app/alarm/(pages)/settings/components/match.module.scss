@@ -1,0 +1,50 @@
+.ruleOr {
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  font-size: 12px;
+  border-radius: 16px;
+  background-color: #3a84ff;
+  color: #fff;
+  z-index: 5;
+}
+
+.ruleAnd {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  text-align: center;
+  line-height: 24px;
+  font-size: 12px;
+  border-radius: 13px;
+  background-color: #3a84ff;
+  color: #fff;
+  position: relative;
+  left: -8px;
+}
+
+.ruleItem {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 8px;
+  margin-left: 4px;
+}
+
+.keySelect,
+.condSelect {
+  flex: 1;
+}
+
+.valueInput {
+  flex: 1.5;
+}
+
+.action {
+  font-size: 16px;
+  color: #979BA5;
+  width: 22px;
+  text-align: right;
+  cursor: pointer;
+}
