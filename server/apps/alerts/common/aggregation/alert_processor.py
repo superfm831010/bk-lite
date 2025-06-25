@@ -88,7 +88,8 @@ class AlertProcessor:
                             "rule": rule_config,
                             "source_name": rule_result.source_name,
                             "fingerprint": fingerprint,
-                            "related_alerts": related_alerts
+                            "related_alerts": related_alerts,
+                            "rule_id": rule_id
                         }
 
                         if related_alerts:
@@ -108,6 +109,7 @@ class AlertProcessor:
         # 对于高等级事件聚合规则，取最低等级（数字最小）
         # 对于其他规则，取最高等级（数字最小）
         logger.debug(f"Processing event levels: {event_levels}")
+        event_levels = [int(i) for i in event_levels]
         highest_level = min(event_levels)
         if highest_level not in self.level_priority:
             highest_level = self.level_priority[-1]
@@ -115,9 +117,10 @@ class AlertProcessor:
 
     def get_min_level(self, event_levels):
         logger.debug(f"Processing event levels: {event_levels}")
+        event_levels = [int(i) for i in event_levels]
         low_level = max(event_levels)
         if low_level not in self.level_priority:
-            low_level = self.level_priority[1]
+            low_level = self.level_priority[-1]
         return int(low_level)
 
     def _get_level_for_aggregation_rule(self, rule_name: str, event_levels):
@@ -136,6 +139,7 @@ class AlertProcessor:
         rule = params["rule"]
         rule_name = params["rule_name"]
         source_name = params["source_name"]
+        rule_id = params["rule_id"]
         _instances, level = self.get_event_instances(event_ids=event_ids, level_max=False)
 
         # 根据规则类型调整等级获取逻辑
@@ -158,7 +162,8 @@ class AlertProcessor:
             "last_event_time": _instances.first().received_at,
             "events": _instances,
             "source_name": source_name,
-            "fingerprint": params["fingerprint"]
+            "fingerprint": params["fingerprint"],
+            "rule_id": rule_id
         }
 
         return alert

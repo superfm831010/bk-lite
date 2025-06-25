@@ -53,6 +53,7 @@ class EventLevel:
 
 class EventStatus:
     """事件状态"""
+    RECEIVED = "received"
     PENDING = "pending"
     RESOLVED = "resolved"
     PROCESSING = "processing"
@@ -65,6 +66,7 @@ class EventStatus:
         (RESOLVED, "已处理"),
         (CLOSED, "已关闭"),
         (SHIELD, "已屏蔽"),
+        (RECEIVED, "已接收"),
     )
 
 

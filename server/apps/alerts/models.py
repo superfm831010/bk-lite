@@ -77,7 +77,7 @@ class Event(models.Model):
     resource_id = models.CharField(max_length=64, null=True, blank=True, db_index=True, help_text="资源唯一ID")
     resource_type = models.CharField(max_length=64, null=True, blank=True, help_text="资源类型")
     resource_name = models.CharField(max_length=128, null=True, blank=True, help_text="资源名称")
-    status = models.CharField(max_length=32, choices=EventStatus.CHOICES, default=EventStatus.PENDING,
+    status = models.CharField(max_length=32, choices=EventStatus.CHOICES, default=EventStatus.RECEIVED,
                               help_text="事件状态")
     assignee = JSONField(default=list, blank=True, help_text="事件责任人")
     # note = models.TextField(null=True, blank=True, help_text="事件备注")
@@ -122,6 +122,7 @@ class Alert(models.Model):
     source_name = models.CharField(max_length=100, null=True, blank=True, help_text="告警源名称")
     # 核心指纹字段（用于聚合）
     fingerprint = models.CharField(max_length=32, db_index=True, help_text="告警指纹")
+    rule_id = models.CharField(max_length=256, null=True, blank=True, help_text="触发该事件的规则ID")
 
     # 告警通知单独存储
 

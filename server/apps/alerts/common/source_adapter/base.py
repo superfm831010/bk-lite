@@ -62,7 +62,7 @@ class AlertSourceAdapter(ABC):
                 if not _value or _value not in self.levels:
                     _value = self.info_level
             else:
-                if not _value:
+                if not _value and _value != 0:
                     # 去元数据里找
                     label = event.get("labels", {})
                     _value = label.get(field, None)

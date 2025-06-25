@@ -39,7 +39,7 @@ def beat_close_alert():
     告警关闭兜底机制
     """
     logger.info("== beat close alert task start ==")
-    beat_update = BeatUpdateAlertStatu(times=10)  # 10个窗口内
+    beat_update = BeatUpdateAlertStatu(times=3)  # 3个窗口内
     beat_update.beat_close_alert()
     logger.info("== beat close alert task end ==")
 

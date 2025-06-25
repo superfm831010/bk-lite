@@ -64,7 +64,7 @@ def generate_mock_events(num_events=100):
 
         # 服务器名称
         server_type = random.choice(server_prefixes)
-        server_num = random.randint(1, 10)
+        server_num = random.randint(1, 10000)
 
         # 更新事件数据
         event["title"] = f"CPU Usage {levels_map[level]}"
@@ -324,11 +324,10 @@ if __name__ == "__main__":
     # 生成100个mock事件
     mock_data = generate_mock_events(50)
 
-    # 保存到JSON文件
-    # with open("mock_monitor_events.json", "w") as f:
-    #     json.dump(mock_data, f, indent=2)
-    #
-    # print("Mock数据已生成并保存到 mock_monitor_events.json 文件")
+    with open("mock_monitor_events.json", "w") as f:
+        json.dump(mock_data, f, indent=2)
+
+    print("Mock数据已生成并保存到 mock_monitor_events.json 文件")
     #
     # # 生成Jenkins失败事件数据，包含0.0和负数测试
     # jenkins_data = generate_jenkins_failure_events(2)
@@ -341,9 +340,9 @@ if __name__ == "__main__":
     # print("数据包含：负数值、0.0值和正数值的测试用例")
 
     # 生成网站拨测事件数据
-    website_data = generate_website_monitoring_events(3)
-
-    with open("mock_website_monitoring_events.json", "w", encoding='utf-8') as f:
-        json.dump(website_data, f, indent=2, ensure_ascii=False)
-
-    print("网站拨测事件Mock数据已生成并保存到 mock_website_monitoring_events.json 文件")
+    # website_data = generate_website_monitoring_events(3)
+    #
+    # with open("mock_website_monitoring_events.json", "w", encoding='utf-8') as f:
+    #     json.dump(website_data, f, indent=2, ensure_ascii=False)
+    #
+    # print("网站拨测事件Mock数据已生成并保存到 mock_website_monitoring_events.json 文件")

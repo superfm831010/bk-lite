@@ -332,6 +332,9 @@ class RuleEngine:
                 if key in filtered_df.columns:
                     filtered_df = filtered_df[filtered_df[key] == value]
 
+            # 不是网站拨测类型的规则，过滤掉网站拨测
+            filtered_df = filtered_df[filtered_df['resource_type'] != '网站拨测']
+
             if filtered_df.empty:
                 return False, []
 
