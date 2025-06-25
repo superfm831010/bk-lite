@@ -50,4 +50,5 @@ for app_config in apps.get_app_configs():
             urlpatterns.append(path(f"{url_path}/", include(urls_module)))
 
     except ImportError as e:  # noqa
-        print(e)
+        import traceback
+        print(traceback.format_exc())
