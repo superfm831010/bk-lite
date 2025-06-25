@@ -103,7 +103,11 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         page_size = int(request.GET.get("page_size", 10))
         search_text = request.GET.get("search_text", "")
         res = ChunkHelper.get_document_es_chunk(
-            instance, page, page_size, search_text, metadata_filter={"knowledge_id": str(instance.id)}
+            instance.knowledge_index_name(),
+            page,
+            page_size,
+            search_text,
+            metadata_filter={"knowledge_id": str(instance.id)},
         )
         return JsonResponse(
             {
