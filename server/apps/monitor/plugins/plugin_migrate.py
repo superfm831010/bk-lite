@@ -3,17 +3,23 @@ import json
 
 from apps.core.logger import monitor_logger as logger
 from apps.monitor.services.plugin import MonitorPluginService
+from apps.monitor.services.policy import PolicyService
+from apps.rpc.node_mgmt import NodeMgmt
+
+PLUGIN_DIRECTORY = 'apps/monitor/plugins'
 
 
-def find_json_paths(root_dir: str):
+def find_json_paths(root_dir: str, target_filename: str = None):
     """
-    查找 plugins/type/config_type/variant/*.json 的文件路径。
+    查找 plugins/type/config_type/variant/* 的文件路径。
 
     只要 path，忽略中间目录名和非 .json 文件。
     跳过任何不是目录的中间层。
+    可指定具体的文件名称进行过滤。
 
     :param root_dir: 根目录路径，例如 'plugins'
-    :return: 所有符合条件的 .json 文件完整路径列表
+    :param target_filename: 目标文件名，例如 'Detection Device.json'
+    :return: 所有符合条件的文件完整路径列表
     """
     result = []
     for type_name in os.listdir(root_dir):
@@ -29,15 +35,15 @@ def find_json_paths(root_dir: str):
                 if not os.path.isdir(variant_path):
                     continue
                 for filename in os.listdir(variant_path):
-                    if filename.endswith('.json'):
+                    if filename == target_filename:
                         result.append(os.path.join(variant_path, filename))
+                        continue
     return result
 
 
 def migrate_plugin():
     """迁移插件"""
-    files_directory = 'apps/monitor/plugins'
-    path_list = find_json_paths(files_directory)
+    path_list = find_json_paths(PLUGIN_DIRECTORY, "metrics.json")
     for file_path in path_list:
         # 打开并读取 JSON 文件
         try:
@@ -46,3 +52,39 @@ def migrate_plugin():
                 MonitorPluginService.import_monitor_plugin(plugin_data)
         except Exception as e:
             logger.error(f'导入插件 {file_path} 失败！原因：{e}')
+
+
+def migrate_policy():
+    """迁移策略"""
+    path_list = find_json_paths(PLUGIN_DIRECTORY, "policy.json")
+    for file_path in path_list:
+        # 打开并读取 JSON 文件
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                policy_data = json.load(file)
+                PolicyService.import_monitor_policy(policy_data)
+        except Exception as e:
+            logger.error(f'导入策略模版 {file_path} 失败！原因：{e}')
+
+
+def migrate_collector():
+    """迁移采集器"""
+    collectors_path = []
+    for type_name in os.listdir(PLUGIN_DIRECTORY):
+        type_path = os.path.join(PLUGIN_DIRECTORY, type_name)
+        if not os.path.isdir(type_path):
+            continue
+        for config_name in os.listdir(type_path):
+            if config_name == "collectors.json":
+                config_path = os.path.join(type_path, config_name)
+                collectors_path.append(config_path)
+                continue
+
+    for file_path in collectors_path:
+        # 打开并读取 JSON 文件
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                collectors_data = json.load(file)
+                NodeMgmt().collectors_import(collectors_data)
+        except Exception as e:
+            logger.error(f'导入采集器 {file_path} 失败！原因：{e}')

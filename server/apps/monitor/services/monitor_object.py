@@ -3,7 +3,6 @@ import uuid
 from collections import defaultdict
 
 from django.db import transaction
-from django.db.models import Prefetch
 
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.constants import MONITOR_OBJS, OBJ_ORDER, DEFAULT_OBJ_ORDER
@@ -37,6 +36,26 @@ class MonitorObjectService:
         return instance_map
 
     @staticmethod
+    def add_attr(items: list):
+        # 状态计算, 补充组织
+        org_objs = MonitorInstanceOrganization.objects.filter(
+            monitor_instance_id__in=[i["instance_id"] for i in items])
+        org_map = {}
+        for org in org_objs:
+            if org.monitor_instance_id not in org_map:
+                org_map[org.monitor_instance_id] = set()
+            org_map[org.monitor_instance_id].add(org.organization)
+
+        for conf_info in items:
+
+            conf_info["organization"] = list(org_map.get(conf_info["instance_id"], []))
+
+            if conf_info["time"] == 0:
+                conf_info["status"] = ""
+            else:
+                conf_info["status"] = calculation_status(conf_info["time"])
+
+    @staticmethod
     def get_monitor_instance(monitor_object_id, page, page_size, name, group_ids, is_super, add_metrics=False):
         """获取监控对象实例"""
         start = (page - 1) * page_size
@@ -44,9 +63,11 @@ class MonitorObjectService:
         qs = MonitorInstance.objects.filter(monitor_object_id=monitor_object_id, is_deleted=False)
         if not is_super:
             qs = qs.filter(monitorinstanceorganization__organization__in=group_ids)
-        qs = qs.prefetch_related(Prefetch('monitorinstanceorganization_set', to_attr='organizations'))
         if name:
             qs = qs.filter(name__icontains=name)
+
+        # 去除重复
+        qs = qs.distinct("id")
 
         count = qs.count()
 
@@ -71,7 +92,6 @@ class MonitorObjectService:
                 "instance_id_values": [i for i in ast.literal_eval(obj.id)],
                 "instance_name": obj.name or obj.id,
                 "agent_id": instance_map.get(obj.id, {}).get("agent_id", ""),
-                "organization": [i.organization for i in obj.organizations],
                 "time": instance_map.get(obj.id, {}).get("time", ""),
             })
 
@@ -101,12 +121,7 @@ class MonitorObjectService:
                 for instance in result:
                     instance[metric_obj.name] = _metric_map.get(instance["instance_id"])
 
-        # 状态计算
-        for conf_info in result:
-            if conf_info["time"] == 0:
-                conf_info["status"] = ""
-            else:
-                conf_info["status"] = calculation_status(conf_info["time"])
+        MonitorObjectService.add_attr(result)
 
         return  dict(count=count, results=result)
 

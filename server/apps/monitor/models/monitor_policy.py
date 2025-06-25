@@ -2,7 +2,19 @@ from django.db import models
 
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
+from apps.monitor.models import MonitorPlugin
 from apps.monitor.models.monitor_object import MonitorObject
+
+
+class PolicyTemplate(models.Model):
+    monitor_object = models.ForeignKey(MonitorObject, on_delete=models.CASCADE, verbose_name='监控对象')
+    plugin = models.ForeignKey(MonitorPlugin, on_delete=models.CASCADE, verbose_name='监控插件')
+    templates = models.JSONField(default=list, verbose_name='策略模板列表')
+
+    class Meta:
+        verbose_name = '监控策略模板'
+        verbose_name_plural = '监控策略模板'
+        unique_together = ('monitor_object', 'plugin')
 
 
 class MonitorPolicy(TimeInfo, MaintainerInfo):

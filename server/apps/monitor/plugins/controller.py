@@ -17,9 +17,6 @@ class Controller:
     def __init__(self, data):
         self.data = data
 
-    def set_config_id(self, config):
-        config.update(id=str(uuid.uuid4().hex))
-
     def get_template_info_by_type(self, template_dir: str, type_name: str):
         """
         从指定目录中查找匹配类型的 j2 模板文件，并解析出 type、config_type、file_type。
@@ -73,7 +70,6 @@ class Controller:
                 node_info = {"node_id": node_id}
                 for config in self.data["configs"]:
                     _config = {"collector": collector, "collect_type": collect_type, **node_info, **config, **instance}
-                    self.set_config_id(_config)
                     configs.append(_config)
         return configs
 
@@ -87,7 +83,8 @@ class Controller:
             env_config = {k[4:]: v for k, v in config_info.items() if k.startswith("ENV_")}
             for template in templates:
                 is_child = True if template["config_type"] == "child" else False
-
+                collector_name = "Telegraf" if is_child else config_info["collector"]
+                config_id = str(uuid.uuid4().hex)
                 # 生成配置
                 template_config = self.render_template(
                     template_dir,
@@ -98,31 +95,31 @@ class Controller:
                 # 节点管理创建配置
                 if is_child:
                     node_child_config = dict(
-                        id=config_info["id"],
+                        id=config_id,
                         collect_type=config_info["collect_type"],
                         type=config_info["type"],
                         content=template_config,
                         node_id=config_info["node_id"],
-                        collector_name=config_info["collector"],
+                        collector_name=collector_name,
                         env_config=env_config,
                     )
                     node_child_configs.append(node_child_config)
                 else:
                     node_config = dict(
-                        id=config_info["id"],
-                        name=f'{config_info["collector"]}-{config_info["id"]}',
+                        id=config_id,
+                        name=f'{collector_name}-{config_id}',
                         content=template_config,
                         node_id=config_info["node_id"],
-                        collector_name=config_info["collector"],
-                        env_config=config_info.get("env_config", {}),
+                        collector_name=collector_name,
+                        env_config=env_config,
                     )
                     node_configs.append(node_config)
 
                 # 监控记录配置
                 collect_configs.append(
                     CollectConfig(
-                        id=config_info["id"],
-                        collector=config_info["collector"],
+                        id=config_id,
+                        collector=collector_name,
                         monitor_instance_id=config_info["instance_id"],
                         collect_type=config_info["collect_type"],
                         config_type=config_info["type"],
