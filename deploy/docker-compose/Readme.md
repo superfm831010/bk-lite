@@ -25,7 +25,8 @@ docker-compose --profile opspilot up -d
 # docker compose --profile opspilot up -d
 ```
 
-> 需在deploy/compose目录下执行
+## 卸载
+> 需在deploy/docker-compose目录下执行
 
 ```bash
 #!/bin/bash
