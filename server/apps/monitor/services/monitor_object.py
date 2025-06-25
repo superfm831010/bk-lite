@@ -48,6 +48,9 @@ class MonitorObjectService:
         if name:
             qs = qs.filter(name__icontains=name)
 
+        # 去除重复
+        qs = qs.distinct("id")
+
         count = qs.count()
 
         if page_size == -1:

@@ -125,6 +125,9 @@ class InstanceSearch:
         if name:
             qs = qs.filter(name__icontains=name)
 
+        # 去除重复
+        qs = qs.distinct("id")
+
         objs_map = {i.id: i for i in qs}
         return objs_map
 
