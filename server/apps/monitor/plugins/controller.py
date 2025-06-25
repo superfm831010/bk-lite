@@ -111,7 +111,7 @@ class Controller:
                         content=template_config,
                         node_id=config_info["node_id"],
                         collector_name=collector_name,
-                        env_config=config_info.get("env_config", {}),
+                        env_config=env_config,
                     )
                     node_configs.append(node_config)
 
