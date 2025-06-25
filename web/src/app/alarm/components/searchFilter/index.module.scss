@@ -1,0 +1,28 @@
+.searchFilter {
+  .attrList {
+    :global {
+      .ant-select-selector {
+        border-radius: 6px 0 0 6px;
+      }
+    }
+  }
+
+  :global {
+    .ant-input,
+    .ant-input-outlined,
+    .ant-input-number,
+    .ant-picker,
+    .ant-select-selector {
+      border-left: 0;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+
+    .ant-checkbox-wrapper {
+      border: var(--ant-line-width) var(--ant-line-type) var(--ant-color-border);
+      padding: 4px 4px 4px 8px;
+      height: 32px;
+      border-radius: 0 4px 4px 0;
+    }
+  }
+}

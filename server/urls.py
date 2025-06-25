@@ -4,6 +4,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
+import traceback
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -49,5 +50,5 @@ for app_config in apps.get_app_configs():
             url_path = app_name.split("apps.")[-1]
             urlpatterns.append(path(f"{url_path}/", include(urls_module)))
 
-    except Exception as e:  # noqa
+    except ImportError as e:  # noqa
         print(e)

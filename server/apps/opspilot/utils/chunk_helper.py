@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 import requests
 from django.conf import settings
 
-from apps.opspilot.knowledge_mgmt.models import KnowledgeDocument
+from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 
@@ -12,7 +12,7 @@ class ChunkHelper(ChatServerHelper):
     @classmethod
     def get_document_es_chunk(
         cls,
-        instance: KnowledgeDocument,
+        index_name,
         page: int = 1,
         page_size: int = 0,
         search_text: str = "",
@@ -23,7 +23,7 @@ class ChunkHelper(ChatServerHelper):
             metadata_filter = {}
         url = f"{settings.METIS_SERVER_URL}/api/rag/list_rag_document"
         query = {
-            "index_name": instance.knowledge_index_name(),
+            "index_name": index_name,
             "page": page,
             "metadata_filter": metadata_filter,
             "size": page_size,
@@ -37,8 +37,18 @@ class ChunkHelper(ChatServerHelper):
         res["count"] = count_res.get("count", 0)
         return res
 
+    @staticmethod
+    def delete_es_content(index_name, qa_pairs_id):
+        url = f"{settings.METIS_SERVER_URL}/api/rag/delete_doc"
+        kwargs = {"index_name": index_name, "metadata_filter": {"qa_paris_id": str(qa_pairs_id)}}
+        try:
+            ChatServerHelper.post_chat_server(kwargs, url)
+        except Exception as e:
+            logger.exception(e)
+
     @classmethod
-    def create_qa_pairs(cls, qa_paris, chunk_obj, knowledge_base_id, embed_config, embed_model_name):
+    def create_qa_pairs(cls, qa_paris, chunk_obj, knowledge_base_id, embed_config, embed_model_name, qa_pairs_id):
+        cls.delete_es_content(knowledge_base_id, qa_pairs_id)
         url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
         kwargs = {
             "knowledge_base_id": knowledge_base_id,
@@ -55,7 +65,7 @@ class ChunkHelper(ChatServerHelper):
             "semantic_chunk_model": "",
             "preview": "false",
         }
-        metadata = {"base_chunk_id": chunk_obj["chunk_id"]}
+        metadata = {"base_chunk_id": chunk_obj["chunk_id"], "qa_pairs_id": str(qa_pairs_id)}
 
         for i in qa_paris:
             params = dict(kwargs, **{"content": i["question"]})

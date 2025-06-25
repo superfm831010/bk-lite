@@ -1,20 +1,20 @@
 [[inputs.snmp]]
     interval = "{{ interval }}s"
     {% if version == 2 %}
-    agents = ["udp://{{ snmp_config.ip }}:{{ snmp_config.port }}"]
+    agents = ["udp://{{ ip }}:{{ port }}"]
     version = 2
-    community = "{{ snmp_config.community }}"
-    timeout = {{ snmp_config.timeout }}
+    community = "{{ community }}"
+    timeout = "{{ timeout }}"
     {% elif version == 3 %}
-    agents = ["udp://{{ snmp_config.ip }}:{{ snmp_config.port }}"]
+    agents = ["udp://{{ ip }}:{{ port }}"]
     version = 3
-    timeout = {{ snmp_config.timeout }}
-    sec_name = "{{ snmp_config.sec_name }}"
-    sec_level = "{{ snmp_config.sec_level }}"
-    auth_protocol = "{{ snmp_config.auth_protocol }}"
-    auth_password = "{{ snmp_config.auth_password }}"
-    priv_protocol = "{{ snmp_config.priv_protocol }}"
-    priv_password = "{{ snmp_config.priv_password }}"
+    timeout = "{{ timeout }}"
+    sec_name = "{{ sec_name }}"
+    sec_level = "{{ sec_level }}"
+    auth_protocol = "{{ auth_protocol }}"
+    auth_password = "{{ auth_password }}"
+    priv_protocol = "{{ priv_protocol }}"
+    priv_password = "{{ priv_password }}"
     {% else %}
     {% endif %}
     [inputs.snmp.tags]

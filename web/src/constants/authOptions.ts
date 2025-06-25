@@ -6,7 +6,12 @@ async function getWeChatConfig() {
   try {
     const response = await fetch(`${process.env.NEXTAPI_URL}/core/api/get_wechat_settings/`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+      },
+      cache: "no-store"
     });
     
     const responseData = await response.json();
@@ -25,6 +30,15 @@ async function getWeChatConfig() {
 
 export async function getAuthOptions(): Promise<AuthOptions> {
   const wechatConfig = await getWeChatConfig();
+  const clientId = wechatConfig?.app_id || process.env.WECHAT_APP_ID;
+  
+  if (!clientId) {
+    throw new Error(
+      `WeChat client_id is missing! ` +
+      `Config: ${JSON.stringify(wechatConfig)}, ` +
+      `Env: WECHAT_APP_ID=${process.env.WECHAT_APP_ID}`
+    );
+  }
   
   const providers = [
     CredentialsProvider({
@@ -109,13 +123,19 @@ export async function getAuthOptions(): Promise<AuthOptions> {
       },
     }),
   ];
-  providers.push(
-    WeChatProvider({
-      clientId: wechatConfig?.app_id || process.env.WECHAT_APP_ID || "",
-      clientSecret: wechatConfig?.app_secret || process.env.WECHAT_APP_SECRET || "",
-      redirectUri: `${wechatConfig?.redirect_uri || process.env.WECHAT_APP_REDIRECT_URI}/api/auth/callback/wechat`,
-    }) as unknown as any
-  );
+  console.log("Credentials wechatConfig", wechatConfig);
+  if (wechatConfig && wechatConfig.app_id && wechatConfig.app_secret) {
+    providers.push(
+      WeChatProvider({
+        clientId: wechatConfig?.app_id || "",
+        clientSecret: wechatConfig?.app_secret || "",
+        redirectUri: `${wechatConfig?.redirect_uri}/api/auth/callback/wechat`,
+      }) as unknown as any
+    );
+    console.log("WeChat provider added successfully");
+  } else {
+    console.warn("WeChat configuration is incomplete. Skipping WeChat provider.");
+  }
 
   return {
     providers,

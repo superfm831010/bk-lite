@@ -73,7 +73,7 @@ def verify_token(token):
             menu_data = Menu.objects.filter(id__in=list(set(menu_ids))).values_list("app", "name")
             for app, name in menu_data:
                 menus.setdefault(app, []).append(name)
-        cache.set(f"menus-user:{user.id}", menus, 60 * 30)
+        cache.set(f"menus-user:{user.id}", menus, 60)
     return {
         "result": True,
         "data": {

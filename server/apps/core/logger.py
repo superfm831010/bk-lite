@@ -2,6 +2,7 @@ import logging
 
 logger = logging.getLogger("app")
 cmdb_logger = logging.getLogger("cmdb")
+alert_logger = logging.getLogger("alert")
 monitor_logger = logging.getLogger("monitor")
 node_logger = logging.getLogger("node")
 console_mgmt_logger = logging.getLogger("ops-console")
