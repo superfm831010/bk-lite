@@ -1,5 +1,6 @@
 import nats_client
 from apps.node_mgmt.models import CloudRegion
+from apps.node_mgmt.node_init.collector_init import import_collector
 from apps.node_mgmt.services.node import NodeService
 from apps.core.logger import node_logger as logger
 
@@ -177,6 +178,13 @@ def node_list(query_data: dict):
 @nats_client.register
 def collector_list(query_data: dict):
     return []
+
+
+@nats_client.register
+def import_collectors(collectors: list):
+    """导入采集器"""
+    logger.info(f"import_collectors: {collectors}")
+    return import_collector(collectors)
 
 
 @nats_client.register

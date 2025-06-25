@@ -11,8 +11,8 @@ from apps.core.utils.web_utils import WebUtils
 from apps.monitor.filters.monitor_policy import MonitorPolicyFilter
 from apps.monitor.models import PolicyOrganization
 from apps.monitor.models.monitor_policy import MonitorPolicy
-from apps.monitor.policy_template.common import load_json
 from apps.monitor.serializers.monitor_policy import MonitorPolicySerializer
+from apps.monitor.services.policy import PolicyService
 from config.drf.pagination import CustomPageNumberPagination
 
 
@@ -144,5 +144,5 @@ class MonitorPolicyVieSet(viewsets.ModelViewSet):
     )
     @action(methods=['post'], detail=False, url_path='template')
     def template(self, request):
-        data = load_json(request.data.get('monitor_object_name'))
+        data = PolicyService.get_policy_templates(request.data['monitor_object_name'])
         return WebUtils.response_success(data)

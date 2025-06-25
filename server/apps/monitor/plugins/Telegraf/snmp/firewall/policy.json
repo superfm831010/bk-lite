@@ -1,4 +1,7 @@
-[
+{
+  "object": "Firewall",
+  "plugin": "Firewall SNMP General",
+  "templates": [
     {
     "name": "接口接收错误包过高",
     "alert_name": "防火墙${metric_instance_id} 接口 ${metric_ifDescr} 每秒接收错误包数过高",
@@ -152,3 +155,4 @@
     ]
   }
 ]
+}

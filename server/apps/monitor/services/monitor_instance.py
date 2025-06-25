@@ -1,11 +1,9 @@
 import ast
 
-from django.db.models import Prefetch
-
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.constants import MONITOR_OBJS
 from apps.monitor.models import Metric, MonitorInstance
-from apps.monitor.utils.instance import calculation_status
+from apps.monitor.services.monitor_object import MonitorObjectService
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
 
 
@@ -86,7 +84,6 @@ class InstanceSearch:
                 instance_id=instance_id,
                 instance_id_values=[i for i in ast.literal_eval(instance_id)],
                 instance_name=obj.name or obj.id,
-                organization=[i.organization for i in obj.organizations],
                 time=metric["value"][0],
                 value=metric["value"][1],
             )
@@ -105,12 +102,7 @@ class InstanceSearch:
         if self.query_data.get("add_metrics", False) and page_size != -1:
             results = self.add_other_metrics(results)
 
-        # 状态计算
-        for conf_info in results:
-            if conf_info["time"] == 0:
-                conf_info["status"] = ""
-            else:
-                conf_info["status"] = calculation_status(conf_info["time"])
+        MonitorObjectService.add_attr(results)
 
         return dict(count=count, results=results)
 
@@ -120,10 +112,12 @@ class InstanceSearch:
         if not is_super:
             group_ids = self.query_data["group_list"]
             qs = qs.filter(monitorinstanceorganization__organization__in=group_ids)
-        qs = qs.prefetch_related(Prefetch('monitorinstanceorganization_set', to_attr='organizations'))
         name = self.query_data.get("name")
         if name:
             qs = qs.filter(name__icontains=name)
+
+        # 去除重复
+        qs = qs.distinct("id")
 
         objs_map = {i.id: i for i in qs}
         return objs_map
