@@ -101,3 +101,11 @@ class NodeMgmt(object):
         """
         return_data = self.client.run("delete_configs", ids)
         return return_data
+
+    def collectors_import(self, collectors: list):
+        """
+        导入采集器
+        :param collectors: 采集器列表
+        """
+        return_data = self.client.run("import_collectors", collectors)
+        return return_data
