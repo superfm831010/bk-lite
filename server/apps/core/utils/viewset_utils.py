@@ -68,7 +68,6 @@ class AuthViewSet(MaintainerViewSet):
         for rule in rules:
             if isinstance(rule, dict) and "id" in rule:
                 rule_ids.append(rule["id"])
-
         return queryset.filter(id__in=rule_ids)
 
     def list(self, request, *args, **kwargs):

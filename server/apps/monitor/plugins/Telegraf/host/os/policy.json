@@ -1,4 +1,7 @@
-[
+{
+  "object": "Host",
+  "plugin": "Host",
+  "templates": [
     {
     "name": "主机 CPU 使用率过高",
     "alert_name": "主机 ${metric_instance_id} CPU 使用率过高",
@@ -216,3 +219,4 @@
     ]
   }
 ]
+}
