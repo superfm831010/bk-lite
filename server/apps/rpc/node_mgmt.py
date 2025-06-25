@@ -29,56 +29,33 @@ class NodeMgmt(object):
         return_data = self.client.run("node_list", query_data)
         return return_data
 
-    def batch_add_node_child_config(self, data):
+    def batch_add_node_child_config(self, configs: list):
         """
-        适用子配置的采集器枚举 ["Telegraf"]
-        :param data: 批量添加配置（以下为一个http prometheus的采集参数）
-        {
-            "collector": "Telegraf",   // 收集器名称
-            "nodes": [{                     // 节点列表
-                "id": "27439797-fd14-4e18-b54e-3f7ce8727030",
-                "configs": [{
-                    # 通用参数
-                    "id": "uuid", // 配置id，调用方自己生成
-                    "collect_type": "http", // 采集方式
-                    "type": "prometheus", // 配置类型
-                    "interval": "", // 采集间隔
-                    "instance_id": "",      // 实例ID
-                    "instance_type": "",    // 实例类型
-                    # 采集器模版参数，不同采集器不同
-                    "url": "",
-                    "timeout": "",
-                    "response_timeout": "",
-                    "custom_headers": "",
-                }]
-            }]
-        }
+        批量创建子配置
+        :param configs: 配置列表，每个配置包含以下字段：
+            - id: 子配置ID
+            - collect_type: 采集类型
+            - type: 配置类型
+            - content: 配置内容
+            - node_id: 节点ID
+            - collector_name: 采集器名称
+            - env_config: 环境变量配置（可选）
         """
-        return_data = self.client.run("batch_add_node_child_config", data)
+        return_data = self.client.run("batch_add_node_child_config", configs)
         return return_data
 
-    def batch_add_node_config(self, data):
+    def batch_add_node_config(self, configs: list):
         """
-        适用配置的采集器枚举 ["JMX-JVM"]
-        :param data: 批量添加配置（以下为一个jmx jvm的采集参数）
-        {
-            "collector": "JMX-JVM",   // 收集器名称
-            "nodes": [{                     // 节点列表
-                "id": "27439797-fd14-4e18-b54e-3f7ce8727030",
-                "configs": [{
-                    # 通用参数
-                    "id": "uuid", // 配置id，调用方自己生成
-                    "collect_type": "jmx", // 采集方式
-                    "type": "jvm", // 配置类型
-                    # 采集器模版参数，不同采集器不同
-                    "username": "",
-                    "password": "",
-                    "jmx_url": "",
-                }]
-            }]
-        }
+        批量创建配置
+        :param configs: 配置列表，每个配置包含以下字段：
+            - id: 配置ID
+            - name: 配置名称
+            - content: 配置内容
+            - node_id: 节点ID
+            - collector_name: 采集器名称
+            - env_config: 环境变量配置（可选）
         """
-        return_data = self.client.run("batch_add_node_config", data)
+        return_data = self.client.run("batch_add_node_config", configs)
         return return_data
 
     def get_child_configs_by_ids(self, ids):

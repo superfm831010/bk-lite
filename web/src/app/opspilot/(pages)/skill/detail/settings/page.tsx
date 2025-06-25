@@ -32,6 +32,7 @@ const SkillSettingsPage: React.FC = () => {
   const [ragEnabled, setRagEnabled] = useState(true);
   const [showRagSource, setRagSourceStatus] = useState(false);
   const [showToolEnabled, setToolEnabled] = useState(false);
+  const [ragStrictMode, setRagStrictMode] = useState(false);
   const [ragSources, setRagSources] = useState<KnowledgeBaseRagSource[]>([]);
   const [selectedKnowledgeBases, setSelectedKnowledgeBases] = useState<number[]>([]);
   const [llmModels, setLlmModels] = useState<{ id: number, name: string, enabled: boolean, llm_model_type: string }[]>([]);
@@ -83,6 +84,7 @@ const SkillSettingsPage: React.FC = () => {
           setIsDeepSeek(selected?.llm_model_type === 'deep-seek');
           setChatHistoryEnabled(data.enable_conversation_history);
           setRagEnabled(data.enable_rag);
+          setRagStrictMode(data.enable_rag_strict_mode);
           setRagSourceStatus(data.enable_rag_knowledge_source);
 
           setTemperature(data.temperature || 0.7);
@@ -129,6 +131,7 @@ const SkillSettingsPage: React.FC = () => {
         enable_conversation_history: chatHistoryEnabled,
         enable_rag: ragEnabled,
         enable_rag_knowledge_source: showRagSource,
+        enable_rag_strict_mode: ragStrictMode,
         rag_score_threshold: ragScoreThreshold,
         conversation_window_size: chatHistoryEnabled ? quantity : undefined,
         temperature: temperature,
@@ -164,8 +167,9 @@ const SkillSettingsPage: React.FC = () => {
         skill_prompt: values.prompt,
         enable_rag: ragEnabled,
         enable_rag_knowledge_source: showRagSource,
+        enable_rag_strict_mode: ragStrictMode,
         rag_score_threshold: ragScoreThreshold,
-        chat_history: quantity ? [] : [], // 这里可以根据需要传入聊天历史
+        chat_history: quantity ? [] : [],
         conversation_window_size: chatHistoryEnabled ? quantity : undefined,
         temperature: temperature,
         show_think: values.show_think,
@@ -327,6 +331,11 @@ const SkillSettingsPage: React.FC = () => {
                           label={t('skill.ragSource')}
                           tooltip={t('skill.ragSourceTip')}>
                           <Switch size="small" className="ml-2" checked={showRagSource} onChange={setRagSourceStatus}/>
+                        </Form.Item>
+                        <Form.Item
+                          label={t('skill.ragStrictMode')}
+                          tooltip={t('skill.ragStrictModeTip')}>
+                          <Switch size="small" className="ml-2" checked={ragStrictMode} onChange={setRagStrictMode}/>
                         </Form.Item>
                         <Form.Item label={t('skill.knowledgeBase')} tooltip={t('skill.knowledgeBaseTip')}>
                           <KnowledgeBaseSelector
