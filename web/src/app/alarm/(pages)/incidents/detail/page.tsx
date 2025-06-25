@@ -10,6 +10,7 @@ import LinkModal from '../components/linkModal';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import AlarmAction from '@/app/alarm/(pages)/alarms/components/alarmAction';
 import SearchFilter from '@/app/alarm/components/searchFilter';
+import PermissionWrapper from '@/components/permission';
 import { AlarmTableDataItem } from '@/app/alarm/types/alarms';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
 import { UserItem } from '@/app/alarm/types/types';
@@ -325,13 +326,15 @@ const IncidentDetail: React.FC = () => {
                     className="whitespace-nowrap overflow-hidden text-ellipsis mr-[6px]"
                     text={assigneeDisplay || '--'}
                   ></EllipsisWithTooltip>
-                  <Button
-                    size="small"
-                    type="link"
-                    icon={<EditOutlined />}
-                    className="mr-[10px]"
-                    onClick={() => setEditingAssignee(true)}
-                  />
+                  <PermissionWrapper requiredPermissions={['Edit']}>
+                    <Button
+                      size="small"
+                      type="link"
+                      icon={<EditOutlined />}
+                      className="mr-[10px]"
+                      onClick={() => setEditingAssignee(true)}
+                    />
+                  </PermissionWrapper>
                 </>
               )}
             </div>
@@ -371,12 +374,14 @@ const IncidentDetail: React.FC = () => {
                     className="whitespace-nowrap overflow-hidden text-ellipsis mr-[6px] max-w-[280px]"
                     text={preNote || '--'}
                   />
-                  <Button
-                    size="small"
-                    type="link"
-                    icon={<EditOutlined />}
-                    onClick={() => setEditingNote(true)}
-                  />
+                  <PermissionWrapper requiredPermissions={['Edit']}>
+                    <Button
+                      size="small"
+                      type="link"
+                      icon={<EditOutlined />}
+                      onClick={() => setEditingNote(true)}
+                    />
+                  </PermissionWrapper>
                 </>
               )}
             </div>
@@ -408,7 +413,7 @@ const IncidentDetail: React.FC = () => {
       <div style={{ position: 'relative', marginBottom: '16px' }}>
         <CustomBreadcrumb>
           <Breadcrumb.Item>
-            <span className="ml-[10px] mr-[10px]">{incidentDetail?.title}</span>
+            <span className="mr-[10px]">{incidentDetail?.title}</span>
             {incidentDetail && (
               <Tag
                 color={
@@ -494,21 +499,25 @@ const IncidentDetail: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <Button
-                      type="primary"
-                      className="mr-[12px]"
-                      onClick={() => handleLink()}
-                    >
-                      {t('common.linkAlert')}
-                    </Button>
-                    <Button
-                      disabled={!selectedRowKeys.length}
-                      type="primary"
-                      onClick={() => handleUnlink()}
-                      loading={unlinkLoading}
-                    >
-                      {t('common.unlinkAlert')}
-                    </Button>
+                    <PermissionWrapper requiredPermissions={['Edit']}>
+                      <Button
+                        type="primary"
+                        className="mr-[12px]"
+                        onClick={() => handleLink()}
+                      >
+                        {t('common.linkAlert')}
+                      </Button>
+                    </PermissionWrapper>
+                    <PermissionWrapper requiredPermissions={['Edit']}>
+                      <Button
+                        disabled={!selectedRowKeys.length}
+                        type="primary"
+                        onClick={() => handleUnlink()}
+                        loading={unlinkLoading}
+                      >
+                        {t('common.unlinkAlert')}
+                      </Button>
+                    </PermissionWrapper>
                   </div>
                 </div>
                 {viewType === 'table' ? (
@@ -521,14 +530,16 @@ const IncidentDetail: React.FC = () => {
                     onSelectionChange={setSelectedRowKeys}
                     onRefresh={() => fetchAlarmList()}
                     extraActions={(record) => (
-                      <Button
-                        type="link"
-                        className="mr-[12px]"
-                        onClick={() => handleUnlink([record.id as number])}
-                        loading={rowUnlinkKey === record.id}
-                      >
-                        {t('common.unlinkAlert')}
-                      </Button>
+                      <PermissionWrapper requiredPermissions={['Edit']}>
+                        <Button
+                          type="link"
+                          className="mr-[12px]"
+                          onClick={() => handleUnlink([record.id as number])}
+                          loading={rowUnlinkKey === record.id}
+                        >
+                          {t('common.unlinkAlert')}
+                        </Button>
+                      </PermissionWrapper>
                     )}
                   />
                 ) : (

@@ -73,7 +73,7 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
         last_event_time ? convertToLocalizedTime(last_event_time) : '--',
     },
     {
-      title: t('alarms.eventTitle'),
+      title: t('alarms.alertName'),
       dataIndex: 'title',
       key: 'title',
       width: 290,
@@ -140,6 +140,12 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
           '--'
         );
       },
+    },
+    {
+      title: t('alarms.alertContent'),
+      dataIndex: 'content',
+      key: 'content',
+      width: 250,
     },
     {
       title: t('common.action'),

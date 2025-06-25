@@ -6,6 +6,7 @@
         "searchPlaceHolder": "搜索...",
         "confirm": "确认",
         "cancel": "取消",
+        "edit": "编辑",
         "detail": "详情",
         "time": "时间",
         "operator": "处理人",
@@ -67,6 +68,8 @@
         "batchOperations": "批量操作",
         "pending": "待响应",
         "processing": "处理中",
+        "shield": "屏蔽",
+        "received": "已接收",
         "reopen": "重新打开",
         "new": "新",
         "unassigned": "未分派",
@@ -178,6 +181,18 @@
             "notRespondMsg": "告警未响应时，",
             "notifyEvery": "每隔",
             "frequencyUnit": "分钟"
+        },
+        "globalConfig": {
+            "title": "未分派告警通知策略",
+            "description": "当有未分派的告警时，通知告警指定的负责人",
+            "intervalLabel": "通知间隔",
+            "intervalMinutes": "分钟",
+            "personnelLabel": "通知人员",
+            "personnelPlaceholder": "请选择通知人员",
+            "notificationMethodLabel": "通知方式",
+            "email": "邮箱",
+            "wechat": "微信",
+            "unselected": "未选择"
         }
     }
 }

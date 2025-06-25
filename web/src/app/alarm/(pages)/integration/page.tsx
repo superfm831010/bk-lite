@@ -65,7 +65,7 @@ const IntegrationPage: React.FC = () => {
                   </span>
                 </div>
                 {/* 信息区 */}
-                <div className="text-xs text-sm text-[var(--color-text-3)] space-y-2">
+                <div className="text-xs text-[var(--color-text-3)] space-y-2">
                   <div>
                     {t('integration.eventCount')}：
                     {[undefined, null, ''].includes(src.event_count as any)

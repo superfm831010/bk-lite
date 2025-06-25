@@ -35,3 +35,44 @@ export interface SourceItem {
   is_effective: boolean;
   description: string;
 }
+
+export interface RawEventData {
+    item: string;
+    level: string;
+    title: string;
+    value: number;
+    labels: Record<string, string>;
+    status: string;
+    end_time: string;
+    start_time: string;
+    annotations: Record<string, string>;
+    description: string;
+    external_id: string;
+    resource_id: number;
+    resource_name: string;
+    resource_type: string;
+}
+
+export interface EventTableItem {
+    id: number;
+    start_time: string;
+    end_time: string;
+    source_name: string;
+    raw_data: RawEventData;
+    received_at: string;
+    title: string;
+    description: string;
+    level: string;
+    action: string;
+    rule_id: number | null;
+    event_id: string;
+    external_id: string;
+    item: string;
+    resource_id: string;
+    resource_type: string;
+    resource_name: string;
+    status: string;
+    assignee: string[];
+    value: number;
+    source: number;
+}

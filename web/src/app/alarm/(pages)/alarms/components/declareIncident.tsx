@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import OperateModal from '@/components/operate-modal';
+import PermissionWrapper from '@/components/permission';
 import { Form, Radio, Input, Select, message, Button } from 'antd';
 import { useCommon } from '@/app/alarm/context/common';
 import { useIncidentsApi } from '@/app/alarm/api/incidents';
@@ -102,15 +103,17 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
 
   return (
     <>
-      <Button
-        color="danger"
-        type="dashed"
-        variant="solid"
-        disabled={rowData.length === 0}
-        onClick={handleDeclare}
-      >
-        {t('alarms.declareIncident')}
-      </Button>
+      <PermissionWrapper requiredPermissions={['Edit']}>
+        <Button
+          color="danger"
+          type="dashed"
+          variant="solid"
+          disabled={rowData.length === 0}
+          onClick={handleDeclare}
+        >
+          {t('alarms.declareIncident')}
+        </Button>
+      </PermissionWrapper>
       <OperateModal
         open={visible}
         title={t('alarms.declareIncident')}

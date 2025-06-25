@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import AlarmAssignModal from './assignModal';
+import PermissionWrapper from '@/components/permission';
 import { Button, Dropdown, Menu, Modal, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { DownOutlined } from '@ant-design/icons';
@@ -128,16 +129,17 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
         const disabled =
           !rowData.length || !allStatusValid || (needMine && !isMine());
         return (
-          <Button
-            key={type}
-            size={btnSize}
-            type="link"
-            className="mr10"
-            disabled={disabled}
-            onClick={() => handleOperate(type)}
-          >
-            {t(`alarms.${type}`)}
-          </Button>
+          <PermissionWrapper requiredPermissions={['Edit']} key={type}>
+            <Button
+              size={btnSize}
+              type="link"
+              className="mr10"
+              disabled={disabled}
+              onClick={() => handleOperate(type)}
+            >
+              {t(`alarms.${type}`)}
+            </Button>
+          </PermissionWrapper>
         );
       })}
     </>
@@ -179,12 +181,14 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
   });
 
   const dropdown = menuItems.length ? (
-    <Dropdown overlay={<Menu items={menuItems} />} trigger={['click']}>
-      <Button size={btnSize} type="primary">
-        {t('common.actions')}
-        <DownOutlined />
-      </Button>
-    </Dropdown>
+    <PermissionWrapper requiredPermissions={['Edit']}>
+      <Dropdown overlay={<Menu items={menuItems} />} trigger={['click']}>
+        <Button size={btnSize} type="primary">
+          {t('common.actions')}
+          <DownOutlined />
+        </Button>
+      </Dropdown>
+    </PermissionWrapper>
   ) : null;
 
   const inline = <div className="gap-2 flex items-center">{actionButtons}</div>;

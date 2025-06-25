@@ -16,6 +16,8 @@ const useStateMap = (): StateMap => {
       processing: t('alarms.processing'),
       unassigned: t('alarms.unassigned'),
       resolved: t('alarms.resolved'),
+      shield: t('alarms.shield'),
+      received: t('alarms.received'),
     }),
     [t]
   );

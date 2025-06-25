@@ -6,9 +6,11 @@ import { ColumnsType } from 'antd/es/table';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { useCommon } from '@/app/alarm/context/common';
+import { useStateMap } from '@/app/alarm/constants/alarm';
+import { EventTableItem, RawEventData } from '@/app/alarm/types/integration';
 
 interface EventTableProps {
-  dataSource: any[];
+  dataSource: EventTableItem[];
   loading?: boolean;
   tableScrollY?: string;
   pagination: {
@@ -30,9 +32,10 @@ const EventTable: React.FC<EventTableProps> = ({
   const { convertToLocalizedTime } = useLocalizedTime();
   const { levelListEvent, levelMapEvent } = useCommon();
   const [rawVisible, setRawVisible] = useState(false);
-  const [rawData, setRawData] = useState<any>({});
+  const [rawData, setRawData] = useState<RawEventData>();
+  const STATE_MAP = useStateMap();
 
-  const handleShowRaw = (record: any) => {
+  const handleShowRaw = (record: EventTableItem) => {
     setRawData(record.raw_data || record);
     setRawVisible(true);
   };
@@ -78,6 +81,15 @@ const EventTable: React.FC<EventTableProps> = ({
       width: 120,
     },
     {
+      title: t('alarms.state'),
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (_: any, { status }: EventTableItem) => (
+        <span>{STATE_MAP[status as keyof typeof STATE_MAP] || '--'}</span>
+      ),
+    },
+    {
       title: t('alarms.metricName'),
       dataIndex: 'item',
       key: 'item',
@@ -100,7 +112,7 @@ const EventTable: React.FC<EventTableProps> = ({
       key: 'action',
       fixed: 'right',
       width: 100,
-      render: (_: any, record: any) => (
+      render: (_: any, record: EventTableItem) => (
         <Button type="link" onClick={() => handleShowRaw(record)}>
           {t('alarms.rawData')}
         </Button>

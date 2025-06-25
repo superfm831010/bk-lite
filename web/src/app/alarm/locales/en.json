@@ -6,6 +6,7 @@
         "searchPlaceHolder": "Search...",
         "confirm": "Confirm",
         "cancel": "Cancel",
+        "edit": "Edit",
         "detail": "Detail",
         "time": "Time",
         "operator": "Operator",
@@ -44,6 +45,8 @@
         "remaining": "Remain",
         "pending": "Pending",
         "processing": "Processing", 
+        "shield": "Shield",
+        "received": "Received",
         "reopen": "Reopen",
         "notified": "Notified",
         "unnotified": "Unnotified",
@@ -176,6 +179,18 @@
             "notRespondMsg": "When the alarm does not respond，",
             "notifyEvery": "notify every",
             "frequencyUnit": "minutes"
+        },
+        "globalConfig": {
+            "title": "Unallocated Alarm Notification",
+            "description": "When there are unassigned alarms, notify the designated person in charge of the alarm",
+            "intervalLabel": "Notification Interval",
+            "intervalMinutes": "minutes",
+            "personnelLabel": "Notification Personnel",
+            "personnelPlaceholder": "Please select notification personnel",
+            "notificationMethodLabel": "Notification Method",
+            "email": "Email",
+            "wechat": "WeChat",
+            "unselected": "Unselected"
         }
     }
 }
