@@ -49,5 +49,5 @@ for app_config in apps.get_app_configs():
             url_path = app_name.split("apps.")[-1]
             urlpatterns.append(path(f"{url_path}/", include(urls_module)))
 
-    except ImportError as e:  # noqa
+    except Exception as e:  # noqa
         print(e)
