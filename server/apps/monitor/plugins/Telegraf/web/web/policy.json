@@ -1,4 +1,7 @@
-[
+{
+  "object": "Website",
+  "plugin": "Website",
+  "templates": [
   {
     "name": "拨测成功率过低",
     "alert_name": "HTTP 拨测目标 ${metric_instance_id} 拨测节点${metric_agent_id} 成功率过低",
@@ -62,3 +65,4 @@
     ]
   }
 ]
+}

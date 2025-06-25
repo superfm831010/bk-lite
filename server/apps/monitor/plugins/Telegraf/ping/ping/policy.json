@@ -1,4 +1,7 @@
-[
+{
+  "object": "Ping",
+  "plugin": "Ping",
+  "templates": [
   {
     "name": "Ping 丢包率过高",
     "alert_name": "目标${metric_instance_id} 节点${metric_agent_id}数据包丢失率过高",
@@ -48,3 +51,4 @@
     ]
   }
 ]
+}
