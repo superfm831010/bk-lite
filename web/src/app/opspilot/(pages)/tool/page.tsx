@@ -7,12 +7,14 @@ import EntityList from '@/components/entity-list';
 import DynamicForm from '@/components/dynamic-form';
 import OperateModal from '@/components/operate-modal';
 import GroupTreeSelect from '@/components/group-tree-select';
+import ContentDrawer from '@/components/content-drawer';
 import { useUserInfoContext } from '@/context/userInfo';
 import { Tool, TagOption } from '@/app/opspilot/types/tool';
 import PermissionWrapper from "@/components/permission";
 import styles from '@/app/opspilot/styles/common.module.scss';
 import { useToolApi } from '@/app/opspilot/api/tool';
 import VariableList from '@/app/opspilot/components/tool/variableList';
+import useContentDrawer from '@/app/opspilot/hooks/useContentDrawer';
 
 const ToolListPage: React.FC = () => {
   const { useForm } = Form;
@@ -26,8 +28,16 @@ const ToolListPage: React.FC = () => {
   const [toolData, setToolData] = useState<Tool[]>([]);
   const [filteredToolData, setFilteredToolData] = useState<Tool[]>([]);
   const [allTags, setAllTags] = useState<TagOption[]>([]);
+  const [selectedToolForDetail, setSelectedToolForDetail] = useState<Tool | null>(null);
 
   const [form] = useForm();
+  
+  const {
+    drawerVisible,
+    drawerContent,
+    showDrawer,
+    hideDrawer,
+  } = useContentDrawer();
 
   const formFields = [
     {
@@ -180,12 +190,16 @@ const ToolListPage: React.FC = () => {
     return (
       <Menu className={`${styles.menuContainer}`}>
         <Menu.Item key="edit">
-          <PermissionWrapper requiredPermissions={['Edit']}>
+          <PermissionWrapper 
+            requiredPermissions={['Edit']}
+            instPermissions={tool.permissions}>
             <span className="block w-full" onClick={() => showModal(tool)}>{t('common.edit')}</span>
           </PermissionWrapper>
         </Menu.Item>
         {!tool.is_build_in && (<Menu.Item key="delete">
-          <PermissionWrapper requiredPermissions={['Delete']}>
+          <PermissionWrapper 
+            requiredPermissions={['Delete']}
+            instPermissions={tool.permissions}>
             <span className="block w-full" onClick={() => handleDelete(tool)}>{t('common.delete')}</span>
           </PermissionWrapper>
         </Menu.Item>)}
@@ -232,6 +246,11 @@ const ToolListPage: React.FC = () => {
     }
   };
 
+  const handleCardClick = (tool: Tool) => {
+    setSelectedToolForDetail(tool);
+    showDrawer(tool.description || '暂无描述');
+  };
+
   return (
     <div className="w-full h-full">
       <EntityList<Tool>
@@ -249,6 +268,7 @@ const ToolListPage: React.FC = () => {
         filterLoading={loading}
         filterOptions={allTags}
         changeFilter={changeFilter}
+        onCardClick={handleCardClick}
       />
       <OperateModal
         title={selectedTool ? `${t('common.edit')}` : `${t('common.add')}`}
@@ -263,6 +283,12 @@ const ToolListPage: React.FC = () => {
           initialValues={{ team: selectedTool?.team || [] }}
         />
       </OperateModal>
+      <ContentDrawer
+        visible={drawerVisible}
+        onClose={hideDrawer}
+        content={drawerContent}
+        title={selectedToolForDetail ? `${t('tool.title')} - ${selectedToolForDetail.name}` : t('common.viewDetails')}
+      />
     </div>
   );
 };

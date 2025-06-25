@@ -1,5 +1,7 @@
 import os
 
+from apps.core.exceptions.base_app_exception import BaseAppException
+
 
 class SettingLanguage:
     def __init__(self, language: str):
@@ -14,7 +16,7 @@ class SettingLanguage:
         elif language == "en":
             from apps.monitor.language.pack.en import LANGUAGE_DICT
         else:
-            raise Exception("Language not supported")
+            raise BaseAppException("Language not supported")
         return LANGUAGE_DICT
 
     def get_val(self, _type: str, key: str):

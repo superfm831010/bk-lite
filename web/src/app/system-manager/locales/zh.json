@@ -213,7 +213,21 @@
       "appSecret": "应用密钥",
       "enabled": "启用",
       "redirectUri": "重定向 URI",
-      "redirectUriTip": "登录成功之后跳转的页面。格式参考（以回到工作台为例）：https://授权回调域名/ops-console/home"
+      "redirectUriTip": "登录成功之后跳转的页面。格式参考（以回到工作台为例）：https://授权回调域名/ops-console/home",
+      "authSourceName": "认证源名称",
+      "authSourceType": "认证源类型",
+      "namespace": "命名空间",
+      "rootGroup": "根分组",
+      "domain": "域",
+      "defaultRoles": "默认角色",
+      "syncEnabled": "定时同步",
+      "syncTime": "同步时间",
+      "everyday": "每天",
+      "selectTime": "选择时间",
+      "syncOnce": "定时同步一次",
+      "syncNow": "立即同步",
+      "syncSuccess": "同步成功",
+      "syncFailed": "同步失败"
     }
   }
 }

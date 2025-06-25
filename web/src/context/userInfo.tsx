@@ -7,6 +7,16 @@ import { useSession } from 'next-auth/react';
 
 const UserInfoContext = createContext<UserInfoContextType | undefined>(undefined);
 
+// Filter out groups with name "OpsPilotGuest" (recursive processing for tree structure)
+const filterOpsPilotGuest = (groups: Group[]): Group[] => {
+  return groups
+    .filter(group => group.name !== 'OpsPilotGuest')
+    .map(group => ({
+      ...group,
+      subGroups: group.subGroups ? filterOpsPilotGuest(group.subGroups) : undefined,
+    }));
+};
+
 export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { get } = useApiClient();
   const { data: session, status } = useSession();
@@ -36,7 +46,7 @@ export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           
           const { group_list: groupList, group_tree: groupTreeData, roles, is_superuser, is_first_login, user_id, display_name } = data;
           setGroups(groupList || []);
-          setGroupTree(groupTreeData || []);
+          setGroupTree(is_superuser ? groupTreeData : filterOpsPilotGuest(groupTreeData || []));
           setRoles(roles || []);
           setIsSuperUser(!!is_superuser);
           setIsFirstLogin(!!is_first_login);
@@ -53,7 +63,9 @@ export const UserInfoProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             if (initialGroup) {
               setSelectedGroupState(initialGroup);
             } else {
-              const filteredGroups = flattenedGroups.filter((group: Group) => group.name !== 'OpsPilotGuest');
+              const filteredGroups = is_superuser 
+                ? [...flattenedGroups] 
+                : flattenedGroups.filter((group: Group) => group.name !== 'OpsPilotGuest');
               const defaultGroup = filteredGroups[0];
               setSelectedGroupState(defaultGroup);
               Cookies.set('current_team', defaultGroup.id);

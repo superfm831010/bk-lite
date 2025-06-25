@@ -5,6 +5,7 @@ from collections import defaultdict
 from django.db import transaction
 from django.db.models import Prefetch
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.constants import MONITOR_OBJS, OBJ_ORDER, DEFAULT_OBJ_ORDER
 from apps.monitor.models.monitor_metrics import Metric
 from apps.monitor.models.monitor_object import MonitorInstance, MonitorObject, MonitorInstanceOrganization
@@ -56,11 +57,11 @@ class MonitorObjectService:
 
         monitor_obj = MonitorObject.objects.filter(id=monitor_object_id).first()
         if not monitor_obj:
-            raise ValueError("Monitor object does not exist")
+            raise BaseAppException("Monitor object does not exist")
         obj_metric_map = {i["name"]: i for i in MONITOR_OBJS}
         obj_metric_map = obj_metric_map.get(monitor_obj.name)
         if not obj_metric_map:
-            raise ValueError("Monitor object default metric does not exist")
+            raise BaseAppException("Monitor object default metric does not exist")
         instance_map = MonitorObjectService.get_instances_by_metric(obj_metric_map.get("default_metric", ""), obj_metric_map.get("instance_id_keys"))
         result = []
 
@@ -132,7 +133,7 @@ class MonitorObjectService:
         instance_id = str(tuple([instance_info["instance_id"]]))
         objs = MonitorInstance.objects.filter(id=instance_id).first()
         if objs:
-            raise Exception(f"实例已存在：{instance_info['instance_name']}")
+            raise BaseAppException(f"实例已存在：{instance_info['instance_name']}")
 
     @staticmethod
     def autodiscover_monitor_instance():
@@ -192,7 +193,7 @@ class MonitorObjectService:
         """更新监控对象实例"""
         instance = MonitorInstance.objects.filter(id=instance_id).first()
         if not instance:
-            raise ValueError("Monitor instance does not exist")
+            raise BaseAppException("Monitor instance does not exist")
         if name:
             instance.name = name
             instance.save()

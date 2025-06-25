@@ -15,6 +15,7 @@ export interface Card {
   team_name?: string;
   team: string[];
   embed_model: number;
+  permissions?: string[];
 }
 
 export interface ModifyKnowledgeModalProps {

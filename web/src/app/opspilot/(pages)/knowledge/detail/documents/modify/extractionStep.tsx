@@ -6,7 +6,6 @@ import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import styles from './modify.module.scss';
 import { ModelOption } from '@/app/opspilot/types/knowledge';
-import { getDefaultExtractionMethod } from '@/app/opspilot/utils/extractionUtils';
 import fullTextImg from '@/app/opspilot/img/full_text_extraction.png';
 import chapterImg from '@/app/opspilot/img/chapter_extraction.png';
 import worksheetImg from '@/app/opspilot/img/worksheet_extraction.png';
@@ -42,6 +41,7 @@ const ExtractionStep: React.FC<{
   const [loadingOcrModels, setLoadingOcrModels] = useState<boolean>(true);
   const [selectedOcrModel, setSelectedOcrModel] = useState<string | null>(null);
 
+  // Extraction methods configuration
   const extractionMethods = {
     fullText: {
       label: t('knowledge.documents.fullTextExtraction'),
@@ -59,6 +59,16 @@ const ExtractionStep: React.FC<{
         formats: t('knowledge.documents.chapterFormats'),
         method: t('knowledge.documents.chapterMethod'),
         description: t('knowledge.documents.chapterDescription'),
+      },
+      defaultOCR: false,
+      img: chapterImg,
+    },
+    page: {
+      label: t('knowledge.documents.pageExtraction'),
+      description: {
+        formats: t('knowledge.documents.pageFormats'),
+        method: t('knowledge.documents.pageMethod'),
+        description: t('knowledge.documents.pageDescription'),
       },
       defaultOCR: false,
       img: chapterImg,
@@ -85,6 +95,37 @@ const ExtractionStep: React.FC<{
     },
   };
 
+  // Get available extraction methods based on file extension
+  // Word: fullText + chapter (default: chapter)
+  // Excel: fullText + worksheet + row (default: row)  
+  // PDF: fullText + page (default: page)
+  // Others: fullText only
+  const getAvailableExtractionMethods = (extension: string) => {
+    const ext = extension.toLowerCase();
+
+    if (ext === 'docx' || ext === 'doc') {
+      return {
+        methods: ['fullText', 'chapter'],
+        default: 'chapter',
+      };
+    } else if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
+      return {
+        methods: ['fullText', 'worksheet', 'row'],
+        default: 'row',
+      };
+    } else if (ext === 'pdf') {
+      return {
+        methods: ['fullText', 'page'],
+        default: 'page',
+      };
+    } else {
+      return {
+        methods: ['fullText'],
+        default: 'fullText',
+      };
+    }
+  };
+
   useEffect(() => {
     const fetchModels = async () => {
       try {
@@ -106,51 +147,61 @@ const ExtractionStep: React.FC<{
     }
   }, [extractionConfig]);
 
-  // Extracted data generation logic into a function
+  // Generate table data from different sources
   const generateData = () => {
     if (extractionConfig?.knowledge_document_list) {
       return extractionConfig.knowledge_document_list.map((doc) => {
         const extension = doc.name?.split('.').pop()?.toLowerCase() || 'text';
+        const availableMethods = getAvailableExtractionMethods(extension);
+        const currentMethod = doc.parse_type || availableMethods.default;
         return {
           key: doc.id,
           name: doc.name,
-          method: extractionMethods[doc.parse_type as keyof typeof extractionMethods]?.label || extractionMethods[getDefaultExtractionMethod(extension) as keyof typeof extractionMethods]?.label,
-          defaultMethod: doc.parse_type || 'fullText',
+          method: extractionMethods[currentMethod as keyof typeof extractionMethods]?.label || extractionMethods[availableMethods.default as keyof typeof extractionMethods]?.label,
+          defaultMethod: currentMethod,
+          extension,
         };
       });
     }
 
     if (type === 'web_page' && webLinkData) {
-      return [{
-        key: knowledgeDocumentIds[0] || 0,
-        name: webLinkData.name,
-        method: extractionMethods['fullText'].label,
-        defaultMethod: 'fullText',
-      }];
+      return [
+        {
+          key: knowledgeDocumentIds[0] || 0,
+          name: webLinkData.name,
+          method: extractionMethods['fullText'].label,
+          defaultMethod: 'fullText',
+          extension: 'web',
+        },
+      ];
     }
 
     if (type === 'manual' && manualData) {
-      return [{
-        key: knowledgeDocumentIds[0] || 0,
-        name: manualData.name,
-        method: extractionMethods['fullText'].label,
-        defaultMethod: 'fullText',
-      }];
+      return [
+        {
+          key: knowledgeDocumentIds[0] || 0,
+          name: manualData.name,
+          method: extractionMethods['fullText'].label,
+          defaultMethod: 'fullText',
+          extension: 'text',
+        },
+      ];
     }
 
     return fileList.map((file, index) => {
       const extension = file.name.split('.').pop()?.toLowerCase() || 'text';
-      const defaultMethod = getDefaultExtractionMethod(extension);
+      const availableMethods = getAvailableExtractionMethods(extension);
       return {
         key: knowledgeDocumentIds[index] || index,
         name: file.name,
-        method: extractionMethods[defaultMethod as keyof typeof extractionMethods].label,
-        defaultMethod,
+        method: extractionMethods[availableMethods.default as keyof typeof extractionMethods].label,
+        defaultMethod: availableMethods.default,
+        extension,
       };
     });
   };
 
-  const data = generateData(); // Use the extracted function
+  const data = generateData();
 
   const [knowledgeDocumentList, setKnowledgeDocumentList] = useState<any[]>(
     extractionConfig?.knowledge_document_list
@@ -192,19 +243,22 @@ const ExtractionStep: React.FC<{
     },
   ];
 
-  const handleConfigure = (record: { defaultMethod: keyof typeof extractionMethods; [key: string]: any }, index: number) => {
+  const handleConfigure = (record: { defaultMethod: keyof typeof extractionMethods; extension: string; [key: string]: any }, index: number) => {
     const documentConfig = knowledgeDocumentList[index];
-    const defaultModel = ocrModels.find(model => model.name === 'PaddleOCR');
+    const defaultModel = ocrModels.find((model) => model.name === 'PaddleOCR');
+    const availableMethods = getAvailableExtractionMethods(record.extension);
 
-    setSelectedDocument({ ...record, index });
-    setSelectedMethod(documentConfig?.parse_type || record.defaultMethod);
-    setOcrEnabled((documentConfig?.enable_ocr_parse ?? extractionMethods[record.defaultMethod]?.defaultOCR) || false);
+    setSelectedDocument({ ...record, index, availableMethods });
+    setSelectedMethod(documentConfig?.parse_type || availableMethods.default);
+    setOcrEnabled(
+      (documentConfig?.enable_ocr_parse ?? extractionMethods[availableMethods.default as keyof typeof extractionMethods]?.defaultOCR) || false
+    );
     setSelectedOcrModel(documentConfig?.ocr_model || (defaultModel ? defaultModel.id : null));
 
     if (extractionConfig && extractionConfig.knowledge_document_list) {
       const doc = extractionConfig.knowledge_document_list.find((d) => d.id === record.key);
       if (doc) {
-        setSelectedMethod(record.defaultMethod);
+        setSelectedMethod(doc.parse_type as keyof typeof extractionMethods || availableMethods.default);
         setOcrEnabled(doc.enable_ocr_parse);
         setSelectedOcrModel(doc.ocr_model);
       }
@@ -279,9 +333,9 @@ const ExtractionStep: React.FC<{
               value={selectedMethod}
               onChange={handleMethodChange}
             >
-              {Object.entries(extractionMethods).map(([key, method]) => (
-                <Option key={key} value={key}>
-                  {method.label}
+              {selectedDocument.availableMethods?.methods.map((methodKey: string) => (
+                <Option key={methodKey} value={methodKey}>
+                  {extractionMethods[methodKey as keyof typeof extractionMethods]?.label}
                 </Option>
               ))}
             </Select>
@@ -334,9 +388,11 @@ const ExtractionStep: React.FC<{
                 {selectedMethod && (
                   <div className="pl-[25px]">
                     <Image
-                      src={typeof extractionMethods[selectedMethod]?.img === 'string' 
-                        ? extractionMethods[selectedMethod]?.img 
-                        : extractionMethods[selectedMethod]?.img.src}
+                      src={
+                        typeof extractionMethods[selectedMethod]?.img === 'string'
+                          ? extractionMethods[selectedMethod]?.img
+                          : extractionMethods[selectedMethod]?.img.src
+                      }
                       alt="example"
                       className="rounded-md"
                     />

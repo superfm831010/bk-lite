@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from celery import shared_task
 
-from apps.core.logger import logger
+from apps.core.logger import cmdb_logger as logger
 from apps.cmdb.models.collect_model import CollectModels
 from apps.cmdb.services.sync_collect import ProtocolCollect, JobCollect
 from apps.cmdb.constants import CollectRunStatusType

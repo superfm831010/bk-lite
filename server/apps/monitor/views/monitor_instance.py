@@ -3,6 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.models import MonitorInstance, MonitorObject, CollectConfig
 from apps.monitor.services.monitor_instance import InstanceSearch
@@ -72,7 +73,7 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
     def monitor_instance_search(self, request, monitor_object_id):
         monitor_obj = MonitorObject.objects.filter(id=monitor_object_id).first()
         if not monitor_obj:
-            raise ValueError("Monitor object does not exist")
+            raise BaseAppException("Monitor object does not exist")
         search_obj = InstanceSearch(
             monitor_obj,
             dict(group_list=[i["id"] for i in request.user.group_list],

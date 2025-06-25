@@ -6,6 +6,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.filters.monitor_policy import MonitorPolicyFilter
 from apps.monitor.models import PolicyOrganization
@@ -98,7 +99,7 @@ class MonitorPolicyVieSet(viewsets.ModelViewSet):
                 minute=0, hour=0, day_of_month=f'*/{value}', month_of_year='*', day_of_week='*'
             )[0]
         else:
-            raise ValueError('Invalid schedule type')
+            raise BaseAppException('Invalid schedule type')
 
     def update_or_create_task(self, policy_id, schedule):
         task_name = f'scan_policy_task_{policy_id}'

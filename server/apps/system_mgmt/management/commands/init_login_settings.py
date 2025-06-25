@@ -1,11 +1,7 @@
-import logging
-
 from django.core.management import BaseCommand
 
 from apps.system_mgmt.models import SystemSettings
 from apps.system_mgmt.models.login_module import LoginModule
-
-logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):

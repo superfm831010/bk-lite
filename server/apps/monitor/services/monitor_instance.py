@@ -2,8 +2,10 @@ import ast
 
 from django.db.models import Prefetch
 
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.constants import MONITOR_OBJS
 from apps.monitor.models import Metric, MonitorInstance
+from apps.monitor.utils.instance import calculation_status
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
 
 
@@ -12,6 +14,14 @@ class InstanceSearch:
         self.monitor_obj = monitor_obj
         self.query_data = query_data
         self.obj_metric_map = self.get_obj_metric_map()
+
+    @staticmethod
+    def get_parent_instance_ids(query):
+        """获取父对象实例ID列表"""
+        metrics = VictoriaMetricsAPI().query(query)
+        instance_ids = [metric_info["metric"].get("instance_id") for metric_info in
+                    metrics.get("data", {}).get("result", [])]
+        return instance_ids
 
     @staticmethod
     def get_query_params_enum(monitor_obj_name):
@@ -39,17 +49,22 @@ class InstanceSearch:
             return map
         elif monitor_obj_name == "Node":
             query = "count(prometheus_remote_write_kube_node_info) by (instance_id)"
-            metrics = VictoriaMetricsAPI().query(query)
-            clusters = [metric_info["metric"].get("instance_id") for metric_info in  metrics.get("data", {}).get("result", [])]
-            return clusters
-        else:
-            return []
+            return InstanceSearch.get_parent_instance_ids(query)
+        elif monitor_obj_name in {"ESXI", "VM", "DataStorage"}:
+            query = 'any({instance_type="vmware"}) by (instance_id)'
+            return InstanceSearch.get_parent_instance_ids(query)
+        elif monitor_obj_name in {"CVM"}:
+            query = 'any({instance_type="qcloud"}) by (instance_id)'
+            return InstanceSearch.get_parent_instance_ids(query)
+        elif monitor_obj_name in {"Docker Container"}:
+            query = 'any({instance_type="docker"}) by (instance_id)'
+            return InstanceSearch.get_parent_instance_ids(query)
 
     def get_obj_metric_map(self):
         obj_metric_map = {i["name"]: i for i in MONITOR_OBJS}
         obj_metric_map = obj_metric_map.get(self.monitor_obj.name)
         if not obj_metric_map:
-            raise ValueError("Monitor object default metric does not exist")
+            raise BaseAppException("Monitor object default metric does not exist")
         return obj_metric_map
 
     def search(self):
@@ -89,6 +104,13 @@ class InstanceSearch:
 
         if self.query_data.get("add_metrics", False) and page_size != -1:
             results = self.add_other_metrics(results)
+
+        # 状态计算
+        for conf_info in results:
+            if conf_info["time"] == 0:
+                conf_info["status"] = ""
+            else:
+                conf_info["status"] = calculation_status(conf_info["time"])
 
         return dict(count=count, results=results)
 

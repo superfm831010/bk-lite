@@ -1,3 +1,4 @@
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.rpc.node_mgmt import NodeMgmt
 
 
@@ -29,7 +30,7 @@ class FormatChildConfig:
         elif object_type == "vmware":
             return FormatChildConfig.format_vmware(configs, instances)
         else:
-            raise ValueError(f"Unsupported object type: {object_type}")
+            raise BaseAppException(f"Unsupported object type: {object_type}")
 
     @staticmethod
     def format_vmware(configs, instances):
@@ -315,7 +316,7 @@ class FormatChildConfig:
     priv_protocol = "{config['priv_protocol']}"              # 加密协议：AES
     priv_password = "{config['priv_password']}"       # 加密密码 """
         else:
-            raise ValueError("SNMP version error")
+            raise BaseAppException("SNMP version error")
         return result
 
 

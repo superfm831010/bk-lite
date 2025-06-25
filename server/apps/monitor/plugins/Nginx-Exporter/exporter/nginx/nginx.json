@@ -1,0 +1,9 @@
+{
+  "plugin": "Nginx-Exporter",
+  "plugin_desc": "Nginx Exporter is used to collect and export metrics from Nginx servers, including request counts, response times, active connections, and more, to help monitor the health and performance of Nginx instances.",
+  "name": "Nginx",
+  "icon": "nginx",
+  "type": "Middleware",
+  "description": "",
+  "metrics": []
+}

@@ -9,6 +9,7 @@ from apps.opspilot.knowledge_mgmt.viewsets import (
     KnowledgeBaseViewSet,
     KnowledgeDocumentViewSet,
     ManualKnowledgeViewSet,
+    QAPairsViewSet,
     WebPageKnowledgeViewSet,
 )
 from apps.opspilot.model_provider_mgmt.views import (
@@ -48,6 +49,7 @@ router.register(r"knowledge_mgmt/file_knowledge", FileKnowledgeViewSet)
 router.register(r"knowledge_mgmt/knowledge_document", KnowledgeDocumentViewSet)
 router.register(r"knowledge_mgmt/web_page_knowledge", WebPageKnowledgeViewSet)
 router.register(r"knowledge_mgmt/manual_knowledge", ManualKnowledgeViewSet)
+router.register(r"knowledge_mgmt/qa_pairs", QAPairsViewSet)
 
 # quota
 router.register(r"quota_rule_mgmt/quota_rule", QuotaRuleViewSet)
