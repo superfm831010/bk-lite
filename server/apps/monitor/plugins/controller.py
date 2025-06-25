@@ -83,6 +83,7 @@ class Controller:
             env_config = {k[4:]: v for k, v in config_info.items() if k.startswith("ENV_")}
             for template in templates:
                 is_child = True if template["config_type"] == "child" else False
+                collector_name = "Telegraf" if is_child else config_info["collector"]
                 config_id = str(uuid.uuid4().hex)
                 # 生成配置
                 template_config = self.render_template(
@@ -99,17 +100,17 @@ class Controller:
                         type=config_info["type"],
                         content=template_config,
                         node_id=config_info["node_id"],
-                        collector_name=config_info["collector"],
+                        collector_name=collector_name,
                         env_config=env_config,
                     )
                     node_child_configs.append(node_child_config)
                 else:
                     node_config = dict(
                         id=config_id,
-                        name=f'{config_info["collector"]}-{config_id}',
+                        name=f'{collector_name}-{config_id}',
                         content=template_config,
                         node_id=config_info["node_id"],
-                        collector_name=config_info["collector"],
+                        collector_name=collector_name,
                         env_config=config_info.get("env_config", {}),
                     )
                     node_configs.append(node_config)
@@ -118,7 +119,7 @@ class Controller:
                 collect_configs.append(
                     CollectConfig(
                         id=config_id,
-                        collector=config_info["collector"],
+                        collector=collector_name,
                         monitor_instance_id=config_info["instance_id"],
                         collect_type=config_info["collect_type"],
                         config_type=config_info["type"],
