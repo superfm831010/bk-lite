@@ -5,16 +5,6 @@ VICTORIAMETRICS_HOST = os.getenv("VICTORIAMETRICS_HOST")
 VICTORIAMETRICS_USER = os.getenv("VICTORIAMETRICS_USER")
 VICTORIAMETRICS_PWD = os.getenv("VICTORIAMETRICS_PWD")
 
-# 内置的监控对象
-MONITOR_OBJS = [
-    {
-        "type": "Tencent Cloud",
-        "name": "CVM",
-        "default_metric": 'any({resource_type="qcloud_cvm"}) by (instance_id, resource_id)',
-        "instance_id_keys": ["instance_id", "resource_id"],
-        "supplementary_indicators": ["cvm_CPU_Usage", "cvm_MemUsage", "cvm_LanOuttraffic", "cvm_WanOuttraffic"],
-    },
-]
 MONITOR_OBJ_KEYS = ["name", "type", "default_metric", "instance_id_keys", "supplementary_indicators"]
 
 # 阀值对比方法
