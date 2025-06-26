@@ -36,9 +36,11 @@ export const useSettingApi = () => {
   const patchShield = (id: string | number, params: any) =>
     patch(`/alerts/api/shield/${id}/`, params);
 
-  const getAggregationRule = (params: any) => get(`/alerts/api/aggregation_rule/`, { params });
+  const getAggregationRule = (params: any) =>
+    get(`/alerts/api/aggregation_rule/`, { params });
 
-  const getCorrelationRuleList = (params: any) => get(`/alerts/api/correlation_rule/`, { params });
+  const getCorrelationRuleList = (params: any) =>
+    get(`/alerts/api/correlation_rule/`, { params });
 
   const createCorrelationRule = (params: any) =>
     post('/alerts/api/correlation_rule/', params);
@@ -48,6 +50,17 @@ export const useSettingApi = () => {
 
   const deleteCorrelationRule = (id: string | number) =>
     del(`/alerts/api/correlation_rule/${id}/`);
+
+  const getGlobalConfig = (key: any) =>
+    get(`/alerts/api/settings/get_setting_key/${key}/`);
+
+  const updateGlobalConfig = (
+    id: any,
+    params: any
+  ) => put(`/alerts/api/settings/${id}/`, params);
+
+  const toggleGlobalConfig = (id: any, params: any) =>
+    patch(`/alerts/api/settings/${id}/`, params);
 
   return {
     getAssignmentList,
@@ -67,5 +80,8 @@ export const useSettingApi = () => {
     createCorrelationRule,
     updateCorrelationRule,
     deleteCorrelationRule,
+    getGlobalConfig,
+    updateGlobalConfig,
+    toggleGlobalConfig,
   };
 };

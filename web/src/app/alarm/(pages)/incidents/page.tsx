@@ -117,9 +117,9 @@ const IncidentsPage: React.FC = () => {
       shouldCellUpdate: (
         prev: IncidentTableDataItem,
         next: IncidentTableDataItem
-      ) => prev?.operator_user !== next?.operator_user,
-      render: (_: any, { operator_user }: IncidentTableDataItem) =>
-        operator_user ? <UserAvatar userName={operator_user} /> : '--',
+      ) => prev?.operator_users !== next?.operator_users,
+      render: (_: any, { operator_users }: IncidentTableDataItem) =>
+        operator_users ? <UserAvatar userName={operator_users} /> : '--',
     },
     {
       title: t('common.action'),
@@ -146,22 +146,27 @@ const IncidentsPage: React.FC = () => {
     pageSize?: number,
     titleSearch?: string
   ) => {
-    setLoading(true);
-    const res: any = await getIncidentList({
-      title: titleSearch !== undefined ? titleSearch : searchText,
-      page: page ?? pagination.current,
-      page_size: pageSize ?? pagination.pageSize,
-      level: filters.level.join(','),
-      status: filters.state.join(','),
-    });
-    setData(res.items);
-    setPagination((p) => ({
-      ...p,
-      total: res.count,
-      current: page ?? p.current,
-      pageSize: pageSize ?? p.pageSize,
-    }));
-    setLoading(false);
+    try {
+      setLoading(true);
+      const res: any = await getIncidentList({
+        title: titleSearch !== undefined ? titleSearch : searchText,
+        page: page ?? pagination.current,
+        page_size: pageSize ?? pagination.pageSize,
+        level: filters.level.join(','),
+        status: filters.state.join(','),
+      });
+      setData(res.items);
+      setPagination((p) => ({
+        ...p,
+        total: res.count,
+        current: page ?? p.current,
+        pageSize: pageSize ?? p.pageSize,
+      }));
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching incident list:', error);
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -170,6 +175,7 @@ const IncidentsPage: React.FC = () => {
   }, [filters]);
 
   useActivate(() => {
+    if (loading) return;
     fetchIncidentList();
   });
 

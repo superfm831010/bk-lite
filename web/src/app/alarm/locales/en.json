@@ -94,6 +94,7 @@
         "declareIncident": "Declare Incident",
         "declareIncidentErrorMsg": "The selected alert is already linked to an incident",
         "createIncident": "Create Incident",
+        "createAndLinkIncident": "Create and Link Incident",
         "linkIncident": "Link Incident",
         "confirmOperate": "Confirm to",
         "claim": "Claim",

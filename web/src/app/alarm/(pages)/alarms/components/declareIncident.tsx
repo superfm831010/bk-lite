@@ -59,7 +59,9 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
           level: values.level,
           operator: values.assignee,
         });
-        message.success(t('alarms.createIncident') + t('common.success'));
+        message.success(
+          t('alarms.createAndLinkIncident') + t('common.success')
+        );
       } else {
         const target = incidentOptions.find(
           (inc) => inc.id === values.incidentId
