@@ -1,0 +1,56 @@
+{
+  "zh": [
+    {
+      "title": "数据集",
+      "icon": "datafull",
+      "url": "/mlops/manage",
+      "name": "Datasets",
+      "children": [
+        {
+          "url": "/mlops/manage/detail",
+          "name": "Detail",
+          "isNotMenuItem": true
+        },
+        {
+          "url": "/mlops/manage/annotation",
+          "name": "anotaition",
+          "isNotMenuItem": true
+        }
+      ]
+    },
+    {
+      "title": "训练任务",
+      "icon": "xunlianrenwu",
+      "url": "/mlops/task",
+      "name": "Train Tasks",
+      "children": [
+        {
+          "url": "/mlops/task/traintask",
+          "name": "TrainTask",
+          "isNotMenuItem": true
+        }
+      ]
+    }
+  ],
+  "en": [
+    {
+      "title": "DataSet",
+      "icon": "datafull",
+      "url": "/mlops/manage",
+      "name": "manage",
+      "children": [
+        {
+          "url": "/mlops/manage/detail",
+          "name": "Detail",
+          "isNotMenuItem": true
+        }
+      ]
+    },
+    {
+      "title": "TrainTask",
+      "icon": "xunlianrenwu",
+      "url": "/mlops/task",
+      "name": "example"
+    }
+  ]
+}

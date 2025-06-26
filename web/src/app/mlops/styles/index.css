@@ -1,0 +1,26 @@
+.text-xxs {
+  font-size: 10px;
+}
+
+.icon {
+  width: 1em; height: 1em;
+  vertical-align: -0.15em;
+  fill: currentColor !important;
+  overflow: hidden;
+}
+
+.ant-popconfirm-buttons, .ant-modal-confirm-btns  {
+    display: flex;
+    flex-direction: row-reverse;
+}
+
+.ant-modal-confirm-btns .ant-btn:nth-child(2) {
+  margin-right: 10px;
+}
+
+svg .recharts-brush-traveller {
+  fill: #1976d2 !important;
+  stroke: #fff !important;
+  rx: 4;
+  opacity: 0.9;
+}
