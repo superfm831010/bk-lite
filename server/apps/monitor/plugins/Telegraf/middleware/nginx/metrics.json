@@ -5,6 +5,9 @@
   "icon": "nginx",
   "type": "Middleware",
   "description": "",
+  "default_metric": "any({instance_type='nginx'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["nginx_requests", "nginx_active"],
   "metrics": [
     {
       "metric_group": "Request",

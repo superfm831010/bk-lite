@@ -1,7 +1,7 @@
 [
   {
     "id": "exporter_mssql_linux",
-    "name": "Mssql-Exporter",
+    "name": "MSSQL-Exporter",
     "controller_default_run": false,
     "icon": "",
     "node_operating_system": "linux",
