@@ -1,7 +1,7 @@
 [
     {
         "id": "exporter_rabbitmq_linux",
-        "name": "Rabbitmq-Exporter",
+        "name": "RabbitMQ-Exporter",
         "controller_default_run": false,
         "icon": "",
         "node_operating_system": "linux",
