@@ -103,7 +103,7 @@ class AuthViewSet(MaintainerViewSet):
     def _get_permission_rules(self, user):
         """获取用户权限规则"""
         try:
-            app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console"}
+            app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console","mlops": "mlops"}
             app_name = self._get_app_name()
             app_name = app_name_map.get(app_name, app_name)
             user_rules = getattr(user, "rules", {}).get(app_name, {})
