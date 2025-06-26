@@ -5,6 +5,9 @@
   "icon": "oracle",
   "type": "Database",
   "description": "",
+  "default_metric": "any({instance_type='oracle'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": [],
   "metrics": [
   {
     "metric_group": "Base",

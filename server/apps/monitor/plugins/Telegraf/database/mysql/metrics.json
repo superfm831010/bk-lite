@@ -5,6 +5,9 @@
   "icon": "mysql1",
   "type": "Database",
   "description": "",
+  "default_metric": "any({instance_type='mysql'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["mysql_bytes_received", "mysql_bytes_sent", "mysql_connections_total"],
   "metrics": [
     {
       "metric_group": "Connection",

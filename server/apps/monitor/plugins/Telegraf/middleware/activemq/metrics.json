@@ -5,6 +5,9 @@
   "icon": "02_ActiveMQ",
   "type": "Middleware",
   "description": "",
+  "default_metric": "any({instance_type='activemq'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["activemq_topic_consumer_count"],
   "metrics": [
     {
       "metric_group": "Topic",

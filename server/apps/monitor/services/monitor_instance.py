@@ -1,8 +1,8 @@
 import ast
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.monitor.constants import MONITOR_OBJS
-from apps.monitor.models import Metric, MonitorInstance
+from apps.monitor.constants import MONITOR_OBJ_KEYS
+from apps.monitor.models import Metric, MonitorInstance, MonitorObject
 from apps.monitor.services.monitor_object import MonitorObjectService
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
 
@@ -59,7 +59,9 @@ class InstanceSearch:
             return InstanceSearch.get_parent_instance_ids(query)
 
     def get_obj_metric_map(self):
-        obj_metric_map = {i["name"]: i for i in MONITOR_OBJS}
+
+        monitor_objs = MonitorObject.objects.all().values(*MONITOR_OBJ_KEYS)
+        obj_metric_map = {i["name"]: i for i in monitor_objs}
         obj_metric_map = obj_metric_map.get(self.monitor_obj.name)
         if not obj_metric_map:
             raise BaseAppException("Monitor object default metric does not exist")
