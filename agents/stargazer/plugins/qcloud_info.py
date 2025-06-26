@@ -3,25 +3,24 @@
 # @Time：2025/6/16 15:14
 # @Author：bennie
 import logging
-from concurrent.futures.thread import ThreadPoolExecutor
 from functools import cached_property
+from typing import List, Dict
 
+from qcloud_cos import CosConfig
+from qcloud_cos import CosS3Client
 from tencentcloud.common import credential
 from tencentcloud.common.common_client import CommonClient
 from tencentcloud.common.profile.client_profile import ClientProfile
 from tencentcloud.common.profile.http_profile import HttpProfile
-from typing import List, Dict
 
 from plugins.base import BasePlugin
 from plugins.base_utils import convert_to_prometheus_format
 from plugins.constains import client_version_map, mysql_pay_type_map, redis_region_map, mongodb_status_map, \
     pgsql_status_map, pulsar_status_map, pgsql_pay_type_map, mysql_status_map, redis_status_map, redis_sub_status_map, \
     redis_type_map, mongodb_inst_type_map, mongodb_pay_type_map, pulsar_pay_type_map, cmq_status_map, \
-    cmq_topic_status_map, cmq_topic_filter_type_map, clb_status_map, clb_net_type_map, clb_isp_map, clb_pay_type_map, \
-    eip_status_map, eip_res_type_map, eip_isp_map, cfs_status_map, cfs_storage_type_map, domain_status_map, \
+    cmq_topic_status_map, cmq_topic_filter_type_map, clb_status_map, clb_net_type_map, clb_isp_map, eip_status_map, \
+    eip_res_type_map, eip_isp_map, cfs_status_map, cfs_storage_type_map, domain_status_map, \
     eip_type_map, eip_pay_type_map, product_available_region_list_map
-from qcloud_cos import CosConfig
-from qcloud_cos import CosS3Client
 
 logger = logging.getLogger(__name__)
 
