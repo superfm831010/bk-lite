@@ -69,3 +69,18 @@ export interface CorrelationRule {
     aggregation_rules: number[];
     [key: string]: any;
 }
+
+export interface Config {
+  notify_every: number;
+  notify_people: string[];
+  notify_channel: string[];
+}
+
+export interface GlobalConfig {
+  id: string | number;
+  key: string;
+  value: Config;
+  description: string;
+  is_activate: boolean;
+  is_build: boolean;
+}
