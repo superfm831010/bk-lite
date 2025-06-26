@@ -74,6 +74,12 @@ eg: monitor/plugins/ActiveMQ/jmx/activemq/metrics.json
 | metrics.description      | string | 指标描述                                         |
 
 
+## 上传采集器
+1.可以在节点管理页面找到上述采集器，上传采集器的执行文件
+
+## 监控对象实例接入
+1.监控管理集成页面找到上述监控对象插件，即可创建监控对象实例
+
 ## 内置监控策略（可选）
 1.在对象实例类型目录下创建 `policy.json` 文件
 eg: monitor/plugins/Telegraf/ping/ping/policy.json
