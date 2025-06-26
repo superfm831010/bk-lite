@@ -50,25 +50,28 @@ eg: monitor/plugins/ActiveMQ/jmx/activemq/activemq.child.yaml.j2   子配置
 eg: monitor/plugins/ActiveMQ/jmx/activemq/metrics.json
 2.属性介绍
 
-| 属性名                      | 类型     | 说明                          |
-|--------------------------|--------|-----------------------------|
-| plugin                   | string | 插件名称，必须全局唯一                 |
-| plugin_desc              | string | 插件描述                        |
-| name                     | string | 监控对象名称                      |
-| icon                     | string | 监控对象图标                      |
-| type                     | string | 监控对象类型                      |
-| description              | string | 监控对象描述                      |
-| metrics                  | array  | 监控指标列表，包含多个指标对象             |
-| metrics.metric_group     | string | 指标分组名称                      |
-| metrics.name             | string | 指标名称                        |
-| metrics.display_name     | string | 指标显示名称                      |
-| metrics.instance_id_keys | array  | 实例ID键列表，用于标识不同实例            |
-| metrics.data_type        | string | 数据类型，Number/String/Boolean等 |
-| metrics.unit             | string | 数据单位，如short/long等           |
-| metrics.dimensions       | array  | 维度列表，用于细分指标                 |
-| metrics.dimensions.name  | string | 维度名称                        |
-| metrics.dimensions.description  | string | 维度描述                        |
-| metrics.description      | string | 指标描述                        |
+| 属性名                      | 类型    | 说明                                           |
+|--------------------------|-------|----------------------------------------------|
+| plugin                   | string | 插件名称，必须全局唯一                                  |
+| plugin_desc              | string | 插件描述                                         |
+| name                     | string | 监控对象名称                                       |
+| icon                     | string | 监控对象图标                                       |
+| type                     | string | 监控对象类型                                       |
+| description              | string | 监控对象描述                                       |
+| default_metric              | string | 监控对象默认查询指标实例的pmq                             |
+| instance_id_keys              | array | 联合唯一实例ID键列表（多维度确定唯一值，如pod，接入对象cluster的实例id+pod名称） |
+| supplementary_indicators              | array | 对象实例补充指标（实例列表展示）                             |
+| metrics                  | array | 监控指标列表，包含多个指标对象                              |
+| metrics.metric_group     | string | 指标分组名称                                       |
+| metrics.name             | string | 指标名称                                         |
+| metrics.display_name     | string | 指标显示名称                                       |
+| metrics.instance_id_keys | array | 实例ID键列表，用于标识不同实例                             |
+| metrics.data_type        | string | 数据类型，Number/String/Boolean等                  |
+| metrics.unit             | string | 数据单位，如short/long等                            |
+| metrics.dimensions       | array | 维度列表，用于细分指标                                  |
+| metrics.dimensions.name  | string | 维度名称                                         |
+| metrics.dimensions.description  | string | 维度描述                                         |
+| metrics.description      | string | 指标描述                                         |
 
 
 ## 内置监控策略（可选）
