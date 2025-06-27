@@ -496,4 +496,4 @@ def not_assignment_alert_notify(alert_ids):
     from apps.alerts.tasks import sync_notify
     params = UnDispatchService.notify_un_dispatched_alert_params_format(alerts=alert_instances)
     for notify_people, channel, title, content, alerts in params:
-        sync_notify.delay(username_list=notify_people, channel=channel, title=title, content=content)
+        sync_notify.delay(notify_people, channel, title, content)
