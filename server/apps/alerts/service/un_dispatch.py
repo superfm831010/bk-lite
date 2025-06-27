@@ -25,14 +25,14 @@ class UnDispatchService:
         return list(alerts)
 
     @classmethod
-    def notify_un_dispatched_alert_params_format(cls):
+    def notify_un_dispatched_alert_params_format(cls, alerts=None):
         """通知未分派的告警"""
         result = []
         notify_setting = cls.get_un_dispatch_config()
         if not notify_setting:
             return result
-
-        alerts = cls.search_no_operator_alerts()
+        if alerts is None:
+            alerts = cls.search_no_operator_alerts()
         notify_people = notify_setting.value["notify_people"]
         notify_channel = notify_setting.value["notify_channel"]
         if not notify_people or not notify_channel or not alerts:

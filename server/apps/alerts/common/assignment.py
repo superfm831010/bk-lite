@@ -14,6 +14,7 @@ from apps.alerts.models import Alert, AlertAssignment, SystemSetting
 from apps.alerts.constants import AlertStatus, AlertAssignmentMatchType
 from apps.alerts.service.alter_operator import AlertOperator
 from apps.alerts.service.reminder_service import ReminderService
+from apps.alerts.service.un_dispatch import UnDispatchService
 from apps.core.logger import alert_logger as logger
 
 
@@ -481,31 +482,18 @@ def execute_auto_assignment_for_alerts(alert_ids: List[str]) -> Dict[str, Any]:
     not_assignment_ids = set(alert_ids) - set(result.get("assignment_results", []))
     if not_assignment_ids:
         # 去进行兜底分派 使用全局分派 每60分钟分派一次 知道告警被相应后结束
-        pass
+        not_assignment_alert_notify(not_assignment_ids)
 
     return result
 
 
-def not_assignment_alert_notify():
+def not_assignment_alert_notify(alert_ids):
     """
     获取未分派告警通知设置
     :return: SystemSetting 实例
     """
-    notify_setting = get_no_dispatch_alert_notice_setting()
-    if not notify_setting:
-        logger.warning("== No setting found for 'not_assignment_alert_notify' ==")
-        return
-
-    notify_every = notify_setting.value["notify_every"]
-    notify_people = notify_setting.value["notify_people"]
-    notify_channel = notify_setting.value["notify_channel"]
-
-
-def get_no_dispatch_alert_notice_setting():
-    key = "no_dispatch_alert_notice"
-    try:
-        setting = SystemSetting.objects.get(key=key, is_activate=True)
-        return setting
-    except SystemSetting.DoesNotExist:
-        logger.warning("No setting found for 'not_assignment_alert_notify'")
-        return None
+    alert_instances = list(Alert.objects.filter(alert_id__in=alert_ids, status=AlertStatus.UNASSIGNED))
+    from apps.alerts.tasks import sync_notify
+    params = UnDispatchService.notify_un_dispatched_alert_params_format(alerts=alert_instances)
+    for notify_people, channel, title, content, alerts in params:
+        sync_notify.delay(username_list=notify_people, channel=channel, title=title, content=content)
