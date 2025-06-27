@@ -319,7 +319,7 @@ class AlertProcessor:
     def main(self):
         """主流程方法"""
         add_alert_list, update_alert_list = self.process()
-        logger.info("==add_alert_list data={}==".format(add_alert_list))
+        logger.info("==add_alert_list data={}==".format([i.get("event_ids") for i in add_alert_list]))
         logger.info("==update_alert_list data={}==".format([i.get("event_ids") for i in update_alert_list]))
         if add_alert_list:
             self.bulk_create_alerts(alerts=add_alert_list)
