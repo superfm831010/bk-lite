@@ -11,7 +11,7 @@ from django.db.models import Q
 
 import nats_client
 from apps.core.backends import cache
-from apps.core.logger import system_logger as logger
+from apps.core.logger import system_mgmt_logger as logger
 from apps.system_mgmt.models import (
     App,
     Channel,
@@ -73,12 +73,13 @@ def verify_token(token):
             menu_data = Menu.objects.filter(id__in=list(set(menu_ids))).values_list("app", "name")
             for app, name in menu_data:
                 menus.setdefault(app, []).append(name)
-        cache.set(f"menus-user:{user.id}", menus, 60 * 30)
+        cache.set(f"menus-user:{user.id}", menus, 60)
     return {
         "result": True,
         "data": {
             "username": user.username,
             "display_name": user.display_name,
+            "domain": user.domain,
             "email": user.email,
             "is_superuser": is_superuser,
             "group_list": groups,
@@ -107,12 +108,12 @@ def get_user_menus(client_id, roles, username, is_superuser):
 
 
 @nats_client.register
-def get_client(client_id="", username=""):
+def get_client(client_id="", username="", domain="domain.com"):
     app_list = App.objects.all()
     if client_id:
         app_list = app_list.filter(name__in=client_id.split(";"))
     if username:
-        user = User.objects.filter(username=username).first()
+        user = User.objects.filter(username=username, domain=domain).first()
         if not user:
             return {"result": False, "message": "User not found"}
         app_name_list = list(Role.objects.filter(id__in=user.role_list).values_list("app", flat=True).distinct())
@@ -271,7 +272,9 @@ def send_msg_with_channel(channel_id, title, content, receivers):
 
 @nats_client.register
 def get_user_rules(group_id, username):
-    rules = UserRule.objects.filter(username=username, group_rule__group_id=group_id)
+    rules = UserRule.objects.filter(username=username).filter(
+        Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
+    )
     if not rules:
         return {}
     return {i.group_rule.app: i.group_rule.rules for i in rules}
@@ -431,6 +434,7 @@ def get_user_login_token(user, username):
             "username": username,
             "display_name": user.display_name,
             "id": user.id,
+            "domain": user.domain,
             "locale": user.locale,
             "temporary_pwd": user.temporary_pwd,
             "enable_otp": enable_otp,

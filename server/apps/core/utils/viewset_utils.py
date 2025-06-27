@@ -19,10 +19,10 @@ class MaintainerViewSet(viewsets.ModelViewSet):
 
             user = getattr(request, "user", None)
             username = getattr(user, "username", self.DEFAULT_USERNAME)
-
+            domain = getattr(user, "domain", "domain.com")
             model = serializer.Meta.model
             if hasattr(model, "created_by"):
-                serializer.save(created_by=username, updated_by=username)
+                serializer.save(created_by=username, updated_by=username, domain=domain, updated_by_domain=domain)
 
         except Exception as e:
             logger.error(f"Error in perform_create: {e}")
@@ -39,10 +39,11 @@ class MaintainerViewSet(viewsets.ModelViewSet):
 
             user = getattr(request, "user", None)
             username = getattr(user, "username", self.DEFAULT_USERNAME)
+            domain = getattr(user, "domain", "domain.com")
 
             model = serializer.Meta.model
             if hasattr(model, "updated_by"):
-                serializer.save(updated_by=username)
+                serializer.save(updated_by=username, updated_by_domain=domain)
 
         except Exception as e:
             logger.error(f"Error in perform_update: {e}")
@@ -67,7 +68,6 @@ class AuthViewSet(MaintainerViewSet):
         for rule in rules:
             if isinstance(rule, dict) and "id" in rule:
                 rule_ids.append(rule["id"])
-
         return queryset.filter(id__in=rule_ids)
 
     def list(self, request, *args, **kwargs):
@@ -103,7 +103,7 @@ class AuthViewSet(MaintainerViewSet):
     def _get_permission_rules(self, user):
         """获取用户权限规则"""
         try:
-            app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console"}
+            app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console","mlops": "mlops"}
             app_name = self._get_app_name()
             app_name = app_name_map.get(app_name, app_name)
             user_rules = getattr(user, "rules", {}).get(app_name, {})

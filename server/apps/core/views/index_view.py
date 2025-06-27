@@ -232,7 +232,7 @@ def verify_otp_code(request):
 def get_client(request):
     try:
         client = _create_system_mgmt_client()
-        return_data = client.get_client("", request.user.username)
+        return_data = client.get_client("", request.user.username, getattr(request.user, "domain", "domain.com"))
         if return_data["result"]:
             for i in return_data["data"]:
                 i["description"] = _(i["description"]) if i.get("is_build_in") else i["description"]

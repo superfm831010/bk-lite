@@ -38,7 +38,7 @@ def init_user_set(group_id, group_name):
 
 
 @nats_client.register
-def get_module_data(module, child_module, page, page_size, group_id):
+def get_opspilot_module_data(module, child_module, page, page_size, group_id):
     model_map = {
         "bot": Bot,
         "skill": LLMSkill,

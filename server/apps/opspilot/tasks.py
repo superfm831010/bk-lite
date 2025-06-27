@@ -6,11 +6,14 @@ from django.conf import settings
 from tqdm import tqdm
 
 from apps.core.logger import opspilot_logger as logger
+from apps.opspilot.knowledge_mgmt.models import QAPairs
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
+from apps.opspilot.model_provider_mgmt.models import LLMModel
 from apps.opspilot.models import FileKnowledge, KnowledgeBase, KnowledgeDocument, ManualKnowledge, WebPageKnowledge
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
+from apps.opspilot.utils.chunk_helper import ChunkHelper
 
 
 @shared_task
@@ -178,7 +181,85 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "semantic_chunk_model_api_key": semantic_embed_config.get("api_key", ""),
         "semantic_chunk_model": semantic_embed_config.get("model", semantic_embed_model_name),
         "preview": "true" if preview else "false",
-        "metadata": json.dumps({"enabled": True}),
+        "metadata": json.dumps({"enabled": True, "is_doc": "1"}),
     }
     kwargs.update(ocr_config)
     return kwargs
+
+
+@shared_task
+def sync_web_page_knowledge(web_page_knowledge_id):
+    """
+    Sync web page knowledge by ID.
+    """
+    web_page = WebPageKnowledge.objects.filter(id=web_page_knowledge_id).first()
+    if not web_page:
+        return {"result": False, "message": "Web page knowledge not found."}
+
+    knowledge_base = web_page.knowledge_document.knowledge_base
+    knowledge_base.recreate_es_index()
+    document_list = [web_page.knowledge_document]
+    web_page.knowledge_document.train_status = DocumentStatus.CHUNKING
+    web_page.knowedge_document.save()
+    general_embed_by_document_list(document_list, username=KnowledgeDocument.created_by)
+
+
+@shared_task
+def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id):
+    qa_pairs_list = QAPairs.objects.filter(id__in=qa_pairs_id_list)
+    if not qa_pairs_list:
+        logger.info(f"QAPairs with ID {qa_pairs_id_list} not found.")
+        return
+    url = f"{settings.METIS_SERVER_URL}/api/rag/qa_pair_generate"
+    llm_model = LLMModel.objects.filter(id=llm_model_id).first()
+    if not llm_model:
+        logger.error(f"LLMModel with ID {llm_model_id} not found.")
+        return
+    knowledge_base = KnowledgeBase.objects.filter(id=knowledge_base_id).first()
+    if not knowledge_base:
+        logger.error(f"KnowledgeBase with ID {knowledge_base_id} not found.")
+        return
+    es_index = knowledge_base.knowledge_index_name()
+    embed_config = knowledge_base.embed_model.decrypted_embed_config
+    embed_model_name = knowledge_base.embed_model.name
+    openai_api_base = llm_model.decrypted_llm_config["openai_base_url"]
+    openai_api_key = llm_model.decrypted_llm_config["openai_api_key"]
+    model = llm_model.decrypted_llm_config["model"]
+    for qa_pairs_obj in qa_pairs_list:
+        content_list = get_qa_content(qa_pairs_obj, es_index)
+        for i in content_list:
+            params = {
+                "size": qa_count,
+                "content": i["content"],
+                "openai_api_base": openai_api_base,
+                "openai_api_key": openai_api_key,
+                "model": model,
+            }
+            res = ChatServerHelper.post_chat_server(params, url)
+            if res.get("status", "fail") != "success":
+                logger.error(f"Failed to create QA pairs for Chunk ID {i['chunk_id']}.")
+                continue
+            ChunkHelper.create_qa_pairs(res["message"], i, es_index, embed_config, embed_model_name, qa_pairs_obj.id)
+
+
+def get_qa_content(qa_pairs_obj: QAPairs, es_index):
+    client = ChunkHelper()
+    document_id = qa_pairs_obj.document_id
+    res = client.get_document_es_chunk(
+        es_index, 1, 10000, metadata_filter={"knowledge_id": str(document_id)}, get_count=False
+    )
+    if res.get("status") != "success":
+        raise Exception(f"Failed to get document chunk for document ID {document_id}.")
+    return_data = []
+    for i in res["documents"]:
+        meta_data = i.get("metadata", {})
+        if not meta_data:
+            continue
+        return_data.append(
+            {
+                "chunk_id": meta_data["chunk_id"],
+                "content": i["page_content"],
+                "knowledge_id": meta_data["knowledge_id"],
+            }
+        )
+    return return_data

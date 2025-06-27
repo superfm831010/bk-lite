@@ -152,7 +152,9 @@ class LLMService:
         if kwargs.get("thread_id"):
             chat_kwargs["thread_id"] = str(kwargs["thread_id"])
         if kwargs["enable_rag_knowledge_source"]:
-            extra_config = {"enable_rag_source": True, "enable_rag_strict_mode": False}
+            extra_config.update({"enable_rag_source": True})
+        if kwargs.get("enable_rag_strict_mode"):
+            extra_config.update({"enable_rag_strict_mode": kwargs["enable_rag_strict_mode"]})
         if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
             tool_map = {
                 i["id"]: {u["key"]: u["value"] for u in i["kwargs"] if u["key"]} for i in kwargs.get("tools", [])

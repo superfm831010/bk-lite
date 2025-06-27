@@ -1,16 +1,17 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Card, Input, Spin, Pagination } from 'antd';
+import { Card, Input, Spin, Pagination, Drawer } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
 import styles from './index.module.scss';
-import ContentDrawer from '@/components/content-drawer';
-import useContentDrawer from '@/app/opspilot/hooks/useContentDrawer';
+import ChunkDetail from '@/app/opspilot/components/chunk-detail';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 
 interface Paragraph {
   id: string;
   content: string;
+  chunk_id?: string;
+  index_name?: string;
 }
 
 const DocsResultPage: React.FC = () => {
@@ -21,16 +22,13 @@ const DocsResultPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(20);
   const [totalItems, setTotalItems] = useState<number>(0);
+
+  const [drawerVisible, setDrawerVisible] = useState<boolean>(false);
+  const [selectedChunk, setSelectedChunk] = useState<Paragraph | null>(null);
+
   const searchParams = useSearchParams();
   const id = searchParams ? searchParams.get('knowledgeId') : null;
   const { fetchDocumentDetails } = useKnowledgeApi();
-
-  const {
-    drawerVisible,
-    drawerContent,
-    showDrawer,
-    hideDrawer,
-  } = useContentDrawer();
 
   const fetchData = async (page: number, pageSize: number, searchValue?: string) => {
     if (id) {
@@ -65,8 +63,14 @@ const DocsResultPage: React.FC = () => {
     fetchData(page, pageSize || 20, searchTerm);
   };
 
-  const handleContentClick = (content: string) => {
-    showDrawer(content);
+  const handleContentClick = (paragraph: Paragraph) => {
+    setSelectedChunk(paragraph);
+    setDrawerVisible(true);
+  };
+
+  const handleDrawerClose = () => {
+    setDrawerVisible(false);
+    setSelectedChunk(null);
   };
 
   return (
@@ -81,28 +85,29 @@ const DocsResultPage: React.FC = () => {
           style={{ width: '240px' }}
         />
       </div>
+      
       {loading ? (
         <div className="flex justify-center items-center w-full h-full">
           <Spin size="large" />
         </div>
       ) : (
         <>
-          <div className={`${styles.resultWrap}`}>
+          <div className={styles.resultWrap}>
             <div className='grid grid-cols-4 gap-4'>
               {paragraphsState.map((paragraph, index) => (
-                <div key={paragraph.id} className="p-2 cursor-pointer" onClick={() => handleContentClick(paragraph.content)}>
+                <div key={paragraph.id} className="p-2 cursor-pointer" onClick={() => handleContentClick(paragraph)}>
                   <Card
                     size="small"
                     className={`rounded-lg flex flex-col justify-between ${styles.resultCard}`}
                     title={
                       <div className="flex justify-between items-center">
                         <span className={`text-xs ${styles.number}`}>
-                          #{index.toString().padStart(3, '0')}
+                          #{(index + 1).toString().padStart(3, '0')}
                         </span>
                       </div>
                     }
                   >
-                    <p className={`${styles.truncateLines}`}>
+                    <p className={styles.truncateLines}>
                       {paragraph.content || '--'}
                     </p>
                   </Card>
@@ -122,11 +127,24 @@ const DocsResultPage: React.FC = () => {
           </div>
         </>
       )}
-      <ContentDrawer
-        visible={drawerVisible}
-        onClose={hideDrawer}
-        content={drawerContent}
-      />
+      
+      <Drawer
+        title={t('knowledge.chunkDetail')}
+        placement="right"
+        size="large"
+        open={drawerVisible}
+        onClose={handleDrawerClose}
+        className="[&_.ant-drawer-body]:p-0"
+      >
+        {selectedChunk && (
+          <ChunkDetail
+            chunkContent={selectedChunk.content}
+            chunkId={selectedChunk.id}
+            indexName={selectedChunk.index_name}
+            visible={drawerVisible}
+          />
+        )}
+      </Drawer>
     </div>
   );
 };

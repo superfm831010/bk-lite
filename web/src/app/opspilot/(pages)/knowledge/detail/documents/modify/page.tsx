@@ -8,6 +8,7 @@ import WebLinkForm from './webLinkForm';
 import CustomTextForm from './customTextForm';
 import PreprocessStep from './preprocessStep';
 import ExtractionStep from './extractionStep';
+import QAPairForm from './qaPairForm';
 import Icon from '@/components/icon'
 import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
@@ -54,8 +55,15 @@ const KnowledgeModifyPage = () => {
     }[];
   } | null>(null);
   const [preprocessConfig, setPreprocessConfig] = useState<any>(null);
-  const [webLinkData, setWebLinkData] = useState<{ name: string, link: string, deep: number }>({ name: '', link: '', deep: 1 });
+  const [webLinkData, setWebLinkData] = useState<{ name: string, link: string, deep: number, sync_enabled?: boolean, sync_time?: string }>({ name: '', link: '', deep: 1 });
   const [manualData, setManualData] = useState<{ name: string, content: string }>({ name: '', content: '' });
+  interface QAPairFormData {
+    llmModel: number;
+    qaCount: number;
+    selectedDocuments: string[];
+  }
+
+  const [qaPairData, setQaPairData] = useState<QAPairFormData>({ llmModel: 0, qaCount: 10, selectedDocuments: [] });
   const [pageLoading, setPageLoading] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [isUpdate, setIsUpdate] = useState<boolean>(false);
@@ -66,8 +74,8 @@ const KnowledgeModifyPage = () => {
     file: t('knowledge.localFile'),
     web_page: t('knowledge.webLink'),
     manual: t('knowledge.cusText'),
+    qa_pairs: t('knowledge.qaPairs.title'),
   };
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -132,6 +140,8 @@ const KnowledgeModifyPage = () => {
           name: webLinkData.name,
           url: webLinkData.link,
           max_depth: webLinkData.deep,
+          sync_enabled: webLinkData.sync_enabled,
+          sync_time: webLinkData.sync_time,
         };
         if (documentIds.length) {
           await updateDocumentBaseInfo(documentIds[0], params);
@@ -224,7 +234,7 @@ const KnowledgeModifyPage = () => {
           const defaultConfig = {
             knowledge_source_type: type || 'file',
             knowledge_document_list: documentIds,
-            general_parse_chunk_size: 256,
+            general_parse_chunk_size: 512,
             general_parse_chunk_overlap: 0,
             semantic_chunk_parse_embedding_model: null,
             chunk_type: 'fixed_size',
@@ -251,6 +261,8 @@ const KnowledgeModifyPage = () => {
           name: data.name,
           link: data.url,
           deep: data.max_depth,
+          sync_enabled: data.sync_enabled,
+          sync_time: data.sync_time
         });
         setIsStepValid(data.name.trim() !== '' && data.url.trim() !== '');
       } else if (type === 'manual') {
@@ -295,6 +307,10 @@ const KnowledgeModifyPage = () => {
     setManualData(data);
   }, []);
 
+  const handleQAPairDataChange = useCallback((data: { llmModel: number, qaCount: number, selectedDocuments: string[] }) => {
+    setQaPairData(data);
+  }, []);
+
   const handleDone = () => {
     router.push(`/opspilot/knowledge/detail/documents?id=${id}&name=${name}&desc=${desc}&type=${type}`);
   };
@@ -302,6 +318,68 @@ const KnowledgeModifyPage = () => {
   const handleToTesting = () => {
     router.push(`/opspilot/knowledge/detail/testing?id=${id}&name=${name}&desc=${desc}`);
   };
+
+  const renderQAPairContent = () => {
+    return (
+      <div className="px-7 py-5">
+        <QAPairForm 
+          ref={formRef}
+          initialData={qaPairData} 
+          onFormChange={handleValidationChange} 
+          onFormDataChange={handleQAPairDataChange} 
+        />
+        <div className="fixed bottom-10 right-10 z-50 flex space-x-2">
+          <Button disabled={loading} onClick={() => router.back()}>
+            {t('common.cancel')}
+          </Button>
+          <Button 
+            type="primary" 
+            onClick={handleCreateQAPair} 
+            disabled={!isStepValid} 
+            loading={loading}
+          >
+            {t('common.confirm')}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const handleCreateQAPair = async () => {
+    if (!formRef.current) {
+      message.error('表单未初始化');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await formRef.current.createQAPairs();
+      router.push(`/opspilot/knowledge/detail/documents?id=${id}&name=${name}&desc=${desc}&type=qa_pairs`);
+    } catch (error) {
+      console.error('Create QA pairs failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (type === 'qa_pairs') {
+    return (
+      <div>
+        <Breadcrumb>
+          <Breadcrumb.Item>{t('knowledge.menu')}</Breadcrumb.Item>
+          <Breadcrumb.Item>{sourceTypeToDisplayText[type]}</Breadcrumb.Item>
+          <Breadcrumb.Item>{t('common.create')}</Breadcrumb.Item>
+        </Breadcrumb>
+        {pageLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <Spin />
+          </div>
+        ) : (
+          renderQAPairContent()
+        )}
+      </div>
+    );
+  }
 
   const renderStepContent = () => {
     switch (type) {
@@ -311,6 +389,8 @@ const KnowledgeModifyPage = () => {
         return <WebLinkForm ref={formRef} initialData={webLinkData} onFormChange={handleValidationChange} onFormDataChange={handleWebLinkDataChange} />;
       case 'manual':
         return <CustomTextForm initialData={manualData} onFormChange={handleValidationChange} onFormDataChange={handleManualDataChange} />;
+      case 'qa_pairs':
+        return <QAPairForm initialData={qaPairData} onFormChange={handleValidationChange} onFormDataChange={handleQAPairDataChange} />;
       default:
         return <LocalFileUpload onFileChange={handleFileChange} initialFileList={fileList} />;
     }
@@ -384,7 +464,7 @@ const KnowledgeModifyPage = () => {
         )}
         <div className="fixed bottom-10 right-10 z-50 flex space-x-2">
           {currentStep > 0 && currentStep < steps.length - 1 && (
-            <Button onClick={handlePrevious} disabled={isUpdate && currentStep === 1}>
+            <Button onClick={handlePrevious} disabled={isUpdate && type === 'file' && currentStep === 1}>
               {t('common.pre')}
             </Button>
           )}

@@ -1,0 +1,9 @@
+{
+  "plugin": "Zookeeper-Exporter",
+  "plugin_desc": "Zookeeper Exporter is a tool for monitoring Zookeeper clusters, collecting metrics such as node status, request latency, and data size to help users understand cluster health and performance.",
+  "name": "Zookeeper",
+  "icon": "Zookeeper",
+  "type": "Middleware",
+  "description": "",
+  "metrics": []
+}

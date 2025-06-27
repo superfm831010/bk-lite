@@ -35,6 +35,7 @@ class LLMSkill(MaintainerInfo):
     skill_type = models.IntegerField(
         choices=SkillTypeChoices.choices, default=SkillTypeChoices.BASIC_TOOL, verbose_name="技能类型"
     )
+    enable_rag_strict_mode = models.BooleanField(default=False, verbose_name="启用RAG严格模式")
     is_template = models.BooleanField(default=False, verbose_name="是否模板")
 
     def __str__(self):

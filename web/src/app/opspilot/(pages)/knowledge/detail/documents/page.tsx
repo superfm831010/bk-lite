@@ -10,7 +10,7 @@ import type { TableColumnsType, PaginationProps } from 'antd';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
 import SelectSourceModal from './selectSourceModal';
-import { TableData } from '@/app/opspilot/types/knowledge'
+import { TableData, QAPairData } from '@/app/opspilot/types/knowledge'
 import styles from '@/app/opspilot/styles/common.module.scss'
 import ActionButtons from '@/app/opspilot/components/knowledge/actionButtons';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
@@ -43,7 +43,17 @@ const DocumentsPage: React.FC = () => {
   const [isTrainLoading, setIsTrainLoading] = useState(false);
   const [singleTrainLoading, setSingleTrainLoading] = useState<{ [key: string]: boolean }>({});
 
-  const { fetchDocuments, batchDeleteDocuments, batchTrainDocuments } = useKnowledgeApi();
+  // 问答对相关状态
+  const [qaPairData, setQaPairData] = useState<QAPairData[]>([]);
+  const [qaPairPagination, setQaPairPagination] = useState<PaginationProps>({
+    current: 1,
+    total: 0,
+    pageSize: 20,
+  });
+  const [qaPairLoading, setQaPairLoading] = useState<boolean>(false);
+  const [selectedQAPairKeys, setSelectedQAPairKeys] = useState<React.Key[]>([]);
+
+  const { fetchDocuments, batchDeleteDocuments, batchTrainDocuments, fetchQAPairs, deleteQAPair } = useKnowledgeApi();
 
   const randomColors = ['#ff9214', '#875cff', '#00cba6', '#155aef'];
 
@@ -108,6 +118,25 @@ const DocumentsPage: React.FC = () => {
         return <Tag color={color}>{text}</Tag>;
       },
     },
+    ...(activeTabKey === 'web_page' ? [{
+      title: t('knowledge.documents.syncEnabled'),
+      key: 'sync_enabled',
+      dataIndex: 'sync_enabled',
+      render: (_: any, record: TableData) => {
+        const syncEnabled = record.sync_enabled;
+        const syncTime = record.sync_time;
+        
+        if (syncEnabled && syncTime) {
+          return (
+            <div>
+              { syncTime && <div>【{t('knowledge.documents.everyday')} {syncTime}】</div> }
+            </div>
+          );
+        } else {
+          return <div>【未定时同步】</div>;
+        }
+      },
+    }] : []),
     {
       title: t('knowledge.documents.extractionMethod'),
       key: 'mode',
@@ -155,6 +184,151 @@ const DocumentsPage: React.FC = () => {
       ),
     }
   ];
+
+  // 问答对表格列定义
+  const qaPairColumns: TableColumnsType<QAPairData> = [
+    {
+      title: t('knowledge.qaPairs.name'),
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record) => (
+        <a
+          href="#"
+          style={{ color: '#155aef' }}
+          onClick={() => router.push(`/opspilot/knowledge/detail/documents/qapairResult?id=${id}&name=${name}&desc=${desc}&qaPairId=${record.id}`)}
+        >
+          {text}
+        </a>
+      ),
+    },
+    {
+      title: t('knowledge.qaPairs.qaCount'),
+      dataIndex: 'qa_count',
+      key: 'qa_count',
+    },
+    {
+      title: t('knowledge.documents.createdAt'),
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (text) => convertToLocalizedTime(text),
+    },
+    {
+      title: t('knowledge.documents.createdBy'),
+      key: 'created_by',
+      dataIndex: 'created_by',
+      render: (_, { created_by }) => (
+        <div>
+          <div
+            className='inline-block text-center rounded-full text-white mr-2'
+            style={{ width: 20, height: 20, backgroundColor: getRandomColor() }}
+          >
+            {created_by.charAt(0).toUpperCase()}
+          </div>
+          {created_by}
+        </div>
+      ),
+    },
+    {
+      title: t('knowledge.documents.actions'),
+      key: 'action',
+      render: (_, record) => (
+        <PermissionWrapper requiredPermissions={['Delete']}>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => handleDeleteSingleQAPair(record.id)}
+          >
+            {t('common.delete')}
+          </Button>
+        </PermissionWrapper>
+      ),
+    }
+  ];
+
+  // 获取问答对数据
+  const fetchQAPairData = useCallback(async (text = '') => {
+    setQaPairLoading(true);
+    const { current, pageSize } = qaPairPagination;
+    const params = {
+      name: text,
+      page: current,
+      page_size: pageSize,
+      knowledge_base_id: id
+    };
+    try {
+      const res = await fetchQAPairs(params);
+      const { items: data, count } = res;
+      setQaPairData(data);
+      setQaPairPagination(prev => ({
+        ...prev,
+        total: count,
+      }));
+    } catch {
+      message.error(t('common.fetchFailed'));
+    } finally {
+      setQaPairLoading(false);
+    }
+  }, [qaPairPagination.current, qaPairPagination.pageSize, id]);
+
+  // 删除单个问答对
+  const handleDeleteSingleQAPair = async (qaPairId: number) => {
+    confirm({
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      centered: true,
+      onOk: async () => {
+        try {
+          await deleteQAPair(qaPairId);
+          fetchQAPairData();
+          message.success(t('common.delSuccess'));
+        } catch {
+          message.error(t('common.delFailed'));
+        }
+      },
+    });
+  };
+
+  // 批量删除问答对
+  const handleBatchDeleteQAPairs = async () => {
+    if (selectedQAPairKeys.length === 0) {
+      message.warning('请选择要删除的问答对');
+      return;
+    }
+
+    confirm({
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      centered: true,
+      onOk: async () => {
+        try {
+          // 批量删除时逐个调用单个删除API
+          await Promise.all(selectedQAPairKeys.map(key => deleteQAPair(Number(key))));
+          fetchQAPairData();
+          setSelectedQAPairKeys([]);
+          message.success(t('common.delSuccess'));
+        } catch {
+          message.error(t('common.delFailed'));
+        }
+      },
+    });
+  };
+
+  // 问答对分页处理
+  const handleQAPairTableChange = (page: number, pageSize?: number) => {
+    setQaPairPagination((prev) => ({
+      ...prev,
+      current: page,
+      pageSize: pageSize || prev.pageSize,
+    }));
+  };
+
+  // 问答对行选择
+  const qaPairRowSelection = {
+    selectedRowKeys: selectedQAPairKeys,
+    onChange: (newSelectedRowKeys: React.Key[]) => {
+      setSelectedQAPairKeys(newSelectedRowKeys);
+    },
+  };
 
   const handleFile = async (record: TableData, type: string) => {
     if (type === 'preview') {
@@ -277,6 +451,12 @@ const DocumentsPage: React.FC = () => {
     fetchData(searchText);
   }, [fetchData, id]);
 
+  useEffect(() => {
+    if (activeTabKey === 'qa_pairs') {
+      fetchQAPairData(searchText);
+    }
+  }, [activeTabKey, qaPairPagination.current, qaPairPagination.pageSize, searchText]);
+
   const rowSelection = {
     selectedRowKeys,
     onChange: (newSelectedRowKeys: React.Key[]) => {
@@ -360,6 +540,7 @@ const DocumentsPage: React.FC = () => {
         <TabPane tab={t('knowledge.localFile')} key='file' />
         <TabPane tab={t('knowledge.webLink')} key='web_page' />
         <TabPane tab={t('knowledge.cusText')} key='manual' />
+        <TabPane tab={t('knowledge.qaPairs.title')} key='qa_pairs' />
       </Tabs>
       <div className='nav-box flex justify-end mb-[20px]'>
         <div className='left-side w-[240px] mr-[8px]'>
@@ -385,28 +566,56 @@ const DocumentsPage: React.FC = () => {
               {t('common.add')}
             </Button>
           </PermissionWrapper>
-          <Dropdown overlay={batchOperationMenu}>
-            <Button>
-              <Space>
-                {t('common.batchOperation')}
-                <DownOutlined />
-              </Space>
-            </Button>
-          </Dropdown>
+          {activeTabKey !== 'qa_pairs' && (
+            <Dropdown overlay={batchOperationMenu}>
+              <Button>
+                <Space>
+                  {t('common.batchOperation')}
+                  <DownOutlined />
+                </Space>
+              </Button>
+            </Dropdown>
+          )}
+          {activeTabKey === 'qa_pairs' && (
+            <PermissionWrapper requiredPermissions={['Delete']}>
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                onClick={handleBatchDeleteQAPairs}
+              >
+                {t('common.batchDelete')}{selectedQAPairKeys.length > 0 && ` (${selectedQAPairKeys.length})`}
+              </Button>
+            </PermissionWrapper>
+          )}
         </div>
       </div>
-      <CustomTable
-        rowKey="id"
-        rowSelection={rowSelection}
-        scroll={{ y: 'calc(100vh - 430px)' }}
-        columns={columns}
-        dataSource={tableData}
-        pagination={{
-          ...pagination,
-          onChange: handleTableChange
-        }}
-        loading={loading}
-      />
+      {activeTabKey === 'qa_pairs' ? (
+        <CustomTable
+          rowKey="id"
+          rowSelection={qaPairRowSelection}
+          scroll={{ y: 'calc(100vh - 430px)' }}
+          columns={qaPairColumns}
+          dataSource={qaPairData}
+          pagination={{
+            ...qaPairPagination,
+            onChange: handleQAPairTableChange
+          }}
+          loading={qaPairLoading}
+        />
+      ) : (
+        <CustomTable
+          rowKey="id"
+          rowSelection={rowSelection}
+          scroll={{ y: 'calc(100vh - 430px)' }}
+          columns={columns}
+          dataSource={tableData}
+          pagination={{
+            ...pagination,
+            onChange: handleTableChange
+          }}
+          loading={loading}
+        />
+      )}
       <SelectSourceModal
         defaultSelected={activeTabKey}
         visible={isModalVisible}

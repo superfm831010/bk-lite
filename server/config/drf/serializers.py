@@ -8,14 +8,19 @@ from apps.system_mgmt.models import User
 class UsernameSerializer(serializers.ModelSerializer):
     def __init__(self, instance=None, data=empty, **kwargs):
         super().__init__(instance=instance, data=data, **kwargs)
-        self.user_map = dict(User.objects.all().values_list("username", "display_name"))
+        user_list = User.objects.all().values("username", "display_name", "domain")
+        self.user_map = {}
+        for i in user_list:
+            self.user_map[f"{i['username']}@{i['domain']}"] = i["display_name"]
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
         if "created_by" in list(response.keys()):
-            response["created_by"] = self.user_map.get(response["created_by"], response["created_by"])
+            username = f"{response['created_by']}@{response.get('domain', 'domain.com')}"
+            response["created_by"] = self.user_map.get(username, response["created_by"])
         if "updated_by" in list(response.keys()):
-            response["updated_by"] = self.user_map.get(response["updated_by"], response["updated_by"])
+            username = f"{response['updated_by']}@{response.get('updated_by_domain', 'domain.com')}"
+            response["updated_by"] = self.user_map.get(username, response["updated_by"])
         return response
 
 

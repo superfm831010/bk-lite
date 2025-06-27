@@ -30,7 +30,12 @@ class Command(BaseCommand):
         for app_obj in MENUS:
             app_inst, _ = App.objects.update_or_create(
                 name=app_obj["client_id"],
-                defaults={"display_name": app_obj["name"], "description": app_obj["description"], "is_build_in": True},
+                defaults={
+                    "display_name": app_obj["name"],
+                    "description": app_obj["description"],
+                    "is_build_in": True,
+                    "url": app_obj["url"],
+                },
             )
             print(f"create {app_obj['client_id']} success")
             create_resource(app_inst, app_obj["menus"])

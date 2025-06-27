@@ -9,10 +9,9 @@ import {
   getEnumValueUnit,
   getEnumColor,
   getK8SData,
-  getConfigByPluginName,
-  getConfigByObjectName,
   getBaseInstanceColumn,
 } from '@/app/monitor/utils/common';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
 import { useRouter } from 'next/navigation';
 import {
   IntergrationItem,
@@ -56,6 +55,7 @@ const ViewList: React.FC<ViewListProps> = ({
   const { t } = useTranslation();
   const router = useRouter();
   const { convertToLocalizedTime } = useLocalizedTime();
+  const { getCollectType, getTableDiaplay } = useObjectConfigInfo();
   const viewRef = useRef<ModalRef>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [searchText, setSearchText] = useState<string>('');
@@ -122,12 +122,17 @@ const ViewList: React.FC<ViewListProps> = ({
   const [colony, setColony] = useState<string | null>(null);
   const [queryData, setQueryData] = useState<any[]>([]);
 
-  const isPod = useMemo(() => {
-    return objects.find((item) => item.id === objectId)?.name === 'Pod';
+  const instNamePlaceholder = useMemo(() => {
+    const type = objects.find((item) => item.id === objectId)?.type || '';
+    const baseTarget = objects
+      .filter((item) => item.type === type)
+      .find((item) => item.level === 'base');
+    const title: string = baseTarget?.display_name || t('monitor.source');
+    return title;
   }, [objects, objectId]);
 
-  const isNode = useMemo(() => {
-    return objects.find((item) => item.id === objectId)?.name === 'Node';
+  const isPod = useMemo(() => {
+    return objects.find((item) => item.id === objectId)?.name === 'Pod';
   }, [objects, objectId]);
 
   const namespaceList = useMemo(() => {
@@ -262,13 +267,13 @@ const ViewList: React.FC<ViewListProps> = ({
         : (k8sQuery || []).map((item: string) => ({ id: item, child: [] }));
       setQueryData(queryForm);
       const _plugins = res[1].map((item: IntergrationItem) => ({
-        label: getConfigByPluginName(item.name, 'collect_type'),
+        label: getCollectType(objName as string, item.name as string),
         value: item.id,
       }));
       setPlugins(_plugins);
       setMetrics(res[0] || []);
       if (objName) {
-        const filterMetrics = getConfigByObjectName(objName, 'tableDiaplay');
+        const filterMetrics = getTableDiaplay(objName);
         const _columns = filterMetrics.map((item: any) => {
           const target = (res[0] || []).find(
             (tex: MetricItem) => tex.name === item.key
@@ -472,11 +477,7 @@ const ViewList: React.FC<ViewListProps> = ({
                 allowClear
                 showSearch
                 style={{ width: isPod ? 120 : 240 }}
-                placeholder={
-                  isNode || isPod
-                    ? t('monitor.views.colony')
-                    : t('monitor.instance')
-                }
+                placeholder={instNamePlaceholder}
                 onChange={handleColonyChange}
               >
                 {queryData.map((item) => (

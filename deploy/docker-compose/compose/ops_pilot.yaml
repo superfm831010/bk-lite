@@ -78,5 +78,5 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      system-manager:
+      server:
         condition: service_healthy

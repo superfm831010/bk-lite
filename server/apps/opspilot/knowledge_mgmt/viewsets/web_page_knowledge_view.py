@@ -17,13 +17,17 @@ class WebPageKnowledgeViewSet(viewsets.ModelViewSet):
     @action(methods=["POST"], detail=False)
     def create_web_page_knowledge(self, request):
         kwargs = request.data
-        if not kwargs.get("url"):
+        if not kwargs.get("url").strip():
             return JsonResponse({"result": False, "data": _("url is required")})
         kwargs["knowledge_source_type"] = "web_page"
         new_doc = KnowledgeDocumentUtils.get_new_document(kwargs, request.user.username)
         knowledge_obj = WebPageKnowledge.objects.create(
             knowledge_document_id=new_doc.id,
-            url=kwargs.get("url", ""),
+            url=kwargs.get("url", "").strip(),
             max_depth=kwargs.get("max_depth", 1),
+            sync_enabled=kwargs.get("sync_enabled", False),
+            sync_time=kwargs.get("sync_time", "00:00"),
         )
+        if knowledge_obj.sync_enabled:
+            knowledge_obj.create_sync_periodic_task()
         return JsonResponse({"result": True, "data": knowledge_obj.knowledge_document_id})
