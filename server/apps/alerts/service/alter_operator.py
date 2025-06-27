@@ -7,6 +7,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.db import transaction
 
+from apps.alerts.common.notify.base import NotifyParamsFormat
 from apps.alerts.models import Alert, AlertAssignment
 from apps.alerts.constants import AlertStatus, AlertOperate
 from apps.core.logger import alert_logger as logger
@@ -124,6 +125,11 @@ class AlertOperator(object):
             assignment_id = data.get('assignment_id')  # 分派策略ID
             if assignment_id:
                 self._create_reminder_record(alert, assignment_id)
+
+            from apps.alerts.tasks import sync_notify
+            transaction.on_commit(
+                lambda: sync_notify.delay(*self.format_notify_data(assignee, alert))
+            )
 
             logger.info(
                 f"告警分派成功: alert_id={alert_id}, assignee={assignee}, 状态变更: {AlertStatus.UNASSIGNED} -> {AlertStatus.PENDING}")
@@ -250,6 +256,10 @@ class AlertOperator(object):
 
             logger.info(
                 f"告警转派成功: alert_id={alert_id}, old_assignee={old_assignee}, new_assignee={new_assignee}, 状态变更: {AlertStatus.PROCESSING} -> {AlertStatus.PENDING}")
+            from apps.alerts.tasks import sync_notify
+            transaction.on_commit(
+                lambda: sync_notify.delay(*self.format_notify_data(new_assignee, alert))
+            )
 
             return {
                 "result": True,
@@ -376,73 +386,18 @@ class AlertOperator(object):
                 }
             }
 
-    def get_alert_status(self, alert_id: str) -> dict:
+    def format_notify_data(self, assignee, alert):
         """
-        获取告警当前状态信息
-        :param alert_id: 告警ID
-        :return: 告警状态信息
+        格式化通知数据
+        :return: 格式化后的通知数据
         """
-        try:
-            alert = Alert.objects.get(alert_id=alert_id)
-            return {
-                "success": True,
-                "data": {
-                    "alert_id": alert_id,
-                    "status": alert.status,
-                    "status_display": alert.get_status_display(),
-                    "operator": alert.operator,
-                    "operate": alert.operate,
-                    "updated_at": alert.updated_at.isoformat(),
-                    "created_at": alert.created_at.isoformat()
-                }
-            }
-        except Alert.DoesNotExist:
-            logger.error(f"告警不存在: alert_id={alert_id}")
-            return {
-                "success": False,
-                "message": "告警不存在"
-            }
-
-    def get_available_operations(self, alert_id: str) -> dict:
-        """
-        根据当前告警状态和用户权限，获取可执行的操作列表
-        :param alert_id: 告警ID
-        :return: 可执行操作列表
-        """
-        try:
-            alert = Alert.objects.get(alert_id=alert_id)
-            available_ops = []
-
-            # 根据告警状态确定可执行操作
-            if alert.status == AlertStatus.UNASSIGNED:
-                available_ops.append("assign")  # 分派
-
-            elif alert.status == AlertStatus.PENDING:
-                if self.user in alert.operator:
-                    available_ops.append("acknowledge")  # 认领
-
-            elif alert.status == AlertStatus.PROCESSING:
-                if self.user in alert.operator:
-                    available_ops.extend(["reassign", "close", "resolve"])  # 转派、关闭、处理
-
-            logger.info(
-                f"获取可用操作: alert_id={alert_id}, user={self.user}, status={alert.status}, available_ops={available_ops}")
-
-            return {
-                "success": True,
-                "data": {
-                    "alert_id": alert_id,
-                    "current_status": alert.status,
-                    "available_operations": available_ops
-                }
-            }
-
-        except Alert.DoesNotExist:
-            logger.error(f"告警不存在: alert_id={alert_id}")
-            return {
-                "success": False,
-                "message": "告警不存在"
-            }
+        user_list = [i for i in assignee if i != self.user]
+        param_format = NotifyParamsFormat(username_list=user_list, alerts=[alert])
+        title = param_format.format_title()
+        content = param_format.format_content()
+        channel = "email"
+        object_id = alert.alert_id
+        return user_list, channel, title, content, object_id
 
 
 class BeatUpdateAlertStatu(object):

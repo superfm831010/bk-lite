@@ -344,3 +344,16 @@ class AggregationRuleType:
         (ALERT, "告警"),
         (INCIDENT, "事故"),
     )
+
+
+class NotifyResultStatus:
+    """通知结果"""
+    SUCCESS = "success"
+    FAILED = "failed"
+    PARTIAL_SUCCESS = "partial_success"
+
+    CHOICES = (
+        (SUCCESS, "成功"),
+        (FAILED, "失败"),
+        (PARTIAL_SUCCESS, "部分成功"),
+    )

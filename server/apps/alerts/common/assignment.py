@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.db import transaction
 
 from apps.alerts.error import AlertNotFoundError
-from apps.alerts.models import Alert, AlertAssignment
+from apps.alerts.models import Alert, AlertAssignment, SystemSetting
 from apps.alerts.constants import AlertStatus, AlertAssignmentMatchType
 from apps.alerts.service.alter_operator import AlertOperator
 from apps.alerts.service.reminder_service import ReminderService
@@ -478,4 +478,34 @@ def execute_auto_assignment_for_alerts(alert_ids: List[str]) -> Dict[str, Any]:
     operator = AlertAssignmentOperator(alert_ids)
     result = operator.execute_auto_assignment()
     logger.info(f"=== Auto assignment completed: {result} ===")
+    not_assignment_ids = set(alert_ids) - set(result.get("assignment_results", []))
+    if not_assignment_ids:
+        # 去进行兜底分派 使用全局分派 每60分钟分派一次 知道告警被相应后结束
+        pass
+
     return result
+
+
+def not_assignment_alert_notify():
+    """
+    获取未分派告警通知设置
+    :return: SystemSetting 实例
+    """
+    notify_setting = get_no_dispatch_alert_notice_setting()
+    if not notify_setting:
+        logger.warning("== No setting found for 'not_assignment_alert_notify' ==")
+        return
+
+    notify_every = notify_setting.value["notify_every"]
+    notify_people = notify_setting.value["notify_people"]
+    notify_channel = notify_setting.value["notify_channel"]
+
+
+def get_no_dispatch_alert_notice_setting():
+    key = "no_dispatch_alert_notice"
+    try:
+        setting = SystemSetting.objects.get(key=key, is_activate=True)
+        return setting
+    except SystemSetting.DoesNotExist:
+        logger.warning("No setting found for 'not_assignment_alert_notify'")
+        return None

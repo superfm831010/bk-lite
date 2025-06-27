@@ -6,7 +6,7 @@ from django_filters import FilterSet, CharFilter
 
 from apps.alerts.constants import AlertStatus
 from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment, AlertShield, Incident, \
-    CorrelationRules, AggregationRules
+    CorrelationRules, AggregationRules, SystemSetting
 
 
 class AlertSourceModelFilter(FilterSet):
@@ -182,3 +182,11 @@ class AggregationRulesModelFilter(FilterSet):
     class Meta:
         model = AggregationRules
         fields = ["name", "type"]
+
+
+class SystemSettingModelFilter(FilterSet):
+    search = CharFilter(field_name="key", lookup_expr="exact", label="系统设置键")
+
+    class Meta:
+        model = SystemSetting
+        fields = ["search"]

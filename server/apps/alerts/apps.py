@@ -22,15 +22,19 @@ def app_init(**kwargs):
     """应用初始化"""
 
     # 初始化内置告警源
+    logger.info("===Start Initializing Built-in Alert Sources===")
     try:
         from apps.alerts.service.init_alert_sources import init_builtin_alert_sources
         init_builtin_alert_sources()
     except Exception as e:
         logger.error(f"Failed to initialize built-in alert sources: {e}")
         pass
+    logger.info("===Built-in Alert Sources Initialization Completed===")
 
     # 初始化告警级别
     init_levels(**kwargs)
+    # 初始化系统设置
+    init_system_settings(**kwargs)
 
 
 def adapters(**kwargs):
@@ -60,3 +64,21 @@ def init_levels(**kwargs):
         pass
 
     logger.info("===Alert Levels Initialization Completed===")
+
+
+def init_system_settings(**kwargs):
+    """初始化系统设置"""
+    logger.info("===Start Initializing System Settings===")
+    try:
+        from apps.alerts.init_constants import SYSTEM_SETTINGS
+        settings_model = kwargs["sender"].models["systemsetting"]
+        for data in SYSTEM_SETTINGS:
+            settings_model.objects.get_or_create(
+                key=data["key"],
+                defaults=data
+            )
+    except Exception as e:
+        logger.error(f"Failed to initialize system settings: {e}")
+        pass
+
+    logger.info("===System Settings Initialization Completed===")
