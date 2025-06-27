@@ -96,7 +96,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     } catch {
       message.error(t('common.fetchFailed'));
     }
-  }, [fetchLlmModelsApi, initialData, form]);
+  }, [initialData, form]);
 
   const fetchDocumentsByType = useCallback(async (type: string, page: number, pageSize: number) => {
     if (!id) return;
@@ -136,11 +136,11 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     if (drawerVisible && activeDocumentTab && id) {
       fetchDocumentsByType(activeDocumentTab, currentPage, pageSize);
     }
-  }, [drawerVisible, activeDocumentTab, currentPage, pageSize, id, fetchDocumentsByType]);
+  }, [drawerVisible, activeDocumentTab, currentPage, pageSize, id]);
 
   useEffect(() => {
     fetchLlmModels();
-  }, [fetchLlmModels]);
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -197,7 +197,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       default:
         return type;
     }
-  }, [t]);
+  }, []);
 
   const handleFormValuesChange = useCallback((_: any, allValues: any) => {
     const newValues = {

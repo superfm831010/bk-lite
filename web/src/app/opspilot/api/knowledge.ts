@@ -1,6 +1,5 @@
 import useApiClient from '@/utils/request';
 import { KnowledgeValues } from '@/app/opspilot/types/knowledge';
-import { ResultItem } from '@/app/opspilot/types/global';
 
 export const useKnowledgeApi = () => {
   const { get, post, patch, del } = useApiClient();
@@ -161,7 +160,7 @@ export const useKnowledgeApi = () => {
   /**
    * Tests knowledge base with a query.
    */
-  const testKnowledge = async (params: any): Promise<ResultItem[]> => {
+  const testKnowledge = async (params: any): Promise<any> => {
     return post('/opspilot/knowledge_mgmt/knowledge_document/testing', params);
   };
 
@@ -281,6 +280,18 @@ export const useKnowledgeApi = () => {
     return get(`/opspilot/knowledge_mgmt/qa_pairs/${params.qa_pair_id}/get_details/`, { params });
   };
 
+  /**
+   * Fetches QA pairs for a specific chunk.
+   */
+  const fetchChunkQAPairs = async (indexName: string, chunkId: string): Promise<any> => {
+    return get('/opspilot/knowledge_mgmt/qa_pairs/get_chunk_qa_pairs/', {
+      params: {
+        index_name: indexName,
+        chunk_id: chunkId,
+      },
+    });
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -314,5 +325,6 @@ export const useKnowledgeApi = () => {
     deleteQAPair,
     createQAPairs,
     fetchQAPairDetails,
+    fetchChunkQAPairs,
   };
 };

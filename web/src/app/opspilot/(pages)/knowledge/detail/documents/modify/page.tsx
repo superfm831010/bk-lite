@@ -329,7 +329,7 @@ const KnowledgeModifyPage = () => {
           onFormDataChange={handleQAPairDataChange} 
         />
         <div className="fixed bottom-10 right-10 z-50 flex space-x-2">
-          <Button onClick={() => router.back()}>
+          <Button disabled={loading} onClick={() => router.back()}>
             {t('common.cancel')}
           </Button>
           <Button 
@@ -353,19 +353,15 @@ const KnowledgeModifyPage = () => {
 
     setLoading(true);
     try {
-      // 调用QAPairForm组件中的createQAPairs方法
       await formRef.current.createQAPairs();
-      // 创建成功后跳转到问答对列表
       router.push(`/opspilot/knowledge/detail/documents?id=${id}&name=${name}&desc=${desc}&type=qa_pairs`);
     } catch (error) {
-      // 错误处理已在QAPairForm中完成，这里不需要额外处理
       console.error('Create QA pairs failed:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // 如果是问答对类型，直接渲染简化的表单页面
   if (type === 'qa_pairs') {
     return (
       <div>
