@@ -122,12 +122,17 @@ const ViewList: React.FC<ViewListProps> = ({
   const [colony, setColony] = useState<string | null>(null);
   const [queryData, setQueryData] = useState<any[]>([]);
 
-  const isPod = useMemo(() => {
-    return objects.find((item) => item.id === objectId)?.name === 'Pod';
+  const instNamePlaceholder = useMemo(() => {
+    const type = objects.find((item) => item.id === objectId)?.type || '';
+    const baseTarget = objects
+      .filter((item) => item.type === type)
+      .find((item) => item.level === 'base');
+    const title: string = baseTarget?.display_name || t('monitor.source');
+    return title;
   }, [objects, objectId]);
 
-  const isNode = useMemo(() => {
-    return objects.find((item) => item.id === objectId)?.name === 'Node';
+  const isPod = useMemo(() => {
+    return objects.find((item) => item.id === objectId)?.name === 'Pod';
   }, [objects, objectId]);
 
   const namespaceList = useMemo(() => {
@@ -472,11 +477,7 @@ const ViewList: React.FC<ViewListProps> = ({
                 allowClear
                 showSearch
                 style={{ width: isPod ? 120 : 240 }}
-                placeholder={
-                  isNode || isPod
-                    ? t('monitor.views.colony')
-                    : t('monitor.instance')
-                }
+                placeholder={instNamePlaceholder}
                 onChange={handleColonyChange}
               >
                 {queryData.map((item) => (

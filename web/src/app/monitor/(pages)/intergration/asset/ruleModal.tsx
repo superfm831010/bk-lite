@@ -40,7 +40,7 @@ interface ModalProps {
 }
 
 const RuleModal = forwardRef<ModalRef, ModalProps>(
-  ({ onSuccess, monitorObject }, ref) => {
+  ({ onSuccess, monitorObject, objects }, ref) => {
     const { post, put } = useApiClient();
     const { t } = useTranslation();
     const { getMetricsGroup, getMonitorMetrics } = useMonitorApi();
@@ -209,8 +209,14 @@ const RuleModal = forwardRef<ModalRef, ModalProps>(
     const handleMetricChange = (val: number) => {
       setMetric(val);
       const target = metrics.find((item) => item.id === val);
-      const _labels = (target?.dimensions || []).map((item) => item.name);
-      setLabels(_labels);
+      const labelKeys = (target?.dimensions || []).map((item) => item.name);
+      const instanceIdKeys =
+        objects.find((item) => item.id === monitorObject)?.instance_id_keys ||
+        [];
+      const keys = [
+        ...new Set([...labelKeys, ...(instanceIdKeys as string[])]),
+      ];
+      setLabels(keys);
     };
 
     const handleLabelChange = (val: string, index: number) => {
