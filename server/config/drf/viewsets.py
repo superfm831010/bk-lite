@@ -11,13 +11,17 @@ class ModelViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """创建时补充基础Model中的字段"""
         user = serializer.context.get("request").user
-        username = getattr(user, "username", "guest")
+        username = getattr(user, "username", "admin")
         if hasattr(serializer.Meta.model, "created_by"):
             serializer.save(created_by=username, updated_by=username)
+        else:
+            serializer.save()
 
     def perform_update(self, serializer):
         """更新时补充基础Model中的字段"""
         user = serializer.context.get("request").user
-        username = getattr(user, "username", "guest")
+        username = getattr(user, "username", "admin")
         if hasattr(serializer.Meta.model, "updated_by"):
             serializer.save(updated_by=username)
+        else:
+            serializer.save()

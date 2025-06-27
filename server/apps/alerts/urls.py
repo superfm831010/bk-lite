@@ -7,7 +7,7 @@ from rest_framework import routers
 
 from apps.alerts.views.assignment_shield import AlertAssignmentModelViewSet, AlertShieldModelViewSet
 from apps.alerts.views.view import request_test, AlertSourceModelViewSet, AlterModelViewSet, EventModelViewSet, \
-    LevelModelViewSet, IncidentModelViewSet
+    LevelModelViewSet, IncidentModelViewSet, SystemSettingModelViewSet
 from apps.alerts.views.source import receiver_data
 from apps.alerts.views.rule_views import AggregationRulesViewSet, CorrelationRulesViewSet
 
@@ -16,6 +16,7 @@ router.register(r"api/alert_source", AlertSourceModelViewSet, basename="alert_so
 router.register(r"api/alerts", AlterModelViewSet, basename="alerts")
 router.register(r"api/events", EventModelViewSet, basename="events")
 router.register(r"api/level", LevelModelViewSet, basename="level")
+router.register(r"api/settings", SystemSettingModelViewSet, basename="settings")
 router.register(r"api/assignment", AlertAssignmentModelViewSet, basename="assignment")
 router.register(r"api/shield", AlertShieldModelViewSet, basename="shield")
 router.register(r"api/incident", IncidentModelViewSet, basename="incident")

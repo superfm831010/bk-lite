@@ -4,9 +4,11 @@
 # @Author: windyzhao
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.fields import empty
 
-from apps.alerts.constants import AlertStatus, IncidentStatus
-from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment, AlertShield, Incident
+from apps.alerts.constants import AlertStatus, IncidentStatus, NotifyResultStatus
+from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment, AlertShield, Incident, SystemSetting, \
+    NotifyResult
 
 
 class AlertSourceModelSerializer(serializers.ModelSerializer):
@@ -92,6 +94,14 @@ class AlertModelSerializer(serializers.ModelSerializer):
     first_event_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     last_event_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     incident_name = serializers.SerializerMethodField()
+    notify_status = serializers.SerializerMethodField()
+
+    def __init__(self, instance=None, data=empty, **kwargs):
+        super().__init__(instance=instance, data=data, **kwargs)
+        try:
+            self.alert_notify_result_map = self.set_alert_notify_result_map(instance)
+        except Exception:
+            self.alert_notify_result_map = {}
 
     class Meta:
         model = Alert
@@ -104,6 +114,22 @@ class AlertModelSerializer(serializers.ModelSerializer):
             "search_vector": {"write_only": True},
             "labels": {"write_only": True},
         }
+
+    @staticmethod
+    def set_alert_notify_result_map(instance):
+        result = {}
+        if isinstance(instance, list):
+            # 如果是列表实例，预处理通知状态
+            alerts = [i.alert_id for i in instance]
+            notify_result = NotifyResult.objects.filter(notify_type="alert", notify_object__in=alerts).values_list(
+                "notify_object", "notify_result")
+            notify_result_map = {i[0]: i[1] for i in notify_result}
+            for alert in instance:
+                alert_result = notify_result_map.get(alert.alert_id)
+                if alert_result:
+                    result.setdefault(alert.alert_id, []).append(alert_result == "success")
+
+        return result
 
     @staticmethod
     def get_duration(obj):
@@ -189,6 +215,20 @@ class AlertModelSerializer(serializers.ModelSerializer):
             return obj.incident_title_annotated
 
         return ""
+
+    def get_notify_status(self, obj):
+        """
+        获取告警通知状态
+        """
+        alert_result = self.alert_notify_result_map.get(obj.alert_id)
+        if not alert_result:
+            return ""
+        if all(alert_result):
+            return NotifyResultStatus.SUCCESS
+        if any(alert_result):
+            return NotifyResultStatus.FAILED
+        else:
+            return NotifyResultStatus.PARTIAL_SUCCESS
 
 
 class LevelModelSerializer(serializers.ModelSerializer):
@@ -353,3 +393,10 @@ class IncidentModelSerializer(serializers.ModelSerializer):
             return obj.operator
 
         return ""
+
+
+class SystemSettingModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SystemSetting
+        fields = "__all__"
+        extra_kwargs = {}

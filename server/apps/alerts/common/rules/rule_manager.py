@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from apps.alerts.common.rules.alert_rules import AlertRuleConfig
 from apps.alerts.common.aggregation.alert_engine import RuleEngine
-from apps.alerts.services.rule_manager import DatabaseRuleManager
+from apps.alerts.common.rules.db_rule_manager import DatabaseRuleManager
 from apps.core.logger import alert_logger as logger
 
 
