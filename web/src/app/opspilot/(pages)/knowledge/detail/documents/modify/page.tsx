@@ -8,6 +8,7 @@ import WebLinkForm from './webLinkForm';
 import CustomTextForm from './customTextForm';
 import PreprocessStep from './preprocessStep';
 import ExtractionStep from './extractionStep';
+import QAPairForm from './qaPairForm';
 import Icon from '@/components/icon'
 import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
@@ -56,6 +57,13 @@ const KnowledgeModifyPage = () => {
   const [preprocessConfig, setPreprocessConfig] = useState<any>(null);
   const [webLinkData, setWebLinkData] = useState<{ name: string, link: string, deep: number, sync_enabled?: boolean, sync_time?: string }>({ name: '', link: '', deep: 1 });
   const [manualData, setManualData] = useState<{ name: string, content: string }>({ name: '', content: '' });
+  interface QAPairFormData {
+    llmModel: number;
+    qaCount: number;
+    selectedDocuments: string[];
+  }
+
+  const [qaPairData, setQaPairData] = useState<QAPairFormData>({ llmModel: 0, qaCount: 10, selectedDocuments: [] });
   const [pageLoading, setPageLoading] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [isUpdate, setIsUpdate] = useState<boolean>(false);
@@ -66,8 +74,8 @@ const KnowledgeModifyPage = () => {
     file: t('knowledge.localFile'),
     web_page: t('knowledge.webLink'),
     manual: t('knowledge.cusText'),
+    qa_pairs: t('knowledge.qaPairs.title'),
   };
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -299,6 +307,10 @@ const KnowledgeModifyPage = () => {
     setManualData(data);
   }, []);
 
+  const handleQAPairDataChange = useCallback((data: { llmModel: number, qaCount: number, selectedDocuments: string[] }) => {
+    setQaPairData(data);
+  }, []);
+
   const handleDone = () => {
     router.push(`/opspilot/knowledge/detail/documents?id=${id}&name=${name}&desc=${desc}&type=${type}`);
   };
@@ -306,6 +318,72 @@ const KnowledgeModifyPage = () => {
   const handleToTesting = () => {
     router.push(`/opspilot/knowledge/detail/testing?id=${id}&name=${name}&desc=${desc}`);
   };
+
+  const renderQAPairContent = () => {
+    return (
+      <div className="px-7 py-5">
+        <QAPairForm 
+          ref={formRef}
+          initialData={qaPairData} 
+          onFormChange={handleValidationChange} 
+          onFormDataChange={handleQAPairDataChange} 
+        />
+        <div className="fixed bottom-10 right-10 z-50 flex space-x-2">
+          <Button onClick={() => router.back()}>
+            {t('common.cancel')}
+          </Button>
+          <Button 
+            type="primary" 
+            onClick={handleCreateQAPair} 
+            disabled={!isStepValid} 
+            loading={loading}
+          >
+            {t('common.confirm')}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const handleCreateQAPair = async () => {
+    if (!formRef.current) {
+      message.error('表单未初始化');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 调用QAPairForm组件中的createQAPairs方法
+      await formRef.current.createQAPairs();
+      // 创建成功后跳转到问答对列表
+      router.push(`/opspilot/knowledge/detail/documents?id=${id}&name=${name}&desc=${desc}&type=qa_pairs`);
+    } catch (error) {
+      // 错误处理已在QAPairForm中完成，这里不需要额外处理
+      console.error('Create QA pairs failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 如果是问答对类型，直接渲染简化的表单页面
+  if (type === 'qa_pairs') {
+    return (
+      <div>
+        <Breadcrumb>
+          <Breadcrumb.Item>{t('knowledge.menu')}</Breadcrumb.Item>
+          <Breadcrumb.Item>{sourceTypeToDisplayText[type]}</Breadcrumb.Item>
+          <Breadcrumb.Item>{t('common.create')}</Breadcrumb.Item>
+        </Breadcrumb>
+        {pageLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <Spin />
+          </div>
+        ) : (
+          renderQAPairContent()
+        )}
+      </div>
+    );
+  }
 
   const renderStepContent = () => {
     switch (type) {
@@ -315,6 +393,8 @@ const KnowledgeModifyPage = () => {
         return <WebLinkForm ref={formRef} initialData={webLinkData} onFormChange={handleValidationChange} onFormDataChange={handleWebLinkDataChange} />;
       case 'manual':
         return <CustomTextForm initialData={manualData} onFormChange={handleValidationChange} onFormDataChange={handleManualDataChange} />;
+      case 'qa_pairs':
+        return <QAPairForm initialData={qaPairData} onFormChange={handleValidationChange} onFormDataChange={handleQAPairDataChange} />;
       default:
         return <LocalFileUpload onFileChange={handleFileChange} initialFileList={fileList} />;
     }

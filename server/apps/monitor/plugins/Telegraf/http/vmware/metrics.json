@@ -9,6 +9,9 @@
       "type": "VMWare",
       "level": "base",
       "description": "",
+      "default_metric": "any({instance_type='vmware'}) by (instance_id)",
+      "instance_id_keys": ["instance_id"],
+      "supplementary_indicators": ["vmware_esxi_count", "vmware_datastore_count", "vmware_vm_count"],
       "metrics": [
         {
           "metric_group": "Quantity",
@@ -51,6 +54,9 @@
       "type": "VMWare",
       "level": "derivative",
       "description": "",
+      "default_metric": "any({resource_type='vmware_esxi'}) by (instance_id, resource_id)",
+      "instance_id_keys": ["instance_id", "resource_id"],
+      "supplementary_indicators": ["esxi_cpu_usage_average_gauge", "esxi_mem_usage_average_gauge", "esxi_disk_read_average_gauge"],
       "metrics": [
         {
           "metric_group": "CPU",
@@ -170,6 +176,9 @@
       "type": "VMWare",
       "level": "derivative",
       "description": "",
+      "default_metric": "any({resource_type='vmware_vm'}) by (instance_id, resource_id)",
+      "instance_id_keys": ["instance_id", "resource_id"],
+      "supplementary_indicators": ["vm_cpu_usage_average_gauge", "vm_mem_usage_average_gauge", "vm_disk_io_usage_gauge"],
       "metrics": [
         {
           "metric_group": "CPU",
@@ -322,6 +331,9 @@
       "type": "VMWare",
       "level": "derivative",
       "description": "",
+      "default_metric": "any({resource_type='vmware_ds'}) by (instance_id, resource_id)",
+      "instance_id_keys": ["instance_id", "resource_id"],
+      "supplementary_indicators": ["data_storage_disk_used_average_gauge", "data_storage_store_accessible_gauge"],
       "metrics": [
         {
           "metric_group": "Default",

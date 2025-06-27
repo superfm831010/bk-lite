@@ -1,5 +1,6 @@
 import { FC } from 'react';
 import styles from './index.module.scss';
+import Icon from '@/components/icon';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
 interface UserAvatarProps {
@@ -37,7 +38,7 @@ const UserAvatar: FC<UserAvatarProps> = ({
         className={`${styles['member-circle']} ${size === 'small' ? styles.small : ''}`}
         style={{ background: getRandomColor() }}
       >
-        {userName.slice(0, 1).toUpperCase()}
+        <Icon type="jiedianhuiyuanfenzu" />
       </span>
       <EllipsisWithTooltip text={userName} className={styles['member-name']} />
     </div>

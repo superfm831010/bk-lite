@@ -94,6 +94,7 @@
         "declareIncident": "升级为事故",
         "declareIncidentErrorMsg": "你选择的alert已关联incident",
         "createIncident": "创建事故",
+        "createAndLinkIncident": "创建并关联事故",
         "linkIncident": "关联事故",
         "confirmOperate": "确认操作",
         "claim": "认领",

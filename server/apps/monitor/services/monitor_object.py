@@ -5,7 +5,7 @@ from collections import defaultdict
 from django.db import transaction
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.monitor.constants import MONITOR_OBJS, OBJ_ORDER, DEFAULT_OBJ_ORDER
+from apps.monitor.constants import OBJ_ORDER, DEFAULT_OBJ_ORDER, MONITOR_OBJ_KEYS
 from apps.monitor.models.monitor_metrics import Metric
 from apps.monitor.models.monitor_object import MonitorInstance, MonitorObject, MonitorInstanceOrganization
 from apps.monitor.models.setting import Setting
@@ -79,7 +79,8 @@ class MonitorObjectService:
         monitor_obj = MonitorObject.objects.filter(id=monitor_object_id).first()
         if not monitor_obj:
             raise BaseAppException("Monitor object does not exist")
-        obj_metric_map = {i["name"]: i for i in MONITOR_OBJS}
+        monitor_objs = MonitorObject.objects.all().values(*MONITOR_OBJ_KEYS)
+        obj_metric_map = {i["name"]: i for i in monitor_objs}
         obj_metric_map = obj_metric_map.get(monitor_obj.name)
         if not obj_metric_map:
             raise BaseAppException("Monitor object default metric does not exist")

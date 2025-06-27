@@ -5,6 +5,9 @@
   "icon": "zhongjianjian",
   "type": "Middleware",
   "description": "",
+  "default_metric": "any({instance_type='clickhouse'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["clickhouse_events_query", "clickhouse_events_inserted_rows", "clickhouse_asynchronous_metrics_load_average1"],
   "metrics": [
     {
       "metric_group": "Uptime",

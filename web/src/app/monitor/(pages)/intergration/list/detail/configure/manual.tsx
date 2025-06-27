@@ -1,21 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Button, message, InputNumber, Select } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import {
-  deepClone,
-  getConfigByPluginName,
-  getConfigByObjectName,
-} from '@/app/monitor/utils/common';
 import { TIMEOUT_UNITS } from '@/app/monitor/constants/monitor';
 import { useSearchParams } from 'next/navigation';
 import useApiClient from '@/utils/request';
 import useMonitorApi from '@/app/monitor/api';
-import { useFormItems } from '@/app/monitor/hooks/intergration';
 import CodeEditor from '@/app/monitor/components/codeEditor';
 import { TableDataItem } from '@/app/monitor/types';
 const { Option } = Select;
 import Permission from '@/components/permission';
 import { IntergrationAccessProps } from '@/app/monitor/types/monitor';
+import { useMonitorConfig } from '@/app/monitor/hooks/intergration/index';
+import { cloneDeep } from 'lodash';
 
 const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   showInterval = true,
@@ -25,30 +21,28 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   const searchParams = useSearchParams();
   const { isLoading } = useApiClient();
   const { checkMonitorInstance } = useMonitorApi();
-  const pluginName = searchParams.get('collect_type') || '';
+  const configs = useMonitorConfig();
+  const pluginName = searchParams.get('plugin_name') || '';
   const objId = searchParams.get('id') || '';
   const objectName = searchParams.get('name') || '';
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [configMsg, setConfigMsg] = useState<string>('');
 
+  const configsInfo = useMemo(() => {
+    return configs.getPlugin({
+      objectName,
+      mode: 'manual',
+      pluginName,
+    });
+  }, [pluginName, objectName]);
+
   const collectType = useMemo(() => {
-    return getConfigByPluginName(pluginName, 'collect_type');
-  }, [pluginName]);
+    return configsInfo.collect_type || '';
+  }, [configsInfo]);
 
-  const instanceType = useMemo(() => {
-    return getConfigByObjectName(objectName, 'instance_type');
-  }, [objectName]);
-
-  const configTypes = useMemo(() => {
-    return getConfigByPluginName(pluginName, 'config_type');
-  }, [pluginName]);
-
-  // 使用自定义 Hook
-  const { formItems, configText } = useFormItems({
-    collectType,
-    columns: [],
-    pluginName,
-  });
+  const formItems = useMemo(() => {
+    return configsInfo.formItems;
+  }, [configsInfo]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -58,119 +52,26 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   const initData = () => {
     form.setFieldsValue({
       interval: collectType === 'http' ? 60 : 10,
+      ...configsInfo.defaultForm,
     });
-    switch (collectType) {
-      case 'host':
-        form.setFieldsValue({
-          metric_type: configTypes.filter((item: string) => item !== 'gpu'),
-        });
-        break;
-      case 'ipmi':
-        form.setFieldsValue({
-          protocol: 'lanplus',
-        });
-        break;
-      case 'snmp':
-        form.setFieldsValue({
-          port: 161,
-          version: 2,
-          timeout: 10,
-        });
-      case 'middleware':
-        form.setFieldsValue({
-          timeout: 10,
-        });
-    }
   };
 
   const handleSave = () => {
     form.validateFields().then((values) => {
-      // 处理表单提交逻辑
-      const _values = deepClone(values);
-      _values.instance_id = getInstId(_values);
-      _values.instance_type = instanceType;
-      _values.collect_type = collectType;
-      _values.config_type = configTypes[0] || '';
-      getConfigText(_values);
+      const params = cloneDeep(values);
+      getConfigText(params);
     });
-  };
-
-  const getInstId = (row: TableDataItem) => {
-    if (['snmp', 'ipmi'].includes(collectType)) {
-      return objectName + '-' + (row.monitor_ip || '');
-    }
-    if (pluginName === 'Tencent Cloud') {
-      return row.monitor_url;
-    }
-    if (['bkpull', 'database'].includes(collectType)) {
-      return row.server || `${row.host}:${row.port}`;
-    }
-    switch (collectType) {
-      case 'host':
-        return row.monitor_ip;
-      case 'trap':
-        return 'trap' + row.monitor_ip;
-      case 'http':
-        return `vc-${row.host}`;
-      case 'docker':
-        return row.endpoint;
-      case 'exporter':
-        return `${row.HOST}:${row.PORT}`;
-      default:
-        return row.monitor_url;
-    }
   };
 
   const getConfigText = async (params: TableDataItem) => {
     try {
       setConfirmLoading(true);
-      await checkMonitorInstance(objId, {
-        instance_id: params.instance_id,
-        instance_name: params.instance_id,
-      });
-      let _configMsg = deepClone(configText);
-      if (collectType === 'snmp') {
-        _configMsg = _configMsg[`v${params.version}`];
-      }
-      if (collectType === 'host') {
-        _configMsg = params.metric_type.reduce((pre: string, cur: string) => {
-          return (pre += _configMsg[cur]);
-        }, '');
-      }
-      if (pluginName === 'MongoDB' && params.password && params.username) {
-        _configMsg = insertCredentialsToMongoDB(_configMsg, params);
-      }
-      setConfigMsg(replaceTemplate(_configMsg || '', params));
+      await checkMonitorInstance(objId, configsInfo.getParams(params));
+      setConfigMsg(configsInfo.getConfigText(params));
       message.success(t('common.successfullyAdded'));
     } finally {
       setConfirmLoading(false);
     }
-  };
-
-  const insertCredentialsToMongoDB = (
-    config: string,
-    params: TableDataItem
-  ): string => {
-    // 正则匹配 "mongodb://" 后的部分，直到 "$host:$port"
-    const regex = /(mongodb:\/\/)(\$host:\$port)/;
-    // 使用正则替换，将 username 和 password 插入到匹配的部分中
-    const updatedConfig = config.replace(
-      regex,
-      `$1${params.username}:${params.password}@$2`
-    );
-    return updatedConfig;
-  };
-
-  const replaceTemplate = (
-    template: string,
-    data: { [key: string]: string | number }
-  ): string => {
-    return Object.keys(data).reduce((acc, key) => {
-      // 使用正则表达式来匹配模板字符串中的 ${key} 或 $key
-      const regex = new RegExp(`\\$${key}`, 'g');
-      // 替换匹配到的内容为对象中的值
-      return acc.replace(regex, (data[key] || 'null').toString());
-    }, template);
   };
 
   return (

@@ -8,19 +8,8 @@
             "name": "Incidents",
             "children": [
                 {
-                    "id": "incidents",
-                    "display_name": "Incidents",
-                    "name": "incidents",
-                    "operation": [
-                        "View",
-                        "Edit",
-                        "Delete"
-                    ]
-                },
-                {
-                    "id": "incident_detail",
-                    "display_name": "Incident Detail",
-                    "name": "incident_detail",
+                    "id": "Incidents",
+                    "name": "Incidents",
                     "operation": [
                         "View",
                         "Edit",
@@ -33,9 +22,8 @@
             "name": "Alarms",
             "children": [
                 {
-                    "id": "alarms",
-                    "display_name": "Alarms",
-                    "name": "alarms",
+                    "id": "Alarms",
+                    "name": "Alarms",
                     "operation": [
                         "View",
                         "Edit",
@@ -48,17 +36,8 @@
             "name": "Integration",
             "children": [
                 {
-                    "id": "integration",
-                    "display_name": "Integration",
-                    "name": "integration",
-                    "operation": [
-                        "View"
-                    ]
-                },
-                {
-                    "id": "integration_detail",
-                    "display_name": "Integration Detail",
-                    "name": "integration_detail",
+                    "id": "Integration",
+                    "name": "Integration",
                     "operation": [
                         "View"
                     ]
@@ -69,17 +48,8 @@
             "name": "Settings",
             "children": [
                 {
-                    "id": "settings",
-                    "display_name": "Settings",
-                    "name": "settings",
-                    "operation": [
-                        "View"
-                    ]
-                },
-                {
-                    "id": "correlationRules",
-                    "display_name": "Correlation Rules",
-                    "name": "correlationRules",
+                    "id": "correlation_rules",
+                    "name": "correlation_rules",
                     "operation": [
                         "View",
                         "Add",
@@ -88,9 +58,8 @@
                     ]
                 },
                 {
-                    "id": "alertAssign",
-                    "display_name": "Alert Assign",
-                    "name": "alertAssign",
+                    "id": "alert_assign",
+                    "name": "alert_assign",
                     "operation": [
                         "View",
                         "Add",
@@ -99,9 +68,8 @@
                     ]
                 },
                 {
-                    "id": "shieldStrategy",
-                    "display_name": "Shield Strategy",
-                    "name": "shieldStrategy",
+                    "id": "shield_strategy",
+                    "name": "shield_strategy",
                     "operation": [
                         "View",
                         "Add",
@@ -110,9 +78,8 @@
                     ]
                 },
                 {
-                    "id": "globalConfig",
-                    "display_name": "Global Configuration",
-                    "name": "globalConfig",
+                    "id": "global_config",
+                    "name": "global_config",
                     "operation": [
                         "View",
                         "Edit"
@@ -131,40 +98,40 @@
             "name": "manager",
             "role_name": "alarm_manager",
             "menus": [
-                "incidents-View",
-                "incidents-Edit",
-                "incidents-Delete",
-                "integration-View",
-                "integration-Detail",
-                "correlationRules-View",
-                "correlationRules-Add",
-                "correlationRules-Edit",
-                "correlationRules-Delete",
-                "alertAssign-View",
-                "alertAssign-Add",
-                "alertAssign-Edit",
-                "alertAssign-Delete",
-                "shieldStrategy-View",
-                "shieldStrategy-Add",
-                "shieldStrategy-Edit",
-                "shieldStrategy-Delete",
-                "alarms-View",
-                "alarms-Edit",
-                "alarms-Delete",
-                "globalConfig-View",
-                "globalConfig-Edit"
+                "Incidents-View",
+                "Incidents-Edit",
+                "Incidents-Delete",
+                "Alarms-View",
+                "Alarms-Edit",
+                "Alarms-Delete",
+                "Integration-View",
+                "Integration-Detail",
+                "correlation_rules-View",
+                "correlation_rules-Add",
+                "correlation_rules-Edit",
+                "correlation_rules-Delete",
+                "alert_assign-View",
+                "alert_assign-Add",
+                "alert_assign-Edit",
+                "alert_assign-Delete",
+                "shield_strategy-View",
+                "shield_strategy-Add",
+                "shield_strategy-Edit",
+                "shield_strategy-Delete",
+                "global_config-View",
+                "global_config-Edit"
             ]
         },
         {
             "name": "normal",
             "role_name": "alarm_normal",
             "menus": [
-                "incidents-View",
-                "integration-View",
-                "correlationRules-View",
-                "alertAssign-View",
-                "shieldStrategy-View",
-                "alarms-View"
+                "Incidents-View",
+                "Integration-View",
+                "Alarms-View",
+                "correlation_rules-View",
+                "alert_assign-View",
+                "shield_strategy-View"
             ]
         }
     ]

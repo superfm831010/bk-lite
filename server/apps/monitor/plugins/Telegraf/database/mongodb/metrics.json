@@ -5,6 +5,9 @@
   "icon": "mongodb",
   "type": "Database",
   "description": "",
+  "default_metric": "any({instance_type='mongodb'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["mongodb_connections_current", "mongodb_latency_commands", "mongodb_resident_megabytes"],
   "metrics": [
     {
       "metric_group": "Active Operations",

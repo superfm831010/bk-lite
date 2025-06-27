@@ -5,6 +5,9 @@
   "icon": "rabbitmq",
   "type": "Middleware",
   "description": "",
+  "default_metric": "any({instance_type='rabbitmq'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["rabbitmq_overview_messages_ready"],
   "metrics": [
     {
       "metric_group": "Exchange",

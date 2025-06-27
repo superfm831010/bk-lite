@@ -253,6 +253,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
                     rowData={[formData]}
                     onSuccess={() => {
                       handleAction();
+                      setGroupVisible(false);
                     }}
                   />
                 )}
