@@ -1,0 +1,9 @@
+{
+  "plugin": "Apache-Exporter",
+  "plugin_desc": "Apache Exporter is used to collect and export metrics from Apache HTTP servers, including request counts, response times, active connections, and more, to help monitor the health and performance of Apache instances.",
+  "name": "Apache",
+  "icon": "apache",
+  "type": "Middleware",
+  "description": "",
+  "metrics": []
+}

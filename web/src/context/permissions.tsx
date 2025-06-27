@@ -56,16 +56,20 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
   const [permissions, setPermissions] = useState<Permissions>(defaultPermissions);
   const [loading, setLoading] = useState(true);
 
-  const extractPermissions = (menus: MenuItem[], accumulated: Permissions = {}): Permissions => {
+  const extractPermissions = (
+    menus: MenuItem[],
+    accumulated: Permissions = {},
+    parentMenu?: MenuItem
+  ): Permissions => {
     for (const item of menus) {
       if (item.url && item.operation?.length) {
         accumulated[item.url] = item.operation;
       }
       if (item.url && item.isNotMenuItem) {
-        accumulated[item.url] = ['View'];
+        accumulated[item.url] = ['View', ...(parentMenu?.operation || [])];
       }
       if (item.children) {
-        extractPermissions(item.children, accumulated);
+        extractPermissions(item.children, accumulated, item);
       }
     }
     return accumulated;

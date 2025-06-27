@@ -274,7 +274,13 @@ COLLECT_OBJ_TREE = [
              "task_type": CollectPluginTypes.MIDDLEWARE,
              "type": CollectDriverTypes.JOB},
             {"id": "kafka", "model_id": "kafka", "name": "Kafka", "task_type": CollectPluginTypes.MIDDLEWARE,
-             "type": CollectDriverTypes.JOB}
+             "type": CollectDriverTypes.JOB},
+            {"id": "etcd", "model_id": "etcd", "name": "Etcd", "task_type": CollectPluginTypes.MIDDLEWARE,
+             "type": CollectDriverTypes.JOB},
+            {"id": "rabbitmq", "model_id": "rabbitmq", "name": "RabbitMQ", "task_type": CollectPluginTypes.MIDDLEWARE,
+             "type": CollectDriverTypes.JOB},
+            {"id": "tomcat", "model_id": "tomcat", "name": "Tomcat", "task_type": CollectPluginTypes.MIDDLEWARE,
+             "type": CollectDriverTypes.JOB},
         ],
     }
 

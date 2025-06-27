@@ -1,6 +1,6 @@
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from src.entity.mlops.anomaly_detection.training_data_point import TrainingDataPoint
+from src.entity.mlops.base.training_data_point import TrainingDataPoint
 
 
 class AnomalyDetectionTrainRequest(BaseModel):

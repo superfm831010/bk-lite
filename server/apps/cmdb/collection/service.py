@@ -1449,6 +1449,7 @@ class HostCollectMetrics(CollectBase):
                     result.append(data)
             self.result[self.model_id] = result
 
+
 class RedisCollectMetrics(CollectBase):
     @property
     def _metrics(self):
@@ -1477,7 +1478,7 @@ class RedisCollectMetrics(CollectBase):
     @property
     def model_field_mapping(self):
         mapping = {
-            "inst_name": lambda data:  f"{data['ip_addr']}-redis-{data['port']}",
+            "inst_name": lambda data: f"{data['ip_addr']}-redis-{data['port']}",
             "ip_addr": "ip_addr",
             "port": "port",
             "version": "version",
@@ -1488,6 +1489,7 @@ class RedisCollectMetrics(CollectBase):
         }
 
         return mapping
+
     def format_metrics(self):
         for metric_key, metrics in self.collection_metrics_dict.items():
             result = []
@@ -1513,6 +1515,7 @@ class RedisCollectMetrics(CollectBase):
 class MiddlewareCollectMetrics(CollectBase):
     @property
     def _metrics(self):
+        assert self.model_id in MIDDLEWARE_METRIC_MAP, f"{self.model_id} needs to be defined in MIDDLEWARE_METRIC_MAP"
         return MIDDLEWARE_METRIC_MAP[self.model_id]
 
     def format_data(self, data):
@@ -1587,6 +1590,41 @@ class MiddlewareCollectMetrics(CollectBase):
                 "socket_receive_buffer_bytes": "socket_receive_buffer_bytes",  # 接收缓冲区大小
                 "socket_request_max_bytes": "socket_request_max_bytes",  # 单个请求套接字最大字节数
                 "socket_send_buffer_bytes": "socket_send_buffer_bytes",  # 发送缓冲区大小
+            },
+            "etcd": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "data_dir": "data_dir",  # 快照文件路径
+                "conf_file_path": "conf_file_path",
+                "peer_port": "peer_port",  # 集群通讯端口
+                "install_path": "install_path",
+            },
+            "rabbitmq": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "allport": "allport",
+                "node_name": "node_name",
+                "log_path": "log_path",
+                "conf_path": "conf_path",
+                "version": "version",
+                "enabled_plugin_file": "enabled_plugin_file",
+                "erlang_version": "erlang_version",
+            },
+            "tomcat": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "catalina_path": "catalina_path",
+                "version": "version",
+                "xms": "xms",
+                "xmx":"xmx",
+                "max_perm_size":"max_perm_size",
+                "permsize": "permsize",
+                "log_path": "log_path",
+                "java_version": "java_version",
             }
 
         }
@@ -1868,7 +1906,7 @@ class QCloudCollectMetrics(CollectBase):
                 "status": "status",
                 "protocol": "protocol",
                 "type": "type",
-                "net_limit": (int,"net_limit"),
+                "net_limit": (int, "net_limit"),
                 "size_gib": (int, "size_gib"),
             },
             "qcloud_domain": {

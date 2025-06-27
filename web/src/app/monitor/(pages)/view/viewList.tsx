@@ -9,10 +9,9 @@ import {
   getEnumValueUnit,
   getEnumColor,
   getK8SData,
-  getConfigByPluginName,
-  getConfigByObjectName,
   getBaseInstanceColumn,
 } from '@/app/monitor/utils/common';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
 import { useRouter } from 'next/navigation';
 import {
   IntergrationItem,
@@ -56,6 +55,7 @@ const ViewList: React.FC<ViewListProps> = ({
   const { t } = useTranslation();
   const router = useRouter();
   const { convertToLocalizedTime } = useLocalizedTime();
+  const { getCollectType, getTableDiaplay } = useObjectConfigInfo();
   const viewRef = useRef<ModalRef>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [searchText, setSearchText] = useState<string>('');
@@ -262,13 +262,13 @@ const ViewList: React.FC<ViewListProps> = ({
         : (k8sQuery || []).map((item: string) => ({ id: item, child: [] }));
       setQueryData(queryForm);
       const _plugins = res[1].map((item: IntergrationItem) => ({
-        label: getConfigByPluginName(item.name, 'collect_type'),
+        label: getCollectType(objName as string, item.name as string),
         value: item.id,
       }));
       setPlugins(_plugins);
       setMetrics(res[0] || []);
       if (objName) {
-        const filterMetrics = getConfigByObjectName(objName, 'tableDiaplay');
+        const filterMetrics = getTableDiaplay(objName);
         const _columns = filterMetrics.map((item: any) => {
           const target = (res[0] || []).find(
             (tex: MetricItem) => tex.name === item.key

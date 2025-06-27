@@ -437,7 +437,8 @@
       "color": "颜色",
       "note": "K8S的监控数据仅支持主动上报，暂不支持在此处接入。",
       "deleteRules": "仅删除规则",
-      "deleteGroup": "删除并清空分组"
+      "deleteGroup": "删除并清空分组",
+      "conditionDes": "触发监控的具体规则。"
     }
   }
 }
