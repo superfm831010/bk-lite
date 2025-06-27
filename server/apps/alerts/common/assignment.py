@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.db import transaction
 
 from apps.alerts.error import AlertNotFoundError
-from apps.alerts.models import Alert, AlertAssignment, SystemSetting
+from apps.alerts.models import Alert, AlertAssignment
 from apps.alerts.constants import AlertStatus, AlertAssignmentMatchType
 from apps.alerts.service.alter_operator import AlertOperator
 from apps.alerts.service.reminder_service import ReminderService
