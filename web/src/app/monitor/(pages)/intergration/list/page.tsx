@@ -7,11 +7,8 @@ import intergrationStyle from './index.module.scss';
 import { SettingOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import Icon from '@/components/icon';
-import {
-  deepClone,
-  getConfigByPluginName,
-  getIconByObjectName,
-} from '@/app/monitor/utils/common';
+import { deepClone, getIconByObjectName } from '@/app/monitor/utils/common';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
 import { useRouter } from 'next/navigation';
 import { ObjectItem, TreeSortData } from '@/app/monitor/types/monitor';
 import { ModalRef, TableDataItem, TreeItem } from '@/app/monitor/types';
@@ -34,6 +31,7 @@ const Intergration = () => {
   const token = authContext?.token || null;
   const tokenRef = useRef(token);
   const searchParams = useSearchParams();
+  const { getCollectType } = useObjectConfigInfo();
   const objId = searchParams.get('objId') || '';
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
@@ -198,11 +196,14 @@ const Intergration = () => {
   };
 
   const linkToDetial = (app: ObjectItem) => {
+    const { id, icon, name } = getObjectInfo();
     const row: TableDataItem = {
-      ...getObjectInfo(),
-      plugin_name: app?.display_name,
+      id,
+      icon,
+      name,
+      plugin_name: app?.name,
       plugin_id: app?.id,
-      collect_type: app?.name,
+      plugin_display_name: app?.display_name,
       plugin_description: app?.display_description || '--',
     };
     const params = new URLSearchParams(row);
@@ -292,7 +293,7 @@ const Intergration = () => {
                         {app.display_name || '--'}
                       </h2>
                       <Tag className="mt-[4px]">
-                        {getConfigByPluginName(app.name, 'collect_type')}
+                        {getCollectType(getObjectInfo().name, app.name)}
                       </Tag>
                     </div>
                   </div>
