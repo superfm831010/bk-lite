@@ -65,7 +65,12 @@ class ChunkHelper(ChatServerHelper):
             "semantic_chunk_model": "",
             "preview": "false",
         }
-        metadata = {"base_chunk_id": chunk_obj["chunk_id"], "qa_pairs_id": str(qa_pairs_id)}
+        metadata = {
+            "enabled": True,
+            "base_chunk_id": chunk_obj["chunk_id"],
+            "qa_pairs_id": str(qa_pairs_id),
+            "is_doc": "0",
+        }
 
         for i in qa_paris:
             params = dict(kwargs, **{"content": i["question"]})

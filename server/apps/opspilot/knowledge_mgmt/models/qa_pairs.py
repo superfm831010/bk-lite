@@ -19,3 +19,10 @@ class QAPairs(MaintainerInfo, TimeInfo):
     qa_count = models.IntegerField(default=0, verbose_name="问答对数量")
     document_id = models.IntegerField(default=0, verbose_name="文档ID")
     document_source = models.CharField(max_length=50, default="file", verbose_name="文档来源")
+
+    def delete(self, *args, **kwargs):
+        from apps.opspilot.utils.chunk_helper import ChunkHelper
+
+        index_name = self.knowledge_base.knowledge_index_name()
+        ChunkHelper.delete_es_content(index_name, self.id)
+        return super().delete(*args, **kwargs)  # 调用父类的delete方法来执行实际的删除操作

@@ -81,7 +81,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
 
         service = KnowledgeSearchService()
         knowledge_base = KnowledgeBase.objects.get(id=knowledge_base_id)
-        docs = service.search(knowledge_base, query, kwargs)
+        docs, qa_docs = service.search(knowledge_base, query, kwargs)
         doc_ids = [doc["knowledge_id"] for doc in docs]
         knowledge_document_list = KnowledgeDocument.objects.filter(id__in=set(doc_ids)).values(
             "id", "name", "knowledge_source_type", "created_by", "created_at"
@@ -94,7 +94,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
                 logger.warning(f"knowledge_id: {knowledge_id} not found")
                 continue
             i.update(doc_obj)
-        return JsonResponse({"result": True, "data": docs})
+        return JsonResponse({"result": True, "data": {"docs": docs, "qa_docs": qa_docs}})
 
     @action(methods=["GET"], detail=True)
     def get_detail(self, request, *args, **kwargs):
@@ -102,19 +102,21 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         page = int(request.GET.get("page", 1))
         page_size = int(request.GET.get("page_size", 10))
         search_text = request.GET.get("search_text", "")
+        index_name = instance.knowledge_index_name()
         res = ChunkHelper.get_document_es_chunk(
-            instance.knowledge_index_name(),
+            index_name,
             page,
             page_size,
             search_text,
-            metadata_filter={"knowledge_id": str(instance.id)},
+            metadata_filter={"knowledge_id": str(instance.id), "is_doc": "1"},
         )
         return JsonResponse(
             {
                 "result": True,
                 "data": {
                     "items": [
-                        {"id": i["metadata"]["chunk_id"], "content": i["page_content"]} for i in res["documents"]
+                        {"id": i["metadata"]["chunk_id"], "content": i["page_content"], "index_name": index_name}
+                        for i in res["documents"]
                     ],
                     "count": res["count"],
                 },
