@@ -62,3 +62,21 @@ export interface TableData {
   train_status_display: string;
   [key: string]: any
 }
+
+export interface QAPairData {
+  id: number;
+  permissions: string[];
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  updated_by: string;
+  domain: string;
+  updated_by_domain: string;
+  name: string;
+  description: string | null;
+  qa_count: number;
+  document_id: number;
+  document_source: string;
+  knowledge_base: number;
+  llm_model: number;
+}

@@ -28,6 +28,18 @@
     "linkSubTitle": "Use web links as a knowledgwe source.",
     "cusText": "Custom Text",
     "cusTextSubTitle": "Enter custom text as a knowledge source.",
+    "qaPairs": {
+      "title": "QA Pairs",
+      "name": "Name",
+      "qaCount": "QA Count",
+      "subTitle": "Generate QA pairs based on existing documents as a knowledge source.",
+      "llmModel": "LLM Model",
+      "targetDocuments": "Target Documents",
+      "selectedDocuments": "Selected Documents",
+      "selectDocuments": "Select Documents",
+      "documentsSelected": "documents selected",
+      "noDocumentsSelected": "No documents selected"
+    },
     "applyConfig": "Apply Config",
     "ranking": "Ranking",
     "score": "Score",
