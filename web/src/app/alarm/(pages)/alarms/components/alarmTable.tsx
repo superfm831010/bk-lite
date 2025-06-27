@@ -128,17 +128,19 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
     },
     {
       title: t('alarms.notificationStatus'),
-      dataIndex: 'notification_status',
-      key: 'notification_status',
+      dataIndex: 'notify_status',
+      key: 'notify_status',
       width: 150,
-      render: (_: any, { notification_status }: AlarmTableDataItem) => {
-        return notification_status ? (
-          <Tag color={notification_status === 'success' ? 'green' : 'red'}>
-            {NOTIFIED_STATE[notification_status] || '--'}
-          </Tag>
-        ) : (
-          '--'
-        );
+      render: (_: any, { notify_status }: AlarmTableDataItem) => {
+        const COLOR_MAP: Record<string, string> = {
+          success: 'success',
+          failed: 'error',
+          partial_success: 'warning',
+        };
+        const key = notify_status ? notify_status : 'not_notified';
+        const color = COLOR_MAP[key] || 'default';
+        const text = NOTIFIED_STATE[key] || '--';
+        return <Tag color={color}>{text}</Tag>;
       },
     },
     {
