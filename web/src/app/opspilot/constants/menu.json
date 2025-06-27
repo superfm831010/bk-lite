@@ -130,6 +130,12 @@
           "url": "/opspilot/knowledge/detail/api",
           "icon": "api",
           "name": "knowledge_api"
+        },
+        {
+          "title": "问答对详情",
+          "url": "/opspilot/knowledge/detail/documents/qapairResult",
+          "name": "knowledge_qapair_result",
+          "isNotMenuItem": true
         }
       ]
     },
