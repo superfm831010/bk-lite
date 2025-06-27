@@ -33,7 +33,7 @@ class QAPairsViewSet(AuthViewSet):
                 )
             )
         add_list = QAPairs.objects.bulk_create(qa_list, batch_size=100)
-        create_qa_pairs(
+        create_qa_pairs.delay(
             [instance.id for instance in add_list],
             params["llm_model_id"],
             params["qa_count"],
