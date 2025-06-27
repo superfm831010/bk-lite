@@ -35,6 +35,11 @@ const SelectSourceModal: React.FC<SelectSourceModalProps> = ({ defaultSelected, 
       title: t('knowledge.cusText'),
       subTitle: t('knowledge.cusTextSubTitle'),
     },
+    {
+      value: 'qa_pairs',
+      title: t('knowledge.qaPairs.title'),
+      subTitle: t('knowledge.qaPairs.subTitle'),
+    },
   ];
 
   const handleConfirm = () => {

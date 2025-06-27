@@ -6,12 +6,14 @@ import AutomaticConfiguration from './automatic';
 import { useTranslation } from '@/utils/i18n';
 import { useSearchParams } from 'next/navigation';
 import configureStyle from './index.module.scss';
-import { getConfigByPluginName } from '@/app/monitor/utils/common';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
 
 const Configure: React.FC = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-  const pluginName = searchParams.get('collect_type') || '';
+  const { getCollectType } = useObjectConfigInfo();
+  const pluginName = searchParams.get('plugin_name') || '';
+  const objectName = searchParams.get('name') || '';
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('automatic');
 
@@ -21,8 +23,8 @@ const Configure: React.FC = () => {
   };
 
   const isK8s = useMemo(() => {
-    return getConfigByPluginName(pluginName, 'collect_type') === 'k8s';
-  }, [pluginName]);
+    return getCollectType(objectName, pluginName) === 'k8s';
+  }, [pluginName, objectName]);
 
   return (
     <>
@@ -36,7 +38,7 @@ const Configure: React.FC = () => {
                 label: t('monitor.intergrations.automatic'),
                 value: 'automatic',
               },
-              { label: t('monitor.intergrations.manual'), value: 'manual' },
+              //   { label: t('monitor.intergrations.manual'), value: 'manual' },
             ]}
             onChange={onTabChange}
           />

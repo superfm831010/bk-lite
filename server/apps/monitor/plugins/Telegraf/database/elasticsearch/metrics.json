@@ -5,6 +5,9 @@
   "icon": "elasticsearch-Elasticsearch",
   "type": "Database",
   "description": "",
+  "default_metric": "any({instance_type='elasticsearch'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["elasticsearch_fs_total_available_in_bytes", "elasticsearch_http_current_open", "elasticsearch_indices_docs_count"],
   "metrics": [
     {
       "metric_group": "Disk",

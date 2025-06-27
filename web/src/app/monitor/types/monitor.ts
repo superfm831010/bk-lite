@@ -319,10 +319,10 @@ export interface ViewListProps {
 }
 
 export interface IntergrationMonitoredObject {
-  key: string;
-  node_ids: string | string[] | null;
+  key?: string;
+  node_ids?: string | string[] | null;
   instance_name?: string | null;
-  group_ids: string[];
+  group_ids?: string[];
   url?: string | null;
   urls?: string | string[] | null;
   ip?: string | null;
@@ -335,6 +335,7 @@ export interface IntergrationMonitoredObject {
   jmx_url?: string | null;
   ENV_PORT?: string | null;
   ENV_HOST?: string | null;
+  [key: string]: any;
 }
 
 export interface MetricListItem {
@@ -375,4 +376,10 @@ export interface ChartDataConfig {
 
 export interface IntergrationAccessProps {
   showInterval?: boolean;
+}
+
+export interface InstNameConfig {
+  index: number;
+  field: string;
+  dataIndex?: string;
 }

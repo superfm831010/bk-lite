@@ -5,6 +5,9 @@
   "icon": "postgres",
   "type": "Database",
   "description": "",
+  "default_metric": "any({instance_type='postgres'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["postgresql_active_time", "postgresql_blks_hit"],
   "metrics": [
     {
       "metric_group": "Performance",

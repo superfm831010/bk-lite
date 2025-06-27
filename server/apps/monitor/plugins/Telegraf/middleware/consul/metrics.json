@@ -5,6 +5,9 @@
   "icon": "zhongjianjian",
   "type": "Middleware",
   "description": "",
+  "default_metric": "any({instance_type='consul'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["consul_health_checks_status", "consul_health_checks_passing"],
   "metrics": [
     {
       "metric_group": "Check",

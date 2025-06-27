@@ -10,7 +10,7 @@ class BaseNodeParams(metaclass=ABCMeta):
     PLUGIN_MAP = {}  # 插件名称映射
     _registry = {}  # 自动收集支持的 model_id 对应的子类
     BASE_INTERVAL_MAP = {"vmware_vc": 300, "network": 300, "network_topo": 300, "mysql_info": 300,
-                         "aliyun_account": 300, "qcloud":300,}  # 默认的采集间隔时间
+                         "aliyun_account": 300, "qcloud": 300, }  # 默认的采集间隔时间
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -433,15 +433,16 @@ class KafkaNodeParams(BaseNodeParams):
             credential_data["port"] = self.credential.get("port", 22),
         return credential_data
 
+
 class QCloudNodeParams(BaseNodeParams):
     supported_model_id = "qcloud"
     plugin_name = "qcloud_info"
 
     interval_map = {plugin_name: 300}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.PLUGIN_MAP.update({self.model_id: "qcloud_info"})
-
 
     def set_credential(self, *args, **kwargs):
         """
@@ -457,6 +458,84 @@ class QCloudNodeParams(BaseNodeParams):
         获取实例 ID
         """
         return f"{self.instance.id}_{instance['inst_name']}"
+
+
+class EtcdNodeParams(BaseNodeParams):
+    supported_model_id = "etcd"
+    plugin_name = "etcd_info"
+    interval_map = {plugin_name: 300}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.host_field = "ip_addr"
+
+    def get_instance_id(self, instance):
+        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
+
+    def set_credential(self, *args, **kwargs):
+        host = kwargs["host"]
+        node_ip = self.instance.access_point[0]["ip"]
+        credential_data = {
+            "node_id": self.instance.access_point[0]["id"],
+            "execute_timeout": self.instance.timeout,
+        }
+        if host["ip_addr"] != node_ip:
+            credential_data["username"] = self.credential.get("username", ""),
+            credential_data["password"] = self.credential.get("password", "")
+            credential_data["port"] = self.credential.get("port", 22),
+        return credential_data
+
+
+class RabbitMQNodeParams(BaseNodeParams):
+    supported_model_id = "rabbitmq"
+    plugin_name = "rabbitmq_info"
+    interval_map = {plugin_name: 300}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.host_field = "ip_addr"
+
+    def get_instance_id(self, instance):
+        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
+
+    def set_credential(self, *args, **kwargs):
+        host = kwargs["host"]
+        node_ip = self.instance.access_point[0]["ip"]
+        credential_data = {
+            "node_id": self.instance.access_point[0]["id"],
+            "execute_timeout": self.instance.timeout,
+        }
+        if host["ip_addr"] != node_ip:
+            credential_data["username"] = self.credential.get("username", ""),
+            credential_data["password"] = self.credential.get("password", "")
+            credential_data["port"] = self.credential.get("port", 22),
+        return credential_data
+
+
+class TomcatNodeParams(BaseNodeParams):
+    supported_model_id = "tomcat"
+    plugin_name = "tomcat_info"
+    interval_map = {plugin_name: 300}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.host_field = "ip_addr"
+
+    def get_instance_id(self, instance):
+        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
+
+    def set_credential(self, *args, **kwargs):
+        host = kwargs["host"]
+        node_ip = self.instance.access_point[0]["ip"]
+        credential_data = {
+            "node_id": self.instance.access_point[0]["id"],
+            "execute_timeout": self.instance.timeout,
+        }
+        if host["ip_addr"] != node_ip:
+            credential_data["username"] = self.credential.get("username", ""),
+            credential_data["password"] = self.credential.get("password", "")
+            credential_data["port"] = self.credential.get("port", 22),
+        return credential_data
 
 
 class NodeParamsFactory:

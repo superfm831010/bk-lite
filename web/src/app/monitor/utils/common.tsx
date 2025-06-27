@@ -21,7 +21,6 @@ import {
 import {
   UNIT_LIST,
   APPOINT_METRIC_IDS,
-  OBJECT_CONFIG_MAP,
   DERIVATIVE_OBJECTS,
   OBJECT_DEFAULT_ICON,
 } from '@/app/monitor/constants/monitor';
@@ -486,56 +485,7 @@ export const getK8SData = (
   return result;
 };
 
-export const getConfigByPluginName = (pluginName = '', key: string) => {
-  const config = Object.values(OBJECT_CONFIG_MAP).reduce(
-    (pre: TableDataItem, cur: any) => {
-      return Object.assign(pre, cur.plugins);
-    },
-    {}
-  );
-  if (!config[pluginName]?.[key]) {
-    switch (key) {
-      case 'collect_type':
-        return '--';
-      case 'config_type':
-        return [];
-      case 'collector':
-        return 'Telegraf';
-      case 'manualCfgText':
-        return `[[inputs.$config_type]]
-            url = "$monitor_url"
-            username = "$username"
-            password = "$password"
-            interval = "$intervals"
-            tags = { "instance_id"="$instance_id", "instance_type"="$instance_type", "collect_type"="$collect_type" }`;
-    }
-  }
-  return config[pluginName][key];
-};
-
-export const getConfigByObjectName = (objectName = '', key: string) => {
-  if (!OBJECT_CONFIG_MAP[objectName]?.[key]) {
-    switch (key) {
-      case 'instance_type':
-        return '';
-      case 'icon':
-        return 'Host';
-      case 'tableDiaplay':
-        return [];
-      case 'dashboardDisplay':
-        return [];
-      case 'groupIds':
-        return {
-          list: ['instance_id'],
-          default: ['instance_id'],
-        };
-    }
-  }
-  return OBJECT_CONFIG_MAP[objectName][key];
-};
-
 // 监控实例名称处理
-
 export const getBaseInstanceColumn = (config: {
   row: TableDataItem;
   objects: ObjectItem[];

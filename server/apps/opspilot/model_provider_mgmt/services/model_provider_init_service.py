@@ -10,7 +10,6 @@ from apps.opspilot.models import (
     RerankProvider,
     SkillTools,
 )
-from apps.rpc.system_mgmt import SystemMgmt
 
 
 class ModelProviderInitService:
@@ -20,11 +19,19 @@ class ModelProviderInitService:
 
     @staticmethod
     def get_group_id():
-        client = SystemMgmt()
-        res = client.get_group_id("Default")
-        if not res["result"]:
-            return ""
-        return res["data"]
+        try:
+            from apps.system_mgmt.models import Group
+
+            group, _ = Group.objects.get_or_create(name="Default", parent_id=0)
+            return group.id
+        except Exception:
+            from apps.rpc.system_mgmt import SystemMgmt
+
+            client = SystemMgmt()
+            res = client.get_group_id("Default")
+            if not res["result"]:
+                return 0
+            return res["data"]
 
     def init(self):
         if self.owner == "admin":
