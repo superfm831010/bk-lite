@@ -1,0 +1,78 @@
+.customTable {
+  position: relative;
+  width: 100%;
+  :global {
+    .ant-btn-link {
+      padding: 0 !important;
+    }
+  }
+
+  .setting {
+    position: absolute;
+    top: 20px;
+    z-index: 99;
+    right: 10px;
+    cursor: pointer;
+  }
+}
+
+.settingFields {
+  @mixin hide-text {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .rightSide {
+    background: var(--color-fill-1);
+    overflow-y: auto;
+
+    .fieldItem {
+      background: var(--color-bg-1);
+      border-bottom: 1px solid var(--color-border);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      position: relative;
+
+      .dragTrigger {
+        visibility: hidden;
+        cursor: move;
+        font-size: 14px;
+      }
+
+      .clearItem {
+        visibility: hidden;
+        position: absolute;
+        cursor: pointer;
+        top: 10px;
+        right: 6px;
+      }
+
+      .dragLabel {
+        @include hide-text;
+        width: 108px;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        .dragTrigger,
+        .clearItem {
+          visibility: visible;
+          color: var(--color-primary);
+        }
+      }
+    }
+  }
+
+  .leftSide {
+    .fieldLabel {
+      @include hide-text;
+      width: 130px;
+    }
+  }
+}

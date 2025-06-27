@@ -1,0 +1,24 @@
+
+
+.ant-popconfirm-buttons,
+.ant-modal-confirm-btns {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.ant-modal-confirm-btns .ant-btn:nth-child(2) {
+  margin-right: 10px;
+}
+
+/* .anomaly-container:nth-child(2) {
+  width: 100%;
+} */
+
+/* .anomaly-container .ant-pagination {
+  max-width: 100% !important;
+  padding: 4px 0 !important;
+} */
+
+.anomaly-container .ant-pagination-total-text {
+  white-space: nowrap !important;
+}
