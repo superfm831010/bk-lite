@@ -30,8 +30,8 @@ import {
   getEnumColor,
   getEnumValueUnit,
   isStringArray,
-  getConfigByObjectName,
 } from '@/app/monitor/utils/common';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
 import { Select, Spin } from 'antd';
 import { ListItem } from '@/types';
 const { Option } = Select;
@@ -43,6 +43,7 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
   const { getInstanceSearch, getInstanceQueryParams, getMonitorMetrics } =
     useMonitorApi();
   const { t } = useTranslation();
+  const { getTableDiaplay } = useObjectConfigInfo();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const modalRef = useRef<ModalRef>(null);
   const hexGridRef = useRef<HTMLDivElement>(null);
@@ -99,7 +100,7 @@ const ViewHive: React.FC<ViewListProps> = ({ objects, objectId }) => {
     if (objectId && objects?.length && mertics?.length) {
       const objName = objects.find((item) => item.id === objectId)?.name;
       if (objName) {
-        const filterMetrics = getConfigByObjectName(objName, 'tableDiaplay');
+        const filterMetrics = getTableDiaplay(objName);
         return mertics.filter((metric) =>
           filterMetrics.find((item: TableDataItem) => item.key === metric.name)
         );

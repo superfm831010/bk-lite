@@ -27,9 +27,9 @@ import {
   findUnitNameById,
   mergeViewQueryKeyValues,
   renderChart,
-  getConfigByPluginName,
   getRecentTimeRange,
 } from '@/app/monitor/utils/common';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
 import dayjs, { Dayjs } from 'dayjs';
 import Icon from '@/components/icon';
 
@@ -48,6 +48,7 @@ const MetricViews: React.FC<ViewDetailProps> = ({
     getInstanceQuery,
   } = useMonitorApi();
   const { t } = useTranslation();
+  const { getCollectType } = useObjectConfigInfo();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [metricId, setMetricId] = useState<number | null>();
@@ -94,7 +95,7 @@ const MetricViews: React.FC<ViewDetailProps> = ({
       monitor_object_id: monitorObjectId,
     });
     const _plugins = responseData.map((item: IntergrationItem) => ({
-      label: getConfigByPluginName(item.name, 'collect_type'),
+      label: getCollectType(monitorObjectName, item.name as string),
       value: item.id,
     }));
     setPlugins(_plugins);

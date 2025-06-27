@@ -13,7 +13,7 @@ const IntergrationDetailLayout = ({
 }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const groupId = searchParams.get('plugin_name');
+  const pluginDisplayName = searchParams.get('plugin_display_name');
   const desc = searchParams.get('plugin_description');
   const objId = searchParams.get('id') || '';
   const icon = searchParams.get('icon');
@@ -30,7 +30,7 @@ const IntergrationDetailLayout = ({
     <div className="p-4 rounded-md w-full h-[95px] flex items-center bg-[var(--color-bg-1)]">
       <Icon type={icon as string} className="text-6xl mr-[10px] min-w-[60px]" />
       <div className="w-full">
-        <h2 className="text-lg font-semibold mb-2">{groupId}</h2>
+        <h2 className="text-lg font-semibold mb-2">{pluginDisplayName}</h2>
         <Tooltip title={desc}>
           <p className="truncate w-[95%] text-sm hide-text">{desc}</p>
         </Tooltip>
