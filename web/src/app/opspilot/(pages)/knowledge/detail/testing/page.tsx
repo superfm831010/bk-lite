@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Input, Button, message, Spin, Empty, Skeleton, List } from 'antd';
+import { Input, Button, message, Spin, Empty, Skeleton, List, Segmented, Card, Divider } from 'antd';
 import ConfigComponent from '@/app/opspilot/components/knowledge/config';
 import { ResultItem } from '@/app/opspilot/types/global';
 import { useTranslation } from '@/utils/i18n';
@@ -16,6 +16,18 @@ import useFetchConfigData from '@/app/opspilot/hooks/useFetchConfigData';
 
 const { TextArea } = Input;
 
+interface QAPair {
+  id: string;
+  question: string;
+  answer: string;
+  score: number;
+}
+
+interface TestKnowledgeResponse {
+  docs: ResultItem[];
+  qa_docs: QAPair[];
+}
+
 const TestingPage: React.FC = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
@@ -23,9 +35,10 @@ const TestingPage: React.FC = () => {
   const { updateKnowledgeSettings, testKnowledge } = useKnowledgeApi();
   const { configData, setConfigData, loading: configLoading } = useFetchConfigData(id);
   const [searchText, setSearchText] = useState<string>('');
-  const [results, setResults] = useState<ResultItem[]>([]);
+  const [results, setResults] = useState<TestKnowledgeResponse>({ docs: [], qa_docs: [] });
   const [loading, setLoading] = useState<boolean>(false);
   const [applyLoading, setApplyLoading] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>('docs');
 
   const {
     drawerVisible,
@@ -69,7 +82,10 @@ const TestingPage: React.FC = () => {
     try {
       const data = await testKnowledge(params);
       message.success(t('knowledge.testingSuccess'));
-      setResults(data);
+      setResults({
+        docs: data.docs || [],
+        qa_docs: data.qa_docs || []
+      });
     } catch (error) {
       message.error(t('knowledge.testingFailed'));
       console.error(error);
@@ -101,6 +117,88 @@ const TestingPage: React.FC = () => {
 
   const handleContentClick = (content: string) => {
     showDrawer(content);
+  };
+
+  const segmentedOptions = [
+    {
+      value: 'docs',
+      label: t('knowledge.chunks'),
+    },
+    {
+      value: 'qa_docs',
+      label: t('knowledge.qaPairs.title'),
+    },
+  ];
+
+  const renderResults = () => {
+    if (loading) {
+      return (
+        <List
+          itemLayout="vertical"
+          dataSource={[1, 2, 3]}
+          renderItem={() => (
+            <List.Item>
+              <Skeleton active />
+            </List.Item>
+          )}
+        />
+      );
+    }
+
+    if (activeTab === 'docs') {
+      return results.docs.length > 0 ? (
+        results.docs.map((result, index) => (
+          <KnowledgeResultItem
+            key={result.id}
+            result={result}
+            index={index}
+            onClick={handleContentClick}
+          />
+        ))
+      ) : (
+        <Empty description={t('common.noResult')} />
+      );
+    }
+
+    if (activeTab === 'qa_docs') {
+      return results.qa_docs.length > 0 ? (
+        <div className="space-y-4">
+          {results.qa_docs.map((qaPair) => (
+            <Card
+              key={qaPair.id}
+              size="small"
+              className="bg-gray-50 border border-gray-200"
+            >
+              <div className="space-y-3">
+                <div>
+                  <div className="text-xs font-medium text-gray-500 mb-2">
+                    {t('knowledge.qaPairs.question')}
+                  </div>
+                  <div className="text-sm text-gray-800 leading-6">
+                    {qaPair.question}
+                  </div>
+                </div>
+                
+                <Divider className="my-3" />
+                
+                <div>
+                  <div className="text-xs font-medium text-gray-500 mb-2">
+                    {t('knowledge.qaPairs.answer')}
+                  </div>
+                  <div className="text-sm text-gray-800 leading-6">
+                    {qaPair.answer}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Empty description={t('knowledge.qaPairs.noData')} />
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -148,32 +246,19 @@ const TestingPage: React.FC = () => {
           </div>
         </div>
         <div className="w-1/2 pl-4">
-          <h2 className="font-semibold mb-2 text-base">{t('knowledge.results')}</h2>
-          <div className="space-y-4">
-            {loading ? (
-              <>
-                <List
-                  itemLayout="vertical"
-                  dataSource={[1, 2, 3]}
-                  renderItem={() => (
-                    <List.Item>
-                      <Skeleton active />
-                    </List.Item>
-                  )}
-                />
-              </>
-            ) : results.length > 0 ? (
-              results.map((result, index) => (
-                <KnowledgeResultItem
-                  key={result.id}
-                  result={result}
-                  index={index}
-                  onClick={handleContentClick}
-                />
-              ))
-            ) : (
-              <Empty description={t('common.noResult')} />
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="font-semibold text-base">{t('knowledge.results')}</h2>
+            {(results.docs.length > 0 || results.qa_docs.length > 0) && (
+              <Segmented
+                options={segmentedOptions}
+                value={activeTab}
+                onChange={setActiveTab}
+                size="small"
+              />
             )}
+          </div>
+          <div className="space-y-4">
+            {renderResults()}
           </div>
         </div>
       </div>

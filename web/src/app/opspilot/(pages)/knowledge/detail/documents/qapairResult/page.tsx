@@ -72,7 +72,7 @@ const QAPairResultPage: React.FC = () => {
   };
 
   const handleCardClick = (qaPair: QAPair) => {
-    const content = `**Q:**\n\n${qaPair.question}\n\n**A:**\n\n${qaPair.answer}`;
+    const content = `Q: ${qaPair.question}\n\nA: ${qaPair.answer}`;
     showDrawer(content);
   };
 
@@ -95,7 +95,6 @@ const QAPairResultPage: React.FC = () => {
       ) : (
         <>
           <div className="h-[calc(100%-100px)] overflow-auto">
-            {/* 响应式网格布局：手机1列，平板2列，小桌面3列，大桌面4列，超大屏5列 */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
               {qaPairsState.map((qaPair) => (
                 <div key={qaPair.id}>

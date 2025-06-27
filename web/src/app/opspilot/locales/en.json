@@ -28,6 +28,8 @@
     "linkSubTitle": "Use web links as a knowledgwe source.",
     "cusText": "Custom Text",
     "cusTextSubTitle": "Enter custom text as a knowledge source.",
+    "chunks": "Chunks",
+    "chunkDetail": "Chunk Detail",
     "qaPairs": {
       "title": "QA Pairs",
       "name": "Name",
@@ -38,7 +40,10 @@
       "selectedDocuments": "Selected Documents",
       "selectDocuments": "Select Documents",
       "documentsSelected": "documents selected",
-      "noDocumentsSelected": "No documents selected"
+      "noDocumentsSelected": "No documents selected",
+      "question": "Question",
+      "answer": "Answer",
+      "noData": "No data available"
     },
     "applyConfig": "Apply Config",
     "ranking": "Ranking",
