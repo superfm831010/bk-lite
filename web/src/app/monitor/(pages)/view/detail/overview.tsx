@@ -30,9 +30,9 @@ import {
   getEnumValueUnit,
   mergeViewQueryKeyValues,
   renderChart,
-  getConfigByObjectName,
   getRecentTimeRange,
 } from '@/app/monitor/utils/common';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
 import dayjs, { Dayjs } from 'dayjs';
 import { useInterfaceLabelMap } from '@/app/monitor/constants/monitor';
 import Icon from '@/components/icon';
@@ -47,6 +47,7 @@ const Overview: React.FC<ViewDetailProps> = ({
 }) => {
   const { isLoading } = useApiClient();
   const { getMonitorMetrics, getInstanceQuery } = useMonitorApi();
+  const { getDashboardDisplay } = useObjectConfigInfo();
   const { t } = useTranslation();
   const INTERFACE_LABEL_MAP = useInterfaceLabelMap();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -85,10 +86,7 @@ const Overview: React.FC<ViewDetailProps> = ({
 
   const getInitData = async () => {
     setLoading(true);
-    const indexList = getConfigByObjectName(
-      monitorObjectName,
-      'dashboardDisplay'
-    );
+    const indexList = getDashboardDisplay(monitorObjectName);
     try {
       getMonitorMetrics({
         monitor_object_id: monitorObjectId,

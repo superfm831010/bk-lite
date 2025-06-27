@@ -190,12 +190,16 @@ const ToolListPage: React.FC = () => {
     return (
       <Menu className={`${styles.menuContainer}`}>
         <Menu.Item key="edit">
-          <PermissionWrapper requiredPermissions={['Edit']}>
+          <PermissionWrapper 
+            requiredPermissions={['Edit']}
+            instPermissions={tool.permissions}>
             <span className="block w-full" onClick={() => showModal(tool)}>{t('common.edit')}</span>
           </PermissionWrapper>
         </Menu.Item>
         {!tool.is_build_in && (<Menu.Item key="delete">
-          <PermissionWrapper requiredPermissions={['Delete']}>
+          <PermissionWrapper 
+            requiredPermissions={['Delete']}
+            instPermissions={tool.permissions}>
             <span className="block w-full" onClick={() => handleDelete(tool)}>{t('common.delete')}</span>
           </PermissionWrapper>
         </Menu.Item>)}

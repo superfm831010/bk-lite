@@ -89,12 +89,16 @@ const KnowledgePage = () => {
   const menu = (card: Card) => (
     <Menu className={`${styles.menuContainer}`}>
       <Menu.Item key="edit">
-        <PermissionWrapper requiredPermissions={['Edit']}>
+        <PermissionWrapper 
+          requiredPermissions={['Edit']}
+          instPermissions={card.permissions}>
           <span className='block' onClick={() => handleMenuClick('edit', card)}>{t('common.edit')}</span>
         </PermissionWrapper>
       </Menu.Item>
       <Menu.Item key="delete">
-        <PermissionWrapper requiredPermissions={['Delete']}>
+        <PermissionWrapper 
+          requiredPermissions={['Delete']}
+          instPermissions={card.permissions}>
           <span className='block' onClick={() => handleMenuClick('delete', card)}>{t('common.delete')}</span>
         </PermissionWrapper>
       </Menu.Item>

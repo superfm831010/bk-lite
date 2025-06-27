@@ -23,6 +23,7 @@ interface EntityCardProps {
   online?: boolean;
   modelName?: string;
   skillType?: string;
+  permissions?: string[];
   onMenuClick: (action: string, entity: any) => void;
   redirectUrl: string;
   iconTypeMapping: [string, string];
@@ -39,6 +40,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
   online,
   modelName,
   skillType,
+  permissions,
   onMenuClick,
   redirectUrl,
   iconTypeMapping
@@ -49,12 +51,16 @@ const EntityCard: React.FC<EntityCardProps> = ({
   const menu = (
     <Menu className={`${styles.menuContainer}`}>
       <Menu.Item key={`edit-${id}`}>
-        <PermissionWrapper requiredPermissions={['Edit']}>
+        <PermissionWrapper
+          requiredPermissions={['Edit']}
+          instPermissions={permissions}>
           <span className="block" onClick={() => onMenuClick('edit', { id, name, introduction, created_by, team_name, team, online })}>{t('common.edit')}</span>
         </PermissionWrapper>
       </Menu.Item>
       <Menu.Item key={`delete-${id}`}>
-        <PermissionWrapper requiredPermissions={['Delete']}>
+        <PermissionWrapper 
+          requiredPermissions={['Delete']} 
+          instPermissions={permissions}>
           <span className="block" onClick={() => onMenuClick('delete', { id, name, introduction, created_by, team_name, team, online })}>{t('common.delete')}</span>
         </PermissionWrapper>
       </Menu.Item>

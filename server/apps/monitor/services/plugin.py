@@ -21,7 +21,21 @@ class MonitorPluginService:
         metrics = data.pop("metrics")
         plugin = data.pop("plugin")
         desc = data.pop("plugin_desc", "")
-        monitor_obj, _ = MonitorObject.objects.update_or_create(name=data["name"], defaults=data)
+
+        monitor_obj = MonitorObject.objects.filter(name=data["name"]).first()
+
+        if monitor_obj:
+            supplementary_indicators = monitor_obj.supplementary_indicators + data.get("supplementary_indicators", [])
+            monitor_obj.icon = data.get("icon", monitor_obj.icon)
+            monitor_obj.type = data.get("type", monitor_obj.type)
+            monitor_obj.description = data.get("description", monitor_obj.description)
+            monitor_obj.level = data.get("level", monitor_obj.level)
+            monitor_obj.default_metric = data.get("default_metric", monitor_obj.default_metric)
+            monitor_obj.instance_id_keys = data.get("instance_id_keys", monitor_obj.instance_id_keys)
+            monitor_obj.supplementary_indicators = list(set(supplementary_indicators))
+            monitor_obj.save()
+        else:
+            monitor_obj = MonitorObject.objects.create(**data)
 
         with transaction.atomic():
             plugin_obj, _ = MonitorPlugin.objects.update_or_create(

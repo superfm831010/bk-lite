@@ -38,11 +38,8 @@ import {
   ObjectItem,
 } from '@/app/monitor/types/monitor';
 import { useCommon } from '@/app/monitor/context/common';
-import {
-  deepClone,
-  getConfigByPluginName,
-  getConfigByObjectName,
-} from '@/app/monitor/utils/common';
+import { deepClone } from '@/app/monitor/utils/common';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
 import strategyStyle from '../index.module.scss';
 import { PlusOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import SelectAssets from '../selectAssets';
@@ -79,6 +76,7 @@ const StrategyOperation = () => {
   const searchParams = useSearchParams();
   const [form] = Form.useForm();
   const router = useRouter();
+  const { getCollectType, getGroupIds } = useObjectConfigInfo();
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
   const instRef = useRef<ModalRef>(null);
@@ -109,8 +107,7 @@ const StrategyOperation = () => {
   const [noDataRecovery, setNoDataRecovery] = useState<number | null>(null);
   const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [groupBy, setGroupBy] = useState<string[]>(
-    getConfigByObjectName(monitorName as string, 'groupIds').default ||
-      defaultGroup
+    getGroupIds(monitorName as string).default || defaultGroup
   );
   const [formData, setFormData] = useState<StrategyFields>({
     threshold: [],
@@ -213,7 +210,7 @@ const StrategyOperation = () => {
       monitor_object_id: monitorObjId,
     });
     const plugins = data.map((item: PluginItem) => ({
-      label: getConfigByPluginName(item.name, 'collect_type'),
+      label: getCollectType(monitorName as string, item.name),
       value: item.id,
       name: item.name,
     }));

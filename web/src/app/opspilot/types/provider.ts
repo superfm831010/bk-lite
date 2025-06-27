@@ -18,6 +18,7 @@ export interface Model {
     rerank_config?: ModelConfig;
     ocr_config?: ModelConfig;
     consumer_team: string;
+    permissions?: string[];
 }
 
 export interface TabConfig {

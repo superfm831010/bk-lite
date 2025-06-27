@@ -4,6 +4,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
+import traceback
 
 urlpatterns = [
     path("admin/", admin.site.urls),

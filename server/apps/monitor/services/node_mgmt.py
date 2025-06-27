@@ -1,7 +1,7 @@
 import ast
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.monitor.collect_config.controller import Controller
+from apps.monitor.plugins.controller import Controller
 from apps.monitor.constants import CHILD_ENVS
 from apps.monitor.models import MonitorInstance, MonitorInstanceOrganization, CollectConfig
 from apps.monitor.utils.config_format import ConfigFormat
@@ -140,7 +140,7 @@ class InstanceConfigService:
         )
 
         # 实例配置
-        Controller(data).main()
+        Controller(data).controller()
 
         if old_instances:
             raise BaseAppException(f"以下实例已存在：{'、'.join([instance['instance_name'] for instance in old_instances])}")

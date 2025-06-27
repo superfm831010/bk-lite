@@ -1,0 +1,138 @@
+{
+    "client_id": "alarm",
+    "name": "Alarm",
+    "url": "/alarm/incidents",
+    "description": "Create roles for the Alarm app to manage data permissions, menu permissions, and feature permissions.",
+    "menus": [
+        {
+            "name": "Incidents",
+            "children": [
+                {
+                    "id": "Incidents",
+                    "name": "Incidents",
+                    "operation": [
+                        "View",
+                        "Edit",
+                        "Delete"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Alarms",
+            "children": [
+                {
+                    "id": "Alarms",
+                    "name": "Alarms",
+                    "operation": [
+                        "View",
+                        "Edit",
+                        "Delete"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Integration",
+            "children": [
+                {
+                    "id": "Integration",
+                    "name": "Integration",
+                    "operation": [
+                        "View"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Settings",
+            "children": [
+                {
+                    "id": "correlation_rules",
+                    "name": "correlation_rules",
+                    "operation": [
+                        "View",
+                        "Add",
+                        "Edit",
+                        "Delete"
+                    ]
+                },
+                {
+                    "id": "alert_assign",
+                    "name": "alert_assign",
+                    "operation": [
+                        "View",
+                        "Add",
+                        "Edit",
+                        "Delete"
+                    ]
+                },
+                {
+                    "id": "shield_strategy",
+                    "name": "shield_strategy",
+                    "operation": [
+                        "View",
+                        "Add",
+                        "Edit",
+                        "Delete"
+                    ]
+                },
+                {
+                    "id": "global_config",
+                    "name": "global_config",
+                    "operation": [
+                        "View",
+                        "Edit"
+                    ]
+                }
+            ]
+        }
+    ],
+    "roles": [
+        {
+            "name": "admin",
+            "role_name": "alarm_admin",
+            "menus": []
+        },
+        {
+            "name": "manager",
+            "role_name": "alarm_manager",
+            "menus": [
+                "Incidents-View",
+                "Incidents-Edit",
+                "Incidents-Delete",
+                "Alarms-View",
+                "Alarms-Edit",
+                "Alarms-Delete",
+                "Integration-View",
+                "Integration-Detail",
+                "correlation_rules-View",
+                "correlation_rules-Add",
+                "correlation_rules-Edit",
+                "correlation_rules-Delete",
+                "alert_assign-View",
+                "alert_assign-Add",
+                "alert_assign-Edit",
+                "alert_assign-Delete",
+                "shield_strategy-View",
+                "shield_strategy-Add",
+                "shield_strategy-Edit",
+                "shield_strategy-Delete",
+                "global_config-View",
+                "global_config-Edit"
+            ]
+        },
+        {
+            "name": "normal",
+            "role_name": "alarm_normal",
+            "menus": [
+                "Incidents-View",
+                "Integration-View",
+                "Alarms-View",
+                "correlation_rules-View",
+                "alert_assign-View",
+                "shield_strategy-View"
+            ]
+        }
+    ]
+}

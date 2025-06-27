@@ -5,7 +5,7 @@ import { useTranslation } from '@/utils/i18n';
 import { ListItem } from '@/app/monitor/types';
 import strategyStyle from '../index.module.scss';
 import { useConditionList } from '@/app/monitor/constants/monitor';
-import { getConfigByObjectName } from '@/app/monitor/utils/common';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
 import { MetricItem } from '@/app/monitor/types/monitor';
 
 const { Option } = Select;
@@ -45,10 +45,11 @@ const ConditionSelector: React.FC<ConditionSelectorProps> = ({
   onGroupChange,
 }) => {
   const { t } = useTranslation();
+  const CONDITION_LIST = useConditionList();
+  const { getGroupIds } = useObjectConfigInfo();
   const [conditions, setConditions] = useState<FilterItem[]>(
     data.filters || []
   );
-  const CONDITION_LIST = useConditionList();
 
   const handleLabelChange = (value: string, index: number) => {
     const newConditions = [...conditions];
@@ -188,13 +189,13 @@ const ConditionSelector: React.FC<ConditionSelectorProps> = ({
           value={data.group}
           onChange={onGroupChange}
         >
-          {(
-            getConfigByObjectName(monitorName, 'groupIds').list || defaultGroup
-          ).map((item: string) => (
-            <Option value={item} key={item}>
-              {item}
-            </Option>
-          ))}
+          {(getGroupIds(monitorName).list || defaultGroup).map(
+            (item: string) => (
+              <Option value={item} key={item}>
+                {item}
+              </Option>
+            )
+          )}
         </Select>
       </div>
     </div>
