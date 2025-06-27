@@ -49,8 +49,8 @@ const useMlopsApi = () => {
   };
 
   // 获取指定异常检测样本的详情
-  const getAnomalyTrainDataInfo = async (id: number | string, include_train_data?: boolean) => {
-    return await get(`/mlops/anomaly_detection_train_data/${id}?include_train_data=${include_train_data}`);
+  const getAnomalyTrainDataInfo = async (id: number | string, include_train_data?: boolean, include_metadata?: boolean) => {
+    return await get(`/mlops/anomaly_detection_train_data/${id}?include_train_data=${include_train_data}&include_metadata=${include_metadata}`);
   };
 
   // // 获取指定异常检测样本的样本数据

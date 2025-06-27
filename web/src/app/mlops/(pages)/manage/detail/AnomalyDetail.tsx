@@ -27,11 +27,13 @@ const AnomalyDetail = () => {
   const {
     folder_id,
     folder_name,
-    description
+    description,
+    activeTap
   } = useMemo(() => ({
     folder_id: searchParams.get('folder_id'),
     folder_name: searchParams.get('folder_name') || '',
-    description: searchParams.get('description') || ''
+    description: searchParams.get('description') || '',
+    activeTap: searchParams.get('activeTap') || ''
   }), [searchParams]);
 
   const columns: ColumnItem[] = useMemo(() => [
@@ -112,7 +114,7 @@ const AnomalyDetail = () => {
       const _tableData = items?.map((item: any) => {
         return {
           id: item?.id,
-          name: item?.id,
+          name: item?.name,
           dataset: item?.dataset,
           count: item?.anomaly_point_count,
           type: {
@@ -121,7 +123,7 @@ const AnomalyDetail = () => {
             is_val_data: item?.is_val_data
           }
         }
-      })
+      });
       setTableData(_tableData as TableData[]);
       setPagination((prev) => {
         return {
@@ -155,7 +157,7 @@ const AnomalyDetail = () => {
   };
 
   const toAnnotation = (data: any) => {
-    router.push(`/mlops/manage/annotation?id=${data.id}&folder_id=${folder_id}&folder_name=${folder_name}&description=${description}`);
+    router.push(`/mlops/manage/annotation?id=${data.id}&folder_id=${folder_id}&folder_name=${folder_name}&description=${description}&activeTap=${activeTap}`);
   };
 
   const handleChange = (value: any) => {

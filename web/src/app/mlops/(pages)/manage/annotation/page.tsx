@@ -62,7 +62,7 @@ const AnnotationPage = () => {
   const [currentFileData, setCurrentFileData] = useState<AnnotationData[]>([]);
   const [loadingState, setLoadingState] = useState({
     loading: false,
-    chartLoading:false,
+    chartLoading: false,
     saveLoading: false,
   });
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -171,14 +171,17 @@ const AnnotationPage = () => {
       return;
     }
     points.forEach(item => {
-      _data[item].label = 1;
+      _data[item] = {
+        ..._data[item],
+        label: 1
+      }
     });
     setCurrentFileData(_data);
     setTableData(_data.filter((item) => item.label === 1))
   }, []);
 
   const getCurrentFileData = useCallback(async () => {
-    setLoadingState(prev => ({...prev, loading: true, chartLoading: true}));
+    setLoadingState(prev => ({ ...prev, loading: true, chartLoading: true }));
     const id = searchParams.get('id');
     const folder_id = searchParams.get('folder_id');
 
@@ -186,7 +189,7 @@ const AnnotationPage = () => {
       const fileList = await getAnomalyTrainData({
         dataset: folder_id as string
       });
-      const data = await getAnomalyTrainDataInfo(id as string, true);
+      const data = await getAnomalyTrainDataInfo(id as string, true, true);
       const { is_train_data, is_val_data, is_test_data } = data;
       const activeTypes = Object.entries({ is_train_data, is_val_data, is_test_data })
         .filter(([, value]) => value === true)
@@ -197,15 +200,15 @@ const AnnotationPage = () => {
     } catch (e) {
       console.log(e);
     } finally {
-      setLoadingState(prev => ({...prev, loading: false, chartLoading: false}));
+      setLoadingState(prev => ({ ...prev, loading: false, chartLoading: false }));
     }
   }, [searchParams]);
 
   const onXRangeChange = useCallback((data: any[]) => {
     if (!isChange) setIsChange(true);
-    setLoadingState(prev => ({...prev, chartLoading: true}));
+    setLoadingState(prev => ({ ...prev, chartLoading: true }));
     if (!currentFileData.length) {
-      setLoadingState(prev => ({...prev, chartLoading: false}));
+      setLoadingState(prev => ({ ...prev, chartLoading: false }));
       return;
     }
     try {
@@ -228,14 +231,14 @@ const AnnotationPage = () => {
       setTableData(_tableData);
       setCurrentFileData(newData);
     } finally {
-      setLoadingState(prev => ({...prev, chartLoading: false}));
+      setLoadingState(prev => ({ ...prev, chartLoading: false }));
     }
   }, [currentFileData]);
 
   const onAnnotationClick = useCallback((value: any[]) => {
     if (!value) return;
     if (!isChange) setIsChange(true);
-    setLoadingState(prev => ({...prev, chartLoading: true}));
+    setLoadingState(prev => ({ ...prev, chartLoading: true }));
     try {
       const _data: any[] = cloneDeep(currentFileData);
       value.map((item: any) => {
@@ -249,7 +252,7 @@ const AnnotationPage = () => {
       setTableData(_tableData);
       setCurrentFileData(_data);
     } finally {
-      setLoadingState(prev => ({...prev, chartLoading: false}));
+      setLoadingState(prev => ({ ...prev, chartLoading: false }));
     }
   }, [currentFileData]);
 
@@ -265,7 +268,7 @@ const AnnotationPage = () => {
 
   const handleDelete = useCallback((record: ColumnItem) => {
     setIsChange(true);
-    setLoadingState(prev => ({...prev, chartLoading: true}));
+    setLoadingState(prev => ({ ...prev, chartLoading: true }));
     try {
       const newData = currentFileData.map((item: any) =>
         item.timestamp === record.timestamp ? { ...item, label: 0 } : item
@@ -274,12 +277,12 @@ const AnnotationPage = () => {
       setCurrentFileData(newData);
       setTableData(_tableData);
     } finally {
-      setLoadingState(prev => ({...prev, chartLoading: false}));
+      setLoadingState(prev => ({ ...prev, chartLoading: false }));
     }
   }, [currentFileData]);
 
   const handleSava = useCallback(async () => {
-    setLoadingState(prev => ({...prev, saveLoading: true}));
+    setLoadingState(prev => ({ ...prev, saveLoading: true }));
     const id = searchParams.get('id');
     try {
       if (!selectedTags.length) {
@@ -303,7 +306,7 @@ const AnnotationPage = () => {
       message.error(t('datasets.saveError'));
     }
     finally {
-      setLoadingState(prev => ({...prev, saveLoading: false}));
+      setLoadingState(prev => ({ ...prev, saveLoading: false }));
       setIsChange(false);
     }
   }, [currentFileData, colmuns]);
@@ -370,11 +373,11 @@ const AnnotationPage = () => {
                     onAnnotationClick={onAnnotationClick}
                   />
                 </div>
-                <div className="w-[32%] overflow-clip" style={{ height: `calc(100vh - 260px)` }}>
+                <div className="w-[32%] anomaly-container" style={{ height: `calc(100vh - 240px)` }}>
                   <CustomTable
                     size="small"
                     rowKey="timestamp"
-                    scroll={{ y: 'calc(100vh - 370px)' }}
+                    scroll={{ y: 'calc(100vh - 340px)' }}
                     columns={colmuns}
                     dataSource={pagedData}
                     pagination={pagination}

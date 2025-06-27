@@ -53,7 +53,7 @@ const DatasetManagePage = () => {
         ),
       },
     ];
-  }
+  };
 
   useEffect(() => {
     console.log(searchTerm)
@@ -78,7 +78,6 @@ const DatasetManagePage = () => {
           }
         }) || [];
         setDatasets(_data);
-
       } else {
         setDatasets([]);
       }

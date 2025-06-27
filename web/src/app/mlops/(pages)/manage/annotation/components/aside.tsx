@@ -18,10 +18,11 @@ const Aside = ({ children, menuItems, loading, isChange, onChange, changeFlag }:
   const folder_id = searchParams.get('folder_id') || '';
   const folder_name = searchParams.get('folder_name') || '';
   const description = searchParams.get('description');
+  const activeTap = searchParams.get('activeTap');
   const router = useRouter();
 
   const buildUrlWithParams = (id: number) => {
-    return `?id=${id}&folder_id=${folder_id}&folder_name=${folder_name}&description=${description}`;
+    return `?id=${id}&folder_id=${folder_id}&folder_name=${folder_name}&description=${description}&activeTap=${activeTap}`;
   };
 
   const isActive = (id: number): boolean => {
@@ -42,12 +43,12 @@ const Aside = ({ children, menuItems, loading, isChange, onChange, changeFlag }:
           return new Promise(async (resolve) => {
             resolve(true);
             onChange(false);
-            router.replace(`/mlops/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}&description=${description}`);
+            router.replace(`/mlops/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}&description=${description}&activeTap=${activeTap}`);
           })
         }
       })
     } else {
-      router.replace(`/mlops/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}&description=${description}`);
+      router.replace(`/mlops/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}&description=${description}&activeTap=${activeTap}`);
     }
   };
 

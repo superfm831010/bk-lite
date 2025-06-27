@@ -52,13 +52,14 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
     // 统一换行符为 \n
     const lines = text.replace(/\r\n|\r|\n/g, '\n')?.split('\n').filter(line => line.trim() !== '');
     if (!lines.length) return [];
-    const headers = ['timestamp', 'value'];
-    const data = lines.slice(1).map(line => {
+    const headers = ['timestamp', 'value', 'label'];
+    const data = lines.slice(1).map((line, index) => {
       const values = line.split(',');
       return headers.reduce((obj: Record<string, any>, key, idx) => {
         obj[key] = key === 'timestamp'
           ? new Date(values[idx]).getTime() / 1000
           : Number(values[idx]);
+        obj['index'] = index;
         return obj;
       }, {});
     });
@@ -75,11 +76,15 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
       }
       const text = await file?.originFileObj.text();
       const data: TrainDataParams[] = handleFileRead(text);
+      const train_data = data.map(item => ({ timestamp: item.timestamp, value: item.value }));
+      const points = data.filter(item => item?.label === 1).map(k => k.index);
       const params = {
         dataset: formData?.dataset_id,
-        name:file.name,
-        train_data: data,
-        metadata: {},
+        name: file.name,
+        train_data: train_data,
+        metadata: {
+          anomaly_point: points
+        },
         is_train_data: true,
         is_val_data: false,
         is_test_data: false,

@@ -253,6 +253,8 @@ export interface TrainData {
 export interface TrainDataParams {
   timestamp: string;
   value: number;
+  label?: number;
+  index?: number;
 }
 
 export interface TrainTaskHistory {

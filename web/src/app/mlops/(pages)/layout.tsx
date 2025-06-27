@@ -1,6 +1,6 @@
 'use client';
 
-// import '@/app/mlops/styles/index.css';
+import '@/app/mlops/styles/index.css';
 
 export default function RootMlops({
   children,
