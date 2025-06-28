@@ -1,9 +1,12 @@
 import { useMysqlTelegraf } from '../../plugins/database/mysqlTelegraf ';
+import { useMysqlExporter } from '../../plugins/database/mysqlExporter';
 
 export const useMysqlConfig = () => {
   const mysqlPlugin = useMysqlTelegraf();
+  const mysqlExporterExporter = useMysqlExporter();
   const plugins = {
     Mysql: mysqlPlugin,
+    'Mysql-Exporter': mysqlExporterExporter,
   };
 
   return {
