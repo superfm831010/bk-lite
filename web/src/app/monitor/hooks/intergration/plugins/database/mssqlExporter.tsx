@@ -6,18 +6,18 @@ import {
   IntergrationMonitoredObject,
 } from '@/app/monitor/types/monitor';
 import { TableDataItem } from '@/app/monitor/types';
-import { useKafkaExporterFormItems } from '../../common/kafkaExporterFormItems';
+import { useMssqlExporterFormItems } from '../../common/mssqlExporterFormItems';
 import { cloneDeep } from 'lodash';
 
-export const useKafkaExporter = () => {
+export const useMssqlExporter = () => {
   const { t } = useTranslation();
-  const kafkaExporterFormItems = useKafkaExporterFormItems();
+  const mssqlExporterFormItems = useMssqlExporterFormItems();
   const pluginConfig = {
     collect_type: 'exporter',
-    config_type: ['kafka'],
-    collector: 'Kafka-Exporter',
-    instance_type: 'kafka',
-    object_name: 'Kafka',
+    config_type: ['mssql'],
+    collector: 'MSSQL-Exporter',
+    instance_type: 'mssql',
+    object_name: 'MSSQL',
   };
 
   return {
@@ -31,9 +31,11 @@ export const useKafkaExporter = () => {
         config: InstNameConfig
       ) => {
         const _dataSource = cloneDeep(extra.dataSource || []);
-        _dataSource[config.index][config.field] = _dataSource[config.index][
-          config.dataIndex as string
-        ] = e.target.value;
+        const fieldValue =
+          _dataSource[config.index][config.dataIndex as string];
+        _dataSource[config.index][config.field] = e.target.value;
+        _dataSource[config.index].instance_name =
+          e.target.value + `:${fieldValue || ''}`;
         extra.onTableDataChange?.(_dataSource);
       };
 
@@ -49,9 +51,24 @@ export const useKafkaExporter = () => {
         extra.onTableDataChange?.(_dataSource);
       };
 
+      const handlePortAndInstNameChange = (
+        val: number,
+        config: {
+          index: number;
+          field: string;
+          dataIndex: string;
+        }
+      ) => {
+        const _dataSource = cloneDeep(extra.dataSource || []);
+        const host = _dataSource[config.index][config.dataIndex] || '';
+        _dataSource[config.index][config.field] = val;
+        _dataSource[config.index].instance_name = `${host}:${val || ''}`;
+        extra.onTableDataChange?.(_dataSource);
+      };
+
       const formItems = (
         <>
-          {kafkaExporterFormItems.getCommonFormItems()}
+          {mssqlExporterFormItems.getCommonFormItems()}
           <Form.Item label={t('monitor.intergrations.listeningPort')} required>
             <Form.Item
               noStyle
@@ -73,10 +90,10 @@ export const useKafkaExporter = () => {
               {t('monitor.intergrations.listeningPortDes')}
             </span>
           </Form.Item>
-          <Form.Item label={t('monitor.intergrations.servers')} required>
+          <Form.Item label={t('monitor.intergrations.host')} required>
             <Form.Item
               noStyle
-              name="KAFKA_SERVER"
+              name="SQL_EXPORTER_HOST"
               rules={[
                 {
                   required: true,
@@ -87,7 +104,28 @@ export const useKafkaExporter = () => {
               <Input className="w-[300px] mr-[10px]" />
             </Form.Item>
             <span className="text-[12px] text-[var(--color-text-3)]">
-              {t('monitor.intergrations.serversDes')}
+              {t('monitor.intergrations.commonHostDes')}
+            </span>
+          </Form.Item>
+          <Form.Item label={t('monitor.intergrations.port')} required>
+            <Form.Item
+              noStyle
+              name="SQL_EXPORTER_PORT"
+              rules={[
+                {
+                  required: true,
+                  message: t('common.required'),
+                },
+              ]}
+            >
+              <InputNumber
+                className="w-[300px] mr-[10px]"
+                min={1}
+                precision={0}
+              />
+            </Form.Item>
+            <span className="text-[12px] text-[var(--color-text-3)]">
+              {t('monitor.intergrations.commonPortDes')}
             </span>
           </Form.Item>
         </>
@@ -96,10 +134,11 @@ export const useKafkaExporter = () => {
       return {
         auto: {
           ...pluginConfig,
-          formItems: kafkaExporterFormItems.getCommonFormItems('auto'),
+          formItems: mssqlExporterFormItems.getCommonFormItems('auto'),
           initTableItems: {
             ENV_LISTEN_PORT: null,
-            ENV_KAFKA_SERVER: null,
+            ENV_SQL_EXPORTER_PORT: null,
+            ENV_SQL_EXPORTER_HOST: null,
           },
           defaultForm: {},
           columns: [
@@ -124,9 +163,9 @@ export const useKafkaExporter = () => {
               ),
             },
             {
-              title: t('monitor.intergrations.servers'),
-              dataIndex: 'ENV_KAFKA_SERVER',
-              key: 'ENV_KAFKA_SERVER',
+              title: t('monitor.intergrations.host'),
+              dataIndex: 'ENV_SQL_EXPORTER_HOST',
+              key: 'ENV_SQL_EXPORTER_HOST',
               width: 200,
               render: (_: unknown, record: TableDataItem, index: number) => (
                 <Input
@@ -134,8 +173,29 @@ export const useKafkaExporter = () => {
                   onChange={(e) =>
                     handleFieldAndInstNameChange(e, {
                       index,
-                      field: 'ENV_KAFKA_SERVER',
-                      dataIndex: 'instance_name',
+                      field: 'ENV_SQL_EXPORTER_HOST',
+                      dataIndex: 'ENV_SQL_EXPORTER_PORT',
+                    })
+                  }
+                />
+              ),
+            },
+            {
+              title: t('monitor.intergrations.port'),
+              dataIndex: 'ENV_SQL_EXPORTER_PORT',
+              key: 'ENV_SQL_EXPORTER_PORT',
+              width: 200,
+              render: (_: unknown, record: TableDataItem, index: number) => (
+                <InputNumber
+                  value={record.ENV_PORT}
+                  className="w-full"
+                  min={1}
+                  precision={0}
+                  onChange={(val) =>
+                    handlePortAndInstNameChange(val, {
+                      index,
+                      field: 'ENV_SQL_EXPORTER_PORT',
+                      dataIndex: 'ENV_SQL_EXPORTER_HOST',
                     })
                   }
                 />
@@ -161,10 +221,11 @@ export const useKafkaExporter = () => {
                 return {
                   ...item,
                   ENV_LISTEN_PORT: String(item.ENV_LISTEN_PORT),
-                  ENV_KAFKA_SERVER: String(item.ENV_KAFKA_SERVER),
+                  ENV_SQL_EXPORTER_PORT: String(item.ENV_SQL_EXPORTER_PORT),
+                  ENV_SQL_EXPORTER_HOST: String(item.ENV_SQL_EXPORTER_HOST),
                   node_ids: [item.node_ids].flat(),
                   instance_type: pluginConfig.instance_type,
-                  instance_id: item.ENV_KAFKA_SERVER,
+                  instance_id: `${item.ENV_SQL_EXPORTER_HOST}:${item.ENV_SQL_EXPORTER_PORT}`,
                 };
               }),
             };
@@ -179,10 +240,10 @@ export const useKafkaExporter = () => {
           getParams: (formData: TableDataItem, configForm: TableDataItem) => {
             [
               'LISTEN_PORT',
-              'KAFKA_SERVER',
-              'SASL_USERNAME',
-              'SASL_PASSWORD',
-              'SASL_MECHANISM',
+              'SQL_EXPORTER_PORT',
+              'SQL_EXPORTER_HOST',
+              'SQL_EXPORTER_USER',
+              'SQL_EXPORTER_PASS',
             ].forEach((item) => {
               if (formData[item]) {
                 configForm.base.env_config[item] = String(formData[item]);
@@ -195,7 +256,7 @@ export const useKafkaExporter = () => {
           defaultForm: {},
           formItems,
           getParams: (row: TableDataItem) => {
-            const instanceId = row.KAFKA_SERVER;
+            const instanceId = `${row.SQL_EXPORTER_PORT}:${row.SQL_EXPORTER_PORT}`;
             return {
               instance_id: instanceId,
               instance_name: instanceId,
