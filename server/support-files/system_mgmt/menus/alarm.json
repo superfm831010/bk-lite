@@ -95,34 +95,6 @@
             "menus": []
         },
         {
-            "name": "manager",
-            "role_name": "alarm_manager",
-            "menus": [
-                "Incidents-View",
-                "Incidents-Edit",
-                "Incidents-Delete",
-                "Alarms-View",
-                "Alarms-Edit",
-                "Alarms-Delete",
-                "Integration-View",
-                "Integration-Detail",
-                "correlation_rules-View",
-                "correlation_rules-Add",
-                "correlation_rules-Edit",
-                "correlation_rules-Delete",
-                "alert_assign-View",
-                "alert_assign-Add",
-                "alert_assign-Edit",
-                "alert_assign-Delete",
-                "shield_strategy-View",
-                "shield_strategy-Add",
-                "shield_strategy-Edit",
-                "shield_strategy-Delete",
-                "global_config-View",
-                "global_config-Edit"
-            ]
-        },
-        {
             "name": "normal",
             "role_name": "alarm_normal",
             "menus": [
