@@ -110,6 +110,7 @@ def create_default_roles(app_inst: App, roles):
         role_obj = role_map["manager"]
         role_obj.menu_list = [i["id"] for i in menus]
         update_roles.append(role_obj)
+        
     Role.objects.bulk_create(add_roles, batch_size=100)
     Role.objects.bulk_update(update_roles, ["menu_list"], batch_size=100)
 
