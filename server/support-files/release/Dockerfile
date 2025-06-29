@@ -19,6 +19,7 @@ RUN pip install -r ./requirements/requirements-console.txt
 RUN pip install -r ./requirements/requirements-monitor.txt
 RUN pip install -r ./requirements/requirements-node_mgmt.txt
 RUN pip install -r ./requirements/requirements-opspilot.txt
+RUN pip install -r ./requirements/requirements-mlops.txt
 
 RUN chmod +x ./support-files/release/startup.sh
 ENTRYPOINT ["/bin/bash","/apps/support-files/release/startup.sh"]
