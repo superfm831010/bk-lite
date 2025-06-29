@@ -41,6 +41,7 @@ import { useCvmConfig } from './objects/tencentCloud/cvm';
 import { useTongWebConfig } from './objects/middleware/tongWeb';
 import { useJbossConfig } from './objects/middleware/jboss';
 import { useKafkaConfig } from './objects/middleware/kafka';
+import { useMssqlConfig } from './objects/database/mssql';
 import { useClusterConfig } from './objects/k8s/cluster';
 import { useNodeConfig } from './objects/k8s/node';
 import { usePodConfig } from './objects/k8s/pod';
@@ -88,6 +89,7 @@ export const useMonitorConfig = () => {
   const tongWebConfig = useTongWebConfig();
   const jbossConfig = useJbossConfig();
   const kafkaConfig = useKafkaConfig();
+  const mssqlConfig = useMssqlConfig();
   const clusterConfig = useClusterConfig();
   const podConfig = usePodConfig();
   const nodeConfig = useNodeConfig();
@@ -132,6 +134,7 @@ export const useMonitorConfig = () => {
       TongWeb: tongWebConfig,
       JBoss: jbossConfig,
       Kafka: kafkaConfig,
+      MSSQL: mssqlConfig,
       Cluster: clusterConfig,
       Pod: podConfig,
       Node: nodeConfig,

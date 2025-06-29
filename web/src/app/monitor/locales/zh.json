@@ -438,7 +438,13 @@
       "note": "K8S的监控数据仅支持主动上报，暂不支持在此处接入。",
       "deleteRules": "仅删除规则",
       "deleteGroup": "删除并清空分组",
-      "conditionDes": "触发监控的具体规则。"
+      "conditionDes": "触发监控的具体规则。",
+      "publishAddress": "发布地址",
+      "publishPort": "发布端口",
+      "publishAddressDes": "系统监控的主要网址，用于检测其可用性和性能状态",
+      "publishPortDes": "程序运行时监听的特定端口，负责接收来自外部的请求和连接",
+      "mechanism": "运行机制",
+      "mechanismDes": "用于处理和响应通过发布端口接收的请求，包括请求的解析、处理和返回结果的完整流程。"
     }
   }
 }

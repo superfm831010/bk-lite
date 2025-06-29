@@ -45,35 +45,15 @@ export const useRabbitMQExporter = () => {
         }
       ) => {
         const _dataSource = cloneDeep(extra.dataSource || []);
-        _dataSource[config.index][config.field] = e;
+        _dataSource[config.index][config.field] =
+          config.field === 'ENV_PUBLISH_ADDR' ? e.target.value : e;
         extra.onTableDataChange?.(_dataSource);
       };
 
       const formItems = (
         <>
           {rabbitMQExporterFormItems.getCommonFormItems()}
-          <Form.Item label={t('monitor.intergrations.listeningPort')} required>
-            <Form.Item
-              noStyle
-              name="LISTEN_PORT"
-              rules={[
-                {
-                  required: true,
-                  message: t('common.required'),
-                },
-              ]}
-            >
-              <InputNumber
-                className="w-[300px] mr-[10px]"
-                min={1}
-                precision={0}
-              />
-            </Form.Item>
-            <span className="text-[12px] text-[var(--color-text-3)]">
-              {t('monitor.intergrations.listeningPortDes')}
-            </span>
-          </Form.Item>
-          <Form.Item label={t('monitor.intergrations.url')} required>
+          <Form.Item label={t('monitor.intergrations.addressDes')} required>
             <Form.Item
               noStyle
               name="RABBIT_URL"
@@ -90,6 +70,44 @@ export const useRabbitMQExporter = () => {
               {t('monitor.intergrations.urlDes')}
             </span>
           </Form.Item>
+          <Form.Item label={t('monitor.intergrations.publishPort')} required>
+            <Form.Item
+              noStyle
+              name="PUBLISH_PORT"
+              rules={[
+                {
+                  required: true,
+                  message: t('common.required'),
+                },
+              ]}
+            >
+              <InputNumber
+                className="w-[300px] mr-[10px]"
+                min={1}
+                precision={0}
+              />
+            </Form.Item>
+            <span className="text-[12px] text-[var(--color-text-3)]">
+              {t('monitor.intergrations.publishPortDes')}
+            </span>
+          </Form.Item>
+          <Form.Item label={t('monitor.intergrations.publishAddress')} required>
+            <Form.Item
+              noStyle
+              name="PUBLISH_ADDR"
+              rules={[
+                {
+                  required: true,
+                  message: t('common.required'),
+                },
+              ]}
+            >
+              <Input className="w-[300px] mr-[10px]" />
+            </Form.Item>
+            <span className="text-[12px] text-[var(--color-text-3)]">
+              {t('monitor.intergrations.publishAddressDes')}
+            </span>
+          </Form.Item>
         </>
       );
 
@@ -98,28 +116,46 @@ export const useRabbitMQExporter = () => {
           ...pluginConfig,
           formItems: rabbitMQExporterFormItems.getCommonFormItems('auto'),
           initTableItems: {
-            ENV_LISTEN_PORT: null,
+            ENV_PUBLISH_PORT: null,
             ENV_RABBIT_URL: null,
+            ENV_PUBLISH_ADDR: null,
           },
           defaultForm: {
             ENV_RABBIT_TIMEOUT: 60,
           },
           columns: [
             {
-              title: t('monitor.intergrations.listeningPort'),
-              dataIndex: 'ENV_LISTEN_PORT',
-              key: 'ENV_LISTEN_PORT',
+              title: t('monitor.intergrations.publishAddress'),
+              dataIndex: 'ENV_PUBLISH_ADDR',
+              key: 'ENV_PUBLISH_ADDR',
+              width: 200,
+              render: (_: unknown, record: TableDataItem, index: number) => (
+                <Input
+                  value={record.ENV_HOST}
+                  onChange={(e) =>
+                    handleInputChange(e, {
+                      index,
+                      field: 'ENV_PUBLISH_ADDR',
+                    })
+                  }
+                />
+              ),
+            },
+            {
+              title: t('monitor.intergrations.publishPort'),
+              dataIndex: 'ENV_PUBLISH_PORT',
+              key: 'ENV_PUBLISH_PORT',
               width: 200,
               render: (_: unknown, record: TableDataItem, index: number) => (
                 <InputNumber
-                  value={record.ENV_LISTEN_PORT}
+                  value={record.ENV_PUBLISH_PORT}
                   className="w-full"
                   min={1}
                   precision={0}
                   onChange={(e) =>
                     handleInputChange(e, {
                       index,
-                      field: 'ENV_LISTEN_PORT',
+                      field: 'ENV_PUBLISH_PORT',
                     })
                   }
                 />
@@ -163,8 +199,9 @@ export const useRabbitMQExporter = () => {
                 delete item.key;
                 return {
                   ...item,
-                  ENV_LISTEN_PORT: String(item.ENV_LISTEN_PORT),
+                  ENV_PUBLISH_PORT: String(item.ENV_PUBLISH_PORT),
                   ENV_RABBIT_URL: String(item.ENV_RABBIT_URL),
+                  ENV_PUBLISH_ADDR: String(item.ENV_PUBLISH_ADDR),
                   node_ids: [item.node_ids].flat(),
                   instance_type: pluginConfig.instance_type,
                   instance_id: item.ENV_RABBIT_URL,
@@ -181,8 +218,9 @@ export const useRabbitMQExporter = () => {
           },
           getParams: (formData: TableDataItem, configForm: TableDataItem) => {
             [
-              'LISTEN_PORT',
+              'PUBLISH_PORT',
               'RABBIT_URL',
+              'PUBLISH_ADDR',
               'RABBIT_USER',
               'RABBIT_PASSWORD',
               'RABBIT_TIMEOUT',
