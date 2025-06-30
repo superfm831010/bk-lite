@@ -497,3 +497,26 @@ msgstr "用于集中管理各个云区域下的节点，为各个节点安装各
 
 msgid "Covering user and organizational role permission management, ensuring resource access security through fine-grained permission control while improving operational efficiency. Provides flexible configuration and management to meet different business needs"
 msgstr "涵盖用户和组织角色权限管理，通过精细化权限控制，确保资源访问安全，同时提升操作效率。提供灵活的配置和管理，满足不同业务需求"
+
+
+msgid "Studio"
+msgstr "工作台"
+
+msgid "Agent"
+msgstr "智能体"
+
+msgid "Knowledge"
+msgstr "知识库"
+
+msgid "Tool"
+msgstr "工具"
+
+msgid "Model"
+msgstr "模型"
+
+msgid "LLM Model"
+msgstr "LLM 模型"
+
+msgid "OCR Model"
+msgstr "OCR 模型"
+
