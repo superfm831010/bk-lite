@@ -6,6 +6,7 @@ import { useTranslation } from '@/utils/i18n';
 import ContentDrawer from '@/components/content-drawer';
 import useContentDrawer from '@/app/opspilot/hooks/useContentDrawer';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
+import Icon from '@/components/icon';
 
 interface QAPair {
   id: string;
@@ -111,23 +112,29 @@ const QAPairResultPage: React.FC = () => {
                     <div className="flex flex-col h-full">
                       <div className="flex-1 flex flex-col">
                         <div className="flex-1 rounded-md transition-colors duration-200">
-                          <p className="
-                            line-clamp-2 text-ellipsis overflow-hidden
-                            leading-6 m-0 text-xs
-                          ">
-                            {qaPair.question || '--'}
-                          </p>
+                          <div className="flex items-start gap-2">
+                            <Icon type="question-circle-fill" className="text-lg mt-1 flex-shrink-0" />
+                            <p className="
+                              line-clamp-2 text-ellipsis overflow-hidden
+                              leading-6 m-0 text-xs text-[var(--color-text-1)] font-medium
+                            ">
+                              {qaPair.question || '--'}
+                            </p>
+                          </div>
                         </div>
                       </div>
                       <Divider className="my-3" />
                       <div className="flex-1 flex flex-col">
                         <div className="flex-1 rounded-md transition-colors duration-200">
-                          <p className="
-                            line-clamp-2 text-ellipsis overflow-hidden
-                            leading-6 m-0 text-xs
-                          ">
-                            {qaPair.answer || '--'}
-                          </p>
+                          <div className="flex items-start gap-2">
+                            <Icon type="answer" className="text-lg mt-1 flex-shrink-0" />
+                            <p className="
+                              line-clamp-2 text-ellipsis overflow-hidden
+                              leading-6 m-0 text-xs text-[var(--color-text-3)]
+                            ">
+                              {qaPair.answer || '--'}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
