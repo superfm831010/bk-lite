@@ -7,10 +7,13 @@ import useMlopsApi from '@/app/mlops/api';
 import {
   Segmented,
   Modal,
-  message
+  Menu,
+  message,
+  Button
 } from 'antd';
-import EntityList from '@/app/mlops/components/entity-list';
+import EntityList from '@/components/entity-list';
 import DatasetModal from './dataSetsModal';
+import PermissionWrapper from '@/components/permission';
 import { ModalRef, DataSet } from '@/app/mlops/types';
 import sideMenuStyle from './index.module.scss';
 const { confirm } = Modal;
@@ -33,26 +36,40 @@ const DatasetManagePage = () => {
   ];
 
   const menuActions = (data: DataSet) => {
-    return [
-      {
-        key: 'edit',
-        label: (
-          <div>
-            <span className="block w-full" onClick={() => {
+    return (
+      <>
+        <Menu onClick={(e) => e.domEvent.preventDefault()}>
+          <Menu.Item
+            className="!p-0"
+            onClick={() => {
               handleOpenModal('edit', 'editform', data)
-            }}>{t('common.edit')}</span>
-          </div>
-        ),
-      },
-      {
-        key: 'delete',
-        label: (
-          <div>
-            <span className="block w-full" onClick={() => handleDelete(data)}>{t('common.delete')}</span>
-          </div>
-        ),
-      },
-    ];
+            }}
+          >
+            <PermissionWrapper
+              requiredPermissions={['Edit']}
+              className="!block"
+            >
+              <Button type="text" className="w-full">
+                {t('common.edit')}
+              </Button>
+            </PermissionWrapper>
+          </Menu.Item>
+          <Menu.Item
+            className="!p-0"
+            onClick={() => handleDelete(data)}
+          >
+            <PermissionWrapper
+              requiredPermissions={['Delete']}
+              className="!block"
+            >
+              <Button type="text" className="w-full">
+                {t('common.delete')}
+              </Button>
+            </PermissionWrapper>
+          </Menu.Item>
+        </Menu>
+      </>
+    );
   };
 
   useEffect(() => {
@@ -89,7 +106,7 @@ const DatasetManagePage = () => {
   }, [activeTab]);
 
   const infoText = (item: any) => {
-    return `Created by: ${item.creator}`;
+    return (<p className='text-right'>{`Created by: ${item.created_by}`}</p>);
   };
 
   const navigateToNode = (item: any) => {
@@ -146,10 +163,9 @@ const DatasetManagePage = () => {
         data={datasets}
         loading={loading}
         onSearch={setSearchTerm}
-        // changeFilter={setFilterValue}
         menuActions={menuActions}
         openModal={() => handleOpenModal('add', 'addform')}
-        infoText={infoText}
+        descSlot={infoText}
         onCardClick={(item) => {
           navigateToNode(item);
         }}
