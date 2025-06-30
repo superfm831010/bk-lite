@@ -158,12 +158,16 @@ class IncidentModelViewSet(ModelViewSet):
         else:
             not_incident_alert_ids = list(
                 Alert.objects.filter(id__in=data["alert"], incident__isnull=False).values_list('id', flat=True))
-            data["alert"] = list(not_incident_alert_ids)
             has_incident_alert_ids = set(data["alert"]) - set(not_incident_alert_ids)
-            if has_incident_alert_ids:
+            data["alert"] = list(has_incident_alert_ids)
+            if not has_incident_alert_ids:
                 logger.warning(
                     f"Some alerts {has_incident_alert_ids} are already associated with an incident. "
                     "They will not be included in the new incident."
+                )
+                return Response(
+                    {"detail": "Some alerts are already associated with an incident and will not be included."},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
         if not data["operator"]:
             data["operator"] = self.request.user.username
