@@ -106,7 +106,6 @@ const DatasetManagePage = () => {
   }, [activeTab]);
 
   const infoText = (item: any) => {
-    console.log(item)
     return (<p className='text-right'>{`Created by: ${item.creator}`}</p>);
   };
 
