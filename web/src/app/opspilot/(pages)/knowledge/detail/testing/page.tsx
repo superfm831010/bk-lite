@@ -13,6 +13,7 @@ import useContentDrawer from '@/app/opspilot/hooks/useContentDrawer';
 import KnowledgeResultItem from '@/app/opspilot/components/block-result';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import useFetchConfigData from '@/app/opspilot/hooks/useFetchConfigData';
+import Icon from '@/components/icon';
 
 const { TextArea } = Input;
 
@@ -171,22 +172,26 @@ const TestingPage: React.FC = () => {
             >
               <div className="space-y-3">
                 <div>
-                  <div className="text-xs font-medium text-gray-500 mb-2">
-                    {t('knowledge.qaPairs.question')}
-                  </div>
-                  <div className="text-sm text-gray-800 leading-6">
-                    {qaPair.question}
+                  <div className="flex items-start gap-2">
+                    <Icon type="question-circle-fill" className="text-lg mt-1 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-[var(--color-text-1)] font-medium leading-6">
+                        {qaPair.question}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
                 <Divider className="my-3" />
                 
                 <div>
-                  <div className="text-xs font-medium text-gray-500 mb-2">
-                    {t('knowledge.qaPairs.answer')}
-                  </div>
-                  <div className="text-sm text-gray-800 leading-6">
-                    {qaPair.answer}
+                  <div className="flex items-start gap-2">
+                    <Icon type="answer" className="text-lg mt-1 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-[var(--color-text-3)] leading-6">
+                        {qaPair.answer}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
