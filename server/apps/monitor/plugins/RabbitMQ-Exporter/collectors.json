@@ -7,7 +7,7 @@
         "node_operating_system": "linux",
         "service_type": "exec",
         "executable_path": "/opt/fusion-collectors/bin/rabbitmq_exporter",
-        "execute_parameters": "--web.listen-address 127.0.0.1:$LISTEN_PORT",
+        "execute_parameters": "",
         "validation_parameters": "",
         "default_template": "",
         "introduction": "Rabbitmq Exporter is a monitoring tool that collects and exports RabbitMQ metrics, providing insights into message broker performance and health."

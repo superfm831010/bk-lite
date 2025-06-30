@@ -182,6 +182,7 @@ export const useKafkaExporter = () => {
               'KAFKA_SERVER',
               'SASL_USERNAME',
               'SASL_PASSWORD',
+              'SASL_MECHANISM',
             ].forEach((item) => {
               if (formData[item]) {
                 configForm.base.env_config[item] = String(formData[item]);

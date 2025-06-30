@@ -185,11 +185,6 @@ const ViewList: React.FC<ViewListProps> = ({
         current: 1,
       }));
       getColoumnAndData();
-      if (!colony) {
-        onRefresh();
-      } else {
-        setColony(null);
-      }
     }
   }, [objectId, objects, isLoading]);
 
@@ -255,12 +250,16 @@ const ViewList: React.FC<ViewListProps> = ({
     };
     const targetObject = objects.find((item) => item.id === objectId);
     const objName = targetObject?.name;
-    const getQueryParams = getInstanceQueryParams(objName as string, objParams);
     const getMetrics = getMonitorMetrics(objParams);
     const getPlugins = getMonitorPlugin(objParams);
     setTableLoading(true);
     try {
-      const res = await Promise.all([getMetrics, getPlugins, getQueryParams]);
+      const res = await Promise.all([
+        getMetrics,
+        getPlugins,
+        showMultipleConditions &&
+          getInstanceQueryParams(objName as string, objParams),
+      ]);
       const k8sQuery = res[2];
       const queryForm = isPod
         ? getK8SData(k8sQuery || {})
@@ -338,10 +337,13 @@ const ViewList: React.FC<ViewListProps> = ({
         const indexToInsert = originColumns.length - 1;
         originColumns.splice(indexToInsert, 0, ..._columns);
         setTableColumn(originColumns);
+        if (!colony) {
+          onRefresh();
+        } else {
+          setColony(null);
+        }
       }
-    } catch (error) {
-      console.log(error);
-    } finally {
+    } catch {
       setTableLoading(false);
     }
   };

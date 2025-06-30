@@ -14,6 +14,7 @@ from apps.alerts.models import Alert, AlertAssignment
 from apps.alerts.constants import AlertStatus, AlertAssignmentMatchType
 from apps.alerts.service.alter_operator import AlertOperator
 from apps.alerts.service.reminder_service import ReminderService
+from apps.alerts.service.un_dispatch import UnDispatchService
 from apps.core.logger import alert_logger as logger
 
 
@@ -478,4 +479,21 @@ def execute_auto_assignment_for_alerts(alert_ids: List[str]) -> Dict[str, Any]:
     operator = AlertAssignmentOperator(alert_ids)
     result = operator.execute_auto_assignment()
     logger.info(f"=== Auto assignment completed: {result} ===")
+    not_assignment_ids = set(alert_ids) - set(result.get("assignment_results", []))
+    if not_assignment_ids:
+        # 去进行兜底分派 使用全局分派 每60分钟分派一次 知道告警被相应后结束
+        not_assignment_alert_notify(not_assignment_ids)
+
     return result
+
+
+def not_assignment_alert_notify(alert_ids):
+    """
+    获取未分派告警通知设置
+    :return: SystemSetting 实例
+    """
+    alert_instances = list(Alert.objects.filter(alert_id__in=alert_ids, status=AlertStatus.UNASSIGNED))
+    from apps.alerts.tasks import sync_notify
+    params = UnDispatchService.notify_un_dispatched_alert_params_format(alerts=alert_instances)
+    for notify_people, channel, title, content, alerts in params:
+        sync_notify.delay(notify_people, channel, title, content)

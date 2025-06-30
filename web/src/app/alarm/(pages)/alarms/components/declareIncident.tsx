@@ -8,6 +8,7 @@ import { useCommon } from '@/app/alarm/context/common';
 import { useIncidentsApi } from '@/app/alarm/api/incidents';
 import { useTranslation } from '@/utils/i18n';
 import { IncidentTableDataItem } from '@/app/alarm/types/incidents';
+import { useSession } from 'next-auth/react';
 
 interface DeclareModalProps {
   rowData: any[];
@@ -17,6 +18,8 @@ interface DeclareModalProps {
 const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
   const { t } = useTranslation();
   const { userList, levelListIncident } = useCommon();
+  const { data: session } = useSession();
+  const currentUsername = session?.user?.username || '';
   const assigneeOptions = userList.map((u) => ({
     label: `${u.display_name} (${u.username})`,
     value: u.username,
@@ -127,7 +130,10 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
           form={form}
           layout="horizontal"
           onFinish={onFinish}
-          initialValues={{ mode: 'create' }}
+          initialValues={{
+            mode: 'create',
+            assignee: currentUsername ? [currentUsername] : [],
+          }}
         >
           <Radio.Group
             value={mode}
@@ -174,8 +180,10 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
                 rules={[{ required: true, message: t('common.selectMsg') }]}
               >
                 <Select
+                  mode="multiple"
                   allowClear
                   showSearch
+                  maxTagCount={4}
                   placeholder={t('common.selectMsg')}
                   options={assigneeOptions}
                 />
