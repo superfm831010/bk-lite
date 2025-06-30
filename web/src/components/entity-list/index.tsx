@@ -49,6 +49,30 @@ const EntityList = <T,>({
     return data.filter((item) => (item as any)[nameField]?.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [data, searchTerm, nameField]);
 
+  const renderAddButton = useCallback(() => {
+    if (!openModal) return null;
+    
+    return (
+      <PermissionWrapper
+        requiredPermissions={['Add']}
+        className="shadow-md p-4 rounded-xl flex items-center justify-center cursor-pointer bg-[var(--color-bg)]"
+      >
+        <div
+          className={`w-full h-full flex items-center justify-center ${styles.addNew}`}
+          onClick={(e) => {
+            e.preventDefault();
+            openModal();
+          }}
+        >
+          <div className="text-center">
+            <div className="text-2xl">+</div>
+            <div className="mt-2">{t('common.addNew')}</div>
+          </div>
+        </div>
+      </PermissionWrapper>
+    );
+  }, [openModal, t]);
+
   const renderCard = useCallback((item: T) => {
     const { id, description, icon, tagList } = item as any;
     const name = (item as any)[nameField];
@@ -164,29 +188,17 @@ const EntityList = <T,>({
         </div>
       ) : (
         <>
-          {openModal && (
-            <PermissionWrapper
-              requiredPermissions={['Add']}
-              className="shadow-md p-4 rounded-xl flex items-center justify-center cursor-pointer bg-[var(--color-bg)]"
-            >
-              <div
-                className="w-full h-full flex items-center justify-center"
-                onClick={(e) => {
-                  e.preventDefault();
-                  openModal();
-                }}
-              >
-                <div className="text-center">
-                  <div className="text-2xl">+</div>
-                  <div className="mt-2">{t('common.addNew')}</div>
-                </div>
-              </div>
-            </PermissionWrapper>
-          )}
           {filteredItems.length === 0 ? (
-            <Empty description={t('common.noData')} />
+            openModal ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
+                {renderAddButton()}
+              </div>
+            ) : (
+              <Empty description={t('common.noData')} />
+            )
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
+              {openModal && renderAddButton()}
               {filteredItems.map((item) => renderCard(item))}
             </div>
           )}
