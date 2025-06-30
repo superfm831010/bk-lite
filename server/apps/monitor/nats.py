@@ -22,15 +22,30 @@ def get_monitor_module_data(module, child_module, page, page_size, group_id):
 
 
 @nats_client.register
-def get_module_list():
+def get_monitor_module_list():
     """
         获取监控模块列表
     """
     objs = MonitorObject.objects.all().values("id", "type", "name")
+
+    obj_map = {}
+    for obj in objs:
+        if obj["type"] not in obj_map:
+            obj_map[obj["type"]] = []
+        obj_map[obj["type"]].append({"name": obj["id"], "display_name": obj["name"]})
+
+    type_list = []
+    for obj_type, items in obj_map.items():
+        type_list.append({
+            "name": obj_type,
+            "display_name": obj_type,
+            "children": items
+        })
+
     return [
         {
             "name": "instance",
             "display_name": "Instance",
-            "children": list(objs),
+            "children": type_list,
         },
     ]

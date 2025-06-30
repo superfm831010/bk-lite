@@ -21,5 +21,5 @@ class Monitor(object):
         :param module: 模块
         :return: 模块的枚举值列表
         """
-        return_data = self.client.run("get_module_list", **kwargs)
+        return_data = self.client.run("get_monitor_module_list", **kwargs)
         return return_data
