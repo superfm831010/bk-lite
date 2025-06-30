@@ -17,7 +17,7 @@ interface GroupItemProps {
 }
 
 const GroupItem: React.FC<GroupItemProps> = ({ id, name, isSelected, onClick }) => (
-  <Space onClick={() => onClick(id)}>
+  <Space className="w-full" onClick={() => onClick(id)}>
     <span
       className={`inline-block w-2 h-2 rounded-full ${
         isSelected ? 'bg-[var(--color-success)]' : 'bg-[var(--color-fill-4)]'
@@ -98,6 +98,7 @@ const UserInfo: React.FC = () => {
         key: 'themeSwitch',
         label: <ThemeSwitcher />,
       },
+      { type: 'divider' },
       {
         key: 'version',
         label: (
@@ -129,6 +130,7 @@ const UserInfo: React.FC = () => {
               />
             ),
           })),
+        popupClassName: 'user-groups-submenu'
       },
       { type: 'divider' },
       {
@@ -152,6 +154,8 @@ const UserInfo: React.FC = () => {
       className="min-w-[180px]"
       onClick={handleMenuClick}
       items={dropdownItems}
+      subMenuOpenDelay={0.1}
+      subMenuCloseDelay={0.1}
     />
   );
 
