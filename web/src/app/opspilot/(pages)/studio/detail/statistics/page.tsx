@@ -26,7 +26,6 @@ const ChartComponent: React.FC = () => {
   };
   const [dates, setDates] = useState<number[]>(getLast7Days());
 
-  // 独立状态和 loading 标识
   const [tokenConsumption, setTokenConsumption] = useState(0);
   const [loadingTokenConsumption, setLoadingTokenConsumption] = useState(true);
 
@@ -108,7 +107,6 @@ const ChartComponent: React.FC = () => {
     setDates(value);
   };
 
-  // 根据数据状态生成图表配置
   const lineConfig = (dataField: DataField): LineConfig => {
     let chartData: any[] = [];
     if (dataField === 'tokenOverviewData') chartData = tokenOverviewData;
