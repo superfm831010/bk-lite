@@ -156,7 +156,7 @@ class InstanceConfigService:
                 content = ConfigFormat.json_to_yaml(base_info["content"])
                 env_config = base_info.get("env_config")
                 if env_config:
-                    child_env = {k: v for k, v in env_config.items() if k in CHILD_ENVS}
+                    child_env = {k: v for k, v in env_config.items()}
                 NodeMgmt().update_config_content(base_info["id"], content, env_config)
 
         if child_info or child_env:
