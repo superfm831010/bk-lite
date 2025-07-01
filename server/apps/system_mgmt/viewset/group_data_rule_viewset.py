@@ -17,6 +17,7 @@ from apps.system_mgmt.serializers import GroupDataRuleSerializer
 class GroupDataRuleFilter(FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     group_id = filters.CharFilter(field_name="group_id", lookup_expr="exact")
+    app = filters.CharFilter(field_name="app", lookup_expr="exact")
 
 
 class GroupDataRuleViewSet(viewsets.ModelViewSet):
@@ -77,12 +78,7 @@ class GroupDataRuleViewSet(viewsets.ModelViewSet):
 
     @staticmethod
     def get_client(params):
-        client_map = {
-            "opspilot": OpsPilot,
-            "system-manager": SystemMgmt,
-            "node": NodeMgmt,
-            "monitor": Monitor
-        }
+        client_map = {"opspilot": OpsPilot, "system-manager": SystemMgmt, "node": NodeMgmt, "monitor": Monitor}
         app = params.pop("app")
         if app not in client_map.keys():
             raise Exception(_("APP not found"))

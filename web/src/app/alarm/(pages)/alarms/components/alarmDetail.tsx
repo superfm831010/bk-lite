@@ -8,9 +8,21 @@ import DeclareIncident from './declareIncident';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { useAlarmApi } from '@/app/alarm/api/alarms';
+import { useSettingApi } from '@/app/alarm/api/settings';
 import { useCommon } from '@/app/alarm/context/common';
 import { useStateMap } from '@/app/alarm/constants/alarm';
-import { Drawer, Button, Tag, Tabs, Timeline, Tooltip, message } from 'antd';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import {
+  Drawer,
+  Button,
+  Tag,
+  Tabs,
+  Timeline,
+  Tooltip,
+  message,
+  Spin,
+  Empty,
+} from 'antd';
 import {
   StateMap,
   EventItem,
@@ -39,6 +51,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const { t } = useTranslation();
     const { convertToLocalizedTime } = useLocalizedTime();
     const { getEventList } = useAlarmApi();
+    const { getLogList } = useSettingApi();
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
     const [formData, setFormData] = useState<AlarmTableDataItem | any>({});
     const [title, setTitle] = useState<string>('');
@@ -119,13 +132,13 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
 
     useEffect(() => {
       if (groupVisible) {
-        getTableData();
+        getLogTableData();
       }
     }, [formData, groupVisible, activeTab]);
 
     useEffect(() => {
       if (formData?.id) {
-        getTableData();
+        getLogTableData();
       }
     }, [pagination.current, pagination.pageSize]);
 
@@ -135,31 +148,48 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
       }
     }, [recordLoading]);
 
-    const getTableData = async () => {
+    const getLogTableData = async () => {
       setRecordLoading(true);
       try {
-        const data = {
-          count: 0,
-          results: [],
-        };
-        const _timelineData = data.results.map((item: AlarmTableDataItem) => ({
-          color: levelMap[item.level] || 'gray',
+        const data: any = await getLogList({
+          target_id: formData.alert_id,
+          page_size: 10000,
+          page: 1,
+        });
+        const _timelineData = (data.items || []).map((item: any) => ({
+          color: 'blue',
           children: (
-            <>
-              <span className="font-[600] mr-[10px]">
+            <div className="flex px-4 text-sm">
+              <span className="w-1/4">
                 {item.created_at
                   ? convertToLocalizedTime(item.created_at)
                   : '--'}
               </span>
-              {`${formData.metric?.display_name || item.content}`}
-            </>
+              <span className="w-[100px]">
+                {t(`settings.operationLog.operationOpts.${item.action}`)}
+              </span>
+              <span className="w-[120px]">{item.operator || '--'}</span>
+              <EllipsisWithTooltip
+                className="flex-1 whitespace-nowrap overflow-hidden text-ellipsis mr-[6px]"
+                text={item.overview || '--'}
+              ></EllipsisWithTooltip>
+            </div>
           ),
         }));
-        setTimeLineData((prev) => [...prev, ..._timelineData]);
-        setPagination((prev: Pagination) => ({
-          ...prev,
-          total: data.count,
-        }));
+        const headerItem = {
+          color: 'blue',
+          children: (
+            <div className="flex px-4 text-sm font-semibold">
+              <span className="w-1/4">{t('common.time')}</span>
+              <span className="w-[100px]">{t('common.action')}</span>
+              <span className="w-[120px]">{t('common.operator')}</span>
+              <span className="flex-1">
+                {t('settings.operationLog.summary')}
+              </span>
+            </div>
+          ),
+        };
+        setTimeLineData([headerItem, ..._timelineData]);
       } finally {
         setRecordLoading(false);
       }
@@ -316,7 +346,6 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
           </ul>
         </div>
         <Tabs activeKey={activeTab} items={tabList} onChange={changeTab} />
-        {recordLoading}
         <div className="w-full min-h-[300px]">
           {isBaseInfo && <BaseInfo detail={formData} />}
           {isEventTab && (
@@ -338,14 +367,23 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
           )}
 
           {!isBaseInfo && !isEventTab && (
-            <div
-              className="pt-[10px]"
-              style={{ height: 'calc(100vh - 330px)', overflowY: 'auto' }}
-              ref={timelineRef}
-              onScroll={handleScroll}
-            >
-              <Timeline items={timeLineData} />
-            </div>
+            <Spin spinning={recordLoading}>
+              {timeLineData.length > 1 ? (
+                <div
+                  className="pt-[10px]"
+                  style={{ height: 'calc(100vh - 330px)', overflowY: 'auto' }}
+                  ref={timelineRef}
+                  onScroll={handleScroll}
+                >
+                  <Timeline items={timeLineData} />
+                </div>
+              ) : (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={t('common.noData')}
+                />
+              )}
+            </Spin>
           )}
         </div>
       </Drawer>

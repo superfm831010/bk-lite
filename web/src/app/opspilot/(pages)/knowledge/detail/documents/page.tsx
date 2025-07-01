@@ -43,7 +43,6 @@ const DocumentsPage: React.FC = () => {
   const [isTrainLoading, setIsTrainLoading] = useState(false);
   const [singleTrainLoading, setSingleTrainLoading] = useState<{ [key: string]: boolean }>({});
 
-  // 问答对相关状态
   const [qaPairData, setQaPairData] = useState<QAPairData[]>([]);
   const [qaPairPagination, setQaPairPagination] = useState<PaginationProps>({
     current: 1,
@@ -53,11 +52,29 @@ const DocumentsPage: React.FC = () => {
   const [qaPairLoading, setQaPairLoading] = useState<boolean>(false);
   const [selectedQAPairKeys, setSelectedQAPairKeys] = useState<React.Key[]>([]);
 
-  const { fetchDocuments, batchDeleteDocuments, batchTrainDocuments, fetchQAPairs, deleteQAPair } = useKnowledgeApi();
+  const { fetchDocuments, batchDeleteDocuments, batchTrainDocuments, fetchQAPairs, deleteQAPair, fetchKnowledgeBaseDetails: fetchKnowledgeBaseDetailsApi } = useKnowledgeApi();
 
   const randomColors = ['#ff9214', '#875cff', '#00cba6', '#155aef'];
 
+  const [knowledgeBasePermissions, setKnowledgeBasePermissions] = useState<string[]>([]);
+
   const getRandomColor = () => randomColors[Math.floor(Math.random() * randomColors.length)];
+
+  const fetchKnowledgeBaseDetails = async () => {
+    if (!id) return;
+    
+    try {
+      const details = await fetchKnowledgeBaseDetailsApi(Number(id));
+      setKnowledgeBasePermissions(details.permissions || []);
+    } catch (error) {
+      console.error('Failed to fetch knowledge base details:', error);
+      setKnowledgeBasePermissions([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchKnowledgeBaseDetails();
+  }, []);
 
   const columns: TableColumnsType<TableData> = [
     {
@@ -232,7 +249,9 @@ const DocumentsPage: React.FC = () => {
       title: t('knowledge.documents.actions'),
       key: 'action',
       render: (_, record) => (
-        <PermissionWrapper requiredPermissions={['Delete']}>
+        <PermissionWrapper 
+          requiredPermissions={['Delete']} 
+          instPermissions={knowledgeBasePermissions}>
           <Button
             type="link"
             size="small"
@@ -492,7 +511,9 @@ const DocumentsPage: React.FC = () => {
   const batchOperationMenu = (
     <Menu className={styles.batchOperationMenu}>
       <Menu.Item key="batchTrain">
-        <PermissionWrapper requiredPermissions={['Train']}>
+        <PermissionWrapper 
+          requiredPermissions={['Train']} 
+          instPermissions={knowledgeBasePermissions}>
           <Button
             type="text"
             className="w-full"
@@ -506,7 +527,9 @@ const DocumentsPage: React.FC = () => {
         </PermissionWrapper>
       </Menu.Item>
       <Menu.Item key="batchDelete">
-        <PermissionWrapper requiredPermissions={['Delete']}>
+        <PermissionWrapper 
+          requiredPermissions={['Delete']} 
+          instPermissions={knowledgeBasePermissions}>
           <Button
             type="text"
             className="w-full"
@@ -519,7 +542,9 @@ const DocumentsPage: React.FC = () => {
         </PermissionWrapper>
       </Menu.Item>
       <Menu.Item key="batchSet">
-        <PermissionWrapper requiredPermissions={['Set']}>
+        <PermissionWrapper 
+          requiredPermissions={['Set']} 
+          instPermissions={knowledgeBasePermissions}>
           <Button
             type="text"
             className="w-full"
@@ -556,7 +581,9 @@ const DocumentsPage: React.FC = () => {
           <Tooltip className='mr-[8px]' title={t('common.refresh')}>
             <Button icon={<SyncOutlined />} onClick={() => fetchData()} /> {/* Adjusted here */}
           </Tooltip>
-          <PermissionWrapper requiredPermissions={['Add']}>
+          <PermissionWrapper 
+            requiredPermissions={['Add']} 
+            instPermissions={knowledgeBasePermissions}>
             <Button
               type='primary'
               className='mr-[8px]'
@@ -577,7 +604,9 @@ const DocumentsPage: React.FC = () => {
             </Dropdown>
           )}
           {activeTabKey === 'qa_pairs' && (
-            <PermissionWrapper requiredPermissions={['Delete']}>
+            <PermissionWrapper 
+              requiredPermissions={['Delete']} 
+              instPermissions={knowledgeBasePermissions}>
               <Button
                 danger
                 icon={<DeleteOutlined />}

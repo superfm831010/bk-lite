@@ -8,7 +8,7 @@ from rest_framework.fields import empty
 
 from apps.alerts.constants import AlertStatus, IncidentStatus, NotifyResultStatus
 from apps.alerts.models import AlertSource, Alert, Event, Level, AlertAssignment, AlertShield, Incident, SystemSetting, \
-    NotifyResult
+    NotifyResult, OperatorLog
 
 
 class AlertSourceModelSerializer(serializers.ModelSerializer):
@@ -400,3 +400,11 @@ class SystemSettingModelSerializer(serializers.ModelSerializer):
         model = SystemSetting
         fields = "__all__"
         extra_kwargs = {}
+
+
+class OperatorLogModelSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+
+    class Meta:
+        model = OperatorLog
+        fields = "__all__"

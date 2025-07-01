@@ -191,7 +191,7 @@ const DataManagement: React.FC = () => {
 
     setLoading(true);
     try {
-      const params: any = { client_id: id, page: currentPage, page_size: pageSize };
+      const params: any = { app: clientId, page: currentPage, page_size: pageSize };
       if (search) {
         params.search = search;
       }

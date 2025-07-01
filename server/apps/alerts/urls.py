@@ -7,7 +7,7 @@ from rest_framework import routers
 
 from apps.alerts.views.assignment_shield import AlertAssignmentModelViewSet, AlertShieldModelViewSet
 from apps.alerts.views.view import request_test, AlertSourceModelViewSet, AlterModelViewSet, EventModelViewSet, \
-    LevelModelViewSet, IncidentModelViewSet, SystemSettingModelViewSet
+    LevelModelViewSet, IncidentModelViewSet, SystemSettingModelViewSet, SystemLogModelViewSet
 from apps.alerts.views.source import receiver_data
 from apps.alerts.views.rule_views import AggregationRulesViewSet, CorrelationRulesViewSet
 
@@ -22,6 +22,7 @@ router.register(r"api/shield", AlertShieldModelViewSet, basename="shield")
 router.register(r"api/incident", IncidentModelViewSet, basename="incident")
 router.register(r'api/correlation_rule', CorrelationRulesViewSet, basename='correlation_rules')
 router.register(r'api/aggregation_rule', AggregationRulesViewSet, basename='aggregation_rules')
+router.register(r'api/log', SystemLogModelViewSet, basename='log')
 
 urlpatterns = [
     path("api/test/", request_test),

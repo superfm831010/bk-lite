@@ -32,14 +32,16 @@ async def test_ingest():
     docs = loader.load()
     rs = chunk.chunk(docs)
 
+    for i, doc in enumerate(rs):
+        doc.metadata['knowledge_id'] = f'knowledge_{i}'
+        doc.metadata['knowledge_title'] = 'development'
+        doc.metadata['chunk_id'] = f'chunk_{i}'
+
     request = GraphitiRagDocumentIngestRequest(
         openai_api_key=os.getenv('OPENAI_API_KEY'),
         openai_api_base=os.getenv('OPENAI_BASE_URL'),
         openai_model='gpt-4.1-mini',
-        openai_small_model='gpt-4.1-nano',
         docs=rs,
-        index_name="test_index",
-        index_mode='overwrite',
         embed_model_base_url='local:huggingface_embedding:BAAI/bge-small-zh-v1.5',
         embed_model_api_key=os.getenv('TEST_INFERENCE_TOKEN'),
         embed_model_name=os.getenv('TEST_BCE_EMBED_MODEL'),
@@ -62,7 +64,7 @@ async def test_retriver():
         rerank_model_api_key='',
         rerank_model_base_url='local:bce:maidalun1020/bce-reranker-base_v1',
         rerank_model_name='bce-reranker-base_v1',
-        group_id='test_group',
+        group_ids=['test_group'],
         search_query='CMDB如何写入主机',
         size=5
     )
@@ -74,7 +76,7 @@ async def test_retriver():
 async def test_list_index_document():
     rag = GraphitiRAG()
     request = DocumentListRequest(
-        group_id='test_group'
+        group_ids=['test_group']
     )
     result = await rag.list_index_document(request)
     print(result)
