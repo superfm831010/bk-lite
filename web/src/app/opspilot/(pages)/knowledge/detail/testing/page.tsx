@@ -221,8 +221,7 @@ const TestingPage: React.FC = () => {
                 rows={6}
               />
               <PermissionWrapper 
-                requiredPermissions={['Edit']}
-                instPermissions={knowledgeBasePermissions}>
+                requiredPermissions={['Edit']}>
                 <Button
                   type="primary"
                   className="absolute bottom-2 right-2"
