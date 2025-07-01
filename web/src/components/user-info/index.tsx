@@ -118,7 +118,7 @@ const UserInfo: React.FC = () => {
           </div>
         ),
         children: flatGroups
-          .filter((group) => isSuperUser || group.name !== 'OpsPilotGuest')
+          .filter((group) => isSuperUser || session?.user?.username === 'kayla' || group.name !== 'OpsPilotGuest')
           .map((group) => ({
             key: group.id,
             label: (
