@@ -53,22 +53,24 @@ class MaintainerViewSet(viewsets.ModelViewSet):
 
 
 class AuthViewSet(MaintainerViewSet):
-    SUPERUSER_RULE_ID = "0"
+    SUPERUSER_RULE_ID = ["0", "-1"]
     ORDERING_FIELD = "-id"
 
-    def filter_rules(self, queryset, rules):
+    def filter_rules(self, rules):
         """根据规则过滤查询集"""
         if not rules:
-            return queryset
+            return []
 
-        if len(rules) == 1 and isinstance(rules[0], dict) and str(rules[0].get("id")) == self.SUPERUSER_RULE_ID:
-            return queryset
+        if len(rules) == 1 and isinstance(rules[0], dict) and str(rules[0].get("id")) in self.SUPERUSER_RULE_ID:
+            return []
 
         rule_ids = []
         for rule in rules:
             if isinstance(rule, dict) and "id" in rule:
-                rule_ids.append(rule["id"])
-        return queryset.filter(id__in=rule_ids)
+                rule_ids.append(int(rule["id"]))
+        if -1 in rule_ids or 0 in rule_ids:
+            return []
+        return rule_ids
 
     def list(self, request, *args, **kwargs):
         """重写列表方法以支持权限过滤"""
@@ -88,12 +90,19 @@ class AuthViewSet(MaintainerViewSet):
 
             if getattr(user, "is_superuser", False):
                 return self._list(queryset.order_by(self.ORDERING_FIELD))
-
+            query = Q()
+            instance_ids = []
             if hasattr(self, "permission_key"):
-                rules = self._get_permission_rules(user)
-                queryset = self.filter_rules(queryset, rules)
+                guest_rules, normal_rules = self._get_permission_rules(user)
+                instance_ids = self.filter_rules(normal_rules)
 
-            queryset = self._filter_by_user_groups(user, queryset)
+                if guest_rules:
+                    guest_instance_ids = self.filter_rules(guest_rules)
+                    query |= Q(id__in=guest_instance_ids)
+            group_query = self._filter_by_user_groups(user, queryset)
+            if instance_ids:
+                queryset = queryset.filter(id__in=instance_ids)
+            queryset = queryset.filter(query | group_query)
             return self._list(queryset.order_by(self.ORDERING_FIELD))
 
         except Exception as e:
@@ -103,33 +112,45 @@ class AuthViewSet(MaintainerViewSet):
     def _get_permission_rules(self, user):
         """获取用户权限规则"""
         try:
-            app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console","mlops": "mlops"}
+            app_name_map = {
+                "system_mgmt": "system-manager",
+                "node_mgmt": "node",
+                "console_mgmt": "ops-console",
+                "mlops": "mlops",
+            }
             app_name = self._get_app_name()
             app_name = app_name_map.get(app_name, app_name)
             user_rules = getattr(user, "rules", {}).get(app_name, {})
             if not isinstance(user_rules, dict):
-                return []
-
+                return {}, {}
+            guest_rules_map = user_rules.get("guest", {})
+            normal_rules_map = user_rules.get("normal", {})
             if "." in self.permission_key:
                 keys = self.permission_key.split(".", 1)
-                rules = user_rules.get(keys[0], {})
-                if isinstance(rules, dict) and len(keys) > 1:
-                    rules = rules.get(keys[1], [])
+                guest_rules = guest_rules_map.get(keys[0], {})
+                normal_rules = normal_rules_map.get(keys[0], {})
+                if isinstance(guest_rules, dict) and len(keys) > 1:
+                    guest_rules = guest_rules.get(keys[1], [])
+                if isinstance(normal_rules, dict) and len(keys) > 1:
+                    normal_rules = normal_rules.get(keys[1], [])
             else:
-                rules = user_rules.get(self.permission_key, [])
+                guest_rules = guest_rules_map.get(self.permission_key, [])
+                normal_rules = normal_rules_map.get(self.permission_key, [])
 
-            return rules if isinstance(rules, list) else []
+            return guest_rules, normal_rules
 
         except Exception as e:
             logger.error(f"Error getting permission rules: {e}")
-            return []
+            return {}, {}
 
     def _filter_by_user_groups(self, user, queryset):
         """根据用户组过滤查询集"""
+        query = Q()
+
         try:
             group_list = getattr(user, "group_list", [])
             if not isinstance(group_list, list):
-                return queryset
+                return query
 
             team_ids = []
             for group in group_list:
@@ -137,17 +158,16 @@ class AuthViewSet(MaintainerViewSet):
                     team_ids.append(group["id"])
 
             if not team_ids:
-                return queryset
+                return query
 
-            query = Q()
             for team_id in team_ids:
                 query |= Q(team__contains=team_id)
 
-            return queryset.filter(query)
+            return query
 
         except Exception as e:
             logger.error(f"Error filtering by user groups: {e}")
-            return queryset
+            return query
 
     def _list(self, queryset):
         """统一的列表响应处理"""

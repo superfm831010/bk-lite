@@ -37,6 +37,7 @@ const StudioSettingsPage: React.FC = () => {
   const [botDomain, setBotDomain] = useState('');
   const [nodePort, setNodePort] = useState<number | string>(5005);
   const [enableSsl, setEnableSsl] = useState(false);
+  const [botPermissions, setBotPermissions] = useState<string[]>([]);
   const [online, setOnline] = useState(false);
   const searchParams = useSearchParams();
   const botId = searchParams ? searchParams.get('id') : null;
@@ -83,6 +84,7 @@ const StudioSettingsPage: React.FC = () => {
         setIsPortMappingEnabled(botData.enable_node_port);
         setBotDomain(botData.bot_domain);
         setNodePort(botData.node_port);
+        setBotPermissions(botData.permissions || []);
       } catch {
         message.error(t('common.fetchFailed'));
       } finally {
@@ -159,14 +161,20 @@ const StudioSettingsPage: React.FC = () => {
       </Menu.Item>
       <Menu.Divider />
       <Menu.Item key="save_publish">
-        <PermissionWrapper requiredPermissions={['Save&Publish']}>
+        <PermissionWrapper 
+          className='w-full' 
+          requiredPermissions={['Save&Publish']} 
+          instPermissions={botPermissions}>
           <Button type="primary" size="small" style={{ width: '100%' }} onClick={handleSaveAndPublish}>
             {t('common.save')} & {t('common.publish')}
           </Button>
         </PermissionWrapper>
       </Menu.Item>
       <Menu.Item key="save_only">
-        <PermissionWrapper requiredPermissions={['Edit']}>
+        <PermissionWrapper 
+          className='w-full' 
+          requiredPermissions={['Edit']} 
+          instPermissions={botPermissions}>
           <Button size="small" style={{ width: '100%' }} onClick={() => handleSave(false)}>
             {t('common.saveOnly')}
           </Button>

@@ -63,12 +63,22 @@ class AuthSerializer(UsernameSerializer):
             app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console"}
             app_name = app_name_map.get(app_name, app_name)
             app_rules = request.user.rules.get(app_name, {})
+            guest_rules_map = app_rules.get("guest", {})
+            normal_rules_map = app_rules.get("normal", {})
             if "." in self.permission_key:
-                keys = self.permission_key.split(".")
-                rules = app_rules.get(keys[0], {}).get(keys[1], [])
+                keys = self.permission_key.split(".", 1)
+                guest_rules = guest_rules_map.get(keys[0], {})
+                normal_rules = normal_rules_map.get(keys[0], {})
+                if isinstance(guest_rules, dict) and len(keys) > 1:
+                    guest_rules = guest_rules.get(keys[1], [])
+                if isinstance(normal_rules, dict) and len(keys) > 1:
+                    normal_rules = normal_rules.get(keys[1], [])
             else:
-                rules = app_rules.get(self.permission_key, [])
-            self.rule_map = {int(i["id"]): i["permission"] for i in rules}
+                guest_rules = guest_rules_map.get(self.permission_key, [])
+                normal_rules = normal_rules_map.get(self.permission_key, [])
+            # 合并规则
+            rules = guest_rules + normal_rules
+            self.rule_map = {int(i["id"]): i["permission"] for i in rules if int(i["id"]) > 0}
 
     def _get_app_name(self):
         """获取当前序列化器所属的应用名称"""
