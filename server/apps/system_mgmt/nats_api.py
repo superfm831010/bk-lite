@@ -277,7 +277,13 @@ def get_user_rules(group_id, username):
     )
     if not rules:
         return {}
-    return {i.group_rule.app: i.group_rule.rules for i in rules}
+    return_data = {}
+    for i in rules:
+        if i.group_rule.group_name == "OpsPilotGuest":
+            return_data.setdefault(i.group_rule.app, {})["guest"] = i.group_rule.rules
+        else:
+            return_data.setdefault(i.group_rule.app, {})["normal"] = i.group_rule.rules
+    return return_data
 
 
 @nats_client.register
