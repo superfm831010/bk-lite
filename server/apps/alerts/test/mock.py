@@ -64,7 +64,7 @@ def generate_mock_events(num_events=100):
 
         # 服务器名称
         server_type = random.choice(server_prefixes)
-        server_num = random.randint(1, 10000)
+        server_num = random.randint(1, 20)
 
         # 更新事件数据
         event["title"] = f"CPU Usage {levels_map[level]}"

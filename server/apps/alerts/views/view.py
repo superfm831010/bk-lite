@@ -11,11 +11,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
 
+from apps.alerts.constants import LogAction, LogTargetType
 from apps.alerts.filters import AlertSourceModelFilter, AlertModelFilter, EventModelFilter, LevelModelFilter, \
-    IncidentModelFilter, SystemSettingModelFilter
-from apps.alerts.models import AlertSource, Alert, Event, Level, Incident, SystemSetting
+    IncidentModelFilter, SystemSettingModelFilter, OperatorLogModelFilter
+from apps.alerts.models import AlertSource, Alert, Event, Level, Incident, SystemSetting, OperatorLog
 from apps.alerts.serializers.serializers import AlertSourceModelSerializer, AlertModelSerializer, EventModelSerializer, \
-    LevelModelSerializer, IncidentModelSerializer, SystemSettingModelSerializer
+    LevelModelSerializer, IncidentModelSerializer, SystemSettingModelSerializer, OperatorLogModelSerializer
 from apps.alerts.service.alter_operator import AlertOperator
 from apps.alerts.service.incident_operator import IncidentOperator
 from apps.core.logger import alert_logger as logger
@@ -69,16 +70,8 @@ class AlterModelViewSet(ModelViewSet):
         ).prefetch_related('events__source')
         return queryset
 
-    def list(self, request, *args, **kwargs):
-        """
-        List all alerts with optional filtering and pagination.
-        """
-        return super().list(request, *args, **kwargs)
-
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
-
     @action(methods=['post'], detail=False, url_path='operator/(?P<operator_action>[^/.]+)', url_name='operator')
+    @transaction.atomic
     def operator(self, request, operator_action, *args, **kwargs):
         """
         Custom operator method to handle alert operations.
@@ -146,6 +139,7 @@ class IncidentModelViewSet(ModelViewSet):
         ).prefetch_related('alert')
         return queryset
 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
         data = request.data
         incident_id = f"INCIDENT-{uuid.uuid4().hex}"
@@ -158,12 +152,16 @@ class IncidentModelViewSet(ModelViewSet):
         else:
             not_incident_alert_ids = list(
                 Alert.objects.filter(id__in=data["alert"], incident__isnull=False).values_list('id', flat=True))
-            data["alert"] = list(not_incident_alert_ids)
             has_incident_alert_ids = set(data["alert"]) - set(not_incident_alert_ids)
-            if has_incident_alert_ids:
+            data["alert"] = list(has_incident_alert_ids)
+            if not has_incident_alert_ids:
                 logger.warning(
                     f"Some alerts {has_incident_alert_ids} are already associated with an incident. "
                     "They will not be included in the new incident."
+                )
+                return Response(
+                    {"detail": "Some alerts are already associated with an incident and will not be included."},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
         if not data["operator"]:
             data["operator"] = self.request.user.username
@@ -171,10 +169,63 @@ class IncidentModelViewSet(ModelViewSet):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+
+        log_data = {
+            "action": LogAction.ADD,
+            "target_type": LogTargetType.INCIDENT,
+            "operator": request.user.username,
+            "operator_object": "事故-创建",
+            "target_id": serializer.data["incident_id"],
+            "overview": f"手动创建事故[{serializer.data['title']}]"
+        }
+        OperatorLog.objects.create(**log_data)
+
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        log_data = {
+            "action": LogAction.MODIFY,
+            "target_type": LogTargetType.INCIDENT,
+            "operator": request.user.username,
+            "operator_object": "事故-更新",
+            "target_id": instance.incident_id,
+            "overview": f"手动修改事故[{instance.title}]"
+        }
+        OperatorLog.objects.create(**log_data)
+
+        return Response(serializer.data)
+
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+
+        log_data = {
+            "action": LogAction.DELETE,
+            "target_type": LogTargetType.INCIDENT,
+            "operator": request.user.username,
+            "operator_object": "事故-删除",
+            "target_id": instance.incident_id,
+            "overview": f"手动删除事故[{instance.title}]"
+        }
+        OperatorLog.objects.create(**log_data)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(methods=['post'], detail=False, url_path='operator/(?P<operator_action>[^/.]+)', url_name='operator')
+    @transaction.atomic
     def operator(self, request, operator_action, *args, **kwargs):
         """
         事故操作方法
@@ -237,6 +288,24 @@ class SystemSettingModelViewSet(ModelViewSet):
             return WebUtils.response_error(error_message="Setting not found", status_code=status.HTTP_404_NOT_FOUND)
 
     @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        log_data = {
+            "action": LogAction.ADD,
+            "target_type": LogTargetType.SYSTEM,
+            "operator": request.user.username,
+            "operator_object": "系统配置-创建",
+            "target_id": serializer.data["key"],
+            "overview": f"创建系统配置: key:{serializer.data['key']}"
+        }
+        OperatorLog.objects.create(**log_data)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
         """
         更新完成系统配置后 若修改了时间频率 即修改celery任务
@@ -252,6 +321,16 @@ class SystemSettingModelViewSet(ModelViewSet):
 
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        log_data = {
+            "action": LogAction.MODIFY,
+            "target_type": LogTargetType.SYSTEM,
+            "operator": request.user.username,
+            "operator_object": "系统配置-修改",
+            "target_id": instance.key,
+            "overview": f"修改系统配置: key:{instance.key}"
+        }
+        OperatorLog.objects.create(**log_data)
+
         self.perform_update(serializer)
         return WebUtils.response_success(serializer.data)
 
@@ -366,3 +445,15 @@ class SystemSettingModelViewSet(ModelViewSet):
             # 简化处理：如果大于60分钟且不能整除，按每小时执行
             logger.warning(f"复杂时间间隔{minutes}分钟，简化为每小时执行")
             return "0 * * * *"
+
+
+class SystemLogModelViewSet(ModelViewSet):
+    """
+    系统日志视图集
+    """
+    queryset = OperatorLog.objects.all()
+    serializer_class = OperatorLogModelSerializer
+    filterset_class = OperatorLogModelFilter
+    ordering_fields = ["created_at"]
+    ordering = ["-created_at"]
+    pagination_class = CustomPageNumberPagination
