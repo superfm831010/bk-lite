@@ -304,6 +304,42 @@ class InstanceViewSet(viewsets.ViewSet):
         return WebUtils.response_success(result)
 
     @swagger_auto_schema(
+        operation_id="inst_import_support_edit",
+        operation_description="实例导入支持编辑",
+        manual_parameters=[
+            openapi.Parameter(
+                "model_id",
+                openapi.IN_PATH,
+                description="模型ID",
+                type=openapi.TYPE_STRING,
+            )
+        ],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "file": openapi.Schema(
+                    type=openapi.TYPE_FILE,
+                    format=openapi.FORMAT_BINARY,
+                    description="文件",
+                ),
+            },
+            required=["file"],
+        ),
+    )
+    @HasPermission("asset_list-Add")
+    @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import_support_edit")
+    def inst_import_support_edit(self, request, model_id):
+        add_result, update_result = InstanceManage.inst_import_support_edit(
+            model_id,
+            request.data.get("file").file,
+            request.user.username,
+        )
+        return WebUtils.response_success({
+            "add_result": add_result,
+            "update_result": update_result,
+        })
+
+    @swagger_auto_schema(
         operation_id="inst_export",
         operation_description="实例导出",
         manual_parameters=[
