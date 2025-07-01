@@ -46,6 +46,7 @@ const SkillSettingsPage: React.FC = () => {
   const [quantity, setQuantity] = useState<number>(10);
   const [selectedTools, setSelectedTools] = useState<SelectTool[]>([]);
   const [skillType, setSkillType] = useState<number | null>(null);
+  const [skillPermissions, setSkillPermissions] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -102,6 +103,7 @@ const SkillSettingsPage: React.FC = () => {
           setToolEnabled(!!data.tools.length);
 
           setSkillType(data.skill_type);
+          setSkillPermissions(data.permissions || []);
         } catch (error) {
           console.error(t('common.fetchFailed'), error);
         } finally {
@@ -371,7 +373,8 @@ const SkillSettingsPage: React.FC = () => {
             </section>
             <div>
               <PermissionWrapper
-                requiredPermissions={['Edit']}>
+                requiredPermissions={['Edit']}
+                instPermissions={skillPermissions}>
                 <Button type="primary" onClick={handleSave} loading={saveLoading}>
                   {t('common.save')}
                 </Button>
@@ -379,7 +382,7 @@ const SkillSettingsPage: React.FC = () => {
             </div>
           </div>
           <div className="w-1/2 space-y-4">
-            <CustomChatSSE handleSendMessage={handleSendMessage} />
+            <CustomChatSSE instPermissions={skillPermissions} handleSendMessage={handleSendMessage} />
           </div>
         </div>
       )}

@@ -34,7 +34,7 @@ const TestingPage: React.FC = () => {
   const searchParams = useSearchParams();
   const id = searchParams ? searchParams.get('id') : null;
   const { updateKnowledgeSettings, testKnowledge } = useKnowledgeApi();
-  const { configData, setConfigData, loading: configLoading } = useFetchConfigData(id);
+  const { configData, setConfigData, loading: configLoading, knowledgeBasePermissions } = useFetchConfigData(id);
   const [searchText, setSearchText] = useState<string>('');
   const [results, setResults] = useState<TestKnowledgeResponse>({ docs: [], qa_docs: [] });
   const [loading, setLoading] = useState<boolean>(false);
@@ -220,7 +220,9 @@ const TestingPage: React.FC = () => {
                 onKeyPress={handleKeyPress}
                 rows={6}
               />
-              <PermissionWrapper requiredPermissions={['Edit']}>
+              <PermissionWrapper 
+                requiredPermissions={['Edit']}
+                instPermissions={knowledgeBasePermissions}>
                 <Button
                   type="primary"
                   className="absolute bottom-2 right-2"
@@ -241,7 +243,9 @@ const TestingPage: React.FC = () => {
                 setConfigData={setConfigData}
               />
               <div className="flex justify-end mt-4">
-                <PermissionWrapper requiredPermissions={['Edit']}>
+                <PermissionWrapper 
+                  requiredPermissions={['Edit']}
+                  instPermissions={knowledgeBasePermissions}>
                   <Button type="primary" onClick={handleApplyConfig} loading={applyLoading}>
                     {t('knowledge.applyConfig')}
                   </Button>
