@@ -4,7 +4,7 @@
       "title": "数据集",
       "icon": "datafull",
       "url": "/mlops/manage",
-      "name": "Datasets",
+      "name": "anomaly_detection_datasets",
       "children": [
         {
           "url": "/mlops/manage/detail",
@@ -22,7 +22,7 @@
       "title": "训练任务",
       "icon": "xunlianrenwu",
       "url": "/mlops/task",
-      "name": "Train Tasks",
+      "name": "train_tasks",
       "children": [
         {
           "url": "/mlops/task/traintask",

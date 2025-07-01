@@ -1,3 +1,4 @@
+from typing import List
 from pydantic import BaseModel
 
 
@@ -11,6 +12,6 @@ class DocumentRetrieverRequest(BaseModel):
     rerank_model_name: str = ''
 
     size: int = 100
-    group_id: str = ''
+    group_ids: List[str] = []
 
     search_query: str = ''

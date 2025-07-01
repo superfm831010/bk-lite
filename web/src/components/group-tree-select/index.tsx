@@ -116,9 +116,18 @@ const GroupTreeSelect: React.FC<GroupTreeSelectProps> = ({
     // Remove duplicates
     resultValue = [...new Set(resultValue)];
 
+    if (!multiple) {
+      const currentValue = internalValue[0];
+      const newSingleValue = resultValue[0];
+      
+      if (currentValue === newSingleValue) {
+        return;
+      }
+    }
+
     setInternalValue(resultValue);
     onChange(resultValue);
-  }, [onChange, isValidValue]);
+  }, [onChange, isValidValue, multiple, internalValue]);
 
   // Transform value to TreeSelect format
   const transformedValue = useMemo(() => {

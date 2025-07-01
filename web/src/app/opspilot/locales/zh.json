@@ -39,6 +39,7 @@
       "targetDocuments": "目标文档",
       "selectedDocuments": "已选文档",
       "selectDocuments": "选择文档",
+      "pendingDocuments": "待确认文档",
       "documentsSelected": "个文档",
       "noDocumentsSelected": "暂无选择文档",
       "question": "问题",

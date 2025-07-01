@@ -25,5 +25,9 @@ class OpsPilot(object):
         return_data = self.client.run("get_opspilot_module_data", **kwargs)
         return return_data
 
+    def get_module_list(self):
+        return_data = self.client.run("get_opspilot_module_list")
+        return return_data
+
     def get_guest_provider(self, group_id):
         return self.client.run("get_guest_provider", group_id=group_id)
