@@ -26,6 +26,7 @@ const useFetchConfigData = (id: string | null) => {
     rerankTopK: 10
   });
   const [loading, setLoading] = useState(true);
+  const [knowledgeBasePermissions, setKnowledgeBasePermissions] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchConfigData = async () => {
@@ -54,6 +55,7 @@ const useFetchConfigData = (id: string | null) => {
           resultCount: data.result_count || 100,
           rerankTopK: data.rerank_top_k || 10
         });
+        setKnowledgeBasePermissions(data.permissions || []);
       } catch (error) {
         message.error('Failed to fetch config data.');
         console.error(error);
@@ -67,7 +69,7 @@ const useFetchConfigData = (id: string | null) => {
     }
   }, [get, id]);
 
-  return { formData, configData, setFormData, setConfigData, loading };
+  return { formData, configData, setFormData, setConfigData, loading, knowledgeBasePermissions };
 };
 
 export default useFetchConfigData;

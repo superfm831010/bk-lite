@@ -38,7 +38,27 @@ def init_user_set(group_id, group_name):
 
 
 @nats_client.register
-def get_module_data(module, child_module, page, page_size, group_id):
+def get_opspilot_module_list():
+    return [
+        {"name": "bot", "display_name": "Studio"},
+        {"name": "skill", "display_name": "Agent"},
+        {"name": "knowledge", "display_name": "Knowledge"},
+        {"name": "tools", "display_name": "Tool"},
+        {
+            "name": "provider",
+            "display_name": "Model",
+            "children": [
+                {"name": "llm_model", "display_name": "LLM Model"},
+                {"name": "ocr_model", "display_name": "OCR Model"},
+                {"name": "embed_model", "display_name": "Embed Model"},
+                {"name": "rerank_model", "display_name": "Rerank Model"},
+            ],
+        },
+    ]
+
+
+@nats_client.register
+def get_opspilot_module_data(module, child_module, page, page_size, group_id):
     model_map = {
         "bot": Bot,
         "skill": LLMSkill,

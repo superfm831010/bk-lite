@@ -23,8 +23,10 @@ class AnomalyDetectionTrainDataSerializer(AuthSerializer):
         if request:
             # 将字符串 'true' 转换为布尔值 True
             self.include_train_data = request.query_params.get('include_train_data', 'false').lower() == 'true'
+            self.include_metadata = request.query_params.get('include_metadata', 'false').lower() == 'true'
         else:
             self.include_train_data = False
+            self.include_metadata = False
 
     def to_representation(self, instance):
         """
@@ -33,4 +35,6 @@ class AnomalyDetectionTrainDataSerializer(AuthSerializer):
         representation = super().to_representation(instance)
         if not self.include_train_data:
             representation.pop("train_data", None)  # 移除 train_data 字段
+        if not self.include_metadata:
+            representation.pop("metadata", None)  # 移除 metadata 字段
         return representation

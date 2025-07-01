@@ -5,6 +5,9 @@
   "icon": "Firewall",
   "type": "Network Device",
   "description": "",
+  "default_metric": "any({instance_type='firewall'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["sysUpTime", "iftotalInOctets", "iftotalOutOctets"],
   "metrics": [
     {
       "metric_group": "Base",

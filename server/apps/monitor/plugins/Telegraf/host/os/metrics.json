@@ -5,6 +5,9 @@
   "icon": "Host",
   "type": "OS",
   "description": "",
+  "default_metric": "any({instance_type='os'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["cpu_summary.usage", "mem.pct_used", "load5"],
   "metrics": [
     {
       "metric_group": "CPU",

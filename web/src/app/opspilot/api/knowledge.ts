@@ -1,6 +1,5 @@
 import useApiClient from '@/utils/request';
 import { KnowledgeValues } from '@/app/opspilot/types/knowledge';
-import { ResultItem } from '@/app/opspilot/types/global';
 
 export const useKnowledgeApi = () => {
   const { get, post, patch, del } = useApiClient();
@@ -161,15 +160,15 @@ export const useKnowledgeApi = () => {
   /**
    * Tests knowledge base with a query.
    */
-  const testKnowledge = async (params: any): Promise<ResultItem[]> => {
+  const testKnowledge = async (params: any): Promise<any> => {
     return post('/opspilot/knowledge_mgmt/knowledge_document/testing', params);
   };
 
   /**
    * Fetches knowledge base details by ID.
    */
-  const fetchKnowledgeBaseDetails = async (id: number): Promise<{ name: string; introduction: string }> => {
-    return get(`/opspilot/knowledge_mgmt/knowledge_base/${id}`);
+  const fetchKnowledgeBaseDetails = async (id: number): Promise<{ name: string; introduction: string; permissions: string[] }> => {
+    return get(`/opspilot/knowledge_mgmt/knowledge_base/${id}/`);
   };
 
   /**
@@ -239,6 +238,60 @@ export const useKnowledgeApi = () => {
     return get('/opspilot/knowledge_mgmt/knowledge_document/get_my_tasks/',  { params });
   };
 
+  /**
+   * Fetches QA pairs for the knowledge base.
+   */
+  const fetchQAPairs = async (params: any): Promise<any> => {
+    return get('/opspilot/knowledge_mgmt/qa_pairs/', { params });
+  };
+
+  /**
+   * Deletes a single QA pair.
+   */
+  const deleteQAPair = async (qaPairId: number): Promise<void> => {
+    return del(`/opspilot/knowledge_mgmt/qa_pairs/${qaPairId}/`);
+  };
+
+  /**
+   * Creates QA pairs from selected documents.
+   */
+  const createQAPairs = async (payload: {
+    knowledge_base_id: number;
+    llm_model_id: number;
+    qa_count: number;
+    document_list: Array<{
+      name: string;
+      document_id: number;
+      document_source: string;
+    }>;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/create_qa_pairs/', payload);
+  };
+
+  /**
+   * Fetches QA pairs chunk details for a specific QA pair.
+   */
+  const fetchQAPairDetails = async (params: {
+    qa_pair_id: number;
+    page?: number;
+    page_size?: number;
+    search_text?: string;
+  }): Promise<any> => {
+    return get(`/opspilot/knowledge_mgmt/qa_pairs/${params.qa_pair_id}/get_details/`, { params });
+  };
+
+  /**
+   * Fetches QA pairs for a specific chunk.
+   */
+  const fetchChunkQAPairs = async (indexName: string, chunkId: string): Promise<any> => {
+    return get('/opspilot/knowledge_mgmt/qa_pairs/get_chunk_qa_pairs/', {
+      params: {
+        index_name: indexName,
+        chunk_id: chunkId,
+      },
+    });
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -268,5 +321,10 @@ export const useKnowledgeApi = () => {
     getDocListConfig,
     getDocumentConfig,
     fetchMyTasks,
+    fetchQAPairs,
+    deleteQAPair,
+    createQAPairs,
+    fetchQAPairDetails,
+    fetchChunkQAPairs,
   };
 };

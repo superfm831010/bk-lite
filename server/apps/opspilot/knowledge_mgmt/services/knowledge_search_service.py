@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from django.conf import settings
 
@@ -63,7 +63,7 @@ class KnowledgeSearchService:
     @classmethod
     def search(
         cls, knowledge_base_folder: KnowledgeBase, query: str, kwargs: Dict[str, Any], score_threshold: float = 0
-    ) -> List[Dict[str, Any]]:
+    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """执行知识库搜索
 
         Args:
@@ -71,11 +71,9 @@ class KnowledgeSearchService:
             query: 搜索查询语句
             kwargs: 搜索配置参数
             score_threshold: 分数阈值，低于此分数的结果将被过滤
-
-        Returns:
-            List[Dict[str, Any]]: 搜索结果列表
         """
         docs = []
+        qa_docs = []
         # 获取嵌入模型地址
         embed_mode = EmbedProvider.objects.get(id=kwargs["embed_model"])
 
@@ -98,21 +96,36 @@ class KnowledgeSearchService:
         # 处理搜索结果
         for doc in result["documents"]:
             score = doc["metadata"]["_score"]
-            doc_info = {
-                "content": doc["page_content"],
-                "score": score,
-                "knowledge_id": doc["metadata"]["_source"]["metadata"]["knowledge_id"],
-                "knowledge_title": doc["metadata"]["_source"]["metadata"]["knowledge_title"],
-            }
-
+            meta_data = doc["metadata"]["_source"]["metadata"]
+            doc_info = {}
             if kwargs["enable_rerank"]:
                 doc_info["rerank_score"] = doc["metadata"]["relevance_score"]
-
-            docs.append(doc_info)
+            if "qa_pairs_id" in meta_data:
+                doc_info.update(
+                    {
+                        "question": meta_data["qa_question"],
+                        "answer": meta_data["qa_answer"],
+                        "score": score,
+                        "knowledge_id": meta_data["knowledge_id"],
+                        "knowledge_title": meta_data["knowledge_title"],
+                    }
+                )
+                qa_docs.append(doc_info)
+            else:
+                doc_info.update(
+                    {
+                        "content": doc["page_content"],
+                        "score": score,
+                        "knowledge_id": meta_data["knowledge_id"],
+                        "knowledge_title": meta_data["knowledge_title"],
+                    }
+                )
+                docs.append(doc_info)
 
         # 按分数降序排序
         docs.sort(key=lambda x: x["score"], reverse=True)
-        return docs
+        qa_docs.sort(key=lambda x: x["score"], reverse=True)
+        return docs, qa_docs
 
     @staticmethod
     def change_chunk_enable(index_name, chunk_id, enabled):

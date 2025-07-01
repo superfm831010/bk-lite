@@ -9,4 +9,7 @@ class AnomalyDetectionTrainDataFilter(FilterSet):
         model = AnomalyDetectionTrainData
         fields = {
             "name": ["exact", "icontains"],
+            "dataset": ["exact"],  # 支持按数据集ID进行精确匹配过滤
         }
+
+   

@@ -9,6 +9,9 @@
       "type": "Container Management",
       "level": "base",
       "description": "",
+      "default_metric": "any({instance_type='docker'}) by (instance_id)",
+      "instance_id_keys": ["instance_id"],
+      "supplementary_indicators": ["docker_n_containers"],
       "metrics": [
         {
           "metric_group": "Docker Count",
@@ -51,6 +54,9 @@
       "type": "Container Management",
       "level": "derivative",
       "description": "",
+      "default_metric": "docker_container_mem_usage",
+      "instance_id_keys": ["instance_id", "container_name"],
+      "supplementary_indicators": ["docker_container_status", "docker_container_cpu_usage_percent", "docker_container_mem_usage_percent"],
       "metrics": [
         {
           "metric_group": "Status",

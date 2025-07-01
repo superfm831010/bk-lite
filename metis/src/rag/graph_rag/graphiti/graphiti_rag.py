@@ -1,9 +1,12 @@
 from typing import List
+
+from shapely import node
 from langchain_core.documents import Document
 from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
 from src.entity.rag.graphiti.document_ingest_request import GraphitiRagDocumentIngestRequest
-from src.entity.rag.graphiti.document_list_request import DocumentListRequest
 from src.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest
+from src.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest
+from src.rag.graph_rag.graphiti.graphiti_extend import GraphitiExtend
 from src.rag.graph_rag.graphiti.metis_embedder import MetisEmbedder
 from src.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderConfig
 from src.rag.graph_rag.graphiti.metis_raranker_config import MetisRerankerConfig
@@ -36,7 +39,7 @@ class GraphitiRAG():
             """
         )
 
-    async def list_index_document(self, req: DocumentListRequest):
+    async def list_index_document(self, req: DocumentRetrieverRequest):
         graphiti = Graphiti(
             core_settings.neo4j_host,
             core_settings.neo4j_username,
@@ -44,17 +47,18 @@ class GraphitiRAG():
         )
         # First get all nodes
         nodes_result = await graphiti.driver.execute_query(
-            f"""
-            MATCH (n) WHERE n.group_id = '{req.group_id}'
-            RETURN n.name as name, n.uuid as uuid, n.fact as fact, n.summary as summary, id(n) as node_id
             """
+            MATCH (n) WHERE n.group_id IN $group_ids
+            RETURN n.name as name, n.uuid as uuid, n.fact as fact, n.summary as summary, id(n) as node_id, n.group_id as group_id
+            """,
+            {"group_ids": req.group_ids}
         )
 
         # Then get all relationships
         edges_result = await graphiti.driver.execute_query(
-            f"""
+            """
             MATCH (n)-[r]-(m) 
-            WHERE n.group_id = '{req.group_id}' AND m.group_id = '{req.group_id}'
+            WHERE n.group_id IN $group_ids AND m.group_id IN $group_ids
             RETURN type(r) as relation_type, 
                    n.uuid as source_uuid, 
                    m.uuid as target_uuid,
@@ -62,7 +66,8 @@ class GraphitiRAG():
                    m.name as target_name,
                    id(n) as source_id,
                    id(m) as target_id
-            """
+            """,
+            {"group_ids": req.group_ids}
         )
 
         # Build edges list
@@ -81,16 +86,15 @@ class GraphitiRAG():
 
         docs = []
         for record in nodes_result.records:
-            doc = Document(
-                page_content=record['fact'] or record['summary'] or '',
-                metadata={
-                    'name': record['name'],
-                    'uuid': record['uuid'],
-                    'group_id': req.group_id,
-                    'node_id': record['node_id'],
-                    'edges': edges
-                }
-            )
+            doc = {
+                'name': record['name'],
+                'uuid': record['uuid'],
+                'group_id': record['group_id'],
+                'node_id': record['node_id'],
+                'edges': edges,
+                "fact": record['fact'],
+                "summary": record['summary'],
+            }
             docs.append(doc)
 
         return docs
@@ -101,9 +105,10 @@ class GraphitiRAG():
             core_settings.neo4j_username,
             core_settings.neo4j_password,
         )
-        await graphiti.remove_episode(
-            episode_uuid=req.uuid,
-        )
+        for uuid in req.uuids:
+            await graphiti.remove_episode(
+                episode_uuid=uuid,
+            )
 
     async def setup_graph(self):
         graphiti = Graphiti(
@@ -146,30 +151,30 @@ class GraphitiRAG():
                 client=llm_client,
                 config=LLMConfig(
                     model=req.openai_model,
-                    small_model=req.openai_small_model,
+                    small_model=req.openai_model,
                 ),
             ),
             embedder=embed_client,
             cross_encoder=rerank_client
         )
 
+        mapping = {}
         for doc in tqdm(req.docs):
-            source_description = SummarizeManager.summarize(content=doc.page_content,
-                                                            model='local:textrank',
-                                                            openai_api_base='',
-                                                            openai_api_key='')
 
-            await graphiti_instance.add_episode(
-                name=doc.metadata['chunk_id'],
+            name = f"{doc.metadata['knowledge_title']}_{doc.metadata['knowledge_id']}_{doc.metadata['chunk_id']}"
+            episode = await graphiti_instance.add_episode(
+                name=name,
                 episode_body=doc.page_content,
                 source=EpisodeType.text,
-                source_description=source_description,
+                source_description=doc.metadata['knowledge_title'],
                 reference_time=datetime.now(timezone.utc),
                 group_id=req.group_id,
             )
+            mapping[doc.metadata['chunk_id']] = episode.episode.uuid
 
         if req.rebuild_community:
             await self.build_communities(graphiti_instance, [req.group_id])
+        return mapping
 
     async def search(self, req: DocumentRetrieverRequest) -> List[Document]:
         embed_client = MetisEmbedder(
@@ -188,7 +193,7 @@ class GraphitiRAG():
             )
         )
 
-        graphiti_instance = Graphiti(
+        graphiti_instance = GraphitiExtend(
             core_settings.neo4j_host,
             core_settings.neo4j_username,
             core_settings.neo4j_password,
@@ -199,17 +204,54 @@ class GraphitiRAG():
         result = await graphiti_instance.search(
             query=req.search_query,
             num_results=req.size,
-            group_ids=[req.group_id]
+            group_ids=req.group_ids
         )
+
+        node_uid_set = set()
+        for r in result:
+            node_uid_set.add(r.source_node_uuid)
+            node_uid_set.add(r.target_node_uuid)
+
+        # 查询neo4j中的节点信息
+        node_info_map = {}
+        if node_uid_set:
+            node_uids = list(node_uid_set)
+            node_result = await graphiti_instance.driver.execute_query(
+                """
+            MATCH (n) 
+            WHERE n.uuid IN $node_uids
+            RETURN n.uuid as uuid, n.name as name, n.fact as fact, n.summary as summary
+            """,
+                {"node_uids": node_uids}
+            )
+
+            for record in node_result.records:
+                node_info_map[record['uuid']] = {
+                    'name': record['name'],
+                    'fact': record['fact'],
+                    'summary': record['summary']
+                }
 
         docs = []
         for r in result:
-            doc = Document(
-                page_content=r.fact,
-                metadata={
-                    'uuid': r.uuid,
-                    'group_id': req.group_id
+            source_node_info = node_info_map.get(r.source_node_uuid, {})
+            target_node_info = node_info_map.get(r.target_node_uuid, {})
+
+            doc = {
+                "fact": r.fact,
+                "name": r.name,
+                "group_id": r.group_id,
+                "source_node": {
+                    "uuid": r.source_node_uuid,
+                    "name": source_node_info.get('name', ''),
+                    "summary": source_node_info.get('summary', '')
+                },
+                "target_node": {
+                    "uuid": r.target_node_uuid,
+                    "name": target_node_info.get('name', ''),
+                    "summary": target_node_info.get('summary', '')
                 }
-            )
+            }
             docs.append(doc)
+
         return docs

@@ -13,6 +13,9 @@ class MonitorObject(TimeInfo, MaintainerInfo):
     level = models.CharField(default="base", max_length=50, verbose_name='监控对象级别')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name='父级监控对象')
     description = models.TextField(blank=True, verbose_name='监控对象描述')
+    default_metric = models.TextField(blank=True, verbose_name='默认指标')
+    instance_id_keys = models.JSONField(default=list, verbose_name='联合唯一实例ID键列表')
+    supplementary_indicators = models.JSONField(default=list, verbose_name='对象实例补充指标')
 
     class Meta:
         verbose_name = '监控对象'

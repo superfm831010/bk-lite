@@ -5,6 +5,9 @@
   "icon": "wangzhan1",
   "type": "Web",
   "description": "",
+  "default_metric": "any({instance_type='ping'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["ping_response_time", "ping_error_response_code"],
   "metrics": [
     {
       "metric_group": "Ping",

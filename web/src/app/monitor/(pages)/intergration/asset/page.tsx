@@ -34,13 +34,13 @@ import { PlusOutlined, DownOutlined } from '@ant-design/icons';
 import Icon from '@/components/icon';
 import RuleModal from './ruleModal';
 import { useCommon } from '@/app/monitor/context/common';
-import { useAssetMenuItems } from '@/app/monitor/hooks/intergration';
+import { useAssetMenuItems } from '@/app/monitor/hooks/intergration/common/assetMenuItems';
 import {
   deepClone,
   showGroupName,
-  getConfigByObjectName,
   getBaseInstanceColumn,
 } from '@/app/monitor/utils/common';
+import { useObjectConfigInfo } from '@/app/monitor/hooks/intergration/common/getObjectConfig';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import TreeSelector from '@/app/monitor/components/treeSelector';
 import EditConfig from './updateConfig';
@@ -69,6 +69,7 @@ const Asset = () => {
   const { t } = useTranslation();
   const commonContext = useCommon();
   const { convertToLocalizedTime } = useLocalizedTime();
+  const { getInstanceType } = useObjectConfigInfo();
   const authList = useRef(commonContext?.authOrganizations || []);
   const organizationList: Organization[] = authList.current;
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -489,9 +490,8 @@ const Asset = () => {
         setTableData(_dataSource);
         const data = {
           instance_id: row.instance_id,
-          instance_type: getConfigByObjectName(
-            objects.find((item) => item.id === objectId)?.name || '',
-            'instance_type'
+          instance_type: getInstanceType(
+            objects.find((item) => item.id === objectId)?.name || ''
           ),
         };
         const res = await getInstanceChildConfig(data);

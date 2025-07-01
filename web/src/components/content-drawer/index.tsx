@@ -12,15 +12,26 @@ interface ContentDrawerProps {
 const ContentDrawer: React.FC<ContentDrawerProps> = ({ visible, onClose, content, title }) => {
   const { t } = useTranslation();
 
+  const formatContent = (text: string) => {
+    return text.split('\n').map((line, index) => (
+      <React.Fragment key={index}>
+        {line}
+        {index < text.split('\n').length - 1 && <br />}
+      </React.Fragment>
+    ));
+  };
+
   return (
     <Drawer
       title={title || t('common.viewDetails')}
       placement="right"
       onClose={onClose}
-      visible={visible}
+      open={visible}
       width={600}
     >
-      <p>{content}</p>
+      <div className="whitespace-pre-wrap leading-6">
+        {formatContent(content)}
+      </div>
     </Drawer>
   );
 };

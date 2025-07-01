@@ -22,7 +22,11 @@ class OpsPilot(object):
         :param page_size: 页条目数
         :param group_id: 组ID
         """
-        return_data = self.client.run("get_module_data", **kwargs)
+        return_data = self.client.run("get_opspilot_module_data", **kwargs)
+        return return_data
+
+    def get_module_list(self):
+        return_data = self.client.run("get_opspilot_module_list")
         return return_data
 
     def get_guest_provider(self, group_id):

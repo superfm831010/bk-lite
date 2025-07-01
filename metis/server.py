@@ -5,7 +5,7 @@ from sanic import Sanic
 from sanic import json
 from sanic.log import logger
 from sanic.logging.default import LOGGING_CONFIG_DEFAULTS
-
+import logging
 from src.api import api
 from src.core import graph
 from src.core.env.core_settings import core_settings
@@ -39,6 +39,7 @@ def verify_password(username, password) -> bool:
 def bootstrap() -> Sanic:
     config = YamlConfig(path="config.yml")
 
+    logging.basicConfig(level=logging.INFO)
     LOGGING_CONFIG_DEFAULTS['formatters']['generic'] = {
         'class': 'src.core.sanic_plus.log.sanic_log_formater.SanicLogFormatter',
     }

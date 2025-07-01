@@ -5,6 +5,9 @@
   "icon": "Loadbalance",
   "type": "Network Device",
   "description": "",
+  "default_metric": "any({instance_type='loadbalance'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": ["sysUpTime", "iftotalInOctets", "iftotalOutOctets"],
   "metrics": [
     {
       "metric_group": "Base",

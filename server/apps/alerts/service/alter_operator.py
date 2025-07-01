@@ -7,8 +7,9 @@ from datetime import timedelta
 from django.utils import timezone
 from django.db import transaction
 
-from apps.alerts.models import Alert, AlertAssignment
-from apps.alerts.constants import AlertStatus, AlertOperate
+from apps.alerts.common.notify.base import NotifyParamsFormat
+from apps.alerts.models import Alert, AlertAssignment, OperatorLog
+from apps.alerts.constants import AlertStatus, AlertOperate, LogTargetType, LogAction
 from apps.core.logger import alert_logger as logger
 
 
@@ -24,6 +25,7 @@ class AlertOperator(object):
 
     def __init__(self, user):
         self.user = user
+        self.status_map = dict(AlertStatus.CHOICES)
 
     def operate(self, action: str, alert_id: str, data: dict) -> dict:
         """
@@ -125,8 +127,23 @@ class AlertOperator(object):
             if assignment_id:
                 self._create_reminder_record(alert, assignment_id)
 
+            from apps.alerts.tasks import sync_notify
+            transaction.on_commit(
+                lambda: sync_notify.delay(*self.format_notify_data(assignee, alert))
+            )
+
             logger.info(
                 f"告警分派成功: alert_id={alert_id}, assignee={assignee}, 状态变更: {AlertStatus.UNASSIGNED} -> {AlertStatus.PENDING}")
+
+            log_data = {
+                "action": LogAction.MODIFY,
+                "target_type": LogTargetType.ALERT,
+                "operator": self.user,
+                "operator_object": "告警处理-分派",
+                "target_id": alert.alert_id,
+                "overview": f"告警分派成功, 处理人[{assignee}] 告警[{alert.title}]状态变更: {self.status_map[AlertStatus.UNASSIGNED]} -> {self.status_map[AlertStatus.PENDING]}"
+            }
+            self.operator_log(log_data)
 
             return {
                 "result": True,
@@ -184,6 +201,16 @@ class AlertOperator(object):
 
             # 停止相关的提醒任务
             self._stop_reminder_tasks(alert)
+
+            log_data = {
+                "action": LogAction.MODIFY,
+                "target_type": LogTargetType.ALERT,
+                "operator": self.user,
+                "operator_object": "告警处理-认领",
+                "target_id": alert.alert_id,
+                "overview": f"告警认领成功, 认领人[{self.user}] 告警[{alert.title}]状态变更: {self.status_map[AlertStatus.PENDING]} -> {self.status_map[AlertStatus.PROCESSING]}"
+            }
+            self.operator_log(log_data)
 
             return {
                 "result": True,
@@ -250,6 +277,20 @@ class AlertOperator(object):
 
             logger.info(
                 f"告警转派成功: alert_id={alert_id}, old_assignee={old_assignee}, new_assignee={new_assignee}, 状态变更: {AlertStatus.PROCESSING} -> {AlertStatus.PENDING}")
+            from apps.alerts.tasks import sync_notify
+            transaction.on_commit(
+                lambda: sync_notify.delay(*self.format_notify_data(new_assignee, alert))
+            )
+
+            log_data = {
+                "action": LogAction.MODIFY,
+                "target_type": LogTargetType.ALERT,
+                "operator": self.user,
+                "operator_object": "告警处理-转派",
+                "target_id": alert.alert_id,
+                "overview": f"告警转派成功, 转派处理人[{new_assignee}] 告警[{alert.title}]状态变更: {self.status_map[AlertStatus.PROCESSING]} -> {self.status_map[AlertStatus.PENDING]}"
+            }
+            self.operator_log(log_data)
 
             return {
                 "result": True,
@@ -309,6 +350,16 @@ class AlertOperator(object):
             logger.info(
                 f"告警关闭成功: alert_id={alert_id}, user={self.user}, reason={close_reason}, 状态变更: {AlertStatus.PROCESSING} -> {AlertStatus.CLOSED}")
 
+            log_data = {
+                "action": LogAction.MODIFY,
+                "target_type": LogTargetType.ALERT,
+                "operator": self.user,
+                "operator_object": "告警处理-关闭",
+                "target_id": alert.alert_id,
+                "overview": f"告警关闭成功, 告警[{alert.title}]状态变更: {self.status_map[AlertStatus.PROCESSING]} -> {self.status_map[AlertStatus.CLOSED]}"
+            }
+            self.operator_log(log_data)
+
             return {
                 "result": True,
                 "message": "告警关闭成功",
@@ -365,6 +416,16 @@ class AlertOperator(object):
             logger.info(
                 f"告警处理成功: alert_id={alert_id}, user={self.user}, note={resolve_note}, 状态变更: {AlertStatus.PROCESSING} -> {AlertStatus.RESOLVED}")
 
+            log_data = {
+                "action": LogAction.MODIFY,
+                "target_type": LogTargetType.ALERT,
+                "operator": self.user,
+                "operator_object": "告警处理-已处理",
+                "target_id": alert.alert_id,
+                "overview": f"告警处理成功, 告警[{alert.title}]状态变更: {self.status_map[AlertStatus.PROCESSING]} -> {self.status_map[AlertStatus.RESOLVED]}"
+            }
+            self.operator_log(log_data)
+
             return {
                 "result": True,
                 "message": "告警处理成功",
@@ -376,73 +437,26 @@ class AlertOperator(object):
                 }
             }
 
-    def get_alert_status(self, alert_id: str) -> dict:
+    def format_notify_data(self, assignee, alert):
         """
-        获取告警当前状态信息
-        :param alert_id: 告警ID
-        :return: 告警状态信息
+        格式化通知数据
+        :return: 格式化后的通知数据
         """
-        try:
-            alert = Alert.objects.get(alert_id=alert_id)
-            return {
-                "success": True,
-                "data": {
-                    "alert_id": alert_id,
-                    "status": alert.status,
-                    "status_display": alert.get_status_display(),
-                    "operator": alert.operator,
-                    "operate": alert.operate,
-                    "updated_at": alert.updated_at.isoformat(),
-                    "created_at": alert.created_at.isoformat()
-                }
-            }
-        except Alert.DoesNotExist:
-            logger.error(f"告警不存在: alert_id={alert_id}")
-            return {
-                "success": False,
-                "message": "告警不存在"
-            }
+        user_list = [i for i in assignee if i != self.user]
+        param_format = NotifyParamsFormat(username_list=user_list, alerts=[alert])
+        title = param_format.format_title()
+        content = param_format.format_content()
+        channel = "email"
+        object_id = alert.alert_id
+        return user_list, channel, title, content, object_id
 
-    def get_available_operations(self, alert_id: str) -> dict:
+    @staticmethod
+    def operator_log(log_data: dict):
         """
-        根据当前告警状态和用户权限，获取可执行的操作列表
-        :param alert_id: 告警ID
-        :return: 可执行操作列表
+        记录告警操作日志
+        :param log_data: 日志数据字典
         """
-        try:
-            alert = Alert.objects.get(alert_id=alert_id)
-            available_ops = []
-
-            # 根据告警状态确定可执行操作
-            if alert.status == AlertStatus.UNASSIGNED:
-                available_ops.append("assign")  # 分派
-
-            elif alert.status == AlertStatus.PENDING:
-                if self.user in alert.operator:
-                    available_ops.append("acknowledge")  # 认领
-
-            elif alert.status == AlertStatus.PROCESSING:
-                if self.user in alert.operator:
-                    available_ops.extend(["reassign", "close", "resolve"])  # 转派、关闭、处理
-
-            logger.info(
-                f"获取可用操作: alert_id={alert_id}, user={self.user}, status={alert.status}, available_ops={available_ops}")
-
-            return {
-                "success": True,
-                "data": {
-                    "alert_id": alert_id,
-                    "current_status": alert.status,
-                    "available_operations": available_ops
-                }
-            }
-
-        except Alert.DoesNotExist:
-            logger.error(f"告警不存在: alert_id={alert_id}")
-            return {
-                "success": False,
-                "message": "告警不存在"
-            }
+        OperatorLog.objects.create(**log_data)
 
 
 class BeatUpdateAlertStatu(object):
@@ -485,7 +499,7 @@ class BeatUpdateAlertStatu(object):
                 if total_checked > 0:
                     # 批量更新告警状态
                     current_time = timezone.now()
-
+                    bulk_data = []
                     # 逐个更新以确保状态检查的准确性
                     for alert in all_alerts_to_close:
                         # 再次检查状态，防止在获取锁的过程中状态被其他进程修改
@@ -502,6 +516,18 @@ class BeatUpdateAlertStatu(object):
                                 f"最近事件时间: {alert.last_event_time}, "
                                 f"阈值时间: {close_threshold}"
                             )
+                        bulk_data.append(
+                            OperatorLog(
+                                action=LogAction.MODIFY,
+                                target_type=LogTargetType.ALERT,
+                                operator="system",
+                                operator_object="告警处理-自动关闭",
+                                target_id=alert.alert_id,
+                                overview=f"告警自动关闭, 告警标题[{alert.title}]",
+                            )
+
+                        )
+                    OperatorLog.objects.bulk_create(bulk_data)
 
         except Exception as e:
             logger.error(f"批量关闭告警失败: error={str(e)}")
