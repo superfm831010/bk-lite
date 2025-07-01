@@ -18,7 +18,7 @@ import { useCommon } from '@/app/alarm/context/common';
 import { useTranslation } from '@/utils/i18n';
 import { useSearchParams } from 'next/navigation';
 import { useIncidentsApi } from '@/app/alarm/api/incidents';
-import { message, Spin, Modal } from 'antd';
+import { message, Spin, Modal, Timeline, Empty } from 'antd';
 import { IncidentTableDataItem } from '@/app/alarm/types/incidents';
 import { useStateMap } from '@/app/alarm/constants/alarm';
 import {
@@ -32,24 +32,30 @@ import {
   Breadcrumb,
   Descriptions,
   Tabs,
-  Timeline,
   Input,
   Button,
   Segmented,
   Select,
   Tag,
-  Empty,
 } from 'antd';
+import { useSettingApi } from '@/app/alarm/api/settings';
+import { useLocalizedTime } from '@/hooks/useLocalizedTime';
+import { TimeLineItem } from '@/app/alarm/types/types';
 
 const { TabPane } = Tabs;
 
 const IncidentDetail: React.FC = () => {
   const { t } = useTranslation();
+  const { getLogList } = useSettingApi();
+  const { convertToLocalizedTime } = useLocalizedTime();
+  const [timeLineData, setTimeLineData] = useState<TimeLineItem[]>([]);
+  const [recordLoading, setRecordLoading] = useState<boolean>(false);
   const { levelListIncident, levelMapIncident, userList } = useCommon();
   const { getAlarmList } = useAlarmApi();
   const { getIncidentDetail, modifyIncidentDetail } = useIncidentsApi();
   const STATE_MAP = useStateMap();
   const searchParams = useSearchParams();
+  const rowDetailId = searchParams.get('id') || '';
   const incidentId = searchParams.get('incident_id') || '';
   const [tableData, setTableData] = useState<AlarmTableDataItem[]>([]);
   const [tabLoading, setTabLoading] = useState<boolean>(false);
@@ -70,11 +76,6 @@ const IncidentDetail: React.FC = () => {
   const [noteValue, setNoteValue] = useState('');
   const [preNote, setPreNote] = useState('');
   const [noteLoading, setNoteLoading] = useState(false);
-
-  const timeline = [
-    { time: '2023-08-01 12:00', event: '触发告警' },
-    { time: '2023-08-01 12:05', event: '认领告警' },
-  ];
 
   const alarmAttrList = [
     {
@@ -100,12 +101,13 @@ const IncidentDetail: React.FC = () => {
   useEffect(() => {
     fetchAlarmList();
     fetchIncidentDetail();
-  }, [incidentId]);
+    fetchTimeline();
+  }, [rowDetailId]);
 
   const fetchIncidentDetail = async () => {
     setLoadingDetail(true);
     try {
-      const res = await getIncidentDetail(incidentId);
+      const res = await getIncidentDetail(rowDetailId);
       setIncidentDetail(res);
     } finally {
       setLoadingDetail(false);
@@ -121,7 +123,7 @@ const IncidentDetail: React.FC = () => {
       const params: any = {
         page: 1,
         page_size: 10000,
-        incident_id: incidentId,
+        incident_id: rowDetailId,
         has_incident: '',
       };
       if (condition) {
@@ -162,11 +164,12 @@ const IncidentDetail: React.FC = () => {
   const confirmAssignee = async () => {
     setAssigneeLoading(true);
     try {
-      await modifyIncidentDetail(incidentId, { operator: selectedAssignees });
+      await modifyIncidentDetail(rowDetailId, { operator: selectedAssignees });
       message.success(t('common.saveSuccess'));
       setPreAssignees(selectedAssignees);
       setAssigneeDisplay(selectedAssignees.join(','));
       setEditingAssignee(false);
+      fetchTimeline();
     } catch {
       message.error(t('common.saveFailed'));
     } finally {
@@ -181,10 +184,11 @@ const IncidentDetail: React.FC = () => {
   const confirmNote = async () => {
     setNoteLoading(true);
     try {
-      await modifyIncidentDetail(incidentId, { note: noteValue });
+      await modifyIncidentDetail(rowDetailId, { note: noteValue });
       message.success(t('common.saveSuccess'));
       setPreNote(noteValue);
       setEditingNote(false);
+      fetchTimeline();
     } catch {
       message.error(t('common.saveFailed'));
     } finally {
@@ -218,10 +222,11 @@ const IncidentDetail: React.FC = () => {
           const remainingIds = tableData
             .map((i) => i.id)
             .filter((id) => !toRemove.includes(id));
-          await modifyIncidentDetail(incidentId, { alert: remainingIds });
+          await modifyIncidentDetail(rowDetailId, { alert: remainingIds });
           message.success(t('common.unlinkAlert') + t('common.success'));
           if (!isRow) setSelectedRowKeys([]);
           fetchAlarmList();
+          fetchTimeline();
         } catch {
           console.error(t('common.unlinkFailed'));
         } finally {
@@ -243,10 +248,11 @@ const IncidentDetail: React.FC = () => {
       const newIds = Array.from(
         new Set([...existingIds, ...(selectedKeys as number[])])
       );
-      await modifyIncidentDetail(incidentId, { alert: newIds });
+      await modifyIncidentDetail(rowDetailId, { alert: newIds });
       message.success(t('common.linkAlert') + t('common.success'));
       setOperateVisible(false);
       fetchAlarmList();
+      fetchTimeline();
     } catch {
       console.error(t('common.linkFailed'));
     } finally {
@@ -257,6 +263,48 @@ const IncidentDetail: React.FC = () => {
   const onRefresh = () => {
     fetchIncidentDetail();
     fetchAlarmList();
+    fetchTimeline();
+  };
+
+  const fetchTimeline = async () => {
+    if (!incidentId) return;
+    setRecordLoading(true);
+    try {
+      const res: any = await getLogList({
+        target_id: incidentId,
+        page_size: 10000,
+        page: 1,
+      });
+      const list = (res.items || []).map((item: any) => ({
+        color: 'blue',
+        children: (
+          <div className="flex px-4 text-sm">
+            <span className="w-[200px]">
+              {item.created_at ? convertToLocalizedTime(item.created_at) : '--'}
+            </span>
+            <span className="w-[140px]">
+              {t(`settings.operationLog.operationOpts.${item.action}`)}
+            </span>
+            <span className="w-[200px]">{item.operator || '--'}</span>
+            <span className="flex-1">{item.overview || '--'}</span>
+          </div>
+        ),
+      }));
+      const header = {
+        color: 'blue',
+        children: (
+          <div className="flex px-4 text-sm font-semibold">
+            <span className="w-[200px]">{t('common.time')}</span>
+            <span className="w-[140px]">{t('common.action')}</span>
+            <span className="w-[200px]">{t('common.operator')}</span>
+            <span className="flex-1">{t('settings.operationLog.summary')}</span>
+          </div>
+        ),
+      };
+      setTimeLineData([header, ...list]);
+    } finally {
+      setRecordLoading(false);
+    }
   };
 
   const renderDescItems = () =>
@@ -274,7 +322,10 @@ const IncidentDetail: React.FC = () => {
                 btnSize="small"
                 displayMode="dropdown"
                 rowData={[incidentDetail || ({} as IncidentTableDataItem)]}
-                onAction={fetchIncidentDetail}
+                onAction={async () => {
+                  fetchIncidentDetail();
+                  fetchTimeline();
+                }}
               />
             </div>
           </Descriptions.Item>
@@ -553,21 +604,18 @@ const IncidentDetail: React.FC = () => {
               </div>
             </TabPane>
             <TabPane tab={t('alarms.changes')} key="timeline">
-              {timeline?.length ? (
-                <Timeline className={styles.timelineContent}>
-                  {timeline.map((item, idx) => (
-                    <Timeline.Item key={idx}>
-                      <span className="font-medium">{item.time}</span> -{' '}
-                      {item.event}
-                    </Timeline.Item>
-                  ))}
-                </Timeline>
-              ) : (
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description={t('common.noData')}
-                />
-              )}
+              <Spin spinning={recordLoading}>
+                {timeLineData.length > 1 ? (
+                  <div className={styles.timelineContent}>
+                    <Timeline items={timeLineData} />
+                  </div>
+                ) : (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={t('common.noData')}
+                  />
+                )}
+              </Spin>
             </TabPane>
           </Tabs>
         </div>

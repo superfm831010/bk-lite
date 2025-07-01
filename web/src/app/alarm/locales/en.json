@@ -192,6 +192,22 @@
             "email": "Email",
             "wechat": "WeChat",
             "unselected": "Unselected"
+        },
+        "operationLog": {
+            "title": "Operation Log",
+            "description": "Display all historical records of additions, deletions, and modifications, and you can search based on conditions such as operator/operation type/time",
+            "timeRange": "Time Range",
+            "operator": "Operator",
+            "operationType": "Type",
+            "summary": "Overview",
+            "operationObject": "Object",
+            "operationTime": "Operating Time",
+            "operationOpts": {
+                "add": "Add",
+                "modify": "Modify",
+                "delete": "Delete",
+                "execute": "Execute"
+            }
         }
     }
 }
