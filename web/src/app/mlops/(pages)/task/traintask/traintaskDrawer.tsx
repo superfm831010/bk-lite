@@ -1,9 +1,11 @@
-import { Button, Drawer, TablePaginationConfig, Tag } from "antd";
+import { Button, Drawer, message, TablePaginationConfig, Tag } from "antd";
 import { ColumnItem, TrainTaskHistory } from "@/app/mlops/types";
 import CustomTable from "@/components/custom-table";
 import { useTranslation } from "@/utils/i18n";
-import { useState, useCallback, useMemo } from "react";
+import useMlopsApi from "@/app/mlops/api";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { TrainStatus, TrainText } from '@/app/mlops/constants';
+import { JointContent } from "antd/es/message/interface";
 
 const getStatusColor = (value: string, TrainStatus: Record<string, string>) => {
   return TrainStatus[value] || '';
@@ -13,21 +15,28 @@ const getStatusText = (value: string, TrainText: Record<string, string>) => {
   return TrainText[value] || '';
 };
 
-const TrainTaskDrawer = ({ open, onCancel, trainData, historyData, selectId }:
+const TrainTaskDrawer = ({ open, onCancel, selectId }:
   {
     open: boolean,
     onCancel: () => void,
-    trainData: any[],
     historyData: TrainTaskHistory[],
     selectId: number | null
   }) => {
   const { t } = useTranslation();
-  // const [loading, setLoading] = useState<boolean>(false);
+  const { getOneAnomalyTask } = useMlopsApi();
+  const [historyData, setHistoryData] = useState<TrainTaskHistory[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
     current: 1,
     total: 1,
     pageSize: 10,
   });
+
+  useEffect(() => {
+    if(open) {
+      getHisttoryData(selectId as number)
+    }
+  }, [open])
 
   // 使用 useCallback 缓存 renderColumns 函数
   const renderColumns = useCallback((params: object) => {
@@ -104,7 +113,7 @@ const TrainTaskDrawer = ({ open, onCancel, trainData, historyData, selectId }:
       dataIndex: 'train_data_id',
       key: 'train_data_id',
       width: 100,
-      render: (_, record) => (<p>{trainData?.find(item => item.id === record?.train_data_id)?.name || '--'}</p>)
+      render: () => (<p>{'--'}</p>)
     },
     {
       title: t('traintask.algorithms'),
@@ -128,6 +137,19 @@ const TrainTaskDrawer = ({ open, onCancel, trainData, historyData, selectId }:
       ),
     }
   ], [t]);
+
+  const getHisttoryData = async (id: number) => {
+    setLoading(true);
+    try {
+      const data = await getOneAnomalyTask(id);
+      setHistoryData(data);
+    }catch (e) {
+      console.log(e);
+      message.error(e as JointContent)
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const processedData = useMemo(() => {
     if (selectId === null) return [];
@@ -171,7 +193,7 @@ const TrainTaskDrawer = ({ open, onCancel, trainData, historyData, selectId }:
       <CustomTable
         rowKey="key"
         scroll={{ y: 'calc(100vh - 280px)' }}
-        // loading={loading}
+        loading={loading}
         columns={columns}
         dataSource={processedData}
         expandable={expandableConfig}

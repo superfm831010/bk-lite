@@ -1,4 +1,4 @@
-import { LevelMap } from "@/app/mlops/types";
+import { LevelMap, AlgorithmParam } from "@/app/mlops/types";
 
 const LEVEL_MAP: LevelMap = {
   critical: '#F43B2C',
@@ -7,8 +7,8 @@ const LEVEL_MAP: LevelMap = {
 };
 
 const TrainStatus = {
-  not_started: 'default',
-  in_progress: 'processing',
+  pending: 'default',
+  running: 'processing',
   completed: 'success',
   failed: 'error'
 };
@@ -20,10 +20,48 @@ const TypeContent: Record<string, any> = {
 };
 
 const TrainText = {
-  not_started: 'notStarted',
-  in_progress: 'inProgress',
+  pending: 'notStarted',
+  running: 'inProgress',
   completed: 'completed',
   failed: 'failed'
+};
+
+const AlgorithmsParams: Record<string, AlgorithmParam[]> = {
+  'RandomForest': [
+    { name: 'n_estimators', type: 'randint', default: [100, 500] },
+    { name: 'max_depth', type: 'randint', default: [10, 50] },
+    { name: 'min_samples_split', type: 'randint', default: [2, 10] },
+    { name: 'min_samples_leaf', type: 'randint', default: [1, 10] },
+    {
+      name: 'max_features',
+      type: 'choice',
+      default: 'none',
+      options: [
+        { label: 'sqrt', value: 'sqrt' },
+        { label: 'log2', value: 'log2' },
+        { label: 'none', value: 'none' },
+      ]
+    },
+    {
+      name: 'bootstrap',
+      type: 'choice',
+      default: 'false',
+      options: [
+        { label: 'true', value: 'true' },
+        { label: 'false', value: 'false' },
+      ]
+    },
+    {
+      name: 'class_weight',
+      type: 'choice',
+      default: 'none',
+      options: [
+        { label: 'balanced', value: 'balanced' },
+        { label: 'balanced_subsample', value: 'balanced_subsample' },
+        { label: 'none', value: 'none' },
+      ]
+    },
+  ]
 };
 
 type TRAIN_STATUS = 'not_started' | 'in_progress' | 'completed' | 'failed';
@@ -35,5 +73,6 @@ export {
   TrainStatus,
   TrainText,
   TypeContent,
+  AlgorithmsParams,
   type TRAIN_STATUS
 }

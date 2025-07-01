@@ -24,7 +24,9 @@
     "creator": "Creator",
     "createdAt": "Create at",
     "createdSuccess": "Created Successfully",
-    "updateSuccess": "Successful update"
+    "updateSuccess": "Successful update",
+    "min": "Min",
+    "max": "Max"
   },
   "datasets": {
     "title": "Document List",
@@ -89,6 +91,7 @@
     "notStarted": "Not Started",
     "inProgress": "In progress",
     "completed": "Completed",
-    "failed": "Training failure"
+    "failed": "Training failure",
+    "maxEvals": "Maximum number of training rounds"
   }
 }

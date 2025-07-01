@@ -83,7 +83,7 @@ const DatasetManagePage = () => {
     setLoading(true);
     try {
       if (activeTab === 'anomaly') {
-        const data = await getAnomalyDatasetsList();
+        const data = await getAnomalyDatasetsList({ page: 1, page_size: -1 });
         const _data: DataSet[] = data?.map((item: any) => {
           return {
             id: item.id,

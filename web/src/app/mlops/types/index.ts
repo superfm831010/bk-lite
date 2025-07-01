@@ -222,7 +222,10 @@ export interface TrainJob {
   type: string,
   status: string,
   created_at: string,
-  [key:string]: any
+  train_data_id: string;
+  val_data_id: string;
+  test_data_id: string;
+  [key: string]: any
 }
 
 export interface TrainTaskModalProps {
@@ -240,14 +243,18 @@ export interface TrainDataModalProps {
 
 export interface AlgorithmParam {
   name: string;
-  type: 'value' | 'enum';
-  default: string | number;
+  type: 'randint' | 'choice';
+  default: string | number | [number, number];
+  options?: Option[]
 }
 
 export interface TrainData {
   id: number;
   name: string;
   dataset_id: string | number;
+  is_train_data: boolean,
+  is_val_data: boolean,
+  is_test_data: boolean,
 }
 
 export interface TrainDataParams {
