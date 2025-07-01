@@ -4,6 +4,7 @@ import { Table, Input, Spin, Button, Pagination, Switch, message, Popconfirm } f
 import { PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
+import { useSearchParams } from 'next/navigation';
 import ModifyRuleModal from './modifyRuleModal';
 import PermissionWrapper from '@/components/permission';
 import { useSkillApi } from '@/app/opspilot/api/skill';
@@ -21,8 +22,11 @@ interface SkillRule {
 
 const SkillRules: React.FC = () => {
   const { t } = useTranslation();
-  const { fetchRules, updateRule, deleteRule } = useSkillApi();
+  const { fetchRules, updateRule, deleteRule, fetchSkillDetail } = useSkillApi();
   const { convertToLocalizedTime } = useLocalizedTime();
+  const searchParams = useSearchParams();
+  const id = searchParams ? searchParams.get('id') : null;
+
   const [searchText, setSearchText] = useState('');
   const [data, setData] = useState<SkillRule[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,6 +38,7 @@ const SkillRules: React.FC = () => {
     pageSize: 10,
   });
   const [switchLoading, setSwitchLoading] = useState<{ [key: string]: boolean }>({});
+  const [skillPermissions, setSkillPermissions] = useState<string[]>([]);
 
   const fetchSkillRules = useCallback(async (searchText = '', page = 1, pageSize = 10) => {
     setLoading(true);
@@ -51,8 +56,20 @@ const SkillRules: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const fetchSkillPermissions = async () => {
+      if (id) {
+        try {
+          const data = await fetchSkillDetail(id);
+          setSkillPermissions(data.permissions || []);
+        } catch (error) {
+          console.error(t('common.fetchFailed'), error);
+        }
+      }
+    };
+
+    fetchSkillPermissions();
     fetchSkillRules();
-  }, []);
+  }, [id]);
 
   const handleSearch = (value: string) => {
     setSearchText(value);
@@ -149,13 +166,15 @@ const SkillRules: React.FC = () => {
       render: (text: any, record: SkillRule) => (
         <>
           <PermissionWrapper
-            requiredPermissions={['Edit']}>
+            requiredPermissions={['Edit']}
+            instPermissions={skillPermissions}>
             <Button type="link" onClick={() => handleEdit(record)}>
               {t('common.edit')}
             </Button>
           </PermissionWrapper>
           <PermissionWrapper
-            requiredPermissions={['Delete']}>
+            requiredPermissions={['Delete']}
+            instPermissions={skillPermissions}>
             <Popconfirm
               title={t('skill.rules.deleteConfirm')}
               onConfirm={() => handleDeleteRule(record.id)}
@@ -183,7 +202,8 @@ const SkillRules: React.FC = () => {
           className='w-60 mr-2'
         />
         <PermissionWrapper
-          requiredPermissions={['Add']}>
+          requiredPermissions={['Add']}
+          instPermissions={skillPermissions}>
           <Button icon={<PlusOutlined />} type="primary" onClick={handleAdd}>{t('common.add')}</Button>
         </PermissionWrapper>
       </div>

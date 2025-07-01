@@ -6,9 +6,9 @@
 from django.db import transaction
 from django.utils import timezone
 
-from apps.alerts.models import Incident
+from apps.alerts.models import Incident, OperatorLog
 from apps.core.logger import alert_logger as logger
-from apps.alerts.constants import IncidentStatus, IncidentOperate
+from apps.alerts.constants import IncidentStatus, IncidentOperate, LogAction, LogTargetType
 
 
 class IncidentOperator:
@@ -19,6 +19,7 @@ class IncidentOperator:
 
     def __init__(self, user):
         self.user = user
+        self.status_map = dict(IncidentStatus.CHOICES)
 
     def operate(self, action: str, incident_id: str, data: dict) -> dict:
         """
@@ -81,6 +82,16 @@ class IncidentOperator:
             incident.updated_by = self.user
             incident.save()
 
+            log_data = {
+                "action": LogAction.MODIFY,
+                "target_type": LogTargetType.INCIDENT,
+                "operator": self.user,
+                "operator_object": "事故处理-确认",
+                "target_id": incident.incident_id,
+                "overview": f"事故确认, 事故[{incident.title}]状态变更: {self.status_map[IncidentStatus.PENDING]} -> {self.status_map[IncidentStatus.PROCESSING]}"
+            }
+            self.operator_log(log_data)
+
             return {
                 "result": True,
                 "message": "事故确认成功",
@@ -111,6 +122,16 @@ class IncidentOperator:
             incident.updated_at = timezone.now()
             incident.updated_by = self.user
             incident.save()
+
+            log_data = {
+                "action": LogAction.MODIFY,
+                "target_type": LogTargetType.INCIDENT,
+                "operator": self.user,
+                "operator_object": "事故处理-关闭",
+                "target_id": incident.incident_id,
+                "overview": f"事故确认, 事故[{incident.title}]状态变更: {self.status_map[IncidentStatus.PROCESSING]} -> {self.status_map[IncidentStatus.CLOSED]}"
+            }
+            self.operator_log(log_data)
 
             return {
                 "result": True,
@@ -143,6 +164,16 @@ class IncidentOperator:
             incident.updated_by = self.user
             incident.save()
 
+            log_data = {
+                "action": LogAction.MODIFY,
+                "target_type": LogTargetType.INCIDENT,
+                "operator": self.user,
+                "operator_object": "事故处理-重新打开",
+                "target_id": incident.incident_id,
+                "overview": f"事故确认, 事故[{incident.title}]状态变更: {self.status_map[IncidentStatus.CLOSED]} -> {self.status_map[IncidentStatus.PROCESSING]}"
+            }
+            self.operator_log(log_data)
+
             return {
                 "result": True,
                 "message": "事故重新打开成功",
@@ -153,3 +184,11 @@ class IncidentOperator:
                     "updated_at": incident.updated_at.isoformat()
                 }
             }
+
+    @staticmethod
+    def operator_log(log_data: dict):
+        """
+        记录告警操作日志
+        :param log_data: 日志数据字典
+        """
+        OperatorLog.objects.create(**log_data)

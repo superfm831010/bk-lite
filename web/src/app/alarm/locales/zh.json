@@ -194,6 +194,22 @@
             "email": "邮箱",
             "wechat": "微信",
             "unselected": "未选择"
+        },
+        "operationLog": {
+            "title": "操作日志",
+            "description": "展示所有增删改等历史记录，您可以根据操作者/操作类型/时间等条件进行查询",
+            "timeRange": "时间范围",
+            "operator": "操作者",
+            "operationType": "操作类型",
+            "summary": "概述",
+            "operationObject": "操作对象",
+            "operationTime": "操作时间",
+            "operationOpts": {
+                "add": "添加",
+                "modify": "修改",
+                "delete": "删除",
+                "execute": "执行"
+            }
         }
     }
 }

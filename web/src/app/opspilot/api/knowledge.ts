@@ -167,8 +167,8 @@ export const useKnowledgeApi = () => {
   /**
    * Fetches knowledge base details by ID.
    */
-  const fetchKnowledgeBaseDetails = async (id: number): Promise<{ name: string; introduction: string }> => {
-    return get(`/opspilot/knowledge_mgmt/knowledge_base/${id}`);
+  const fetchKnowledgeBaseDetails = async (id: number): Promise<{ name: string; introduction: string; permissions: string[] }> => {
+    return get(`/opspilot/knowledge_mgmt/knowledge_base/${id}/`);
   };
 
   /**

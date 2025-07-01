@@ -22,6 +22,7 @@ interface CustomChatSSEProps {
   showMarkOnly?: boolean;
   initialMessages?: CustomChatMessage[];
   mode?: 'preview' | 'chat';
+  instPermissions?: string[];
 }
 
 // Define action renderer type
@@ -52,7 +53,7 @@ const md = new MarkdownIt({
   },
 });
 
-const CustomChatSSE: React.FC<CustomChatSSEProps> = ({ handleSendMessage, showMarkOnly = false, initialMessages = [], mode = 'chat' }) => {
+const CustomChatSSE: React.FC<CustomChatSSEProps> = ({ handleSendMessage, showMarkOnly = false, initialMessages = [], mode = 'chat', instPermissions }) => {
   const { t } = useTranslation();
   const { data: session } = useSession();
   const authContext = useAuth();
@@ -333,7 +334,8 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({ handleSendMessage, showMa
 
     return (
       <PermissionWrapper
-        requiredPermissions={['Test']}>
+        requiredPermissions={['Test']}
+        instPermissions={instPermissions}>
         <Sender
           className={styles.sender}
           value={value}
