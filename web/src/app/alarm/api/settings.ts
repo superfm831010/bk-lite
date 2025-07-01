@@ -54,13 +54,13 @@ export const useSettingApi = () => {
   const getGlobalConfig = (key: any) =>
     get(`/alerts/api/settings/get_setting_key/${key}/`);
 
-  const updateGlobalConfig = (
-    id: any,
-    params: any
-  ) => put(`/alerts/api/settings/${id}/`, params);
+  const updateGlobalConfig = (id: any, params: any) =>
+    put(`/alerts/api/settings/${id}/`, params);
 
   const toggleGlobalConfig = (id: any, params: any) =>
     patch(`/alerts/api/settings/${id}/`, params);
+
+  const getLogList = (params: any) => get('/alerts/api/log/', { params });
 
   return {
     getAssignmentList,
@@ -83,5 +83,6 @@ export const useSettingApi = () => {
     getGlobalConfig,
     updateGlobalConfig,
     toggleGlobalConfig,
+    getLogList
   };
 };
