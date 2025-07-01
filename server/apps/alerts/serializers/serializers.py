@@ -325,7 +325,7 @@ class IncidentModelSerializer(serializers.ModelSerializer):
         """
         当前时间- 创建时间
         """
-        if not obj.created_at or obj.status in IncidentStatus.ACTIVATE_STATUS:
+        if obj.status not in IncidentStatus.ACTIVATE_STATUS:
             return "--"
 
         # 计算持续时间
