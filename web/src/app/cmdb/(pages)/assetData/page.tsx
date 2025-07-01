@@ -20,7 +20,7 @@ import CustomTable from '@/components/custom-table';
 import SearchFilter from './list/searchFilter';
 import ImportInst from './list/importInst';
 import SelectInstance from './detail/relationships/selectInstance';
-import { SearchOutlined, DownOutlined } from '@ant-design/icons';
+import { DownOutlined } from '@ant-design/icons';
 import { useSearchParams } from 'next/navigation';
 import assetDataStyle from './index.module.scss';
 import FieldModal from './list/fieldModal';
@@ -517,8 +517,7 @@ const AssetDataContent = () => {
   );
 
   const handleTreeSearch = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const searchText = e.target.value;
+    (searchText: string) => {
       setTreeSearchText(searchText);
 
       const treeData = modelGroup.map((group) => ({
@@ -693,12 +692,13 @@ const AssetDataContent = () => {
       <div className={assetDataStyle.assetData}>
         <div className={`${assetDataStyle.groupSelector}`}>
           <div className={assetDataStyle.treeSearchWrapper}>
-            <Input
+            <Input.Search
               placeholder={t('searchTxt')}
               value={treeSearchText}
-              onChange={handleTreeSearch}
               allowClear
-              prefix={<SearchOutlined className="text-gray-400" />}
+              enterButton
+              onSearch={handleTreeSearch}
+              onChange={(e) => setTreeSearchText(e.target.value)}
             />
           </div>
           <div className={assetDataStyle.treeWrapper}>
