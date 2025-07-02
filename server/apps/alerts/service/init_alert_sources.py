@@ -2,11 +2,7 @@
 # @File: init_alert_sources.py
 # @Time: 2025/5/14 16:39
 # @Author: windyzhao
-
-from django.db import transaction
-
 from apps.alerts.common.source_adapter.constants import DEFAULT_SOURCE_CONFIG
-from apps.alerts.models import AlertSource
 from apps.alerts.constants import AlertsSourceTypes, AlertAccessType
 
 # 内置告警源配置
@@ -31,16 +27,6 @@ BUILTIN_ALERT_SOURCES = [
         "is_active": True,
         "is_effective": True,
         "description": "内置NATS告警源, 周期拉取NATS网关数据",
-        "logo":"data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PHN2ZyB0PSIxNzQ5NTM4Mjk5NTYwIiBjbGFzcz0iaWNvbiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHAtaWQ9IjE0ODQ2IiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiPjxwYXRoIGQ9Ik0xMTMuOSA5Ny4xdjY0Ni40aDMzOS40TDY0NyA5MjcuMVY3NDMuNmgyNjJWOTcuMUgxMTMuOXpNNzcyIDU5NC4ySDYyNUwzMzEuMiAzMjQuOXYyNjkuM2gtOTUuNVYyNDguOWgxNTYuN2wyODYuNSAyNjMuMlYyNDguOWg5M2wwLjEgMzQ1LjN6IiBmaWxsPSIjZmZmZmZmIiBwLWlkPSIxNDg0NyIgZGF0YS1zcG0tYW5jaG9yLWlkPSJhMzEzeC5zZWFyY2hfaW5kZXguMC5pMC4xMTczM2E4MWpVNTlzSSIgY2xhc3M9InNlbGVjdGVkIj48L3BhdGg+PC9zdmc+"
+        "logo": "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PHN2ZyB0PSIxNzQ5NTM4Mjk5NTYwIiBjbGFzcz0iaWNvbiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHAtaWQ9IjE0ODQ2IiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiPjxwYXRoIGQ9Ik0xMTMuOSA5Ny4xdjY0Ni40aDMzOS40TDY0NyA5MjcuMVY3NDMuNmgyNjJWOTcuMUgxMTMuOXpNNzcyIDU5NC4ySDYyNUwzMzEuMiAzMjQuOXYyNjkuM2gtOTUuNVYyNDguOWgxNTYuN2wyODYuNSAyNjMuMlYyNDguOWg5M2wwLjEgMzQ1LjN6IiBmaWxsPSIjZmZmZmZmIiBwLWlkPSIxNDg0NyIgZGF0YS1zcG0tYW5jaG9yLWlkPSJhMzEzeC5zZWFyY2hfaW5kZXguMC5pMC4xMTczM2E4MWpVNTlzSSIgY2xhc3M9InNlbGVjdGVkIj48L3BhdGg+PC9zdmc+"
     }
 ]
-
-
-def init_builtin_alert_sources():
-    """初始化内置告警源"""
-    with transaction.atomic():
-        for src in BUILTIN_ALERT_SOURCES:
-            AlertSource.all_objects.get_or_create(
-                source_id=src["source_id"],
-                defaults=src
-            )
