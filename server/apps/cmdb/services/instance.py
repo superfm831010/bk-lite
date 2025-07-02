@@ -405,6 +405,42 @@ class InstanceManage(object):
         return results
 
     @staticmethod
+    def inst_import_support_edit(model_id: str, file_stream: bytes, operator: str):
+        """实例导入-支持编辑"""
+        attrs = ModelManage.search_model_attr_v2(model_id)
+        model_info = ModelManage.search_model_info(model_id)
+
+        with Neo4jClient() as ag:
+            exist_items, _ = ag.query_entity(INSTANCE, [{"field": "model_id", "type": "str=", "value": model_id}])
+        add_results, update_results = Import(model_id, attrs, exist_items, operator).import_inst_list_support_edit(file_stream)
+
+        add_changes = [
+            dict(
+                inst_id=i["data"]["_id"],
+                model_id=i["data"]["model_id"],
+                before_data=i["data"],
+                model_object=OPERATOR_INSTANCE,
+                message=f"导入模型实例. 模型:{model_info['model_name']} 新增模型实例:{i['data'].get('inst_name') or i['data'].get('ip_addr', '')}",
+            )
+            for i in add_results
+            if i["success"]
+        ]
+        exist_items__id_map = {i["_id"]: i for i in exist_items}
+        update_changes = [
+            dict(
+                inst_id=i["_id"],
+                model_id=i["model_id"],
+                before_data=exist_items__id_map[i["_id"]],
+                model_object=OPERATOR_INSTANCE,
+                message=f"导入模型实例. 模型:{model_info['model_name']} 更新模型实例:{i.get('inst_name') or i.get('ip_addr', '')}",
+            )
+            for i in update_results
+        ]
+        batch_create_change_record(INSTANCE, CREATE_INST, add_changes, operator=operator)
+        batch_create_change_record(INSTANCE, UPDATE_INST, update_changes, operator=operator)
+        return add_results,update_results
+
+    @staticmethod
     def inst_export(model_id: str, ids: list):
         """实例导出"""
         attrs = ModelManage.search_model_attr_v2(model_id)

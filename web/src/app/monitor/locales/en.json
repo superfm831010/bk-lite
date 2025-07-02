@@ -467,7 +467,8 @@
       "publishAddressDes": "The main website for system monitoring, used to detect its availability and performance status.",
       "publishPortDes": "The specific port that the program listens on during runtime, responsible for receiving requests and connections from external sources.",
       "mechanism": "Mechanism",
-      "mechanismDes": "Used to process and respond to requests received through the publishing port, including the complete process of request parsing, processing, and returning results."
+      "mechanismDes": "Used to process and respond to requests received through the publishing port, including the complete process of request parsing, processing, and returning results.",
+      "kafkaVersionDes": "Specify the version details of the current program"
     }
   }
 }

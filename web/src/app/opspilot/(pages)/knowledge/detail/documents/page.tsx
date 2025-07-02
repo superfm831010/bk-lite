@@ -192,6 +192,7 @@ const DocumentsPage: React.FC = () => {
         <ActionButtons
           record={record}
           isFile={activeTabKey === 'file'}
+          instPermissions={knowledgeBasePermissions}
           singleTrainLoading={singleTrainLoading}
           onTrain={handleTrain}
           onDelete={handleDelete}
@@ -202,7 +203,6 @@ const DocumentsPage: React.FC = () => {
     }
   ];
 
-  // 问答对表格列定义
   const qaPairColumns: TableColumnsType<QAPairData> = [
     {
       title: t('knowledge.qaPairs.name'),

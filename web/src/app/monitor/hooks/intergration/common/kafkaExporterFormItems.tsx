@@ -61,6 +61,23 @@ const useKafkaExporterFormItems = () => {
               {t('monitor.intergrations.mechanismDes')}
             </span>
           </Form.Item>
+          <Form.Item label={t('monitor.intergrations.version')} required>
+            <Form.Item
+              noStyle
+              name={`${mode === 'auto' ? 'ENV_' : ''}KAFKA_VERSION`}
+              rules={[
+                {
+                  required: true,
+                  message: t('common.required'),
+                },
+              ]}
+            >
+              <Input className="w-[300px] mr-[10px]" />
+            </Form.Item>
+            <span className="text-[12px] text-[var(--color-text-3)]">
+              {t('monitor.intergrations.kafkaVersionDes')}
+            </span>
+          </Form.Item>
         </>
       );
     },

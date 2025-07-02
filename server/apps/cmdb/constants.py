@@ -1,6 +1,40 @@
 # 模型分类标签
 import os
 
+from enum import Enum
+
+
+class BaseEnum(str, Enum):
+    """
+    枚举基类
+    """
+
+    def __new__(cls, value, chinese):
+        obj = str.__new__(cls, value)
+        obj._value_ = value
+        obj.chinese = chinese
+        return obj
+
+    def __str__(self):
+        return self.chinese
+
+    def __repr__(self):
+        return self.chinese
+
+    @classmethod
+    def get_value_choices(cls):
+        """获取枚举值列表"""
+        return [(item.value, item.value) for item in cls]
+
+    @classmethod
+    def get_chinese_by_value(cls, value):
+        """根据value获取中文描述"""
+        for item in cls:
+            if item.value == value:
+                return item.chinese
+        return None
+
+
 CLASSIFICATION = "classification"
 
 # 模型标签
@@ -14,6 +48,14 @@ MODEL_ASSOCIATION = "model_association"
 
 # 实例关联标签
 INSTANCE_ASSOCIATION = "instance_association"
+
+
+class ModelConstraintKey(BaseEnum):
+    """模型约束键"""
+    unique = ("is_only", "唯一键")
+    required = ("is_required", "必填项")
+    editable = ("editable", "可编辑")
+
 
 # 模型间的关联类型
 ASSOCIATION_TYPE = [
@@ -251,8 +293,8 @@ COLLECT_OBJ_TREE = [
             {"id": "aliyun", "model_id": "aliyun_account", "name": "阿里云", "task_type": CollectPluginTypes.CLOUD,
              "type": CollectDriverTypes.PROTOCOL},
             {
-              "id": "qcloud", "model_id": "qcloud", "name": "腾讯云", "task_type": CollectPluginTypes.CLOUD,
-              "type": CollectDriverTypes.PROTOCOL
+                "id": "qcloud", "model_id": "qcloud", "name": "腾讯云", "task_type": CollectPluginTypes.CLOUD,
+                "type": CollectDriverTypes.PROTOCOL
             },
         ],
     },

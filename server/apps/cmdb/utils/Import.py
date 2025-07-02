@@ -3,6 +3,7 @@ import ast
 import openpyxl
 
 from apps.cmdb.constants import INSTANCE, NEED_CONVERSION_TYPE, ORGANIZATION, USER, ENUM
+from apps.cmdb.constants import ModelConstraintKey
 from apps.cmdb.graph.neo4j import Neo4jClient
 
 
@@ -75,22 +76,40 @@ class Import:
             result.append(item)
         return result
 
+    def get_check_attr_map(self):
+        check_attr_map = dict(is_only={}, is_required={}, editable={})
+        for attr in self.attrs:
+            if attr[ModelConstraintKey.unique.value]:
+                check_attr_map[ModelConstraintKey.unique.value][attr["attr_id"]] = attr["attr_name"]
+            if attr[ModelConstraintKey.required.value]:
+                check_attr_map[ModelConstraintKey.required.value][attr["attr_id"]] = attr["attr_name"]
+            if attr[ModelConstraintKey.editable.value]:
+                check_attr_map[ModelConstraintKey.editable.value][attr["attr_id"]] = attr["attr_name"]
+        return check_attr_map
+
     def inst_list_save(self, inst_list):
         """实例列表保存"""
 
-        check_attr_map = dict(is_only={}, is_required={})
-        for attr in self.attrs:
-            if attr["is_only"]:
-                check_attr_map["is_only"][attr["attr_id"]] = attr["attr_name"]
-            if attr["is_required"]:
-                check_attr_map["is_required"][attr["attr_id"]] = attr["attr_name"]
+        with Neo4jClient() as ag:
+            result = ag.batch_create_entity(INSTANCE, inst_list, self.get_check_attr_map(), self.exist_items,
+                                            self.operator)
+        return result
+
+    def inst_list_update(self, inst_list):
+        """实例列表更新"""
 
         with Neo4jClient() as ag:
-            result = ag.batch_create_entity(INSTANCE, inst_list, check_attr_map, self.exist_items, self.operator)
-        return result
+            add_results, update_results = ag.batch_save_entity(INSTANCE, inst_list, self.get_check_attr_map(),
+                                                               self.exist_items, self.operator)
+        return add_results, update_results
 
     def import_inst_list(self, file_stream: bytes):
         """将excel主机数据导入"""
         inst_list = self.format_excel_data(file_stream)
         result = self.inst_list_save(inst_list)
         return result
+
+    def import_inst_list_support_edit(self, file_stream: bytes):
+        """将excel主机数据导入"""
+        inst_list = self.format_excel_data(file_stream)
+        return self.inst_list_update(inst_list)
