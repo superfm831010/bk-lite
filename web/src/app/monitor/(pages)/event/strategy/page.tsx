@@ -72,7 +72,10 @@ const Strategy: React.FC = () => {
       key: 'source',
       width: 80,
       render: (_, record) => (
-        <Permission requiredPermissions={['Edit']}>
+        <Permission
+          requiredPermissions={['Edit']}
+          instPermissions={record.permission}
+        >
           <Button
             type="link"
             onClick={() => {
@@ -134,7 +137,10 @@ const Strategy: React.FC = () => {
       key: 'effective',
       width: 80,
       render: (_, record) => (
-        <Permission requiredPermissions={['Edit']}>
+        <Permission
+          requiredPermissions={['Edit']}
+          instPermissions={record.permission}
+        >
           <Switch
             size="small"
             loading={enableLoading}
@@ -152,7 +158,11 @@ const Strategy: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
         <>
-          <Permission className="mr-[10px]" requiredPermissions={['Edit']}>
+          <Permission
+            className="mr-[10px]"
+            requiredPermissions={['Edit']}
+            instPermissions={record.permission}
+          >
             <Button
               type="link"
               onClick={() => linkToStrategyDetail('edit', record)}
@@ -160,7 +170,10 @@ const Strategy: React.FC = () => {
               {t('common.edit')}
             </Button>
           </Permission>
-          <Permission requiredPermissions={['Delete']}>
+          <Permission
+            requiredPermissions={['Delete']}
+            instPermissions={record.permission}
+          >
             <Popconfirm
               title={t('common.deleteTitle')}
               description={t('common.deleteContent')}
