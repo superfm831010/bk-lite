@@ -86,6 +86,7 @@ export interface MenuItem {
   tour?: TourItem;
   isNotMenuItem?: boolean;
   children?: MenuItem[];
+  withParentPermission?: boolean;
 }
 
 export interface Option {

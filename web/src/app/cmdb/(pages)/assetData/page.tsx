@@ -618,7 +618,7 @@ const AssetDataContent = () => {
               >
                 {t('detail')}
               </Button>
-              <PermissionWrapper requiredPermissions={['Associate']}>
+              <PermissionWrapper requiredPermissions={['Add Associate']}>
                 <Button
                   type="link"
                   className="mr-[10px]"
