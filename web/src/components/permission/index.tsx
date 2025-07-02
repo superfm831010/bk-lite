@@ -12,15 +12,16 @@ interface PermissionWrapperProps {
 
 const PermissionWrapper: React.FC<React.PropsWithChildren<PermissionWrapperProps>> = ({
   requiredPermissions,
-  instPermissions = ['Operate'],
+  instPermissions,
   fallback = null,
   tooltip = "暂无权限",
   className,
   children
 }) => {
   const { hasPermission } = usePermissions();
+  const instancePermissions = instPermissions || ['Operate'];
 
-  if (hasPermission(requiredPermissions) && instPermissions.includes('Operate')) {
+  if (hasPermission(requiredPermissions) && instancePermissions.includes('Operate')) {
     return <span className={className}>{children}</span>;
   }
 
