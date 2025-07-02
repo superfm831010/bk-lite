@@ -49,7 +49,7 @@
             "children": [
                 {
                     "id": "correlation_rules",
-                    "name": "correlation_rules",
+                    "name": "Correlation Rules",
                     "operation": [
                         "View",
                         "Add",
@@ -59,7 +59,7 @@
                 },
                 {
                     "id": "alert_assign",
-                    "name": "alert_assign",
+                    "name": "Alert Assign",
                     "operation": [
                         "View",
                         "Add",
@@ -69,7 +69,7 @@
                 },
                 {
                     "id": "shield_strategy",
-                    "name": "shield_strategy",
+                    "name": "Shield Strategy",
                     "operation": [
                         "View",
                         "Add",
@@ -79,10 +79,17 @@
                 },
                 {
                     "id": "global_config",
-                    "name": "global_config",
+                    "name": "Global Config",
                     "operation": [
                         "View",
                         "Edit"
+                    ]
+                }, 
+                {
+                    "id": "operation_log",
+                    "name": "Operation Log",
+                    "operation": [
+                        "View"
                     ]
                 }
             ]

@@ -9,6 +9,7 @@ import styles from '@/app/opspilot/styles/common.module.scss';
 interface ActionButtonsProps {
   record: TableData;
   isFile?: boolean;
+  instPermissions?: string[];
   onTrain: (ids: React.Key[]) => void;
   onDelete: (ids: React.Key[]) => void;
   onSet: (record: any) => void;
@@ -19,6 +20,7 @@ interface ActionButtonsProps {
 const ActionButtons: React.FC<ActionButtonsProps> = ({
   record,
   isFile,
+  instPermissions,
   onTrain,
   onDelete,
   onSet,
@@ -30,7 +32,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
   const horizontalButtons = (
     <>
-      <PermissionWrapper requiredPermissions={['Set']}>
+      <PermissionWrapper 
+        requiredPermissions={['Set']}
+        instPermissions={instPermissions}>
         <Button
           type='link'
           className='mr-[10px]'
@@ -40,7 +44,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           {t('common.set')}
         </Button>
       </PermissionWrapper>
-      <PermissionWrapper requiredPermissions={['Train']}>
+      <PermissionWrapper 
+        requiredPermissions={['Train']}
+        instPermissions={instPermissions}>
         <Button
           type='link'
           className='mr-[10px]'
@@ -51,7 +57,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           {t('common.train')}
         </Button>
       </PermissionWrapper>
-      <PermissionWrapper requiredPermissions={['Delete']}>
+      <PermissionWrapper 
+        requiredPermissions={['Delete']}
+        instPermissions={instPermissions}>
         <Button
           type='link'
           onClick={() => onDelete([record.id])}
@@ -66,7 +74,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const verticalMenuItems = (
     <>
       <Menu.Item key="delete">
-        <PermissionWrapper requiredPermissions={['Delete']}>
+        <PermissionWrapper 
+          requiredPermissions={['Delete']}
+          instPermissions={instPermissions}>
           <Button
             type="link"
             className="w-full text-left"
@@ -96,7 +106,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
   return (
     <>
-      <PermissionWrapper requiredPermissions={['Set']}>
+      <PermissionWrapper 
+        requiredPermissions={['Set']}
+        instPermissions={instPermissions}>
         <Button
           type="link"
           className='mr-[10px]'
@@ -106,7 +118,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           {t('common.set')}
         </Button>
       </PermissionWrapper>
-      <PermissionWrapper requiredPermissions={['Train']}>
+      <PermissionWrapper 
+        requiredPermissions={['Train']}
+        instPermissions={instPermissions}>
         <Button
           type="link"
           className='mr-[10px]'

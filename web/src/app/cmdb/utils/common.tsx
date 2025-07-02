@@ -190,7 +190,7 @@ export const getAssetColumns = (config: {
           render: (_: unknown, record: any) => (
             <>
               <Tag color={record[attrId] ? 'green' : 'geekblue'}>
-                {config.t(record[attrId] ? 'yes' : 'no')}
+                {record[attrId] ? 'Yes' : 'No'}
               </Tag>
             </>
           ),

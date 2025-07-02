@@ -336,6 +336,7 @@ def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=N
     response["Access-Control-Allow-Headers"] = "Cache-Control"
 
     def log_after_response():
+        logger.info(f"{skill_name}token使用统计: prompt: {total_prompt_tokens}, completion: {total_completion_tokens}")
         if final_content or total_prompt_tokens or total_completion_tokens:
             final_stats = {
                 "content": final_content,

@@ -273,6 +273,16 @@ html:not(.dark) body {
   font-size: 10px;
 }
 
+.user-groups-submenu {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
+.user-groups-submenu .ant-dropdown-menu {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
 @keyframes rt {
   100% {
       transform: rotate(360deg);

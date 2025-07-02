@@ -14,7 +14,8 @@ from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
 from apps.alerts.constants import AlertsSourceTypes, AlertAccessType, EventStatus, AlertOperate, \
     AlertStatus, EventAction, LevelType, AlertAssignmentMatchType, AlertShieldMatchType, IncidentStatus, \
-    IncidentOperate, CorrelationRulesScope, CorrelationRulesType, AggregationRuleType, NotifyResultStatus
+    IncidentOperate, CorrelationRulesScope, CorrelationRulesType, AggregationRuleType, NotifyResultStatus, \
+    LogTargetType, LogAction
 from apps.alerts.utils.util import gen_app_secret
 
 
@@ -352,3 +353,23 @@ class SystemSetting(TimeInfo):
 
     def __str__(self):
         return self.key
+
+
+class OperatorLog(models.Model):
+    """操作日志模型"""
+    operator = models.CharField(max_length=64, default="admin", help_text="操作人")
+    action = models.CharField(max_length=32, choices=LogAction.CHOICES, help_text="操作类型")
+    target_type = models.CharField(max_length=32, choices=LogTargetType.CHOICES, default=LogTargetType.SYSTEM,
+                                   help_text="目标类型")
+    operator_object = models.CharField(max_length=100, null=True, blank=True, help_text="操作对象")
+    target_id = models.CharField(max_length=100, null=True, blank=True, help_text="目标ID")
+    overview = models.TextField(null=True, blank=True, help_text="操作概述")
+    created_at = models.DateTimeField(help_text="Created Time", auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = 'alerts_operator_log'
+        verbose_name = '操作日志'
+        verbose_name_plural = '操作日志'
+
+    def __str__(self):
+        return f"{self.operator} - {self.action} on {self.target_type}({self.target_id})"

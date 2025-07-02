@@ -357,3 +357,35 @@ class NotifyResultStatus:
         (FAILED, "失败"),
         (PARTIAL_SUCCESS, "部分成功"),
     )
+
+
+class LogTargetType:
+    """
+    日志目标类型
+    """
+    EVENT = "event"
+    ALERT = "alert"
+    INCIDENT = "incident"
+    SYSTEM = "system"
+    CHOICES = (
+        (EVENT, "事件"),
+        (ALERT, "告警"),
+        (INCIDENT, "事故"),
+        (SYSTEM, "系统"),
+    )
+
+
+class LogAction:
+    """
+    日志操作类型
+    """
+    ADD = "add"
+    MODIFY = "modify"
+    DELETE = "delete"
+    EXECUTE = "execute"
+    CHOICES = (
+        (ADD, "添加"),
+        (MODIFY, "修改"),
+        (DELETE, "删除"),
+        (EXECUTE, "执行")
+    )

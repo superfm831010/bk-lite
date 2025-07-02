@@ -19,7 +19,7 @@ const SettingsPage: React.FC = () => {
   const { groups, loading: groupsLoading } = useGroups();
   const searchParams = useSearchParams();
   const id = searchParams ? searchParams.get('id') : null;
-  const { formData, configData, setFormData, setConfigData, loading } = useFetchConfigData(id);
+  const { formData, configData, setFormData, setConfigData, loading, knowledgeBasePermissions } = useFetchConfigData(id);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const { updateKnowledgeSettings } = useKnowledgeApi();
 
@@ -123,7 +123,9 @@ const SettingsPage: React.FC = () => {
                   </Button>
                 </Col>
                 <Col>
-                  <PermissionWrapper requiredPermissions={['Edit']}>
+                  <PermissionWrapper 
+                    requiredPermissions={['Edit']}
+                    instPermissions={knowledgeBasePermissions}>
                     <Button type="primary" onClick={handleConfirm} loading={confirmLoading}>
                       {t('common.confirm')}
                     </Button>

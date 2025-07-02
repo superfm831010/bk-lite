@@ -2,9 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Form, Input, Select, Button, InputNumber, Radio, Tooltip } from 'antd';
 import { InfoCircleOutlined, PlusCircleOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import OperateModal from '@/components/operate-modal';
+import GroupTreeSelect from '@/components/group-tree-select';
 import { useTranslation } from '@/utils/i18n';
 import styles from './index.module.scss';
-import { useUserInfoContext } from '@/context/userInfo';
 import { QuotaModalProps, TargetOption } from '@/app/opspilot/types/settings'
 import { useQuotaApi } from '@/app/opspilot/api/settings';
 
@@ -13,7 +13,6 @@ const { Option } = Select;
 const QuotaModal: React.FC<QuotaModalProps> = ({ visible, onConfirm, onCancel, mode, initialValues }) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
-  const { groups: groupList, selectedGroup } = useUserInfoContext();
   const [targetType, setTargetType] = useState<string>('user');
   const [rule, setRule] = useState<string>('uniform');
   const [userList, setUserList] = useState<TargetOption[]>([]);
@@ -86,24 +85,20 @@ const QuotaModal: React.FC<QuotaModalProps> = ({ visible, onConfirm, onCancel, m
 
   const handleTargetTypeChange = (value: string) => {
     setTargetType(value);
+    
+    form.setFieldsValue({
+      targetList: [],
+      rule: 'uniform',
+      targetType: value
+    });
+    setRule('uniform');
+    
     if (value === 'user' && userList.length === 0) {
       fetchData();
     }
     if (value === 'group') {
       form.setFieldValue('token_set', [{ model: '', value: '', unit: '' }]);
-      const defaultGroup = selectedGroup?.id;
-      form.setFieldsValue({
-        targetList: defaultGroup
-      });
-      if (defaultGroup) {
-        fetchModelList(defaultGroup);
-      }
     }
-    form.setFieldsValue({
-      rule: 'uniform',
-      targetType: value
-    });
-    setRule('uniform');
   };
 
   const handleSubmit = () => {
@@ -166,24 +161,33 @@ const QuotaModal: React.FC<QuotaModalProps> = ({ visible, onConfirm, onCancel, m
               noStyle
               rules={[{ required: true, message: `${t('common.selectMsg')}${t('settings.manageQuota.form.target')}` }]}
             >
-              <Select
-                allowClear
-                mode={targetType === 'user' ? "multiple" : undefined}
-                maxTagCount="responsive"
-                className={styles.multipleSelect}
-                style={{ width: '70%' }}
-                loading={targetLoading}
-                disabled={targetLoading}
-                onChange={(value) => {
-                  if (targetType === 'group' && value) {
-                    fetchModelList(value);
-                  }
-                }}
-                placeholder={`${t('common.selectMsg')}${t('settings.manageQuota.form.target')}`}>
-                {(targetType === 'user' ? userList : groupList).map(item => (
-                  <Option key={item.id} value={item.id}>{item.name}</Option>
-                ))}
-              </Select>
+              {targetType === 'user' ? (
+                <Select
+                  allowClear
+                  mode="multiple"
+                  maxTagCount="responsive"
+                  className={styles.multipleSelect}
+                  style={{ width: '70%' }}
+                  loading={targetLoading}
+                  disabled={targetLoading}
+                  placeholder={`${t('common.selectMsg')}${t('settings.manageQuota.form.target')}`}
+                >
+                  {userList.map(item => (
+                    <Option key={item.id} value={item.id}>{item.name}</Option>
+                  ))}
+                </Select>
+              ) : (
+                <GroupTreeSelect
+                  multiple={false}
+                  style={{ width: '70%' }}
+                  placeholder={`${t('common.selectMsg')}${t('settings.manageQuota.form.target')}`}
+                  onChange={(value) => {
+                    if (value && value.length > 0) {
+                      fetchModelList(value[0].toString());
+                    }
+                  }}
+                />
+              )}
             </Form.Item>
           </Input.Group>
         </Form.Item>
