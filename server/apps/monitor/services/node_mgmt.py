@@ -2,7 +2,6 @@ import ast
 
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.plugins.controller import Controller
-from apps.monitor.constants import CHILD_ENVS
 from apps.monitor.models import MonitorInstance, MonitorInstanceOrganization, CollectConfig
 from apps.monitor.utils.config_format import ConfigFormat
 from apps.monitor.utils.instance import calculation_status
