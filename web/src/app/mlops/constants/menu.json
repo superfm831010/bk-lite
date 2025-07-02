@@ -2,7 +2,7 @@
   "zh": [
     {
       "title": "数据集",
-      "icon": "datafull",
+      "icon": "Gc_103_face-Data",
       "url": "/mlops/manage",
       "name": "anomaly_detection_datasets",
       "children": [
@@ -20,16 +20,24 @@
     },
     {
       "title": "训练任务",
-      "icon": "xunlianrenwu",
+      "icon": "renwu",
       "url": "/mlops/task",
       "name": "train_tasks",
       "children": [
         {
+          "title": "异常检测",
           "url": "/mlops/task/traintask",
-          "name": "TrainTask",
+          "icon": "guanli",
+          "name": "train_test",
           "isNotMenuItem": true
         }
       ]
+    },
+    {
+      "title": "能力发布",
+      "icon": "renwu",
+      "url": "/mlops/model-release",
+      "name": "train_tasks"
     }
   ],
   "en": [
@@ -37,7 +45,7 @@
       "title": "DataSet",
       "icon": "datafull",
       "url": "/mlops/manage",
-      "name": "manage",
+      "name": "anomaly_detection_datasets",
       "children": [
         {
           "url": "/mlops/manage/detail",
@@ -50,7 +58,14 @@
       "title": "TrainTask",
       "icon": "xunlianrenwu",
       "url": "/mlops/task",
-      "name": "example"
+      "name": "train_tasks",
+      "children": [
+        {
+          "url": "/mlops/task/traintask",
+          "name": "train_test",
+          "isNotMenuItem": false
+        }
+      ]
     }
   ]
 }

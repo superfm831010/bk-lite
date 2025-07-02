@@ -23,8 +23,6 @@ const DatasetManagePage = () => {
   const router = useRouter();
   const { deleteAnomalyDatasets, getAnomalyDatasetsList } = useMlopsApi();
   const [activeTab, setActiveTab] = useState<string>('anomaly');
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  // const [filterValue, setFilterValue] = useState<string[]>([]);
   const [datasets, setDatasets] = useState<DataSet[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const modalRef = useRef<ModalRef>(null);
@@ -73,7 +71,6 @@ const DatasetManagePage = () => {
   };
 
   useEffect(() => {
-    console.log(searchTerm)
     if (!loading) {
       getDataSets();
     }
@@ -83,7 +80,7 @@ const DatasetManagePage = () => {
     setLoading(true);
     try {
       if (activeTab === 'anomaly') {
-        const data = await getAnomalyDatasetsList();
+        const data = await getAnomalyDatasetsList({ page: 1, page_size: -1 });
         const _data: DataSet[] = data?.map((item: any) => {
           return {
             id: item.id,
@@ -117,8 +114,6 @@ const DatasetManagePage = () => {
 
   const handleTabChange = (key: string) => {
     setActiveTab(key);
-    setSearchTerm('');
-    // setFilterValue([]);
   };
 
   const handleDelete = (data: any) => {
@@ -162,7 +157,6 @@ const DatasetManagePage = () => {
       <EntityList
         data={datasets}
         loading={loading}
-        onSearch={setSearchTerm}
         menuActions={menuActions}
         openModal={() => handleOpenModal('add', 'addform')}
         descSlot={infoText}
