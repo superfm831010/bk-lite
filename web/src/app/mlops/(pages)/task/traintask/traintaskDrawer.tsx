@@ -19,7 +19,6 @@ const TrainTaskDrawer = ({ open, onCancel, selectId }:
   {
     open: boolean,
     onCancel: () => void,
-    historyData: TrainTaskHistory[],
     selectId: number | null
   }) => {
   const { t } = useTranslation();
@@ -163,10 +162,10 @@ const TrainTaskDrawer = ({ open, onCancel, selectId }:
         loading: false, // 修正字段名
       }));
 
-      return processedData.slice(
+      return processedData.length ? processedData.slice(
         (pagination.current! - 1) * pagination.pageSize!,
         pagination.current! * pagination.pageSize!
-      );
+      ) : [];
     }
   }, [historyData, pagination.current, pagination.pageSize, selectId]);
 

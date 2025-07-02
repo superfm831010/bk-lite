@@ -1,9 +1,8 @@
 'use client'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-// import { useRouter } from 'next/navigation';
+// import { useRouter, usePathname } from 'next/navigation';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import useMlopsApi from '@/app/mlops/api';
-import { usePathname } from 'next/navigation';
 import { Button, Input, Popconfirm, message, Tag } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/custom-table';
@@ -11,7 +10,7 @@ import Icon from '@/components/icon';
 import TrainTaskModal from './traintaskModal';
 import TrainTaskDrawer from './traintaskDrawer';
 import { useTranslation } from '@/utils/i18n';
-import { ModalRef, ColumnItem, TrainJob, TrainTaskHistory } from '@/app/mlops/types';
+import { ModalRef, ColumnItem, TrainJob } from '@/app/mlops/types';
 import { TrainStatus, TrainText } from '@/app/mlops/constants';
 import SubLayout from '@/components/sub-layout';
 import { JointContent } from 'antd/es/message/interface';
@@ -29,11 +28,10 @@ const TrainTask = () => {
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
   // const router = useRouter();
-  const path = usePathname();
+  // const path = usePathname();
   const { getAnomalyTaskList, deleteAnomalyTrainTask, startAnomalyTrainTask } = useMlopsApi();
   const modalRef = useRef<ModalRef>(null);
   const [tableData, setTableData] = useState<TrainJob[]>([]);
-  const [historyData, setHistoryData] = useState<TrainTaskHistory[]>([]);
   const [selectId, setSelectId] = useState<number | null>(null);
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -131,8 +129,8 @@ const TrainTask = () => {
   ];
 
   const Topsection = useMemo(() => {
-    const name = path.split('/')[2];
-    console.log(name);
+    // const name = path.split('/')[2];
+    // console.log(name);
 
     return (
       <div className="flex flex-col h-[90px] p-4 overflow-hidden">
@@ -161,26 +159,76 @@ const TrainTask = () => {
     getTasks();
   }, [pagination.current, pagination.pageSize]);
 
-  const getTasks = async (search: string = '') => {
+  const getTasks = async () => {
     setLoading(true);
     try {
-      const [{ items, count }, history] = await Promise.all([
-        fetchTaskList(search, pagination.current, pagination.pageSize),
-        fetchHistory(),
+      const [{ items, count }] = await Promise.all([
+        fetchTaskList(pagination.current, pagination.pageSize),
       ]);
-      const _data = items?.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        type: 'anomaly',
-        dataset_id: item.dataset_id,
-        train_data_id: item.train_data_id,
-        created_at: item.created_at,
-        creator: item?.created_by || '--',
-        status: item?.status || '--',
-        user_id: item.user_id
-      })) || [];
+      const _data =
+        items?.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          type: 'anomaly',
+          train_data_id: item.train_data_id,
+          val_data_id: item.val_data_id,
+          test_data_id: item.test_data_id,
+          created_at: item.created_at,
+          creator: item?.created_by || '--',
+          status: item?.status || '--',
+          max_evals: item.max_evals || '',
+          algorithm: item.algorithm || ''
+        })) || [];
       setTableData(_data as TrainJob[]);
-      setHistoryData(history || []);
+      // setTableData([
+      //   {
+      //     id: 1,
+      //     name: 'test',
+      //     type: 'anomaly',
+      //     train_data_id: 1,
+      //     val_data_id: 2,
+      //     test_data_id: 3,
+      //     created_at: '',
+      //     creator: 'test',
+      //     status: 'pending',
+      //     max_evals: 30,
+      //     algorithm: 'RandomForest',
+      //     hyperopt_config: {
+      //       "n_estimators": {
+      //         "type": "randint",
+      //         "min": 100,
+      //         "max": 500
+      //       },
+      //       "max_depth": {
+      //         "type": "randint",
+      //         "min": 10,
+      //         "max": 50
+      //       },
+      //       "min_samples_split": {
+      //         "type": "randint",
+      //         "min": 2,
+      //         "max": 10
+      //       },
+      //       "min_samples_leaf": {
+      //         "type": "randint",
+      //         "min": 1,
+      //         "max": 10
+      //       },
+      //       "max_features": {
+      //         "type": "choice",
+      //         "choice": ["sqrt", "log2", "none"]
+      //       },
+      //       "bootstrap": {
+      //         "type": "choice",
+      //         "choice": ["true", "false"]
+      //       },
+      //       "class_weight": {
+      //         "type": "choice",
+      //         "choice": ["balanced", "balanced_subsample", "none"]
+      //       }
+      //     }
+      //   }
+      // ])
       setPagination(prev => ({
         ...prev,
         total: count,
@@ -192,8 +240,7 @@ const TrainTask = () => {
     }
   };
 
-  const fetchTaskList = useCallback(async (search: string = '', page: number = 1, pageSize: number = 10) => {
-    console.log(search)
+  const fetchTaskList = useCallback(async ( page: number = 1, pageSize: number = 10) => {
     const { count, items } = await getAnomalyTaskList({
       page,
       page_size: pageSize
@@ -203,32 +250,6 @@ const TrainTask = () => {
       count
     }
   }, [getAnomalyTaskList]);
-
-  const fetchHistory = async () => {
-    const data = [
-      {
-        "id": 4,
-        "tenant_id": 1,
-        "job_id": 5,
-        "train_data_id": 17,
-        "parameters": "{\"n_estimators\":100,\"max_samples\":\"auto\",\"contamination\":\"auto\",\"max_features\":1,\"bootstrap\":\"False\",\"n_jobs\":\"None\",\"random_state\":\"None\",\"verbose\":0,\"warm_start\":\"False\"}",
-        "status": "in_progress",
-        "model_path": null,
-        "metrics": null,
-        "created_at": "2025-06-20T01:43:12.184148+00:00",
-        "updated_at": "2025-06-20T01:43:12.184148+00:00",
-        "started_at": TrainStatus.pending,
-        "completed_at": '',
-        "user_id": "7440ea1e-3048-4fba-bc63-102878a5ed5f",
-        "anomaly_detection_train_jobs": {
-          "name": "test"
-        }
-      }
-    ];
-    return data;
-  };
-
-
 
   const handleAdd = () => {
     if (modalRef.current) {
@@ -268,8 +289,8 @@ const TrainTask = () => {
     setPagination(value);
   };
 
-  const onSearch = (search: string) => {
-    getTasks(search);
+  const onSearch = () => {
+    getTasks();
   };
 
   const onDelete = async (record: TrainJob) => {
@@ -289,7 +310,7 @@ const TrainTask = () => {
 
   return (
     <>
-      <div>
+      <div className='w-full'>
         <SubLayout
           topSection={Topsection}
           intro={Intro}
@@ -309,21 +330,23 @@ const TrainTask = () => {
             </div>
           </div>
           <div className="flex-1 relative">
-            <CustomTable
-              rowKey="id"
-              className="mt-3"
-              scroll={{ x: '100%', y: 'calc(100vh - 420px)' }}
-              dataSource={tableData}
-              columns={columns}
-              pagination={pagination}
-              loading={loading}
-              onChange={handleChange}
-            />
+            <div className='absolute w-full'>
+              <CustomTable
+                rowKey="id"
+                className="mt-3"
+                scroll={{ x: '100%', y: 'calc(100vh - 420px)' }}
+                dataSource={tableData}
+                columns={columns}
+                pagination={pagination}
+                loading={loading}
+                onChange={handleChange}
+              />
+            </div>
           </div>
         </SubLayout>
       </div>
       <TrainTaskModal ref={modalRef} onSuccess={() => getTasks()} />
-      <TrainTaskDrawer open={open} selectId={selectId} onCancel={onCancel} historyData={historyData} />
+      <TrainTaskDrawer open={open} selectId={selectId} onCancel={onCancel} />
     </>
   );
 };

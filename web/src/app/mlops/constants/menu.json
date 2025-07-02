@@ -28,9 +28,16 @@
           "title": "异常检测",
           "url": "/mlops/task/traintask",
           "icon": "guanli",
-          "name": "train_test"
+          "name": "train_test",
+          "isNotMenuItem": true
         }
       ]
+    },
+    {
+      "title": "能力发布",
+      "icon": "renwu",
+      "url": "/mlops/model-release",
+      "name": "train_tasks"
     }
   ],
   "en": [

@@ -6,12 +6,12 @@ import { useTranslation } from '@/utils/i18n';
 import useMlopsApi from '@/app/mlops/api';
 import { DataSet, ModalRef, Option, TrainJob, TrainTaskModalProps, AlgorithmParam, TrainData } from '@/app/mlops/types';
 import RangeInput from '@/app/mlops/components/RangeInput';
-import { AlgorithmsParams } from '@/app/mlops/constants';
+import { AlgorithmsParams, AlgorithmsType } from '@/app/mlops/constants';
 import { JointContent } from 'antd/es/message/interface';
 
 const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess }, ref) => {
   const { t } = useTranslation();
-  const { addAnomalyTrainTask, getAnomalyTrainData, getAnomalyDatasetsList, updateAnomalyTrainTask } = useMlopsApi();
+  const { addAnomalyTrainTask, getAnomalyTrainData, getAnomalyDatasetsList, updateAnomalyTrainTask, getAnomalyTrainDataInfo } = useMlopsApi();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [type, setType] = useState<string>('add');
   const [title, setTitle] = useState<string>('addtask');
@@ -53,7 +53,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess },
 
   const getDataSets = async () => {
     setDatasetLoading(true);
-    try{
+    try {
       const data = await getAnomalyDatasetsList({});
       const items = data.map((item: DataSet) => {
         return {
@@ -69,43 +69,71 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess },
     }
   };
 
-  const initializeForm = useCallback(() => {
+  const initializeForm = useCallback(async () => {
     const defaultParams: Record<string, any> = {};
+
     AlgorithmsParams['RandomForest'].forEach(item => {
       defaultParams[item.name] = item.default;
     });
+
     if (!formRef.current) return;
     formRef.current.resetFields();
 
     if (type === 'add') {
       formRef.current.setFieldsValue({
-        params: defaultParams
+        hyperopt_config: defaultParams
       });
     } else if (formData) {
+      const dataset = await searchDatasetId(formData.train_data_id as number);
+      const hyperopt_config = hyperoptConversion(formData.hyperopt_config);
       setIsShow(true);
-      renderFileOption(formData.dataset_id);
+      setShowParams(true);
+      renderFileOption(dataset);
       formRef.current.setFieldsValue({
         name: formData.name,
         type: formData.type,
-        dataset_id: formData.dataset_id,
+        dataset_id: dataset,
+        max_evals: formData.max_evals,
+        algorithm: formData.algorithm,
         train_data_id: formData.train_data_id,
         val_data_id: formData.val_data_id,
-        test_data_id: formData.test_data_id
+        test_data_id: formData.test_data_id,
+        hyperopt_config
       });
     }
   }, [type, formData]);
 
+  const searchDatasetId = async (traindataId: number) => {
+    if (!traindataId) return;
+    const { dataset } = await getAnomalyTrainDataInfo(traindataId, false, false);
+    return dataset || null;
+  };
+
+  const hyperoptConversion = (params: object) => {
+    if (!params) return;
+    const hyperopt_config: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value?.type === 'randint') {
+        hyperopt_config[key] = [value?.min, value?.max];
+      } else if (value?.type === 'choice') {
+        hyperopt_config[key] = value?.choice[0];
+      }
+    });
+
+    return hyperopt_config;
+  };
+
   const renderFileOption = useCallback(async (data: number) => {
-    if (!formRef.current) return;
+    if (!formRef.current || !data) return;
     const param = { dataset: data };
     setSelectLoading(true);
     try {
       formRef.current.resetFields(['train_data_id', 'val_data_id', 'test_data_id']);
       const trainData = await getAnomalyTrainData(param);
       const options = {
-        trainOption: trainData.filter((item: TrainData) => item.is_train_data).map((item: TrainData) => ({label: item.name, value: item.id})),
-        valOption: trainData.filter((item: TrainData) => item.is_val_data).map((item: TrainData) => ({label: item.name, value: item.id})),
-        testOption: trainData.filter((item: TrainData) => item.is_test_data).map((item: TrainData) => ({label: item.name, value: item.id})),
+        trainOption: trainData.filter((item: TrainData) => item.is_train_data).map((item: TrainData) => ({ label: item.name, value: item.id })),
+        valOption: trainData.filter((item: TrainData) => item.is_val_data).map((item: TrainData) => ({ label: item.name, value: item.id })),
+        testOption: trainData.filter((item: TrainData) => item.is_test_data).map((item: TrainData) => ({ label: item.name, value: item.id })),
       };
       setTrainDataOption(options);
     } catch (e) {
@@ -117,7 +145,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess },
 
   const renderItem = useCallback((param: AlgorithmParam[]) => {
     return param.map((item) => (
-      <Form.Item key={item.name} name={['params', item.name]} label={item.name} rules={[{ required: true, message: t('common.inputMsg') }]}>
+      <Form.Item key={item.name} name={['hyperopt_config', item.name]} label={item.name} rules={[{ required: true, message: t('common.inputMsg') }]}>
         {item.type === 'randint' ?
           <RangeInput className='ml-2' value={item.default as [number, number]} /> :
           <Select className='ml-2' options={item.options} />
@@ -132,17 +160,39 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess },
     setShowParams(true);
   };
 
+  const renderParams = (object: Record<string, any>) => {
+    const hyperopt_config: Record<string, any> = {};
+    Object.keys(object).forEach((item: string) => {
+      if (AlgorithmsType['RandomForest'][item] == 'randint') {
+        hyperopt_config[item] = {
+          type: 'randint',
+          min: object[item][0],
+          max: object[item][1]
+        }
+      } else if (AlgorithmsType['RandomForest'][item] == 'choice') {
+        hyperopt_config[item] = {
+          type: 'choice',
+          choice: [object[item]]
+        }
+      }
+    });
+    return hyperopt_config;
+  };
+
   const handleSubmit = useCallback(async () => {
     if (confirmLoading) return;
     setConfirmLoading(true);
     try {
       const value = await formRef.current?.validateFields();
-      console.log(value);
+      const hyperopt_config = renderParams(value?.hyperopt_config);
       const params = {
         ...value,
-        status: 'pending'
+        status: 'pending',
+        hyperopt_config,
+        description: value.name || ''
       };
       if (type === 'add') {
+        console.log(params);
         await addAnomalyTrainTask(params);
       } else {
         await updateAnomalyTrainTask(formData?.id as string, value)

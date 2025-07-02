@@ -93,5 +93,9 @@
     "completed": "Completed",
     "failed": "Training failure",
     "maxEvals": "Maximum number of training rounds"
+  },
+  "model-release": {
+    "title": "Competence release",
+    "detail": "Publishing management of trained models."
   }
 }

@@ -64,6 +64,18 @@ const AlgorithmsParams: Record<string, AlgorithmParam[]> = {
   ]
 };
 
+const AlgorithmsType: Record<string, any> = {
+  'RandomForest': {
+    n_estimators: 'randint',
+    max_depth: 'randint',
+    min_samples_split: 'randint',
+    min_samples_leaf: 'randint',
+    max_features: 'choice',
+    bootstrap: 'choice',
+    class_weight: 'choice'
+  }
+};
+
 type TRAIN_STATUS = 'not_started' | 'in_progress' | 'completed' | 'failed';
 
 
@@ -74,5 +86,6 @@ export {
   TrainText,
   TypeContent,
   AlgorithmsParams,
+  AlgorithmsType,
   type TRAIN_STATUS
 }

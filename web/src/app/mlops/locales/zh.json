@@ -93,5 +93,9 @@
     "completed": "已完成",
     "failed": "训练失败",
     "maxEvals": "最大训练轮次"
+  },
+  "model-release": {
+    "title": "能力发布",
+    "detail": "对训练完成的模型进行发布管理。"
   }
 }

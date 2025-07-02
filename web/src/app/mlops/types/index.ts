@@ -216,15 +216,13 @@ export interface DataSet {
 
 export interface TrainJob {
   id: string | number,
-  user_id: string,
-  dataset_id: number,
   name: string,
   type: string,
   status: string,
   created_at: string,
-  train_data_id: string;
-  val_data_id: string;
-  test_data_id: string;
+  train_data_id: string | number;
+  val_data_id: string | number;
+  test_data_id: string | number;
   [key: string]: any
 }
 
