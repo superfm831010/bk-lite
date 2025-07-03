@@ -76,7 +76,7 @@ const IncidentsPage: React.FC = () => {
       title: t('alarms.createTime'),
       dataIndex: 'created_at',
       key: 'created_at',
-      width: 140,
+      width: 170,
     },
     {
       title: t('alarms.incidentName'),
@@ -131,7 +131,9 @@ const IncidentsPage: React.FC = () => {
           <Button
             type="link"
             onClick={() => {
-              router.push(`/alarm/incidents/detail?incident_id=${record.id}`);
+              router.push(
+                `/alarm/incidents/detail?id=${record.id}&incident_id=${record.incident_id}`
+              );
             }}
           >
             {t('common.detail')}

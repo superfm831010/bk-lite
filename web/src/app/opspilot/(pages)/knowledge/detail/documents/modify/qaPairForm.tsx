@@ -431,7 +431,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
             <div className="border rounded-lg p-4 bg-white h-full flex flex-col">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-base font-medium m-0">
-                  待确认文档 ({tempSelectedDocuments.length})
+                  {t('knowledge.qaPairs.pendingDocuments')} ({tempSelectedDocuments.length})
                 </h4>
                 {tempSelectedDocuments.length > 0 && (
                   <Button
@@ -441,7 +441,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
                     onClick={handleTempClearAllDocuments}
                     className="text-red-500 hover:text-red-700"
                   >
-                    清空
+                    {t('common.clear')}
                   </Button>
                 )}
               </div>

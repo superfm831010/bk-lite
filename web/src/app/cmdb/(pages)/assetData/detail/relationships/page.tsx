@@ -66,7 +66,7 @@ const Ralationships = () => {
         />
         {activeTab === 'list' && (
           <div className={relationshipsStyle.operation}>
-            <PermissionWrapper requiredPermissions={['Add']}>
+            <PermissionWrapper requiredPermissions={['Add Associate']}>
               <Button
                 type="link"
                 icon={<GatewayOutlined />}

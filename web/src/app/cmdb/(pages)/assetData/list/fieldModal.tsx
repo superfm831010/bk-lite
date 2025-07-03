@@ -264,10 +264,10 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
                 placeholder={t('common.pleaseSelect')}
               >
                 {[
-                  { id: 1, name: 'Yes' },
-                  { id: 0, name: 'No' },
+                  { id: true, name: 'Yes' },
+                  { id: false, name: 'No' },
                 ].map((opt) => (
-                  <Select.Option key={opt.id} value={opt.id}>
+                  <Select.Option key={opt.id.toString()} value={opt.id}>
                     {opt.name}
                   </Select.Option>
                 ))}

@@ -2,6 +2,7 @@
 import OperateModal from '@/components/operate-modal';
 import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useTranslation } from '@/utils/i18n';
+import { exportToCSV } from '@/app/mlops/utils/common';
 import useMlopsApi from '@/app/mlops/api';
 import { Upload, Button, message, type UploadFile, type UploadProps } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
@@ -24,7 +25,6 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
     showModal: ({ form }: ModalConfig) => {
       setVisiable(true);
       setFormData(form);
-      console.log(form);
     }
   }));
 
@@ -109,18 +109,53 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
   };
 
   const downloadTemplate = async () => {
-    // if (data) {
-    //   const url = URL.createObjectURL(data);
-    //   const a = document.createElement('a');
-    //   a.href = url;
-    //   a.download = 'template.csv';
-    //   document.body.appendChild(a);
-    //   a.click();
-    //   document.body.removeChild(a);
-    //   URL.revokeObjectURL(url);
-    // } else {
-    //   message.error(t('datasets.downloadError'));
-    // }
+    const data = [
+      {
+        "value": 27.43789942218143,
+        "timestamp": 1704038400
+      },
+      {
+        "value": 26.033612999373652,
+        "timestamp": 1704038460
+      },
+      {
+        "value": 36.30777324191053,
+        "timestamp": 1704038520
+      },
+      {
+        "value": 33.70226097527219,
+        "timestamp": 1704038580
+      }
+    ];
+    const columns = [
+      {
+        title: t('common.time'),
+        key: 'timestamp',
+        dataIndex: 'timestamp',
+        width: 80,
+        align: 'center',
+      },
+      {
+        title: t('datasets.value'),
+        key: 'value',
+        dataIndex: 'value',
+        align: 'center',
+        width: 30,
+      },
+    ]
+    const blob = exportToCSV(data, columns);
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'template.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      message.error(t('datasets.downloadError'));
+    }
     console.log('download');
   }
 

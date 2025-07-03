@@ -1,7 +1,7 @@
 {
     "client_id": "mlops",
     "name": "MLOps",
-    "url": "/mlops/datasets",
+    "url": "/mlops/manage",
     "description": "Create roles for the MLOps app to manage data permissions, menu permissions, and feature permissions.",
     "menus": [
         {

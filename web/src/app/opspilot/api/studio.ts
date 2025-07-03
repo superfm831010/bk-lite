@@ -20,6 +20,14 @@ export const useStudioApi = () => {
   };
 
   /**
+   * Fetches bot detail information including permissions.
+   * @param botId - The ID of the bot.
+   */
+  const fetchBotDetail = async (botId: string | null): Promise<any> => {
+    return get(`/opspilot/bot_mgmt/bot/${botId}/`);
+  };
+
+  /**
    * Updates a channel's configuration.
    * @param config - The updated channel configuration.
    */
@@ -105,6 +113,7 @@ export const useStudioApi = () => {
   return {
     fetchLogs,
     fetchChannels,
+    fetchBotDetail,
     updateChannel,
     deleteStudio,
     fetchInitialData,

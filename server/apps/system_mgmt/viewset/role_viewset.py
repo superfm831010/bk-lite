@@ -55,7 +55,7 @@ class RoleViewSet(ViewSetUtils):
             .order_by("-id")
         )
         data, total = self.search_by_page(queryset, request, User.display_fields())
-        return JsonResponse({"result": True, "data": data})
+        return JsonResponse({"result": True, "data": {"items": data, "count": total}})
 
     @action(detail=False, methods=["GET"])
     @HasPermission("application_role-View")

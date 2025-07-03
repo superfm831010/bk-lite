@@ -2,7 +2,6 @@ import ast
 
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.monitor.plugins.controller import Controller
-from apps.monitor.constants import CHILD_ENVS
 from apps.monitor.models import MonitorInstance, MonitorInstanceOrganization, CollectConfig
 from apps.monitor.utils.config_format import ConfigFormat
 from apps.monitor.utils.instance import calculation_status
@@ -156,7 +155,7 @@ class InstanceConfigService:
                 content = ConfigFormat.json_to_yaml(base_info["content"])
                 env_config = base_info.get("env_config")
                 if env_config:
-                    child_env = {k: v for k, v in env_config.items() if k in CHILD_ENVS}
+                    child_env = {k: v for k, v in env_config.items()}
                 NodeMgmt().update_config_content(base_info["id"], content, env_config)
 
         if child_info or child_env:

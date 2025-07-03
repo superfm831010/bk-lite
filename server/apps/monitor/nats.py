@@ -1,5 +1,5 @@
 import nats_client
-from apps.monitor.models import MonitorInstance, MonitorObject
+from apps.monitor.models import MonitorInstance, MonitorObject, MonitorPolicy
 
 
 @nats_client.register
@@ -7,10 +7,18 @@ def get_monitor_module_data(module, child_module, page, page_size, group_id):
     """
         获取监控模块数据
     """
-    queryset = MonitorInstance.objects.filter(
-        monitor_object_id=child_module,
-        monitorinstanceorganization__organization=group_id
-    ).distinct("id")
+    if module == "instance":
+        queryset = MonitorInstance.objects.filter(
+            monitor_object_id=child_module,
+            monitorinstanceorganization__organization=group_id
+        ).distinct("id")
+    elif module == "policy":
+        queryset = MonitorPolicy.objects.filter(
+            monitor_object_id=child_module,
+            policyorganization__organization=group_id
+        ).distinct("id")
+    else:
+        raise ValueError("Invalid module type")
     # 计算总数
     total_count = queryset.count()
     # 计算分页
@@ -19,6 +27,8 @@ def get_monitor_module_data(module, child_module, page, page_size, group_id):
     # 获取当前页的数据
     data_list = queryset.values("id", "name")[start:end]
     return {"count": total_count,"items": list(data_list)}
+
+
 
 
 @nats_client.register
@@ -48,4 +58,9 @@ def get_monitor_module_list():
             "display_name": "Instance",
             "children": type_list,
         },
+        {
+            "name": "policy",
+            "display_name": "Policy",
+            "children": type_list
+        }
     ]

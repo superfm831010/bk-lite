@@ -1,5 +1,11 @@
 'use client';
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+} from 'react';
 import {
   Spin,
   Input,
@@ -112,77 +118,88 @@ const Asset = () => {
     onClick: handleAssetMenuClick,
   };
 
-  const childColumns: ColumnItem[] = [
-    {
-      title: t('monitor.intergrations.collectionMethod'),
-      dataIndex: 'collect_type',
-      key: 'collect_type',
-      width: 150,
-      render: (_, record) => <>{getCollectType(record)}</>,
+  const getChildColumns = useCallback(
+    (parentRecord: TableDataItem) => {
+      const childColumns: ColumnItem[] = [
+        {
+          title: t('monitor.intergrations.collectionMethod'),
+          dataIndex: 'collect_type',
+          key: 'collect_type',
+          width: 150,
+          render: (_, record) => <>{getCollectType(record)}</>,
+        },
+        {
+          title: t('monitor.intergrations.collectionNode'),
+          dataIndex: 'agent_id',
+          key: 'agent_id',
+          width: 150,
+        },
+        {
+          title: t('monitor.intergrations.reportingStatus'),
+          dataIndex: 'status',
+          key: 'status',
+          width: 150,
+          render: (_, { time, status }) =>
+            time ? (
+              <Tag color={NODE_STATUS_MAP[status] || 'gray'}>
+                {t(`monitor.intergrations.${status}`)}
+              </Tag>
+            ) : (
+              <>--</>
+            ),
+        },
+        {
+          title: t('monitor.intergrations.lastReportTime'),
+          dataIndex: 'time',
+          key: 'time',
+          width: 160,
+          render: (_, { time }) => (
+            <>
+              {time ? convertToLocalizedTime(new Date(time * 1000) + '') : '--'}
+            </>
+          ),
+        },
+        {
+          title: t('monitor.intergrations.installationMethod'),
+          dataIndex: 'config_id',
+          key: 'config_id',
+          width: 170,
+          render: (_, record) => (
+            <>
+              {record.config_id
+                ? t('monitor.intergrations.automatic')
+                : t('monitor.intergrations.manual')}
+            </>
+          ),
+        },
+        {
+          title: t('common.action'),
+          key: 'action',
+          dataIndex: 'action',
+          fixed: 'right',
+          width: 100,
+          render: (_, record) => (
+            <>
+              <Permission
+                requiredPermissions={['Edit']}
+                instPermissions={parentRecord.permission}
+              >
+                <Button
+                  type="link"
+                  disabled={!record.config_ids?.length}
+                  onClick={() => openConfigModal(record)}
+                >
+                  {t('monitor.intergrations.updateConfigration')}
+                </Button>
+              </Permission>
+            </>
+          ),
+        },
+      ];
+      return childColumns;
     },
-    {
-      title: t('monitor.intergrations.collectionNode'),
-      dataIndex: 'agent_id',
-      key: 'agent_id',
-      width: 150,
-    },
-    {
-      title: t('monitor.intergrations.reportingStatus'),
-      dataIndex: 'status',
-      key: 'status',
-      width: 150,
-      render: (_, { time, status }) =>
-        time ? (
-          <Tag color={NODE_STATUS_MAP[status] || 'gray'}>
-            {t(`monitor.intergrations.${status}`)}
-          </Tag>
-        ) : (
-          <>--</>
-        ),
-    },
-    {
-      title: t('monitor.intergrations.lastReportTime'),
-      dataIndex: 'time',
-      key: 'time',
-      width: 160,
-      render: (_, { time }) => (
-        <>{time ? convertToLocalizedTime(new Date(time * 1000) + '') : '--'}</>
-      ),
-    },
-    {
-      title: t('monitor.intergrations.installationMethod'),
-      dataIndex: 'config_id',
-      key: 'config_id',
-      width: 170,
-      render: (_, record) => (
-        <>
-          {record.config_id
-            ? t('monitor.intergrations.automatic')
-            : t('monitor.intergrations.manual')}
-        </>
-      ),
-    },
-    {
-      title: t('common.action'),
-      key: 'action',
-      dataIndex: 'action',
-      fixed: 'right',
-      width: 100,
-      render: (_, record) => (
-        <>
-          <Permission requiredPermissions={['Edit']}>
-            <Button
-              type="link"
-              disabled={!record.config_ids?.length}
-              onClick={() => openConfigModal(record)}
-            >
-              {t('monitor.intergrations.updateConfigration')}
-            </Button>
-          </Permission>
-        </>
-      ),
-    },
-  ];
+    [NODE_STATUS_MAP]
+  );
 
   const columns = useMemo(() => {
     const columnItems: ColumnItem[] = [
@@ -209,7 +226,10 @@ const Asset = () => {
             <Button type="link" onClick={() => checkDetail(record)}>
               {t('common.detail')}
             </Button>
-            <Permission requiredPermissions={['Edit']}>
+            <Permission
+              requiredPermissions={['Edit']}
+              instPermissions={record.permission}
+            >
               <Button
                 type="link"
                 className="ml-[10px]"
@@ -218,7 +238,10 @@ const Asset = () => {
                 {t('common.edit')}
               </Button>
             </Permission>
-            <Permission requiredPermissions={['Delete']}>
+            <Permission
+              requiredPermissions={['Delete']}
+              instPermissions={record.permission}
+            >
               <Popconfirm
                 title={t('common.deleteTitle')}
                 description={t('common.deleteContent')}
@@ -531,6 +554,11 @@ const Asset = () => {
   const rowSelection: TableRowSelection<TableDataItem> = {
     selectedRowKeys,
     onChange: onSelectChange,
+    getCheckboxProps: (record: any) => {
+      return {
+        disabled: !record.permission.includes('Operate'),
+      };
+    },
   };
 
   return (
@@ -589,7 +617,7 @@ const Asset = () => {
                 loading={record.loading}
                 rowKey="id"
                 dataSource={record.dataSource || []}
-                columns={childColumns}
+                columns={getChildColumns(record)}
               />
             ),
             onExpand: (expanded, record) => {

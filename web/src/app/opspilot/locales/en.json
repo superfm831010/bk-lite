@@ -39,6 +39,7 @@
       "targetDocuments": "Target Documents",
       "selectedDocuments": "Selected Documents",
       "selectDocuments": "Select Documents",
+      "pendingDocuments": "Pending Documents",
       "documentsSelected": "documents selected",
       "noDocumentsSelected": "No documents selected",
       "question": "Question",

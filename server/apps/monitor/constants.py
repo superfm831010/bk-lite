@@ -28,8 +28,6 @@ LEVEL_WEIGHT = {
 # 对象顺序key
 OBJ_ORDER = "OBJ_ORDER"
 
-CHILD_ENVS = {"ENV_LISTEN_PORT", "LISTEN_PORT"}
-
 # 对象默认顺序
 DEFAULT_OBJ_ORDER = [
   {"name_list": ["Host"], "type": "OS"},
@@ -48,3 +46,7 @@ DEFAULT_OBJ_ORDER = [
 # 阈值告警类型， 无数据告警类型
 THRESHOLD = "threshold"
 NO_DATA = "no_data"
+
+DEFAULT_PERMISSION = ['View', 'Operate']
+INSTANCE_MODULE = "instance"
+POLICY_MODULE = "policy"

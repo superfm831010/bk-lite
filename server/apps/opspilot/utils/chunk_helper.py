@@ -40,7 +40,7 @@ class ChunkHelper(ChatServerHelper):
     @staticmethod
     def delete_es_content(index_name, qa_pairs_id):
         url = f"{settings.METIS_SERVER_URL}/api/rag/delete_doc"
-        kwargs = {"index_name": index_name, "metadata_filter": {"qa_paris_id": str(qa_pairs_id)}}
+        kwargs = {"index_name": index_name, "metadata_filter": {"qa_pairs_id": str(qa_pairs_id)}}
         try:
             ChatServerHelper.post_chat_server(kwargs, url)
         except Exception as e:
@@ -75,7 +75,6 @@ class ChunkHelper(ChatServerHelper):
         for i in qa_paris:
             params = dict(kwargs, **{"content": i["question"]})
             params["metadata"] = json.dumps(dict(metadata, **{"qa_question": i["question"], "qa_answer": i["answer"]}))
-            print(json.dumps(params))
             res = requests.post(url, headers=cls.get_chat_server_header(), data=params, verify=False).json()
             if res["status"] != "success":
                 raise Exception(f"创建问答对失败: {res['message']}")
