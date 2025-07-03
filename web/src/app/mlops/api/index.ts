@@ -1,5 +1,5 @@
 import useApiClient from '@/utils/request';
-import { TrainDataParams } from '../types';
+import { TrainDataParams } from '@/app/mlops/types/manage';
 
 interface TrainDataBrochure {
   dataset: number;

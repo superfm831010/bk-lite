@@ -10,7 +10,8 @@ import Icon from '@/components/icon';
 import TrainTaskModal from './traintaskModal';
 // import TrainTaskDrawer from './traintaskDrawer';
 import { useTranslation } from '@/utils/i18n';
-import { ModalRef, ColumnItem, TrainJob } from '@/app/mlops/types';
+import { ModalRef, ColumnItem } from '@/app/mlops/types';
+import { TrainJob } from '@/app/mlops/types/task';
 import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
 import SubLayout from '@/components/sub-layout';
 import { JointContent } from 'antd/es/message/interface';
@@ -174,61 +175,12 @@ const TrainTask = () => {
           val_data_id: item.val_data_id,
           test_data_id: item.test_data_id,
           created_at: item.created_at,
-          creator: item?.created_by || '--',
-          status: item?.status || '--',
-          max_evals: item.max_evals || '',
-          algorithm: item.algorithm || ''
+          creator: item?.created_by,
+          status: item?.status,
+          max_evals: item.max_evals,
+          algorithm: item.algorithm
         })) || [];
       setTableData(_data as TrainJob[]);
-      // setTableData([
-      //   {
-      //     id: 1,
-      //     name: 'test',
-      //     type: 'anomaly',
-      //     train_data_id: 1,
-      //     val_data_id: 2,
-      //     test_data_id: 3,
-      //     created_at: '',
-      //     creator: 'test',
-      //     status: 'pending',
-      //     max_evals: 30,
-      //     algorithm: 'RandomForest',
-      //     hyperopt_config: {
-      //       "n_estimators": {
-      //         "type": "randint",
-      //         "min": 100,
-      //         "max": 500
-      //       },
-      //       "max_depth": {
-      //         "type": "randint",
-      //         "min": 10,
-      //         "max": 50
-      //       },
-      //       "min_samples_split": {
-      //         "type": "randint",
-      //         "min": 2,
-      //         "max": 10
-      //       },
-      //       "min_samples_leaf": {
-      //         "type": "randint",
-      //         "min": 1,
-      //         "max": 10
-      //       },
-      //       "max_features": {
-      //         "type": "choice",
-      //         "choice": ["sqrt", "log2"]
-      //       },
-      //       "bootstrap": {
-      //         "type": "choice",
-      //         "choice": ["true", "false"]
-      //       },
-      //       "class_weight": {
-      //         "type": "choice",
-      //         "choice": ["balanced", "balanced_subsample", "none"]
-      //       }
-      //     }
-      //   }
-      // ]);
       setPagination(prev => ({
         ...prev,
         total: count,

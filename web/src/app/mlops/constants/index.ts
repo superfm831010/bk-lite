@@ -1,4 +1,5 @@
-import { LevelMap, AlgorithmParam } from "@/app/mlops/types";
+import { LevelMap,  } from "@/app/mlops/types";
+import { AlgorithmParam } from "@/app/mlops/types/task"; 
 
 const LEVEL_MAP: LevelMap = {
   critical: '#F43B2C',

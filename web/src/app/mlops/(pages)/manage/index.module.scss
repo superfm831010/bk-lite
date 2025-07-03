@@ -1,6 +1,6 @@
 .segmented :global(.ant-segmented) {
   background: transparent;
-  color: #1E252E;
+  color: var(--color-text-1);
 }
 
 .segmented :global(.ant-segmented-item) {
@@ -9,5 +9,5 @@
 }
 
 .segmented :global(.ant-segmented-item-selected) {
-  color: #155AEF;
+  color: var(--color-text-active);
 }

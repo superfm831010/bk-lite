@@ -7,11 +7,17 @@ import { Spin, Modal } from 'antd';
 import Icon from '@/components/icon';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import { AnomalyTrainData } from '@/app/mlops/types';
+import { AnomalyTrainData, AsideProps } from '@/app/mlops/types/manage'
 import sideMenuStyle from './index.module.scss';
 const { confirm } = Modal;
 
-const Aside = ({ children, menuItems, loading, isChange, onChange, changeFlag }: { children: any, menuItems: AnomalyTrainData[], loading: boolean, isChange: boolean, onChange: (value: boolean) => void, changeFlag: (value: boolean) => void }) => {
+const Aside = ({
+  children,
+  menuItems,
+  loading,
+  isChange,
+  onChange,
+  changeFlag }: AsideProps) => {
   const pathname = usePathname();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
@@ -33,7 +39,7 @@ const Aside = ({ children, menuItems, loading, isChange, onChange, changeFlag }:
   const goBack = (e: any) => {
     e.preventDefault();
     if (isChange) {
-      confirm({
+      return confirm({
         title: t('datasets.leave'),
         content: t('datasets.leaveContent'),
         okText: t('common.confirm'),
@@ -47,9 +53,9 @@ const Aside = ({ children, menuItems, loading, isChange, onChange, changeFlag }:
           })
         }
       })
-    } else {
-      router.replace(`/mlops/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}&description=${description}&activeTap=${activeTap}`);
     }
+
+    router.replace(`/mlops/manage/detail?folder_id=${folder_id}&folder_name=${folder_name}&description=${description}&activeTap=${activeTap}`);
   };
 
   const showConfirm = (id: number) => {
@@ -70,6 +76,15 @@ const Aside = ({ children, menuItems, loading, isChange, onChange, changeFlag }:
     })
   };
 
+  const onClick = async (e: any, item: AnomalyTrainData) => {
+    e.preventDefault();
+    if (isChange) {
+      return showConfirm(item.id)
+    }
+    changeFlag(true);
+    router.push(buildUrlWithParams(item.id));
+  };
+
   return (
     <>
       <aside className={`w-[216px] pr-4 flex flex-shrink-0 flex-col h-full ${sideMenuStyle.sideMenu} font-sans`}>
@@ -84,19 +99,11 @@ const Aside = ({ children, menuItems, loading, isChange, onChange, changeFlag }:
           ) : (
             <ul className="p-3 overflow-auto max-h-[65vh]">
               {menuItems.map((item: any) => (
-                <li key={item.id} className={`rounded-md mb-1 ${isActive(item.id) ? `${sideMenuStyle.active} bg-blue-50 text-blue-600` : '' }`}>
+                <li key={item.id} className={`rounded-md mb-1 ${isActive(item.id) ? `${sideMenuStyle.active} bg-blue-50 text-blue-600` : ''}`}>
                   <Link
                     href={buildUrlWithParams(item.id)}
                     className="group flex items-center overflow-hidden h-9 rounded-md py-2 px-3"
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      if (isChange) {
-                        showConfirm(item.id)
-                      } else {
-                        changeFlag(true);
-                        router.push(buildUrlWithParams(item.id));
-                      }
-                    }}
+                    onClick={(e) => onClick(e, item)}
                   >
                     <Icon type={'chakanshuji'} className="text-xl pr-1.5" />
                     <EllipsisWithTooltip
