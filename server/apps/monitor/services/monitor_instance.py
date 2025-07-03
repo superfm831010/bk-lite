@@ -1,17 +1,18 @@
 import ast
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.monitor.constants import MONITOR_OBJ_KEYS
+from apps.monitor.constants import MONITOR_OBJ_KEYS, DEFAULT_PERMISSION
 from apps.monitor.models import Metric, MonitorInstance, MonitorObject
 from apps.monitor.services.monitor_object import MonitorObjectService
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
 
 
 class InstanceSearch:
-    def __init__(self, monitor_obj, query_data):
+    def __init__(self, monitor_obj, query_data, permission=None):
         self.monitor_obj = monitor_obj
         self.query_data = query_data
         self.obj_metric_map = self.get_obj_metric_map()
+        self.permission = permission
 
     @staticmethod
     def get_parent_instance_ids(query):
@@ -105,6 +106,11 @@ class InstanceSearch:
             results = self.add_other_metrics(results)
 
         MonitorObjectService.add_attr(results)
+        for instance_info in results:
+            if self.permission:
+                instance_info["permission"] = self.permission.get(instance_info["instance_id"], DEFAULT_PERMISSION)
+            else:
+                instance_info["permission"] = DEFAULT_PERMISSION
 
         return dict(count=count, results=results)
 
@@ -117,6 +123,10 @@ class InstanceSearch:
         name = self.query_data.get("name")
         if name:
             qs = qs.filter(name__icontains=name)
+
+        if self.permission:
+            # 根据权限过滤
+            qs = qs.filter(id__in=list(self.permission.keys()))
 
         # 去除重复
         qs = qs.distinct("id")

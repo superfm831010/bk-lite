@@ -8,11 +8,13 @@ from rest_framework.decorators import action
 
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.utils.web_utils import WebUtils
+from apps.monitor.constants import POLICY_MODULE, DEFAULT_PERMISSION
 from apps.monitor.filters.monitor_policy import MonitorPolicyFilter
 from apps.monitor.models import PolicyOrganization
 from apps.monitor.models.monitor_policy import MonitorPolicy
 from apps.monitor.serializers.monitor_policy import MonitorPolicySerializer
 from apps.monitor.services.policy import PolicyService
+from apps.monitor.utils.system_mgmt_api import SystemMgmtUtils
 from config.drf.pagination import CustomPageNumberPagination
 
 
@@ -23,18 +25,39 @@ class MonitorPolicyVieSet(viewsets.ModelViewSet):
     pagination_class = CustomPageNumberPagination
 
     def list(self, request, *args, **kwargs):
+        monitor_object_id = request.query_params.get('monitor_object_id', None)
+        permission = SystemMgmtUtils.format_rules(POLICY_MODULE, monitor_object_id, request.user.rules)
+
         queryset = self.filter_queryset(self.get_queryset())
+
+        if permission:
+            queryset = queryset.filter(id__in=list(permission.keys()))
 
         group_ids = [i["id"] for i in request.user.group_list]
         queryset = queryset.filter(policyorganization__organization__in=group_ids).distinct()
 
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        # 获取分页参数
+        page = int(request.GET.get('page', 1))  # 默认第1页
+        page_size = int(request.GET.get('page_size', 10))  # 默认每页10条数据
 
-        serializer = self.get_serializer(queryset, many=True)
-        return WebUtils.response_success(serializer.data)
+        # 计算分页的起始位置
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        # 获取当前页的数据
+        page_data = queryset[start:end]
+
+        # 执行序列化
+        serializer = self.get_serializer(page_data, many=True)
+        results = serializer.data
+
+        for instance_info in results:
+            if permission:
+                instance_info["permission"] = permission.get(instance_info["id"], DEFAULT_PERMISSION)
+            else:
+                instance_info["permission"] = DEFAULT_PERMISSION
+
+        return WebUtils.response_success(dict(count=queryset.count(), items=results))
 
     def create(self, request, *args, **kwargs):
         # 补充创建人

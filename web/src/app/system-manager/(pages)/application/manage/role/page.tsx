@@ -25,7 +25,6 @@ const RoleManagement: React.FC = () => {
   const [addUserForm] = Form.useForm();
 
   const [roleList, setRoleList] = useState<Role[]>([]);
-  const [userList, setUserList] = useState<User[]>([]);
   const [allUserList, setAllUserList] = useState<User[]>([]);
   const [tableData, setTableData] = useState<User[]>([]);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -86,29 +85,27 @@ const RoleManagement: React.FC = () => {
   const fetchUsersByRole = async (role: Role, page: number, size: number, search?: string) => {
     setLoading(true);
     try {
-      const users = await getUsersByRole({
+      const data = await getUsersByRole({
         params: {
           role_id: role.id,
           search,
+          page: page, 
+          page_size: size
         },
       });
-      setUserList(users);
-      handleTableChange(page, size, users);
+      setTableData(data.items || []);
+      setTotal(data.count);
+      setCurrentPage(page);
+      setPageSize(size);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleTableChange = (page: number, size?: number, listOverride?: User[]) => {
+  const handleTableChange = (page: number, size?: number) => {
+    if (!selectedRole) return;
     const newPageSize = size || pageSize;
-    const offset = (page - 1) * newPageSize;
-    const currentList = listOverride || userList;
-    const paginatedData = currentList.slice(offset, offset + newPageSize);
-
-    setTableData(paginatedData);
-    setCurrentPage(page);
-    setPageSize(newPageSize);
-    setTotal(listOverride?.length || userList.length);
+    fetchUsersByRole(selectedRole, page, newPageSize);
   };
 
   const fetchAllUsers = async () => {
