@@ -1,10 +1,26 @@
 "use client";
 import OperateModal from '@/components/operate-modal';
-import { Form, Input, Button, Select, FormInstance, message, Divider, InputNumber } from 'antd';
-import { useState, useImperativeHandle, useEffect, useRef, useCallback, forwardRef } from 'react';
+import { 
+  Form, 
+  Input, 
+  Button, 
+  Select, 
+  FormInstance, 
+  message, 
+  Divider, 
+  InputNumber } from 'antd';
+import { 
+  useState, 
+  useImperativeHandle, 
+  useEffect, 
+  useRef, 
+  useCallback, 
+  forwardRef } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import useMlopsApi from '@/app/mlops/api';
-import { DataSet, ModalRef, Option, TrainJob, TrainTaskModalProps, AlgorithmParam, TrainData } from '@/app/mlops/types';
+import { ModalRef, Option } from '@/app/mlops/types';
+import { TrainData, DataSet } from '@/app/mlops/types/manage';
+import { TrainJob, TrainTaskModalProps, AlgorithmParam } from '@/app/mlops/types/task';
 import RangeInput from '@/app/mlops/components/range-input';
 import { ALGORITHMS_PARAMS, ALGORITHMS_TYPE } from '@/app/mlops/constants';
 import { JointContent } from 'antd/es/message/interface';

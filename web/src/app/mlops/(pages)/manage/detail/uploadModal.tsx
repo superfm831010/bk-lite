@@ -6,7 +6,8 @@ import { exportToCSV } from '@/app/mlops/utils/common';
 import useMlopsApi from '@/app/mlops/api';
 import { Upload, Button, message, type UploadFile, type UploadProps } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
-import { ModalConfig, ModalRef, TableData, TrainDataParams } from '@/app/mlops/types';
+import { ModalConfig, ModalRef, TableData } from '@/app/mlops/types';
+import { TrainDataParams } from '@/app/mlops/types/manage';
 const { Dragger } = Upload;
 
 interface UploadModalProps {

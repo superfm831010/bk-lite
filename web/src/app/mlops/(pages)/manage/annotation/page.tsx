@@ -1,19 +1,29 @@
 "use client";
-import { useEffect, useState, useMemo, memo, useCallback } from "react";
+import { 
+  useEffect, 
+  useState, 
+  useMemo, 
+  memo, 
+  useCallback } from "react";
 import { useSearchParams } from 'next/navigation';
 import { cloneDeep } from "lodash";
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { useTranslation } from "@/utils/i18n";
 import { TYPE_CONTENT } from "@/app/mlops/constants";
 import useMlopsApi from "@/app/mlops/api";
-// import { exportToCSV } from "@/app/mlops/utils/common";
-import { Button, message, Spin, TablePaginationConfig, Tag } from "antd";
-import Aside from "./components/aside";
+import { 
+  Button, 
+  message, 
+  Spin, 
+  TablePaginationConfig, 
+  Tag } from "antd";
+import Aside from "./aside";
 import Icon from '@/components/icon';
 import LineChart from "@/app/mlops/components/charts/lineChart";
 import CustomTable from "@/components/custom-table";
-import { ColumnItem, AnomalyTrainData, TableDataItem, Pagination, } from '@/app/mlops/types';
-import sideMenuStyle from './components/index.module.scss';
+import { ColumnItem, TableDataItem, Pagination, } from '@/app/mlops/types';
+import { AnomalyTrainData } from '@/app/mlops/types/manage';
+import sideMenuStyle from './aside/index.module.scss';
 
 interface AnnotationData {
   timestamp: number;

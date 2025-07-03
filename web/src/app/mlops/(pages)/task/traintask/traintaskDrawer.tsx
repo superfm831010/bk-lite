@@ -1,5 +1,6 @@
 import { Button, Drawer, message, TablePaginationConfig, Tag } from "antd";
-import { ColumnItem, TrainTaskHistory } from "@/app/mlops/types";
+import { ColumnItem } from "@/app/mlops/types";
+import { TrainTaskHistory } from "@/app/mlops/types/task";
 import CustomTable from "@/components/custom-table";
 import { useTranslation } from "@/utils/i18n";
 import useMlopsApi from "@/app/mlops/api";
