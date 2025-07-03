@@ -1,0 +1,12 @@
+{
+  "plugin": "Postgresql-Exporter",
+  "plugin_desc": "postgresql Exporter is used to collect and export metrics from postgresql databases, including connection counts, query performance, cache usage, and error rates, to help monitor the health and performance of postgresql instances.",
+  "name": "postgresql",
+  "icon": "postgresql",
+  "type": "Database",
+  "description": "",
+  "default_metric": "any({instance_type='postgresql'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": [],
+  "metrics": []
+}
