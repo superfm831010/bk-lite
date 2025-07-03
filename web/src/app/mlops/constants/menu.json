@@ -41,7 +41,7 @@
       "children": [
         {
           "title": "异常检测",
-          "url": "/mlops/model-release/models?name=anomaly",
+          "url": "/mlops/model-release/models",
           "icon": "guanli",
           "name": "train_tasks",
           "isNotMenuItem": false
