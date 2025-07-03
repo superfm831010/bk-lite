@@ -6,7 +6,7 @@
     "icon": "",
     "node_operating_system": "linux",
     "service_type": "exec",
-    "executable_path": "/opt/fusion-collectors/bin/postgres_exporter",
+    "executable_path": "/opt/fusion-collectors/bin/postgresql_exporter",
     "execute_parameters": "--web.listen-address 127.0.0.1:$LISTEN_PORT",
     "validation_parameters": "",
     "default_template": "",
