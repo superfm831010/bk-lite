@@ -1,50 +1,46 @@
 "use client";
 import OperateModal from '@/components/operate-modal';
-import { Form, Input, Button, Select, FormInstance, message } from 'antd';
+import { Form, Input, Button, Select, FormInstance, message, Divider, InputNumber } from 'antd';
 import { useState, useImperativeHandle, useEffect, useRef, useCallback, forwardRef } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import { DataSet, ModalRef, Option, TrainJob, TrainTaskModalProps, AlgorithmParam } from '@/app/mlops/types';
+import useMlopsApi from '@/app/mlops/api';
+import { DataSet, ModalRef, Option, TrainJob, TrainTaskModalProps, AlgorithmParam, TrainData } from '@/app/mlops/types';
+import RangeInput from '@/app/mlops/components/RangeInput';
+import { AlgorithmsParams, AlgorithmsType } from '@/app/mlops/constants';
+import { JointContent } from 'antd/es/message/interface';
 
-const algorithmsParam: AlgorithmParam[] = [
-  { name: 'n_estimators', type: 'value', default: 100 },
-  { name: 'max_samples', type: 'value', default: 'auto' },
-  { name: 'contamination', type: 'value', default: 'auto' },
-  { name: 'max_features', type: 'value', default: 1.0 },
-  { name: 'bootstrap', type: 'enum', default: 'False' },
-  { name: 'n_jobs', type: 'value', default: 'None', },
-  { name: 'random_state', type: 'value', default: 'None' },
-  { name: 'verbose', type: 'value', default: 0 },
-  { name: 'warm_start', type: 'enum', default: 'False' }
-];
-
-const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess, datasets, trainData }, ref) => {
+const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess }, ref) => {
   const { t } = useTranslation();
+  const { addAnomalyTrainTask, getAnomalyTrainData, getAnomalyDatasetsList, updateAnomalyTrainTask, getAnomalyTrainDataInfo } = useMlopsApi();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [type, setType] = useState<string>('add');
   const [title, setTitle] = useState<string>('addtask');
   const [datasetItems, setDatasetItems] = useState<Option[]>([]);
   const [formData, setFormData] = useState<TrainJob | null>(null);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [datasetLoading, setDatasetLoading] = useState<boolean>(false);
   const [selectLoading, setSelectLoading] = useState<boolean>(false);
-  const [traindataOption, setTrainDataOption] = useState<Option[]>([]);
+  const [traindataOption, setTrainDataOption] = useState<{
+    trainOption: Option[],
+    valOption: Option[],
+    testOption: Option[],
+  }>({
+    trainOption: [],
+    valOption: [],
+    testOption: []
+  });
   const [isShow, setIsShow] = useState<boolean>(false);
   const [showParams, setShowParams] = useState<boolean>(false);
   const formRef = useRef<FormInstance>(null);
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, title, form }) => {
-      const items = datasets.map((item: DataSet) => {
-        return {
-          value: item.id,
-          label: item.name
-        }
-      }) || [];
-      console.log(form);
+      console.log(form)
+      getDataSets();
       setSelectLoading(false);
       setType(type);
       setTitle(title as string);
       setFormData(form);
-      setDatasetItems(items as Option[]);
       setIsModalOpen(true);
     }
   }));
@@ -55,50 +51,104 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess, d
     }
   }, [isModalOpen]);
 
-  const initializeForm = useCallback(() => {
+  const getDataSets = async () => {
+    setDatasetLoading(true);
+    try {
+      const data = await getAnomalyDatasetsList({});
+      const items = data.map((item: DataSet) => {
+        return {
+          value: item.id,
+          label: item.name
+        }
+      }) || [];
+      setDatasetItems(items);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setDatasetLoading(false);
+    }
+  };
+
+  const initializeForm = useCallback(async () => {
     const defaultParams: Record<string, any> = {};
-    algorithmsParam.forEach(item => {
+
+    AlgorithmsParams['RandomForest'].forEach(item => {
       defaultParams[item.name] = item.default;
     });
+
     if (!formRef.current) return;
     formRef.current.resetFields();
 
     if (type === 'add') {
-      formRef.current.setFieldsValue({});
+      formRef.current.setFieldsValue({
+        hyperopt_config: defaultParams
+      });
     } else if (formData) {
+      const dataset = await searchDatasetId(formData.train_data_id as number);
+      const hyperopt_config = hyperoptConversion(formData.hyperopt_config);
       setIsShow(true);
-      renderFileOption(formData.dataset_id);
+      setShowParams(true);
+      renderFileOption(dataset);
       formRef.current.setFieldsValue({
         name: formData.name,
         type: formData.type,
-        dataset_id: formData.dataset_id,
+        dataset_id: dataset,
+        max_evals: formData.max_evals,
+        algorithm: formData.algorithm,
         train_data_id: formData.train_data_id,
-        params: defaultParams
+        val_data_id: formData.val_data_id,
+        test_data_id: formData.test_data_id,
+        hyperopt_config
       });
     }
   }, [type, formData]);
 
-  const renderFileOption = useCallback((data: number) => {
-    if (!formRef.current) return;
-    const option: Option[] = trainData
-      .filter((item: any) => item.dataset_id === data)
-      .map((item: any) => ({
-        label: item?.name,
-        value: item?.id
-      }));
-    setTrainDataOption(option);
-  }, [trainData]);
+  const searchDatasetId = async (traindataId: number) => {
+    if (!traindataId) return;
+    const { dataset } = await getAnomalyTrainDataInfo(traindataId, false, false);
+    return dataset || null;
+  };
+
+  const hyperoptConversion = (params: object) => {
+    if (!params) return;
+    const hyperopt_config: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value?.type === 'randint') {
+        hyperopt_config[key] = [value?.min, value?.max];
+      } else if (value?.type === 'choice') {
+        hyperopt_config[key] = value?.choice[0];
+      }
+    });
+
+    return hyperopt_config;
+  };
+
+  const renderFileOption = useCallback(async (data: number) => {
+    if (!formRef.current || !data) return;
+    const param = { dataset: data };
+    setSelectLoading(true);
+    try {
+      formRef.current.resetFields(['train_data_id', 'val_data_id', 'test_data_id']);
+      const trainData = await getAnomalyTrainData(param);
+      const options = {
+        trainOption: trainData.filter((item: TrainData) => item.is_train_data).map((item: TrainData) => ({ label: item.name, value: item.id })),
+        valOption: trainData.filter((item: TrainData) => item.is_val_data).map((item: TrainData) => ({ label: item.name, value: item.id })),
+        testOption: trainData.filter((item: TrainData) => item.is_test_data).map((item: TrainData) => ({ label: item.name, value: item.id })),
+      };
+      setTrainDataOption(options);
+    } catch (e) {
+      message.error(e as JointContent)
+    } finally {
+      setSelectLoading(false);
+    }
+  }, [datasetItems]);
 
   const renderItem = useCallback((param: AlgorithmParam[]) => {
     return param.map((item) => (
-      <Form.Item key={item.name} name={['params', item.name]} label={item.name} rules={[{ required: true, message: t('common.inputMsg') }]}>
-        {item.type === 'value' ? <Input /> :
-          <Select
-            options={[
-              { value: 'False', label: 'False' },
-              { value: 'True', label: 'True' },
-            ]}
-          />
+      <Form.Item key={item.name} name={['hyperopt_config', item.name]} label={item.name} rules={[{ required: true, message: t('common.inputMsg') }]}>
+        {item.type === 'randint' ?
+          <RangeInput className='ml-2' value={item.default as [number, number]} /> :
+          <Select className='ml-2' options={item.options} />
         }
       </Form.Item>
     ))
@@ -107,28 +157,52 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess, d
   const onTypeChange = () => {
     if (!formRef.current) return;
     setIsShow(true);
-  }
+    setShowParams(true);
+  };
+
+  const renderParams = (object: Record<string, any>) => {
+    const hyperopt_config: Record<string, any> = {};
+    Object.keys(object).forEach((item: string) => {
+      if (AlgorithmsType['RandomForest'][item] == 'randint') {
+        hyperopt_config[item] = {
+          type: 'randint',
+          min: object[item][0],
+          max: object[item][1]
+        }
+      } else if (AlgorithmsType['RandomForest'][item] == 'choice') {
+        hyperopt_config[item] = {
+          type: 'choice',
+          choice: [object[item]]
+        }
+      }
+    });
+    return hyperopt_config;
+  };
 
   const handleSubmit = useCallback(async () => {
     if (confirmLoading) return;
     setConfirmLoading(true);
     try {
       const value = await formRef.current?.validateFields();
-      let result = value;
+      const hyperopt_config = renderParams(value?.hyperopt_config);
+      const params = {
+        ...value,
+        status: 'pending',
+        hyperopt_config,
+        description: value.name || ''
+      };
       if (type === 'add') {
-        result = [];
+        console.log(params);
+        await addAnomalyTrainTask(params);
       } else {
-        result = [];
-      }
-      if (result.error) {
-        message.error(result.error.message);
-        return;
+        await updateAnomalyTrainTask(formData?.id as string, value)
       }
       setIsModalOpen(false);
-      message.success(`datasets.${type}Success`)
+      message.success(t(`datasets.${type}Success`));
       onSuccess();
     } catch (e) {
       console.log(e);
+      message.error('error');
     } finally {
       setConfirmLoading(false);
     }
@@ -167,7 +241,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess, d
           >
             <Input placeholder={t('common.inputMsg')} />
           </Form.Item>
-          <Form.Item
+          {/* <Form.Item
             name='type'
             label={t('common.type')}
             rules={[{ required: true, message: t('common.inputMsg') }]}
@@ -175,32 +249,64 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess, d
             <Select placeholder={t('common.inputMsg')} onChange={onTypeChange} options={[
               { value: 'anomaly', label: t('datasets.anomaly') },
             ]} />
+          </Form.Item> */}
+          <Form.Item
+            name='algorithm'
+            label={t('traintask.algorithms')}
+            rules={[{ required: true, message: t('common.inputMsg') }]}
+          >
+            <Select placeholder={t('common.inputMsg')} onChange={onTypeChange} options={[
+              { value: 'RandomForest', label: `RandomForest` },
+            ]} />
+          </Form.Item>
+          <Form.Item
+            name='max_evals'
+            label={t('traintask.maxEvals')}
+            rules={[{ required: true, message: t('common.inputMsg') }]}
+          >
+            <InputNumber style={{ width: '100%' }} placeholder={t('common.inputMsg')} />
+          </Form.Item>
+          <Form.Item
+            name='dataset_id'
+            label={t('traintask.datasets')}
+            rules={[{ required: true, message: t('traintask.selectDatasets') }]}
+          >
+            <Select placeholder={t('traintask.selectDatasets')} loading={datasetLoading} options={datasetItems} onChange={renderFileOption} />
           </Form.Item>
           {isShow && (<>
-            <Form.Item
-              name='dataset_id'
-              label={t('traintask.datasets')}
-              rules={[{ required: true, message: t('traintask.selectDatasets') }]}
-            >
-              <Select placeholder={t('traintask.selectDatasets')} options={datasetItems} onChange={renderFileOption} />
-            </Form.Item>
+            <Divider orientation='start' orientationMargin={'0'} plain style={{ borderColor: '#d1d5db' }}>训练文件</Divider>
             <Form.Item
               name='train_data_id'
-              label={t('traintask.trainfile')}
+              className='ml-2'
+              label={t('datasets.train')}
               rules={[{ required: true, message: t('common.inputMsg') }]}
             >
-              <Select placeholder={t('common.inputMsg')} loading={selectLoading} options={traindataOption} />
+              <Select placeholder={t('common.inputMsg')} loading={selectLoading} options={traindataOption.trainOption} />
             </Form.Item>
             <Form.Item
-              name='algorithms'
-              label={t('traintask.algorithms')}
+              name='val_data_id'
+              className='ml-2'
+              label={t('datasets.validate')}
               rules={[{ required: true, message: t('common.inputMsg') }]}
             >
-              <Select placeholder={t('common.inputMsg')} onChange={() => { setShowParams(true) }} options={[
-                { value: 'isolationForst', label: `IsolationForst` },
-              ]} />
+              <Select placeholder={t('common.inputMsg')} loading={selectLoading} options={traindataOption.valOption} />
             </Form.Item>
-            {showParams && renderItem(algorithmsParam)}
+            <Form.Item
+              name='test_data_id'
+              className='ml-2'
+              label={t('datasets.test')}
+              rules={[{ required: true, message: t('common.inputMsg') }]}
+            >
+              <Select placeholder={t('common.inputMsg')} loading={selectLoading} options={traindataOption.testOption} />
+            </Form.Item>
+            {
+              showParams && (
+                <>
+                  <Divider orientation='start' orientationMargin={'0'} plain style={{ borderColor: '#d1d5db' }}>超参数</Divider>
+                  {renderItem(AlgorithmsParams['RandomForest'])}
+                </>
+              )
+            }
           </>)}
         </Form>
       </OperateModal>

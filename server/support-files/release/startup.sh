@@ -30,6 +30,13 @@ init_node_mgmt() {
     python manage.py node_init || true
 }
 
+init_alerts() {
+    echo "告警系统资源初始化..."
+    python manage.py init_alert_sources || true
+    python manage.py init_alert_levels || true
+    python manage.py create_builtin_rules || true
+}
+
 init_opspilot() {
     echo "OpsPilot资源初始化..."
     python manage.py init_bot || true
@@ -52,6 +59,7 @@ if [ -z "$INSTALL_APPS" ]; then
     init_cmdb
     init_monitor
     init_node_mgmt
+    init_alerts
     init_opspilot
     opspilot_installed=true
 else
@@ -74,6 +82,9 @@ else
                 ;;
             "node_mgmt")
                 init_node_mgmt
+                ;;
+            "alerts")
+                init_alerts
                 ;;
             "opspilot")
                 init_opspilot

@@ -155,21 +155,21 @@ const OperateOid: React.FC<OperateOidProps> = ({
         <Form.Item
           name="oid"
           label="sysObjectID"
-          rules={[{ required: true, message: t('common.required') }]}
+          rules={[{ required: true, message: t('required') }]}
         >
           <Input allowClear placeholder={t('common.pleaseInput')} />
         </Form.Item>
         <Form.Item
           name="brand"
           label={t('OidLibrary.brand')}
-          rules={[{ required: true, message: t('common.required') }]}
+          rules={[{ required: true, message: t('required') }]}
         >
           <Input allowClear placeholder={t('common.pleaseInput')} />
         </Form.Item>
         <Form.Item
           name="model"
           label={t('OidLibrary.model')}
-          rules={[{ required: true, message: t('common.required') }]}
+          rules={[{ required: true, message: t('required') }]}
         >
           <Input allowClear placeholder={t('common.pleaseInput')} />
         </Form.Item>

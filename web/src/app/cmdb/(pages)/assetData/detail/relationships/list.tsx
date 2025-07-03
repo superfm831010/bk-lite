@@ -208,7 +208,7 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
           fixed: 'right',
           width: 120,
           render: (_: unknown, record: any) => (
-            <PermissionWrapper requiredPermissions={['Add']}>
+            <PermissionWrapper requiredPermissions={['Delete Associate']}>
               <Button
                 type="link"
                 onClick={() =>

@@ -105,7 +105,10 @@ const ViewList: React.FC<ViewListProps> = ({
           >
             {t('common.detail')}
           </Button>
-          <Permission requiredPermissions={['Detail']}>
+          <Permission
+            requiredPermissions={['Detail']}
+            instPermissions={record.permission}
+          >
             <Button type="link" onClick={() => linkToDetial(record)}>
               {t('monitor.views.dashboard')}
             </Button>
