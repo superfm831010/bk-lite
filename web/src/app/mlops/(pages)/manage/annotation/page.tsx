@@ -78,7 +78,7 @@ const AnnotationPage = () => {
     endIndex: 0,
   });
 
-  const tagsData = ['is_train_data', 'is_test_data', 'is_val_data'];
+  const tagsData = ['is_train_data', 'is_val_data', 'is_test_data'];
 
   const colmuns: ColumnItem[] = useMemo(() => {
     return [
@@ -86,7 +86,7 @@ const AnnotationPage = () => {
         title: t('common.time'),
         key: 'timestamp',
         dataIndex: 'timestamp',
-        width: 100,
+        width: 80,
         align: 'center',
         render: (_, record) => {
           const time = new Date(record.timestamp * 1000).toISOString();
@@ -98,7 +98,7 @@ const AnnotationPage = () => {
         key: 'value',
         dataIndex: 'value',
         align: 'center',
-        width: 40,
+        width: 30,
         render: (_, record) => {
           const value = Number(record.value).toFixed(2);
           return <p>{value}</p>
@@ -117,7 +117,7 @@ const AnnotationPage = () => {
         key: 'action',
         dataIndex: 'action',
         align: 'center',
-        width: 40,
+        width: 30,
         render: (_, record) => {
           return (
             <Button color="danger" variant="link" onClick={() => handleDelete(record)}>
@@ -349,9 +349,15 @@ const AnnotationPage = () => {
                   <span className="mr-2">文件类型: </span>
                   {tagsData.map((tag) => (
                     <Tag.CheckableTag
-                      className="h-full content-center"
+                      className="h-full content-center "
                       key={tag}
                       checked={selectedTags.includes(tag)}
+                      style={{
+                        backgroundColor: selectedTags.includes(tag) ? '#1890ff' : '',
+                        color: selectedTags.includes(tag) ? '#fff' : '#000',
+                        border: selectedTags.includes(tag) ? '1px solid #1890ff' : '',
+                        borderRadius: '4px'
+                      }}
                       onChange={(checked) => handleTagChange(tag, checked)}
                     >
                       {t(`datasets.${TypeContent[tag]}`)}
@@ -362,7 +368,7 @@ const AnnotationPage = () => {
                 <Button type="primary" loading={loadingState.saveLoading} onClick={handleSava}>{t('common.save')}</Button>
               </div>
               <div className="flex justify-between">
-                <div className="w-[66%]" style={{ height: `calc(100vh - 270px)` }}>
+                <div className="w-[74%]" style={{ height: `calc(100vh - 270px)` }}>
                   <LineChart
                     data={currentFileData}
                     timeline={timeline}
@@ -373,7 +379,7 @@ const AnnotationPage = () => {
                     onAnnotationClick={onAnnotationClick}
                   />
                 </div>
-                <div className="w-[32%] anomaly-container" style={{ height: `calc(100vh - 240px)` }}>
+                <div className="w-[25%] anomaly-container" style={{ height: `calc(100vh - 240px)` }}>
                   <CustomTable
                     size="small"
                     rowKey="timestamp"

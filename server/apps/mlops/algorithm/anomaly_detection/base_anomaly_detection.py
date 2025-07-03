@@ -1,4 +1,5 @@
 import abc
+from math import log
 from typing import Any, Dict
 from functools import lru_cache
 import time
@@ -298,7 +299,6 @@ class BaseAnomalyDetection(abc.ABC):
                     else:
                         options.append(choice)
                 hyperopt_config[key] = hp.choice(key, options)
-
         logger.info(f"🚀 超参数优化: 最大评估{entity.max_evals}")
         
         # 数据质量检查
@@ -600,43 +600,48 @@ class BaseAnomalyDetection(abc.ABC):
                 
             if final_precision < 0.3:
                 logger.warning(f"⚠️  精确率偏低 (Precision={final_precision:.4f}) - 误报率较高")
-            final_test_metrics = self.calculate_metrics(
-                y_test, y_test_pred_final, subprefix='final_test')
-            
-            # 计算最终验证集F1分数用于记录
-            y_val_pred_final = best_model.predict(X_val)
-            final_val_metrics = self.calculate_metrics(
-                y_val, y_val_pred_final, subprefix='final_val')
-            val_f1 = final_val_metrics.get('final_val_f1', 0.0)
 
-            # 输出最终训练结果总结
-            logger.info(f"🏆 训练完成! 最终结果总结:")
-            logger.info(f"   💎 最佳Loss: {best_loss:.6f}")
-            logger.info(f"   📈 验证集最终表现:")
-            logger.info(f"      - F1 Score: {val_f1:.4f}")
-            logger.info(f"      - Recall: {final_val_metrics.get('final_val_recall', 0.0):.4f}")
-            logger.info(f"      - Precision: {final_val_metrics.get('final_val_precision', 0.0):.4f}")
-            logger.info(f"   📊 测试集最终表现:")
-            logger.info(f"      - F1 Score: {final_test_metrics.get('final_test_f1', 0.0):.4f}")
-            logger.info(f"      - Recall: {final_test_metrics.get('final_test_recall', 0.0):.4f}")
-            logger.info(f"      - Precision: {final_test_metrics.get('final_test_precision', 0.0):.4f}")
+            # 记录最终指标到MLflow
+            for metric_name, metric_value in final_test_metrics.items():
+                mlflow.log_metric(metric_name, metric_value)
             
-            # 性能评估建议
-            final_f1 = final_test_metrics.get('final_test_f1', 0.0)
-            final_recall = final_test_metrics.get('final_test_recall', 0.0)
-            final_precision = final_test_metrics.get('final_test_precision', 0.0)
+            for metric_name, metric_value in final_val_metrics.items():
+                mlflow.log_metric(metric_name, metric_value)
+
+            # 记录模型配置参数
+            mlflow.log_param("windows_size", entity.windows_size)
+            mlflow.log_param("feature_count", len(feature_columns))
+            mlflow.log_param("frequency", freq)
+            mlflow.log_param("train_samples", len(X_train))
+            mlflow.log_param("val_samples", len(X_val))
+            mlflow.log_param("test_samples", len(X_test))
+
+            # 获取最佳参数并记录
+            best_trial = min(trials.trials, key=lambda x: x['result']['loss'])
+            best_params = best_trial['misc']['vals']
             
-            if final_f1 >= 0.8:
-                logger.info(f"✅ 模型性能优秀 (F1={final_f1:.4f})")
-            elif final_f1 >= 0.6:
-                logger.info(f"✅ 模型性能良好 (F1={final_f1:.4f})")
-            elif final_f1 >= 0.4:
-                logger.info(f"⚠️  模型性能一般 (F1={final_f1:.4f}) - 建议调优")
-            else:
-                logger.warning(f"❌ 模型性能较差 (F1={final_f1:.4f}) - 需要重新设计")
-                
-            if final_recall < 0.5:
-                logger.warning(f"⚠️  召回率偏低 (Recall={final_recall:.4f}) - 可能存在漏检风险")
-                
-            if final_precision < 0.3:
-                logger.warning(f"⚠️  精确率偏低 (Precision={final_precision:.4f}) - 误报率较高")
+            # 解析最佳参数（处理hyperopt的参数格式）
+            for param_name, param_values in best_params.items():
+                if param_values:  # 非空列表
+                    param_value = param_values[0]  # hyperopt将参数存储为列表
+                    mlflow.log_param(f"best_{param_name}", param_value)
+
+            # 注册模型到MLflow模型注册表
+            model_name = f"{entity.algorithm}_{entity.id}"
+            logger.info(f"📦 正在注册模型到MLflow: {model_name}")
+            
+            # 注册sklearn模型
+            registered_model = mlflow.sklearn.log_model(
+                sk_model=best_model,
+                registered_model_name=model_name,
+                input_example=pd.DataFrame(
+                    X_train, 
+                    columns=feature_columns
+                ).head(1)
+            )
+            
+            # 获取注册后的模型版本信息
+            logger.info(f"✅ 模型注册成功!")
+            logger.info(f"   📋 模型名称: {model_name}")
+            logger.info(f"   📊 最终性能: F1={final_f1:.4f}, Recall={final_recall:.4f}, Precision={final_precision:.4f}")
+    
