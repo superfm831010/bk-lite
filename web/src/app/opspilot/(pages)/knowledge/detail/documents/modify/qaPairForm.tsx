@@ -368,7 +368,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       <Drawer
         title={t('knowledge.qaPairs.selectDocuments')}
         placement="right"
-        width={1200}
+        width={900}
         onClose={() => setDrawerVisible(false)}
         open={drawerVisible}
         footer={

@@ -23,15 +23,14 @@ const PermissionsContext = createContext<PermissionsContextValue>({
   hasPermission: () => false,
 });
 
-// Function: Extract client_id from route
+// Extract client_id from route
 const getClientIdFromRoute = (): string => {
   if (typeof window === 'undefined') return '';
   
   const pathname = window.location.pathname;
   const pathSegments = pathname.split('/').filter(Boolean);
   
-  // Route format: /opspilot/xxx or /client-name/xxx
-  // Take the first path segment as client_id
+  // Route format: /opspilot/xxx or /client-name/xxx - take the first segment as client_id
   if (pathSegments.length > 0) {
     return pathSegments[0];
   }
@@ -39,7 +38,7 @@ const getClientIdFromRoute = (): string => {
   return '';
 };
 
-// Function: Map route-based client_id to actual client name
+// Map route-based client_id to actual client name
 const mapClientName = (routeClientId: string): string => {
   const clientNameMap: { [key: string]: string } = {
     'node-manager': 'node',
