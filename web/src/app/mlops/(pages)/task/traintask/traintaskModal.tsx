@@ -5,7 +5,7 @@ import { useState, useImperativeHandle, useEffect, useRef, useCallback, forwardR
 import { useTranslation } from '@/utils/i18n';
 import useMlopsApi from '@/app/mlops/api';
 import { DataSet, ModalRef, Option, TrainJob, TrainTaskModalProps, AlgorithmParam, TrainData } from '@/app/mlops/types';
-import RangeInput from '@/app/mlops/components/ranginput';
+import RangeInput from '@/app/mlops/components/range-input';
 import { AlgorithmsParams, AlgorithmsType } from '@/app/mlops/constants';
 import { JointContent } from 'antd/es/message/interface';
 
