@@ -359,14 +359,12 @@ const AnnotationPage = () => {
                   <span className="mr-2">文件类型: </span>
                   {tagsData.map((tag) => (
                     <Tag.CheckableTag
-                      className="h-full content-center "
+                      className={`h-full content-center`}
                       key={tag}
                       checked={selectedTags.includes(tag)}
                       style={{
                         backgroundColor: selectedTags.includes(tag) ? '#1890ff' : '',
-                        color: selectedTags.includes(tag) ? '#fff' : '#000',
-                        border: selectedTags.includes(tag) ? '1px solid #1890ff' : '',
-                        borderRadius: '4px'
+                        color: selectedTags.includes(tag) ? `var(--color-secondary)` : `var(--color-text-1)`,
                       }}
                       onChange={(checked) => handleTagChange(tag, checked)}
                     >

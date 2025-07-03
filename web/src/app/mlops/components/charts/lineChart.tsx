@@ -428,19 +428,20 @@ const LineChart: React.FC<LineChartProps> = ({
                 height={30}
                 travellerWidth={5}
                 stroke="#8884d8"
+                fill={`var(--color-bg-1)`}
                 startIndex={brushStartIndex}
                 endIndex={brushEndIndex}
                 onChange={indexChange}
                 tickFormatter={(tick) => formatTime(tick, minTime, maxTime)}
               >
                 <AreaChart data={data}>
-                  {chartKeys.map((key) => (
+                  {chartKeys.map((key, index) => (
                     <Area
                       key={key}
                       type="monotone"
                       dataKey={key}
                       stroke={'#1976d2'}
-                      fill={'#1976d2'}
+                      fill={colors[index]}
                       fillOpacity={0}
                       isAnimationActive={false}
                       dot={renderMinDot}
