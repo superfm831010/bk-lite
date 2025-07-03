@@ -556,7 +556,9 @@ const Asset = () => {
     onChange: onSelectChange,
     getCheckboxProps: (record: any) => {
       return {
-        disabled: !record.permission.includes('Operate'),
+        disabled: Array.isArray(record.permission)
+          ? record.permission.includes('Operate')
+          : false,
       };
     },
   };
