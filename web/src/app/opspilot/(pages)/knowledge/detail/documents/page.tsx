@@ -591,32 +591,32 @@ const DocumentsPage: React.FC = () => {
   return (
     <div style={{marginTop: '-10px'}}>
       <Tabs activeKey={mainTabKey} onChange={handleMainTabChange}>
-        <TabPane tab={t('knowledge.sourceFiles')} key='source_files'>
-          <Radio.Group
-            value={sourceFileType}
-            onChange={handleSourceFileTypeChange}
-            style={{ marginBottom: 16 }}
-          >
-            <Radio.Button value="file">{t('knowledge.localFile')}</Radio.Button>
-            <Radio.Button value="web_page">{t('knowledge.webLink')}</Radio.Button>
-            <Radio.Button value="manual">{t('knowledge.cusText')}</Radio.Button>
-          </Radio.Group>
-        </TabPane>
+        <TabPane tab={t('knowledge.sourceFiles')} key='source_files' />
         <TabPane tab={t('knowledge.qaPairs.title')} key='qa_pairs' />
       </Tabs>
-      <div className='nav-box flex justify-end mb-[20px]'>
-        <div className='left-side w-[240px] mr-[8px]'>
+      <div className='nav-box flex justify-between mb-[20px]'>
+        <div className='left-side'>
+          {mainTabKey === 'source_files' && (
+            <Radio.Group
+              value={sourceFileType}
+              onChange={handleSourceFileTypeChange}
+            >
+              <Radio.Button value="file">{t('knowledge.localFile')}</Radio.Button>
+              <Radio.Button value="web_page">{t('knowledge.webLink')}</Radio.Button>
+              <Radio.Button value="manual">{t('knowledge.cusText')}</Radio.Button>
+            </Radio.Group>
+          )}
+        </div>
+        <div className='right-side flex items-center'>
           <Search
             placeholder={`${t('common.search')}...`}
             allowClear
             onSearch={handleSearch}
             enterButton
-            className="w-60"
+            className="w-60 mr-[8px]"
           />
-        </div>
-        <div className='right-side flex'>
           <Tooltip className='mr-[8px]' title={t('common.refresh')}>
-            <Button icon={<SyncOutlined />} onClick={() => fetchData()} /> {/* Adjusted here */}
+            <Button icon={<SyncOutlined />} onClick={() => fetchData()} />
           </Tooltip>
           <PermissionWrapper 
             requiredPermissions={['Add']} 
