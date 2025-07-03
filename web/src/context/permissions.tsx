@@ -102,7 +102,15 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
     return menus
       .filter((menu) => {
         const hasParentPermission = parentMenu && menu.withParentPermission;
-        const hasPermission = permissionMap.hasOwnProperty(menu.name) || menu.isNotMenuItem || hasParentPermission;
+        const hasChildPermission = menu.children?.some((child) =>
+          permissionMap.hasOwnProperty(child.name)
+        );
+        const hasPermission =
+          permissionMap.hasOwnProperty(menu.name) ||
+          menu.isNotMenuItem ||
+          hasParentPermission ||
+          hasChildPermission;
+          
         if (!hasPermission) {
           console.warn(`No permission for menu: ${menu.name}`);
           return false;
