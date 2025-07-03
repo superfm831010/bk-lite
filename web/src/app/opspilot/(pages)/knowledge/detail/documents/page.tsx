@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Input, Button, Modal, message, Tag, Tabs, Tooltip, Dropdown, Menu, Space } from 'antd';
+import { Input, Button, Modal, message, Tag, Tabs, Tooltip, Dropdown, Menu, Space, Radio } from 'antd';
 import { PlusOutlined, DeleteOutlined, TrademarkOutlined, SyncOutlined, DownOutlined } from '@ant-design/icons';
 import { useAuth } from '@/context/auth';
 import { useTranslation } from '@/utils/i18n';
@@ -29,7 +29,14 @@ const DocumentsPage: React.FC = () => {
   const name = searchParams ? searchParams.get('name') : null;
   const desc = searchParams ? searchParams.get('desc') : null;
   const type = searchParams ? searchParams.get('type') : null;
+  
+  // Main tab key, defaults to source files
+  const [mainTabKey, setMainTabKey] = useState<string>(type === 'qa_pairs' ? 'qa_pairs' : 'source_files');
+  // Source file sub-options, defaults to file
+  const [sourceFileType, setSourceFileType] = useState<string>(type && type !== 'qa_pairs' ? type : 'file');
+  // Current active type (used for API calls and other logic)
   const [activeTabKey, setActiveTabKey] = useState<string>(type || 'file');
+
   const [searchText, setSearchText] = useState<string>('');
   const [pagination, setPagination] = useState<PaginationProps>({
     current: 1,
@@ -264,7 +271,7 @@ const DocumentsPage: React.FC = () => {
     }
   ];
 
-  // 获取问答对数据
+  // Fetch QA pair data
   const fetchQAPairData = useCallback(async (text = '') => {
     setQaPairLoading(true);
     const { current, pageSize } = qaPairPagination;
@@ -289,7 +296,7 @@ const DocumentsPage: React.FC = () => {
     }
   }, [qaPairPagination.current, qaPairPagination.pageSize, id]);
 
-  // 删除单个问答对
+  // Delete single QA pair
   const handleDeleteSingleQAPair = async (qaPairId: number) => {
     confirm({
       title: t('common.delConfirm'),
@@ -307,10 +314,10 @@ const DocumentsPage: React.FC = () => {
     });
   };
 
-  // 批量删除问答对
+  // Batch delete QA pairs
   const handleBatchDeleteQAPairs = async () => {
     if (selectedQAPairKeys.length === 0) {
-      message.warning('请选择要删除的问答对');
+      message.warning('Please select QA pairs to delete');
       return;
     }
 
@@ -320,7 +327,7 @@ const DocumentsPage: React.FC = () => {
       centered: true,
       onOk: async () => {
         try {
-          // 批量删除时逐个调用单个删除API
+          // Call individual delete API for each item during batch deletion
           await Promise.all(selectedQAPairKeys.map(key => deleteQAPair(Number(key))));
           fetchQAPairData();
           setSelectedQAPairKeys([]);
@@ -332,7 +339,7 @@ const DocumentsPage: React.FC = () => {
     });
   };
 
-  // 问答对分页处理
+  // Handle QA pair pagination
   const handleQAPairTableChange = (page: number, pageSize?: number) => {
     setQaPairPagination((prev) => ({
       ...prev,
@@ -341,7 +348,7 @@ const DocumentsPage: React.FC = () => {
     }));
   };
 
-  // 问答对行选择
+  // QA pair row selection
   const qaPairRowSelection = {
     selectedRowKeys: selectedQAPairKeys,
     onChange: (newSelectedRowKeys: React.Key[]) => {
@@ -471,10 +478,10 @@ const DocumentsPage: React.FC = () => {
   }, [fetchData, id]);
 
   useEffect(() => {
-    if (activeTabKey === 'qa_pairs') {
+    if (mainTabKey === 'qa_pairs') {
       fetchQAPairData(searchText);
     }
-  }, [activeTabKey, qaPairPagination.current, qaPairPagination.pageSize, searchText]);
+  }, [mainTabKey, qaPairPagination.current, qaPairPagination.pageSize, searchText]);
 
   const rowSelection = {
     selectedRowKeys,
@@ -486,17 +493,39 @@ const DocumentsPage: React.FC = () => {
     }),
   };
 
-  const handleTabChange = (key: string) => {
+  const handleMainTabChange = (key: string) => {
+    setMainTabKey(key);
+    if (key === 'source_files') {
+      setActiveTabKey(sourceFileType);
+    } else {
+      setActiveTabKey('qa_pairs');
+    }
     setPagination({
       current: 1,
       total: 0,
       pageSize: 20,
     });
-    setActiveTabKey(key);
+  };
+
+  const handleSourceFileTypeChange = (e: any) => {
+    const newType = e.target.value;
+    setSourceFileType(newType);
+    setActiveTabKey(newType);
+    setPagination({
+      current: 1,
+      total: 0,
+      pageSize: 20,
+    });
   };
 
   const handleAddClick = () => {
-    setIsModalVisible(true);
+    if (mainTabKey === 'qa_pairs') {
+      // If QA pairs, directly navigate to the QA pair addition page
+      router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_pairs&id=${id}&name=${name}&desc=${desc}`);
+    } else {
+      // If source files, show a modal to select specific type
+      setIsModalVisible(true);
+    }
   };
 
   const handleModalCancel = () => {
@@ -561,10 +590,18 @@ const DocumentsPage: React.FC = () => {
 
   return (
     <div style={{marginTop: '-10px'}}>
-      <Tabs defaultActiveKey={activeTabKey} onChange={handleTabChange}>
-        <TabPane tab={t('knowledge.localFile')} key='file' />
-        <TabPane tab={t('knowledge.webLink')} key='web_page' />
-        <TabPane tab={t('knowledge.cusText')} key='manual' />
+      <Tabs activeKey={mainTabKey} onChange={handleMainTabChange}>
+        <TabPane tab={t('knowledge.sourceFiles')} key='source_files'>
+          <Radio.Group
+            value={sourceFileType}
+            onChange={handleSourceFileTypeChange}
+            style={{ marginBottom: 16 }}
+          >
+            <Radio.Button value="file">{t('knowledge.localFile')}</Radio.Button>
+            <Radio.Button value="web_page">{t('knowledge.webLink')}</Radio.Button>
+            <Radio.Button value="manual">{t('knowledge.cusText')}</Radio.Button>
+          </Radio.Group>
+        </TabPane>
         <TabPane tab={t('knowledge.qaPairs.title')} key='qa_pairs' />
       </Tabs>
       <div className='nav-box flex justify-end mb-[20px]'>
@@ -645,12 +682,15 @@ const DocumentsPage: React.FC = () => {
           loading={loading}
         />
       )}
-      <SelectSourceModal
-        defaultSelected={activeTabKey}
-        visible={isModalVisible}
-        onCancel={handleModalCancel}
-        onConfirm={handleModalConfirm}
-      />
+      {/* Only show selection modal in source file mode */}
+      {mainTabKey === 'source_files' && (
+        <SelectSourceModal
+          defaultSelected={sourceFileType}
+          visible={isModalVisible}
+          onCancel={handleModalCancel}
+          onConfirm={handleModalConfirm}
+        />
+      )}
     </div>
   );
 };
