@@ -1,11 +1,11 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Input, Form, message, Spin, Popconfirm } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { useSearchParams } from 'next/navigation';
 import { useUserInfoContext } from '@/context/userInfo';
-import { CLIENT_MODULES_MAP } from '@/app/system-manager/constants/application'
+import { buildModulesMap } from '@/app/system-manager/constants/application';
 import { useRoleApi } from '@/app/system-manager/api/application';
 import CustomTable from '@/components/custom-table';
 import OperateModal from '@/components/operate-modal';
@@ -162,12 +162,33 @@ const DataManagement: React.FC = () => {
   const [currentGroupId, setCurrentGroupId] = useState<string>("");
   const [selectChanged, setSelectChanged] = useState(false);
 
+  const [supportedModules, setSupportedModules] = useState<string[]>([]);
+  const [moduleConfigLoading, setModuleConfigLoading] = useState(false);
+
   const {
     getGroupDataRule,
     deleteGroupDataRule,
     addGroupDataRule,
-    updateGroupDataRule
+    updateGroupDataRule,
+    getAppModules
   } = useRoleApi();
+
+  // Fetch app modules only when modal is opened
+  const fetchAppModules = useCallback(async () => {
+    if (!clientId || moduleConfigLoading) return;
+
+    try {
+      setModuleConfigLoading(true);
+      const modules = await getAppModules({ params: { app: clientId } });
+      const moduleNames = buildModulesMap(modules);
+      setSupportedModules(moduleNames);
+    } catch (error) {
+      console.error('Failed to fetch app modules:', error);
+      setSupportedModules([]);
+    } finally {
+      setModuleConfigLoading(false);
+    }
+  }, [clientId]);
 
   useEffect(() => {
     fetchDataList();
@@ -221,9 +242,6 @@ const DataManagement: React.FC = () => {
 
     dataForm.resetFields();
 
-    const supportedModules = clientId && Object.prototype.hasOwnProperty.call(CLIENT_MODULES_MAP, clientId)
-      ? CLIENT_MODULES_MAP[clientId as keyof typeof CLIENT_MODULES_MAP]
-      : [];
     const defaultPermissionRule = createDefaultPermissionRule(supportedModules);
 
     if (data) {
@@ -262,6 +280,8 @@ const DataManagement: React.FC = () => {
       setCurrentGroupId(initialGroupId || "");
     }
 
+    fetchAppModules();
+
     setTimeout(() => {
       setDataModalOpen(true);
       setModalLoading(false);
@@ -279,9 +299,6 @@ const DataManagement: React.FC = () => {
       }
 
       const transformedRules: Record<string, any> = {};
-      const supportedModules = clientId && Object.keys(CLIENT_MODULES_MAP).includes(clientId)
-        ? CLIENT_MODULES_MAP[clientId as keyof typeof CLIENT_MODULES_MAP]
-        : [];
 
       supportedModules.forEach(moduleKey => {
         if (moduleKey === 'provider') {
@@ -408,7 +425,7 @@ const DataManagement: React.FC = () => {
         component: (
           <PermissionRule
             key={`permission-rule-${currentGroupId}`}
-            modules={clientId && clientId in CLIENT_MODULES_MAP ? CLIENT_MODULES_MAP[clientId as keyof typeof CLIENT_MODULES_MAP] : []}
+            modules={supportedModules}
             formGroupId={currentGroupId}
             onChange={(newVal: any) => {
               dataForm.setFieldsValue({ permissionRule: newVal });
@@ -500,6 +517,7 @@ const DataManagement: React.FC = () => {
         />
       </Spin>
       <OperateModal
+        width={800}
         title={isEditing ? t('common.edit') : t('common.add')}
         okText={t('common.confirm')}
         cancelText={t('common.cancel')}

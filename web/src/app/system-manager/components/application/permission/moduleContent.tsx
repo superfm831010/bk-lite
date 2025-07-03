@@ -13,7 +13,6 @@ import {
   PermissionTableColumnsProps,
   SpecificDataTableProps
 } from '@/app/system-manager/types/permission';
-import { EDITABLE_MODULES } from '@/app/system-manager/constants/application';
 
 const PermissionTypeSelector: React.FC<PermissionTypeSelectorProps> = ({
   type,
@@ -23,11 +22,15 @@ const PermissionTypeSelector: React.FC<PermissionTypeSelectorProps> = ({
   isEditable
 }) => {
   const { t } = useTranslation();
+  
+  // 确保使用正确的子模块值 - 优先使用 activeSubModule（叶子节点）
+  const actualSubModule = subModule;
+  
   return (
     <Form.Item label={t('system.permission.type')} className="mb-2">
       <Radio.Group
         value={type}
-        onChange={(e) => handleTypeChange(e, module, subModule)}
+        onChange={(e) => handleTypeChange(e, module, actualSubModule)}
         disabled={!isEditable}
       >
         <Radio value="all">{t('system.permission.allData')}</Radio>
@@ -70,7 +73,9 @@ const AllPermissionsSelector: React.FC<AllPermissionsSelectorProps> = ({
 const PermissionTableColumns = ({
   handleSpecificDataChange,
   activeKey,
-  activeSubModule
+  activeSubModule,
+  module,
+  subModule
 }: PermissionTableColumnsProps) => {
   const { t } = useTranslation();
   return [
@@ -88,9 +93,9 @@ const PermissionTableColumns = ({
             checked={record.view}
             onChange={() => handleSpecificDataChange(
               { ...record, view: !record.view },
-              activeKey,
+              module || activeKey,
               'view',
-              activeKey === 'provider' ? activeSubModule : undefined
+              subModule || (subModule ? activeSubModule : undefined)
             )}
           >
             {t('system.permission.view')}
@@ -100,9 +105,9 @@ const PermissionTableColumns = ({
             disabled={!record.view}
             onChange={() => handleSpecificDataChange(
               { ...record, operate: !record.operate },
-              activeKey,
+              module || activeKey,
               'operate',
-              activeKey === 'provider' ? activeSubModule : undefined
+              subModule || (subModule ? activeSubModule : undefined)
             )}
           >
             {t('system.permission.operate')}
@@ -128,6 +133,10 @@ const SpecificDataTable: React.FC<SpecificDataTableProps> = ({
   handleSpecificDataChange
 }) => {
   const { t } = useTranslation();
+  
+  // 使用传入的 subModule 或 activeSubModule 作为实际的子模块参数
+  const actualSubModule = subModule || activeSubModule;
+  
   return (
     <Spin spinning={isModuleLoading}>
       {isEditable ? (
@@ -152,7 +161,7 @@ const SpecificDataTable: React.FC<SpecificDataTableProps> = ({
                 newRecord,
                 activeKey,
                 'view',
-                activeKey === 'provider' ? activeSubModule : undefined
+                activeKey === 'provider' ? actualSubModule : undefined
               );
             },
             onSelectAll: (selected: boolean, selectedRows: DataPermission[], changeRows: DataPermission[]) => {
@@ -167,7 +176,7 @@ const SpecificDataTable: React.FC<SpecificDataTableProps> = ({
                   newRecord,
                   activeKey,
                   'view',
-                  activeKey === 'provider' ? activeSubModule : undefined
+                  activeKey === 'provider' ? actualSubModule : undefined
                 );
               });
             }
@@ -176,12 +185,15 @@ const SpecificDataTable: React.FC<SpecificDataTableProps> = ({
             current: pagination.current || 1,
             pageSize: pagination.pageSize || 10,
             total: pagination.total || 0,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `${t('system.permission.total')} ${total} ${t('system.permission.items')}`,
             onChange: (page: number, pageSize: number) => handleTableChange(
               { current: page, pageSize, total: pagination.total },
               {},
               {},
               module,
-              subModule
+              actualSubModule // 确保传递正确的子模块参数
             )
           }}
           className="mt-4"
@@ -209,22 +221,74 @@ const ModuleContent: React.FC<ModuleContentProps> = ({
 }) => {
   let currentModule: PermissionConfig | undefined;
 
-  if (subModule && module === 'provider') {
-    const providerConfig = permissions[module] as ProviderPermissionConfig;
-    currentModule = providerConfig[subModule] as PermissionConfig;
+  // 递归查找多层级权限配置的辅助函数
+  const findPermissionConfig = (
+    permissionState: any,
+    module: string,
+    targetSubModule?: string
+  ): PermissionConfig | undefined => {
+    if (!targetSubModule) {
+      // 没有子模块，直接返回模块配置
+      const modulePermission = permissionState[module];
+      return modulePermission?.__type === 'module' 
+        ? modulePermission as ModulePermissionConfig
+        : undefined;
+    }
+    
+    const modulePermission = permissionState[module];
+    if (!modulePermission || modulePermission.__type !== 'provider') {
+      return undefined;
+    }
+    
+    const providerConfig = modulePermission as ProviderPermissionConfig;
+    
+    // 递归查找函数 - 在所有层级中查找匹配的 targetSubModule
+    const findInAllLevels = (config: any, target: string): PermissionConfig | undefined => {
+      // 检查当前层级是否直接包含目标子模块
+      if (config[target] && typeof config[target] === 'object' && config[target].type !== undefined) {
+        return config[target] as PermissionConfig;
+      }
+      
+      // 递归查找所有子级
+      for (const key in config) {
+        if (key === '__type') continue; // 跳过类型标识符
+        
+        const value = config[key];
+        if (value && typeof value === 'object' && value.type === undefined) {
+          // 这是一个中间层级，继续递归查找
+          const found = findInAllLevels(value, target);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+    
+    return findInAllLevels(providerConfig, targetSubModule);
+  };
+
+  // 检查当前模块是否有子模块（通过检查permissions结构判断）
+  const modulePermission = permissions[module];
+  const hasSubModules = modulePermission && modulePermission.__type === 'provider';
+
+  if (subModule && hasSubModules) {
+    // 有子模块的情况，使用递归查找函数来获取多层级权限配置
+    currentModule = findPermissionConfig(permissions, module, subModule);
   } else {
+    // 没有子模块的情况，直接使用模块配置
     currentModule = permissions[module] as ModulePermissionConfig;
   }
 
   const type = currentModule?.type || 'all';
   const dataKey = subModule ? `${module}_${subModule}` : module;
   const isModuleLoading = loading[dataKey] || false;
-  const isEditable = EDITABLE_MODULES.includes(subModule || module);
+  const isEditable = true;
 
   const columns = PermissionTableColumns({
     handleSpecificDataChange,
     activeKey,
-    activeSubModule
+    activeSubModule,
+    module,
+    subModule
   });
 
   return (
