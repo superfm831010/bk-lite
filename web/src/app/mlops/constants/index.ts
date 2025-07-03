@@ -6,27 +6,27 @@ const LEVEL_MAP: LevelMap = {
   warning: '#FFAD42',
 };
 
-const TrainStatus = {
+const TRAIN_STATUS_MAP = { 
   pending: 'default',
   running: 'processing',
   completed: 'success',
   failed: 'error'
 };
 
-const TypeContent: Record<string, any> = {
+const TYPE_CONTENT: Record<string, any> = { 
   is_test_data: 'test',
   is_train_data: 'train',
   is_val_data: 'validate',
 };
 
-const TrainText = {
+const TRAIN_TEXT = { 
   pending: 'notStarted',
   running: 'inProgress',
   completed: 'completed',
   failed: 'failed'
 };
 
-const AlgorithmsParams: Record<string, AlgorithmParam[]> = {
+const ALGORITHMS_PARAMS: Record<string, AlgorithmParam[]> = { 
   'RandomForest': [
     { name: 'n_estimators', type: 'randint', default: [100, 500] },
     { name: 'max_depth', type: 'randint', default: [10, 50] },
@@ -64,7 +64,7 @@ const AlgorithmsParams: Record<string, AlgorithmParam[]> = {
   ]
 };
 
-const AlgorithmsType: Record<string, any> = {
+const ALGORITHMS_TYPE: Record<string, any> = { 
   'RandomForest': {
     n_estimators: 'randint',
     max_depth: 'randint',
@@ -82,10 +82,10 @@ type TRAIN_STATUS = 'not_started' | 'in_progress' | 'completed' | 'failed';
 
 export {
   LEVEL_MAP,
-  TrainStatus,
-  TrainText,
-  TypeContent,
-  AlgorithmsParams,
-  AlgorithmsType,
+  TRAIN_STATUS_MAP,
+  TRAIN_TEXT,
+  TYPE_CONTENT,
+  ALGORITHMS_PARAMS,
+  ALGORITHMS_TYPE,
   type TRAIN_STATUS
 }

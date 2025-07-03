@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { cloneDeep } from "lodash";
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { useTranslation } from "@/utils/i18n";
-import { TypeContent } from "@/app/mlops/constants";
+import { TYPE_CONTENT } from "@/app/mlops/constants";
 import useMlopsApi from "@/app/mlops/api";
 // import { exportToCSV } from "@/app/mlops/utils/common";
 import { Button, message, Spin, TablePaginationConfig, Tag } from "antd";
@@ -360,7 +360,7 @@ const AnnotationPage = () => {
                       }}
                       onChange={(checked) => handleTagChange(tag, checked)}
                     >
-                      {t(`datasets.${TypeContent[tag]}`)}
+                      {t(`datasets.${TYPE_CONTENT[tag]}`)}
                     </Tag.CheckableTag>
                   ))}
                 </div>

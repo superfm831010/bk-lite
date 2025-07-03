@@ -11,7 +11,7 @@ import TrainTaskModal from './traintaskModal';
 // import TrainTaskDrawer from './traintaskDrawer';
 import { useTranslation } from '@/utils/i18n';
 import { ModalRef, ColumnItem, TrainJob } from '@/app/mlops/types';
-import { TrainStatus, TrainText } from '@/app/mlops/constants';
+import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
 import SubLayout from '@/components/sub-layout';
 import { JointContent } from 'antd/es/message/interface';
 const { Search } = Input;
@@ -73,8 +73,8 @@ const TrainTask = () => {
       key: 'status',
       dataIndex: 'status',
       render: (_, record: TrainJob) => {
-        return record.status ? (<Tag color={getStatusColor(record.status, TrainStatus)} className=''>
-          {t(`traintask.${getStatusText(record.status, TrainText)}`)}
+        return record.status ? (<Tag color={getStatusColor(record.status, TRAIN_STATUS_MAP)} className=''>
+          {t(`traintask.${getStatusText(record.status, TRAIN_TEXT)}`)}
         </Tag>) : (<p>--</p>)
       }
     },

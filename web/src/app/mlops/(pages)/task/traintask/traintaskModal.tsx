@@ -6,7 +6,7 @@ import { useTranslation } from '@/utils/i18n';
 import useMlopsApi from '@/app/mlops/api';
 import { DataSet, ModalRef, Option, TrainJob, TrainTaskModalProps, AlgorithmParam, TrainData } from '@/app/mlops/types';
 import RangeInput from '@/app/mlops/components/range-input';
-import { AlgorithmsParams, AlgorithmsType } from '@/app/mlops/constants';
+import { ALGORITHMS_PARAMS, ALGORITHMS_TYPE } from '@/app/mlops/constants';
 import { JointContent } from 'antd/es/message/interface';
 
 const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess }, ref) => {
@@ -72,7 +72,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess },
   const initializeForm = useCallback(async () => {
     const defaultParams: Record<string, any> = {};
 
-    AlgorithmsParams['RandomForest'].forEach(item => {
+    ALGORITHMS_PARAMS['RandomForest'].forEach(item => {
       defaultParams[item.name] = item.default;
     });
 
@@ -163,13 +163,13 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess },
   const renderParams = (object: Record<string, any>) => {
     const hyperopt_config: Record<string, any> = {};
     Object.keys(object).forEach((item: string) => {
-      if (AlgorithmsType['RandomForest'][item] == 'randint') {
+      if (ALGORITHMS_TYPE['RandomForest'][item] == 'randint') {
         hyperopt_config[item] = {
           type: 'randint',
           min: object[item][0],
           max: object[item][1]
         }
-      } else if (AlgorithmsType['RandomForest'][item] == 'choice') {
+      } else if (ALGORITHMS_TYPE['RandomForest'][item] == 'choice') {
         hyperopt_config[item] = {
           type: 'choice',
           choice: [object[item]]
@@ -303,7 +303,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess },
               showParams && (
                 <>
                   <Divider orientation='start' orientationMargin={'0'} plain style={{ borderColor: '#d1d5db' }}>超参数</Divider>
-                  {renderItem(AlgorithmsParams['RandomForest'])}
+                  {renderItem(ALGORITHMS_PARAMS['RandomForest'])}
                 </>
               )
             }
