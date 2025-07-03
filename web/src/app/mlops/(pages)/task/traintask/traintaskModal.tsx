@@ -5,7 +5,7 @@ import { useState, useImperativeHandle, useEffect, useRef, useCallback, forwardR
 import { useTranslation } from '@/utils/i18n';
 import useMlopsApi from '@/app/mlops/api';
 import { DataSet, ModalRef, Option, TrainJob, TrainTaskModalProps, AlgorithmParam, TrainData } from '@/app/mlops/types';
-import RangeInput from '@/app/mlops/components/RangeInput';
+import RangeInput from '@/app/mlops/components/ranginput';
 import { AlgorithmsParams, AlgorithmsType } from '@/app/mlops/constants';
 import { JointContent } from 'antd/es/message/interface';
 
@@ -116,7 +116,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess },
       if (value?.type === 'randint') {
         hyperopt_config[key] = [value?.min, value?.max];
       } else if (value?.type === 'choice') {
-        hyperopt_config[key] = value?.choice[0];
+        hyperopt_config[key] = value?.choice;
       }
     });
 
@@ -148,7 +148,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ onSuccess },
       <Form.Item key={item.name} name={['hyperopt_config', item.name]} label={item.name} rules={[{ required: true, message: t('common.inputMsg') }]}>
         {item.type === 'randint' ?
           <RangeInput className='ml-2' value={item.default as [number, number]} /> :
-          <Select className='ml-2' options={item.options} />
+          <Select className='ml-2' mode="multiple" options={item.options} />
         }
       </Form.Item>
     ))

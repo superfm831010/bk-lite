@@ -4,11 +4,11 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import useMlopsApi from '@/app/mlops/api';
 import { Button, Input, Popconfirm, message, Tag } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/custom-table';
 import Icon from '@/components/icon';
 import TrainTaskModal from './traintaskModal';
-import TrainTaskDrawer from './traintaskDrawer';
+// import TrainTaskDrawer from './traintaskDrawer';
 import { useTranslation } from '@/utils/i18n';
 import { ModalRef, ColumnItem, TrainJob } from '@/app/mlops/types';
 import { TrainStatus, TrainText } from '@/app/mlops/constants';
@@ -32,8 +32,8 @@ const TrainTask = () => {
   const { getAnomalyTaskList, deleteAnomalyTrainTask, startAnomalyTrainTask } = useMlopsApi();
   const modalRef = useRef<ModalRef>(null);
   const [tableData, setTableData] = useState<TrainJob[]>([]);
-  const [selectId, setSelectId] = useState<number | null>(null);
-  const [open, setOpen] = useState<boolean>(false);
+  // const [selectId, setSelectId] = useState<number | null>(null);
+  // const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -108,13 +108,13 @@ const TrainTask = () => {
           >
             {t('common.edit')}
           </Button>
-          <Button
+          {/* <Button
             type="link"
             className="mr-[10px]"
             onClick={() => openHistortDrawer(record)}
           >
             {t('traintask.history')}
-          </Button>
+          </Button> */}
           <Popconfirm
             title={t('traintask.deleteTraintask')}
             okText={t('common.confirm')}
@@ -216,7 +216,7 @@ const TrainTask = () => {
       //       },
       //       "max_features": {
       //         "type": "choice",
-      //         "choice": ["sqrt", "log2", "none"]
+      //         "choice": ["sqrt", "log2"]
       //       },
       //       "bootstrap": {
       //         "type": "choice",
@@ -228,7 +228,7 @@ const TrainTask = () => {
       //       }
       //     }
       //   }
-      // ])
+      // ]);
       setPagination(prev => ({
         ...prev,
         total: count,
@@ -280,10 +280,10 @@ const TrainTask = () => {
     }
   };
 
-  const openHistortDrawer = (record: TrainJob) => {
-    setSelectId(record.id as number);
-    setOpen(true);
-  };
+  // const openHistortDrawer = (record: TrainJob) => {
+  //   setSelectId(record.id as number);
+  //   setOpen(true);
+  // };
 
   const handleChange = (value: any) => {
     setPagination(value);
@@ -304,9 +304,9 @@ const TrainTask = () => {
     }
   };
 
-  const onCancel = () => {
-    setOpen(false);
-  };
+  // const onCancel = () => {
+  //   setOpen(false);
+  // };
 
   return (
     <>
@@ -324,9 +324,10 @@ const TrainTask = () => {
                 onSearch={onSearch}
                 style={{ fontSize: 15 }}
               />
-              <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow" onClick={() => handleAdd()}>
+              <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow mr-2" onClick={() => handleAdd()}>
                 {t('common.add')}
               </Button>
+              <ReloadOutlined onClick={() => getTasks()} />
             </div>
           </div>
           <div className="flex-1 relative">
@@ -346,7 +347,7 @@ const TrainTask = () => {
         </SubLayout>
       </div>
       <TrainTaskModal ref={modalRef} onSuccess={() => getTasks()} />
-      <TrainTaskDrawer open={open} selectId={selectId} onCancel={onCancel} />
+      {/* <TrainTaskDrawer open={open} selectId={selectId} onCancel={onCancel} /> */}
     </>
   );
 };
