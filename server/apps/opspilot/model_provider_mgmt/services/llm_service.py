@@ -104,21 +104,21 @@ class LLMService:
         processed_history = []
 
         for user_msg in chat_history[num:]:
-            if user_msg["event"] == "user" and isinstance(user_msg["message"], list):
+            if user_msg["event"] == "user" and isinstance(user_msg["text"], list):
                 image_list = []
                 msg = ""
-                for item in user_msg["message"]:
+                for item in user_msg["text"]:
                     if item["type"] == "image_url":
                         image_url = item.get("image_url", {}).get("url") or item.get("url")
                         if image_url:
                             image_list.append(image_url)
                     else:
-                        msg = item["message"]
+                        msg = item["text"]
                 processed_history.append({"event": "user", "message": msg, "image_data": image_list})
             else:
-                txt = user_msg["message"]
+                txt = user_msg["text"]
                 if isinstance(txt, list):
-                    txt = "\n".join([i["message"] for i in txt])
+                    txt = "\n".join([i["text"] for i in txt])
                 processed_history.append({"event": user_msg["event"], "message": txt})
 
         return processed_history

@@ -17,6 +17,7 @@ class SkillExecuteService:
 
         params = {
             "user_message": user_message,  # 用户消息
+            "skill_type": llm_skill.skill_type,  # 技能类型
             "llm_model": llm_skill.llm_model_id,  # 大模型ID
             "skill_prompt": skill_prompt,  # Prompt
             "enable_rag": llm_skill.enable_rag,  # 是否启用RAG
