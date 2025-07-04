@@ -1,9 +1,9 @@
 .sideMenuLayout {
-  height: var(--custom-height, calc(100vh - 68px));
+  height: var(--custom-height, calc(100vh - 90px));
   overflow: hidden;
 
   .sectionContainer {
-    background: #FFFFFF;
+    background: var( --color-bg);
   }
 
   .sectionContext {
@@ -16,20 +16,20 @@
   color: var(--color-components-side-nav-text);
 
   .introduction {
-    background: #FFFFFF;
+    background: var( --color-bg);
   }
 
   .nav {
-    background: #FFFFFF;
+    background: var( --color-bg);
 
     li {
       &:hover {
-        background: #f2f4f7;
+        background: var(--color-secondary);
       }
 
       &.active {
-        color: #155AEF;
-        background: #e1edfc;
+        color: var(--color-text-active);
+        background: var(--color-primary-bg-active);
       }
     }
   }
@@ -51,4 +51,9 @@
       }
     }
   }
+}
+
+.tagCheckable {
+  background: var(--color-bg-1);
+  color: var(--color-text-1);
 }

@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { useRouter } from 'next/navigation';
-// import { getName } from '@/app/mlops/utils/common';
 import useMlopsApi from '@/app/mlops/api';
 import {
   Segmented,
@@ -14,7 +13,8 @@ import {
 import EntityList from '@/components/entity-list';
 import DatasetModal from './dataSetsModal';
 import PermissionWrapper from '@/components/permission';
-import { ModalRef, DataSet } from '@/app/mlops/types';
+import { ModalRef } from '@/app/mlops/types';
+import { DataSet } from '@/app/mlops/types/manage';
 import sideMenuStyle from './index.module.scss';
 const { confirm } = Modal;
 

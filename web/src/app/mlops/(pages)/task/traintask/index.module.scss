@@ -1,10 +1,10 @@
 .sideMenuLayout {
   height: var(--custom-height, calc(100vh - 68px));
   overflow: hidden;
-  color: black;
+  color: var(--color-text-1);
 
   .sectionContainer {
-    background: #FFFFFF;
+    background: var( --color-bg);
   }
 
   .sectionContext {
@@ -17,20 +17,20 @@
   color: var(--color-components-side-nav-text);
 
   .introduction {
-    background: #FFFFFF;
+    background: var( --color-bg);
   }
 
   .nav {
-    background: #FFFFFF;
+    background: var( --color-bg);
 
     li {
       &:hover {
-        background: #f2f4f7;
+        background: var(--color-secondary);
       }
 
       &.active {
-        color: #155AEF;
-        background: #e1edfc;
+        color: var(--color-text-active);
+        background: var(--color-primary-bg-active);
       }
     }
   }

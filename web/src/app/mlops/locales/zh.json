@@ -92,10 +92,12 @@
     "inProgress": "进行中",
     "completed": "已完成",
     "failed": "训练失败",
-    "maxEvals": "最大训练轮次"
+    "maxEvals": "最大训练轮次",
+    "hyperopt": "超参数"
   },
   "model-release": {
     "title": "能力发布",
-    "detail": "对训练完成的模型进行发布管理。"
+    "detail": "对训练完成的模型进行发布管理。",
+    "modalTitle": "选择模型版本"
   }
 }

@@ -1,10 +1,11 @@
 import { Button, Drawer, message, TablePaginationConfig, Tag } from "antd";
-import { ColumnItem, TrainTaskHistory } from "@/app/mlops/types";
+import { ColumnItem } from "@/app/mlops/types";
+import { TrainTaskHistory } from "@/app/mlops/types/task";
 import CustomTable from "@/components/custom-table";
 import { useTranslation } from "@/utils/i18n";
 import useMlopsApi from "@/app/mlops/api";
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { TrainStatus, TrainText } from '@/app/mlops/constants';
+import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
 import { JointContent } from "antd/es/message/interface";
 
 const getStatusColor = (value: string, TrainStatus: Record<string, string>) => {
@@ -95,8 +96,8 @@ const TrainTaskDrawer = ({ open, onCancel, selectId }:
       key: 'status',
       width: 100,
       render: (_, record: TrainTaskHistory) => {
-        return record.status ? (<Tag color={getStatusColor(record.status, TrainStatus)} className=''>
-          {t(`traintask.${getStatusText(record.status, TrainText)}`)}
+        return record.status ? (<Tag color={getStatusColor(record.status, TRAIN_STATUS_MAP)} className=''>
+          {t(`traintask.${getStatusText(record.status, TRAIN_TEXT)}`)}
         </Tag>) : (<p>--</p>)
       }
     },

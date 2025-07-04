@@ -129,16 +129,6 @@ export interface ModalRef {
   showModal: (config: ModalConfig) => void;
 }
 
-export interface AnomalyDataSet {
-  id: number,
-  tenant_id: number,
-  description: string,
-  has_labels: boolean,
-  created_at: string,
-  user_id: string,
-  [key: string]: any
-}
-
 export interface UserProfile {
   id: string,
   first_name: string,
@@ -173,108 +163,9 @@ export interface Pagination {
   pageSize: number;
 }
 
-export enum TrainingStatus {
-  'not_stared',
-  'in_progress',
-  'completed',
-  'failed'
-}
-
-export interface AnomalyTrainData {
-  id: number;
-  tenant_id: number;
-  dataset_id: number;
-  name: string,
-  storage_path: string,
-  metadata: any;
-  user_id: string;
-  latest_status?: TrainingStatus;
-}
-
-export interface LabelData {
-  timestamp: string,
-  value: number,
-  label?: number
-}
-
 export interface TableData {
   id: number,
   name: string,
   anomaly?: number,
   [key: string]: any
-}
-
-export interface DataSet {
-  id: number;
-  name: string;
-  description: string;
-  icon: string;
-  creator: string;
-  // user_id: string;
-  tenant_id: number;
-}
-
-export interface TrainJob {
-  id: string | number,
-  name: string,
-  type: string,
-  status: string,
-  created_at: string,
-  train_data_id: string | number;
-  val_data_id: string | number;
-  test_data_id: string | number;
-  [key: string]: any
-}
-
-export interface TrainTaskModalProps {
-  options?: any;
-  onSuccess: () => void;
-  [key: string]: any
-}
-
-export interface TrainDataModalProps {
-  options?: any;
-  onSuccess: () => void;
-  trainData: TrainData[];
-  [key: string]: any
-}
-
-export interface AlgorithmParam {
-  name: string;
-  type: 'randint' | 'choice';
-  default: string | number | [number, number];
-  options?: Option[]
-}
-
-export interface TrainData {
-  id: number;
-  name: string;
-  dataset_id: string | number;
-  is_train_data: boolean,
-  is_val_data: boolean,
-  is_test_data: boolean,
-}
-
-export interface TrainDataParams {
-  timestamp: string;
-  value: number;
-  label?: number;
-  index?: number;
-}
-
-export interface TrainTaskHistory {
-  id: number;
-  job_id: number;
-  tenant_id: number;
-  train_data_id: number;
-  user_id: string;
-  parameters: string;
-  status: string;
-  created_at?: string;
-  started_at?: string;
-  updated_at?: string;
-  completed_at?: string;
-  anomaly_detection_train_jobs: {
-    name: string;
-  }
 }
