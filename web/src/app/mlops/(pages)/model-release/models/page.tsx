@@ -1,16 +1,19 @@
 'use client';
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import CustomTable from "@/components/custom-table";
 import Icon from "@/components/icon";
 import { useTranslation } from "@/utils/i18n";
-import { ColumnItem } from "@/types";
-import SubLayout from '@/components/sub-layout';
 import { Button } from "antd";
-import { useState, useMemo } from "react";
+import SubLayout from '@/components/sub-layout';
+import type { TableProps } from "antd";
 import { Pagination } from "@/app/mlops/types";
-// import type { TableProps } from "antd";
+import { ColumnItem } from "@/types";
+
 
 const ModelRelease = () => {
   const { t } = useTranslation();
+  const router = useRouter();
   const [pagination, setPagination] = useState<Pagination>({
     current: 1,
     total: 0,
@@ -51,6 +54,16 @@ const ModelRelease = () => {
     }
   ];
 
+  const rowSelection: TableProps<any>['rowSelection'] = {
+    onChange: (selectedRowKeys: React.Key[], selectedRows: any[]) => {
+      console.log(selectedRowKeys, selectedRows)
+    },
+    getCheckboxProps: (record: any) => ({
+      disabled: false,
+      name: record.name
+    }),
+  }
+
   const Topsection = () => {
     return (
       <div className="flex flex-col h-[90px] p-4 overflow-hidden">
@@ -68,10 +81,6 @@ const ModelRelease = () => {
     { id: 3, name: '异常检测训练', version: 'v3' },
   ];
 
-  
-
-
-
   const publish = () => {
     setPagination({
       current: 1,
@@ -86,6 +95,7 @@ const ModelRelease = () => {
       <SubLayout
         topSection={<Topsection />}
         intro={Intro}
+        onBackButtonClick={() => router.back()}
       >
         <div className="flex-1 relative">
           <div className="absolute w-full">
@@ -94,6 +104,7 @@ const ModelRelease = () => {
               dataSource={mock}
               rowKey='id'
               pagination={pagination}
+              rowSelection={{ type: 'checkbox', ...rowSelection }}
             />
           </div>
         </div>

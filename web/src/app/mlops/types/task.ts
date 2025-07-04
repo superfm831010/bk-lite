@@ -21,7 +21,7 @@ interface TrainTaskModalProps {
 interface AlgorithmParam {
   name: string;
   type: 'randint' | 'choice';
-  default: string | number | [number, number];
+  default: string[] | number | [number, number];
   options?: Option[]
 }
 

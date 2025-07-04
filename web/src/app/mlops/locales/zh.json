@@ -92,7 +92,8 @@
     "inProgress": "进行中",
     "completed": "已完成",
     "failed": "训练失败",
-    "maxEvals": "最大训练轮次"
+    "maxEvals": "最大训练轮次",
+    "hyperopt": "超参数"
   },
   "model-release": {
     "title": "能力发布",

@@ -1,22 +1,24 @@
 "use client";
-import { 
-  useEffect, 
-  useState, 
-  useMemo, 
-  memo, 
-  useCallback } from "react";
+import {
+  useEffect,
+  useState,
+  useMemo,
+  memo,
+  useCallback
+} from "react";
 import { useSearchParams } from 'next/navigation';
 import { cloneDeep } from "lodash";
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { useTranslation } from "@/utils/i18n";
 import { TYPE_CONTENT } from "@/app/mlops/constants";
 import useMlopsApi from "@/app/mlops/api";
-import { 
-  Button, 
-  message, 
-  Spin, 
-  TablePaginationConfig, 
-  Tag } from "antd";
+import {
+  Button,
+  message,
+  Spin,
+  TablePaginationConfig,
+  Tag
+} from "antd";
 import Aside from "./aside";
 import Icon from '@/components/icon';
 import LineChart from "@/app/mlops/components/charts/lineChart";
@@ -314,8 +316,7 @@ const AnnotationPage = () => {
     } catch (e) {
       console.log(e);
       message.error(t('datasets.saveError'));
-    }
-    finally {
+    } finally {
       setLoadingState(prev => ({ ...prev, saveLoading: false }));
       setIsChange(false);
     }

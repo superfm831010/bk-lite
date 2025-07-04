@@ -36,7 +36,7 @@ const ALGORITHMS_PARAMS: Record<string, AlgorithmParam[]> = {
     {
       name: 'max_features',
       type: 'choice',
-      default: 'none',
+      default: ['none'],
       options: [
         { label: 'sqrt', value: 'sqrt' },
         { label: 'log2', value: 'log2' },
@@ -46,7 +46,7 @@ const ALGORITHMS_PARAMS: Record<string, AlgorithmParam[]> = {
     {
       name: 'bootstrap',
       type: 'choice',
-      default: 'false',
+      default: ['false'],
       options: [
         { label: 'true', value: 'true' },
         { label: 'false', value: 'false' },
@@ -55,7 +55,7 @@ const ALGORITHMS_PARAMS: Record<string, AlgorithmParam[]> = {
     {
       name: 'class_weight',
       type: 'choice',
-      default: 'none',
+      default: ['none'],
       options: [
         { label: 'balanced', value: 'balanced' },
         { label: 'balanced_subsample', value: 'balanced_subsample' },

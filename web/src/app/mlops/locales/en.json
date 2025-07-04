@@ -92,7 +92,8 @@
     "inProgress": "In progress",
     "completed": "Completed",
     "failed": "Training failure",
-    "maxEvals": "Maximum number of training rounds"
+    "maxEvals": "Maximum number of training rounds",
+    "hyperopt": "Hyperparameterization"
   },
   "model-release": {
     "title": "Competence release",

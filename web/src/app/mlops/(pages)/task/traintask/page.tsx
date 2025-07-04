@@ -178,7 +178,8 @@ const TrainTask = () => {
           creator: item?.created_by,
           status: item?.status,
           max_evals: item.max_evals,
-          algorithm: item.algorithm
+          algorithm: item.algorithm,
+          hyperopt_config: item.hyperopt_config
         })) || [];
       setTableData(_data as TrainJob[]);
       setPagination(prev => ({
@@ -192,7 +193,7 @@ const TrainTask = () => {
     }
   };
 
-  const fetchTaskList = useCallback(async ( page: number = 1, pageSize: number = 10) => {
+  const fetchTaskList = useCallback(async (page: number = 1, pageSize: number = 10) => {
     const { count, items } = await getAnomalyTaskList({
       page,
       page_size: pageSize
