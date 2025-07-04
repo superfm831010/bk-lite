@@ -25,10 +25,10 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
         knowledge_base_id = request.query_params.get("knowledge_base_id")
         obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base_id).first()
         if not obj:
-            return JsonResponse({"result": False})
-        index_name = obj.knowledge_base.knowledge_index_name()
-        res = GraphUtils.get_graph(index_name)
-        return JsonResponse({"result": True, "data": res})
+            return JsonResponse({"result": True, "is_exists": False})
+        res = GraphUtils.get_graph(obj.id)
+        res.update({"graph_id": obj.id, "is_exists": True})
+        return JsonResponse(res)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -37,14 +37,4 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
         except Exception as e:
             return JsonResponse({"result": False, "message": str(e)}, status=500)
         instance.delete()
-        return JsonResponse({"result": True})
-
-    @action(methods=["POST"], detail=False)
-    def delete_graph_chunk(self, request):
-        params = request.data
-        chunk_ids = params["chunk_ids"]
-        try:
-            GraphUtils.delete_graph_chunk(chunk_ids)
-        except Exception as e:
-            return JsonResponse({"result": False, "message": str(e)}, status=500)
         return JsonResponse({"result": True})

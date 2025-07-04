@@ -103,7 +103,7 @@ class PeriodicTaskUtils:
         )
 
         # 创建周期任务
-        PeriodicTask.objects.get_or_create(
+        PeriodicTask.objects.update_or_create(
             name=task_name,
             defaults={
                 "crontab": schedule,
