@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from apps.core.utils.web_utils import WebUtils
+from apps.monitor.constants import DEFAULT_PERMISSION, POLICY_MODULE
 from apps.monitor.language.service import SettingLanguage
 from apps.monitor.models import MonitorAlert, MonitorEvent, MonitorPolicy, MonitorInstance, MonitorObject, \
     PolicyOrganization, MonitorEventRawData
@@ -17,6 +18,7 @@ from apps.monitor.serializers.monitor_alert import MonitorAlertSerializer
 from apps.monitor.serializers.monitor_instance import MonitorInstanceSerializer
 from apps.monitor.serializers.monitor_metrics import MetricSerializer
 from apps.monitor.serializers.monitor_policy import MonitorPolicySerializer
+from apps.monitor.utils.system_mgmt_api import SystemMgmtUtils
 from config.drf.pagination import CustomPageNumberPagination
 
 
@@ -33,6 +35,12 @@ class MonitorAlertVieSet(
 
     def list(self, request, *args, **kwargs):
 
+        all_permission_objs, permission = SystemMgmtUtils.format_rules_v2(POLICY_MODULE, request.user.rules)
+        policy_ids = MonitorPolicy.objects.filter(
+            monitor_object_id__in=list(all_permission_objs)).values_list("id", flat=True)
+        for policy_id in policy_ids:
+            permission[policy_id] = DEFAULT_PERMISSION
+
         # 获取经过过滤器处理的数据
         queryset = self.filter_queryset(self.get_queryset())
         if not request.user.is_superuser:
@@ -45,6 +53,10 @@ class MonitorAlertVieSet(
             monitor_objects = [int(i) for i in monitor_objects]
             policy_ids = MonitorPolicy.objects.filter(monitor_object_id__in=monitor_objects).values_list("id", flat=True)
             queryset = queryset.filter(policy_id__in=list(policy_ids)).distinct()
+
+        if permission:
+            # 如果有权限限制，则过滤 queryset
+            queryset = queryset.filter(id__in=list(permission.keys()))
 
         if request.GET.get("type") == "count":
             # 执行序列化
@@ -78,6 +90,12 @@ class MonitorAlertVieSet(
 
         # 补充策略和实例到每个 alert 中
         for alert in results:
+
+            if permission:
+                alert["permission"] = permission.get(alert["id"], DEFAULT_PERMISSION)
+            else:
+                alert["permission"] = DEFAULT_PERMISSION
+
             # 补充instance_id_values
             try:
                 alert["instance_id_values"] = [i for i in ast.literal_eval(alert["monitor_instance_id"])]

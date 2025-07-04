@@ -24,7 +24,9 @@
     "creator": "创建人",
     "createdAt": "创建时间",
     "createdSuccess": "创建成功",
-    "updateSuccess": "更新成功"
+    "updateSuccess": "更新成功",
+    "min": "最小值",
+    "max": "最大值"
   },
   "datasets": {
     "title": "文档列表",
@@ -89,6 +91,11 @@
     "notStarted": "未开始",
     "inProgress": "进行中",
     "completed": "已完成",
-    "failed": "训练失败"
+    "failed": "训练失败",
+    "maxEvals": "最大训练轮次"
+  },
+  "model-release": {
+    "title": "能力发布",
+    "detail": "对训练完成的模型进行发布管理。"
   }
 }

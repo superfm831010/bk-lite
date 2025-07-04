@@ -41,7 +41,7 @@ services:
       - CONVERSATION_MQ_PORT=5672
       - CONVERSATION_MQ_USER=${RABBITMQ_DEFAULT_USER}
       - CONVERSATION_MQ_PASSWORD=${RABBITMQ_DEFAULT_PASSWORD}
-      - MUNCHKIN_BASE_URL=http://${HOST_IP}:${TRAEFIK_WEB_PORT}
+      - MUNCHKIN_BASE_URL=http://${HOST_IP}:${TRAEFIK_WEB_PORT}/opspilot
       - METIS_SERVER_URL=http://metis:18083
       - PILOT_RUNTIME=docker
       - INSTALL_APPS=${INSTALL_APPS}
@@ -58,6 +58,6 @@ services:
       - prod
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.sidecar.rule=Host(`${HOST_IP}`) && PathPrefix(`/node_mgmt`)"
+      - "traefik.http.routers.sidecar.rule=Host(`${HOST_IP}`) && PathPrefix(`/node_mgmt`) || PathPrefix(`/opspilot/bot_mgmt`)"
       - "traefik.http.routers.sidecar.entrypoints=web"
       - "traefik.http.services.sidecar.loadbalancer.server.port=8000"

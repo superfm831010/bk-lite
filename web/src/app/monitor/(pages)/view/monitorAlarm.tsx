@@ -121,7 +121,10 @@ const Alert: React.FC<ViewModalProps> = ({
           >
             {t('common.detail')}
           </Button>
-          <Permission requiredPermissions={['Detail']}>
+          <Permission
+            requiredPermissions={['Detail']}
+            instPermissions={record.permission}
+          >
             <Popconfirm
               title={t('monitor.events.closeTitle')}
               description={t('monitor.events.closeContent')}

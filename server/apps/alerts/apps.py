@@ -2,8 +2,9 @@
 # @File: apps.py
 # @Time: 2025/5/9 14:51
 # @Author: windyzhao
+import sys
+
 from django.apps import AppConfig
-from django.db.models.signals import post_migrate
 
 from apps.core.logger import alert_logger as logger
 
@@ -13,31 +14,14 @@ class AlertsConfig(AppConfig):
     name = "apps.alerts"
 
     def ready(self):
-        # 注册告警源适配器
-        adapters()
-        post_migrate.connect(app_init, sender=self)
+        # 检查是否正在运行迁移命令
+        is_running_migrations = 'makemigrations' in sys.argv or 'migrate' in sys.argv
+        if not is_running_migrations:
+            # 注册告警源适配器
+            adapters()
 
 
-def app_init(**kwargs):
-    """应用初始化"""
-
-    # 初始化内置告警源
-    logger.info("===Start Initializing Built-in Alert Sources===")
-    try:
-        from apps.alerts.service.init_alert_sources import init_builtin_alert_sources
-        init_builtin_alert_sources()
-    except Exception as e:
-        logger.error(f"Failed to initialize built-in alert sources: {e}")
-        pass
-    logger.info("===Built-in Alert Sources Initialization Completed===")
-
-    # 初始化告警级别
-    init_levels(**kwargs)
-    # 初始化系统设置
-    init_system_settings(**kwargs)
-
-
-def adapters(**kwargs):
+def adapters():
     """注册告警源适配器"""
     try:
         from apps.alerts.common.source_adapter.base import AlertSourceAdapterFactory
@@ -46,39 +30,3 @@ def adapters(**kwargs):
     except Exception as e:
         logger.error(f"Failed to register alert source adapter: {e}")
         pass
-
-
-def init_levels(**kwargs):
-    """初始化告警级别"""
-    logger.info("===Start Initializing Alert Levels==")
-    try:
-        from apps.alerts.constants import DEFAULT_LEVEL
-        level_model = kwargs["sender"].models["level"]
-        for level_data in DEFAULT_LEVEL:
-            level_data["built_in"] = True
-            level_model.objects.get_or_create(level_type=level_data["level_type"], level_id=level_data["level_id"],
-                                              level_name=level_data["level_name"],
-                                              defaults=level_data)
-    except Exception as e:
-        logger.error(f"Failed to initialize alert levels: {e}")
-        pass
-
-    logger.info("===Alert Levels Initialization Completed===")
-
-
-def init_system_settings(**kwargs):
-    """初始化系统设置"""
-    logger.info("===Start Initializing System Settings===")
-    try:
-        from apps.alerts.init_constants import SYSTEM_SETTINGS
-        settings_model = kwargs["sender"].models["systemsetting"]
-        for data in SYSTEM_SETTINGS:
-            settings_model.objects.get_or_create(
-                key=data["key"],
-                defaults=data
-            )
-    except Exception as e:
-        logger.error(f"Failed to initialize system settings: {e}")
-        pass
-
-    logger.info("===System Settings Initialization Completed===")

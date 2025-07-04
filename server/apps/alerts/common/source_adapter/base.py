@@ -156,6 +156,7 @@ class AlertSourceAdapterFactory:
     def register_adapter(cls, source_type: str, adapter_class):
         """注册适配器"""
         cls._adapters[source_type] = adapter_class
+        logger.info(f"Adapter registered for source type: {source_type}")
 
     @classmethod
     def get_adapter(cls, alert_source: AlertSource):

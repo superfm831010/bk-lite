@@ -52,7 +52,7 @@ class DockerClient(object):
         labels = {"app": "pilot", "bot-id": str(bot.id)}
 
         # 配置extra_hosts
-        extra_hosts = {"rabbitmq-service": settings.CONVERSATION_MQ_HOST}
+        # extra_hosts = {"rabbitmq-service": settings.CONVERSATION_MQ_HOST}
 
         # 如果存在bot_domain，添加Traefik相关标签
         if bot.bot_domain:
@@ -82,9 +82,9 @@ class DockerClient(object):
                 ports=ports,
                 labels=labels,
                 restart_policy={"Name": "always"},
-                network="traefik",
+                network=settings.CONVERSATION_DOCKER_NETWORK,
                 command=command,
-                extra_hosts=extra_hosts,
+                # extra_hosts=extra_hosts,
             )
 
             logger.info(f"启动Pilot[{bot.id}]容器成功，容器ID: {container.id}")

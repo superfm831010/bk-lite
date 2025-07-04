@@ -12,6 +12,7 @@
     "backToList": "返回文档列表",
     "or": "或",
     "goToTesting": "前往测试",
+    "sourceFiles": "源文件",
     "form": {
       "name": "名称",
       "group": "分组",

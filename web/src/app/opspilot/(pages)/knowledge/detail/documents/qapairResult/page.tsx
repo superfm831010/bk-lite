@@ -44,8 +44,8 @@ const QAPairResultPage: React.FC = () => {
           search_text: searchValue || ''
         };
         const data = await fetchQAPairDetails(params);
-        setQaPairsState(data || []);
-        setTotalItems(data?.length || 0);
+        setQaPairsState(data.items || []);
+        setTotalItems(data.count || 0);
       } catch (error) {
         console.error(`${t('common.errorFetch')}: ${error}`);
       } finally {

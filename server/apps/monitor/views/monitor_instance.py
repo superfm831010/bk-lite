@@ -5,9 +5,11 @@ from rest_framework.decorators import action
 
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.utils.web_utils import WebUtils
+from apps.monitor.constants import INSTANCE_MODULE
 from apps.monitor.models import MonitorInstance, MonitorObject, CollectConfig
 from apps.monitor.services.monitor_instance import InstanceSearch
 from apps.monitor.services.monitor_object import MonitorObjectService
+from apps.monitor.utils.system_mgmt_api import SystemMgmtUtils
 from apps.rpc.node_mgmt import NodeMgmt
 
 
@@ -39,6 +41,7 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
     )
     @action(methods=['get'], detail=False, url_path='(?P<monitor_object_id>[^/.]+)/list')
     def monitor_instance_list(self, request, monitor_object_id):
+        permission = SystemMgmtUtils.format_rules(INSTANCE_MODULE, monitor_object_id, request.user.rules)
         page, page_size = request.GET.get("page", 1), request.GET.get("page_size", 10)
         data = MonitorObjectService.get_monitor_instance(
             int(monitor_object_id),
@@ -48,6 +51,7 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
             [i["id"] for i in request.user.group_list],
             request.user.is_superuser,
             bool(request.GET.get("add_metrics", False)),
+            permission
         )
         return WebUtils.response_success(data)
 
@@ -71,6 +75,9 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
     )
     @action(methods=['post'], detail=False, url_path='(?P<monitor_object_id>[^/.]+)/search')
     def monitor_instance_search(self, request, monitor_object_id):
+
+        permission = SystemMgmtUtils.format_rules(INSTANCE_MODULE, monitor_object_id, request.user.rules)
+
         monitor_obj = MonitorObject.objects.filter(id=monitor_object_id).first()
         if not monitor_obj:
             raise BaseAppException("Monitor object does not exist")
@@ -78,7 +85,8 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
             monitor_obj,
             dict(group_list=[i["id"] for i in request.user.group_list],
                  is_superuser=request.user.is_superuser,
-                 **request.data)
+                 **request.data),
+            permission=permission,
         )
         data = search_obj.search()
         return WebUtils.response_success(data)
