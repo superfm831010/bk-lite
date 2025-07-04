@@ -79,22 +79,23 @@ class GraphUtils(ChunkHelper):
         return res
 
     @classmethod
-    def get_graph(cls, index_name):
+    def get_graph(cls, graph_id):
         """
         Retrieve a graph by its ID.
         """
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/list_index_documents"
-        kwargs = {"group_ids": [index_name]}
+        kwargs = {"group_ids": [f"graph-{graph_id}"]}
         try:
             res = cls.post_chat_server(kwargs, url)
         except Exception as e:
             return {"result": False, "message": str(e)}
-        return res
+        return_data = {"result": True, "data": res["result"]}
+        return return_data
 
     @classmethod
     def delete_graph(cls, graph_obj: KnowledgeGraph):
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/delete_index"
-        kwargs = {"group_ids": [graph_obj.knowledge_base.knowledge_index_name()]}
+        kwargs = {"group_id": f"graph-{graph_obj.id}"}
         res = cls.post_chat_server(kwargs, url)
         if res["status"] != "success":
             raise Exception(res["message"])

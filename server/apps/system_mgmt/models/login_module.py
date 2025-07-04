@@ -31,7 +31,7 @@ class LoginModule(models.Model, EncryptMixin, PeriodicTaskUtils):
 
     def create_sync_periodic_task(self):
         sync_time = self.other_config.get("sync_time", "00:00")
-        task_name = f"sync_user_group_{self.name}"
+        task_name = f"sync_user_group_{self.id}"
         task_args = f"[{self.id}]"
         task_path = "apps.system_mgmt.tasks.sync_user_and_group_by_login_module"
         self.create_periodic_task(sync_time, task_name, task_args, task_path)

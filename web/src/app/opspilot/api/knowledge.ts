@@ -292,6 +292,23 @@ export const useKnowledgeApi = () => {
     });
   };
 
+  /**
+   * Creates or updates knowledge graph configuration.
+   */
+  const saveKnowledgeGraph = async (payload: {
+    knowledge_base: number;
+    llm_model: number;
+    rerank_model: number;
+    embed_model: number;
+    rebuild_community: boolean;
+    doc_list: Array<{
+      id: number;
+      source: string;
+    }>;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/knowledge_graph/', payload);
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -326,5 +343,6 @@ export const useKnowledgeApi = () => {
     createQAPairs,
     fetchQAPairDetails,
     fetchChunkQAPairs,
+    saveKnowledgeGraph,
   };
 };

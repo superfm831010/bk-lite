@@ -32,7 +32,7 @@ class WebPageKnowledge(models.Model, PeriodicTaskUtils):
 
     def create_sync_periodic_task(self):
         sync_time = self.sync_time or "00:00"
-        task_name = f"sync_web_page_knowledge_{self.knowledge_document.name}"
+        task_name = f"sync_web_page_knowledge_{self.id}"
         task_args = f"[{self.id}]"
         task_path = "apps.opspilot.tasks.sync_web_page_knowledge"
         self.create_periodic_task(sync_time, task_name, task_args, task_path)

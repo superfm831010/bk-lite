@@ -119,7 +119,13 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
       const { zoneinfo, ...restData } = formData;
       const payload = {
         ...restData,
-        rules: Object.values(groupRules).flat(2),
+        rules: Object.values(groupRules)
+          .filter(value => {
+            if (typeof value === 'object' && value !== null) {
+              return Object.keys(value).length > 0;
+            }
+            return true;
+          }).flat(2),
         timezone: zoneinfo, 
       };
       if (type === 'add') {

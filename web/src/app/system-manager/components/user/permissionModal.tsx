@@ -35,7 +35,6 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, rules = [], 
         clientModules.map((item, index) => {
           const appRules = rules && typeof rules === 'object' ? rules[item as keyof typeof rules] : null;
           const permission = appRules && Array.isArray(appRules) && appRules.length > 0 ? appRules[0] : 0;
-          console.log('Setting app data for:', item, 'with permission:', rules, appRules, permission);
           return {
             key: index.toString(),
             app: item,
