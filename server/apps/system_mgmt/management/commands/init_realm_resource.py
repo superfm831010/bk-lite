@@ -35,6 +35,7 @@ class Command(BaseCommand):
                     "description": app_obj["description"],
                     "is_build_in": True,
                     "url": app_obj["url"],
+                    "icon": app_obj.get("icon", app_obj["client_id"]),
                 },
             )
             print(f"create {app_obj['client_id']} success")
@@ -110,7 +111,7 @@ def create_default_roles(app_inst: App, roles):
         role_obj = role_map["manager"]
         role_obj.menu_list = [i["id"] for i in menus]
         update_roles.append(role_obj)
-        
+
     Role.objects.bulk_create(add_roles, batch_size=100)
     Role.objects.bulk_update(update_roles, ["menu_list"], batch_size=100)
 
