@@ -143,6 +143,21 @@ const CorrelationRulesPage: React.FC = () => {
         },
       },
       {
+        title: t('settings.correlation.windowType'),
+        dataIndex: 'window_type',
+        key: 'window_type',
+        width: 150,
+        render: (text: string) => {
+          return text === 'sliding'
+            ? t('settings.correlation.slidingWindow')
+            : text === 'fixed'
+              ? t('settings.correlation.fixedWindow')
+              : text === 'session'
+                ? t('settings.correlation.sessionWindow')
+                : '';
+        },
+      },
+      {
         title: t('settings.correlation.lastUpdateTime'),
         dataIndex: 'updated_at',
         key: 'updated_at',

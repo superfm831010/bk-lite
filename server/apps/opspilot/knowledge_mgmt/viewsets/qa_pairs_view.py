@@ -59,13 +59,11 @@ class QAPairsViewSet(MaintainerViewSet):
         index_name = instance.knowledge_base.knowledge_index_name()
 
         res = client.get_document_es_chunk(index_name, page, page_size, search_text, metadata_filter)
-        if res["status"] != "success":
-            return JsonResponse({"result": False, "message": res.get("message", "Failed to retrieve data.")})
         return_data = [
             {"question": i["page_content"], "answer": i["metadata"]["qa_answer"], "id": i["metadata"]["chunk_id"]}
             for i in res.get("documents", [])
         ]
-        return JsonResponse({"result": True, "data": return_data, "count": res["count"]})
+        return JsonResponse({"result": True, "data": {"items": return_data, "count": res["count"]}})
 
     @action(methods=["GET"], detail=False)
     def get_chunk_qa_pairs(self, request):
