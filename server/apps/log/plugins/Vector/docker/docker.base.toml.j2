@@ -1,0 +1,28 @@
+[sources.docker_logs_{{ id }}]
+type = "docker_logs"
+docker_host = "unix:///var/run/docker.sock"
+auto_partial_merge = true
+include_containers = ["{{ container_name }}"]
+
+[transforms.parse_{{ id }}]
+type = "remap"
+inputs = ["docker_logs_{{ id }}"]
+source = '''
+.message = .log
+.container_name = .container.name
+.image = .container.image
+.stream = .stream
+.host = get_hostname!()
+'''
+
+[sinks.vmlogs_{{ id }}]
+type = "loki"
+inputs = ["parse_{{ id }}"]
+endpoint = "http://10.10.90.113:3100"
+encoding.codec = "json"
+
+[sinks.vmlogs_{{ id }}.labels]
+container = "{{ container_name }}"
+image = "{{ image }}"
+stream = "{{ stream }}"
+host = "{{ host }}"
