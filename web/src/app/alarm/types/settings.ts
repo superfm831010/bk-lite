@@ -53,7 +53,8 @@ export interface AggregationRule {
     updated_by: string;
     rule_id: string;
     name: string;
-    description: string;
+    description: { en: string; zh: string };
+    image: string;
     [key: string]: any;
 }
 export interface CorrelationRule {
