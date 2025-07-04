@@ -48,20 +48,25 @@
           ]
         },
         {
-          "id": "auto_discovery",
-          "name": "Auto Discovery",
-          "children": [
-            {
-              "id": "auto_collection",
-              "name": "Auto Collection",
-              "operation": ["View", "Add", "Edit", "Delete", "Execute"]
-            },
-            {
-              "id": "soid_library",
-              "name": "SOID Library",
-              "operation": ["View", "Add", "Edit", "Delete"]
-            }
-          ]
+        "id": "auto_collection",
+        "name": "Auto Collection",
+        "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete",
+            "Execute"
+        ]
+    },
+    {
+        "id": "soid_library",
+        "name": "SOID Library",
+        "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+        ]
         },
         {
           "id": "operation_log",
