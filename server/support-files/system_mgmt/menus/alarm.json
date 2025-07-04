@@ -2,7 +2,7 @@
     "client_id": "alarm",
     "name": "Alarm",
     "url": "/alarm/incidents",
-    "description": "Create roles for the Alarm app to manage data permissions, menu permissions, and feature permissions.",
+    "description": "Gather multiple sources of alarm events from enterprises, intelligently reduce noise, explore deep fault causes, improve operation and maintenance response efficiency, and help quickly locate problems.",
     "menus": [
         {
             "name": "Incidents",
@@ -95,6 +95,7 @@
             ]
         }
     ],
+    "icon": "alarm",
     "roles": [
         {
             "name": "admin",

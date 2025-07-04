@@ -3,6 +3,7 @@
   "name": "Monitor",
   "url": "/monitor/search",
   "description": "Real-time monitoring and management platform for system operation status, providing data visualization, alert notifications, performance analysis and other functions to help quickly identify problems and ensure business stability",
+  "icon": "monitor",
   "menus": [
     {
       "name": "Search",

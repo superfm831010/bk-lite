@@ -219,7 +219,7 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
         domain=qa_pairs_list[0].domain,
         knowledge_base_id=knowledge_base_id,
         task_name=qa_pairs_list[0].name,
-        knowledge_ids=[doc.id for doc in qa_pairs_id_list],
+        knowledge_ids=[doc for doc in qa_pairs_id_list],
         train_progress=0,
     )
     train_progress = round(float(1 / len(task_obj.knowledge_ids)) * 100, 2)

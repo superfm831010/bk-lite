@@ -499,6 +499,12 @@ msgid "Covering user and organizational role permission management, ensuring res
 msgstr "涵盖用户和组织角色权限管理，通过精细化权限控制，确保资源访问安全，同时提升操作效率。提供灵活的配置和管理，满足不同业务需求"
 
 
+msgid "AI end-to-end lifecycle management tool, integrating dataset management and model task training functionalities, enhances the flexibility and efficiency of machine learning."
+msgstr "AI模型全生命周期管理工具，集成数据集管理、模型任务训练等功能，提升机器学习的灵活性和效率。"
+
+msgid "Gather multiple sources of alarm events from enterprises, intelligently reduce noise, explore deep fault causes, improve operation and maintenance response efficiency, and help quickly locate problems."
+msgstr "汇聚企业多源告警事件，智能降噪，挖掘深层故障原因，提升运维响应效率，帮助快速定位问题。"
+
 msgid "Studio"
 msgstr "工作台"
 
