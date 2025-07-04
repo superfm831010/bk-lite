@@ -1,48 +1,49 @@
 {
-    "client_id": "mlops",
-    "name": "MLOps",
-    "url": "/mlops/datasets",
-    "description": "Create roles for the MLOps app to manage data permissions, menu permissions, and feature permissions.",
-    "menus": [
+  "client_id": "mlops",
+  "name": "MLOps",
+  "url": "/mlops/datasets",
+  "description": "AI end-to-end lifecycle management tool, integrating dataset management and model task training functionalities, enhances the flexibility and efficiency of machine learning.",
+  "icon": "moxingguanli1",
+  "menus": [
+    {
+      "name": "Datasets",
+      "children": [
         {
-            "name": "Datasets",
-            "children": [
-                {
-                    "id": "anomaly_detection_datasets",
-                    "display_name": "Anomaly Detection",
-                    "name": "anomaly_detection_datasets",
-                    "operation": [
-                        "View",
-                        "Add",
-                        "Edit",
-                        "Delete"
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "Train Tasks",
-            "children": [
-                {
-                    "id": "train_tasks",
-                    "display_name": "Train Tasks",
-                    "name": "train_tasks",
-                    "operation": [
-                        "View",
-                        "Add",
-                        "Edit",
-                        "Delete",
-                        "Train"
-                    ]
-                }
-            ]
+          "id": "anomaly_detection_datasets",
+          "display_name": "Anomaly Detection",
+          "name": "anomaly_detection_datasets",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
         }
-    ],
-    "roles": [
+      ]
+    },
+    {
+      "name": "Train Tasks",
+      "children": [
         {
-            "name": "admin",
-            "role_name": "mlops_admin",
-            "menus": []
+          "id": "train_tasks",
+          "display_name": "Train Tasks",
+          "name": "train_tasks",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete",
+            "Train"
+          ]
         }
-    ]
+      ]
+    }
+  ],
+  "roles": [
+    {
+      "name": "admin",
+      "role_name": "mlops_admin",
+      "menus": []
+    }
+  ]
 }

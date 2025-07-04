@@ -17,7 +17,7 @@ class ManualKnowledgeViewSet(viewsets.ModelViewSet):
     def create_manual_knowledge(self, request):
         kwargs = request.data
         kwargs["knowledge_source_type"] = "manual"
-        new_doc = KnowledgeDocumentUtils.get_new_document(kwargs, request.user.username)
+        new_doc = KnowledgeDocumentUtils.get_new_document(kwargs, request.user.username, request.user.domain)
         knowledge_obj = ManualKnowledge.objects.create(
             knowledge_document_id=new_doc.id,
             content=kwargs.get("content", ""),
