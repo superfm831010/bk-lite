@@ -1,18 +1,25 @@
 from django.http import JsonResponse
+from django_filters import filters
+from django_filters.rest_framework import FilterSet
 from rest_framework.decorators import action
 
-from apps.core.utils.viewset_utils import AuthViewSet
+from apps.core.utils.viewset_utils import MaintainerViewSet
 from apps.opspilot.knowledge_mgmt.models import QAPairs
 from apps.opspilot.knowledge_mgmt.serializers.qa_pairs_serializers import QAPairsSerializer
 from apps.opspilot.tasks import create_qa_pairs
 from apps.opspilot.utils.chunk_helper import ChunkHelper
 
 
-class QAPairsViewSet(AuthViewSet):
+class QAPairsFilter(FilterSet):
+    name = filters.CharFilter(field_name="name", lookup_expr="icontains")
+    knowledge_base_id = filters.NumberFilter(field_name="knowledge_base_id", lookup_expr="exact")
+
+
+class QAPairsViewSet(MaintainerViewSet):
     queryset = QAPairs.objects.all()
     serializer_class = QAPairsSerializer
+    filterset_class = QAPairsFilter
     ordering = ("-id",)
-    search_fields = ("name",)
 
     @action(methods=["POST"], detail=False)
     def create_qa_pairs(self, request):
@@ -52,13 +59,11 @@ class QAPairsViewSet(AuthViewSet):
         index_name = instance.knowledge_base.knowledge_index_name()
 
         res = client.get_document_es_chunk(index_name, page, page_size, search_text, metadata_filter)
-        if res["status"] != "success":
-            return JsonResponse({"result": False, "message": res.get("message", "Failed to retrieve data.")})
         return_data = [
             {"question": i["page_content"], "answer": i["metadata"]["qa_answer"], "id": i["metadata"]["chunk_id"]}
             for i in res.get("documents", [])
         ]
-        return JsonResponse({"result": True, "data": return_data, "count": res["count"]})
+        return JsonResponse({"result": True, "data": {"items": return_data, "count": res["count"]}})
 
     @action(methods=["GET"], detail=False)
     def get_chunk_qa_pairs(self, request):

@@ -18,39 +18,77 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, rules = [], 
   const { clientData } = useClientData();
   const { getGroupDataRule } = useRoleApi();
 
-  const [dataPermissions, setDataPermissions] = useState<PermissionDataType[]>([]);
+  const [appDataPermissions, setAppDataPermissions] = useState<{ [key: string]: PermissionDataType[] }>({});
   const [appData, setAppData] = useState<AppPermission[]>([]);
+  const [appLoadingStates, setAppLoadingStates] = useState<{ [key: string]: boolean }>({});
 
   const clientModules = clientData.filter(client => client.name !== 'ops-console').map(r=> r.name);
 
   useEffect(() => {
     if (visible && node) {
-      fetchGroupDataRule();
+      fetchAllAppDataRules();
       form.setFieldsValue({
         groupName: typeof node?.title === 'string' ? node.title : ''
       });
 
       setAppData(
-        clientModules.map((item, index) => ({
-          key: index.toString(),
-          app: item,
-          permission: item === 'opspilot' ? (rules && rules.length > 0 ? rules[0] : 0) : 0,
-        }))
+        clientModules.map((item, index) => {
+          const appRules = rules && typeof rules === 'object' ? rules[item as keyof typeof rules] : null;
+          const permission = appRules && Array.isArray(appRules) && appRules.length > 0 ? appRules[0] : 0;
+          return {
+            key: index.toString(),
+            app: item,
+            permission: permission,
+          };
+        })
       );
     }
   }, [visible, node, rules]);
 
-  const fetchGroupDataRule = async () => {
+  const fetchAllAppDataRules = async () => {
     if (!node?.key) return;
 
+    const initialLoadingStates = clientModules.reduce((acc, app) => {
+      acc[app] = true;
+      return acc;
+    }, {} as { [key: string]: boolean });
+    setAppLoadingStates(initialLoadingStates);
+
     try {
-      const data = await getGroupDataRule({
-        params: { group_id: node.key.toString() }
+      const allData = await getGroupDataRule({
+        params: { 
+          group_id: node.key.toString()
+        }
       });
-      setDataPermissions(data || []);
+
+      const groupedPermissions: { [key: string]: PermissionDataType[] } = {};
+      
+      clientModules.forEach(app => {
+        groupedPermissions[app] = [];
+      });
+
+      if (allData && Array.isArray(allData)) {
+        allData.forEach((permission: PermissionDataType) => {
+          if (permission.app && groupedPermissions[permission.app]) {
+            groupedPermissions[permission.app].push(permission);
+          }
+        });
+      }
+
+      setAppDataPermissions(groupedPermissions);
     } catch (error) {
-      console.error('Failed to fetch group data rule:', error);
-      setDataPermissions([]);
+      console.error('Failed to fetch group data rules:', error);
+      const emptyPermissions = clientModules.reduce((acc, app) => {
+        acc[app] = [];
+        return acc;
+      }, {} as { [key: string]: PermissionDataType[] });
+      setAppDataPermissions(emptyPermissions);
+    } finally {
+      const clearedLoadingStates = clientModules.reduce((acc, app) => {
+        acc[app] = false;
+        return acc;
+      }, {} as { [key: string]: boolean });
+      setAppLoadingStates(clearedLoadingStates);
     }
   };
 
@@ -69,18 +107,24 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, rules = [], 
         const options = [
           { value: 0, label: t('system.permission.fullPermission') }
         ];
-        if (dataPermissions && dataPermissions.length > 0) {
-          dataPermissions.forEach(permission => {
+        
+        const currentAppPermissions = appDataPermissions[record.app] || [];
+        if (currentAppPermissions.length > 0) {
+          currentAppPermissions.forEach(permission => {
             options.push({ value: Number(permission.id), label: permission.name });
           });
         }
+
+        const isAppLoading = appLoadingStates[record.app] || false;
 
         return (
           <Select
             value={record.permission}
             className="w-full"
             options={options}
-            disabled={record.app !== 'opspilot'}
+            loading={isAppLoading}
+            disabled={isAppLoading}
+            placeholder={t('common.select')}
             onChange={(value: number) => {
               setAppData(prevData =>
                 prevData.map(item =>
@@ -93,6 +137,8 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, rules = [], 
       },
     },
   ];
+
+  const isAnyAppLoading = Object.values(appLoadingStates).some(loading => loading);
 
   const handleOk = () => {
     form.validateFields().then((values: PermissionFormValues) => {
@@ -108,8 +154,11 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, rules = [], 
       onCancel={() => {
         form.resetFields();
         setAppData([]);
+        setAppDataPermissions({});
+        setAppLoadingStates({});
         onCancel();
       }}
+      confirmLoading={isAnyAppLoading}
     >
       <Form
         form={form}
@@ -130,6 +179,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, rules = [], 
             size="small"
             rowKey="key"
             bordered={false}
+            loading={isAnyAppLoading}
           />
         </Form.Item>
       </Form>

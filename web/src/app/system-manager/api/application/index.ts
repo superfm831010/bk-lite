@@ -49,6 +49,9 @@ export const useRoleApi = () => {
   const getAppData = async (params: any) => {
     return await get('/system_mgmt/group_data_rule/get_app_data/', params);
   }
+  const getAppModules = async (params: any) => {
+    return await get('/system_mgmt/group_data_rule/get_app_module/', params);
+  }
   const addApplication = async (params: any) => {
     return await post('/system_mgmt/app/', params);
   }
@@ -75,6 +78,7 @@ export const useRoleApi = () => {
     addGroupDataRule,
     updateGroupDataRule,
     getAppData,
+    getAppModules,
     addApplication,
     updateApplication,
     deleteApplication

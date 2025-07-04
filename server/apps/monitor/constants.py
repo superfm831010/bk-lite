@@ -46,3 +46,7 @@ DEFAULT_OBJ_ORDER = [
 # 阈值告警类型， 无数据告警类型
 THRESHOLD = "threshold"
 NO_DATA = "no_data"
+
+DEFAULT_PERMISSION = ['View', 'Operate']
+INSTANCE_MODULE = "instance"
+POLICY_MODULE = "policy"

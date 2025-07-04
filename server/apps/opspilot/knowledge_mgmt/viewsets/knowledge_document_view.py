@@ -56,7 +56,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         if type(knowledge_document_ids) is not list:
             knowledge_document_ids = [knowledge_document_ids]
         KnowledgeDocument.objects.filter(id__in=knowledge_document_ids).update(train_status=DocumentStatus.TRAINING)
-        general_embed.delay(knowledge_document_ids, request.user.username)
+        general_embed.delay(knowledge_document_ids, request.user.username, request.user.domain)
         return JsonResponse({"result": True})
 
     @action(methods=["GET"], detail=False)
@@ -66,7 +66,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             return JsonResponse({"result": False, "message": _("knowledge_base_id is required")})
         task_list = (
             KnowledgeTask.objects.filter(created_by=request.user.username, knowledge_base_id=knowledge_base_id)
-            .values("task_name", "train_progress")
+            .values("task_name", "train_progress", "is_qa_task")
             .order_by("-id")
         )
         return JsonResponse({"result": True, "data": list(task_list)})
@@ -196,6 +196,9 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             obj.name = name
             obj.save()
         doc.save()
+        if obj.knowledge_source_type == "web_page" and doc.sync_enabled:
+            doc.create_sync_periodic_task()
+
         return JsonResponse({"result": True})
 
     @action(methods=["GET"], detail=True)
@@ -246,7 +249,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             semantic_chunk_parse_embedding_model_id=kwargs.get("semantic_chunk_parse_embedding_model", None),
             chunk_type=kwargs.get("chunk_type", "fixed_size"),
         )
-        general_embed.delay(knowledge_document_list, request.user.username)
+        general_embed.delay(knowledge_document_list, request.user.username, request.user.domain)
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
