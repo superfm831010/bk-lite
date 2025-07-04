@@ -97,6 +97,7 @@
   },
   "model-release": {
     "title": "Competence release",
-    "detail": "Publishing management of trained models."
+    "detail": "Publishing management of trained models.",
+    "modalTitle": "Select model version."
   }
 }

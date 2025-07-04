@@ -1,19 +1,20 @@
 'use client';
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CustomTable from "@/components/custom-table";
 import Icon from "@/components/icon";
 import { useTranslation } from "@/utils/i18n";
 import { Button } from "antd";
 import SubLayout from '@/components/sub-layout';
-import type { TableProps } from "antd";
-import { Pagination } from "@/app/mlops/types";
+import ReleaseModal from "./releaseModal";
+import { ModalRef, Pagination } from "@/app/mlops/types";
 import { ColumnItem } from "@/types";
 
 
 const ModelRelease = () => {
   const { t } = useTranslation();
   const router = useRouter();
+  const modalRef = useRef<ModalRef>(null);
   const [pagination, setPagination] = useState<Pagination>({
     current: 1,
     total: 0,
@@ -40,29 +41,19 @@ const ModelRelease = () => {
       key: 'name'
     },
     {
-      title: '模型版本',
-      dataIndex: 'version',
-      key: 'version'
+      title: '模型介绍',
+      dataIndex: 'description',
+      key: 'description'
     },
     {
       title: t(`common.action`),
       dataIndex: 'action',
       key: 'action',
-      render: () => (
-        <Button type="link" onClick={publish}>发布</Button>
+      render: (_, record: any) => (
+        <Button type="link" onClick={() => publish(record)}>发布</Button>
       )
     }
   ];
-
-  const rowSelection: TableProps<any>['rowSelection'] = {
-    onChange: (selectedRowKeys: React.Key[], selectedRows: any[]) => {
-      console.log(selectedRowKeys, selectedRows)
-    },
-    getCheckboxProps: (record: any) => ({
-      disabled: false,
-      name: record.name
-    }),
-  }
 
   const Topsection = () => {
     return (
@@ -76,12 +67,13 @@ const ModelRelease = () => {
   };
 
   const mock = [
-    { id: 1, name: '异常检测训练', version: 'v1' },
-    { id: 2, name: '异常检测训练', version: 'v2' },
-    { id: 3, name: '异常检测训练', version: 'v3' },
+    { id: 7, name: '异常检测训练', description: '1' },
+    { id: 2, name: '异常检测训练', description: '2' },
+    { id: 3, name: '异常检测训练', description: '3' },
   ];
 
-  const publish = () => {
+  const publish = (record: any) => {
+    modalRef.current?.showModal({type: 'release', form: record})
     setPagination({
       current: 1,
       total: 0,
@@ -104,11 +96,11 @@ const ModelRelease = () => {
               dataSource={mock}
               rowKey='id'
               pagination={pagination}
-              rowSelection={{ type: 'checkbox', ...rowSelection }}
             />
           </div>
         </div>
       </SubLayout>
+      <ReleaseModal ref={modalRef} />
     </div>
   )
 };

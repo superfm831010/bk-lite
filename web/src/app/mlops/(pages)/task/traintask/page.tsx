@@ -10,11 +10,12 @@ import Icon from '@/components/icon';
 import TrainTaskModal from './traintaskModal';
 // import TrainTaskDrawer from './traintaskDrawer';
 import { useTranslation } from '@/utils/i18n';
-import { ModalRef, ColumnItem } from '@/app/mlops/types';
+import { ModalRef, ColumnItem, Option } from '@/app/mlops/types';
 import { TrainJob } from '@/app/mlops/types/task';
 import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
 import SubLayout from '@/components/sub-layout';
 import { JointContent } from 'antd/es/message/interface';
+import { DataSet } from '@/app/mlops/types/manage';
 const { Search } = Input;
 
 const getStatusColor = (value: string, TrainStatus: Record<string, string>) => {
@@ -30,9 +31,15 @@ const TrainTask = () => {
   const { convertToLocalizedTime } = useLocalizedTime();
   // const router = useRouter();
   // const path = usePathname();
-  const { getAnomalyTaskList, deleteAnomalyTrainTask, startAnomalyTrainTask } = useMlopsApi();
+  const {
+    getAnomalyTaskList,
+    deleteAnomalyTrainTask,
+    startAnomalyTrainTask,
+    getAnomalyDatasetsList,
+  } = useMlopsApi();
   const modalRef = useRef<ModalRef>(null);
   const [tableData, setTableData] = useState<TrainJob[]>([]);
+  const [datasetOptions, setDatasetOptions] = useState<Option[]>([]);
   // const [selectId, setSelectId] = useState<number | null>(null);
   // const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -157,6 +164,10 @@ const TrainTask = () => {
   }, []);
 
   useEffect(() => {
+    getDatasetList();
+  }, [])
+
+  useEffect(() => {
     getTasks();
   }, [pagination.current, pagination.pageSize]);
 
@@ -191,6 +202,17 @@ const TrainTask = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getDatasetList = async () => {
+    const data = await getAnomalyDatasetsList({});
+    const items = data.map((item: DataSet) => {
+      return {
+        value: item.id,
+        label: item.name
+      }
+    }) || [];
+    setDatasetOptions(items);
   };
 
   const fetchTaskList = useCallback(async (page: number = 1, pageSize: number = 10) => {
@@ -257,6 +279,11 @@ const TrainTask = () => {
     }
   };
 
+  const onRefresh = () => {
+    getTasks();
+    getDatasetList();
+  }
+
   // const onCancel = () => {
   //   setOpen(false);
   // };
@@ -280,7 +307,7 @@ const TrainTask = () => {
               <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow mr-2" onClick={() => handleAdd()}>
                 {t('common.add')}
               </Button>
-              <ReloadOutlined onClick={() => getTasks()} />
+              <ReloadOutlined onClick={onRefresh} />
             </div>
           </div>
           <div className="flex-1 relative">
@@ -299,7 +326,7 @@ const TrainTask = () => {
           </div>
         </SubLayout>
       </div>
-      <TrainTaskModal ref={modalRef} onSuccess={() => getTasks()} />
+      <TrainTaskModal ref={modalRef} onSuccess={() => onRefresh()} datasetOptions={datasetOptions} />
       {/* <TrainTaskDrawer open={open} selectId={selectId} onCancel={onCancel} /> */}
     </>
   );

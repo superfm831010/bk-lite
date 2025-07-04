@@ -97,6 +97,7 @@
   },
   "model-release": {
     "title": "能力发布",
-    "detail": "对训练完成的模型进行发布管理。"
+    "detail": "对训练完成的模型进行发布管理。",
+    "modalTitle": "选择模型版本"
   }
 }
