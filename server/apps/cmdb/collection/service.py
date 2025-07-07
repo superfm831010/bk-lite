@@ -21,7 +21,7 @@ from apps.cmdb.collection.constants import (
     K8S_DEPLOYMENT_ANNOTATIONS, K8S_REPLICASET_ANNOTATIONS, K8S_STATEFULSET_ANNOTATIONS, K8S_DAEMONSET_ANNOTATIONS,
     K8S_JOB_ANNOTATIONS, K8S_CRONJOB_ANNOTATIONS, POD_NODE_RELATION, VMWARE_CLUSTER, VMWARE_COLLECT_MAP,
     NETWORK_COLLECT, NETWORK_INTERFACES_RELATIONS, PROTOCOL_METRIC_MAP, ALIYUN_COLLECT_CLUSTER, HOST_COLLECT_METRIC,
-    REDIS_COLLECT_METRIC, MIDDLEWARE_METRIC_MAP, QCLOUD_COLLECT_CLUSTER,
+    MIDDLEWARE_METRIC_MAP, QCLOUD_COLLECT_CLUSTER, DB_COLLECT_METRIC_MAP,
 )
 from apps.cmdb.constants import INSTANCE
 from apps.cmdb.graph.neo4j import Neo4jClient
@@ -1450,68 +1450,6 @@ class HostCollectMetrics(CollectBase):
             self.result[self.model_id] = result
 
 
-class RedisCollectMetrics(CollectBase):
-    @property
-    def _metrics(self):
-        return REDIS_COLLECT_METRIC
-
-    def format_data(self, data):
-        """格式化数据"""
-        for index_data in data["result"]:
-            metric_name = index_data["metric"]["__name__"]
-            value = index_data["value"]
-            _time, value = value[0], value[1]
-            if not self.timestamp_gt:
-                if timestamp_gt_one_day_ago(_time):
-                    break
-                else:
-                    self.timestamp_gt = True
-
-            index_dict = dict(
-                index_key=metric_name,
-                index_value=value,
-                **index_data["metric"],
-            )
-
-            self.collection_metrics_dict[metric_name].append(index_dict)
-
-    @property
-    def model_field_mapping(self):
-        mapping = {
-            "inst_name": lambda data: f"{data['ip_addr']}-redis-{data['port']}",
-            "ip_addr": "ip_addr",
-            "port": "port",
-            "version": "version",
-            "install_path": "install_path",
-            "max_conn": "max_conn",
-            "max_mem": "max_mem",
-            "database_role": "database_role",
-        }
-
-        return mapping
-
-    def format_metrics(self):
-        for metric_key, metrics in self.collection_metrics_dict.items():
-            result = []
-            for index_data in metrics:
-                data = {}
-                for field, key_or_func in self.model_field_mapping.items():
-                    if isinstance(key_or_func, tuple):
-                        data[field] = key_or_func[0](index_data[key_or_func[1]])
-                    elif callable(key_or_func):
-                        data[field] = key_or_func(index_data)
-                    else:
-                        data[field] = index_data.get(key_or_func, "")
-                if data:
-                    result.append(data)
-            self.result[self.model_id] = result
-
-    def prom_sql(self):
-        sql = " or ".join(
-            "{}{{instance_id=\"{}\"}}".format(m, f"{self.task_id}_{self.inst_name}") for m in self._metrics)
-        return sql
-
-
 class MiddlewareCollectMetrics(CollectBase):
     @property
     def _metrics(self):
@@ -1620,8 +1558,8 @@ class MiddlewareCollectMetrics(CollectBase):
                 "catalina_path": "catalina_path",
                 "version": "version",
                 "xms": "xms",
-                "xmx":"xmx",
-                "max_perm_size":"max_perm_size",
+                "xmx": "xmx",
+                "max_perm_size": "max_perm_size",
                 "permsize": "permsize",
                 "log_path": "log_path",
                 "java_version": "java_version",
@@ -1959,3 +1897,106 @@ class QCloudCollectMetrics(CollectBase):
                 if data:
                     result.append(data)
             self.result[model_id] = result
+
+
+class DBCollectCollectMetrics(CollectBase):
+    """数据库 采集指标"""
+
+    @property
+    def _metrics(self):
+        assert self.model_id in DB_COLLECT_METRIC_MAP, f"{self.model_id} needs to be defined in DB_COLLECT_METRIC_MAP"
+        return DB_COLLECT_METRIC_MAP[self.model_id]
+
+    def format_data(self, data):
+        for index_data in data["result"]:
+            metric_name = index_data["metric"]["__name__"]
+            value = index_data["value"]
+            _time, value = value[0], value[1]
+            if not self.timestamp_gt:
+                if timestamp_gt_one_day_ago(_time):
+                    break
+                else:
+                    self.timestamp_gt = True
+
+            index_dict = dict(
+                index_key=metric_name,
+                index_value=value,
+                **index_data["metric"],
+            )
+
+            self.collection_metrics_dict[metric_name].append(index_dict)
+
+    def get_inst_name(self, data):
+        return f"{data['ip_addr']}-{self.model_id}-{data['port']}"
+
+    def format_data(self, data):
+        """格式化数据"""
+        for index_data in data["result"]:
+            metric_name = index_data["metric"]["__name__"]
+            value = index_data["value"]
+            _time, value = value[0], value[1]
+            if not self.timestamp_gt:
+                if timestamp_gt_one_day_ago(_time):
+                    break
+                else:
+                    self.timestamp_gt = True
+
+            index_dict = dict(
+                index_key=metric_name,
+                index_value=value,
+                **index_data["metric"],
+            )
+
+            self.collection_metrics_dict[metric_name].append(index_dict)
+
+    @property
+    def model_field_mapping(self):
+
+        mapping = {
+            "es": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "log_path": "log_path",
+                "data_path": "data_path",
+                "is_master": "is_master",
+                "node_name": "node_name",
+                "cluster_name": "cluster_name",
+                "java_version": "java_version",
+                "java_path": "java_path",
+                "conf_path": "conf_path",
+                "install_path": "install_path",
+            },
+            "redis": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "install_path": "install_path",
+                "max_conn": "max_conn",
+                "max_mem": "max_mem",
+                "database_role": "database_role",
+            }}
+        return mapping
+
+    def format_metrics(self):
+        for metric_key, metrics in self.collection_metrics_dict.items():
+            result = []
+            mapping = self.model_field_mapping.get(self.model_id, {})
+            for index_data in metrics:
+                data = {}
+                for field, key_or_func in mapping.items():
+                    if isinstance(key_or_func, tuple):
+                        data[field] = key_or_func[0](index_data[key_or_func[1]])
+                    elif callable(key_or_func):
+                        data[field] = key_or_func(index_data)
+                    else:
+                        data[field] = index_data.get(key_or_func, "")
+                if data:
+                    result.append(data)
+            self.result[self.model_id] = result
+
+    def prom_sql(self):
+        sql = " or ".join(m for m in self._metrics)
+        return sql

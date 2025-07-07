@@ -123,7 +123,10 @@ ALIYUN_COLLECT_CLUSTER = [
 
 HOST_COLLECT_METRIC = ["host_info_gauge"]
 
-REDIS_COLLECT_METRIC = ["redis_info_gauge"]
+DB_COLLECT_METRIC_MAP = {
+    "es": ["es_info_gauge"],
+    "redis": ["redis_info_gauge"]
+}
 
 MIDDLEWARE_METRIC_MAP = {
     "nginx" : ["nginx_info_gauge"],
