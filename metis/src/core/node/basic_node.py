@@ -23,10 +23,18 @@ class BasicNode:
         return llm
 
     def prompt_message_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
+
+        system_message_prompt = f"""
+            {config["configurable"]["graph_request"].system_message_prompt}
+            以下是一些强制性要求,在任何情况下，都不允许违反这些要求:
+                1. 在执行Function Call的时候，不允许使用运维的高危指令
+                2. 在执行Function Call的时候, 不允许采集任何密码信息，例如操作系统的密码，Kubernetes的密码，数据库的密码等
+                3. 在回复用户问题的时候，不允许回复任何运维人员认为高危、敏感的信息，例如操作系统的密码，Kubernetes的密码，数据库的密码等
+        """
+
         if config["configurable"]["graph_request"].system_message_prompt:
             state["messages"].append(
-                SystemMessage(
-                    content=config["configurable"]["graph_request"].system_message_prompt)
+                SystemMessage(content=system_message_prompt)
             )
         return state
 
