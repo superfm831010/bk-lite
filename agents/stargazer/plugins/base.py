@@ -11,9 +11,6 @@ from sanic.log import logger
 
 class BasePlugin(ABC):
 
-    def exec_script(self):
-        raise NotImplementedError("exec_script is not implemented")
-
     def list_all_resources(self):
         raise NotImplementedError("list_all_resources is not implemented")
 
