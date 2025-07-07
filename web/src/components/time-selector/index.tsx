@@ -49,7 +49,8 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
   } = props;
   const TIME_RANGE_LIST = useTimeRangeList();
   const FREQUENCY_LIST = useFrequencyList();
-  const latestValueRef = useRef<number[] | null>(null);
+  const rangePickerVauleRef = useRef<number[] | null>(null);
+  const selectValueRef = useRef<number | null>(clearable ? null : 15);
   const [frequency, setFrequency] = useState<number>(0);
   const [rangePickerOpen, setRangePickerOpen] = useState<boolean>(false);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
@@ -61,9 +62,13 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
     [Dayjs, Dayjs] | null
   >(defaultValue.rangePickerVaule);
 
-  // 引用时，可以通过ref调用以下方法
+  // 可以通过ref调用组件的以下方法
   useImperativeHandle(ref, () => ({
-    getValue: () => latestValueRef.current, // 获取组件当前的值
+    // 获取组件当前的值
+    getValue: () =>
+      selectValueRef.current
+        ? getRecentTimeRange()
+        : rangePickerVauleRef.current,
   }));
 
   useEffect(() => {
@@ -75,12 +80,21 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
       const _times = (defaultValue.rangePickerVaule || []).map((item) =>
         dayjs(item).valueOf()
       );
-      latestValueRef.current = _times;
+      rangePickerVauleRef.current = _times;
     }
     if (defaultValue.selectValue !== selectValue) {
+      selectValueRef.current = defaultValue.selectValue;
       setSelectValue(defaultValue.selectValue);
     }
   }, [defaultValue.rangePickerVaule, defaultValue.selectValue]);
+
+  const getRecentTimeRange = () => {
+    const beginTime: number = dayjs()
+      .subtract(selectValueRef.current as number, 'minute')
+      .valueOf();
+    const lastTime: number = dayjs().valueOf();
+    return [beginTime, lastTime];
+  };
 
   const labelRender: LabelRender = (props) => {
     const { label } = props;
@@ -120,9 +134,10 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
 
   const handleRangePickerChange: TimeRangePickerProps['onChange'] = (value) => {
     if (value) {
+      selectValueRef.current = 0;
       setSelectValue(0);
       const rangeTime = value.map((item) => dayjs(item).valueOf());
-      latestValueRef.current = rangeTime;
+      rangePickerVauleRef.current = rangeTime;
       onChange?.(rangeTime, 0);
       setRangePickerVaule(value as [Dayjs, Dayjs]);
       return;
@@ -134,15 +149,17 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
       dayjs().valueOf(),
     ];
     const originValue = clearable ? null : defaultValue.selectValue || 15;
+    selectValueRef.current = originValue;
     setSelectValue(originValue);
     setRangePickerVaule(null);
     const latestValue = clearable ? [] : rangeTime;
-    latestValueRef.current = latestValue;
+    rangePickerVauleRef.current = latestValue;
     onChange?.(latestValue, originValue);
   };
 
   const handleRangePickerOk: TimeRangePickerProps['onOk'] = (value) => {
     if (value && value.every((item) => !!item)) {
+      selectValueRef.current = 0;
       setSelectValue(0);
     }
   };
@@ -153,11 +170,12 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
       return;
     }
     setRangePickerVaule(null);
+    selectValueRef.current = value;
     setSelectValue(value);
     const rangeTime = value
       ? [dayjs().subtract(value, 'minute').valueOf(), dayjs().valueOf()]
       : [];
-    latestValueRef.current = rangeTime;
+    rangePickerVauleRef.current = rangeTime;
     onChange?.(rangeTime, value);
   };
 
