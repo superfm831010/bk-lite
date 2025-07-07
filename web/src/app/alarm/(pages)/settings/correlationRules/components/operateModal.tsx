@@ -1,13 +1,22 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from '@/utils/i18n';
+import { useSettingApi } from '@/app/alarm/api/settings';
 import type {
   AggregationRule,
   CorrelationRule,
 } from '@/app/alarm/types/settings';
-import { Drawer, Form, Input, Button, Select, message } from 'antd';
-import { useTranslation } from '@/utils/i18n';
-import { useSettingApi } from '@/app/alarm/api/settings';
+import {
+  Drawer,
+  Form,
+  Input,
+  Button,
+  Select,
+  Radio,
+  InputNumber,
+  message,
+} from 'antd';
 
 interface OperateModalProps {
   open: boolean;
@@ -25,17 +34,30 @@ const OperateModal: React.FC<OperateModalProps> = ({
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [aggOptions, setAggOptions] = useState<
-    { label: string; value: string; id: number; disabled?: boolean }[]
-  >([]);
   const [optionsLoading, setOptionsLoading] = useState(false);
   const selectedType = Form.useWatch('ruleId', form);
+  const windowType = Form.useWatch('windowType', form);
   const { getAggregationRule, createCorrelationRule, updateCorrelationRule } =
     useSettingApi();
+  const [aggOptions, setAggOptions] = useState<
+    {
+      label: string;
+      value: string;
+      id: number;
+      image: string;
+      describeContent: string;
+      disabled?: boolean;
+    }[]
+  >([]);
+
+  const selOption = aggOptions.find((opt) => opt.value === selectedType);
+
   const locale = localStorage.getItem('locale') || 'en';
-  const imageMap: Record<string, string> = {
-    high_level_event_aggregation: '/app/high_level_event_aggregation.png',
-    website_monitoring_alert: '/app/website_monitoring_alert.png',
+
+  const windowImageMap: Record<string, string> = {
+    sliding: '/app/sliding_window.png',
+    fixed: '/app/fixed_window.png',
+    session: '/app/session_window.png',
   };
 
   useEffect(() => {
@@ -47,15 +69,46 @@ const OperateModal: React.FC<OperateModalProps> = ({
 
   useEffect(() => {
     if (open && currentRow && aggOptions.length) {
+
+      const winType = currentRow.window_type;
+      let winTime: number | undefined;
+      
       const initialRuleId = aggOptions.find(
         (opt) => opt.id === currentRow.aggregation_rules?.[0]
       )?.value;
+
+      if (winType === 'session') {
+        winTime = currentRow.session_timeout
+          ? parseInt(currentRow.session_timeout, 10)
+          : undefined;
+      } else {
+        winTime = currentRow.window_size
+          ? parseInt(currentRow.window_size, 10)
+          : undefined;
+      }
       form.setFieldsValue({
         name: currentRow.name,
         ruleId: initialRuleId,
+        windowType: winType,
+        windowTime: winTime,
       });
     }
   }, [aggOptions, open, currentRow, form]);
+
+  useEffect(() => {
+    if (!currentRow && selectedType) {
+      let defaultType = 'sliding';
+      let defaultTime = 10;
+      if (selectedType === 'critical_event_aggregation') {
+        defaultType = 'fixed';
+        defaultTime = 1;
+      } else if (selectedType === 'error_scenario_handling') {
+        defaultType = 'session';
+        defaultTime = 10;
+      }
+      form.setFieldsValue({ windowType: defaultType, windowTime: defaultTime });
+    }
+  }, [selectedType, form, currentRow]);
 
   const fetchAggregationRule = async () => {
     setOptionsLoading(true);
@@ -69,7 +122,10 @@ const OperateModal: React.FC<OperateModalProps> = ({
         (res?.items || []).map((item: AggregationRule) => ({
           id: item.id,
           value: item.rule_id,
-          label: locale === 'zh' ? item.description : item.name,
+          label: item.name,
+          image: item.image,
+          describeContent:
+            locale === 'en' ? item.description?.en : item.description?.zh,
           disabled: !!item.correlation_name,
         }))
       );
@@ -83,25 +139,30 @@ const OperateModal: React.FC<OperateModalProps> = ({
   const handleFinish = async (values: any) => {
     setSubmitLoading(true);
     const selectedOpt = aggOptions.find((opt) => opt.value === values.ruleId);
-    const params = {
+    const apiWinType = values.windowType;
+    const timeStr = `${values.windowTime}min`;
+    const params: any = {
       name: values.name,
       aggregation_rules: [selectedOpt?.id],
       scope: 'all',
       rule_type: 'alert',
+      window_type: apiWinType,
     };
+    if (apiWinType === 'session') {
+      params.session_timeout = timeStr;
+    } else {
+      params.window_size = timeStr;
+    }
     try {
       if (currentRow?.id) {
         await updateCorrelationRule(currentRow.id, params);
-        message.success(t('common.successOperate'));
       } else {
         await createCorrelationRule(params);
-        message.success(t('common.successOperate'));
       }
+      message.success(t('common.successOperate'));
       form.resetFields();
       onSuccess();
       onClose();
-    } catch {
-      message.error(t('common.operateFailed'));
     } finally {
       setSubmitLoading(false);
     }
@@ -156,23 +217,20 @@ const OperateModal: React.FC<OperateModalProps> = ({
             loading={optionsLoading}
             placeholder={t('common.selectMsg')}
             options={aggOptions}
-            disabled={!!currentRow}
+            disabled={!!currentRow || optionsLoading}
           />
         </Form.Item>
-        {selectedType && imageMap[selectedType] ? (
-          <Form.Item
-            label={t('settings.correlation.explain')}
-            className="ml-10"
-            labelCol={{ span: 24 }}
-          >
+
+        {selOption && (
+          <Form.Item className="ml-20 mt-[-10px]" labelCol={{ span: 24 }}>
             <div className="border border-gray-300 p-4 rounded-lg space-y-4">
               <div>
                 <div className="font-medium mb-2">
                   {t('settings.correlation.example')}
                 </div>
                 <img
-                  src={imageMap[selectedType || 'high_level_event_aggregation']}
-                  alt={selectedType}
+                  src={selOption.image}
+                  alt={selOption.value}
                   className="w-full h-auto"
                 />
               </div>
@@ -181,16 +239,71 @@ const OperateModal: React.FC<OperateModalProps> = ({
                   {t('settings.correlation.describe')}
                 </div>
                 <p style={{ whiteSpace: 'pre-line' }}>
-                  {selectedType === 'high_level_event_aggregation'
-                    ? t('settings.correlation.dimDescribeContent')
-                    : t('settings.correlation.bizDescribeContent')}
+                  {selOption.describeContent}
                 </p>
               </div>
             </div>
           </Form.Item>
-        ) : null}
+        )}
         <Form.Item name="scope" label={t('settings.correlation.scope')}>
           <span>{t('common.all')}</span>
+        </Form.Item>
+        <Form.Item
+          name="windowType"
+          label={t('settings.correlation.windowType')}
+          initialValue="sliding"
+          className="mb-2"
+          rules={[{ required: true, message: t('common.selectMsg') }]}
+        >
+          <Radio.Group>
+            <Radio value="sliding">
+              {t('settings.correlation.slidingWindow')}
+            </Radio>
+            <Radio value="fixed">{t('settings.correlation.fixedWindow')}</Radio>
+            <Radio value="session">
+              {t('settings.correlation.sessionWindow')}
+            </Radio>
+          </Radio.Group>
+        </Form.Item>
+        {windowType && windowImageMap[windowType] && (
+          <Form.Item className="ml-20" labelCol={{ span: 24 }}>
+            <div className="border border-gray-300 p-4 rounded-lg space-y-4">
+              <div>
+                <div className="font-medium mb-2">
+                  {t('settings.correlation.example')}
+                </div>
+                <img
+                  src={windowImageMap[windowType]}
+                  alt={windowType}
+                  className="w-full h-auto"
+                />
+              </div>
+              <div>
+                <div className="font-medium mb-2">
+                  {t('settings.correlation.describe')}
+                </div>
+                <p style={{ whiteSpace: 'pre-line', textIndent: '2ch' }}>
+                  {t(`settings.correlation.${windowType}Msg`)}
+                </p>
+              </div>
+            </div>
+          </Form.Item>
+        )}
+        <Form.Item
+          name="windowTime"
+          initialValue={10}
+          rules={[{ required: true, message: t('common.inputMsg') }]}
+          label={
+            windowType === 'session'
+              ? t('settings.correlation.timeOut')
+              : t('settings.correlation.windowTime')
+          }
+        >
+          <InputNumber
+            min={0}
+            style={{ width: '140px' }}
+            addonAfter={t('settings.correlation.min')}
+          />
         </Form.Item>
       </Form>
     </Drawer>

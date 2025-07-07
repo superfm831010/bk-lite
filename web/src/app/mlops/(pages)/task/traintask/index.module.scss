@@ -1,0 +1,55 @@
+.sideMenuLayout {
+  height: var(--custom-height, calc(100vh - 68px));
+  overflow: hidden;
+  color: var(--color-text-1);
+
+  .sectionContainer {
+    background: var( --color-bg);
+  }
+
+  .sectionContext {
+    height: 100%;
+    overflow: auto;
+  }
+}
+
+.sideMenu {
+  color: var(--color-components-side-nav-text);
+
+  .introduction {
+    background: var( --color-bg);
+  }
+
+  .nav {
+    background: var( --color-bg);
+
+    li {
+      &:hover {
+        background: var(--color-secondary);
+      }
+
+      &.active {
+        color: var(--color-text-active);
+        background: var(--color-primary-bg-active);
+      }
+    }
+  }
+}
+
+.segmented {
+  :global {
+    .ant-segmented {
+      background: transparent;
+      color: var(--color-text-1);
+
+      .ant-segmented-item {
+        margin-right: 8px;
+        padding: 3px 6px !important;
+      }
+
+      .ant-segmented-item-selected {
+        color: var(--color-primary);
+      }
+    }
+  }
+}

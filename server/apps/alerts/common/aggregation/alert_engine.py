@@ -448,7 +448,6 @@ class RuleEngine:
 
         missing_fields = [field for field in self.required_fields if field not in events.columns]
         if missing_fields:
-            logger.warning(f"Missing required fields for grouping: {missing_fields}")
             # 为缺失的字段填充默认值
             for field in missing_fields:
                 events[field] = 'unknown'
@@ -503,7 +502,6 @@ class RuleEngine:
         sorted_data = json.dumps(fingerprint_data, sort_keys=True, ensure_ascii=False)
         fingerprint = hashlib.md5(sorted_data.encode('utf-8')).hexdigest()
 
-        logger.debug(f"Generated fingerprint: {fingerprint} for data: {fingerprint_data}")
         return fingerprint
 
     def _check_instance_alert_status(self, instance_events: pd.DataFrame,

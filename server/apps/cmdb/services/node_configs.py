@@ -5,9 +5,12 @@
 import ipaddress
 from abc import abstractmethod, ABCMeta
 
+from jinja2 import Environment, FileSystemLoader, DebugUndefined
+
 
 class BaseNodeParams(metaclass=ABCMeta):
     PLUGIN_MAP = {}  # 插件名称映射
+    plugin_name = None
     _registry = {}  # 自动收集支持的 model_id 对应的子类
     BASE_INTERVAL_MAP = {"vmware_vc": 300, "network": 300, "network_topo": 300, "mysql_info": 300,
                          "aliyun_account": 300, "qcloud": 300, }  # 默认的采集间隔时间
@@ -122,26 +125,51 @@ class BaseNodeParams(metaclass=ABCMeta):
         """
         生成节点管理创建配置的参数
         """
+        if self.plugin_name is None:
+            raise ValueError("插件名称未设置，请检查 plugin_name 是否正确")
+
         node = self.instance.access_point[0]
         nodes = []
         for host in self.hosts:
-            _url = self.base_path
+            content = {
+                "instance_id": str(self.get_instance_id(host)),
+                "interval": self.BASE_INTERVAL_MAP.get(self.model_id, 300),
+                "instance_type": self.get_instance_type,
+                "timeout": self.timeout,
+                "response_timeout": self.response_timeout,
+                "headers": self.custom_headers(host=host),
+                "config_type": self.model_id
+            }
+            jinja_context = self.render_template(context=content)
             nodes.append({
-                "id": node["id"],
-                "configs": [{
-                    "id": self.get_instance_id(host),
-                    "url": _url,
-                    "collect_type": "http",
-                    "type": "prometheus",
-                    "instance_id": str((self.get_instance_id(host),)),
-                    "interval": self.BASE_INTERVAL_MAP.get(self.model_id, 300),
-                    "instance_type": self.get_instance_type,
-                    "timeout": self.timeout,
-                    "response_timeout": self.response_timeout,
-                    "custom_headers": self.custom_headers(host=host)
-                }]
+                "id": self.get_instance_id(host),
+                "collect_type": "http",
+                "type": self.model_id,
+                "content": jinja_context,
+                "node_id": node["id"],
+                "collector_name": "Telegraf",
+                "env_config": {}
             })
-        return {"collector": "Telegraf", "nodes": nodes}
+        return nodes
+
+    @staticmethod
+    def to_toml_dict(d):
+        if not d:
+            return "{}"
+        return "{ " + ", ".join(f'"{k}" = "{v}"' for k, v in d.items()) + " }"
+
+    def render_template(self, context: dict):
+        """
+        渲染指定目录下的 j2 模板文件。
+        :param context: 用于模板渲染的变量字典
+        :return: 渲染后的配置字符串
+        """
+        file_name = "base.child.toml.j2"
+        template_dir = "apps/cmdb/plugins/Telegraf/http/"
+        env = Environment(loader=FileSystemLoader(template_dir), undefined=DebugUndefined)
+        env.filters['to_toml'] = self.to_toml_dict
+        template = env.get_template(file_name)
+        return template.render(context)
 
     def delete_params(self):
         """
@@ -161,11 +189,12 @@ class BaseNodeParams(metaclass=ABCMeta):
 
 class VmwareNodeParams(BaseNodeParams):
     supported_model_id = "vmware_vc"  # 通过此属性自动注册
+    plugin_name = "vmware_info"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # 当 instance.model_id 为 "network" 时，PLUGIN_MAP 配置为 "snmp_facts"
-        self.PLUGIN_MAP.update({self.model_id: "vmware_info"})
+        self.PLUGIN_MAP.update({self.model_id: self.plugin_name})
         self.host_field = "hostname"
 
     def set_credential(self, *args, **kwargs):
@@ -189,11 +218,12 @@ class VmwareNodeParams(BaseNodeParams):
 
 class NetworkNodeParams(BaseNodeParams):
     supported_model_id = "network"  # 通过此属性自动注册
+    plugin_name = "snmp_facts"  # 插件名称
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # 当 instance.model_id 为 "vmware_vc" 时，PLUGIN_MAP 配置为 "vmware_info"
-        self.PLUGIN_MAP.update({self.model_id: "snmp_facts"})
+        self.PLUGIN_MAP.update({self.model_id: self.plugin_name})
         self.host_field = "ip_addr"
 
     def set_credential(self, *args, **kwargs):
@@ -244,11 +274,12 @@ class NetworkNodeParams(BaseNodeParams):
 
 class MysqlNodeParams(BaseNodeParams):
     supported_model_id = "mysql"  # 通过此属性自动注册
+    plugin_name = "mysql_info"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # 当 instance.model_id 为 "vmware_vc" 时，PLUGIN_MAP 配置为 "vmware_info"
-        self.PLUGIN_MAP.update({self.model_id: "mysql_info"})
+        self.PLUGIN_MAP.update({self.model_id: self.plugin_name})
         self.host_field = "ip_addr"
 
     def set_credential(self, *args, **kwargs):
@@ -271,10 +302,11 @@ class MysqlNodeParams(BaseNodeParams):
 
 class AliyunNodeParams(BaseNodeParams):
     supported_model_id = "aliyun_account"
+    plugin_name = "aliyun_info"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.PLUGIN_MAP.update({self.model_id: "aliyun_info"})
+        self.PLUGIN_MAP.update({self.model_id: self.plugin_name})
 
     def set_credential(self, *args, **kwargs):
         regions_id = self.credential["regions"]["resource_id"]
@@ -354,9 +386,6 @@ class RedisNodeParams(BaseNodeParams):
 
 
 class NginxNodeParams(BaseNodeParams):
-    def get_instance_id(self, instance):
-        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
-
     supported_model_id = "nginx"
     plugin_name = "nginx_info"
 
@@ -365,6 +394,9 @@ class NginxNodeParams(BaseNodeParams):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.host_field = "ip_addr"
+
+    def get_instance_id(self, instance):
+        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
 
     def set_credential(self, *args, **kwargs):
         host = kwargs["host"]

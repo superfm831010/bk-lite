@@ -1,3 +1,4 @@
+import copy
 import os
 from typing import List
 
@@ -119,11 +120,8 @@ class ElasticSearchRag(BaseRag):
 
     def list_index_document(self, req: DocumentListRequest):
         # Build filter query for specific metadata
-        metadata_filter = []
-        for key, value in req.metadata_filter.items():
-            metadata_filter.append(
-                {"term": {f"metadata.{key}.keyword": value}}
-            )
+        metadata_filter = ElasticsearchQueryBuilder.build_metadata_filter(
+            req.metadata_filter)
 
         # Calculate offset from page and size
         offset = (req.page - 1) * req.size if req.page > 0 else 0
@@ -314,19 +312,38 @@ class ElasticSearchRag(BaseRag):
                 return search_result  # Return original if response processing fails
 
     def search(self, req: DocumentRetrieverRequest) -> List[Document]:
-        # 构建检索器 (使用固定的size)
-        documents_retriever = ElasticsearchRetriever.from_es_params(
-            index_name=req.index_name,
-            body_func=lambda x: ElasticsearchQueryBuilder.build_query(req),
-            content_field="text",
-            url=core_settings.elasticsearch_url,
-            username="elastic",
-            password=core_settings.elasticsearch_password,
-        )
-
         # 执行搜索
-        search_result = documents_retriever.invoke(req.search_query)
-        search_result = self._process_search_result(search_result)
+        search_result = []
+        if req.enable_naive_rag is True:
+            naive_rag_request = copy.deepcopy(req)
+            naive_rag_request.metadata_filter['qa_answer__missing'] = True
+            documents_retriever = ElasticsearchRetriever.from_es_params(
+                index_name=req.index_name,
+                body_func=lambda x: ElasticsearchQueryBuilder.build_query(
+                    naive_rag_request),
+                content_field="text",
+                url=core_settings.elasticsearch_url,
+                username="elastic",
+                password=core_settings.elasticsearch_password,
+            )
+            rs = documents_retriever.invoke(req.search_query)
+            rs = self._process_search_result(rs)
+            search_result.extend(rs)
+        if req.enable_qa_rag is True:
+            qa_rag_request = copy.deepcopy(req)
+            qa_rag_request.metadata_filter['qa_answer__exists'] = True
+            documents_retriever = ElasticsearchRetriever.from_es_params(
+                index_name=req.index_name,
+                body_func=lambda x: ElasticsearchQueryBuilder.build_query(
+                    qa_rag_request),
+                content_field="text",
+                url=core_settings.elasticsearch_url,
+                username="elastic",
+                password=core_settings.elasticsearch_password,
+            )
+            rs = documents_retriever.invoke(req.search_query)
+            rs = self._process_search_result(rs)
+            search_result.extend(rs)
 
         # 重排序处理
         search_result = self._rerank_results(req, search_result)

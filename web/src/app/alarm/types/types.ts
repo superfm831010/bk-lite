@@ -110,6 +110,17 @@ export interface TimeLineItem {
   children: ReactNode;
 }
 
+export interface AlarmLogItem {
+  id: number;
+  created_at: string;
+  operator: string;
+  action: 'add' | 'modify' | 'delete' | 'execute';
+  target_type: string;
+  operator_object: string;
+  target_id: string;
+  overview: string;
+}
+
 export interface ViewQueryKeyValuePairs {
   keys: string[];
   values: string[];

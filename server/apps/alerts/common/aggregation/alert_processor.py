@@ -281,18 +281,6 @@ class AlertProcessor:
         """获取规则统计信息"""
         return self.rule_manager.get_rule_statistics()
 
-    def add_custom_rule(self, rule_config: Dict[str, Any]) -> bool:
-        """添加自定义规则"""
-        return self.rule_manager.add_rule(rule_config)
-
-    def update_rule(self, rule_name: str, rule_config: Dict[str, Any]) -> bool:
-        """更新规则"""
-        return self.rule_manager.update_rule(rule_name, rule_config)
-
-    def remove_rule(self, rule_name: str) -> bool:
-        """删除规则"""
-        return self.rule_manager.remove_rule(rule_name)
-
     def reload_rules(self):
         """重新加载规则"""
         self.rule_manager.reload_rules()
@@ -319,8 +307,8 @@ class AlertProcessor:
     def main(self):
         """主流程方法"""
         add_alert_list, update_alert_list = self.process()
-        logger.info("==add_alert_list data={}==".format(add_alert_list))
-        logger.info("==update_alert_list data={}==".format(update_alert_list))
+        logger.info("==add_alert_list data={}==".format([i.get("event_ids") for i in add_alert_list]))
+        logger.info("==update_alert_list data={}==".format([i.get("event_ids") for i in update_alert_list]))
         if add_alert_list:
             self.bulk_create_alerts(alerts=add_alert_list)
             self.alert_auto_assign(alert_id_list=[alert['alert_id'] for alert in add_alert_list])

@@ -55,6 +55,12 @@ class QuotaRuleViewSet(viewsets.ModelViewSet):
         skill_count, used_skill_count, is_skill_uniform = client.get_skill_quota()
         bot_count, used_bot_count, is_bot_uniform = client.get_bot_quota()
         token_set = client.get_token_quota()
+        if all_file_size == -1:
+            all_file_size = 0
+        if skill_count == -1:
+            skill_count = 0
+        if bot_count == -1:
+            bot_count = 0
         return_data = {
             "used_file_size": used_file_size,
             "is_file_uniform": is_file_uniform,

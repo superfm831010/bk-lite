@@ -10,10 +10,11 @@ from django.utils import timezone
 from django.db import transaction
 
 from apps.alerts.error import AlertNotFoundError
-from apps.alerts.models import Alert, AlertAssignment
-from apps.alerts.constants import AlertStatus, AlertAssignmentMatchType
+from apps.alerts.models import Alert, AlertAssignment, OperatorLog
+from apps.alerts.constants import AlertStatus, AlertAssignmentMatchType, LogAction, LogTargetType
 from apps.alerts.service.alter_operator import AlertOperator
 from apps.alerts.service.reminder_service import ReminderService
+from apps.alerts.service.un_dispatch import UnDispatchService
 from apps.core.logger import alert_logger as logger
 
 
@@ -130,12 +131,39 @@ class AlertAssignmentOperator:
                     else:
                         results["failed_alerts"] += 1
 
+                try:
+                    self._batch_create_log(assignment, matched_alert_ids)
+                except Exception as log_error:
+                    logger.error(f"Error creating logs for assignment {assignment.id}: {str(log_error)}")
+
             except Exception as e:
                 logger.error(f"Error processing assignment {assignment.id}: {str(e)}")
                 continue
 
         logger.info(f"Assignment completed: {results}")
         return results
+
+    @staticmethod
+    def _batch_create_log(assignment: AlertAssignment, alert_ids: List[int]) -> None:
+        """
+        批量创建分派日志记录
+        Args:
+            assignment: 分派策略
+            alert_ids: 告警ID列表
+        """
+        bulk_data = []
+        for alert_id in alert_ids:
+            bulk_data.append(
+                OperatorLog(
+                    action=LogAction.MODIFY,
+                    target_type=LogTargetType.ALERT,
+                    operator="system",
+                    operator_object="告警处理-自动分派",
+                    target_id=alert_id,
+                    overview=f"告警自动分派，分派策略ID [{assignment.id}] 策略名称 [{assignment.name}] 分派人员 {assignment.personnel}",
+                )
+            )
+        OperatorLog.objects.bulk_create(bulk_data)
 
     def _batch_find_matching_alerts(self, assignment: AlertAssignment, excluded_ids: set = None) -> List[int]:
         """
@@ -478,4 +506,21 @@ def execute_auto_assignment_for_alerts(alert_ids: List[str]) -> Dict[str, Any]:
     operator = AlertAssignmentOperator(alert_ids)
     result = operator.execute_auto_assignment()
     logger.info(f"=== Auto assignment completed: {result} ===")
+    not_assignment_ids = set(alert_ids) - set(result.get("assignment_results", []))
+    if not_assignment_ids:
+        # 去进行兜底分派 使用全局分派 每60分钟分派一次 知道告警被相应后结束
+        not_assignment_alert_notify(not_assignment_ids)
+
     return result
+
+
+def not_assignment_alert_notify(alert_ids):
+    """
+    获取未分派告警通知设置
+    :return: SystemSetting 实例
+    """
+    alert_instances = list(Alert.objects.filter(alert_id__in=alert_ids, status=AlertStatus.UNASSIGNED))
+    from apps.alerts.tasks import sync_notify
+    params = UnDispatchService.notify_un_dispatched_alert_params_format(alerts=alert_instances)
+    for notify_people, channel, title, content, alerts in params:
+        sync_notify.delay(notify_people, channel, title, content)

@@ -33,11 +33,11 @@ class FileKnowledgeViewSet(viewsets.ModelViewSet):
                         "message": _(f"File size exceeds quota limit. Available size: {no_used_file_size} MB"),
                     }
                 )
-        result = self.import_file_knowledge(files, kwargs, request.user.username)
+        result = self.import_file_knowledge(files, kwargs, request.user.username, request.user.domain)
         return JsonResponse(result)
 
     @staticmethod
-    def import_file_knowledge(files, kwargs, username):
+    def import_file_knowledge(files, kwargs, username, domain):
         file_knowledge_list = []
         try:
             for file_obj in files:
@@ -47,7 +47,7 @@ class FileKnowledgeViewSet(viewsets.ModelViewSet):
                     continue
                 kwargs["name"] = title
                 kwargs["knowledge_source_type"] = "file"
-                new_doc = KnowledgeDocumentUtils.get_new_document(kwargs, username)
+                new_doc = KnowledgeDocumentUtils.get_new_document(kwargs, username, domain)
                 content_file = ContentFile(file_obj.read(), name=title)
                 file_knowledge_list.append(FileKnowledge(file=content_file, knowledge_document_id=new_doc.id))
             objs = FileKnowledge.objects.bulk_create(file_knowledge_list, batch_size=10)

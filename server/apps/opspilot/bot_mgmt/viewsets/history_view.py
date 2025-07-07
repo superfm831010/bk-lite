@@ -149,7 +149,7 @@ class HistoryViewSet(viewsets.ModelViewSet):
         }
         with transaction.atomic():
             tag_obj = self.get_or_create_tag(kwargs)
-            new_doc = KnowledgeDocumentUtils.get_new_document(params, request.user.username)
+            new_doc = KnowledgeDocumentUtils.get_new_document(params, request.user.username, request.user.domain)
             ManualKnowledge.objects.create(
                 knowledge_document_id=new_doc.id,
                 content=kwargs.get("content", ""),

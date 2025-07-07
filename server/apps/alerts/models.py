@@ -14,7 +14,8 @@ from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
 from apps.alerts.constants import AlertsSourceTypes, AlertAccessType, EventStatus, AlertOperate, \
     AlertStatus, EventAction, LevelType, AlertAssignmentMatchType, AlertShieldMatchType, IncidentStatus, \
-    IncidentOperate, CorrelationRulesScope, CorrelationRulesType, AggregationRuleType
+    IncidentOperate, CorrelationRulesScope, CorrelationRulesType, AggregationRuleType, NotifyResultStatus, \
+    LogTargetType, LogAction
 from apps.alerts.utils.util import gen_app_secret
 
 
@@ -315,3 +316,60 @@ class CorrelationRules(MaintainerInfo, TimeInfo):
 
     def __str__(self):
         return self.name
+
+
+# 通知结果存储
+class NotifyResult(models.Model):
+    """通知结果"""
+    notify_people = JSONField(default=list, help_text="通知人员")
+    notify_channel = models.CharField(max_length=100, null=True, blank=True, help_text="通知渠道")
+    notify_channel_name = models.CharField(max_length=100, null=True, blank=True, help_text="通知渠道名称")
+    notify_time = models.DateTimeField(auto_now_add=True, help_text="通知时间")
+    notify_result = models.CharField(max_length=30, choices=NotifyResultStatus.CHOICES, help_text="通知结果")
+    notify_object = models.CharField(max_length=100, null=True, blank=True, help_text="通知对象ID")
+    notify_type = models.CharField(max_length=50, null=True, blank=True, help_text="通知类型")
+
+    class Meta:
+        db_table = 'alerts_notify_result'
+        verbose_name = '通知结果'
+        verbose_name_plural = '通知结果'
+
+    def __str__(self):
+        return f"NotifyResult for {self.notify_object} at {self.notify_time} - {self.notify_result}"
+
+
+class SystemSetting(TimeInfo):
+    """系统设置模型"""
+    key = models.CharField(max_length=100, unique=True, help_text="设置键")
+    value = JSONField(help_text="设置值", default=dict)
+    description = models.TextField(null=True, blank=True, help_text="设置描述")
+    is_activate = models.BooleanField(default=False, db_index=True, help_text="是否启用")
+    is_build = models.BooleanField(default=True, db_index=True, help_text="是否为内置设置")
+
+    class Meta:
+        db_table = 'alerts_system_setting'
+        verbose_name = '系统设置'
+        verbose_name_plural = '系统设置'
+
+    def __str__(self):
+        return self.key
+
+
+class OperatorLog(models.Model):
+    """操作日志模型"""
+    operator = models.CharField(max_length=64, default="admin", help_text="操作人")
+    action = models.CharField(max_length=32, choices=LogAction.CHOICES, help_text="操作类型")
+    target_type = models.CharField(max_length=32, choices=LogTargetType.CHOICES, default=LogTargetType.SYSTEM,
+                                   help_text="目标类型")
+    operator_object = models.CharField(max_length=100, null=True, blank=True, help_text="操作对象")
+    target_id = models.CharField(max_length=100, null=True, blank=True, help_text="目标ID")
+    overview = models.TextField(null=True, blank=True, help_text="操作概述")
+    created_at = models.DateTimeField(help_text="Created Time", auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = 'alerts_operator_log'
+        verbose_name = '操作日志'
+        verbose_name_plural = '操作日志'
+
+    def __str__(self):
+        return f"{self.operator} - {self.action} on {self.target_type}({self.target_id})"

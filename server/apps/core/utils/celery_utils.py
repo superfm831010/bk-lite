@@ -1,6 +1,7 @@
 import json
 
 from django_celery_beat.models import CrontabSchedule, IntervalSchedule, PeriodicTask
+from apps.core.logger import opspilot_logger as logger
 
 
 def crontab_format(value_type: str, value: str):
@@ -27,47 +28,63 @@ class CeleryUtils:
                                        enabled=True):
         """
         创建或更新周期任务
-        :param name: 任务名称
-        :param crontab: crontab表达式，如：'0 0 * * *'，默认为None
-        :param interval: 间隔时间，如：60（秒），默认为None
-        :param task: 任务函数，如：'app.tasks.send_email'，默认为None
-        :param args: 任务函数的位置参数，如：(1, 2, 3)，默认为None
-        :param kwargs: 任务函数的关键字参数，如：{'to': 'example@example.com', 'subject': 'Hello'}，默认为None
-        :param enabled: 是否启用该任务，默认为True
         """
+        logger.info(f"创建或更新周期任务: name={name}, crontab={crontab}, interval={interval}, task={task}, enabled={enabled}")
+        
         if crontab:
             minute, hour, day_of_month, month_of_year, day_of_week = crontab.split()
-            data = dict(
+            schedule_data = dict(
                 minute=minute,
                 hour=hour,
                 day_of_month=day_of_month,
                 month_of_year=month_of_year,
                 day_of_week=day_of_week,
             )
-            schedule, _ = CrontabSchedule.objects.get_or_create(**data, defaults=data)
+            schedule, created = CrontabSchedule.objects.get_or_create(**schedule_data, defaults=schedule_data)
+            schedule_type = "crontab"
         elif interval:
-            data = dict(every=interval, period='seconds')
-            schedule, _ = IntervalSchedule.objects.get_or_create(**data, defaults=data)
+            schedule_data = dict(every=interval, period='seconds')
+            schedule, created = IntervalSchedule.objects.get_or_create(**schedule_data, defaults=schedule_data)
+            schedule_type = "interval"
         else:
             raise ValueError('Either crontab or interval must be provided')
 
         defaults = dict(
-            name=name,
             task=task,
             args=json.dumps(args) if args else '[]',
             kwargs=json.dumps(kwargs) if kwargs else '{}',
             enabled=enabled,
-            crontab=schedule,
         )
-        PeriodicTask.objects.update_or_create(name=name, defaults=defaults)
+        
+        if schedule_type == "crontab":
+            defaults['crontab'] = schedule
+            defaults['interval'] = None
+        else:
+            defaults['interval'] = schedule
+            defaults['crontab'] = None
+
+        task_obj, task_created = PeriodicTask.objects.update_or_create(name=name, defaults=defaults)
+        
+        action = "创建" if task_created else "更新"
+        logger.info(f"{action}周期任务成功: {name}")
+        
+        return task_obj
 
     @staticmethod
     def delete_periodic_task(name):
         """
         删除周期任务
-        :param name: 任务名称
         """
-        PeriodicTask.objects.filter(name=name).delete()
+        try:
+            deleted_count, _ = PeriodicTask.objects.filter(name=name).delete()
+            if deleted_count > 0:
+                logger.info(f"删除周期任务成功: {name}")
+            else:
+                logger.warning(f"未找到要删除的周期任务: {name}")
+            return deleted_count
+        except Exception as e:
+            logger.error(f"删除周期任务失败: {name}, 错误: {str(e)}")
+            raise
 
     @staticmethod
     def get_periodic_task(name):
@@ -95,10 +112,18 @@ class CeleryUtils:
         启用周期任务
         :param name: 任务名称
         """
-        task = CeleryUtils.get_periodic_task(name)
-        if task:
+        try:
+            task = PeriodicTask.objects.get(name=name)
             task.enabled = True
             task.save()
+            logger.info(f"启用周期任务成功: {name}")
+            return True
+        except PeriodicTask.DoesNotExist:
+            logger.warning(f"要启用的周期任务不存在: {name}")
+            return False
+        except Exception as e:
+            logger.error(f"启用周期任务失败: {name}, 错误: {str(e)}")
+            raise
 
     @staticmethod
     def disable_periodic_task(name):
@@ -106,7 +131,28 @@ class CeleryUtils:
         禁用周期任务
         :param name: 任务名称
         """
-        task = CeleryUtils.get_periodic_task(name)
-        if task:
+        try:
+            task = PeriodicTask.objects.get(name=name)
             task.enabled = False
             task.save()
+            logger.info(f"禁用周期任务成功: {name}")
+            return True
+        except PeriodicTask.DoesNotExist:
+            logger.warning(f"要禁用的周期任务不存在: {name}")
+            return False
+        except Exception as e:
+            logger.error(f"禁用周期任务失败: {name}, 错误: {str(e)}")
+            raise
+
+    @staticmethod
+    def is_task_enabled(name):
+        """
+        检查任务是否启用
+        :param name: 任务名称
+        :return: True/False 或 None（任务不存在）
+        """
+        try:
+            task = PeriodicTask.objects.get(name=name)
+            return task.enabled
+        except PeriodicTask.DoesNotExist:
+            return None

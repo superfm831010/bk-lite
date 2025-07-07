@@ -159,7 +159,10 @@ const Information: React.FC<TableDataItem> = ({
         </Descriptions.Item>
       </Descriptions>
       <div className="mt-4">
-        <Permission requiredPermissions={['Operate', 'Detail']}>
+        <Permission
+          requiredPermissions={['Operate', 'Detail']}
+          instPermissions={formData.permission}
+        >
           <Popconfirm
             title={t('monitor.events.closeTitle')}
             description={t('monitor.events.closeContent')}

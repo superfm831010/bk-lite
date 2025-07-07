@@ -63,6 +63,8 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
     for (const item of menus) {
       if (item.url && item.operation?.length) {
         accumulated[item.url] = item.operation;
+      } else if (item.url && item.withParentPermission && parentMenu) {
+        accumulated[item.url] = parentMenu.operation || [];
       }
       if (item.url && item.isNotMenuItem) {
         accumulated[item.url] = ['View', ...(parentMenu?.operation || [])];
@@ -93,11 +95,21 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
   const filterMenusByPermission = (
     permissionMap: { [key: string]: string[] },
     menus: MenuItem[],
-    routeClientId?: string
+    routeClientId?: string,
+    parentMenu?: MenuItem
   ): MenuItem[] => {
     return menus
       .filter((menu) => {
-        const hasPermission = permissionMap.hasOwnProperty(menu.name) || menu.isNotMenuItem;
+        const hasParentPermission = parentMenu && menu.withParentPermission;
+        const hasChildPermission = menu.children?.some((child) =>
+          permissionMap.hasOwnProperty(child.name)
+        );
+        const hasPermission =
+          permissionMap.hasOwnProperty(menu.name) ||
+          menu.isNotMenuItem ||
+          hasParentPermission ||
+          hasChildPermission;
+          
         if (!hasPermission) {
           console.warn(`No permission for menu: ${menu.name}`);
           return false;
@@ -118,7 +130,7 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
         ...menu,
         operation: permissionMap[menu.name],
         children: menu.children
-          ? filterMenusByPermission(permissionMap, menu.children, routeClientId)
+          ? filterMenusByPermission(permissionMap, menu.children, routeClientId, menu)
           : []
       }));
   };

@@ -64,7 +64,7 @@ class BootStrap(object):
             #     ]
             # }
             'event_broker': {
-                'url': 'rabbitmq-service',
+                'url': server_settings.rabbitmq_host,
                 'username': server_settings.rabbitmq_username,
                 'password': server_settings.rabbitmq_password,
                 'queues': [

@@ -10,21 +10,7 @@
         {
           "id": "search",
           "name": "Search",
-          "operation": [
-            "View"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "View",
-      "children": [
-        {
-          "id": "view_list",
-          "name": "List",
-          "operation": [
-            "View"
-          ]
+          "operation": ["View"]
         }
       ]
     },
@@ -32,38 +18,15 @@
       "name": "Asset",
       "children": [
         {
-          "id": "asset_list",
-          "name": "Asset—List",
+          "id": "asset_info",
+          "name": "Asset Info",
           "operation": [
             "View",
             "Add",
-            "Associate",
             "Edit",
-            "Delete"
-          ]
-        },
-        {
-          "id": "asset_basic_information",
-          "name": "Asset-Basic information",
-          "operation": [
-            "View",
-            "Edit"
-          ]
-        },
-        {
-          "id": "asset_relationships",
-          "name": "Asset-Relationships",
-          "operation": [
-            "View",
-            "Add",
-            "Delete"
-          ]
-        },
-        {
-          "id": "asset_change_records",
-          "name": "Asset-Change Records",
-          "operation": [
-            "View"
+            "Delete",
+            "Add Associate",
+            "Delete Associate"
           ]
         }
       ]
@@ -73,85 +36,42 @@
       "children": [
         {
           "id": "model_management",
-          "name": "Model-Management",
+          "name": "Model Management",
           "operation": [
             "View",
             "Add Model",
-            "Add Group",
             "Edit Model",
+            "Delete Model",
+            "Add Group",
             "Edit Group",
-            "Delete Group",
-            "Delete Model"
+            "Delete Group"
           ]
         },
         {
-          "id": "model_attributes",
-          "name": "Model-Attributes",
-          "operation": [
-            "View",
-            "Add",
-            "Edit",
-            "Delete"
-          ]
-        },
-        {
-          "id": "model_relationships",
-          "name": "Model-Relationships",
-          "operation": [
-            "View",
-            "Add",
-            "Edit",
-            "Delete"
-          ]
-        },
-        {
-          "id": "auto_discovery",
-          "name": "Auto-Discovery",
-          "operation": [
-            "View"
-          ]
-        },
-        {
-          "id": "discovery_scan",
-          "name": "Discovery-Scan",
-          "operation": [
+        "id": "auto_collection",
+        "name": "Auto Collection",
+        "operation": [
             "View",
             "Add",
             "Edit",
             "Delete",
             "Execute"
-          ]
-        },
-        {
-          "id": "discovery_collection",
-          "name": "Discovery-Collection",
-          "operation": [
-            "View",
-            "Add",
-            "Edit",
-            "Delete",
-            "Execute"
-          ]
-        },
-        {
-          "id": "discovery_feature_library",
-          "name": "Discovery-Feature-Library",
-          "operation": [
+        ]
+    },
+    {
+        "id": "soid_library",
+        "name": "SOID Library",
+        "operation": [
             "View",
             "Add",
             "Edit",
             "Delete"
-          ]
+        ]
         },
         {
           "id": "operation_log",
           "name": "Operation Log",
-          "operation": [
-            "View",
-            "Add",
-            "Edit",
-            "Delete"
-          ]
+          "operation": ["View"]
         }
       ]
     }
@@ -163,13 +83,39 @@
       "menus": []
     },
     {
-      "name": "normal",
-      "role_name": "cmdb_normal",
+      "name": "manager",
+      "role_name": "cmdb_manager",
       "menus": [
         "search-View",
-        "view_list-View",
-        "asset_list-View"
+        "asset_info-View",
+        "asset_info-Add",
+        "asset_info-Edit",
+        "asset_info-Delete",
+        "asset_info-Add Associate",
+        "asset_info-Delete Associate",
+        "model_management-View",
+        "model_management-Add Model",
+        "model_management-Edit Model",
+        "model_management-Delete Model",
+        "model_management-Add Group",
+        "model_management-Edit Group",
+        "model_management-Delete Group",
+        "auto_collection-View",
+        "auto_collection-Add",
+        "auto_collection-Edit",
+        "auto_collection-Delete",
+        "auto_collection-Execute",
+        "soid_library-View",
+        "soid_library-Add",
+        "soid_library-Edit",
+        "soid_library-Delete",
+        "operation_log-View"
       ]
+    },
+    {
+      "name": "normal",
+      "role_name": "cmdb_normal",
+      "menus": ["search-View", "asset_info-View"]
     }
   ]
 }

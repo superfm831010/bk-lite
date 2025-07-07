@@ -63,6 +63,12 @@
           "url": "/alarm/settings/globalConfig",
           "name": "global_config",
           "icon": "shujumoxingguanli"
+        },
+        {
+            "title": "操作日志",
+            "icon": "shiyongwendang",
+            "url": "/alarm/settings/operationLog",
+            "name": "operation_log"
         }
       ]
     }
@@ -131,6 +137,12 @@
           "url": "/alarm/settings/globalConfig",
           "name": "global_config",
           "icon": "gaojingfenpai"
+        },
+        {
+            "title": "Operation Log",
+            "icon": "shiyongwendang",
+            "url": "/alarm/settings/operationLog",
+            "name": "operation_log"
         }
       ]
     }

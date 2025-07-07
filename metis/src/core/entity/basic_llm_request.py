@@ -21,9 +21,6 @@ class BasicLLMReuqest(BaseModel):
     user_id: Optional[str] = ''
     thread_id: Optional[str] = ''
 
-    enable_naive_rag: bool = False
     naive_rag_request: List[DocumentRetrieverRequest] = []
-
-    rag_stage: str = 'naive-rag'
 
     extra_config: Optional[dict] = {}

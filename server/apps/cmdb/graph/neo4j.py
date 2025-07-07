@@ -1,10 +1,11 @@
 import os
+from typing import List, Union
 
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
 from neo4j.graph import Path
 
-from apps.cmdb.constants import INSTANCE
+from apps.cmdb.constants import INSTANCE, ModelConstraintKey
 from apps.cmdb.graph.format_type import FORMAT_TYPE
 from apps.core.exceptions.base_app_exception import BaseAppException
 
@@ -409,12 +410,37 @@ class Neo4jClient:
             # 取出可编辑属性
             properties = self.get_editable_attr(properties, check_attr_map.get("editable", {}))
 
+        nodes = self.batch_update_node_properties(label, entity_ids, properties)
+        return self.entity_to_list(nodes)
+
+    def batch_update_entity_properties(self,
+                                       label: str,
+                                       entity_ids: list,
+                                       properties: dict,
+                                       check_attr_map: dict,
+                                       check: bool = True):
+        """批量更新实体属性"""
+
+        if check:
+            # 校验必填项
+            self.check_required_attr(properties, check_attr_map.get("is_required", {}), is_update=True)
+
+            # 取出可编辑属性
+            properties = self.get_editable_attr(properties, check_attr_map.get("editable", {}))
+            if not properties:
+                return []
+
+        nodes = self.batch_update_node_properties(label, entity_ids, properties)
+        return self.entity_to_list(nodes)
+
+    def batch_update_node_properties(self, label: str, node_ids: Union[int, List[int]], properties: dict):
+        """批量更新节点属性"""
         label_str = f":{label}" if label else ""
         properties_str = self.format_properties_set(properties)
         if not properties_str:
             raise BaseAppException("properties is empty")
-        entitys = self.session.run(f"MATCH (n{label_str}) WHERE id(n) IN {entity_ids} SET {properties_str} RETURN n")
-        return self.entity_to_list(entitys)
+        nodes = self.session.run(f"MATCH (n{label_str}) WHERE id(n) IN {node_ids} SET {properties_str} RETURN n")
+        return nodes
 
     def format_properties_remove(self, attrs: list):
         """格式化properties的remove数据"""
@@ -565,3 +591,43 @@ class Neo4jClient:
         query = f"""MATCH (n:{INSTANCE}) WHERE {params} ANY(key IN keys(n) WHERE (NOT n[key] IS NULL AND ANY(value IN n[key] WHERE toString(value) CONTAINS '{search}'))) RETURN n"""  # noqa
         objs = self.session.run(query)
         return self.entity_to_list(objs)
+
+    def batch_save_entity(
+            self,
+            label: str,
+            properties_list: list,
+            check_attr_map: dict,
+            exist_items: list,
+            operator: str = None,
+    ):
+        """批量保存实体，支持新增与更新"""
+        unique_key = check_attr_map.get(ModelConstraintKey.unique.value, {}).keys()
+        add_nodes = []
+        update_results = []
+        if unique_key:
+            properties_map = {}
+            for properties in properties_list:
+                properties_key = tuple([properties.get(k) for k in unique_key if k in properties])
+                # 对参数中的节点按唯一键进行去重
+                properties_map[properties_key] = properties
+            # 已有节点处理
+            item_map = {}
+            for item in exist_items:
+                item_key = tuple([item.get(k) for k in unique_key if k in item])
+                item_map[item_key] = item
+            for properties_key, properties in properties_map.items():
+                node = item_map.get(properties_key)
+                if node:
+                    # 节点更新
+                    results = self.batch_update_entity_properties(label=label, entity_ids=[node.get("_id")],
+                                                         properties=properties,
+                                                         check_attr_map=check_attr_map)
+                    update_results.append(results[0]) if results else None
+                else:
+                    # 暂存统一新增
+                    add_nodes.append(properties)
+        else:
+            add_nodes = properties_list
+        add_results = self.batch_create_entity(label=label, properties_list=add_nodes, check_attr_map=check_attr_map,
+                                               exist_items=exist_items, operator=operator)
+        return add_results, update_results

@@ -10,7 +10,7 @@ from django.db import transaction
 from datetime import timedelta
 from typing import Dict, Any, Optional
 
-from apps.alerts.constants import LevelType
+from apps.alerts.common.notify.base import NotifyParamsFormat
 from apps.alerts.models import Alert, AlertReminderTask, AlertAssignment, Level
 from apps.core.logger import alert_logger as logger
 
@@ -188,37 +188,21 @@ class ReminderService:
                 logger.warning(f"提醒任务 {assignment.id} 没有配置通知渠道，无法发送通知")
                 return False
 
-            title = cls.format_title(alert)
-            content = cls.format_content(alert)
+            param_format = NotifyParamsFormat(username_list=username_list, alerts=[alert])
+            title = param_format.format_title()
+            content = param_format.format_content()
 
             # 移动导入到函数内部避免循环导入
             from apps.alerts.tasks import sync_notify
 
             for channel in channel_list:
-                transaction.on_commit(lambda: sync_notify.delay(username_list, channel, title, content))
+                transaction.on_commit(lambda: sync_notify.delay(username_list, channel, title, content, alert.alert_id))
 
             return True
 
         except Exception as e:
             logger.error(f"发送提醒通知失败: reminder_id={assignment.id}, error={str(e)}")
             return False
-
-    @staticmethod
-    def format_title(alert: Alert) -> str:
-        """格式化提醒标题"""
-        title = alert.title
-        return title
-
-    @classmethod
-    def format_content(cls, alert: Alert) -> str:
-        """格式化提醒内容"""
-        alert_level_map = cls.search_level_map(level_type=LevelType.ALERT)
-        content = f"告警对象: {alert.resource_type}\n"
-        content += f"告警级别: {alert_level_map[alert.level]}\n"
-        content += f"告警指标: {alert.item}\n"
-        content += f"告警内容: {alert.content}\n"
-        content += f"告警时间: {alert.format_created_at}\n"
-        return content
 
     @staticmethod
     def search_level_map(level_type) -> Dict[str, str]:

@@ -17,24 +17,22 @@ from apps.opspilot.utils.chunk_helper import ChunkHelper
 
 
 @shared_task
-def general_embed(knowledge_document_id_list, username):
+def general_embed(knowledge_document_id_list, username, domain="domain.com"):
     logger.info(f"general_embed: {knowledge_document_id_list}")
     document_list = KnowledgeDocument.objects.filter(id__in=knowledge_document_id_list)
-    general_embed_by_document_list(document_list, username=username)
+    general_embed_by_document_list(document_list, username=username, domain=domain)
     logger.info(f"knowledge training finished: {knowledge_document_id_list}")
 
 
 @shared_task
-def retrain_all(knowledge_base_id, username):
+def retrain_all(knowledge_base_id, username, domain="domain.com"):
     logger.info("Start retraining")
-    knowledge_base = KnowledgeBase.objects.get(id=knowledge_base_id)
-    knowledge_base.recreate_es_index()
     document_list = KnowledgeDocument.objects.filter(knowledge_base_id=knowledge_base_id)
     document_list.update(train_status=DocumentStatus.CHUNKING)
-    general_embed_by_document_list(document_list, username=username)
+    general_embed_by_document_list(document_list, username=username, domain=domain)
 
 
-def general_embed_by_document_list(document_list, is_show=False, username=""):
+def general_embed_by_document_list(document_list, is_show=False, username="", domain="domain.com"):
     if is_show:
         res, remote_docs = invoke_one_document(document_list[0], is_show)
         docs = [i["page_content"] for i in remote_docs][:10]
@@ -42,6 +40,7 @@ def general_embed_by_document_list(document_list, is_show=False, username=""):
     knowledge_base_id = document_list[0].knowledge_base_id
     task_obj = KnowledgeTask.objects.create(
         created_by=username,
+        domain=domain,
         knowledge_base_id=knowledge_base_id,
         task_name=document_list[0].name,
         knowledge_ids=[doc.id for doc in document_list],
@@ -194,14 +193,14 @@ def sync_web_page_knowledge(web_page_knowledge_id):
     """
     web_page = WebPageKnowledge.objects.filter(id=web_page_knowledge_id).first()
     if not web_page:
-        return {"result": False, "message": "Web page knowledge not found."}
-
-    knowledge_base = web_page.knowledge_document.knowledge_base
-    knowledge_base.recreate_es_index()
+        logger.error(f"Web page knowledge {web_page_knowledge_id} not found.")
+        return
     document_list = [web_page.knowledge_document]
     web_page.knowledge_document.train_status = DocumentStatus.CHUNKING
-    web_page.knowedge_document.save()
-    general_embed_by_document_list(document_list, username=KnowledgeDocument.created_by)
+    web_page.knowledge_document.save()
+    general_embed_by_document_list(
+        document_list, username=web_page.knowledge_document.created_by, domain=web_page.knowledge_document.domain
+    )
 
 
 @shared_task
@@ -210,6 +209,17 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
     if not qa_pairs_list:
         logger.info(f"QAPairs with ID {qa_pairs_id_list} not found.")
         return
+    username = qa_pairs_list[0].created_by
+    task_obj = KnowledgeTask.objects.create(
+        created_by=username,
+        domain=qa_pairs_list[0].domain,
+        knowledge_base_id=knowledge_base_id,
+        task_name=qa_pairs_list[0].name,
+        knowledge_ids=[doc for doc in qa_pairs_id_list],
+        train_progress=0,
+    )
+    train_progress = round(float(1 / len(task_obj.knowledge_ids)) * 100, 2)
+
     url = f"{settings.METIS_SERVER_URL}/api/rag/qa_pair_generate"
     llm_model = LLMModel.objects.filter(id=llm_model_id).first()
     if not llm_model:
@@ -240,6 +250,10 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
                 logger.error(f"Failed to create QA pairs for Chunk ID {i['chunk_id']}.")
                 continue
             ChunkHelper.create_qa_pairs(res["message"], i, es_index, embed_config, embed_model_name, qa_pairs_obj.id)
+        task_obj.train_progress += train_progress
+        task_obj.save()
+    task_obj.train_progress = 100
+    task_obj.save()
 
 
 def get_qa_content(qa_pairs_obj: QAPairs, es_index):

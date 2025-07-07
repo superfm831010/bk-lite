@@ -20,7 +20,7 @@ class WebPageKnowledgeViewSet(viewsets.ModelViewSet):
         if not kwargs.get("url").strip():
             return JsonResponse({"result": False, "data": _("url is required")})
         kwargs["knowledge_source_type"] = "web_page"
-        new_doc = KnowledgeDocumentUtils.get_new_document(kwargs, request.user.username)
+        new_doc = KnowledgeDocumentUtils.get_new_document(kwargs, request.user.username, request.user.domain)
         knowledge_obj = WebPageKnowledge.objects.create(
             knowledge_document_id=new_doc.id,
             url=kwargs.get("url", "").strip(),

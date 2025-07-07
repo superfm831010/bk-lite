@@ -36,7 +36,8 @@ server-init:
 	python manage.py init_bot 
 	python manage.py init_channel 
 	python manage.py init_llm 
-	
+	python manage.py create_builtin_rules --update
+
 setup-dev-user:
 	DJANGO_SUPERUSER_USERNAME=admin DJANGO_SUPERUSER_EMAIL=admin@example.com DJANGO_SUPERUSER_PASSWORD=password python manage.py createsuperuser --noinput
 

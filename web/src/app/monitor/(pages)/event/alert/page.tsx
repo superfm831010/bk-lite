@@ -212,7 +212,10 @@ const Alert: React.FC = () => {
           >
             {t('common.detail')}
           </Button>
-          <Permission requiredPermissions={['Operate']}>
+          <Permission
+            requiredPermissions={['Operate']}
+            instPermissions={record.permission}
+          >
             <Popconfirm
               title={t('monitor.events.closeTitle')}
               description={t('monitor.events.closeContent')}

@@ -155,12 +155,19 @@
         "correlation": {
             "example": "Example",
             "describe": "Describe",
-            "dimDescribeContent": "Rule definition: \n1. Filtering method: event level higher than \"warning\"\n2. Aggregation dimension: Object instances of events\n3. Aggregation strategy: Aggregate based on the same object instance of the event, with the alert level being the lowest level of the event.\nCommonly used in scenarios where performance evaluation of a single operational object requires a combination of multiple dimensions for analysis, such as abnormal server performance, abnormal database performance, etc",
-            "bizDescribeContent": "Rule definition:\n1. Filtering method: Event type is website call test\n2. Aggregation strategy: When there is an abnormal dial test, an alert is immediately generated, and events on the same website are associated and aggregated \nCommonly used scenarios for website testing",
             "type": "Type",
             "scope": "Scope",
             "lastUpdateTime": "Last Update Time",
-            "explain": "Explain"
+            "windowType": "Window Type",
+            "slidingWindow": "Sliding Window",
+            "fixedWindow": "Fixed Window",
+            "sessionWindow": "Session Window",
+            "windowTime": "Window Time",
+            "timeOut": "Timeout",
+            "slidingMsg": "There are two key parameters for sliding windows, namely window size and sliding step size. It will slide forward with a fixed step size, and there is overlap between the windows. Suitable for partial context linkage analysis, such as checking a single server's past 1-minute Event every 10 seconds, generating an Alert when a fatal level Event occurs, and continuously aggregating the Event into one Alert for comprehensive analysis of faults.",
+            "fixedMsg": "Also known as a rolling window, it is characterized by a fixed time length and no overlap between windows, meaning that the window time is the same as the step size. Suitable for aggregation calculations with clear requirements for time range, such as triggering an alarm if the number of errors exceeds 100 within an hour.",
+            "sessionMsg": "The boundary of the session window is determined by the interval time between events (session timeout or specific events). If no new events arrive within the specified time, the current window will close and a new window will open for subsequent events. Suitable for analyzing user session related scenarios, such as: after pipeline packaging failure, if there is no further processing within 10 minutes, it means that the code problem cannot be solved in a short period of time and an alarm is issued",
+            "min": "min"
         },
         "assignStrategy": {
             "ruleAll": "All",
@@ -192,6 +199,22 @@
             "email": "Email",
             "wechat": "WeChat",
             "unselected": "Unselected"
+        },
+        "operationLog": {
+            "title": "Operation Log",
+            "description": "Display all historical records of additions, deletions, and modifications, and you can search based on conditions such as operator/operation type/time",
+            "timeRange": "Time Range",
+            "operator": "Operator",
+            "operationType": "Type",
+            "summary": "Overview",
+            "operationObject": "Object",
+            "operationTime": "Operating Time",
+            "operationOpts": {
+                "add": "Add",
+                "modify": "Modify",
+                "delete": "Delete",
+                "execute": "Execute"
+            }
         }
     }
 }

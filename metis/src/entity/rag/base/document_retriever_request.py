@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+from src.rag import graph_rag
+from src.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest as GraphitiDocumentRetrieverRequest
 
 
 class DocumentRetrieverRequest(BaseModel):
@@ -29,3 +31,9 @@ class DocumentRetrieverRequest(BaseModel):
     rerank_top_k: int = 5
 
     rag_recall_mode: str = "chunk"
+
+    enable_naive_rag: bool = True
+    enable_qa_rag: bool = False
+    enable_graph_rag: bool = False
+
+    graph_rag_request: GraphitiDocumentRetrieverRequest = None

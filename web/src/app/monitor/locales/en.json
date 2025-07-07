@@ -232,7 +232,30 @@
       "cvm_LanOuttraffic": "Internal Outbound Bandwidth",
       "cvm_WanOuttraffic": "External Outbound Bandwidth",
       "dashboard": "DashBoard",
-      "quickSearch": "Quick Search"
+      "quickSearch": "Quick Search",
+      "apache_up": "Running Status",
+      "apache_duration_ms_total": "Request Duration",
+      "activemq_connections_gauge": "Current Connections",
+      "activemq_memory_usage_ratio_gauge": "Memory Usage Ratio",
+      "activemq_topic_queue_size_value": "Queue Size",
+      "activemq_message_total_rate": "Growth Rate",
+      "weblogic_threadpool_stuck_thread_count_value": "Stuck Thread Count",
+      "weblogic_threadpool_load_ratio": "Thread Pool Load Ratio",
+      "weblogic_application_overallhealthstatejmx_is_critical_value": "Application Overall Health Critical State",
+      "nginx_up": "Nginx Status",
+      "nginx_connections_active": "Active Connections",
+      "nginx_http_requests_total": "Total HTTP Requests",
+      "nginx_vts_server_requestMsec": "Zone Request Time",
+      "tomcat_errorcount_increase": "Error Increase",
+      "tomcat_threadpool_utilization": "Threadpool Utilization",
+      "tomcat_session_rejectionrate": "Session Rejection Rate",
+      "jetty_queuedthreadpool_utilizationrate_value": "Utilization Rate",
+      "jvm_memory_heap_usage_used_rate": "Heap Memory Usage Change Rate",
+      "jvm_memory_heap_usage_max_value": "Heap Memory Usage (Max)",
+      "oracledb_up_gauge": "OracleDb Status",
+      "oracledb_activity_user_rollbacks_rate": "User Rollbacks Rate",
+      "oracledb_wait_time_user_io_gauge": "User I/O Wait Time",
+      "oracledb_tablespace_used_percent_gauge": "Tablespace Usage Percentage"
     },
     "events": {
       "event": "Event",
@@ -438,7 +461,14 @@
       "note": "The monitoring data of K8S only supports active reporting, and is not supported to be accessed here for the time being.",
       "deleteRules": "Delete Rule",
       "deleteGroup": "Delete and Clear Groups",
-      "conditionDes": "Specific rules for triggering monitoring."
+      "conditionDes": "Specific rules for triggering monitoring.",
+      "publishAddress": "Publish Address",
+      "publishPort": "Publish Port",
+      "publishAddressDes": "The main website for system monitoring, used to detect its availability and performance status.",
+      "publishPortDes": "The specific port that the program listens on during runtime, responsible for receiving requests and connections from external sources.",
+      "mechanism": "Mechanism",
+      "mechanismDes": "Used to process and respond to requests received through the publishing port, including the complete process of request parsing, processing, and returning results.",
+      "kafkaVersionDes": "Specify the version details of the current program"
     }
   }
 }
