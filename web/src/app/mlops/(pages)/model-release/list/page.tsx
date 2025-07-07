@@ -1,10 +1,12 @@
 'use client';
 import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useCopyToClipboard } from "@/app/mlops/hooks/useCopyToClipboard";
 import CustomTable from "@/components/custom-table";
 import Icon from "@/components/icon";
 import { useTranslation } from "@/utils/i18n";
 import { Button } from "antd";
+import { PlusOutlined } from '@ant-design/icons';
 import SubLayout from '@/components/sub-layout';
 import ReleaseModal from "./releaseModal";
 import { ModalRef, Pagination } from "@/app/mlops/types";
@@ -15,6 +17,7 @@ const ModelRelease = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const modalRef = useRef<ModalRef>(null);
+  const { copyToClipboard } = useCopyToClipboard();
   const [pagination, setPagination] = useState<Pagination>({
     current: 1,
     total: 0,
@@ -49,8 +52,8 @@ const ModelRelease = () => {
       title: t(`common.action`),
       dataIndex: 'action',
       key: 'action',
-      render: (_, record: any) => (
-        <Button type="link" onClick={() => publish(record)}>发布</Button>
+      render: () => (
+        <Button type="link" onClick={() => copyToClipboard('123')}>复制链接</Button>
       )
     }
   ];
@@ -73,13 +76,13 @@ const ModelRelease = () => {
   ];
 
   const publish = (record: any) => {
-    modalRef.current?.showModal({type: 'release', form: record})
+    modalRef.current?.showModal({ type: 'release', form: record })
     setPagination({
       current: 1,
       total: 0,
       pageSize: 20
     });
-  }
+  };
 
 
   return (
@@ -89,6 +92,9 @@ const ModelRelease = () => {
         intro={Intro}
         onBackButtonClick={() => router.back()}
       >
+        <div className="flex justify-end mb-2">
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => publish({})}>模型发布</Button>
+        </div>
         <div className="flex-1 relative">
           <div className="absolute w-full">
             <CustomTable

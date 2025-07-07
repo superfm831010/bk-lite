@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { useRouter } from 'next/navigation';
-import useMlopsApi from '@/app/mlops/api';
+import useMlopsManageApi from '@/app/mlops/api/manage';
 import {
   Segmented,
   Modal,
@@ -21,7 +21,7 @@ const { confirm } = Modal;
 const DatasetManagePage = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { deleteAnomalyDatasets, getAnomalyDatasetsList } = useMlopsApi();
+  const { deleteAnomalyDatasets, getAnomalyDatasetsList } = useMlopsManageApi();
   const [activeTab, setActiveTab] = useState<string>('anomaly');
   const [datasets, setDatasets] = useState<DataSet[]>([]);
   const [loading, setLoading] = useState<boolean>(false);

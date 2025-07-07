@@ -2,13 +2,13 @@
 import { ModalRef } from "@/app/mlops/types";
 import { forwardRef, useImperativeHandle, useState, useRef } from "react";
 import OperateModal from '@/components/operate-modal';
-import { Form, FormInstance, Select, Button } from "antd";
+import { Form, FormInstance, Select, Button, Input } from "antd";
 import { useTranslation } from "@/utils/i18n";
-import useMlopsApi from "@/app/mlops/api";
+// import useMlopsApi from "@/app/mlops/api";
+const { TextArea } = Input;
 
 const ReleaseModal = forwardRef<ModalRef, any>(({ }, ref) => {
   const { t } = useTranslation();
-  const { getOneAnomalyTask } = useMlopsApi();
   const formRef = useRef<FormInstance>(null);
   const [formData, setFormData] = useState(null);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
@@ -19,19 +19,20 @@ const ReleaseModal = forwardRef<ModalRef, any>(({ }, ref) => {
       setFormData(form);
       setModalOpen(true);
       setConfirmLoading(false);
-      getTaskInfo(form?.id)
     }
   }));
 
-  const getTaskInfo = async (id: number) => {
-    const data = await getOneAnomalyTask(id);
-    console.log(data);
-  }
-
   const handleConfirm = () => {
-    console.log(formData);
-    setConfirmLoading(true);
-    setModalOpen(false);
+    try {
+      const data = formRef.current?.validateFields();
+      console.log(formData, data);
+      setConfirmLoading(true);
+      // setModalOpen(false);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -51,6 +52,13 @@ const ReleaseModal = forwardRef<ModalRef, any>(({ }, ref) => {
       >
         <Form ref={formRef} layout="vertical">
           <Form.Item
+            name='name'
+            label='模型名称'
+            rules={[{ required: true, message: t('common.inputMsg') }]}
+          >
+            <Input placeholder={t(`common.inputMsg`)} />
+          </Form.Item>
+          <Form.Item
             name='version'
             label='版本'
             rules={[{ required: true, message: t('common.selectMsg') }]}
@@ -61,6 +69,13 @@ const ReleaseModal = forwardRef<ModalRef, any>(({ }, ref) => {
               ]}
               placeholder={t('common.selectMsg')}
             />
+          </Form.Item>
+          <Form.Item
+            name='description'
+            label='模型介绍'
+            rules={[{ required: true, message: t('common.inputMsg') }]}
+          >
+            <TextArea placeholder={t(`common.inputMsg`)} rows={4} maxLength={6} />
           </Form.Item>
         </Form>
       </OperateModal>
