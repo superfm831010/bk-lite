@@ -60,7 +60,7 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
   );
   const [rangePickerVaule, setRangePickerVaule] = useState<
     [Dayjs, Dayjs] | null
-  >(defaultValue.rangePickerVaule);
+  >(null);
 
   // 可以通过ref调用组件的以下方法
   useImperativeHandle(ref, () => ({
