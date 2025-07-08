@@ -1563,6 +1563,18 @@ class MiddlewareCollectMetrics(CollectBase):
                 "permsize": "permsize",
                 "log_path": "log_path",
                 "java_version": "java_version",
+            },
+            "apache":{
+                "inst_name": self.get_inst_name,
+                "ip_addr":"ip_addr",
+                "port":"port",
+                "version":"version",
+                "httpd_path":"httpd_path",
+                "httpd_conf_path":"httpd_conf_path",
+                "doc_root":"doc_root",
+                "error_log":"error_log",
+                "custom_Log":"custom_Log",
+                "include":"include",
             }
 
         }

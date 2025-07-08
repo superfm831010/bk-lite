@@ -426,6 +426,9 @@ class MongoDBParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "mongodb"
     plugin_name = "mongodb_info"
 
+class ApacheNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "apache"
+    plugin_name = "apache_info"
 
 class NodeParamsFactory:
     """

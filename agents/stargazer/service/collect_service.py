@@ -31,6 +31,7 @@ class CollectService(object):
             "tomcat_info": "TomcatInfo",
             "es_info": "ESInfo",
             "mongodb_info": "MongoDBInfo",
+            "apache_info": "ApacheInfo",
         }
 
     def import_plugin(self, plugin_name):
