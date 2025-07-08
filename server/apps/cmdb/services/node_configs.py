@@ -401,12 +401,12 @@ class QCloudNodeParams(BaseNodeParams):
         return f"{self.instance.id}_{instance['inst_name']}"
 
 
-class EtcdNodeParams(BaseNodeParams, SSHNodeParamsMixin):
+class EtcdNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "etcd"
     plugin_name = "etcd_info"
 
 
-class RabbitMQNodeParams(BaseNodeParams, SSHNodeParamsMixin):
+class RabbitMQNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "rabbitmq"
     plugin_name = "rabbitmq_info"
 
@@ -415,9 +415,9 @@ class TomcatNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "tomcat"
     plugin_name = "tomcat_info"
 
-class DBNodeParams(SSHNodeParamsMixin, BaseNodeParams):
-    supported_model_id = "db"
-    plugin_name = "db_info"
+class ESNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "es"
+    plugin_name = "es_info"
 
 class NodeParamsFactory:
     """
