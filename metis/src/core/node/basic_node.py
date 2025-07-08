@@ -5,7 +5,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 
-from src.core.entity.basic_llm_request import BasicLLMReuqest
+from src.core.entity.basic_llm_request import BasicLLMRequest
 from src.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
 from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
 from sanic.log import logger
@@ -17,7 +17,7 @@ class BasicNode:
         trace_id = config["configurable"]['trace_id']
         logger.debug(f"[{trace_id}] {message}")
 
-    def get_llm_client(self, request: BasicLLMReuqest) -> ChatOpenAI:
+    def get_llm_client(self, request: BasicLLMRequest) -> ChatOpenAI:
         llm = ChatOpenAI(model=request.model, base_url=request.openai_api_base,
                          api_key=request.openai_api_key, temperature=request.temperature)
         return llm

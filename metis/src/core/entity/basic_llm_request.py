@@ -6,7 +6,7 @@ from src.core.entity.chat_history import ChatHistory
 from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
 
 
-class BasicLLMReuqest(BaseModel):
+class BasicLLMRequest(BaseModel):
     openai_api_base: str = 'https://api.openai.com'
     openai_api_key: str = ''
     model: str = 'gpt-4o'
