@@ -125,12 +125,13 @@ const TrainTask = () => {
             {t('traintask.history')}
           </Button> */}
           <Popconfirm
-            title={t('traintask.deleteTraintask')}
+            title={t('traintask.delTraintask')}
+            description={t(`traintask.delTraintaskContent`)}
             okText={t('common.confirm')}
             cancelText={t('common.cancel')}
             onConfirm={() => onDelete(record)}
           >
-            <Button type="link">{t('common.delete')}</Button>
+            <Button type="link" danger>{t('common.delete')}</Button>
           </Popconfirm>
         </>
       ),

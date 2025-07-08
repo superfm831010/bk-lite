@@ -31,15 +31,16 @@ const useMlopsModelReleaseApi = () => {
     page?: number;
     page_size?: number;
   }) => {
-    const {
-      name,
-      anomaly_detection_train_job,
-      status,
-      page,
-      page_size
-    } = params;
-    const queryParams = `?name=${name}&anomaly_detection_train_job=${anomaly_detection_train_job}&status=${status}&page=${page}&page_size=${page_size}`;
-    return await get(`/mlops/anomaly_detection_servings/` + queryParams)
+    const searchParams = new URLSearchParams();
+
+    // 只添加有值的参数
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.append(key, value.toString());
+      }
+    });
+
+    return await get(`/mlops/anomaly_detection_servings/?${searchParams}`);
   };
 
   // 查询单个能力发布

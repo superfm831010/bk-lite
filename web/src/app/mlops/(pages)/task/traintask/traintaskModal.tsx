@@ -313,7 +313,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
             label={t('traintask.algorithms')}
             rules={[{ required: true, message: t('common.inputMsg') }]}
           >
-            <Select placeholder={t('common.selectMsg')} onChange={onTypeChange} options={[
+            <Select placeholder={t('traintask.selectAlgorithmsMsg')} onChange={onTypeChange} options={[
               { value: 'RandomForest', label: `RandomForest` },
             ]} />
           </Form.Item>
@@ -322,7 +322,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
             label={t('traintask.maxEvals')}
             rules={[{ required: true, message: t('common.inputMsg') }]}
           >
-            <InputNumber style={{ width: '100%' }} placeholder={t('common.inputMsg')} />
+            <InputNumber style={{ width: '100%' }} placeholder={t('traintask.maxEvalsMsg')} />
           </Form.Item>
           <Form.Item
             name='dataset_id'

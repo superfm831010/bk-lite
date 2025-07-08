@@ -1,23 +1,29 @@
 'use client';
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useCopyToClipboard } from "@/app/mlops/hooks/useCopyToClipboard";
+import useMlopsTaskApi from "@/app/mlops/api/task";
+import useMlopsModelReleaseApi from "@/app/mlops/api/modelRelease";
 import CustomTable from "@/components/custom-table";
 import Icon from "@/components/icon";
 import { useTranslation } from "@/utils/i18n";
-import { Button } from "antd";
+import { Button, Popconfirm, Tag, message } from "antd";
 import { PlusOutlined } from '@ant-design/icons';
 import SubLayout from '@/components/sub-layout';
 import ReleaseModal from "./releaseModal";
-import { ModalRef, Pagination } from "@/app/mlops/types";
+import { ModalRef, Option, Pagination, TableData } from "@/app/mlops/types";
 import { ColumnItem } from "@/types";
+import { TrainJob } from "@/app/mlops/types/task";
 
 
 const ModelRelease = () => {
   const { t } = useTranslation();
   const router = useRouter();
+  const { getAnomalyTaskList } = useMlopsTaskApi();
+  const { getAnomalyServingsList, deleteAnomalyServing } = useMlopsModelReleaseApi();
   const modalRef = useRef<ModalRef>(null);
-  const { copyToClipboard } = useCopyToClipboard();
+  const [trainjobs, setTrainjobs] = useState<Option[]>([]);
+  const [tableData, setTableData] = useState<TableData[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState<Pagination>({
     current: 1,
     total: 0,
@@ -39,22 +45,40 @@ const ModelRelease = () => {
 
   const columns: ColumnItem[] = [
     {
-      title: '模型名称',
+      title: t(`model-release.modelName`),
       dataIndex: 'name',
       key: 'name'
     },
     {
-      title: '模型介绍',
+      title: t(`model-release.modelDescription`),
       dataIndex: 'description',
       key: 'description'
+    },
+    {
+      title: t(`model-release.publishStatus`),
+      dataIndex: 'status',
+      key: 'status',
+      render: (_, record) => (
+        <Tag color={record.status === 'active' ? 'success' : 'default'}>{t(`model-release.${record.status}`)}</Tag>
+      )
     },
     {
       title: t(`common.action`),
       dataIndex: 'action',
       key: 'action',
-      render: () => (
-        <Button type="link" onClick={() => copyToClipboard('123')}>复制链接</Button>
-      )
+      width: 180,
+      render: (_, record: TableData) => (<>
+        <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
+        <Popconfirm
+          title={t(`model-release.delModel`)}
+          description={t(`model-release.delModelContent`)}
+          okText={t('common.confirm')}
+          cancelText={t('common.cancel')}
+          onConfirm={() => handleDelete(record.id)}
+        >
+          <Button type="link" danger>{t(`common.delete`)}</Button>
+        </Popconfirm>
+      </>)
     }
   ];
 
@@ -69,19 +93,51 @@ const ModelRelease = () => {
     )
   };
 
-  const mock = [
-    { id: 7, name: '异常检测训练', description: '1' },
-    { id: 2, name: '异常检测训练', description: '2' },
-    { id: 3, name: '异常检测训练', description: '3' },
-  ];
+  useEffect(() => {
+    getModelServings();
+  }, [])
 
   const publish = (record: any) => {
-    modalRef.current?.showModal({ type: 'release', form: record })
-    setPagination({
-      current: 1,
-      total: 0,
-      pageSize: 20
-    });
+    modalRef.current?.showModal({ type: 'add', form: record })
+  };
+
+  const handleEdit = (record: any) => {
+    modalRef.current?.showModal({type: 'edit', form: record});
+  };
+
+  const getModelServings = async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: pagination.current,
+        page_size: pagination.pageSize,
+      };
+      const [taskList, { count, items }] = await Promise.all([getAnomalyTaskList({}), getAnomalyServingsList(params)]);
+      const _data = taskList.map((item: TrainJob) => ({
+        label: item.name,
+        value: item.id
+      }));
+      setTrainjobs(_data);
+      setTableData(items);
+      setPagination((prev) => ({
+        ...prev,
+        total: count
+      }))
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteAnomalyServing(id);
+      getModelServings();
+    } catch (e) {
+      console.log(e);
+      message.error(t(`common.delFailed`));
+    }
   };
 
 
@@ -93,20 +149,22 @@ const ModelRelease = () => {
         onBackButtonClick={() => router.back()}
       >
         <div className="flex justify-end mb-2">
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => publish({})}>模型发布</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => publish({})}>{t(`model-release.modelRelease`)}</Button>
         </div>
         <div className="flex-1 relative">
           <div className="absolute w-full">
             <CustomTable
+              scroll={{ x: '100%', y: 'calc(100vh - 420px)' }}
               columns={columns}
-              dataSource={mock}
+              dataSource={tableData}
+              loading={loading}
               rowKey='id'
               pagination={pagination}
             />
           </div>
         </div>
       </SubLayout>
-      <ReleaseModal ref={modalRef} />
+      <ReleaseModal ref={modalRef} trainjobs={trainjobs} onSuccess={() => getModelServings()} />
     </div>
   )
 };
