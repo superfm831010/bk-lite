@@ -44,6 +44,12 @@ class KnowledgeDocument(MaintainerInfo, TimeInfo):
     chunk_type = models.CharField(max_length=30, verbose_name=_("chunk type"), default="fixed_size")
     knowledge_source_type = models.CharField(max_length=20, verbose_name=_("source type"), default="file")
 
+    enable_naive_rag = models.BooleanField(default=True)
+    enable_qa_rag = models.BooleanField(default=True)
+    enable_graph_rag = models.BooleanField(default=False)
+
+    rag_size = models.IntegerField(default=5, verbose_name=_("RAG size"))
+
     def __str__(self):
         return self.name
 
