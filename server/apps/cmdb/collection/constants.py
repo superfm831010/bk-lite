@@ -125,7 +125,8 @@ HOST_COLLECT_METRIC = ["host_info_gauge"]
 
 DB_COLLECT_METRIC_MAP = {
     "es": ["es_info_gauge"],
-    "redis": ["redis_info_gauge"]
+    "redis": ["redis_info_gauge"],
+    "mongodb": ["mongodb_info_gauge"],
 }
 
 MIDDLEWARE_METRIC_MAP = {

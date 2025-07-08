@@ -29,7 +29,8 @@ class CollectService(object):
             "etcd_info": "EtcdInfo",
             "rabbitmq_info": "RabbitMQInfo",
             "tomcat_info": "TomcatInfo",
-            "es_info": "ESInfo"
+            "es_info": "ESInfo",
+            "mongodb_info": "MongoDBInfo",
         }
 
     def import_plugin(self, plugin_name):

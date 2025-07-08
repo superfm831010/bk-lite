@@ -1977,7 +1977,22 @@ class DBCollectCollectMetrics(CollectBase):
                 "max_conn": "max_conn",
                 "max_mem": "max_mem",
                 "database_role": "database_role",
-            }}
+            },
+            "mongodb":{
+                "inst_name": self.get_inst_name,
+                "ip_addr":"ip_addr",
+                "port":"port",
+                "version":"version",
+                "mongo_path":"mongo_path",
+                "bin_path":"bin_path",
+                "config":"config",
+                "fork":"fork",
+                "system_log":"system_log",
+                "db_path":"db_path",
+                "max_incoming_conn":"max_incoming_conn",
+                "database_role":"database_role",
+            },
+        }
         return mapping
 
     def format_metrics(self):
