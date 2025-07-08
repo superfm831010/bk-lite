@@ -53,6 +53,13 @@ class LLMViewSet(AuthViewSet):
             return JsonResponse({"result": False, "message": message})
         params["team"] = params.get("team", []) or [int(request.COOKIES.get("current_team"))]
         params["enable_conversation_history"] = True
+        params[
+            "skill_prompt"
+        ] = """你是关于专业机器人，请按照以下要求进行回复
+1、请根据用户的问题，从知识库检索关联的知识进行总结回复
+2、请根据用户需求，从工具中选取适当的工具进行执行
+3、回复的语句请保证准确，不要杜撰
+4、请按照要点有条理的梳理答案"""
         serializer = self.get_serializer(data=params)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)

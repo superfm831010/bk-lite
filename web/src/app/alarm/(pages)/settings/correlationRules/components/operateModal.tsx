@@ -238,7 +238,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
                 <div className="font-medium mb-2">
                   {t('settings.correlation.describe')}
                 </div>
-                <p style={{ whiteSpace: 'pre-line' }}>
+                <p style={{ whiteSpace: 'pre-line', textIndent: '2ch' }}>
                   {selOption.describeContent}
                 </p>
               </div>
