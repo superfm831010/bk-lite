@@ -340,7 +340,8 @@ class SSHNodeParamsMixin:
             "node_id": self.instance.access_point[0]["id"],
             "execute_timeout": self.instance.timeout,
         }
-        if host["ip_addr"] != node_ip:
+        host_ip = host.get("ip_addr", "") if host and isinstance(host, dict) else host
+        if host_ip != node_ip:
             credential_data["username"] = self.credential.get("username", ""),
             credential_data["password"] = self.credential.get("password", ""),
             credential_data["port"] = self.credential.get("port", 22),
@@ -415,9 +416,16 @@ class TomcatNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "tomcat"
     plugin_name = "tomcat_info"
 
+
 class ESNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "es"
     plugin_name = "es_info"
+
+
+class MongoDBParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "mongodb"
+    plugin_name = "mongodb_info"
+
 
 class NodeParamsFactory:
     """
