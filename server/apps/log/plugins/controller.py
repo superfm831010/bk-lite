@@ -63,48 +63,6 @@ class Controller:
                     configs.append(_config)
         return configs
 
-    # def controller(self):
-    #     base_dir = PLUGIN_DIRECTORY
-    #     configs = self.format_configs()
-    #     node_configs, collect_configs = [], []
-    #     for config_info in configs:
-    #         template_dir = os.path.join(base_dir, config_info["collector"], config_info["collect_type"])
-    #         templates = self.get_template_info_by_type(template_dir, config_info["collect_type"])
-    #         for template in templates:
-    #             collector_name = config_info["collector"]
-    #             config_id = str(uuid.uuid4().hex)
-    #             # 生成配置
-    #             template_config = self.render_template(
-    #                 template_dir,
-    #                 f"{template['type']}.{template['config_type']}.{template['file_type']}.j2",
-    #                 config_info,
-    #             )
-    #
-    #             # 节点管理创建配置
-    #             node_config = dict(
-    #                 id=config_id,
-    #                 name=f'{collector_name}-{config_id}',
-    #                 content=template_config,
-    #                 node_id=config_info["node_id"],
-    #                 collector_name=collector_name,
-    #                 env_config={k[4:]: v for k, v in config_info.items() if k.startswith("ENV_")},
-    #             )
-    #             node_configs.append(node_config)
-    #
-    #             # 监控记录配置
-    #             collect_configs.append(
-    #                 CollectConfig(
-    #                     id=config_id,
-    #                     collect_instance_id=config_info["instance_id"],
-    #                     file_type=template["file_type"],
-    #                 )
-    #             )
-    #
-    #     # 记录实例与配置的关系
-    #     CollectConfig.objects.bulk_create(collect_configs, batch_size=100)
-    #     # 创建配置
-    #     NodeMgmt().batch_add_node_config(node_configs)
-
     def controller(self):
         base_dir = PLUGIN_DIRECTORY
         configs = self.format_configs()

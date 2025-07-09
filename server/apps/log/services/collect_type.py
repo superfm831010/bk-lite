@@ -1,8 +1,11 @@
+import toml
+import yaml
 from django.db import transaction
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.log.models import CollectInstance, CollectInstanceOrganization
+from apps.log.models import CollectInstance, CollectInstanceOrganization, CollectConfig
 from apps.log.plugins.controller import Controller
+from apps.rpc.node_mgmt import NodeMgmt
 
 
 class CollectTypeService:
@@ -98,3 +101,39 @@ class CollectTypeService:
                         organization=org
                     ))
             CollectInstanceOrganization.objects.bulk_create(creates, ignore_conflicts=True)
+
+    @staticmethod
+    def update_instance_config(child_info, base_info):
+
+        child_env = None
+
+        if base_info:
+            config_obj = CollectConfig.objects.filter(id=base_info["id"]).first()
+            if config_obj:
+                content = yaml.dump(base_info["content"], default_flow_style=False)
+                env_config = base_info.get("env_config")
+                if env_config:
+                    child_env = {k: v for k, v in env_config.items()}
+                NodeMgmt().update_config_content(base_info["id"], content, env_config)
+
+        if child_info or child_env:
+            config_obj = CollectConfig.objects.filter(id=child_info["id"]).first()
+            if not config_obj:
+                return
+            content = toml.dumps(child_info["content"]) if child_info else None
+            NodeMgmt().update_child_config_content(child_info["id"], content, child_env)
+
+    @staticmethod
+    def update_instance(instance_id, name, organizations):
+        """更新监控对象实例"""
+        instance = CollectInstance.objects.filter(id=instance_id).first()
+        if not instance:
+            raise BaseAppException("collect instance does not exist")
+        if name:
+            instance.name = name
+            instance.save()
+
+        # 更新组织信息
+        instance.collectinstanceorganization_set.all().delete()
+        for org in organizations:
+            instance.collectinstanceorganization_set.create(organization=org)
