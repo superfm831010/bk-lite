@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.log.models import CollectInstance, CollectInstanceOrganization
 from apps.log.plugins.controller import Controller
@@ -74,3 +76,25 @@ class CollectTypeService:
         if old_instances:
             raise BaseAppException(
                 f"以下实例已存在：{'、'.join([instance['instance_name'] for instance in old_instances])}")
+
+    @staticmethod
+    def set_instances_organizations(instance_ids, organizations):
+        """设置监控对象实例组织"""
+        if not instance_ids or not organizations:
+            return
+
+        with transaction.atomic():
+            # 删除旧的组织关联
+            CollectInstanceOrganization.objects.filter(
+                collect_instance_id__in=instance_ids
+            ).delete()
+
+            # 添加新的组织关联
+            creates = []
+            for instance_id in instance_ids:
+                for org in organizations:
+                    creates.append(CollectInstanceOrganization(
+                        collect_instance_id=instance_id,
+                        organization=org
+                    ))
+            CollectInstanceOrganization.objects.bulk_create(creates, ignore_conflicts=True)

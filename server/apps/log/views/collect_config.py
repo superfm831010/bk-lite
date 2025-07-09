@@ -188,3 +188,25 @@ class CollectConfigViewSet(ViewSet):
             content = toml.dumps(request.data["content"])
             NodeMgmt().update_config_content(request.data["id"], content)
         return WebUtils.response_success()
+
+    @swagger_auto_schema(
+        operation_id="set_organizations",
+        operation_description="设置实例组织",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "instance_ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING),
+                                               description="实例ID列表"),
+                "organizations": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING),
+                                                description="组织ID列表"),
+            },
+            required=["instance_ids", "organizations"]
+        )
+    )
+    @action(methods=['post'], detail=False, url_path='set_organizations')
+    def set_organizations(self, request):
+        """设置监控对象实例组织"""
+        instance_ids = request.data.get("instance_ids", [])
+        organizations = request.data.get("organizations", [])
+        CollectTypeService.set_instances_organizations(instance_ids, organizations)
+        return WebUtils.response_success()
