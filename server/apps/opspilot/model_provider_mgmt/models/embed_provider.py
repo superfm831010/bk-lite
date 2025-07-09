@@ -33,6 +33,7 @@ class EmbedProvider(models.Model, EncryptMixin):
 
     def save(self, *args, **kwargs):
         if "api_key" in self.embed_config:
+            self.decrypt_field("api_key", self.embed_config)
             self.encrypt_field("api_key", self.embed_config)
         super().save(*args, **kwargs)
 

@@ -36,7 +36,13 @@ class KnowledgeBase(MaintainerInfo, TimeInfo):
     rag_k = models.IntegerField(default=50, verbose_name=_("Number of Results"))
     rag_num_candidates = models.IntegerField(default=1000, verbose_name=_("Number of Candidates"))
     text_search_mode = models.CharField(default="match", max_length=20, verbose_name=_("Text search mode"))
-    result_count = models.IntegerField(default=50)
+    enable_naive_rag = models.BooleanField(default=True)
+    enable_qa_rag = models.BooleanField(default=True)
+    enable_graph_rag = models.BooleanField(default=False)
+
+    rag_size = models.IntegerField(default=50)
+    qa_size = models.IntegerField(default=50, verbose_name=_("QA size"))
+    graph_size = models.IntegerField(default=50, verbose_name=_("Graph size"))
 
     class Meta:
         db_table = "knowledge_mgmt_knowledgebase"

@@ -88,7 +88,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             params = dict(
                 kwargs,
                 **{
-                    "size": kwargs.get("rag_size", knowledge_base.result_count),
+                    "size": kwargs.get("rag_size", knowledge_base.rag_size),
                     "enable_qa_rag": False,
                     "enable_graph_rag": False,
                 },
@@ -98,7 +98,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             params = dict(
                 kwargs,
                 **{
-                    "size": kwargs.get("qa_size", knowledge_base.result_count),
+                    "size": kwargs.get("qa_size", knowledge_base.qa_size),
                     "enable_naive_rag": False,
                     "enable_graph_rag": False,
                 },
@@ -107,7 +107,9 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         if kwargs.get("enable_graph_rag", False):
             graph_obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base.id).first()
             if graph_obj:
-                graph_list = GraphUtils.search_graph(graph_obj, kwargs["graph_size"], query)
+                res = GraphUtils.search_graph(graph_obj, kwargs["graph_size"], query)
+                if res["result"]:
+                    graph_list = res["data"]
         doc_ids = [doc["knowledge_id"] for doc in docs]
         knowledge_document_list = KnowledgeDocument.objects.filter(id__in=set(doc_ids)).values(
             "id", "name", "knowledge_source_type", "created_by", "created_at"
