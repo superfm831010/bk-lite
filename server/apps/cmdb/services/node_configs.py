@@ -430,6 +430,10 @@ class ApacheNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "apache"
     plugin_name = "apache_info"
 
+class ActiveMQNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "activemq"
+    plugin_name = "activemq_info"
+
 class NodeParamsFactory:
     """
     工厂类，根据 instance 的 model_id 返回对应的 NodeParams 实例

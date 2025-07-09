@@ -32,6 +32,7 @@ class CollectService(object):
             "es_info": "ESInfo",
             "mongodb_info": "MongoDBInfo",
             "apache_info": "ApacheInfo",
+            "activemq_info": "ActiveMQInfo",
         }
 
     def import_plugin(self, plugin_name):

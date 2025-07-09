@@ -1575,6 +1575,18 @@ class MiddlewareCollectMetrics(CollectBase):
                 "error_log":"error_log",
                 "custom_Log":"custom_Log",
                 "include":"include",
+            },
+            "activemq":{
+                "inst_name": self.get_inst_name,
+                "ip_addr":"ip_addr",
+                "port":"port",
+                "version":"version",
+                "install_path":"install_path",
+                "conf_path":"conf_path",
+                "java_path":"java_path",
+                "java_version":"java_version",
+                "xms":"xms",
+                "xmx":"xmx",
             }
 
         }

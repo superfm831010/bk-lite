@@ -137,6 +137,7 @@ MIDDLEWARE_METRIC_MAP = {
     "rabbitmq": ["rabbitmq_info_gauge"],
     "tomcat": ["tomcat_info_gauge"],
     "apache": ["apache_info_gauge"],
+    "activemq": ["activemq_info_gauge"],
 }
 
 # Tencent cloud
