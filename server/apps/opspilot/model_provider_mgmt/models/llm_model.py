@@ -33,6 +33,7 @@ class LLMModel(models.Model, EncryptMixin):
 
     def save(self, *args, **kwargs):
         if "openai_api_key" in self.llm_config:
+            self.decrypt_field("openai_api_key", self.llm_config)
             self.encrypt_field("openai_api_key", self.llm_config)
         super().save(*args, **kwargs)
 
