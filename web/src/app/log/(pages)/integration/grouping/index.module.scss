@@ -1,0 +1,78 @@
+.conditionItem {
+    :global {
+        .ant-btn-default {
+            min-width: 32px;
+        }
+    }
+
+    .itemLabel {
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .itemOption {
+        display: flex;
+    }
+
+    .source {
+        .sourceObjectType {
+            :global {
+                .ant-select-selector {
+                    border-radius: 6px 0 0 6px;
+                }
+            }
+        }
+
+        .sourceObject {
+            :global {
+                .ant-select-selector {
+                    border-radius: 0 6px 6px 0;
+                }
+            }
+        }
+    }
+
+    .conditions {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: -10px;
+
+        .conditionTitle {
+            height: 32px;
+            line-height: 32px;
+            margin-right: 10px;
+        }
+
+        .filter {
+            margin-bottom: 10px;
+
+            :global {
+                .ant-btn:nth-of-type(1) {
+                    border-radius: 0 6px 6px 0;
+                    margin-right: 10px;
+                }
+
+                .ant-btn:nth-of-type(2) {
+                    margin-right: 10px;
+                }
+
+                .ant-btn {
+                    background: var(--color-fill-2);
+                }
+
+                .ant-btn-icon {
+                    transform: scale(0.8);
+                }
+
+                .ant-select-selector {
+                    border-radius: 0;
+                }
+
+                .ant-input {
+                    border-radius: 0;
+                }
+            }
+        }
+    }
+}

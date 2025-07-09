@@ -1,0 +1,58 @@
+export interface CollectTypeItem {
+  id: number;
+  name: string;
+  collector: string;
+  icon?: string;
+  domain?: string;
+  display_description?: string;
+  description: string;
+  display_name?: string;
+  display_collector?: string;
+  [key: string]: unknown;
+}
+
+export interface IntegrationAccessProps {
+  showInterval?: boolean;
+}
+
+export interface InstNameConfig {
+  index: number;
+  field: string;
+  dataIndex?: string;
+}
+
+export interface IntegrationLogInstance {
+  key?: string;
+  node_ids?: string | string[] | null;
+  instance_name?: string | null;
+  group_ids?: string[];
+  url?: string | null;
+  urls?: string | string[] | null;
+  ip?: string | null;
+  instance_id?: string;
+  instance_type?: string;
+  endpoint?: string | null;
+  server?: string | null;
+  host?: string | null;
+  port?: string | null;
+  jmx_url?: string | null;
+  ENV_PORT?: string | null;
+  ENV_HOST?: string | null;
+  [key: string]: any;
+}
+
+export interface InstanceInfo {
+  organizations?: (string | number)[];
+  organization?: (string | number)[];
+  instance_name?: string;
+  instance_id?: string;
+  rule?: any;
+  name?: string;
+  keys?: React.Key[];
+}
+
+export interface FilterItem {
+  name: string | null;
+  method: string | null;
+  value: string;
+}
