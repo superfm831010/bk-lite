@@ -3,7 +3,7 @@ import { ColumnItem } from "@/app/mlops/types";
 import { TrainTaskHistory } from "@/app/mlops/types/task";
 import CustomTable from "@/components/custom-table";
 import { useTranslation } from "@/utils/i18n";
-import useMlopsApi from "@/app/mlops/api";
+import useMlopsTaskApi from "@/app/mlops/api/task";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
 import { JointContent } from "antd/es/message/interface";
@@ -23,7 +23,7 @@ const TrainTaskDrawer = ({ open, onCancel, selectId }:
     selectId: number | null
   }) => {
   const { t } = useTranslation();
-  const { getOneAnomalyTask } = useMlopsApi();
+  const { getOneAnomalyTask } = useMlopsTaskApi();
   const [historyData, setHistoryData] = useState<TrainTaskHistory[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({

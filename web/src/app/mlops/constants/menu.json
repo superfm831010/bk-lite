@@ -7,6 +7,12 @@
       "name": "anomaly_detection_datasets",
       "children": [
         {
+          "title": "异常检测",
+          "icon": "Gc_103_face-Data",
+          "url": "/mlops/manage/list",
+          "name": "anomaly_detection_datasets"
+        },
+        {
           "url": "/mlops/manage/detail",
           "name": "Detail",
           "isNotMenuItem": true
@@ -41,7 +47,7 @@
       "children": [
         {
           "title": "异常检测",
-          "url": "/mlops/model-release/models",
+          "url": "/mlops/model-release/list",
           "icon": "guanli",
           "name": "train_tasks",
           "isNotMenuItem": false

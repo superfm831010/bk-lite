@@ -2,7 +2,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // import { useRouter, usePathname } from 'next/navigation';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
-import useMlopsApi from '@/app/mlops/api';
+import useMlopsTaskApi from '@/app/mlops/api/task';
+import useMlopsManageApi from '@/app/mlops/api/manage';
 import { Button, Input, Popconfirm, message, Tag } from 'antd';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/custom-table';
@@ -31,12 +32,12 @@ const TrainTask = () => {
   const { convertToLocalizedTime } = useLocalizedTime();
   // const router = useRouter();
   // const path = usePathname();
+  const { getAnomalyDatasetsList } = useMlopsManageApi();
   const {
     getAnomalyTaskList,
     deleteAnomalyTrainTask,
     startAnomalyTrainTask,
-    getAnomalyDatasetsList,
-  } = useMlopsApi();
+  } = useMlopsTaskApi();
   const modalRef = useRef<ModalRef>(null);
   const [tableData, setTableData] = useState<TrainJob[]>([]);
   const [datasetOptions, setDatasetOptions] = useState<Option[]>([]);
@@ -124,12 +125,13 @@ const TrainTask = () => {
             {t('traintask.history')}
           </Button> */}
           <Popconfirm
-            title={t('traintask.deleteTraintask')}
+            title={t('traintask.delTraintask')}
+            description={t(`traintask.delTraintaskContent`)}
             okText={t('common.confirm')}
             cancelText={t('common.cancel')}
             onConfirm={() => onDelete(record)}
           >
-            <Button type="link">{t('common.delete')}</Button>
+            <Button type="link" danger>{t('common.delete')}</Button>
           </Popconfirm>
         </>
       ),
@@ -174,9 +176,7 @@ const TrainTask = () => {
   const getTasks = async () => {
     setLoading(true);
     try {
-      const [{ items, count }] = await Promise.all([
-        fetchTaskList(pagination.current, pagination.pageSize),
-      ]);
+      const { items, count } = await fetchTaskList(pagination.current, pagination.pageSize);
       const _data =
         items?.map((item: any) => ({
           id: item.id,
