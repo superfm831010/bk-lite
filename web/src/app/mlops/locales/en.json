@@ -29,6 +29,7 @@
     "max": "Max"
   },
   "datasets": {
+    "datasets": "Datasets",
     "title": "Document List",
     "detail": "Support for uploading timing data and labeling this data for subsequent model training.",
     "addform": "New datasets added",
