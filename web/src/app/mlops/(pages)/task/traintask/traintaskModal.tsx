@@ -19,7 +19,8 @@ import {
   forwardRef
 } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import useMlopsApi from '@/app/mlops/api';
+import useMlopsTaskApi from '@/app/mlops/api/task';
+import useMlopsManageApi from '@/app/mlops/api/manage';
 import { ModalRef, Option } from '@/app/mlops/types';
 import { TrainData } from '@/app/mlops/types/manage';
 import { TrainJob, TrainTaskModalProps, AlgorithmParam } from '@/app/mlops/types/task';
@@ -36,11 +37,8 @@ interface ModalState {
 
 const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptions, onSuccess }, ref) => {
   const { t } = useTranslation();
-  const {
-    addAnomalyTrainTask,
-    getAnomalyTrainData,
-    updateAnomalyTrainTask,
-    getAnomalyTrainDataInfo } = useMlopsApi();
+  const { addAnomalyTrainTask, updateAnomalyTrainTask } = useMlopsTaskApi();
+  const { getAnomalyTrainData, getAnomalyTrainDataInfo } = useMlopsManageApi();
   const [modalState, setModalState] = useState<ModalState>({
     isOpen: false,
     type: 'add',
@@ -159,8 +157,8 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
   const renderFileOption = useCallback(async (data: number) => {
     if (!formRef.current || !data) return;
     const param = { dataset: data };
-    const {formData} = modalState;
-    setLoadingState(prev => ({...prev, select: true}));
+    const { formData } = modalState;
+    setLoadingState(prev => ({ ...prev, select: true }));
 
     try {
       const trainData = await getAnomalyTrainData(param);
@@ -315,7 +313,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
             label={t('traintask.algorithms')}
             rules={[{ required: true, message: t('common.inputMsg') }]}
           >
-            <Select placeholder={t('common.selectMsg')} onChange={onTypeChange} options={[
+            <Select placeholder={t('traintask.selectAlgorithmsMsg')} onChange={onTypeChange} options={[
               { value: 'RandomForest', label: `RandomForest` },
             ]} />
           </Form.Item>
@@ -324,7 +322,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
             label={t('traintask.maxEvals')}
             rules={[{ required: true, message: t('common.inputMsg') }]}
           >
-            <InputNumber style={{ width: '100%' }} placeholder={t('common.inputMsg')} />
+            <InputNumber style={{ width: '100%' }} placeholder={t('traintask.maxEvalsMsg')} />
           </Form.Item>
           <Form.Item
             name='dataset_id'

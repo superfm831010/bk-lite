@@ -1,0 +1,190 @@
+from collections import defaultdict
+
+import toml
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.viewsets import ModelViewSet, ViewSet
+
+from apps.core.utils.web_utils import WebUtils
+from apps.log.models.collect_config import CollectType, CollectInstance, CollectConfig, CollectInstanceOrganization
+from apps.log.serializers.collect_config import CollectTypeSerializer
+from apps.log.filters.collect_config import CollectTypeFilter
+from apps.log.services.collect_type import CollectTypeService
+from apps.rpc.node_mgmt import NodeMgmt
+
+
+class CollectTypeViewSet(ModelViewSet):
+    queryset = CollectType.objects.all()
+    serializer_class = CollectTypeSerializer
+    filterset_class = CollectTypeFilter
+
+
+class CollectInstanceViewSet(ViewSet):
+
+    @swagger_auto_schema(
+        operation_description="查询采集实例列表",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "collect_type_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="采集类型ID"),
+                "name": openapi.Schema(type=openapi.TYPE_STRING, description="采集实例名称"),
+                "page": openapi.Schema(type=openapi.TYPE_INTEGER, description="页码"),
+                "page_size": openapi.Schema(type=openapi.TYPE_INTEGER, description="每页数据条数"),
+            },
+            required=["page", "page_size"]
+        ),
+    )
+    @action(methods=['post'], detail=False, url_path='search')
+    def search(self, request):
+        """
+        List all collect instances.
+        """
+        collect_type_id = request.query_params.get("collect_type_id")
+        name = request.query_params.get("name")
+        page = int(request.query_params.get("page", 1))
+        page_size = int(request.query_params.get("page_size", 10))
+
+        queryset = CollectInstance.objects.select_related("collect_type")
+        if collect_type_id:
+            queryset = queryset.filter(collect_type_id=collect_type_id)
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+
+        # 计算总数
+        total_count = queryset.count()
+        # 计算分页
+        start = (page - 1) * page_size
+        end = page * page_size
+        # 获取当前页的数据
+        data_list = queryset.values("id", "name", "collect_type__name", "collect_type__collector")[start:end]
+
+        # 补充组织与配置
+        org_map = defaultdict(list)
+
+        qs = CollectInstanceOrganization.objects.filter(
+            collect_instance_id__in=[item["id"] for item in data_list]
+        ).values_list("collect_instance_id", "organization")
+
+        for instance_id, organization in qs:
+            org_map[instance_id].append(organization)
+
+        conf_map = dict(CollectConfig.objects.filter(
+            collect_instance_id__in=[item["id"] for item in data_list]).values_list("collect_instance", "id"))
+
+        items = []
+        for info in data_list:
+            info.update(
+                organization=org_map.get(info["id"]),
+                config_id=conf_map.get(info["id"]),
+            )
+            items.append(info)
+
+        data = {"count": total_count, "items": items}
+        return WebUtils.response_success(data)
+
+    @swagger_auto_schema(
+        operation_description="批量接入日志",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "collector": openapi.Schema(type=openapi.TYPE_STRING, description="采集器名称"),
+                "collect_type": openapi.Schema(type=openapi.TYPE_STRING, description="采集类型"),
+                "collect_type_id": openapi.Schema(type=openapi.TYPE_NUMBER, description="采集类型ID"),
+                "configs": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "...": openapi.Schema(type=openapi.TYPE_STRING, description="公共配置内容"),
+                        }
+                    )),
+                "instances": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "instance_id": openapi.Schema(type=openapi.TYPE_STRING, description="实例id"),
+                            "instance_type": openapi.Schema(type=openapi.TYPE_STRING, description="实例类型"),
+                            "instance_name": openapi.Schema(type=openapi.TYPE_STRING, description="实例类型"),
+                            "group_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_INTEGER), description="组织id列表"),
+                            "node_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_INTEGER), description="节点id列表"),
+                            "...": openapi.Schema(type=openapi.TYPE_OBJECT, description="其他信息"),
+                        }
+                    )
+                )
+            },
+            required=["collector", "collect_type_id", "collect_type", "configs", "instances"]
+        )
+    )
+    @action(methods=['post'], detail=False, url_path='batch_create')
+    def batch_create(self, request):
+        CollectTypeService.batch_create_collect_configs(request.data)
+        return WebUtils.response_success()
+
+    @swagger_auto_schema(
+        operation_id="remove_collect_instance",
+        operation_description="批量删除采集实例",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "instance_ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING),
+                                               description="采集实例ID列表"),
+                "clean_child_config": openapi.Schema(type=openapi.TYPE_BOOLEAN, description="是否清除子配置"),
+            },
+            required=["instance_ids", "clean_child_config"]
+        )
+    )
+    @action(methods=['post'], detail=False, url_path='remove_collect_instance')
+    def remove_collect_instance(self, request):
+        instance_ids = request.data.get("instance_ids", [])
+        if request.data.get("clean_child_config"):
+            config_objs = CollectConfig.objects.filter(collect_instance_id__in=instance_ids)
+            NodeMgmt().delete_configs([config.id for config in config_objs])
+            config_objs.delete()
+        CollectInstance.objects.filter(id__in=instance_ids).delete()
+        return WebUtils.response_success()
+
+
+class CollectConfigViewSet(ViewSet):
+
+    @swagger_auto_schema(
+        operation_description="查询配置内容",
+        operation_id="get_config_content",
+        manual_parameters=[
+            openapi.Parameter(
+                'id', openapi.IN_QUERY, description="配置ID", type=openapi.TYPE_STRING, required=True
+            )
+        ],
+    )
+    @action(methods=['get'], detail=False, url_path='get_config_content')
+    def get_config_content(self, request):
+        id = request.query_params.get("id")
+        config_obj = CollectConfig.objects.filter(id=id)
+        if not config_obj.exists():
+            return WebUtils.response_error("配置不存在", status.HTTP_404_NOT_FOUND)
+
+        configs = NodeMgmt().get_configs_by_ids([id])
+        config = configs[0]
+        config["content"] = toml.loads(config["config_template"])
+        return WebUtils.response_success(config)
+
+    @swagger_auto_schema(
+        operation_description="更改采集配置",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "id": openapi.Schema(type=openapi.TYPE_STRING, description="配置ID"),
+                "content": openapi.Schema(type=openapi.TYPE_OBJECT, description="配置内容"),
+            },
+            required=["id", "content"]
+        ),
+    )
+    @action(methods=['post'], detail=False, url_path='update_instance_collect_config')
+    def update_instance_collect_config(self, request):
+        config_obj = CollectConfig.objects.filter(id=request.data["id"]).first()
+        if config_obj:
+            content = toml.dumps(request.data["content"])
+            NodeMgmt().update_config_content(request.data["id"], content)
+        return WebUtils.response_success()

@@ -1,6 +1,6 @@
 'use client'
 import React, { memo, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
 import AnomalyDetail from './AnomalyDetail';
 import Icon from '@/components/icon';
@@ -8,22 +8,21 @@ import SubLayout from '@/components/sub-layout';
 
 const Intro = memo(({
   folder_name,
-  description,
+  // description,
 }: {
   folder_name: string;
   description: string;
 }) => {
   return (
     <div>
-      <div className="flex justify-center items-center w-full">
+      <div className="flex items-center w-full">
         <Icon
           type="chakanshuji"
           className="h-16 w-16"
           style={{ height: '36px', width: '36px', color: 'blue' }}
         />
-        <h1 className="text-center truncate">{folder_name}</h1>
+        <h1 className="ml-2 text-center truncate">{folder_name}</h1>
       </div>
-      <p className="text-xs">{description}</p>
     </div>
   )
 });
@@ -48,7 +47,7 @@ Topsection.displayName = 'Topsection';
 const Detail = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-
+  const router = useRouter();
   const {
     folder_name,
     description,
@@ -69,7 +68,8 @@ const Detail = () => {
         <SubLayout
           topSection={<Topsection t={t} />}
           intro={<Intro folder_name={folder_name} description={description} />}
-          showBackButton={true}
+          onBackButtonClick={() => router.back()}
+          showSideMenu={false}
         >
           <div className='w-full relative'>
             {renderPage[activeTap]}

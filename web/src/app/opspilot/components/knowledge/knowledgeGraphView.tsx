@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { Spin } from 'antd';
+import { useTranslation } from '@/utils/i18n';
 
 export interface GraphNode {
   id: string;
@@ -69,6 +70,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   onEdgeClick,
   useMockData = false,
 }) => {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<any>(null);
   const [initError, setInitError] = useState<string | null>(null);
@@ -335,7 +337,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   if (loading || isInitializing) {
     return (
       <div className="flex items-center justify-center" style={{ height }}>
-        <Spin size="large" tip="加载知识图谱中..." />
+        <Spin size="large" tip={t('knowledge.knowledgeGraph.loading')} />
       </div>
     );
   }
@@ -343,7 +345,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   if (initError) {
     return (
       <div className="flex flex-col items-center justify-center text-gray-500" style={{ height }}>
-        <div className="text-red-500 mb-2">图谱初始化失败</div>
+        <div className="text-red-500 mb-2">{t('common.initializeFailed')}</div>
         <div className="text-sm">{initError}</div>
         <button 
           className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -352,7 +354,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
             createGraph();
           }}
         >
-          重试
+          {t('common.retry')}
         </button>
       </div>
     );
@@ -361,7 +363,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   if (!graphData.nodes.length) {
     return (
       <div className="flex items-center justify-center text-gray-500" style={{ height }}>
-        暂无知识图谱数据
+        {t('knowledge.knowledgeGraph.noGraphData')}
       </div>
     );
   }

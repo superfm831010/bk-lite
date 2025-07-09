@@ -133,13 +133,13 @@
         },
         {
           "title": "问答对详情",
-          "url": "/opspilot/knowledge/detail/documents/qapairResult",
+          "url": "/opspilot/knowledge/detail/documents/qapair/result",
           "name": "knowledge_qapair_result",
           "isNotMenuItem": true
         },
         {
           "title": "知识图谱设置",
-          "url": "/opspilot/knowledge/detail/documents/knowledgeGraph/edit",
+          "url": "/opspilot/knowledge/detail/documents/graph/edit",
           "name": "knowledge_graph_edit",
           "isNotMenuItem": true
         }
@@ -331,13 +331,13 @@
         },
         {
           "title": "QAPair Result",
-          "url": "/opspilot/knowledge/detail/documents/qapairResult",
+          "url": "/opspilot/knowledge/detail/documents/qapair/result",
           "name": "knowledge_qapair_result",
           "isNotMenuItem": true
         },
         {
           "title": "Knowledge Graph Edit",
-          "url": "/opspilot/knowledge/detail/documents/knowledgeGraph/edit",
+          "url": "/opspilot/knowledge/detail/documents/graph/edit",
           "name": "knowledge_graph_edit",
           "isNotMenuItem": true
         }

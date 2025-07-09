@@ -1,0 +1,60 @@
+{
+  "client_id": "log",
+  "name": "Log",
+  "url": "/log/search",
+  "description": "A comprehensive log collection and analysis system that provides log collection, storage, analysis, and visualization capabilities, supporting real-time monitoring and historical backtracking to help identify root causes of issues.",
+  "menus": [
+    {
+      "name": "Search",
+      "children": [
+        {
+          "id": "search",
+          "name": "Search",
+          "operation": ["View"]
+        }
+      ]
+    },
+    {
+      "name": "Integration",
+      "children": [
+        {
+          "id": "receive",
+          "name": "Receive",
+          "operation": ["View", "Edit", "Delete"]
+        },
+        {
+          "id": "integration_list",
+          "name": "Integration-list",
+          "operation": ["View", "Setting"]
+        },
+        {
+          "id": "integration_configure",
+          "name": "Integration-configure",
+          "operation": ["View", "Add"]
+        },
+        {
+          "id": "integration_output",
+          "name": "Integration-output",
+          "operation": ["View"]
+        },
+        {
+          "id": "grouping",
+          "name": "Grouping",
+          "operation": ["View", "Add", "Edit", "Delete"]
+        }
+      ]
+    }
+  ],
+  "roles": [
+    {
+      "name": "admin",
+      "role_name": "log_admin",
+      "menus": []
+    },
+    {
+      "name": "normal",
+      "role_name": "log_normal",
+      "menus": ["search-View", "integration_list-View"]
+    }
+  ]
+}
