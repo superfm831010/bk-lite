@@ -43,39 +43,41 @@ const UserInfo: React.FC = () => {
   const federatedLogout = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/federated-logout', {
+      // Call logout API for server-side cleanup
+      await fetch('/api/auth/federated-logout', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        // Clear authentication token from cookie
-        clearAuthToken();
-        
-        // Clear the session using NextAuth's signOut
-        await signOut({ redirect: false });
-        
-        // Redirect to the login page
-        if (data.url) {
-          window.location.href = data.url;
-        } else {
-          window.location.href = '/auth/signin';
-        }
-      } else {
-        throw new Error(data.error || 'Failed to log out');
-      }
+      // Clear authentication token
+      clearAuthToken();
+      
+      // Use NextAuth's signOut to clear client session
+      await signOut({ redirect: false });
+      
+      // Build login page URL with current page as callback URL after successful login
+      const currentPageUrl = `${window.location.origin}${pathname}`;
+      const loginUrl = `/auth/signin?callbackUrl=${encodeURIComponent(currentPageUrl)}`;
+      
+      // Redirect to login page
+      window.location.href = loginUrl;
     } catch (error) {
       console.error('Logout error:', error);
       message.error(t('common.logoutFailed'));
       
-      // Even on error, attempt to clear token and sign out
+      // Even if API call fails, still clear token and redirect to login page
       clearAuthToken();
       await signOut({ redirect: false });
-      window.location.href = '/auth/signin';
+      
+      const currentPageUrl = `${window.location.origin}${pathname}`;
+      const loginUrl = `/auth/signin?callbackUrl=${encodeURIComponent(currentPageUrl)}`;
+      window.location.href = loginUrl;
     } finally {
       setIsLoading(false);
     }
-  }, [t]);
+  }, [pathname, t]);
 
   const handleChangeGroup = useCallback(async (key: string) => {
     const nextGroup = flatGroups.find(group => group.id === key);
@@ -90,7 +92,7 @@ const UserInfo: React.FC = () => {
     } else {
       window.location.reload();
     }
-  }, [flatGroups, pathname, router, setSelectedGroup]);
+  }, [flatGroups, pathname, router]);
 
   const dropdownItems: MenuProps['items'] = useMemo(() => {
     const items: MenuProps['items'] = [
@@ -141,7 +143,7 @@ const UserInfo: React.FC = () => {
     ];
 
     return items;
-  }, [t, selectedGroup, flatGroups, handleChangeGroup, isLoading]);
+  }, [selectedGroup, flatGroups, isLoading]);
 
   const handleMenuClick = ({ key }: any) => {
     if (key === 'version') setVersionVisible(true);

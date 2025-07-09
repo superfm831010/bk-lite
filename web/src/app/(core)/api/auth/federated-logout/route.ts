@@ -16,11 +16,13 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    // Return success with the signIn URL for redirection
-    const signInUrl = '/auth/signin';
+    // Additional server-side cleanup logic can be added here
+    // For example: notify other services about user logout, log events, etc.
+
+    // Return success
     return NextResponse.json({ 
       success: true, 
-      url: signInUrl 
+      message: 'Logout successful'
     }, { status: 200 });
   } catch (error) {
     console.error('Logout error:', error);
