@@ -199,7 +199,7 @@ def sync_web_page_knowledge(web_page_knowledge_id):
     web_page.knowledge_document.train_status = DocumentStatus.CHUNKING
     web_page.knowledge_document.save()
     general_embed_by_document_list(
-        document_list, username=web_page.knowedge_document.created_by, domain=web_page.knowedge_document.domain
+        document_list, username=web_page.knowledge_document.created_by, domain=web_page.knowledge_document.domain
     )
 
 

@@ -1,19 +1,31 @@
 "use client";
-import { useEffect, useState, useMemo, memo, useCallback } from "react";
+import {
+  useEffect,
+  useState,
+  useMemo,
+  memo,
+  useCallback
+} from "react";
 import { useSearchParams } from 'next/navigation';
 import { cloneDeep } from "lodash";
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { useTranslation } from "@/utils/i18n";
-import { TypeContent } from "@/app/mlops/constants";
-import useMlopsApi from "@/app/mlops/api";
-// import { exportToCSV } from "@/app/mlops/utils/common";
-import { Button, message, Spin, TablePaginationConfig, Tag } from "antd";
-import Aside from "./components/aside";
+import { TYPE_CONTENT } from "@/app/mlops/constants";
+import useMlopsManageApi from "@/app/mlops/api/manage";
+import {
+  Button,
+  message,
+  Spin,
+  TablePaginationConfig,
+  Tag
+} from "antd";
+import Aside from "./aside";
 import Icon from '@/components/icon';
 import LineChart from "@/app/mlops/components/charts/lineChart";
 import CustomTable from "@/components/custom-table";
-import { ColumnItem, AnomalyTrainData, TableDataItem, Pagination, } from '@/app/mlops/types';
-import sideMenuStyle from './components/index.module.scss';
+import { ColumnItem, TableDataItem, Pagination, } from '@/app/mlops/types';
+import { AnomalyTrainData } from '@/app/mlops/types/manage';
+import sideMenuStyle from './aside/index.module.scss';
 
 interface AnnotationData {
   timestamp: number;
@@ -55,7 +67,7 @@ Topsection.displayName = 'Topsection';
 const AnnotationPage = () => {
   const searchParams = useSearchParams();
   const { t } = useTranslation();
-  const { getAnomalyTrainDataInfo, getAnomalyTrainData, labelingData } = useMlopsApi();
+  const { getAnomalyTrainDataInfo, getAnomalyTrainData, labelingData } = useMlopsManageApi();
   const { convertToLocalizedTime } = useLocalizedTime();
   const [menuItems, setMenuItems] = useState<AnomalyTrainData[]>([]);
   const [tableData, setTableData] = useState<TableDataItem[]>([]);
@@ -304,8 +316,7 @@ const AnnotationPage = () => {
     } catch (e) {
       console.log(e);
       message.error(t('datasets.saveError'));
-    }
-    finally {
+    } finally {
       setLoadingState(prev => ({ ...prev, saveLoading: false }));
       setIsChange(false);
     }
@@ -349,18 +360,16 @@ const AnnotationPage = () => {
                   <span className="mr-2">文件类型: </span>
                   {tagsData.map((tag) => (
                     <Tag.CheckableTag
-                      className="h-full content-center "
+                      className={`h-full content-center`}
                       key={tag}
                       checked={selectedTags.includes(tag)}
                       style={{
                         backgroundColor: selectedTags.includes(tag) ? '#1890ff' : '',
-                        color: selectedTags.includes(tag) ? '#fff' : '#000',
-                        border: selectedTags.includes(tag) ? '1px solid #1890ff' : '',
-                        borderRadius: '4px'
+                        color: selectedTags.includes(tag) ? `var(--color-secondary)` : `var(--color-text-1)`,
                       }}
                       onChange={(checked) => handleTagChange(tag, checked)}
                     >
-                      {t(`datasets.${TypeContent[tag]}`)}
+                      {t(`datasets.${TYPE_CONTENT[tag]}`)}
                     </Tag.CheckableTag>
                   ))}
                 </div>

@@ -12,13 +12,74 @@ class ElasticsearchQueryBuilder:
     def build_metadata_filter(metadata_filter: Dict) -> List[Dict]:
         filters = []
         for key, value in metadata_filter.items():
-            if isinstance(value, (str, bool, int, float)):
+            if key.endswith('__exists'):
+                filters.append({"exists": {"field": f"metadata.{key[:-8]}"}})
+            elif key.endswith('__missing'):
+                filters.append(
+                    {"bool": {"must_not": {"exists": {"field": f"metadata.{key[:-9]}"}}}})
+            elif key.endswith('__range'):
+                range_key = key[:-7]
+                if isinstance(value, dict) and 'gte' in value and 'lte' in value:
+                    filters.append({"range": {f"metadata.{range_key}": {
+                                   "gte": value['gte'], "lte": value['lte']}}})
+                else:
+                    raise ValueError(
+                        f"Invalid range filter for key {key}: {value}")
+            elif key.endswith('__in'):
+                in_key = key[:-4]
+                if isinstance(value, list):
+                    filters.append({"terms": {f"metadata.{in_key}": value}})
+                else:
+                    raise ValueError(
+                        f"Invalid in filter for key {key}: {value}")
+            elif key.endswith('__not_in'):
+                not_in_key = key[:-8]
+                if isinstance(value, list):
+                    filters.append(
+                        {"bool": {"must_not": {"terms": {f"metadata.{not_in_key}": value}}}})
+                else:
+                    raise ValueError(
+                        f"Invalid not_in filter for key {key}: {value}")
+            elif key.endswith('__like'):
+                like_key = key[:-6]
+                if isinstance(value, str):
+                    filters.append(
+                        {"wildcard": {f"metadata.{like_key}": f"*{value}*"}})
+                else:
+                    raise ValueError(
+                        f"Invalid like filter for key {key}: {value}")
+            elif key.endswith('__not_like'):
+                not_like_key = key[:-10]
+                if isinstance(value, str):
+                    filters.append(
+                        {"bool": {"must_not": {"wildcard": {f"metadata.{not_like_key}": f"*{value}*"}}}})
+                else:
+                    raise ValueError(
+                        f"Invalid not_like filter for key {key}: {value}")
+            elif key.endswith('__is_null'):
+                is_null_key = key[:-8]
+                filters.append(
+                    {"bool": {"must_not": {"exists": {"field": f"metadata.{is_null_key}"}}}})
+            elif key.endswith('__is_not_null'):
+                is_not_null_key = key[:-12]
+                filters.append(
+                    {"exists": {"field": f"metadata.{is_not_null_key}"}})
+            elif key.endswith('__is_empty'):
+                is_empty_key = key[:-9]
+                filters.append(
+                    {"bool": {"must_not": {"exists": {"field": f"metadata.{is_empty_key}"}}}})
+            elif key.endswith('__is_not_empty'):
+                is_not_empty_key = key[:-14]
+                filters.append(
+                    {"exists": {"field": f"metadata.{is_not_empty_key}"}})
+            elif isinstance(value, (str, bool, int, float)):
                 field_name = f"metadata.{key}"
                 if isinstance(value, str):
                     field_name += ".keyword"
                 filters.append({"term": {field_name: value}})
             else:
-                raise ValueError(f"Unsupported metadata filter type for key {key}: {type(value)}")
+                raise ValueError(
+                    f"Unsupported metadata filter type for key {key}: {type(value)}")
         return filters
 
     @staticmethod

@@ -1,3 +1,9 @@
+from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
+from src.entity.rag.base.index_delete_request import IndexDeleteRequest
+from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
+from src.entity.rag.base.document_metadata_update_request import DocumentMetadataUpdateRequest
+from src.entity.rag.base.document_ingest_request import DocumentIngestRequest
+from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
 import os
 import uuid
 
@@ -6,13 +12,6 @@ from langchain_core.documents import Document
 import logging
 
 logger = logging.getLogger(__name__)
-
-from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
-from src.entity.rag.base.document_ingest_request import DocumentIngestRequest
-from src.entity.rag.base.document_metadata_update_request import DocumentMetadataUpdateRequest
-from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
-from src.entity.rag.base.index_delete_request import IndexDeleteRequest
-from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
 
 
 def get_sample_request(index_name=''):

@@ -2,18 +2,21 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // import { useRouter, usePathname } from 'next/navigation';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
-import useMlopsApi from '@/app/mlops/api';
+import useMlopsTaskApi from '@/app/mlops/api/task';
+import useMlopsManageApi from '@/app/mlops/api/manage';
 import { Button, Input, Popconfirm, message, Tag } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/custom-table';
 import Icon from '@/components/icon';
 import TrainTaskModal from './traintaskModal';
-import TrainTaskDrawer from './traintaskDrawer';
+// import TrainTaskDrawer from './traintaskDrawer';
 import { useTranslation } from '@/utils/i18n';
-import { ModalRef, ColumnItem, TrainJob } from '@/app/mlops/types';
-import { TrainStatus, TrainText } from '@/app/mlops/constants';
+import { ModalRef, ColumnItem, Option } from '@/app/mlops/types';
+import { TrainJob } from '@/app/mlops/types/task';
+import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
 import SubLayout from '@/components/sub-layout';
 import { JointContent } from 'antd/es/message/interface';
+import { DataSet } from '@/app/mlops/types/manage';
 const { Search } = Input;
 
 const getStatusColor = (value: string, TrainStatus: Record<string, string>) => {
@@ -29,11 +32,17 @@ const TrainTask = () => {
   const { convertToLocalizedTime } = useLocalizedTime();
   // const router = useRouter();
   // const path = usePathname();
-  const { getAnomalyTaskList, deleteAnomalyTrainTask, startAnomalyTrainTask } = useMlopsApi();
+  const { getAnomalyDatasetsList } = useMlopsManageApi();
+  const {
+    getAnomalyTaskList,
+    deleteAnomalyTrainTask,
+    startAnomalyTrainTask,
+  } = useMlopsTaskApi();
   const modalRef = useRef<ModalRef>(null);
   const [tableData, setTableData] = useState<TrainJob[]>([]);
-  const [selectId, setSelectId] = useState<number | null>(null);
-  const [open, setOpen] = useState<boolean>(false);
+  const [datasetOptions, setDatasetOptions] = useState<Option[]>([]);
+  // const [selectId, setSelectId] = useState<number | null>(null);
+  // const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -73,8 +82,8 @@ const TrainTask = () => {
       key: 'status',
       dataIndex: 'status',
       render: (_, record: TrainJob) => {
-        return record.status ? (<Tag color={getStatusColor(record.status, TrainStatus)} className=''>
-          {t(`traintask.${getStatusText(record.status, TrainText)}`)}
+        return record.status ? (<Tag color={getStatusColor(record.status, TRAIN_STATUS_MAP)} className=''>
+          {t(`traintask.${getStatusText(record.status, TRAIN_TEXT)}`)}
         </Tag>) : (<p>--</p>)
       }
     },
@@ -108,20 +117,21 @@ const TrainTask = () => {
           >
             {t('common.edit')}
           </Button>
-          <Button
+          {/* <Button
             type="link"
             className="mr-[10px]"
             onClick={() => openHistortDrawer(record)}
           >
             {t('traintask.history')}
-          </Button>
+          </Button> */}
           <Popconfirm
-            title={t('traintask.deleteTraintask')}
+            title={t('traintask.delTraintask')}
+            description={t(`traintask.delTraintaskContent`)}
             okText={t('common.confirm')}
             cancelText={t('common.cancel')}
             onConfirm={() => onDelete(record)}
           >
-            <Button type="link">{t('common.delete')}</Button>
+            <Button type="link" danger>{t('common.delete')}</Button>
           </Popconfirm>
         </>
       ),
@@ -156,15 +166,17 @@ const TrainTask = () => {
   }, []);
 
   useEffect(() => {
+    getDatasetList();
+  }, [])
+
+  useEffect(() => {
     getTasks();
   }, [pagination.current, pagination.pageSize]);
 
   const getTasks = async () => {
     setLoading(true);
     try {
-      const [{ items, count }] = await Promise.all([
-        fetchTaskList(pagination.current, pagination.pageSize),
-      ]);
+      const { items, count } = await fetchTaskList(pagination.current, pagination.pageSize);
       const _data =
         items?.map((item: any) => ({
           id: item.id,
@@ -174,61 +186,13 @@ const TrainTask = () => {
           val_data_id: item.val_data_id,
           test_data_id: item.test_data_id,
           created_at: item.created_at,
-          creator: item?.created_by || '--',
-          status: item?.status || '--',
-          max_evals: item.max_evals || '',
-          algorithm: item.algorithm || ''
+          creator: item?.created_by,
+          status: item?.status,
+          max_evals: item.max_evals,
+          algorithm: item.algorithm,
+          hyperopt_config: item.hyperopt_config
         })) || [];
       setTableData(_data as TrainJob[]);
-      // setTableData([
-      //   {
-      //     id: 1,
-      //     name: 'test',
-      //     type: 'anomaly',
-      //     train_data_id: 1,
-      //     val_data_id: 2,
-      //     test_data_id: 3,
-      //     created_at: '',
-      //     creator: 'test',
-      //     status: 'pending',
-      //     max_evals: 30,
-      //     algorithm: 'RandomForest',
-      //     hyperopt_config: {
-      //       "n_estimators": {
-      //         "type": "randint",
-      //         "min": 100,
-      //         "max": 500
-      //       },
-      //       "max_depth": {
-      //         "type": "randint",
-      //         "min": 10,
-      //         "max": 50
-      //       },
-      //       "min_samples_split": {
-      //         "type": "randint",
-      //         "min": 2,
-      //         "max": 10
-      //       },
-      //       "min_samples_leaf": {
-      //         "type": "randint",
-      //         "min": 1,
-      //         "max": 10
-      //       },
-      //       "max_features": {
-      //         "type": "choice",
-      //         "choice": ["sqrt", "log2", "none"]
-      //       },
-      //       "bootstrap": {
-      //         "type": "choice",
-      //         "choice": ["true", "false"]
-      //       },
-      //       "class_weight": {
-      //         "type": "choice",
-      //         "choice": ["balanced", "balanced_subsample", "none"]
-      //       }
-      //     }
-      //   }
-      // ])
       setPagination(prev => ({
         ...prev,
         total: count,
@@ -240,7 +204,18 @@ const TrainTask = () => {
     }
   };
 
-  const fetchTaskList = useCallback(async ( page: number = 1, pageSize: number = 10) => {
+  const getDatasetList = async () => {
+    const data = await getAnomalyDatasetsList({});
+    const items = data.map((item: DataSet) => {
+      return {
+        value: item.id,
+        label: item.name
+      }
+    }) || [];
+    setDatasetOptions(items);
+  };
+
+  const fetchTaskList = useCallback(async (page: number = 1, pageSize: number = 10) => {
     const { count, items } = await getAnomalyTaskList({
       page,
       page_size: pageSize
@@ -280,10 +255,10 @@ const TrainTask = () => {
     }
   };
 
-  const openHistortDrawer = (record: TrainJob) => {
-    setSelectId(record.id as number);
-    setOpen(true);
-  };
+  // const openHistortDrawer = (record: TrainJob) => {
+  //   setSelectId(record.id as number);
+  //   setOpen(true);
+  // };
 
   const handleChange = (value: any) => {
     setPagination(value);
@@ -304,9 +279,14 @@ const TrainTask = () => {
     }
   };
 
-  const onCancel = () => {
-    setOpen(false);
-  };
+  const onRefresh = () => {
+    getTasks();
+    getDatasetList();
+  }
+
+  // const onCancel = () => {
+  //   setOpen(false);
+  // };
 
   return (
     <>
@@ -324,9 +304,10 @@ const TrainTask = () => {
                 onSearch={onSearch}
                 style={{ fontSize: 15 }}
               />
-              <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow" onClick={() => handleAdd()}>
+              <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow mr-2" onClick={() => handleAdd()}>
                 {t('common.add')}
               </Button>
+              <ReloadOutlined onClick={onRefresh} />
             </div>
           </div>
           <div className="flex-1 relative">
@@ -345,8 +326,8 @@ const TrainTask = () => {
           </div>
         </SubLayout>
       </div>
-      <TrainTaskModal ref={modalRef} onSuccess={() => getTasks()} />
-      <TrainTaskDrawer open={open} selectId={selectId} onCancel={onCancel} />
+      <TrainTaskModal ref={modalRef} onSuccess={() => onRefresh()} datasetOptions={datasetOptions} />
+      {/* <TrainTaskDrawer open={open} selectId={selectId} onCancel={onCancel} /> */}
     </>
   );
 };

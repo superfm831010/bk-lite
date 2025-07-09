@@ -152,7 +152,7 @@ class AuthViewSet(MaintainerViewSet):
             if not current_team:
                 return query
 
-            query = Q(team__contains=current_team)
+            query = Q(team__contains=int(current_team))
 
             return query
 

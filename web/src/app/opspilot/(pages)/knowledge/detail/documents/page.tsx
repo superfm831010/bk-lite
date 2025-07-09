@@ -220,7 +220,7 @@ const DocumentsPage: React.FC = () => {
         <a
           href="#"
           style={{ color: '#155aef' }}
-          onClick={() => router.push(`/opspilot/knowledge/detail/documents/qapairResult?id=${id}&name=${name}&desc=${desc}&qaPairId=${record.id}`)}
+          onClick={() => router.push(`/opspilot/knowledge/detail/documents/qapair/result?id=${id}&name=${name}&desc=${desc}&qaPairId=${record.id}`)}
         >
           {text}
         </a>
@@ -475,8 +475,10 @@ const DocumentsPage: React.FC = () => {
   }, [pagination.current, pagination.pageSize, searchText, activeTabKey]);
 
   useEffect(() => {
-    fetchData(searchText);
-  }, [fetchData, id]);
+    if (mainTabKey === 'source_files') {
+      fetchData(searchText);
+    }
+  }, [id, sourceFileType]);
 
   useEffect(() => {
     if (mainTabKey === 'qa_pairs') {
@@ -523,10 +525,8 @@ const DocumentsPage: React.FC = () => {
 
   const handleAddClick = () => {
     if (mainTabKey === 'qa_pairs') {
-      // If QA pairs, directly navigate to the QA pair addition page
       router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_pairs&id=${id}&name=${name}&desc=${desc}`);
     } else {
-      // If source files, show a modal to select specific type
       setIsModalVisible(true);
     }
   };
@@ -612,7 +612,6 @@ const DocumentsPage: React.FC = () => {
           )}
         </div>
         <div className='right-side flex items-center'>
-          {/* 知识图谱标签页不显示搜索和操作按钮 */}
           {mainTabKey !== 'knowledge_graph' && (
             <>
               <Search

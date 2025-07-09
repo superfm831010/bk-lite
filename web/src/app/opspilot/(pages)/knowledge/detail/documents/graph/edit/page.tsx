@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Form, Button, Select, Switch, message, Space, Tag, Empty, Drawer, Tabs, Divider } from 'antd';
+import { Form, Button, Select, message, Space, Tag, Empty, Drawer, Tabs, Divider, Skeleton } from 'antd';
 import { SaveOutlined, PlusOutlined, CloseOutlined, ClearOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import PermissionWrapper from '@/components/permission';
@@ -16,8 +16,6 @@ interface GraphConfig {
   llmModel: number;
   rerankModel: number;
   embedModel: number;
-  enableRerank: boolean;
-  enableRebuildGroup: boolean;
 }
 
 interface DocumentItem {
@@ -38,6 +36,10 @@ const KnowledgeGraphEditPage: React.FC = () => {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fetchingConfig, setFetchingConfig] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [graphId, setGraphId] = useState<number | null>(null);
+  
   const [llmModels, setLlmModels] = useState<any[]>([]);
   const [rerankModels, setRerankModels] = useState<any[]>([]);
   const [embedModels, setEmbedModels] = useState<any[]>([]);
@@ -64,11 +66,17 @@ const KnowledgeGraphEditPage: React.FC = () => {
     llmModel: 0,
     rerankModel: 0,
     embedModel: 0,
-    enableRerank: false,
-    enableRebuildGroup: false,
   });
 
-  const { fetchDocuments, fetchSemanticModels, fetchEmbeddingModels, saveKnowledgeGraph } = useKnowledgeApi();
+  const { 
+    fetchDocuments, 
+    fetchSemanticModels, 
+    fetchEmbeddingModels, 
+    saveKnowledgeGraph,
+    updateKnowledgeGraph,
+    fetchKnowledgeGraphDetails,
+    fetchKnowledgeGraphById
+  } = useKnowledgeApi();
   const { fetchLlmModels: fetchLlmModelsApi } = useSkillApi();
 
   const fetchDocumentsByType = useCallback(async (type: string, page: number, pageSize: number) => {
@@ -108,12 +116,6 @@ const KnowledgeGraphEditPage: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    if (drawerVisible && id) {
-      fetchDocumentsByType(activeDocumentTab, currentPage, pageSize);
-    }
-  }, [drawerVisible, currentPage, pageSize, id, activeDocumentTab]);
-
-  useEffect(() => {
     const initializeData = async () => {
       setLoading(true);
       try {
@@ -127,13 +129,50 @@ const KnowledgeGraphEditPage: React.FC = () => {
         setRerankModels(rerankData);
         setEmbedModels(embedData);
         
+        let existingConfig = null;
+        let currentGraphId = null;
+        let selectedDocIds: string[] = [];
+        
+        if (id) {
+          try {
+            const graphDetails = await fetchKnowledgeGraphDetails(Number(id));
+            
+            if (graphDetails.is_exists && graphDetails.graph_id) {
+              setIsEditMode(true);
+              currentGraphId = graphDetails.graph_id;
+              setGraphId(currentGraphId);
+              
+              setFetchingConfig(true);
+              try {
+                existingConfig = await fetchKnowledgeGraphById(currentGraphId);
+                console.log('获取到的现有配置:', existingConfig);
+                
+                selectedDocIds = existingConfig.doc_list.map((doc: any) => doc.id.toString());
+                
+                await preloadDocumentData(existingConfig.doc_list);
+                
+                setSelectedDocuments(selectedDocIds);
+                
+              } finally {
+                setFetchingConfig(false);
+              }
+            } else {
+              setIsEditMode(false);
+              setGraphId(null);
+            }
+          } catch (error) {
+            console.warn('获取知识图谱配置失败，将使用新建模式:', error);
+            setIsEditMode(false);
+            setGraphId(null);
+          }
+        }
+        
+        // 3. 设置表单默认值
         const defaultConfig = {
-          selectedDocuments: [],
-          llmModel: llmData.length > 0 ? llmData[0].id : 0,
-          rerankModel: rerankData.length > 0 ? rerankData[0].id : 0,
-          embedModel: embedData.length > 0 ? embedData[0].id : 0,
-          enableRerank: false,
-          enableRebuildGroup: false,
+          selectedDocuments: selectedDocIds,
+          llmModel: existingConfig?.llm_model || (llmData.length > 0 ? llmData[0].id : 0),
+          rerankModel: existingConfig?.rerank_model || (rerankData.length > 0 ? rerankData[0].id : 0),
+          embedModel: existingConfig?.embed_model || (embedData.length > 0 ? embedData[0].id : 0),
         };
         
         setConfig(defaultConfig);
@@ -147,6 +186,64 @@ const KnowledgeGraphEditPage: React.FC = () => {
       }
     };
 
+    const preloadDocumentData = async (docList: Array<{id: number, source: string}>) => {
+      try {
+        const docsByType = docList.reduce((acc, doc) => {
+          if (!acc[doc.source]) {
+            acc[doc.source] = [];
+          }
+          acc[doc.source].push(doc.id);
+          return acc;
+        }, {} as Record<string, number[]>);
+
+        const promises = Object.entries(docsByType).map(async ([type, ids]) => {
+          try {
+            const result = await fetchDocuments({
+              knowledge_source_type: type,
+              knowledge_base_id: id,
+              page: 1,
+              page_size: 1000
+            });
+            
+            const matchedItems = result.items.filter((item: any) => 
+              ids.includes(item.id)
+            ).map((item: any) => ({
+              key: item.id.toString(),
+              title: item.name,
+              status: item.train_status_display,
+              type: type
+            }));
+            
+            return { type, items: matchedItems };
+          } catch (error) {
+            console.warn(`Failed to fetch documents for type ${type}:`, error);
+            return { type, items: [] };
+          }
+        });
+
+        const results = await Promise.all(promises);
+        
+        const newDocumentData = { ...documentData };
+        results.forEach(({ type, items }: { type: string; items: any[] }) => {
+          if (!newDocumentData[type]) {
+            newDocumentData[type] = [];
+          }
+          const existingKeys = new Set(newDocumentData[type].map(item => item.key));
+          items.forEach((item: any) => {
+            if (!existingKeys.has(item.key)) {
+              newDocumentData[type].push(item);
+            }
+          });
+        });
+        
+        setDocumentData(newDocumentData);
+        console.log('预加载的文档数据:', newDocumentData);
+        
+      } catch (error) {
+        console.error('Failed to preload document data:', error);
+      }
+    };
+
     if (id) {
       initializeData();
     } else {
@@ -154,6 +251,31 @@ const KnowledgeGraphEditPage: React.FC = () => {
       message.error(t('common.missingId'));
     }
   }, [id]);
+
+  useEffect(() => {
+    if (drawerVisible && id) {
+      fetchDocumentsByType(activeDocumentTab, currentPage, pageSize);
+    }
+  }, [drawerVisible, currentPage, pageSize, id, activeDocumentTab]);
+
+  const getSelectedDocumentInfo = useCallback((documentKey: string) => {
+    for (const type in documentData) {
+      const doc = documentData[type].find(item => item.key === documentKey);
+      if (doc) {
+        return { ...doc, type };
+      }
+    }
+    return null;
+  }, [documentData]);
+
+  useEffect(() => {
+    if (selectedDocuments.length > 0 && !drawerVisible) {
+      const hasDocumentData = Object.values(documentData).some(docs => docs.length > 0);
+      if (hasDocumentData) {
+        setTempSelectedDocuments(selectedDocuments);
+      }
+    }
+  }, [selectedDocuments, documentData, drawerVisible]);
 
   const handleDocumentSelect = useCallback((keys: React.Key[]) => {
     setTempSelectedDocuments(keys.map(key => key.toString()));
@@ -167,20 +289,16 @@ const KnowledgeGraphEditPage: React.FC = () => {
     setTempSelectedDocuments([]);
   }, []);
 
-  const getSelectedDocumentInfo = useCallback((documentKey: string) => {
-    for (const type in documentData) {
-      const doc = documentData[type].find(item => item.key === documentKey);
-      if (doc) {
-        return { ...doc, type };
-      }
-    }
-    return null;
-  }, [documentData]);
-
   const tempSelectedDocumentsList = useMemo(() => {
     return tempSelectedDocuments.map(key => {
       const docInfo = getSelectedDocumentInfo(key);
-      return docInfo ? { ...docInfo } : { key, title: `文档 ${key}`, type: 'unknown', description: '', status: '' };
+      return docInfo ? { ...docInfo } : { 
+        key, 
+        title: `文档 ${key}`, 
+        type: 'unknown', 
+        description: '', 
+        status: '未知' 
+      };
     }).filter(Boolean);
   }, [tempSelectedDocuments]);
 
@@ -207,7 +325,6 @@ const KnowledgeGraphEditPage: React.FC = () => {
         llm_model: values.llmModel,
         rerank_model: values.rerankModel,
         embed_model: values.embedModel,
-        rebuild_community: values.enableRebuildGroup,
         doc_list: selectedDocuments.map(docKey => {
           const docInfo = getSelectedDocumentInfo(docKey);
           return {
@@ -218,15 +335,21 @@ const KnowledgeGraphEditPage: React.FC = () => {
       };
       
       console.log('保存知识图谱配置:', saveParams);
+      console.log('编辑模式:', isEditMode, '图谱ID:', graphId);
       
-      await saveKnowledgeGraph(saveParams);
+      if (isEditMode && graphId) {
+        await updateKnowledgeGraph(graphId, saveParams);
+        message.success(t('common.updateSuccess'));
+      } else {
+        await saveKnowledgeGraph(saveParams);
+        message.success(t('knowledge.knowledgeGraph.rebuildSuccess'));
+      }
       
-      message.success(t('knowledge.knowledgeGraph.rebuildSuccess'));
       router.back();
       
     } catch (error) {
       console.error('Failed to save config:', error);
-      message.error(t('common.saveFailed'));
+      message.error(isEditMode ? t('common.updateFailed') : t('common.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -258,6 +381,15 @@ const KnowledgeGraphEditPage: React.FC = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
+      {fetchingConfig && (
+        <div className="mb-4 p-4 border rounded-lg bg-blue-50">
+          <div className="flex items-center space-x-2">
+            <Skeleton.Avatar size="small" active />
+            <Skeleton.Input style={{ width: 200 }} active />
+          </div>
+        </div>
+      )}
+
       <Form
         form={form}
         layout="vertical"
@@ -307,13 +439,6 @@ const KnowledgeGraphEditPage: React.FC = () => {
         </Form.Item>
 
         <Form.Item
-          name="enableRebuildGroup"
-          label={t('knowledge.knowledgeGraph.rebuild')}
-          valuePropName="checked"
-        >
-          <Switch size="small" />
-        </Form.Item>
-        <Form.Item
           label={
             <div className="flex items-center">
               <span>{t('knowledge.knowledgeGraph.selectDocuments')}</span>
@@ -344,7 +469,9 @@ const KnowledgeGraphEditPage: React.FC = () => {
 
       <div className="fixed bottom-6 right-6 z-50">
         <div className="flex gap-3 pb-4">
-          <Button onClick={handleBack}>
+          <Button 
+            disabled={saving} 
+            onClick={handleBack}>
             {t('common.cancel')}
           </Button>
           <PermissionWrapper requiredPermissions={['Edit']}>
@@ -431,6 +558,7 @@ const KnowledgeGraphEditPage: React.FC = () => {
                 }}
               />
             </div>
+
           </div>
 
           <div className="w-2/5 flex flex-col">

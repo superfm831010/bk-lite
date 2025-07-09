@@ -1,11 +1,11 @@
 import { useCallback, useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
-import useMlopsApi from '@/app/mlops/api';
+import useMlopsManageApi from '@/app/mlops/api/manage';
 import CustomTable from "@/components/custom-table";
 import UploadModal from "./uploadModal";
 import { Input, Button, Popconfirm, Tag } from "antd";
 import { useTranslation } from "@/utils/i18n";
-import { TypeContent } from "@/app/mlops/constants";
+import { TYPE_CONTENT } from "@/app/mlops/constants";
 import { ColumnItem, ModalRef, Pagination, TableData } from '@/app/mlops/types';
 const { Search } = Input;
 
@@ -13,7 +13,7 @@ const AnomalyDetail = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { getAnomalyTrainData, deleteAnomalyTrainData } = useMlopsApi();
+  const { getAnomalyTrainData, deleteAnomalyTrainData } = useMlopsManageApi();
   const modalRef = useRef<ModalRef>(null);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -54,7 +54,7 @@ const AnomalyDetail = () => {
       render(_, record) {
         const activeTypes = Object.entries(record.type)
           .filter(([, value]) => value === true)
-          .map(([key]) => <Tag key={key}>{t(`datasets.${TypeContent[key]}`)}</Tag>);
+          .map(([key]) => <Tag key={key}>{t(`datasets.${TYPE_CONTENT[key]}`)}</Tag>);
         return (
           <>
             {activeTypes.length ? activeTypes : '--'}

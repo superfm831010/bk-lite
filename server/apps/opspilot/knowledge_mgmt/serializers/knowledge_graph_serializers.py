@@ -10,10 +10,17 @@ class KnowledgeGraphSerializer(AuthSerializer):
 
     def create(self, validated_data):
         instance = super().create(validated_data)
-        GraphUtils.create_graph(instance)
+        res = GraphUtils.create_graph(instance)
+        if not res["result"]:
+            instance.delete()
+            raise Exception(res["message"])
         return instance
 
     def update(self, instance, validated_data):
+        old_doc_list = instance.doc_list[:]
         instance = super().update(instance, validated_data)
-        # GraphUtils.create_graph(instance)
+        res = GraphUtils.update_graph(instance, old_doc_list)
+        if not res["result"]:
+            instance.delete()
+            raise Exception(res["message"])
         return instance

@@ -4,7 +4,7 @@ import { Form, Input, Button, FormInstance, message } from 'antd';
 import { useState, useImperativeHandle, useEffect, useRef, forwardRef } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { ModalRef } from '@/app/mlops/types';
-import useMlopsApi from '@/app/mlops/api';
+import useMlopsManageApi from '@/app/mlops/api/manage';
 
 interface DatasetModalProps {
   user: any;
@@ -15,7 +15,7 @@ interface DatasetModalProps {
 
 const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess }, ref) => {
   const { t } = useTranslation();
-  const { addAnomalyDatasets, updateAnomalyDatasets } = useMlopsApi();
+  const { addAnomalyDatasets, updateAnomalyDatasets } = useMlopsManageApi();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [type, setType] = useState<string>('edit');
   const [title, setTitle] = useState<string>('editform');
