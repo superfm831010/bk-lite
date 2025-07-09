@@ -47,7 +47,7 @@ export const useVectorConfig = () => {
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const path =
-              formData?.content?.sources?.[
+              formData?.child?.content?.sources?.[
                 pluginConfig.collect_type + '_' + formData.rowId
               ]?.include?.[0] || null;
             return {
@@ -55,7 +55,7 @@ export const useVectorConfig = () => {
             };
           },
           getParams: (formData: TableDataItem, configForm: TableDataItem) => {
-            configForm.content.sources[
+            configForm.child.content.sources[
               pluginConfig.collect_type + '_' + formData.rowId
             ].include = [formData.file_path];
             return configForm;

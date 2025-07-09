@@ -42,7 +42,7 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
     setPageLoading(true);
     try {
       const res = await getConfigContent({
-        id: data.config_id,
+        ids: data.config_id,
       });
       setConfigForm(res || {});
     } finally {

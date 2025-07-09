@@ -60,10 +60,7 @@ const useIntegrationApi = () => {
     instance_ids: any;
     clean_child_config: boolean;
   }) => {
-    return await post(
-      `/log/collect_instances/remove_collect_instance/`,
-      data
-    );
+    return await post(`/log/collect_instances/remove_collect_instance/`, data);
   };
 
   const updateMonitorInstance = async (data: InstanceInfo) => {
@@ -77,16 +74,11 @@ const useIntegrationApi = () => {
     instance_ids: React.Key[];
     organizations: React.Key[];
   }) => {
-    return await post(
-      `/log/collect_configs/set_organizations/`,
-      data
-    );
+    return await post(`/log/collect_configs/set_organizations/`, data);
   };
 
-  const getConfigContent = async (params: { id: React.Key }) => {
-    return await get('/log/collect_configs/get_config_content/', {
-      params,
-    });
+  const getConfigContent = async (data: { ids: React.Key[] }) => {
+    return await post('/log/collect_configs/get_config_content/', data);
   };
 
   const updateInstanceCollectConfig = async (data: {

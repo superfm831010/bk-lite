@@ -47,7 +47,7 @@ export const useVectorConfig = () => {
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const address =
-              formData?.content?.sources?.[
+              formData?.child?.content?.sources?.[
                 pluginConfig.collect_type + '_' + formData.rowId
               ]?.address || null;
             return {
@@ -55,7 +55,7 @@ export const useVectorConfig = () => {
             };
           },
           getParams: (formData: TableDataItem, configForm: TableDataItem) => {
-            configForm.content.sources[
+            configForm.child.content.sources[
               pluginConfig.collect_type + '_' + formData.rowId
             ].address = formData.address;
             return configForm;

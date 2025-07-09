@@ -49,7 +49,7 @@ export const useVectorConfig = () => {
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const host =
-              formData?.content?.sources?.[
+              formData?.child?.content?.sources?.[
                 pluginConfig.collect_type + '_' + formData.rowId
               ]?.docker_host || null;
             return {
@@ -57,7 +57,7 @@ export const useVectorConfig = () => {
             };
           },
           getParams: (formData: TableDataItem, configForm: TableDataItem) => {
-            configForm.content.sources[
+            configForm.child.content.sources[
               pluginConfig.collect_type + '_' + formData.rowId
             ].docker_host = formData.docker_host;
             return configForm;
