@@ -1,16 +1,10 @@
-import ast
 import os
 import uuid
 
 from jinja2 import Environment, FileSystemLoader, DebugUndefined
-from apps.monitor.models import CollectConfig
+from apps.log.models import CollectConfig
+from apps.log.plugins import PLUGIN_DIRECTORY
 from apps.rpc.node_mgmt import NodeMgmt
-
-
-def to_toml_dict(d):
-    if not d:
-        return "{}"
-    return "{ " + ", ".join(f'"{k}" = "{v}"' for k, v in d.items()) + " }"
 
 
 class Controller:
@@ -51,11 +45,7 @@ class Controller:
         :return: 渲染后的配置字符串
         """
         _context = {**context}
-        _context.update(instance_id=ast.literal_eval(_context["instance_id"])[0])
-
         env = Environment(loader=FileSystemLoader(template_dir), undefined=DebugUndefined)
-        env.filters['to_toml'] = to_toml_dict
-
         template = env.get_template(file_name)
         return template.render(_context)
 
@@ -74,16 +64,58 @@ class Controller:
         return configs
 
     def controller(self):
-        base_dir = "apps/monitor/plugins"
+        base_dir = PLUGIN_DIRECTORY
+        configs = self.format_configs()
+        node_configs, collect_configs = [], []
+        for config_info in configs:
+            template_dir = os.path.join(base_dir, config_info["collector"], config_info["collect_type"])
+            templates = self.get_template_info_by_type(template_dir, config_info["collect_type"])
+            for template in templates:
+                collector_name = config_info["collector"]
+                config_id = str(uuid.uuid4().hex)
+                # 生成配置
+                template_config = self.render_template(
+                    template_dir,
+                    f"{template['type']}.{template['config_type']}.{template['file_type']}.j2",
+                    config_info,
+                )
+
+                # 节点管理创建配置
+                node_config = dict(
+                    id=config_id,
+                    name=f'{collector_name}-{config_id}',
+                    content=template_config,
+                    node_id=config_info["node_id"],
+                    collector_name=collector_name,
+                    env_config={k[4:]: v for k, v in config_info.items() if k.startswith("ENV_")},
+                )
+                node_configs.append(node_config)
+
+                # 监控记录配置
+                collect_configs.append(
+                    CollectConfig(
+                        id=config_id,
+                        collect_instance_id=config_info["instance_id"],
+                        file_type=template["file_type"],
+                    )
+                )
+
+        # 记录实例与配置的关系
+        CollectConfig.objects.bulk_create(collect_configs, batch_size=100)
+        # 创建配置
+        NodeMgmt().batch_add_node_config(node_configs)
+
+    def controller_v2(self):
+        base_dir = PLUGIN_DIRECTORY
         configs = self.format_configs()
         node_configs, node_child_configs, collect_configs = [], [], []
         for config_info in configs:
-            template_dir = os.path.join(base_dir, config_info["collector"], config_info["collect_type"], config_info["instance_type"])
-            templates = self.get_template_info_by_type(template_dir, config_info["type"])
+            template_dir = os.path.join(base_dir, config_info["collector"], config_info["collect_type"])
+            templates = self.get_template_info_by_type(template_dir, config_info["collect_type"])
             env_config = {k[4:]: v for k, v in config_info.items() if k.startswith("ENV_")}
             for template in templates:
                 is_child = True if template["config_type"] == "child" else False
-                collector_name = "Telegraf" if is_child else config_info["collector"]
+                collector_name = "Vector" if is_child else config_info["collector"]
                 config_id = str(uuid.uuid4().hex)
                 # 生成配置
                 template_config = self.render_template(
@@ -97,7 +129,7 @@ class Controller:
                     node_child_config = dict(
                         id=config_id,
                         collect_type=config_info["collect_type"],
-                        type=config_info["type"],
+                        type=config_info["collect_type"],
                         content=template_config,
                         node_id=config_info["node_id"],
                         collector_name=collector_name,
@@ -119,10 +151,7 @@ class Controller:
                 collect_configs.append(
                     CollectConfig(
                         id=config_id,
-                        collector=collector_name,
-                        monitor_instance_id=config_info["instance_id"],
-                        collect_type=config_info["collect_type"],
-                        config_type=config_info["type"],
+                        collect_instance_id=config_info["instance_id"],
                         file_type=template["file_type"],
                         is_child=is_child,
                     )

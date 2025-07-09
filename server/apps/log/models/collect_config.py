@@ -27,10 +27,21 @@ class CollectInstance(TimeInfo, MaintainerInfo):
         verbose_name_plural = '采集方式实例'
 
 
+class CollectInstanceOrganization(TimeInfo, MaintainerInfo):
+    collect_instance = models.ForeignKey(CollectInstance, on_delete=models.CASCADE, verbose_name='监控对象实例')
+    organization = models.CharField(max_length=100, verbose_name='组织id')
+
+    class Meta:
+        verbose_name = '采集方式实例组织'
+        verbose_name_plural = '采集方式实例组织'
+        unique_together = ('collect_instance', 'organization')
+
+
 class CollectConfig(TimeInfo, MaintainerInfo):
     id = models.CharField(primary_key=True, max_length=100, verbose_name='配置ID')
     collect_instance = models.ForeignKey(CollectInstance, on_delete=models.CASCADE, verbose_name='采集方式实例')
     file_type = models.CharField(max_length=50, verbose_name='文件类型')
+    is_child = models.BooleanField(default=False, verbose_name='是否子配置')
 
     class Meta:
         verbose_name = '采集配置'

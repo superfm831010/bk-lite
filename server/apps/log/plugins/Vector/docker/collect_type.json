@@ -1,0 +1,6 @@
+{
+  "name": "docker",
+  "collector": "Vector",
+  "icon": "docker",
+  "description": "Collects logs from Docker containers"
+}

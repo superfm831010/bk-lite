@@ -1,6 +1,6 @@
 [
   {
-    "id": "vector_linux",
+    "id": "Vector_linux",
     "name": "Vector",
     "controller_default_run": false,
     "icon": "",
@@ -10,6 +10,10 @@
     "execute_parameters": "--config %s",
     "validation_parameters": "",
     "default_template": "",
-    "introduction": "Vector is a high-performance observability data pipeline that collects, processes, and routes logs, metrics, and traces from various sources to multiple destinations, providing real-time insights into system performance and health."
+    "introduction": "Vector is a high-performance observability data pipeline that collects, processes, and routes logs, metrics, and traces from various sources to multiple destinations, providing real-time insights into system performance and health.",
+    "enabled_default_config": true,
+    "default_config": {
+      "nats": "# Vector Config"
+    }
   }
 ]
