@@ -22,6 +22,13 @@ TELEGRAF_CONFIG = """
 
 [[inputs.internal]]
     tags = { "instance_id"="${node.ip}-${node.cloud_region}","instance_type"="internal","instance_name"="${node.name}" }
+
+[[outputs.influxdb]]
+  urls = ["${VM_SERVERS}"]
+  database = "victoriametrics"
+  skip_database_creation = true
+  exclude_retention_policy_tag = true
+  content_encoding = "gzip"
 """
 
 if default_sidecar_mode == "telegraf":
