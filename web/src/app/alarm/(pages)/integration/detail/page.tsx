@@ -155,6 +155,28 @@ const IntegrationDetail: FC = () => {
             onClick={() => copySecret(source?.secret)}
           />
         </Descriptions.Item>
+        <Descriptions.Item label="CURL">
+          <span
+            dangerouslySetInnerHTML={{
+              __html: source?.config?.examples?.CURL || '',
+            }}
+          />
+          <CopyOutlined
+            className="ml-[10px]"
+            onClick={() => copySecret(source?.config?.examples?.CURL)}
+          />
+        </Descriptions.Item>
+        <Descriptions.Item label="Python">
+          <span
+            dangerouslySetInnerHTML={{
+              __html: source?.config?.examples?.Python || '',
+            }}
+          />
+          <CopyOutlined
+            className="ml-[10px]"
+            onClick={() => copySecret(source?.config?.examples?.Python)}
+          />
+        </Descriptions.Item>
       </Descriptions>
       <h4 className="mt-6 mb-2 font-medium pl-2 border-l-4 border-blue-400 inline-block leading-tight">
         {t('integration.eventFieldsMapping')}
