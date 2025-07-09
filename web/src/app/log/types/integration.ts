@@ -1,3 +1,5 @@
+import React from 'react';
+
 export interface CollectTypeItem {
   id: number;
   name: string;
@@ -46,6 +48,7 @@ export interface InstanceInfo {
   organization?: (string | number)[];
   instance_name?: string;
   instance_id?: string;
+  id?: React.Key;
   rule?: any;
   name?: string;
   keys?: React.Key[];

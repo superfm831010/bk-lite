@@ -64,17 +64,14 @@ const useIntegrationApi = () => {
   };
 
   const updateMonitorInstance = async (data: InstanceInfo) => {
-    return await post(
-      '/log/api/monitor_instance/update_monitor_instance/',
-      data
-    );
+    return await post('/log/collect_instances/instance_update/', data);
   };
 
   const setInstancesGroup = async (data: {
     instance_ids: React.Key[];
     organizations: React.Key[];
   }) => {
-    return await post(`/log/collect_configs/set_organizations/`, data);
+    return await post(`/log/collect_instances/set_organizations/`, data);
   };
 
   const getConfigContent = async (data: { ids: React.Key[] }) => {

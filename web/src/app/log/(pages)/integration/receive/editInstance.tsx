@@ -76,7 +76,7 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
 
   const handleSubmit = () => {
     formRef.current?.validateFields().then((values) => {
-      let params = { ...values, instance_id: configForm.instance_id };
+      let params = { ...values, instance_id: configForm.id };
       if (!isEdit) {
         params = {
           instance_ids: configForm.keys,
