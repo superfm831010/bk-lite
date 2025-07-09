@@ -44,7 +44,7 @@ const UserInfo: React.FC = () => {
     setIsLoading(true);
     try {
       // Call logout API for server-side cleanup
-      const response = await fetch('/api/auth/federated-logout', {
+      await fetch('/api/auth/federated-logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
