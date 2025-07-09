@@ -41,14 +41,13 @@ def receiver_data(request):
         return JsonResponse({"status": "error", "message": "Invalid request method."}, status=400)
     try:
         data = json.loads(request.body.decode("utf-8"))
-        source_type = data.pop("source_type", None)
         source_id = data.pop("source_id", None)
         events = data.pop("events", [])
         secret = request.META.get("HTTP_SECRET") or data.pop("secret", None)
         if not events:
             return JsonResponse({"status": "error", "message": "Missing events."}, status=400)
 
-        event_source = AlertSource.objects.filter(source_id=source_id, source_type=source_type).first()
+        event_source = AlertSource.objects.filter(source_id=source_id).first()
         if not event_source:
             return JsonResponse({"status": "error", "message": "Invalid source_id or source_type."}, status=400)
 
