@@ -6,18 +6,19 @@ import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import KnowledgeGraphView from './knowledgeGraphView';
+import { GraphData, GraphNode, GraphEdge } from '@/app/opspilot/types/knowledge';
 
 interface KnowledgeGraphPageProps {
   knowledgeBaseId: string | null;
 }
 
-const transformApiDataToGraphData = (data: any) => {
+const transformApiDataToGraphData = (data: any): GraphData => {
   if (!data || !Array.isArray(data)) {
     return { nodes: [], edges: [] };
   }
 
-  const nodes: any[] = [];
-  const edges: any[] = [];
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
   const nodeMap = new Map();
 
   data.forEach((item: any) => {
@@ -29,7 +30,9 @@ const transformApiDataToGraphData = (data: any) => {
           type: 'entity',
           category: 'document',
           node_id: item.node_id,
-          group_id: item.group_id
+          group_id: item.group_id,
+          name: item.name,
+          uuid: item.uuid
         });
         nodeMap.set(item.uuid, true);
       }
@@ -42,7 +45,9 @@ const transformApiDataToGraphData = (data: any) => {
               label: edge.target_name,
               type: 'entity',
               category: 'related',
-              node_id: edge.target_id
+              node_id: edge.target_id,
+              name: edge.target_name,
+              uuid: edge.target
             });
             nodeMap.set(edge.target, true);
           }
@@ -53,7 +58,9 @@ const transformApiDataToGraphData = (data: any) => {
               label: edge.source_name,
               type: 'entity',
               category: 'related',
-              node_id: edge.source_id
+              node_id: edge.source_id,
+              name: edge.source_name,
+              uuid: edge.source
             });
             nodeMap.set(edge.source, true);
           }
@@ -65,7 +72,11 @@ const transformApiDataToGraphData = (data: any) => {
               target: edge.target,
               label: edge.relation_type || '关联',
               type: 'relation',
-              weight: 0.7
+              relation_type: edge.relation_type,
+              source_name: edge.source_name,
+              target_name: edge.target_name,
+              source_id: edge.source_id,
+              target_id: edge.target_id
             });
           }
         });
@@ -83,7 +94,7 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
   
   const [hasGraph, setHasGraph] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [graphData, setGraphData] = useState<any>(null);
+  const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [graphExists, setGraphExists] = useState(false);
 
   const initializeGraph = async () => {

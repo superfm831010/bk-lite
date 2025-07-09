@@ -47,6 +47,8 @@ const SkillSettingsPage: React.FC = () => {
   const [selectedTools, setSelectedTools] = useState<SelectTool[]>([]);
   const [skillType, setSkillType] = useState<number | null>(null);
   const [skillPermissions, setSkillPermissions] = useState<string[]>([]);
+  const [enableKmRoute, setEnableKmRoute] = useState(true);
+  const [kmLlmModel, setKmLlmModel] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -104,6 +106,9 @@ const SkillSettingsPage: React.FC = () => {
 
           setSkillType(data.skill_type);
           setSkillPermissions(data.permissions || []);
+          
+          setEnableKmRoute(data.enable_km_route !== undefined ? data.enable_km_route : true);
+          setKmLlmModel(data.km_llm_model || data.llm_model);
         } catch (error) {
           console.error(t('common.fetchFailed'), error);
         } finally {
@@ -113,7 +118,7 @@ const SkillSettingsPage: React.FC = () => {
     };
 
     fetchFormData();
-  }, [id, knowledgeBases]);
+  }, [id]);
 
   const allLoading = Object.values(pageLoading).some(loading => loading) || groupsLoading;
 
@@ -138,6 +143,8 @@ const SkillSettingsPage: React.FC = () => {
         conversation_window_size: chatHistoryEnabled ? quantity : undefined,
         temperature: temperature,
         show_think: values.show_think,
+        enable_km_route: enableKmRoute,
+        km_llm_model: enableKmRoute ? kmLlmModel : undefined,
         tools: selectedTools.map((tool: any) => ({
           id: tool.id,
           name: tool.name,
@@ -180,6 +187,8 @@ const SkillSettingsPage: React.FC = () => {
         group: values.group?.[0],
         skill_name: values.name,
         skill_id: id,
+        enable_km_route: enableKmRoute,
+        km_llm_model: enableKmRoute ? kmLlmModel : undefined,
       };
       
       return {
@@ -201,6 +210,16 @@ const SkillSettingsPage: React.FC = () => {
   const changeToolEnable = (checked: boolean) => {
     setToolEnabled(checked);
     !checked && setSelectedTools([])
+  }
+
+  const handleKmRouteChange = (checked: boolean) => {
+    setEnableKmRoute(checked);
+    if (checked && !kmLlmModel) {
+      const currentLlmModel = form.getFieldValue('llmModel');
+      if (currentLlmModel) {
+        setKmLlmModel(currentLlmModel);
+      }
+    }
   }
 
   return (
@@ -339,6 +358,25 @@ const SkillSettingsPage: React.FC = () => {
                           tooltip={t('skill.ragStrictModeTip')}>
                           <Switch size="small" className="ml-2" checked={ragStrictMode} onChange={setRagStrictMode}/>
                         </Form.Item>
+                        <Form.Item
+                          label={t('skill.knowledgeRoute')}
+                          tooltip={t('skill.knowledgeRouteTip')}>
+                          <Switch size="small" className="ml-2" checked={enableKmRoute} onChange={handleKmRouteChange}/>
+                        </Form.Item>
+                        {enableKmRoute && (
+                          <Form.Item
+                            label={t('skill.kmLlmModel')}>
+                            <Select
+                              value={kmLlmModel}
+                              onChange={(value: number) => setKmLlmModel(value)}
+                              placeholder={t('common.select')}
+                            >
+                              {llmModels.map(model => (
+                                <Option key={model.id} value={model.id} disabled={!model.enabled}>{model.name}</Option>
+                              ))}
+                            </Select>
+                          </Form.Item>
+                        )}
                         <Form.Item label={t('skill.knowledgeBase')} tooltip={t('skill.knowledgeBaseTip')}>
                           <KnowledgeBaseSelector
                             ragSources={ragSources}
