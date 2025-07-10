@@ -1,0 +1,20 @@
+.integration {
+    .cards {
+        width: 100%;
+        padding: 20px;
+
+        .integrationList {
+            height: calc(100vh - 236px);
+            overflow-y: auto;
+        }
+    }
+
+    .lineClamp3 {
+        height: 60px;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        white-space: normal;
+    }
+}

@@ -50,6 +50,12 @@ const SettingsPage: React.FC = () => {
           rag_num_candidates: configData.candidate,
           result_count: configData.resultCount,
           rerank_top_k: configData.rerankTopK,
+          enable_naive_rag: configData.enableNaiveRag,
+          enable_qa_rag: configData.enableQaRag,
+          enable_graph_rag: configData.enableGraphRag,
+          rag_size: configData.ragSize,
+          qa_size: configData.qaSize,
+          graph_size: configData.graphSize,
         };
 
         try {

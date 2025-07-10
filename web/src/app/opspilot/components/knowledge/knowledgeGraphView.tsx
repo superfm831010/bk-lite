@@ -1,37 +1,9 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { Spin } from 'antd';
+import { useTranslation } from '@/utils/i18n';
+import { GraphNode, GraphEdge, GraphData, KnowledgeGraphViewProps } from '@/app/opspilot/types/knowledge';
 
-export interface GraphNode {
-  id: string;
-  label: string;
-  type: 'concept' | 'entity' | 'document';
-  category?: string;
-}
-
-export interface GraphEdge {
-  id: string;
-  source: string;
-  target: string;
-  label?: string;
-  type: 'relation' | 'reference';
-}
-
-export interface GraphData {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-}
-
-interface KnowledgeGraphViewProps {
-  data: GraphData;
-  loading?: boolean;
-  height?: number;
-  onNodeClick?: (node: GraphNode) => void;
-  onEdgeClick?: (edge: GraphEdge) => void;
-  useMockData?: boolean;
-}
-
-// Mock数据生成函数
 const generateMockData = (): GraphData => {
   const nodes: GraphNode[] = [
     { id: '1', label: 'DevOps', type: 'concept', category: 'methodology' },
@@ -69,69 +41,55 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   onEdgeClick,
   useMockData = false,
 }) => {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<any>(null);
   const [initError, setInitError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
 
-  // 使用mock数据或传入的数据
   const graphData = useMockData || (!data.nodes.length && !loading) ? generateMockData() : data;
 
-  const getNodeStyle = (type: string, label: string) => {
-    const baseStyle = {
-      size: 40,
-      labelText: label,
-      labelPosition: 'bottom' as const,
-      lineWidth: 2,
-    };
-
+  const getNodeStyle = (type: string) => {
     switch (type) {
       case 'concept':
         return {
-          ...baseStyle,
           fill: '#5B8FF9',
           stroke: '#3A7FE8',
+          size: 40,
         };
       case 'entity':
         return {
-          ...baseStyle,
           fill: '#61DDAA',
           stroke: '#4CAF7A',
+          size: 40,
         };
       case 'document':
         return {
-          ...baseStyle,
           fill: '#FFB84D',
           stroke: '#FF9900',
+          size: 40,
         };
       default:
         return {
-          ...baseStyle,
           fill: '#C6E5FF',
           stroke: '#5B8FF9',
+          size: 40,
         };
     }
   };
 
-  const getEdgeStyle = (type: string, label?: string) => {
-    const baseStyle = {
-      lineWidth: 2,
-      labelText: label || '',
-      labelFontSize: 10,
-      stroke: '#e2e2e2', // 默认stroke颜色
-    };
-
+  const getEdgeStyle = (type: string) => {
     switch (type) {
       case 'reference':
         return {
-          ...baseStyle,
           stroke: '#999',
           lineDash: [4, 4],
+          lineWidth: 2,
         };
       default:
         return {
-          ...baseStyle,
-          lineDash: undefined, // 明确设置为undefined，保持类型一致
+          stroke: '#e2e2e2',
+          lineWidth: 2,
         };
     }
   };
@@ -150,64 +108,50 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
       const container = containerRef.current;
       const width = container.offsetWidth || 800;
 
-      // 动态导入 G6
       const G6Module = await import('@antv/g6');
+      const G6 = G6Module.default || G6Module;
       
-      // G6 5.x 使用 Graph 类
-      const Graph = G6Module.Graph || G6Module.default?.Graph || G6Module.default;
-      
-      if (!Graph) {
+      if (!G6 || !G6.Graph) {
         throw new Error('G6 Graph constructor not found');
       }
 
-      // 处理数据格式 - G6 5.x 格式
       const processedData = {
         nodes: graphData.nodes.map(node => {
-          const style = getNodeStyle(node.type, node.label);
+          const style = getNodeStyle(node.type);
           return {
             id: node.id,
-            data: {
-              label: node.label,
-              type: node.type,
-              category: node.category,
-            },
+            label: node.label,
+            type: node.type,
+            category: node.category,
+            size: style.size,
             style: {
               fill: style.fill,
               stroke: style.stroke,
-              lineWidth: style.lineWidth,
-              size: style.size,
-              labelText: style.labelText,
-              labelPosition: style.labelPosition,
+              lineWidth: 2,
             },
           };
         }),
         edges: graphData.edges.map(edge => {
-          const style = getEdgeStyle(edge.type, edge.label);
+          const style = getEdgeStyle(edge.type);
           return {
             id: edge.id,
             source: edge.source,
             target: edge.target,
-            data: {
-              label: edge.label,
-              type: edge.type,
-            },
+            label: edge.label,
+            type: edge.type,
             style: {
               stroke: style.stroke,
               lineWidth: style.lineWidth,
-              labelText: style.labelText,
-              labelFontSize: style.labelFontSize,
               ...(style.lineDash && { lineDash: style.lineDash }),
             },
           };
         }),
       };
 
-      // 创建图实例 - G6 5.x API
-      const graph = new Graph({
+      const graph = new G6.Graph({
         container: container,
         width,
         height,
-        data: processedData,
         layout: {
           type: 'force',
           preventOverlap: true,
@@ -217,26 +161,59 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
           edgeStrength: 0.8,
           gravity: 0.1,
         },
-        behaviors: [
-          'drag-canvas',
-          'zoom-canvas',
-          'drag-element',
-          'click-select',
-        ],
-        autoFit: 'view',
-      });
+        defaultNode: {
+          type: 'circle',
+          labelCfg: {
+            position: 'bottom',
+            offset: 5,
+            style: {
+              fontSize: 12,
+              fill: '#666',
+            },
+          },
+          style: {
+            lineWidth: 2,
+            stroke: '#5B8FF9',
+            fill: '#C6E5FF',
+          },
+        },
+        defaultEdge: {
+          type: 'line',
+          labelCfg: {
+            autoRotate: true,
+            style: {
+              fontSize: 10,
+              fill: '#666',
+            },
+          },
+          style: {
+            stroke: '#e2e2e2',
+            lineWidth: 2,
+          },
+        },
+        modes: {
+          default: [
+            'drag-canvas',
+            'zoom-canvas',
+            'drag-node',
+            'click-select',
+          ],
+        },
+        fitView: true,
+        fitViewPadding: 20,
+      } as any);
 
-      // 绑定事件
       if (onNodeClick) {
         graph.on('node:click', (event: any) => {
           try {
-            const nodeData = event.target?.model?.data || event.itemModel?.data;
-            if (nodeData) {
+            const node = event.item;
+            const model = node.getModel();
+            if (model) {
               onNodeClick({
-                id: event.target?.model?.id || event.itemId,
-                label: nodeData.label,
-                type: nodeData.type,
-                category: nodeData.category,
+                id: model.id as string,
+                label: model.label as string,
+                type: model.type as 'concept' | 'entity' | 'document',
+                category: model.category as string,
               });
             }
           } catch (error) {
@@ -248,14 +225,15 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
       if (onEdgeClick) {
         graph.on('edge:click', (event: any) => {
           try {
-            const edgeData = event.target?.model?.data || event.itemModel?.data;
-            if (edgeData) {
+            const edge = event.item;
+            const model = edge.getModel();
+            if (model) {
               onEdgeClick({
-                id: event.target?.model?.id || event.itemId,
-                source: event.target?.model?.source || '',
-                target: event.target?.model?.target || '',
-                label: edgeData.label,
-                type: edgeData.type,
+                id: model.id as string,
+                source: model.source as string,
+                target: model.target as string,
+                label: model.label as string,
+                type: model.type as 'relation' | 'reference',
               });
             }
           } catch (error) {
@@ -264,8 +242,8 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
         });
       }
 
-      // 渲染图
-      await graph.render();
+      (graph as any).data(processedData);
+      graph.render();
       
       graphRef.current = graph;
       
@@ -280,7 +258,6 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   };
 
   useEffect(() => {
-    // 只在没有图实例或数据变化时才重新创建
     if (!graphRef.current && !loading && graphData.nodes.length > 0) {
       const timer = setTimeout(() => {
         createGraph();
@@ -288,9 +265,8 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [useMockData]); // 只依赖useMockData，避免频繁重新创建
+  }, [useMockData]);
 
-  // 组件卸载时清理图实例
   useEffect(() => {
     return () => {
       if (graphRef.current) {
@@ -304,13 +280,12 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
     };
   }, []);
 
-  // 处理窗口大小变化
   useEffect(() => {
     const handleResize = () => {
       if (graphRef.current && containerRef.current) {
         try {
           const newWidth = containerRef.current.offsetWidth;
-          graphRef.current.setSize([newWidth, height]);
+          graphRef.current.changeSize(newWidth, height);
         } catch (error) {
           console.warn('Error handling resize:', error);
         }
@@ -324,7 +299,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   if (loading || isInitializing) {
     return (
       <div className="flex items-center justify-center" style={{ height }}>
-        <Spin size="large" tip="加载知识图谱中..." />
+        <Spin size="large" tip={t('knowledge.knowledgeGraph.loading')} />
       </div>
     );
   }
@@ -332,7 +307,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   if (initError) {
     return (
       <div className="flex flex-col items-center justify-center text-gray-500" style={{ height }}>
-        <div className="text-red-500 mb-2">图谱初始化失败</div>
+        <div className="text-red-500 mb-2">{t('common.initializeFailed')}</div>
         <div className="text-sm">{initError}</div>
         <button 
           className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -341,7 +316,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
             createGraph();
           }}
         >
-          重试
+          {t('common.retry')}
         </button>
       </div>
     );
@@ -350,7 +325,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   if (!graphData.nodes.length) {
     return (
       <div className="flex items-center justify-center text-gray-500" style={{ height }}>
-        暂无知识图谱数据
+        {t('knowledge.knowledgeGraph.noGraphData')}
       </div>
     );
   }

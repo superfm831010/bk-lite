@@ -1,16 +1,17 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 from django.conf import settings
 
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.knowledge_mgmt.models import KnowledgeBase
+from apps.opspilot.knowledge_mgmt.models import GraphChunkMap, KnowledgeBase, KnowledgeGraph
 from apps.opspilot.models import EmbedProvider, RerankProvider
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 
 class KnowledgeSearchService:
-    @staticmethod
-    def _build_search_params(
+    @classmethod
+    def build_search_params(
+        cls,
         knowledge_base_folder: KnowledgeBase,
         query: str,
         embed_mode_config: Dict[str, Any],
@@ -23,10 +24,10 @@ class KnowledgeSearchService:
         Args:
             knowledge_base_folder: 知识库文件夹对象
             query: 搜索查询
-            embed_model_address: 嵌入模型地址
-            rerank_model_address: 重排序模型地址
+            embed_mode_config: 嵌入模型
+            rerank_model: 重排序模型
             kwargs: 搜索配置参数
-
+            score_threshold: 分数阈值，低于此分数的结果将被过滤
         Returns:
             Dict[str, Any]: 构建好的搜索参数字典
         """
@@ -40,7 +41,7 @@ class KnowledgeSearchService:
             "index_name": knowledge_base_folder.knowledge_index_name(),
             "search_query": query,
             "metadata_filter": {"enabled": True},
-            "size": knowledge_base_folder.result_count,
+            "size": kwargs["size"],
             "threshold": score_threshold,
             "enable_term_search": kwargs["enable_text_search"],
             "text_search_weight": kwargs["text_search_weight"],
@@ -57,13 +58,46 @@ class KnowledgeSearchService:
             "rerank_model_api_key": rerank_model_api_key,
             "rerank_model_name": rerank_model_name,
             "rerank_top_k": kwargs["rerank_top_k"],
+            "rag_recall_mode": "chunk",
+            "enable_naive_rag": kwargs["enable_naive_rag"],
+            "enable_graph_rag": False,
+            "enable_qa_rag": kwargs["enable_qa_rag"],
+            "graph_rag_request": {},
         }
         return params
 
+    @staticmethod
+    def set_graph_rag_request(knowledge_base_folder, kwargs, query):
+        graph_rag_request = {}
+        if kwargs["enable_graph_rag"]:
+            graph_obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base_folder.id).first()
+            if not graph_obj:
+                return {}
+            embed_config = graph_obj.embed_model.decrypted_embed_config
+            rerank_config = graph_obj.rerank_model.decrypted_rerank_config_config
+            group_ids = GraphChunkMap.objects.filter(knowledge_graph_id=graph_obj.id).values_list("graph_id", flat=True)
+            graph_rag_request = {
+                "embed_model_base_url": embed_config["base_url"],
+                "embed_model_api_key": embed_config["api_key"],
+                "embed_model_name": embed_config.get("model", graph_obj.embed_model.name),
+                "rerank_model_base_url": rerank_config["base_url"],
+                "rerank_model_name": rerank_config.get("model", graph_obj.rerank_model.name),
+                "rerank_model_api_key": rerank_config["api_key"],
+                "size": kwargs["graph_size"],
+                "group_ids": list(group_ids),
+                "search_query": query,
+            }
+        return graph_rag_request
+
     @classmethod
     def search(
-        cls, knowledge_base_folder: KnowledgeBase, query: str, kwargs: Dict[str, Any], score_threshold: float = 0
-    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        cls,
+        knowledge_base_folder: KnowledgeBase,
+        query: str,
+        kwargs: Dict[str, Any],
+        score_threshold: float = 0,
+        is_qa=False,
+    ) -> List[Dict[str, Any]]:
         """执行知识库搜索
 
         Args:
@@ -71,14 +105,12 @@ class KnowledgeSearchService:
             query: 搜索查询语句
             kwargs: 搜索配置参数
             score_threshold: 分数阈值，低于此分数的结果将被过滤
+            is_qa: 是否为问答模式
         """
         docs = []
-        qa_docs = []
         # 获取嵌入模型地址
         embed_mode = EmbedProvider.objects.get(id=kwargs["embed_model"])
-
         embed_mode_config = embed_mode.decrypted_embed_config
-
         # 获取重排序模型地址
         rerank_model = None
         if kwargs["enable_rerank"]:
@@ -86,7 +118,7 @@ class KnowledgeSearchService:
         if "model" not in embed_mode_config:
             embed_mode_config["model"] = embed_mode.name
         # 构建搜索参数
-        params = cls._build_search_params(
+        params = cls.build_search_params(
             knowledge_base_folder, query, embed_mode_config, rerank_model, kwargs, score_threshold
         )
 
@@ -100,7 +132,7 @@ class KnowledgeSearchService:
             doc_info = {}
             if kwargs["enable_rerank"]:
                 doc_info["rerank_score"] = doc["metadata"]["relevance_score"]
-            if "qa_pairs_id" in meta_data:
+            if is_qa:
                 doc_info.update(
                     {
                         "question": meta_data["qa_question"],
@@ -110,7 +142,7 @@ class KnowledgeSearchService:
                         "knowledge_title": meta_data["knowledge_title"],
                     }
                 )
-                qa_docs.append(doc_info)
+                docs.append(doc_info)
             else:
                 doc_info.update(
                     {
@@ -124,8 +156,7 @@ class KnowledgeSearchService:
 
         # 按分数降序排序
         docs.sort(key=lambda x: x["score"], reverse=True)
-        qa_docs.sort(key=lambda x: x["score"], reverse=True)
-        return docs, qa_docs
+        return docs
 
     @staticmethod
     def change_chunk_enable(index_name, chunk_id, enabled):

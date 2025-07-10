@@ -120,12 +120,9 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
       const payload = {
         ...restData,
         rules: Object.values(groupRules)
-          .filter(value => {
-            if (typeof value === 'object' && value !== null) {
-              return Object.keys(value).length > 0;
-            }
-            return true;
-          }).flat(2),
+          .filter(group => group && typeof group === 'object' && Object.keys(group).length > 0)
+          .flatMap(group => Object.values(group))
+          .flat(),
         timezone: zoneinfo, 
       };
       if (type === 'add') {

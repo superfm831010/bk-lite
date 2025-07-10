@@ -1,0 +1,41 @@
+# ====================================
+# file 日志源（含字段映射）
+# ====================================
+[sources.file_{{ instance_id }}]
+type = "file"
+include = ["{{ file_path }}"]
+ignore_older = 86400  # 忽略24小时以前的日志，可按需调整
+# encoding = "utf-8"  # 如有乱码可手动开启
+
+# ====================================
+# enrich（字段补全）
+# ====================================
+[transforms.file_enrich_{{ instance_id }}]
+type = "remap"
+inputs = ["file_{{ instance_id }}"]
+source = '''
+.message = .message ?? .  # 兼容没有 .message 的情况
+.file_path = file!().path
+.host = get_hostname!()
+.collect_type = "file"
+.instance_id = "{{ instance_id }}"
+'''
+
+# ====================================
+# NATS Sink（独立实例）
+# ====================================
+[sinks.vmlogs_{{ instance_id }}]
+type = "nats"
+inputs = ["file_enrich_{{ instance_id }}"]
+subject = "vector.{{ instance_id }}"
+url = "nats://${NATS_SERVERS}"
+
+[sinks.vmlogs_{{ instance_id }}.auth]
+strategy = "user_password"
+
+[sinks.vmlogs_{{ instance_id }}.auth.user_password]
+user = "${NATS_USERNAME}"
+password = "${NATS_PASSWORD}"
+
+[sinks.vmlogs_{{ instance_id }}.encoding]
+codec = "json"
