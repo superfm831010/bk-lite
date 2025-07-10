@@ -14,8 +14,13 @@ restart_attempts = 3
 type = "remap"
 inputs = ["exec_{{ instance_id }}"]
 source = '''
-.message = .message ?? .  # 防止为空
-.host = get_hostname!()
+.command = .command
+.data_stream = .data_stream
+.host = .host
+.message = .message
+.pid = .pid
+.source_type = .source_type
+.timestamp = .timestamp
 .collect_type = "exec"
 .instance_id = "{{ instance_id }}"
 '''
@@ -26,7 +31,7 @@ source = '''
 [sinks.vmlogs_{{ instance_id }}]
 type = "nats"
 inputs = ["exec_enrich_{{ instance_id }}"]
-subject = "vector.{{ instance_id }}"
+subject = "vector"
 url = "nats://${NATS_SERVERS}"
 
 [sinks.vmlogs_{{ instance_id }}.auth]
