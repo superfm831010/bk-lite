@@ -8,13 +8,17 @@ auto_partial_merge = true
 
 [transforms.docker_enrich_{{ instance_id }}]
 type = "remap"
-inputs = ["docker_logs_{{ instance_id }}"]
+inputs = ["docker_{{ instance_id }}"]
 source = '''
-.message = .log
-.container_name = .container.name
-.image = .container.image
+.container_created_at = .container_created_at
+.container_id = .container_id
+.container_name = .container_name
+.host = .host
+.image = .image
+.message = .message
+.source_type = .source_type
 .stream = .stream
-.host = get_hostname!()
+.timestamp = .timestamp
 .collect_type = "docker"
 .instance_id = "{{ instance_id }}"
 '''
@@ -25,7 +29,7 @@ source = '''
 [sinks.vmlogs_{{ instance_id }}]
 type = "nats"
 inputs = ["docker_enrich_{{ instance_id }}"]
-subject = "vector.{{ instance_id }}"
+subject = "vector"
 url = "nats://${NATS_SERVERS}"
 
 [sinks.vmlogs_{{ instance_id }}.auth]

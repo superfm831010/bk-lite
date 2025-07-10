@@ -3,7 +3,6 @@ from collections import defaultdict
 import toml
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
@@ -62,16 +61,18 @@ class CollectInstanceViewSet(ViewSet):
 
         # 补充组织与配置
         org_map = defaultdict(list)
-
-        qs = CollectInstanceOrganization.objects.filter(
+        org_objs = CollectInstanceOrganization.objects.filter(
             collect_instance_id__in=[item["id"] for item in data_list]
         ).values_list("collect_instance_id", "organization")
-
-        for instance_id, organization in qs:
+        for instance_id, organization in org_objs:
             org_map[instance_id].append(organization)
 
-        conf_map = dict(CollectConfig.objects.filter(
-            collect_instance_id__in=[item["id"] for item in data_list]).values_list("collect_instance", "id"))
+        conf_map = defaultdict(list)
+        conf_objs = CollectConfig.objects.filter(
+            collect_instance_id__in=[item["id"] for item in data_list]
+        ).values_list("collect_instance", "id")
+        for instance_id, config_id in conf_objs:
+            conf_map[instance_id].append(config_id)
 
         items = []
         for info in data_list:
@@ -131,19 +132,75 @@ class CollectInstanceViewSet(ViewSet):
             properties={
                 "instance_ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING),
                                                description="采集实例ID列表"),
-                "clean_child_config": openapi.Schema(type=openapi.TYPE_BOOLEAN, description="是否清除子配置"),
             },
-            required=["instance_ids", "clean_child_config"]
+            required=["instance_ids"]
         )
     )
     @action(methods=['post'], detail=False, url_path='remove_collect_instance')
     def remove_collect_instance(self, request):
         instance_ids = request.data.get("instance_ids", [])
-        if request.data.get("clean_child_config"):
-            config_objs = CollectConfig.objects.filter(collect_instance_id__in=instance_ids)
-            NodeMgmt().delete_configs([config.id for config in config_objs])
-            config_objs.delete()
+        config_objs = CollectConfig.objects.filter(collect_instance_id__in=instance_ids)
+        child_configs, configs = [], []
+        for config in config_objs:
+            if config.is_child:
+                child_configs.append(config.id)
+            else:
+                configs.append(config.id)
+        # 删除子配置
+        NodeMgmt().delete_child_configs(child_configs)
+        # 删除配置
+        NodeMgmt().delete_configs(configs)
+        # 删除配置对象
+        config_objs.delete()
         CollectInstance.objects.filter(id__in=instance_ids).delete()
+        return WebUtils.response_success()
+
+
+    @swagger_auto_schema(
+        operation_id="instance_update",
+        operation_description="更新实例",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "instance_id": openapi.Schema(type=openapi.TYPE_STRING, description="实例ID"),
+                "name": openapi.Schema(type=openapi.TYPE_STRING, description="实例名称"),
+                "organizations": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_INTEGER, description="组织ID列表")
+                ),
+            },
+            required=["instance_id", "name", "organizations"]
+        )
+    )
+    @action(methods=['post'], detail=False, url_path='instance_update')
+    def instance_update(self, request):
+        CollectTypeService.update_instance(
+            request.data.get("instance_id"),
+            request.data.get("name"),
+            request.data.get("organizations", []),
+        )
+        return WebUtils.response_success()
+
+    @swagger_auto_schema(
+        operation_id="set_organizations",
+        operation_description="设置实例组织",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "instance_ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING),
+                                               description="实例ID列表"),
+                "organizations": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING),
+                                                description="组织ID列表"),
+            },
+            required=["instance_ids", "organizations"]
+        )
+    )
+    @action(methods=['post'], detail=False, url_path='set_organizations')
+    def set_organizations(self, request):
+        """设置监控对象实例组织"""
+        instance_ids = request.data.get("instance_ids", [])
+        organizations = request.data.get("organizations", [])
+        CollectTypeService.set_instances_organizations(instance_ids, organizations)
         return WebUtils.response_success()
 
 
@@ -152,39 +209,63 @@ class CollectConfigViewSet(ViewSet):
     @swagger_auto_schema(
         operation_description="查询配置内容",
         operation_id="get_config_content",
-        manual_parameters=[
-            openapi.Parameter(
-                'id', openapi.IN_QUERY, description="配置ID", type=openapi.TYPE_STRING, required=True
-            )
-        ],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING),
+                                      description="配置ID列表"),
+            },
+            required=["ids"]
+        ),
     )
-    @action(methods=['get'], detail=False, url_path='get_config_content')
+    @action(methods=['post'], detail=False, url_path='get_config_content')
     def get_config_content(self, request):
-        id = request.query_params.get("id")
-        config_obj = CollectConfig.objects.filter(id=id)
-        if not config_obj.exists():
-            return WebUtils.response_error("配置不存在", status.HTTP_404_NOT_FOUND)
+        config_objs = CollectConfig.objects.filter(id__in=request.data["ids"])
+        if not config_objs:
+            return WebUtils.response_error("配置不存在!")
 
-        configs = NodeMgmt().get_configs_by_ids([id])
-        config = configs[0]
-        config["content"] = toml.loads(config["config_template"])
-        return WebUtils.response_success(config)
+        result = {}
+        for config_obj in config_objs:
+            content_key = "content" if config_obj.is_child else "config_template"
+            if config_obj.is_child:
+                configs = NodeMgmt().get_child_configs_by_ids([config_obj.id])
+            else:
+                configs = NodeMgmt().get_configs_by_ids([config_obj.id])
+            config = configs[0]
+
+            config["content"] = toml.loads(config[content_key])
+
+            if config_obj.is_child:
+                result["child"] = config
+            else:
+                result["base"] = config
+
+        return WebUtils.response_success(result)
 
     @swagger_auto_schema(
         operation_description="更改采集配置",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "id": openapi.Schema(type=openapi.TYPE_STRING, description="配置ID"),
-                "content": openapi.Schema(type=openapi.TYPE_OBJECT, description="配置内容"),
+                "child": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_STRING, description="配置ID"),
+                        "content": openapi.Schema(type=openapi.TYPE_OBJECT, description="配置内容"),
+                    },
+                ),
+                "base": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_STRING, description="配置ID"),
+                        "content": openapi.Schema(type=openapi.TYPE_OBJECT, description="配置内容"),
+                        "env_config": openapi.Schema(type=openapi.TYPE_OBJECT, description="环境变量配置"),
+                    },
+                ),
             },
-            required=["id", "content"]
         ),
     )
     @action(methods=['post'], detail=False, url_path='update_instance_collect_config')
     def update_instance_collect_config(self, request):
-        config_obj = CollectConfig.objects.filter(id=request.data["id"]).first()
-        if config_obj:
-            content = toml.dumps(request.data["content"])
-            NodeMgmt().update_config_content(request.data["id"], content)
+        CollectTypeService.update_instance_config(request.data.get("child"), request.data.get("base"))
         return WebUtils.response_success()
