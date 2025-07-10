@@ -5,8 +5,8 @@
 from apps.cmdb.constants import CollectPluginTypes
 from apps.cmdb.models.collect_model import CollectModels
 from apps.cmdb.collection.service import MetricsCannula, CollectK8sMetrics, CollectVmwareMetrics, \
-    CollectNetworkMetrics, ProtocolCollectMetrics, AliyunCollectMetrics, HostCollectMetrics, RedisCollectMetrics, \
-    MiddlewareCollectMetrics, QCloudCollectMetrics
+    CollectNetworkMetrics, ProtocolCollectMetrics, AliyunCollectMetrics, HostCollectMetrics, \
+    MiddlewareCollectMetrics, QCloudCollectMetrics, DBCollectCollectMetrics
 
 
 class ProtocolCollect(object):
@@ -182,7 +182,7 @@ class JobCollect(object):
     def collect_manage(self):
         result = {
             CollectPluginTypes.HOST: self.collect_host,
-            CollectPluginTypes.REDIS: self.collect_redis,
+            CollectPluginTypes.DB: self.collect_db,
             CollectPluginTypes.MIDDLEWARE: self.collect_middleware
         }
         return result
@@ -195,13 +195,12 @@ class JobCollect(object):
         data = HostCollect(self.task.id)()
         return data
 
-    def collect_redis(self):
-        data = RedisCollect(self.task.id)()
-        return data
-
     def collect_middleware(self):
         data = MiddlewareCollect(self.task.id)()
         return data
+
+    def collect_db(self):
+        return DBCollect(self.task.id)()
 
     def main(self):
         return self.collect_manage[self.task.task_type]()
@@ -210,9 +209,8 @@ class JobCollect(object):
 class HostCollect(BaseCollect):
     COLLECT_PLUGIN = HostCollectMetrics
 
-
-class RedisCollect(BaseCollect):
-    COLLECT_PLUGIN = RedisCollectMetrics
-
 class MiddlewareCollect(BaseCollect):
     COLLECT_PLUGIN = MiddlewareCollectMetrics
+
+class DBCollect(BaseCollect):
+    COLLECT_PLUGIN = DBCollectCollectMetrics
