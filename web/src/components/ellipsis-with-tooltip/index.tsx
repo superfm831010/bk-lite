@@ -17,7 +17,7 @@ const EllipsisWithTooltip: React.FC<EllipsisWithTooltipProps> = ({ text, classNa
   };
 
   useEffect(() => {
-    // requestAnimationFrame 会在浏览器下次重绘之前执行回调函数，确保在元素渲染完成后再进行检查
+    // requestAnimationFrame will execute the callback function before the browser's next repaint, ensuring the check is performed after the element is rendered
     const frameId = requestAnimationFrame(() => {
       checkOverflow(textRef.current, setIsOverflow);
     });

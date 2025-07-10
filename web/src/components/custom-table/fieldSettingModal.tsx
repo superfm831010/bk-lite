@@ -41,14 +41,12 @@ const FieldSettingModal = forwardRef<FieldModalRef, FieldModalProps>(
 
     useImperativeHandle(ref, () => ({
       showModal: () => {
-        // 开启弹窗的交互
         setTitle(t('cutomTable.fieldSetting'));
         handleCheckboxChange(displayFieldKeys);
         setVisible(true);
       },
     }));
 
-    // 全选或取消全选
     const onCheckAllChange: CheckboxProps['onChange'] = (e) => {
       setCheckedFields(
         e.target.checked ? choosableFields.map((item) => item.key) : []
@@ -56,7 +54,6 @@ const FieldSettingModal = forwardRef<FieldModalRef, FieldModalProps>(
       setDragFields(e.target.checked ? choosableFields : []);
     };
 
-    // 单选
     const handleCheckboxChange = (checkedValues: string[]) => {
       setCheckedFields(checkedValues);
       const fields: ColumnItem[] = [];
@@ -69,7 +66,6 @@ const FieldSettingModal = forwardRef<FieldModalRef, FieldModalProps>(
       setDragFields(fields);
     };
 
-    // 清空某项
     const clearCheckedItem = (key: string) => {
       const fields = cloneDeep(dragFields);
       const targetIndex = fields.findIndex(
@@ -82,7 +78,6 @@ const FieldSettingModal = forwardRef<FieldModalRef, FieldModalProps>(
       }
     };
 
-    // 清空所有
     const handleClear = () => {
       setCheckedFields([]);
     };
@@ -189,7 +184,7 @@ const FieldSettingModal = forwardRef<FieldModalRef, FieldModalProps>(
               )}
             </Checkbox.Group>
           </div>
-          {/* 右侧拖拽列表 */}
+          {/* Right drag list */}
           <div className={`${fieldSettingModalStyle.rightSide} w-1/3 p-4`}>
             <div className="flex justify-between items-center">
               <span>

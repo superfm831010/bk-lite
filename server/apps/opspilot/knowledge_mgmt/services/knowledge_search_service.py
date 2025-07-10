@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from django.conf import settings
 
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.knowledge_mgmt.models import GraphChunkMap, KnowledgeBase, KnowledgeGraph
+from apps.opspilot.knowledge_mgmt.models import KnowledgeBase, KnowledgeGraph
 from apps.opspilot.models import EmbedProvider, RerankProvider
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
@@ -75,7 +75,6 @@ class KnowledgeSearchService:
                 return {}
             embed_config = graph_obj.embed_model.decrypted_embed_config
             rerank_config = graph_obj.rerank_model.decrypted_rerank_config_config
-            group_ids = GraphChunkMap.objects.filter(knowledge_graph_id=graph_obj.id).values_list("graph_id", flat=True)
             graph_rag_request = {
                 "embed_model_base_url": embed_config["base_url"],
                 "embed_model_api_key": embed_config["api_key"],
@@ -83,8 +82,8 @@ class KnowledgeSearchService:
                 "rerank_model_base_url": rerank_config["base_url"],
                 "rerank_model_name": rerank_config.get("model", graph_obj.rerank_model.name),
                 "rerank_model_api_key": rerank_config["api_key"],
-                "size": kwargs["graph_size"],
-                "group_ids": list(group_ids),
+                "size": knowledge_base_folder.graph_size,
+                "group_ids": ["graph-{}".format(graph_obj.id)],
                 "search_query": query,
             }
         return graph_rag_request
