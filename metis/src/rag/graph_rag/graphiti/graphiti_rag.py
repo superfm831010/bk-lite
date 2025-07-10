@@ -50,7 +50,9 @@ class GraphitiRAG():
         nodes_result = await graphiti.driver.execute_query(
             """
             MATCH (n) WHERE n.group_id IN $group_ids
-            RETURN n.name as name, n.uuid as uuid, n.fact as fact, n.summary as summary, id(n) as node_id, n.group_id as group_id
+            RETURN n.name as name, n.uuid as uuid, n.fact as fact, n.summary as summary, 
+                   id(n) as node_id, n.group_id as group_id,
+                   labels(n) as labels
             """,
             {"group_ids": req.group_ids}
         )
@@ -85,20 +87,23 @@ class GraphitiRAG():
             }
             edges.append(edge)
 
-        docs = []
+        nodes = []
         for record in nodes_result.records:
             doc = {
                 'name': record['name'],
                 'uuid': record['uuid'],
                 'group_id': record['group_id'],
                 'node_id': record['node_id'],
-                'edges': edges,
                 "fact": record['fact'],
                 "summary": record['summary'],
+                "labels": record['labels'],
             }
-            docs.append(doc)
-
-        return docs
+            nodes.append(doc)
+        rs = {
+            "nodes": nodes,
+            "edges": edges
+        }
+        return rs
 
     async def delete_document(self, req: DocumentDeleteRequest):
         graphiti = Graphiti(
