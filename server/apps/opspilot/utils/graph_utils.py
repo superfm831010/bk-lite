@@ -26,12 +26,30 @@ class GraphUtils(ChunkHelper):
         return return_data
 
     @classmethod
-    def create_graph(cls, graph_obj: KnowledgeGraph):
+    def update_graph(cls, graph_obj, old_doc_list):
+        new_doc_list = graph_obj.doc_list[:]
+        add_doc_list = [i for i in new_doc_list if i not in old_doc_list]
+        delete_doc_list = [i for i in old_doc_list if i not in new_doc_list]
+        delete_docs = cls.get_documents(delete_doc_list, graph_obj.knowledge_base.knowledge_index_name())
+        graph_map_list = dict(
+            GraphChunkMap.objects.filter(knowledge_graph_id=graph_obj.id).values_list("chunk_id", "graph_id")
+        )
+        delete_chunk = [i["metadata"]["chunk_id"] for i in delete_docs]
+        graph_list = [graph_id for chunk_id, graph_id in graph_map_list.items() if chunk_id in delete_chunk]
+        if graph_list:
+            cls.delete_graph_chunk(graph_list)
+            GraphChunkMap.objects.filter(knowledge_graph_id=graph_obj.id, chunk_id__in=delete_chunk).delete()
+        return cls.create_graph(graph_obj, add_doc_list)
+
+    @classmethod
+    def create_graph(cls, graph_obj: KnowledgeGraph, doc_list=None):
+        if doc_list is None:
+            doc_list = graph_obj.doc_list
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/ingest"
         embed_config = graph_obj.embed_model.decrypted_embed_config
         llm_config = graph_obj.llm_model.decrypted_llm_config
         rerank_config = graph_obj.rerank_model.decrypted_rerank_config_config
-        docs = cls.get_documents(graph_obj.doc_list, graph_obj.knowledge_base.knowledge_index_name())
+        docs = cls.get_documents(doc_list, graph_obj.knowledge_base.knowledge_index_name())
         kwargs = {
             "openai_api_key": llm_config["openai_api_key"],
             "openai_model": llm_config.get("model", graph_obj.llm_model.name),
@@ -52,14 +70,17 @@ class GraphUtils(ChunkHelper):
             return {"result": False, "message": str(e)}
         data_list = [
             GraphChunkMap(graph_id=graph_id, chunk_id=chunk_id, knowledge_graph_id=graph_obj.id)
-            for graph_id, chunk_id in res["result"].items()
+            for chunk_id, graph_id in res["result"].items()
         ]
         GraphChunkMap.objects.bulk_create(data_list, batch_size=100)
+        return {"result": True}
 
     @classmethod
     def search_graph(cls, graph_obj: KnowledgeGraph, size=0, search_query=""):
         embed_config = graph_obj.embed_model.decrypted_embed_config
         rerank_config = graph_obj.rerank_model.decrypted_rerank_config_config
+        group_ids = GraphChunkMap.objects.filter(knowledge_graph_id=graph_obj.id).values_list("graph_id", flat=True)
+
         kwargs = {
             "embed_model_base_url": embed_config["base_url"],
             "embed_model_api_key": embed_config["api_key"],
@@ -68,7 +89,7 @@ class GraphUtils(ChunkHelper):
             "rerank_model_name": rerank_config.get("model", graph_obj.rerank_model.name),
             "rerank_model_api_key": rerank_config["api_key"],
             "size": size,
-            "group_ids": [f"graph-{graph_obj.id}"],
+            "group_ids": list(group_ids),
             "search_query": search_query,
         }
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/search"
@@ -76,7 +97,7 @@ class GraphUtils(ChunkHelper):
             res = cls.post_chat_server(kwargs, url)
         except Exception as e:
             return {"result": False, "message": str(e)}
-        return res
+        return {"result": True, "data": res["result"]}
 
     @classmethod
     def get_graph(cls, graph_id):
@@ -110,3 +131,12 @@ class GraphUtils(ChunkHelper):
         res = cls.post_chat_server(kwargs, url)
         if res["status"] != "success":
             raise Exception(res["message"])
+
+    @classmethod
+    def rebuild_graph_community(cls, graph_obj: KnowledgeGraph):
+        url = f"{settings.METIS_SERVER_URL}/api/graph_rag/rebuild_community"
+        kwargs = {"group_ids": [f"graph-{graph_obj.id}"]}
+        res = cls.post_chat_server(kwargs, url)
+        if res["status"] != "success":
+            raise Exception(res["message"])
+        return {"result": True}

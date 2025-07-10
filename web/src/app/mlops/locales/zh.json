@@ -29,6 +29,7 @@
     "max": "最大值"
   },
   "datasets": {
+    "datasets": "数据集",
     "title": "文档列表",
     "detail": "支持上传时序数据，并为这些数据进行打标，以便后续进行模型训练。",
     "addform": "新增数据集",
@@ -77,6 +78,7 @@
     "trainfile": "训练文件",
     "datasets": "数据集",
     "algorithms": "训练算法",
+    "selectAlgorithmsMsg":"请选择一个训练算法",
     "addtask": "新增训练任务",
     "edittask": "编辑训练任务",
     "history": "历史记录",
@@ -86,18 +88,34 @@
     "modelDownload": "模型下载",
     "selectDatasets": "请选择数据训练集",
     "selectTraindata": "请选择训练数据参数",
-    "deleteTraintask": "确定要删除该训练任务吗？",
+    "delTraintask": "删除训练任务",
+    "delTraintaskContent": "确定要删除该训练任务吗？",
     "IsolationForst": "孤立森林",
     "notStarted": "未开始",
     "inProgress": "进行中",
     "completed": "已完成",
     "failed": "训练失败",
     "maxEvals": "最大训练轮次",
+    "maxEvalsMsg": "请输入最大训练轮次",
     "hyperopt": "超参数"
   },
   "model-release": {
+    "modelName":"模型名称",
     "title": "能力发布",
     "detail": "对训练完成的模型进行发布管理。",
-    "modalTitle": "选择模型版本"
+    "modalTitle": "选择模型版本",
+    "active": "已上线",
+    "inactive": "未上线",
+    "modelVersion": "模型版本",
+    "modelDescription": "模型介绍",
+    "modelRelease": "模型发布",
+    "modelThreshold": "异常阈值",
+    "selectTraintask": "请选择训练任务",
+    "inputVersionMsg": "请输入版本号",
+    "inputThreshold": "请输入异常阈值",
+    "publishSuccess": "发布成功",
+    "publishStatus": "发布状态",
+    "delModel": "删除模型",
+    "delModelContent": "你确认要删除这个模型吗？"
   }
 }

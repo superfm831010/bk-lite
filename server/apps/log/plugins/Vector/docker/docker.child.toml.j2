@@ -1,0 +1,40 @@
+# ====================================
+# Docker 日志源（含字段映射）
+# ====================================
+[sources.docker_{{ instance_id }}]
+type = "docker_logs"
+docker_host = "{{ docker_host }}"
+auto_partial_merge = true
+
+[transforms.docker_enrich_{{ instance_id }}]
+type = "remap"
+inputs = ["docker_logs_{{ instance_id }}"]
+source = '''
+.message = .log
+.container_name = .container.name
+.image = .container.image
+.stream = .stream
+.host = get_hostname!()
+.collect_type = "docker"
+.instance_id = "{{ instance_id }}"
+'''
+
+# ====================================
+# NATS Sink（独立实例）
+# ====================================
+[sinks.vmlogs_{{ instance_id }}]
+type = "nats"
+inputs = ["docker_enrich_{{ instance_id }}"]
+subject = "vector.{{ instance_id }}"
+url = "nats://${NATS_SERVERS}"
+
+[sinks.vmlogs_{{ instance_id }}.auth]
+strategy = "user_password"
+
+[sinks.vmlogs_{{ instance_id }}.auth.user_password]
+user = "${NATS_USERNAME}"
+password = "${NATS_PASSWORD}"
+
+[sinks.vmlogs_{{ instance_id }}.encoding]
+codec = "json"
+

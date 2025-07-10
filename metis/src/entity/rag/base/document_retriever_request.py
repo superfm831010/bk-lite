@@ -7,7 +7,7 @@ class DocumentRetrieverRequest(BaseModel):
     index_name: str
     search_query: str = ''
     metadata_filter: dict = {}
-    size: int = 100
+
     threshold: float = 0.7
     enable_term_search: bool = True
 
@@ -32,8 +32,11 @@ class DocumentRetrieverRequest(BaseModel):
 
     rag_recall_mode: str = "chunk"
 
+    size: int = 100
     enable_naive_rag: bool = True
+
     enable_qa_rag: bool = False
+    qa_size: int = 10
     enable_graph_rag: bool = False
 
     graph_rag_request: GraphitiDocumentRetrieverRequest = None

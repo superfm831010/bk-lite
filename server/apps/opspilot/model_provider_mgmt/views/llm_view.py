@@ -53,6 +53,13 @@ class LLMViewSet(AuthViewSet):
             return JsonResponse({"result": False, "message": message})
         params["team"] = params.get("team", []) or [int(request.COOKIES.get("current_team"))]
         params["enable_conversation_history"] = True
+        params[
+            "skill_prompt"
+        ] = """你是关于专业机器人，请按照以下要求进行回复
+1、请根据用户的问题，从知识库检索关联的知识进行总结回复
+2、请根据用户需求，从工具中选取适当的工具进行执行
+3、回复的语句请保证准确，不要杜撰
+4、请按照要点有条理的梳理答案"""
         serializer = self.get_serializer(data=params)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -106,11 +113,11 @@ class LLMViewSet(AuthViewSet):
         params["username"] = request.user.username
         params["user_id"] = request.user.id
         skill_type = SkillTypeChoices.KNOWLEDGE_TOOL
-        skill_obj = LLMSkill.objects.get(id=int(params["skill_id"]))
         if params.get("tools"):
             skill_type = SkillTypeChoices.BASIC_TOOL
         try:
             # 获取客户端IP
+            skill_obj = LLMSkill.objects.get(id=int(params["skill_id"]))
             current_ip = request.META.get("HTTP_X_FORWARDED_FOR")
             if current_ip:
                 current_ip = current_ip.split(",")[0].strip()
@@ -124,12 +131,14 @@ class LLMViewSet(AuthViewSet):
             params["skill_type"] = skill_type
             params["tools"] = params.get("tools", [])
             params["group"] = params["group"] if params.get("group") else skill_obj.team[0]
+            params["enable_km_route"] = (
+                params["enable_km_route"] if params.get("enable_km_route") else skill_obj.enable_km_route
+            )
+            params["km_llm_model"] = params["km_llm_model"] if params.get("km_llm_model") else skill_obj.km_llm_model
             # 调用stream_chat函数返回流式响应
             return stream_chat(params, skill_obj.name, {}, current_ip, params["user_message"])
         except LLMSkill.DoesNotExist:
             return JsonResponse({"result": False, "message": _("Skill not found.")})
-        except LLMModel.DoesNotExist:
-            return JsonResponse({"result": False, "message": _("LLM Model not found.")})
         except Exception as e:
             logger.exception(e)
             return JsonResponse({"result": False, "message": str(e)})
