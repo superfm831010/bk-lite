@@ -2,37 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Spin } from 'antd';
 import { useTranslation } from '@/utils/i18n';
+import { GraphNode, GraphEdge, GraphData, KnowledgeGraphViewProps } from '@/app/opspilot/types/knowledge';
 
-export interface GraphNode {
-  id: string;
-  label: string;
-  type: 'concept' | 'entity' | 'document';
-  category?: string;
-}
-
-export interface GraphEdge {
-  id: string;
-  source: string;
-  target: string;
-  label?: string;
-  type: 'relation' | 'reference';
-}
-
-export interface GraphData {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-}
-
-interface KnowledgeGraphViewProps {
-  data: GraphData;
-  loading?: boolean;
-  height?: number;
-  onNodeClick?: (node: GraphNode) => void;
-  onEdgeClick?: (edge: GraphEdge) => void;
-  useMockData?: boolean;
-}
-
-// Mock数据生成函数
 const generateMockData = (): GraphData => {
   const nodes: GraphNode[] = [
     { id: '1', label: 'DevOps', type: 'concept', category: 'methodology' },
@@ -76,7 +47,6 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   const [initError, setInitError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
 
-  // 使用mock数据或传入的数据
   const graphData = useMockData || (!data.nodes.length && !loading) ? generateMockData() : data;
 
   const getNodeStyle = (type: string) => {
@@ -138,7 +108,6 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
       const container = containerRef.current;
       const width = container.offsetWidth || 800;
 
-      // 动态导入 G6 4.x
       const G6Module = await import('@antv/g6');
       const G6 = G6Module.default || G6Module;
       
@@ -146,7 +115,6 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
         throw new Error('G6 Graph constructor not found');
       }
 
-      // 处理数据格式 - G6 4.x 格式
       const processedData = {
         nodes: graphData.nodes.map(node => {
           const style = getNodeStyle(node.type);
@@ -180,7 +148,6 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
         }),
       };
 
-      // 创建图实例 - G6 4.x API
       const graph = new G6.Graph({
         container: container,
         width,
@@ -236,7 +203,6 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
         fitViewPadding: 20,
       } as any);
 
-      // 绑定事件
       if (onNodeClick) {
         graph.on('node:click', (event: any) => {
           try {
@@ -276,7 +242,6 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
         });
       }
 
-      // 加载数据并渲染
       (graph as any).data(processedData);
       graph.render();
       
@@ -293,7 +258,6 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   };
 
   useEffect(() => {
-    // 只在没有图实例或数据变化时才重新创建
     if (!graphRef.current && !loading && graphData.nodes.length > 0) {
       const timer = setTimeout(() => {
         createGraph();
@@ -301,9 +265,8 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [useMockData]); // 只依赖useMockData，避免频繁重新创建
+  }, [useMockData]);
 
-  // 组件卸载时清理图实例
   useEffect(() => {
     return () => {
       if (graphRef.current) {
@@ -317,7 +280,6 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
     };
   }, []);
 
-  // 处理窗口大小变化
   useEffect(() => {
     const handleResize = () => {
       if (graphRef.current && containerRef.current) {

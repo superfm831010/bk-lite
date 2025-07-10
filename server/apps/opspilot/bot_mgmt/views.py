@@ -202,6 +202,8 @@ def openai_completions(request):
         else:
             return JsonResponse({"choices": [{"message": {"role": "assistant", "content": str(e)}}]})
     params["user_id"] = user.username
+    params["enable_km_route"] = skill_obj.enable_km_route
+    params["km_llm_model"] = skill_obj.km_llm_model
     user_message = params.get("user_message")
     if not stream_mode:
         return invoke_chat(params, skill_obj, kwargs, current_ip, user_message)

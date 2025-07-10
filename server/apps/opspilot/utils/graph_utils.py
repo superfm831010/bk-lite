@@ -97,7 +97,7 @@ class GraphUtils(ChunkHelper):
             res = cls.post_chat_server(kwargs, url)
         except Exception as e:
             return {"result": False, "message": str(e)}
-        return res
+        return {"result": True, "data": res["result"]}
 
     @classmethod
     def get_graph(cls, graph_id):

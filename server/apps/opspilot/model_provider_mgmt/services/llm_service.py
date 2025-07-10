@@ -128,13 +128,13 @@ class LLMService:
         title_map = doc_map = {}
         naive_rag_request = []
         # 如果启用RAG，搜索文档
+        extra_config = {}
         if kwargs["enable_rag"]:
-            naive_rag_request, doc_map = self.format_naive_rag_kwargs(kwargs)
-
+            naive_rag_request, km_request, doc_map = self.format_naive_rag_kwargs(kwargs)
+            extra_config.update(km_request)
         user_message, image_data = self._process_user_message_and_images(kwargs["user_message"])
         # 处理聊天历史
         chat_history = self._process_chat_history(kwargs["chat_history"], kwargs.get("conversation_window_size", 10))
-        extra_config = {}
         # 构建聊天参数
         chat_kwargs = {
             "openai_api_base": llm_model.decrypted_llm_config["openai_base_url"],
@@ -239,8 +239,8 @@ class LLMService:
             logger.error(f"Error converting image to base64: {e}")
             return None
 
-    @staticmethod
-    def format_naive_rag_kwargs(kwargs: Dict[str, Any]) -> Tuple[List, Dict]:
+    @classmethod
+    def format_naive_rag_kwargs(cls, kwargs: Dict[str, Any]) -> Tuple[List, Dict, Dict]:
         """
         搜索相关文档以提供上下文
 
@@ -261,45 +261,103 @@ class LLMService:
             )
         )
         doc_map = {i["id"]: i for i in doc_list}
-
+        km_request = cls.set_km_request(knowledge_base_list, kwargs["enable_km_route"], kwargs["km_llm_model"])
         # 为每个知识库搜索相关文档
         for knowledge_base in knowledge_base_list:
-            embed_config = knowledge_base.embed_model.decrypted_embed_config
-            embed_model_base_url = embed_config["base_url"]
-            embed_model_api_key = embed_config["api_key"]
-            embed_model_name = embed_config.get("model", knowledge_base.embed_model.name)
-            rerank_model_base_url = rerank_model_api_key = rerank_model_name = ""
-            if knowledge_base.rerank_model:
-                rerank_config = knowledge_base.rerank_model.decrypted_rerank_config_config
-                rerank_model_base_url = rerank_config["base_url"]
-                rerank_model_api_key = rerank_config["api_key"]
-                rerank_model_name = rerank_config.get("model", knowledge_base.rerank_model.name)
-            score_threshold = score_threshold_map.get(knowledge_base.id, 0.7)
-            kwargs = {
-                "index_name": knowledge_base.knowledge_index_name(),
-                "metadata_filter": {"enabled": True},
-                "size": knowledge_base.result_count,
-                "threshold": score_threshold,
-                "enable_term_search": knowledge_base.enable_text_search,  # TODO 确认是否这个参数
-                "text_search_weight": knowledge_base.text_search_weight,
-                "text_search_mode": knowledge_base.text_search_mode,
-                "enable_vector_search": knowledge_base.enable_vector_search,
-                "vector_search_weight": knowledge_base.vector_search_weight,
-                "rag_k": knowledge_base.rag_k,
-                "rag_num_candidates": knowledge_base.rag_num_candidates,
-                "enable_rerank": knowledge_base.enable_rerank,
-                "embed_model_base_url": embed_model_base_url,
-                "embed_model_api_key": embed_model_api_key,
-                "embed_model_name": embed_model_name,
-                "rerank_model_base_url": rerank_model_base_url,
-                "rerank_model_api_key": rerank_model_api_key,
-                "rerank_model_name": rerank_model_name,
-                "rerank_top_k": knowledge_base.rerank_top_k,
-                "rag_recall_mode": "chunk",
-            }
-            naive_rag_request.append(kwargs)
+            default_kwargs = cls.set_default_naive_rag_kwargs(knowledge_base, score_threshold_map)
+            if knowledge_base.enable_naive_rag:
+                params = dict(
+                    default_kwargs,
+                    **{
+                        "size": knowledge_base.rag_size,
+                        "enable_naive_rag": True,
+                        "enable_qa_rag": False,
+                        "enable_graph_rag": False,
+                    },
+                )
+                naive_rag_request.append(params)
+            if knowledge_base.enable_qa_rag:
+                params = dict(
+                    default_kwargs,
+                    **{
+                        "size": knowledge_base.qa_size,
+                        "enable_naive_rag": False,
+                        "enable_qa_rag": True,
+                        "enable_graph_rag": False,
+                    },
+                )
+                naive_rag_request.append(params)
+            if knowledge_base.enable_graph_rag:
+                graph_rag_request = KnowledgeSearchService.set_graph_rag_request(
+                    knowledge_base, {"enable_graph_rag": 1}, ""
+                )
+                params = dict(
+                    default_kwargs,
+                    **{
+                        "size": knowledge_base.rag_size,
+                        "graph_rag_request": graph_rag_request,
+                        "enable_naive_rag": False,
+                        "enable_qa_rag": False,
+                        "enable_graph_rag": True,
+                    },
+                )
+                naive_rag_request.append(params)
+        return naive_rag_request, km_request, doc_map
 
-        return naive_rag_request, doc_map
+    @staticmethod
+    def set_km_request(knowledge_base_list, enable_km_route, km_llm_model):
+        km_request = {}
+        if enable_km_route:
+            llm_model = LLMModel.objects.get(id=km_llm_model)
+            openai_api_base = llm_model.decrypted_llm_config["openai_base_url"]
+            openai_api_key = llm_model.decrypted_llm_config["openai_api_key"]
+            model = llm_model.decrypted_llm_config["model"]
+            km_request = {
+                "km_route_llm_api_base": openai_api_base,
+                "km_route_llm_api_key": openai_api_key,
+                "km_route_llm_model": model,
+                "km_info": [
+                    {"index_name": i.knowledge_index_name(), "description": i.introduction} for i in knowledge_base_list
+                ],
+            }
+        return km_request
+
+    @staticmethod
+    def set_default_naive_rag_kwargs(knowledge_base, score_threshold_map):
+        embed_config = knowledge_base.embed_model.decrypted_embed_config
+        embed_model_base_url = embed_config["base_url"]
+        embed_model_api_key = embed_config["api_key"]
+        embed_model_name = embed_config.get("model", knowledge_base.embed_model.name)
+        rerank_model_base_url = rerank_model_api_key = rerank_model_name = ""
+        if knowledge_base.rerank_model:
+            rerank_config = knowledge_base.rerank_model.decrypted_rerank_config_config
+            rerank_model_base_url = rerank_config["base_url"]
+            rerank_model_api_key = rerank_config["api_key"]
+            rerank_model_name = rerank_config.get("model", knowledge_base.rerank_model.name)
+        score_threshold = score_threshold_map.get(knowledge_base.id, 0.7)
+        kwargs = {
+            "index_name": knowledge_base.knowledge_index_name(),
+            "metadata_filter": {"enabled": True},
+            "threshold": score_threshold,
+            "enable_term_search": knowledge_base.enable_text_search,  # TODO 确认是否这个参数
+            "text_search_weight": knowledge_base.text_search_weight,
+            "text_search_mode": knowledge_base.text_search_mode,
+            "enable_vector_search": knowledge_base.enable_vector_search,
+            "vector_search_weight": knowledge_base.vector_search_weight,
+            "rag_k": knowledge_base.rag_k,
+            "rag_num_candidates": knowledge_base.rag_num_candidates,
+            "enable_rerank": knowledge_base.enable_rerank,
+            "embed_model_base_url": embed_model_base_url,
+            "embed_model_api_key": embed_model_api_key,
+            "embed_model_name": embed_model_name,
+            "rerank_model_base_url": rerank_model_base_url,
+            "rerank_model_api_key": rerank_model_api_key,
+            "rerank_model_name": rerank_model_name,
+            "rerank_top_k": knowledge_base.rerank_top_k,
+            "rag_recall_mode": "chunk",
+            "graph_rag_request": {},
+        }
+        return kwargs
 
 
 # 创建服务实例

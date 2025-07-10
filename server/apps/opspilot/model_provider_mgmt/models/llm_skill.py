@@ -37,6 +37,10 @@ class LLMSkill(MaintainerInfo):
     )
     enable_rag_strict_mode = models.BooleanField(default=False, verbose_name="启用RAG严格模式")
     is_template = models.BooleanField(default=False, verbose_name="是否模板")
+    enable_km_route = models.BooleanField(default=False, verbose_name="启用知识库路由")
+    km_llm_model = models.ForeignKey(
+        "LLMModel", on_delete=models.CASCADE, blank=True, null=True, related_name="km_llm_model"
+    )
 
     def __str__(self):
         return self.name
