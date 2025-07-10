@@ -165,11 +165,17 @@ const TestingPage: React.FC = () => {
     try {
       const data = await testKnowledge(params);
       message.success(t('knowledge.testingSuccess'));
-      setResults({
+      const newResults = {
         docs: data.docs || [],
         qa_docs: data.qa_docs || [],
         graph_data: data.graph_data || []
-      });
+      };
+      setResults(newResults);
+      
+      const availableOptions = getSegmentedOptions();
+      if (availableOptions.length > 0) {
+        setActiveTab(availableOptions[0].value);
+      }
     } catch (error) {
       message.error(t('knowledge.testingFailed'));
       console.error(error);
