@@ -2,10 +2,6 @@
 # @File: collect_service.py
 # @Time: 2025/2/27 11:29
 # @Author: windyzhao
-# -- coding: utf-8 --
-# @File: collect_service.py
-# @Time: 2025/2/27 11:29
-# @Author: windyzhao
 import time
 import traceback
 import importlib
@@ -33,6 +29,10 @@ class CollectService(object):
             "etcd_info": "EtcdInfo",
             "rabbitmq_info": "RabbitMQInfo",
             "tomcat_info": "TomcatInfo",
+            "es_info": "ESInfo",
+            "mongodb_info": "MongoDBInfo",
+            "apache_info": "ApacheInfo",
+            "activemq_info": "ActiveMQInfo",
         }
 
     def import_plugin(self, plugin_name):

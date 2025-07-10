@@ -190,7 +190,7 @@ class CollectPluginTypes(object):
     CLOUD = "cloud"
     PROTOCOL = "protocol"
     HOST = "host"
-    REDIS = "redis"
+    DB = "db"
     MIDDLEWARE = "middleware"
     IP = "ip"
     OTHER = "other"
@@ -202,7 +202,7 @@ class CollectPluginTypes(object):
         (CLOUD, "云采集"),
         (PROTOCOL, "协议采集"),
         (HOST, "主机采集"),
-        (REDIS, "Redis采集"),
+        (DB, "数据库采集"),
         (MIDDLEWARE, "中间件采集"),
         (IP, "IP采集"),
         (OTHER, "其他采集"),
@@ -281,7 +281,7 @@ COLLECT_OBJ_TREE = [
                 "id": "redis",
                 "model_id": "redis",
                 "name": "Redis",
-                "task_type": CollectPluginTypes.REDIS,
+                "task_type": CollectPluginTypes.DB,
                 "type": CollectDriverTypes.JOB,
             }
         ],
