@@ -23,6 +23,7 @@ interface EntityCardProps {
   online?: boolean;
   modelName?: string;
   skillType?: string;
+  skill_type?: number;
   permissions?: string[];
   onMenuClick: (action: string, entity: any) => void;
   redirectUrl: string;
@@ -40,6 +41,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
   online,
   modelName,
   skillType,
+  skill_type,
   permissions,
   onMenuClick,
   redirectUrl,
@@ -54,14 +56,14 @@ const EntityCard: React.FC<EntityCardProps> = ({
         <PermissionWrapper
           requiredPermissions={['Edit']}
           instPermissions={permissions}>
-          <span className="block" onClick={() => onMenuClick('edit', { id, name, introduction, created_by, team_name, team, online })}>{t('common.edit')}</span>
+          <span className="block" onClick={() => onMenuClick('edit', { id, name, introduction, created_by, team_name, team, online, skill_type })}>{t('common.edit')}</span>
         </PermissionWrapper>
       </Menu.Item>
       <Menu.Item key={`delete-${id}`}>
         <PermissionWrapper 
           requiredPermissions={['Delete']} 
           instPermissions={permissions}>
-          <span className="block" onClick={() => onMenuClick('delete', { id, name, introduction, created_by, team_name, team, online })}>{t('common.delete')}</span>
+          <span className="block" onClick={() => onMenuClick('delete', { id, name, introduction, created_by, team_name, team, online, skill_type })}>{t('common.delete')}</span>
         </PermissionWrapper>
       </Menu.Item>
     </Menu>
