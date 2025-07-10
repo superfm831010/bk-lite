@@ -15,24 +15,81 @@ from apps.core.logger import alert_logger as logger
 
 
 @shared_task
-def event_aggregation_alert(window_size="10min"):
+def event_aggregation_alert():
     """
-    每分钟执行的聚合任务
+    按窗口类型分组执行的聚合任务
+    支持滑动窗口、固定窗口、会话窗口三种类型
     """
-    logger.info("event aggregation alert task start!")
+    logger.info("开始执行多窗口类型聚合任务")
+
     try:
         # 移动导入到函数内部避免循环导入
-        from apps.alerts.common.aggregation.alert_processor import AlertProcessor
+        from apps.alerts.common.aggregation.smart_scheduler import create_smart_scheduler
+        from apps.alerts.common.aggregation.agg_window import WindowProcessorFactory
 
-        processor = AlertProcessor(window_size=window_size)
+        # 1. 创建智能调度器，判断当前时间应该执行哪些规则
+        scheduler = create_smart_scheduler()
+        executable_rules = scheduler.get_executable_rules()
 
-        # 重新加载数据库规则，确保使用最新规则
-        logger.info("开始重新加载数据库规则")
-        processor.reload_database_rules()
+        # 2. 检查是否有可执行的规则
+        total_executable_rules = sum(len(rules) for rules in executable_rules.values())
+        if total_executable_rules == 0:
+            logger.info("当前时间无需执行任何聚合规则")
+            return
 
-        # 执行聚合处理
-        processor.main()
-        logger.info("event aggregation alert task end!")
+        # 3. 按窗口类型优先级顺序处理（滑动、固定、会话）
+        # window_order = ['sliding', 'fixed', 'session']
+        window_order = ['session']
+        processing_stats = {}
+
+        for window_type in window_order:
+            rules_to_execute = executable_rules.get(window_type, [])
+            if not rules_to_execute:
+                continue
+
+            logger.info(f"开始处理 {window_type} 窗口类型，规则数量: {len(rules_to_execute)}")
+
+            try:
+                # 使用窗口处理器工厂创建处理器并执行
+                # 不再传递固定的window_size，让处理器内部处理每个规则的window_size
+                alerts_created, alerts_updated = WindowProcessorFactory.process_window_type_rules(
+                    window_type=window_type,
+                    rules=rules_to_execute
+                )
+
+                processing_stats[window_type] = {
+                    'rules_count': len(rules_to_execute),
+                    'alerts_created': alerts_created,
+                    'alerts_updated': alerts_updated,
+                    'status': 'success'
+                }
+
+                logger.info(f"{window_type} 窗口类型处理完成，创建告警: {alerts_created}, 更新告警: {alerts_updated}")
+
+            except Exception as e:
+                logger.error(f"{window_type} 窗口类型处理失败: {str(e)}")
+                processing_stats[window_type] = {
+                    'rules_count': len(rules_to_execute),
+                    'status': 'failed',
+                    'error': str(e)
+                }
+
+        # 4. 输出处理统计
+        logger.info("聚合任务处理统计:")
+        total_created = 0
+        total_updated = 0
+
+        for window_type, stats in processing_stats.items():
+            if stats['status'] == 'success':
+                created = stats.get('alerts_created', 0)
+                updated = stats.get('alerts_updated', 0)
+                total_created += created
+                total_updated += updated
+                logger.info(f"  {window_type}: 规则数={stats['rules_count']}, 新建告警={created}, 更新告警={updated}")
+            else:
+                logger.error(f"  {window_type}: 规则数={stats['rules_count']}, 处理失败 - {stats['error']}")
+
+        logger.info(f"多窗口类型聚合任务执行完成，总计: 新建告警={total_created}, 更新告警={total_updated}")
 
     except Exception as e:
         logger.error(f"聚合任务执行失败: {str(e)}")
@@ -140,3 +197,64 @@ def sync_no_dispatch_alert_notice_task():
         sync_notify(username_list=notify_people, channel=channel, title=title, content=content)
 
     logger.info("== 未分派告警通知任务执行完成 ==")
+
+
+@shared_task
+def cleanup_session_windows():
+    """
+    清理过期的会话窗口并生成告警
+    每小时执行一次，清理过期和超过大小限制的会话，并为符合条件的过期会话生成告警
+
+    该任务执行以下操作：
+    1. 扫描所有过期的会话窗口
+    2. 为符合条件的过期会话生成告警
+    3. 清理数据库中的过期会话记录
+    4. 记录清理统计信息
+    """
+    logger.info("== 开始清理过期会话窗口并生成告警 ==")
+    try:
+        from apps.alerts.models import SessionWindow, CorrelationRules
+        from apps.alerts.common.aggregation.session_window_processor import SessionWindowProcessor
+        from django.utils import timezone
+
+        # 统计信息
+        generated_alerts = 0
+        cleaned_sessions = 0
+
+        # 获取所有会话窗口相关的关联规则
+        session_rules = CorrelationRules.objects.filter(
+            window_type='session',
+            aggregation_rules__is_active=True
+        ).distinct()
+
+        # 为每个规则处理其相关的会话
+        for rule in session_rules:
+            try:
+                processor = SessionWindowProcessor(rule)
+
+                # 处理该规则的过期会话
+                rule_alerts_created, rule_alerts_updated = processor._process_expired_sessions()
+                generated_alerts += rule_alerts_created
+
+                # 清理该规则的过期会话记录
+                rule_cleaned = processor._cleanup_expired_sessions()
+                cleaned_sessions += rule_cleaned
+
+                logger.info(f"规则 {rule.name}: 生成告警 {rule_alerts_created}, 清理会话 {rule_cleaned}")
+
+            except Exception as e:
+                logger.error(f"处理规则 {rule.name} 的会话清理时出错: {str(e)}")
+                continue
+
+        cleanup_stats = {
+            "generated_alerts": generated_alerts,
+            "cleaned_sessions": cleaned_sessions,
+            "status": "success"
+        }
+
+        logger.info(f"== 会话窗口清理完成 == 统计信息: {cleanup_stats}")
+        return cleanup_stats
+
+    except Exception as e:
+        logger.error(f"清理会话窗口失败: {str(e)}")
+        return {"generated_alerts": 0, "cleaned_sessions": 0, "error": str(e), "status": "failed"}

@@ -6,16 +6,19 @@
 # @File: alert.py
 # @Time: 2025/5/9 15:25
 # @Author: windyzhao
+from datetime import timedelta
+
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex, BTreeIndex
 from django.db.models import JSONField
+from django.utils import timezone
 
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
 from apps.alerts.constants import AlertsSourceTypes, AlertAccessType, EventStatus, AlertOperate, \
     AlertStatus, EventAction, LevelType, AlertAssignmentMatchType, AlertShieldMatchType, IncidentStatus, \
     IncidentOperate, CorrelationRulesScope, CorrelationRulesType, AggregationRuleType, NotifyResultStatus, \
-    LogTargetType, LogAction
+    LogTargetType, LogAction, WindowType, Alignment
 from apps.alerts.utils.util import gen_app_secret
 
 
@@ -285,7 +288,6 @@ class AggregationRules(MaintainerInfo, TimeInfo):
     """聚合规则模型"""
     rule_id = models.CharField(max_length=100, unique=True, db_index=True, help_text="规则ID")
     name = models.CharField(max_length=100, help_text="规则名称")
-    description = models.TextField(null=True, blank=True, help_text="规则描述")
     is_active = models.BooleanField(default=True, db_index=True, help_text="是否启用")
     template_title = models.CharField(max_length=200, null=True, blank=True, help_text="模板标题")
     template_content = models.TextField(null=True, blank=True, help_text="模板内容")
@@ -293,6 +295,18 @@ class AggregationRules(MaintainerInfo, TimeInfo):
     condition = JSONField(default=list, help_text="规则条件配置")  # [dict, ...]
     type = models.CharField(max_length=32, choices=AggregationRuleType.CHOICES, default=AggregationRuleType.ALERT,
                             help_text="聚合类型")
+
+    # {"zh": "中文描述", "en": "English description"}
+    description = JSONField(default=dict, help_text="规则描述", blank=True, null=True)
+    image = models.TextField(null=True, blank=True, help_text="规则图标base64")
+
+    def get_session_close_conditions(self):
+        try:
+            # 获取第一个条件的session_close配置
+            if self.condition and isinstance(self.condition[0], dict):
+                return self.condition[0].get("session_close", {})
+        except Exception as err:
+            return {}
 
     class Meta:
         db_table = 'alerts_aggregation_rules'
@@ -309,10 +323,64 @@ class CorrelationRules(MaintainerInfo, TimeInfo):
     rule_type = models.CharField(max_length=20, choices=CorrelationRulesType.CHOICES, help_text="规则类型")
     description = models.TextField(null=True, blank=True, verbose_name="描述")
 
+    # 窗口类型配置字段 - 从 AggregationRules 移动到这里
+    window_type = models.CharField(max_length=20, choices=WindowType.CHOICES, default=WindowType.SLIDING,
+                                   help_text="聚合窗口类型")
+    window_size = models.CharField(max_length=20, default="10min", help_text="窗口大小，如10min、1h、30s")
+    slide_interval = models.CharField(max_length=20, default="1min", help_text="滑动窗口滑动间隔")
+    alignment = models.CharField(
+        max_length=10,
+        choices=Alignment.CHOICES,
+        default=Alignment.MINUTE,
+        help_text="固定窗口对齐方式"
+    )
+    session_timeout = models.CharField(max_length=20, default="10min", help_text="会话窗口超时时间")
+    max_window_size = models.CharField(max_length=20, null=True, blank=True, help_text="最大窗口大小限制")
+    """
+        会话窗口分组字段，用于确定哪些事件属于同一个会话。
+        
+        **推荐配置**：使用事件指纹作为session_key，
+        这样每个唯一的事件指纹对应一个独立的会话。
+        
+        指纹分组模式配置：
+        - session_key_fields = [] （空数组，启用指纹分组）
+        
+        传统配置（仍支持）：
+        - ["resource_id"]: 按资源分组，同一资源的事件在一个会话中
+        - ["resource_id", "alert_source"]: 按资源和告警源分组
+        - ["user_id", "resource_type"]: 按用户和资源类型分组
+        
+        业务场景示例：
+        1. 每个事件独立会话（推荐）：session_key_fields = []
+           → 服务器A的CPU告警、内存告警、磁盘告警各自独立成会话
+           → 用户X的登录失败、权限异常、操作超时各自独立成会话
+           
+        2. 按资源聚合：session_key_fields = ["resource_id"]
+           → 服务器A的所有告警归为一个会话
+           
+        3. 应用链路分析：session_key_fields = ["service_name", "trace_id"]
+           → 同一调用链的所有服务事件归为一个会话
+           
+        **性能优势**：使用指纹分组可以显著简化会话管理逻辑，
+        提高处理性能，减少配置复杂度。
+    """
+    session_key_fields = JSONField(default=list, help_text="会话窗口分组字段，空数组表示使用事件指纹")
+
     class Meta:
         db_table = 'alerts_correlation_rules'
         verbose_name = '关联规则'
         verbose_name_plural = '关联规则'
+
+    @property
+    def rule_id_str(self):
+        """返回规则ID的字符串形式"""
+        rules = list(self.aggregation_rules.all().values_list("rule_id", flat=True))
+        result = ",".join(rules) if rules else ""
+        return result
+
+    @property
+    def is_session_rule(self):
+        return self.rule_id_str == "error_scenario_handling"
 
     def __str__(self):
         return self.name
@@ -373,3 +441,275 @@ class OperatorLog(models.Model):
 
     def __str__(self):
         return f"{self.operator} - {self.action} on {self.target_type}({self.target_id})"
+
+
+class SessionWindow(TimeInfo):
+    """
+    会话窗口状态持久化
+    
+    改进说明：
+    - 引入events字段建立与Event模型的多对多关联，替代之前的session_key字符串查询方式
+    - 提供更高效和可靠的事件关联机制
+    - 确保数据一致性和查询性能
+    """
+
+    session_id = models.CharField(max_length=100, unique=True, db_index=True, help_text="会话ID")
+    session_key = models.CharField(max_length=200, db_index=True, help_text="会话分组键")
+    rule_id = models.CharField(max_length=100, db_index=True, help_text="关联规则ID")
+
+    # 会话时间窗口
+    session_start = models.DateTimeField(help_text="会话开始时间")
+    last_activity = models.DateTimeField(help_text="最后活动时间")
+    session_timeout = models.IntegerField(help_text="会话超时时间(秒)")
+
+    # 会话状态
+    is_active = models.BooleanField(default=True, db_index=True, help_text="是否活跃")
+    event_count = models.IntegerField(default=0, help_text="事件数量")
+
+    # 新增：会话数据字段，用于存储会话相关的元数据
+    session_data = JSONField(default=dict, help_text="会话数据和元数据")
+
+    # 会话关联的事件 - 使用多对多关联替代session_key字符串查询
+    events = models.ManyToManyField(
+        Event,
+        related_name='session_windows',
+        through='SessionEventRelation',  # 使用中间表以便添加额外信息
+        help_text="会话关联的事件"
+    )
+
+    class Meta:
+        db_table = 'alerts_session_window'
+        indexes = [
+            models.Index(fields=['session_key', 'rule_id', 'is_active']),
+            models.Index(fields=['is_active', 'last_activity']),
+            models.Index(fields=['rule_id', 'is_active']),  # 新增：优化规则查询
+        ]
+
+    def __str__(self):
+        return f"Session {self.session_id} - {self.session_key}"
+
+    def is_expired(self, current_time=None):
+        """判断会话是否已过期"""
+        if current_time is None:
+            current_time = timezone.now()
+        timeout_delta = timedelta(seconds=self.session_timeout)
+        return current_time - self.last_activity > timeout_delta
+
+    def get_max_window_duration_seconds(self):
+        """
+        获取关联规则配置的最大窗口大小限制（转换为秒）
+        
+        Returns:
+            int: 最大窗口持续时间（秒）
+        """
+        try:
+            # 修复：使用正确的查询条件
+            correlation_rule = CorrelationRules.objects.filter(
+                aggregation_rules__rule_id__in=self.rule_id.split(',')
+            ).first()
+
+            if not correlation_rule:
+                return 3600  # 默认1小时
+
+            max_window_size = correlation_rule.max_window_size
+
+            # 解析时间字符串转换为秒数
+            if max_window_size.endswith('s'):
+                return int(max_window_size[:-1])
+            elif max_window_size.endswith('min'):
+                return int(max_window_size[:-3]) * 60
+            elif max_window_size.endswith('h'):
+                return int(max_window_size[:-1]) * 3600
+            elif max_window_size.endswith('d'):
+                return int(max_window_size[:-1]) * 86400
+            else:
+                # 默认按分钟处理
+                return int(max_window_size) * 60
+
+        except (ValueError, AttributeError):
+            # 默认最大窗口大小为1小时
+            return 3600
+
+    def get_max_event_count(self):
+        """
+        获取关联规则配置的最大事件数量限制
+        
+        Returns:
+            int: 最大事件数量
+        """
+        try:
+            correlation_rule = CorrelationRules.objects.get(
+                aggregation_rules__rule_id=self.rule_id
+            )
+            # 从session_data中获取最大事件数量配置，如果没有则使用默认值
+            max_event_count = correlation_rule.session_data.get('max_event_count', 1000)
+            return max_event_count
+        except (CorrelationRules.DoesNotExist, AttributeError):
+            # 默认最大事件数量为1000
+            return 1000
+
+    def is_window_size_exceeded(self, current_time=None):
+        """
+        检查会话窗口是否超过最大大小限制
+        
+        最大窗口大小限制有两个维度：
+        1. 时间维度：从会话开始到当前时间的持续时间
+        2. 事件数量维度：会话中包含的事件数量
+        
+        Args:
+            current_time: 当前时间，默认为None使用系统当前时间
+            
+        Returns:
+            bool: True表示超过限制，False表示未超过
+        """
+        if current_time is None:
+            current_time = timezone.now()
+
+        # 检查时间维度的限制
+        max_duration_seconds = self.get_max_window_duration_seconds()
+        session_duration = (current_time - self.session_start).total_seconds()
+
+        if session_duration > max_duration_seconds:
+            return True
+
+        # 检查事件数量维度的限制
+        max_event_count = self.get_max_event_count()
+        if self.event_count > max_event_count:
+            return True
+
+        return False
+
+    def should_close_window(self, current_time=None):
+        """
+        判断会话窗口是否应该关闭
+        
+        会话窗口关闭的条件：
+        1. 会话已过期（超过session_timeout）
+        2. 会话窗口大小超过最大限制（max_window_size）
+        
+        Args:
+            current_time: 当前时间
+            
+        Returns:
+            tuple: (should_close, reason)
+                should_close: bool，是否应该关闭
+                reason: str，关闭原因
+        """
+        if current_time is None:
+            current_time = timezone.now()
+
+        # 检查是否过期
+        if self.is_expired(current_time):
+            return True, "session_timeout"
+
+        # # 检查是否超过最大窗口大小
+        # if self.is_window_size_exceeded(current_time):
+        #     return True, "max_window_size_exceeded"
+
+        return False, ""
+
+    def extend_session(self, new_activity_time=None):
+        """
+        延长会话活动时间
+        
+        在延长会话前会检查是否超过最大窗口大小限制
+        如果超过限制，会将当前会话标记为非活跃状态
+        
+        Args:
+            new_activity_time: 新的活动时间
+            
+        Returns:
+            bool: True表示成功延长，False表示因超过限制无法延长
+        """
+        if new_activity_time is None:
+            new_activity_time = timezone.now()
+
+        # 检查是否应该关闭窗口
+        should_close, reason = self.should_close_window(new_activity_time)
+
+        if should_close:
+            return False
+
+        # 正常延长会话
+        self.last_activity = new_activity_time
+        self.event_count += 1
+        self.save(update_fields=['last_activity', 'event_count', 'updated_at'])
+        return True
+
+    @classmethod
+    def cleanup_expired_sessions(cls, batch_size=1000):
+        """
+        批量清理过期和超过大小限制的会话窗口
+        
+        这个方法应该由定时任务调用，用于清理系统中的无效会话
+        
+        Args:
+            batch_size: 每批处理的数量
+            
+        Returns:
+            dict: 清理统计信息
+        """
+        current_time = timezone.now()
+
+        # 修复：使用更高效的批量查询
+        expired_sessions = cls.objects.filter(
+            is_active=True
+        ).select_related().prefetch_related('events')[:batch_size]
+
+        cleanup_stats = {
+            'timeout_count': 0,
+            'size_exceeded_count': 0,
+            'total_cleaned': 0
+        }
+
+        # 批量更新列表
+        sessions_to_update = []
+
+        for session in expired_sessions:
+            should_close, reason = session.should_close_window(current_time)
+
+            if should_close:
+                session.is_active = False
+                session.session_data['close_reason'] = reason
+                session.session_data['close_time'] = current_time.isoformat()
+                sessions_to_update.append(session)
+
+                cleanup_stats['total_cleaned'] += 1
+                if reason == 'session_timeout':
+                    cleanup_stats['timeout_count'] += 1
+                elif reason == 'max_window_size_exceeded':
+                    cleanup_stats['size_exceeded_count'] += 1
+
+        # 批量更新数据库
+        if sessions_to_update:
+            cls.objects.bulk_update(
+                sessions_to_update,
+                ['is_active', 'session_data', 'updated_at'],
+                batch_size=100
+            )
+
+        return cleanup_stats
+
+
+class SessionEventRelation(models.Model):
+    """
+    会话和事件的关联关系中间表
+
+    用于记录事件何时被分配到会话中，以及关联的元数据
+    """
+    session = models.ForeignKey(SessionWindow, on_delete=models.CASCADE, help_text="会话")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, help_text="事件")
+    assigned_at = models.DateTimeField(auto_now_add=True, help_text="分配时间")
+    order = models.PositiveIntegerField(help_text="事件在会话中的顺序")
+
+    class Meta:
+        db_table = 'alerts_session_event_relation'
+        unique_together = ['session', 'event']  # 确保同一事件不会被重复分配到同一会话
+        indexes = [
+            models.Index(fields=['session', 'assigned_at']),
+            models.Index(fields=['event']),
+        ]
+        ordering = ['assigned_at']
+
+    def __str__(self):
+        return f"Session {self.session.session_id} - Event {self.event.event_id}"

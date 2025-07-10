@@ -77,17 +77,21 @@ class AggregationRulesViewSet(viewsets.ModelViewSet):
         """重新加载数据库规则到告警引擎"""
         try:
             # 移动导入到函数内部避免循环导入
-            from apps.alerts.common.aggregation.alert_processor import AlertProcessor
-            processor = AlertProcessor()
-            processor.reload_database_rules()
+            from apps.alerts.common.rules.rule_manager import get_rule_manager
+            
+            rule_manager = get_rule_manager()
+            rule_manager.reload_rules_from_database()
 
-            # 统计加载的规则数量
-            rule_count = AggregationRules.objects.filter(is_active=True).count()
+            # 统计规则信息
+            stats = rule_manager.get_rule_statistics()
+            window_types = rule_manager.get_window_types()
 
             return Response({
                 'success': True,
-                'message': f'成功重新加载 {rule_count} 个规则到告警引擎',
-                'rule_count': rule_count
+                'message': f'成功重新加载 {stats["total_rules"]} 条规则到告警引擎',
+                'window_types': len(window_types),
+                'window_type': window_types[0] if window_types else None,
+                'stats': stats
             })
         except Exception as e:
             logger.error(f"重新加载规则失败: {str(e)}")

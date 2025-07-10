@@ -5,6 +5,7 @@
 import json
 
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from apps.alerts.common.source_adapter.base import AlertSourceAdapterFactory
 from apps.alerts.models import AlertSource
@@ -66,6 +67,6 @@ def receiver_data(request):
 
         # TODO 若数据量大无法处理，及优化为异步处理 推送到队列
         # send_to_queue(events)
-        return JsonResponse({"status": "success", "message": "Data received successfully."})
+        return JsonResponse({"status": "success", "time": timezone.now().strftime("%Y-%m-%d %H:%M:%S"), "message": "Data received successfully."})
     except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        return JsonResponse({"status": "error", "time": timezone.now().strftime("%Y-%m-%d %H:%M:%S"), "message": str(e)}, status=500)
