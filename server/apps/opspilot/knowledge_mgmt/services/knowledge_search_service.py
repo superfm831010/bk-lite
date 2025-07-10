@@ -138,7 +138,7 @@ class KnowledgeSearchService:
                         "question": meta_data["qa_question"],
                         "answer": meta_data["qa_answer"],
                         "score": score,
-                        "knowledge_id": meta_data["knowledge_id"],
+                        "knowledge_id": 0,
                         "knowledge_title": meta_data["knowledge_title"],
                     }
                 )
