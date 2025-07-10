@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import KnowledgeGraphView from './knowledgeGraphView';
+import NodeDetailDrawer from './NodeDetailDrawer';
 import { GraphData, GraphNode, GraphEdge } from '@/app/opspilot/types/knowledge';
 
 interface KnowledgeGraphPageProps {
@@ -13,78 +14,55 @@ interface KnowledgeGraphPageProps {
 }
 
 const transformApiDataToGraphData = (data: any): GraphData => {
-  if (!data || !Array.isArray(data)) {
+  if (!data) {
     return { nodes: [], edges: [] };
   }
 
-  const nodes: GraphNode[] = [];
-  const edges: GraphEdge[] = [];
-  const nodeMap = new Map();
+  if (data.nodes && data.edges) {
+    const nodes: GraphNode[] = [];
+    const edges: GraphEdge[] = [];
 
-  data.forEach((item: any) => {
-    if (item.uuid && item.name) {
-      if (!nodeMap.has(item.uuid)) {
-        nodes.push({
-          id: item.uuid,
-          label: item.name,
-          type: 'entity',
-          category: 'document',
-          node_id: item.node_id,
-          group_id: item.group_id,
-          name: item.name,
-          uuid: item.uuid
-        });
-        nodeMap.set(item.uuid, true);
-      }
-
-      if (item.edges && Array.isArray(item.edges)) {
-        item.edges.forEach((edge: any) => {
-          if (edge.target && edge.target_name && !nodeMap.has(edge.target)) {
-            nodes.push({
-              id: edge.target,
-              label: edge.target_name,
-              type: 'entity',
-              category: 'related',
-              node_id: edge.target_id,
-              name: edge.target_name,
-              uuid: edge.target
-            });
-            nodeMap.set(edge.target, true);
-          }
-
-          if (edge.source && edge.source_name && !nodeMap.has(edge.source)) {
-            nodes.push({
-              id: edge.source,
-              label: edge.source_name,
-              type: 'entity',
-              category: 'related',
-              node_id: edge.source_id,
-              name: edge.source_name,
-              uuid: edge.source
-            });
-            nodeMap.set(edge.source, true);
-          }
-
-          if (edge.source && edge.target) {
-            edges.push({
-              id: `${edge.source}-${edge.target}`,
-              source: edge.source,
-              target: edge.target,
-              label: edge.relation_type || '关联',
-              type: 'relation',
-              relation_type: edge.relation_type,
-              source_name: edge.source_name,
-              target_name: edge.target_name,
-              source_id: edge.source_id,
-              target_id: edge.target_id
-            });
-          }
-        });
-      }
+    if (Array.isArray(data.nodes)) {
+      data.nodes.forEach((node: any) => {
+        if (node.uuid && node.name) {
+          nodes.push({
+            id: node.uuid,
+            label: node.name,
+            labels: node.labels,
+            node_id: node.node_id,
+            group_id: node.group_id,
+            name: node.name,
+            uuid: node.uuid,
+            fact: node.fact,
+            summary: node.summary
+          });
+        }
+      });
     }
-  });
 
-  return { nodes, edges };
+    if (Array.isArray(data.edges)) {
+      data.edges.forEach((edge: any) => {
+        if (edge.source && edge.target) {
+          edges.push({
+            id: `${edge.source}-${edge.target}`,
+            source: edge.source,
+            target: edge.target,
+            label: edge.relation_type || '关联',
+            type: 'relation',
+            relation_type: edge.relation_type,
+            source_name: edge.source_name,
+            target_name: edge.target_name,
+            source_id: edge.source_id,
+            target_id: edge.target_id
+          });
+        }
+      });
+    }
+
+    return { nodes, edges };
+  }
+
+  return { nodes: [], edges: [] };
 };
 
 const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId }) => {
@@ -96,6 +74,8 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
   const [loading, setLoading] = useState(true);
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [graphExists, setGraphExists] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [nodeDetailVisible, setNodeDetailVisible] = useState(false);
 
   const initializeGraph = async () => {
     setLoading(true);
@@ -110,7 +90,6 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
       setGraphExists(response.is_exists || false);
       
       const transformedData = transformApiDataToGraphData(response.graph);
-      console.log('转换后的图谱数据:', transformedData);
       
       if (transformedData.nodes.length === 0) {
         setHasGraph(false);
@@ -120,7 +99,6 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
       
       setGraphData(transformedData);
       setHasGraph(true);
-      console.log('知识图谱数据加载成功');
       
     } catch (error: any) {
       console.error('Failed to load knowledge graph:', error);
@@ -144,13 +122,17 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
     router.push(`/opspilot/knowledge/detail/documents/graph/edit?id=${knowledgeBaseId}`);
   };
 
-  const handleNodeClick = (node: any) => {
-    console.log('Node clicked:', node);
-    message.info(t('knowledge.knowledgeGraph.clickedNode'), node);
+  const handleNodeClick = (node: GraphNode) => {
+    setSelectedNode(node);
+    setNodeDetailVisible(true);
+  };
+
+  const handleCloseNodeDetail = () => {
+    setNodeDetailVisible(false);
+    setSelectedNode(null);
   };
 
   const handleEdgeClick = (edge: any) => {
-    console.log('Edge clicked:', edge);
     message.info(t('knowledge.knowledgeGraph.clickedRelationship'), edge);
   };
 
@@ -254,6 +236,12 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
           )}
         </div>
       )}
+
+      <NodeDetailDrawer
+        visible={nodeDetailVisible}
+        node={selectedNode}
+        onClose={handleCloseNodeDetail}
+      />
     </div>
   );
 };
