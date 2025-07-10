@@ -3,7 +3,7 @@ import OperateModal from '@/components/operate-modal';
 import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { exportToCSV } from '@/app/mlops/utils/common';
-import useMlopsApi from '@/app/mlops/api';
+import useMlopsManageApi from '@/app/mlops/api/manage';
 import { Upload, Button, message, type UploadFile, type UploadProps } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import { ModalConfig, ModalRef, TableData } from '@/app/mlops/types';
@@ -16,7 +16,7 @@ interface UploadModalProps {
 
 const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) => {
   const { t } = useTranslation();
-  const { addAnomalyTrainData } = useMlopsApi();
+  const { addAnomalyTrainData } = useMlopsManageApi();
   const [visiable, setVisiable] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [fileList, setFileList] = useState<UploadFile<any>[]>([]);

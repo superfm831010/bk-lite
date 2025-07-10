@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Input, Button, message, Spin, Empty, Skeleton, List, Segmented, Card, Divider } from 'antd';
 import ConfigComponent from '@/app/opspilot/components/knowledge/config';
-import { ResultItem } from '@/app/opspilot/types/global';
 import { useTranslation } from '@/utils/i18n';
 import styles from './index.module.scss';
 import ContentDrawer from '@/components/content-drawer';
@@ -14,20 +13,10 @@ import KnowledgeResultItem from '@/app/opspilot/components/block-result';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import useFetchConfigData from '@/app/opspilot/hooks/useFetchConfigData';
 import Icon from '@/components/icon';
+import KnowledgeGraphView from '@/app/opspilot/components/knowledge/knowledgeGraphView';
+import { GraphData, GraphDataItem, TestKnowledgeResponse } from '@/app/opspilot/types/knowledge';
 
 const { TextArea } = Input;
-
-interface QAPair {
-  id: string;
-  question: string;
-  answer: string;
-  score: number;
-}
-
-interface TestKnowledgeResponse {
-  docs: ResultItem[];
-  qa_docs: QAPair[];
-}
 
 const TestingPage: React.FC = () => {
   const { t } = useTranslation();
@@ -36,7 +25,7 @@ const TestingPage: React.FC = () => {
   const { updateKnowledgeSettings, testKnowledge } = useKnowledgeApi();
   const { configData, setConfigData, loading: configLoading, knowledgeBasePermissions } = useFetchConfigData(id);
   const [searchText, setSearchText] = useState<string>('');
-  const [results, setResults] = useState<TestKnowledgeResponse>({ docs: [], qa_docs: [] });
+  const [results, setResults] = useState<TestKnowledgeResponse>({ docs: [], qa_docs: [], graph_data: [] });
   const [loading, setLoading] = useState<boolean>(false);
   const [applyLoading, setApplyLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('docs');
@@ -47,6 +36,93 @@ const TestingPage: React.FC = () => {
     showDrawer,
     hideDrawer,
   } = useContentDrawer();
+
+  const transformGraphData = (graphData: GraphDataItem[]): GraphData => {
+    if (!graphData || !Array.isArray(graphData)) {
+      return { nodes: [], edges: [] };
+    }
+
+    const nodes: any[] = [];
+    const edges: any[] = [];
+    const nodeMap = new Map();
+
+    graphData.forEach((item: GraphDataItem) => {
+      if (item.uuid && item.name && !nodeMap.has(item.uuid)) {
+        nodes.push({
+          id: item.uuid,
+          label: item.name,
+          type: 'document',
+          category: 'knowledge',
+        });
+        nodeMap.set(item.uuid, true);
+      }
+
+      if (item.edges && Array.isArray(item.edges)) {
+        item.edges.forEach((edge) => {
+          if (edge.source && edge.source_name && !nodeMap.has(edge.source)) {
+            nodes.push({
+              id: edge.source,
+              label: edge.source_name,
+              type: 'entity',
+              category: 'related',
+            });
+            nodeMap.set(edge.source, true);
+          }
+
+          if (edge.target && edge.target_name && !nodeMap.has(edge.target)) {
+            nodes.push({
+              id: edge.target,
+              label: edge.target_name,
+              type: 'entity',
+              category: 'related',
+            });
+            nodeMap.set(edge.target, true);
+          }
+
+          if (edge.source && edge.target) {
+            edges.push({
+              id: `${edge.source}-${edge.target}`,
+              source: edge.source,
+              target: edge.target,
+              label: edge.relation_type || '关联',
+              type: 'relation',
+            });
+          }
+        });
+      }
+    });
+
+    return { nodes, edges };
+  };
+
+  const getSegmentedOptions = () => {
+    const options = [];
+    
+    if (configData.enableNaiveRag) {
+      options.push({
+        value: 'docs',
+        label: t('knowledge.chunks'),
+      });
+    }
+    
+    if (configData.enableQaRag) {
+      options.push({
+        value: 'qa_docs',
+        label: t('knowledge.qaPairs.title'),
+      });
+    }
+    
+    if (configData.enableGraphRag) {
+      options.push({
+        value: 'graph_data',
+        label: t('knowledge.graphRag'),
+      });
+    }
+    
+    return options;
+  };
+
+  const segmentedOptions = getSegmentedOptions();
 
   const getConfigParams = () => {
     return {
@@ -62,6 +138,12 @@ const TestingPage: React.FC = () => {
       rag_num_candidates: configData.candidate,
       result_count: configData.resultCount,
       rerank_top_k: configData.rerankTopK,
+      enable_naive_rag: configData.enableNaiveRag,
+      enable_qa_rag: configData.enableQaRag,
+      enable_graph_rag: configData.enableGraphRag,
+      rag_size: configData.ragSize,
+      qa_size: configData.qaSize,
+      graph_size: configData.graphSize,
     };
   };
 
@@ -85,7 +167,8 @@ const TestingPage: React.FC = () => {
       message.success(t('knowledge.testingSuccess'));
       setResults({
         docs: data.docs || [],
-        qa_docs: data.qa_docs || []
+        qa_docs: data.qa_docs || [],
+        graph_data: data.graph_data || []
       });
     } catch (error) {
       message.error(t('knowledge.testingFailed'));
@@ -119,17 +202,6 @@ const TestingPage: React.FC = () => {
   const handleContentClick = (content: string) => {
     showDrawer(content);
   };
-
-  const segmentedOptions = [
-    {
-      value: 'docs',
-      label: t('knowledge.chunks'),
-    },
-    {
-      value: 'qa_docs',
-      label: t('knowledge.qaPairs.title'),
-    },
-  ];
 
   const renderResults = () => {
     if (loading) {
@@ -203,6 +275,14 @@ const TestingPage: React.FC = () => {
       );
     }
 
+    if (activeTab === 'graph_data') {
+      return results.graph_data.length > 0 ? (
+        <KnowledgeGraphView data={transformGraphData(results.graph_data)} />
+      ) : (
+        <Empty description={t('common.noData')} />
+      );
+    }
+
     return null;
   };
 
@@ -256,7 +336,7 @@ const TestingPage: React.FC = () => {
         <div className="w-1/2 pl-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-semibold text-base">{t('knowledge.results')}</h2>
-            {(results.docs.length > 0 || results.qa_docs.length > 0) && (
+            {(results.docs.length > 0 || results.qa_docs.length > 0 || results.graph_data.length > 0) && (
               <Segmented
                 options={segmentedOptions}
                 value={activeTab}

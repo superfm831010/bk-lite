@@ -1,3 +1,5 @@
+from django.core.cache import cache
+
 import nats_client
 from apps.node_mgmt.models import CloudRegion
 from apps.node_mgmt.node_init.collector_init import import_collector
@@ -116,10 +118,14 @@ class NatsService:
 
     def update_child_config_content(self, id, content, env_config=None):
         """更新子配置内容"""
+
+
         if not content and not env_config:
             raise BaseAppException("Content or env_config must be provided for update.")
 
         child_config = ChildConfig.objects.filter(id=id).first()
+
+        cache.delete(f"configuration_etag_{child_config.collector_config_id}")
 
         if env_config:
             child_config.env_config = env_config
@@ -136,6 +142,7 @@ class NatsService:
             raise BaseAppException("Content or env_config must be provided for update.")
 
         config = CollectorConfiguration.objects.filter(id=id).first()
+        cache.delete(f"configuration_etag_{config.id}")
 
         if config:
             config.config_template = content

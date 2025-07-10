@@ -1,5 +1,5 @@
-from src.core.entity.basic_llm_request import BasicLLMReuqest
+from src.core.entity.basic_llm_request import BasicLLMRequest
 
 
-class ChatBotWorkflowRequest(BasicLLMReuqest):
+class ChatBotWorkflowRequest(BasicLLMRequest):
     pass

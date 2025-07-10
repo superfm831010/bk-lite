@@ -6,6 +6,7 @@ from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
 from src.entity.rag.graphiti.document_ingest_request import GraphitiRagDocumentIngestRequest
 from src.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest
 from src.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest
+from src.entity.rag.graphiti.rebuild_community_request import RebuildCommunityRequest
 from src.rag.graph_rag.graphiti.graphiti_extend import GraphitiExtend
 from src.rag.graph_rag.graphiti.metis_embedder import MetisEmbedder
 from src.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderConfig
@@ -175,6 +176,14 @@ class GraphitiRAG():
         if req.rebuild_community:
             await self.build_communities(graphiti_instance, [req.group_id])
         return mapping
+
+    async def rebuild_community(self, req: RebuildCommunityRequest):
+        graphiti_instance = Graphiti(
+            core_settings.neo4j_host,
+            core_settings.neo4j_username,
+            core_settings.neo4j_password,
+        )
+        await self.build_communities(graphiti_instance, req.group_ids)
 
     async def search(self, req: DocumentRetrieverRequest) -> List[Document]:
         embed_client = MetisEmbedder(
