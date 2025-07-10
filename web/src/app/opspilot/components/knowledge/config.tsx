@@ -193,6 +193,57 @@ const ConfigComponent: React.FC<ConfigProps> = ({ configData, setConfigData }) =
               </>
             )}
           </div>
+          <div className="p-4 pb-0 border rounded-md mb-4">
+            <div className="flex items-center mb-4 justify-between">
+              <h3 className="font-medium text-sm">{t('knowledge.vectorSearch')}</h3>
+              <Switch
+                size="small"
+                checked={configData.selectedSearchTypes.includes('vectorSearch')}
+                onChange={() => handleSearchTypeChange('vectorSearch')}
+              />
+            </div>
+            <p className="text-xs mb-4 text-[var(--color-text-4)]">
+              {t('knowledge.vectorSearchDesc')}
+            </p>
+            {configData.selectedSearchTypes.includes('vectorSearch') && (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-sm w-[100px]">{t('knowledge.weight')}</label>
+                  <div className='flex flex-1 items-center gap-4'>
+                    <Slider
+                      className="flex-1"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={configData.vectorSearchWeight}
+                      onChange={(value) => setConfigData(prevData => ({ ...prevData, vectorSearchWeight: value }))}
+                    />
+                    <Input className="w-14" value={configData.vectorSearchWeight.toFixed(2)} readOnly />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-sm w-[100px]">{t('knowledge.returnQuantity')}</label>
+                  <InputNumber
+                    className='flex-1'
+                    min={1}
+                    value={configData.quantity}
+                    onChange={(value) => setConfigData(prevData => ({ ...prevData, quantity: value ?? 1 }))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-sm w-[100px]">{t('knowledge.candidateQuantity')}</label>
+                  <InputNumber
+                    className='flex-1'
+                    min={1}
+                    value={configData.candidate}
+                    onChange={(value) => setConfigData(prevData => ({ ...prevData, candidate: value ?? 1 }))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
       <div className="mb-4 flex">
