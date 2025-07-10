@@ -5,7 +5,44 @@
 type = "docker_logs"
 docker_host = "{{ docker_host }}"
 auto_partial_merge = true
+{% if include_containers %}
+include_containers = [{{ include_containers | map('tojson') | join(', ') }}]
+{% elif exclude_containers %}
+exclude_containers = [{{ exclude_containers | map('tojson') | join(', ') }}]
+{% endif %}
 
+{% if start_pattern %}
+[transforms.multiline_{{ instance_id }}]
+type = "multiline"
+inputs = ["docker_{{ instance_id }}"]
+start_pattern = '{{ start_pattern }}'
+mode = "halt_before"
+
+# ====================================
+# enrich（字段补全）
+# ====================================
+[transforms.docker_enrich_{{ instance_id }}]
+type = "remap"
+inputs = ["multiline_{{ instance_id }}"]
+source = '''
+.container_created_at = .container_created_at
+.container_id = .container_id
+.container_name = .container_name
+.host = .host
+.image = .image
+.message = .message
+.source_type = .source_type
+.stream = .stream
+.timestamp = .timestamp
+.collect_type = "docker"
+.instance_id = "{{ instance_id }}"
+'''
+
+{% else %}
+
+# ====================================
+# enrich（字段补全）
+# ====================================
 [transforms.docker_enrich_{{ instance_id }}]
 type = "remap"
 inputs = ["docker_{{ instance_id }}"]
@@ -22,6 +59,8 @@ source = '''
 .collect_type = "docker"
 .instance_id = "{{ instance_id }}"
 '''
+
+{% endif %}
 
 # ====================================
 # NATS Sink（独立实例）
@@ -41,4 +80,3 @@ password = "${NATS_PASSWORD}"
 
 [sinks.vmlogs_{{ instance_id }}.encoding]
 codec = "json"
-
