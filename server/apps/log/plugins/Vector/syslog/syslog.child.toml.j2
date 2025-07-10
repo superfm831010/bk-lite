@@ -13,8 +13,20 @@ mode = "tcp"  # 也可以是 udp
 type = "remap"
 inputs = ["syslog_{{ instance_id }}"]
 source = '''
-.message = .message ?? .
-.host = get_hostname!()
+.* = .*
+.appname = .appname
+.client_metadata = .client_metadata
+.facility = .facility
+.host = .host
+.hostname = .hostname
+.message = .message
+.msgid = .msgid
+.procid = .procid
+.severity = .severity
+.source_ip = .source_ip
+.source_type = .source_type
+.timestamp = .timestamp
+.version = .version
 .collect_type = "syslog"
 .instance_id = "{{ instance_id }}"
 '''
@@ -25,7 +37,7 @@ source = '''
 [sinks.vmlogs_{{ instance_id }}]
 type = "nats"
 inputs = ["syslog_enrich_{{ instance_id }}"]
-subject = "vector.{{ instance_id }}"
+subject = "vector"
 url = "nats://${NATS_SERVERS}"
 
 [sinks.vmlogs_{{ instance_id }}.auth]

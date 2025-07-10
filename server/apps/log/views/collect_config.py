@@ -132,20 +132,29 @@ class CollectInstanceViewSet(ViewSet):
             properties={
                 "instance_ids": openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING),
                                                description="采集实例ID列表"),
-                "clean_child_config": openapi.Schema(type=openapi.TYPE_BOOLEAN, description="是否清除子配置"),
             },
-            required=["instance_ids", "clean_child_config"]
+            required=["instance_ids"]
         )
     )
     @action(methods=['post'], detail=False, url_path='remove_collect_instance')
     def remove_collect_instance(self, request):
         instance_ids = request.data.get("instance_ids", [])
-        if request.data.get("clean_child_config"):
-            config_objs = CollectConfig.objects.filter(collect_instance_id__in=instance_ids)
-            NodeMgmt().delete_configs([config.id for config in config_objs])
-            config_objs.delete()
+        config_objs = CollectConfig.objects.filter(collect_instance_id__in=instance_ids)
+        child_configs, configs = [], []
+        for config in config_objs:
+            if config.is_child:
+                child_configs.append(config.id)
+            else:
+                configs.append(config.id)
+        # 删除子配置
+        NodeMgmt().delete_child_configs(child_configs)
+        # 删除配置
+        NodeMgmt().delete_configs(configs)
+        # 删除配置对象
+        config_objs.delete()
         CollectInstance.objects.filter(id__in=instance_ids).delete()
         return WebUtils.response_success()
+
 
     @swagger_auto_schema(
         operation_id="instance_update",
