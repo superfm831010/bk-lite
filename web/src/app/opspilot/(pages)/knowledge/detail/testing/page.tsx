@@ -92,7 +92,6 @@ const TestingPage: React.FC = () => {
       }
     });
 
-    console.log('Transformed graph data:', Array.from(nodesMap.values()));
     return {
       nodes: Array.from(nodesMap.values()),
       edges: edges
