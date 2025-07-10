@@ -91,12 +91,13 @@ export interface QAPairData {
 export interface GraphNode {
   id: string;
   label: string;
-  type: 'concept' | 'entity' | 'document';
-  category?: string;
+  labels: string[];
   node_id?: number;
   group_id?: string;
   name?: string;
   uuid?: string;
+  fact?: string | null;
+  summary?: string | null;
 }
 
 export interface GraphEdge {
