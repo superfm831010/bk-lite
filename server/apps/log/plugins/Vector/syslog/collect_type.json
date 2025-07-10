@@ -1,0 +1,6 @@
+{
+  "name": "syslog",
+  "collector": "Vector",
+  "icon": "syslog",
+  "description": "Collects logs from syslog sources"
+}
