@@ -33,6 +33,7 @@ class CollectService(object):
             "mongodb_info": "MongoDBInfo",
             "apache_info": "ApacheInfo",
             "activemq_info": "ActiveMQInfo",
+            "pgsql_info": "PgsqlInfo",
         }
 
     def import_plugin(self, plugin_name):
