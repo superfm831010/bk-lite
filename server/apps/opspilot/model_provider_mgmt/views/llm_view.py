@@ -79,6 +79,8 @@ class LLMViewSet(AuthViewSet):
             params.pop("team", [])
         if "llm_model" in params:
             params["llm_model_id"] = params.pop("llm_model")
+        if "km_llm_model" in params:
+            params["km_llm_model_id"] = params.pop("km_llm_model")
         for key in params.keys():
             if hasattr(instance, key):
                 setattr(instance, key, params[key])
