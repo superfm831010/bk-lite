@@ -85,20 +85,22 @@ class GraphitiRAG():
             }
             edges.append(edge)
 
-        docs = []
+        nodes = []
         for record in nodes_result.records:
             doc = {
                 'name': record['name'],
                 'uuid': record['uuid'],
                 'group_id': record['group_id'],
                 'node_id': record['node_id'],
-                'edges': edges,
                 "fact": record['fact'],
                 "summary": record['summary'],
             }
-            docs.append(doc)
-
-        return docs
+            nodes.append(doc)
+        rs = {
+            "nodes": nodes,
+            "edges": edges
+        }
+        return rs
 
     async def delete_document(self, req: DocumentDeleteRequest):
         graphiti = Graphiti(
