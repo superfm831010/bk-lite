@@ -82,7 +82,7 @@ class KnowledgeSearchService:
                 "rerank_model_base_url": rerank_config["base_url"],
                 "rerank_model_name": rerank_config.get("model", graph_obj.rerank_model.name),
                 "rerank_model_api_key": rerank_config["api_key"],
-                "size": kwargs["graph_size"],
+                "size": knowledge_base_folder.graph_size,
                 "group_ids": ["graph-{}".format(graph_obj.id)],
                 "search_query": query,
             }
