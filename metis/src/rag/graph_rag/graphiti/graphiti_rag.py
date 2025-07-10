@@ -231,7 +231,7 @@ class GraphitiRAG():
                 """
             MATCH (n) 
             WHERE n.uuid IN $node_uids
-            RETURN n.uuid as uuid, n.name as name, n.fact as fact, n.summary as summary
+            RETURN n.uuid as uuid, n.name as name, n.fact as fact, n.summary as summary, labels(n) as labels
             """,
                 {"node_uids": node_uids}
             )
@@ -240,7 +240,8 @@ class GraphitiRAG():
                 node_info_map[record['uuid']] = {
                     'name': record['name'],
                     'fact': record['fact'],
-                    'summary': record['summary']
+                    'summary': record['summary'],
+                    'labels': record['labels']
                 }
 
         docs = []
