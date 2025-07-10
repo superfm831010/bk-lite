@@ -50,7 +50,9 @@ class GraphitiRAG():
         nodes_result = await graphiti.driver.execute_query(
             """
             MATCH (n) WHERE n.group_id IN $group_ids
-            RETURN n.name as name, n.uuid as uuid, n.fact as fact, n.summary as summary, id(n) as node_id, n.group_id as group_id
+            RETURN n.name as name, n.uuid as uuid, n.fact as fact, n.summary as summary, 
+                   id(n) as node_id, n.group_id as group_id,
+                   labels(n) as labels
             """,
             {"group_ids": req.group_ids}
         )
@@ -94,6 +96,7 @@ class GraphitiRAG():
                 'node_id': record['node_id'],
                 "fact": record['fact'],
                 "summary": record['summary'],
+                "labels": record['labels'],
             }
             nodes.append(doc)
         rs = {
@@ -231,7 +234,7 @@ class GraphitiRAG():
                 """
             MATCH (n) 
             WHERE n.uuid IN $node_uids
-            RETURN n.uuid as uuid, n.name as name, n.fact as fact, n.summary as summary, labels(n) as labels
+            RETURN n.uuid as uuid, n.name as name, n.fact as fact, n.summary as summary
             """,
                 {"node_uids": node_uids}
             )
@@ -240,8 +243,7 @@ class GraphitiRAG():
                 node_info_map[record['uuid']] = {
                     'name': record['name'],
                     'fact': record['fact'],
-                    'summary': record['summary'],
-                    'labels': record['labels']
+                    'summary': record['summary']
                 }
 
         docs = []
