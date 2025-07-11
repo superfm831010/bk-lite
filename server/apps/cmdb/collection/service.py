@@ -2016,6 +2016,17 @@ class DBCollectCollectMetrics(CollectBase):
                 "max_incoming_conn":"max_incoming_conn",
                 "database_role":"database_role",
             },
+            "postgresql":{
+                "inst_name": lambda x: f"{x['ip_addr']}-pg-{x['port']}",
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "conf_path": "conf_path",
+                "data_path": "data_path",
+                "max_conn": "max_conn",
+                "cache_memory_mb": "cache_memory_mb",
+                "log_path": "log_path",
+            }
         }
         return mapping
 

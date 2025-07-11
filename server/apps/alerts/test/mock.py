@@ -109,7 +109,7 @@ def generate_jenkins_failure_events(num_pipelines=5):
         "title": "Jenkins Pipeline Build Failed",
         "description": "Jenkins pipeline build failed",
         "value": 0.0,  # 明确设置为0.0，表示构建失败
-        "item": "build_status",
+        "item": "jenkins_build_status",
         "level": "0",
         "start_time": "",
         "end_time": "",
@@ -138,69 +138,69 @@ def generate_jenkins_failure_events(num_pipelines=5):
     events = []
     current_time = int(time.time())
 
-    # 为每个pipeline生成连续失败的事件
-    for i in range(min(num_pipelines, len(pipeline_names))):
-        pipeline_name = pipeline_names[i]
-        resource_id = i + 1
-
-        # 生成连续3次失败的构建事件
-        for build_num in range(1, 4):  # 3次连续失败
-            event = base_event.copy()
-            event["labels"] = event["labels"].copy()
-            event["annotations"] = event["annotations"].copy()
-
-            # 每次构建间隔5-10分钟
-            build_start_time = current_time - (3 - build_num) * random.randint(300, 600)
-            build_duration = random.randint(120, 300)  # 构建持续2-5分钟
-            build_end_time = build_start_time + build_duration
-
-            # 更新事件数据
-            event["title"] = f"Jenkins流水线 {pipeline_name} 连续构建失败"
-            event["description"] = f"流水线: {pipeline_name}\n构建编号: #{build_num}\n状态: 失败"
-            event["start_time"] = str(build_start_time)
-            event["end_time"] = str(build_end_time)
-            event["labels"]["pipeline"] = pipeline_name
-            event["labels"]["build_number"] = str(build_num)
-            event["annotations"]["alertname"] = "JenkinsBuildFailure"
-            event["annotations"]["pipeline"] = pipeline_name
-            event["annotations"]["build_number"] = str(build_num)
-            event["external_id"] = str(uuid.uuid4())
-            event["status"] = 0  # 失败状态
-            # 为失败事件设置不同的负值，用于测试
-            event["value"] = 0
-            event["resource_id"] = resource_id
-            event["resource_name"] = pipeline_name
-
-            events.append(event)
-
-    # 添加一些成功的构建事件作为对比
-    for i in range(1):
-        pipeline_name = random.choice(pipeline_names)
-        resource_id = pipeline_names.index(pipeline_name) + 1
-
-        event = base_event.copy()
-        event["labels"] = event["labels"].copy()
-        event["annotations"] = event["annotations"].copy()
-
-        success_time = current_time - random.randint(3600, 7200)  # 1-2小时前的成功构建
-        build_duration = random.randint(60, 180)
-
-        event["title"] = f"Jenkins流水线 {pipeline_name} 构建成功"
-        event["description"] = f"流水线: {pipeline_name}\n状态: 成功"
-        event["start_time"] = str(success_time)
-        event["end_time"] = str(success_time + build_duration)
-        event["labels"]["pipeline"] = pipeline_name
-        event["labels"]["build_number"] = str(random.randint(10, 50))
-        event["annotations"]["alertname"] = "JenkinsBuildSuccess"
-        event["external_id"] = str(uuid.uuid4())
-        event["status"] = 1  # 成功状态
-        event["value"] = round(random.uniform(0.5, 1.0), 2)  # 成功值在0.5-1.0之间
-        event["level"] = "1"
-        event["resource_id"] = resource_id
-        event["resource_name"] = pipeline_name
-        event["value"] = "1"
-
-        events.append(event)
+    # # 为每个pipeline生成连续失败的事件
+    # for i in range(min(num_pipelines, len(pipeline_names))):
+    #     pipeline_name = pipeline_names[i]
+    #     resource_id = i + 1
+    #
+    #     # 生成连续3次失败的构建事件
+    #     for build_num in range(1, 4):  # 3次连续失败
+    #         event = base_event.copy()
+    #         event["labels"] = event["labels"].copy()
+    #         event["annotations"] = event["annotations"].copy()
+    #
+    #         # 每次构建间隔5-10分钟
+    #         build_start_time = current_time - (3 - build_num) * random.randint(300, 600)
+    #         build_duration = random.randint(120, 300)  # 构建持续2-5分钟
+    #         build_end_time = build_start_time + build_duration
+    #
+    #         # 更新事件数据
+    #         event["title"] = f"Jenkins流水线 {pipeline_name} 连续构建失败"
+    #         event["description"] = f"流水线: {pipeline_name}\n构建编号: #{build_num}\n状态: 失败"
+    #         event["start_time"] = str(build_start_time)
+    #         event["end_time"] = str(build_end_time)
+    #         event["labels"]["pipeline"] = pipeline_name
+    #         event["labels"]["build_number"] = str(build_num)
+    #         event["annotations"]["alertname"] = "JenkinsBuildFailure"
+    #         event["annotations"]["pipeline"] = pipeline_name
+    #         event["annotations"]["build_number"] = str(build_num)
+    #         event["external_id"] = str(uuid.uuid4())
+    #         event["status"] = 0  # 失败状态
+    #         # 为失败事件设置不同的负值，用于测试
+    #         event["value"] = 0
+    #         event["resource_id"] = resource_id
+    #         event["resource_name"] = pipeline_name
+    #
+    #         events.append(event)
+    #
+    # # 添加一些成功的构建事件作为对比
+    # for i in range(1):
+    #     pipeline_name = random.choice(pipeline_names)
+    #     resource_id = pipeline_names.index(pipeline_name) + 1
+    #
+    #     event = base_event.copy()
+    #     event["labels"] = event["labels"].copy()
+    #     event["annotations"] = event["annotations"].copy()
+    #
+    #     success_time = current_time - random.randint(3600, 7200)  # 1-2小时前的成功构建
+    #     build_duration = random.randint(60, 180)
+    #
+    #     event["title"] = f"Jenkins流水线 {pipeline_name} 构建成功"
+    #     event["description"] = f"流水线: {pipeline_name}\n状态: 成功"
+    #     event["start_time"] = str(success_time)
+    #     event["end_time"] = str(success_time + build_duration)
+    #     event["labels"]["pipeline"] = pipeline_name
+    #     event["labels"]["build_number"] = str(random.randint(10, 50))
+    #     event["annotations"]["alertname"] = "JenkinsBuildSuccess"
+    #     event["external_id"] = str(uuid.uuid4())
+    #     event["status"] = 1  # 成功状态
+    #     event["value"] = round(random.uniform(0.5, 1.0), 2)  # 成功值在0.5-1.0之间
+    #     event["level"] = "1"
+    #     event["resource_id"] = resource_id
+    #     event["resource_name"] = pipeline_name
+    #     event["value"] = "1"
+    #
+    #     events.append(event)
 
     # 添加一些零值事件进行测试
     for i in range(1):
@@ -223,7 +223,7 @@ def generate_jenkins_failure_events(num_pipelines=5):
         event["annotations"]["alertname"] = "JenkinsBuildUnknown"
         event["external_id"] = str(uuid.uuid4())
         event["status"] = 0  # 状态为0
-        event["value"] = "0"  # 明确设置为0.0
+        event["value"] = 0  # 明确设置为0.0
         event["level"] = "1"
         event["resource_id"] = resource_id
         event["resource_name"] = pipeline_name
@@ -322,21 +322,21 @@ def generate_website_monitoring_events(num_websites=3):
 
 if __name__ == "__main__":
     # 生成100个mock事件
-    mock_data = generate_mock_events(50)
+    # mock_data = generate_mock_events(50)
+    #
+    # with open("mock_monitor_events.json", "w") as f:
+    #     json.dump(mock_data, f, indent=2)
+    #
+    # print("Mock数据已生成并保存到 mock_monitor_events.json 文件")
+    #
+    # 生成Jenkins失败事件数据，包含0.0和负数测试
+    jenkins_data = generate_jenkins_failure_events(2)
 
-    with open("mock_monitor_events.json", "w") as f:
-        json.dump(mock_data, f, indent=2)
+    # 保存到JSON文件
+    with open("mock_jenkins_failure_events.json", "w", encoding='utf-8') as f:
+        json.dump(jenkins_data, f, indent=2, ensure_ascii=False)
 
-    print("Mock数据已生成并保存到 mock_monitor_events.json 文件")
-    #
-    # # 生成Jenkins失败事件数据，包含0.0和负数测试
-    # jenkins_data = generate_jenkins_failure_events(2)
-    #
-    # # 保存到JSON文件
-    # with open("mock_jenkins_failure_events.json", "w", encoding='utf-8') as f:
-    #     json.dump(jenkins_data, f, indent=2, ensure_ascii=False)
-    #
-    # print("Jenkins失败事件Mock数据已生成并保存到 mock_jenkins_failure_events.json 文件")
+    print("Jenkins失败事件Mock数据已生成并保存到 mock_jenkins_failure_events.json 文件")
     # print("数据包含：负数值、0.0值和正数值的测试用例")
 
     # 生成网站拨测事件数据

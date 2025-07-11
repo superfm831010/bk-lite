@@ -38,6 +38,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const locale = localStorage.getItem('locale') || 'en';
   const { t } = useTranslation();
   const { levelList, levelMap, userList } = useCommon();
   const { createAssignment, updateAssignment } = useSettingApi();
@@ -143,7 +144,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
           : t('settings.assignStrategy.addTitle')
       }
       placement="right"
-      width={720}
+      width={740}
       open={open}
       onClose={handleClose}
       footer={
@@ -164,7 +165,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
       <Form
         form={form}
         layout="horizontal"
-        labelCol={{ span: 4 }}
+        labelCol={{ span: locale === 'en' ? 5 : 4 }}
         onFinish={onFinish}
       >
         <Form.Item
@@ -307,7 +308,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
               <div className="mt-[5px]">
                 {t('settings.assignStrategy.frequencyMsg')}
               </div>
-              <div className="flex flex-row align-center gap-2 mt-2">
+              <div className="flex flex-row align-center gap-1 mt-2">
                 <span className="mt-[4px]">
                   {t('settings.assignStrategy.notRespondMsg')}
                 </span>
