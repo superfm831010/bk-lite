@@ -38,8 +38,9 @@ def event_aggregation_alert():
             return
 
         # 3. 按窗口类型优先级顺序处理（滑动、固定、会话）
-        # window_order = ['sliding', 'fixed', 'session']
-        window_order = ['session']
+        # window_order = ['session', 'sliding', 'fixed']
+        window_order = ['sliding', 'fixed', 'session']
+        # window_order = ['session']
         processing_stats = {}
 
         for window_type in window_order:
@@ -75,7 +76,6 @@ def event_aggregation_alert():
                 }
 
         # 4. 输出处理统计
-        logger.info("聚合任务处理统计:")
         total_created = 0
         total_updated = 0
 
@@ -197,64 +197,3 @@ def sync_no_dispatch_alert_notice_task():
         sync_notify(username_list=notify_people, channel=channel, title=title, content=content)
 
     logger.info("== 未分派告警通知任务执行完成 ==")
-
-
-@shared_task
-def cleanup_session_windows():
-    """
-    清理过期的会话窗口并生成告警
-    每小时执行一次，清理过期和超过大小限制的会话，并为符合条件的过期会话生成告警
-
-    该任务执行以下操作：
-    1. 扫描所有过期的会话窗口
-    2. 为符合条件的过期会话生成告警
-    3. 清理数据库中的过期会话记录
-    4. 记录清理统计信息
-    """
-    logger.info("== 开始清理过期会话窗口并生成告警 ==")
-    try:
-        from apps.alerts.models import SessionWindow, CorrelationRules
-        from apps.alerts.common.aggregation.session_window_processor import SessionWindowProcessor
-        from django.utils import timezone
-
-        # 统计信息
-        generated_alerts = 0
-        cleaned_sessions = 0
-
-        # 获取所有会话窗口相关的关联规则
-        session_rules = CorrelationRules.objects.filter(
-            window_type='session',
-            aggregation_rules__is_active=True
-        ).distinct()
-
-        # 为每个规则处理其相关的会话
-        for rule in session_rules:
-            try:
-                processor = SessionWindowProcessor(rule)
-
-                # 处理该规则的过期会话
-                rule_alerts_created, rule_alerts_updated = processor._process_expired_sessions()
-                generated_alerts += rule_alerts_created
-
-                # 清理该规则的过期会话记录
-                rule_cleaned = processor._cleanup_expired_sessions()
-                cleaned_sessions += rule_cleaned
-
-                logger.info(f"规则 {rule.name}: 生成告警 {rule_alerts_created}, 清理会话 {rule_cleaned}")
-
-            except Exception as e:
-                logger.error(f"处理规则 {rule.name} 的会话清理时出错: {str(e)}")
-                continue
-
-        cleanup_stats = {
-            "generated_alerts": generated_alerts,
-            "cleaned_sessions": cleaned_sessions,
-            "status": "success"
-        }
-
-        logger.info(f"== 会话窗口清理完成 == 统计信息: {cleanup_stats}")
-        return cleanup_stats
-
-    except Exception as e:
-        logger.error(f"清理会话窗口失败: {str(e)}")
-        return {"generated_alerts": 0, "cleaned_sessions": 0, "error": str(e), "status": "failed"}

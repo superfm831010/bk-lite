@@ -722,7 +722,7 @@ class AlertProcessor:
         """
 
         try:
-            current_time = timezone.now()
+            current_time = self.now
             closed_sessions_count = 0
 
             # 获取该关联规则下所有活跃的会话
@@ -797,12 +797,6 @@ class AlertProcessor:
 
                 if not session_close_conditions:
                     continue
-
-                # 检查每个关闭条件
-                # {'type': 'session_close_condition', 'action': 'close_session', 'filter': {'resource_type': 'jenkins'},
-                #  'operator': '==', 'target_field': 'item', 'target_value': 1,
-                #  'aggregation_key': ['resource_type', 'resource_id', 'resource_name'],
-                #  'target_field_value': 'jenkins_build_status', 'target_value_field': 'value'}
 
                 if self._match_session_close_condition(event, session_close_conditions):
                     logger.info(

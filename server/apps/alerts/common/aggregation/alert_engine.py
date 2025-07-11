@@ -473,14 +473,11 @@ class RuleEngine:
         logger.info(f"Grouped {len(events)} events into {len(grouped_events)} instances")
         return grouped_events
 
-    def _check_instance_alert_status(self, instance_events: pd.DataFrame,
-                                     instance_fingerprint: str,
-                                     rule: AlertRule) -> Tuple[bool, List[Dict], str]:
+    def _check_instance_alert_status(self, instance_fingerprint: str, rule: AlertRule) -> Tuple[bool, List[Dict], str]:
         """
         检查实例是否已有活跃告警
 
         Args:
-            instance_events: 实例事件数据
             instance_fingerprint: 实例指纹
             rule: 告警规则
 
@@ -492,6 +489,7 @@ class RuleEngine:
             # 'rule_name': rule.name,
             'status__in': AlertStatus.ACTIVATE_STATUS,
             'fingerprint': instance_fingerprint,  # 使用实例指纹查询
+            'rule_id': rule.rule_id,  # 使用规则ID查询
         }
 
         # 添加时间窗口限制
@@ -550,8 +548,8 @@ class RuleEngine:
 
                     # 检查是否需要创建新告警（基于实例指纹）
                     should_create_new, related_alerts, operation_type = self._check_instance_alert_status(
-                        instance_events, instance_fingerprint, rule
-                    )
+                        instance_fingerprint, rule
+                        )
 
                     results[rule_id] = {
                         'triggered': True,

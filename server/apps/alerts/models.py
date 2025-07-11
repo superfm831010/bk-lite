@@ -464,7 +464,6 @@ class SessionWindow(TimeInfo):
 
     # 会话状态
     is_active = models.BooleanField(default=True, db_index=True, help_text="是否活跃")
-    event_count = models.IntegerField(default=0, help_text="事件数量")
 
     # 新增：会话数据字段，用于存储会话相关的元数据
     session_data = JSONField(default=dict, help_text="会话数据和元数据")
@@ -495,90 +494,6 @@ class SessionWindow(TimeInfo):
         timeout_delta = timedelta(seconds=self.session_timeout)
         return current_time - self.last_activity > timeout_delta
 
-    def get_max_window_duration_seconds(self):
-        """
-        获取关联规则配置的最大窗口大小限制（转换为秒）
-        
-        Returns:
-            int: 最大窗口持续时间（秒）
-        """
-        try:
-            # 修复：使用正确的查询条件
-            correlation_rule = CorrelationRules.objects.filter(
-                aggregation_rules__rule_id__in=self.rule_id.split(',')
-            ).first()
-
-            if not correlation_rule:
-                return 3600  # 默认1小时
-
-            max_window_size = correlation_rule.max_window_size
-
-            # 解析时间字符串转换为秒数
-            if max_window_size.endswith('s'):
-                return int(max_window_size[:-1])
-            elif max_window_size.endswith('min'):
-                return int(max_window_size[:-3]) * 60
-            elif max_window_size.endswith('h'):
-                return int(max_window_size[:-1]) * 3600
-            elif max_window_size.endswith('d'):
-                return int(max_window_size[:-1]) * 86400
-            else:
-                # 默认按分钟处理
-                return int(max_window_size) * 60
-
-        except (ValueError, AttributeError):
-            # 默认最大窗口大小为1小时
-            return 3600
-
-    def get_max_event_count(self):
-        """
-        获取关联规则配置的最大事件数量限制
-        
-        Returns:
-            int: 最大事件数量
-        """
-        try:
-            correlation_rule = CorrelationRules.objects.get(
-                aggregation_rules__rule_id=self.rule_id
-            )
-            # 从session_data中获取最大事件数量配置，如果没有则使用默认值
-            max_event_count = correlation_rule.session_data.get('max_event_count', 1000)
-            return max_event_count
-        except (CorrelationRules.DoesNotExist, AttributeError):
-            # 默认最大事件数量为1000
-            return 1000
-
-    def is_window_size_exceeded(self, current_time=None):
-        """
-        检查会话窗口是否超过最大大小限制
-        
-        最大窗口大小限制有两个维度：
-        1. 时间维度：从会话开始到当前时间的持续时间
-        2. 事件数量维度：会话中包含的事件数量
-        
-        Args:
-            current_time: 当前时间，默认为None使用系统当前时间
-            
-        Returns:
-            bool: True表示超过限制，False表示未超过
-        """
-        if current_time is None:
-            current_time = timezone.now()
-
-        # 检查时间维度的限制
-        max_duration_seconds = self.get_max_window_duration_seconds()
-        session_duration = (current_time - self.session_start).total_seconds()
-
-        if session_duration > max_duration_seconds:
-            return True
-
-        # 检查事件数量维度的限制
-        max_event_count = self.get_max_event_count()
-        if self.event_count > max_event_count:
-            return True
-
-        return False
-
     def should_close_window(self, current_time=None):
         """
         判断会话窗口是否应该关闭
@@ -608,7 +523,23 @@ class SessionWindow(TimeInfo):
 
         return False, ""
 
-    def extend_session(self, new_activity_time=None):
+    def check_has_events(self, events):
+        """
+        检查会话是否包含指定的事件
+
+        Args:
+            events: 需要检查的事件列表
+
+        Returns:
+            bool: True表示会话包含这些事件，False表示不包含
+        """
+        if not events:
+            return False
+
+        # 使用多对多关系查询
+        return self.events.filter(events__in=events).exists()
+
+    def extend_session(self, new_activity_time=None, events=[]):
         """
         延长会话活动时间
         
@@ -621,6 +552,9 @@ class SessionWindow(TimeInfo):
         Returns:
             bool: True表示成功延长，False表示因超过限制无法延长
         """
+        if self.check_has_events(events):
+            return False
+
         if new_activity_time is None:
             new_activity_time = timezone.now()
 
@@ -632,63 +566,8 @@ class SessionWindow(TimeInfo):
 
         # 正常延长会话
         self.last_activity = new_activity_time
-        self.event_count += 1
-        self.save(update_fields=['last_activity', 'event_count', 'updated_at'])
+        self.save(update_fields=['last_activity', 'updated_at'])
         return True
-
-    @classmethod
-    def cleanup_expired_sessions(cls, batch_size=1000):
-        """
-        批量清理过期和超过大小限制的会话窗口
-        
-        这个方法应该由定时任务调用，用于清理系统中的无效会话
-        
-        Args:
-            batch_size: 每批处理的数量
-            
-        Returns:
-            dict: 清理统计信息
-        """
-        current_time = timezone.now()
-
-        # 修复：使用更高效的批量查询
-        expired_sessions = cls.objects.filter(
-            is_active=True
-        ).select_related().prefetch_related('events')[:batch_size]
-
-        cleanup_stats = {
-            'timeout_count': 0,
-            'size_exceeded_count': 0,
-            'total_cleaned': 0
-        }
-
-        # 批量更新列表
-        sessions_to_update = []
-
-        for session in expired_sessions:
-            should_close, reason = session.should_close_window(current_time)
-
-            if should_close:
-                session.is_active = False
-                session.session_data['close_reason'] = reason
-                session.session_data['close_time'] = current_time.isoformat()
-                sessions_to_update.append(session)
-
-                cleanup_stats['total_cleaned'] += 1
-                if reason == 'session_timeout':
-                    cleanup_stats['timeout_count'] += 1
-                elif reason == 'max_window_size_exceeded':
-                    cleanup_stats['size_exceeded_count'] += 1
-
-        # 批量更新数据库
-        if sessions_to_update:
-            cls.objects.bulk_update(
-                sessions_to_update,
-                ['is_active', 'session_data', 'updated_at'],
-                batch_size=100
-            )
-
-        return cleanup_stats
 
 
 class SessionEventRelation(models.Model):
@@ -700,7 +579,6 @@ class SessionEventRelation(models.Model):
     session = models.ForeignKey(SessionWindow, on_delete=models.CASCADE, help_text="会话")
     event = models.ForeignKey(Event, on_delete=models.CASCADE, help_text="事件")
     assigned_at = models.DateTimeField(auto_now_add=True, help_text="分配时间")
-    order = models.PositiveIntegerField(help_text="事件在会话中的顺序")
 
     class Meta:
         db_table = 'alerts_session_event_relation'

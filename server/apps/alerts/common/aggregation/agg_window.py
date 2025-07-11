@@ -348,7 +348,9 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
                             # 将事件添加到会话中
                             added_count = self._add_events_to_session(session, events)
                             if added_count > 0:
-                                if session.event_count == added_count:
+                                # 通过判断会话中事件的总数来确定是新建还是更新
+                                current_event_count = session.events.count()
+                                if current_event_count == added_count:
                                     session_created_count += 1
                                 else:
                                     session_updated_count += 1
@@ -363,21 +365,22 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
         # 不返回告警数据，因为我们现在只是在管理会话，真正的告警将在超时检查中生成
         return [], []
 
-    def _generate_session_key_for_alert(self, alert_data: Dict[str, Any]) -> str:
+    @staticmethod
+    def _generate_session_key_for_alert(alert_data: Dict[str, Any]) -> str:
         """
         为告警数据生成会话键
         
         Args:
             alert_data: 告警数据
-            correlation_rule: 关联规则
-            
+
         Returns:
             str: 会话键
         """
         session_key_fields = "session-{}".format(alert_data['fingerprint'])
         return session_key_fields
 
-    def _get_or_create_session_for_rule(self, session_key: str, alert_data: Dict[str, Any],
+    @staticmethod
+    def _get_or_create_session_for_rule(session_key: str, alert_data: Dict[str, Any],
                                         correlation_rule: CorrelationRules, current_time) -> SessionWindow | None:
         """
         为规则获取或创建会话
@@ -404,7 +407,8 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
 
             if active_session:
                 # 尝试扩展现有会话
-                if active_session.extend_session(current_time):
+                alert_events = alert_data.get('events', [])
+                if active_session.extend_session(current_time, alert_events):
                     return active_session
                 else:
                     # 会话已过期，需要创建新会话
@@ -423,7 +427,6 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
                 last_activity=current_time,
                 session_timeout=session_timeout_seconds,
                 is_active=True,
-                event_count=0,
                 session_data={
                     'created_by_rule': correlation_rule.name,
                     'alert_fingerprint': alert_data.get('fingerprint'),
@@ -477,7 +480,6 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
 
             # 准备批量创建的关联关系列表
             relations_to_create = []
-            current_order = session.event_count
 
             for event in event_list:
                 # 获取事件ID
@@ -494,8 +496,7 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
                 relations_to_create.append(
                     SessionEventRelation(
                         session=session,
-                        event=event,
-                        order=current_order + added_count + 1
+                        event=event
                     )
                 )
                 added_count += 1
@@ -509,25 +510,11 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
                         batch_size=1000,  # Django 建议的批量创建大小
                         ignore_conflicts=True  # 忽略唯一性约束冲突
                     )
-
-                    # 由于使用了 ignore_conflicts=True，实际创建的数量可能少于预期
-                    # 重新计算实际添加的数量
-                    if hasattr(created_relations, '__len__'):
-                        actual_added_count = len(created_relations)
-                    else:
-                        # 某些数据库后端可能不返回创建的对象列表
-                        # 通过重新查询来确定实际添加的数量
-                        new_event_ids = [rel.event.id for rel in relations_to_create]
-                        actual_added_count = SessionEventRelation.objects.filter(
-                            session=session,
-                            event_id__in=new_event_ids
-                        ).count() - len(existing_event_ids & set(new_event_ids))
-
-                    # 更新会话的事件计数和最后活动时间
+                    actual_added_count = len(created_relations)
+                    # 更新会话的最后活动时间
                     if actual_added_count > 0:
-                        session.event_count += actual_added_count
                         session.last_activity = self.now
-                        session.save(update_fields=['event_count', 'last_activity', 'updated_at'])
+                        session.save(update_fields=['last_activity', 'updated_at'])
 
                         logger.debug(f"成功为会话 {session.session_id} 添加了 {actual_added_count} 个事件")
 
@@ -563,10 +550,7 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
                 # 使用 get_or_create 避免重复插入
                 session_relation, created = SessionEventRelation.objects.get_or_create(
                     session=session,
-                    event=relation.event,
-                    defaults={
-                        'order': relation.order
-                    }
+                    event=relation.event
                 )
 
                 if created:
@@ -581,9 +565,8 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
 
         # 更新会话统计
         if added_count > 0:
-            session.event_count += added_count
             session.last_activity = self.now
-            session.save(update_fields=['event_count', 'last_activity', 'updated_at'])
+            session.save(update_fields=['last_activity', 'updated_at'])
 
         return added_count
 
@@ -679,6 +662,7 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
                 query_conditions = {
                     'status__in': AlertStatus.ACTIVATE_STATUS,
                     'fingerprint': _fingerprint,  # 使用实例指纹查询
+                    'rule_id': aggregation_rule.rule_id_str
                 }
                 related_alerts = list(Alert.objects.filter(**query_conditions).values())
                 # 创建告警数据
