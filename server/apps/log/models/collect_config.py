@@ -21,6 +21,7 @@ class CollectInstance(TimeInfo, MaintainerInfo):
     id = models.CharField(primary_key=True, max_length=200, verbose_name='采集方式实例ID')
     name = models.CharField(db_index=True, max_length=200, verbose_name='采集方式实例名称')
     collect_type = models.ForeignKey(CollectType, on_delete=models.CASCADE, verbose_name='采集方式')
+    node_id = models.CharField(max_length=100, blank=True, null=True, verbose_name='Node ID')
 
     class Meta:
         verbose_name = '采集方式实例'
