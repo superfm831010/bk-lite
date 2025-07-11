@@ -79,8 +79,6 @@ class GraphUtils(ChunkHelper):
     def search_graph(cls, graph_obj: KnowledgeGraph, size=0, search_query=""):
         embed_config = graph_obj.embed_model.decrypted_embed_config
         rerank_config = graph_obj.rerank_model.decrypted_rerank_config_config
-        group_ids = GraphChunkMap.objects.filter(knowledge_graph_id=graph_obj.id).values_list("graph_id", flat=True)
-
         kwargs = {
             "embed_model_base_url": embed_config["base_url"],
             "embed_model_api_key": embed_config["api_key"],
@@ -89,7 +87,7 @@ class GraphUtils(ChunkHelper):
             "rerank_model_name": rerank_config.get("model", graph_obj.rerank_model.name),
             "rerank_model_api_key": rerank_config["api_key"],
             "size": size,
-            "group_ids": list(group_ids),
+            "group_ids": [f"graph-{graph_obj.id}"],
             "search_query": search_query,
         }
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/search"
