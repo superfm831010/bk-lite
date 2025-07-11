@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 import toml
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -7,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from apps.core.utils.web_utils import WebUtils
-from apps.log.models.collect_config import CollectType, CollectInstance, CollectConfig, CollectInstanceOrganization
+from apps.log.models.collect_config import CollectType, CollectInstance, CollectConfig
 from apps.log.serializers.collect_config import CollectTypeSerializer
 from apps.log.filters.collect_config import CollectTypeFilter
 from apps.log.services.collect_type import CollectTypeService
@@ -45,44 +43,13 @@ class CollectInstanceViewSet(ViewSet):
         page = int(request.query_params.get("page", 1))
         page_size = int(request.query_params.get("page_size", 10))
 
-        queryset = CollectInstance.objects.select_related("collect_type")
-        if collect_type_id:
-            queryset = queryset.filter(collect_type_id=collect_type_id)
-        if name:
-            queryset = queryset.filter(name__icontains=name)
+        data = CollectTypeService.search_instance(
+            collect_type_id=collect_type_id,
+            name=name,
+            page=page,
+            page_size=page_size
+        )
 
-        # 计算总数
-        total_count = queryset.count()
-        # 计算分页
-        start = (page - 1) * page_size
-        end = page * page_size
-        # 获取当前页的数据
-        data_list = queryset.values("id", "name", "collect_type__name", "collect_type__collector")[start:end]
-
-        # 补充组织与配置
-        org_map = defaultdict(list)
-        org_objs = CollectInstanceOrganization.objects.filter(
-            collect_instance_id__in=[item["id"] for item in data_list]
-        ).values_list("collect_instance_id", "organization")
-        for instance_id, organization in org_objs:
-            org_map[instance_id].append(organization)
-
-        conf_map = defaultdict(list)
-        conf_objs = CollectConfig.objects.filter(
-            collect_instance_id__in=[item["id"] for item in data_list]
-        ).values_list("collect_instance", "id")
-        for instance_id, config_id in conf_objs:
-            conf_map[instance_id].append(config_id)
-
-        items = []
-        for info in data_list:
-            info.update(
-                organization=org_map.get(info["id"]),
-                config_id=conf_map.get(info["id"]),
-            )
-            items.append(info)
-
-        data = {"count": total_count, "items": items}
         return WebUtils.response_success(data)
 
     @swagger_auto_schema(
