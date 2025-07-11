@@ -12,8 +12,8 @@ for app in os.listdir("apps"):
             for _setting in dir(__module):
                 if _setting == _setting.upper():
                     value = getattr(__module, _setting)
-                    if isinstance(value, list):
-                        locals().setdefault(_setting, []).extend(value)
+                    if isinstance(value, dict):
+                        locals().setdefault(_setting, {}).update(value)
                     else:
                         locals()[_setting] = getattr(__module, _setting)
 try:
