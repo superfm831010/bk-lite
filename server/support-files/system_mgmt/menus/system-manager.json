@@ -2,6 +2,7 @@
   "client_id": "system-manager",
   "name": "Setting",
   "url": "/system-manager/user",
+  "icon": "system-manager",
   "description": "Covering user and organizational role permission management, ensuring resource access security through fine-grained permission control while improving operational efficiency. Provides flexible configuration and management to meet different business needs",
   "menus": [
     {

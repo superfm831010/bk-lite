@@ -1,20 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs } from 'antd';
-import { useTranslation } from '@/utils/i18n';
 import {
   SubModuleTabsProps,
   ProviderPermissionConfig,
   PermissionConfig
 } from '@/app/system-manager/types/permission';
-import {
-  SUB_MODULE_MAP,
-  EDITABLE_MODULES
-} from '@/app/system-manager/constants/application';
+import { ModuleItem } from '@/app/system-manager/constants/application';
 import ModuleContent from './moduleContent';
+import styles from './tabs.module.scss';
 
 const SubModuleTabs: React.FC<SubModuleTabsProps> = ({
   module,
-  activeSubModule,
   setActiveSubModule,
   permissions,
   moduleData,
@@ -25,59 +21,203 @@ const SubModuleTabs: React.FC<SubModuleTabsProps> = ({
   handleTypeChange,
   handleAllPermissionChange,
   handleSpecificDataChange,
-  handleTableChange
+  handleTableChange,
+  moduleTree
 }) => {
-  const { t } = useTranslation();
+  // Current selected first-level module
+  const [activeFirstLevel, setActiveFirstLevel] = useState<string>('');
 
-  if (!SUB_MODULE_MAP[module]) return null;
+  // Add current active leaf node state
+  const [currentLeafNode, setCurrentLeafNode] = useState<string>('');
 
-  const subModules = SUB_MODULE_MAP[module];
-  if (subModules.length === 0) return null;
+  // Get current module configuration
+  const currentModuleConfig = moduleTree?.[module];
+  
+  // Initialize default values when module config changes
+  useEffect(() => {
+    if (!currentModuleConfig?.children || currentModuleConfig.children.length === 0) {
+      return;
+    }
 
-  const subItems = subModules.map(subModule => ({
-    key: subModule,
-    label: t(`system.modules.${subModule}`) || subModule,
-    children: (
+    const firstChild = currentModuleConfig.children[0];
+    if (!activeFirstLevel) {
+      setActiveFirstLevel(firstChild?.name || '');
+    }
+
+    const initializeLeafNode = () => {
+      if (firstChild) {
+        if (!firstChild.children || firstChild.children.length === 0) {
+          // First level is a leaf node
+          const leafNode = firstChild.name;
+          setCurrentLeafNode(leafNode);
+          setActiveSubModule(leafNode);
+        } else {
+          // Has sub-levels, find the first leaf node
+          const findFirstLeaf = (node: ModuleItem): string => {
+            if (!node.children || node.children.length === 0) {
+              return node.name;
+            }
+            return findFirstLeaf(node.children[0]);
+          };
+          const leafNode = findFirstLeaf(firstChild);
+          setCurrentLeafNode(leafNode);
+          setActiveSubModule(leafNode);
+        }
+      }
+    };
+
+    initializeLeafNode();
+  }, [currentModuleConfig, activeFirstLevel, setActiveSubModule]);
+
+  // Early return after all hooks are called
+  if (!currentModuleConfig || !currentModuleConfig.children || currentModuleConfig.children.length === 0) {
+    return null;
+  }
+
+  // Build first-level tab items - each tab has its own independent content
+  const firstLevelTabs = currentModuleConfig.children.map(child => {
+    // Generate content for each tab separately
+    const tabContent = child.name === activeFirstLevel ? getContentForChild(child) : <div />;
+    
+    return {
+      key: child.name,
+      label: child.display_name || child.name,
+      children: tabContent
+    };
+  });
+
+  // Generate content for specified child module
+  function getContentForChild(child: ModuleItem): JSX.Element {
+    // If has children, show second level
+    if (child.children && child.children.length > 0) {
+      return renderSecondLevel(child.children);
+    }
+
+    // Leaf node, directly render permission configuration
+    return (
       <ModuleContent
         module={module}
-        subModule={subModule}
+        subModule={child.name}
         permissions={permissions}
         loading={loading}
         moduleData={moduleData}
         pagination={pagination}
         activeKey={activeKey}
-        activeSubModule={activeSubModule || ''}
+        activeSubModule={child.name}
         handleTypeChange={handleTypeChange}
         handleAllPermissionChange={handleAllPermissionChange}
         handleSpecificDataChange={handleSpecificDataChange}
         handleTableChange={handleTableChange}
       />
-    )
-  }));
+    );
+  }
+
+  // Render second level
+  function renderSecondLevel(children: ModuleItem[]): JSX.Element {
+    const secondLevelTabs = children.map(child => ({
+      key: child.name,
+      label: child.display_name || child.name,
+      children: child.name === currentLeafNode ? (
+        <ModuleContent
+          module={module}
+          subModule={child.name}
+          permissions={permissions}
+          loading={loading}
+          moduleData={moduleData}
+          pagination={pagination}
+          activeKey={activeKey}
+          activeSubModule={child.name}
+          handleTypeChange={handleTypeChange}
+          handleAllPermissionChange={handleAllPermissionChange}
+          handleSpecificDataChange={handleSpecificDataChange}
+          handleTableChange={handleTableChange}
+        />
+      ) : <div />
+    }));
+
+    return (
+      <div className={styles['nested-sub-module-tabs']}>
+        <Tabs
+          type="card"
+          size="small"
+          activeKey={currentLeafNode || children[0]?.name}
+          onChange={(key) => {
+            setCurrentLeafNode(key);
+            setActiveSubModule(key);
+            
+            // Find corresponding child and load data
+            const selectedChild = children.find(c => c.name === key);
+            if (selectedChild && (!selectedChild.children || selectedChild.children.length === 0)) {
+              loadDataForLeafNode(key);
+            }
+          }}
+          items={secondLevelTabs}
+          tabBarStyle={{ 
+            marginBottom: 16,
+            overflowX: 'auto',
+            scrollbarWidth: 'none'
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Load leaf node data
+  function loadDataForLeafNode(leafNodeKey: string) {
+    const providerConfig = permissions[module] as ProviderPermissionConfig;
+    if (providerConfig[leafNodeKey]) {
+      const subModuleConfig = providerConfig[leafNodeKey] as PermissionConfig;
+      if (subModuleConfig.type === 'specific' && (!moduleData[`${module}_${leafNodeKey}`] || moduleData[`${module}_${leafNodeKey}`].length === 0)) {
+        loadSpecificData(module, leafNodeKey);
+      }
+    }
+  }
+
+  // First level tab change handler
+  const handleFirstLevelChange = (key: string) => {
+    setActiveFirstLevel(key);
+    
+    // Find selected first-level child module
+    const selectedChild = currentModuleConfig.children?.find(child => child.name === key);
+    if (selectedChild) {
+      // If first level is leaf node, directly load data
+      if (!selectedChild.children || selectedChild.children.length === 0) {
+        const leafNode = selectedChild.name;
+        setCurrentLeafNode(leafNode);
+        setActiveSubModule(leafNode);
+        loadDataForLeafNode(leafNode);
+      } else {
+        // If has sub-levels, automatically select first child item
+        const findFirstLeaf = (node: ModuleItem): string => {
+          if (!node.children || node.children.length === 0) {
+            return node.name;
+          }
+          return findFirstLeaf(node.children[0]);
+        };
+        
+        const leafNode = findFirstLeaf(selectedChild);
+        setCurrentLeafNode(leafNode);
+        setActiveSubModule(leafNode);
+        loadDataForLeafNode(leafNode);
+      }
+    }
+  };
 
   return (
-    <Tabs
-      activeKey={activeSubModule || subModules[0]}
-      onChange={(key) => {
-        setActiveSubModule(key);
-
-        if (!EDITABLE_MODULES.includes(key)) {
-          return;
-        }
-
-        const providerConfig = permissions[module] as ProviderPermissionConfig;
-
-        if (providerConfig[key]) {
-          const subModuleConfig = providerConfig[key] as PermissionConfig;
-
-          if (subModuleConfig.type === 'specific' && (!moduleData[`${module}_${key}`] || moduleData[`${module}_${key}`].length === 0)) {
-            loadSpecificData(module, key);
-          }
-        }
-      }}
-      items={subItems}
-      className="sub-module-tabs"
-    />
+    <div className={styles['sub-module-tabs']}>
+      <Tabs
+        type="card"
+        size="small"
+        activeKey={activeFirstLevel}
+        onChange={handleFirstLevelChange}
+        items={firstLevelTabs}
+        tabBarStyle={{ 
+          marginBottom: 16,
+          overflowX: 'auto',
+          scrollbarWidth: 'none'
+        }}
+      />
+    </div>
   );
 };
 

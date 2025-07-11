@@ -3,6 +3,7 @@
   "name": "OpsConsole",
   "url": "/ops-console/home",
   "description": "",
+  "icon": "ops-console",
   "description_cn": "",
   "menus": [],
   "roles": [

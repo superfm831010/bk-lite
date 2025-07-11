@@ -2,6 +2,7 @@
   "client_id": "opspilot",
   "name": "OpsPilot",
   "url": "/opspilot/studio",
+  "icon": "opspilot",
   "description": "OpsPilot is an AI intelligence platform, based on cutting-edge artificial intelligence technology, integrating machine learning and large model capabilities, supporting diversified scenarios.",
   "menus": [
     {
