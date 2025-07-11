@@ -67,14 +67,13 @@ const IntegrationPage: React.FC = () => {
                 {/* 信息区 */}
                 <div className="text-xs text-[var(--color-text-3)] space-y-2">
                   <div>
-                    {t('integration.eventCount')}：
+                    {t('alarms.eventCount')}：
                     {[undefined, null, ''].includes(src.event_count as any)
                       ? '--'
                       : src.event_count}
                   </div>
                   <div>
-                    {t('integration.lastEventTime')}：
-                    {src.last_event_time || '--'}
+                    {t('alarms.lastEventTime')}：{src.last_event_time || '--'}
                   </div>
                 </div>
               </div>
