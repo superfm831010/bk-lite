@@ -11,7 +11,11 @@ for app in os.listdir("apps"):
         else:
             for _setting in dir(__module):
                 if _setting == _setting.upper():
-                    locals()[_setting] = getattr(__module, _setting)
+                    value = getattr(__module, _setting)
+                    if isinstance(value, list):
+                        locals().setdefault(_setting, []).extend(value)
+                    else:
+                        locals()[_setting] = getattr(__module, _setting)
 try:
     from local_settings import *  # noqa
 except ImportError:
