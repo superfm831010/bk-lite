@@ -8,7 +8,7 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.constants import START
 
-from src.core.entity.basic_llm_request import BasicLLMReuqest
+from src.core.entity.basic_llm_request import BasicLLMRequest
 from src.core.entity.basic_llm_response import BasicLLMResponse
 from src.core.env.core_settings import core_settings
 
@@ -16,7 +16,8 @@ from src.core.env.core_settings import core_settings
 class BasicGraph(ABC):
     def count_tokens(self, text: str, encoding_name='gpt-4o') -> int:
         try:
-            encoding = tiktoken.encoding_for_model(encoding_name)  # 获取模型的 Token 编码器
+            encoding = tiktoken.encoding_for_model(
+                encoding_name)  # 获取模型的 Token 编码器
             tokens = encoding.encode(text)  # 将文本 Token 化
             return len(tokens)  # 返回 Token 数量
         except KeyError:
@@ -39,10 +40,13 @@ class BasicGraph(ABC):
         print('\n')
 
     def prepare_graph(self, graph_builder, node_builder) -> str:
-        graph_builder.add_node("prompt_message_node", node_builder.prompt_message_node)
-        graph_builder.add_node("add_chat_history_node", node_builder.add_chat_history_node)
+        graph_builder.add_node("prompt_message_node",
+                               node_builder.prompt_message_node)
+        graph_builder.add_node("add_chat_history_node",
+                               node_builder.add_chat_history_node)
         graph_builder.add_node("naive_rag_node", node_builder.naive_rag_node)
-        graph_builder.add_node("user_message_node", node_builder.user_message_node)
+        graph_builder.add_node("user_message_node",
+                               node_builder.user_message_node)
 
         graph_builder.add_edge(START, "prompt_message_node")
         graph_builder.add_edge("prompt_message_node", "add_chat_history_node")
@@ -51,7 +55,7 @@ class BasicGraph(ABC):
 
         return 'user_message_node'
 
-    async def invoke(self, graph, request: BasicLLMReuqest, stream_mode='values'):
+    async def invoke(self, graph, request: BasicLLMRequest, stream_mode='values'):
         config = {
             "graph_request": request,
             "recursion_limit": 10,
@@ -80,15 +84,15 @@ class BasicGraph(ABC):
             return result
 
     @abstractmethod
-    async def compile_graph(self, request: BasicLLMReuqest):
+    async def compile_graph(self, request: BasicLLMRequest):
         pass
 
-    async def stream(self, request: BasicLLMReuqest):
+    async def stream(self, request: BasicLLMRequest):
         graph = await self.compile_graph(request)
         result = await self.invoke(graph, request, stream_mode='messages')
         return result
 
-    async def execute(self, request: BasicLLMReuqest) -> BasicLLMResponse:
+    async def execute(self, request: BasicLLMRequest) -> BasicLLMResponse:
         graph = await self.compile_graph(request)
         result = await self.invoke(graph, request)
 

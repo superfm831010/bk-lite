@@ -1,0 +1,6 @@
+{
+  "name": "file",
+  "collector": "Vector",
+  "icon": "file",
+  "description": "Collects logs from files"
+}

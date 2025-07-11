@@ -11,7 +11,7 @@ import { cloneDeep } from "lodash";
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { useTranslation } from "@/utils/i18n";
 import { TYPE_CONTENT } from "@/app/mlops/constants";
-import useMlopsApi from "@/app/mlops/api";
+import useMlopsManageApi from "@/app/mlops/api/manage";
 import {
   Button,
   message,
@@ -67,7 +67,7 @@ Topsection.displayName = 'Topsection';
 const AnnotationPage = () => {
   const searchParams = useSearchParams();
   const { t } = useTranslation();
-  const { getAnomalyTrainDataInfo, getAnomalyTrainData, labelingData } = useMlopsApi();
+  const { getAnomalyTrainDataInfo, getAnomalyTrainData, labelingData } = useMlopsManageApi();
   const { convertToLocalizedTime } = useLocalizedTime();
   const [menuItems, setMenuItems] = useState<AnomalyTrainData[]>([]);
   const [tableData, setTableData] = useState<TableDataItem[]>([]);

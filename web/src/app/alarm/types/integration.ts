@@ -13,6 +13,7 @@ interface Config {
   headers: Record<string, any>;
   timeout: number;
   content_type: string;
+  examples: any;
   event_fields_mapping: Record<string, string>;
   event_fields_desc_mapping: Record<string, string>;
 }

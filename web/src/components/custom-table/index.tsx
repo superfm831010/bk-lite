@@ -126,7 +126,7 @@ const CustomTable = <T extends object>({
     const vh = window.innerHeight;
     let total = 0;
 
-    // 分析表达式的正则表达式以捕获运算符、数字和单位
+    // Regex to parse expressions and capture operators, numbers, and units
     const calcRegex = /([-+]?)\s*(\d*\.?\d+)(vh|px)/g;
     let match: RegExpExecArray | null;
 

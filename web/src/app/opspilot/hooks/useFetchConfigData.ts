@@ -23,7 +23,13 @@ const useFetchConfigData = (id: string | null) => {
     textSearchMode: 'match',
     selectedEmbedModel: null,
     resultCount: 100,
-    rerankTopK: 10
+    rerankTopK: 10,
+    enableNaiveRag: false,
+    enableQaRag: false,
+    enableGraphRag: false,
+    ragSize: 0,
+    qaSize: 0,
+    graphSize: 0
   });
   const [loading, setLoading] = useState(true);
   const [knowledgeBasePermissions, setKnowledgeBasePermissions] = useState<string[]>([]);
@@ -53,7 +59,13 @@ const useFetchConfigData = (id: string | null) => {
           textSearchMode: data.text_search_mode,
           selectedEmbedModel: data.embed_model || null,
           resultCount: data.result_count || 100,
-          rerankTopK: data.rerank_top_k || 10
+          rerankTopK: data.rerank_top_k || 10,
+          enableNaiveRag: data.enable_naive_rag || false,
+          enableQaRag: data.enable_qa_rag || false,
+          enableGraphRag: data.enable_graph_rag || false,
+          ragSize: data.rag_size || 0,
+          qaSize: data.qa_size || 0,
+          graphSize: data.graph_size || 0
         });
         setKnowledgeBasePermissions(data.permissions || []);
       } catch (error) {

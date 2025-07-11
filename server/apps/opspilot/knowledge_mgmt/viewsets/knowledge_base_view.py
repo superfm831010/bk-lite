@@ -79,7 +79,12 @@ class KnowledgeBaseViewSet(AuthViewSet):
         instance.text_search_mode = kwargs["text_search_mode"]
         instance.rag_k = kwargs["rag_k"]
         instance.rerank_top_k = kwargs.get("rerank_top_k", 10)
-        instance.result_count = kwargs["result_count"]
+        instance.enable_naive_rag = kwargs["enable_naive_rag"]
+        instance.enable_qa_rag = kwargs["enable_qa_rag"]
+        instance.enable_graph_rag = kwargs["enable_graph_rag"]
+        instance.rag_size = kwargs["rag_size"]
+        instance.qa_size = kwargs["qa_size"]
+        instance.graph_size = kwargs["graph_size"]
         instance.rag_num_candidates = kwargs["rag_num_candidates"]
         instance.save()
         return JsonResponse({"result": True})

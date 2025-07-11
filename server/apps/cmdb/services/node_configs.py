@@ -327,46 +327,11 @@ class AliyunNodeParams(BaseNodeParams):
             return f"{self.instance.id}_{instance}"
 
 
-class HostNodeParams(BaseNodeParams):
-    supported_model_id = "host"  # 模型id
-    plugin_name = "host_info"  # 插件名称
-    interval_map = {plugin_name: 300}  # 插件的默认采集间隔时间
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def set_credential(self, *args, **kwargs):
-        host = kwargs["host"]
-        node_ip = self.instance.access_point[0]["ip"]
-        credential_data = {
-            "node_id": self.instance.access_point[0]["id"],
-            "execute_timeout": self.instance.timeout,
-        }
-        if host["ip_addr"] != node_ip:
-            credential_data["username"] = self.credential.get("username", ""),
-            credential_data["password"] = self.credential.get("password", ""),
-            credential_data["port"] = self.credential.get("port", 22),
-
-        return credential_data
-
-    def get_instance_id(self, instance):
-        """
-        获取实例 id
-        """
-        if self.has_set_instances:
-            return f"{self.instance.id}_{instance['inst_name']}"
-        else:
-            return f"{self.instance.id}_{instance}"
-
-
-class RedisNodeParams(BaseNodeParams):
-    supported_model_id = "redis"
-    plugin_name = "redis_info"
+class SSHNodeParamsMixin:
+    supported_model_id = ""
+    plugin_name = f"{supported_model_id}_info"
     interval_map = {plugin_name: 300}
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.host_field = "ip_addr"
+    host_field = "ip_addr"
 
     def set_credential(self, *args, **kwargs):
         host = kwargs["host"]
@@ -375,7 +340,8 @@ class RedisNodeParams(BaseNodeParams):
             "node_id": self.instance.access_point[0]["id"],
             "execute_timeout": self.instance.timeout,
         }
-        if host["ip_addr"] != node_ip:
+        host_ip = host.get("ip_addr", "") if host and isinstance(host, dict) else host
+        if host_ip != node_ip:
             credential_data["username"] = self.credential.get("username", ""),
             credential_data["password"] = self.credential.get("password", ""),
             credential_data["port"] = self.credential.get("port", 22),
@@ -385,85 +351,29 @@ class RedisNodeParams(BaseNodeParams):
         return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
 
 
-class NginxNodeParams(BaseNodeParams):
+class HostNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "host"  # 模型id
+    plugin_name = "host_info"  # 插件名称
+
+
+class RedisNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "redis"
+    plugin_name = "redis_info"
+
+
+class NginxNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "nginx"
     plugin_name = "nginx_info"
 
-    interval_map = {plugin_name: 300}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.host_field = "ip_addr"
-
-    def get_instance_id(self, instance):
-        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
-
-    def set_credential(self, *args, **kwargs):
-        host = kwargs["host"]
-        node_ip = self.instance.access_point[0]["ip"]
-        credential_data = {
-            "node_id": self.instance.access_point[0]["id"],
-            "execute_timeout": self.instance.timeout,
-        }
-        if host["ip_addr"] != node_ip:
-            credential_data["username"] = self.credential.get("username", ""),
-            credential_data["password"] = self.credential.get("password", "")
-            credential_data["port"] = self.credential.get("port", 22),
-        return credential_data
-
-
-class ZookeeperNodeParams(BaseNodeParams):
+class ZookeeperNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "zookeeper"
     plugin_name = "zookeeper_info"
 
-    interval_map = {plugin_name: 300}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.host_field = "ip_addr"
-
-    def set_credential(self, *args, **kwargs):
-        host = kwargs["host"]
-        node_ip = self.instance.access_point[0]["ip"]
-        credential_data = {
-            "node_id": self.instance.access_point[0]["id"],
-            "execute_timeout": self.instance.timeout,
-        }
-        if host["ip_addr"] != node_ip:
-            credential_data["username"] = self.credential.get("username", ""),
-            credential_data["password"] = self.credential.get("password", "")
-            credential_data["port"] = self.credential.get("port", 22),
-        return credential_data
-
-    def get_instance_id(self, instance):
-        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
-
-
-class KafkaNodeParams(BaseNodeParams):
+class KafkaNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "kafka"
     plugin_name = "kafka_info"
-
-    interval_map = {plugin_name: 300}
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.host_field = "ip_addr"
-
-    def get_instance_id(self, instance):
-        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
-
-    def set_credential(self, *args, **kwargs):
-        host = kwargs["host"]
-        node_ip = self.instance.access_point[0]["ip"]
-        credential_data = {
-            "node_id": self.instance.access_point[0]["id"],
-            "execute_timeout": self.instance.timeout,
-        }
-        if host["ip_addr"] != node_ip:
-            credential_data["username"] = self.credential.get("username", ""),
-            credential_data["password"] = self.credential.get("password", "")
-            credential_data["port"] = self.credential.get("port", 22),
-        return credential_data
 
 
 class QCloudNodeParams(BaseNodeParams):
@@ -492,82 +402,44 @@ class QCloudNodeParams(BaseNodeParams):
         return f"{self.instance.id}_{instance['inst_name']}"
 
 
-class EtcdNodeParams(BaseNodeParams):
+class EtcdNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "etcd"
     plugin_name = "etcd_info"
-    interval_map = {plugin_name: 300}
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.host_field = "ip_addr"
-
-    def get_instance_id(self, instance):
-        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
-
-    def set_credential(self, *args, **kwargs):
-        host = kwargs["host"]
-        node_ip = self.instance.access_point[0]["ip"]
-        credential_data = {
-            "node_id": self.instance.access_point[0]["id"],
-            "execute_timeout": self.instance.timeout,
-        }
-        if host["ip_addr"] != node_ip:
-            credential_data["username"] = self.credential.get("username", ""),
-            credential_data["password"] = self.credential.get("password", "")
-            credential_data["port"] = self.credential.get("port", 22),
-        return credential_data
 
 
-class RabbitMQNodeParams(BaseNodeParams):
+class RabbitMQNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "rabbitmq"
     plugin_name = "rabbitmq_info"
-    interval_map = {plugin_name: 300}
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.host_field = "ip_addr"
-
-    def get_instance_id(self, instance):
-        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
-
-    def set_credential(self, *args, **kwargs):
-        host = kwargs["host"]
-        node_ip = self.instance.access_point[0]["ip"]
-        credential_data = {
-            "node_id": self.instance.access_point[0]["id"],
-            "execute_timeout": self.instance.timeout,
-        }
-        if host["ip_addr"] != node_ip:
-            credential_data["username"] = self.credential.get("username", ""),
-            credential_data["password"] = self.credential.get("password", "")
-            credential_data["port"] = self.credential.get("port", 22),
-        return credential_data
 
 
-class TomcatNodeParams(BaseNodeParams):
+class TomcatNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "tomcat"
     plugin_name = "tomcat_info"
-    interval_map = {plugin_name: 300}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.host_field = "ip_addr"
 
-    def get_instance_id(self, instance):
-        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
+class ESNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "es"
+    plugin_name = "es_info"
 
-    def set_credential(self, *args, **kwargs):
-        host = kwargs["host"]
-        node_ip = self.instance.access_point[0]["ip"]
-        credential_data = {
-            "node_id": self.instance.access_point[0]["id"],
-            "execute_timeout": self.instance.timeout,
-        }
-        if host["ip_addr"] != node_ip:
-            credential_data["username"] = self.credential.get("username", ""),
-            credential_data["password"] = self.credential.get("password", "")
-            credential_data["port"] = self.credential.get("port", 22),
-        return credential_data
+
+class MongoDBParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "mongodb"
+    plugin_name = "mongodb_info"
+
+
+class ApacheNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "apache"
+    plugin_name = "apache_info"
+
+
+class ActiveMQNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "activemq"
+    plugin_name = "activemq_info"
+
+
+class PgsqlNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "postgresql"
+    plugin_name = "pgsql_info"
 
 
 class NodeParamsFactory:

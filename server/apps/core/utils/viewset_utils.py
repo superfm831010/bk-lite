@@ -99,7 +99,12 @@ class AuthViewSet(MaintainerViewSet):
 
                 if guest_rules:
                     guest_instance_ids = self.filter_rules(guest_rules)
-                    query |= Q(id__in=guest_instance_ids)
+                    if guest_instance_ids:
+                        query |= Q(id__in=guest_instance_ids)
+                    else:
+                        guest_group = [i for i in user.group_list if i["name"] == "OpsPilotGuest"]
+                        if guest_group:
+                            current_team += f",{guest_group[0]['id']}"
             group_query = self._filter_by_user_groups(queryset, current_team)
             if instance_ids:
                 queryset = queryset.filter(id__in=instance_ids)
@@ -151,8 +156,9 @@ class AuthViewSet(MaintainerViewSet):
         try:
             if not current_team:
                 return query
-
-            query = Q(team__contains=current_team)
+            teams = [i.strip() for i in current_team.split(",") if i.strip()]
+            for i in teams:
+                query |= Q(team__contains=int(i))
 
             return query
 
