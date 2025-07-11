@@ -1,4 +1,3 @@
-import React from 'react';
 import { IntegrationLogInstance } from '@/app/log/types/integration';
 import { TableDataItem } from '@/app/log/types';
 import { useDockerVectorFormItems } from '../../common/dockerVectorFormItems';
@@ -18,10 +17,6 @@ export const useVectorConfig = () => {
       mode: 'manual' | 'auto' | 'edit';
       onTableDataChange?: (data: IntegrationLogInstance[]) => void;
     }) => {
-      const disabledForm = {
-        command: false,
-      };
-      const formItems = <>{commonFormItems.getCommonFormItems(disabledForm)}</>;
       const configs = {
         auto: {
           formItems: commonFormItems.getCommonFormItems(),
@@ -46,26 +41,61 @@ export const useVectorConfig = () => {
           },
         },
         edit: {
-          formItems,
+          getFormItems: (configForm: TableDataItem) => {
+            const sources =
+              configForm.child?.content?.sources?.[
+                pluginConfig.collect_type + '_' + configForm.rowId
+              ];
+            const transforms =
+              configForm?.child?.content?.transforms?.[
+                `multiline_${configForm.rowId}`
+              ];
+            return commonFormItems.getCommonFormItems({
+              hiddenFormItems: {
+                include_containers: !sources?.include_containers,
+                exclude_containers: !sources?.exclude_containers,
+                start_pattern:
+                  !transforms?.start_pattern &&
+                  transforms?.start_pattern !== '',
+              },
+              disabledFormItems: {},
+            });
+          },
           getDefaultForm: (formData: TableDataItem) => {
-            const host =
+            const sources =
               formData?.child?.content?.sources?.[
                 pluginConfig.collect_type + '_' + formData.rowId
-              ]?.docker_host || null;
+              ] || {};
+            const multiline =
+              formData?.child?.content?.transforms?.[
+                'multiline_' + formData.rowId
+              ] || {};
             return {
-              docker_host: host,
+              docker_host: sources.docker_host || null,
+              include_containers: sources.include_containers || null,
+              exclude_containers: sources.exclude_containers || null,
+              start_pattern: multiline.start_pattern || null,
             };
           },
           getParams: (formData: TableDataItem, configForm: TableDataItem) => {
-            configForm.child.content.sources[
-              pluginConfig.collect_type + '_' + formData.rowId
-            ].docker_host = formData.docker_host;
+            const sources = configForm.child.content.sources;
+            const transforms =
+              configForm.child.content.transforms[
+                `multiline_${formData.rowId}`
+              ];
+            const key = pluginConfig.collect_type + '_' + formData.rowId;
+            sources[key].docker_host = formData.docker_host;
+            sources[key].include_containers = formData.include_containers;
+            sources[key].exclude_containers = formData.exclude_containers;
+            if (transforms) {
+              transforms.start_pattern = formData.start_pattern;
+            }
             return configForm;
           },
         },
         manual: {
           defaultForm: {},
-          formItems,
+          formItems: commonFormItems.getCommonFormItems(),
           getParams: (row: TableDataItem) => {
             return {
               instance_name: row.instance_name,
