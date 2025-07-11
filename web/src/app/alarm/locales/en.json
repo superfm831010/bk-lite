@@ -24,7 +24,8 @@
         "advanced": "Advanced",
         "partialFailure": "Partial failure",
         "successOperate": "Successfully",
-        "all": "All"
+        "all": "All",
+        "actions": "Actions"
     },
     "incidents": {
         "table": "Table",
@@ -115,7 +116,8 @@
         "incident": "Incident",
         "title": "Title",
         "alertId": "Alert ID",
-        "alertContent": "Alert Content"
+        "alertContent": "Alert Content",
+        "ruleId": "Rule ID"
     },
     "integration": {
         "description": "Description",
@@ -174,15 +176,15 @@
             "ruleFilter": "Filter",
             "editTitle": "Edit Assignment Strategy",
             "addTitle": "Add Assignment Strategy",
-            "formMatchingRules": "Matching Rules",
+            "formMatchingRules": "Match Rules",
             "formPersonnelSelect": "Personnel",
-            "formNotifyMethod": "Notification Method",
+            "formNotifyMethod": "Notify Method",
             "submit": "Submit",
             "effectiveTime": "Effective Time",
-            "notificationScenario": "Notification scenario",
+            "notificationScenario": "Notify Scenario",
             "assignment": "Assignment",
             "recovery": "Recovery",
-            "notificationFrequency": "Notification Frequency",
+            "notificationFrequency": "Notify Frequency",
             "frequencyMsg": "Default notification once during alarm assignment",
             "notRespondMsg": "When the alarm does not respond，",
             "notifyEvery": "notify every",
@@ -191,11 +193,11 @@
         "globalConfig": {
             "title": "Unallocated Alarm Notification",
             "description": "When there are unassigned alarms, notify the designated person in charge of the alarm",
-            "intervalLabel": "Notification Interval",
+            "intervalLabel": "Notify Interval",
             "intervalMinutes": "minutes",
-            "personnelLabel": "Notification Personnel",
-            "personnelPlaceholder": "Please select notification personnel",
-            "notificationMethodLabel": "Notification Method",
+            "personnelLabel": "Notify Personnel",
+            "personnelPlaceholder": "Please select Notify personnel",
+            "notificationMethodLabel": "Notify Method",
             "email": "Email",
             "wechat": "WeChat",
             "unselected": "Unselected"

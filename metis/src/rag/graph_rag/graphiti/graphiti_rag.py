@@ -7,7 +7,6 @@ from src.entity.rag.graphiti.document_ingest_request import GraphitiRagDocumentI
 from src.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest
 from src.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest
 from src.entity.rag.graphiti.rebuild_community_request import RebuildCommunityRequest
-from src.rag.graph_rag.graphiti.graphiti_extend import GraphitiExtend
 from src.rag.graph_rag.graphiti.metis_embedder import MetisEmbedder
 from src.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderConfig
 from src.rag.graph_rag.graphiti.metis_raranker_config import MetisRerankerConfig
@@ -54,7 +53,7 @@ class GraphitiRAG():
                    id(n) as node_id, n.group_id as group_id,
                    labels(n) as labels
             """,
-            {"group_ids": req.group_ids}
+            params={"group_ids": req.group_ids}
         )
 
         # Then get all relationships
@@ -70,7 +69,7 @@ class GraphitiRAG():
                    id(n) as source_id,
                    id(m) as target_id
             """,
-            {"group_ids": req.group_ids}
+            params={"group_ids": req.group_ids}
         )
 
         # Build edges list
@@ -207,7 +206,7 @@ class GraphitiRAG():
             )
         )
 
-        graphiti_instance = GraphitiExtend(
+        graphiti_instance = Graphiti(
             core_settings.neo4j_host,
             core_settings.neo4j_username,
             core_settings.neo4j_password,
@@ -236,7 +235,7 @@ class GraphitiRAG():
             WHERE n.uuid IN $node_uids
             RETURN n.uuid as uuid, n.name as name, n.fact as fact, n.summary as summary
             """,
-                {"node_uids": node_uids}
+                params={"node_uids": node_uids}
             )
 
             for record in node_result.records:

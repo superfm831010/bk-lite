@@ -11,6 +11,7 @@ from sanic.log import logger
 
 class BasePlugin(ABC):
 
+    @abstractmethod
     def list_all_resources(self):
         raise NotImplementedError("list_all_resources is not implemented")
 

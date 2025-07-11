@@ -31,6 +31,7 @@ const StudioCard: React.FC<StudioCardProps> = (props) => {
       team={team}
       index={index}
       modelName={llm_model_name}
+      skill_type={skill_type}
       skillType={skillType}
       permissions={permissions}
       onMenuClick={onMenuClick}

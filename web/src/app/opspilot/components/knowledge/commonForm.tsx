@@ -42,15 +42,22 @@ const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValu
 
     if (initialValues) {
       form.setFieldsValue(initialValues);
+      if (initialValues.skill_type !== undefined) {
+        setSelectedType(initialValues.skill_type);
+      }
     } else {
       form.resetFields();
       const defaultValues: any = {};
       if (formType === 'knowledge' && modelOptions && modelOptions.length > 0) {
         defaultValues.embed_model = modelOptions[0].id;
       }
+      if (formType === 'skill') {
+        defaultValues.skill_type = typeOptions[0].key;
+        setSelectedType(typeOptions[0].key);
+      }
       form.setFieldsValue(defaultValues);
     }
-  }, [initialValues, form, modelOptions, formType, visible]);
+  }, [initialValues, visible]);
 
   const handleTypeSelection = (typeKey: number) => {
     setSelectedType(typeKey);
@@ -60,7 +67,7 @@ const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValu
   return (
     <Form form={form} layout="vertical" name={`${formType}_form`}>
       {formType === 'skill' && (
-        <Form.Item name="skill_type" initialValue={typeOptions[0].key}>
+        <Form.Item name="skill_type">
           <div className="grid grid-cols-2 gap-4">
             {typeOptions.map((type) => (
               <Tooltip key={type.key} title={type.desc}>
