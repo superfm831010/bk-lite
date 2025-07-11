@@ -1,0 +1,12 @@
+{
+  "name": "log",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "react-ace": "^14.0.1"
+  }
+}

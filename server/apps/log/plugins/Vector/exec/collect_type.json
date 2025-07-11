@@ -1,0 +1,6 @@
+{
+  "name": "exec",
+  "collector": "Vector",
+  "icon": "exec",
+  "description": "Collects logs from command execution"
+}

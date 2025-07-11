@@ -10,6 +10,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 
 from apps.core.logger import opspilot_logger as logger
+from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.serializers import KnowledgeDocumentSerializer
@@ -25,6 +26,7 @@ from apps.opspilot.models import (
 )
 from apps.opspilot.tasks import general_embed, general_embed_by_document_list
 from apps.opspilot.utils.chunk_helper import ChunkHelper
+from apps.opspilot.utils.graph_utils import GraphUtils
 
 
 class ObjFilter(FilterSet):
@@ -81,7 +83,33 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
 
         service = KnowledgeSearchService()
         knowledge_base = KnowledgeBase.objects.get(id=knowledge_base_id)
-        docs, qa_docs = service.search(knowledge_base, query, kwargs)
+        docs = qa_docs = graph_list = []
+        if kwargs.get("enable_naive_rag", True):
+            params = dict(
+                kwargs,
+                **{
+                    "size": kwargs.get("rag_size", knowledge_base.rag_size),
+                    "enable_qa_rag": False,
+                    "enable_graph_rag": False,
+                },
+            )
+            docs = service.search(knowledge_base, query, params, is_qa=False)
+        if kwargs.get("enable_qa_rag", True):
+            params = dict(
+                kwargs,
+                **{
+                    "size": kwargs.get("qa_size", knowledge_base.qa_size),
+                    "enable_naive_rag": False,
+                    "enable_graph_rag": False,
+                },
+            )
+            qa_docs = service.search(knowledge_base, query, params, is_qa=True)
+        if kwargs.get("enable_graph_rag", False):
+            graph_obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base.id).first()
+            if graph_obj:
+                res = GraphUtils.search_graph(graph_obj, kwargs["graph_size"], query)
+                if res["result"]:
+                    graph_list = res["data"]
         doc_ids = [doc["knowledge_id"] for doc in docs]
         knowledge_document_list = KnowledgeDocument.objects.filter(id__in=set(doc_ids)).values(
             "id", "name", "knowledge_source_type", "created_by", "created_at"
@@ -89,12 +117,12 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         doc_map = {doc["id"]: doc for doc in knowledge_document_list}
         for i in docs:
             knowledge_id = i.pop("knowledge_id")
-            doc_obj = doc_map.get(knowledge_id)
+            doc_obj = doc_map.get(int(knowledge_id))
             if not doc_obj:
                 logger.warning(f"knowledge_id: {knowledge_id} not found")
                 continue
             i.update(doc_obj)
-        return JsonResponse({"result": True, "data": {"docs": docs, "qa_docs": qa_docs}})
+        return JsonResponse({"result": True, "data": {"docs": docs, "qa_docs": qa_docs, "graph_data": graph_list}})
 
     @action(methods=["GET"], detail=True)
     def get_detail(self, request, *args, **kwargs):
@@ -196,6 +224,9 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             obj.name = name
             obj.save()
         doc.save()
+        if obj.knowledge_source_type == "web_page" and doc.sync_enabled:
+            doc.create_sync_periodic_task()
+
         return JsonResponse({"result": True})
 
     @action(methods=["GET"], detail=True)

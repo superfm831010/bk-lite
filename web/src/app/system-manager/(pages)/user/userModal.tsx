@@ -77,8 +77,8 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
         setSelectedRoles(userDetail.roles?.map((role: { role_id: number }) => role.role_id) || []);
         setSelectedGroups(userDetail.groups?.map((group: { id: number }) => group.id) || []);
 
-        const groupRulesObj = userDetail.groups?.reduce((acc: { [key: string]: number[] }, group: { id: number; rules: { [key: string]: number } }) => {
-          acc[group.id] = Object.values(group.rules) || [];
+        const groupRulesObj = userDetail.groups?.reduce((acc: { [key: string]: { [key: string]: number[] } }, group: { id: number; rules: { [key: string]: number[] } }) => {
+          acc[group.id] = group.rules || {};
           return acc;
         }, {});
         setGroupRules(groupRulesObj || {});
@@ -119,7 +119,10 @@ const UserModal = forwardRef<ModalRef, ModalProps>(({ onSuccess, treeData }, ref
       const { zoneinfo, ...restData } = formData;
       const payload = {
         ...restData,
-        rules: Object.values(groupRules).flat(2),
+        rules: Object.values(groupRules)
+          .filter(group => group && typeof group === 'object' && Object.keys(group).length > 0)
+          .flatMap(group => Object.values(group))
+          .flat(),
         timezone: zoneinfo, 
       };
       if (type === 'add') {

@@ -27,8 +27,6 @@ def general_embed(knowledge_document_id_list, username, domain="domain.com"):
 @shared_task
 def retrain_all(knowledge_base_id, username, domain="domain.com"):
     logger.info("Start retraining")
-    knowledge_base = KnowledgeBase.objects.get(id=knowledge_base_id)
-    knowledge_base.recreate_es_index()
     document_list = KnowledgeDocument.objects.filter(knowledge_base_id=knowledge_base_id)
     document_list.update(train_status=DocumentStatus.CHUNKING)
     general_embed_by_document_list(document_list, username=username, domain=domain)
@@ -195,15 +193,13 @@ def sync_web_page_knowledge(web_page_knowledge_id):
     """
     web_page = WebPageKnowledge.objects.filter(id=web_page_knowledge_id).first()
     if not web_page:
-        return {"result": False, "message": "Web page knowledge not found."}
-
-    knowledge_base = web_page.knowledge_document.knowledge_base
-    knowledge_base.recreate_es_index()
+        logger.error(f"Web page knowledge {web_page_knowledge_id} not found.")
+        return
     document_list = [web_page.knowledge_document]
     web_page.knowledge_document.train_status = DocumentStatus.CHUNKING
-    web_page.knowedge_document.save()
+    web_page.knowledge_document.save()
     general_embed_by_document_list(
-        document_list, username=web_page.knowedge_document.created_by, domain=web_page.knowedge_document.domain
+        document_list, username=web_page.knowledge_document.created_by, domain=web_page.knowledge_document.domain
     )
 
 

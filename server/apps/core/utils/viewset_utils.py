@@ -90,6 +90,7 @@ class AuthViewSet(MaintainerViewSet):
 
             if getattr(user, "is_superuser", False):
                 return self._list(queryset.order_by(self.ORDERING_FIELD))
+            current_team = request.COOKIES.get("current_team", None)
             query = Q()
             instance_ids = []
             if hasattr(self, "permission_key"):
@@ -98,8 +99,13 @@ class AuthViewSet(MaintainerViewSet):
 
                 if guest_rules:
                     guest_instance_ids = self.filter_rules(guest_rules)
-                    query |= Q(id__in=guest_instance_ids)
-            group_query = self._filter_by_user_groups(user, queryset)
+                    if guest_instance_ids:
+                        query |= Q(id__in=guest_instance_ids)
+                    else:
+                        guest_group = [i for i in user.group_list if i["name"] == "OpsPilotGuest"]
+                        if guest_group:
+                            current_team += f",{guest_group[0]['id']}"
+            group_query = self._filter_by_user_groups(queryset, current_team)
             if instance_ids:
                 queryset = queryset.filter(id__in=instance_ids)
             queryset = queryset.filter(query | group_query)
@@ -143,25 +149,16 @@ class AuthViewSet(MaintainerViewSet):
             logger.error(f"Error getting permission rules: {e}")
             return {}, {}
 
-    def _filter_by_user_groups(self, user, queryset):
+    def _filter_by_user_groups(self, queryset, current_team):
         """根据用户组过滤查询集"""
         query = Q()
 
         try:
-            group_list = getattr(user, "group_list", [])
-            if not isinstance(group_list, list):
+            if not current_team:
                 return query
-
-            team_ids = []
-            for group in group_list:
-                if isinstance(group, dict) and "id" in group:
-                    team_ids.append(group["id"])
-
-            if not team_ids:
-                return query
-
-            for team_id in team_ids:
-                query |= Q(team__contains=team_id)
+            teams = [i.strip() for i in current_team.split(",") if i.strip()]
+            for i in teams:
+                query |= Q(team__contains=int(i))
 
             return query
 

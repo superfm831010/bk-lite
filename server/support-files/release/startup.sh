@@ -34,7 +34,7 @@ init_alerts() {
     echo "告警系统资源初始化..."
     python manage.py init_alert_sources || true
     python manage.py init_alert_levels || true
-    python manage.py create_builtin_rules || true
+    python manage.py create_builtin_rules --update || true
 }
 
 init_opspilot() {

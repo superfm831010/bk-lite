@@ -292,6 +292,70 @@ export const useKnowledgeApi = () => {
     });
   };
 
+  const fetchKnowledgeGraphDetails = async (knowledgeBaseId: number): Promise<{
+    graph_id?: number;
+    is_exists: boolean;
+    graph?: any;
+  }> => {
+    return get('/opspilot/knowledge_mgmt/knowledge_graph/get_details/', {
+      params: {
+        knowledge_base_id: knowledgeBaseId,
+      },
+    });
+  };
+
+  const fetchKnowledgeGraphById = async (graphId: number): Promise<{
+    knowledge_base: number;
+    llm_model: number;
+    rerank_model: number;
+    embed_model: number;
+    rebuild_community: boolean;
+    doc_list: Array<{
+      id: number;
+      source: string;
+    }>;
+  }> => {
+    return get(`/opspilot/knowledge_mgmt/knowledge_graph/${graphId}/`);
+  };
+
+  const saveKnowledgeGraph = async (payload: {
+    knowledge_base: number;
+    llm_model: number;
+    rerank_model: number;
+    embed_model: number;
+    doc_list: Array<{
+      id: number;
+      source: string;
+    }>;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/knowledge_graph/', payload);
+  };
+
+  /**
+   * Updates existing knowledge graph configuration.
+   */
+  const updateKnowledgeGraph = async (graphId: number, payload: {
+    knowledge_base: number;
+    llm_model: number;
+    rerank_model: number;
+    embed_model: number;
+    doc_list: Array<{
+      id: number;
+      source: string;
+    }>;
+  }): Promise<any> => {
+    return patch(`/opspilot/knowledge_mgmt/knowledge_graph/${graphId}/`, payload);
+  };
+
+  /**
+   * Rebuilds knowledge graph community.
+   */
+  const rebuildKnowledgeGraphCommunity = async (knowledgeBaseId: number): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/knowledge_graph/rebuild_graph_community/', {
+      knowledge_base_id: knowledgeBaseId,
+    });
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -326,5 +390,10 @@ export const useKnowledgeApi = () => {
     createQAPairs,
     fetchQAPairDetails,
     fetchChunkQAPairs,
+    fetchKnowledgeGraphDetails,
+    fetchKnowledgeGraphById,
+    saveKnowledgeGraph,
+    updateKnowledgeGraph,
+    rebuildKnowledgeGraphCommunity,
   };
 };

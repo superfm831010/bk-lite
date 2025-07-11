@@ -2,6 +2,7 @@
   "common": {
     "edit": "Edit",
     "delete": "Delete",
+    "detail": "Detail",
     "add": "Add",
     "set": "Set",
     "search": "Search",
@@ -19,6 +20,8 @@
     "batchDelete": "Batch Delete",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "retry": "Retry",
+    "initializeFailed": "Graph initialization failed",
     "uploadText": "Click or drag files here to upload",
     "supports": "Supports",
     "logout": "Logout",

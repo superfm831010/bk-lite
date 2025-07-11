@@ -11,13 +11,14 @@ import json
 
 from apps.alerts.constants import AlertStatus
 from apps.alerts.models import Alert
+from apps.alerts.utils.util import generate_instance_fingerprint
 from apps.core.logger import alert_logger as logger
 
 
 @dataclass
 class AlertRule:
     name: str
-    condition: Callable[[pd.DataFrame], Tuple[bool, List[str]]]
+    condition: Callable[[pd.DataFrame], Tuple[bool, List[List[str]]]]  # 修正类型注解
     aggregation: Dict[str, List[str]]
     description: str
     rule_id: str
@@ -438,9 +439,6 @@ class RuleEngine:
         Returns:
             按实例指纹分组的事件字典
         """
-        if events.empty:
-            return {}
-
         # 为每个事件生成实例指纹
         events = events.copy()
 
@@ -454,7 +452,7 @@ class RuleEngine:
 
         # 生成实例指纹
         events['instance_fingerprint'] = events.apply(
-            lambda row: self.generate_instance_fingerprint(row.to_dict()),
+            lambda row: generate_instance_fingerprint(row.to_dict()),
             axis=1
         )
 
@@ -475,43 +473,11 @@ class RuleEngine:
         logger.info(f"Grouped {len(events)} events into {len(grouped_events)} instances")
         return grouped_events
 
-    def generate_instance_fingerprint(self, event_data: Dict[str, Any]) -> str:
-        """
-        生成实例指纹，用于标识唯一实例
-
-        Args:
-            event_data: 事件数据
-
-        Returns:
-            32位MD5哈希字符串作为实例指纹
-        """
-        fingerprint_data = {}
-
-        for field in self.INSTANCE_GROUP_FIELDS:
-            value = event_data.get(field)
-
-            # 处理None值和空字符串
-            if value is not None and str(value).strip():
-                fingerprint_data[field] = str(value).strip()
-            else:
-                # 为空值提供默认值，确保指纹的一致性
-                fingerprint_data[field] = 'unknown'
-                logger.debug(f"Field '{field}' is empty or None, using 'unknown' as default")
-
-        # 确保字段顺序一致
-        sorted_data = json.dumps(fingerprint_data, sort_keys=True, ensure_ascii=False)
-        fingerprint = hashlib.md5(sorted_data.encode('utf-8')).hexdigest()
-
-        return fingerprint
-
-    def _check_instance_alert_status(self, instance_events: pd.DataFrame,
-                                     instance_fingerprint: str,
-                                     rule: AlertRule) -> Tuple[bool, List[Dict], str]:
+    def _check_instance_alert_status(self, instance_fingerprint: str, rule: AlertRule) -> Tuple[bool, List[Dict], str]:
         """
         检查实例是否已有活跃告警
 
         Args:
-            instance_events: 实例事件数据
             instance_fingerprint: 实例指纹
             rule: 告警规则
 
@@ -523,6 +489,7 @@ class RuleEngine:
             # 'rule_name': rule.name,
             'status__in': AlertStatus.ACTIVATE_STATUS,
             'fingerprint': instance_fingerprint,  # 使用实例指纹查询
+            'rule_id': rule.rule_id,  # 使用规则ID查询
         }
 
         # 添加时间窗口限制
@@ -581,8 +548,8 @@ class RuleEngine:
 
                     # 检查是否需要创建新告警（基于实例指纹）
                     should_create_new, related_alerts, operation_type = self._check_instance_alert_status(
-                        instance_events, instance_fingerprint, rule
-                    )
+                        instance_fingerprint, rule
+                        )
 
                     results[rule_id] = {
                         'triggered': True,
@@ -611,18 +578,6 @@ class RuleEngine:
         """
         if events.empty:
             return {}
-
-        # 修复时间处理逻辑
-        events = events.copy()
-
-        # 确保 received_at 是 datetime 类型，而不是 timedelta
-        if 'received_at' in events.columns:
-            events['received_at'] = pd.to_datetime(events['received_at'])
-            # 只保留窗口内的数据
-            window_end = events['received_at'].max()
-            events = events[events['received_at'] >= (window_end - self.window_size)]
-        else:
-            logger.warning("'received_at' column not found in events DataFrame")
 
         # 确保存在alert_source字段
         events['alert_source'] = events['source__name']

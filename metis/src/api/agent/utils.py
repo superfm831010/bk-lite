@@ -52,7 +52,8 @@ async def stream_response(workflow, body, res):
                     "tool_name": chunk[0].name,
                     "tool_result": chunk[0].content
                 }
-                delta_content = f"执行工具: {tool_info['tool_name']}\n工具执行结果: {tool_info['tool_result']}\n"
+                # delta_content = f"执行工具: {tool_info['tool_name']}\n工具执行结果: {tool_info['tool_result']}\n"
+                delta_content = f"执行工具: {tool_info['tool_name']}\n"
             else:  # AIMessageChunk
                 delta_content = content
 

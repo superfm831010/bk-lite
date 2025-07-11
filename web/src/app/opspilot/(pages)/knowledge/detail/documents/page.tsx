@@ -14,6 +14,7 @@ import { TableData, QAPairData } from '@/app/opspilot/types/knowledge'
 import styles from '@/app/opspilot/styles/common.module.scss'
 import ActionButtons from '@/app/opspilot/components/knowledge/actionButtons';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
+import KnowledgeGraphPage from '@/app/opspilot/components/knowledge/knowledgeGraphPage';
 
 const { confirm } = Modal;
 const { TabPane } = Tabs;
@@ -219,7 +220,7 @@ const DocumentsPage: React.FC = () => {
         <a
           href="#"
           style={{ color: '#155aef' }}
-          onClick={() => router.push(`/opspilot/knowledge/detail/documents/qapairResult?id=${id}&name=${name}&desc=${desc}&qaPairId=${record.id}`)}
+          onClick={() => router.push(`/opspilot/knowledge/detail/documents/qapair/result?id=${id}&name=${name}&desc=${desc}&qaPairId=${record.id}`)}
         >
           {text}
         </a>
@@ -474,8 +475,10 @@ const DocumentsPage: React.FC = () => {
   }, [pagination.current, pagination.pageSize, searchText, activeTabKey]);
 
   useEffect(() => {
-    fetchData(searchText);
-  }, [fetchData, id]);
+    if (mainTabKey === 'source_files') {
+      fetchData(searchText);
+    }
+  }, [id, sourceFileType]);
 
   useEffect(() => {
     if (mainTabKey === 'qa_pairs') {
@@ -497,8 +500,10 @@ const DocumentsPage: React.FC = () => {
     setMainTabKey(key);
     if (key === 'source_files') {
       setActiveTabKey(sourceFileType);
-    } else {
+    } else if (key === 'qa_pairs') {
       setActiveTabKey('qa_pairs');
+    } else if (key === 'knowledge_graph') {
+      setActiveTabKey('knowledge_graph');
     }
     setPagination({
       current: 1,
@@ -520,10 +525,8 @@ const DocumentsPage: React.FC = () => {
 
   const handleAddClick = () => {
     if (mainTabKey === 'qa_pairs') {
-      // If QA pairs, directly navigate to the QA pair addition page
       router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_pairs&id=${id}&name=${name}&desc=${desc}`);
     } else {
-      // If source files, show a modal to select specific type
       setIsModalVisible(true);
     }
   };
@@ -593,6 +596,7 @@ const DocumentsPage: React.FC = () => {
       <Tabs activeKey={mainTabKey} onChange={handleMainTabChange}>
         <TabPane tab={t('knowledge.sourceFiles')} key='source_files' />
         <TabPane tab={t('knowledge.qaPairs.title')} key='qa_pairs' />
+        <TabPane tab={t('knowledge.knowledgeGraph.title')} key='knowledge_graph' />
       </Tabs>
       <div className='nav-box flex justify-between mb-[20px]'>
         <div className='left-side'>
@@ -608,54 +612,60 @@ const DocumentsPage: React.FC = () => {
           )}
         </div>
         <div className='right-side flex items-center'>
-          <Search
-            placeholder={`${t('common.search')}...`}
-            allowClear
-            onSearch={handleSearch}
-            enterButton
-            className="w-60 mr-[8px]"
-          />
-          <Tooltip className='mr-[8px]' title={t('common.refresh')}>
-            <Button icon={<SyncOutlined />} onClick={() => fetchData()} />
-          </Tooltip>
-          <PermissionWrapper 
-            requiredPermissions={['Add']} 
-            instPermissions={knowledgeBasePermissions}>
-            <Button
-              type='primary'
-              className='mr-[8px]'
-              icon={<PlusOutlined />}
-              onClick={handleAddClick}
-            >
-              {t('common.add')}
-            </Button>
-          </PermissionWrapper>
-          {activeTabKey !== 'qa_pairs' && (
-            <Dropdown overlay={batchOperationMenu}>
-              <Button>
-                <Space>
-                  {t('common.batchOperation')}
-                  <DownOutlined />
-                </Space>
-              </Button>
-            </Dropdown>
-          )}
-          {activeTabKey === 'qa_pairs' && (
-            <PermissionWrapper 
-              requiredPermissions={['Delete']} 
-              instPermissions={knowledgeBasePermissions}>
-              <Button
-                danger
-                icon={<DeleteOutlined />}
-                onClick={handleBatchDeleteQAPairs}
-              >
-                {t('common.batchDelete')}{selectedQAPairKeys.length > 0 && ` (${selectedQAPairKeys.length})`}
-              </Button>
-            </PermissionWrapper>
+          {mainTabKey !== 'knowledge_graph' && (
+            <>
+              <Search
+                placeholder={`${t('common.search')}...`}
+                allowClear
+                onSearch={handleSearch}
+                enterButton
+                className="w-60 mr-[8px]"
+              />
+              <Tooltip className='mr-[8px]' title={t('common.refresh')}>
+                <Button icon={<SyncOutlined />} onClick={() => fetchData()} />
+              </Tooltip>
+              <PermissionWrapper 
+                requiredPermissions={['Add']} 
+                instPermissions={knowledgeBasePermissions}>
+                <Button
+                  type='primary'
+                  className='mr-[8px]'
+                  icon={<PlusOutlined />}
+                  onClick={handleAddClick}
+                >
+                  {t('common.add')}
+                </Button>
+              </PermissionWrapper>
+              {activeTabKey !== 'qa_pairs' && (
+                <Dropdown overlay={batchOperationMenu}>
+                  <Button>
+                    <Space>
+                      {t('common.batchOperation')}
+                      <DownOutlined />
+                    </Space>
+                  </Button>
+                </Dropdown>
+              )}
+              {activeTabKey === 'qa_pairs' && (
+                <PermissionWrapper 
+                  requiredPermissions={['Delete']} 
+                  instPermissions={knowledgeBasePermissions}>
+                  <Button
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={handleBatchDeleteQAPairs}
+                  >
+                    {t('common.batchDelete')}{selectedQAPairKeys.length > 0 && ` (${selectedQAPairKeys.length})`}
+                  </Button>
+                </PermissionWrapper>
+              )}
+            </>
           )}
         </div>
       </div>
-      {activeTabKey === 'qa_pairs' ? (
+      {activeTabKey === 'knowledge_graph' ? (
+        <KnowledgeGraphPage knowledgeBaseId={id} />
+      ) : activeTabKey === 'qa_pairs' ? (
         <CustomTable
           rowKey="id"
           rowSelection={qaPairRowSelection}

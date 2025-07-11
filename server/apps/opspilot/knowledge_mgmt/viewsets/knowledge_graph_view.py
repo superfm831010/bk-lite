@@ -25,13 +25,16 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
         knowledge_base_id = request.query_params.get("knowledge_base_id")
         obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base_id).first()
         if not obj:
-            return JsonResponse({"result": False})
-        index_name = obj.knowledge_base.knowledge_index_name()
-        res = GraphUtils.get_graph(index_name)
-        return JsonResponse({"result": True, "data": res})
+            return JsonResponse({"result": True, "data": {"is_exists": False}})
+        res = GraphUtils.get_graph(obj.id)
+        if not res["result"]:
+            return JsonResponse(res)
+        return_data = {"graph": res["data"], "graph_id": obj.id, "is_exists": True}
+        return JsonResponse({"result": True, "data": return_data})
 
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
+    @action(methods=["POST"], detail=False)
+    def delete_graph(self, request):
+        instance = KnowledgeGraph.objects.get(knowledge_base_id=request.data.get("knowledge_base_id"))
         try:
             GraphUtils.delete_graph(instance)
         except Exception as e:
@@ -40,11 +43,15 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
-    def delete_graph_chunk(self, request):
-        params = request.data
-        chunk_ids = params["chunk_ids"]
+    def rebuild_graph_community(self, request):
+        knowledge_base_id = request.data.get("knowledge_base_id")
+        graph_obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base_id).first()
+        if not graph_obj:
+            return JsonResponse({"result": False, "message": "Knowledge graph not found."}, status=404)
         try:
-            GraphUtils.delete_graph_chunk(chunk_ids)
+            res = GraphUtils.rebuild_graph_community(graph_obj)
+            if not res["result"]:
+                return JsonResponse({"result": False, "message": res["message"]})
+            return JsonResponse({"result": True})
         except Exception as e:
-            return JsonResponse({"result": False, "message": str(e)}, status=500)
-        return JsonResponse({"result": True})
+            return JsonResponse({"result": False, "message": str(e)})

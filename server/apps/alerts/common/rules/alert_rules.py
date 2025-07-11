@@ -51,6 +51,7 @@ class ConditionConfig(BaseModel):
     target_field_value: Union[str, int, float, bool, None] = None  # 目标字段的期望值
     target_value_field: str = None  # 目标值字段
     target_value: Union[str, int, float, bool, None] = None  # 目标值，用于特定条件类型的期望值比较
+    session_close: dict = {}
 
     @validator('operator')
     def validate_operator(cls, v):
@@ -66,7 +67,7 @@ class ConditionConfig(BaseModel):
 class AlertRuleConfig(BaseModel):
     name: str
     rule_id: str
-    description: str
+    description: dict
     severity: SeverityLevel = SeverityLevel.WARNING
     is_active: bool = True
     title: str = None  # 自定义告警标题，支持变量替换
@@ -76,6 +77,12 @@ class AlertRuleConfig(BaseModel):
 
 class AlertRulesConfig(BaseModel):
     window_size: str = "10min"
+    window_type: str = "sliding"  # 新增：窗口类型
+    alignment: str = "natural"  # 新增：对齐方式
+    max_window_size: str = "1h"  # 新增：最大窗口大小
+    session_timeout: str = "30m"  # 新增：会话超时时间
+    session_key_fields: List[str] = ['item', 'resource_id', 'resource_type', 'alert_source',
+                                     'rule_id']  # 会话键字段和event指纹一致
     rules: List[AlertRuleConfig]
 
 
