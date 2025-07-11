@@ -14,11 +14,6 @@ ignore_older = 86400  # 忽略24小时以前的日志，可按需调整
 type = "remap"
 inputs = ["file_{{ instance_id }}"]
 source = '''
-.file = .file
-.host = .host
-.message = .message
-.source_type = .source_type
-.timestamp = .timestamp
 .collect_type = "file"
 .instance_id = "{{ instance_id }}"
 '''

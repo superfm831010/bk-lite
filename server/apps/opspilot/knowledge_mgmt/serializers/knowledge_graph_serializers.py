@@ -21,6 +21,5 @@ class KnowledgeGraphSerializer(AuthSerializer):
         instance = super().update(instance, validated_data)
         res = GraphUtils.update_graph(instance, old_doc_list)
         if not res["result"]:
-            instance.delete()
             raise Exception(res["message"])
         return instance

@@ -56,6 +56,7 @@ const GenericModifyModal: React.FC<GenericModifyModalProps> = ({ visible, onCanc
     >
       <CommonForm 
         form={form} 
+        initialValues={initialValues}
         formType={formType} 
         visible={visible} 
       />

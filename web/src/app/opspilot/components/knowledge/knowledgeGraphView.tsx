@@ -6,16 +6,16 @@ import { GraphNode, GraphEdge, GraphData, KnowledgeGraphViewProps } from '@/app/
 
 const generateMockData = (): GraphData => {
   const nodes: GraphNode[] = [
-    { id: '1', label: 'DevOps', type: 'concept', category: 'methodology' },
-    { id: '2', label: 'CI/CD', type: 'concept', category: 'process' },
-    { id: '3', label: 'Jenkins', type: 'entity', category: 'tool' },
-    { id: '4', label: 'Docker', type: 'entity', category: 'tool' },
-    { id: '5', label: 'Kubernetes', type: 'entity', category: 'platform' },
-    { id: '6', label: '监控指南', type: 'document', category: 'documentation' },
-    { id: '7', label: '部署流程', type: 'document', category: 'process' },
-    { id: '8', label: '微服务', type: 'concept', category: 'architecture' },
-    { id: '9', label: 'API网关', type: 'entity', category: 'component' },
-    { id: '10', label: '日志系统', type: 'entity', category: 'monitoring' },
+    { id: '1', label: 'DevOps工作流', labels: ['Episodic'] },
+    { id: '2', label: 'CI/CD流程', labels: ['Episodic'] },
+    { id: '3', label: 'Jenkins服务器', labels: ['Entity'] },
+    { id: '4', label: 'Docker容器', labels: ['Entity']},
+    { id: '5', label: 'Kubernetes集群', labels: ['Entity',]},
+    { id: '6', label: '运维团队', labels: ['Group'] },
+    { id: '7', label: '开发团队', labels: ['Group'] },
+    { id: '8', label: '微服务架构', labels: ['Episodic'] },
+    { id: '9', label: 'API网关', labels: ['Entity'] },
+    { id: '10', label: '监控系统', labels: ['Entity'] },
   ];
 
   const edges: GraphEdge[] = [
@@ -49,24 +49,30 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
 
   const graphData = useMockData || (!data.nodes.length && !loading) ? generateMockData() : data;
 
+  /**
+   * Get node style configuration based on label type
+   * - Episodic: Purple color scheme
+   * - Entity: Orange color scheme  
+   * - Group: Blue color scheme
+   */
   const getNodeStyle = (type: string) => {
     switch (type) {
-      case 'concept':
+      case 'Episodic':
         return {
-          fill: '#5B8FF9',
-          stroke: '#3A7FE8',
+          fill: '#B37FEB',
+          stroke: '#9254DE',
           size: 40,
         };
-      case 'entity':
+      case 'Entity':
         return {
-          fill: '#61DDAA',
-          stroke: '#4CAF7A',
+          fill: '#FFA940',
+          stroke: '#FA8C16',
           size: 40,
         };
-      case 'document':
+      case 'Community':
         return {
-          fill: '#FFB84D',
-          stroke: '#FF9900',
+          fill: '#69C0FF',
+          stroke: '#1890FF',
           size: 40,
         };
       default:
@@ -85,11 +91,21 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
           stroke: '#999',
           lineDash: [4, 4],
           lineWidth: 2,
+          endArrow: {
+            path: 'M 0,0 L 8,4 L 8,-4 Z',
+            fill: '#999',
+            stroke: '#999',
+          },
         };
       default:
         return {
           stroke: '#e2e2e2',
           lineWidth: 2,
+          endArrow: {
+            path: 'M 0,0 L 8,4 L 8,-4 Z',
+            fill: '#e2e2e2',
+            stroke: '#e2e2e2',
+          },
         };
     }
   };
@@ -103,8 +119,6 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
     setInitError(null);
 
     try {
-      console.log('Starting graph initialization...');
-      
       const container = containerRef.current;
       const width = container.offsetWidth || 800;
 
@@ -115,15 +129,30 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
         throw new Error('G6 Graph constructor not found');
       }
 
+      const truncateText = (text: string, maxLength: number = 3) => {
+        if (!text) return '';
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+      };
+
       const processedData = {
         nodes: graphData.nodes.map(node => {
-          const style = getNodeStyle(node.type);
+          // Use first label as node type for styling
+          const nodeType = node.labels && node.labels.length > 0 ? node.labels[0] : 'default';
+          const style = getNodeStyle(nodeType);
+          const displayLabel = truncateText(node.label || node.name || '', 3);
+          
           return {
             id: node.id,
-            label: node.label,
-            type: node.type,
-            category: node.category,
-            size: style.size,
+            label: displayLabel,
+            labels: node.labels,
+            // Include all original node data for click handling
+            name: node.name,
+            uuid: node.uuid,
+            summary: node.summary,
+            node_id: node.node_id,
+            group_id: node.group_id,
+            fact: node.fact,
+            size: 60, // Keep consistent with defaultNode
             style: {
               fill: style.fill,
               stroke: style.stroke,
@@ -143,11 +172,13 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
               stroke: style.stroke,
               lineWidth: style.lineWidth,
               ...(style.lineDash && { lineDash: style.lineDash }),
+              endArrow: style.endArrow,
             },
           };
         }),
       };
 
+      // Initialize G6 Graph with TypeScript assertion for API compatibility
       const graph = new G6.Graph({
         container: container,
         width,
@@ -155,26 +186,46 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
         layout: {
           type: 'force',
           preventOverlap: true,
-          nodeSize: 40,
-          linkDistance: 150,
-          nodeStrength: -100,
+          nodeSize: 60, // Update to match actual node size
+          linkDistance: 180, // Increase link distance to give nodes more space
+          nodeStrength: -150, // Enhance node repulsion to avoid overlap
           edgeStrength: 0.8,
           gravity: 0.1,
         },
         defaultNode: {
           type: 'circle',
+          size: 60, // Increase node size to provide more space for text
           labelCfg: {
-            position: 'bottom',
-            offset: 5,
+            position: 'center',
             style: {
-              fontSize: 12,
-              fill: '#666',
+              fontSize: 11,
+              fill: '#333', // Change to dark gray for better readability
+              fontWeight: '500', // Slightly reduce font weight
+              textAlign: 'center',
+              textBaseline: 'middle',
+              wordWrap: true, // Enable text wrapping
+              wordWrapWidth: 50, // Set wrap width
             },
           },
           style: {
             lineWidth: 2,
             stroke: '#5B8FF9',
             fill: '#C6E5FF',
+          },
+          stateStyles: {
+            hover: {
+              lineWidth: 4,
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowOffsetY: 0,
+            },
+            highlight: {
+              lineWidth: 3,
+              opacity: 1,
+            },
+            inactive: {
+              opacity: 0.3,
+            },
           },
         },
         defaultEdge: {
@@ -189,6 +240,20 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
           style: {
             stroke: '#e2e2e2',
             lineWidth: 2,
+            endArrow: {
+              path: 'M 0,0 L 8,4 L 8,-4 Z',
+              fill: '#e2e2e2',
+              stroke: '#e2e2e2',
+            },
+          },
+          stateStyles: {
+            highlight: {
+              lineWidth: 3,
+              opacity: 1,
+            },
+            inactive: {
+              opacity: 0.2,
+            },
           },
         },
         modes: {
@@ -203,6 +268,10 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
         fitViewPadding: 20,
       } as any);
 
+      // Bind data and render graph
+      (graph as any).data(processedData);
+      (graph as any).render();
+
       if (onNodeClick) {
         graph.on('node:click', (event: any) => {
           try {
@@ -212,8 +281,13 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
               onNodeClick({
                 id: model.id as string,
                 label: model.label as string,
-                type: model.type as 'concept' | 'entity' | 'document',
-                category: model.category as string,
+                labels: model.labels as string[],
+                name: model.name as string,
+                uuid: model.uuid as string,
+                summary: model.summary as string,
+                node_id: model.node_id as number,
+                group_id: model.group_id as string,
+                fact: model.fact as string,
               });
             }
           } catch (error) {
@@ -242,13 +316,112 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
         });
       }
 
-      (graph as any).data(processedData);
-      graph.render();
+      /**
+       * Enhanced hover effect with dynamic shadow colors
+       * - Current node: 4px border + matching shadow color
+       * - Related nodes: Keep original colors with thicker border  
+       * - Unrelated nodes: Reduced opacity
+       */
+      graph.on('node:mouseenter', (event: any) => {
+        try {
+          const node = event.item;
+          const nodeModel = node.getModel();
+          const nodeId = nodeModel.id;
+          
+          // Set dynamic shadow color based on node's original stroke color
+          const shadowColor = nodeModel.style.stroke || '#9254DE';
+          
+          (graph as any).updateItem(node, {
+            style: {
+              ...nodeModel.style,
+              lineWidth: 4,
+              shadowColor: shadowColor,
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowOffsetY: 0,
+            },
+          });
+          
+          const edges = (graph as any).getEdges();
+          const nodes = (graph as any).getNodes();
+          
+          // Find related edges and nodes
+          const relatedEdges: any[] = [];
+          const relatedNodeIds = new Set([nodeId]);
+          
+          edges.forEach((edge: any) => {
+            const edgeModel = edge.getModel();
+            if (edgeModel.source === nodeId || edgeModel.target === nodeId) {
+              relatedEdges.push(edge);
+              relatedNodeIds.add(edgeModel.source);
+              relatedNodeIds.add(edgeModel.target);
+            }
+          });
+          
+          // Update edge states
+          edges.forEach((edge: any) => {
+            if (relatedEdges.includes(edge)) {
+              (graph as any).setItemState(edge, 'highlight', true);
+            } else {
+              (graph as any).setItemState(edge, 'inactive', true);
+            }
+          });
+          
+          // Update node states - keep original colors for related nodes
+          nodes.forEach((n: any) => {
+            const nModel = n.getModel();
+            if (nModel.id !== nodeId) {
+              if (relatedNodeIds.has(nModel.id)) {
+                // Related nodes: preserve original colors, only increase border width
+                (graph as any).updateItem(n, {
+                  style: {
+                    ...nModel.style,
+                    lineWidth: 3,
+                    opacity: 1,
+                  },
+                });
+              } else {
+                (graph as any).setItemState(n, 'inactive', true);
+              }
+            }
+          });
+        } catch (error) {
+          console.warn('Error handling node mouseenter:', error);
+        }
+      });
+
+      // Reset all styles when mouse leaves node
+      graph.on('node:mouseleave', () => {
+        try {
+          const nodes = (graph as any).getNodes();
+          const edges = (graph as any).getEdges();
+          
+          nodes.forEach((node: any) => {
+            const nodeModel = node.getModel();
+            (graph as any).clearItemStates(node);
+            (graph as any).updateItem(node, {
+              style: {
+                ...nodeModel.style,
+                lineWidth: 2,
+                shadowColor: undefined,
+                shadowBlur: undefined,
+                shadowOffsetX: undefined,
+                shadowOffsetY: undefined,
+                opacity: 1,
+              },
+            });
+          });
+          
+          edges.forEach((edge: any) => {
+            (graph as any).clearItemStates(edge);
+          });
+        } catch (error) {
+          console.warn('Error handling node mouseleave:', error);
+        }
+      });
       
       graphRef.current = graph;
       
-      console.log('Graph initialization completed successfully');
-
     } catch (error) {
       console.error('Failed to create G6 graph:', error);
       setInitError(error instanceof Error ? error.message : 'Unknown error occurred');

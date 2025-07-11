@@ -25,7 +25,7 @@ class AlertSourceAdapter(ABC):
         self.secret = secret
         self.events = events
         self.mapping = self.alert_source.config.get("event_fields_mapping", {})
-        self.unique_fields = ["title", "start_time"]
+        self.unique_fields = ["title"]
         self.info_level, self.levels = self.get_event_level()  # 默认级别为最低级别
 
     @staticmethod
@@ -78,7 +78,15 @@ class AlertSourceAdapter(ABC):
 
             result[key] = _value
 
+        self.add_start_time(result)
+
         return result
+
+    @staticmethod
+    def add_start_time(data):
+        if "start_time" not in data:
+            # 如果没有开始时间，默认使用当前时间
+            data["start_time"] = timezone.now()
 
     def create_events(self, add_events):
         """将原始告警数据转换为Event对象"""

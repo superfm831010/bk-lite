@@ -14,7 +14,8 @@ import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import useFetchConfigData from '@/app/opspilot/hooks/useFetchConfigData';
 import Icon from '@/components/icon';
 import KnowledgeGraphView from '@/app/opspilot/components/knowledge/knowledgeGraphView';
-import { GraphData, GraphDataItem, TestKnowledgeResponse } from '@/app/opspilot/types/knowledge';
+import NodeDetailDrawer from '@/app/opspilot/components/knowledge/NodeDetailDrawer';
+import { GraphData, TestKnowledgeResponse, GraphNode } from '@/app/opspilot/types/knowledge';
 
 const { TextArea } = Input;
 
@@ -29,6 +30,8 @@ const TestingPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [applyLoading, setApplyLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('docs');
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [nodeDetailVisible, setNodeDetailVisible] = useState(false);
 
   const {
     drawerVisible,
@@ -37,62 +40,62 @@ const TestingPage: React.FC = () => {
     hideDrawer,
   } = useContentDrawer();
 
-  const transformGraphData = (graphData: GraphDataItem[]): GraphData => {
+  const transformGraphData = (graphData: any): GraphData => {
     if (!graphData || !Array.isArray(graphData)) {
       return { nodes: [], edges: [] };
     }
 
-    const nodes: any[] = [];
+    const nodesMap = new Map();
     const edges: any[] = [];
-    const nodeMap = new Map();
 
-    graphData.forEach((item: GraphDataItem) => {
-      if (item.uuid && item.name && !nodeMap.has(item.uuid)) {
-        nodes.push({
-          id: item.uuid,
-          label: item.name,
-          type: 'document',
-          category: 'knowledge',
-        });
-        nodeMap.set(item.uuid, true);
+    graphData.forEach((relation: any, index: number) => {
+      const { source_node, target_node, fact, name } = relation;
+      
+      if (!source_node || !target_node) {
+        return;
       }
 
-      if (item.edges && Array.isArray(item.edges)) {
-        item.edges.forEach((edge) => {
-          if (edge.source && edge.source_name && !nodeMap.has(edge.source)) {
-            nodes.push({
-              id: edge.source,
-              label: edge.source_name,
-              type: 'entity',
-              category: 'related',
-            });
-            nodeMap.set(edge.source, true);
-          }
+      if (source_node.uuid && !nodesMap.has(source_node.uuid)) {
+        nodesMap.set(source_node.uuid, {
+          id: source_node.uuid,
+          label: source_node.name || `节点${source_node.uuid.slice(0, 8)}`,
+          type: 'entity',
+          labels: source_node.labels || [],
+          uuid: source_node.uuid,
+          name: source_node.name,
+          summary: source_node.summary
+        });
+      }
 
-          if (edge.target && edge.target_name && !nodeMap.has(edge.target)) {
-            nodes.push({
-              id: edge.target,
-              label: edge.target_name,
-              type: 'entity',
-              category: 'related',
-            });
-            nodeMap.set(edge.target, true);
-          }
+      if (target_node.uuid && !nodesMap.has(target_node.uuid)) {
+        nodesMap.set(target_node.uuid, {
+          id: target_node.uuid,
+          label: target_node.name || `节点${target_node.uuid.slice(0, 8)}`,
+          type: 'entity',
+          labels: target_node.labels || [],
+          uuid: target_node.uuid,
+          name: target_node.name,
+          summary: target_node.summary,
+        });
+      }
 
-          if (edge.source && edge.target) {
-            edges.push({
-              id: `${edge.source}-${edge.target}`,
-              source: edge.source,
-              target: edge.target,
-              label: edge.relation_type || '关联',
-              type: 'relation',
-            });
-          }
+      if (source_node.uuid && target_node.uuid) {
+        edges.push({
+          id: `edge-${index}`,
+          source: source_node.uuid,
+          target: target_node.uuid,
+          label: name,
+          type: 'relation',
+          relation_type: name,
+          fact: fact
         });
       }
     });
 
-    return { nodes, edges };
+    return {
+      nodes: Array.from(nodesMap.values()),
+      edges: edges
+    };
   };
 
   const getSegmentedOptions = () => {
@@ -209,6 +212,16 @@ const TestingPage: React.FC = () => {
     showDrawer(content);
   };
 
+  const handleNodeClick = (node: GraphNode) => {
+    setSelectedNode(node);
+    setNodeDetailVisible(true);
+  };
+
+  const handleCloseNodeDetail = () => {
+    setNodeDetailVisible(false);
+    setSelectedNode(null);
+  };
+
   const renderResults = () => {
     if (loading) {
       return (
@@ -283,7 +296,10 @@ const TestingPage: React.FC = () => {
 
     if (activeTab === 'graph_data') {
       return results.graph_data.length > 0 ? (
-        <KnowledgeGraphView data={transformGraphData(results.graph_data)} />
+        <KnowledgeGraphView 
+          data={transformGraphData(results.graph_data)} 
+          onNodeClick={handleNodeClick}
+        />
       ) : (
         <Empty description={t('common.noData')} />
       );
@@ -360,6 +376,12 @@ const TestingPage: React.FC = () => {
         visible={drawerVisible}
         onClose={hideDrawer}
         content={drawerContent}
+      />
+      
+      <NodeDetailDrawer
+        visible={nodeDetailVisible}
+        node={selectedNode}
+        onClose={handleCloseNodeDetail}
       />
     </Spin>
   );

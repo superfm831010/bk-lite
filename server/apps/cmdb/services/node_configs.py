@@ -426,13 +426,21 @@ class MongoDBParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "mongodb"
     plugin_name = "mongodb_info"
 
+
 class ApacheNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "apache"
     plugin_name = "apache_info"
 
+
 class ActiveMQNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "activemq"
     plugin_name = "activemq_info"
+
+
+class PgsqlNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "postgresql"
+    plugin_name = "pgsql_info"
+
 
 class NodeParamsFactory:
     """
