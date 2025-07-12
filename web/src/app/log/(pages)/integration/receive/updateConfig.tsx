@@ -59,8 +59,14 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
   }, [formData]);
 
   const formItems = useMemo(() => {
-    return configsInfo.formItems;
-  }, [configsInfo]);
+    return (
+      configsInfo.formItems ||
+      configsInfo.getFormItems({
+        rowId: formData.id,
+        ...configForm,
+      })
+    );
+  }, [configsInfo, configForm, formData]);
 
   useEffect(() => {
     if (configsInfo?.getDefaultForm && configForm && formData) {
