@@ -509,7 +509,7 @@ class SessionWindow(TimeInfo):
             return False
 
         # 使用多对多关系查询
-        return self.events.filter(events__in=events).exists()
+        return self.events.filter(event_id__in=list(events.values_list("event_id", flat=True))).exists()
 
     def extend_session(self, new_activity_time=None, events=[]):
         """
