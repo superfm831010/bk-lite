@@ -3,19 +3,20 @@ from apps.cmdb.services.model import ModelManage
 from apps.cmdb.services.classification import ClassificationManage
 from apps.cmdb.models.collect_model import CollectModels
 from apps.cmdb.services.instance import InstanceManage
+from apps.cmdb.constants import PERMISSION_MODEL,PERMISSION_INSTANCES,PERMISSION_TASK
 @nats_client.register
 def get_cmdb_module_data(module, child_module, page, page_size, group_id):
     """
         获取cmdb模块实例数据
     """
-    if module == "task":
+    if module == PERMISSION_TASK:
         # 计算分页
         start = (page - 1) * page_size
         end = page * page_size
         instances = CollectModels.objects.filter(model_id=child_module).values("id","name", "model_id")[start:end]
         count = instances.count()
         queryset= [{"id":i['id'], "name":f"{i['model_id']}_{i['name']}"} for i in instances]
-    elif module == "instance" or module == "model":
+    elif module == PERMISSION_INSTANCES or module == PERMISSION_MODEL:
         instances, count = InstanceManage.instance_list(
             user_groups=[group_id],  # 改为列表
             roles=[],  # 空列表
@@ -99,8 +100,8 @@ def get_cmdb_module_list():
             "children": item,
         })
     result = [
-        {"name": "instance","display_name": "Instance","children":cls_list},
-        {"name": "model", "display_name": "Model", "children":model_list},
-        {"name": "task","display_name": "Task","children":type_list},
+        {"name": PERMISSION_INSTANCES,"display_name": "Instance","children":cls_list},
+        {"name": PERMISSION_MODEL, "display_name": "Model", "children":model_list},
+        {"name": PERMISSION_TASK,"display_name": "Task","children":type_list},
     ]
     return result
