@@ -1,4 +1,4 @@
-Django==4.2.15
+Django==4.2.22
 django-split-settings==1.2.0
 python-dotenv==1.0.0
 daphne==4.0.0
