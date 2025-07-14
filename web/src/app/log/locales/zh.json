@@ -121,8 +121,8 @@
     "exclude": "排除",
     "group": "分组",
     "search": {
-      "area": "区域",
-      "table": "表格"
+      "searchPlaceHolder": "在此处输入您的搜索查询，然后按Enter",
+      "searchCriteria": "搜索条件"
     },
     "integration": {
       "interval": "间隔",
@@ -154,7 +154,11 @@
       "collector": "采集器",
       "command": "命令",
       "address": "地址",
-      "host": "主机"
+      "host": "主机",
+      "includeContainers": "指定的容器",
+      "excludeContainers": "忽略的容器",
+      "startPattern": "合并正则",
+      "containerPlaceholder": "请输入容器按回车键结束"
     }
   }
 }
