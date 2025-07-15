@@ -21,12 +21,11 @@ import {
 const { Search } = Input;
 
 const convertPermissionsForApi = (
-  moduleConfig: any,
-  isProvider: boolean = false,
-  subModule?: string
+  moduleConfig: any
 ): PermissionRuleItem[] => {
   const permissionArray: PermissionRuleItem[] = [];
-  const config = isProvider && subModule ? moduleConfig[subModule] : moduleConfig;
+  
+  const config = moduleConfig;
 
   if (!config) return permissionArray;
 
@@ -119,17 +118,32 @@ const convertApiDataToFormData = (
   };
 };
 
-const createDefaultPermissionRule = (modules: string[]): Record<string, any> => {
+const createDefaultPermissionRule = (modules: string[], moduleConfigs?: any[]): Record<string, any> => {
   const defaultPermissionRule: Record<string, any> = {};
 
   modules.forEach(module => {
-    if (module === 'provider') {
-      defaultPermissionRule.provider = {
-        llm_model: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-        embed_model: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-        rerank_model: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] },
-        ocr_model: { type: 'all', allPermissions: { view: true, operate: true }, specificData: [] }
+    const moduleConfig = moduleConfigs?.find(config => config.name === module);
+    
+    if (moduleConfig?.children && moduleConfig.children.length > 0) {
+      const buildDefaultNestedStructure = (children: any[]): Record<string, any> => {
+        const nestedStructure: Record<string, any> = {};
+        
+        children.forEach(child => {
+          if (!child.children || child.children.length === 0) {
+            nestedStructure[child.name] = {
+              type: 'all',
+              allPermissions: { view: true, operate: true },
+              specificData: []
+            };
+          } else {
+            nestedStructure[child.name] = buildDefaultNestedStructure(child.children);
+          }
+        });
+        
+        return nestedStructure;
       };
+      
+      defaultPermissionRule[module] = buildDefaultNestedStructure(moduleConfig.children);
     } else {
       defaultPermissionRule[module] = {
         type: 'all',
@@ -164,6 +178,7 @@ const DataManagement: React.FC = () => {
 
   const [supportedModules, setSupportedModules] = useState<string[]>([]);
   const [moduleConfigLoading, setModuleConfigLoading] = useState(false);
+  const [moduleConfigs, setModuleConfigs] = useState<any[]>([]);
 
   const {
     getGroupDataRule,
@@ -173,7 +188,6 @@ const DataManagement: React.FC = () => {
     getAppModules
   } = useRoleApi();
 
-  // Fetch app modules only when modal is opened
   const fetchAppModules = useCallback(async () => {
     if (!clientId || moduleConfigLoading) return;
 
@@ -182,9 +196,11 @@ const DataManagement: React.FC = () => {
       const modules = await getAppModules({ params: { app: clientId } });
       const moduleNames = buildModulesMap(modules);
       setSupportedModules(moduleNames);
+      setModuleConfigs(modules);
     } catch (error) {
       console.error('Failed to fetch app modules:', error);
       setSupportedModules([]);
+      setModuleConfigs([]);
     } finally {
       setModuleConfigLoading(false);
     }
@@ -242,20 +258,41 @@ const DataManagement: React.FC = () => {
 
     dataForm.resetFields();
 
-    const defaultPermissionRule = createDefaultPermissionRule(supportedModules);
+    const defaultPermissionRule = createDefaultPermissionRule(supportedModules, moduleConfigs);
 
     if (data) {
       const formattedPermissionRule: Record<string, any> = {};
       if (data.rules) {
+        const convertApiDataToFormDataRecursive = (rulesData: any): any => {
+          const result: Record<string, any> = {};
+          
+          Object.keys(rulesData).forEach(key => {
+            const value = rulesData[key];
+            
+            if (Array.isArray(value) && value.length > 0 && 
+                value.every(item => item.hasOwnProperty('id') && item.hasOwnProperty('permission'))) {
+              result[key] = convertApiDataToFormData(value);
+            } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+              result[key] = convertApiDataToFormDataRecursive(value);
+            }
+          });
+          
+          return result;
+        };
+
         Object.keys(data.rules).forEach(moduleKey => {
-          if (moduleKey === 'provider') {
-            formattedPermissionRule.provider = {};
-            Object.keys(data.rules?.provider || {}).forEach(subModule => {
-              const items = data.rules?.provider?.[subModule] || [];
-              formattedPermissionRule.provider[subModule] = convertApiDataToFormData(items);
-            });
+          const moduleRules = data.rules[moduleKey];
+          
+          const hasNestedStructure = typeof moduleRules === 'object' && 
+                                   !Array.isArray(moduleRules) &&
+                                   Object.values(moduleRules).some(val => 
+                                     Array.isArray(val) || (val && typeof val === 'object')
+                                   );
+
+          if (hasNestedStructure) {
+            formattedPermissionRule[moduleKey] = convertApiDataToFormDataRecursive(moduleRules);
           } else {
-            const items = data.rules[moduleKey] || [];
+            const items = Array.isArray(moduleRules) ? moduleRules : [];
             formattedPermissionRule[moduleKey] = convertApiDataToFormData(items);
           }
         });
@@ -300,32 +337,94 @@ const DataManagement: React.FC = () => {
 
       const transformedRules: Record<string, any> = {};
 
-      supportedModules.forEach(moduleKey => {
-        if (moduleKey === 'provider') {
-          const providerConfig = values.permissionRule.provider || {};
-          const providerRules: Record<string, PermissionRuleItem[]> = {};
-
-          Object.keys(providerConfig).forEach(subModule => {
-            if (subModule === '__type') return;
-            const permissionArray = convertPermissionsForApi(providerConfig, true, subModule);
-
-            if (permissionArray.length > 0) {
-              providerRules[subModule] = permissionArray;
+      const collectLeafNodes = (config: any, currentPath: string[] = []): Array<{path: string[], leafName: string}> => {
+        const leafNodes: Array<{path: string[], leafName: string}> = [];
+        
+        if (!config || typeof config !== 'object') {
+          return leafNodes;
+        }
+        
+        for (const key in config) {
+          const value = config[key];
+          if (value && typeof value === 'object' && value !== null) {
+            if (typeof value.type !== 'undefined') {
+              const fullPath = [...currentPath, key];
+              leafNodes.push({
+                path: fullPath,
+                leafName: key
+              });
+            } else {
+              const childLeafNodes = collectLeafNodes(value, [...currentPath, key]);
+              leafNodes.push(...childLeafNodes);
             }
-          });
+          }
+        }
+        
+        return leafNodes;
+      };
 
-          if (Object.keys(providerRules).length > 0) {
-            transformedRules.provider = providerRules;
+      const processModuleConfig = (moduleKey: string, moduleConfig: any) => {
+        const isReallyFlatStructure = typeof moduleConfig.type !== 'undefined';
+
+        if (!isReallyFlatStructure) {
+          const leafNodes = collectLeafNodes(moduleConfig);
+          
+          const buildNestedRules = (leafNodes: Array<{path: string[], leafName: string}>) => {
+            const nestedRules: Record<string, any> = {};
+            
+            leafNodes.forEach(({path, leafName}) => {
+              let targetConfig = moduleConfig;
+              for (const pathSegment of path) {
+                if (targetConfig && typeof targetConfig === 'object') {
+                  targetConfig = targetConfig[pathSegment];
+                }
+              }
+              
+              if (targetConfig && typeof targetConfig.type !== 'undefined') {
+                const permissionArray = convertPermissionsForApi(targetConfig);
+
+                if (permissionArray.length > 0) {
+                  if (path.length === 1) {
+                    nestedRules[leafName] = permissionArray;
+                  } else {
+                    let currentLevel = nestedRules;
+                    
+                    for (let i = 0; i < path.length - 1; i++) {
+                      const pathSegment = path[i];
+                      if (!currentLevel[pathSegment]) {
+                        currentLevel[pathSegment] = {};
+                      }
+                      currentLevel = currentLevel[pathSegment];
+                    }
+                    
+                    currentLevel[leafName] = permissionArray;
+                  }
+                }
+              }
+            });
+            
+            return nestedRules;
+          };
+          
+          const moduleRules = buildNestedRules(leafNodes);
+
+          if (Object.keys(moduleRules).length > 0) {
+            transformedRules[moduleKey] = moduleRules;
           }
         } else {
-          const moduleConfig = values.permissionRule[moduleKey];
-          if (!moduleConfig) return;
           const permissionArray = convertPermissionsForApi(moduleConfig);
 
           if (permissionArray.length > 0) {
             transformedRules[moduleKey] = permissionArray;
           }
         }
+      };
+
+      supportedModules.forEach(moduleKey => {
+        const moduleConfig = values.permissionRule[moduleKey];
+        if (!moduleConfig) return;
+        
+        processModuleConfig(moduleKey, moduleConfig);
       });
 
       const requestData = {
