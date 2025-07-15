@@ -1,0 +1,98 @@
+{
+  "zh": [
+    {
+      "title": "日志搜索",
+      "icon": "search-f",
+      "url": "/log/search",
+      "name": "search1"
+    },
+    {
+      "title": "集成",
+      "icon": "moxing2",
+      "url": "/log/integration",
+      "name": "Integration",
+      "children": [
+        {
+          "title": "日志接收",
+          "icon": "",
+          "url": "/log/integration/receive",
+          "name": "receive"
+        },
+        {
+          "title": "日志集成",
+          "icon": "",
+          "url": "/log/integration/list",
+          "name": "integration_list",
+          "children": [
+            {
+              "title": "配置",
+              "icon": "settings-fill",
+              "url": "/log/integration/list/detail/configure",
+              "name": "integration_configure"
+            },
+            {
+              "title": "输出",
+              "icon": "guanli",
+              "url": "/log/integration/list/detail/output",
+              "name": "integration_output"
+            }
+          ]
+        },
+        {
+          "title": "日志分组",
+          "icon": "",
+          "url": "/log/integration/grouping",
+          "name": "view_list"
+        }
+      ]
+    }
+  ],
+  "en": [
+    {
+      "title": "Log Search",
+      "icon": "search-f",
+      "url": "/log/search",
+      "name": "search1"
+    },
+    {
+      "title": "Integration",
+      "icon": "moxing2",
+      "url": "/log/integration",
+      "name": "integration",
+      "children": [
+        {
+          "title": "Log receive",
+          "icon": "",
+          "url": "/log/integration/receive",
+          "name": "asset"
+        },
+        {
+          "title": "Log Integration",
+          "icon": "",
+          "url": "/log/integration/list",
+          "name": "integration_list",
+          "children": [
+            {
+              "title": "Configure",
+              "icon": "settings-fill",
+              "url": "/log/integration/list/detail/configure",
+              "name": "integration_configure"
+            },
+            {
+              "title": "Output",
+              "icon": "guanli",
+              "url": "/log/integration/list/detail/output",
+              "name": "integration_metric"
+            }
+          ]
+        },
+        {
+          "title": "Log Grouping",
+          "icon": "",
+          "url": "/log/integration/grouping",
+          "name": "view_list"
+        }
+      ]
+    }
+  ]
+}

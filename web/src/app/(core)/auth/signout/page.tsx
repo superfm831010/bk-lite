@@ -1,37 +1,49 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signOut, useSession } from "next-auth/react";
 import { clearAuthToken } from '@/utils/crossDomainAuth';
 
 export default function SignoutPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignout = async () => {
     try {
       setIsLoading(true);
-      // Simple API call to the logout endpoint to handle any server-side cleanup
+      
+      // Call logout API for server-side cleanup
       await fetch("/api/auth/federated-logout", {
         method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       
-      // Clear authentication token from cookie
+      // Clear authentication token
       clearAuthToken();
       
-      // Use NextAuth's signOut to clear the client session
+      // Use NextAuth's signOut to clear client session
       await signOut({ redirect: false });
       
-      // Redirect to home page after successful logout
-      router.push("/");
+      // Get callbackUrl parameter and build login page URL
+      const callbackUrl = searchParams.get('callbackUrl') || '/';
+      const loginUrl = `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+      
+      // Redirect to login page
+      window.location.href = loginUrl;
     } catch (error) {
       console.error("Logout error:", error);
-      // Still try to clear token and sign out even if the API call fails
+      // Even if API call fails, still clear token and redirect
       clearAuthToken();
       await signOut({ redirect: false });
-      router.push("/");
+      
+      const callbackUrl = searchParams.get('callbackUrl') || '/';
+      const loginUrl = `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+      window.location.href = loginUrl;
     } finally {
       setIsLoading(false);
     }

@@ -15,7 +15,7 @@ from tencentcloud.common.profile.http_profile import HttpProfile
 
 from plugins.base import BasePlugin
 from plugins.base_utils import convert_to_prometheus_format
-from plugins.constains import client_version_map, mysql_pay_type_map, redis_region_map, mongodb_status_map, \
+from plugins.constants import client_version_map, mysql_pay_type_map, redis_region_map, mongodb_status_map, \
     pgsql_status_map, pulsar_status_map, pgsql_pay_type_map, mysql_status_map, redis_status_map, redis_sub_status_map, \
     redis_type_map, mongodb_inst_type_map, mongodb_pay_type_map, pulsar_pay_type_map, cmq_status_map, \
     cmq_topic_status_map, cmq_topic_filter_type_map, clb_status_map, clb_net_type_map, clb_isp_map, eip_status_map, \

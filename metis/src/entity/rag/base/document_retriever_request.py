@@ -1,11 +1,13 @@
 from pydantic import BaseModel
+from src.rag import graph_rag
+from src.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest as GraphitiDocumentRetrieverRequest
 
 
 class DocumentRetrieverRequest(BaseModel):
     index_name: str
     search_query: str = ''
     metadata_filter: dict = {}
-    size: int = 100
+
     threshold: float = 0.7
     enable_term_search: bool = True
 
@@ -29,3 +31,12 @@ class DocumentRetrieverRequest(BaseModel):
     rerank_top_k: int = 5
 
     rag_recall_mode: str = "chunk"
+
+    size: int = 100
+    enable_naive_rag: bool = True
+
+    enable_qa_rag: bool = False
+    qa_size: int = 10
+    enable_graph_rag: bool = False
+
+    graph_rag_request: GraphitiDocumentRetrieverRequest = None

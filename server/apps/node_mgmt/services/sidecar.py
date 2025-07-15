@@ -5,8 +5,7 @@ from django.core.cache import cache
 from django.http import JsonResponse, HttpResponse
 from apps.core.utils.crypto.aes_crypto import AESCryptor
 from apps.node_mgmt.constants import CACHE_TIMEOUT
-from apps.node_mgmt.default_config.nats_executor import create_nats_executor_config
-from apps.node_mgmt.default_config.telegraf import create_telegraf_config
+from apps.node_mgmt.default_config.default_config import create_default_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
 from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization
 from apps.node_mgmt.utils.sidecar import format_tags_dynamic
@@ -133,11 +132,8 @@ class Sidecar:
             # 关联组织
             Sidecar.asso_groups(node_id, tags_data.get("group", []))
 
-            # 创建默认的 Telegraf 配置
-            create_telegraf_config(node)
-
-            # 创建默认的 NATS Executor 配置
-            create_nats_executor_config(node)
+            # 创建默认的配置
+            create_default_config(node)
 
         else:
             # 更新时间

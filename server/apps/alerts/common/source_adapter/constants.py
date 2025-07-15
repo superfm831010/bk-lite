@@ -7,9 +7,75 @@ DEFAULT_SOURCE_CONFIG = {
     "url": "/alerts/api/receiver_data/",
     "headers": {"SECRET": "your_source_secret"},
     "params": {
-        "source_type": "",
         "source_id": "",
         "events": []
+    },
+    "examples":{
+        "CURL": """
+        curl --location --request POST 'http://127.0.0.1:8000/alerts/api/receiver_data/' \
+        --header 'SECRET: QKY2ZupjkfEvypiU3bTg4afuqfVjpIwF' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "source_id": "restful",
+          "events": [
+            {
+              "title": "Jenkins流水线 frontend-deploy 构建状态成功1",
+              "description": "流水线: frontend-deploy\n状态: 成功",
+              "value": 0,
+              "item": "jenkins_build_status",
+              "level": "1",
+              "start_time": "1751964596",
+              "labels": {
+                "pipeline": "frontend-deploy",
+                "build_number": "7",
+                "external_id": "5755b65d-3cdc-47ed-90de-834db7a58e26",
+                "status": 0,
+                "resource_id": 1,
+                "resource_type": "jenkins_pipeline",
+                "resource_name": "frontend-deploy"
+              }
+            }
+          ]
+        }'
+        """,
+        "Python":"""
+        import requests
+        import json
+        
+        url = "http://127.0.0.1:8000/alerts/api/receiver_data/"
+        
+        payload = json.dumps({
+           "source_id": "restful",
+           "events": [
+              {
+                 "title": "Jenkins流水线 frontend-deploy 构建状态成功1",
+                 "description": "流水线: frontend-deploy\n状态: 成功",
+                 "value": 0,
+                 "item": "jenkins_build_status",
+                 "level": "1",
+                 "start_time": "1751964596",
+                 "labels": {
+                    "pipeline": "frontend-deploy",
+                    "build_number": "7",
+                    "external_id": "5755b65d-3cdc-47ed-90de-834db7a58e26",
+                    "status": 0,
+                    "resource_id": 1,
+                    "resource_type": "jenkins_pipeline",
+                    "resource_name": "frontend-deploy"
+                 }
+              }
+           ]
+        })
+        headers = {
+           'SECRET': 'QKY2ZupjkfEvypiU3bTg4afuqfVjpIwF',
+           'Content-Type': 'application/json'
+        }
+        
+        response = requests.request("POST", url, headers=headers, data=payload)
+        
+        print(response.text)
+
+        """,
     },
     "content_type": "application/json",
     "method": "POST",

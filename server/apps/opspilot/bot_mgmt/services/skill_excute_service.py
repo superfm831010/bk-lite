@@ -16,15 +16,16 @@ class SkillExecuteService:
         skill_prompt, rag_score_threshold = cls.get_rule_result(channel, llm_skill, user, groups)
 
         params = {
-            "user_message": user_message,  # 用户消息
-            "llm_model": llm_skill.llm_model_id,  # 大模型ID
-            "skill_prompt": skill_prompt,  # Prompt
-            "enable_rag": llm_skill.enable_rag,  # 是否启用RAG
-            "enable_rag_knowledge_source": llm_skill.enable_rag_knowledge_source,  # 是否显示RAG知识来源
-            "enable_rag_strict_mode": llm_skill.enable_rag_strict_mode,  # 是否显示RAG知识来源
-            "rag_score_threshold": rag_score_threshold,  # RAG分数阈值
-            "chat_history": chat_history,  # 对话历史
-            "conversation_window_size": 10,  # 对话窗口大小
+            "user_message": user_message,
+            "skill_type": llm_skill.skill_type,
+            "llm_model": llm_skill.llm_model_id,
+            "skill_prompt": skill_prompt,
+            "enable_rag": llm_skill.enable_rag,
+            "enable_rag_knowledge_source": llm_skill.enable_rag_knowledge_source,
+            "enable_rag_strict_mode": llm_skill.enable_rag_strict_mode,
+            "rag_score_threshold": rag_score_threshold,
+            "chat_history": chat_history,
+            "conversation_window_size": 10,
             "temperature": llm_skill.temperature,
             "username": user.name if user else sender_id,
             "user_id": user.user_id if user else sender_id,
@@ -32,6 +33,8 @@ class SkillExecuteService:
             "show_think": llm_skill.show_think,
             "tools": llm_skill.tools,
             "group": llm_skill.team[0],
+            "enable_km_route": llm_skill.enable_km_route,
+            "km_llm_model": llm_skill.km_llm_model,
         }
 
         result = llm_service.chat(params)

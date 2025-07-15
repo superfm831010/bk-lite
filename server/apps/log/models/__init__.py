@@ -1,0 +1,1 @@
+from apps.log.models.collect_config import *

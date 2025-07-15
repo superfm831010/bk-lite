@@ -6,7 +6,7 @@ from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
 from src.entity.rag.graphiti.document_ingest_request import GraphitiRagDocumentIngestRequest
 from src.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest
 from src.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest
-from src.rag.graph_rag.graphiti.graphiti_extend import GraphitiExtend
+from src.entity.rag.graphiti.rebuild_community_request import RebuildCommunityRequest
 from src.rag.graph_rag.graphiti.metis_embedder import MetisEmbedder
 from src.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderConfig
 from src.rag.graph_rag.graphiti.metis_raranker_config import MetisRerankerConfig
@@ -49,9 +49,11 @@ class GraphitiRAG():
         nodes_result = await graphiti.driver.execute_query(
             """
             MATCH (n) WHERE n.group_id IN $group_ids
-            RETURN n.name as name, n.uuid as uuid, n.fact as fact, n.summary as summary, id(n) as node_id, n.group_id as group_id
+            RETURN n.name as name, n.uuid as uuid, n.fact as fact, n.summary as summary, 
+                   id(n) as node_id, n.group_id as group_id,
+                   labels(n) as labels
             """,
-            {"group_ids": req.group_ids}
+            params={"group_ids": req.group_ids}
         )
 
         # Then get all relationships
@@ -67,7 +69,7 @@ class GraphitiRAG():
                    id(n) as source_id,
                    id(m) as target_id
             """,
-            {"group_ids": req.group_ids}
+            params={"group_ids": req.group_ids}
         )
 
         # Build edges list
@@ -84,20 +86,23 @@ class GraphitiRAG():
             }
             edges.append(edge)
 
-        docs = []
+        nodes = []
         for record in nodes_result.records:
             doc = {
                 'name': record['name'],
                 'uuid': record['uuid'],
                 'group_id': record['group_id'],
                 'node_id': record['node_id'],
-                'edges': edges,
                 "fact": record['fact'],
                 "summary": record['summary'],
+                "labels": record['labels'],
             }
-            docs.append(doc)
-
-        return docs
+            nodes.append(doc)
+        rs = {
+            "nodes": nodes,
+            "edges": edges
+        }
+        return rs
 
     async def delete_document(self, req: DocumentDeleteRequest):
         graphiti = Graphiti(
@@ -176,6 +181,14 @@ class GraphitiRAG():
             await self.build_communities(graphiti_instance, [req.group_id])
         return mapping
 
+    async def rebuild_community(self, req: RebuildCommunityRequest):
+        graphiti_instance = Graphiti(
+            core_settings.neo4j_host,
+            core_settings.neo4j_username,
+            core_settings.neo4j_password,
+        )
+        await self.build_communities(graphiti_instance, req.group_ids)
+
     async def search(self, req: DocumentRetrieverRequest) -> List[Document]:
         embed_client = MetisEmbedder(
             MetisEmbedderConfig(
@@ -193,7 +206,7 @@ class GraphitiRAG():
             )
         )
 
-        graphiti_instance = GraphitiExtend(
+        graphiti_instance = Graphiti(
             core_settings.neo4j_host,
             core_settings.neo4j_username,
             core_settings.neo4j_password,
@@ -220,16 +233,17 @@ class GraphitiRAG():
                 """
             MATCH (n) 
             WHERE n.uuid IN $node_uids
-            RETURN n.uuid as uuid, n.name as name, n.fact as fact, n.summary as summary
+            RETURN n.uuid as uuid, n.name as name, n.fact as fact, n.summary as summary,labels(n) as labels
             """,
-                {"node_uids": node_uids}
+                params={"node_uids": node_uids}
             )
 
             for record in node_result.records:
                 node_info_map[record['uuid']] = {
                     'name': record['name'],
                     'fact': record['fact'],
-                    'summary': record['summary']
+                    'summary': record['summary'],
+                    'labels': record['labels']
                 }
 
         docs = []
@@ -244,12 +258,14 @@ class GraphitiRAG():
                 "source_node": {
                     "uuid": r.source_node_uuid,
                     "name": source_node_info.get('name', ''),
-                    "summary": source_node_info.get('summary', '')
+                    "summary": source_node_info.get('summary', ''),
+                    "labels": source_node_info.get('labels', [])
                 },
                 "target_node": {
                     "uuid": r.target_node_uuid,
                     "name": target_node_info.get('name', ''),
-                    "summary": target_node_info.get('summary', '')
+                    "summary": target_node_info.get('summary', ''),
+                    "labels": target_node_info.get('labels', [])
                 }
             }
             docs.append(doc)

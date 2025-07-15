@@ -144,6 +144,12 @@ const AlarmTable: React.FC<AlarmTableProps> = ({
       },
     },
     {
+      title: t('alarms.ruleId'),
+      dataIndex: 'rule_id',
+      key: 'rule_id',
+      width: 250,
+    },
+    {
       title: t('alarms.alertContent'),
       dataIndex: 'content',
       key: 'content',

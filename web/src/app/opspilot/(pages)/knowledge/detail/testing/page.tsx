@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Input, Button, message, Spin, Empty, Skeleton, List, Segmented, Card, Divider } from 'antd';
 import ConfigComponent from '@/app/opspilot/components/knowledge/config';
-import { ResultItem } from '@/app/opspilot/types/global';
 import { useTranslation } from '@/utils/i18n';
 import styles from './index.module.scss';
 import ContentDrawer from '@/components/content-drawer';
@@ -14,20 +13,11 @@ import KnowledgeResultItem from '@/app/opspilot/components/block-result';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import useFetchConfigData from '@/app/opspilot/hooks/useFetchConfigData';
 import Icon from '@/components/icon';
+import KnowledgeGraphView from '@/app/opspilot/components/knowledge/knowledgeGraphView';
+import NodeDetailDrawer from '@/app/opspilot/components/knowledge/NodeDetailDrawer';
+import { GraphData, TestKnowledgeResponse, GraphNode } from '@/app/opspilot/types/knowledge';
 
 const { TextArea } = Input;
-
-interface QAPair {
-  id: string;
-  question: string;
-  answer: string;
-  score: number;
-}
-
-interface TestKnowledgeResponse {
-  docs: ResultItem[];
-  qa_docs: QAPair[];
-}
 
 const TestingPage: React.FC = () => {
   const { t } = useTranslation();
@@ -36,10 +26,12 @@ const TestingPage: React.FC = () => {
   const { updateKnowledgeSettings, testKnowledge } = useKnowledgeApi();
   const { configData, setConfigData, loading: configLoading, knowledgeBasePermissions } = useFetchConfigData(id);
   const [searchText, setSearchText] = useState<string>('');
-  const [results, setResults] = useState<TestKnowledgeResponse>({ docs: [], qa_docs: [] });
+  const [results, setResults] = useState<TestKnowledgeResponse>({ docs: [], qa_docs: [], graph_data: [] });
   const [loading, setLoading] = useState<boolean>(false);
   const [applyLoading, setApplyLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('docs');
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [nodeDetailVisible, setNodeDetailVisible] = useState(false);
 
   const {
     drawerVisible,
@@ -47,6 +39,93 @@ const TestingPage: React.FC = () => {
     showDrawer,
     hideDrawer,
   } = useContentDrawer();
+
+  const transformGraphData = (graphData: any): GraphData => {
+    if (!graphData || !Array.isArray(graphData)) {
+      return { nodes: [], edges: [] };
+    }
+
+    const nodesMap = new Map();
+    const edges: any[] = [];
+
+    graphData.forEach((relation: any, index: number) => {
+      const { source_node, target_node, fact, name } = relation;
+      
+      if (!source_node || !target_node) {
+        return;
+      }
+
+      if (source_node.uuid && !nodesMap.has(source_node.uuid)) {
+        nodesMap.set(source_node.uuid, {
+          id: source_node.uuid,
+          label: source_node.name || `节点${source_node.uuid.slice(0, 8)}`,
+          type: 'entity',
+          labels: source_node.labels || [],
+          uuid: source_node.uuid,
+          name: source_node.name,
+          summary: source_node.summary
+        });
+      }
+
+      if (target_node.uuid && !nodesMap.has(target_node.uuid)) {
+        nodesMap.set(target_node.uuid, {
+          id: target_node.uuid,
+          label: target_node.name || `节点${target_node.uuid.slice(0, 8)}`,
+          type: 'entity',
+          labels: target_node.labels || [],
+          uuid: target_node.uuid,
+          name: target_node.name,
+          summary: target_node.summary,
+        });
+      }
+
+      if (source_node.uuid && target_node.uuid) {
+        edges.push({
+          id: `edge-${index}`,
+          source: source_node.uuid,
+          target: target_node.uuid,
+          label: name,
+          type: 'relation',
+          relation_type: name,
+          fact: fact
+        });
+      }
+    });
+
+    return {
+      nodes: Array.from(nodesMap.values()),
+      edges: edges
+    };
+  };
+
+  const getSegmentedOptions = () => {
+    const options = [];
+    
+    if (configData.enableNaiveRag) {
+      options.push({
+        value: 'docs',
+        label: t('knowledge.chunks'),
+      });
+    }
+    
+    if (configData.enableQaRag) {
+      options.push({
+        value: 'qa_docs',
+        label: t('knowledge.qaPairs.title'),
+      });
+    }
+    
+    if (configData.enableGraphRag) {
+      options.push({
+        value: 'graph_data',
+        label: t('knowledge.graphRag'),
+      });
+    }
+    
+    return options;
+  };
+
+  const segmentedOptions = getSegmentedOptions();
 
   const getConfigParams = () => {
     return {
@@ -62,6 +141,12 @@ const TestingPage: React.FC = () => {
       rag_num_candidates: configData.candidate,
       result_count: configData.resultCount,
       rerank_top_k: configData.rerankTopK,
+      enable_naive_rag: configData.enableNaiveRag,
+      enable_qa_rag: configData.enableQaRag,
+      enable_graph_rag: configData.enableGraphRag,
+      rag_size: configData.ragSize,
+      qa_size: configData.qaSize,
+      graph_size: configData.graphSize,
     };
   };
 
@@ -83,10 +168,17 @@ const TestingPage: React.FC = () => {
     try {
       const data = await testKnowledge(params);
       message.success(t('knowledge.testingSuccess'));
-      setResults({
+      const newResults = {
         docs: data.docs || [],
-        qa_docs: data.qa_docs || []
-      });
+        qa_docs: data.qa_docs || [],
+        graph_data: data.graph_data || []
+      };
+      setResults(newResults);
+      
+      const availableOptions = getSegmentedOptions();
+      if (availableOptions.length > 0) {
+        setActiveTab(availableOptions[0].value);
+      }
     } catch (error) {
       message.error(t('knowledge.testingFailed'));
       console.error(error);
@@ -120,16 +212,15 @@ const TestingPage: React.FC = () => {
     showDrawer(content);
   };
 
-  const segmentedOptions = [
-    {
-      value: 'docs',
-      label: t('knowledge.chunks'),
-    },
-    {
-      value: 'qa_docs',
-      label: t('knowledge.qaPairs.title'),
-    },
-  ];
+  const handleNodeClick = (node: GraphNode) => {
+    setSelectedNode(node);
+    setNodeDetailVisible(true);
+  };
+
+  const handleCloseNodeDetail = () => {
+    setNodeDetailVisible(false);
+    setSelectedNode(null);
+  };
 
   const renderResults = () => {
     if (loading) {
@@ -203,6 +294,17 @@ const TestingPage: React.FC = () => {
       );
     }
 
+    if (activeTab === 'graph_data') {
+      return results.graph_data.length > 0 ? (
+        <KnowledgeGraphView 
+          data={transformGraphData(results.graph_data)} 
+          onNodeClick={handleNodeClick}
+        />
+      ) : (
+        <Empty description={t('common.noData')} />
+      );
+    }
+
     return null;
   };
 
@@ -256,7 +358,7 @@ const TestingPage: React.FC = () => {
         <div className="w-1/2 pl-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-semibold text-base">{t('knowledge.results')}</h2>
-            {(results.docs.length > 0 || results.qa_docs.length > 0) && (
+            {(results.docs.length > 0 || results.qa_docs.length > 0 || results.graph_data.length > 0) && (
               <Segmented
                 options={segmentedOptions}
                 value={activeTab}
@@ -274,6 +376,12 @@ const TestingPage: React.FC = () => {
         visible={drawerVisible}
         onClose={hideDrawer}
         content={drawerContent}
+      />
+      
+      <NodeDetailDrawer
+        visible={nodeDetailVisible}
+        node={selectedNode}
+        onClose={handleCloseNodeDetail}
       />
     </Spin>
   );

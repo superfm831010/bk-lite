@@ -389,3 +389,33 @@ class LogAction:
         (DELETE, "删除"),
         (EXECUTE, "执行")
     )
+
+
+class WindowType:
+    """
+    窗口类型
+    """
+    SLIDING = "sliding"
+    FIXED = "fixed"
+    SESSION = "session"
+
+    CHOICES = (
+        (SLIDING, '滑动窗口'),
+        (FIXED, '固定窗口'),
+        (SESSION, '会话窗口'),
+    )
+
+
+class Alignment:
+    """
+    窗口对齐方式
+    """
+    DAY = "day"
+    HOUR = "hour"
+    MINUTE = "minute"
+
+    CHOICES = (
+        (DAY, '天对齐'),
+        (HOUR, '小时对齐'),
+        (MINUTE, '分钟对齐'),
+    )

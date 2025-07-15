@@ -25,6 +25,7 @@ interface LoginResponse {
   username?: string;
   id?: string;
   locale?: string;
+  redirect_url?: string;
 }
 
 interface WeChatSettings {
@@ -173,6 +174,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
         return;
       }
       
+      // Complete authentication first, then handle redirect_url
       await completeAuthentication(userData);
       
     } catch (error) {
@@ -255,8 +257,13 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
         setFormError(result.error);
         setIsLoading(false);
       } else if (result?.ok) {
-        console.log('SignIn successful, redirecting to:', callbackUrl || "/");
-        window.location.href = callbackUrl || "/";
+        if (userData.redirect_url) {
+          console.log('Redirecting to server-provided redirect_url:', userData.redirect_url);
+          window.location.href = userData.redirect_url;
+        } else {
+          console.log('SignIn successful, redirecting to:', callbackUrl || "/");
+          window.location.href = callbackUrl || "/";
+        }
       } else {
         console.error('SignIn failed with unknown error');
         setFormError("Authentication failed");

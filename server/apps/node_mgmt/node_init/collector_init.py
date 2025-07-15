@@ -13,7 +13,13 @@ COLLECTORS = [
         "execute_parameters": "--config %s",
         "validation_parameters": "",
         "default_template": "",
-        "introduction": "NATS Executor is a task scheduling and management tool that automates data storage, backup, and distributed file processing tasks."
+        "introduction": "NATS Executor is a task scheduling and management tool that automates data storage, backup, and distributed file processing tasks.",
+        "enabled_default_config": True,
+        "default_config": {
+        "nats": """nats_urls: "nats://${NATS_USERNAME}:${NATS_PASSWORD}@${NATS_SERVERS}"
+nats_instanceId: "${node.id}"
+nats_conn_timeout: 600""",
+        }
     },
     {
         "id": "natsexecutor_windows",
@@ -26,7 +32,13 @@ COLLECTORS = [
         "execute_parameters": "--config %s",
         "validation_parameters": "",
         "default_template": "",
-        "introduction": "NATS Executor is a task scheduling and management tool that automates data storage, backup, and distributed file processing tasks."
+        "introduction": "NATS Executor is a task scheduling and management tool that automates data storage, backup, and distributed file processing tasks.",
+        "enabled_default_config": True,
+        "default_config": {
+        "nats": """nats_urls: "nats://${NATS_USERNAME}:${NATS_PASSWORD}@${NATS_SERVERS}"
+nats_instanceId: "${node.id}"
+nats_conn_timeout: 600""",
+        }
     },
 ]
 
@@ -49,7 +61,7 @@ def import_collector(collectors):
     if update_collectors:
         Collector.objects.bulk_update([Collector(**i) for i in update_collectors],
                                       ["service_type", "executable_path", "execute_parameters", "validation_parameters",
-                                       "default_template", "introduction"])
+                                       "default_template", "introduction", "enabled_default_config", "default_config",])
 
 
 def collector_init():

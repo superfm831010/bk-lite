@@ -176,7 +176,7 @@ export async function getAuthOptions(): Promise<AuthOptions> {
   };
 }
 
-// 为了向后兼容，保留一个默认的 authOptions，但只包含基本的 CredentialsProvider
+// For backward compatibility, keep a default authOptions, but only include basic CredentialsProvider
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
