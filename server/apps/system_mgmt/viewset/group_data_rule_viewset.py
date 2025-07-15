@@ -79,7 +79,7 @@ class GroupDataRuleViewSet(viewsets.ModelViewSet):
 
     @staticmethod
     def get_client(params):
-        client_map = {"opspilot": OpsPilot, "system-manager": SystemMgmt, "node": NodeMgmt, "monitor": Monitor,"cmdb": CMDB}
+        client_map = {"opspilot": OpsPilot, "system-manager": SystemMgmt, "node": NodeMgmt, "monitor": Monitor, "cmdb":CMDB}
         app = params.pop("app")
         if app not in client_map.keys():
             raise Exception(_("APP not found"))
