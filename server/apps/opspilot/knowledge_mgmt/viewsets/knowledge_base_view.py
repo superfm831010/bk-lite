@@ -48,6 +48,13 @@ class KnowledgeBaseViewSet(AuthViewSet):
     @HasRole()
     def update(self, request, *args, **kwargs):
         instance: KnowledgeBase = self.get_object()
+        if not request.user.is_superuser:
+            has_permission = self.get_has_permission(request.user, instance.id)
+            if not has_permission:
+                return JsonResponse(
+                    {"result": False, "message": _("You do not have permission to update this instance")}
+                )
+
         params = request.data
         if instance.embed_model_id != params["embed_model"]:
             if instance.knowledgedocument_set.filter(train_status=DocumentStatus.TRAINING).exists():
@@ -61,6 +68,13 @@ class KnowledgeBaseViewSet(AuthViewSet):
     @HasRole()
     def update_settings(self, request, *args, **kwargs):
         instance: KnowledgeBase = self.get_object()
+        if not request.user.is_superuser:
+            has_permission = self.get_has_permission(request.user, instance.id)
+            if not has_permission:
+                return JsonResponse(
+                    {"result": False, "message": _("You do not have permission to update this instance")}
+                )
+
         kwargs = request.data
         if kwargs.get("name"):
             if KnowledgeBase.objects.filter(name=kwargs["name"]).exclude(id=instance.id).exists():
@@ -91,6 +105,13 @@ class KnowledgeBaseViewSet(AuthViewSet):
 
     @HasRole()
     def destroy(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            has_permission = self.get_has_permission(request.user, kwargs["pk"])
+            if not has_permission:
+                return JsonResponse(
+                    {"result": False, "message": _("You do not have permission to delete this instance")}
+                )
+
         if KnowledgeDocument.objects.filter(knowledge_base_id=kwargs["pk"]).exists():
             return JsonResponse(
                 {"result": False, "message": _("This knowledge base contains documents and cannot be deleted.")}
