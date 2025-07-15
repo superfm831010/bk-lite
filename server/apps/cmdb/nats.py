@@ -18,8 +18,8 @@ def get_cmdb_module_data(module, child_module, page, page_size, group_id):
         end = page * page_size
         instances = CollectModels.objects.filter(task_type=child_module).values("id", "name", "model_id")[start:end]
         count = instances.count()
-        queryset = [{"id": i['id'], "name": f"{i['model_id']}_{i['name']}"} for i in instances]
-    elif module == PERMISSION_INSTANCES or module == PERMISSION_MODEL:
+        queryset = [{"id": str(i['id']), "name": f"{i['model_id']}_{i['name']}"} for i in instances]
+    elif module == PERMISSION_INSTANCES:
         instances, count = InstanceManage.instance_list(
             user_groups=[group_id],  # 改为列表
             roles=[],  # 空列表
@@ -36,14 +36,19 @@ def get_cmdb_module_data(module, child_module, page, page_size, group_id):
                 "name": instance["inst_name"],
                 "id": instance["inst_name"]
             })
+    elif module == PERMISSION_MODEL:
+        models = ModelManage.search_model(classification_id=child_module)
+        count = len(models)
+        queryset = [{"name": model["model_id"], "display_name": model["model_name"]} for model in models]
+
     else:
         raise ValueError("Invalid module type")
-    return [
-        {
-            "count": count,
-            "items": list(queryset)
-        }
-    ]
+
+    result = {
+        "count": count,
+        "items": list(queryset)
+    }
+    return result
 
 
 @nats_client.register
