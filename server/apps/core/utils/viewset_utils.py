@@ -181,23 +181,40 @@ class AuthViewSet(MaintainerViewSet):
             logger.error(f"Error in _list method: {e}")
             raise
 
+    def destroy(self, request, *args, **kwargs):
+        user = getattr(request, "user", None)
+        if not user:
+            raise ValueError("User not found in request")
+        instance = self.get_object()
+        if getattr(user, "is_superuser", False):
+            return super().destroy(request, *args, **kwargs)
+        if hasattr(self, "permission_key"):
+            has_permission = self.get_has_permission(user, instance.id)
+            if not has_permission:
+                raise ValueError("User does not have permission to delete this instance")
+        return super().destroy(request, *args, **kwargs)
+
     def update(self, request, *args, **kwargs):
         """重写更新方法以支持权限控制"""
         try:
-            partial = kwargs.pop("partial", False)
-            data = request.data.copy() if hasattr(request.data, "copy") else dict(request.data)
-            instance = self.get_object()
-
             user = getattr(request, "user", None)
             if not user:
                 raise ValueError("User not found in request")
+            partial = kwargs.pop("partial", False)
+            data = request.data
+            instance = self.get_object()
 
-            if not getattr(user, "is_superuser", False) and getattr(instance, "created_by", None) != getattr(
-                user, "username", None
-            ):
-                if "team" in data:
-                    data.pop("team", None)
-
+            if getattr(user, "is_superuser", False):
+                return super().update(request, *args, **kwargs)
+            if "team" in data:
+                data.pop("team", None)
+            current_team = int(request.COOKIES.get("current_team", None))
+            if current_team not in instance.teams:
+                raise ValueError("Current team is not allowed to update this instance")
+            if hasattr(self, "permission_key"):
+                has_permission = self.get_has_permission(user, instance.id)
+                if not has_permission:
+                    raise ValueError("User does not have permission to update this instance")
             serializer = self.get_serializer(instance, data=data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
@@ -210,6 +227,47 @@ class AuthViewSet(MaintainerViewSet):
         except Exception as e:
             logger.error(f"Error in update method: {e}")
             raise
+
+    def get_has_permission(self, user, instance_id):
+        """获取规则实例ID"""
+        if isinstance(instance_id, str):
+            instance_id = [int(instance_id)]
+        elif isinstance(instance_id, int):
+            instance_id = [instance_id]
+        elif isinstance(instance_id, list):
+            instance_id = [int(i) for i in instance_id]
+        try:
+            app_name_map = {
+                "system_mgmt": "system-manager",
+                "node_mgmt": "node",
+                "console_mgmt": "ops-console",
+                "mlops": "mlops",
+            }
+            app_name = self._get_app_name()
+            app_name = app_name_map.get(app_name, app_name)
+            user_rules = getattr(user, "rules", {}).get(app_name, {})
+            if not isinstance(user_rules, dict):
+                return True
+            normal_rules_map = user_rules.get("normal", {})
+            if "." in self.permission_key:
+                keys = self.permission_key.split(".", 1)
+                normal_rules = normal_rules_map.get(keys[0], {})
+                if isinstance(normal_rules, dict) and len(keys) > 1:
+                    normal_rules = normal_rules.get(keys[1], [])
+            else:
+                normal_rules = normal_rules_map.get(self.permission_key, [])
+            if not normal_rules:
+                return True
+            instance_list = []
+            for i in normal_rules:
+                if "Operate" in i["permission"]:
+                    instance_list.append(int(i["id"]))
+            if -1 in instance_list or 0 in instance_list:
+                return True
+            return set(instance_id).issubset(set(instance_list))
+        except Exception as e:
+            logger.error(f"Error getting rule instances: {e}")
+            return False
 
     def _validate_name(self, name, group_list, team, exclude_id=None):
         """验证名称在团队中的唯一性"""
