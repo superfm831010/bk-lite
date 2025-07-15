@@ -14,3 +14,6 @@ class CmdbConfig(AppConfig):
             post_migrate.connect(init_network_oid, sender=self)
         except Exception as e:
             logger.exception(getattr(e, "message", e))
+
+        import apps.cmdb.nats  # noqa
+
