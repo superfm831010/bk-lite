@@ -181,6 +181,20 @@ class AuthViewSet(MaintainerViewSet):
             logger.error(f"Error in _list method: {e}")
             raise
 
+    def retrieve(self, request, *args, **kwargs):
+        user = getattr(request, "user", None)
+        if not user:
+            raise ValueError("User not found in request")
+        instance = self.get_object()
+        if getattr(user, "is_superuser", False):
+            return super().retrieve(request, *args, **kwargs)
+        if hasattr(self, "permission_key"):
+            has_permission = self.get_has_permission(user, instance.id)
+            if not has_permission:
+                raise ValueError("User does not have permission to get this instance")
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
     def destroy(self, request, *args, **kwargs):
         user = getattr(request, "user", None)
         if not user:
