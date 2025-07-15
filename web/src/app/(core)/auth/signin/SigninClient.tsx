@@ -288,7 +288,6 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
 
   const renderLoginForm = () => (
     <form onSubmit={handleLoginSubmit} className="flex flex-col space-y-6 w-full">
-      {/* Domain Selection */}
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <label htmlFor="domain" className="text-sm font-medium text-gray-700">Domain</label>
