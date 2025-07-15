@@ -31,6 +31,9 @@ class ClassificationViewSet(viewsets.ViewSet):
     )
     @HasPermission("model_management-View,view_list-View")
     def list(self, request):
+        permissions = []
+        p = request.user.locale
+        print(p)
         result = ClassificationManage.search_model_classification(request.user.locale)
         return WebUtils.response_success(result)
 
