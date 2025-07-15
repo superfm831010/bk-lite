@@ -4,6 +4,7 @@
 [sources.file_{{ instance_id }}]
 type = "file"
 include = ["{{ file_path }}"]
+data_dir = "/opt/fusion-collectors"
 ignore_older = 86400  # 忽略24小时以前的日志，可按需调整
 # encoding = "utf-8"  # 如有乱码可手动开启
 

@@ -344,7 +344,7 @@ class AlertAssignmentOperator:
                         ReminderService._send_reminder_notification(assignment=assignment, alert=alert)
 
                         results.append({
-                            "alert_id": alert.id,
+                            "alert_id": alert.alert_id,
                             "success": True,
                             "assignment_id": assignment.id,
                             "assigned_to": personnel
@@ -353,7 +353,7 @@ class AlertAssignmentOperator:
                     except Exception as e:
                         logger.error(f"Error executing assignment for alert {alert.id}: {str(e)}")
                         results.append({
-                            "alert_id": alert.id,
+                            "alert_id": alert.alert_id,
                             "success": False,
                             "message": str(e),
                             "assignment_id": assignment.id
@@ -506,7 +506,8 @@ def execute_auto_assignment_for_alerts(alert_ids: List[str]) -> Dict[str, Any]:
     operator = AlertAssignmentOperator(alert_ids)
     result = operator.execute_auto_assignment()
     logger.info(f"=== Auto assignment completed: {result} ===")
-    not_assignment_ids = set(alert_ids) - set(result.get("assignment_results", []))
+    assignment_alart_ids = [i.get("alert_id") for i in result.get("assignment_results", [])]
+    not_assignment_ids = set(alert_ids) - set(assignment_alart_ids)
     if not_assignment_ids:
         # 去进行兜底分派 使用全局分派 每60分钟分派一次 知道告警被相应后结束
         not_assignment_alert_notify(not_assignment_ids)

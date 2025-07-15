@@ -121,8 +121,8 @@
     "exclude": "Exclude",
     "group": "Group",
     "search": {
-      "area": "Area",
-      "table": "Table"
+      "searchPlaceHolder": "Enter your search query here and press Enter to search",
+      "searchCriteria": "Search Criteria"
     },
     "integration": {
       "interval": "Interval",
@@ -154,7 +154,11 @@
       "collector": "Collector",
       "command": "Command",
       "address": "Address",
-      "host": "Host"
+      "host": "Host",
+      "includeContainers": "Designated Containers",
+      "excludeContainers": "Neglected Containers",
+      "startPattern": "Merging Regular",
+      "containerPlaceholder": "Please enter the container and press Enter to end"
     }
   }
 }

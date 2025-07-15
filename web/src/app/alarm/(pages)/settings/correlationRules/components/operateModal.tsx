@@ -175,7 +175,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
           ? `${t('settings.correlationRules')} - ${currentRow.name}`
           : t('settings.correlationRules')
       }
-      width={700}
+      width={720}
       open={open}
       onClose={onClose}
       footer={
@@ -197,7 +197,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
       <Form
         form={form}
         layout="horizontal"
-        labelCol={{ span: 3 }}
+        labelCol={{ span: locale === 'en' ? 4 : 3 }}
         onFinish={handleFinish}
       >
         <Form.Item
@@ -222,7 +222,10 @@ const OperateModal: React.FC<OperateModalProps> = ({
         </Form.Item>
 
         {selOption && (
-          <Form.Item className="ml-20 mt-[-10px]" labelCol={{ span: 24 }}>
+          <Form.Item
+            className={`${locale === 'en' ? 'ml-28' : 'ml-20'} mt-[-10px]`}
+            labelCol={{ span: 24 }}
+          >
             <div className="border border-gray-300 p-4 rounded-lg space-y-4">
               <div>
                 <div className="font-medium mb-2">
@@ -266,7 +269,10 @@ const OperateModal: React.FC<OperateModalProps> = ({
           </Radio.Group>
         </Form.Item>
         {windowType && windowImageMap[windowType] && (
-          <Form.Item className="ml-20" labelCol={{ span: 24 }}>
+          <Form.Item
+            className={`${locale === 'en' ? 'ml-28' : 'ml-20'}`}
+            labelCol={{ span: 24 }}
+          >
             <div className="border border-gray-300 p-4 rounded-lg space-y-4">
               <div>
                 <div className="font-medium mb-2">

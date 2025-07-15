@@ -1,141 +1,21 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.conf import settings
 
 from apps.alerts.models import AggregationRules
+from apps.alerts.utils.util import image_to_base64
 from apps.core.logger import alert_logger as logger
 
 INIT_RULES = [
     {
-        'rule_id': 'high_cpu',
-        'name': 'CPU High Usage',
-        'description': 'CPU使用率超过85%',
-        'template_title': '【${resource_type}】${resource_name} CPU使用率过高',
-        'template_content': 'CPU使用率: ${value}%\n阈值: 85%\n持续时间: ${duration}分钟',
-        'severity': 'warning',  # warning
-        'is_active': False,
-        'condition': [
-            {
-                'type': 'threshold',
-                'field': 'cpu_usage',
-                'threshold': 85.0,
-                'operator': '>='
-            }
-        ]
-    },
-    {
-        'rule_id': 'sustained_high_cpu',
-        'name': 'CPU Sustained High Usage',
-        'description': 'CPU连续3个周期使用率超过80%',
-        'template_title': '【${resource_type}】${resource_name} CPU持续高使用率',
-        'template_content': 'CPU使用率: ${value}%\n阈值: 80%\n连续周期: 3',
-        'severity': 'warning',  # warning
-        'is_active': False,
-        'condition': [
-            {
-                'type': 'sustained',
-                'field': 'cpu_usage',
-                'threshold': 80.0,
-                'operator': '>=',
-                'required_consecutive': 3
-            }
-        ]
-    },
-    {
-        'rule_id': 'disk_io_latency_spike',
-        'name': 'Disk IO Latency Spike',
-        'description': '磁盘IO延迟大于5.0',
-        'template_title': '【${resource_type}】${resource_name} 磁盘IO延迟异常',
-        'template_content': '磁盘IO延迟: ${value}ms\n阈值: 5.0ms',
-        'severity': 'warning',  # severity
-        'is_active': False,
-        'condition': [
-            {
-                'type': 'threshold',
-                'field': 'disk_io_latency',
-                'threshold': 5.0,
-                'operator': '>'
-            }
-        ]
-    },
-    {
-        'rule_id': 'cpu_trend_spike',
-        'name': 'CPU Trend Spike',
-        'description': 'CPU使用率突增超过20%',
-        'template_title': '【${resource_type}】${resource_name} CPU使用率突增',
-        'template_content': 'CPU使用率突增: ${value}%\n基线: ${baseline}%\n阈值: 20%',
-        'severity': 'warning',  # fatal
-        'is_active': False,
-        'condition': [
-            {
-                'type': 'trend',
-                'field': 'cpu_usage',
-                'threshold': 20.0,
-                'operator': '>',
-                'baseline_window': 5,
-                'trend_method': 'percentage'
-            }
-        ]
-    },
-    {
-        'rule_id': 'prev_status_equals',
-        'name': 'Status Recovery Detection',
-        'description': '状态恢复检测规则',
-        'template_title': '【${resource_type}】${resource_name} 状态变更',
-        'template_content': '资源状态从 ${prev_status} 变更为 ${status}',
-        'severity': 'warning',  # fatal
-        'is_active': False,
-        'condition': [
-            {
-                'type': 'prev_field_equals',
-                'field': '',
-                'group_by': ['source_id', 'resource_type', 'resource_id', 'item'],
-                'prev_status_field': 'status',
-                'prev_status_value': 'closed'
-            }
-        ]
-    },
-    {
-        'rule_id': 'jenkins_single_failure',
-        'name': 'Jenkins Single Build Failure',
-        'description': 'Jenkins单次构建失败',
-        'template_title': 'Jenkins构建失败 - ${resource_name}',
-        'template_content': '流水线: ${resource_name}\n状态: 构建失败\n构建号: ${value}\n错误信息: ${description}',
-        'severity': "warning",  # warning
-        'is_active': False,
-        'condition': [
-            {
-                'type': 'threshold',
-                'field': 'build_status',
-                'threshold': 0.0,
-                'operator': '=='
-            }
-        ]
-    },
-    {
-        'rule_id': 'jenkins_sustained_failures',
-        'name': 'Jenkins Sustained Build Failures',
-        'description': 'Jenkins构建连续失败3次',
-        'template_title': 'Jenkins流水线 ${resource_name} 连续构建失败',
-        'template_content': '流水线: ${resource_name}\n连续失败次数: 3次',
-        'severity': "warning",  # fatal
-        'is_active': False,
-        'condition': [
-            {
-                'type': 'sustained',
-                'field': 'build_status',
-                'threshold': 0.0,
-                'operator': '==',
-                'required_consecutive': 3,
-                'group_by': ['resource_id']
-            }
-        ]
-    },
-    {
         'rule_id': 'high_level_event_aggregation',
         'name': 'High Level Event Aggregation',
-        'description': '高等级事件聚合规则',
-        'template_title': '【${resource_type}】${resource_name} 发生告警',
-        'template_content': '资源类型: ${resource_type}\n资源名称: ${resource_name}\n详情: ${description}',
+        'description': {
+            "en": "Rule definition: \n1. Filtering method: event level higher than \"warning\"\n2. Aggregation dimension: Object instances of events\n3. Aggregation strategy: Aggregate based on the same object instance of the event, with the alert level being the lowest level of the event.\nCommonly used in scenarios where performance evaluation of a single operational object requires a combination of multiple dimensions for analysis, such as abnormal server performance, abnormal database performance, etc",
+            "zh": "规则定义： \n1，过滤方式：event等级高于“warning”\n2，汇聚维度：event的对象实例\n3，聚合策略：按照event相同对象实例进行聚合，alert等级为event的最低等级。\n常用于单种运维对象的性能判断需要多个维度结合分析的场景，例如：服务器的性能异常、数据库的性能异常等"
+        },
+        'template_title': '',
+        'template_content': '',
         'severity': "warning",
         'is_active': True,
         'condition': [
@@ -152,11 +32,14 @@ INIT_RULES = [
         ]
     },
     {
-        'rule_id': 'website_monitoring_alert',
-        'name': 'Website Monitoring Alert',
-        'description': '网站拨测异常告警',
-        'template_title': '网站拨测异常 - ${resource_name}',
-        'template_content': '网站: ${resource_name}\n拨测状态: 异常\nstatus值: ${value}\n异常详情: ${description}',
+        'rule_id': 'critical_event_aggregation',
+        'name': 'Critical Event Aggregation',
+        'description': {
+            "en": "Rule definition:\nRule definition: 1. Filtering method: event type\n2. Aggregation strategy: Every minute, when a certain event is abnormal, it will aggregate the repeated events of this object within 1 minute and immediately generate an alert.Commonly used scenarios for website testing",
+            "zh": "规则定义：\n1，过滤方式：event类型\n2，聚合策略：每隔1分钟，检测当某个事件异常时，将1分钟内这个对象重复的事件聚合，立刻产生alert。常用于网站拨测的场景"
+        },
+        'template_title': '',
+        'template_content': '',
         'severity': "warning",
         'is_active': True,
         'condition': [
@@ -173,12 +56,54 @@ INIT_RULES = [
                 'aggregation_key': ['resource_id']
             }
         ]
+    },
+    {
+        'rule_id': 'error_scenario_handling',
+        'name': 'Error Scenario Handling',
+        'description': {
+            "zh": "当某个操作失败时，如果10分钟内没有继续修正的动作，则意味着构建失败，发出告警。如果10分钟内依旧持续操作但是依旧失败，意味着有人在介入，此时持续等待不发出告警。如果10分钟内收到操作成功的事件，则关闭等待，不发出告警。\n 常用于比如流水线构建场景，如果某流水线构建失败后，10分钟内没有继续操作的事件，则意味着短时间内代码问题无法解决，发出告警",
+            "en": "When an operation fails and there are no further corrective actions within 10 minutes, it means that the build has failed and an alarm is raised. If the operation continues for 10 minutes but still fails, it means that someone is intervening and waiting continuously without issuing an alarm. If a successful operation event is received within 10 minutes, turn off waiting and no alarm will be issued.\n Commonly used in scenarios such as pipeline construction, if there is no event to continue operating within 10 minutes after a pipeline construction failure, it means that the code problem cannot be solved in a short period of time and an alarm is issued",
+        },
+        'template_title': '',
+        'template_content': '',
+        'severity': "warning",
+        'is_active': True,
+        'condition': [
+            {
+                'type': 'filter_and_check',
+                'filter': {
+                    'resource_type': 'jenkins',
+                },
+                'target_field': 'item',
+                'target_field_value': 'jenkins_build_status',
+                'target_value_field': 'value',
+                'target_value': 0,
+                'operator': '==',
+                'aggregation_key': ['resource_type', 'resource_id', 'resource_name'],
+                # 新增：成功事件关闭会话的条件
+                'session_close': {
+                    'type': 'session_close_condition',
+                    'filter': {
+                        'resource_type': 'jenkins',
+                    },
+                    'target_field': 'item',
+                    'target_field_value': 'jenkins_build_status',
+                    'target_value_field': 'value',
+                    'target_value': 1,  # 成功状态
+                    'operator': '==',
+                    'action': 'close_session',  # 关闭会话动作
+                    'aggregation_key': ['resource_type', 'resource_id', 'resource_name']
+                }
+            }
+        ]
+
     }
 ]
 
 
 class Command(BaseCommand):
     help = '创建内置告警聚合规则'
+    base_path = "/apps/alerts/images"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -224,6 +149,11 @@ class Command(BaseCommand):
                         for key, value in rule_data.items():
                             if key != 'rule_id':  # rule_id不能修改
                                 setattr(existing_rule, key, value)
+                        image = self.get_rule_image(rule_data['rule_id'])
+                        if image:
+                            setattr(existing_rule, "image", image)
+                        else:
+                            logger.warning(f"未找到规则图片: {rule_data['rule_id']}")
                         existing_rule.save()
                         updated_count += 1
                         logger.info(f"更新聚合规则: {rule_data['name']}")
@@ -231,6 +161,11 @@ class Command(BaseCommand):
                         logger.info(f"规则已存在，跳过: {rule_data['name']}")
                         continue
                 else:
+                    image = self.get_rule_image(rule_data['rule_id'])
+                    if image:
+                        rule_data['image'] = image
+                    else:
+                        logger.warning(f"未找到规则图片: {rule_data['rule_id']}")
                     # 创建新规则
                     AggregationRules.objects.create(**rule_data)
                     created_count += 1
@@ -241,3 +176,12 @@ class Command(BaseCommand):
 
         logger.info(f"聚合规则处理完成 - 创建: {created_count}, 更新: {updated_count}")
         return created_count, updated_count
+
+    def get_rule_image(self, rule_id):
+        image_path = f"{settings.BASE_DIR}/{self.base_path}/{rule_id}.png"
+        try:
+            base64_data = image_to_base64(image_path=image_path, output_format="png")
+        except Exception as e:
+            logger.error(f"获取规则图片失败 {rule_id}: {str(e)}")
+            return
+        return base64_data

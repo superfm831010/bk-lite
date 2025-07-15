@@ -1,5 +1,5 @@
-from typing import Dict, Any
-from apps.alerts.models import AggregationRules
+from typing import Dict, Any, List
+from apps.alerts.models import AggregationRules, CorrelationRules
 from apps.alerts.common.rules.alert_rules import load_rules, AlertRulesConfig
 from apps.core.logger import alert_logger as logger
 
@@ -9,55 +9,145 @@ class DatabaseRuleManager:
 
     def __init__(self, window_size="10min"):
         self.rules_config = None
-        self.window_size = window_size  # 默认窗口大小
+        self.window_size = window_size
         # 延迟加载规则，避免初始化时的潜在问题
 
     def load_rules_from_database(self) -> AlertRulesConfig:
-        """从数据库加载聚合规则"""
+        """从数据库加载聚合规则 - 直接返回窗口配置对象"""
         try:
-            aggregation_rules = AggregationRules.objects.filter(is_active=True, correlation_rules__isnull=False)
-
-            if not aggregation_rules.exists():
-                logger.warning("数据库中没有找到启用的聚合规则")
-
-            rules_json = self._convert_rules_to_config(self.window_size, aggregation_rules)
-            self.rules_config = load_rules(rules_json)
-            logger.info(f"成功从数据库加载 {len(aggregation_rules)} 条聚合规则")
-            return self.rules_config
-
+            # 获取所有启用的关联规则
+            correlation_rules = self._get_active_correlation_rules()
+            
+            if not correlation_rules:
+                logger.warning("没有找到启用的关联规则")
+                return None
+            
+            # 取第一个关联规则创建配置（单一配置模式）
+            correlation_rule = correlation_rules[0]
+            
+            # 构建规则数据
+            rules_data = []
+            for corr_rule in correlation_rules:
+                for agg_rule in corr_rule.aggregation_rules.filter(is_active=True):
+                    rules_data.append({
+                        'correlation_rule': corr_rule,
+                        'aggregation_rule': agg_rule
+                    })
+            
+            # 创建并返回窗口配置
+            return self._create_window_config(correlation_rule.window_type, rules_data)
+            
         except Exception as e:
             logger.error(f"从数据库加载规则失败: {str(e)}")
-            default_config = load_rules({"window_size": "10min", "rules": []})
-            self.rules_config = default_config
-            return default_config
+            return None
 
-    def _convert_rules_to_config(self, window_size, aggregation_rules) -> Dict[str, Any]:
-        """将AggregationRules转换为规则配置格式"""
+    @staticmethod
+    def _get_active_correlation_rules():
+        """获取所有启用的关联规则及其聚合规则"""
+        instances = CorrelationRules.objects.filter(
+            aggregation_rules__is_active=True
+        ).prefetch_related('aggregation_rules').distinct()
+        return instances
+
+    def load_specific_correlation_rules(self, correlation_rules: List[CorrelationRules]) -> AlertRulesConfig| None:
+        """
+        加载特定关联规则的配置 - 直接返回窗口配置对象
+        
+        Args:
+            correlation_rules: 要加载的关联规则列表
+            
+        Returns:
+            AlertRulesConfig: 窗口配置对象，如果没有规则则返回None
+        """
+        try:
+            if not correlation_rules:
+                logger.warning("没有提供关联规则")
+                return None
+            
+            # 构建规则数据
+            rules_data = []
+            for correlation_rule in correlation_rules:
+                # 只处理启用的聚合规则
+                active_aggregation_rules = correlation_rule.aggregation_rules.filter(is_active=True)
+                
+                for agg_rule in active_aggregation_rules:
+                    rules_data.append({
+                        'correlation_rule': correlation_rule,
+                        'aggregation_rule': agg_rule
+                    })
+            
+            if not rules_data:
+                logger.warning("没有找到启用的聚合规则")
+                return None
+            
+            # 使用第一个关联规则的窗口类型作为配置基准
+            window_type = correlation_rules[0].window_type
+            
+            # 创建并返回窗口配置
+            config = self._create_window_config(window_type, rules_data)
+            logger.info(f"成功加载特定关联规则配置: 窗口类型={window_type}, 规则数={len(rules_data)}")
+            
+            return config
+            
+        except Exception as e:
+            logger.error(f"加载特定关联规则失败: {str(e)}")
+            return None
+
+    def get_correlation_rules(self, correlation_rules) -> Dict[str, List]:
+        """按窗口类型分组关联规则"""
+        rules_by_window = {}
+        
+        for correlation_rule in correlation_rules:
+            window_type = correlation_rule.window_type
+            if window_type not in rules_by_window:
+                rules_by_window[window_type] = []
+            rules_by_window[window_type].append(correlation_rule)
+        
+        return rules_by_window
+
+    def _create_window_config(self, window_type: str, rules_data: List) -> AlertRulesConfig:
+        """为特定窗口类型创建配置"""
+        if not rules_data:
+            return AlertRulesConfig(
+                window_type=window_type,
+                rules=[]
+            )
+
+        # 取第一个关联规则的窗口配置作为基准
+        base_correlation_rule = rules_data[0]['correlation_rule']
+
+        # 转换聚合规则为规则配置
         rules_list = []
-
-        for rule in aggregation_rules:
+        for rule_data in rules_data:
             try:
+                agg_rule = rule_data['aggregation_rule']
                 rule_dict = {
-                    "rule_id": rule.rule_id,
-                    "name": rule.name,
-                    "description": rule.description or "",
-                    "severity": rule.severity,
-                    "is_active": rule.is_active,
-                    "title": rule.template_title or "",
-                    "content": rule.template_content or "",
-                    "condition": self._parse_rule_condition(rule.condition)
+                    "rule_id": agg_rule.rule_id,
+                    "name": agg_rule.name,
+                    "description": agg_rule.description or "",
+                    "severity": agg_rule.severity,
+                    "is_active": agg_rule.is_active,
+                    "title": agg_rule.template_title or "",
+                    "content": agg_rule.template_content or "",
+                    "condition": self._parse_rule_condition(agg_rule.condition)
                 }
                 rules_list.append(rule_dict)
-                logger.debug(f"成功转换规则: {rule.name}")
-
+                logger.debug(f"成功转换规则: {agg_rule.name}")
             except Exception as e:
-                logger.error(f"转换规则 {rule.name} 失败: {str(e)}")
+                logger.error(f"转换规则失败: {str(e)}")
                 continue
 
-        return {
-            "window_size": window_size,
-            "rules": rules_list
-        }
+        from apps.alerts.common.rules.alert_rules import AlertRuleConfig
+        rules = [AlertRuleConfig(**rule_dict) for rule_dict in rules_list]
+        return AlertRulesConfig(
+            window_size=base_correlation_rule.window_size,
+            window_type=window_type,
+            alignment=base_correlation_rule.alignment,
+            max_window_size=base_correlation_rule.max_window_size or "1h",
+            session_timeout=base_correlation_rule.session_timeout or "30m",
+            session_key_fields=base_correlation_rule.session_key_fields,
+            rules=rules
+        )
 
     def _parse_rule_condition(self, condition_json: list) -> Dict[str, Any]:
         """解析规则条件配置"""
@@ -146,7 +236,8 @@ class DatabaseRuleManager:
             'target_value_field': data.get('target_value_field', 'value'),
             'target_value': data.get('target_value'),
             'operator': data.get('operator', '=='),
-            'aggregation_key': data.get('aggregation_key', ['resource_id'])
+            'aggregation_key': data.get('aggregation_key', ['resource_id']),
+            'session_close': data.get('session_close', {})
         })
 
     def _add_website_monitoring_config(self, condition: Dict, data: Dict):

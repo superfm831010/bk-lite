@@ -5,6 +5,7 @@
 import json
 
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from apps.alerts.common.source_adapter.base import AlertSourceAdapterFactory
 from apps.alerts.models import AlertSource
@@ -41,14 +42,13 @@ def receiver_data(request):
         return JsonResponse({"status": "error", "message": "Invalid request method."}, status=400)
     try:
         data = json.loads(request.body.decode("utf-8"))
-        source_type = data.pop("source_type", None)
         source_id = data.pop("source_id", None)
         events = data.pop("events", [])
         secret = request.META.get("HTTP_SECRET") or data.pop("secret", None)
         if not events:
             return JsonResponse({"status": "error", "message": "Missing events."}, status=400)
 
-        event_source = AlertSource.objects.filter(source_id=source_id, source_type=source_type).first()
+        event_source = AlertSource.objects.filter(source_id=source_id).first()
         if not event_source:
             return JsonResponse({"status": "error", "message": "Invalid source_id or source_type."}, status=400)
 
@@ -67,6 +67,6 @@ def receiver_data(request):
 
         # TODO 若数据量大无法处理，及优化为异步处理 推送到队列
         # send_to_queue(events)
-        return JsonResponse({"status": "success", "message": "Data received successfully."})
+        return JsonResponse({"status": "success", "time": timezone.now().strftime("%Y-%m-%d %H:%M:%S"), "message": "Data received successfully."})
     except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        return JsonResponse({"status": "error", "time": timezone.now().strftime("%Y-%m-%d %H:%M:%S"), "message": str(e)}, status=500)

@@ -98,7 +98,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
   return (
     <Drawer
       title={t('common.linkAlert')}
-      width={740}
+      width={820}
       onClose={onClose}
       open={visible}
     >
