@@ -48,9 +48,13 @@ class BotViewSet(AuthViewSet):
         return JsonResponse({"result": True})
 
     def update(self, request, *args, **kwargs):
+        obj: Bot = self.get_object()
+        if not request.user.is_superuser:
+            has_permission = self.get_has_permission(request.user, obj)
+            if not has_permission:
+                return JsonResponse({"result": False, "message": _("You do not have permission to update this bot.")})
         data = request.data
         is_publish = data.pop("is_publish", False)
-        obj: Bot = self.get_object()
         channels = data.pop("channels", [])
         llm_skills = data.pop("llm_skills", [])
         rasa_model = data.pop("rasa_model", None)
@@ -105,6 +109,11 @@ class BotViewSet(AuthViewSet):
         enabled = request.data.get("enabled")
         channel_config = request.data.get("channel_config")
         channel = BotChannel.objects.get(id=channel_id)
+        if not request.user.is_superuser:
+            has_permission = self.get_has_permission(request.user, channel.bot)
+            if not has_permission:
+                return JsonResponse({"result": False, "message": _("You do not have permission to update this bot.")})
+
         channel.enabled = enabled
         if channel_config is not None:
             channel.channel_config = channel_config
@@ -112,7 +121,12 @@ class BotViewSet(AuthViewSet):
         return JsonResponse({"result": True})
 
     def destroy(self, request, *args, **kwargs):
-        obj: Bot = self.get_object()
+        obj = self.get_object()
+        if not request.user.is_superuser:
+            has_permission = self.get_has_permission(request.user, obj)
+            if not has_permission:
+                return JsonResponse({"result": False, "message": _("You do not have permission to delete this bot.")})
+
         if obj.online:
             client = PilotClient()
             client.stop_pilot(obj.id)
@@ -127,6 +141,11 @@ class BotViewSet(AuthViewSet):
     def start_pilot(self, request):
         bot_ids = request.data.get("bot_ids")
         bots = Bot.objects.filter(id__in=bot_ids)
+        if not request.user.is_superuser:
+            has_permission = self.get_has_permission(request.user, bots, is_list=True)
+            if not has_permission:
+                return JsonResponse({"result": False, "message": _("You do not have permission to start this bot.")})
+
         client = PilotClient()
         for bot in bots:
             if not bot.api_token:
@@ -141,6 +160,11 @@ class BotViewSet(AuthViewSet):
     def stop_pilot(self, request):
         bot_ids = request.data.get("bot_ids")
         bots = Bot.objects.filter(id__in=bot_ids)
+        if not request.user.is_superuser:
+            has_permission = self.get_has_permission(request.user, bots, is_list=True)
+            if not has_permission:
+                return JsonResponse({"result": False, "message": _("You do not have permission to stop this bot")})
+
         client = PilotClient()
         for bot in bots:
             client.stop_pilot(bot.id)

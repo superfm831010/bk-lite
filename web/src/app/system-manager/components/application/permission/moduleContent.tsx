@@ -137,6 +137,12 @@ const SpecificDataTable: React.FC<SpecificDataTableProps> = ({
   // 使用传入的 subModule 或 activeSubModule 作为实际的子模块参数
   const actualSubModule = subModule || activeSubModule;
   
+  // 确保数据源存在且有有效的ID字段
+  const tableDataSource = (moduleData[dataKey] || []).map(item => ({
+    ...item,
+    id: item.id || item.name || Math.random().toString(36) // 确保每个item都有唯一ID
+  }));
+  
   return (
     <Spin spinning={isModuleLoading}>
       {isEditable ? (
@@ -144,41 +150,61 @@ const SpecificDataTable: React.FC<SpecificDataTableProps> = ({
           rowKey="id"
           scroll={{ y: '300px' }}
           columns={columns}
-          dataSource={moduleData[dataKey] || []}
+          dataSource={tableDataSource}
           rowSelection={{
             type: 'checkbox',
-            selectedRowKeys: (moduleData[dataKey] || [])
+            selectedRowKeys: tableDataSource
               .filter(item => item.view)
               .map(item => item.id),
             onSelect: (record: DataPermission, selected: boolean) => {
+              console.log('onSelect triggered:', { 
+                record: record.id, 
+                selected, 
+                module, 
+                actualSubModule,
+                activeKey 
+              });
+              
               const newRecord = {
                 ...record,
                 view: selected,
                 operate: selected ? record.operate : false
               };
 
+              // 修正参数传递：确保传递正确的模块和子模块
               handleSpecificDataChange(
                 newRecord,
-                activeKey,
+                module, // 直接使用传入的module参数
                 'view',
-                activeKey === 'provider' ? actualSubModule : undefined
+                actualSubModule // 使用计算出的实际子模块
               );
             },
             onSelectAll: (selected: boolean, selectedRows: DataPermission[], changeRows: DataPermission[]) => {
-              changeRows.forEach(record => {
-                const newRecord = {
-                  ...record,
-                  view: selected,
-                  operate: selected ? record.operate : false
-                };
-
-                handleSpecificDataChange(
-                  newRecord,
-                  activeKey,
-                  'view',
-                  activeKey === 'provider' ? actualSubModule : undefined
-                );
+              console.log('onSelectAll triggered:', { 
+                selected, 
+                selectedRows: selectedRows?.length, 
+                changeRows: changeRows?.length,
+                module,
+                actualSubModule
               });
+              
+              if (changeRows && changeRows.length > 0) {
+                changeRows.forEach(record => {
+                  const newRecord = {
+                    ...record,
+                    view: selected,
+                    operate: selected ? record.operate : false
+                  };
+
+                  // 修正参数传递：确保传递正确的模块和子模块
+                  handleSpecificDataChange(
+                    newRecord,
+                    module, // 直接使用传入的module参数
+                    'view',
+                    actualSubModule // 使用计算出的实际子模块
+                  );
+                });
+              }
             }
           }}
           pagination={{
@@ -193,7 +219,7 @@ const SpecificDataTable: React.FC<SpecificDataTableProps> = ({
               {},
               {},
               module,
-              actualSubModule // 确保传递正确的子模块参数
+              actualSubModule
             )
           }}
           className="mt-4"
@@ -230,13 +256,13 @@ const ModuleContent: React.FC<ModuleContentProps> = ({
     if (!targetSubModule) {
       // 没有子模块，直接返回模块配置
       const modulePermission = permissionState[module];
-      return modulePermission?.__type === 'module' 
+      return modulePermission && typeof modulePermission.type !== 'undefined'
         ? modulePermission as ModulePermissionConfig
         : undefined;
     }
     
     const modulePermission = permissionState[module];
-    if (!modulePermission || modulePermission.__type !== 'provider') {
+    if (!modulePermission || typeof modulePermission.type !== 'undefined') {
       return undefined;
     }
     
@@ -244,17 +270,28 @@ const ModuleContent: React.FC<ModuleContentProps> = ({
     
     // 递归查找函数 - 在所有层级中查找匹配的 targetSubModule
     const findInAllLevels = (config: any, target: string): PermissionConfig | undefined => {
+      // 安全检查：确保config存在且是对象
+      if (!config || typeof config !== 'object') {
+        return undefined;
+      }
+
       // 检查当前层级是否直接包含目标子模块
-      if (config[target] && typeof config[target] === 'object' && config[target].type !== undefined) {
-        return config[target] as PermissionConfig;
+      const targetConfig = config[target];
+      if (targetConfig && 
+          typeof targetConfig === 'object' && 
+          targetConfig !== null &&
+          typeof targetConfig.type !== 'undefined') {
+        return targetConfig as PermissionConfig;
       }
       
       // 递归查找所有子级
       for (const key in config) {
-        if (key === '__type') continue; // 跳过类型标识符
-        
         const value = config[key];
-        if (value && typeof value === 'object' && value.type === undefined) {
+        // 更严格的类型检查：确保value是有效对象且不是权限配置节点
+        if (value && 
+            typeof value === 'object' && 
+            value !== null &&
+            typeof value.type === 'undefined') {
           // 这是一个中间层级，继续递归查找
           const found = findInAllLevels(value, target);
           if (found) return found;
@@ -268,7 +305,7 @@ const ModuleContent: React.FC<ModuleContentProps> = ({
 
   // 检查当前模块是否有子模块（通过检查permissions结构判断）
   const modulePermission = permissions[module];
-  const hasSubModules = modulePermission && modulePermission.__type === 'provider';
+  const hasSubModules = modulePermission && typeof modulePermission.type === 'undefined';
 
   if (subModule && hasSubModules) {
     // 有子模块的情况，使用递归查找函数来获取多层级权限配置
