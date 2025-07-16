@@ -184,7 +184,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
             target: edge.target,
             label: edge.label,
             type: isSelfLoop ? 'loop' : 'line',
-            soucerce_name: edge.source_name,
+            source_name: edge.source_name,
             target_name: edge.target_name,
             fact: edge.fact || '-',
             style: {
@@ -334,7 +334,7 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
                 target: model.target as string,
                 label: model.label as string,
                 type: model.type as 'relation' | 'reference',
-                source_name: model.soucerce_name as string,
+                source_name: model.source_name as string,
                 target_name: model.target_name as string,
                 fact: model.fact as string | null,
               });
