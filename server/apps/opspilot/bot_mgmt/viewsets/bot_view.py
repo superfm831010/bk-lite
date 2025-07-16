@@ -122,11 +122,6 @@ class BotViewSet(AuthViewSet):
 
     def destroy(self, request, *args, **kwargs):
         obj = self.get_object()
-        if not request.user.is_superuser:
-            has_permission = self.get_has_permission(request.user, obj)
-            if not has_permission:
-                return JsonResponse({"result": False, "message": _("You do not have permission to delete this bot.")})
-
         if obj.online:
             client = PilotClient()
             client.stop_pilot(obj.id)

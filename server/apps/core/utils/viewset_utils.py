@@ -223,7 +223,7 @@ class AuthViewSet(MaintainerViewSet):
             if "team" in data:
                 data.pop("team", None)
             current_team = int(request.COOKIES.get("current_team", None))
-            if current_team not in instance.teams:
+            if current_team not in instance.team:
                 return self.value_error(_("User does not have permission to update this instance"))
             if hasattr(self, "permission_key"):
                 has_permission = self.get_has_permission(user, instance)
