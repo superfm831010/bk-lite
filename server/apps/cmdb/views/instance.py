@@ -143,7 +143,7 @@ class InstanceViewSet(viewsets.ViewSet):
     def instance_batch_delete(self, request):
         can_do = "Operate"
         rules = request.user.rules['cmdb']['normal']
-        instances = InstanceManage.query_entity_by_ids(list(request.data))
+        instances = InstanceManage.query_entity_by_ids(request.data)
         model_id = instances[0]["model_id"]
         inst_names = [i["inst_name"] for i in instances]
         permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules,inst_names,can_do)
@@ -202,11 +202,12 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Edit")
     @action(detail=False, methods=["post"], url_path="batch_update")
     def instance_batch_update(self, request):
+        can_do = "Operate"
         rules = request.user.rules['cmdb']['normal']
         instances = InstanceManage.query_entity_by_ids(request.data["inst_ids"])
         model_id = instances[0]["model_id"]
-        inst_names = [inst["name"] for inst in instances]
-        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES,model_id,rules,inst_names)
+        inst_names = [inst["inst_name"] for inst in instances]
+        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES,model_id,rules,inst_names,can_do)
         if not permission:
             return WebUtils.response_error("没有权限")
         InstanceManage.batch_instance_update(
@@ -248,15 +249,16 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules['cmdb']['normal']
         dst_model_id = request.data.get("dst_model_id")
         src_model_id = request.data.get("src_model_id")
-        dst_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES,dst_model_id,rules)
-        src_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES,src_model_id,rules)
-        if dst_permission is not None and src_permission is not None:
-            for _,value in dst_permission.items():
-                if can_do not in value:
-                    return WebUtils.response_error("无权限操作目标模型")
-            for _,value in src_permission.items():
-                if can_do not in value:
-                    return WebUtils.response_error("无权限操作源模型")
+        src_inst_id = request.data.get("src_inst_id")
+        dst_inst_id = request.data.get("dst_inst_id")
+        src_inst_name = InstanceManage.query_entity_by_id(src_inst_id)["inst_name"]
+        dst_inst_name = InstanceManage.query_entity_by_id(dst_inst_id)["inst_name"]
+        # 将源目标模型id和实例名封装成字典
+        src_dict = {src_model_id: src_inst_name}
+        dst_dict = {dst_model_id: dst_inst_name}
+        permission = CmdbRulesFormatUtil.has_single_asso_permission(PERMISSION_INSTANCES,src_dict,dst_dict,rules,can_do)
+        if not permission:
+            return WebUtils.response_error("没有权限")
         asso = InstanceManage.instance_association_create(request.data, request.user.username)
         return WebUtils.response_success(asso)
 
@@ -269,6 +271,20 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Delete,asset_relationships-Delete")
     @action(detail=False, methods=["delete"], url_path="association/(?P<id>.+?)")
     def instance_association_delete(self, request, id: int):
+        can_do = "Operate"
+        rules = request.user.rules['cmdb']['normal']
+        association = InstanceManage.instance_association_by_asso_id(int(id))
+        src_model_id = association["edge"]["src_model_id"]
+        dst_model_id = association["edge"]["dst_model_id"]
+        dst_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, dst_model_id, rules)
+        src_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES,src_model_id,rules,)
+        if dst_permission is not None and src_permission is not None:
+            for _, value in dst_permission.items():
+                if can_do not in value:
+                    return WebUtils.response_error("没有权限")
+            for _, value in src_permission.items():
+                if can_do not in value:
+                    return WebUtils.response_error("没有权限")
         InstanceManage.instance_association_delete(int(id), request.user.username)
         return WebUtils.response_success()
 
@@ -292,8 +308,11 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_list-View,asset_relationships-View")
     def instance_association_instance_list(self, request, model_id: str, inst_id: int):
+        can_do = "View"
+        rules = request.user.rules['cmdb']['normal']
         asso_insts = InstanceManage.instance_association_instance_list(model_id, int(inst_id))
-        return WebUtils.response_success(asso_insts)
+        result = CmdbRulesFormatUtil.has_bath_asso_permission(PERMISSION_INSTANCES, asso_insts, rules, can_do)
+        return WebUtils.response_success(result)
 
     @swagger_auto_schema(
         operation_id="instance_association",
@@ -314,6 +333,12 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_relationships-View,asset_list-View")
     def instance_association(self, request, model_id: str, inst_id: int):
+        can_do = "View"
+        rules = request.user.rules['cmdb']['normal']
+        inst_name = InstanceManage.query_entity_by_id(inst_id)["inst_name"]
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do)
+        if not permission:
+            return WebUtils.response_error("没有权限")
         asso_insts = InstanceManage.instance_association(model_id, int(inst_id))
         return WebUtils.response_success(asso_insts)
 
@@ -332,6 +357,13 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Add")
     @action(methods=["get"], detail=False, url_path=r"(?P<model_id>.+?)/download_template")
     def download_template(self, request, model_id):
+        rules = request.user.rules['cmdb']['normal']
+        can_do = "Operate"
+        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
+        if permission is not None:
+            for _, value in permission.items():
+                if can_do not in value:
+                    return WebUtils.response_error("没有权限")
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         response["Content-Disposition"] = f"attachment;filename={f'{model_id}_import_template.xlsx'}"
         response.write(InstanceManage.download_import_template(model_id).read())
@@ -363,6 +395,13 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Add")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import")
     def inst_import(self, request, model_id):
+        can_do = "Operate"
+        rules = request.user.rules['cmdb']['normal']
+        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
+        if permission is not None:
+            for _, value in permission.items():
+                if can_do not in value:
+                    return WebUtils.response_error("没有权限")
         result = InstanceManage.inst_import(
             model_id,
             request.data.get("file").file,
@@ -396,6 +435,13 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Add")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import_support_edit")
     def inst_import_support_edit(self, request, model_id):
+        can_do = "Operate"
+        rules = request.user.rules['cmdb']['normal']
+        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
+        if permission is not None:
+            for _, value in permission.items():
+                if can_do not in value:
+                    return WebUtils.response_error("没有权限")
         add_result, update_result = InstanceManage.inst_import_support_edit(
             model_id,
             request.data.get("file").file,
@@ -425,6 +471,13 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-View")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_export")
     def inst_export(self, request, model_id):
+        can_do = "Operate"
+        rules = request.user.rules['cmdb']['normal']
+        permisssion = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
+        if permisssion is not None:
+            for _, value in permisssion.items():
+                if can_do not in value:
+                    return WebUtils.response_error("没有权限")
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         response["Content-Disposition"] = f"attachment;filename={f'{model_id}_import_template.xlsx'}"
         response.write(InstanceManage.inst_export(model_id, request.data).read())
@@ -472,6 +525,12 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_list-View,asset_basic_information-View,asset_relationships-View")
     def topo_search(self, request, model_id: str, inst_id: int):
+        can_do = "View"
+        rules = request.user.rules['cmdb']['normal']
+        inst_name = InstanceManage.query_entity_by_id(inst_id)["inst_name"]
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do)
+        if not permission:
+            return WebUtils.response_error("没有权限")
         result = InstanceManage.topo_search(int(inst_id))
         return WebUtils.response_success(result)
 
@@ -490,6 +549,13 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_list-View")
     def create_or_update(self, request, model_id):
+        can_do = "View"
+        rules = request.user.rules['cmdb']['normal']
+        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
+        if permission is not None:
+            for _, value in permission.items():
+                if can_do not in value:
+                    return WebUtils.response_error("没有权限")
         data = dict(
             model_id=model_id,
             created_by=request.user.username,
@@ -501,6 +567,13 @@ class InstanceViewSet(viewsets.ViewSet):
     @action(methods=["get"], detail=False, url_path=r"(?P<model_id>.+?)/show_field/detail")
     @HasPermission("asset_list-View")
     def get_info(self, request, model_id):
+        can_do = "View"
+        rules = request.user.rules['cmdb']['normal']
+        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
+        if permission is not None:
+            for _, value in permission.items():
+                if can_do not in value:
+                    return WebUtils.response_error("没有权限")
         result = InstanceManage.get_info(model_id, request.user.username)
         return WebUtils.response_success(result)
 

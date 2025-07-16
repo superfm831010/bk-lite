@@ -19,11 +19,11 @@ class CmdbRulesFormatUtil:
 
     @staticmethod
     def has_single_permission(module,children_module,rules,inst_name,can_do):
-        permission = CmdbRulesFormatUtil.format_rules(module,children_module,rules)
-        if permission is None:
+        permission_map = CmdbRulesFormatUtil.format_rules(module,children_module,rules)
+        if permission_map is None:
             return True
         else:
-            return can_do in permission[inst_name]
+            return can_do in permission_map[inst_name]
 
     @staticmethod
     def has_btch_permission(module,children_module,rules,inst_names: list,can_do):
@@ -32,8 +32,32 @@ class CmdbRulesFormatUtil:
                 return False
         return True
 
+    @staticmethod
+    def has_single_asso_permission(module,src_dict: dict,dst_dict: dict,rules,can_do):
+        dst_model_id = list(dst_dict.keys())[0]
+        src_model_id = list(src_dict.keys())[0]
+        dst_inst_name = dst_dict[dst_model_id]
+        src_inst_name = src_dict[src_model_id]
+        dst_permission = CmdbRulesFormatUtil.has_single_permission(module,dst_model_id,rules,dst_inst_name,can_do)
+        src_permission = CmdbRulesFormatUtil.has_single_permission(module,src_model_id,rules,src_inst_name,can_do)
+        return dst_permission and src_permission
 
-
+    @staticmethod
+    def has_bath_asso_permission(module,asso_list: list,rules,can_do):
+        #判断每个关联的两个模型的权限是否都包含can_do
+        for asso in asso_list:
+            src_model_id = asso.get("src_model_id")
+            dst_model_id = asso.get("dst_model_id")
+            src_permission = CmdbRulesFormatUtil.format_rules(module,src_model_id,rules)
+            dst_permission = CmdbRulesFormatUtil.format_rules(module,dst_model_id,rules)
+            if src_permission is not None and dst_permission is not None:
+                for _,value in src_permission.items():
+                    if can_do not in value:
+                        asso_list.remove(asso)
+                for _,value in dst_permission.items():
+                    if can_do not in value:
+                        asso_list.remove(asso)
+        return asso_list
 
 
 
