@@ -282,6 +282,15 @@ def get_qa_content(qa_pairs_obj: QAPairs, es_index):
 
 
 @shared_task
+def rebuild_graph_community_by_instance(instance_id):
+    graph_obj = KnowledgeGraph.objects.get(id=instance_id)
+    res = GraphUtils.rebuild_graph_community(graph_obj)
+    if not res["result"]:
+        logger.error("Failed to rebuild graph community: {}".format(res["message"]))
+    logger.info("Graph community rebuild completed for instance ID: {}".format(instance_id))
+
+
+@shared_task
 def create_graph(instance_id):
     logger.info("Start creating graph for instance ID: {}".format(instance_id))
     instance = KnowledgeGraph.objects.get(id=instance_id)
