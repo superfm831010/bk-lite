@@ -30,6 +30,9 @@ const SubModuleTabs: React.FC<SubModuleTabsProps> = ({
   // Add current active leaf node state
   const [currentLeafNode, setCurrentLeafNode] = useState<string>('');
 
+  // 添加一个状态来跟踪之前的模块
+  const [previousModule, setPreviousModule] = useState<string>('');
+
   // Get current module configuration
   const currentModuleConfig = moduleTree?.[module];
   
@@ -40,7 +43,9 @@ const SubModuleTabs: React.FC<SubModuleTabsProps> = ({
     }
 
     const firstChild = currentModuleConfig.children[0];
-    if (!activeFirstLevel) {
+    
+    // 自动选择第一级的第一个模块
+    if (!activeFirstLevel || module !== previousModule) {
       setActiveFirstLevel(firstChild?.name || '');
     }
 
@@ -67,7 +72,16 @@ const SubModuleTabs: React.FC<SubModuleTabsProps> = ({
     };
 
     initializeLeafNode();
-  }, [currentModuleConfig, activeFirstLevel, setActiveSubModule]);
+  }, [currentModuleConfig, module]); // 移除 activeFirstLevel 依赖，使用 module 变化来触发初始化
+
+  useEffect(() => {
+    if (module !== previousModule) {
+      setPreviousModule(module);
+      // 重置状态，强制重新初始化
+      setActiveFirstLevel('');
+      setCurrentLeafNode('');
+    }
+  }, [module, previousModule]);
 
   // Early return after all hooks are called
   if (!currentModuleConfig || !currentModuleConfig.children || currentModuleConfig.children.length === 0) {
@@ -165,11 +179,26 @@ const SubModuleTabs: React.FC<SubModuleTabsProps> = ({
   // Load leaf node data
   function loadDataForLeafNode(leafNodeKey: string) {
     const providerConfig = permissions[module] as ProviderPermissionConfig;
-    if (providerConfig[leafNodeKey]) {
-      const subModuleConfig = providerConfig[leafNodeKey] as PermissionConfig;
-      if (subModuleConfig.type === 'specific' && (!moduleData[`${module}_${leafNodeKey}`] || moduleData[`${module}_${leafNodeKey}`].length === 0)) {
-        loadSpecificData(module, leafNodeKey);
+    
+    // 使用递归查找来定位叶子节点配置
+    const findLeafConfig = (config: any, targetKey: string): PermissionConfig | undefined => {
+      if (config[targetKey] && typeof config[targetKey] === 'object' && config[targetKey].type !== undefined) {
+        return config[targetKey] as PermissionConfig;
       }
+      
+      for (const key in config) {
+        const value = config[key];
+        if (value && typeof value === 'object' && value.type === undefined) {
+          const found = findLeafConfig(value, targetKey);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+    
+    const subModuleConfig = findLeafConfig(providerConfig, leafNodeKey);
+    if (subModuleConfig?.type === 'specific' && (!moduleData[`${module}_${leafNodeKey}`] || moduleData[`${module}_${leafNodeKey}`].length === 0)) {
+      loadSpecificData(module, leafNodeKey);
     }
   }
 
