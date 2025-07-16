@@ -1,3 +1,5 @@
+import json
+
 from django.http import JsonResponse
 from django_filters import filters
 from django_filters.rest_framework import FilterSet
@@ -6,7 +8,7 @@ from rest_framework.decorators import action
 from apps.core.utils.viewset_utils import MaintainerViewSet
 from apps.opspilot.knowledge_mgmt.models import QAPairs
 from apps.opspilot.knowledge_mgmt.serializers.qa_pairs_serializers import QAPairsSerializer
-from apps.opspilot.tasks import create_qa_pairs
+from apps.opspilot.tasks import create_qa_pairs, create_qa_pairs_by_json
 from apps.opspilot.utils.chunk_helper import ChunkHelper
 
 
@@ -47,6 +49,20 @@ class QAPairsViewSet(MaintainerViewSet):
             params["knowledge_base_id"],
         )
         return JsonResponse({"result": True})
+
+    @action(methods=["POST"], detail=False)
+    def import_qa_json(self, request):
+        json_file = request.FILES.get("file")
+        if not json_file:
+            return JsonResponse({"result": False, "message": "No file provided."})
+        try:
+            data = json.load(json_file)
+        except json.JSONDecodeError:
+            return JsonResponse({"result": False, "message": "Invalid JSON file."})
+        if not isinstance(data, list):
+            return JsonResponse({"result": False, "message": "JSON file must contain a list of QAPairs."})
+        params = request.data
+        create_qa_pairs_by_json.delay(data, params["knowledge_base_id"], json_file.name)
 
     @action(methods=["GET"], detail=True)
     def get_details(self, request, *args, **kwargs):
