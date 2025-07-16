@@ -207,23 +207,23 @@ DOCKER_IMAGE_NATS=nats:2.10.25
 DOCKER_IMAGE_NATS_CLI=bitnami/natscli:0.1.6
 DOCKER_IMAGE_VICTORIA_METRICS=victoriametrics/victoria-metrics:v1.106.1
 DOCKER_IMAGE_POSTGRES=postgres:15
-DOCKER_IMAGE_SERVER=ccr.ccs.tencentyun.com/bklite/server
-DOCKER_IMAGE_WEB=ccr.ccs.tencentyun.com/bklite/web
+DOCKER_IMAGE_SERVER=bklite/server
+DOCKER_IMAGE_WEB=bklite/web
 DOCKER_NETWORK=prod
 DIST_ARCH=arm64
 POSTGRES_USERNAME=postgres
 TRAEFIK_ENABLE_DASHBOARD=false
 DEFAULT_REQUEST_TIMEOUT=10
-DOCKER_IMAGE_STARGAZER=ccr.ccs.tencentyun.com/bklite/stargazer
+DOCKER_IMAGE_STARGAZER=bklite/stargazer
 DOCKER_NEO4J_IMAGE=neo4j:4.4.43
 DOCKER_IMAGE_MINIO=minio/minio:RELEASE.2024-05-01T01-11-10Z-cpuv1
 DOCKER_IMAGE_RABBITMQ=rabbitmq:management
-DOCKER_IMAGE_ELASTICSEARCH=ccr.ccs.tencentyun.com/bklite/elasticsearch
-DOCKER_IMAGE_METIS=ccr.ccs.tencentyun.com/bklite/metis
+DOCKER_IMAGE_ELASTICSEARCH=bklite/elasticsearch
+DOCKER_IMAGE_METIS=bklite/metis
 
 # 采集器镜像
 # TODO: 不同OS/架构支持
-export DOCKER_IMAGE_FUSION_COLLECTOR=ccr.ccs.tencentyun.com/bklite/fusion-collector:linux-amd64
+export DOCKER_IMAGE_FUSION_COLLECTOR=bklite/fusion-collector:linux-amd64
 
 # 从镜像生成控制器&采集器包
 log "INFO" "开始生成控制器和采集器包..."
@@ -325,8 +325,8 @@ DOCKER_NEO4J_IMAGE=${DOCKER_NEO4J_IMAGE}
 DOCKER_IMAGE_FUSION_COLLECTOR=${DOCKER_IMAGE_FUSION_COLLECTOR}
 DOCKER_IMAGE_MINIO=minio/minio:RELEASE.2024-05-01T01-11-10Z-cpuv1
 DOCKER_IMAGE_RABBITMQ=rabbitmq:management
-DOCKER_IMAGE_ELASTICSEARCH=ccr.ccs.tencentyun.com/bklite/elasticsearch
-DOCKER_IMAGE_METIS=ccr.ccs.tencentyun.com/bklite/metis
+DOCKER_IMAGE_ELASTICSEARCH=bklite/elasticsearch
+DOCKER_IMAGE_METIS=bklite/metis
 POSTGRES_USERNAME=${POSTGRES_USERNAME}
 TRAEFIK_ENABLE_DASHBOARD=${TRAEFIK_ENABLE_DASHBOARD}
 DEFAULT_REQUEST_TIMEOUT=${DEFAULT_REQUEST_TIMEOUT}
