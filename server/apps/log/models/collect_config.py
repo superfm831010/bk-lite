@@ -10,6 +10,8 @@ class CollectType(TimeInfo, MaintainerInfo):
     collector = models.CharField(max_length=100, verbose_name='采集器')
     icon = models.CharField(max_length=100, verbose_name='图标')
     description = models.TextField(blank=True, verbose_name='描述')
+    default_query = models.TextField(blank=True, verbose_name='默认查询语句')
+    attrs = models.JSONField(default=list, verbose_name='属性列表')
 
     class Meta:
         verbose_name = '采集方式'
@@ -30,7 +32,7 @@ class CollectInstance(TimeInfo, MaintainerInfo):
 
 class CollectInstanceOrganization(TimeInfo, MaintainerInfo):
     collect_instance = models.ForeignKey(CollectInstance, on_delete=models.CASCADE, verbose_name='监控对象实例')
-    organization = models.CharField(max_length=100, verbose_name='组织id')
+    organization = models.IntegerField(verbose_name='组织ID')
 
     class Meta:
         verbose_name = '采集方式实例组织'

@@ -3,5 +3,6 @@
   "collector": "Vector",
   "icon": "docker",
   "description": "Collects logs from Docker containers",
-  "default_metric": "collect_type: docker | last 1 by (_time) partition by (instance_id)"
+  "default_query": "collect_type: docker | last 1 by (_time) partition by (instance_id)",
+  "attrs": ["container_created_at", "container_id", "container_name", "host", "image", "label", "message", "source_type", "stream", "timestamp"]
 }

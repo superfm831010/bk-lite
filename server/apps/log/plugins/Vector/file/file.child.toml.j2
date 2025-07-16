@@ -17,14 +17,40 @@ inputs = ["file_{{ instance_id }}"]
 source = '''
 .collect_type = "file"
 .instance_id = "{{ instance_id }}"
+.streams = ["default"]
 '''
 
 # ====================================
-# NATS Sink（独立实例）
+# 日志数据流
 # ====================================
+
+[transforms.router_{{ instance_id }}]
+type = "route"
+inputs = ["file_enrich_{{ instance_id }}"]
+{% for route in routes %}
+route.{{ instance_id }}_{{ route.stream_id }} = '{{ route.condition }}'
+{% endfor %}
+
+{% for stream in streams %}
+[transforms.{{ instance_id }}_{{ stream.stream_id }}]
+type = "remap"
+inputs = ["router_{{ instance_id }}_{{ stream.stream_id }}"]
+source = '''
+.streams = push!(get!(.streams, []), "{{ stream.stream_id }}")
+'''
+{% endfor %}
+
+# ====================================
+# sinks
+# ====================================
+
 [sinks.vmlogs_{{ instance_id }}]
 type = "nats"
-inputs = ["file_enrich_{{ instance_id }}"]
+inputs = [
+    {% for stream in streams %}
+    "{{ instance_id }}_{{ stream.stream_id }}",
+    {% endfor %}
+]
 subject = "vector"
 url = "nats://${NATS_SERVERS}"
 
