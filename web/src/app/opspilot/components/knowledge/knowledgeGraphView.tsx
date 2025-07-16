@@ -84,7 +84,20 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
     }
   };
 
-  const getEdgeStyle = (type: string) => {
+  const getEdgeStyle = (type: string, isSelfLoop: boolean = false) => {
+    if (isSelfLoop) {
+      return {
+        stroke: type === 'reference' ? '#999' : '#e2e2e2',
+        lineWidth: 3,
+        lineDash: type === 'reference' ? [4, 4] : undefined,
+        endArrow: {
+          path: 'M 0,0 L 8,4 L 8,-4 Z',
+          fill: type === 'reference' ? '#999' : '#e2e2e2',
+          stroke: type === 'reference' ? '#999' : '#e2e2e2',
+        },
+      };
+    }
+
     switch (type) {
       case 'reference':
         return {
@@ -136,23 +149,21 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
 
       const processedData = {
         nodes: graphData.nodes.map(node => {
-          // Use first label as node type for styling
           const nodeType = node.labels && node.labels.length > 0 ? node.labels[0] : 'default';
           const style = getNodeStyle(nodeType);
           const displayLabel = truncateText(node.label || node.name || '', 3);
-          
+
           return {
             id: node.id,
             label: displayLabel,
             labels: node.labels,
-            // Include all original node data for click handling
             name: node.name,
             uuid: node.uuid,
             summary: node.summary,
             node_id: node.node_id,
             group_id: node.group_id,
             fact: node.fact,
-            size: 60, // Keep consistent with defaultNode
+            size: 60,
             style: {
               fill: style.fill,
               stroke: style.stroke,
@@ -160,20 +171,35 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
             },
           };
         }),
-        edges: graphData.edges.map(edge => {
-          const style = getEdgeStyle(edge.type);
+        edges: graphData.edges.map((edge, index) => {
+          const isSelfLoop = edge.source === edge.target;
+          const style = getEdgeStyle(edge.type, isSelfLoop);
+
+          const loopPositions = ['top', 'top-right', 'right', 'bottom-right', 'bottom', 'bottom-left', 'left', 'top-left'];
+          const loopIndex = index % loopPositions.length;
+
           return {
             id: edge.id,
             source: edge.source,
             target: edge.target,
             label: edge.label,
-            type: edge.type,
+            type: isSelfLoop ? 'loop' : 'line',
+            soucerce_name: edge.source_name,
+            target_name: edge.target_name,
+            fact: edge.fact || '-',
             style: {
               stroke: style.stroke,
               lineWidth: style.lineWidth,
               ...(style.lineDash && { lineDash: style.lineDash }),
               endArrow: style.endArrow,
             },
+            ...(isSelfLoop && {
+              loopCfg: {
+                position: loopPositions[loopIndex],
+                dist: 60 + (loopIndex * 10),
+                clockwise: index % 2 === 0,
+              }
+            }),
           };
         }),
       };
@@ -308,6 +334,9 @@ const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
                 target: model.target as string,
                 label: model.label as string,
                 type: model.type as 'relation' | 'reference',
+                source_name: model.soucerce_name as string,
+                target_name: model.target_name as string,
+                fact: model.fact as string | null,
               });
             }
           } catch (error) {
