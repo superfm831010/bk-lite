@@ -62,7 +62,10 @@ class QAPairsViewSet(MaintainerViewSet):
         if not isinstance(data, list):
             return JsonResponse({"result": False, "message": "JSON file must contain a list of QAPairs."})
         params = request.data
-        create_qa_pairs_by_json.delay(data, params["knowledge_base_id"], json_file.name)
+        create_qa_pairs_by_json.delay(
+            data, params["knowledge_base_id"], json_file.name, request.user.username, request.user.domain
+        )
+        return JsonResponse({"result": True, "message": "QA pairs import started."})
 
     @action(methods=["GET"], detail=True)
     def get_details(self, request, *args, **kwargs):
