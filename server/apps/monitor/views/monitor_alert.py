@@ -44,8 +44,7 @@ class MonitorAlertVieSet(
         # 获取经过过滤器处理的数据
         queryset = self.filter_queryset(self.get_queryset())
         if not request.user.is_superuser:
-            group_ids = [i["id"] for i in request.user.group_list]
-            policy_ids = PolicyOrganization.objects.filter(organization__in=group_ids).values_list("policy_id", flat=True)
+            policy_ids = PolicyOrganization.objects.filter(organization=request.COOKIES.get("current_team")).values_list("policy_id", flat=True)
             queryset = queryset.filter(policy_id__in=list(policy_ids)).distinct()
 
         if request.GET.get("monitor_objects"):

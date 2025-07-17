@@ -2,14 +2,28 @@ import os
 import uuid
 
 from jinja2 import Environment, FileSystemLoader, DebugUndefined
-from apps.log.models import CollectConfig
+from apps.log.models import CollectConfig, Stream
 from apps.log.plugins import PLUGIN_DIRECTORY
+from apps.log.utils.stream import StreamUtils
 from apps.rpc.node_mgmt import NodeMgmt
 
 
 class Controller:
     def __init__(self, data):
         self.data = data
+        self.stream_rules = self.get_stream_rules()
+
+    def get_stream_rules(self):
+        streams = Stream.objects.filter(collect_type_id=self.data["collect_type_id"])
+        stream_rules = []
+        for stream in streams:
+            stream_rules.append(
+                {
+                    "stream_id": stream.id,
+                    "condition": StreamUtils.json_to_jq_expression(stream.rule),
+                }
+            )
+        return stream_rules
 
     def get_template_info_by_type(self, template_dir: str, type_name: str):
         """
@@ -36,7 +50,7 @@ class Controller:
             })
         return result
 
-    def render_template(self, template_dir: str, file_name: str, context: dict):
+    def render_template(self, template_dir: str, file_name: str, context: dict, stream_rules=None):
         """
         渲染指定目录下的 j2 模板文件。
 
@@ -45,6 +59,7 @@ class Controller:
         :return: 渲染后的配置字符串
         """
         _context = {**context}
+        _context.update(streams=stream_rules or [])
         env = Environment(loader=FileSystemLoader(template_dir), undefined=DebugUndefined)
         template = env.get_template(file_name)
         return template.render(_context)
@@ -80,6 +95,7 @@ class Controller:
                     template_dir,
                     f"{template['type']}.{template['config_type']}.{template['file_type']}.j2",
                     config_info,
+                    self.stream_rules
                 )
 
                 # 节点管理创建配置
