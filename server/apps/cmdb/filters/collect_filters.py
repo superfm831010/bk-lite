@@ -2,11 +2,11 @@
 # @File: collect_filters.py
 # @Time: 2025/3/3 14:00
 # @Author: windyzhao
-
-
+from django.db.models import Q
 from django_filters import CharFilter, FilterSet
 
 from apps.cmdb.models.collect_model import CollectModels, OidMapping
+from apps.cmdb.utils.permission import InstancePermissionManage
 
 
 class CollectModelFilter(FilterSet):
@@ -19,6 +19,32 @@ class CollectModelFilter(FilterSet):
     class Meta:
         model = CollectModels
         fields = ["search_ids", "driver_type", "exec_status", "model_id"]
+
+    @property
+    def qs(self):
+        # 先获取父类应用所有过滤器后的查询集
+        queryset = super().qs
+
+        # 然后应用权限过滤
+        filters = self.get_user_permission_filters()
+        if filters:
+            queryset = queryset.filter(filters)
+
+        return queryset
+
+    def get_user_permission_filters(self):
+        """
+        获取用户task权限过滤条件
+        """
+        rules = self.request.user.rules.get("cmdb", {}).get("normal", {}).get("task", {})
+        result = InstancePermissionManage.get_task_permissions(rules=rules)
+        filters = Q()
+        if not result:
+            return filters
+        for task_type, instance_map in result.items():
+            filters |= ~Q(task_type=task_type)
+            filters |= Q(id__in=list(instance_map.keys()))
+        return filters
 
 
 class OidModelFilter(FilterSet):
