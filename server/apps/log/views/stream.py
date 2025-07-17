@@ -1,10 +1,6 @@
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.decorators import action
-from rest_framework.response import Response
-
 from apps.core.utils.web_utils import WebUtils
 from apps.log.models.stream import Stream, StreamOrganization
 from apps.log.serializers.stream import StreamSerializer
@@ -17,7 +13,7 @@ class StreamViewSet(ModelViewSet):
     filterset_class = StreamFilter
 
     @swagger_auto_schema(
-        operation_description="创建节点列表",
+        operation_description="创建数据流",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -64,29 +60,65 @@ class StreamViewSet(ModelViewSet):
         return self.get_paginated_response(data)
 
     @swagger_auto_schema(
-        operation_description="查询节点列表",
+        operation_description="修改数据流",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "organizations": openapi.Schema(type=openapi.TYPE_ARRAY,
+                "name": openapi.Schema(type=openapi.TYPE_STRING, description="Stream Name"),
+                "collect_type_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="Collect Type ID"),
+                "rule": openapi.Schema(type=openapi.TYPE_OBJECT, description="Stream Rule"),
+                "organizations": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
                     items=openapi.Schema(type=openapi.TYPE_INTEGER, description="Organization ID")),
             },
-            required=["organizations"]
+            required=["name", "collect_type_id", "rule", "organizations"]
         )
     )
-    @action(methods=["post"], detail=True, url_path="set_organizations")
-    def set_organizations(self, request, pk=None):
-        """Set organizations for a specific stream."""
-        stream = self.get_object()
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.name = request.data.get("name", instance.name)
+        instance.collect_type_id = request.data.get("collect_type_id", instance.collect_type_id)
+        instance.rule = request.data.get("rule", instance.rule)
+        instance.updated_by = request.user.username
+        instance.save()
+        # 更新组织关联
         organizations = request.data.get("organizations", [])
-        if not isinstance(organizations, list):
-            return Response({"error": "Invalid organizations format"}, status=400)
+        # 清除旧的组织关联
+        StreamOrganization.objects.filter(stream=instance).delete()
+        # 添加新的组织关联
+        StreamOrganization.objects.bulk_create(
+            [StreamOrganization(stream=instance, organization=org_id) for org_id in organizations],
+            ignore_conflicts=True
+        )
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
 
-        # Clear existing organizations
-        StreamOrganization.objects.filter(stream=stream).delete()
+        return WebUtils.response_success(dict(id=instance.id, **request.data))
 
-        # Add new organizations
-        for org_id in organizations:
-            StreamOrganization.objects.create(stream=stream, organization=org_id)
-
-        return Response({"message": "Organizations updated successfully"})
+    # @swagger_auto_schema(
+    #     operation_description="查询节点列表",
+    #     request_body=openapi.Schema(
+    #         type=openapi.TYPE_OBJECT,
+    #         properties={
+    #             "organizations": openapi.Schema(type=openapi.TYPE_ARRAY,
+    #                 items=openapi.Schema(type=openapi.TYPE_INTEGER, description="Organization ID")),
+    #         },
+    #         required=["organizations"]
+    #     )
+    # )
+    # @action(methods=["post"], detail=True, url_path="set_organizations")
+    # def set_organizations(self, request, pk=None):
+    #     """Set organizations for a specific stream."""
+    #     stream = self.get_object()
+    #     organizations = request.data.get("organizations", [])
+    #     if not isinstance(organizations, list):
+    #         return Response({"error": "Invalid organizations format"}, status=400)
+    #
+    #     # Clear existing organizations
+    #     StreamOrganization.objects.filter(stream=stream).delete()
+    #
+    #     # Add new organizations
+    #     for org_id in organizations:
+    #         StreamOrganization.objects.create(stream=stream, organization=org_id)
+    #
+    #     return Response({"message": "Organizations updated successfully"})

@@ -8,7 +8,7 @@ from apps.log.models import CollectType
 class Stream(TimeInfo, MaintainerInfo):
     id = models.CharField(primary_key=True, max_length=200, verbose_name='数据流ID')
     name = models.CharField(db_index=True, max_length=200, verbose_name='数据流名称')
-    collect_type = models.ForeignKey(CollectType, on_delete=models.CASCADE, verbose_name='采集方式')
+    collect_type = models.ForeignKey(CollectType, null=True, blank=True, on_delete=models.CASCADE, verbose_name='采集方式')
     rule = models.JSONField(default=dict, verbose_name='规则')
 
     class Meta:

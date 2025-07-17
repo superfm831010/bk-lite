@@ -53,7 +53,7 @@ source = '''
 [transforms.router_{{ instance_id }}]
 type = "route"
 inputs = ["docker_enrich_{{ instance_id }}"]
-{% for route in routes %}
+{% for route in streams %}
 route.{{ instance_id }}_{{ route.stream_id }} = '{{ route.condition }}'
 {% endfor %}
 
