@@ -26,7 +26,7 @@ const Password: React.FC<PasswordProps> = ({
   onCopy,
 }) => {
   const { t } = useTranslation();
-  const { handleCopy } = useHandleCopy(value);
+  const { handleCopy } = useHandleCopy();
   const [password, setPassword] = useState<string>('');
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
@@ -51,7 +51,7 @@ const Password: React.FC<PasswordProps> = ({
       onCopy(password);
       return;
     }
-    handleCopy();
+    handleCopy(value);
   };
 
   return (
