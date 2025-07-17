@@ -270,12 +270,12 @@ class BasicNode:
             rag_message += f"""
                 <knowledge>
                     <ref_id>{index + 1}</ref_id>
-                    <title>{r.metadata['_source']['metadata']['knowledge_title']}</title>
-                    <knowledge_id>{r.metadata['_source']['metadata']['knowledge_id']}</knowledge_id>
-                    <chunk_number>{r.metadata['_source']['metadata']['chunk_number']}</chunk_number>
-                    <chunk_id>{r.metadata['_source']['metadata']['chunk_id']}</chunk_id>
-                    <segment_number>{r.metadata['_source']['metadata']['segment_number']}</segment_number>
-                    <segment_id>{r.metadata['_source']['metadata']['segment_id']}</segment_id>
+                    <title>{r.metadata['_source']['metadata'].get('knowledge_title', 'N/A')}</title>
+                    <knowledge_id>{r.metadata['_source']['metadata'].get('knowledge_id', 0)}</knowledge_id>
+                    <chunk_number>{r.metadata['_source']['metadata'].get('chunk_number', 0)}</chunk_number>
+                    <chunk_id>{r.metadata['_source']['metadata'].get('chunk_id', 'N/A')}</chunk_id>
+                    <segment_number>{r.metadata['_source']['metadata'].get('segment_number', 0)}</segment_number>
+                    <segment_id>{r.metadata['_source']['metadata'].get('segment_id', 'N/A')}</segment_id>
                     <content>{r.page_content}</content>
                 </knowledge>
             """
