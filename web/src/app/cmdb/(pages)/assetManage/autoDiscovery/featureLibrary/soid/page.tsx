@@ -19,6 +19,7 @@ interface ListItem {
   brand: string;
   device_type: string;
   built_in: boolean;
+  [key: string]: any;
 }
 
 const OidLibrary: React.FC = () => {
@@ -189,24 +190,30 @@ const OidLibrary: React.FC = () => {
         title: t('action'),
         key: 'operation',
         width: 140,
-        render: (text: any, row: ListItem) => (
+        render: (text: any, record: ListItem) => (
           <div className="flex gap-4">
-            <PermissionWrapper requiredPermissions={['Edit']}>
+            <PermissionWrapper
+              requiredPermissions={['Edit']}
+              instPermissions={record.permission}
+            >
               <Button
                 type="link"
                 size="small"
-                disabled={row.built_in}
-                onClick={() => operateMap('edit', row)}
+                disabled={record.built_in}
+                onClick={() => operateMap('edit', record)}
               >
                 {t('edit')}
               </Button>
             </PermissionWrapper>
-            <PermissionWrapper requiredPermissions={['Delete']}>
+            <PermissionWrapper
+              requiredPermissions={['Delete']}
+              instPermissions={record.permission}
+            >
               <Button
                 type="link"
                 size="small"
-                disabled={row.built_in}
-                onClick={() => delMap(row)}
+                disabled={record.built_in}
+                onClick={() => delMap(record)}
               >
                 {t('delete')}
               </Button>

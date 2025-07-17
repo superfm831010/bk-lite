@@ -16,8 +16,8 @@ export interface CollectTask {
     message: CollectTaskMessage;
     exec_time: string | null;
     input_method: number;
-    examine: boolean
-
+    examine: boolean,
+    [permission: string]: any;
 }
 
 export interface TreeNode {
