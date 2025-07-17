@@ -44,11 +44,10 @@ class InstanceViewSet(viewsets.ViewSet):
         page, page_size = int(request.data.get("page", 1)), int(request.data.get("page_size", 10))
         model_id = request.data["model_id"]
         rules = request.user.rules['cmdb']['normal']
-        can_do = "View"
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
-        for _,value in permission.items():
-            if can_do not in value:
-                return WebUtils.response_error("没有权限")
+        inst_names = []
+        is_per = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
+        if is_per is not None:
+            inst_names = CmdbRulesFormatUtil.get_can_view_insts(PERMISSION_INSTANCES, model_id, rules)
         insts, count = InstanceManage.instance_list(
             request.user.group_list,
             request.user.roles,
@@ -57,7 +56,10 @@ class InstanceViewSet(viewsets.ViewSet):
             page,
             page_size,
             request.data.get("order", ""),
+            inst_names,
         )
+        for inst in insts:
+            inst['permission'] = CmdbRulesFormatUtil.get_inst_permission_list(PERMISSION_INSTANCES, model_id, rules,inst['inst_name'])
         return WebUtils.response_success(dict(insts=insts, count=count))
 
     @swagger_auto_schema(
@@ -74,10 +76,13 @@ class InstanceViewSet(viewsets.ViewSet):
         data = InstanceManage.query_entity_by_id(int(pk))
         model_id = data["model_id"]
         inst_name = data["inst_name"]
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id,rules,inst_name, can_do)
-        if not permission:
+        # 判断权限
+        is_per = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id,rules,inst_name, can_do)
+        if not is_per:
             return WebUtils.response_error("没有权限")
-        return WebUtils.response_success(data)
+        #获取权限列表
+        permission = CmdbRulesFormatUtil.get_inst_permission_list(PERMISSION_INSTANCES, model_id,rules,inst_name)
+        return WebUtils.response_success(data,permission)
 
     @swagger_auto_schema(
         operation_id="instance_create",
@@ -96,10 +101,10 @@ class InstanceViewSet(viewsets.ViewSet):
         can_do = "Operate"
         rules = request.user.rules['cmdb']['normal']
         model_id = request.data.get("model_id")
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES,model_id,rules)
-        for _,value in permission.items():
-            if can_do not in value:
-                return WebUtils.response_error("没有权限")
+        inst_name = request.data['instance_info']['inst_name']
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES,model_id,rules,inst_name,can_do)
+        if not permission:
+            return WebUtils.response_error("没有权限")
         inst = InstanceManage.instance_create(
             model_id,
             request.data.get("instance_info"),
@@ -286,7 +291,7 @@ class InstanceViewSet(viewsets.ViewSet):
                 if can_do not in value:
                     return WebUtils.response_error("没有权限")
         InstanceManage.instance_association_delete(int(id), request.user.username)
-        return WebUtils.response_success()
+        return WebUtils.response_success(association)
 
     @swagger_auto_schema(
         operation_id="instance_association_instance_list",
