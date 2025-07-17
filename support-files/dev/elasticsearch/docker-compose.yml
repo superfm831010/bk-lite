@@ -1,7 +1,7 @@
 version: '3'
 services:
   elasticsearch:
-    image: 'bklite/elasticsearch'
+    image: 'ccr.ccs.tencentyun.com/bklite/elasticsearch'
     ports:
       - '9200:9200'
     restart: always

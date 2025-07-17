@@ -2,5 +2,6 @@
   "name": "syslog",
   "collector": "Vector",
   "icon": "syslog",
-  "description": "Collects logs from syslog sources"
+  "description": "Collects logs from syslog sources",
+  "default_metric": "collect_type: syslog | last 1 by (_time) partition by (instance_id)"
 }

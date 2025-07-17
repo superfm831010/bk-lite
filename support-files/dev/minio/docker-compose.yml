@@ -2,7 +2,7 @@ version: '3'
 services:
 
   minio:
-    image: 'minio/minio'
+    image: ccr.ccs.tencentyun.com/bklite/minio
     ports:
       - '9000:9000'
       - '9001:9001'    
@@ -10,6 +10,7 @@ services:
       - MINIO_ROOT_USER=minio
       - MINIO_ROOT_PASSWORD=bklite-minio-password
     command: server --console-address :9001 /data
+    restart: always
     networks:
       - traefik    
     volumes:

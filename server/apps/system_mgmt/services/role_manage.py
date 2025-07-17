@@ -62,5 +62,5 @@ class RoleManage(object):
     @staticmethod
     def get_cache_keys(cache_key):
         sql = "select * from django_cache where cache_key like %(key)s"
-        data = SQLExecute.execute_sql(sql, {"key": f"%{cache_key}%"}, db_name="system_mgmt")
+        data = SQLExecute.execute_sql(sql, {"key": f"%{cache_key}%"})
         return [i["cache_key"].split(":", 3)[-1] for i in data]

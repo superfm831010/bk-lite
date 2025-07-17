@@ -85,6 +85,6 @@ def migrate_collector():
         try:
             with open(file_path, 'r', encoding='utf-8') as file:
                 collectors_data = json.load(file)
-                NodeMgmt().collectors_import(collectors_data)
+                NodeMgmt(is_local_client=True).collectors_import(collectors_data)
         except Exception as e:
             logger.error(f'导入采集器 {file_path} 失败！原因：{e}')

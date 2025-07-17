@@ -2,7 +2,7 @@ version: '3'
 services:
   
   neo4j:
-    image: neo4j
+    image: ccr.ccs.tencentyun.com/bklite/neo4j:5.26.9
     container_name: neo4j
     restart: always
     ports:

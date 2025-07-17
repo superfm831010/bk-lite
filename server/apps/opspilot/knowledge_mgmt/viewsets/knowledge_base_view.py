@@ -61,6 +61,13 @@ class KnowledgeBaseViewSet(AuthViewSet):
     @HasRole()
     def update_settings(self, request, *args, **kwargs):
         instance: KnowledgeBase = self.get_object()
+        if not request.user.is_superuser:
+            has_permission = self.get_has_permission(request.user, instance)
+            if not has_permission:
+                return JsonResponse(
+                    {"result": False, "message": _("You do not have permission to update this instance")}
+                )
+
         kwargs = request.data
         if kwargs.get("name"):
             if KnowledgeBase.objects.filter(name=kwargs["name"]).exclude(id=instance.id).exists():

@@ -2,7 +2,7 @@ version: '3'
 services:
 
   telegraf:
-    image: bklite/telegraf
+    image: ccr.ccs.tencentyun.com/bklite/telegraf 
     container_name: telegraf
     environment:
       - METRIC_NATS_USERNAME=admin

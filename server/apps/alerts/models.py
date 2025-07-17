@@ -336,34 +336,6 @@ class CorrelationRules(MaintainerInfo, TimeInfo):
     )
     session_timeout = models.CharField(max_length=20, default="10min", help_text="会话窗口超时时间")
     max_window_size = models.CharField(max_length=20, null=True, blank=True, help_text="最大窗口大小限制")
-    """
-        会话窗口分组字段，用于确定哪些事件属于同一个会话。
-        
-        **推荐配置**：使用事件指纹作为session_key，
-        这样每个唯一的事件指纹对应一个独立的会话。
-        
-        指纹分组模式配置：
-        - session_key_fields = [] （空数组，启用指纹分组）
-        
-        传统配置（仍支持）：
-        - ["resource_id"]: 按资源分组，同一资源的事件在一个会话中
-        - ["resource_id", "alert_source"]: 按资源和告警源分组
-        - ["user_id", "resource_type"]: 按用户和资源类型分组
-        
-        业务场景示例：
-        1. 每个事件独立会话（推荐）：session_key_fields = []
-           → 服务器A的CPU告警、内存告警、磁盘告警各自独立成会话
-           → 用户X的登录失败、权限异常、操作超时各自独立成会话
-           
-        2. 按资源聚合：session_key_fields = ["resource_id"]
-           → 服务器A的所有告警归为一个会话
-           
-        3. 应用链路分析：session_key_fields = ["service_name", "trace_id"]
-           → 同一调用链的所有服务事件归为一个会话
-           
-        **性能优势**：使用指纹分组可以显著简化会话管理逻辑，
-        提高处理性能，减少配置复杂度。
-    """
     session_key_fields = JSONField(default=list, help_text="会话窗口分组字段，空数组表示使用事件指纹")
 
     class Meta:
@@ -537,7 +509,7 @@ class SessionWindow(TimeInfo):
             return False
 
         # 使用多对多关系查询
-        return self.events.filter(events__in=events).exists()
+        return self.events.filter(event_id__in=list(events.values_list("event_id", flat=True))).exists()
 
     def extend_session(self, new_activity_time=None, events=[]):
         """
