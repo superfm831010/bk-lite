@@ -6,6 +6,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 
 from apps.core.decorators.api_permission import HasPermission
+from apps.rpc.cmdb import CMDB
 from apps.rpc.monitor import Monitor
 from apps.rpc.node_mgmt import NodeMgmt
 from apps.rpc.opspilot import OpsPilot
@@ -78,7 +79,7 @@ class GroupDataRuleViewSet(viewsets.ModelViewSet):
 
     @staticmethod
     def get_client(params):
-        client_map = {"opspilot": OpsPilot, "system-manager": SystemMgmt, "node": NodeMgmt, "monitor": Monitor}
+        client_map = {"opspilot": OpsPilot, "system-manager": SystemMgmt, "node": NodeMgmt, "monitor": Monitor, "cmdb":CMDB}
         app = params.pop("app")
         if app not in client_map.keys():
             raise Exception(_("APP not found"))

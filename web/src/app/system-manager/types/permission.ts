@@ -29,7 +29,7 @@ export interface PermissionRuleItem {
   permission: string[];
 }
 
-// Permission configuration interface
+// Permission configuration interfaces
 export interface PermissionConfig {
   type: string;
   allPermissions: {
@@ -39,14 +39,12 @@ export interface PermissionConfig {
   specificData: Array<DataPermission>;
 }
 
-// Modified interface definition with type discriminator
-export interface ModulePermissionConfig extends PermissionConfig {
-  __type?: 'module';
-}
+// Module permission configuration (for flat structure modules)
+export type ModulePermissionConfig = PermissionConfig;
 
+// Provider permission configuration (for nested structure modules)
 export interface ProviderPermissionConfig {
-  __type?: 'provider';
-  [key: string]: PermissionConfig | 'provider' | undefined; // Unified index signature
+  [key: string]: PermissionConfig | ProviderPermissionConfig | undefined;
 }
 
 // Using discriminated union type

@@ -321,7 +321,7 @@ def reset_pwd(username, password):
 def wechat_user_register(user_id, nick_name):
     user, is_first_login = User.objects.update_or_create(username=user_id, defaults={"display_name": nick_name})
     if not user.group_list:
-        default_group = Group.objects.get(name="Default", parent_id=0)
+        default_group = Group.objects.get(name="OpsPilotGuest", parent_id=0)
         user.group_list = [default_group.id]
     if not user.role_list:
         default_role = list(

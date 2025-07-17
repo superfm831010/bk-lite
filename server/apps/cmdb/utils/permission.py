@@ -27,3 +27,23 @@ class PermissionManage:
         params = self.get_group_params()
 
         return params
+
+
+class InstancePermissionManage:
+
+    @staticmethod
+    def get_task_permissions(rules):
+        """
+        获取任务的权限
+        :param rules: 用户规则
+        :return: 权限列表
+        """
+        result = {}
+        if not rules:
+            return result
+        for task_type, rule in rules.items():
+            _all = any([True for i in rule if i["id"] in {"0", "-1"}])
+            if not _all:
+                result[task_type] = {i["id"]: i["permission"] for i in rule}
+
+        return result
