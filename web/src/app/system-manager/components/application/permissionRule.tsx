@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Tabs, Skeleton } from 'antd';
 import type { RadioChangeEvent } from 'antd';
 import type { CheckboxChangeEvent } from 'antd/es/checkbox';
@@ -85,13 +85,15 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
   ): PermissionConfig | undefined => {
     if (!subModule) {
       const modulePermission = permissions[module];
-      return modulePermission?.__type === 'module' 
+      // Dynamically detect if it is a simple module configuration
+      return modulePermission && typeof modulePermission.type !== 'undefined'
         ? modulePermission as ModulePermissionConfig
         : undefined;
     }
     
     const modulePermission = permissions[module];
-    if (!modulePermission || modulePermission.__type !== 'provider') {
+    // Dynamically detect if it is a nested structure
+    if (!modulePermission || typeof modulePermission.type !== 'undefined') {
       return undefined;
     }
     
@@ -104,8 +106,6 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
       }
       
       for (const key in config) {
-        if (key === '__type') continue;
-        
         const value = config[key];
         if (value && typeof value === 'object' && value.type === undefined) {
           const found = findInAllLevels(value, target);
@@ -127,7 +127,6 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
       if (!moduleConfig) {
         // Module without config, treat as regular module
         initialPermissions[module] = {
-          __type: 'module',
           type: hasValue && value[module]?.type || 'all',
           allPermissions: {
             view: hasValue && value[module]?.allPermissions?.view !== undefined
@@ -148,7 +147,7 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
 
       // Module with sub-modules
       if (moduleConfig.children && moduleConfig.children.length > 0) {
-        const providerConfig: ProviderPermissionConfig = { __type: 'provider' };
+        const providerConfig: ProviderPermissionConfig = {};
 
         // Recursively build multi-level permission structure
         const buildNestedPermissions = (
@@ -191,7 +190,6 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
       } else {
         // No sub-modules, treat as regular module
         initialPermissions[module] = {
-          __type: 'module',
           type: hasValue && value[module]?.type || 'all',
           allPermissions: {
             view: hasValue && value[module]?.allPermissions?.view !== undefined
@@ -230,6 +228,7 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
   const [pagination, setPagination] = useState<{ [key: string]: { current: number, pageSize: number, total: number } }>({});
   const [activeKey, setActiveKey] = useState<string>('');
   const [activeSubModule, setActiveSubModule] = useState<string>('');
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize activeKey and activeSubModule when modules and moduleTree are ready
   useEffect(() => {
@@ -250,9 +249,63 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
         
         const firstLeafModule = getFirstLeafModule(firstModuleConfig);
         setActiveSubModule(firstLeafModule);
+        
+        // Automatically load corresponding permission data
+        setTimeout(() => {
+          if (editableModules.includes(firstLeafModule)) {
+            const providerConfig = permissions[firstModule] as ProviderPermissionConfig;
+            
+            const findInAllLevels = (config: any, target: string): PermissionConfig | undefined => {
+              // Safety check: ensure config exists and is an object
+              if (!config || typeof config !== 'object') {
+                return undefined;
+              }
+
+              // Check if the current level directly contains the target
+              const targetConfig = config[target];
+              if (targetConfig && 
+                  typeof targetConfig === 'object' && 
+                  targetConfig !== null &&
+                  typeof targetConfig.type !== 'undefined') {
+                return targetConfig as PermissionConfig;
+              }
+              
+              // Recursively search all sub-levels
+              for (const configKey in config) {
+                const value = config[configKey];
+                if (value && 
+                    typeof value === 'object' && 
+                    value !== null &&
+                    typeof value.type === 'undefined') {
+                  const found = findInAllLevels(value, target);
+                  if (found) return found;
+                }
+              }
+              return undefined;
+            };
+            
+            const subModuleConfig = findInAllLevels(providerConfig, firstLeafModule);
+            if (subModuleConfig?.type === 'specific') {
+              loadSpecificData(firstModule, firstLeafModule);
+            }
+          }
+        }, 100); // Slight delay to ensure state is updated
+      } else {
+        // Clear sub-module state
+        setActiveSubModule('');
+        
+        // Automatically load module data
+        setTimeout(() => {
+          if (editableModules.includes(firstModule)) {
+            const moduleConfig = permissions[firstModule] as ModulePermissionConfig;
+            if (moduleConfig?.type === 'specific') {
+              loadSpecificData(firstModule);
+            }
+          }
+        }, 100);
       }
     }
-  }, [modules, moduleTree, activeKey]);
+  }, [modules, moduleTree, activeKey, permissions, editableModules]);
 
   // Check and load specific data for the currently active tab when permissions are ready
   useEffect(() => {
@@ -263,13 +316,14 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
     const modulePermission = permissions[activeKey];
     if (!modulePermission) return;
 
-    if (modulePermission.__type === 'module') {
+    // Dynamically detect module type instead of using __type
+    if (typeof modulePermission.type !== 'undefined') {
       // Handle regular module
       const moduleConfig = modulePermission as ModulePermissionConfig;
       if (moduleConfig.type === 'specific') {
         loadSpecificData(activeKey);
       }
-    } else if (modulePermission.__type === 'provider') {
+    } else {
       // Handle provider module with sub-modules
       if (activeSubModule) {
         const providerConfig = modulePermission as ProviderPermissionConfig;
@@ -281,7 +335,6 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
           }
           
           for (const key in config) {
-            if (key === '__type') continue;
             const value = config[key];
             if (value && typeof value === 'object' && value.type === undefined) {
               const found = findInAllLevels(value, target);
@@ -297,7 +350,7 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
         }
       }
     }
-  }, [activeKey, activeSubModule, permissions, moduleTree]);
+  }, [activeKey, activeSubModule, moduleTree]);
 
   // Rebuild permission state when module configuration updates
   useEffect(() => {
@@ -309,7 +362,6 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
   }, [moduleConfig, modules, buildInitialPermissions]);
 
   const loadSpecificData = useCallback(async (module: string, subModule?: string) => {
-    console.log('loadSpecificData called with:', { module, subModule });
     const dataKey = subModule ? `${module}_${subModule}` : module;
 
     if (loading[dataKey]) {
@@ -336,10 +388,9 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
       const formattedData = data.items.map((item: any) => {
         let currentPermission;
         
-        // Use same recursive search logic as moduleContent
         if (subModule) {
           const modulePermission = currentPermissions[module];
-          if (modulePermission && modulePermission.__type === 'provider') {
+          if (modulePermission && typeof modulePermission.type === 'undefined') {
             const providerConfig = modulePermission as ProviderPermissionConfig;
             
             const findInAllLevels = (config: any, target: string): PermissionConfig | undefined => {
@@ -348,7 +399,6 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
               }
               
               for (const key in config) {
-                if (key === '__type') continue;
                 const value = config[key];
                 if (value && typeof value === 'object' && value.type === undefined) {
                   const found = findInAllLevels(value, target);
@@ -413,11 +463,10 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
   }, [moduleTree]);
 
   const handleTypeChange = useCallback((e: RadioChangeEvent, module: string, subModule?: string) => {
-    console.log('handleTypeChange:', { module, subModule, value: e.target.value });
     const newPermissions = { ...permissions };
 
     const modulePermission = newPermissions[module];
-    const hasSubModules = modulePermission && modulePermission.__type === 'provider';
+    const hasSubModules = modulePermission && typeof modulePermission.type === 'undefined';
     
     if (subModule && hasSubModules && isSubModuleOfModule(module, subModule)) {
       const providerConfig = { ...newPermissions[module] } as ProviderPermissionConfig;
@@ -430,8 +479,6 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
         }
         
         for (const key in config) {
-          if (key === '__type') continue;
-          
           const value = config[key];
           if (value && typeof value === 'object' && value.type === undefined) {
             if (setNestedPermissionConfigDeep(value, targetSubModule, newConfig)) {
@@ -458,8 +505,6 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
         if (e.target.value === 'specific') {
           loadSpecificData(module, subModule);
         }
-      } else {
-        console.error('Failed to update permissions for:', subModule);
       }
     } else {
       // Handle module without sub-modules
@@ -482,34 +527,63 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
     const newPermissions = { ...permissions };
 
     const modulePermission = newPermissions[module];
-    const hasSubModules = modulePermission && modulePermission.__type === 'provider';
+    const hasSubModules = modulePermission && typeof modulePermission.type === 'undefined';
 
     if (subModule && hasSubModules && isSubModuleOfModule(module, subModule)) {
+      // Dynamically handle nested structure permission updates
       const providerConfig = { ...newPermissions[module] } as ProviderPermissionConfig;
-      if (!providerConfig[subModule]) return;
+      
+      // Recursively find and update nested permission configuration
+      const updateNestedAllPermission = (config: any, targetSubModule: string): boolean => {
+        if (config[targetSubModule] && 
+            typeof config[targetSubModule] === 'object' && 
+            config[targetSubModule] !== null &&
+            typeof config[targetSubModule].type !== 'undefined') {
+          
+          const subModuleConfig = {
+            ...config[targetSubModule],
+            allPermissions: {
+              ...config[targetSubModule].allPermissions
+            }
+          };
 
-      const subModuleConfig = {
-        ...(providerConfig[subModule] as PermissionConfig),
-        allPermissions: {
-          ...(providerConfig[subModule] as PermissionConfig).allPermissions
+          if (type === 'view') {
+            subModuleConfig.allPermissions.view = e.target.checked;
+            if (!e.target.checked) {
+              subModuleConfig.allPermissions.operate = false;
+            }
+          } else if (type === 'operate') {
+            if (subModuleConfig.allPermissions.view) {
+              subModuleConfig.allPermissions.operate = e.target.checked;
+            }
+          }
+
+          config[targetSubModule] = subModuleConfig;
+          return true;
         }
+        
+        // Recursively search sub-levels
+        for (const key in config) {
+          const value = config[key];
+          if (value && 
+              typeof value === 'object' && 
+              value !== null &&
+              typeof value.type === 'undefined') {
+            if (updateNestedAllPermission(value, targetSubModule)) {
+              return true;
+            }
+          }
+        }
+        
+        return false;
       };
 
-      if (type === 'view') {
-        subModuleConfig.allPermissions.view = e.target.checked;
-
-        if (!e.target.checked) {
-          subModuleConfig.allPermissions.operate = false;
-        }
-      } else if (type === 'operate') {
-        if (subModuleConfig.allPermissions.view) {
-          subModuleConfig.allPermissions.operate = e.target.checked;
-        }
+      const updateSuccess = updateNestedAllPermission(providerConfig, subModule);
+      if (updateSuccess) {
+        newPermissions[module] = providerConfig;
       }
-
-      providerConfig[subModule] = subModuleConfig;
-      newPermissions[module] = providerConfig;
     } else {
+      // Handle flat modules
       const moduleConfig = {
         ...newPermissions[module],
         allPermissions: {
@@ -519,7 +593,6 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
 
       if (type === 'view') {
         moduleConfig.allPermissions.view = e.target.checked;
-
         if (!e.target.checked) {
           moduleConfig.allPermissions.operate = false;
         }
@@ -543,24 +616,26 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
     const newPermissions = { ...permissions };
     const dataKey = subModule ? `${module}_${subModule}` : module;
 
+    // Batch update table data to avoid frequent re-renders
     setModuleData(prev => {
       const newData = [...(prev[dataKey] || [])];
       const itemIndex = newData.findIndex(item => item.id === record.id);
 
       if (itemIndex > -1) {
+        const currentItem = newData[itemIndex];
+        
         if (type === 'view') {
           newData[itemIndex] = {
-            ...newData[itemIndex],
-            view: record.view
+            ...currentItem,
+            view: record.view,
+            // Auto-disable operate permission when view is disabled
+            operate: record.view ? currentItem.operate : false
           };
-
-          if (!record.view) {
-            newData[itemIndex].operate = false;
-          }
         } else if (type === 'operate') {
-          if (newData[itemIndex].view) {
+          // Only allow operate permission when view permission exists
+          if (currentItem.view) {
             newData[itemIndex] = {
-              ...newData[itemIndex],
+              ...currentItem,
               operate: record.operate
             };
           }
@@ -570,41 +645,101 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
       return { ...prev, [dataKey]: newData };
     });
 
+    // Update permission state
     const modulePermission = newPermissions[module];
-    const hasSubModules = modulePermission && modulePermission.__type === 'provider';
+    const hasSubModules = modulePermission && typeof modulePermission.type === 'undefined';
 
     if (subModule && hasSubModules && isSubModuleOfModule(module, subModule)) {
       const providerConfig = { ...newPermissions[module] } as ProviderPermissionConfig;
-      if (!providerConfig[subModule]) return;
-
-      const subModuleConfig = {
-        ...(providerConfig[subModule] as PermissionConfig),
-        specificData: [...((providerConfig[subModule] as PermissionConfig).specificData || [])]
-      };
-
-      const dataIndex = subModuleConfig.specificData.findIndex(item => item.id === record.id);
-
-      if (dataIndex === -1) {
-        subModuleConfig.specificData.push(record);
-      } else {
-        const item = { ...subModuleConfig.specificData[dataIndex] };
-        if (type === 'view') {
-          item.view = record.view;
-          if (!record.view) {
-            item.operate = false;
-          }
-        } else if (type === 'operate') {
-          if (item.view) {
-            item.operate = record.operate;
+      
+      // Deep clone provider config to ensure nested structure integrity
+      const deepCloneProviderConfig = (config: any): any => {
+        if (config === null || typeof config !== 'object') return config;
+        if (Array.isArray(config)) return config.map(deepCloneProviderConfig);
+        
+        const cloned: any = {};
+        for (const key in config) {
+          if (config.hasOwnProperty(key)) {
+            cloned[key] = deepCloneProviderConfig(config[key]);
           }
         }
+        return cloned;
+      };
+      
+      const clonedProviderConfig = deepCloneProviderConfig(providerConfig);
+      
+      // Recursively find and update multi-level permission config
+      const updateNestedPermissionConfig = (config: any, targetSubModule: string, recordToUpdate: DataPermission): boolean => {
+        // Check if current level contains target sub-module
+        if (config[targetSubModule] && 
+            typeof config[targetSubModule] === 'object' && 
+            config[targetSubModule] !== null &&
+            typeof config[targetSubModule].type !== 'undefined') {
+          
+          // Ensure specificData array exists
+          if (!config[targetSubModule].specificData) {
+            config[targetSubModule].specificData = [];
+          }
+          
+          const specificData = [...config[targetSubModule].specificData];
+          const dataIndex = specificData.findIndex(item => item.id === recordToUpdate.id);
 
-        subModuleConfig.specificData[dataIndex] = item;
+          if (dataIndex === -1) {
+            // Add new data item
+            specificData.push({
+              id: recordToUpdate.id,
+              name: recordToUpdate.name,
+              view: recordToUpdate.view,
+              operate: recordToUpdate.operate
+            });
+          } else {
+            // Update existing data item
+            const item = { ...specificData[dataIndex] };
+            if (type === 'view') {
+              item.view = recordToUpdate.view;
+              if (!recordToUpdate.view) {
+                item.operate = false;
+              }
+            } else if (type === 'operate') {
+              if (item.view) {
+                item.operate = recordToUpdate.operate;
+              }
+            }
+            specificData[dataIndex] = item;
+          }
+
+          // Update config
+          config[targetSubModule] = {
+            ...config[targetSubModule],
+            specificData
+          };
+          
+          return true;
+        }
+        
+        // Recursively search sub-levels
+        for (const key in config) {
+          const value = config[key];
+          if (value && 
+              typeof value === 'object' && 
+              value !== null &&
+              typeof value.type === 'undefined') {
+            if (updateNestedPermissionConfig(value, targetSubModule, recordToUpdate)) {
+              return true;
+            }
+          }
+        }
+        
+        return false;
+      };
+
+      const updateSuccess = updateNestedPermissionConfig(clonedProviderConfig, subModule, record);
+      
+      if (updateSuccess) {
+        newPermissions[module] = clonedProviderConfig;
       }
-
-      providerConfig[subModule] = subModuleConfig;
-      newPermissions[module] = providerConfig;
     } else {
+      // Handle non-nested modules
       const moduleConfig = {
         ...newPermissions[module],
         specificData: [...((newPermissions[module] as ModulePermissionConfig).specificData || [])]
@@ -633,16 +768,23 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
       newPermissions[module] = moduleConfig;
     }
 
+    // Update permission state
     setPermissions(newPermissions);
+    
+    // Immediately trigger onChange to ensure parent component gets latest state
     if (onChange) {
-      onChange(newPermissions);
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+      debounceTimer.current = setTimeout(() => {
+        onChange(newPermissions);
+      }, 50);
     }
-  }, [permissions]);
+  }, [permissions, isSubModuleOfModule, onChange]);
 
   const handleTableChange = async (pagination: PaginationInfo, filters: any, sorter: any, module?: string, subModule?: string) => {
     if (!module) return;
 
-    console.log('handleTableChange called with:', { module, subModule });
     const dataKey = subModule ? `${module}_${subModule}` : module;
 
     setPagination(prev => ({
@@ -772,6 +914,7 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
         const hasSubModules = moduleConfig?.children && moduleConfig.children.length > 0;
         
         if (hasSubModules) {
+          // Recursively find the first leaf node at the deepest level
           const getFirstLeafModule = (module: ModuleItem): string => {
             if (module.children && module.children.length > 0) {
               return getFirstLeafModule(module.children[0]);
@@ -782,24 +925,40 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
           const firstLeafModule = getFirstLeafModule(moduleConfig);
           setActiveSubModule(firstLeafModule);
 
-          if (!editableModules.includes(firstLeafModule)) {
-            return;
-          }
-
-          const providerConfig = permissions[key] as ProviderPermissionConfig;
-          const subModuleConfig = providerConfig[firstLeafModule] as PermissionConfig;
-
-          if (subModuleConfig?.type === 'specific') {
-            loadSpecificData(key, firstLeafModule);
+          // Automatically load corresponding permission data without waiting for user click
+          if (editableModules.includes(firstLeafModule)) {
+            const providerConfig = permissions[key] as ProviderPermissionConfig;
+            
+            // Use recursive search function to find leaf node configuration
+            const findInAllLevels = (config: any, target: string): PermissionConfig | undefined => {
+              if (config[target] && typeof config[target] === 'object' && config[target].type !== undefined) {
+                return config[target] as PermissionConfig;
+              }
+              
+              for (const configKey in config) {
+                const value = config[configKey];
+                if (value && typeof value === 'object' && value.type === undefined) {
+                  const found = findInAllLevels(value, target);
+                  if (found) return found;
+                }
+              }
+              return undefined;
+            };
+            
+            const subModuleConfig = findInAllLevels(providerConfig, firstLeafModule);
+            if (subModuleConfig?.type === 'specific') {
+              loadSpecificData(key, firstLeafModule);
+            }
           }
         } else {
-          if (!editableModules.includes(key)) {
-            return;
-          }
-
-          const moduleConfig = permissions[key] as ModulePermissionConfig;
-          if (moduleConfig?.type === 'specific') {
-            loadSpecificData(key);
+          // Clear sub-module state
+          setActiveSubModule('');
+          
+          if (editableModules.includes(key)) {
+            const moduleConfig = permissions[key] as ModulePermissionConfig;
+            if (moduleConfig?.type === 'specific') {
+              loadSpecificData(key);
+            }
           }
         }
       }}

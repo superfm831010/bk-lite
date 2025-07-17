@@ -13,6 +13,7 @@ token
 assets/static
 templates/index.prod.html
 output
+/models/
 swagger.yml
 USERRES
 staticfiles/

@@ -1,4 +1,5 @@
 import json
+import time
 
 import requests
 from celery import shared_task
@@ -6,7 +7,7 @@ from django.conf import settings
 from tqdm import tqdm
 
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.knowledge_mgmt.models import QAPairs
+from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph, QAPairs
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
@@ -14,6 +15,7 @@ from apps.opspilot.model_provider_mgmt.models import LLMModel
 from apps.opspilot.models import FileKnowledge, KnowledgeBase, KnowledgeDocument, ManualKnowledge, WebPageKnowledge
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 from apps.opspilot.utils.chunk_helper import ChunkHelper
+from apps.opspilot.utils.graph_utils import GraphUtils
 
 
 @shared_task
@@ -277,3 +279,90 @@ def get_qa_content(qa_pairs_obj: QAPairs, es_index):
             }
         )
     return return_data
+
+
+@shared_task
+def rebuild_graph_community_by_instance(instance_id):
+    graph_obj = KnowledgeGraph.objects.get(id=instance_id)
+    res = GraphUtils.rebuild_graph_community(graph_obj)
+    if not res["result"]:
+        logger.error("Failed to rebuild graph community: {}".format(res["message"]))
+    logger.info("Graph community rebuild completed for instance ID: {}".format(instance_id))
+
+
+@shared_task
+def create_graph(instance_id):
+    logger.info("Start creating graph for instance ID: {}".format(instance_id))
+    instance = KnowledgeGraph.objects.get(id=instance_id)
+    res = GraphUtils.create_graph(instance)
+    if not res["result"]:
+        instance.delete()
+        logger.error("Failed to create graph: {}".format(res["message"]))
+    else:
+        logger.info("Graph created completed: {}".format(instance.name))
+
+
+@shared_task
+def update_graph(instance_id, old_doc_list):
+    logger.info("Start updating graph for instance ID: {}".format(instance_id))
+    instance = KnowledgeGraph.objects.get(id=instance_id)
+    res = GraphUtils.update_graph(instance, old_doc_list)
+    if not res["result"]:
+        logger.error("Failed to update graph: {}".format(res["message"]))
+    else:
+        logger.info("Graph updated completed: {}".format(instance.name))
+
+
+@shared_task
+def create_qa_pairs_by_json(qa_json, knowledge_base_id, qa_name):
+    url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
+    knowledge_base = KnowledgeBase.objects.get(id=knowledge_base_id)
+    embed_config = knowledge_base.embed_model.decrypted_embed_config
+    embed_model_name = knowledge_base.embed_model.name
+    qa_pairs, _ = QAPairs.objects.get_or_create(
+        name=qa_name,
+        knowledge_base_id=knowledge_base_id,
+        document_id=0,
+    )
+    kwargs = {
+        "knowledge_base_id": knowledge_base.knowledge_index_name(),
+        "knowledge_id": "",
+        "embed_model_base_url": embed_config.get("base_url", ""),
+        "embed_model_api_key": embed_config.get("api_key", ""),
+        "embed_model_name": embed_config.get("model", embed_model_name),
+        "chunk_mode": "full",
+        "chunk_size": 9999,
+        "chunk_overlap": 128,
+        "load_mode": "full",
+        "semantic_chunk_model_base_url": [],
+        "semantic_chunk_model_api_key": "",
+        "semantic_chunk_model": "",
+        "preview": "false",
+    }
+    metadata = {
+        "enabled": True,
+        "base_chunk_id": "",
+        "qa_pairs_id": str(qa_pairs.id),
+        "is_doc": "0",
+    }
+    success_count = 0
+    headers = ChatServerHelper.get_chat_server_header()
+    for i in tqdm(qa_json):
+        if not i["instruction"]:
+            continue
+        params = dict(kwargs, **{"content": i["instruction"]})
+        params["metadata"] = json.dumps(dict(metadata, **{"qa_question": i["instruction"], "qa_answer": i["output"]}))
+        try:
+            res = requests.post(url, headers=headers, data=params, verify=False).json()
+            if res["status"] != "success":
+                raise Exception(f"创建问答对失败: {res['message']}")
+        except Exception:
+            time.sleep(5)
+            res = requests.post(url, headers=headers, data=params, verify=False).json()
+            if res["status"] != "success":
+                continue
+        success_count += 1
+        print(success_count)
+
+    qa_pairs.qa_count += success_count
+    qa_pairs.save()

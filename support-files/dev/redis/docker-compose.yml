@@ -2,7 +2,7 @@ version: '3'
 services:
 
   redis:
-    image: redis:5.0.14
+    image: ccr.ccs.tencentyun.com/bklite/redis:5.0.14
     container_name: redis
     command: redis-server --requirepass password
     volumes:

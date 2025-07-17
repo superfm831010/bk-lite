@@ -66,6 +66,7 @@ class GraphitiRAG():
                    m.uuid as target_uuid,
                    n.name as source_name,
                    m.name as target_name,
+                   r.fact as fact,
                    id(n) as source_id,
                    id(m) as target_id
             """,
@@ -82,7 +83,8 @@ class GraphitiRAG():
                 'source_name': edge_record['source_name'],
                 'target_name': edge_record['target_name'],
                 'source_id': edge_record['source_id'],
-                'target_id': edge_record['target_id']
+                'target_id': edge_record['target_id'],
+                'fact': edge_record['fact']
             }
             edges.append(edge)
 
@@ -182,10 +184,40 @@ class GraphitiRAG():
         return mapping
 
     async def rebuild_community(self, req: RebuildCommunityRequest):
+        llm_client = AsyncOpenAI(
+            api_key=req.openai_api_key,
+            base_url=req.openai_api_base,
+        )
+
+        embed_client = MetisEmbedder(
+            MetisEmbedderConfig(
+                url=req.embed_model_base_url,
+                model_name=req.embed_model_name,
+                api_key=req.embed_model_api_key
+            )
+        )
+
+        rerank_client = MetisRerankerClient(
+            MetisRerankerConfig(
+                url=req.rerank_model_base_url,
+                model_name=req.rerank_model_name,
+                api_key=req.rerank_model_api_key
+            )
+        )
+
         graphiti_instance = Graphiti(
             core_settings.neo4j_host,
             core_settings.neo4j_username,
             core_settings.neo4j_password,
+            llm_client=OpenAIClient(
+                client=llm_client,
+                config=LLMConfig(
+                    model=req.openai_model,
+                    small_model=req.openai_model,
+                ),
+            ),
+            embedder=embed_client,
+            cross_encoder=rerank_client
         )
         await self.build_communities(graphiti_instance, req.group_ids)
 

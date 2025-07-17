@@ -1,6 +1,8 @@
 import logging
 
 from django.db.models import Q
+from django.http import JsonResponse
+from django.utils.translation import gettext as _
 from rest_framework import viewsets
 from rest_framework.response import Response
 
@@ -86,7 +88,7 @@ class AuthViewSet(MaintainerViewSet):
         try:
             user = getattr(request, "user", None)
             if not user:
-                raise ValueError("User not found in request")
+                return self.value_error(_("User not found in request"))
 
             if getattr(user, "is_superuser", False):
                 return self._list(queryset.order_by(self.ORDERING_FIELD))
@@ -183,37 +185,35 @@ class AuthViewSet(MaintainerViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         user = getattr(request, "user", None)
-        if not user:
-            raise ValueError("User not found in request")
         instance = self.get_object()
         if getattr(user, "is_superuser", False):
             return super().retrieve(request, *args, **kwargs)
         if hasattr(self, "permission_key"):
-            has_permission = self.get_has_permission(user, instance.id)
+            has_permission = self.get_has_permission(user, instance)
             if not has_permission:
-                raise ValueError("User does not have permission to get this instance")
+                return self.value_error(_("User does not have permission to view this instance"))
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+    @staticmethod
+    def value_error(msg):
+        return JsonResponse({"result": False, "message": msg})
+
     def destroy(self, request, *args, **kwargs):
         user = getattr(request, "user", None)
-        if not user:
-            raise ValueError("User not found in request")
         instance = self.get_object()
         if getattr(user, "is_superuser", False):
             return super().destroy(request, *args, **kwargs)
         if hasattr(self, "permission_key"):
-            has_permission = self.get_has_permission(user, instance.id)
+            has_permission = self.get_has_permission(user, instance)
             if not has_permission:
-                raise ValueError("User does not have permission to delete this instance")
+                return self.value_error(_("User does not have permission to delete this instance"))
         return super().destroy(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         """重写更新方法以支持权限控制"""
         try:
             user = getattr(request, "user", None)
-            if not user:
-                raise ValueError("User not found in request")
             partial = kwargs.pop("partial", False)
             data = request.data
             instance = self.get_object()
@@ -223,12 +223,12 @@ class AuthViewSet(MaintainerViewSet):
             if "team" in data:
                 data.pop("team", None)
             current_team = int(request.COOKIES.get("current_team", None))
-            if current_team not in instance.teams:
-                raise ValueError("Current team is not allowed to update this instance")
+            if current_team not in instance.team:
+                return self.value_error(_("User does not have permission to update this instance"))
             if hasattr(self, "permission_key"):
-                has_permission = self.get_has_permission(user, instance.id)
+                has_permission = self.get_has_permission(user, instance)
                 if not has_permission:
-                    raise ValueError("User does not have permission to update this instance")
+                    return self.value_error(_("User does not have permission to update this instance"))
             serializer = self.get_serializer(instance, data=data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
@@ -242,14 +242,22 @@ class AuthViewSet(MaintainerViewSet):
             logger.error(f"Error in update method: {e}")
             raise
 
-    def get_has_permission(self, user, instance_id):
+    def get_has_permission(self, user, instance, is_list=False):
         """获取规则实例ID"""
-        if isinstance(instance_id, str):
-            instance_id = [int(instance_id)]
-        elif isinstance(instance_id, int):
-            instance_id = [instance_id]
-        elif isinstance(instance_id, list):
-            instance_id = [int(i) for i in instance_id]
+        user_groups = [int(i["id"]) for i in user.group_list]
+        if is_list:
+            instance_id = list(instance.values_list("id", flat=True))
+            for i in instance:
+                if hasattr(i, "team"):
+                    # 判断两个集合是否有交集
+                    if not set(i.team).intersection(set(user_groups)):
+                        return False
+        else:
+            if hasattr(instance, "team"):
+                if not set(instance.team).intersection(set(user_groups)):
+                    return False
+            instance_id = [instance.id]
+
         try:
             app_name_map = {
                 "system_mgmt": "system-manager",

@@ -3,7 +3,7 @@ services:
 
   rabbitmq:
     restart: always
-    image: rabbitmq:management
+    image: ccr.ccs.tencentyun.com/bklite/rabbitmq:management
     ports:
       - 5671:5671
       - 5672:5672
