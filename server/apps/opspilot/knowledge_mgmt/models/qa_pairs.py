@@ -13,7 +13,7 @@ class QAPairs(MaintainerInfo, TimeInfo):
 
     # 外键关系
     knowledge_base = models.ForeignKey("KnowledgeBase", on_delete=models.CASCADE)
-    llm_model = models.ForeignKey("LLMModel", on_delete=models.CASCADE)
+    llm_model = models.ForeignKey("LLMModel", on_delete=models.CASCADE, null=True, blank=True)
 
     # 问答对相关字段
     qa_count = models.IntegerField(default=0, verbose_name="问答对数量")

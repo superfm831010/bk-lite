@@ -117,12 +117,18 @@
     "label": "标签",
     "value": "值",
     "term": "条件",
-    "include": "包含",
-    "exclude": "排除",
+    "include": "包括",
+    "exclude": "不包括",
     "group": "分组",
     "search": {
-      "area": "区域",
-      "table": "表格"
+      "searchPlaceHolder": "在此处输入您的搜索查询，然后按Enter",
+      "searchCriteria": "搜索条件",
+      "addToQuery": "添加到查询语句",
+      "histogram": "查询直方图",
+      "total": "日志总条数",
+      "queryTime": "查询时间",
+      "timeConsumption": "查询耗时",
+      "receiver": "接收器"
     },
     "integration": {
       "interval": "间隔",
@@ -154,7 +160,16 @@
       "collector": "采集器",
       "command": "命令",
       "address": "地址",
-      "host": "主机"
+      "host": "主机",
+      "includeContainers": "指定的容器",
+      "excludeContainers": "忽略的容器",
+      "startPattern": "合并正则",
+      "containerPlaceholder": "请输入容器按回车键结束",
+      "collectType": "采集类型",
+      "anySatisfy": "满足",
+      "anyOneof": "条规则中的任意一条",
+      "allSatisfy": "满足全部",
+      "allRules": "条规则"
     }
   }
 }

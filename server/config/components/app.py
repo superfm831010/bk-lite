@@ -126,5 +126,6 @@ if os.path.exists(APPS_DIR):
         
 else:
     app_folders = []
+
 INSTALLED_APPS += tuple(f"apps.{app}" for app in app_folders)
 

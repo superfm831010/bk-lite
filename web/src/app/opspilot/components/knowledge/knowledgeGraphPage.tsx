@@ -7,6 +7,7 @@ import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import KnowledgeGraphView from './knowledgeGraphView';
 import NodeDetailDrawer from './NodeDetailDrawer';
+import EdgeDetailDrawer from './EdgeDetailDrawer';
 import { GraphData, GraphNode, GraphEdge } from '@/app/opspilot/types/knowledge';
 
 interface KnowledgeGraphPageProps {
@@ -44,7 +45,7 @@ const transformApiDataToGraphData = (data: any): GraphData => {
       data.edges.forEach((edge: any) => {
         if (edge.source && edge.target) {
           edges.push({
-            id: `${edge.source}-${edge.target}`,
+            id: `${edge.source}-${edge.target}-${edge.fact}`,
             source: edge.source,
             target: edge.target,
             label: edge.relation_type || '关联',
@@ -53,7 +54,8 @@ const transformApiDataToGraphData = (data: any): GraphData => {
             source_name: edge.source_name,
             target_name: edge.target_name,
             source_id: edge.source_id,
-            target_id: edge.target_id
+            target_id: edge.target_id,
+            fact: edge.fact || '-',
           });
         }
       });
@@ -76,6 +78,8 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
   const [graphExists, setGraphExists] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [nodeDetailVisible, setNodeDetailVisible] = useState(false);
+  const [edgeDetailVisible, setEdgeDetailVisible] = useState(false);
+  const [selectedEdge, setSelectedEdge] = useState<any | null>(null);
 
   const initializeGraph = async () => {
     setLoading(true);
@@ -133,7 +137,13 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
   };
 
   const handleEdgeClick = (edge: any) => {
-    message.info(t('knowledge.knowledgeGraph.clickedRelationship'), edge);
+    setSelectedEdge(edge);
+    setEdgeDetailVisible(true);
+  };
+
+  const handleCloseEdgeDetail = () => {
+    setEdgeDetailVisible(false);
+    setSelectedEdge(null);
   };
 
   const handleRefresh = () => {
@@ -241,6 +251,11 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
         visible={nodeDetailVisible}
         node={selectedNode}
         onClose={handleCloseNodeDetail}
+      />
+      <EdgeDetailDrawer
+        visible={edgeDetailVisible}
+        edge={selectedEdge}
+        onClose={handleCloseEdgeDetail}
       />
     </div>
   );

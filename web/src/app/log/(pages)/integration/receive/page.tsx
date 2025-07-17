@@ -5,7 +5,6 @@ import {
   Button,
   message,
   Dropdown,
-  Tag,
   Popconfirm,
   Space,
   Modal,
@@ -26,10 +25,8 @@ import { DownOutlined } from '@ant-design/icons';
 import { useCommon } from '@/app/log/context/common';
 import { useAssetMenuItems } from '@/app/log/hooks/integration/common/other';
 import { showGroupName } from '@/app/log/utils/common';
-import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import EditConfig from './updateConfig';
 import EditInstance from './editInstance';
-import { NODE_STATUS_MAP } from '@/app/log/constants';
 import Permission from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import type { TableProps, MenuProps } from 'antd';
@@ -43,7 +40,6 @@ const Asset = () => {
   const { getInstanceList, deleteLogInstance } = useLogApi();
   const { t } = useTranslation();
   const commonContext = useCommon();
-  const { convertToLocalizedTime } = useLocalizedTime();
   const authList = useRef(commonContext?.authOrganizations || []);
   const organizationList: Organization[] = authList.current;
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -109,32 +105,9 @@ const Asset = () => {
     },
     {
       title: t('log.integration.collectionNode'),
-      dataIndex: 'agent_id',
-      key: 'agent_id',
+      dataIndex: 'node_name',
+      key: 'node_name',
       width: 100,
-    },
-    {
-      title: t('log.integration.reportingStatus'),
-      dataIndex: 'status',
-      key: 'status',
-      width: 100,
-      render: (_, { time, status }) =>
-        time ? (
-          <Tag color={NODE_STATUS_MAP[status] || 'gray'}>
-            {t(`log.integration.${status}`)}
-          </Tag>
-        ) : (
-          <>--</>
-        ),
-    },
-    {
-      title: t('log.integration.lastReportTime'),
-      dataIndex: 'time',
-      key: 'time',
-      width: 160,
-      render: (_, { time }) => (
-        <>{time ? convertToLocalizedTime(new Date(time * 1000) + '') : '--'}</>
-      ),
     },
     {
       title: t('common.action'),

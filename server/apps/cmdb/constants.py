@@ -333,3 +333,7 @@ COLLECT_OBJ_TREE = [
 VICTORIAMETRICS_HOST = os.getenv("VICTORIAMETRICS_HOST", "")
 
 STARGAZER_URL = os.getenv("STARGAZER_URL", "http://stargazer:8083")
+# ===== 实例权限 =====
+PERMISSION_INSTANCES = "instances"  # 实例
+PERMISSION_TASK = "task"  # 采集任务
+PERMISSION_MODEL = "model"  # 模型

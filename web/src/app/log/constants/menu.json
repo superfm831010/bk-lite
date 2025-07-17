@@ -31,7 +31,7 @@
               "name": "integration_configure"
             },
             {
-              "title": "输出",
+              "title": "简介",
               "icon": "guanli",
               "url": "/log/integration/list/detail/output",
               "name": "integration_output"
@@ -42,7 +42,7 @@
           "title": "日志分组",
           "icon": "",
           "url": "/log/integration/grouping",
-          "name": "view_list"
+          "name": "grouping"
         }
       ]
     }
@@ -79,7 +79,7 @@
               "name": "integration_configure"
             },
             {
-              "title": "Output",
+              "title": "Introduction",
               "icon": "guanli",
               "url": "/log/integration/list/detail/output",
               "name": "integration_metric"
@@ -90,7 +90,7 @@
           "title": "Log Grouping",
           "icon": "",
           "url": "/log/integration/grouping",
-          "name": "view_list"
+          "name": "grouping"
         }
       ]
     }

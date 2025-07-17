@@ -58,10 +58,9 @@ const Collapse: React.FC<AccordionProps> = ({
       onDrop={sortable ? onDrop : undefined}
     >
       <div
-        className={`flex justify-between items-center p-[10px] bg-[var(--color-fill-1)] cursor-pointer collapse-title ${titleClassName}`}
-        onClick={toggleAccordion}
+        className={`flex justify-between items-center p-[10px] bg-[var(--color-fill-1)] collapse-title ${titleClassName}`}
       >
-        <div className="flex items-center">
+        <div className="flex items-center cursor-pointer" onClick={toggleAccordion}>
           {sortable && (
             <HolderOutlined className="font-[800] text-[16px] mr-[6px] cursor-move" />
           )}

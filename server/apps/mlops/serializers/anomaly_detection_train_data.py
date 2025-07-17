@@ -11,17 +11,19 @@ class AnomalyDetectionTrainDataSerializer(AuthSerializer):
     class Meta:
         model = AnomalyDetectionTrainData
         fields = "__all__"  # 允许新增时包含所有字段
+        extra_kwargs = {
+            'name': {'required': False},
+            'train_data': {'required': False},
+            'dataset': {'required': False},
+        }
 
     def __init__(self, *args, **kwargs):
         """
         初始化序列化器，从请求上下文中获取 include_train_data 参数
         """
         super().__init__(*args, **kwargs)
-        
-        # 从请求上下文中获取 include_train_data 参数
         request = self.context.get('request')
         if request:
-            # 将字符串 'true' 转换为布尔值 True
             self.include_train_data = request.query_params.get('include_train_data', 'false').lower() == 'true'
             self.include_metadata = request.query_params.get('include_metadata', 'false').lower() == 'true'
         else:

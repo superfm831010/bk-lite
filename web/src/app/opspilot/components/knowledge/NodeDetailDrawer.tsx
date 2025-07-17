@@ -67,13 +67,13 @@ const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({ visible, node, onCl
     return (
       <div 
         key={label}
-        className={`flex items-center justify-between py-4 px-6 transition-all duration-200 hover:bg-blue-50 ${
+        className={`flex items-center justify-between py-2 px-6 transition-all duration-200 hover:bg-blue-50 ${
           isEven ? 'bg-gray-50' : 'bg-white'
         }`}
       >
         <div className="flex items-center space-x-6 flex-1 min-w-0">
           <div className="w-24 flex-shrink-0">
-            <Text className="text-xs font-medium text-gray-700">{label}</Text>
+            <Text className="text-xs font-semibold text-gray-700">{label}</Text>
           </div>
           <div className="flex-1 min-w-0">
             <Text 
@@ -81,7 +81,7 @@ const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({ visible, node, onCl
               style={{ 
                 wordBreak: 'break-word',
                 overflowWrap: 'break-word',
-                lineHeight: '1.5'
+                lineHeight: '1.0'
               }}
             >
               {displayValue}

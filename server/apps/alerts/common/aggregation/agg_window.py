@@ -442,7 +442,8 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
             return session
 
         except Exception as e:
-            logger.error(f"获取或创建会话失败: {str(e)}")
+            import traceback
+            logger.error(f"获取或创建会话失败: {traceback.format_exc()}")
             return None
 
     def _add_events_to_session(self, session: SessionWindow, events) -> int:
@@ -662,7 +663,7 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
                 query_conditions = {
                     'status__in': AlertStatus.ACTIVATE_STATUS,
                     'fingerprint': _fingerprint,  # 使用实例指纹查询
-                    'rule_id': aggregation_rule.rule_id_str
+                    'rule_id': aggregation_rule.rule_id
                 }
                 related_alerts = list(Alert.objects.filter(**query_conditions).values())
                 # 创建告警数据
