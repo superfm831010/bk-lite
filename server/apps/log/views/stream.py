@@ -46,6 +46,7 @@ class StreamViewSet(ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.filter(streamorganization__organization=request.COOKIES.get("current_team")).distinct("id")
         page = self.paginate_queryset(queryset)
         serializer = self.get_serializer(page, many=True)
         data = serializer.data

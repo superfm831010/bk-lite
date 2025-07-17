@@ -21,7 +21,11 @@ class SystemMgmtUtils:
 
     @staticmethod
     def format_rules(module, child_module, rules):
-        rule_items = rules.get(module, {}).get(child_module, {})
+        rule = rules.get("monitor", {}).get("normal", {})
+        map = {}
+        for j in [i for i in rule.get(module, {}).values()]:
+            map.update(**j)
+        rule_items = map.get(child_module, [])
         instance_permission_map = {i["id"]: i["permission"] for i in rule_items}
         if "0" in instance_permission_map or "-1" in instance_permission_map or not instance_permission_map:
             return None

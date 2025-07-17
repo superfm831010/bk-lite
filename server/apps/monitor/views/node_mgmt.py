@@ -29,7 +29,7 @@ class NodeMgmtView(ViewSet):
     )
     @action(methods=['post'], detail=False, url_path='nodes')
     def get_nodes(self, request):
-        organization_ids = [] if request.user.is_superuser else [i["id"] for i in request.user.group_list]
+        organization_ids = [] if request.user.is_superuser else [request.COOKIES.get("current_team")]
         data = NodeMgmt().node_list(dict(
             cloud_region_id=request.data.get("cloud_region_id", 1),
             organization_ids=organization_ids,

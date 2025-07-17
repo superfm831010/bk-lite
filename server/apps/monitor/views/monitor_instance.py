@@ -48,7 +48,7 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
             int(page),
             int(page_size),
             request.GET.get("name"),
-            [i["id"] for i in request.user.group_list],
+            [request.COOKIES.get("current_team")],
             request.user.is_superuser,
             bool(request.GET.get("add_metrics", False)),
             permission
@@ -83,7 +83,7 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
             raise BaseAppException("Monitor object does not exist")
         search_obj = InstanceSearch(
             monitor_obj,
-            dict(group_list=[i["id"] for i in request.user.group_list],
+            dict(group_id=request.COOKIES.get("current_team"),
                  is_superuser=request.user.is_superuser,
                  **request.data),
             permission=permission,
