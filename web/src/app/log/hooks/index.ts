@@ -1,8 +1,8 @@
 import { message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-export const useHandleCopy = (value: string) => {
+export const useHandleCopy = () => {
   const { t } = useTranslation();
-  const handleCopy = () => {
+  const handleCopy = (value: string) => {
     try {
       if (navigator?.clipboard?.writeText) {
         navigator.clipboard.writeText(value);

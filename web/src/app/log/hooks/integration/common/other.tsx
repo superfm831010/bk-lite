@@ -39,10 +39,10 @@ const useConditionList = (): ListItem[] => {
   const { t } = useTranslation();
   return useMemo(
     () => [
-      { id: '=', name: '=' },
+      { id: '==', name: '=' },
       { id: '!=', name: '!=' },
-      { id: '=~', name: t('log.include') },
-      { id: '!~', name: t('log.exclude') },
+      { id: 'contains', name: t('log.include') },
+      { id: '!contains', name: t('log.exclude') },
     ],
     [t]
   );
@@ -52,8 +52,8 @@ const useTermList = (): ListItem[] => {
   const { t } = useTranslation();
   return useMemo(
     () => [
-      { id: 'or', name: t('log.integration.anyCondition') },
-      { id: 'and', name: t('log.integration.allConditions') },
+      { id: 'OR', name: t('log.integration.anyCondition') },
+      { id: 'AND', name: t('log.integration.allConditions') },
     ],
     [t]
   );

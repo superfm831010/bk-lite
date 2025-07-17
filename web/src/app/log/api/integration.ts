@@ -4,6 +4,8 @@ import {
   InstanceInfo,
   IntegrationLogInstance,
 } from '@/app/log/types/integration';
+import { GroupInfo } from '@/app/log/types/integration';
+import { cloneDeep } from 'lodash';
 interface NodeConfigParam {
   configs?: any;
   collect_type?: string;
@@ -12,7 +14,7 @@ interface NodeConfigParam {
 }
 
 const useIntegrationApi = () => {
-  const { get, post } = useApiClient();
+  const { get, post, put, del } = useApiClient();
 
   const getCollectTypes = async (
     params: {
@@ -88,6 +90,32 @@ const useIntegrationApi = () => {
     );
   };
 
+  const createLogStreams = async (data: GroupInfo) => {
+    return await post(`/log/streams/`, data);
+  };
+
+  const updateLogStreams = async (data: GroupInfo) => {
+    const params = cloneDeep(data);
+    delete params.id;
+    return await put(`/log/streams/${data.id}/`, params);
+  };
+
+  const getLogStreams = async (
+    params: {
+      name?: string;
+      page?: number;
+      page_size?: number;
+    } = {}
+  ) => {
+    return await get('/log/streams/', {
+      params,
+    });
+  };
+
+  const deleteLogStream = async (id: React.Key) => {
+    return await del(`/log/streams/${id}/`);
+  };
+
   return {
     getCollectTypes,
     getLogNodeList,
@@ -99,6 +127,10 @@ const useIntegrationApi = () => {
     setInstancesGroup,
     getConfigContent,
     updateInstanceCollectConfig,
+    getLogStreams,
+    createLogStreams,
+    updateLogStreams,
+    deleteLogStream,
   };
 };
 

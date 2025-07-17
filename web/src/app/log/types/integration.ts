@@ -49,13 +49,26 @@ export interface InstanceInfo {
   instance_name?: string;
   instance_id?: string;
   id?: React.Key;
-  rule?: any;
   name?: string;
   keys?: React.Key[];
 }
 
+export interface GroupInfo {
+  organizations?: React.Key[];
+  collect_type_id?: React.Key;
+  id?: React.Key;
+  rule?: GroupRule;
+  name?: string;
+ [key: string]: any;
+}
+
+export interface GroupRule {
+  mode: string;
+  conditions: FilterItem[];
+}
+
 export interface FilterItem {
-  name: string | null;
-  method: string | null;
+  field: string | null;
+  op: string | null;
   value: string;
 }
