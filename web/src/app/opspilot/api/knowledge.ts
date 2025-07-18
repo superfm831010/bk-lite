@@ -14,8 +14,8 @@ export const useKnowledgeApi = () => {
   /**
    * Fetches the knowledge base.
    */
-  const fetchKnowledgeBase = async (): Promise<any[]> => {
-    return get('/opspilot/knowledge_mgmt/knowledge_base/');
+  const fetchKnowledgeBase = async (params: any): Promise<any> => {
+    return get('/opspilot/knowledge_mgmt/knowledge_base/', { params });
   };
 
   /**

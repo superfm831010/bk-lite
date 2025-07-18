@@ -35,7 +35,7 @@ const AnnotationModal: React.FC<AnnotationModalProps> = ({ visible, showMarkOnly
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await fetchKnowledgeBase(); // Use fetchKnowledgeBase
+        const data = await fetchKnowledgeBase({});
         setKnowledgeBases(data);
       } catch {
         message.error(t('common.fetchFailed'));
@@ -45,7 +45,7 @@ const AnnotationModal: React.FC<AnnotationModalProps> = ({ visible, showMarkOnly
     };
 
     fetchData();
-  }, [fetchKnowledgeBase]);
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
