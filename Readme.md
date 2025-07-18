@@ -52,6 +52,9 @@ Blueking Lite是一个AI First的轻量版运维产品：
 - [BK-PaaS](https://github.com/Tencent/bk-PaaS)：蓝鲸PaaS平台是一个开放式的开发平台，让开发者可以方便快捷地创建、开发、部署和管理SaaS应用。
 - [BK-SOPS](https://github.com/Tencent/bk-sops)：标准运维（SOPS）是通过可视化的图形界面进行任务流程编排和执行的系统，是蓝鲸体系中一款轻量级的调度编排类SaaS产品。
 
+## Partners
+![jiawei](docs/resource/img/jiawei-logo.png)　
+
 ## Contributing
 如果你有好的意见或建议，欢迎给我们提 Issues 或 Pull Requests，为蓝鲸开源社区贡献力量。关于bk-cmdb分支管理、Issue 以及 PR 规范，
 请阅读 [Contributing Guide](docs/CONTRIBUTING.md)。
