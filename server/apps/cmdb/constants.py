@@ -3,6 +3,8 @@ import os
 
 from enum import Enum
 
+from tencentcloud.teo.v20220901.errorcodes import OPERATIONDENIED_ERRZONEISALREADYPAUSED
+
 
 class BaseEnum(str, Enum):
     """
@@ -337,3 +339,5 @@ STARGAZER_URL = os.getenv("STARGAZER_URL", "http://stargazer:8083")
 PERMISSION_INSTANCES = "instances"  # 实例
 PERMISSION_TASK = "task"  # 采集任务
 PERMISSION_MODEL = "model"  # 模型
+OPERATE = "Operate"
+VIEW = "View"
