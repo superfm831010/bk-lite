@@ -44,11 +44,12 @@ class InstanceViewSet(viewsets.ViewSet):
         """
         page, page_size = int(request.data.get("page", 1)), int(request.data.get("page_size", 10))
         model_id = request.data["model_id"]
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         rules = request.user.rules['cmdb']['normal']
         inst_names = []
-        is_per = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
+        is_per = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules,cls_id)
         if is_per is not None:
-            inst_names = CmdbRulesFormatUtil.get_can_view_insts(PERMISSION_INSTANCES, model_id, rules)
+            inst_names = CmdbRulesFormatUtil.get_can_view_insts(PERMISSION_INSTANCES, model_id, rules, cls_id)
         insts, count = InstanceManage.instance_list(
             request.user.group_list,
             request.user.roles,
@@ -60,7 +61,7 @@ class InstanceViewSet(viewsets.ViewSet):
             inst_names,
         )
         for inst in insts:
-            inst['permission'] = CmdbRulesFormatUtil.get_permission_list(PERMISSION_INSTANCES, model_id, rules,inst['inst_name'])
+            inst['permission'] = CmdbRulesFormatUtil.get_permission_list(PERMISSION_INSTANCES, model_id, rules,inst['inst_name'],cls_id)
         return WebUtils.response_success(dict(insts=insts, count=count))
 
     @swagger_auto_schema(
@@ -76,13 +77,14 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules['cmdb']['normal']
         data = InstanceManage.query_entity_by_id(int(pk))
         model_id = data["model_id"]
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = data["inst_name"]
         # 判断权限
-        is_per = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id,rules,inst_name, can_do)
+        is_per = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id,rules,inst_name, can_do,cls_id)
         if not is_per:
             return WebUtils.response_error("没有权限")
         #获取权限列表
-        permission = CmdbRulesFormatUtil.get_permission_list(PERMISSION_INSTANCES, model_id,rules,inst_name)
+        permission = CmdbRulesFormatUtil.get_permission_list(PERMISSION_INSTANCES, model_id,rules,inst_name,cls_id)
         data['permission'] =  permission
         return WebUtils.response_success(data)
 
@@ -152,8 +154,9 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules['cmdb']['normal']
         instances = InstanceManage.query_entity_by_ids(request.data)
         model_id = instances[0]["model_id"]
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_names = [i["inst_name"] for i in instances]
-        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules,inst_names,can_do)
+        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules,inst_names,can_do,cls_id)
         if not permission:
             return WebUtils.response_error("没有批量删除权限")
         InstanceManage.instance_batch_delete(
@@ -213,8 +216,9 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules['cmdb']['normal']
         instances = InstanceManage.query_entity_by_ids(request.data["inst_ids"])
         model_id = instances[0]["model_id"]
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_names = [inst["inst_name"] for inst in instances]
-        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES,model_id,rules,inst_names,can_do)
+        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES,model_id,rules,inst_names,can_do,cls_id)
         if not permission:
             return WebUtils.response_error("没有权限")
         InstanceManage.batch_instance_update(
@@ -474,9 +478,10 @@ class InstanceViewSet(viewsets.ViewSet):
         can_do = "Operate"
         rules = request.user.rules['cmdb']['normal']
         inst_ids = request.data
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         instances = InstanceManage.query_entity_by_ids(inst_ids)
         inst_names = [inst["inst_name"] for inst in instances]
-        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules, inst_names, can_do)
+        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules, inst_names, can_do,cls_id)
         if not permission:
             return WebUtils.response_error("存在不可执行操作的实例")
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

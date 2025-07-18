@@ -192,7 +192,7 @@ class ModelViewSet(viewsets.ViewSet):
         rules = request.user.rules['cmdb']['normal']
         can_do = "View"
         result = ModelManage.model_association_search(model_id)
-        final_result = CmdbRulesFormatUtil.has_bath_asso_permission(PERMISSION_MODEL, result, rules, can_do)
+        final_result = CmdbRulesFormatUtil.has_bath_asso_permission(PERMISSION_MODEL, result, rules, model_id,can_do)
         return WebUtils.response_success(final_result)
 
     @swagger_auto_schema(
