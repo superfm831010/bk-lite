@@ -126,9 +126,11 @@
       "addToQuery": "添加到查询语句",
       "histogram": "查询直方图",
       "total": "日志总条数",
+      "logCount": "日志数量",
       "queryTime": "查询时间",
       "timeConsumption": "查询耗时",
-      "receiver": "接收器"
+      "receiver": "接收器",
+      "grammarExplanation": "语法说明"
     },
     "integration": {
       "interval": "间隔",

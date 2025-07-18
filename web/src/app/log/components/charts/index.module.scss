@@ -6,6 +6,7 @@
     font-size: 14px;
     background: var(--color-bg-1);
     border: 1px solid var(--color-border-1);
+    box-shadow: var(--ant-box-shadow-secondary);
     padding: 10px;
     border-radius: 5px;
 }
@@ -19,6 +20,12 @@
     :global {
         .recharts-tooltip-wrapper {
             z-index: 9;
+        }
+    }
+
+    :global {
+        path.recharts-tooltip-cursor {
+            fill: var(--color-fill-4);
         }
     }
 }
