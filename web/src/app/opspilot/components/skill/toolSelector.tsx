@@ -84,7 +84,7 @@ const ToolSelector: React.FC<ToolSelectorProps> = ({ defaultTools, onChange }) =
   const openEditModal = (tool: SelectTool) => {
     setEditingTool(tool);
     form.setFieldsValue({
-      kwargs: tool.kwargs?.map((item: { key: string; value: string }) => ({ key: item.key, value: item.value })) || [],
+      kwargs: tool.kwargs?.map((item: any) => ({ key: item.key, value: item.value, type: item.type, isRequired: item.isRequired })) || [],  
     });
     setEditModalVisible(true);
   };
@@ -173,9 +173,11 @@ const ToolSelector: React.FC<ToolSelectorProps> = ({ defaultTools, onChange }) =
                     name={[name, 'value']}
                     fieldKey={[fieldKey ?? '', 'value']}
                     label={form.getFieldValue(['kwargs', name, 'key'])}
-                    rules={[{ required: true, message: `${t('common.inputMsg')}${form.getFieldValue(['kwargs', name, 'key'])}` }]}
+                    rules={[{ required: form.getFieldValue(['kwargs', name, 'isRequired']), message: `${t('common.inputMsg')}${form.getFieldValue(['kwargs', name, 'key'])}` }]}
                   >
-                    <Input />
+                    {
+                      form.getFieldValue(['kwargs', name, 'type']) === 'text' ? <Input /> : <Input.Password placeholder="input password" />
+                    }
                   </Form.Item>
                 ))}
               </>

@@ -33,6 +33,7 @@ server-init:
 	python manage.py model_init
 	python manage.py plugin_init 
 	python manage.py node_init
+	python manage.py log_init
 	python manage.py init_bot 
 	python manage.py init_channel 
 	python manage.py init_llm 

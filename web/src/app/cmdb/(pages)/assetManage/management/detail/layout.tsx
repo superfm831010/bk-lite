@@ -13,7 +13,6 @@ import attrLayoutStyle from './layout.module.scss';
 import useApiClient from '@/utils/request';
 import { ClassificationItem } from '@/app/cmdb/types/assetManage';
 import { useTranslation } from '@/utils/i18n';
-import { useCommon } from '@/app/cmdb/context/common';
 import PermissionWrapper from '@/components/permission';
 
 const AboutLayout = ({ children }: { children: React.ReactNode }) => {
@@ -22,17 +21,14 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
   const { confirm } = Modal;
   const router = useRouter();
   const searchParams = useSearchParams();
-  const commonContext = useCommon();
   const objIcon: string = searchParams.get('icn') || '';
   const modelName: string = searchParams.get('model_name') || '';
   const modelId: string = searchParams.get('model_id') || '';
   const classificationId: string = searchParams.get('classification_id') || '';
   const isPre = searchParams.get('is_pre') === 'true';
+  const permissionParam = searchParams.get('permission');
+  const permission = permissionParam ? JSON.parse(permissionParam) : '';
   const modelRef = useRef<any>(null);
-  const permissionGroupsInfo = useRef(
-    commonContext?.permissionGroupsInfo || null
-  );
-  const isAdmin = permissionGroupsInfo.current?.is_all;
   const [groupList, setGroupList] = useState<ClassificationItem[]>([]);
 
   useEffect(() => {
@@ -109,9 +105,12 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
               {modelId}
             </div>
           </div>
-          {(isAdmin || !isPre) && (
+          {!isPre && (
             <div className="self-start">
-              <PermissionWrapper requiredPermissions={['Edit']}>
+              <PermissionWrapper
+                requiredPermissions={['Edit Model']}
+                instPermissions={permission}
+              >
                 <EditTwoTone
                   className="edit mr-[10px] text-[14px] cursor-pointer"
                   onClick={() =>
@@ -124,7 +123,10 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
                   }
                 />
               </PermissionWrapper>
-              <PermissionWrapper requiredPermissions={['Delete']}>
+              <PermissionWrapper
+                requiredPermissions={['Delete Model']}
+                instPermissions={permission}
+              >
                 <DeleteTwoTone
                   className="delete text-[14px] cursor-pointer"
                   onClick={() =>

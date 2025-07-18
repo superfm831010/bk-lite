@@ -6,6 +6,7 @@ class RebuildCommunityRequest(BaseModel):
     group_ids: List[str] = []
     openai_api_key: str = ""
     openai_api_base: str = ""
+    openai_model: str = ""
     embed_model_base_url: str = ""
     embed_model_name: str = ""
     embed_model_api_key: str = ""

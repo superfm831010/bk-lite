@@ -33,8 +33,7 @@ class MonitorPolicyVieSet(viewsets.ModelViewSet):
         if permission:
             queryset = queryset.filter(id__in=list(permission.keys()))
 
-        group_ids = [i["id"] for i in request.user.group_list]
-        queryset = queryset.filter(policyorganization__organization__in=group_ids).distinct()
+        queryset = queryset.filter(policyorganization__organization=request.COOKIES.get("current_team")).distinct()
 
         # 获取分页参数
         page = int(request.GET.get('page', 1))  # 默认第1页

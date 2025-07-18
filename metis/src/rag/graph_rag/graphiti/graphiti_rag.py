@@ -66,6 +66,7 @@ class GraphitiRAG():
                    m.uuid as target_uuid,
                    n.name as source_name,
                    m.name as target_name,
+                   r.fact as fact,
                    id(n) as source_id,
                    id(m) as target_id
             """,
@@ -82,7 +83,8 @@ class GraphitiRAG():
                 'source_name': edge_record['source_name'],
                 'target_name': edge_record['target_name'],
                 'source_id': edge_record['source_id'],
-                'target_id': edge_record['target_id']
+                'target_id': edge_record['target_id'],
+                'fact': edge_record['fact']
             }
             edges.append(edge)
 

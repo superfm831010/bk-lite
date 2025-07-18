@@ -9,8 +9,9 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.cmdb.models import EXECUTE
+from apps.cmdb.permission import InstanceTaskPermission
 from apps.cmdb.utils.change_record import create_change_record
-from apps.core.decorators.api_permission import  HasPermission
+from apps.core.decorators.api_permission import HasPermission
 from apps.rpc.node_mgmt import NodeMgmt
 from config.drf.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -35,6 +36,7 @@ class CollectModelViewSet(ModelViewSet):
     ordering = ["-updated_at"]
     filterset_class = CollectModelFilter
     pagination_class = CustomPageNumberPagination
+    permission_classes = [InstanceTaskPermission]
 
     @swagger_auto_schema(
         method='get',
@@ -66,10 +68,10 @@ class CollectModelViewSet(ModelViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = CollectModelLIstSerializer(page, many=True)
+            serializer = CollectModelLIstSerializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
 
-        serializer = CollectModelLIstSerializer(queryset, many=True)
+        serializer = CollectModelLIstSerializer(queryset, many=True, context={"request": request})
         return WebUtils.response_success(serializer.data)
 
     @HasPermission("discovery_collection-Add")
