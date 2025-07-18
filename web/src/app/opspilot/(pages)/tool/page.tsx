@@ -143,8 +143,8 @@ const ToolListPage: React.FC = () => {
       .then(async (values: Store) => {
         try {
           setConfirmLoading(true);
-          const kwargs = (values.variables || []).map((variable: string) => ({
-            key: variable,
+          const kwargs = (values.variables || []).map((variable: { key: string; type: string; isRequired: boolean }) => ({
+            ...variable,
             value: '',
           }));
           const queryParams = {
@@ -215,7 +215,7 @@ const ToolListPage: React.FC = () => {
         ...tool,
         url: tool?.params?.url,
         team: tool ? tool.team : [selectedGroup?.id],
-        variables: tool?.params?.kwargs?.map((item: any) => item.key) || [],
+        variables: tool?.params?.kwargs,
       });
     });
   };

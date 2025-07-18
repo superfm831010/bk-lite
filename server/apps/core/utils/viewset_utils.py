@@ -92,8 +92,15 @@ class AuthViewSet(MaintainerViewSet):
 
             if getattr(user, "is_superuser", False):
                 return self._list(queryset.order_by(self.ORDERING_FIELD))
-            current_team = request.COOKIES.get("current_team", None)
-            query = Q()
+            current_team = request.COOKIES.get("current_team", "0")
+            fields = [i.name for i in queryset.model._meta.fields]
+            if "created_by" in fields:
+                query = Q(
+                    team__contains=int(current_team), created_by=request.user.username, domain=request.user.domain
+                )
+            else:
+                query = Q()
+
             instance_ids = []
             if hasattr(self, "permission_key"):
                 guest_rules, normal_rules = self._get_permission_rules(user)
@@ -161,7 +168,6 @@ class AuthViewSet(MaintainerViewSet):
             teams = [i.strip() for i in current_team.split(",") if i.strip()]
             for i in teams:
                 query |= Q(team__contains=int(i))
-
             return query
 
         except Exception as e:
