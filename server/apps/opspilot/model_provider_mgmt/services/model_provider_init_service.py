@@ -124,78 +124,71 @@ class ModelProviderInitService:
                 "ocr_config": {"base_url": "http://ocr-server/olm_ocr", "api_key": ""},
             },
         )
-
-        SkillTools.objects.update_or_create(
-            name="DuckDuckGo Search",
-            defaults={
-                "team": [self.group_id],
-                "params": {"url": "langchain:duckduckgo", "name": "DuckDuckGo Search"},
-                "description": """
-Perform fast web searches using DuckDuckGo.
+        tools = [
+            SkillTools.objects.update_or_create(
+                name="DuckDuckGo Search",
+                defaults={
+                    "params": {"url": "langchain:duckduckgo", "name": "DuckDuckGo Search"},
+                    "description": """Perform fast web searches using DuckDuckGo.
 
 This tool allows you to search the internet and retrieve relevant results in real time.
 You can specify the search query and control the number of results returned.
 Ideal for getting up-to-date information without tracking or ads.
 """,
-                "tags": ["search"],
-                "icon": "",
-                "is_build_in": True,
-            },
-        )
-        SkillTools.objects.update_or_create(
-            name="Current Time Tool",
-            defaults={
-                "team": [self.group_id],
-                "params": {"url": "langchain:current_time", "name": "Current Time Tool"},
-                "description": """
-Provides the current date and time.
+                    "tags": ["search"],
+                    "icon": "",
+                    "is_build_in": True,
+                },
+            )[0],
+            SkillTools.objects.update_or_create(
+                name="Current Time Tool",
+                defaults={
+                    "params": {"url": "langchain:current_time", "name": "Current Time Tool"},
+                    "description": """Provides the current date and time.
 
 Use this tool to get the exact current timestamp in `YYYY-MM-DD HH:MM:SS` format.
 Useful for logging, scheduling, or any functionality that requires up-to-date time information.
 """,
-                "tags": ["general"],
-                "icon": "",
-                "is_build_in": True,
-            },
-        )
-        SkillTools.objects.update_or_create(
-            name="Kubernetes Insight Tools",
-            defaults={
-                "team": [self.group_id],
-                "params": {
-                    "url": "langchain:kubernetes",
-                    "name": "Kubernetes Insight Tools",
-                    "kwargs": [{"key": "kubeconfig_path", "value": ""}],
+                    "tags": ["general"],
+                    "icon": "",
+                    "is_build_in": True,
                 },
-                "description": (
-                    "A collection of user-friendly tools for exploring and monitoring your Kubernetes cluster.\n\n"
-                    "These tools allow you to:\n\n"
-                    "- 🔍 List **namespaces**, **pods**, **deployments**, **services**, and **nodes**\n"
-                    "- 🚨 View recent **events** across the cluster\n"
-                    "- ⚠️ Troubleshoot **failed** or **pending** pods\n\n"
-                    "Each tool provides clean JSON output, making it easy to plug into chains or agents.\n\n"
-                    "**Configure once** with your kubeconfig path and use anywhere."
-                ),
-                "tags": ["maintenance"],
-                "icon": "",
-                "is_build_in": True,
-            },
-        )
-        SkillTools.objects.update_or_create(
-            name="Jenkins",
-            defaults={
-                "team": [self.group_id],
-                "params": {
-                    "url": "langchain:jenkins",
-                    "name": "Jenkins",
-                    "kwargs": [
-                        {"key": "jenkins_url", "value": ""},
-                        {"key": "jenkins_username", "value": ""},
-                        {"key": "jenkins_password", "value": ""},
-                    ],
+            )[0],
+            SkillTools.objects.update_or_create(
+                name="Kubernetes Insight Tools",
+                defaults={
+                    "params": {
+                        "url": "langchain:kubernetes",
+                        "name": "Kubernetes Insight Tools",
+                        "kwargs": [{"key": "kubeconfig_path", "value": "", "type": "text", "isRequired": True}],
+                    },
+                    "description": (
+                        "A collection of user-friendly tools for exploring and monitoring your Kubernetes cluster.\n\n"
+                        "These tools allow you to:\n\n"
+                        "- 🔍 List **namespaces**, **pods**, **deployments**, **services**, and **nodes**\n"
+                        "- 🚨 View recent **events** across the cluster\n"
+                        "- ⚠️ Troubleshoot **failed** or **pending** pods\n\n"
+                        "Each tool provides clean JSON output, making it easy to plug into chains or agents.\n\n"
+                        "**Configure once** with your kubeconfig path and use anywhere."
+                    ),
+                    "tags": ["maintenance"],
+                    "icon": "",
+                    "is_build_in": True,
                 },
-                "description": """
-### Jenkins Tools
+            )[0],
+            SkillTools.objects.update_or_create(
+                name="Jenkins",
+                defaults={
+                    "params": {
+                        "url": "langchain:jenkins",
+                        "name": "Jenkins",
+                        "kwargs": [
+                            {"key": "jenkins_url", "value": "", "type": "text", "isRequired": True},
+                            {"key": "jenkins_username", "value": "", "type": "text", "isRequired": True},
+                            {"key": "jenkins_password", "value": "", "type": "password", "isRequired": True},
+                        ],
+                    },
+                    "description": """### Jenkins Tools
 
 This toolset allows you to interact with Jenkins servers for CI/CD automation.
 It includes tools to:
@@ -210,14 +203,18 @@ It includes tools to:
 
 Make sure to provide valid credentials and Jenkins server URL before using.
 """,
-                "tags": [
-                    "maintenance",
-                ],
-                "icon": "",
-                "is_build_in": True,
-            },
-        )
-
+                    "tags": [
+                        "maintenance",
+                    ],
+                    "icon": "",
+                    "is_build_in": True,
+                },
+            )[0],
+        ]
+        for i in tools:
+            if self.group_id not in i.team:
+                i.team.append(self.group_id)
+        SkillTools.objects.bulk_update(tools, ["team"])
         LLMSkill.objects.filter(is_template=True).delete()
         skill_list = [LLMSkill(**skill) for skill in SKILL_LIST]
         LLMSkill.objects.bulk_create(skill_list, batch_size=10)
