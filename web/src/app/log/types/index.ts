@@ -87,10 +87,8 @@ export interface TabItem {
 
 export interface ChartData {
   time: number;
-  value1?: number;
-  value2?: number;
-  details?: Record<string, any>;
-  [key: string]: unknown;
+  value: number;
+  [key: string]: any;
 }
 
 export interface SegmentedItem {

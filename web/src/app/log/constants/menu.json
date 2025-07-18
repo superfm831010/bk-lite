@@ -4,7 +4,7 @@
       "title": "日志搜索",
       "icon": "search-f",
       "url": "/log/search",
-      "name": "search1"
+      "name": "search"
     },
     {
       "title": "集成",
@@ -52,7 +52,7 @@
       "title": "Log Search",
       "icon": "search-f",
       "url": "/log/search",
-      "name": "search1"
+      "name": "search"
     },
     {
       "title": "Integration",

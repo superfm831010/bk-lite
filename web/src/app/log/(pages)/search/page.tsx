@@ -1,23 +1,24 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import TimeSelector from '@/components/time-selector';
-import { TimeSelectorRef } from '@/types';
+import { TimeSelectorDefaultValue, TimeSelectorRef } from '@/types';
 import {
   SearchOutlined,
   BulbFilled,
   CopyTwoTone,
   CaretDownFilled,
 } from '@ant-design/icons';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { Card, Input, Button, Select } from 'antd';
-import CustomPopover from './custom-popover';
+import CustomPopover from './customPopover';
 import CustomTable from '@/components/custom-table';
 import { useTranslation } from '@/utils/i18n';
 import searchStyle from './index.module.scss';
 import Collapse from '@/components/collapse';
-import CustomBarChart from '../../components/charts/barChart';
+import CustomBarChart from '@/app/log/components/charts/barChart';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import { Pagination, TableDataItem } from '@/app/log/types';
+import GrammarExplanation from '@/app/log/components/operate-drawer';
+import { ChartData, Pagination, TableDataItem } from '@/app/log/types';
 import { useHandleCopy } from '@/app/log/hooks';
 
 const { Option } = Select;
@@ -39,6 +40,13 @@ const SearchView: React.FC = () => {
   const [expand, setExpand] = useState<boolean>(true);
   const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]);
   const [logData, setLogData] = useState<TableDataItem[]>([]);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [visible, setVisible] = useState<boolean>(false);
+  const [timeDefaultValue, setTimeDefaultValue] =
+    useState<TimeSelectorDefaultValue>({
+      selectValue: 15,
+      rangePickerVaule: null,
+    });
 
   // 模拟数据加载
   useEffect(() => {
@@ -46,14 +54,12 @@ const SearchView: React.FC = () => {
     setGroupList([]);
     setLogData([
       {
-        label:
-          'filebeat_filebeatfilebeat_filebeatfilebeat_filebeatfilebeat_filebeatfilebeat_',
-        value:
-          'ewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscsewqtwetuhgfsasadscse',
+        label: 'packetbeat_event_action',
+        value: 'network_flow',
       },
       {
-        label: 'type',
-        value: 'filebeat',
+        label: 'source',
+        value: 'appo',
       },
     ]);
   }, [frequence]);
@@ -72,6 +78,40 @@ const SearchView: React.FC = () => {
       };
     });
     setTableData(mockData);
+    setChartData([
+      {
+        time: dayjs('2025-07-17T06:31:00.000Z').valueOf(),
+        value: 120,
+      },
+      {
+        time: dayjs('2025-07-17T06:32:30.000Z').valueOf(),
+        value: 80,
+      },
+      {
+        time: dayjs('2025-07-17T06:33:00.000Z').valueOf(),
+        value: 150,
+      },
+      {
+        time: dayjs('2025-07-17T06:34:30.000Z').valueOf(),
+        value: 200,
+      },
+      {
+        time: dayjs('2025-07-17T06:35:00.000Z').valueOf(),
+        value: 90,
+      },
+      {
+        time: dayjs('2025-07-17T06:36:30.000Z').valueOf(),
+        value: 110,
+      },
+      {
+        time: dayjs('2025-07-17T06:37:00.000Z').valueOf(),
+        value: 85,
+      },
+      {
+        time: dayjs('2025-07-17T06:38:30.000Z').valueOf(),
+        value: 160,
+      },
+    ]);
   };
 
   const onFrequenceChange = (val: number) => {
@@ -118,6 +158,14 @@ const SearchView: React.FC = () => {
     });
   };
 
+  const onXRangeChange = (arr: [Dayjs, Dayjs]) => {
+    setTimeDefaultValue((pre) => ({
+      ...pre,
+      rangePickerVaule: arr,
+      selectValue: 0,
+    }));
+  };
+
   const getRowExpandRender = (record: TableDataItem) => {
     return (
       <div
@@ -130,22 +178,23 @@ const SearchView: React.FC = () => {
               onClick={() => handleCopy('Jun 26 16:43:08 control')}
             />
             <span className="font-[500] break-all">
-              Jun 26 16:43:08 control
-              11111111111111111111sxsavfv11111111111111111111sxsavfvfdvwddwqdddeqdccxcdsc2fdfwdc11111111111111111111sxsavfvfdvwddwqdddeqdccxcdsc2fdfwdcfdvwddwqdddeqdccxcdsc2fdfwdc11111111111111111111sxsavfvfdvwddwqdddeqdccxcdsc2fdfwdc
+              {
+                '2025-07-17T14:46:22.513+0800 I INDEX [conn283635] index build: starting on cmdb.cc_ObjectBase_0_pub_aliyun_bucket properties: { v: 2, unique: true, key: { bk_inst_name: 1 }, name: "bkcc_unique_541", ns: "cmdb.cc_ObjectBase_0_pub_aliyun_bucket", background: true, partialFilterExpression: { bk_inst_name: { $type: "string" } } } using method: Hybrid'
+              }
             </span>
           </div>
           <div>
-            <span className="mr-2">
+            <span className="mr-3">
               <span className="text-[var(--color-text-3)]">
                 {t('common.time')}：
               </span>
               <span>{record.date}</span>
             </span>
-            <span className="mr-2">
+            <span>
               <span className="text-[var(--color-text-3)]">
                 {t('log.search.receiver')}：
               </span>
-              <span>yhd1</span>
+              <span>filebeat</span>
             </span>
           </div>
         </div>
@@ -179,7 +228,7 @@ const SearchView: React.FC = () => {
                       text={item.label}
                       className="w-full overflow-hidden text-[var(--color-text-3)] text-ellipsis whitespace-nowrap"
                     ></EllipsisWithTooltip>
-                    :
+                    <span className="text-[var(--color-text-3)]">:</span>
                     <CaretDownFilled
                       className={`text-[12px] ${searchStyle.arrow}`}
                     />
@@ -224,10 +273,7 @@ const SearchView: React.FC = () => {
       <div className="flex justify-end">
         <TimeSelector
           ref={timeSelectorRef}
-          defaultValue={{
-            selectValue: 15,
-            rangePickerVaule: null,
-          }}
+          defaultValue={timeDefaultValue}
           onChange={onTimeChange}
           onFrequenceChange={onFrequenceChange}
           onRefresh={onRefresh}
@@ -258,7 +304,11 @@ const SearchView: React.FC = () => {
             placeholder={t('log.search.searchPlaceHolder')}
             value={searchText}
             addonAfter={
-              <BulbFilled style={{ color: 'var(--color-primary)' }} />
+              <BulbFilled
+                className="cursor-pointer px-[10px] py-[8px]"
+                style={{ color: 'var(--color-primary)' }}
+                onClick={() => setVisible(true)}
+              />
             }
             onChange={(e) => setSearchText(e.target.value)}
           />
@@ -298,7 +348,11 @@ const SearchView: React.FC = () => {
           }
           onToggle={(val) => setExpand(val)}
         >
-          <CustomBarChart data={[]} />
+          <CustomBarChart
+            className={searchStyle.chart}
+            data={chartData}
+            onXRangeChange={onXRangeChange}
+          />
         </Collapse>
       </Card>
       <Card bordered={false}>
@@ -307,7 +361,7 @@ const SearchView: React.FC = () => {
           dataSource={tableData}
           scroll={{
             x: 'max-content',
-            y: `calc(100vh - ${expand ? '610px' : '456px'})`,
+            y: `calc(100vh - ${expand ? '534px' : '456px'})`,
           }}
           pagination={pagination}
           expandable={{
@@ -321,6 +375,19 @@ const SearchView: React.FC = () => {
           onChange={handleTableChange}
         />
       </Card>
+      <GrammarExplanation
+        title={t('log.search.grammarExplanation')}
+        visible={visible}
+        width={600}
+        onClose={() => setVisible(false)}
+        footer={
+          <Button onClick={() => setVisible(false)}>
+            {t('common.cancel')}
+          </Button>
+        }
+      >
+        语法说明
+      </GrammarExplanation>
     </div>
   );
 };
