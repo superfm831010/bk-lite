@@ -41,10 +41,13 @@ class MonitorAlertVieSet(
         for policy_id in policy_ids:
             permission[policy_id] = DEFAULT_PERMISSION
 
+        orgs = {i["id"] for i in request.user.group_list if i["name"] == "OpsPilotGuest"}
+        orgs.add(request.COOKIES.get("current_team"))
+
         # 获取经过过滤器处理的数据
         queryset = self.filter_queryset(self.get_queryset())
         if not request.user.is_superuser:
-            policy_ids = PolicyOrganization.objects.filter(organization=request.COOKIES.get("current_team")).values_list("policy_id", flat=True)
+            policy_ids = PolicyOrganization.objects.filter(organization__in=orgs).values_list("policy_id", flat=True)
             queryset = queryset.filter(policy_id__in=list(policy_ids)).distinct()
 
         if request.GET.get("monitor_objects"):

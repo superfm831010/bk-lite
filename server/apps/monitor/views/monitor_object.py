@@ -33,10 +33,13 @@ class MonitorObjectVieSet(viewsets.ModelViewSet):
             result["display_type"] = lan.get_val("MONITOR_OBJECT_TYPE", result["type"]) or result["type"]
             result["display_name"] = lan.get_val("MONITOR_OBJECT", result["name"]) or result["name"]
 
+        orgs = {i["id"] for i in request.user.group_list if i["name"] == "OpsPilotGuest"}
+        orgs.add(request.COOKIES.get("current_team"))
+
         if request.GET.get("add_instance_count") in ["true", "True"]:
             inst_qs = MonitorInstance.objects.filter(is_deleted=False)
             if not request.user.is_superuser:
-                inst_qs = inst_qs.filter(monitorinstanceorganization__organization=request.COOKIES.get("current_team"))
+                inst_qs = inst_qs.filter(monitorinstanceorganization__organization__in=orgs)
             count_data = inst_qs.distinct("id").values('monitor_object_id').annotate(instance_count=Count('id'))
             count_map = {i["monitor_object_id"]: i["instance_count"] for i in count_data}
             for result in results:
@@ -45,7 +48,7 @@ class MonitorObjectVieSet(viewsets.ModelViewSet):
         if request.GET.get("add_policy_count") in ["true", "True"]:
             policy_qs = MonitorPolicy.objects.filter()
             if not request.user.is_superuser:
-                policy_qs = policy_qs.filter(policyorganization__organization=request.COOKIES.get("current_team"))
+                policy_qs = policy_qs.filter(policyorganization__organization__in=orgs)
             count_data = policy_qs.distinct("id").values('monitor_object_id').annotate(policy_count=Count('id'))
             count_map = {i["monitor_object_id"]: i["policy_count"] for i in count_data}
             for result in results:
