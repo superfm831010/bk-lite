@@ -71,7 +71,7 @@ class AnomalyDetectionServingViewSet(AuthViewSet):
                 )
 
             # 从服务配置和训练任务获取模型信息
-            model_name = f"anomaly_detection_model_{train_job.id}"  # 基于训练任务ID生成模型名称
+            model_name = f"{train_job.algorithm}_{train_job.id}"  # 基于训练任务ID生成模型名称
             model_version = serving.model_version
             anomaly_threshold = serving.anomaly_threshold
             algorithm = train_job.algorithm

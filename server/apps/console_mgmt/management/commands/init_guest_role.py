@@ -13,7 +13,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         sys_client = SystemMgmt()
-        res = sys_client.create_opspilot_guest_role()
+        res = sys_client.create_guest_role()
         opspilot_client = OpsPilot()
         provider_res = opspilot_client.get_guest_provider(res["data"]["group_id"])
         if not provider_res["result"]:
