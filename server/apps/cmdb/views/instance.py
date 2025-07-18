@@ -105,8 +105,9 @@ class InstanceViewSet(viewsets.ViewSet):
         can_do = "Operate"
         rules = request.user.rules['cmdb']['normal']
         model_id = request.data.get("model_id")
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = request.data['instance_info']['inst_name']
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES,model_id,rules,inst_name,can_do)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES,model_id,rules,inst_name,can_do,cls_id)
         if not permission:
             return WebUtils.response_error("没有权限")
         inst = InstanceManage.instance_create(
@@ -127,8 +128,9 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules['cmdb']['normal']
         instance = InstanceManage.query_entity_by_id(pk)
         model_id = instance["model_id"]
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = instance["inst_name"]
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules,inst_name,can_do)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules,inst_name,can_do,cls_id)
         if not permission:
             return WebUtils.response_error("没有权限")
         InstanceManage.instance_batch_delete(
@@ -181,8 +183,9 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules['cmdb']['normal']
         instance = InstanceManage.query_entity_by_id(pk)
         model_id = instance["model_id"]
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = instance["inst_name"]
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES,model_id,rules,inst_name,can_do)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES,model_id,rules,inst_name,can_do,cls_id)
         if not permission:
             return WebUtils.response_error("没有权限")
         inst = InstanceManage.instance_update(
@@ -286,9 +289,11 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules['cmdb']['normal']
         association = InstanceManage.instance_association_by_asso_id(int(id))
         src_model_id = association["src_model_id"]
+        src_cls_id = ModelManage.search_model_info(src_model_id)["classification_id"]
         dst_model_id = association["dst_model_id"]
-        dst_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, dst_model_id, rules)
-        src_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES,src_model_id,rules,)
+        dst_cls_id = ModelManage.search_model_info(dst_model_id)["classification_id"]
+        dst_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, dst_model_id, rules,dst_cls_id)
+        src_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES,src_model_id,rules,src_cls_id)
         if dst_permission is not None and src_permission is not None:
             for _, value in dst_permission.items():
                 if can_do not in value:
@@ -347,8 +352,9 @@ class InstanceViewSet(viewsets.ViewSet):
     def instance_association(self, request, model_id: str, inst_id: int):
         can_do = "View"
         rules = request.user.rules['cmdb']['normal']
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = InstanceManage.query_entity_by_id(inst_id)["inst_name"]
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do,cls_id)
         if not permission:
             return WebUtils.response_error("没有权限")
         asso_insts = InstanceManage.instance_association(model_id, int(inst_id))
@@ -441,7 +447,8 @@ class InstanceViewSet(viewsets.ViewSet):
     def inst_import_support_edit(self, request, model_id):
         can_do = "Operate"
         rules = request.user.rules['cmdb']['normal']
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
+        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules,cls_id)
         if permission is not None:
             for _, value in permission.items():
                 if can_do not in value:
@@ -533,8 +540,9 @@ class InstanceViewSet(viewsets.ViewSet):
     def topo_search(self, request, model_id: str, inst_id: int):
         can_do = "View"
         rules = request.user.rules['cmdb']['normal']
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = InstanceManage.query_entity_by_id(inst_id)["inst_name"]
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do,cls_id)
         if not permission:
             return WebUtils.response_error("没有权限")
         result = InstanceManage.topo_search(int(inst_id))
@@ -557,7 +565,8 @@ class InstanceViewSet(viewsets.ViewSet):
     def create_or_update(self, request, model_id):
         can_do = "View"
         rules = request.user.rules['cmdb']['normal']
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
+        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules,cls_id)
         if permission is not None:
             for _, value in permission.items():
                 if can_do not in value:
@@ -575,7 +584,8 @@ class InstanceViewSet(viewsets.ViewSet):
     def get_info(self, request, model_id):
         can_do = "View"
         rules = request.user.rules['cmdb']['normal']
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
+        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules,cls_id)
         if permission is not None:
             for _, value in permission.items():
                 if can_do not in value:
