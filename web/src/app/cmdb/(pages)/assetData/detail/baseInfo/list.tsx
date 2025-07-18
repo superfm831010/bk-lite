@@ -149,7 +149,10 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
               ) : (
                 <>
                   {item.editable && (
-                    <PermissionWrapper requiredPermissions={['Edit']}>
+                    <PermissionWrapper
+                      requiredPermissions={['Edit']}
+                      instPermissions={instDetail.permission}
+                    >
                       <Button
                         type="link"
                         size="small"

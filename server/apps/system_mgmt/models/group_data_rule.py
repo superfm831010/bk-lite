@@ -10,7 +10,7 @@ class GroupDataRule(models.Model):
     app = models.CharField(max_length=50, default="")
 
     class Meta:
-        unique_together = ("name", "group_id")
+        unique_together = ("name", "group_id", "app")
 
 
 class UserRule(models.Model):

@@ -385,7 +385,10 @@ const ProfessionalCollection: React.FC = () => {
       return (
         <div className="flex gap-3">
           {record.input_method && !record.examine ? (
-            <PermissionWrapper requiredPermissions={['Execute']}>
+            <PermissionWrapper
+              requiredPermissions={['Execute']}
+              instPermissions={record.permission}
+            >
               <Button
                 type="link"
                 size="small"
@@ -406,7 +409,10 @@ const ProfessionalCollection: React.FC = () => {
             </Button>
           )}
 
-          <PermissionWrapper requiredPermissions={['Execute']}>
+          <PermissionWrapper
+            requiredPermissions={['Execute']}
+            instPermissions={record.permission}
+          >
             <Button
               type="link"
               size="small"
@@ -419,7 +425,10 @@ const ProfessionalCollection: React.FC = () => {
                 : t('Collection.table.executeNow')}
             </Button>
           </PermissionWrapper>
-          <PermissionWrapper requiredPermissions={['Edit']}>
+          <PermissionWrapper
+            requiredPermissions={['Edit']}
+            instPermissions={record.permission}
+          >
             <Button
               type="link"
               size="small"
@@ -429,7 +438,10 @@ const ProfessionalCollection: React.FC = () => {
               {t('Collection.table.modify')}
             </Button>
           </PermissionWrapper>
-          <PermissionWrapper requiredPermissions={['Delete']}>
+          <PermissionWrapper
+            requiredPermissions={['Delete']}
+            instPermissions={record.permission}
+          >
             <Button
               type="link"
               size="small"

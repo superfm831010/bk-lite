@@ -508,6 +508,9 @@ msgstr "汇聚企业多源告警事件，智能降噪，挖掘深层故障原因
 msgid "For centralized collection, storage, and analysis of log data, helping users achieve efficient log monitoring and troubleshooting."
 msgstr "用于集中收集、存储和分析日志数据，帮助用户实现高效的日志监控和故障排查。"
 
+msgid "Users can experience relevant capabilities here, including AIOps model testing, intelligent agent usage, and more."
+msgstr "用户可以在这里体验相关能力，包括 AIOps 模型测试、智能体使用等。"
+
 
 msgid "Studio"
 msgstr "工作台"

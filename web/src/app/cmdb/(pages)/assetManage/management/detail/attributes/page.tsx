@@ -102,7 +102,10 @@ const Attributes = () => {
       key: 'action',
       render: (_, record) => (
         <>
-          <PermissionWrapper requiredPermissions={['Edit']}>
+          <PermissionWrapper
+            requiredPermissions={['Edit Model']}
+            instPermissions={record.permission}
+          >
             <Button
               type="link"
               className="mr-[10px]"
@@ -112,7 +115,10 @@ const Attributes = () => {
               {t('edit')}
             </Button>
           </PermissionWrapper>
-          <PermissionWrapper requiredPermissions={['Delete']}>
+          <PermissionWrapper
+            requiredPermissions={['Edit Model']}
+            instPermissions={record.permission}
+          >
             <Button
               type="link"
               disabled={!isAdmin && record.is_pre}
@@ -222,7 +228,7 @@ const Attributes = () => {
             />
           </div>
           <div className="right-side">
-            <PermissionWrapper requiredPermissions={['Add']}>
+            <PermissionWrapper requiredPermissions={['Edit Model']}>
               <Button
                 type="primary"
                 className="mr-[8px]"
