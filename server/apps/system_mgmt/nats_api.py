@@ -176,7 +176,9 @@ def search_users(query_params):
 @nats_client.register
 def init_user_default_attributes(user_id, group_name, default_group_id):
     try:
-        role_obj = Role.objects.get(name="guest", app="opspilot")
+        role_ids = list(
+            Role.objects.filter(name="guest", app__in=["opspilot", "cmdb", "monitor"]).values_list("id", flat=True)
+        )
         normal_role = Role.objects.get(name="normal", app="opspilot")
         user = User.objects.get(id=user_id)
         top_group, _ = Group.objects.get_or_create(
@@ -189,8 +191,8 @@ def init_user_default_attributes(user_id, group_name, default_group_id):
         group_obj = Group.objects.create(name=group_name, parent_id=top_group.id)
         user.locale = "zh-Hans"
         user.timezone = "Asia/Shanghai"
-        if role_obj.id not in user.role_list:
-            user.role_list.append(role_obj.id)
+        user.role_list.extend(role_ids)
+        user.role_list = list(set(user.role_list))  # 去重
         if normal_role.id in user.role_list:
             user.role_list.remove(normal_role.id)
         user.group_list.remove(int(default_group_id))
@@ -198,7 +200,7 @@ def init_user_default_attributes(user_id, group_name, default_group_id):
         user.group_list.append(group_obj.id)
         user.save()
         default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", app="opspilot", group_id=guest_group.id)
-        monitor_rule = GroupDataRule.objects.get(name="OpsPilot数据权限", app="monitor", group_id=guest_group.id)
+        monitor_rule = GroupDataRule.objects.get(name="OpsPilotGuest数据权限", app="monitor", group_id=guest_group.id)
         cmdb_rule = GroupDataRule.objects.get(name="游客数据权限", app="cmdb", group_id=guest_group.id)
         UserRule.objects.create(username=user.username, group_rule_id=default_rule.id)
         UserRule.objects.create(username=user.username, group_rule_id=monitor_rule.id)
@@ -339,7 +341,7 @@ def wechat_user_register(user_id, nick_name):
     user.save()
     try:
         default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", app="opspilot", group_id=default_group.id)
-        monitor_rule = GroupDataRule.objects.get(name="OpsPilot数据权限", app="monitor", group_id=default_group.id)
+        monitor_rule = GroupDataRule.objects.get(name="OpsPilotGuest数据权限", app="monitor", group_id=default_group.id)
         cmdb_rule = GroupDataRule.objects.get(name="游客数据权限", app="cmdb", group_id=default_group.id)
         UserRule.objects.get_or_create(username=user.username, group_rule_id=cmdb_rule.id)
         UserRule.objects.get_or_create(username=user.username, group_rule_id=default_rule.id)
