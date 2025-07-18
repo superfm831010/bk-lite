@@ -37,7 +37,7 @@ class MonitorObjectVieSet(viewsets.ModelViewSet):
             inst_qs = MonitorInstance.objects.filter(is_deleted=False)
             if not request.user.is_superuser:
                 inst_qs = inst_qs.filter(monitorinstanceorganization__organization=request.COOKIES.get("current_team"))
-            count_data = inst_qs.values('monitor_object_id').annotate(instance_count=Count('id'))
+            count_data = inst_qs.distinct("id").values('monitor_object_id').annotate(instance_count=Count('id'))
             count_map = {i["monitor_object_id"]: i["instance_count"] for i in count_data}
             for result in results:
                 result["instance_count"] = count_map.get(result["id"], 0)
@@ -46,7 +46,7 @@ class MonitorObjectVieSet(viewsets.ModelViewSet):
             policy_qs = MonitorPolicy.objects.filter()
             if not request.user.is_superuser:
                 policy_qs = policy_qs.filter(policyorganization__organization=request.COOKIES.get("current_team"))
-            count_data = policy_qs.values('monitor_object_id').annotate(policy_count=Count('id'))
+            count_data = policy_qs.distinct("id").values('monitor_object_id').annotate(policy_count=Count('id'))
             count_map = {i["monitor_object_id"]: i["policy_count"] for i in count_data}
             for result in results:
                 result["policy_count"] = count_map.get(result["id"], 0)

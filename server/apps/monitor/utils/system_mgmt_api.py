@@ -35,12 +35,17 @@ class SystemMgmtUtils:
     def format_rules_v2(module, rules):
         all_permission_objs = set()
         instance_map = {}
-        for object_rule in rules.get(module, {}):
-            for obj, instance_rules in object_rule.items():
-                for instance_rule in instance_rules:
-                    if instance_rule["id"] in {"0", "-1"}:
-                        all_permission_objs.add(obj)
-                        continue
-                    instance_map[instance_rule["id"]] = instance_rule["permission"]
+
+        rule = rules.get("monitor", {}).get("normal", {})
+        map = {}
+        for j in [i for i in rule.get(module, {}).values()]:
+            map.update(**j)
+
+        for obj, instance_rules in map.items():
+            for instance_rule in instance_rules:
+                if instance_rule["id"] in {"0", "-1"}:
+                    all_permission_objs.add(obj)
+                    continue
+                instance_map[instance_rule["id"]] = instance_rule["permission"]
 
         return all_permission_objs, instance_map
