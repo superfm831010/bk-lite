@@ -17,6 +17,8 @@ Blueking Lite是一个AI First的轻量版运维产品：
 
 具有部署资源要求、使用成本低，渐进式的使用体验等特点，为运维管理员提供了日常运维中的必备工具。
 
+> 使用微信扫码登录,快速体验: https://bklite.canway.net
+
 ## Overview
 * [设计理念](docs/overview/design.md)
 * [架构设计](docs/overview/architecture.md)
