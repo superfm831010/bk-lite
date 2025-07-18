@@ -118,8 +118,8 @@ class InstanceSearch:
         qs = MonitorInstance.objects.filter(monitor_object_id=self.monitor_obj.id, is_deleted=False)
         is_super = self.query_data.get("is_superuser")
         if not is_super:
-            group_id = self.query_data["group_id"]
-            qs = qs.filter(monitorinstanceorganization__organization=group_id)
+            group_ids = self.query_data["group_ids"]
+            qs = qs.filter(monitorinstanceorganization__organization__in=group_ids)
         name = self.query_data.get("name")
         if name:
             qs = qs.filter(name__icontains=name)

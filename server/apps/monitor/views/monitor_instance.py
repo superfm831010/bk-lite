@@ -43,12 +43,16 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
     def monitor_instance_list(self, request, monitor_object_id):
         permission = SystemMgmtUtils.format_rules(INSTANCE_MODULE, monitor_object_id, request.user.rules)
         page, page_size = request.GET.get("page", 1), request.GET.get("page_size", 10)
+
+        orgs = {i["id"] for i in request.user.group_list if i["name"] == "OpsPilotGuest"}
+        orgs.add(request.COOKIES.get("current_team"))
+
         data = MonitorObjectService.get_monitor_instance(
             int(monitor_object_id),
             int(page),
             int(page_size),
             request.GET.get("name"),
-            [request.COOKIES.get("current_team")],
+            orgs,
             request.user.is_superuser,
             bool(request.GET.get("add_metrics", False)),
             permission
@@ -81,9 +85,11 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
         monitor_obj = MonitorObject.objects.filter(id=monitor_object_id).first()
         if not monitor_obj:
             raise BaseAppException("Monitor object does not exist")
+        orgs = {i["id"] for i in request.user.group_list if i["name"] == "OpsPilotGuest"}
+        orgs.add(request.COOKIES.get("current_team"))
         search_obj = InstanceSearch(
             monitor_obj,
-            dict(group_id=request.COOKIES.get("current_team"),
+            dict(group_ids=orgs,
                  is_superuser=request.user.is_superuser,
                  **request.data),
             permission=permission,
