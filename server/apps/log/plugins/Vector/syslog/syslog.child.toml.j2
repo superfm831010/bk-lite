@@ -32,7 +32,7 @@ route.{{ instance_id }}_{{ route.stream_id }} = '{{ route.condition }}'
 {% for stream in streams %}
 [transforms.{{ instance_id }}_{{ stream.stream_id }}]
 type = "remap"
-inputs = ["router_{{ instance_id }}_{{ stream.stream_id }}"]
+inputs = ["router_{{ instance_id }}.{{ instance_id }}_{{ stream.stream_id }}"]
 source = '''
 .streams = push!(get!(.streams, []), "{{ stream.stream_id }}")
 '''
