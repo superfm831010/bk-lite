@@ -4,8 +4,9 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from apps.cmdb.constants import PERMISSION_INSTANCES
+from apps.cmdb.constants import PERMISSION_INSTANCES,PERMISSION_MODEL
 from apps.cmdb.services.instance import InstanceManage
+from apps.cmdb.services.model import ModelManage
 from apps.cmdb.utils.permisssion_util import CmdbRulesFormatUtil
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.web_utils import WebUtils
@@ -59,7 +60,7 @@ class InstanceViewSet(viewsets.ViewSet):
             inst_names,
         )
         for inst in insts:
-            inst['permission'] = CmdbRulesFormatUtil.get_inst_permission_list(PERMISSION_INSTANCES, model_id, rules,inst['inst_name'])
+            inst['permission'] = CmdbRulesFormatUtil.get_permission_list(PERMISSION_INSTANCES, model_id, rules,inst['inst_name'])
         return WebUtils.response_success(dict(insts=insts, count=count))
 
     @swagger_auto_schema(
@@ -81,8 +82,9 @@ class InstanceViewSet(viewsets.ViewSet):
         if not is_per:
             return WebUtils.response_error("没有权限")
         #获取权限列表
-        permission = CmdbRulesFormatUtil.get_inst_permission_list(PERMISSION_INSTANCES, model_id,rules,inst_name)
-        return WebUtils.response_success(data,permission)
+        permission = CmdbRulesFormatUtil.get_permission_list(PERMISSION_INSTANCES, model_id,rules,inst_name)
+        data['permission'] =  permission
+        return WebUtils.response_success(data)
 
     @swagger_auto_schema(
         operation_id="instance_create",
@@ -279,8 +281,8 @@ class InstanceViewSet(viewsets.ViewSet):
         can_do = "Operate"
         rules = request.user.rules['cmdb']['normal']
         association = InstanceManage.instance_association_by_asso_id(int(id))
-        src_model_id = association["edge"]["src_model_id"]
-        dst_model_id = association["edge"]["dst_model_id"]
+        src_model_id = association["src_model_id"]
+        dst_model_id = association["dst_model_id"]
         dst_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, dst_model_id, rules)
         src_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES,src_model_id,rules,)
         if dst_permission is not None and src_permission is not None:
@@ -315,8 +317,9 @@ class InstanceViewSet(viewsets.ViewSet):
     def instance_association_instance_list(self, request, model_id: str, inst_id: int):
         can_do = "View"
         rules = request.user.rules['cmdb']['normal']
+        inst_name = InstanceManage.query_entity_by_id(inst_id)["inst_name"]
         asso_insts = InstanceManage.instance_association_instance_list(model_id, int(inst_id))
-        result = CmdbRulesFormatUtil.has_bath_asso_permission(PERMISSION_INSTANCES, asso_insts, rules, can_do)
+        result = CmdbRulesFormatUtil.has_bath_asso_permission(PERMISSION_INSTANCES, asso_insts, rules, inst_name,can_do)
         return WebUtils.response_success(result)
 
     @swagger_auto_schema(
@@ -362,13 +365,6 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Add")
     @action(methods=["get"], detail=False, url_path=r"(?P<model_id>.+?)/download_template")
     def download_template(self, request, model_id):
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
-        if permission is not None:
-            for _, value in permission.items():
-                if can_do not in value:
-                    return WebUtils.response_error("没有权限")
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         response["Content-Disposition"] = f"attachment;filename={f'{model_id}_import_template.xlsx'}"
         response.write(InstanceManage.download_import_template(model_id).read())
@@ -402,11 +398,10 @@ class InstanceViewSet(viewsets.ViewSet):
     def inst_import(self, request, model_id):
         can_do = "Operate"
         rules = request.user.rules['cmdb']['normal']
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
-        if permission is not None:
-            for _, value in permission.items():
-                if can_do not in value:
-                    return WebUtils.response_error("没有权限")
+        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_MODEL, cls_id,rules,model_id,can_do)
+        if not permission:
+            return WebUtils.response_error("没有权限")
         result = InstanceManage.inst_import(
             model_id,
             request.data.get("file").file,
@@ -478,11 +473,12 @@ class InstanceViewSet(viewsets.ViewSet):
     def inst_export(self, request, model_id):
         can_do = "Operate"
         rules = request.user.rules['cmdb']['normal']
-        permisssion = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules)
-        if permisssion is not None:
-            for _, value in permisssion.items():
-                if can_do not in value:
-                    return WebUtils.response_error("没有权限")
+        inst_ids = request.data
+        instances = InstanceManage.query_entity_by_ids(inst_ids)
+        inst_names = [inst["inst_name"] for inst in instances]
+        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules, inst_names, can_do)
+        if not permission:
+            return WebUtils.response_error("存在不可执行操作的实例")
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         response["Content-Disposition"] = f"attachment;filename={f'{model_id}_import_template.xlsx'}"
         response.write(InstanceManage.inst_export(model_id, request.data).read())

@@ -50,8 +50,11 @@ class ModelViewSet(viewsets.ViewSet):
         rules = request.user.rules['cmdb']['normal']
         can_do = "View"
         result = CmdbRulesFormatUtil.has_model_list(PERMISSION_MODEL, src_result, rules, can_do)
-        permission = CmdbRulesFormatUtil.get_permission_list(PERMISSION_MODEL, result, rules)
-        result['permission'] = permission
+        for model in result:
+            cls_id = model['classification_id']
+            model_id = model['model_id']
+            model_permission = CmdbRulesFormatUtil.get_permission_list(PERMISSION_MODEL,cls_id,rules,model_id)
+            model['permission'] = model_permission
         return WebUtils.response_success(result)
 
     @swagger_auto_schema(
