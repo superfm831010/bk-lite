@@ -4,7 +4,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from apps.cmdb.constants import PERMISSION_INSTANCES,PERMISSION_MODEL
+from apps.cmdb.constants import PERMISSION_INSTANCES,PERMISSION_MODEL,OPERATE,VIEW
 from apps.cmdb.services.instance import InstanceManage
 from apps.cmdb.services.model import ModelManage
 from apps.cmdb.utils.permisssion_util import CmdbRulesFormatUtil
@@ -73,7 +73,7 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_basic_information-View")
     def retrieve(self, request, pk: str):
-        can_do = "View"
+        can_do = VIEW
         rules = request.user.rules['cmdb']['normal']
         data = InstanceManage.query_entity_by_id(int(pk))
         model_id = data["model_id"]
@@ -102,7 +102,7 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_list-Add")
     def create(self, request):
-        can_do = "Operate"
+        can_do = OPERATE
         rules = request.user.rules['cmdb']['normal']
         model_id = request.data.get("model_id")
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
@@ -124,7 +124,7 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_list-Delete")
     def destroy(self, request, pk: int):
-        can_do = "Operate"
+        can_do = OPERATE
         rules = request.user.rules['cmdb']['normal']
         instance = InstanceManage.query_entity_by_id(pk)
         model_id = instance["model_id"]
@@ -152,7 +152,7 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Delete")
     @action(detail=False, methods=["post"], url_path="batch_delete")
     def instance_batch_delete(self, request):
-        can_do = "Operate"
+        can_do = OPERATE
         rules = request.user.rules['cmdb']['normal']
         instances = InstanceManage.query_entity_by_ids(request.data)
         model_id = instances[0]["model_id"]
@@ -179,7 +179,7 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_list-Edit,asset_basic_information-Edit")
     def partial_update(self, request, pk: int):
-        can_do = "Operate"
+        can_do = OPERATE
         rules = request.user.rules['cmdb']['normal']
         instance = InstanceManage.query_entity_by_id(pk)
         model_id = instance["model_id"]
@@ -215,7 +215,7 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Edit")
     @action(detail=False, methods=["post"], url_path="batch_update")
     def instance_batch_update(self, request):
-        can_do = "Operate"
+        can_do = OPERATE
         rules = request.user.rules['cmdb']['normal']
         instances = InstanceManage.query_entity_by_ids(request.data["inst_ids"])
         model_id = instances[0]["model_id"]
@@ -259,7 +259,7 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Add,asset_relationships-Add")
     @action(detail=False, methods=["post"], url_path="association")
     def instance_association_create(self, request):
-        can_do = "Operate"
+        can_do = OPERATE
         rules = request.user.rules['cmdb']['normal']
         dst_model_id = request.data.get("dst_model_id")
         src_model_id = request.data.get("src_model_id")
@@ -285,7 +285,7 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Delete,asset_relationships-Delete")
     @action(detail=False, methods=["delete"], url_path="association/(?P<id>.+?)")
     def instance_association_delete(self, request, id: int):
-        can_do = "Operate"
+        can_do = OPERATE
         rules = request.user.rules['cmdb']['normal']
         association = InstanceManage.instance_association_by_asso_id(int(id))
         src_model_id = association["src_model_id"]
@@ -324,7 +324,7 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_list-View,asset_relationships-View")
     def instance_association_instance_list(self, request, model_id: str, inst_id: int):
-        can_do = "View"
+        can_do = VIEW
         rules = request.user.rules['cmdb']['normal']
         inst_name = InstanceManage.query_entity_by_id(inst_id)["inst_name"]
         asso_insts = InstanceManage.instance_association_instance_list(model_id, int(inst_id))
@@ -350,7 +350,7 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_relationships-View,asset_list-View")
     def instance_association(self, request, model_id: str, inst_id: int):
-        can_do = "View"
+        can_do = VIEW
         rules = request.user.rules['cmdb']['normal']
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = InstanceManage.query_entity_by_id(inst_id)["inst_name"]
@@ -406,7 +406,7 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Add")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import")
     def inst_import(self, request, model_id):
-        can_do = "Operate"
+        can_do = OPERATE
         rules = request.user.rules['cmdb']['normal']
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_MODEL, cls_id,rules,model_id,can_do)
@@ -445,7 +445,7 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-Add")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import_support_edit")
     def inst_import_support_edit(self, request, model_id):
-        can_do = "Operate"
+        can_do = OPERATE
         rules = request.user.rules['cmdb']['normal']
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules,cls_id)
@@ -482,7 +482,7 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_list-View")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_export")
     def inst_export(self, request, model_id):
-        can_do = "Operate"
+        can_do = OPERATE
         rules = request.user.rules['cmdb']['normal']
         inst_ids = request.data
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
@@ -538,7 +538,7 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_list-View,asset_basic_information-View,asset_relationships-View")
     def topo_search(self, request, model_id: str, inst_id: int):
-        can_do = "View"
+        can_do = VIEW
         rules = request.user.rules['cmdb']['normal']
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = InstanceManage.query_entity_by_id(inst_id)["inst_name"]
@@ -563,7 +563,7 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_list-View")
     def create_or_update(self, request, model_id):
-        can_do = "View"
+        can_do = VIEW
         rules = request.user.rules['cmdb']['normal']
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules,cls_id)
@@ -582,7 +582,7 @@ class InstanceViewSet(viewsets.ViewSet):
     @action(methods=["get"], detail=False, url_path=r"(?P<model_id>.+?)/show_field/detail")
     @HasPermission("asset_list-View")
     def get_info(self, request, model_id):
-        can_do = "View"
+        can_do = VIEW
         rules = request.user.rules['cmdb']['normal']
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules,cls_id)
