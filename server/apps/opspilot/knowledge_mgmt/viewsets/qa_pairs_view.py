@@ -52,19 +52,17 @@ class QAPairsViewSet(MaintainerViewSet):
 
     @action(methods=["POST"], detail=False)
     def import_qa_json(self, request):
-        json_file = request.FILES.get("file")
-        if not json_file:
+        files = request.FILES.getlist("file")
+        if not files:
             return JsonResponse({"result": False, "message": "No file provided."})
-        try:
-            data = json.load(json_file)
-        except json.JSONDecodeError:
-            return JsonResponse({"result": False, "message": "Invalid JSON file."})
-        if not isinstance(data, list):
-            return JsonResponse({"result": False, "message": "JSON file must contain a list of QAPairs."})
+        file_data = {}
+        for i in files:
+            try:
+                file_data.setdefault(i.name, []).extend(json.loads(i.read().decode("utf-8")))
+            except json.JSONDecodeError:
+                return JsonResponse({"result": False, "message": f"Invalid JSON file: {i.name}"})
         params = request.data
-        create_qa_pairs_by_json.delay(
-            data, params["knowledge_base_id"], json_file.name, request.user.username, request.user.domain
-        )
+        create_qa_pairs_by_json(file_data, params["knowledge_base_id"], request.user.username, request.user.domain)
         return JsonResponse({"result": True, "message": "QA pairs import started."})
 
     @action(methods=["GET"], detail=True)

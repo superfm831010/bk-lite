@@ -313,65 +313,108 @@ def update_graph(instance_id, old_doc_list):
 
 
 @shared_task
-def create_qa_pairs_by_json(qa_json, knowledge_base_id, qa_name, username, domain):
+def create_qa_pairs_by_json(file_data, knowledge_base_id, username, domain):
     """
     通过JSON数据批量创建问答对
 
     Args:
-        qa_json: 包含问答对数据的JSON列表，每个元素包含instruction和output字段
+        file_data: 包含问答对数据的JSON列表，每个元素包含instruction和output字段
         knowledge_base_id: 知识库ID
-        qa_name: 问答对名称
         username: 创建用户名
         domain: 域名
     """
-    logger.info(f"开始批量创建问答对: {qa_name}, 知识库ID: {knowledge_base_id}, 数据量: {len(qa_json)}")
-
-    url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
-
     # 获取知识库对象
-    try:
-        knowledge_base = KnowledgeBase.objects.get(id=knowledge_base_id)
-        logger.info(f"成功获取知识库: {knowledge_base.name}")
-    except KnowledgeBase.DoesNotExist:
-        logger.error(f"知识库不存在: {knowledge_base_id}")
+    knowledge_base = KnowledgeBase.objects.filter(id=knowledge_base_id).first()
+    if not knowledge_base:
         return
 
-    qa_pairs, task_obj = create_qa_pairs_task(domain, knowledge_base_id, qa_name, username)
+    # 初始化任务和问答对对象
+    task_obj, qa_pairs_list = _initialize_qa_task(file_data, knowledge_base_id, username, domain)
 
-    # 计算每个问答对的进度增量
-    train_progress = round(float(1 / len(qa_json)) * 100, 2)
+    # 批量处理问答对
+    _process_qa_pairs_batch(qa_pairs_list, file_data, knowledge_base, task_obj)
 
-    # 设置导入参数和元数据
-    kwargs, metadata = set_import_kwargs(knowledge_base, qa_pairs)
+    # 清理任务对象
+    task_obj.delete()
+    logger.info("批量创建问答对任务完成")
+
+
+def _initialize_qa_task(file_data, knowledge_base_id, username, domain):
+    """初始化任务和问答对对象"""
+    task_name = list(file_data.keys())[0]
+    qa_pairs_list = []
+    qa_pairs_id_list = []
+
+    # 创建问答对对象
+    for qa_name in file_data.keys():
+        qa_pairs = create_qa_pairs_task(knowledge_base_id, qa_name)
+        if qa_pairs.id not in qa_pairs_id_list:
+            qa_pairs_list.append(qa_pairs)
+            qa_pairs_id_list.append(qa_pairs.id)
+
+    # 创建任务跟踪对象
+    task_obj = KnowledgeTask.objects.create(
+        created_by=username,
+        domain=domain,
+        knowledge_base_id=knowledge_base_id,
+        task_name=task_name,
+        knowledge_ids=qa_pairs_id_list,
+        train_progress=0,
+    )
+
+    return task_obj, qa_pairs_list
+
+
+def _process_qa_pairs_batch(qa_pairs_list, file_data, knowledge_base, task_obj):
+    """批量处理问答对数据"""
+    url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
+    headers = ChatServerHelper.get_chat_server_header()
+    kwargs = set_import_kwargs(knowledge_base)
+    train_progress = round(float(1 / len(qa_pairs_list)) * 100, 2)
+
+    for qa_pairs in qa_pairs_list:
+        qa_json = file_data[qa_pairs.name]
+        success_count = _process_single_qa_pairs(qa_pairs, qa_json, kwargs, url, headers)
+
+        # 更新问答对数量和任务进度
+        qa_pairs.qa_count += success_count
+        qa_pairs.save()
+        task_obj.train_progress += train_progress
+        task_obj.save()
+
+        logger.info(f"批量创建问答对完成: {qa_pairs.name}, 总数: {len(qa_json)}, 成功: {success_count}")
+
+
+def _process_single_qa_pairs(qa_pairs, qa_json, kwargs, url, headers):
+    """处理单个问答对集合"""
+    metadata = {
+        "enabled": True,
+        "base_chunk_id": "",
+        "qa_pairs_id": str(qa_pairs.id),
+        "is_doc": "0",
+    }
+
     success_count = 0
     error_count = 0
-    headers = ChatServerHelper.get_chat_server_header()
 
-    logger.info("开始批量处理问答对数据")
+    logger.info(f"开始处理问答对数据: {qa_pairs.name}")
     for index, qa_item in enumerate(tqdm(qa_json)):
-        # 跳过空的instruction
-        res = create_one_qa_pair(qa_item, index, kwargs, metadata, url, headers)
-        if res is None:
+        result = _create_single_qa_item(qa_item, index, kwargs, metadata, url, headers)
+        if result is None:
             continue
-        if res:
+        elif result:
             success_count += 1
         else:
             error_count += 1
-        # 更新任务进度
-        task_obj.train_progress += train_progress
-        task_obj.save()
         # 每10个记录输出一次进度日志
         if (index + 1) % 10 == 0:
             logger.info(f"已处理 {index + 1}/{len(qa_json)} 个问答对，成功: {success_count}, 失败: {error_count}")
-    logger.info("任务进度更新完成")
-    # 更新问答对数量
-    qa_pairs.qa_count += success_count
-    qa_pairs.save()
-    task_obj.delete()
-    logger.info(f"批量创建问答对完成: {qa_name}, 总数: {len(qa_json)}, 成功: {success_count}, 失败: {error_count}")
+
+    return success_count
 
 
-def create_one_qa_pair(qa_item, index, kwargs, metadata, url, headers):
+def _create_single_qa_item(qa_item, index, kwargs, metadata, url, headers):
+    """创建单个问答项"""
     if not qa_item["instruction"]:
         logger.warning(f"跳过空instruction，索引: {index}")
         return None
@@ -382,8 +425,13 @@ def create_one_qa_pair(qa_item, index, kwargs, metadata, url, headers):
         dict(metadata, **{"qa_question": qa_item["instruction"], "qa_answer": qa_item["output"]})
     )
 
+    # 尝试创建问答对，带重试机制
+    return _send_qa_request_with_retry(params, url, headers, index)
+
+
+def _send_qa_request_with_retry(params, url, headers, index):
+    """发送问答对创建请求，带重试机制"""
     try:
-        # 发送请求创建问答对
         res = requests.post(url, headers=headers, data=params, verify=False).json()
         if res.get("status") != "success":
             raise Exception(f"创建问答对失败: {res['message']}")
@@ -404,7 +452,7 @@ def create_one_qa_pair(qa_item, index, kwargs, metadata, url, headers):
     return True
 
 
-def create_qa_pairs_task(domain, knowledge_base_id, qa_name, username):
+def create_qa_pairs_task(knowledge_base_id, qa_name):
     # 创建或获取问答对对象
     qa_pairs, created = QAPairs.objects.get_or_create(
         name=qa_name,
@@ -412,19 +460,10 @@ def create_qa_pairs_task(domain, knowledge_base_id, qa_name, username):
         document_id=0,
     )
     logger.info(f"问答对对象{'创建' if created else '获取'}成功: {qa_pairs.name}")
-    # 创建任务跟踪对象
-    task_obj = KnowledgeTask.objects.create(
-        created_by=username,
-        domain=domain,
-        knowledge_base_id=knowledge_base_id,
-        task_name=qa_name,
-        knowledge_ids=[qa_pairs.id],
-        train_progress=0,
-    )
-    return qa_pairs, task_obj
+    return qa_pairs
 
 
-def set_import_kwargs(knowledge_base, qa_pairs):
+def set_import_kwargs(knowledge_base):
     embed_config = knowledge_base.embed_model.decrypted_embed_config
     embed_model_name = knowledge_base.embed_model.name
     kwargs = {
@@ -442,10 +481,5 @@ def set_import_kwargs(knowledge_base, qa_pairs):
         "semantic_chunk_model": "",
         "preview": "false",
     }
-    metadata = {
-        "enabled": True,
-        "base_chunk_id": "",
-        "qa_pairs_id": str(qa_pairs.id),
-        "is_doc": "0",
-    }
-    return kwargs, metadata
+
+    return kwargs
