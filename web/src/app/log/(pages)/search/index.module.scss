@@ -6,7 +6,21 @@
 
         .collapse-content {
             background: var(--color-fill-1);
+            padding: 0;
         }
+    }
+
+    .searchCondition {
+        :global {
+           .ant-input-group-addon {
+            padding: 0;
+           } 
+        }
+    }
+
+    .chart {
+        height: 80px !important;
+        padding: 0 20px 0 4px;
     }
 
     .detail {
@@ -42,6 +56,7 @@
             &:hover {
                 .arrow {
                     display: flex;
+                    transform: scale(0.9);
                 }
             }
         }
@@ -57,6 +72,7 @@
                 .arrow {
                     display: inline-block;
                     vertical-align: middle;
+                    transform: scale(0.9);
                 }
             }
         }
