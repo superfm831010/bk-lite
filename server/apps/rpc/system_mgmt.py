@@ -157,8 +157,8 @@ class SystemMgmt(object):
         )
         return return_data
 
-    def create_opspilot_guest_role(self):
-        return_data = self.client.run("create_opspilot_guest_role")
+    def create_guest_role(self):
+        return_data = self.client.run("create_guest_role")
         return return_data
 
     def get_namespace_by_domain(self, domain):

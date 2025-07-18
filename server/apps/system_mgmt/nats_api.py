@@ -12,6 +12,7 @@ from django.db.models import Q
 import nats_client
 from apps.core.backends import cache
 from apps.core.logger import system_mgmt_logger as logger
+from apps.system_mgmt.guest_menus import CMDB_MENUS, MONITOR_MENUS, OPSPILOT_GUEST_MENUS
 from apps.system_mgmt.models import (
     App,
     Channel,
@@ -25,7 +26,6 @@ from apps.system_mgmt.models import (
     UserRule,
 )
 from apps.system_mgmt.models.system_settings import SystemSettings
-from apps.system_mgmt.opspilot_menus import GUEST_MENUS
 from apps.system_mgmt.services.role_manage import RoleManage
 from apps.system_mgmt.utils.channel_utils import send_by_bot, send_email, send_wechat
 from apps.system_mgmt.utils.group_utils import GroupUtils
@@ -197,8 +197,12 @@ def init_user_default_attributes(user_id, group_name, default_group_id):
         user.group_list.append(guest_group.id)
         user.group_list.append(group_obj.id)
         user.save()
-        default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", group_id=guest_group.id)
+        default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", app="opspilot", group_id=guest_group.id)
+        monitor_rule = GroupDataRule.objects.get(name="OpsPilot数据权限", app="monitor", group_id=guest_group.id)
+        cmdb_rule = GroupDataRule.objects.get(name="游客数据权限", app="cmdb", group_id=guest_group.id)
         UserRule.objects.create(username=user.username, group_rule_id=default_rule.id)
+        UserRule.objects.create(username=user.username, group_rule_id=monitor_rule.id)
+        UserRule.objects.create(username=user.username, group_rule_id=cmdb_rule.id)
         cache.delete(f"group_{user.username}")
         return {"result": True, "data": {"group_id": group_obj.id}}
     except Exception as e:
@@ -207,14 +211,15 @@ def init_user_default_attributes(user_id, group_name, default_group_id):
 
 
 @nats_client.register
-def create_opspilot_guest_role():
-    menus = dict(Menu.objects.filter(app="opspilot").values_list("id", "name"))
-    guest_menus = GUEST_MENUS[:]
-    menu_list = [k for k, v in menus.items() if v in guest_menus]
-    Role.objects.update_or_create(name="guest", app="opspilot", defaults={"menu_list": menu_list})
+def create_guest_role():
+    app_map = {"opspilot": OPSPILOT_GUEST_MENUS[:], "cmdb": CMDB_MENUS[:], "monitor": MONITOR_MENUS[:]}
     guest_group, _ = Group.objects.get_or_create(name="Guest", parent_id=0, defaults={"description": "Guest group"})
-    opspilot_guest_group, _ = Group.objects.get_or_create(name="OpsPilotGuest", parent_id=0)
-    return {"result": True, "data": {"group_id": opspilot_guest_group.id}}
+    app_guest_group, _ = Group.objects.get_or_create(name="OpsPilotGuest", parent_id=0)
+    for app, app_menus in app_map.items():
+        menus = dict(Menu.objects.filter(app=app).values_list("id", "name"))
+        menu_list = [k for k, v in menus.items() if v in app_menus]
+        Role.objects.update_or_create(name="guest", app=app, defaults={"menu_list": menu_list})
+    return {"result": True, "data": {"group_id": app_guest_group.id}}
 
 
 @nats_client.register
@@ -320,15 +325,27 @@ def reset_pwd(username, password):
 @nats_client.register
 def wechat_user_register(user_id, nick_name):
     user, is_first_login = User.objects.update_or_create(username=user_id, defaults={"display_name": nick_name})
+    default_group = Group.objects.get(name="OpsPilotGuest", parent_id=0)
     if not user.group_list:
-        default_group = Group.objects.get(name="OpsPilotGuest", parent_id=0)
         user.group_list = [default_group.id]
-    if not user.role_list:
-        default_role = list(
-            Role.objects.filter(name="normal", app__in=["opspilot", "ops-console"]).values_list("id", flat=True)
-        )
-        user.role_list = default_role
+    default_role = list(
+        Role.objects.filter(
+            Q(name="normal", app__in=["opspilot", "ops-console"])
+            | Q(name="guest", app__in=["opspilot", "cmdb", "monitor"])
+        ).values_list("id", flat=True)
+    )
+    role_list = list(set(user.role_list + default_role))
+    user.role_list = role_list
     user.save()
+    try:
+        default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", app="opspilot", group_id=default_group.id)
+        monitor_rule = GroupDataRule.objects.get(name="OpsPilot数据权限", app="monitor", group_id=default_group.id)
+        cmdb_rule = GroupDataRule.objects.get(name="游客数据权限", app="cmdb", group_id=default_group.id)
+        UserRule.objects.get_or_create(username=user.username, group_rule_id=cmdb_rule.id)
+        UserRule.objects.get_or_create(username=user.username, group_rule_id=default_rule.id)
+        UserRule.objects.get_or_create(username=user.username, group_rule_id=monitor_rule.id)
+    except Exception:  # noqa
+        pass
     secret_key = os.getenv("SECRET_KEY")
     algorithm = os.getenv("JWT_ALGORITHM", "HS256")
     user_obj = {"user_id": user.id, "login_time": int(time.time())}
