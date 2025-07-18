@@ -26,11 +26,6 @@
     :global {
         path.recharts-tooltip-cursor {
             fill: var(--color-fill-4);
-            cursor: e-resize !important;
-        }
-
-        path {
-            cursor: e-resize !important;
         }
     }
 }

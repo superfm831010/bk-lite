@@ -128,11 +128,11 @@ const CustomBarChart: React.FC<BarChartProps> = ({
               domain={[0, 'auto']}
               tick={renderYAxisTick}
               ticks={[0, maxValue]} // Y轴只显示0和最大值
-              className='cursor-default'
             />
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <Tooltip content={<CustomTooltip visible={!isDragging} />} />
             <Bar
+              className="cursor-w-resize"
               dataKey="value" // 数据中的值字段为'value'
               fill="var(--color-primary)" // 柱子颜色为蓝色
               width={20}
