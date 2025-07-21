@@ -288,9 +288,9 @@ class InstanceViewSet(viewsets.ViewSet):
         can_do = OPERATE
         rules = request.user.rules['cmdb']['normal']
         association = InstanceManage.instance_association_by_asso_id(int(id))
-        src_model_id = association["src_model_id"]
+        src_model_id = association['edge']['src_model_id']
         src_cls_id = ModelManage.search_model_info(src_model_id)["classification_id"]
-        dst_model_id = association["dst_model_id"]
+        dst_model_id = association['edge']['dst_model_id']
         dst_cls_id = ModelManage.search_model_info(dst_model_id)["classification_id"]
         dst_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, dst_model_id, rules,dst_cls_id)
         src_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES,src_model_id,rules,src_cls_id)

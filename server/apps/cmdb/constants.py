@@ -3,14 +3,10 @@ import os
 
 from enum import Enum
 
-from tencentcloud.teo.v20220901.errorcodes import OPERATIONDENIED_ERRZONEISALREADYPAUSED
-
-
 class BaseEnum(str, Enum):
     """
     枚举基类
     """
-
     def __new__(cls, value, chinese):
         obj = str.__new__(cls, value)
         obj._value_ = value
