@@ -1,12 +1,13 @@
 from django.http import HttpResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets,status
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 
-from apps.cmdb.constants import PERMISSION_INSTANCES,PERMISSION_MODEL,OPERATE,VIEW
+from apps.cmdb.constants import PERMISSION_INSTANCES, PERMISSION_MODEL, OPERATE, VIEW
 from apps.cmdb.services.instance import InstanceManage
 from apps.cmdb.services.model import ModelManage
+from apps.cmdb.utils.base import format_group_params, get_cmdb_rules
 from apps.cmdb.utils.permisssion_util import CmdbRulesFormatUtil
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.web_utils import WebUtils
@@ -47,11 +48,12 @@ class InstanceViewSet(viewsets.ViewSet):
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         rules = request.user.rules
         inst_names = []
-        is_per = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules,cls_id)
+        is_per = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules, cls_id)
         if is_per is not None:
             inst_names = CmdbRulesFormatUtil.get_can_view_insts(PERMISSION_INSTANCES, model_id, rules, cls_id)
         insts, count = InstanceManage.instance_list(
-            request.user.group_list,
+            # request.user.group_list 是当然用户的组，但是现在是只展示当前的组而不是全部
+            format_group_params(request.COOKIES.get("current_team")),
             request.user.roles,
             model_id,
             request.data.get("query_list", []),
@@ -61,7 +63,8 @@ class InstanceViewSet(viewsets.ViewSet):
             inst_names,
         )
         for inst in insts:
-            inst['permission'] = CmdbRulesFormatUtil.get_permission_list(PERMISSION_INSTANCES, model_id, rules,inst['inst_name'],cls_id)
+            inst['permission'] = CmdbRulesFormatUtil.get_permission_list(PERMISSION_INSTANCES, model_id, rules,
+                                                                         inst['inst_name'], cls_id)
         return WebUtils.response_success(dict(insts=insts, count=count))
 
     @swagger_auto_schema(
@@ -80,12 +83,13 @@ class InstanceViewSet(viewsets.ViewSet):
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = data["inst_name"]
         # 判断权限
-        is_per = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id,rules,inst_name, can_do,cls_id)
+        is_per = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do,
+                                                           cls_id)
         if not is_per:
-            return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
-        #获取权限列表
-        permission = CmdbRulesFormatUtil.get_permission_list(PERMISSION_INSTANCES, model_id,rules,inst_name,cls_id)
-        data['permission'] =  permission
+            return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
+        # 获取权限列表
+        permission = CmdbRulesFormatUtil.get_permission_list(PERMISSION_INSTANCES, model_id, rules, inst_name, cls_id)
+        data['permission'] = permission
         return WebUtils.response_success(data)
 
     @swagger_auto_schema(
@@ -106,10 +110,11 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules
         model_id = request.data.get("model_id")
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
-        inst_name = request.data['instance_info']['instance']
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES,model_id,rules,inst_name,can_do,cls_id)
+        inst_name = request.data['instance_info']['inst_name']
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do,
+                                                               cls_id)
         if not permission:
-            return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+            return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         inst = InstanceManage.instance_create(
             model_id,
             request.data.get("instance_info"),
@@ -130,9 +135,10 @@ class InstanceViewSet(viewsets.ViewSet):
         model_id = instance["model_id"]
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = instance["inst_name"]
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules,inst_name,can_do,cls_id)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do,
+                                                               cls_id)
         if not permission:
-            return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+            return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         InstanceManage.instance_batch_delete(
             request.user.group_list,
             request.user.roles,
@@ -158,7 +164,8 @@ class InstanceViewSet(viewsets.ViewSet):
         model_id = instances[0]["model_id"]
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_names = [i["inst_name"] for i in instances]
-        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules,inst_names,can_do,cls_id)
+        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules, inst_names, can_do,
+                                                             cls_id)
         if not permission:
             return WebUtils.response_error("没有批量删除权限")
         InstanceManage.instance_batch_delete(
@@ -185,9 +192,10 @@ class InstanceViewSet(viewsets.ViewSet):
         model_id = instance["model_id"]
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = instance["inst_name"]
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES,model_id,rules,inst_name,can_do,cls_id)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do,
+                                                               cls_id)
         if not permission:
-            return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+            return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         inst = InstanceManage.instance_update(
             request.user.group_list,
             request.user.roles,
@@ -221,9 +229,10 @@ class InstanceViewSet(viewsets.ViewSet):
         model_id = instances[0]["model_id"]
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_names = [inst["inst_name"] for inst in instances]
-        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES,model_id,rules,inst_names,can_do,cls_id)
+        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules, inst_names, can_do,
+                                                             cls_id)
         if not permission:
-            return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+            return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         InstanceManage.batch_instance_update(
             request.user.group_list,
             request.user.roles,
@@ -270,9 +279,10 @@ class InstanceViewSet(viewsets.ViewSet):
         # 将源目标模型id和实例名封装成字典
         src_dict = {src_model_id: src_inst_name}
         dst_dict = {dst_model_id: dst_inst_name}
-        permission = CmdbRulesFormatUtil.has_single_asso_permission(PERMISSION_INSTANCES,src_dict,dst_dict,rules,can_do)
+        permission = CmdbRulesFormatUtil.has_single_asso_permission(PERMISSION_INSTANCES, src_dict, dst_dict, rules,
+                                                                    can_do)
         if not permission:
-            return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+            return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         asso = InstanceManage.instance_association_create(request.data, request.user.username)
         return WebUtils.response_success(asso)
 
@@ -292,15 +302,15 @@ class InstanceViewSet(viewsets.ViewSet):
         src_cls_id = ModelManage.search_model_info(src_model_id)["classification_id"]
         dst_model_id = association['edge']['dst_model_id']
         dst_cls_id = ModelManage.search_model_info(dst_model_id)["classification_id"]
-        dst_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, dst_model_id, rules,dst_cls_id)
-        src_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES,src_model_id,rules,src_cls_id)
+        dst_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, dst_model_id, rules, dst_cls_id)
+        src_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, src_model_id, rules, src_cls_id)
         if dst_permission is not None and src_permission is not None:
             for _, value in dst_permission.items():
                 if can_do not in value:
-                    return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+                    return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
             for _, value in src_permission.items():
                 if can_do not in value:
-                    return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+                    return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         InstanceManage.instance_association_delete(int(id), request.user.username)
         return WebUtils.response_success(association)
 
@@ -328,7 +338,8 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules
         inst_name = InstanceManage.query_entity_by_id(inst_id)["inst_name"]
         asso_insts = InstanceManage.instance_association_instance_list(model_id, int(inst_id))
-        result = CmdbRulesFormatUtil.has_bath_asso_permission(PERMISSION_INSTANCES, asso_insts, rules, inst_name,can_do)
+        result = CmdbRulesFormatUtil.has_bath_asso_permission(PERMISSION_INSTANCES, asso_insts, rules, inst_name,
+                                                              can_do)
         return WebUtils.response_success(result)
 
     @swagger_auto_schema(
@@ -354,9 +365,10 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = InstanceManage.query_entity_by_id(inst_id)["inst_name"]
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do,cls_id)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do,
+                                                               cls_id)
         if not permission:
-            return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+            return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         asso_insts = InstanceManage.instance_association(model_id, int(inst_id))
         return WebUtils.response_success(asso_insts)
 
@@ -409,9 +421,9 @@ class InstanceViewSet(viewsets.ViewSet):
         can_do = OPERATE
         rules = request.user.rules
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_MODEL, cls_id,rules,model_id,can_do)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_MODEL, cls_id, rules, model_id, can_do)
         if not permission:
-            return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+            return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         result = InstanceManage.inst_import(
             model_id,
             request.data.get("file").file,
@@ -448,11 +460,11 @@ class InstanceViewSet(viewsets.ViewSet):
         can_do = OPERATE
         rules = request.user.rules
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules,cls_id)
+        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules, cls_id)
         if permission is not None:
             for _, value in permission.items():
                 if can_do not in value:
-                    return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+                    return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         add_result, update_result = InstanceManage.inst_import_support_edit(
             model_id,
             request.data.get("file").file,
@@ -488,7 +500,8 @@ class InstanceViewSet(viewsets.ViewSet):
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         instances = InstanceManage.query_entity_by_ids(inst_ids)
         inst_names = [inst["inst_name"] for inst in instances]
-        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules, inst_names, can_do,cls_id)
+        permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules, inst_names, can_do,
+                                                             cls_id)
         if not permission:
             return WebUtils.response_error("存在不可执行操作的实例")
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -512,7 +525,7 @@ class InstanceViewSet(viewsets.ViewSet):
     @action(methods=["post"], detail=False)
     def fulltext_search(self, request):
         result = InstanceManage.fulltext_search(
-            request.user.group_list,
+            format_group_params(request.COOKIES.get("current_team")),
             request.user.roles,
             request.data.get("search", "")
         )
@@ -542,9 +555,10 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
         inst_name = InstanceManage.query_entity_by_id(inst_id)["inst_name"]
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do,cls_id)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do,
+                                                               cls_id)
         if not permission:
-            return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+            return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         result = InstanceManage.topo_search(int(inst_id))
         return WebUtils.response_success(result)
 
@@ -566,11 +580,11 @@ class InstanceViewSet(viewsets.ViewSet):
         can_do = VIEW
         rules = request.user.rules
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules,cls_id)
+        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules, cls_id)
         if permission is not None:
             for _, value in permission.items():
                 if can_do not in value:
-                    return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+                    return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         data = dict(
             model_id=model_id,
             created_by=request.user.username,
@@ -585,11 +599,11 @@ class InstanceViewSet(viewsets.ViewSet):
         can_do = VIEW
         rules = request.user.rules
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules,cls_id)
+        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules, cls_id)
         if permission is not None:
             for _, value in permission.items():
                 if can_do not in value:
-                    return WebUtils.response_error("没有权限",status_code=status.HTTP_403_FORBIDDEN)
+                    return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         result = InstanceManage.get_info(model_id, request.user.username)
         return WebUtils.response_success(result)
 
@@ -600,7 +614,9 @@ class InstanceViewSet(viewsets.ViewSet):
     @action(methods=["get"], detail=False, url_path=r"model_inst_count")
     @HasPermission("asset_list-View,view_list-View")
     def model_inst_count(self, request):
-        result = InstanceManage.model_inst_count(user_groups=request.user.group_list, roles=request.user.roles)
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_INSTANCES)
+        result = InstanceManage.model_inst_count(user_groups=format_group_params(request.COOKIES.get("current_team")),
+                                                 roles=request.user.roles, rules=rules)
         return WebUtils.response_success(result)
 
     @action(methods=["GET"], detail=False)

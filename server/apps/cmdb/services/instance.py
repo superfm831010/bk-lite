@@ -41,7 +41,7 @@ class InstanceManage(object):
 
     @staticmethod
     def instance_list(user_groups: list, roles: list, model_id: str, params: list, page: int, page_size: int,
-                      order: str, inst_names: list = [],check_permission=True):
+                      order: str, inst_names: list = [], check_permission=True):
         """实例列表"""
 
         params.append({"field": "model_id", "type": "str=", "value": model_id})
@@ -416,7 +416,8 @@ class InstanceManage(object):
 
         with Neo4jClient() as ag:
             exist_items, _ = ag.query_entity(INSTANCE, [{"field": "model_id", "type": "str=", "value": model_id}])
-        add_results, update_results = Import(model_id, attrs, exist_items, operator).import_inst_list_support_edit(file_stream)
+        add_results, update_results = Import(model_id, attrs, exist_items, operator).import_inst_list_support_edit(
+            file_stream)
 
         add_changes = [
             dict(
@@ -442,7 +443,7 @@ class InstanceManage(object):
         ]
         batch_create_change_record(INSTANCE, CREATE_INST, add_changes, operator=operator)
         batch_create_change_record(INSTANCE, UPDATE_INST, update_changes, operator=operator)
-        return add_results,update_results
+        return add_results, update_results
 
     @staticmethod
     def inst_export(model_id: str, ids: list):
@@ -480,10 +481,41 @@ class InstanceManage(object):
         return result
 
     @staticmethod
-    def model_inst_count(user_groups: list, roles: list):
+    def model_inst_count(user_groups: list, roles: list, rules: dict = {}):
+        # 构建基础权限参数
         permission_params = InstanceManage.get_permission_params(user_groups, roles)
+
+        # 构建实例权限过滤参数
+        instance_permission_params = []
+        if rules:
+            for group_id, models in rules.items():
+                for model_id, permissions in models.items():
+                    # 检查是否有具体的实例权限限制
+                    has_specific_instances = False
+                    specific_instance_names = []
+
+                    for perm in permissions:
+                        # id为'0'或'-1'表示全选，不需要过滤
+                        if perm.get('id') not in ['0', '-1']:
+                            has_specific_instances = True
+                            # 这里的id实际上是inst_name
+                            specific_instance_names.append(perm.get('id'))
+
+                    # 如果有具体的实例权限限制，添加到过滤参数中
+                    if has_specific_instances and specific_instance_names:
+                        instance_permission_params.append({
+                            'model_id': model_id,
+                            'inst_names': specific_instance_names
+                        })
+
         with Neo4jClient() as ag:
-            data = ag.entity_count(INSTANCE, "model_id", [], permission_params=permission_params)
+            data = ag.entity_count(
+                INSTANCE, 
+                "model_id", 
+                [],
+                permission_params=permission_params,
+                instance_permission_params=instance_permission_params
+            )
         return data
 
     @staticmethod
