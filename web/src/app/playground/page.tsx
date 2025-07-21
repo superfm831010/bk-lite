@@ -2,5 +2,5 @@
 import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  return redirect('/playground/home');
+  return redirect('/playground/home?page=anomaly-detection');
 }
