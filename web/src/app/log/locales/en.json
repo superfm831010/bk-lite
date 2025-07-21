@@ -121,8 +121,16 @@
     "exclude": "Exclude",
     "group": "Group",
     "search": {
-      "area": "Area",
-      "table": "Table"
+      "searchPlaceHolder": "Enter your search query here and press Enter to search",
+      "searchCriteria": "Search Criteria",
+      "addToQuery": "Add to query statement",
+      "histogram": "Query Histogram",
+      "total": "Total number of logs",
+      "logCount": "Number of logs",
+      "queryTime": "Query Time",
+      "timeConsumption": "Query Time Consumption",
+      "receiver": "Receiver",
+      "grammarExplanation": "Grammar Explanation"
     },
     "integration": {
       "interval": "Interval",
@@ -154,7 +162,16 @@
       "collector": "Collector",
       "command": "Command",
       "address": "Address",
-      "host": "Host"
+      "host": "Host",
+      "includeContainers": "Designated Containers",
+      "excludeContainers": "Neglected Containers",
+      "startPattern": "Merging Regular",
+      "containerPlaceholder": "Please enter the container and press Enter to end",
+      "collectType": "Collect Type",
+      "anySatisfy": "Satisfy any one of the",
+      "anyOneof": "rules",
+      "allSatisfy": "Satisfy all",
+      "allRules": "rules"
     }
   }
 }

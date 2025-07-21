@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.utils.translation import gettext as _
 from django_filters import filters
 from django_filters.rest_framework import FilterSet
@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.core.logger import opspilot_logger as logger
+from apps.core.mixinx import EncryptMixin
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.bot_mgmt.views import validate_remaining_token
 from apps.opspilot.enum import SkillTypeChoices
@@ -68,6 +69,13 @@ class LLMViewSet(AuthViewSet):
 
     def update(self, request, *args, **kwargs):
         instance: LLMSkill = self.get_object()
+        if not request.user.is_superuser:
+            has_permission = self.get_has_permission(request.user, instance)
+            if not has_permission:
+                return JsonResponse(
+                    {"result": False, "message": _("You do not have permission to update this instance")}
+                )
+
         params = request.data
         validate_msg = self._validate_name(
             params["name"], request.user.group_list, params["team"], exclude_id=instance.id
@@ -79,6 +87,13 @@ class LLMViewSet(AuthViewSet):
             params.pop("team", [])
         if "llm_model" in params:
             params["llm_model_id"] = params.pop("llm_model")
+        if "km_llm_model" in params:
+            params["km_llm_model_id"] = params.pop("km_llm_model")
+        for tool in params.get("tools", []):
+            for i in tool.get("kwargs", []):
+                if i["type"] == "password":
+                    EncryptMixin.decrypt_field("value", i)
+                    EncryptMixin.encrypt_field("value", i)
         for key in params.keys():
             if hasattr(instance, key):
                 setattr(instance, key, params[key])
@@ -90,6 +105,29 @@ class LLMViewSet(AuthViewSet):
             instance.knowledge_base.set(knowledge_base_list)
         instance.save()
         return JsonResponse({"result": True})
+
+    @staticmethod
+    def _create_error_stream_response(error_message):
+        """
+        创建错误的流式响应
+        用于在流式模式下返回错误信息
+        """
+        import json
+
+        def error_generator():
+            error_data = {"result": False, "message": error_message, "error": True}
+            yield f"data: {json.dumps(error_data, ensure_ascii=False)}\n\n"
+            yield "data: [DONE]\n\n"
+
+        response = StreamingHttpResponse(error_generator(), content_type="text/event-stream")
+        response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response["X-Accel-Buffering"] = "no"  # Nginx
+        # response["Pragma"] = "no-cache"
+        # response["Expires"] = "0"
+        # response["X-Buffering"] = "no"  # Apache
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Allow-Headers"] = "Cache-Control"
+        return response
 
     @action(methods=["POST"], detail=False)
     def execute(self, request):
@@ -118,6 +156,11 @@ class LLMViewSet(AuthViewSet):
         try:
             # 获取客户端IP
             skill_obj = LLMSkill.objects.get(id=int(params["skill_id"]))
+            if not request.user.is_superuser:
+                has_permission = self.get_has_permission(request.user, skill_obj)
+                if not has_permission:
+                    return self._create_error_stream_response(_("You do not have permission to update this agent."))
+
             current_ip = request.META.get("HTTP_X_FORWARDED_FOR")
             if current_ip:
                 current_ip = current_ip.split(",")[0].strip()
@@ -138,10 +181,10 @@ class LLMViewSet(AuthViewSet):
             # 调用stream_chat函数返回流式响应
             return stream_chat(params, skill_obj.name, {}, current_ip, params["user_message"])
         except LLMSkill.DoesNotExist:
-            return JsonResponse({"result": False, "message": _("Skill not found.")})
+            return self._create_error_stream_response(_("Skill not found."))
         except Exception as e:
             logger.exception(e)
-            return JsonResponse({"result": False, "message": str(e)})
+            return self._create_error_stream_response(str(e))
 
 
 class LLMModelViewSet(AuthViewSet):

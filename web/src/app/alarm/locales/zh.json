@@ -24,7 +24,8 @@
         "advanced": "高级",
         "partialFailure": "部分失败",
         "successOperate": "操作成功",
-        "all": "全部"
+        "all": "全部",
+        "actions": "操作"
     },
     "incidents": {
         "table": "表格",
@@ -115,7 +116,8 @@
         "incident": "事故",
         "title": "标题",
         "alertId": "告警ID",
-        "alertContent": "告警内容"
+        "alertContent": "告警内容",
+        "ruleId": "规则ID"
     },
     "integration": {
         "description": "描述",

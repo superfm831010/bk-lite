@@ -618,7 +618,10 @@ const AssetDataContent = () => {
               >
                 {t('detail')}
               </Button>
-              <PermissionWrapper requiredPermissions={['Add Associate']}>
+              <PermissionWrapper
+                requiredPermissions={['Add Associate']}
+                instPermissions={record.permission}
+              >
                 <Button
                   type="link"
                   className="mr-[10px]"
@@ -627,7 +630,10 @@ const AssetDataContent = () => {
                   {t('Model.association')}
                 </Button>
               </PermissionWrapper>
-              <PermissionWrapper requiredPermissions={['Edit']}>
+              <PermissionWrapper
+                requiredPermissions={['Edit']}
+                instPermissions={record.permission}
+              >
                 <Button
                   type="link"
                   className="mr-[10px]"
@@ -636,7 +642,10 @@ const AssetDataContent = () => {
                   {t('edit')}
                 </Button>
               </PermissionWrapper>
-              <PermissionWrapper requiredPermissions={['Delete']}>
+              <PermissionWrapper
+                requiredPermissions={['Delete']}
+                instPermissions={record.permission}
+              >
                 <Button type="link" onClick={() => showDeleteConfirm(record)}>
                   {t('delete')}
                 </Button>

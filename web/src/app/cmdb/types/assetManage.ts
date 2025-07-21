@@ -126,7 +126,7 @@ export interface AssetDataFieldProps {
 export interface InstDetail {
   inst_name?: string;
   organization?: string;
-  [key: string]: unknown;
+  [permission: string]: any;
 }
 
 export interface EnumList {

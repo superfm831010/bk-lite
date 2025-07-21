@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
-import { Input, Button, message, Popconfirm } from 'antd';
+import { Input, Button, message, Popconfirm, Spin } from 'antd';
 import useApiClient from '@/utils/request';
 import useLogApi from '@/app/log/api/integration';
 import { useTranslation } from '@/utils/i18n';
@@ -19,11 +19,13 @@ import EditInstance from './editInstance';
 import Permission from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
+import { ListItem } from '@/app/log//types';
+import { GroupInfo } from '@/app/log/types/integration';
 const { Search } = Input;
 
 const Grouping = () => {
   const { isLoading } = useApiClient();
-  const { getInstanceList, deleteLogInstance } = useLogApi();
+  const { getLogStreams, deleteLogStream, getCollectTypes } = useLogApi();
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
   const commonContext = useCommon();
@@ -36,15 +38,17 @@ const Grouping = () => {
     pageSize: 20,
   });
   const [tableLoading, setTableLoading] = useState<boolean>(false);
+  const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [tableData, setTableData] = useState<TableDataItem[]>([]);
   const [searchText, setSearchText] = useState<string>('');
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [collectTypes, setCollectTypes] = useState<ListItem[]>([]);
 
   const columns: ColumnItem[] = [
     {
       title: t('common.name'),
-      dataIndex: 'instance_name',
-      key: 'instance_name',
+      dataIndex: 'name',
+      key: 'name',
       width: 160,
     },
     {
@@ -52,23 +56,43 @@ const Grouping = () => {
       dataIndex: 'rule',
       key: 'rule',
       width: 200,
+      render: (_, { rule }) => (
+        <EllipsisWithTooltip
+          className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
+          text={getRuleDisplay(rule)}
+        />
+      ),
     },
     {
       title: t('common.belongingGroup'),
-      dataIndex: 'organization',
-      key: 'organization',
+      dataIndex: 'organizations',
+      key: 'organizations',
       width: 160,
-      render: (_, { organization }) => (
+      render: (_, { organizations }) => (
         <EllipsisWithTooltip
           className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
-          text={showGroupName(organization, organizationList)}
+          text={showGroupName(organizations, organizationList)}
+        />
+      ),
+    },
+    {
+      title: t('log.integration.collectType'),
+      dataIndex: 'collect_type',
+      key: 'collect_type',
+      width: 160,
+      render: (_, { collect_type }) => (
+        <EllipsisWithTooltip
+          className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
+          text={
+            collectTypes.find((item) => item.id === collect_type)?.name || '--'
+          }
         />
       ),
     },
     {
       title: t('common.createTime'),
-      dataIndex: 'createTime',
-      key: 'createTime',
+      dataIndex: 'created_at',
+      key: 'created_at',
       width: 180,
       render: (val: any) => {
         return <>{convertToLocalizedTime(val, 'YYYY-MM-DD HH:mm:ss')}</>;
@@ -76,8 +100,8 @@ const Grouping = () => {
     },
     {
       title: t('common.creator'),
-      dataIndex: 'creator',
-      key: 'creator',
+      dataIndex: 'created_by',
+      key: 'created_by',
       width: 160,
     },
     {
@@ -88,7 +112,7 @@ const Grouping = () => {
       fixed: 'right',
       render: (_, record) => (
         <>
-          {/* <Permission requiredPermissions={['Edit']}>
+          <Permission requiredPermissions={['Edit']}>
             <Button
               type="link"
               className="ml-[10px]"
@@ -96,14 +120,7 @@ const Grouping = () => {
             >
               {t('common.edit')}
             </Button>
-          </Permission> */}
-          <Button
-            type="link"
-            className="ml-[10px]"
-            onClick={() => openInstanceModal(record, 'edit')}
-          >
-            {t('common.edit')}
-          </Button>
+          </Permission>
           <Permission requiredPermissions={['Delete']}>
             <Popconfirm
               title={t('common.deleteTitle')}
@@ -125,9 +142,41 @@ const Grouping = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      getAssetInsts();
     }
-  }, [isLoading, pagination.current, pagination.pageSize]);
+  }, [pagination.current, pagination.pageSize]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      initPage();
+    }
+  }, [isLoading]);
+
+  const initPage = () => {
+    setPageLoading(true);
+    Promise.all([
+      getCollectTypeList(),
+      getLogGroups(searchText, 'init'),
+    ]).finally(() => {
+      setPageLoading(false);
+    });
+  };
+
+  const getRuleDisplay = (rule: GroupInfo) => {
+    const { mode, conditions = [] } = rule || {};
+    if (mode === 'OR') {
+      return `${t('log.integration.anySatisfy')}${conditions.length}${t(
+        'log.integration.anyOneof'
+      )}`;
+    }
+    return `${t('log.integration.allSatisfy')}${conditions.length}${t(
+      'log.integration.allRules'
+    )}`;
+  };
+
+  const getCollectTypeList = async (params = {}) => {
+    const data = await getCollectTypes(params);
+    setCollectTypes(data);
+  };
 
   const openInstanceModal = (row = {}, type: string) => {
     instanceRef.current?.showModal({
@@ -141,16 +190,16 @@ const Grouping = () => {
     setPagination(pagination);
   };
 
-  const getAssetInsts = async (val?: string) => {
+  const getLogGroups = async (val: string, type?: string) => {
     try {
-      setTableLoading(true);
+      setTableLoading(type !== 'init');
       const params = {
         page: pagination.current,
         page_size: pagination.pageSize,
         name: val || '',
       };
-      const data = await getInstanceList(params);
-      setTableData(data?.results || []);
+      const data = await getLogStreams(params);
+      setTableData(data?.items || []);
       setPagination((prev: Pagination) => ({
         ...prev,
         total: data?.count || 0,
@@ -160,14 +209,10 @@ const Grouping = () => {
     }
   };
 
-  const deleteInstConfirm = async (row: any) => {
+  const deleteInstConfirm = async (row: TableDataItem) => {
     setConfirmLoading(true);
     try {
-      const data = {
-        instance_ids: [row.instance_id],
-        clean_child_config: true,
-      };
-      await deleteLogInstance(data);
+      await deleteLogStream(row.id as number);
       message.success(t('common.successfullyDeleted'));
       onRefresh();
     } finally {
@@ -176,50 +221,53 @@ const Grouping = () => {
   };
 
   const onRefresh = () => {
-    getAssetInsts(searchText);
+    getLogGroups(searchText);
   };
 
   const handleSearch = (val: string) => {
     setSearchText(val);
-    getAssetInsts(val);
+    getLogGroups(val);
   };
 
   return (
     <div className="bg-[var(--color-bg-1)] h-full p-[20px]">
-      <div className="flex justify-end items-center mb-[10px]">
-        <Search
-          allowClear
-          enterButton
-          className="mr-[8px] w-60"
-          placeholder={t('common.searchPlaceHolder')}
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          onSearch={handleSearch}
-        ></Search>
-        {/* <Permission requiredPermissions={['Add']}>
-          <Button className="mr-[8px]" type="primary">
-            + {t('common.add')}
-          </Button>
-        </Permission> */}
-        <Button
-          className="mr-[8px]"
-          type="primary"
-          onClick={() => openInstanceModal({}, 'add')}
-        >
-          + {t('common.add')}
-        </Button>
-        <Button icon={<ReloadOutlined />} onClick={onRefresh} />
-      </div>
-      <CustomTable
-        scroll={{ y: 'calc(100vh - 320px)', x: 'calc(100vh - 80px)' }}
-        columns={columns}
-        dataSource={tableData}
-        pagination={pagination}
-        loading={tableLoading}
-        rowKey="instance_id"
-        onChange={handleTableChange}
-      ></CustomTable>
-      <EditInstance ref={instanceRef} onSuccess={() => onRefresh} />
+      <Spin spinning={pageLoading}>
+        <div className="flex justify-end items-center mb-[10px]">
+          <Search
+            allowClear
+            enterButton
+            className="mr-[8px] w-60"
+            placeholder={t('common.searchPlaceHolder')}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onSearch={handleSearch}
+          ></Search>
+          <Permission requiredPermissions={['Add']}>
+            <Button
+              className="mr-[8px]"
+              type="primary"
+              onClick={() => openInstanceModal({}, 'add')}
+            >
+              + {t('common.add')}
+            </Button>
+          </Permission>
+          <Button icon={<ReloadOutlined />} onClick={onRefresh} />
+        </div>
+        <CustomTable
+          scroll={{ y: 'calc(100vh - 320px)', x: 'calc(100vh - 80px)' }}
+          columns={columns}
+          dataSource={tableData}
+          pagination={pagination}
+          loading={tableLoading}
+          rowKey="id"
+          onChange={handleTableChange}
+        ></CustomTable>
+      </Spin>
+      <EditInstance
+        ref={instanceRef}
+        collectTypes={collectTypes}
+        onSuccess={onRefresh}
+      />
     </div>
   );
 };

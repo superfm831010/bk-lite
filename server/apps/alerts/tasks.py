@@ -15,24 +15,81 @@ from apps.core.logger import alert_logger as logger
 
 
 @shared_task
-def event_aggregation_alert(window_size="10min"):
+def event_aggregation_alert():
     """
-    每分钟执行的聚合任务
+    按窗口类型分组执行的聚合任务
+    支持滑动窗口、固定窗口、会话窗口三种类型
     """
-    logger.info("event aggregation alert task start!")
+    logger.info("开始执行多窗口类型聚合任务")
+
     try:
         # 移动导入到函数内部避免循环导入
-        from apps.alerts.common.aggregation.alert_processor import AlertProcessor
+        from apps.alerts.common.aggregation.smart_scheduler import create_smart_scheduler
+        from apps.alerts.common.aggregation.agg_window import WindowProcessorFactory
 
-        processor = AlertProcessor(window_size=window_size)
+        # 1. 创建智能调度器，判断当前时间应该执行哪些规则
+        scheduler = create_smart_scheduler()
+        executable_rules = scheduler.get_executable_rules()
 
-        # 重新加载数据库规则，确保使用最新规则
-        logger.info("开始重新加载数据库规则")
-        processor.reload_database_rules()
+        # 2. 检查是否有可执行的规则
+        total_executable_rules = sum(len(rules) for rules in executable_rules.values())
+        if total_executable_rules == 0:
+            logger.info("当前时间无需执行任何聚合规则")
+            return
 
-        # 执行聚合处理
-        processor.main()
-        logger.info("event aggregation alert task end!")
+        # 3. 按窗口类型优先级顺序处理（滑动、固定、会话）
+        # window_order = ['session', 'sliding', 'fixed']
+        window_order = ['sliding', 'fixed', 'session']
+        # window_order = ['session']
+        processing_stats = {}
+
+        for window_type in window_order:
+            rules_to_execute = executable_rules.get(window_type, [])
+            if not rules_to_execute:
+                continue
+
+            logger.info(f"开始处理 {window_type} 窗口类型，规则数量: {len(rules_to_execute)}")
+
+            try:
+                # 使用窗口处理器工厂创建处理器并执行
+                # 不再传递固定的window_size，让处理器内部处理每个规则的window_size
+                alerts_created, alerts_updated = WindowProcessorFactory.process_window_type_rules(
+                    window_type=window_type,
+                    rules=rules_to_execute
+                )
+
+                processing_stats[window_type] = {
+                    'rules_count': len(rules_to_execute),
+                    'alerts_created': alerts_created,
+                    'alerts_updated': alerts_updated,
+                    'status': 'success'
+                }
+
+                logger.info(f"{window_type} 窗口类型处理完成，创建告警: {alerts_created}, 更新告警: {alerts_updated}")
+
+            except Exception as e:
+                logger.error(f"{window_type} 窗口类型处理失败: {str(e)}")
+                processing_stats[window_type] = {
+                    'rules_count': len(rules_to_execute),
+                    'status': 'failed',
+                    'error': str(e)
+                }
+
+        # 4. 输出处理统计
+        total_created = 0
+        total_updated = 0
+
+        for window_type, stats in processing_stats.items():
+            if stats['status'] == 'success':
+                created = stats.get('alerts_created', 0)
+                updated = stats.get('alerts_updated', 0)
+                total_created += created
+                total_updated += updated
+                logger.info(f"  {window_type}: 规则数={stats['rules_count']}, 新建告警={created}, 更新告警={updated}")
+            else:
+                logger.error(f"  {window_type}: 规则数={stats['rules_count']}, 处理失败 - {stats['error']}")
+
+        logger.info(f"多窗口类型聚合任务执行完成，总计: 新建告警={total_created}, 更新告警={total_updated}")
 
     except Exception as e:
         logger.error(f"聚合任务执行失败: {str(e)}")

@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import toml
 import yaml
 from django.db import transaction
@@ -54,6 +56,7 @@ class CollectTypeService:
                 "id": instance["instance_id"],
                 "name": instance["instance_name"],
                 "collect_type_id": data["collect_type_id"],
+                "node_id": instance["node_ids"][0],
                 "group_ids": instance["group_ids"],
             }
             for instance in data["instances"]
@@ -137,3 +140,58 @@ class CollectTypeService:
         instance.collectinstanceorganization_set.all().delete()
         for org in organizations:
             instance.collectinstanceorganization_set.create(organization=org)
+
+    # @staticmethod
+    # def add_instance_status(instances):
+    #     """添加实例状态"""
+    #     start, end = TimeHelper.get_time_range("5m")
+    #     vm = VictoriaMetricsAPI()
+    #     vm.query()
+
+    @staticmethod
+    def search_instance(collect_type_id, name, page, page_size):
+        queryset = CollectInstance.objects.select_related("collect_type")
+        if collect_type_id:
+            queryset = queryset.filter(collect_type_id=collect_type_id)
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+
+        # 计算总数
+        total_count = queryset.count()
+        # 计算分页
+        start = (page - 1) * page_size
+        end = page * page_size
+        # 获取当前页的数据
+        data_list = queryset.values("id", "name", "node_id", "collect_type__name", "collect_type__collector")[start:end]
+
+        # 补充组织与配置
+        org_map = defaultdict(list)
+        org_objs = CollectInstanceOrganization.objects.filter(
+            collect_instance_id__in=[item["id"] for item in data_list]
+        ).values_list("collect_instance_id", "organization")
+        for instance_id, organization in org_objs:
+            org_map[instance_id].append(organization)
+
+        conf_map = defaultdict(list)
+        conf_objs = CollectConfig.objects.filter(
+            collect_instance_id__in=[item["id"] for item in data_list]
+        ).values_list("collect_instance", "id")
+        for instance_id, config_id in conf_objs:
+            conf_map[instance_id].append(config_id)
+
+        nodes = NodeMgmt().node_list(dict(page_size=-1))
+        node_map = {node["id"]: node["name"] for node in nodes["nodes"]}
+
+        items = []
+        for info in data_list:
+            info.update(
+                organization=org_map.get(info["id"]),
+                config_id=conf_map.get(info["id"]),
+                node_name=node_map.get(info["node_id"], "")
+            )
+            items.append(info)
+
+        # todo 补充状态
+        data = {"count": total_count, "items": items}
+
+        return data

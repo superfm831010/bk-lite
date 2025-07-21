@@ -1,0 +1,48 @@
+{
+  "client_id": "playground",
+  "name": "Playground",
+  "url": "/playground",
+  "description": "Users can experience relevant capabilities here, including AIOps model testing, intelligent agent usage, and more.",
+  "icon": "tiyanzhongtai",
+  "menus": [
+    {
+      "name": "Categories",
+      "children": [
+        {
+          "id": "categories",
+          "display_name": "Categories",
+          "name": "categories",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Capabilities",
+      "children": [
+        {
+          "id": "capabilities",
+          "display_name": "Capabilities",
+          "name": "capabilities",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
+        }
+      ]
+    }
+  ],
+  "roles": [
+    {
+      "name": "admin",
+      "role_name": "playground_admin",
+      "menus": []
+    }
+  ]
+}

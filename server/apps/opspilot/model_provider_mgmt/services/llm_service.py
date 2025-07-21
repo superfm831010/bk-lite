@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from django.conf import settings
 
 from apps.core.logger import opspilot_logger as logger
+from apps.core.mixinx import EncryptMixin
 from apps.opspilot.enum import SkillTypeChoices
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
 from apps.opspilot.models import (
@@ -157,9 +158,14 @@ class LLMService:
         if kwargs.get("enable_rag_strict_mode"):
             extra_config.update({"enable_rag_strict_mode": kwargs["enable_rag_strict_mode"]})
         if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
+            for tool in kwargs.get("tools", []):
+                for i in tool.get("kwargs", []):
+                    if i["type"] == "password":
+                        EncryptMixin.decrypt_field("value", i)
             tool_map = {
                 i["id"]: {u["key"]: u["value"] for u in i["kwargs"] if u["key"]} for i in kwargs.get("tools", [])
             }
+
             tools = list(SkillTools.objects.filter(id__in=list(tool_map.keys())).values_list("params", flat=True))
             for i in tools:
                 i.pop("kwargs", None)

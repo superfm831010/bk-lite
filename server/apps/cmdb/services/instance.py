@@ -41,15 +41,19 @@ class InstanceManage(object):
 
     @staticmethod
     def instance_list(user_groups: list, roles: list, model_id: str, params: list, page: int, page_size: int,
-                      order: str):
+                      order: str, inst_names: list = None,check_permission=True):
         """实例列表"""
 
         params.append({"field": "model_id", "type": "str=", "value": model_id})
+        if len(inst_names):
+            params.append({"field": "inst_name", "type": "str[]", "value": inst_names})
         _page = dict(skip=(page - 1) * page_size, limit=page_size)
         if order and order.startswith("-"):
             order = f"{order.replace('-', '')} DESC"
-
-        permission_params = InstanceManage.get_permission_params(user_groups, roles)
+        if not check_permission:
+            permission_params = ""
+        else:
+            permission_params = InstanceManage.get_permission_params(user_groups, roles)
 
         with Neo4jClient() as ag:
             inst_list, count = ag.query_entity(

@@ -95,8 +95,8 @@ class CollectModels(MaintainerInfo, TimeInfo):
         return self.task_type == CollectPluginTypes.HOST
 
     @property
-    def is_redis(self):
-        return self.task_type == CollectPluginTypes.REDIS
+    def is_db(self):
+        return self.task_type == CollectPluginTypes.DB
 
 
 class OidMapping(MaintainerInfo, TimeInfo):

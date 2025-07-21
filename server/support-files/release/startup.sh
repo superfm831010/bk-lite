@@ -34,7 +34,7 @@ init_alerts() {
     echo "告警系统资源初始化..."
     python manage.py init_alert_sources || true
     python manage.py init_alert_levels || true
-    python manage.py create_builtin_rules || true
+    python manage.py create_builtin_rules --update || true
 }
 
 init_opspilot() {
@@ -42,6 +42,11 @@ init_opspilot() {
     python manage.py init_bot || true
     python manage.py init_channel || true
     python manage.py init_llm || true
+}
+
+init_log(){
+    echo "日志模块初始化..."
+    python manage.py log_init || true
 }
 
 # 读取 INSTALL_APPS 环境变量
@@ -61,6 +66,7 @@ if [ -z "$INSTALL_APPS" ]; then
     init_node_mgmt
     init_alerts
     init_opspilot
+    init_log
     opspilot_installed=true
 else
     # 按逗号分割 INSTALL_APPS
@@ -68,6 +74,9 @@ else
     
     for app in "${APPS[@]}"; do
         case "$app" in
+            "log")
+                init_log
+                ;;
             "system_mgmt")
                 init_system_mgmt
                 ;;
