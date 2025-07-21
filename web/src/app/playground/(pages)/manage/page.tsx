@@ -4,7 +4,7 @@ import CustomTable from '@/components/custom-table';
 import TopSection from '@/components/top-section';
 import { ColumnItem } from '@/types';
 import type { DataNode as TreeDataNode } from 'antd/lib/tree';
-import { Input, Button, Tree, Spin, Dropdown, Menu } from 'antd';
+import { Input, Button, Tree, Spin, Dropdown, Menu, Modal, message } from 'antd';
 import { PlusOutlined, MoreOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { useEffect, useState, useRef } from 'react';
@@ -12,10 +12,11 @@ import usePlayroundApi from '@/app/playground/api';
 import ManageModal from './manageModal';
 import { ModalRef, TableData } from '@/app/playground/types';
 const { Search } = Input;
+const { confirm } = Modal;
 
 const PlaygroundManage = () => {
   const { t } = useTranslation();
-  const { getCategoryList, getCapabilityList } = usePlayroundApi();
+  const { getCategoryList, getCapabilityList, deleteCategory } = usePlayroundApi();
   const modalRef = useRef<ModalRef>(null)
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [treeLoading, setTreeLoading] = useState<boolean>(false);
@@ -67,31 +68,6 @@ const PlaygroundManage = () => {
     getAllCategory();
     getAllCapability();
     setSearchValue('');
-    setFilteredTreeData(
-      [{
-        key: 'anomaly',
-        title: renderTitle('异常检测'),
-        selectable: false,
-        children: [
-          {
-            key: 'hardware',
-            title: "硬件异常检测"
-          }
-        ]
-      },
-      {
-        key: 'log',
-        title: renderTitle("日志"),
-        selectable: false,
-        children: [
-          {
-            key: 'logs',
-            title: "日志"
-          }
-        ]
-      }
-      ]
-    );
 
     setTableData([
       {
@@ -104,11 +80,44 @@ const PlaygroundManage = () => {
     ])
   }, []);
 
+  const renderNode = (data: any[], isChildren = false) => {
+    const filterData = isChildren ? data : data.filter(item => item.level === 0);
+    const treeData = filterData.map((item: any) => {
+      const { children } = item;
+      const node: any = {
+        key: item?.id,
+        name: item?.name,
+        title: renderTitle(item),
+        selectable: item.level === 0 ? false : true,
+        children: children?.length > 0 ? renderNode(children, true) : [],
+      };
+      return node;
+    });
+    
+    treeData.sort((a, b) => {
+      const aHasChildren = a.children.length > 0;
+      const bHasChildren = b.children.length > 0;
+
+      // 1. 有子节点的排在前面
+      if (aHasChildren && !bHasChildren) return -1;
+      if (!aHasChildren && bHasChildren) return 1;
+
+      // 2. 如果都有子节点或都没有子节点，按名称排序
+      return a.name.localeCompare(b.name, 'zh-CN', {
+        numeric: true,
+        sensitivity: 'base'
+      });
+    });
+    return treeData;
+  };
+
   const getAllCategory = async () => {
     setTreeLoading(true);
     try {
       const data = await getCategoryList();
-      console.log(data);
+      const nodes = renderNode(data);
+      setFilteredTreeData(nodes);
+      console.log(nodes);
     } catch (e) {
       console.log(e)
     } finally {
@@ -128,22 +137,27 @@ const PlaygroundManage = () => {
     }
   };
 
-  const renderTitle = (title: string) => {
+  const renderTitle = (data: any) => {
     return (
       <div className='w-full flex justify-between'>
-        <span className='truncate'>{title}</span>
+        <span className='truncate'>{data?.name || '--'}</span>
         <span>
           <Dropdown
             overlay={
               <Menu
                 onClick={({ key, domEvent }) => {
                   domEvent.stopPropagation();
-                  console.log(key);
+                  if (key !== 'delete') {
+                    openModal({ type: `${key}Category`, title: key, form: data })
+                  } else {
+                    handleDelCategory(data.id)
+                  }
                 }}
                 items={[
                   {
                     key: 'add',
-                    label: t(`common.add`)
+                    label: t(`common.add`),
+                    disabled: data.level !== 0
                   },
                   {
                     key: 'update',
@@ -151,7 +165,7 @@ const PlaygroundManage = () => {
                   },
                   {
                     key: 'delete',
-                    label: t(`common.delete`)
+                    label: t(`common.delete`),
                   }
                 ]}
 
@@ -176,8 +190,12 @@ const PlaygroundManage = () => {
     return filteredTreeData
   };
 
-  const handleAdd = (type: string) => {
-    modalRef.current?.showModal({ type: type, title: 'add', form: {} })
+  const openModal = (data: {
+    type: string;
+    title: string;
+    form: any
+  }) => {
+    modalRef.current?.showModal(data)
   };
 
 
@@ -201,7 +219,7 @@ const PlaygroundManage = () => {
               onChange={(e) => console.log(e)}
               value={searchValue}
             />
-            <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={() => handleAdd('addCategory')} />
+            <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={() => openModal({ type: 'addCategory', title: 'add', form: null })} />
           </div>
           <Tree
             className="w-full flex-1"
@@ -223,11 +241,30 @@ const PlaygroundManage = () => {
     console.log(search);
   };
 
+  const handleDelCategory = (id: number) => {
+    confirm({
+      title: `确认要删除此类别吗`,
+      okText: t(`common.confirm`),
+      cancelText: t(`common.cancel`),
+      onOk: async () => {
+        try {
+          await deleteCategory(id);
+          message.success(`删除成功`);
+        } catch (e) {
+          console.log(e);
+          message.error(`删除失败`);
+        } finally {
+          getAllCategory();
+        }
+      }
+    })
+  }
+
   const rightSection = (
     <>
       <div className='flex justify-end mb-4'>
         <Search className='w-[240px] mr-4' placeholder={t(`common.search`)} enterButton onSearch={onSearch} />
-        <Button type='primary' icon={<PlusOutlined />} onClick={() => handleAdd('addCapability')}>添加</Button>
+        <Button type='primary' icon={<PlusOutlined />} onClick={() => openModal({ type: 'addCapability', title: 'add', form: null })}>添加</Button>
       </div>
       <CustomTable
         rowKey='id'
@@ -245,7 +282,7 @@ const PlaygroundManage = () => {
         leftSection={leftSection}
         topSection={topSection}
       />
-      <ManageModal ref={modalRef} />
+      <ManageModal ref={modalRef} nodes={filteredTreeData} />
     </>
   )
 };
