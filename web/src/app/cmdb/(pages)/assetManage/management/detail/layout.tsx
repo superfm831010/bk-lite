@@ -27,7 +27,9 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
   const classificationId: string = searchParams.get('classification_id') || '';
   const isPre = searchParams.get('is_pre') === 'true';
   const permissionParam = searchParams.get('permission');
-  const permission = permissionParam ? JSON.parse(permissionParam) : '';
+  const permission = permissionParam
+    ? decodeURIComponent(permissionParam).split(',')
+    : [];
   const modelRef = useRef<any>(null);
   const [groupList, setGroupList] = useState<ClassificationItem[]>([]);
 
@@ -46,9 +48,16 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   const onSuccess = (info: any) => {
-    router.replace(
-      `/cmdb/assetManage/management/detail/attributes?icn=${info.icn}&model_name=${info.model_name}&model_id=${info.model_id}&classification_id=${info.classification_id}`
-    );
+    const currentPermission = permission.length > 0 ? permission.join(',') : '';
+    const params = new URLSearchParams({
+      icn: info.icn || objIcon,
+      model_name: info.model_name,
+      model_id: info.model_id,
+      classification_id: info.classification_id,
+      is_pre: info.is_pre || searchParams.get('is_pre') || 'false',
+      permission: currentPermission,
+    }).toString();
+    router.replace(`/cmdb/assetManage/management/detail/attributes?${params}`);
   };
 
   const handleBackButtonClick = () => {

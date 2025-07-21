@@ -4,6 +4,8 @@
 # @Author: windyzhao
 from rest_framework.permissions import BasePermission
 
+from apps.cmdb.utils.base import get_cmdb_rules
+
 
 class InstanceTaskPermission(BasePermission):
     """
@@ -19,7 +21,7 @@ class InstanceTaskPermission(BasePermission):
         return ["update", "destroy", "exec_task"]
 
     def has_object_permission(self, request, view, obj):
-        rules = request.user.rules.get("cmdb", {}).get("normal", {}).get("task", {})
+        rules = get_cmdb_rules(request)
         obj_rule = rules.get(obj.task_type, {})
         if not obj_rule:
             return True

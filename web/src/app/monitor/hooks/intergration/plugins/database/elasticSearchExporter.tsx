@@ -93,9 +93,8 @@ export const useElasticSearchExporter = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: elasticSearchExportFormItems.getCommonFormItems(
             {},
             'auto'
@@ -174,7 +173,6 @@ export const useElasticSearchExporter = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             return formData?.base?.env_config || {};
@@ -204,6 +202,11 @@ export const useElasticSearchExporter = () => {
             return '--';
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

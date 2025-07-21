@@ -90,9 +90,8 @@ export const useNginxExporter = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: null,
           initTableItems: {
             ENV_LISTEN_PORT: null,
@@ -168,7 +167,6 @@ export const useNginxExporter = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             return formData?.base?.env_config || {};
@@ -196,6 +194,11 @@ export const useNginxExporter = () => {
             return '--';
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

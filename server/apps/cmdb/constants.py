@@ -3,12 +3,10 @@ import os
 
 from enum import Enum
 
-
 class BaseEnum(str, Enum):
     """
     枚举基类
     """
-
     def __new__(cls, value, chinese):
         obj = str.__new__(cls, value)
         obj._value_ = value
@@ -337,3 +335,5 @@ STARGAZER_URL = os.getenv("STARGAZER_URL", "http://stargazer:8083")
 PERMISSION_INSTANCES = "instances"  # 实例
 PERMISSION_TASK = "task"  # 采集任务
 PERMISSION_MODEL = "model"  # 模型
+OPERATE = "Operate"
+VIEW = "View"

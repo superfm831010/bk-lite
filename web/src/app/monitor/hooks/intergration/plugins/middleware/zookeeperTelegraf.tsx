@@ -64,9 +64,8 @@ export const useZookeeperTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: zookeeperFormItems.getCommonFormItems(),
           initTableItems: {
             url: null,
@@ -120,7 +119,6 @@ export const useZookeeperTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const url = formData?.child?.content?.config?.servers?.[0] || '';
@@ -163,6 +161,11 @@ export const useZookeeperTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

@@ -62,7 +62,9 @@ class QAPairsViewSet(MaintainerViewSet):
             except json.JSONDecodeError:
                 return JsonResponse({"result": False, "message": f"Invalid JSON file: {i.name}"})
         params = request.data
-        create_qa_pairs_by_json(file_data, params["knowledge_base_id"], request.user.username, request.user.domain)
+        create_qa_pairs_by_json.delay(
+            file_data, params["knowledge_base_id"], request.user.username, request.user.domain
+        )
         return JsonResponse({"result": True, "message": "QA pairs import started."})
 
     @action(methods=["GET"], detail=True)
