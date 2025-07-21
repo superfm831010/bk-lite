@@ -500,7 +500,7 @@ export const getBaseInstanceColumn = (config: {
     {
       title: config.t('common.name'),
       dataIndex: 'instance_name',
-      width: 160,
+      width: 200,
       key: 'instance_name',
       render: (_: unknown, record: TableDataItem) => {
         const instanceName =
@@ -520,7 +520,7 @@ export const getBaseInstanceColumn = (config: {
     columnItems.unshift({
       title: title,
       dataIndex: 'base_instance_name',
-      width: 160,
+      width: 200,
       key: 'base_instance_name',
       render: (_: unknown, record: TableDataItem) => {
         return (

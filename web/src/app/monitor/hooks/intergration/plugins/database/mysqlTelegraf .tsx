@@ -109,9 +109,8 @@ export const useMysqlTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: mysqlFormItems.getCommonFormItems(),
           initTableItems: {
             host: null,
@@ -186,7 +185,6 @@ export const useMysqlTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const server = formData?.child?.content?.config?.servers?.[0] || '';
@@ -225,6 +223,11 @@ export const useMysqlTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

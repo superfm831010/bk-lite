@@ -71,9 +71,8 @@ export const useVCenterTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: vCenterFormItems.getCommonFormItems(),
           initTableItems: {
             host: null,
@@ -131,7 +130,6 @@ export const useVCenterTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const config = formData?.child?.content?.config || {};
@@ -176,6 +174,11 @@ export const useVCenterTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

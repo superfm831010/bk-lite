@@ -131,9 +131,8 @@ export const useOracleExporter = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: oracleFormItems.getCommonFormItems('auto'),
           initTableItems: {
             ENV_LISTEN_PORT: null,
@@ -231,7 +230,6 @@ export const useOracleExporter = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             return formData?.base?.env_config || {};
@@ -266,6 +264,11 @@ export const useOracleExporter = () => {
             return '--';
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

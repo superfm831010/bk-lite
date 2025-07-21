@@ -110,9 +110,8 @@ export const useMongoDBTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: mongoDBFormItems.getCommonFormItems(),
           initTableItems: {
             host: null,
@@ -187,7 +186,6 @@ export const useMongoDBTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const server = formData?.child?.content?.config?.servers?.[0] || '';
@@ -227,6 +225,11 @@ export const useMongoDBTelegraf = () => {
             return replaceTemplate(text, params);
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

@@ -131,9 +131,8 @@ export const useMongoDBExporter = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: mongoDBExporterFormItems.getCommonFormItems('auto'),
           initTableItems: {
             ENV_LISTEN_PORT: null,
@@ -232,7 +231,6 @@ export const useMongoDBExporter = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             return formData?.base?.env_config || {};
@@ -266,6 +264,11 @@ export const useMongoDBExporter = () => {
             return '--';
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };
