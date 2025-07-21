@@ -1,4 +1,4 @@
-from apps.cmdb.constants import PERMISSION_MODEL, PERMISSION_INSTANCES
+from apps.cmdb.constants import PERMISSION_MODEL, PERMISSION_INSTANCES, OPERATE, VIEW
 from apps.cmdb.services.model import ModelManage
 
 
@@ -68,6 +68,7 @@ class CmdbRulesFormatUtil:
             inst_list = asso['inst_list']
             src_permission = CmdbRulesFormatUtil.has_single_permission(module, src_model_id, rules, inst_name, can_do,
                                                                        src_cls_id)
+            inst_list = asso['inst_list']
             for dst_inst in inst_list:
                 dst_inst_name = dst_inst['inst_name']
                 dst_permission = CmdbRulesFormatUtil.has_single_permission(module, dst_model_id, rules, dst_inst_name,
@@ -89,6 +90,10 @@ class CmdbRulesFormatUtil:
 
     @staticmethod
     def has_model_permission(module, children_module, rules, can_do):
+        cls_id = ModelManage.search_model_info(children_module)["classification_id"]
+        permission_map = CmdbRulesFormatUtil.format_rules(module, cls_id, rules)
+        if permission_map is None:
+            return True
         rule_items = rules.get(module, {})
         for model_list in rule_items.values():
             for model in model_list:
@@ -104,7 +109,7 @@ class CmdbRulesFormatUtil:
         # module为instance时，children_module为model_id, inst_name为inst_name
         permission_map = CmdbRulesFormatUtil.format_rules(module, children_module, rules, cls_id)
         if permission_map is None:
-            permission_list = ["Operate", "View"]
+            permission_list = [OPERATE, VIEW]
         else:
             permission_list = permission_map[inst_name]
         return permission_list

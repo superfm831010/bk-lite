@@ -45,11 +45,6 @@ Blueking Lite是一个AI First的轻量版运维产品：
 - [白皮书](https://docs.bk.tencent.com/)
 - [蓝鲸论坛](https://bk.tencent.com/s-mart/community)
 
-## Discussion
-添加“小嘉”微信，加入官方沟通群
-
-![wx](docs/resource/img/wx.jpg)　
-
 ## BlueKing Community
 - [BK-CI](https://github.com/Tencent/bk-ci)：蓝鲸持续集成平台是一个开源的持续集成和持续交付系统，可以轻松将你的研发流程呈现到你面前。
 - [BK-BCS](https://github.com/Tencent/bk-bcs)：蓝鲸容器管理平台是以容器技术为基础，为微服务业务提供编排管理的基础服务平台。

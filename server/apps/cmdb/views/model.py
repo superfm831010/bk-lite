@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from apps.cmdb.constants import ASSOCIATION_TYPE, OPERATOR_MODEL, PERMISSION_MODEL
+from apps.cmdb.constants import ASSOCIATION_TYPE, OPERATOR_MODEL, PERMISSION_MODEL, OPERATE, VIEW
 from apps.cmdb.language.service import SettingLanguage
 from apps.cmdb.models import DELETE_INST, UPDATE_INST
 from apps.cmdb.services.model import ModelManage
@@ -31,7 +31,7 @@ class ModelViewSet(viewsets.ViewSet):
     @HasPermission("model_management-Add Model")
     def create(self, request):
         rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
+        can_do = OPERATE
         classification_id = request.data.get("classification_id")
         model_id = request.data.get("model_id")
         permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_MODEL, classification_id, rules, model_id,
@@ -49,7 +49,7 @@ class ModelViewSet(viewsets.ViewSet):
     def list(self, request):
         src_result = ModelManage.search_model(request.user.locale)
         rules = request.user.rules['cmdb']['normal']
-        can_do = "View"
+        can_do = VIEW
         result = CmdbRulesFormatUtil.has_model_list(PERMISSION_MODEL, src_result, rules, can_do)
         for model in result:
             cls_id = model['classification_id']
@@ -66,7 +66,7 @@ class ModelViewSet(viewsets.ViewSet):
     @HasPermission("model_management-Delete Model")
     def destroy(self, request, pk: str):
         rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
+        can_do = OPERATE
         permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, pk, rules, can_do)
         if not permission:
             return WebUtils.response_error("没有权限")
@@ -99,7 +99,7 @@ class ModelViewSet(viewsets.ViewSet):
     @HasPermission("model_management-Edit Model")
     def update(self, request, pk: str):
         rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
+        can_do = OPERATE
         permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, pk, rules, can_do)
         if not permission:
             return WebUtils.response_error("没有权限")
@@ -133,7 +133,7 @@ class ModelViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"], url_path="association")
     def model_association_create(self, request):
         rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
+        can_do = OPERATE
         src_model_id = request.data["src_model_id"]
         dst_model_id = request.data["dst_model_id"]
         src_permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, src_model_id, rules, can_do)
@@ -164,7 +164,7 @@ class ModelViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["delete"], url_path="association/(?P<model_asst_id>.+?)")
     def model_association_delete(self, request, model_asst_id: str):
         rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
+        can_do = OPERATE
         association_info = ModelManage.model_association_info_search(model_asst_id)
         src_model_id = association_info['edge']['src_model_id']
         dst_model_id = association_info['edge']['dst_model_id']
@@ -191,7 +191,7 @@ class ModelViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["get"], url_path="(?P<model_id>.+?)/association")
     def model_association_list(self, request, model_id: str):
         rules = request.user.rules['cmdb']['normal']
-        can_do = "View"
+        can_do = VIEW
         result = ModelManage.model_association_search(model_id)
         final_result = CmdbRulesFormatUtil.has_bath_asso_permission(PERMISSION_MODEL, result, rules, model_id, can_do)
         return WebUtils.response_success(final_result)
@@ -227,7 +227,7 @@ class ModelViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"], url_path="(?P<model_id>.+?)/attr")
     def model_attr_create(self, request, model_id):
         rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
+        can_do = OPERATE
         permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, model_id, rules, can_do)
         if not permission:
             return WebUtils.response_error("没有权限")
@@ -263,7 +263,7 @@ class ModelViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["put"], url_path="(?P<model_id>.+?)/attr_update")
     def model_attr_update(self, request, model_id):
         rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
+        can_do = OPERATE
         permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, model_id, rules, can_do)
         if not permission:
             return WebUtils.response_error("没有权限")
@@ -296,7 +296,7 @@ class ModelViewSet(viewsets.ViewSet):
     )
     def model_attr_delete(self, request, model_id: str, attr_id: str):
         rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
+        can_do = OPERATE
         permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, model_id, rules, can_do)
         if not permission:
             return WebUtils.response_error("没有权限")
@@ -319,13 +319,12 @@ class ModelViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["get"], url_path="(?P<model_id>.+?)/attr_list")
     def model_attr_list(self, request, model_id: str):
         rules = request.user.rules['cmdb']['normal']
-        can_do = "View"
+        can_do = VIEW
         permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, model_id, rules, can_do)
         if not permission:
             return WebUtils.response_error("没有权限")
         cls_id = ModelManage.search_model_info(model_id)['classification_id']
-        model_list = [{"classification": cls_id, "model_id": model_id}]
-        permission = CmdbRulesFormatUtil.get_permission_list(PERMISSION_MODEL, model_list, rules)
+        permission = CmdbRulesFormatUtil.get_permission_list(PERMISSION_MODEL, cls_id, rules, model_id)
         result = ModelManage.search_model_attr(model_id, request.user.locale)
         return WebUtils.response_success(result, permission)
 
