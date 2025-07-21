@@ -6,6 +6,7 @@ from django.db.models import Q
 from django_filters import CharFilter, FilterSet
 
 from apps.cmdb.models.collect_model import CollectModels, OidMapping
+from apps.cmdb.utils.base import get_cmdb_rules
 from apps.cmdb.utils.permission import InstancePermissionManage
 
 
@@ -36,7 +37,7 @@ class CollectModelFilter(FilterSet):
         """
         获取用户task权限过滤条件
         """
-        rules = self.request.user.rules.get("cmdb", {}).get("normal", {}).get("task", {})
+        rules = get_cmdb_rules(self.request)
         result = InstancePermissionManage.get_task_permissions(rules=rules)
         filters = Q()
         if not result:

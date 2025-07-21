@@ -356,6 +356,17 @@ export const useKnowledgeApi = () => {
     });
   };
 
+  /**
+   * import_qa_json
+   */
+  const importQaJson = async (formData: FormData): Promise<number[]> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/import_qa_json/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -395,5 +406,6 @@ export const useKnowledgeApi = () => {
     saveKnowledgeGraph,
     updateKnowledgeGraph,
     rebuildKnowledgeGraphCommunity,
+    importQaJson,
   };
 };

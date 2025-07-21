@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Input, Button, Modal, message, Tag, Tabs, Tooltip, Dropdown, Menu, Space, Radio } from 'antd';
-import { PlusOutlined, DeleteOutlined, TrademarkOutlined, SyncOutlined, DownOutlined } from '@ant-design/icons';
+import { Input, Button, Modal, message, Tag, Tabs, Tooltip, Dropdown, Menu, Space, Radio, Upload } from 'antd';
+import { PlusOutlined, DeleteOutlined, TrademarkOutlined, SyncOutlined, DownOutlined, InboxOutlined } from '@ant-design/icons';
 import { useAuth } from '@/context/auth';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
@@ -15,10 +15,12 @@ import styles from '@/app/opspilot/styles/common.module.scss'
 import ActionButtons from '@/app/opspilot/components/knowledge/actionButtons';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import KnowledgeGraphPage from '@/app/opspilot/components/knowledge/knowledgeGraphPage';
+import OperateModal from '@/components/operate-modal';
 
 const { confirm } = Modal;
 const { TabPane } = Tabs;
 const { Search } = Input;
+const { Dragger } = Upload;
 
 const DocumentsPage: React.FC = () => {
   const router = useRouter();
@@ -30,12 +32,9 @@ const DocumentsPage: React.FC = () => {
   const name = searchParams ? searchParams.get('name') : null;
   const desc = searchParams ? searchParams.get('desc') : null;
   const type = searchParams ? searchParams.get('type') : null;
-  
-  // Main tab key, defaults to source files
+
   const [mainTabKey, setMainTabKey] = useState<string>(type === 'qa_pairs' ? 'qa_pairs' : 'source_files');
-  // Source file sub-options, defaults to file
   const [sourceFileType, setSourceFileType] = useState<string>(type && type !== 'qa_pairs' ? type : 'file');
-  // Current active type (used for API calls and other logic)
   const [activeTabKey, setActiveTabKey] = useState<string>(type || 'file');
 
   const [searchText, setSearchText] = useState<string>('');
@@ -50,6 +49,7 @@ const DocumentsPage: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isTrainLoading, setIsTrainLoading] = useState(false);
   const [singleTrainLoading, setSingleTrainLoading] = useState<{ [key: string]: boolean }>({});
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
 
   const [qaPairData, setQaPairData] = useState<QAPairData[]>([]);
   const [qaPairPagination, setQaPairPagination] = useState<PaginationProps>({
@@ -59,8 +59,18 @@ const DocumentsPage: React.FC = () => {
   });
   const [qaPairLoading, setQaPairLoading] = useState<boolean>(false);
   const [selectedQAPairKeys, setSelectedQAPairKeys] = useState<React.Key[]>([]);
+  const [uploadModalVisible, setUploadModalVisible] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
-  const { fetchDocuments, batchDeleteDocuments, batchTrainDocuments, fetchQAPairs, deleteQAPair, fetchKnowledgeBaseDetails: fetchKnowledgeBaseDetailsApi } = useKnowledgeApi();
+  const {
+    fetchDocuments,
+    batchDeleteDocuments,
+    batchTrainDocuments,
+    fetchQAPairs,
+    deleteQAPair,
+    fetchKnowledgeBaseDetails: fetchKnowledgeBaseDetailsApi,
+    importQaJson
+  } = useKnowledgeApi();
 
   const randomColors = ['#ff9214', '#875cff', '#00cba6', '#155aef'];
 
@@ -70,7 +80,7 @@ const DocumentsPage: React.FC = () => {
 
   const fetchKnowledgeBaseDetails = async () => {
     if (!id) return;
-    
+
     try {
       const details = await fetchKnowledgeBaseDetailsApi(Number(id));
       setKnowledgeBasePermissions(details.permissions || []);
@@ -150,11 +160,11 @@ const DocumentsPage: React.FC = () => {
       render: (_: any, record: TableData) => {
         const syncEnabled = record.sync_enabled;
         const syncTime = record.sync_time;
-        
+
         if (syncEnabled && syncTime) {
           return (
             <div>
-              { syncTime && <div>【{t('knowledge.documents.everyday')} {syncTime}】</div> }
+              {syncTime && <div>【{t('knowledge.documents.everyday')} {syncTime}】</div>}
             </div>
           );
         } else {
@@ -257,8 +267,8 @@ const DocumentsPage: React.FC = () => {
       title: t('knowledge.documents.actions'),
       key: 'action',
       render: (_, record) => (
-        <PermissionWrapper 
-          requiredPermissions={['Delete']} 
+        <PermissionWrapper
+          requiredPermissions={['Delete']}
           instPermissions={knowledgeBasePermissions}>
           <Button
             type="link"
@@ -524,11 +534,7 @@ const DocumentsPage: React.FC = () => {
   };
 
   const handleAddClick = () => {
-    if (mainTabKey === 'qa_pairs') {
-      router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_pairs&id=${id}&name=${name}&desc=${desc}`);
-    } else {
-      setIsModalVisible(true);
-    }
+    setIsModalVisible(true);
   };
 
   const handleModalCancel = () => {
@@ -538,13 +544,46 @@ const DocumentsPage: React.FC = () => {
   const handleModalConfirm = (selectedType: string) => {
     setIsModalVisible(false);
     router.push(`/opspilot/knowledge/detail/documents/modify?type=${selectedType}&id=${id}&name=${name}&desc=${desc}`);
+  }
+
+  const handleUploadModalConfirm = async () => {
+    if (uploadedFiles.length === 0) {
+      message.error(t('knowledge.qaPairs.noFileSelected'));
+      return;
+    }
+
+    try {
+      setConfirmLoading(true);
+      const formData = new FormData();
+      formData.append('knowledge_base_id', id as string);
+      uploadedFiles.forEach(file => formData.append('file', file));
+      await importQaJson(formData);
+      message.success(t('knowledge.qaPairs.importSuccess'));
+      fetchQAPairData(searchText);
+    } catch {
+      message.error(t('knowledge.qaPairs.importFailed'));
+    } finally {
+      setConfirmLoading(false);
+      setUploadModalVisible(false);
+      setUploadedFiles([]);
+    }
+  };
+
+  const handleImportClick = () => {
+    setUploadModalVisible(true);
+    setUploadedFiles([]);
+  };
+
+  const handleFileUpload = (file: any) => {
+    setUploadedFiles(prev => [...prev, file]);
+    return false;
   };
 
   const batchOperationMenu = (
     <Menu className={styles.batchOperationMenu}>
       <Menu.Item key="batchTrain">
-        <PermissionWrapper 
-          requiredPermissions={['Train']} 
+        <PermissionWrapper
+          requiredPermissions={['Train']}
           instPermissions={knowledgeBasePermissions}>
           <Button
             type="text"
@@ -559,8 +598,8 @@ const DocumentsPage: React.FC = () => {
         </PermissionWrapper>
       </Menu.Item>
       <Menu.Item key="batchDelete">
-        <PermissionWrapper 
-          requiredPermissions={['Delete']} 
+        <PermissionWrapper
+          requiredPermissions={['Delete']}
           instPermissions={knowledgeBasePermissions}>
           <Button
             type="text"
@@ -574,8 +613,8 @@ const DocumentsPage: React.FC = () => {
         </PermissionWrapper>
       </Menu.Item>
       <Menu.Item key="batchSet">
-        <PermissionWrapper 
-          requiredPermissions={['Set']} 
+        <PermissionWrapper
+          requiredPermissions={['Set']}
           instPermissions={knowledgeBasePermissions}>
           <Button
             type="text"
@@ -591,8 +630,39 @@ const DocumentsPage: React.FC = () => {
     </Menu>
   );
 
+  const menuProps = (
+    <Menu className={styles.batchOperationMenu}>
+      <Menu.Item key="create">
+        <PermissionWrapper
+          requiredPermissions={['Add']}
+          instPermissions={knowledgeBasePermissions}>
+          <Button
+            type="text"
+            className="w-full"
+            onClick={() => router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_pairs&id=${id}&name=${name}&desc=${desc}`)}
+          >
+            {t('common.create')}
+          </Button>
+        </PermissionWrapper>
+      </Menu.Item>
+      <Menu.Item key="import">
+        <PermissionWrapper
+          requiredPermissions={['Add']}
+          instPermissions={knowledgeBasePermissions}>
+          <Button
+            type="text"
+            className="w-full"
+            onClick={handleImportClick}
+          >
+            {t('common.import')}
+          </Button>
+        </PermissionWrapper>
+      </Menu.Item>
+    </Menu>
+  );
+
   return (
-    <div style={{marginTop: '-10px'}}>
+    <div style={{ marginTop: '-10px' }}>
       <Tabs activeKey={mainTabKey} onChange={handleMainTabChange}>
         <TabPane tab={t('knowledge.sourceFiles')} key='source_files' />
         <TabPane tab={t('knowledge.qaPairs.title')} key='qa_pairs' />
@@ -624,40 +694,53 @@ const DocumentsPage: React.FC = () => {
               <Tooltip className='mr-[8px]' title={t('common.refresh')}>
                 <Button icon={<SyncOutlined />} onClick={() => fetchData()} />
               </Tooltip>
-              <PermissionWrapper 
-                requiredPermissions={['Add']} 
-                instPermissions={knowledgeBasePermissions}>
-                <Button
-                  type='primary'
-                  className='mr-[8px]'
-                  icon={<PlusOutlined />}
-                  onClick={handleAddClick}
-                >
-                  {t('common.add')}
-                </Button>
-              </PermissionWrapper>
               {activeTabKey !== 'qa_pairs' && (
-                <Dropdown overlay={batchOperationMenu}>
-                  <Button>
-                    <Space>
-                      {t('common.batchOperation')}
-                      <DownOutlined />
-                    </Space>
-                  </Button>
-                </Dropdown>
+                <>
+                  <PermissionWrapper
+                    requiredPermissions={['Add']}
+                    instPermissions={knowledgeBasePermissions}>
+                    <Button
+                      type='primary'
+                      className='mr-[8px]'
+                      icon={<PlusOutlined />}
+                      onClick={handleAddClick}
+                    >
+                      {t('common.add')}
+                    </Button>
+                  </PermissionWrapper>
+                  <Dropdown overlay={batchOperationMenu}>
+                    <Button>
+                      <Space>
+                        {t('common.batchOperation')}
+                        <DownOutlined />
+                      </Space>
+                    </Button>
+                  </Dropdown>
+                </>
               )}
               {activeTabKey === 'qa_pairs' && (
-                <PermissionWrapper 
-                  requiredPermissions={['Delete']} 
-                  instPermissions={knowledgeBasePermissions}>
-                  <Button
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={handleBatchDeleteQAPairs}
-                  >
-                    {t('common.batchDelete')}{selectedQAPairKeys.length > 0 && ` (${selectedQAPairKeys.length})`}
-                  </Button>
-                </PermissionWrapper>
+                <>
+                  <Dropdown overlay={menuProps}>
+                    <Button>
+                      <Space>
+                        {t('common.add')}
+                        <DownOutlined />
+                      </Space>
+                    </Button>
+                  </Dropdown>
+                  <PermissionWrapper
+                    requiredPermissions={['Delete']}
+                    instPermissions={knowledgeBasePermissions}>
+                    <Button
+                      danger
+                      icon={<DeleteOutlined />}
+                      className="ml-[8px]"
+                      onClick={handleBatchDeleteQAPairs}
+                    >
+                      {t('common.batchDelete')}{selectedQAPairKeys.length > 0 && ` (${selectedQAPairKeys.length})`}
+                    </Button>
+                  </PermissionWrapper>
+                </>
               )}
             </>
           )}
@@ -692,7 +775,6 @@ const DocumentsPage: React.FC = () => {
           loading={loading}
         />
       )}
-      {/* Only show selection modal in source file mode */}
       {mainTabKey === 'source_files' && (
         <SelectSourceModal
           defaultSelected={sourceFileType}
@@ -701,6 +783,27 @@ const DocumentsPage: React.FC = () => {
           onConfirm={handleModalConfirm}
         />
       )}
+      <OperateModal
+        title={t('common.import')}
+        centered
+        visible={uploadModalVisible}
+        confirmLoading={confirmLoading}
+        onOk={handleUploadModalConfirm}
+        onCancel={() => setUploadModalVisible(false)}
+      >
+        <div>
+          <Dragger
+            accept="application/json"
+            beforeUpload={handleFileUpload}
+          >
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <p className="ant-upload-text">{t('knowledge.qaPairs.dragOrClick')}</p>
+            <p className="ant-upload-hint">{t('knowledge.qaPairs.uploadHint')}</p>
+          </Dragger>
+        </div>
+      </OperateModal>
     </div>
   );
 };

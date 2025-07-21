@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.core.logger import opspilot_logger as logger
+from apps.core.mixinx import EncryptMixin
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.bot_mgmt.views import validate_remaining_token
 from apps.opspilot.enum import SkillTypeChoices
@@ -88,6 +89,11 @@ class LLMViewSet(AuthViewSet):
             params["llm_model_id"] = params.pop("llm_model")
         if "km_llm_model" in params:
             params["km_llm_model_id"] = params.pop("km_llm_model")
+        for tool in params.get("tools", []):
+            for i in tool.get("kwargs", []):
+                if i["type"] == "password":
+                    EncryptMixin.decrypt_field("value", i)
+                    EncryptMixin.encrypt_field("value", i)
         for key in params.keys():
             if hasattr(instance, key):
                 setattr(instance, key, params[key])
@@ -100,7 +106,8 @@ class LLMViewSet(AuthViewSet):
         instance.save()
         return JsonResponse({"result": True})
 
-    def _create_error_stream_response(self, error_message):
+    @staticmethod
+    def _create_error_stream_response(error_message):
         """
         创建错误的流式响应
         用于在流式模式下返回错误信息

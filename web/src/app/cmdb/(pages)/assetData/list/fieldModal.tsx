@@ -409,13 +409,15 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
               >
                 {t('confirm')}
               </Button>
-              <Button
-                className="mr-[10px]"
-                loading={confirmLoading}
-                onClick={() => handleSubmit('associate')}
-              >
-                {t('Model.confirmAndAssociate')}
-              </Button>
+              {type === 'add' && (
+                <Button
+                  className="mr-[10px]"
+                  loading={confirmLoading}
+                  onClick={() => handleSubmit('associate')}
+                >
+                  {t('Model.confirmAndAssociate')}
+                </Button>
+              )}
               <Button onClick={handleCancel}>{t('cancel')}</Button>
             </div>
           }
