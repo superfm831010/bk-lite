@@ -165,8 +165,8 @@ class ModelViewSet(viewsets.ViewSet):
         rules = request.user.rules['cmdb']['normal']
         can_do = OPERATE
         association_info = ModelManage.model_association_info_search(model_asst_id)
-        src_model_id = association_info['edge']['src_model_id']
-        dst_model_id = association_info['edge']['dst_model_id']
+        src_model_id = association_info['src_model_id']
+        dst_model_id = association_info['dst_model_id']
         src_permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, src_model_id, rules, can_do)
         dst_permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, dst_model_id, rules, can_do)
         if not src_permission or not dst_permission:
