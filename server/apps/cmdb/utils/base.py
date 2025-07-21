@@ -19,3 +19,12 @@ def get_cmdb_rules(request, permission_key=PERMISSION_TASK) -> dict:
         rules = {}
         logger.error(f"获取cmdb权限规则失败: {err}")
     return rules
+
+
+def format_group_params(group_id: str):
+    """
+    格式化组织参数
+    :param group_id: 组织ID
+    :return: 格式化后的参数
+    """
+    return [{'id': int(group_id)}]
