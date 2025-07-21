@@ -41,7 +41,7 @@ class InstanceManage(object):
 
     @staticmethod
     def instance_list(user_groups: list, roles: list, model_id: str, params: list, page: int, page_size: int,
-                      order: str, inst_names: list = None,check_permission=True):
+                      order: str, inst_names: list = [],check_permission=True):
         """实例列表"""
 
         params.append({"field": "model_id", "type": "str=", "value": model_id})

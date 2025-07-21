@@ -65,16 +65,21 @@ class CmdbRulesFormatUtil:
             src_cls_id = ModelManage.search_model_info(src_model_id)["classification_id"]
             dst_model_id = asso['dst_model_id']
             dst_cls_id = ModelManage.search_model_info(dst_model_id)["classification_id"]
-            inst_list = asso['inst_list']
-            src_permission = CmdbRulesFormatUtil.has_single_permission(module, src_model_id, rules, inst_name, can_do,
-                                                                       src_cls_id)
-            inst_list = asso['inst_list']
-            for dst_inst in inst_list:
-                dst_inst_name = dst_inst['inst_name']
-                dst_permission = CmdbRulesFormatUtil.has_single_permission(module, dst_model_id, rules, dst_inst_name,
-                                                                           can_do, dst_cls_id)
-                if not dst_permission and src_permission:
-                    inst_list.remove(dst_inst)
+            if module == PERMISSION_INSTANCES:
+                src_permission = CmdbRulesFormatUtil.has_single_permission(module, src_model_id, rules, inst_name, can_do,
+                                                                           src_cls_id)
+                inst_list = asso['inst_list']
+                for dst_inst in inst_list:
+                    dst_inst_name = dst_inst['inst_name']
+                    dst_permission = CmdbRulesFormatUtil.has_single_permission(module, dst_model_id, rules, dst_inst_name,
+                                                                               can_do, dst_cls_id)
+                    if not dst_permission or not src_permission:
+                        inst_list.remove(dst_inst)
+            else:
+                src_permission = CmdbRulesFormatUtil.has_single_permission(module, src_cls_id, rules, inst_name, can_do)
+                dst_permission = CmdbRulesFormatUtil.has_single_permission(module, dst_cls_id, rules, inst_name, can_do)
+                if not src_permission or not dst_permission:
+                    asso_list.remove(asso)
         return asso_list
 
     @staticmethod
