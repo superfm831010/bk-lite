@@ -7,7 +7,7 @@ class CmdbRulesFormatUtil:
     def format_rules(module, child_module, rules, cls_id=None):
         rule_items = []
         if module == PERMISSION_MODEL:
-            rule_items = rules.get(module, {}).get(child_module, {})
+            rule_items = rules.get('cmdb', {}).get('normal', {}).get(module, {}).get(child_module, {})
         elif module == PERMISSION_INSTANCES:
             rule_items = rules.get(module, {}).get(cls_id, {}).get(child_module, {})
         instance_permission_map = {i["id"]: i["permission"] for i in rule_items}
