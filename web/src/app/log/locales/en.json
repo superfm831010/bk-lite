@@ -126,9 +126,11 @@
       "addToQuery": "Add to query statement",
       "histogram": "Query Histogram",
       "total": "Total number of logs",
+      "logCount": "Number of logs",
       "queryTime": "Query Time",
       "timeConsumption": "Query Time Consumption",
-      "receiver": "Receiver"
+      "receiver": "Receiver",
+      "grammarExplanation": "Grammar Explanation"
     },
     "integration": {
       "interval": "Interval",
