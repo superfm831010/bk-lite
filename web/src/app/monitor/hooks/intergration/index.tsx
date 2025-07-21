@@ -157,7 +157,14 @@ export const useMonitorConfig = () => {
   }) => {
     const objectConfig = config[data.objectName];
     const pluginCfg =
-      objectConfig?.plugins?.[data.pluginName]?.getPluginCfg(data)?.[data.mode];
+      objectConfig?.plugins?.[data.pluginName]?.getPluginCfg(data);
+    const commonConfig = {
+      collect_type: '',
+      config_type: [],
+      collector: '',
+      instance_type: '',
+      object_name: '',
+    };
     let defaultPluginCfg: any = {
       getParams: () => ({
         instance_id: '',
@@ -168,11 +175,6 @@ export const useMonitorConfig = () => {
     };
     if (data.mode === 'auto') {
       defaultPluginCfg = {
-        collect_type: '',
-        config_type: [],
-        collector: '',
-        instance_type: '',
-        object_name: '',
         formItems: null,
         initTableItems: {},
         defaultForm: {},
@@ -180,7 +182,7 @@ export const useMonitorConfig = () => {
         getParams: () => ({}),
       };
     }
-    return pluginCfg || defaultPluginCfg;
+    return pluginCfg || { ...commonConfig, ...defaultPluginCfg };
   };
 
   return {
