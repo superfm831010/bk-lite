@@ -563,12 +563,46 @@ class Neo4jClient:
                 return entity
         return None
 
-    def entity_count(self, label: str, group_by_attr: str, params: list, permission_params: str = ""):
+    def entity_count(self, label: str, group_by_attr: str, params: list, permission_params: str = "",
+                     instance_permission_params: list = None):
         """实体数量"""
 
         label_str = f":{label}" if label else ""
-        params_str = self.format_final_params(params, permission_params=permission_params)
-        params_str = f"WHERE {params_str}" if params_str else params_str
+        base_params_str = self.format_search_params(params)
+
+        # 处理权限参数
+        if instance_permission_params:
+            # 构建实例权限过滤条件
+            instance_conditions = []
+            for perm_param in instance_permission_params:
+                model_id = perm_param.get('model_id')
+                instance_names = perm_param.get('inst_names', [])
+                if model_id and instance_names:
+                    # 对于有具体实例权限的模型，只统计指定的实例
+                    condition = f"(n.{group_by_attr} = '{model_id}' AND n.inst_name IN {instance_names})"
+                    instance_conditions.append(condition)
+
+            if instance_conditions:
+                instance_condition_str = " OR ".join(instance_conditions)
+                # 组织权限和实例权限是OR关系
+                if permission_params:
+                    combined_permission = f"({permission_params}) OR ({instance_condition_str})"
+                else:
+                    combined_permission = instance_condition_str
+                
+                # 组合基础查询参数和权限参数
+                if base_params_str:
+                    params_str = f"WHERE {base_params_str} AND ({combined_permission})"
+                else:
+                    params_str = f"WHERE ({combined_permission})"
+            else:
+                # 没有实例权限，只使用组织权限
+                params_str = self.format_final_params(params, permission_params=permission_params)
+                params_str = f"WHERE {params_str}" if params_str else params_str
+        else:
+            # 没有实例权限参数，使用原有逻辑
+            params_str = self.format_final_params(params, permission_params=permission_params)
+            params_str = f"WHERE {params_str}" if params_str else params_str
 
         data = self.session.run(
             f"MATCH (n{label_str}) {params_str} RETURN n.{group_by_attr} AS {group_by_attr}, COUNT(n) AS count"
@@ -620,8 +654,8 @@ class Neo4jClient:
                 if node:
                     # 节点更新
                     results = self.batch_update_entity_properties(label=label, entity_ids=[node.get("_id")],
-                                                         properties=properties,
-                                                         check_attr_map=check_attr_map)
+                                                                  properties=properties,
+                                                                  check_attr_map=check_attr_map)
                     update_results.append(results[0]) if results else None
                 else:
                     # 暂存统一新增
