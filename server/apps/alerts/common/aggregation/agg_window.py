@@ -408,6 +408,8 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
             if active_session:
                 # 尝试扩展现有会话
                 alert_events = alert_data.get('events', [])
+                if active_session.check_has_events(alert_events):
+                    return active_session
                 if active_session.extend_session(current_time, alert_events):
                     return active_session
                 else:
