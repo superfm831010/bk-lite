@@ -39,7 +39,7 @@ def get_cmdb_module_data(module, child_module, page, page_size, group_id):
     elif module == PERMISSION_MODEL:
         models = ModelManage.search_model(classification_id=child_module)
         count = len(models)
-        queryset = [{"name": model["model_id"], "display_name": model["model_name"]} for model in models]
+        queryset = [{"id": model["model_id"], "name": model["model_name"]} for model in models]
 
     else:
         raise ValueError("Invalid module type")
