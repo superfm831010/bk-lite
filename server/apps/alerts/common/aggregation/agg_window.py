@@ -397,17 +397,20 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
 
         try:
             rule_id = correlation_rule.rule_id_str
+            alert_events = alert_data.get('events', [])
+            if not alert_events:
+                return
 
             # 查找活跃的会话
             active_session = SessionWindow.objects.filter(
                 session_key=session_key,
                 rule_id=rule_id,
-                is_active=True
+                events__in=alert_events
             ).first()
 
+            # 判断event是不是成功的 成功的话就不进行会话创建
             if active_session:
                 # 尝试扩展现有会话
-                alert_events = alert_data.get('events', [])
                 if active_session.check_has_events(alert_events):
                     return active_session
                 if active_session.extend_session(current_time, alert_events):
