@@ -70,6 +70,8 @@ class ModelManage(object):
         model_id = data.pop("model_id", "")  # 不能更新model_id
         with Neo4jClient() as ag:
             exist_items, _ = ag.query_entity(MODEL, [{"field": "model_id", "type": "str<>", "value": model_id}])
+            # 排除当前正在更新的模型，避免自己和自己比较
+            exist_items = [i for i in exist_items if i["_id"] != id]
             model = ag.set_entity_properties(MODEL, [id], data, UPDATE_MODEL_CHECK_ATTR_MAP, exist_items)
         return model[0]
 

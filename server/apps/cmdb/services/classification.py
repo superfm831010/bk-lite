@@ -66,6 +66,7 @@ class ClassificationManage(object):
         data.pop("exist_model", "")
         with Neo4jClient() as ag:
             exist_items, _ = ag.query_entity(CLASSIFICATION, [])
+            # 排除当前正在更新的分类，避免自己和自己比较
             exist_items = [i for i in exist_items if i["_id"] != id]
             model = ag.set_entity_properties(
                 CLASSIFICATION,
