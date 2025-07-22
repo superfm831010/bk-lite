@@ -1,12 +1,13 @@
 import OperateModal from "@/components/operate-modal";
 import { useTranslation } from "@/utils/i18n";
 import usePlayroundApi from '@/app/playground/api';
-import { forwardRef, useImperativeHandle, useState, useRef, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import { Button, Form, FormInstance, Input, message, Select, Switch } from 'antd';
 import { ModalRef } from "@/app/playground/types";
 const { TextArea } = Input;
 
 interface ModalProps {
+  id: number;
   name: string;
   description?: string;
   parent?: number;
@@ -16,18 +17,18 @@ interface ModalProps {
   config?: object;
 }
 
-const ManageModal = forwardRef<ModalRef, any>(({ nodes }, ref) => {
+const ManageModal = forwardRef<ModalRef, any>(({ nodes, onSuccess }, ref) => {
   const { t } = useTranslation();
   const formRef = useRef<FormInstance>(null);
-  const { createCategory } = usePlayroundApi();
+  const { createCategory, createCapability, updateCapability, updateCategory } = usePlayroundApi();
   const [open, setOpen] = useState<boolean>(false);
   const [confirm, setConfirm] = useState<boolean>(false);
   const [isAddChildren, setIsAddChildren] = useState<boolean>(false);
   const [title, setTitle] = useState<string>('add');
   const [type, setType] = useState<string>('');
   const [formData, setFormData] = useState<ModalProps | null>(null);
-  const CategoryType = ['addCategory', 'updateCategory', 'delCategory'];
-  const CapabilityType = ['addCapability', 'updateCapability', 'delCapability'];
+  const CategoryType = ['addCategory', 'updateCategory'];
+  const CapabilityType = ['addCapability', 'updateCapability'];
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, title, form }) => {
@@ -35,9 +36,15 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes }, ref) => {
       setType(type);
       setTitle(title as string);
       setFormData(form);
-      initForm(type, form);
+
     }
   }));
+
+  useEffect(() => {
+    if (open) {
+      initForm();
+    }
+  }, [open]);
 
   const parentOptions = useMemo(() => {
     return nodes.map((item: any) => ({
@@ -46,43 +53,58 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes }, ref) => {
     }));
   }, [nodes]);
 
-  const initForm = (type: string, form: any) => {
+  const initForm = useCallback(() => {
+    if (!formRef.current) return;
     formRef.current?.resetFields();
     if (type.trim().startsWith('update')) {
+      if(formData?.level === 0) setIsAddChildren(true);
       formRef.current?.setFieldsValue({
-        name: form.name,
-        description: form.description,
-        parent: form.parent
+        name: formData?.name,
+        description: formData?.description,
+        parent: formData?.level === 0 ? null : formData?.parent,
+        url: formData?.url,
+        is_active: formData?.is_active
       });
-    } else if (type.trim().startsWith('add') && form) {
+    } else if (formData && type.trim().startsWith('add')) {
       setIsAddChildren(true);
       formRef.current?.setFieldsValue({
-        parent: form.id
+        parent: formData?.id
       });
     }
-  }
+  }, [type, formData]);
+
+  const handleAdd: Record<string, any> = {
+    'addCategory': async (data: any) => await createCategory(data),
+    'addCapability': async (data: any) => await createCapability(data),
+    'updateCategory': async (id: number, data: any) => await updateCategory(id, data),
+    'updateCapability': async (id: number, data: any) => await updateCapability(id, data),
+  };
+
 
   const handleSubmit = async () => {
     setConfirm(true);
     try {
+      const data = await formRef.current?.validateFields();
       if (type.trim().startsWith('add')) {
-        const data = await formRef.current?.validateFields();
-        await createCategory(data);
-        setOpen(false);
-        message.success('添加成功');
+        await handleAdd[type](data);
+      } else {
+        await handleAdd[type](formData?.id, data);
       }
+      setOpen(false);
+      message.success(`common.${title}Success`);
+      onSuccess();
     } catch (e) {
       console.log(e)
     } finally {
       setConfirm(false);
     }
-    console.log(formData);
   };
 
   const handleCancel = () => {
     setOpen(false);
     setConfirm(false);
     setIsAddChildren(false);
+    setFormData(null);
   };
 
   return (
@@ -110,7 +132,7 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes }, ref) => {
         {CategoryType.includes(type) && (
           <Form.Item
             name='parent'
-            label='父类'
+            label={t(`manage.parentCategory`)}
           >
             <Select disabled={isAddChildren} options={parentOptions} allowClear />
           </Form.Item>
@@ -119,7 +141,7 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes }, ref) => {
           <>
             <Form.Item
               name='url'
-              label={'url'}
+              label={t(`common.url`)}
               rules={[{ required: true, message: t('common.inputMsg') }]}
             >
               <Input placeholder={t(`common.inputMsg`)} />

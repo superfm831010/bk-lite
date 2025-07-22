@@ -22,9 +22,9 @@ const AnomalyDetection = () => {
   const [activeKey, setActiveKey] = useState<string[]>(['request']);
   const [chartData, setChartData] = useState<any[]>([]);
   const [infoText, setInfoText] = useState<any>({
-    banner_title: '',
-    banner_info: "",
-    usage: []
+    bannerTitle: '',
+    bannerInfo: "",
+    applicationScenario: []
   });
   const [chartLoading, setChartLoading] = useState<boolean>(false);
   const [timeline, setTimeline] = useState<any>({
@@ -74,18 +74,18 @@ const AnomalyDetection = () => {
 
   const RequestContent = useMemo(() => {
     const params = {
-      serving_id: 1,
+      // serving_id: 1,
       model_name: "RandomForest_1",
       model_version: "latest",
       algorithm: "RandomForest",
-      data: [
-        {
-          "timestamp": "2026-03-01",
-          "value": 0.498,
-          "label": 0
-        },
-        "..."
-      ],
+      // data: [
+      //   {
+      //     "timestamp": "2026-03-01",
+      //     "value": 0.498,
+      //     "label": 0
+      //   },
+      //   "..."
+      // ],
       anomaly_threshold: 0.5,
     };
 
@@ -135,9 +135,9 @@ const AnomalyDetection = () => {
 
   useEffect(() => {
     setInfoText({
-      banner_title: '异常检测',
-      banner_info: "基于机器学习的智能异常检测服务，能够自动识别时序数据中的异常模式和突变点。支持CSV文件上传，提供实时数据分析和可视化结果，帮助用户快速发现数据中的异常情况。广泛应用于系统监控、质量检测、金融风控、工业设备监控等场景。",
-      usage: [
+      bannerTitle: '异常检测',
+      bannerInfo: "基于机器学习的智能异常检测服务，能够自动识别时序数据中的异常模式和突变点。支持CSV文件上传，提供实时数据分析和可视化结果，帮助用户快速发现数据中的异常情况。广泛应用于系统监控、质量检测、金融风控、工业设备监控等场景。",
+      applicationScenario: [
         {
           title: '系统监控',
           content: '实时监控服务器性能指标、网络流量、应用响应时间等关键指标，及时发现系统异常，确保业务连续性。支持CPU使用率、内存占用、磁盘I/O等多维度监控。'
@@ -281,7 +281,7 @@ const AnomalyDetection = () => {
   };
 
   const renderElement = () => {
-    return infoText.usage.map((item: any) => (
+    return infoText.applicationScenario.map((item: any) => (
       <div key={item.title} className="content overflow-auto pb-[20px] border-b mt-4">
         <div className="float-right w-[250px] h-[160px] bg-slate-400"></div>
         <div className="content-info mr-[300px]">
@@ -296,10 +296,10 @@ const AnomalyDetection = () => {
     <div className="relative pb-8">
       <div className="banner-content w-[90%] h-[380px] pr-[400px] mx-auto">
         <div className="banner-title text-5xl pt-5">
-          {infoText.banner_title}
+          {infoText.bannerTitle}
         </div>
         <div className="banner-info mt-8">
-          {infoText.banner_info}
+          {infoText.bannerInfo}
         </div>
         {/* <div className="banner-btn-list mt-[80px]">
             <Button type="primary" className="mr-3">立即使用</Button>

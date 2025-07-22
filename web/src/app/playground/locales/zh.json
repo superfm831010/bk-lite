@@ -7,6 +7,17 @@
     "useScenario": "应用场景",
     "selectMsg": "请选择一份样本文件",
     "uploadError": "上传的文件类型错误",
-    "uploadMsg": "请选择一份文件或者从本地上传文件"
+    "uploadMsg": "请选择一份文件或者从本地上传文件",
+    "url": "地址",
+    "active": "已上线",
+    "inactive": "未上线"
+  },
+  "manage": {
+    "delCapability": "删除能力演示",
+    "delCapabilityText": "确认删除此能力演示吗？",
+    "manageTitle": "门户管理",
+    "description": "管理门户的所有类别和所有的能力演示菜单。",
+    "delCategory": "确认要删除此类别吗?",
+    "parentCategory": "父类"
   }
 }
