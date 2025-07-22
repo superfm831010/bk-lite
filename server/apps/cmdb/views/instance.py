@@ -44,13 +44,13 @@ class InstanceViewSet(viewsets.ViewSet):
         query_list [{field: "inst_name", type: "str=", value: "allure(weops-prod)"}] 搜索成果
         """
         page, page_size = int(request.data.get("page", 1)), int(request.data.get("page_size", 10))
-        model_id = request.data["model_id"]
-        cls_id = ModelManage.search_model_info(model_id)["classification_id"]
+        model_id = request.data['model_id']
+        cls_id = ModelManage.search_model_info(model_id)['classification_id']
         rules = request.user.rules
         inst_names = []
         is_per = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules, cls_id)
         if is_per is not None:
-            inst_names = CmdbRulesFormatUtil.get_can_view_insts(PERMISSION_INSTANCES, model_id, rules, cls_id)
+            inst_names = CmdbRulesFormatUtil.get_can_view_insts(is_per)
         insts, count = InstanceManage.instance_list(
             # request.user.group_list 是当然用户的组，但是现在是只展示当前的组而不是全部
             format_group_params(request.COOKIES.get("current_team")),
@@ -522,11 +522,13 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("search-View")
     @action(methods=["post"], detail=False)
     def fulltext_search(self, request):
-        result = InstanceManage.fulltext_search(
+        rules = request.user.rules
+        src_result = InstanceManage.fulltext_search(
             format_group_params(request.COOKIES.get("current_team")),
             request.user.roles,
             request.data.get("search", "")
         )
+        result = CmdbRulesFormatUtil.filter_full_text_search_result(src_result, rules)
         return WebUtils.response_success(result)
 
     @swagger_auto_schema(
