@@ -36,100 +36,48 @@ export const mockInitialNodes = [
     id: 'node1',
     x: 100,
     y: 80,
-    width: 100,
-    height: 40,
-    label: 'Node 1',
-    attrs: {
-      body: {
-        fill: '#FFFFFF',
-        stroke: '#1890FF',
-        strokeWidth: 2,
-        rx: 6,
-        ry: 6,
-        magnet: true,
-      },
-      label: { fill: '#262626', fontSize: 14, fontWeight: 500 },
-    },
+    label: 'Web Server',
   },
   {
     id: 'node2',
-    x: 300,
+    x: 350,
     y: 80,
-    width: 100,
-    height: 40,
-    label: 'Node 2',
-    attrs: {
-      body: {
-        fill: '#FFFFFF',
-        stroke: '#1890FF',
-        strokeWidth: 2,
-        rx: 6,
-        ry: 6,
-        magnet: true,
-      },
-      label: { fill: '#262626', fontSize: 14, fontWeight: 500 },
-    },
+    label: 'Database',
   },
   {
     id: 'node3',
     x: 100,
-    y: 200,
-    width: 100,
-    height: 40,
-    label: 'Node 3',
-    attrs: {
-      body: {
-        fill: '#FFFFFF',
-        stroke: '#1890FF',
-        strokeWidth: 2,
-        rx: 6,
-        ry: 6,
-        magnet: true,
-      },
-      label: { fill: '#262626', fontSize: 14, fontWeight: 500 },
-    },
+    y: 220,
+    label: 'Load Balancer',
   },
   {
     id: 'node4',
-    x: 300,
-    y: 200,
-    width: 100,
-    height: 40,
-    label: 'Node 4',
-    attrs: {
-      body: {
-        fill: '#FFFFFF',
-        stroke: '#1890FF',
-        strokeWidth: 2,
-        rx: 6,
-        ry: 6,
-        magnet: true,
-      },
-      label: { fill: '#262626', fontSize: 14, fontWeight: 500 },
-    },
+    x: 350,
+    y: 220,
+    label: 'Cache Server',
   },
 ];
 
 // 初始 mock 连线配置
 export const mockInitialEdges = [
   {
-    source: { cell: 'node1' },
-    target: { cell: 'node2' },
+    source: { cell: 'node1', port: 'right' },
+    target: { cell: 'node2', port: 'left' },
     attrs: { line: { stroke: '#8C8C8C', strokeWidth: 2 } },
   },
   {
-    source: { cell: 'node2' },
-    target: { cell: 'node4' },
+    source: { cell: 'node2', port: 'bottom' },
+    target: { cell: 'node4', port: 'top' },
     attrs: { line: { stroke: '#8C8C8C', strokeWidth: 2 } },
   },
   {
-    source: { cell: 'node1' },
-    target: { cell: 'node3' },
+    source: { cell: 'node1', port: 'bottom' },
+    target: { cell: 'node3', port: 'top' },
     attrs: { line: { stroke: '#8C8C8C', strokeWidth: 2 } },
   },
   {
-    source: { cell: 'node3' },
-    target: { cell: 'node4' },
+    source: { cell: 'node3', port: 'right' },
+    target: { cell: 'node4', port: 'left' },
     attrs: { line: { stroke: '#8C8C8C', strokeWidth: 2 } },
   },
 ];
@@ -156,7 +104,7 @@ export const mockDirs = [
         id: '2',
         name: 'Dashboard 1',
         type: 'dashboard',
-        description: '示例仪表 1',
+        description: '示例仪表1的描述长文本',
       },
       {
         id: '3',
@@ -192,4 +140,13 @@ export const mockDirs = [
       },
     ],
   },
+];
+
+
+export const mockInterfaces = [
+  { value: 'eth0', label: 'eth0 (以太网接口)' },
+  { value: 'eth1', label: 'eth1 (以太网接口)' },
+  { value: 'wlan0', label: 'wlan0 (无线接口)' },
+  { value: 'lo', label: 'lo (回环接口)' },
+  { value: 'vlan10', label: 'vlan10 (虚拟接口)' },
 ];

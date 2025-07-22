@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Table } from 'antd';
+import { Modal } from 'antd';
+import CustomTable from '@/components/custom-table';
 
 interface InstanceModalProps {
   visible: boolean;
@@ -24,8 +25,10 @@ const InstanceModal: React.FC<InstanceModalProps> = ({
     open={visible}
     onOk={onOk}
     onCancel={onCancel}
+    style={{ top: '20%' }}
+    styles={{ body: { height: '40vh', overflowY: 'auto' } }}
   >
-    <Table
+    <CustomTable
       rowKey="id"
       columns={[{ title: '名称', dataIndex: 'name' }]}
       dataSource={dataSource}

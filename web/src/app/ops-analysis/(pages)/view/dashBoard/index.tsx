@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ComponentSelector from './components/compSelector';
 import ComponentConfig from './components/compConfig';
 import 'react-grid-layout/css/styles.css';
@@ -13,8 +13,10 @@ import { LayoutItem } from '@/app/ops-analysis/types/dashBoard';
 import { DirItem } from '@/app/ops-analysis/types';
 import { SaveOutlined, PlusOutlined, MoreOutlined } from '@ant-design/icons';
 import TimeSelector from '@/components/time-selector';
+import { useDashBoardApi } from '@/app/ops-analysis/api/dashBoard';
 import {
   getWidgetComponent,
+  getWidgetMeta,
   needsGlobalTimeSelector,
   needsGlobalInstanceSelector,
 } from './components/registry';
@@ -27,17 +29,38 @@ const ResponsiveGridLayout = WidthProvider(GridLayout);
 
 const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
   const { t } = useTranslation();
+  const { getInstanceList } = useDashBoardApi();
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [layout, setLayout] = useState<LayoutItem[]>([]);
   const [configDrawerVisible, setConfigDrawerVisible] = useState(false);
   const [currentConfigItem, setCurrentConfigItem] = useState<any>(null);
   const [globalTimeRange, setGlobalTimeRange] = useState<any>(null);
   const [globalInstances, setGlobalInstances] = useState<string[]>([]);
+  const [instanceOptions, setInstanceOptions] = useState<any[]>([]);
+  const [instancesLoading, setInstancesLoading] = useState(false);
 
   const timeDefaultValue = {
-    selectValue: 0,
+    selectValue: 10080,
     rangePickerVaule: null,
   };
+
+  // 获取实例列表
+  useEffect(() => {
+    const fetchInstanceList = async () => {
+      try {
+        setInstancesLoading(true);
+        const response: any = await getInstanceList();
+        setInstanceOptions(response.data || []);
+      } catch (error) {
+        console.error('获取实例列表失败:', error);
+        setInstanceOptions([]);
+      } finally {
+        setInstancesLoading(false);
+      }
+    };
+
+    fetchInstanceList();
+  }, []);
 
   const handleTimeChange = (timeData: any) => {
     setGlobalTimeRange(timeData);
@@ -73,6 +96,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
 
   const handleAddComponent = (widget: string, config?: any) => {
     const newId = (layout.length + 1).toString();
+    const widgetMeta = getWidgetMeta(widget);
     const newWidget: LayoutItem = {
       i: newId,
       x: (layout.length % 3) * 4,
@@ -81,7 +105,10 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
       h: 3,
       widget: widget,
       title: config?.name || `New ${widget}`,
-      config: config,
+      config: {
+        ...widgetMeta?.defaultConfig,
+        ...config,
+      },
     };
     setLayout((prev) => [...prev, newWidget]);
     setAddModalVisible(false);
@@ -161,17 +188,12 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
           {
             <div className="flex items-center space-x-2 py-2">
               {needGlobalTimeSelector && (
-                <>
-                  <span className="text-sm text-gray-600">
-                    {t('dashboard.timeRange')}:
-                  </span>
-                  <TimeSelector
-                    onlyTimeSelect
-                    defaultValue={timeDefaultValue}
-                    onChange={handleTimeChange}
-                    onRefresh={handleRefresh}
-                  />
-                </>
+                <TimeSelector
+                  onlyTimeSelect
+                  defaultValue={timeDefaultValue}
+                  onChange={handleTimeChange}
+                  onRefresh={handleRefresh}
+                />
               )}
               {needGlobalInstanceSelector && (
                 <>
@@ -180,22 +202,19 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
                   </span>
                   <Select
                     mode="multiple"
+                    loading={instancesLoading}
                     placeholder={t('dashboard.selectInstance')}
                     style={{ width: 200 }}
                     value={globalInstances}
                     onChange={handleInstancesChange}
-                    options={[
-                      { label: '实例-1', value: 'instance1' },
-                      { label: '实例-2', value: 'instance2' },
-                      { label: '实例-3', value: 'instance3' },
-                    ]}
+                    options={instanceOptions}
                   />
                 </>
               )}
             </div>
           }
           <Button icon={<SaveOutlined />} onClick={handleSave}>
-            {t('dashboard.save')}
+            {t('common.save')}
           </Button>
           <Button
             type="dashed"

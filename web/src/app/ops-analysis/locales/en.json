@@ -8,6 +8,7 @@
     "cancel": "Cancel",
     "edit": "Edit",
     "delete": "Delete",
+    "save": "Save",
     "operateFailed": "Operation failed",
     "successOperate": "Operation successful",
     "all": "All",
@@ -29,17 +30,11 @@
     "nameLabel": "Name",
     "descLabel": "Description"
   },
-  "dashboard": {
-    "save": "Save",
+"dashboard": {
     "addComponent": "Add Component",
     "componentConfig": "Component Configuration",
     "addView": "Add View",
     "title": "Select Component",
-    "zoomIn": "Zoom In",
-    "zoomOut": "Zoom Out",
-    "fitView": "Fit View",
-    "selectMode": "Select Mode",
-    "deleteSelected": "Delete Selected",
     "dataSource": "Data Source",
     "selectDataSource": "Please select data source",
     "lineColor": "Line Color",
@@ -55,10 +50,21 @@
     "startTime": "Start Time",
     "endTime": "End Time",
     "instanceList": "Instance List",
-    "selectInstance": "Please select instance"
+    "selectInstance": "Please select instance",
+    "basicSettings": "Basic Settings",
+    "dataSourceType": "Data Source Type",
+    "dataSourceAttr": "Data Source Attribute",
+    "styleSettings": "Style Settings",
+    "filterSettings": "Filter Settings",
+    "chartType": "Chart Type",
+    "chartTypeLabel": "Chart Type",
+    "selectChartType": "Please select chart type",
+    "lineChart": "Line Chart",
+    "barChart": "Bar Chart",
+    "pieChart": "Pie Chart"
   },
   "dataSource": {
-    "title": "Data Source Operations",
+    "title": "Data Source",
     "nats": "NATS",
     "name": "Name",
     "describe": "Description",
@@ -68,5 +74,26 @@
     "defaultValue": "Default Value",
     "introTitle": "Data Source",
     "introMsg": "Choose NATS service as the data source"
+},
+"topology": {
+    "edgeConfig": "Edge Configuration",
+    "lineType": "Line Type",
+    "lineName": "Line Name",
+    "networkLine": "Network Line",
+    "line": "Line",
+    "node": "Node",
+    "node1": "Node 1",
+    "node2": "Node 2",
+    "nodeName": "Name",
+    "interface": "Interface",
+    "existingInterface": "Existing Interface",
+    "customInterface": "Custom",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "fitView": "Fit View",
+    "selectMode": "Select Mode",
+    "addText": "Add Text",
+    "deleteSelected": "Delete Selected",
+    "exitEdit": "Exit Edit"
   }
 }

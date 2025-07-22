@@ -14,10 +14,11 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
       description: '按照天的维度对Alarm产生的数量以趋势图的方式呈现',
       icon: 'zhexiantu',
       category: '告警',
-      needsTimeSelector: false,
+      needsTimeSelector: true,
       needsInstanceSelector: false,
       defaultConfig: {
         barColor: '#52c41a',
+        filterType: 'selector',
       },
     },
     component: TrendLine,
@@ -81,7 +82,9 @@ export const getWidgetsByCategory = () => {
 export const needsGlobalTimeSelector = (layouts: any[]) => {
   return layouts.some((item) => {
     const meta = getWidgetMeta(item.widget);
-    return meta?.needsTimeSelector && item.config?.filterType === 'selector';
+    if (!meta?.needsTimeSelector) return false;
+    const filterType = item.config?.filterType || meta.defaultConfig?.filterType;
+    return filterType === 'selector';
   });
 };
 
@@ -89,8 +92,8 @@ export const needsGlobalTimeSelector = (layouts: any[]) => {
 export const needsGlobalInstanceSelector = (layouts: any[]) => {
   return layouts.some((item) => {
     const meta = getWidgetMeta(item.widget);
-    return (
-      meta?.needsInstanceSelector && item.config?.filterType === 'selector'
-    );
+    if (!meta?.needsInstanceSelector) return false;
+    const filterType = item.config?.filterType || meta.defaultConfig?.filterType;
+    return filterType === 'selector';
   });
 };

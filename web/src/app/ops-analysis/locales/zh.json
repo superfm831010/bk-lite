@@ -8,6 +8,7 @@
     "cancel": "取消",
     "edit": "编辑",
     "delete": "删除",
+    "save": "保存",
     "operateFailed": "操作失败",
     "successOperate": "操作成功",
     "all": "全部",
@@ -30,17 +31,11 @@
     "nameLabel": "名称",
     "descLabel": "描述"
   },
-  "dashboard": {
-    "save": "保存",
+"dashboard": {
     "addComponent": "添加视图",
     "componentConfig": "组件配置",
     "addView": "添加视图",
     "title": "选择组件",
-    "zoomIn": "放大",
-    "zoomOut": "缩小",
-    "fitView": "适配视图",
-    "selectMode": "框选",
-    "deleteSelected": "删除选中",
     "dataSource": "数据源",
     "selectDataSource": "请选择数据源",
     "lineColor": "线条颜色",
@@ -56,10 +51,21 @@
     "startTime": "开始时间",
     "endTime": "结束时间",
     "instanceList": "实例列表",
-    "selectInstance": "请选择实例"
+    "selectInstance": "请选择实例",
+    "basicSettings": "基本设置",
+    "dataSourceType": "数据源类型",
+    "dataSourceAttr": "数据源属性",
+    "styleSettings": "样式设置",
+    "filterSettings": "筛选设置",
+    "chartType": "图表类型",
+    "chartTypeLabel": "图表类型",
+    "selectChartType": "请选择图表类型",
+    "lineChart": "折线图",
+    "barChart": "柱状图",
+    "pieChart": "饼图"
   },
   "dataSource": {
-    "title": "数据源操作",
+    "title": "数据源",
     "nats": "NATS",
     "name": "名称",
     "describe": "描述",
@@ -69,5 +75,26 @@
     "defaultValue": "默认值",
     "introTitle": "数据源",
     "introMsg": "选择NATS服务作为数据源"
+},
+"topology": {
+    "edgeConfig": "连线配置",
+    "lineType": "线条类型",
+    "lineName": "线条名称",
+    "networkLine": "Network Line",
+    "line": "Line",
+    "node": "节点",
+    "node1": "节点1",
+    "node2": "节点2",
+    "nodeName": "名称",
+    "interface": "接口",
+    "existingInterface": "已有接口",
+    "customInterface": "自定义",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "fitView": "适配视图",
+    "selectMode": "框选",
+    "addText": "添加文本",
+    "deleteSelected": "删除选中",
+    "exitEdit": "退出编辑"
   }
 }

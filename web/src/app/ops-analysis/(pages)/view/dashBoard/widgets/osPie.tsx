@@ -64,23 +64,28 @@ const OsPie: React.FC<BaseWidgetProps> = ({ globalTimeRange }) => {
       {
         name: '操作系统',
         type: 'pie',
-        radius: ['38%', '60%'],
+        center: ['50%', '56%'],
+        radius: ['43%', '65%'],
         avoidLabelOverlap: false,
         label: {
-          show: false,
+          show: true,
           position: 'center',
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: 24,
-            fontWeight: 'bold',
-            color: '#333',
+          formatter: function () {
+            const total = chartData.reduce((sum, item) => sum + item.value, 0);
+            return `{title|总数}\n{value|${total}}`;
           },
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)',
+          rich: {
+            title: {
+              fontSize: 14,
+              color: '#666',
+              lineHeight: 20,
+            },
+            value: {
+              fontSize: 24,
+              fontWeight: 'bold',
+              color: '#333',
+              lineHeight: 32,
+            },
           },
         },
         labelLine: {

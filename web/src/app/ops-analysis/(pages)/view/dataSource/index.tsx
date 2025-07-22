@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import OperateModal from './operateModal';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
-import { Button, Input, Card } from 'antd';
+import { Button, Input, Card, message, Modal } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { DatasourceItem } from '@/app/ops-analysis/types/dataSource';
-import { useDashBoardApi } from '@/app/ops-analysis/api/dashBoard';
+import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 
 const Datasource: React.FC = () => {
   const { t } = useTranslation();
-  const { getDataSources } = useDashBoardApi();
+  const { getDataSourceList, deleteDataSource } = useDataSourceApi();
   const [searchKey, setSearchKey] = useState('');
-  const [dataSourceList, setDataSourceList] = useState<DatasourceItem[]>([]);
+  const [searchValue, setSearchValue] = useState('');
   const [filteredList, setFilteredList] = useState<DatasourceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -23,28 +23,35 @@ const Datasource: React.FC = () => {
   });
 
   // 获取数据源列表
-  const fetchDataSources = async () => {
+  const fetchDataSources = async (
+    searchKeyParam?: string,
+    paginationParam?: { current?: number; pageSize?: number }
+  ) => {
     try {
       setLoading(true);
-      const response: any = await getDataSources();
-      const transformedData: DatasourceItem[] = response.data.map(
-        (item: any, index: number) => ({
-          id: index + 1,
-          name: item.label,
-          describe: item.type || '数据源',
-          created_time:
-            new Date().toISOString().split('T')[0] +
-            ' ' +
-            new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000)
-              .toTimeString()
-              .split(' ')[0],
-        })
-      );
-      setDataSourceList(transformedData);
-      setFilteredList(transformedData);
-      setPagination((prev) => ({ ...prev, total: transformedData.length }));
+      const currentPagination = paginationParam || pagination;
+      const params: any = {
+        page: currentPagination.current || pagination.current,
+        page_size: currentPagination.pageSize || pagination.pageSize,
+      };
+      const currentSearchKey =
+        searchKeyParam !== undefined ? searchKeyParam : searchKey;
+      if (currentSearchKey && currentSearchKey.trim()) {
+        params.search = currentSearchKey.trim();
+      }
+      const { items, count } = await getDataSourceList(params);
+      if (items && Array.isArray(items)) {
+        setFilteredList(items);
+        setPagination((prev) => ({
+          ...prev,
+          current: currentPagination.current || prev.current,
+          pageSize: currentPagination.pageSize || prev.pageSize,
+          total: count || 0,
+        }));
+      }
     } catch (error) {
       console.error('获取数据源列表失败:', error);
+      setFilteredList([]);
     } finally {
       setLoading(false);
     }
@@ -52,22 +59,15 @@ const Datasource: React.FC = () => {
 
   useEffect(() => {
     fetchDataSources();
-  }, []);
-
-  useEffect(() => {
-    handleFilter();
   }, [pagination.current, pagination.pageSize]);
 
   const handleFilter = (value?: string) => {
-    const key = value !== undefined ? value : searchKey;
-    let filtered = dataSourceList;
-    if (key) {
-      filtered = dataSourceList.filter((item: DatasourceItem) =>
-        item.name.toLowerCase().includes(key.toLowerCase())
-      );
-    }
-    setFilteredList(filtered);
-    setPagination((prev) => ({ ...prev, total: filtered.length }));
+    const key = value !== undefined ? value : searchValue;
+    setSearchKey(key);
+    setSearchValue(key);
+    const newPagination = { current: 1, pageSize: pagination.pageSize };
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    fetchDataSources(key, newPagination);
   };
 
   const handleEdit = (type: 'add' | 'edit', row?: DatasourceItem) => {
@@ -79,31 +79,63 @@ const Datasource: React.FC = () => {
     setModalVisible(true);
   };
 
-  const handleDelete = (row?: DatasourceItem) => {
-    console.log('Delete row:', row);
+  const handleDelete = (row: DatasourceItem) => {
+    Modal.confirm({
+      title: t('common.confirmDelete'),
+      content: `${t('common.confirmDeleteMsg')} "${row.name}"?`,
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      onOk: async () => {
+        try {
+          await deleteDataSource(row.id);
+          message.success(t('common.deleteSuccess'));
+          fetchDataSources();
+        } catch (error: any) {
+          message.error(error.message);
+        }
+      },
+    });
   };
 
   const handleTableChange = (pg: any) => {
-    setPagination((prev) => ({
-      ...prev,
+    const newPagination = {
       current: pg.current || 1,
       pageSize: pg.pageSize || 20,
+    };
+    setPagination((prev) => ({
+      ...prev,
+      ...newPagination,
     }));
+    // 直接传递新的分页信息，避免状态更新延迟
+    fetchDataSources(undefined, newPagination);
   };
 
   const columns = [
     { title: t('dataSource.name'), dataIndex: 'name', key: 'name', width: 150 },
+    { title: 'REST API', dataIndex: 'rest_api', key: 'rest_api', width: 150 },
     {
       title: t('dataSource.describe'),
-      dataIndex: 'describe',
-      key: 'describe',
-      width: 120,
+      dataIndex: 'desc',
+      key: 'desc',
+      width: 200,
+    },
+    {
+      title: '状态',
+      dataIndex: 'is_active',
+      key: 'is_active',
+      width: 100,
+      render: (isActive: boolean) => (
+        <span style={{ color: isActive ? '#52c41a' : '#ff4d4f' }}>
+          {isActive ? '活跃' : '禁用'}
+        </span>
+      ),
     },
     {
       title: t('dataSource.createdTime'),
-      dataIndex: 'created_time',
-      key: 'created_time',
+      dataIndex: 'created_at',
+      key: 'created_at',
       width: 180,
+      render: (text: string) => (text ? new Date(text).toLocaleString() : '-'),
     },
     {
       title: t('common.edit'),
@@ -153,13 +185,13 @@ const Datasource: React.FC = () => {
           <div className="flex items-center">
             <Input
               allowClear
-              value={searchKey}
+              value={searchValue}
               placeholder={t('common.searchPlaceHolder')}
               style={{ width: 250 }}
-              onChange={(e) => setSearchKey(e.target.value)}
+              onChange={(e) => setSearchValue(e.target.value)}
               onPressEnter={(e) => handleFilter(e.currentTarget.value)}
               onClear={() => {
-                setSearchKey('');
+                setSearchValue('');
                 handleFilter('');
               }}
             />
@@ -175,10 +207,7 @@ const Datasource: React.FC = () => {
           rowKey="id"
           columns={columns}
           loading={loading}
-          dataSource={filteredList.slice(
-            (pagination.current - 1) * pagination.pageSize,
-            pagination.current * pagination.pageSize
-          )}
+          dataSource={filteredList}
           pagination={pagination}
           onChange={handleTableChange}
           scroll={{ y: 'calc(100vh - 360px)' }}
@@ -189,7 +218,7 @@ const Datasource: React.FC = () => {
           onClose={() => setModalVisible(false)}
           onSuccess={() => {
             setModalVisible(false);
-            fetchDataSources(); // 重新获取数据
+            fetchDataSources();
           }}
         />
       </div>

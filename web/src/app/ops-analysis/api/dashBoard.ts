@@ -20,26 +20,6 @@ export const useDashBoardApi = () => {
     });
   }
 
-  async function getDataSources() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          data: [
-            { label: 'MySQL数据库', value: 'mysql_source', type: 'database' },
-            { label: 'Redis缓存', value: 'redis_source', type: 'cache' },
-            { label: 'Elasticsearch日志', value: 'es_source', type: 'log' },
-            {
-              label: 'Prometheus监控',
-              value: 'prometheus_source',
-              type: 'metrics',
-            },
-            { label: 'Kafka消息队列', value: 'kafka_source', type: 'message' },
-          ],
-        });
-      }, 300);
-    });
-  }
-
   async function getOsData() {
     // 模拟操作系统分布数据
     return new Promise((resolve) => {
@@ -56,53 +36,30 @@ export const useDashBoardApi = () => {
     });
   }
 
-  async function getDataSourceAttrs(dataSourceValue: string) {
+  async function getInstanceList() {
     return new Promise((resolve) => {
       setTimeout(() => {
-        const attrMap: Record<string, any[]> = {
-          mysql_source: [
-            { label: 'CPU使用率', value: 'cpu_usage' },
-            { label: '内存使用率', value: 'memory_usage' },
-            { label: '连接数', value: 'connections' },
-            { label: '查询数', value: 'queries' },
-          ],
-          redis_source: [
-            { label: '内存使用率', value: 'memory_usage' },
-            { label: '键数量', value: 'key_count' },
-            { label: '命中率', value: 'hit_rate' },
-            { label: '连接数', value: 'connections' },
-          ],
-          es_source: [
-            { label: '索引大小', value: 'index_size' },
-            { label: '文档数量', value: 'doc_count' },
-            { label: '查询响应时间', value: 'query_time' },
-            { label: '节点状态', value: 'node_status' },
-          ],
-          prometheus_source: [
-            { label: 'CPU指标', value: 'cpu_metrics' },
-            { label: '内存指标', value: 'memory_metrics' },
-            { label: '网络指标', value: 'network_metrics' },
-            { label: '磁盘指标', value: 'disk_metrics' },
-          ],
-          kafka_source: [
-            { label: '消息数量', value: 'message_count' },
-            { label: '分区数', value: 'partition_count' },
-            { label: '消费者延迟', value: 'consumer_lag' },
-            { label: '吞吐量', value: 'throughput' },
-          ],
-        };
-
         resolve({
-          data: attrMap[dataSourceValue] || [],
+          data: [
+            { label: '生产环境-Web服务器-01', value: 'prod-web-01' },
+            { label: '生产环境-Web服务器-02', value: 'prod-web-02' },
+            { label: '生产环境-数据库服务器-01', value: 'prod-db-01' },
+            { label: '测试环境-Web服务器-01', value: 'test-web-01' },
+            { label: '测试环境-Web服务器-02', value: 'test-web-02' },
+            { label: '开发环境-Web服务器-01', value: 'dev-web-01' },
+            { label: '负载均衡器-01', value: 'lb-01' },
+            { label: '负载均衡器-02', value: 'lb-02' },
+            { label: '缓存服务器-Redis-01', value: 'cache-redis-01' },
+            { label: '缓存服务器-Redis-02', value: 'cache-redis-02' },
+          ],
         });
-      }, 200);
+      }, 300);
     });
   }
 
   return {
     getTrendData,
-    getDataSources,
     getOsData,
-    getDataSourceAttrs,
+    getInstanceList,
   };
 };
