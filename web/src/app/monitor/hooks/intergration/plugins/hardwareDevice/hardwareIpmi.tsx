@@ -71,9 +71,8 @@ export const useHardwareIpmiPlugin = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: ipmiCommonFormItems.getCommonFormItems(),
           initTableItems: {
             ip: null,
@@ -135,7 +134,6 @@ export const useHardwareIpmiPlugin = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const url = formData?.child?.content?.config?.servers?.[0] || '';
@@ -173,6 +171,11 @@ export const useHardwareIpmiPlugin = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

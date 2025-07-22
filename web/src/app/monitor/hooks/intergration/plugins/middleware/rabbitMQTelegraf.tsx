@@ -68,9 +68,8 @@ export const useRabbitMQTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: rabbitMQFormItems.getCommonFormItems(),
           initTableItems: {
             url: null,
@@ -122,7 +121,6 @@ export const useRabbitMQTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const url = formData?.child?.content?.config?.url || '';
@@ -166,6 +164,11 @@ export const useRabbitMQTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

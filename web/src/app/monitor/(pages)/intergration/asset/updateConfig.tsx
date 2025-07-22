@@ -51,9 +51,7 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
       setConfigForm(res);
       const plugins = configs.config[data.objName].plugins || {};
       const _PluginName = Object.keys(plugins).find((key) => {
-        const pluginItem = plugins[key]?.getPluginCfg({ mode: 'edit' })?.[
-          'edit'
-        ];
+        const pluginItem = plugins[key]?.getPluginCfg({ mode: 'edit' });
         return (
           pluginItem?.collect_type === data.collect_type &&
           (pluginItem?.config_type || []).includes(data.config_type)

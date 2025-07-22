@@ -109,9 +109,8 @@ export const usePostgresTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: postgresFormItems.getCommonFormItems(),
           initTableItems: {
             host: null,
@@ -186,7 +185,6 @@ export const usePostgresTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const address = formData?.child?.content?.config?.address || '';
@@ -225,6 +223,11 @@ export const usePostgresTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

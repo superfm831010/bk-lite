@@ -109,9 +109,8 @@ export const useMssqlTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: mssqlFormItems.getCommonFormItems(),
           initTableItems: {
             host: null,
@@ -186,7 +185,6 @@ export const useMssqlTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const server = formData?.child?.content?.config?.servers?.[0] || '';
@@ -226,6 +224,11 @@ export const useMssqlTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

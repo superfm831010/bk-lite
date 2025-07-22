@@ -61,9 +61,8 @@ export const useHostTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: hostFormItems.getCommonFormItems(),
           initTableItems: {},
           defaultForm: {
@@ -100,7 +99,6 @@ export const useHostTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const config = formData?.child?.content?.config || {};
@@ -132,7 +130,7 @@ export const useHostTelegraf = () => {
             };
           },
           getConfigText: (formData: { [key: string]: string | number }) => {
-            const configText:Record<string,string> = {
+            const configText: Record<string, string> = {
               cpu: `[[inputs.cpu]]
         percpu = true
         totalcpu = true
@@ -185,13 +183,10 @@ export const useHostTelegraf = () => {
     `,
             };
             const instanceId = formData.monitor_ip;
-            const metricType:any = formData.metric_type
-            const text = metricType.reduce(
-              (pre: string, cur: string) => {
-                return (pre += configText[cur]);
-              },
-              ''
-            );
+            const metricType: any = formData.metric_type;
+            const text = metricType.reduce((pre: string, cur: string) => {
+              return (pre += configText[cur]);
+            }, '');
             return replaceTemplate(text, {
               ...formData,
               instance_id: instanceId,
@@ -201,6 +196,11 @@ export const useHostTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

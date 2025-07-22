@@ -1,12 +1,12 @@
 import requests
-from apps.log.constants import VICTORIAMETRICS_HOST, VICTORIAMETRICS_USER, VICTORIAMETRICS_PWD
+from apps.log.constants import VICTORIALOGS_HOST, VICTORIALOGS_USER, VICTORIALOGS_PWD
 
 
 class VictoriaMetricsAPI:
     def __init__(self):
-        self.host = VICTORIAMETRICS_HOST
-        self.username = VICTORIAMETRICS_USER
-        self.password = VICTORIAMETRICS_PWD
+        self.host = VICTORIALOGS_HOST
+        self.username = VICTORIALOGS_USER
+        self.password = VICTORIALOGS_PWD
 
     def query(self, query, start, end, limit=10):
         data = {"query": query, "start": start, "end": end, "limit": limit}

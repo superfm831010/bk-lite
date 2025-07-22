@@ -68,9 +68,8 @@ export const useTomcatTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: activeMQFormItems.getCommonFormItems(),
           initTableItems: {
             url: null,
@@ -122,7 +121,6 @@ export const useTomcatTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const url = formData?.child?.content?.config?.url || '';
@@ -164,6 +162,11 @@ export const useTomcatTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

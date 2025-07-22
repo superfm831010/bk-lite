@@ -60,7 +60,7 @@ const Detail = () => {
 
   const renderPage: Record<string, React.ReactNode> = useMemo(() => ({
     anomaly: <AnomalyDetail />
-  }), [activeTap])
+  }), [activeTap]);
 
   return (
     <>

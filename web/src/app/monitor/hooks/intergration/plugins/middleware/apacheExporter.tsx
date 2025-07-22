@@ -90,9 +90,8 @@ export const useApacheExporter = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: null,
           initTableItems: {
             ENV_LISTEN_PORT: null,
@@ -168,7 +167,6 @@ export const useApacheExporter = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             return formData?.base?.env_config || {};
@@ -196,6 +194,11 @@ export const useApacheExporter = () => {
             return '--';
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };
