@@ -110,9 +110,7 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules
         model_id = request.data.get("model_id")
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
-        inst_name = request.data['instance_info']['inst_name']
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, can_do,
-                                                               cls_id)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_MODEL, cls_id, rules, model_id, can_do)
         if not permission:
             return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         inst = InstanceManage.instance_create(
