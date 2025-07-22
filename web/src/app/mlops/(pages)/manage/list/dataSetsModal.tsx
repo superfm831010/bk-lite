@@ -64,8 +64,7 @@ const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess }, ref
       onSuccess();
     } catch (e) {
       console.log(e)
-    }
-    finally {
+    } finally {
       setConfirmLoading(false);
     }
   };

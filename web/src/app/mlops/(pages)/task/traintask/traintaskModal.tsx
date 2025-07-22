@@ -172,7 +172,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
         train_data_id: formData?.train_data_id,
         val_data_id: formData?.val_data_id,
         test_data_id: formData?.test_data_id,
-      })
+      });
     } catch (e) {
       message.error(e as JointContent)
     } finally {
@@ -244,6 +244,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
         hyperopt_config,
         description: value.name || ''
       };
+      console.log(params);
       if (modalState.type === 'add') {
         await addAnomalyTrainTask(params);
       } else {

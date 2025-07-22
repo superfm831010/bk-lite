@@ -11,7 +11,7 @@ aiofiles==24.1.0
     # via sanic
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.18
+aiohttp==3.12.14
     # via alibabacloud-tea
 aiosignal==1.3.2
     # via aiohttp
@@ -543,7 +543,7 @@ pyyaml==6.0.2
     #   sanic-ext
 qingcloud-sdk==1.2.14
     # via -r ./requirements/requirements-extra.txt
-requests==2.32.3
+requests==2.32.4
     # via
     #   alibabacloud-tea
     #   cos-python-sdk-v5
@@ -627,11 +627,11 @@ tzdata==2025.2
     #   oslo-serialization
     #   oslo-utils
     #   pandas
-ujson==4.1.0
+ujson==5.4.0
     # via
     #   -r ./requirements/requirements-extra.txt
     #   sanic
-urllib3==1.26.20
+urllib3==2.5.0
     # via
     #   botocore
     #   requests

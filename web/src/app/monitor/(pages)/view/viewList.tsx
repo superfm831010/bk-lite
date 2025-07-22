@@ -30,7 +30,6 @@ import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
-import Permission from '@/components/permission';
 import { ListItem } from '@/types';
 import {
   OBJECT_DEFAULT_ICON,
@@ -105,14 +104,9 @@ const ViewList: React.FC<ViewListProps> = ({
           >
             {t('common.detail')}
           </Button>
-          <Permission
-            requiredPermissions={['Detail']}
-            instPermissions={record.permission}
-          >
-            <Button type="link" onClick={() => linkToDetial(record)}>
-              {t('monitor.views.dashboard')}
-            </Button>
-          </Permission>
+          <Button type="link" onClick={() => linkToDetial(record)}>
+            {t('monitor.views.dashboard')}
+          </Button>
         </>
       ),
     },

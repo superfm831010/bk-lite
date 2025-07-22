@@ -6,6 +6,7 @@ from rest_framework import serializers
 from rest_framework.fields import empty
 
 from apps.cmdb.models.collect_model import CollectModels, OidMapping
+from apps.cmdb.utils.base import get_cmdb_rules
 from apps.core.logger import cmdb_logger as logger
 
 
@@ -33,7 +34,7 @@ class CollectModelLIstSerializer(serializers.ModelSerializer):
             logger.error("规则格式话权限失败: {}".format(traceback.format_exc()))
 
     def set_permission_map(self, request):
-        rules = request.user.rules.get("cmdb", {}).get("normal", {}).get("task", {})
+        rules = get_cmdb_rules(request)
         for task_type, permission_data in rules.items():
             _map_data = {
                 "select_all": False,
