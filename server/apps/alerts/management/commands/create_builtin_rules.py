@@ -27,7 +27,7 @@ INIT_RULES = [
                 'target_value_field': 'level',
                 'target_value': 'warning',
                 'operator': '<=',
-                'aggregation_key': ['resource_type', 'resource_id', 'resource_name']
+                'aggregation_key': ['resource_type', 'resource_name']
             }
         ]
     },
@@ -53,7 +53,7 @@ INIT_RULES = [
                 'target_value_field': 'value',
                 'target_value': 0,  # 保持为数字类型
                 'operator': '==',
-                'aggregation_key': ['resource_id']
+                'aggregation_key': ['resource_type', 'resource_name']
             }
         ]
     },
@@ -79,7 +79,7 @@ INIT_RULES = [
                 'target_value_field': 'value',
                 'target_value': 0,
                 'operator': '==',
-                'aggregation_key': ['resource_type', 'resource_id', 'resource_name'],
+                'aggregation_key': ['resource_type', 'resource_name'],
                 # 新增：成功事件关闭会话的条件
                 'session_close': {
                     'type': 'session_close_condition',
@@ -92,7 +92,7 @@ INIT_RULES = [
                     'target_value': 1,  # 成功状态
                     'operator': '==',
                     'action': 'close_session',  # 关闭会话动作
-                    'aggregation_key': ['resource_type', 'resource_id', 'resource_name']
+                    'aggregation_key': ['resource_type', 'resource_name']
                 }
             }
         ]

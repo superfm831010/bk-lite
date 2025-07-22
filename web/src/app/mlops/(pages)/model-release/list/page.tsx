@@ -122,7 +122,7 @@ const ModelRelease = () => {
       setPagination((prev) => ({
         ...prev,
         total: count
-      }))
+      }));
     } catch (e) {
       console.log(e);
     } finally {

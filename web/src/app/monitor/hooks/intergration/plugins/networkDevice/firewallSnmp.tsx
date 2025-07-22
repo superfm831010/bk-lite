@@ -72,9 +72,8 @@ export const useFirewallSnmpPlugin = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: snmpCommonFormItems.getCommonFormItems(),
           initTableItems: {
             ip: null,
@@ -139,7 +138,6 @@ export const useFirewallSnmpPlugin = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const agent = formData?.child?.content?.config?.agents?.[0] || '';
@@ -242,6 +240,11 @@ export const useFirewallSnmpPlugin = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

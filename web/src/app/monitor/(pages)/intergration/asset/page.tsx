@@ -198,7 +198,6 @@ const Asset = () => {
         title: t('monitor.group'),
         dataIndex: 'organization',
         key: 'organization',
-        width: 160,
         render: (_, { organization }) => (
           <EllipsisWithTooltip
             className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
@@ -597,7 +596,7 @@ const Asset = () => {
           </div>
         </div>
         <CustomTable
-          scroll={{ y: 'calc(100vh - 320px)', x: 'calc(100vh - 480px)' }}
+          scroll={{ y: 'calc(100vh - 320px)', x: "max-content" }}
           columns={columns}
           dataSource={tableData}
           pagination={pagination}

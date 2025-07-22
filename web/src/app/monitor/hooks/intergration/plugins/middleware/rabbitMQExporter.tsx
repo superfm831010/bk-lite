@@ -111,9 +111,8 @@ export const useRabbitMQExporter = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: rabbitMQExporterFormItems.getCommonFormItems('auto'),
           initTableItems: {
             ENV_PUBLISH_PORT: null,
@@ -211,7 +210,6 @@ export const useRabbitMQExporter = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             return formData?.base?.env_config || {};
@@ -247,6 +245,11 @@ export const useRabbitMQExporter = () => {
             return '--';
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };
