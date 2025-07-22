@@ -21,7 +21,7 @@ def get_cmdb_module_data(module, child_module, page, page_size, group_id):
         queryset = [{"id": str(i['id']), "name": f"{i['model_id']}_{i['name']}"} for i in instances]
     elif module == PERMISSION_INSTANCES:
         instances, count = InstanceManage.instance_list(
-            user_groups=[group_id],  # 改为列表
+            user_groups=[{'id': int(group_id)}],  # 改为列表
             roles=[],  # 空列表
             model_id=child_module,  # 使用实际模型ID
             params=[],  # 空查询条件（或按需添加）
