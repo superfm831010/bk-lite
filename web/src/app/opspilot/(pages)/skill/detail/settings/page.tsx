@@ -51,7 +51,53 @@ const SkillSettingsPage: React.FC = () => {
   const [kmLlmModel, setKmLlmModel] = useState<number | null>(null);
 
   useEffect(() => {
+    const fetchFormData = async (knowledgeBases: KnowledgeBase[]) => {
+      try {
+        const data = await fetchSkillDetail(id);
+        form.setFieldsValue({
+          name: data.name,
+          group: data.team,
+          introduction: data.introduction,
+          llmModel: data.llm_model,
+          temperature: data.temperature || 0.7,
+          prompt: data.skill_prompt,
+          show_think: data.show_think,
+        });
+        const selected = llmModels.find(model => model.id === data.llm_model);
+        setIsDeepSeek(selected?.llm_model_type === 'deep-seek');
+        setChatHistoryEnabled(data.enable_conversation_history);
+        setRagEnabled(data.enable_rag);
+        setRagStrictMode(data.enable_rag_strict_mode);
+        setRagSourceStatus(data.enable_rag_knowledge_source);
+
+        setTemperature(data.temperature || 0.7);
+
+        const initialRagSources = data.rag_score_threshold.map((item: RagScoreThresholdItem) => {
+          const base = knowledgeBases.find((base) => base.id === Number(item.knowledge_base));
+          return base ? { id: base.id, name: base.name, introduction: base.introduction || '', score: item.score } : null;
+        }).filter(Boolean) as KnowledgeBaseRagSource[];
+        setRagSources(initialRagSources);
+        setQuantity(data.conversation_window_size !== undefined ? data.conversation_window_size : 10);
+
+        const initialSelectedKnowledgeBases = data.rag_score_threshold.map((item: RagScoreThresholdItem) => Number(item.knowledge_base));
+        setSelectedKnowledgeBases(initialSelectedKnowledgeBases);
+        setSelectedTools(data.tools);
+        setToolEnabled(!!data.tools.length);
+
+        setSkillType(data.skill_type);
+        setSkillPermissions(data.permissions || []);
+        
+        setEnableKmRoute(data.enable_km_route !== undefined ? data.enable_km_route : true);
+        setKmLlmModel(data.km_llm_model || data.llm_model);
+      } catch (error) {
+        console.error(t('common.fetchFailed'), error);
+      } finally {
+        setPageLoading(prev => ({ ...prev, formDataLoading: false }));
+      }
+    };
+
     const fetchInitialData = async () => {
+      if (!id) return;
       try {
         const [llmModelsData, knowledgeBasesData] = await Promise.all([
           fetchLlmModels(),
@@ -59,6 +105,7 @@ const SkillSettingsPage: React.FC = () => {
         ]);
         setLlmModels(llmModelsData);
         setKnowledgeBases(knowledgeBasesData);
+        fetchFormData(knowledgeBasesData);
       } catch (error) {
         console.error(t('common.fetchFailed'), error);
       } finally {
@@ -67,57 +114,6 @@ const SkillSettingsPage: React.FC = () => {
     };
 
     fetchInitialData();
-  }, []);
-
-  useEffect(() => {
-    const fetchFormData = async () => {
-      if (id) {
-        try {
-          const data = await fetchSkillDetail(id);
-          form.setFieldsValue({
-            name: data.name,
-            group: data.team,
-            introduction: data.introduction,
-            llmModel: data.llm_model,
-            temperature: data.temperature || 0.7,
-            prompt: data.skill_prompt,
-            show_think: data.show_think,
-          });
-          const selected = llmModels.find(model => model.id === data.llm_model);
-          setIsDeepSeek(selected?.llm_model_type === 'deep-seek');
-          setChatHistoryEnabled(data.enable_conversation_history);
-          setRagEnabled(data.enable_rag);
-          setRagStrictMode(data.enable_rag_strict_mode);
-          setRagSourceStatus(data.enable_rag_knowledge_source);
-
-          setTemperature(data.temperature || 0.7);
-
-          const initialRagSources = data.rag_score_threshold.map((item: RagScoreThresholdItem) => {
-            const base = knowledgeBases.find((base) => base.id === Number(item.knowledge_base));
-            return base ? { id: base.id, name: base.name, introduction: base.introduction || '', score: item.score } : null;
-          }).filter(Boolean) as KnowledgeBaseRagSource[];
-          setRagSources(initialRagSources);
-          setQuantity(data.conversation_window_size !== undefined ? data.conversation_window_size : 10);
-
-          const initialSelectedKnowledgeBases = data.rag_score_threshold.map((item: RagScoreThresholdItem) => Number(item.knowledge_base));
-          setSelectedKnowledgeBases(initialSelectedKnowledgeBases);
-          setSelectedTools(data.tools);
-          setToolEnabled(!!data.tools.length);
-
-          setSkillType(data.skill_type);
-          setSkillPermissions(data.permissions || []);
-          
-          setEnableKmRoute(data.enable_km_route !== undefined ? data.enable_km_route : true);
-          setKmLlmModel(data.km_llm_model || data.llm_model);
-        } catch (error) {
-          console.error(t('common.fetchFailed'), error);
-        } finally {
-          setPageLoading(prev => ({ ...prev, formDataLoading: false }));
-        }
-      }
-    };
-
-    fetchFormData();
   }, [id]);
 
   const allLoading = Object.values(pageLoading).some(loading => loading) || groupsLoading;
@@ -125,6 +121,14 @@ const SkillSettingsPage: React.FC = () => {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
+      if (ragEnabled && ragSources.length === 0) {
+        message.error(t('skill.ragKnowledgeBaseRequired'));
+        return;
+      }
+      if (showToolEnabled && selectedTools.length === 0) { 
+        message.error(t('skill.ragToolRequired'));
+        return;
+      }
       const ragScoreThreshold = ragSources.map((source) => ({
         knowledge_base: knowledgeBases.find(base => base.name === source.name)?.id,
         score: source.score
@@ -169,7 +173,7 @@ const SkillSettingsPage: React.FC = () => {
         knowledge_base: id,
         score: ragSources.find(base => base.id === id)?.score || 0.7,
       }));
-      
+
       const payload = {
         user_message: userMessage,
         llm_model: values.llmModel,
@@ -190,7 +194,7 @@ const SkillSettingsPage: React.FC = () => {
         enable_km_route: enableKmRoute,
         km_llm_model: enableKmRoute ? kmLlmModel : undefined,
       };
-      
+
       return {
         url: '/api/proxy/opspilot/model_provider_mgmt/llm/execute/?stream=1',
         payload

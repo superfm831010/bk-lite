@@ -234,7 +234,7 @@ const KnowledgeModifyPage = () => {
           const defaultConfig = {
             knowledge_source_type: type || 'file',
             knowledge_document_list: documentIds,
-            general_parse_chunk_size: 512,
+            general_parse_chunk_size: 2000,
             general_parse_chunk_overlap: 0,
             semantic_chunk_parse_embedding_model: null,
             chunk_type: 'fixed_size',
