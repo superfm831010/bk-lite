@@ -321,7 +321,7 @@ class RuleEngine:
 
         # 等级优先级映射
         level_priority = {'info': 3, 'warning': 2, 'error': 1, 'critical': 0}
-        threshold_priority = level_priority.get(target_value, 1)
+        threshold_priority = level_priority.get(target_value, 3)
 
         def condition(df: pd.DataFrame) -> Tuple[bool, List[List[str]]]:
             if df.empty:
@@ -339,8 +339,8 @@ class RuleEngine:
             if filtered_df.empty:
                 return False, []
 
-            # 等级映射
-            filtered_df['level_priority'] = filtered_df[target_value_field].map(level_priority).fillna(0)
+            # 做类型转换，确保 level 列是int类型
+            filtered_df['level_priority'] = filtered_df[target_value_field].astype(int)
 
             if operator == '>=':
                 result_df = filtered_df[filtered_df['level_priority'] >= threshold_priority]
