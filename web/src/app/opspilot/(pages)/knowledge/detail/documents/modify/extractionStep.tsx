@@ -111,7 +111,7 @@ const ExtractionStep: React.FC<{
     } else if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
       return {
         methods: ['fullText', 'worksheet', 'row'],
-        default: 'row',
+        default: 'fullText',
       };
     } else if (ext === 'pdf') {
       return {
