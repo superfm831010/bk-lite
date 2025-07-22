@@ -511,7 +511,7 @@ class SessionWindow(TimeInfo):
         # 使用多对多关系查询
         return self.events.filter(event_id__in=list(events.values_list("event_id", flat=True))).exists()
 
-    def extend_session(self, new_activity_time=None, events=[]):
+    def extend_session(self, new_activity_time=None):
         """
         延长会话活动时间
         
@@ -524,9 +524,6 @@ class SessionWindow(TimeInfo):
         Returns:
             bool: True表示成功延长，False表示因超过限制无法延长
         """
-        if self.check_has_events(events):
-            return False
-
         if new_activity_time is None:
             new_activity_time = timezone.now()
 
