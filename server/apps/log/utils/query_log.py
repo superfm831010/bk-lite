@@ -28,3 +28,17 @@ class VictoriaMetricsAPI:
         )
         response.raise_for_status()
         return response.json()
+
+    def tail(self, query):
+        # tail是一个长连接接口，用于实时获取日志数据
+        data = {"query": query}
+        with requests.post(
+                f"{self.host}/select/logsql/tail",
+                json=data,
+                auth=(self.username, self.password),
+                stream=True,  # Enable streaming
+        ) as response:
+            response.raise_for_status()
+            for line in response.iter_lines(decode_unicode=True):
+                if line:  # Process each line of the streamed response
+                    yield line
