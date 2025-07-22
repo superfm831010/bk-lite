@@ -100,9 +100,8 @@ export const useMinioBkpull = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: null,
           initTableItems: {
             host: null,
@@ -177,7 +176,6 @@ export const useMinioBkpull = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const url = formData?.child?.content?.config?.urls?.[0] || '';
@@ -202,6 +200,11 @@ export const useMinioBkpull = () => {
           },
           getConfigText: () => '--',
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

@@ -7,7 +7,7 @@ export const useObjectConfigInfo = () => {
     return (
       configs.config[objectName]?.plugins?.[pluginName]?.getPluginCfg({
         mode: 'auto',
-      })?.auto?.collect_type || '--'
+      })?.collect_type || '--'
     );
   };
   const getGroupIds = (objectName: string) => {

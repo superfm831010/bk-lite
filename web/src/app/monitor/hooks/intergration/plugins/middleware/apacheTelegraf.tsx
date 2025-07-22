@@ -61,9 +61,8 @@ export const useApacheTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: null,
           initTableItems: {
             url: null,
@@ -115,7 +114,6 @@ export const useApacheTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const url = formData?.child?.content?.config?.urls?.[0] || '';
@@ -155,6 +153,11 @@ export const useApacheTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

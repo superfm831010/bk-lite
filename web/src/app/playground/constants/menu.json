@@ -1,0 +1,27 @@
+{
+  "zh": [
+    {
+      "title": "开放平台",
+      "icon": "jiqiren2",
+      "url": "/playground/home",
+      "name": "playground",
+      "isNotMenuItem": true
+    },
+    {
+      "title": "能力管理",
+      "icon": "jiqiren2",
+      "url": "/playground/manage",
+      "name": "manage",
+      "isNotMenuItem": true
+    }
+  ],
+  "en": [
+    {
+      "title": "Console",
+      "icon": "jiqiren2",
+      "url": "/playground/home",
+      "name": "bot_list",
+      "isNotMenuItem": true
+    }
+  ]
+}

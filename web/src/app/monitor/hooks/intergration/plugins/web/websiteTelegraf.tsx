@@ -61,9 +61,8 @@ export const useWebsiteTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: null,
           initTableItems: {
             url: null,
@@ -115,7 +114,6 @@ export const useWebsiteTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const url = formData?.child?.content?.config?.urls?.[0] || '';
@@ -155,6 +153,11 @@ export const useWebsiteTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };
