@@ -265,6 +265,8 @@
     "tool": "Tool",
     "toolTip": "The tool is used to provide the skill with the ability to obtain external data or perform operations. The specific tool to be called is determined autonomously by the large model.",
     "selecteTool": "Selecte Tool",
+    "ragKnowledgeBaseRequired": "When RAG is enabled, a knowledge base must be selected.",
+    "ragToolRequired": "When RAG is enabled, a tool must be selected.",
     "settings": {
       "menu": "Setting",
       "title": "LLM Skill",

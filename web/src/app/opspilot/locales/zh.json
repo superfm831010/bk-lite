@@ -268,6 +268,8 @@
     "tool": "工具",
     "toolTip": "给智能体获取外部数据或者执行操作的能力，具体调用哪个工具，由大模型自主决定。",
     "selecteTool": "选择工具",
+    "ragKnowledgeBaseRequired": "开启RAG时必须选择知识库",
+    "ragToolRequired": "开启RAG时必须选择工具",
     "settings": {
       "menu": "设置",
       "title": "智能体",
