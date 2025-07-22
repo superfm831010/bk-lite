@@ -496,7 +496,7 @@ class InstanceViewSet(viewsets.ViewSet):
         rules = request.user.rules
         inst_ids = request.data
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
-        instances = InstanceManage.query_entity_by_ids(inst_ids)
+        instances = InstanceManage.query_entity_by_ids(list(inst_ids))
         inst_names = [inst["inst_name"] for inst in instances]
         permission = CmdbRulesFormatUtil.has_btch_permission(PERMISSION_INSTANCES, model_id, rules, inst_names, can_do,
                                                              cls_id)
@@ -577,14 +577,12 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_list-View")
     def create_or_update(self, request, model_id):
-        can_do = VIEW
+        can_do = OPERATE
         rules = request.user.rules
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules, cls_id)
-        if permission is not None:
-            for _, value in permission.items():
-                if can_do not in value:
-                    return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_MODEL, cls_id, rules, model_id, can_do)
+        if not permission:
+            return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         data = dict(
             model_id=model_id,
             created_by=request.user.username,
@@ -599,11 +597,9 @@ class InstanceViewSet(viewsets.ViewSet):
         can_do = VIEW
         rules = request.user.rules
         cls_id = ModelManage.search_model_info(model_id)["classification_id"]
-        permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, model_id, rules, cls_id)
-        if permission is not None:
-            for _, value in permission.items():
-                if can_do not in value:
-                    return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
+        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_MODEL, cls_id, rules, model_id, can_do)
+        if not permission:
+            return WebUtils.response_error("没有权限", status_code=status.HTTP_403_FORBIDDEN)
         result = InstanceManage.get_info(model_id, request.user.username)
         return WebUtils.response_success(result)
 
