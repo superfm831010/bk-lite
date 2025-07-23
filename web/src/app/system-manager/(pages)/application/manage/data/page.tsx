@@ -131,7 +131,7 @@ const createDefaultPermissionRule = (modules: string[], moduleConfigs?: any[]): 
         children.forEach(child => {
           if (!child.children || child.children.length === 0) {
             nestedStructure[child.name] = {
-              type: 'all',
+              type: 'specific',
               allPermissions: { view: true, operate: true },
               specificData: []
             };
@@ -146,7 +146,7 @@ const createDefaultPermissionRule = (modules: string[], moduleConfigs?: any[]): 
       defaultPermissionRule[module] = buildDefaultNestedStructure(moduleConfig.children);
     } else {
       defaultPermissionRule[module] = {
-        type: 'all',
+        type: 'specific',
         allPermissions: { view: true, operate: true },
         specificData: []
       };

@@ -459,8 +459,10 @@ const DocumentsPage: React.FC = () => {
     }));
   };
 
-  const fetchData = useCallback(async (text = '') => {
-    setLoading(true);
+  const fetchData = useCallback(async (text = '', skipLoading = false) => {
+    if (!skipLoading) {
+      setLoading(true);
+    }
     const { current, pageSize } = pagination;
     const params = {
       name: text,
@@ -477,10 +479,17 @@ const DocumentsPage: React.FC = () => {
         ...prev,
         total: res.count,
       }));
+
+      if (data.some((item: any) => item.train_status === 0)) {
+        const timer = setTimeout(() => fetchData(text, true), 10000);
+        return () => clearTimeout(timer);
+      }
     } catch {
       message.error(t('common.fetchFailed'));
     } finally {
-      setLoading(false);
+      if (!skipLoading) {
+        setLoading(false);
+      }
     }
   }, [pagination.current, pagination.pageSize, searchText, activeTabKey]);
 
