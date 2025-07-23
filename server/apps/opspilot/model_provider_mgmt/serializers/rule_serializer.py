@@ -1,5 +1,5 @@
+from apps.core.utils.serializers import UsernameSerializer
 from apps.opspilot.models import SkillRule
-from config.drf.serializers import UsernameSerializer
 
 
 class RuleSerializer(UsernameSerializer):

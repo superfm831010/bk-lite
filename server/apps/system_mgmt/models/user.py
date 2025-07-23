@@ -38,6 +38,7 @@ class Group(models.Model):
     description = models.TextField(null=True, blank=True)
     parent_id = models.IntegerField(default=0)
     external_id = models.CharField(max_length=100, null=True, blank=True)
+    # is_virtual = models.BooleanField(default=False, verbose_name="是否虚拟组")
 
     class Meta:
         unique_together = ("name", "parent_id")

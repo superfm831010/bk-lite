@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from rest_framework.fields import empty
 
+from apps.core.utils.serializers import UsernameSerializer
 from apps.opspilot.knowledge_mgmt.models import WebPageKnowledge
 from apps.opspilot.models import KnowledgeDocument
-from config.drf.serializers import UsernameSerializer
 
 
 class KnowledgeDocumentSerializer(UsernameSerializer):
