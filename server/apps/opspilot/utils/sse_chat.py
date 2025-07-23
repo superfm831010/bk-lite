@@ -298,6 +298,10 @@ def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=N
     url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_chatbot_workflow_sse"
     if params.get("skill_type") == SkillTypeChoices.BASIC_TOOL:
         url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_react_agent_sse"
+    elif params.get("skill_type") == SkillTypeChoices.PLAN_EXECUTE:
+        url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_plan_and_execute_agent_sse"
+    elif params.get("skill_type") == SkillTypeChoices.LATS:
+        url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_lats_agent_sse"
 
     final_content = ""
     total_prompt_tokens = 0

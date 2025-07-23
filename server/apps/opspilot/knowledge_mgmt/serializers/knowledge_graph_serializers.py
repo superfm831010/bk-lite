@@ -1,6 +1,6 @@
+from apps.core.utils.serializers import AuthSerializer
 from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph
 from apps.opspilot.tasks import create_graph, update_graph
-from config.drf.serializers import AuthSerializer
 
 
 class KnowledgeGraphSerializer(AuthSerializer):

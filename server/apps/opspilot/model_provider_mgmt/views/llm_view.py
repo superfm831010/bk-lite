@@ -70,7 +70,8 @@ class LLMViewSet(AuthViewSet):
     def update(self, request, *args, **kwargs):
         instance: LLMSkill = self.get_object()
         if not request.user.is_superuser:
-            has_permission = self.get_has_permission(request.user, instance)
+            current_team = request.COOKIES.get("current_team", "0")
+            has_permission = self.get_has_permission(request.user, instance, current_team)
             if not has_permission:
                 return JsonResponse(
                     {"result": False, "message": _("You do not have permission to update this instance")}
@@ -157,7 +158,8 @@ class LLMViewSet(AuthViewSet):
             # 获取客户端IP
             skill_obj = LLMSkill.objects.get(id=int(params["skill_id"]))
             if not request.user.is_superuser:
-                has_permission = self.get_has_permission(request.user, skill_obj)
+                current_team = request.COOKIES.get("current_team", "0")
+                has_permission = self.get_has_permission(request.user, skill_obj, current_team)
                 if not has_permission:
                     return self._create_error_stream_response(_("You do not have permission to update this agent."))
 

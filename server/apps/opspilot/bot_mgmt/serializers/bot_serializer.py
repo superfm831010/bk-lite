@@ -1,5 +1,5 @@
+from apps.core.utils.serializers import AuthSerializer, TeamSerializer
 from apps.opspilot.models import Bot
-from config.drf.serializers import AuthSerializer, TeamSerializer
 
 
 class BotSerializer(TeamSerializer, AuthSerializer):

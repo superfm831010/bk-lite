@@ -1,5 +1,5 @@
+from apps.core.utils.serializers import I18nSerializer
 from apps.system_mgmt.models import Channel, ChannelChoices
-from config.drf.serializers import I18nSerializer
 
 
 class ChannelSerializer(I18nSerializer):

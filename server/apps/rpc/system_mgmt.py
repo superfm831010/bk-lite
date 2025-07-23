@@ -171,3 +171,6 @@ class SystemMgmt(object):
 
     def get_login_module_domain_list(self):
         return self.client.run("get_login_module_domain_list")
+
+    def get_user_rules_by_app(self, group_id, username, app, module, child_module=""):
+        return self.client.run("get_user_rules_by_app", group_id, username, app, module, child_module)
