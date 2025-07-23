@@ -92,6 +92,9 @@ const AnnotationPage = () => {
   });
   const [tableScrollHeight, setTableScrollHeight] = useState<number>(400);
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [chartData, setChartData] = useState<AnnotationData[]>([]);
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // const tagsData = ['is_train_data', 'is_val_data', 'is_test_data'];
 
@@ -237,6 +240,87 @@ const AnnotationPage = () => {
       setTimeout(calculateTableHeight, 100);
     }
   }, [loadingState.loading, tableData.length, calculateTableHeight]);
+
+  // 监听侧边栏宽度变化，管理图表动画状态
+  useEffect(() => {
+    let observer: MutationObserver | null = null;
+    
+    const handleAnimationStart = () => {
+      if (!isAnimating) {
+        setIsAnimating(true);
+        // 动画开始时，将图表数据设为空并显示loading
+        setChartData([]);
+        setLoadingState(prev => ({ ...prev, chartLoading: true }));
+        
+        // 清除之前的定时器
+        if (animationTimeoutRef.current) {
+          clearTimeout(animationTimeoutRef.current);
+        }
+      }
+    };
+
+    const handleAnimationEnd = () => {
+      // 延迟确保动画完全结束
+      animationTimeoutRef.current = setTimeout(() => {
+        setIsAnimating(false);
+        // 动画结束时，恢复完整数据并关闭loading
+        setChartData(currentFileData);
+        setLoadingState(prev => ({ ...prev, chartLoading: false }));
+        // 重新计算表格高度
+        calculateTableHeight();
+      }, 100);
+    };
+
+    if (window.MutationObserver) {
+      observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+            const target = mutation.target as HTMLElement;
+            // 检查是否是侧边栏的宽度变化
+            if (target.tagName === 'ASIDE' && target.style.transition && target.style.transition.includes('width')) {
+              handleAnimationStart();
+              
+              // 监听过渡结束事件
+              const onTransitionEnd = (e: TransitionEvent) => {
+                if (e.propertyName === 'width') {
+                  handleAnimationEnd();
+                  target.removeEventListener('transitionend', onTransitionEnd);
+                }
+              };
+              
+              target.addEventListener('transitionend', onTransitionEnd);
+            }
+          }
+        });
+      });
+
+      // 观察侧边栏容器
+      const asideElement = document.querySelector('aside');
+      if (asideElement) {
+        observer.observe(asideElement, {
+          attributes: true,
+          attributeFilter: ['style'],
+          subtree: false
+        });
+      }
+    }
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, [currentFileData, calculateTableHeight, isAnimating]);
+
+  // 初始化图表数据
+  useEffect(() => {
+    if (!isAnimating) {
+      setChartData(currentFileData);
+    }
+  }, [currentFileData, isAnimating]);
 
   const handleLabelData = useCallback((data: any[], points: number[] | undefined) => {
     const _data = cloneDeep(data).map((item, index) => ({
@@ -442,6 +526,10 @@ const AnnotationPage = () => {
                   transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   height: `calc(100vh - 120px)`,
                   minHeight: `calc(100vh - 120px)`,
+                  // 启用硬件加速和优化渲染
+                  transform: 'translateZ(0)',
+                  willChange: 'width',
+                  backfaceVisibility: 'hidden',
                 }}
               >
                 <div className="w-[74%]">
@@ -449,15 +537,16 @@ const AnnotationPage = () => {
                     style={{
                       width: '100%',
                       height: '100%',
-                      // position: 'absolute',
-                      // top: 0,
-                      // left: 0,
-                      // transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      // 在动画期间禁用pointer events提升性能
+                      pointerEvents: isAnimating ? 'none' : 'auto',
+                      // 启用硬件加速
+                      transform: 'translateZ(0)',
+                      backfaceVisibility: 'hidden',
                     }}
                   >
                     <LineChart
                       key="main-line-chart"
-                      data={currentFileData}
+                      data={chartData}
                       timeline={timeline}
                       showDimensionTable
                       showDimensionFilter
@@ -489,6 +578,11 @@ const AnnotationPage = () => {
                     transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     display: 'flex',
                     flexDirection: 'column',
+                    // 在动画期间禁用pointer events提升性能
+                    pointerEvents: isAnimating ? 'none' : 'auto',
+                    // 启用硬件加速
+                    transform: 'translateZ(0)',
+                    backfaceVisibility: 'hidden',
                   }}>
                     <CustomTable
                       virtual
