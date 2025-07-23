@@ -1,12 +1,13 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { Input, message, Modal, Tree, Button, Spin, Popconfirm, Dropdown, Menu, Form } from 'antd';
+import { Input, message, Modal, Tree, Button, Spin, Popconfirm, Dropdown, Menu, Form, Tooltip } from 'antd';
 import type { DataNode as TreeDataNode } from 'antd/lib/tree';
 import { ColumnsType } from 'antd/es/table';
 import TopSection from '@/components/top-section';
 import UserModal, { ModalRef } from './userModal';
 import PasswordModal, { PasswordModalRef } from '@/app/system-manager/components/user/passwordModal';
 import { useTranslation } from '@/utils/i18n';
+import { useClientData } from '@/context/client';
 import { getRandomColor } from '@/app/system-manager/utils';
 import CustomTable from '@/components/custom-table';
 import { useUserApi } from '@/app/system-manager/api/user/index';
@@ -19,6 +20,7 @@ import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import OperateModal from '@/components/operate-modal';
 import PermissionWrapper from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import Icon from '@/components/icon';
 
 interface ExtendedTreeDataNode extends TreeDataNode {
   hasAuth?: boolean;
@@ -49,6 +51,7 @@ const User: React.FC = () => {
   const [renameGroupLoading, setRenameGroupLoading] = useState(false);
   const [renameGroupKey, setRenameGroupKey] = useState<number | null>(null);
   const renameGroupFormRef = useRef<any>(null);
+  const { clientData } = useClientData();
 
   const userModalRef = useRef<ModalRef>(null);
   const passwordModalRef = useRef<PasswordModalRef>(null);
@@ -57,6 +60,9 @@ const User: React.FC = () => {
   const { confirm } = Modal;
   const { getUsersList, getOrgTree, deleteUser } = useUserApi();
   const { addTeamData, updateGroup, deleteTeam } = useGroupApi();
+
+  // Add a map to convert app names to icons
+  const appIconMap = new Map(clientData.map((item) => [item.name, item.icon]));
 
   const columns: ColumnsType<UserDataType> = [
     {
@@ -88,6 +94,65 @@ const User: React.FC = () => {
       title: t('system.user.table.email'),
       dataIndex: 'email',
       width: 185,
+    },
+    {
+      title: t('system.user.table.role'),
+      dataIndex: 'roles',
+      width: 200,
+      render: (roles: string[]) => {
+        const groupedRoles = (roles || []).reduce((acc: Record<string, string[]>, role: string) => {
+          const [appName, roleName] = [role.split('-').slice(0, -1).join('-'), role.split('-').slice(-1)[0]];
+          if (!acc[appName]) acc[appName] = [];
+          acc[appName].push(roleName);
+          return acc;
+        }, {});
+
+        const appEntries = Object.entries(groupedRoles);
+        const visibleApps = appEntries.slice(0, 2);
+        const hiddenApps = appEntries.slice(2);
+
+        return (
+          <div className="flex flex-wrap gap-2">
+            {visibleApps.map(([appName, roleNames]) => (
+              <div key={appName} className="flex items-center gap-1 rounded-xl border px-2 py-1">
+                {appIconMap.get(appName) && (
+                  <Tooltip title={appName} placement="top">
+                    <div>
+                      <Icon type={appName} className="w-4 h-4" />
+                    </div>
+                  </Tooltip>
+                )}
+                <span className="text-xs text-[var(--color-text-3)]">{roleNames.join(', ')}</span>
+              </div>
+            ))}
+            {hiddenApps.length > 0 && (
+              <Dropdown
+                overlay={
+                  <Menu>
+                    {hiddenApps.map(([appName, roleNames]) => (
+                      <Menu.Item key={appName}>
+                        <div className="flex items-center gap-1">
+                          {appIconMap.get(appName) && (
+                            <Tooltip title={appName} placement="top" zIndex={10000}>
+                              <div>
+                                <Icon type={appName} className="w-4 h-4" />
+                              </div>
+                            </Tooltip>
+                          )}
+                          <span>{roleNames.join(', ')}</span>
+                        </div>
+                      </Menu.Item>
+                    ))}
+                  </Menu>
+                }
+                trigger={["click"]}
+              >
+                <span className="cursor-pointer text-blue-500 ml-1">...</span>
+              </Dropdown>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: t('common.actions'),
@@ -134,6 +199,7 @@ const User: React.FC = () => {
         name: item.display_name,
         email: item.email,
         role: item.role,
+        roles: item.roles || [],
       }));
       setTableData(data);
       setTotal(res.count);

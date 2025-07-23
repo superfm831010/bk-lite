@@ -26,20 +26,28 @@ const ProChatComponentWrapper: React.FC<ChatComponentProps> = ({ initialChats, c
     setLoading(true);
 
     try {
-      const data = await fetchLogDetails(post, conversationId, page + 1);
-      if (data.length === 0 || count <= messages.length) {
+      const nextPage = page + 1;
+      const data = await fetchLogDetails(post, conversationId, nextPage);
+      
+      if (data.length === 0) {
         setHasMore(false);
       } else {
         const newMessages = await createConversation(data, get);
-        setMessages((prevMessages) => [...prevMessages, ...newMessages]);
-        setPage((prevPage) => prevPage + 1);
+        setMessages((prevMessages) => {
+          const updatedMessages = [...prevMessages, ...newMessages];
+          if (updatedMessages.length >= count) {
+            setHasMore(false);
+          }
+          return updatedMessages;
+        });
+        setPage(nextPage);
       }
     } catch (error) {
       console.error('Error fetching more data:', error);
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, page, conversationId, post, count, messages]);
+  }, [loading, hasMore, page, conversationId, count]);
 
   const handleScroll = useCallback(throttle(() => {
     const scrollElement = proChatContainerRef.current?.querySelector('.chat-content-wrapper') as HTMLDivElement;
@@ -49,13 +57,14 @@ const ProChatComponentWrapper: React.FC<ChatComponentProps> = ({ initialChats, c
     if (scrollTop + clientHeight >= scrollHeight - 300) {
       fetchMoreData();
     }
-  }, 200), [fetchMoreData, hasMore, loading]);
+  }, 200), [loading, hasMore]);
 
   useEffect(() => {
-    if (page === 1) {
-      fetchMoreData();
-    }
-  }, [fetchMoreData, page]);
+    setMessages(initialChats);
+    setPage(1);
+    setHasMore(initialChats.length < count);
+    setLoading(false);
+  }, [initialChats, count]);
 
   useEffect(() => {
     const proChatContainer = proChatContainerRef.current;
@@ -74,7 +83,11 @@ const ProChatComponentWrapper: React.FC<ChatComponentProps> = ({ initialChats, c
 
   return (
     <div className={`rounded-lg h-full ${styles.proChatDetail}`} ref={proChatContainerRef}>
-      <CustomChat initialMessages={messages} showMarkOnly={true} mode='preview' />
+      <CustomChat 
+        initialMessages={messages} 
+        showMarkOnly={true} 
+        mode='preview' 
+      />
       {loading && <div className='flex justify-center items-center'><Spin /></div>}
     </div>
   );

@@ -63,37 +63,45 @@ export const useHostConfig = () => {
 
 ```typescript
 export const useHostTelegraf = () => {
+  const pluginConfig = {
+    collect_type: 'host', // 采集类型
+    config_type: ['cpu', 'disk'], // 配置类型
+    collector: 'Telegraf', // 采集器
+    instance_type: 'os', // 实例类型
+    object_name: 'Host', // 对象名称
+  };
   return {
-    getPluginCfg: (extra) => ({
-      // 自动配置模式
-      auto: {
-        collect_type: 'host', // 采集类型
-        config_type: ['cpu', 'disk'], // 配置类型
-        collector: 'Telegraf', // 采集器
-        instance_type: 'os', // 实例类型
-        object_name: 'Host', // 对象名称
-        formItems: [], // 表单项
-        initTableItems: {}, // 表格初始项
-        defaultForm: {}, // 默认表单值
-        columns: [], // 表格列配置
-        getParams: () => {}, // 获取请求参数方法
-      },
+    getPluginCfg: (extra) => {
+      const pluginConfig = {
+        // 自动配置模式
+        auto: {
+          formItems: [], // 表单项
+          initTableItems: {}, // 表格初始项
+          defaultForm: {}, // 默认表单值
+          columns: [], // 表格列配置
+          getParams: () => {}, // 获取请求参数方法
+        },
 
-      // 编辑模式
-      edit: {
-        formItems: [], // 表单项
-        getDefaultForm: () => {}, // 获取默认表单值方法
-        getParams: () => {}, // 获取请求参数的方法
-      },
+        // 编辑模式
+        edit: {
+          formItems: [], // 表单项
+          getDefaultForm: () => {}, // 获取默认表单值方法
+          getParams: () => {}, // 获取请求参数的方法
+        },
 
-      // 手动配置模式（该功能暂时隐藏）
-      manual: {
-        defaultForm: {}, // 默认表单值
-        formItems: [], // 表单项
-        getParams: () => {}, // 获取请求参数的方法
-        getConfigText: () => {}, // 获取生成的配置文本方法
-      },
-    }),
+        // 手动配置模式（该功能暂时隐藏）
+        manual: {
+          defaultForm: {}, // 默认表单值
+          formItems: [], // 表单项
+          getParams: () => {}, // 获取请求参数的方法
+          getConfigText: () => {}, // 获取生成的配置文本方法
+        },
+      };
+      return {
+        ...pluginConfig, // 公共的配置参数
+        ...config[extra.mode], // 指定模式下的配置
+      };
+    },
   };
 };
 ```
@@ -176,27 +184,33 @@ export const useHostTelegraf = () => {
   const hostFormItems = useHostFormItems();
 
   return {
-    getPluginCfg: (extra) => ({
-      auto: {
-        // 自动配置使用公共表单
-        formItems: hostFormItems.getCommonFormItems(),
-        // ... 其他配置
-      },
+    getPluginCfg: (extra) => {
+      const config = {
+        auto: {
+          // 自动配置使用公共表单
+          formItems: hostFormItems.getCommonFormItems(),
+          // ... 其他配置
+        },
 
-      edit: {
-        // 编辑模式使用公共表单，并禁用某些项
-        formItems: hostFormItems.getCommonFormItems({
-          metric_type: true,
-        }),
-        // ... 其他配置
-      },
+        edit: {
+          // 编辑模式使用公共表单，并禁用某些项
+          formItems: hostFormItems.getCommonFormItems({
+            metric_type: true,
+          }),
+          // ... 其他配置
+        },
 
-      manual: {
-        // 手动配置使用公共表单
-        formItems: hostFormItems.getCommonFormItems(),
-        // ... 其他配置
-      },
-    }),
+        manual: {
+          // 手动配置使用公共表单
+          formItems: hostFormItems.getCommonFormItems(),
+          // ... 其他配置
+        },
+      };
+      return {
+        // ...公共的配置参数
+        ...config[extra.mode], // 指定模式下的配置
+      };
+    },
   };
 };
 ```

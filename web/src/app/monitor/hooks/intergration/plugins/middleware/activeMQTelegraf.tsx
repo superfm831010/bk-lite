@@ -68,9 +68,8 @@ export const useActiveMQTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: activeMQFormItems.getCommonFormItems(),
           initTableItems: {
             url: null,
@@ -122,7 +121,6 @@ export const useActiveMQTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const url = formData?.child?.content?.config?.url || '';
@@ -166,6 +164,11 @@ export const useActiveMQTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, ReactNode } from 'react';
+import React, { useState, useCallback, ReactNode, useEffect } from 'react';
 import { Popconfirm, Button, Tooltip, Flex, ButtonProps } from 'antd';
 import { FullscreenOutlined, FullscreenExitOutlined, SendOutlined } from '@ant-design/icons';
 import { Bubble, Sender } from '@ant-design/x';
@@ -45,6 +45,12 @@ const CustomChat: React.FC<CustomChatProps> = ({ handleSendMessage, showMarkOnly
   const [messages, setMessages] = useState<CustomChatMessage[]>(initialMessages.length ? initialMessages : []);
   const [annotationModalVisible, setAnnotationModalVisible] = useState(false);
   const [annotation, setAnnotation] = useState<Annotation | null>(null);
+
+  useEffect(() => {
+    if (initialMessages.length > 0) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages]);
 
   const handleFullscreenToggle = () => {
     setIsFullscreen(!isFullscreen);

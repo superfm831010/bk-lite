@@ -114,7 +114,10 @@ const Associations = () => {
       key: 'action',
       render: (_, record) => (
         <>
-          <PermissionWrapper requiredPermissions={['Delete']}>
+          <PermissionWrapper
+            requiredPermissions={['Delete']}
+            instPermissions={record.permission}
+          >
             <Button
               type="link"
               disabled={!isAdmin && record.is_pre}
@@ -258,7 +261,7 @@ const Associations = () => {
             />
           </div>
           <div className="right-side">
-            <PermissionWrapper requiredPermissions={['Add']}>
+            <PermissionWrapper requiredPermissions={['Edit Model']}>
               <Button
                 type="primary"
                 className="mr-[8px]"

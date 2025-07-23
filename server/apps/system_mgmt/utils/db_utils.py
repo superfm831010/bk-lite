@@ -1,3 +1,5 @@
+import os
+
 from django.db import connection
 
 from apps.core.logger import system_mgmt_logger as logger
@@ -5,9 +7,9 @@ from apps.core.logger import system_mgmt_logger as logger
 
 class SQLExecute(object):
     @staticmethod
-    def execute_sql(sql, args, db_name="keycloak"):
+    def execute_sql(sql, args):
         db_config = connection.get_connection_params()
-        db_config["dbname"] = db_name
+        db_config["dbname"] = os.getenv("DB_NAME", "bklite")
         sql_connection = connection.get_new_connection(db_config)
         cursor = sql_connection.cursor()
         try:

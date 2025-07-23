@@ -131,9 +131,8 @@ export const useMysqlExporter = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: mysqlExporterFormItems.getCommonFormItems('auto'),
           initTableItems: {
             ENV_LISTEN_PORT: null,
@@ -232,7 +231,6 @@ export const useMysqlExporter = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             return formData?.base?.env_config || {};
@@ -266,6 +264,11 @@ export const useMysqlExporter = () => {
             return '--';
           },
         },
+      };
+      
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

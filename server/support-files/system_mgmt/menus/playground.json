@@ -2,8 +2,8 @@
   "client_id": "playground",
   "name": "Playground",
   "url": "/playground",
-  "description": "",
-  "icon": "",
+  "description": "Users can experience relevant capabilities here, including AIOps model testing, intelligent agent usage, and more.",
+  "icon": "tiyanzhongtai",
   "menus": [
     {
       "name": "Categories",

@@ -58,9 +58,8 @@ export const useTcpTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: tcpFormItems.getCommonFormItems(),
           initTableItems: {},
           defaultForm: {},
@@ -98,7 +97,6 @@ export const useTcpTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const config = formData?.child?.content?.config || {};
@@ -146,6 +144,11 @@ export const useTcpTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

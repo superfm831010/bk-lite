@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from apps.core.utils.viewset_utils import MaintainerViewSet
 from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph
 from apps.opspilot.knowledge_mgmt.serializers.knowledge_graph_serializers import KnowledgeGraphSerializer
+from apps.opspilot.tasks import rebuild_graph_community_by_instance
 from apps.opspilot.utils.graph_utils import GraphUtils
 
 
@@ -49,9 +50,7 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
         if not graph_obj:
             return JsonResponse({"result": False, "message": "Knowledge graph not found."}, status=404)
         try:
-            res = GraphUtils.rebuild_graph_community(graph_obj)
-            if not res["result"]:
-                return JsonResponse({"result": False, "message": res["message"]})
+            rebuild_graph_community_by_instance.delay(graph_obj.id)
             return JsonResponse({"result": True})
         except Exception as e:
             return JsonResponse({"result": False, "message": str(e)})

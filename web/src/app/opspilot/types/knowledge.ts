@@ -111,6 +111,7 @@ export interface GraphEdge {
   target_name?: string;
   source_id?: number;
   target_id?: number;
+  fact?: string | null;
 }
 
 export interface GraphData {

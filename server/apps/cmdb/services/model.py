@@ -70,20 +70,27 @@ class ModelManage(object):
         model_id = data.pop("model_id", "")  # 不能更新model_id
         with Neo4jClient() as ag:
             exist_items, _ = ag.query_entity(MODEL, [{"field": "model_id", "type": "str<>", "value": model_id}])
+            # 排除当前正在更新的模型，避免自己和自己比较
+            exist_items = [i for i in exist_items if i["_id"] != id]
             model = ag.set_entity_properties(MODEL, [id], data, UPDATE_MODEL_CHECK_ATTR_MAP, exist_items)
         return model[0]
 
     @staticmethod
-    def search_model(language: str = "en", order_type: str = "ASC", order: str = "id"):
+    def search_model(language: str = "en", order_type: str = "ASC", order: str = "id", classification_id: str = None):
         """
         查询模型
         Args:
             language: 语言，默认英语
             order_type: 排序方式，asc升序/desc降序
             order: 排序字段，默认order_id
+            classification_id: 分类ID，可选，用于过滤特定分类下的模型
         """
+        query_conditions = []
+        if classification_id:
+            query_conditions.append({"field": "classification_id", "type": "str=", "value": classification_id})
+
         with Neo4jClient() as ag:
-            models, _ = ag.query_entity(MODEL, [], order=order, order_type=order_type)
+            models, _ = ag.query_entity(MODEL, query_conditions, order=order, order_type=order_type)
 
         lan = SettingLanguage(language)
 

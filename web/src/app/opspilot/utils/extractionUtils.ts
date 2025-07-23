@@ -4,7 +4,7 @@ export const getDefaultExtractionMethod = (extension: string): string => {
   if (ext === 'docx' || ext === 'doc') {
     return 'chapter';
   } else if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
-    return 'row';
+    return 'fullText';
   } else if (ext === 'pdf') {
     return 'page';
   } else {

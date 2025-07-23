@@ -1,4 +1,5 @@
 import json
+import time
 
 import requests
 from celery import shared_task
@@ -6,7 +7,7 @@ from django.conf import settings
 from tqdm import tqdm
 
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.knowledge_mgmt.models import QAPairs
+from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph, QAPairs
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
@@ -14,6 +15,7 @@ from apps.opspilot.model_provider_mgmt.models import LLMModel
 from apps.opspilot.models import FileKnowledge, KnowledgeBase, KnowledgeDocument, ManualKnowledge, WebPageKnowledge
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 from apps.opspilot.utils.chunk_helper import ChunkHelper
+from apps.opspilot.utils.graph_utils import GraphUtils
 
 
 @shared_task
@@ -252,8 +254,7 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
             ChunkHelper.create_qa_pairs(res["message"], i, es_index, embed_config, embed_model_name, qa_pairs_obj.id)
         task_obj.train_progress += train_progress
         task_obj.save()
-    task_obj.train_progress = 100
-    task_obj.save()
+    task_obj.delete()
 
 
 def get_qa_content(qa_pairs_obj: QAPairs, es_index):
@@ -277,3 +278,208 @@ def get_qa_content(qa_pairs_obj: QAPairs, es_index):
             }
         )
     return return_data
+
+
+@shared_task
+def rebuild_graph_community_by_instance(instance_id):
+    graph_obj = KnowledgeGraph.objects.get(id=instance_id)
+    res = GraphUtils.rebuild_graph_community(graph_obj)
+    if not res["result"]:
+        logger.error("Failed to rebuild graph community: {}".format(res["message"]))
+    logger.info("Graph community rebuild completed for instance ID: {}".format(instance_id))
+
+
+@shared_task
+def create_graph(instance_id):
+    logger.info("Start creating graph for instance ID: {}".format(instance_id))
+    instance = KnowledgeGraph.objects.get(id=instance_id)
+    res = GraphUtils.create_graph(instance)
+    if not res["result"]:
+        instance.delete()
+        logger.error("Failed to create graph: {}".format(res["message"]))
+    else:
+        logger.info("Graph created completed: {}".format(instance.name))
+
+
+@shared_task
+def update_graph(instance_id, old_doc_list):
+    logger.info("Start updating graph for instance ID: {}".format(instance_id))
+    instance = KnowledgeGraph.objects.get(id=instance_id)
+    res = GraphUtils.update_graph(instance, old_doc_list)
+    if not res["result"]:
+        logger.error("Failed to update graph: {}".format(res["message"]))
+    else:
+        logger.info("Graph updated completed: {}".format(instance.name))
+
+
+@shared_task
+def create_qa_pairs_by_json(file_data, knowledge_base_id, username, domain):
+    """
+    通过JSON数据批量创建问答对
+
+    Args:
+        file_data: 包含问答对数据的JSON列表，每个元素包含instruction和output字段
+        knowledge_base_id: 知识库ID
+        username: 创建用户名
+        domain: 域名
+    """
+    # 获取知识库对象
+    knowledge_base = KnowledgeBase.objects.filter(id=knowledge_base_id).first()
+    if not knowledge_base:
+        return
+
+    # 初始化任务和问答对对象
+    task_obj, qa_pairs_list = _initialize_qa_task(file_data, knowledge_base_id, username, domain)
+
+    # 批量处理问答对
+    _process_qa_pairs_batch(qa_pairs_list, file_data, knowledge_base, task_obj)
+
+    # 清理任务对象
+    task_obj.delete()
+    logger.info("批量创建问答对任务完成")
+
+
+def _initialize_qa_task(file_data, knowledge_base_id, username, domain):
+    """初始化任务和问答对对象"""
+    task_name = list(file_data.keys())[0]
+    qa_pairs_list = []
+    qa_pairs_id_list = []
+
+    # 创建问答对对象
+    for qa_name in file_data.keys():
+        qa_pairs = create_qa_pairs_task(knowledge_base_id, qa_name)
+        if qa_pairs.id not in qa_pairs_id_list:
+            qa_pairs_list.append(qa_pairs)
+            qa_pairs_id_list.append(qa_pairs.id)
+
+    # 创建任务跟踪对象
+    task_obj = KnowledgeTask.objects.create(
+        created_by=username,
+        domain=domain,
+        knowledge_base_id=knowledge_base_id,
+        task_name=task_name,
+        knowledge_ids=qa_pairs_id_list,
+        train_progress=0,
+    )
+
+    return task_obj, qa_pairs_list
+
+
+def _process_qa_pairs_batch(qa_pairs_list, file_data, knowledge_base, task_obj):
+    """批量处理问答对数据"""
+    url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
+    headers = ChatServerHelper.get_chat_server_header()
+    kwargs = set_import_kwargs(knowledge_base)
+    train_progress = round(float(1 / len(qa_pairs_list)) * 100, 2)
+
+    for qa_pairs in qa_pairs_list:
+        qa_json = file_data[qa_pairs.name]
+        success_count = _process_single_qa_pairs(qa_pairs, qa_json, kwargs, url, headers)
+
+        # 更新问答对数量和任务进度
+        qa_pairs.qa_count += success_count
+        qa_pairs.save()
+        task_obj.train_progress += train_progress
+        task_obj.save()
+
+        logger.info(f"批量创建问答对完成: {qa_pairs.name}, 总数: {len(qa_json)}, 成功: {success_count}")
+
+
+def _process_single_qa_pairs(qa_pairs, qa_json, kwargs, url, headers):
+    """处理单个问答对集合"""
+    metadata = {
+        "enabled": True,
+        "base_chunk_id": "",
+        "qa_pairs_id": str(qa_pairs.id),
+        "is_doc": "0",
+    }
+
+    success_count = 0
+    error_count = 0
+
+    logger.info(f"开始处理问答对数据: {qa_pairs.name}")
+    for index, qa_item in enumerate(tqdm(qa_json)):
+        result = _create_single_qa_item(qa_item, index, kwargs, metadata, url, headers)
+        if result is None:
+            continue
+        elif result:
+            success_count += 1
+        else:
+            error_count += 1
+        # 每10个记录输出一次进度日志
+        if (index + 1) % 10 == 0:
+            logger.info(f"已处理 {index + 1}/{len(qa_json)} 个问答对，成功: {success_count}, 失败: {error_count}")
+
+    return success_count
+
+
+def _create_single_qa_item(qa_item, index, kwargs, metadata, url, headers):
+    """创建单个问答项"""
+    if not qa_item["instruction"]:
+        logger.warning(f"跳过空instruction，索引: {index}")
+        return None
+
+    # 构建请求参数
+    params = dict(kwargs, **{"content": qa_item["instruction"]})
+    params["metadata"] = json.dumps(
+        dict(metadata, **{"qa_question": qa_item["instruction"], "qa_answer": qa_item["output"]})
+    )
+
+    # 尝试创建问答对，带重试机制
+    return _send_qa_request_with_retry(params, url, headers, index)
+
+
+def _send_qa_request_with_retry(params, url, headers, index):
+    """发送问答对创建请求，带重试机制"""
+    try:
+        res = requests.post(url, headers=headers, data=params, verify=False).json()
+        if res.get("status") != "success":
+            raise Exception(f"创建问答对失败: {res['message']}")
+    except Exception as e:
+        logger.warning(f"第一次请求失败，准备重试。索引: {index}, 错误: {str(e)}")
+        # 重试机制：等待5秒后重试
+        time.sleep(5)
+        try:
+            res = requests.post(url, headers=headers, data=params, verify=False).json()
+            if res.get("status") != "success":
+                raise Exception(f"重试后仍然失败: {res['message']}")
+            logger.info(f"重试成功，索引: {index}")
+        except Exception as retry_e:
+            logger.error(f"创建问答对失败，索引: {index}, 错误: {str(retry_e)}")
+            if hasattr(retry_e, "response"):
+                logger.error(f"响应内容: {retry_e.response}")
+            return False
+    return True
+
+
+def create_qa_pairs_task(knowledge_base_id, qa_name):
+    # 创建或获取问答对对象
+    qa_pairs, created = QAPairs.objects.get_or_create(
+        name=qa_name,
+        knowledge_base_id=knowledge_base_id,
+        document_id=0,
+    )
+    logger.info(f"问答对对象{'创建' if created else '获取'}成功: {qa_pairs.name}")
+    return qa_pairs
+
+
+def set_import_kwargs(knowledge_base):
+    embed_config = knowledge_base.embed_model.decrypted_embed_config
+    embed_model_name = knowledge_base.embed_model.name
+    kwargs = {
+        "knowledge_base_id": knowledge_base.knowledge_index_name(),
+        "knowledge_id": "0",
+        "embed_model_base_url": embed_config.get("base_url", ""),
+        "embed_model_api_key": embed_config.get("api_key", "") or " ",
+        "embed_model_name": embed_config.get("model", embed_model_name),
+        "chunk_mode": "full",
+        "chunk_size": 9999,
+        "chunk_overlap": 128,
+        "load_mode": "full",
+        "semantic_chunk_model_base_url": [],
+        "semantic_chunk_model_api_key": "",
+        "semantic_chunk_model": "",
+        "preview": "false",
+    }
+
+    return kwargs
