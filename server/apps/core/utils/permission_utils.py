@@ -12,9 +12,6 @@ def get_permission_rules(user, current_team, app_name, permission_key):
     client = SystemMgmt()
     try:
         app_name = app_name_map.get(app_name, app_name)
-        user_rules = getattr(user, "rules", {}).get(app_name, {})
-        if not isinstance(user_rules, dict):
-            return {}, {}
         module = permission_key
         child_module = ""
         if "." in permission_key:

@@ -106,9 +106,10 @@ class AuthViewSet(MaintainerViewSet):
             if hasattr(self, "permission_key"):
                 app_name = self._get_app_name()
                 permission_data = get_permission_rules(user, current_team, app_name, self.permission_key)
-                instance_ids = [i["id"] for i in permission_data["instance"]]
-                team = permission_data["team"]
-                query |= Q(id__in=instance_ids)
+                instance_ids = [i["id"] for i in permission_data.get("instance", [])]
+                team = permission_data.get("team", [])
+                if instance_ids:
+                    query |= Q(id__in=instance_ids)
                 for i in team:
                     query |= Q(team__contains=int(i))
             queryset = queryset.filter(query)

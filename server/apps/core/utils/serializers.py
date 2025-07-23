@@ -58,8 +58,8 @@ class AuthSerializer(UsernameSerializer):
         current_team = request.COOKIES.get("current_team", "0")
         app_name = self.get_app_name()
         permission_rules = get_permission_rules(request.user, current_team, app_name, self.permission_key)
-        self.auth_team = permission_rules["team"]
-        self.rule_map = {int(i["id"]): i["permission"] for i in permission_rules["instance"]}
+        self.auth_team = permission_rules.get("team", [])
+        self.rule_map = {int(i["id"]): i["permission"] for i in permission_rules.get("instance", [])}
 
     def get_app_name(self):
         """获取当前序列化器所属的应用名称"""
