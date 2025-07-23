@@ -32,6 +32,17 @@ class ModelViewSet(viewsets.ViewSet):
         if not has_permission:
             return WebUtils.response_error("抱歉！您没有此模型的权限", status_code=status.HTTP_403_FORBIDDEN)
 
+        model_id_list, classification_id_list = CmdbRulesFormatUtil.get_rules_classification_id_list(rules=rules,
+                                                                                                     classification_id=classification_id)
+        if classification_id in classification_id_list or model_id in model_id_list:
+            model_permission = [OPERATE, VIEW]
+        else:
+            if not model_id_list and not classification_id_list:
+                model_permission = [OPERATE, VIEW]
+            else:
+                model_permission = []
+        model_info['permission'] = model_permission
+
         return WebUtils.response_success(model_info)
 
     @swagger_auto_schema(

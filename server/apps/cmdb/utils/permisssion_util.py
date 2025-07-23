@@ -71,6 +71,7 @@ class CmdbRulesFormatUtil:
                     if data["id"] in ["0", "-1"]:
                         _map_data["select_all"] = True
                         _map_data["permission_map"] = data["permission"]
+                        permission_map[classification_id] = _map_data
                         break
                     _map_data["permission_map"][data["id"]] = data["permission"]
                     permission_map[classification_id] = _map_data
@@ -84,6 +85,7 @@ class CmdbRulesFormatUtil:
                         if _model_data["id"] in ["0", "-1"]:
                             _map_data["select_all"] = True
                             _map_data["permission_map"] = _model_data["permission"]
+                            permission_map[model_id] = _map_data
                             break
                         _map_data["permission_map"][_model_data["id"]] = _model_data["permission"]
                     permission_map[model_id] = _map_data

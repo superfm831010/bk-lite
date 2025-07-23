@@ -41,12 +41,25 @@ class InstanceManage(object):
 
     @staticmethod
     def instance_list(user_groups: list, roles: list, model_id: str, params: list, page: int, page_size: int,
-                      order: str, inst_names: list = list, check_permission=True):
+                      order: str, inst_names: list = list, check_permission=True, creator: str = None):
         """实例列表"""
 
         params.append({"field": "model_id", "type": "str=", "value": model_id})
-        if inst_names:
+        
+        # 构建权限过滤条件：有权限的实例 OR 自己创建的实例
+        permission_or_creator_filter = None
+        if inst_names and creator:
+            # 既有实例名称权限限制，又有创建人条件，构建OR条件
+            permission_or_creator_filter = {
+                "inst_names": inst_names,
+                "creator": creator
+            }
+        elif inst_names:
+            # 只有实例名称权限限制
             params.append({"field": "inst_name", "type": "str[]", "value": inst_names})
+        elif creator:
+            # 只有创建人条件
+            params.append({"field": "_creator", "type": "str=", "value": creator})
 
         _page = dict(skip=(page - 1) * page_size, limit=page_size)
         if order and order.startswith("-"):
@@ -63,6 +76,7 @@ class InstanceManage(object):
                 page=_page,
                 order=order,
                 permission_params=permission_params,
+                permission_or_creator_filter=permission_or_creator_filter,
             )
 
         return inst_list, count

@@ -307,12 +307,41 @@ class Neo4jClient:
             order_type: str = "ASC",
             param_type="AND",
             permission_params: str = "",
+            permission_or_creator_filter: dict = None,
     ):
         """
         查询实体
         """
         label_str = f":{label}" if label else ""
-        params_str = self.format_final_params(params, search_param_type=param_type, permission_params=permission_params)
+        
+        # 处理权限或创建人的OR条件
+        if permission_or_creator_filter:
+            inst_names = permission_or_creator_filter.get("inst_names", [])
+            creator = permission_or_creator_filter.get("creator")
+            
+            # 构建OR条件：有权限的实例 OR 自己创建的实例
+            or_conditions = []
+            if inst_names:
+                or_conditions.append(f"n.inst_name IN {inst_names}")
+            if creator:
+                or_conditions.append(f"n._creator = '{creator}'")
+            
+            or_condition_str = " OR ".join(or_conditions)
+            
+            # 将OR条件与其他条件结合
+            params_str = self.format_search_params(params, param_type=param_type)
+            if params_str:
+                params_str = f"({params_str}) AND ({or_condition_str})"
+            else:
+                params_str = f"({or_condition_str})"
+            
+            # 结合权限参数
+            if permission_params:
+                params_str = f"{params_str} AND {permission_params}"
+        else:
+            # 原有逻辑
+            params_str = self.format_final_params(params, search_param_type=param_type, permission_params=permission_params)
+        
         params_str = f"WHERE {params_str}" if params_str else params_str
 
         sql_str = f"MATCH (n{label_str}) {params_str} RETURN n"
