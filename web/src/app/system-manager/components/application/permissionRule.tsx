@@ -127,7 +127,7 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
       if (!moduleConfig) {
         // Module without config, treat as regular module
         initialPermissions[module] = {
-          type: hasValue && value[module]?.type || 'all',
+          type: hasValue && value[module]?.type || 'specific',
           allPermissions: {
             view: hasValue && value[module]?.allPermissions?.view !== undefined
               ? value[module]?.allPermissions?.view
@@ -190,7 +190,7 @@ const PermissionRule: React.FC<PermissionRuleProps> = ({
       } else {
         // No sub-modules, treat as regular module
         initialPermissions[module] = {
-          type: hasValue && value[module]?.type || 'all',
+          type: hasValue && value[module]?.type || 'specific',
           allPermissions: {
             view: hasValue && value[module]?.allPermissions?.view !== undefined
               ? value[module]?.allPermissions?.view
