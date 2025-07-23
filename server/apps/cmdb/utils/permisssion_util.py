@@ -4,24 +4,24 @@ from apps.cmdb.services.model import ModelManage
 
 class CmdbRulesFormatUtil:
     @staticmethod
-    def format_rules(module, child_module, rules, cls_id=None):
+    def format_rules(module: str, child_module, rules, cls_id=None):
         rule_items = []
         if module == PERMISSION_MODEL:
-            rule_items = rules.get('cmdb', {}).get('normal', {}).get(module, {}).get(child_module, {})
+            rule_items = rules.get('cmdb', {}).get('normal', {}).get(module, {}).get(child_module,[])
         elif module == PERMISSION_INSTANCES:
-            rule_items = rules.get(module, {}).get(cls_id, {}).get(child_module, {})
+            rule_items = rules.get('cmdb', {}).get('normal', {}).get(module, {}).get(cls_id, {}).get(child_module,[])
         instance_permission_map = {i["id"]: i["permission"] for i in rule_items}
         if "0" in instance_permission_map or "-1" in instance_permission_map or not instance_permission_map:
             return None
         return instance_permission_map
 
     @staticmethod
-    def get_can_view_insts(module, child_module, rules, cls_id=None):
+    def get_can_view_insts(rules):
         # 获取可查看的实例名称集合
-        instance_permission_map = CmdbRulesFormatUtil.format_rules(module, child_module, rules, cls_id)
+        instance_permission_map = rules
         inst_names = []
         for inst_name, permission in instance_permission_map.items():
-            if "View" in permission:
+            if VIEW in permission:
                 inst_names.append(inst_name)
         return inst_names
 
@@ -65,16 +65,21 @@ class CmdbRulesFormatUtil:
             src_cls_id = ModelManage.search_model_info(src_model_id)["classification_id"]
             dst_model_id = asso['dst_model_id']
             dst_cls_id = ModelManage.search_model_info(dst_model_id)["classification_id"]
-            inst_list = asso['inst_list']
-            src_permission = CmdbRulesFormatUtil.has_single_permission(module, src_model_id, rules, inst_name, can_do,
-                                                                       src_cls_id)
-            inst_list = asso['inst_list']
-            for dst_inst in inst_list:
-                dst_inst_name = dst_inst['inst_name']
-                dst_permission = CmdbRulesFormatUtil.has_single_permission(module, dst_model_id, rules, dst_inst_name,
-                                                                           can_do, dst_cls_id)
-                if not dst_permission and src_permission:
-                    inst_list.remove(dst_inst)
+            if module == PERMISSION_INSTANCES:
+                src_permission = CmdbRulesFormatUtil.has_single_permission(module, src_model_id, rules, inst_name, can_do,
+                                                                           src_cls_id)
+                inst_list = asso['inst_list']
+                for dst_inst in inst_list:
+                    dst_inst_name = dst_inst['inst_name']
+                    dst_permission = CmdbRulesFormatUtil.has_single_permission(module, dst_model_id, rules, dst_inst_name,
+                                                                               can_do, dst_cls_id)
+                    if not dst_permission or not src_permission:
+                        inst_list.remove(dst_inst)
+            else:
+                src_permission = CmdbRulesFormatUtil.has_single_permission(module, src_cls_id, rules, inst_name, can_do)
+                dst_permission = CmdbRulesFormatUtil.has_single_permission(module, dst_cls_id, rules, inst_name, can_do)
+                if not src_permission or not dst_permission:
+                    asso_list.remove(asso)
         return asso_list
 
     @staticmethod
@@ -91,17 +96,8 @@ class CmdbRulesFormatUtil:
     @staticmethod
     def has_model_permission(module, children_module, rules, can_do):
         cls_id = ModelManage.search_model_info(children_module)["classification_id"]
-        permission_map = CmdbRulesFormatUtil.format_rules(module, cls_id, rules)
-        if permission_map is None:
-            return True
-        rule_items = rules.get(module, {})
-        for model_list in rule_items.values():
-            for model in model_list:
-                model_id = model['id']
-                model_permission = model['permission']
-                if model_id == children_module and can_do in model_permission:
-                    return True
-        return False
+        permission = CmdbRulesFormatUtil.has_single_permission(module, cls_id, rules, children_module, can_do)
+        return  permission
 
     @staticmethod
     def get_permission_list(module, children_module, rules, inst_name, cls_id=None):
@@ -113,3 +109,19 @@ class CmdbRulesFormatUtil:
         else:
             permission_list = permission_map[inst_name]
         return permission_list
+
+    @staticmethod
+    def filter_full_text_search_result(result: list,rules):
+        model_cls_map = {}
+        for item in result:
+            model_id = item['model_id']
+            if model_id not in model_cls_map:
+                model_cls_map[model_id] = ModelManage.search_model_info(model_id)['classification_id']
+            cls_id = model_cls_map[model_id]
+            inst_name = item['inst_name']
+            permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_INSTANCES, model_id, rules, inst_name, VIEW,cls_id)
+            if not permission:
+                result.remove(item)
+        return result
+
+
