@@ -43,7 +43,7 @@ class CollectModelLIstSerializer(serializers.ModelSerializer):
             for data in permission_data:
                 if data["id"] in ["0", "-1"]:
                     _map_data["select_all"] = True
-                    _map_data["permission_map"] = {}
+                    _map_data["permission_map"] = data["permission"]
                     break
                 _map_data["permission_map"][data["id"]] = data["permission"]
             self.permission_map[task_type] = _map_data
@@ -74,7 +74,7 @@ class CollectModelLIstSerializer(serializers.ModelSerializer):
             if not permission_data:
                 return []
             if permission_data["select_all"]:
-                return ["View", "Operator"]
+                return permission_data["permission_map"]
             return permission_data["permission_map"].get(str(obj.id), [])
         except Exception as err:
             import traceback

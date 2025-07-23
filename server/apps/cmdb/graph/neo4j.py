@@ -610,17 +610,39 @@ class Neo4jClient:
 
         return {i[group_by_attr]: i["count"] for i in data}
 
-    def full_text(self, search: str, permission_params: str = ""):
-        """全文检索, 无实例权限"""
+    def full_text(self, search: str, permission_params: str = "", instance_permission_params: list = None):
+        """全文检索"""
 
-        params = f"{permission_params} AND" if permission_params else ""
+        base_params = f"{permission_params} AND" if permission_params else ""
 
-        # query = f"""
-        #         MATCH (n:{INSTANCE})
-        #         WHERE {params} AND
-        #             ANY(key IN keys(n) WHERE (NOT n[key] IS NULL AND toString(n[key]) CONTAINS '{search}'))
-        #         RETURN n
-        #         """
+        # 处理权限参数
+        if instance_permission_params:
+            # 构建实例权限过滤条件
+            instance_conditions = []
+            for perm_param in instance_permission_params:
+                model_id = perm_param.get('model_id')
+                instance_names = perm_param.get('inst_names', [])
+                if model_id and instance_names:
+                    # 对于有具体实例权限的模型，只检索指定的实例
+                    condition = f"(n.model_id = '{model_id}' AND n.inst_name IN {instance_names})"
+                    instance_conditions.append(condition)
+
+            if instance_conditions:
+                instance_condition_str = " OR ".join(instance_conditions)
+                # 组织权限和实例权限是OR关系
+                if permission_params:
+                    combined_permission = f"({permission_params}) OR ({instance_condition_str})"
+                else:
+                    combined_permission = instance_condition_str
+                
+                # 组合权限参数和全文检索条件
+                params = f"{combined_permission} AND" if combined_permission else ""
+            else:
+                # 没有实例权限，只使用组织权限
+                params = base_params
+        else:
+            # 没有实例权限参数，使用原有逻辑
+            params = base_params
 
         query = f"""MATCH (n:{INSTANCE}) WHERE {params} ANY(key IN keys(n) WHERE (NOT n[key] IS NULL AND ANY(value IN n[key] WHERE toString(value) CONTAINS '{search}'))) RETURN n"""  # noqa
         objs = self.session.run(query)
