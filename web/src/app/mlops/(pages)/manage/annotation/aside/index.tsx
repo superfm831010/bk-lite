@@ -1,21 +1,22 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 // import Link from 'next/link';
 import { useTranslation } from '@/utils/i18n';
 import {
-  // usePathname, 
+  // usePathname,
   useSearchParams,
   useRouter
 } from 'next/navigation';
 import { Spin, Modal, Menu, Button } from 'antd';
 import Icon from '@/components/icon';
 import { ArrowLeftOutlined, MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons';
-import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+// import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import {
   // AnomalyTrainData, 
   AsideProps
 } from '@/app/mlops/types/manage'
 import sideMenuStyle from './index.module.scss';
+import { MenuItemType } from 'antd/es/menu/interface';
 const { confirm } = Modal;
 
 const Aside = ({
@@ -28,12 +29,17 @@ const Aside = ({
   // const pathname = usePathname();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
+  const file_id = searchParams.get('id') || '';
   const folder_id = searchParams.get('folder_id') || '';
   const folder_name = searchParams.get('folder_name') || '';
   const description = searchParams.get('description');
   const activeTap = searchParams.get('activeTap');
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+
+  const selectKey = useMemo(() => {
+    return [file_id];
+  }, [searchParams])
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
@@ -48,29 +54,22 @@ const Aside = ({
   //   return searchParams.get('id') === id.toString();
   // };
 
-  const menuItem = (item: any) => (
-    <div className='flex w-[160px] ' onClick={(e) => onClick(e, item)}>
-      <Icon type={'yingpan'} className="text-xl pr-1.5" />
-      <EllipsisWithTooltip
-        text={item.name}
-        className={`w-[160px] overflow-hidden text-ellipsis whitespace-nowrap} `}
-      />
-    </div>
-  )
+  // const menuItem = (item: any) => (
+  //   <div className={`w-[160px] ${isActive(item.id) ? `${sideMenuStyle.active} bg-blue-50 text-blue-600` : ''}`} onClick={(e) => onClick(e, item)}>
+  //     {/* <Icon type={'yingpan'} className="text-xl pr-1.5" /> */}
+  //     <EllipsisWithTooltip
+  //       text={item.name}
+  //       className={`w-[120px] overflow-hidden text-ellipsis whitespace-nowrap} `}
+  //     />
+  //   </div>
+  // );
 
-  const renderMenuItems = () => {
+  const renderMenuItems: () => MenuItemType[] = () => {
     return menuItems.map((item: any) => {
       return {
-        key: item.id,
-        label: menuItem(item)
-        // label:
-        //   <Link
-        //     href={buildUrlWithParams(item.id)}
-        //     className={`group flex w-full items-center overflow-hidden h-9 rounded-md py-2 px-3 ${isActive(item.id) ? `${sideMenuStyle.active} bg-blue-50 text-blue-600` : ''}`}
-        //     onClick={(e) => onClick(e, item)}
-        //   >
-
-        //   </Link>,
+        key: item.id?.toString(),
+        label: item.name,
+        icon: <Icon type={'yingpan'} className="!text-xl pr-1.5" />
       }
     })
   };
@@ -115,9 +114,7 @@ const Aside = ({
     })
   };
 
-  const onClick = async (e: any, item: any) => {
-    console.log(item);
-    e.preventDefault();
+  const onMenuItemClick = async (item: any) => {
     if (isChange) {
       return showConfirm(item.id)
     }
@@ -125,51 +122,82 @@ const Aside = ({
     router.push(buildUrlWithParams(item.id));
   };
 
+  // 动态计算容器宽度和样式
+  const asideStyle: React.CSSProperties = {
+    width: collapsed ? '80px' : '200px',
+    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden'
+  };
+
+  const navStyle: React.CSSProperties = {
+    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden'
+  };
+
+  const menuStyle: React.CSSProperties = {
+    width: collapsed ? 80 : 190,
+    maxWidth: collapsed ? 80 : 190,
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+    border: 0
+  };
+
   return (
     <>
-      <aside className={` relative pr-4 flex flex-shrink-0 flex-col h-full ${sideMenuStyle.sideMenu} font-sans`}>
+      <aside
+        className={`relative mr-4 flex flex-shrink-0 flex-col h-full ${sideMenuStyle.sideMenu} font-sans`}
+        style={asideStyle}
+      >
         <button
-          className="absolute z-10 top-4 left-0 flex items-center content-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
+          className="absolute z-10 top-4 left-3 flex items-center content-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
           onClick={goBack}
+          style={{
+            transition: 'all 0.2s ease',
+            zIndex: 20
+          }}
         >
           <ArrowLeftOutlined className="mr-2" />
         </button>
-        <nav className={`flex-1 pt-[54px] relative rounded-md ${sideMenuStyle.nav}`}>
+        <nav
+          className={`flex-1 pt-[54px] relative rounded-md ${sideMenuStyle.nav}`}
+          style={navStyle}
+        >
           {loading ? (
             <div className="min-h-[300px] flex items-center justify-center">
               <Spin spinning={loading}></Spin>
             </div>
           ) : (
             <>
-
               <Menu
                 items={renderMenuItems()}
                 inlineCollapsed={collapsed}
-              // onClick={({ item, domEvent }) => onClick(domEvent, item)}
+                // defaultSelectedKeys={selectKey}
+                selectedKeys={selectKey}
+                style={menuStyle}
+                mode='inline'
+                onClick={({ key, domEvent }) => {
+                  domEvent.preventDefault();
+                  const item = menuItems.find((item: any) => item.id.toString() === key);
+                  if (item && item.id.toString() !== file_id) {
+                    onMenuItemClick(item);
+                  }
+                }}
               />
-              <Button type="primary" onClick={toggleCollapsed} style={{ marginBottom: 16 }} className='absolute left-0 bottom-0'>
+              <Button
+                type="link"
+                onClick={toggleCollapsed}
+                style={{
+                  marginBottom: 16,
+                  transition: 'all 0.3s ease',
+                  width: collapsed ? '40px' : 'auto'
+                }}
+                className='absolute left-3 bottom-2'
+              >
                 {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               </Button>
             </>
-            // <ul className="p-3 overflow-auto max-h-[65vh]">
-            //   {menuItems.map((item: any) => (
-            //     <li key={item.id} className={`rounded-md mb-1 ${isActive(item.id) ? `${sideMenuStyle.active} bg-blue-50 text-blue-600` : ''}`}>
-            //       <Link
-            //         href={buildUrlWithParams(item.id)}
-            //         className="group flex items-center overflow-hidden h-9 rounded-md py-2 px-3"
-            //         onClick={(e) => onClick(e, item)}
-            //       >
-            //         <Icon type={'yingpan'} className="text-xl pr-1.5" />
-            //         <EllipsisWithTooltip
-            //           text={item.name}
-            //           className={`w-[100px] overflow-hidden text-ellipsis whitespace-nowrap}`}
-            //         />
-            //       </Link>
-            //     </li>
-            //   ))}
-            // </ul>
           )}
-
         </nav>
       </aside>
     </>

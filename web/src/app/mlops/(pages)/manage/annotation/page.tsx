@@ -4,7 +4,8 @@ import {
   useState,
   useMemo,
   memo,
-  useCallback
+  useCallback,
+  useRef
 } from "react";
 import { useSearchParams } from 'next/navigation';
 import { cloneDeep } from "lodash";
@@ -89,6 +90,8 @@ const AnnotationPage = () => {
     startIndex: 0,
     endIndex: 0,
   });
+  const [tableScrollHeight, setTableScrollHeight] = useState<number>(400);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // const tagsData = ['is_train_data', 'is_val_data', 'is_test_data'];
 
@@ -143,10 +146,11 @@ const AnnotationPage = () => {
 
   const pagedData = useMemo(() => {
     if (!tableData.length) return [];
-    return tableData.slice(
-      (pagination.current! - 1) * pagination.pageSize!,
-      pagination.current! * pagination.pageSize!
-    );
+    return tableData;
+    // return tableData.slice(
+    //   (pagination.current! - 1) * pagination.pageSize!,
+    //   pagination.current! * pagination.pageSize!
+    // );
   }, [tableData, pagination.current, pagination.pageSize]);
 
   useEffect(() => {
@@ -171,6 +175,68 @@ const AnnotationPage = () => {
       setFlag(false);
     }
   }, [currentFileData]);
+
+  // 动态计算表格滚动高度
+  const calculateTableHeight = useCallback(() => {
+    if (tableContainerRef.current) {
+      const containerElement = tableContainerRef.current;
+      const containerHeight = containerElement.clientHeight;
+
+      // 计算需要减去的各个部分高度
+      const buttonHeight = 60; // 底部按钮区域高度（包括 margin）
+      const tableHeaderHeight = 40; // 表格头部高度
+      const padding = 16; // 额外的padding和边距
+
+      // 计算最终的表格内容滚动高度
+      const calculatedHeight = containerHeight - buttonHeight - tableHeaderHeight - padding;
+      const tableHeight = Math.max(150, calculatedHeight); // 最小高度150px
+
+      setTableScrollHeight(tableHeight);
+    } else {
+      // 如果无法获取容器元素，使用默认计算
+      const viewportHeight = window.innerHeight;
+      const fallbackHeight = Math.max(200, viewportHeight - 300);
+      setTableScrollHeight(fallbackHeight);
+    }
+  }, []);
+
+  // 监听容器高度变化
+  useEffect(() => {
+    // 延迟初始计算，确保DOM渲染完成
+    const timeoutId = setTimeout(calculateTableHeight, 300);
+
+    const handleResize = () => {
+      setTimeout(calculateTableHeight, 100);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // 使用 ResizeObserver 监听容器大小变化
+    let resizeObserver: ResizeObserver | null = null;
+
+    if (tableContainerRef.current && window.ResizeObserver) {
+      resizeObserver = new ResizeObserver(() => {
+        // 防抖处理，避免频繁计算
+        setTimeout(calculateTableHeight, 50);
+      });
+      resizeObserver.observe(tableContainerRef.current);
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', handleResize);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, [calculateTableHeight]);
+
+  // 当数据加载完成后重新计算高度
+  useEffect(() => {
+    if (!loadingState.loading && tableData.length > 0) {
+      setTimeout(calculateTableHeight, 100);
+    }
+  }, [loadingState.loading, tableData.length, calculateTableHeight]);
 
   const handleLabelData = useCallback((data: any[], points: number[] | undefined) => {
     const _data = cloneDeep(data).map((item, index) => ({
@@ -331,15 +397,19 @@ const AnnotationPage = () => {
     setTimeline(value);
   };
 
-  // const handleTagChange = (tag: string, checked: boolean) => {
-  //   if (!isChange) setIsChange(true);
-  //   const nextSelectedTag = checked ? [...selectedTags, tag] : selectedTags.filter((t) => t !== tag);
-  //   setSelectedTags(nextSelectedTag);
-  // };
+
 
   return (
     <div className={`flex w-full h-full text-sm ${sideMenuStyle.sideMenuLayout} grow`}>
-      <div className="w-full flex grow flex-1 h-full">
+      <div
+        className="w-full flex grow flex-1 h-full"
+        style={{
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          willChange: 'width',
+          position: 'relative',
+          height: '100%',
+        }}
+      >
         <Aside
           loading={loadingState.loading}
           menuItems={menuItems}
@@ -347,62 +417,96 @@ const AnnotationPage = () => {
           onChange={(value: boolean) => setIsChange(value)}
           changeFlag={(value: boolean) => setFlag(value)}
         >
-          {/* <AnnotationIntro /> */}
         </Aside>
-        <section className="flex-1 flex flex-col overflow-hidden">
-          {/* <div className={`mb-4 w-full rounded-md ${sideMenuStyle.sectionContainer}`}>
-            <Topsection />
-          </div> */}
-          <div className={`pt-4 pr-4 flex-1 rounded-md overflow-auto ${sideMenuStyle.sectionContainer} ${sideMenuStyle.sectionContext}`}>
+        <section
+          className="flex-1 flex flex-col overflow-hidden"
+          style={{
+            transition: 'flex 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'flex',
+            height: '100%',
+          }}
+        >
+          <div
+            className={`pt-4 pr-4 flex-1 rounded-md overflow-auto ${sideMenuStyle.sectionContainer} ${sideMenuStyle.sectionContext}`}
+            style={{
+              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'width',
+              height: '100%',
+            }}
+          >
             <Spin className="w-full" spinning={loadingState.chartLoading}>
 
-              <div className="flex justify-between">
-                <div className="w-[74%]" style={{ height: `calc(100vh - 120px)` }}>
-                  <LineChart
-                    data={currentFileData}
-                    timeline={timeline}
-                    showDimensionTable
-                    showDimensionFilter
-                    onXRangeChange={onXRangeChange}
-                    onTimeLineChange={onTimeLineChange}
-                    onAnnotationClick={onAnnotationClick}
-                  />
-                </div>
-                <div className="w-[25%] anomaly-container" style={{ height: `calc(100vh - 120px)` }}>
-                  <CustomTable
-                    size="small"
-                    rowKey="timestamp"
-                    scroll={{ y: 'calc(100vh - 200px)' }}
-                    columns={colmuns}
-                    dataSource={pagedData}
-                    // pagination={pagination}
-                    onChange={handleChange}
-                  />
-                  <div className="flex justify-end gap-2 mb-4">
-                    {/* <div>
-                <span className="mr-2">文件类型: </span>
-                {tagsData.map((tag) => (
-                  <Tag.CheckableTag
-                    className={`h-full content-center`}
-                    key={tag}
-                    checked={selectedTags.includes(tag)}
+              <div
+                className="flex justify-between"
+                style={{
+                  transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  height: `calc(100vh - 120px)`,
+                  minHeight: `calc(100vh - 120px)`,
+                }}
+              >
+                <div className="w-[74%]">
+                  <div
                     style={{
-                      backgroundColor: selectedTags.includes(tag) ? '#1890ff' : '',
-                      color: selectedTags.includes(tag) ? `var(--color-secondary)` : `var(--color-text-1)`,
+                      width: '100%',
+                      height: '100%',
+                      // position: 'absolute',
+                      // top: 0,
+                      // left: 0,
+                      // transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
-                    onChange={(checked) => handleTagChange(tag, checked)}
                   >
-                    {t(`datasets.${TYPE_CONTENT[tag]}`)}
-                  </Tag.CheckableTag>
-                ))}
-              </div> */}
-                    <Button className="mr-4" onClick={handleCancel}>{t('common.cancel')}</Button>
-                    <Button type="primary" loading={loadingState.saveLoading} onClick={handleSava}>{t('common.save')}</Button>
+                    <LineChart
+                      key="main-line-chart"
+                      data={currentFileData}
+                      timeline={timeline}
+                      showDimensionTable
+                      showDimensionFilter
+                      onXRangeChange={onXRangeChange}
+                      onTimeLineChange={onTimeLineChange}
+                      onAnnotationClick={onAnnotationClick}
+                    />
+                  </div>
+                </div>
+                <div
+                  className="w-[25%] min-w-[285px] anomaly-container relative"
+                  ref={tableContainerRef}
+                  style={{
+                    height: `calc(100vh - 120px)`,
+                    minHeight: `calc(100vh - 120px)`,
+                    maxHeight: `calc(100vh - 120px)`,
+                    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    willChange: 'width',
+                    overflow: 'hidden',
+                    position: 'relative',
+                  }}
+                >
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}>
+                    <CustomTable
+                      virtual
+                      size="small"
+                      rowKey="timestamp"
+                      scroll={{ y: tableScrollHeight }}
+                      columns={colmuns}
+                      dataSource={pagedData}
+                      onChange={handleChange}
+                    />
+                    <div className="absolute bottom-0 right-0 flex justify-end gap-2 mb-4">
+                      <Button className="mr-4" onClick={handleCancel}>{t('common.cancel')}</Button>
+                      <Button type="primary" loading={loadingState.saveLoading} onClick={handleSava}>{t('common.save')}</Button>
+                    </div>
                   </div>
                 </div>
               </div>
             </Spin>
-
           </div>
         </section>
       </div>
