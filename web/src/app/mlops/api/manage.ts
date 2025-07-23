@@ -6,9 +6,9 @@ interface TrainDataBrochure {
   name: string;
   train_data: TrainDataParams[];
   metadata: object;
-  is_train_data: boolean;
-  is_val_data: boolean;
-  is_test_data: boolean;
+  is_train_data?: boolean;
+  is_val_data?: boolean;
+  is_test_data?: boolean;
 }
 
 const useMlopsManageApi = () => {
@@ -77,7 +77,7 @@ const useMlopsManageApi = () => {
 
   // 标注数据
   const labelingData = async (id: string, params: {
-    metadata: {
+    metadata?: {
       anomaly_point: number[]
     },
     is_train_data: boolean,

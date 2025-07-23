@@ -10,14 +10,14 @@ import { useSearchParams } from 'next/navigation';
 import { cloneDeep } from "lodash";
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { useTranslation } from "@/utils/i18n";
-import { TYPE_CONTENT } from "@/app/mlops/constants";
+// import { TYPE_CONTENT } from "@/app/mlops/constants";
 import useMlopsManageApi from "@/app/mlops/api/manage";
 import {
   Button,
   message,
   Spin,
   TablePaginationConfig,
-  Tag
+  // Tag
 } from "antd";
 import Aside from "./aside";
 import Icon from '@/components/icon';
@@ -90,7 +90,7 @@ const AnnotationPage = () => {
     endIndex: 0,
   });
 
-  const tagsData = ['is_train_data', 'is_val_data', 'is_test_data'];
+  // const tagsData = ['is_train_data', 'is_val_data', 'is_test_data'];
 
   const colmuns: ColumnItem[] = useMemo(() => {
     return [
@@ -331,11 +331,11 @@ const AnnotationPage = () => {
     setTimeline(value);
   };
 
-  const handleTagChange = (tag: string, checked: boolean) => {
-    if (!isChange) setIsChange(true);
-    const nextSelectedTag = checked ? [...selectedTags, tag] : selectedTags.filter((t) => t !== tag);
-    setSelectedTags(nextSelectedTag);
-  };
+  // const handleTagChange = (tag: string, checked: boolean) => {
+  //   if (!isChange) setIsChange(true);
+  //   const nextSelectedTag = checked ? [...selectedTags, tag] : selectedTags.filter((t) => t !== tag);
+  //   setSelectedTags(nextSelectedTag);
+  // };
 
   return (
     <div className={`flex w-full h-full text-sm ${sideMenuStyle.sideMenuLayout} grow`}>
@@ -347,37 +347,17 @@ const AnnotationPage = () => {
           onChange={(value: boolean) => setIsChange(value)}
           changeFlag={(value: boolean) => setFlag(value)}
         >
-          <AnnotationIntro />
+          {/* <AnnotationIntro /> */}
         </Aside>
         <section className="flex-1 flex flex-col overflow-hidden">
-          <div className={`mb-4 w-full rounded-md ${sideMenuStyle.sectionContainer}`}>
+          {/* <div className={`mb-4 w-full rounded-md ${sideMenuStyle.sectionContainer}`}>
             <Topsection />
-          </div>
+          </div> */}
           <div className={`pt-4 pr-4 flex-1 rounded-md overflow-auto ${sideMenuStyle.sectionContainer} ${sideMenuStyle.sectionContext}`}>
             <Spin className="w-full" spinning={loadingState.chartLoading}>
-              <div className="flex justify-end gap-2 mb-4">
-                <div>
-                  <span className="mr-2">文件类型: </span>
-                  {tagsData.map((tag) => (
-                    <Tag.CheckableTag
-                      className={`h-full content-center`}
-                      key={tag}
-                      checked={selectedTags.includes(tag)}
-                      style={{
-                        backgroundColor: selectedTags.includes(tag) ? '#1890ff' : '',
-                        color: selectedTags.includes(tag) ? `var(--color-secondary)` : `var(--color-text-1)`,
-                      }}
-                      onChange={(checked) => handleTagChange(tag, checked)}
-                    >
-                      {t(`datasets.${TYPE_CONTENT[tag]}`)}
-                    </Tag.CheckableTag>
-                  ))}
-                </div>
-                <Button className="mr-4" onClick={handleCancel}>{t('common.cancel')}</Button>
-                <Button type="primary" loading={loadingState.saveLoading} onClick={handleSava}>{t('common.save')}</Button>
-              </div>
+
               <div className="flex justify-between">
-                <div className="w-[74%]" style={{ height: `calc(100vh - 270px)` }}>
+                <div className="w-[74%]" style={{ height: `calc(100vh - 120px)` }}>
                   <LineChart
                     data={currentFileData}
                     timeline={timeline}
@@ -388,19 +368,41 @@ const AnnotationPage = () => {
                     onAnnotationClick={onAnnotationClick}
                   />
                 </div>
-                <div className="w-[25%] anomaly-container" style={{ height: `calc(100vh - 240px)` }}>
+                <div className="w-[25%] anomaly-container" style={{ height: `calc(100vh - 120px)` }}>
                   <CustomTable
                     size="small"
                     rowKey="timestamp"
-                    scroll={{ y: 'calc(100vh - 340px)' }}
+                    scroll={{ y: 'calc(100vh - 200px)' }}
                     columns={colmuns}
                     dataSource={pagedData}
-                    pagination={pagination}
+                    // pagination={pagination}
                     onChange={handleChange}
                   />
+                  <div className="flex justify-end gap-2 mb-4">
+                    {/* <div>
+                <span className="mr-2">文件类型: </span>
+                {tagsData.map((tag) => (
+                  <Tag.CheckableTag
+                    className={`h-full content-center`}
+                    key={tag}
+                    checked={selectedTags.includes(tag)}
+                    style={{
+                      backgroundColor: selectedTags.includes(tag) ? '#1890ff' : '',
+                      color: selectedTags.includes(tag) ? `var(--color-secondary)` : `var(--color-text-1)`,
+                    }}
+                    onChange={(checked) => handleTagChange(tag, checked)}
+                  >
+                    {t(`datasets.${TYPE_CONTENT[tag]}`)}
+                  </Tag.CheckableTag>
+                ))}
+              </div> */}
+                    <Button className="mr-4" onClick={handleCancel}>{t('common.cancel')}</Button>
+                    <Button type="primary" loading={loadingState.saveLoading} onClick={handleSava}>{t('common.save')}</Button>
+                  </div>
                 </div>
               </div>
             </Spin>
+
           </div>
         </section>
       </div>

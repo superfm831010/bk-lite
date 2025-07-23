@@ -17,7 +17,7 @@ interface AnomalyTrainData {
 }
 
 interface AsideProps {
-  children: any,
+  // children: any,
   menuItems: AnomalyTrainData[],
   loading: boolean,
   isChange: boolean,

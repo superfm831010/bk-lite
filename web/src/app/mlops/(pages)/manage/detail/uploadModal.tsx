@@ -4,7 +4,7 @@ import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { exportToCSV } from '@/app/mlops/utils/common';
 import useMlopsManageApi from '@/app/mlops/api/manage';
-import { Upload, Button, message, type UploadFile, type UploadProps } from 'antd';
+import { Upload, Button, message, Select, type UploadFile, type UploadProps } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import { ModalConfig, ModalRef, TableData } from '@/app/mlops/types';
 import { TrainDataParams } from '@/app/mlops/types/manage';
@@ -20,6 +20,9 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
   const [visiable, setVisiable] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [fileList, setFileList] = useState<UploadFile<any>[]>([]);
+  const [selectTags, setSelectTags] = useState<{
+    [key: string]: boolean
+  }>({});
   const [formData, setFormData] = useState<TableData>();
 
   useImperativeHandle(ref, () => ({
@@ -65,7 +68,17 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
       }, {});
     });
     return data as TrainDataParams[];
-  }
+  };
+
+  const onSelectChange = (value: string[]) => {
+    const object = value.reduce((prev: object, current: string) => {
+      return {
+        ...prev,
+        [current]: true
+      };
+    }, {});
+    setSelectTags(object);
+  };
 
   const handleSubmit = async () => {
     setConfirmLoading(true);
@@ -86,9 +99,7 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
         metadata: {
           anomaly_point: points
         },
-        is_train_data: true,
-        is_val_data: false,
-        is_test_data: false,
+        ...selectTags
       }
       await addAnomalyTrainData(params);
       setConfirmLoading(false);
@@ -158,7 +169,7 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
       message.error(t('datasets.downloadError'));
     }
     console.log('download');
-  }
+  };
 
   return (
     <OperateModal
@@ -181,6 +192,11 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
         <p className="ant-upload-text">{t('datasets.uploadText')}</p>
       </Dragger>
       <p>{t('datasets.downloadText')}<Button type='link' onClick={downloadTemplate}>{t('datasets.template')}</Button></p>
+      <Select className='min-w-[240px] mt-2' mode='multiple' placeholder={`训练文件类型选择`} allowClear options={[
+        { label: '训练集', value: 'is_train_data' },
+        { label: '验证集', value: 'is_val_data' },
+        { label: '测试集', value: 'is_test_data' },
+      ]} onChange={onSelectChange} />
     </OperateModal>
   )
 });
