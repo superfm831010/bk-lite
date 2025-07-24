@@ -1,18 +1,14 @@
 'use client';
 import React, { useMemo, useState } from 'react';
-// import Link from 'next/link';
 import { useTranslation } from '@/utils/i18n';
 import {
-  // usePathname,
   useSearchParams,
   useRouter
 } from 'next/navigation';
 import { Spin, Modal, Menu, Button } from 'antd';
 import Icon from '@/components/icon';
 import { ArrowLeftOutlined, MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons';
-// import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import {
-  // AnomalyTrainData, 
   AsideProps
 } from '@/app/mlops/types/manage'
 import sideMenuStyle from './index.module.scss';
@@ -20,13 +16,11 @@ import { MenuItemType } from 'antd/es/menu/interface';
 const { confirm } = Modal;
 
 const Aside = ({
-  // children,
   menuItems,
   loading,
   isChange,
   onChange,
   changeFlag }: AsideProps) => {
-  // const pathname = usePathname();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const file_id = searchParams.get('id') || '';
@@ -48,21 +42,6 @@ const Aside = ({
   const buildUrlWithParams = (id: number) => {
     return `?id=${id}&folder_id=${folder_id}&folder_name=${folder_name}&description=${description}&activeTap=${activeTap}`;
   };
-
-  // const isActive = (id: number): boolean => {
-  //   if (pathname === null) return false;
-  //   return searchParams.get('id') === id.toString();
-  // };
-
-  // const menuItem = (item: any) => (
-  //   <div className={`w-[160px] ${isActive(item.id) ? `${sideMenuStyle.active} bg-blue-50 text-blue-600` : ''}`} onClick={(e) => onClick(e, item)}>
-  //     {/* <Icon type={'yingpan'} className="text-xl pr-1.5" /> */}
-  //     <EllipsisWithTooltip
-  //       text={item.name}
-  //       className={`w-[120px] overflow-hidden text-ellipsis whitespace-nowrap} `}
-  //     />
-  //   </div>
-  // );
 
   const renderMenuItems: () => MenuItemType[] = () => {
     return menuItems.map((item: any) => {
@@ -173,7 +152,6 @@ const Aside = ({
               <Menu
                 items={renderMenuItems()}
                 inlineCollapsed={collapsed}
-                // defaultSelectedKeys={selectKey}
                 selectedKeys={selectKey}
                 style={menuStyle}
                 mode='inline'

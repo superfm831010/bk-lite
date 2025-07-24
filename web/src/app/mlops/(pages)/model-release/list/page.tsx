@@ -1,10 +1,8 @@
 'use client';
 import { useState, useRef, useEffect } from "react";
-// import { useRouter } from "next/navigation";
 import useMlopsTaskApi from "@/app/mlops/api/task";
 import useMlopsModelReleaseApi from "@/app/mlops/api/modelRelease";
 import CustomTable from "@/components/custom-table";
-// import Icon from "@/components/icon";
 import { useTranslation } from "@/utils/i18n";
 import { Button, Popconfirm, Tag, message, Tree, type TreeDataNode } from "antd";
 import { PlusOutlined } from '@ant-design/icons';
@@ -18,7 +16,6 @@ import { TrainJob } from "@/app/mlops/types/task";
 
 const ModelRelease = () => {
   const { t } = useTranslation();
-  // const router = useRouter();
   const { getAnomalyTaskList } = useMlopsTaskApi();
   const { getAnomalyServingsList, deleteAnomalyServing } = useMlopsModelReleaseApi();
   const modalRef = useRef<ModalRef>(null);

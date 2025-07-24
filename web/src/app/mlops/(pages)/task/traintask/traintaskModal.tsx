@@ -258,10 +258,8 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
         description: value.name || ''
       };
       if (modalState.type === 'add') {
-        // await addAnomalyTrainTask(params);
         await handleAddMap[tagName](params);
       } else {
-        // await updateAnomalyTrainTask(modalState.formData?.id as string, params);
         await handleUpdateMap[tagName](modalState.formData?.id as string, params)
       }
       setModalState((prev) => ({ ...prev, isOpen: false }))

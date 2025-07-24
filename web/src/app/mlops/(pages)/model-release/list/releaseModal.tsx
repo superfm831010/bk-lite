@@ -28,7 +28,6 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, activ
       setFormData(form);
       setModalOpen(true);
       setConfirmLoading(false);
-      console.log(formData);
     }
   }));
 
@@ -77,11 +76,9 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, activ
       };
 
       if (type === 'add') {
-        // await addAnomalyServings(params);
         await handleAddMap[tagName](params);
         message.success(t(`model-release.publishSuccess`));
       } else {
-        // await updateAnomalyServings(formData.id, params);
         await handleUpdateMap[tagName](params);
         message.success(t(`common.updateSuccess`));
       }

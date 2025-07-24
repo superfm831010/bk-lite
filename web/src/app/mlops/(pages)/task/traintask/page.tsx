@@ -7,14 +7,12 @@ import { Button, Input, Popconfirm, message, Tag, Tree } from 'antd';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/custom-table';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-// import Icon from '@/components/icon';
 import TrainTaskModal from './traintaskModal';
 import { useTranslation } from '@/utils/i18n';
 import { ModalRef, ColumnItem, Option } from '@/app/mlops/types';
 import type { TreeDataNode } from 'antd';
 import { TrainJob } from '@/app/mlops/types/task';
 import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
-// import SubLayout from '@/components/sub-layout';
 import PageLayout from '@/components/page-layout';
 import TopSection from '@/components/top-section';
 import { JointContent } from 'antd/es/message/interface';
@@ -32,8 +30,6 @@ const getStatusText = (value: string, TrainText: Record<string, string>) => {
 const TrainTask = () => {
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
-  // const router = useRouter();
-  // const path = usePathname();
   const { getAnomalyDatasetsList } = useMlopsManageApi();
   const {
     getAnomalyTaskList,
@@ -44,8 +40,6 @@ const TrainTask = () => {
   const [tableData, setTableData] = useState<TrainJob[]>([]);
   const [datasetOptions, setDatasetOptions] = useState<Option[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-  // const [selectId, setSelectId] = useState<number | null>(null);
-  // const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -73,14 +67,6 @@ const TrainTask = () => {
       key: 'name',
       dataIndex: 'name',
     },
-    // {
-    //   title: t('mlops-common.type'),
-    //   key: 'type',
-    //   dataIndex: 'type',
-    //   render: (_, record) => {
-    //     return (<>{t(`datasets.${record.type}`)}</>)
-    //   }
-    // },
     {
       title: t('mlops-common.createdAt'),
       key: 'created_at',
@@ -224,23 +210,6 @@ const TrainTask = () => {
           ...prev,
           total: count || 1,
         }));
-
-        // setTableData([
-        //   {
-        //     id: 1,
-        //     name: 'test',
-        //     type: 'anomaly',
-        //     train_data_id: 1,
-        //     val_data_id: 2,
-        //     test_data_id: 3,
-        //     created_at: '',
-        //     creator: 'test',
-        //     status: 'running',
-        //     max_evals: 30,
-        //     algorithm: 'Randomforest',
-        //     hyperopt_config: {}
-        //   }
-        // ]);
       }
     } catch (e) {
       console.log(e);

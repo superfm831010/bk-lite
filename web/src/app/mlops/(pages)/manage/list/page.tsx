@@ -4,17 +4,13 @@ import { useTranslation } from '@/utils/i18n';
 import { useRouter } from 'next/navigation';
 import useMlopsManageApi from '@/app/mlops/api/manage';
 import {
-  // Popconfirm,
   message,
   Button,
-  // Input,
   Menu,
   Modal,
   Tree
 } from 'antd';
 import type { TreeDataNode } from 'antd';
-// import { PlusOutlined } from '@ant-design/icons';
-// import Icon from '@/components/icon';
 import DatasetModal from './dataSetsModal';
 import PageLayout from '@/components/page-layout';
 import TopSection from '@/components/top-section';
@@ -22,7 +18,6 @@ import EntityList from '@/components/entity-list';
 import PermissionWrapper from '@/components/permission';
 import { ModalRef } from '@/app/mlops/types';
 import { DataSet } from '@/app/mlops/types/manage';
-// const { Search } = Input;
 const { confirm } = Modal;
 
 const DatasetManagePage = () => {
@@ -30,20 +25,12 @@ const DatasetManagePage = () => {
   const router = useRouter();
   const { deleteAnomalyDatasets, getAnomalyDatasetsList } = useMlopsManageApi();
   const [datasets, setDatasets] = useState<DataSet[]>([]);
-  // const [pagination, setPagination] = useState<Pagination>({
-  //   current: 1,
-  //   total: 0,
-  //   pageSize: 20
-  // });
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-  // const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const modalRef = useRef<ModalRef>(null);
   const activeTab = 'anomaly';
   const datasetTypes = [
     { key: 'anomaly', value: 'anomaly', label: t('datasets.anomaly') },
-    // { key: 'forecast', value: 'forecast', label: t('datasets.forecast') },
-    // { key: 'log', value: 'log', label: t('datasets.log') },
   ];
 
   const treeData: TreeDataNode[] = [
@@ -91,10 +78,6 @@ const DatasetManagePage = () => {
           }
         }) || [];
         setDatasets(_data);
-        // setPagination(prev => ({
-        //   ...prev,
-        //   total: _data.length
-        // }));
       } else {
         setDatasets([]);
       }
@@ -118,7 +101,6 @@ const DatasetManagePage = () => {
       okText: t('common.confirm'),
       cancelText: t('common.cancel'),
       onOk: async () => {
-        // setConfirmLoading(true);
         try {
           await deleteAnomalyDatasets(id);
           message.success(t('common.delSuccess'));
@@ -127,7 +109,6 @@ const DatasetManagePage = () => {
           message.error(t(`common.delFailed`));
         } finally {
           getDataSets();
-          // setConfirmLoading(false);
         }
       }
     })

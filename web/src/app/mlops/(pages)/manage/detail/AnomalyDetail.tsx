@@ -115,9 +115,9 @@ const AnomalyDetail = () => {
   ], [t]);
 
   const options: CheckboxOptionType[] = [
-    { label: '训练集', value: 'is_train_data' },
-    { label: '验证集', value: 'is_val_data' },
-    { label: '测试集', value: 'is_test_data' },
+    { label: t(`datasets.train`), value: 'is_train_data' },
+    { label: t(`datasets.validate`), value: 'is_val_data' },
+    { label: t(`datasets.test`), value: 'is_test_data' },
   ];
 
   useEffect(() => {
@@ -227,7 +227,6 @@ const AnomalyDetail = () => {
     const activeTypes = Object.entries({ is_train_data, is_val_data, is_test_data })
       .filter(([, value]) => value === true)
       .map(([key]) => key);
-    console.log(activeTypes);
     setSelectedTags(activeTypes);
   };
 
@@ -242,7 +241,7 @@ const AnomalyDetail = () => {
                 title: <a href="/mlops/manage">{t(`datasets.datasets`)}</a>
               },
               {
-                title: '数据集详情'
+                title: t(`datasets.datasetsDetail`)
               }
             ]}
           />
@@ -288,7 +287,7 @@ const AnomalyDetail = () => {
         ]}
       >
         <div>
-          文件类型：
+          {t(`datasets.fileType`) + ': '}
           <Checkbox.Group options={options} value={selectedTags} onChange={onChange} />
         </div>
       </OperateModal>

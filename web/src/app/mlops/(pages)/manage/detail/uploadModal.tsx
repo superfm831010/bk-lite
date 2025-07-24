@@ -192,10 +192,10 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
         <p className="ant-upload-text">{t('datasets.uploadText')}</p>
       </Dragger>
       <p>{t('datasets.downloadText')}<Button type='link' onClick={downloadTemplate}>{t('datasets.template')}</Button></p>
-      <Select className='min-w-[240px] mt-2' mode='multiple' placeholder={`训练文件类型选择`} allowClear options={[
-        { label: '训练集', value: 'is_train_data' },
-        { label: '验证集', value: 'is_val_data' },
-        { label: '测试集', value: 'is_test_data' },
+      <Select className='min-w-[240px] mt-2' mode='multiple' placeholder={t(`datasets.typeSelect`)} allowClear options={[
+        { label: t(`datasets.train`), value: 'is_train_data' },
+        { label: t(`datasets.validate`), value: 'is_val_data' },
+        { label: t(`datasets.test`), value: 'is_test_data' },
       ]} onChange={onSelectChange} />
     </OperateModal>
   )
