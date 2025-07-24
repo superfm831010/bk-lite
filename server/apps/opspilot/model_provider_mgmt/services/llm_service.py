@@ -197,6 +197,10 @@ class LLMService:
         url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_chatbot_workflow"
         if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
             url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_react_agent"
+        elif kwargs["skill_type"] == SkillTypeChoices.PLAN_EXECUTE:
+            url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_plan_and_execute_agent"
+        elif kwargs["skill_type"] == SkillTypeChoices.LATS:
+            url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_lats_agent"
         result = ChatServerHelper.post_chat_server(chat_kwargs, url)
         data = result["message"]
 
