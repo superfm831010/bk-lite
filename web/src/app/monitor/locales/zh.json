@@ -441,6 +441,8 @@
       "privPasswordDes": "用于加密的密码，与选择的加密协议对应。",
       "seviceName": "服务名称",
       "seviceNameDes": "要监控的服务名称，确保其与实际运行的服务一致。",
+      "dataSource": "数据源",
+      "dataSourceDes": "监控数据的来，用于确保系统准确获取所需数据。",
       "collectionMethod": "采集方法",
       "reportingStatus": "上报状态",
       "lastReportTime": "最后上报时间",

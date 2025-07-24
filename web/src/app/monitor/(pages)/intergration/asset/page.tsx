@@ -159,7 +159,7 @@ const Asset = () => {
         width: 170,
         render: (_, record) => (
           <>
-            {record.config_id
+            {record.config_ids?.length
               ? t('monitor.intergrations.automatic')
               : t('monitor.intergrations.manual')}
           </>
@@ -596,13 +596,14 @@ const Asset = () => {
           </div>
         </div>
         <CustomTable
-          scroll={{ y: 'calc(100vh - 320px)', x: "max-content" }}
+          scroll={{ y: 'calc(100vh - 320px)' }}
           columns={columns}
           dataSource={tableData}
           pagination={pagination}
           loading={tableLoading}
           expandable={{
             showExpandColumn: getRowxpandable(),
+            columnWidth: 36,
             expandedRowRender: (record) => (
               <CustomTable
                 scroll={{ x: 'calc(100vh - 480px)' }}
