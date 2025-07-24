@@ -342,7 +342,7 @@ class LLMService:
         if knowledge_base.rerank_model:
             rerank_config = knowledge_base.rerank_model.decrypted_rerank_config_config
             rerank_model_base_url = rerank_config["base_url"]
-            rerank_model_api_key = rerank_config["api_key"]
+            rerank_model_api_key = rerank_config["api_key"] or " "
             rerank_model_name = rerank_config.get("model", knowledge_base.rerank_model.name)
         score_threshold = score_threshold_map.get(knowledge_base.id, 0.7)
         kwargs = {
