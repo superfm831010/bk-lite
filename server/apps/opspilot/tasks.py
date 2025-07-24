@@ -174,7 +174,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "knowledge_base_id": knowledge_document.knowledge_index_name(),
         "knowledge_id": str(knowledge_document.id),
         "embed_model_base_url": embed_config.get("base_url", ""),
-        "embed_model_api_key": embed_config.get("api_key", ""),
+        "embed_model_api_key": embed_config.get("api_key", "") or " ",
         "embed_model_name": embed_config.get("model", embed_model_name),
         "chunk_mode": knowledge_document.chunk_type,
         "chunk_size": knowledge_document.general_parse_chunk_size,

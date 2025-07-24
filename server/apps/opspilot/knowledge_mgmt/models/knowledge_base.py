@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.logger import opspilot_logger as logger
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
 
@@ -55,13 +54,3 @@ class KnowledgeBase(MaintainerInfo, TimeInfo):
 
         KnowledgeSearchService.delete_es_index(self.knowledge_index_name())
         super().delete(*args, **kwargs)
-
-    def recreate_es_index(self):
-        from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
-
-        try:
-            KnowledgeSearchService.delete_es_index(self.knowledge_index_name())
-            logger.info("delete es index success")
-        except Exception as e:
-            logger.error("recreate es index failed")
-            logger.exception(e)
