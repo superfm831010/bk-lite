@@ -7,6 +7,7 @@ from django.db.models import JSONField
 
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
+from apps.operation_analysis.constants import DashboardType
 
 
 class DataSourceAPIModel(MaintainerInfo, TimeInfo):
@@ -19,7 +20,23 @@ class DataSourceAPIModel(MaintainerInfo, TimeInfo):
     class Meta:
         db_table = "operation_analysis_data_source_api"
         verbose_name = "数据源API"
-        verbose_name_plural = verbose_name
-        ordering = ["-created_at"]
 
 
+class Dashboard(MaintainerInfo, TimeInfo):
+    name = models.CharField(max_length=128, verbose_name="仪表盘名称")
+    type = models.CharField(max_length=64, verbose_name="仪表盘类型", choices=DashboardType.CHOICES)
+    data_source = models.ForeignKey(
+        DataSourceAPIModel, on_delete=models.CASCADE, related_name="dashboards", verbose_name="数据源"
+    )
+    filters = JSONField(help_text="仪表盘过滤条件", verbose_name="过滤条件", blank=True, null=True)
+    other = JSONField(help_text="其他配置", verbose_name="其他配置", blank=True, null=True)
+
+    class Meta:
+        db_table = "operation_analysis_dashboard"
+        verbose_name = "仪表盘"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'type'],
+                name='unique_session_event'
+            ),
+        ]
