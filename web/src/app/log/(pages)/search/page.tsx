@@ -134,8 +134,11 @@ const SearchView: React.FC = () => {
   const getParams = (seletedTimes?: number[]) => {
     const times = seletedTimes || timeSelectorRef.current?.getValue() || [];
     let text = searchText;
-    if (groups.length) {
-      const groupsText = `streams:"${escapeArrayToJson(groups)}"`;
+    if (groups?.length >= 1) {
+      const groupsText =
+        groups.length > 1
+          ? `streams:"${escapeArrayToJson(groups)}"`
+          : `streams:"${groups[0]}"`;
       text = searchText ? `${groupsText} | ${searchText}` : groupsText;
     }
     const params: SearchParams = {
