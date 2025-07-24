@@ -59,7 +59,13 @@ class AuthSerializer(UsernameSerializer):
         app_name = self.get_app_name()
         permission_rules = get_permission_rules(request.user, current_team, app_name, self.permission_key)
         self.auth_team = permission_rules.get("team", [])
-        self.rule_map = {int(i["id"]): i["permission"] for i in permission_rules.get("instance", [])}
+        self.rule_map = {}
+        for i in permission_rules.get("instance", []):
+            if int(i["id"]) in self.rule_map:
+                permission = list(set(self.rule_map[int(i["id"])] + i["permission"]))
+                self.rule_map[int(i["id"])] = permission
+            else:
+                self.rule_map[int(i["id"])] = i["permission"]
 
     def get_app_name(self):
         """获取当前序列化器所属的应用名称"""
