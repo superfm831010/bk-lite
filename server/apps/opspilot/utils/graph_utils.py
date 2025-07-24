@@ -60,7 +60,7 @@ class GraphUtils(ChunkHelper):
             "group_id": f"graph-{graph_obj.id}",
             "rebuild_community": graph_obj.rebuild_community,
             "embed_model_base_url": embed_config["base_url"],
-            "embed_model_api_key": embed_config["api_key"],
+            "embed_model_api_key": embed_config["api_key"] or " ",
             "embed_model_name": embed_config.get("model", graph_obj.embed_model.name),
             "docs": docs,
         }
@@ -81,7 +81,7 @@ class GraphUtils(ChunkHelper):
         rerank_config = graph_obj.rerank_model.decrypted_rerank_config_config
         kwargs = {
             "embed_model_base_url": embed_config["base_url"],
-            "embed_model_api_key": embed_config["api_key"],
+            "embed_model_api_key": embed_config["api_key"] or " ",
             "embed_model_name": embed_config.get("model", graph_obj.embed_model.name),
             "rerank_model_base_url": rerank_config["base_url"],
             "rerank_model_name": rerank_config.get("model", graph_obj.rerank_model.name),
@@ -142,11 +142,11 @@ class GraphUtils(ChunkHelper):
             "openai_api_base": llm_config["openai_base_url"],
             "group_ids": [f"graph-{graph_obj.id}"],
             "embed_model_base_url": embed_config["base_url"],
-            "embed_model_api_key": embed_config["api_key"],
+            "embed_model_api_key": embed_config["api_key"] or " ",
             "embed_model_name": embed_config.get("model", graph_obj.embed_model.name),
             "rerank_model_base_url": rerank_config["base_url"],
             "rerank_model_name": rerank_config.get("model", graph_obj.rerank_model.name),
-            "rerank_model_api_key": rerank_config["api_key"],
+            "rerank_model_api_key": rerank_config["api_key"] or " ",
         }
         res = cls.post_chat_server(kwargs, url)
         if res["status"] != "success":
