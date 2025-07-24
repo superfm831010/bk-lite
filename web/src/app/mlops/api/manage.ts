@@ -80,9 +80,9 @@ const useMlopsManageApi = () => {
     metadata?: {
       anomaly_point: number[]
     },
-    is_train_data: boolean,
-    is_val_data: boolean,
-    is_test_data: boolean
+    is_train_data?: boolean,
+    is_val_data?: boolean,
+    is_test_data?: boolean
   }) => {
     return await patch(`/mlops/anomaly_detection_train_data/${id}/`, params);
   };

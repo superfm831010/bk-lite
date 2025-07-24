@@ -69,6 +69,7 @@ const Aside = ({
       return {
         key: item.id?.toString(),
         label: item.name,
+        title: item.name,
         icon: <Icon type={'yingpan'} className="!text-xl pr-1.5" />
       }
     })
@@ -185,12 +186,12 @@ const Aside = ({
                 }}
               />
               <Button
-                type="link"
+                color="default" variant="link"
                 onClick={toggleCollapsed}
                 style={{
                   marginBottom: 16,
                   transition: 'all 0.3s ease',
-                  width: collapsed ? '40px' : 'auto'
+                  width: collapsed ? '40px' : 'auto',
                 }}
                 className='absolute left-3 bottom-2'
               >

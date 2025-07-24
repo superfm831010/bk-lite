@@ -170,6 +170,7 @@ const AnomalyDetail = () => {
     const data = {
       dataset_id: folder_id,
       folder: folder_name,
+      activeTap
     };
     modalRef.current?.showModal({ type: 'edit', form: data });
   };
@@ -201,15 +202,17 @@ const AnomalyDetail = () => {
   const handleSubmit = async () => {
     setConfirmLoading(true);
     try {
-      const params = {
-        is_train_data: selectedTags.includes('is_train_data'),
-        is_val_data: selectedTags.includes('is_val_data'),
-        is_test_data: selectedTags.includes('is_test_data')
-      };
-      await labelingData(currentData?.id, params);
-      message.success(`common.updateSuccess`);
-      setModalOpen(false);
-      getDataset();
+      if (activeTap === 'anomaly') {
+        const params = {
+          is_train_data: selectedTags.includes('is_train_data'),
+          is_val_data: selectedTags.includes('is_val_data'),
+          is_test_data: selectedTags.includes('is_test_data')
+        };
+        await labelingData(currentData?.id, params);
+        message.success(`common.updateSuccess`);
+        setModalOpen(false);
+        getDataset();
+      }
     } catch (e) {
       console.log(e);
     } finally {

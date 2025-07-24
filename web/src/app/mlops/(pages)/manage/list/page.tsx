@@ -36,6 +36,7 @@ const DatasetManagePage = () => {
   //   pageSize: 20
   // });
   const [loading, setLoading] = useState<boolean>(false);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   // const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const modalRef = useRef<ModalRef>(null);
   const activeTab = 'anomaly';
@@ -50,18 +51,31 @@ const DatasetManagePage = () => {
       title: t(`datasets.datasets`),
       key: 'datasets',
       selectable: false,
-      children: [{
-        title: t(`datasets.anomaly`),
-        key: 'anomaly',
-      }]
+      children: [
+        {
+          title: t(`datasets.anomaly`),
+          key: 'anomaly',
+        },
+        {
+          title: '日志',
+          key: 'log'
+        }
+      ]
     }
   ];
 
   useEffect(() => {
+    setSelectedKeys(['anomaly'])
+  }, []);
+
+  useEffect(() => {
     getDataSets();
-  }, [])
+  }, [selectedKeys])
+
 
   const getDataSets = useCallback(async () => {
+    const [activeTab] = selectedKeys;
+    if (!activeTab) return;
     setLoading(true);
     try {
       if (activeTab === 'anomaly') {
@@ -89,7 +103,7 @@ const DatasetManagePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [selectedKeys]);
 
   const navigateToNode = (item: any) => {
     router.push(
@@ -107,7 +121,7 @@ const DatasetManagePage = () => {
         // setConfirmLoading(true);
         try {
           await deleteAnomalyDatasets(id);
-          message.success(t('common.successfullyDeleted'));
+          message.success(t('common.delSuccess'));
         } catch (e) {
           console.log(e);
           message.error(t(`common.delFailed`));
@@ -180,12 +194,18 @@ const DatasetManagePage = () => {
 
   const leftSection = (
     <div className='w-full'>
-      <Tree treeData={treeData} showLine />
+      <Tree
+        treeData={treeData}
+        showLine
+        selectedKeys={selectedKeys}
+        onSelect={(keys) => setSelectedKeys(keys as string[])}
+        defaultExpandedKeys={['datasets']}
+      />
     </div>
   );
 
   const rightSection = (
-    <div className='overflow-auto pb-2'>
+    <div className='overflow-auto h-[calc(100vh-200px)] pb-2'>
       <EntityList
         data={datasets}
         menuActions={menuActions}
@@ -209,6 +229,7 @@ const DatasetManagePage = () => {
         ref={modalRef}
         options={datasetTypes}
         onSuccess={getDataSets}
+        activeTag={selectedKeys}
       />
     </>
   );

@@ -88,31 +88,32 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
         setConfirmLoading(false);
         return message.error(t('datasets.pleaseUpload'));
       }
-      const text = await file?.originFileObj.text();
-      const data: TrainDataParams[] = handleFileRead(text);
-      const train_data = data.map(item => ({ timestamp: item.timestamp, value: item.value }));
-      const points = data.filter(item => item?.label === 1).map(k => k.index);
-      const params = {
-        dataset: formData?.dataset_id,
-        name: file.name,
-        train_data: train_data,
-        metadata: {
-          anomaly_point: points
-        },
-        ...selectTags
+      if (formData?.activeTap === 'anomaly') {
+        const text = await file?.originFileObj.text();
+        const data: TrainDataParams[] = handleFileRead(text);
+        const train_data = data.map(item => ({ timestamp: item.timestamp, value: item.value }));
+        const points = data.filter(item => item?.label === 1).map(k => k.index);
+        const params = {
+          dataset: formData?.dataset_id,
+          name: file.name,
+          train_data: train_data,
+          metadata: {
+            anomaly_point: points
+          },
+          ...selectTags
+        };
+        await addAnomalyTrainData(params);
+        setConfirmLoading(false);
+        setVisiable(false);
+        message.success(t('datasets.uploadSuccess'));
+        onSuccess();
       }
-      await addAnomalyTrainData(params);
-      setConfirmLoading(false);
-      setVisiable(false);
-      message.success(t('datasets.uploadSuccess'));
-      onSuccess();
     } catch (e) {
-      console.log(e)
+      console.log(e);
     } finally {
       setConfirmLoading(false);
       setFileList([]);
     }
-    // message.error(`${error.message}`);
   };
 
   const handleCancel = () => {
@@ -168,7 +169,6 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
     } else {
       message.error(t('datasets.downloadError'));
     }
-    console.log('download');
   };
 
   return (
