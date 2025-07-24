@@ -332,7 +332,7 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
               name="organizations"
               rules={[{ required: true, message: t('common.required') }]}
             >
-              <GroupTreeSelector />
+              <GroupTreeSelector placeholder={t('log.group')} />
             </Form.Item>
           </Form>
         </OperateModal>
