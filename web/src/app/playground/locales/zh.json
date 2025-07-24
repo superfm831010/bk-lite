@@ -1,0 +1,12 @@
+{
+  "common": {
+    "functionExper": "功能体验",
+    "or": "或",
+    "localUpload": "本地上传",
+    "clickTest": "点击检测",
+    "useScenario": "应用场景",
+    "selectMsg": "请选择一份样本文件",
+    "uploadError": "上传的文件类型错误",
+    "uploadMsg": "请选择一份文件或者从本地上传文件"
+  }
+}

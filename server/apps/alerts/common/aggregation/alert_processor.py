@@ -81,8 +81,8 @@ class AlertProcessor:
         instances = Event.objects.filter(
             received_at__gte=start_time,
             received_at__lt=self.now,
-            source__is_active=True,
-        ).exclude(status=EventStatus.SHIELD).values(*self.event_fields)
+            source__is_active=True
+        ).exclude(status=EventStatus.SHIELD, alert__status__in=AlertStatus.ACTIVATE_STATUS).values(*self.event_fields)
 
         return pd.DataFrame(list(instances))
 
@@ -555,52 +555,6 @@ class AlertProcessor:
         if update_alert_list:
             self.update_alerts(alerts=update_alert_list)
 
-    def process_window_type_rules(self, window_type: str, rules: List[CorrelationRules]) -> Tuple[int, int]:
-        """
-        处理特定窗口类型的规则
-        
-        Args:
-            window_type: 窗口类型 sliding/fixed/session
-            rules: 要处理的规则列表
-            
-        Returns:
-            Tuple[int, int]: (新建告警数, 更新告警数)
-        """
-        format_alert_list = []
-        update_alert_list = []
-
-        try:
-            if window_type == 'session':
-                # 会话窗口：每个规则单独处理
-                for rule in rules:
-                    session_alerts, session_updates = self._process_session_correlation_rule(rule)
-                    format_alert_list.extend(session_alerts)
-                    update_alert_list.extend(session_updates)
-            else:
-                # 滑动窗口和固定窗口：批量处理
-                batch_alerts, batch_updates = self._process_batch_correlation_rules(rules, window_type)
-                format_alert_list.extend(batch_alerts)
-                update_alert_list.extend(batch_updates)
-
-            # 处理告警创建和更新
-            alerts_created = 0
-            alerts_updated = len(update_alert_list)
-
-            if format_alert_list:
-                created_ids = self.bulk_create_alerts(alerts=format_alert_list)
-                alerts_created = len(created_ids)
-                if created_ids:
-                    self.alert_auto_assign(alert_id_list=created_ids)
-
-            if update_alert_list:
-                self.update_alerts(alerts=update_alert_list)
-
-            return alerts_created, alerts_updated
-
-        except Exception as e:
-            logger.error(f"处理{window_type}窗口规则失败: {str(e)}", exc_info=True)
-            return 0, 0
-
     def _process_events_with_aggregation_rules(self, events: pd.DataFrame,
                                                aggregation_rules: List[AggregationRules]) -> Tuple[
         List[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -747,7 +701,7 @@ class AlertProcessor:
                 axis=1
             )
             event_fingerprints = events.to_dict('records')
-            event_fingerprints = {i["instance_fingerprint"]: i for i in event_fingerprints}
+            event_fingerprints = {i["instance_fingerprint"]: i for i in event_fingerprints if i["value"] == 1}
 
             # 检查每个活跃会话
             for session in active_sessions:

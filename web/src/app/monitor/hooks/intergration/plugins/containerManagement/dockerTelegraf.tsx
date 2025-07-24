@@ -61,9 +61,8 @@ export const useDockerTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: null,
           initTableItems: {
             endpoint: null,
@@ -115,7 +114,6 @@ export const useDockerTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: () => ({}),
           getParams: (
@@ -150,6 +148,11 @@ export const useDockerTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

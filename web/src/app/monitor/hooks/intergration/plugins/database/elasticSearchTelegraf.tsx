@@ -66,9 +66,8 @@ export const useElasticSearchTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: elasticSearchFormItems.getCommonFormItems(),
           initTableItems: {
             server: null,
@@ -120,7 +119,6 @@ export const useElasticSearchTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const server =
@@ -161,6 +159,11 @@ export const useElasticSearchTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

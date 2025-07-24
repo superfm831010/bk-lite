@@ -121,14 +121,14 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, onSuc
             label={t(`model-release.modelThreshold`)}
             rules={[{ required: true, message: t('common.inputMsg') }]}
           >
-            <InputNumber className="w-full" placeholder={t(`model-release.inputThreshoid`)} />
+            <InputNumber className="w-full" placeholder={t(`model-release.inputThreshold`)} />
           </Form.Item>
           <Form.Item
             name='status'
             label={t(`common.status`)}
             layout="horizontal"
           >
-            <Switch checkedChildren="是" unCheckedChildren="否" defaultChecked />
+            <Switch checkedChildren="是" unCheckedChildren="否" />
           </Form.Item>
           <Form.Item
             name='description'

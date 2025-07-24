@@ -621,14 +621,17 @@ def get_kubernetes_node_capacity(config: RunnableConfig = None):
                                 cpu_request += float(cpu_str)
 
                         if container.resources.requests.get("memory"):
-                            mem_str = container.resources.requests.get("memory")
+                            mem_str = container.resources.requests.get(
+                                "memory")
                             # Convert to bytes (rough approximation)
                             if mem_str.endswith("Ki"):
                                 memory_request += int(mem_str[:-2]) * 1024
                             elif mem_str.endswith("Mi"):
-                                memory_request += int(mem_str[:-2]) * 1024 * 1024
+                                memory_request += int(mem_str[:-2]
+                                                      ) * 1024 * 1024
                             elif mem_str.endswith("Gi"):
-                                memory_request += int(mem_str[:-2]) * 1024 * 1024 * 1024
+                                memory_request += int(mem_str[:-2]) * \
+                                    1024 * 1024 * 1024
                             else:
                                 memory_request += int(mem_str)
 
@@ -852,17 +855,23 @@ def get_kubernetes_resource_yaml(namespace, resource_type, resource_name, config
         resource_data = None
 
         if resource_type == "pod":
-            resource_data = core_v1.read_namespaced_pod(resource_name, namespace)
+            resource_data = core_v1.read_namespaced_pod(
+                resource_name, namespace)
         elif resource_type == "deployment":
-            resource_data = apps_v1.read_namespaced_deployment(resource_name, namespace)
+            resource_data = apps_v1.read_namespaced_deployment(
+                resource_name, namespace)
         elif resource_type == "service":
-            resource_data = core_v1.read_namespaced_service(resource_name, namespace)
+            resource_data = core_v1.read_namespaced_service(
+                resource_name, namespace)
         elif resource_type == "configmap":
-            resource_data = core_v1.read_namespaced_config_map(resource_name, namespace)
+            resource_data = core_v1.read_namespaced_config_map(
+                resource_name, namespace)
         elif resource_type == "secret":
-            resource_data = core_v1.read_namespaced_secret(resource_name, namespace)
+            resource_data = core_v1.read_namespaced_secret(
+                resource_name, namespace)
         elif resource_type == "job":
-            resource_data = batch_v1.read_namespaced_job(resource_name, namespace)
+            resource_data = batch_v1.read_namespaced_job(
+                resource_name, namespace)
         else:
             return json.dumps(
                 {"error": f"Unsupported resource type: {resource_type}"}
@@ -944,7 +953,7 @@ def get_kubernetes_pod_logs(namespace, pod_name, container=None, lines=100, tail
         # 返回日志内容或空日志提示
         if not logs:
             return "No logs available for the specified container."
-        
+
         return logs
 
     except ApiException as e:
@@ -957,3 +966,617 @@ def get_kubernetes_pod_logs(namespace, pod_name, container=None, lines=100, tail
             return json.dumps({"error": error_message}), 500
     except Exception as e:
         return json.dumps({"error": str(e)}), 500
+
+
+@tool()
+def check_kubernetes_resource_quotas(namespace=None, config: RunnableConfig = None):
+    """
+    检查资源配额使用情况
+
+    Args:
+        namespace (str, optional): 要检查的命名空间，如果为None则检查所有命名空间
+        config (RunnableConfig): 工具配置
+
+    Returns:
+        str: JSON格式的资源配额信息，包括配额限制和当前使用量
+    """
+    prepare_context(config)
+    try:
+        core_v1 = client.CoreV1Api()
+
+        if namespace:
+            quotas = core_v1.list_namespaced_resource_quota(namespace)
+        else:
+            quotas = core_v1.list_resource_quota_for_all_namespaces()
+
+        result = []
+        for quota in quotas.items:
+            hard_limits = quota.status.hard if quota.status.hard else {}
+            used = quota.status.used if quota.status.used else {}
+
+            quota_info = {
+                "name": quota.metadata.name,
+                "namespace": quota.metadata.namespace,
+                "hard_limits": dict(hard_limits),
+                "used": dict(used),
+                "utilization": {}
+            }
+
+            # 计算利用率
+            for resource, limit in hard_limits.items():
+                if resource in used:
+                    try:
+                        if limit.endswith('i'):  # 处理内存单位
+                            limit_val = parse_resource_quantity(limit)
+                            used_val = parse_resource_quantity(used[resource])
+                        else:
+                            limit_val = float(limit)
+                            used_val = float(used[resource])
+
+                        utilization = (used_val / limit_val *
+                                       100) if limit_val > 0 else 0
+                        quota_info["utilization"][resource] = round(
+                            utilization, 2)
+                    except:
+                        quota_info["utilization"][resource] = "N/A"
+
+            result.append(quota_info)
+
+        return json.dumps(result)
+    except ApiException as e:
+        return json.dumps({"error": str(e)}), 500
+
+
+@tool()
+def check_kubernetes_network_policies(namespace=None, config: RunnableConfig = None):
+    """
+    检查网络策略配置
+
+    Args:
+        namespace (str, optional): 要检查的命名空间
+        config (RunnableConfig): 工具配置
+
+    Returns:
+        str: JSON格式的网络策略信息
+    """
+    prepare_context(config)
+    try:
+        networking_v1 = client.NetworkingV1Api()
+
+        if namespace:
+            policies = networking_v1.list_namespaced_network_policy(namespace)
+        else:
+            policies = networking_v1.list_network_policy_for_all_namespaces()
+
+        result = []
+        for policy in policies.items:
+            policy_info = {
+                "name": policy.metadata.name,
+                "namespace": policy.metadata.namespace,
+                "pod_selector": policy.spec.pod_selector.match_labels if policy.spec.pod_selector and policy.spec.pod_selector.match_labels else {},
+                "policy_types": policy.spec.policy_types if policy.spec.policy_types else [],
+                "ingress_rules": len(policy.spec.ingress) if policy.spec.ingress else 0,
+                "egress_rules": len(policy.spec.egress) if policy.spec.egress else 0,
+                "creation_time": policy.metadata.creation_timestamp.strftime("%Y-%m-%d %H:%M:%S") if policy.metadata.creation_timestamp else None
+            }
+            result.append(policy_info)
+
+        return json.dumps(result)
+    except ApiException as e:
+        return json.dumps({"error": str(e)}), 500
+
+
+@tool()
+def check_kubernetes_persistent_volumes(config: RunnableConfig = None):
+    """
+    检查持久化卷状态和使用情况
+
+    Returns:
+        str: JSON格式的PV信息，包括状态、容量、回收策略等
+    """
+    prepare_context(config)
+    try:
+        core_v1 = client.CoreV1Api()
+        pvs = core_v1.list_persistent_volume()
+        pvcs = core_v1.list_persistent_volume_claim_for_all_namespaces()
+
+        # 构建PVC映射
+        pvc_map = {}
+        for pvc in pvcs.items:
+            if pvc.spec.volume_name:
+                pvc_map[pvc.spec.volume_name] = {
+                    "name": pvc.metadata.name,
+                    "namespace": pvc.metadata.namespace,
+                    "status": pvc.status.phase
+                }
+
+        result = []
+        for pv in pvs.items:
+            pv_info = {
+                "name": pv.metadata.name,
+                "status": pv.status.phase,
+                "capacity": pv.spec.capacity.get("storage") if pv.spec.capacity else None,
+                "access_modes": pv.spec.access_modes if pv.spec.access_modes else [],
+                "reclaim_policy": pv.spec.persistent_volume_reclaim_policy,
+                "storage_class": pv.spec.storage_class_name,
+                "claim": pvc_map.get(pv.metadata.name),
+                "creation_time": pv.metadata.creation_timestamp.strftime("%Y-%m-%d %H:%M:%S") if pv.metadata.creation_timestamp else None
+            }
+            result.append(pv_info)
+
+        return json.dumps(result)
+    except ApiException as e:
+        return json.dumps({"error": str(e)}), 500
+
+
+@tool()
+def check_kubernetes_ingress(namespace=None, config: RunnableConfig = None):
+    """
+    检查Ingress配置和状态
+
+    Args:
+        namespace (str, optional): 要检查的命名空间
+        config (RunnableConfig): 工具配置
+    """
+    prepare_context(config)
+    try:
+        networking_v1 = client.NetworkingV1Api()
+
+        if namespace:
+            ingresses = networking_v1.list_namespaced_ingress(namespace)
+        else:
+            ingresses = networking_v1.list_ingress_for_all_namespaces()
+
+        result = []
+        for ingress in ingresses.items:
+            # 提取规则信息
+            rules = []
+            if ingress.spec.rules:
+                for rule in ingress.spec.rules:
+                    rule_info = {
+                        "host": rule.host,
+                        "paths": []
+                    }
+                    if rule.http and rule.http.paths:
+                        for path in rule.http.paths:
+                            path_info = {
+                                "path": path.path,
+                                "path_type": path.path_type,
+                                "service": {
+                                    "name": path.backend.service.name if path.backend.service else None,
+                                    "port": path.backend.service.port.number if path.backend.service and path.backend.service.port else None
+                                }
+                            }
+                            rule_info["paths"].append(path_info)
+                    rules.append(rule_info)
+
+            # 提取LoadBalancer状态
+            load_balancer_ingress = []
+            if ingress.status.load_balancer and ingress.status.load_balancer.ingress:
+                for lb in ingress.status.load_balancer.ingress:
+                    load_balancer_ingress.append({
+                        "ip": lb.ip,
+                        "hostname": lb.hostname
+                    })
+
+            ingress_info = {
+                "name": ingress.metadata.name,
+                "namespace": ingress.metadata.namespace,
+                "class": ingress.spec.ingress_class_name,
+                "rules": rules,
+                "tls": [{"hosts": tls.hosts, "secret": tls.secret_name} for tls in ingress.spec.tls] if ingress.spec.tls else [],
+                "load_balancer_ingress": load_balancer_ingress,
+                "creation_time": ingress.metadata.creation_timestamp.strftime("%Y-%m-%d %H:%M:%S") if ingress.metadata.creation_timestamp else None
+            }
+            result.append(ingress_info)
+
+        return json.dumps(result)
+    except ApiException as e:
+        return json.dumps({"error": str(e)}), 500
+
+
+@tool()
+def check_kubernetes_daemonsets(namespace=None, config: RunnableConfig = None):
+    """
+    检查DaemonSet状态
+
+    Args:
+        namespace (str, optional): 要检查的命名空间
+        config (RunnableConfig): 工具配置
+    """
+    prepare_context(config)
+    try:
+        apps_v1 = client.AppsV1Api()
+
+        if namespace:
+            daemonsets = apps_v1.list_namespaced_daemon_set(namespace)
+        else:
+            daemonsets = apps_v1.list_daemon_set_for_all_namespaces()
+
+        result = []
+        for ds in daemonsets.items:
+            ds_info = {
+                "name": ds.metadata.name,
+                "namespace": ds.metadata.namespace,
+                "desired": ds.status.desired_number_scheduled,
+                "current": ds.status.current_number_scheduled,
+                "ready": ds.status.number_ready,
+                "available": ds.status.number_available,
+                "unavailable": ds.status.number_unavailable,
+                "update_strategy": ds.spec.update_strategy.type if ds.spec.update_strategy else None,
+                "creation_time": ds.metadata.creation_timestamp.strftime("%Y-%m-%d %H:%M:%S") if ds.metadata.creation_timestamp else None
+            }
+            result.append(ds_info)
+
+        return json.dumps(result)
+    except ApiException as e:
+        return json.dumps({"error": str(e)}), 500
+
+
+@tool()
+def check_kubernetes_statefulsets(namespace=None, config: RunnableConfig = None):
+    """
+    检查StatefulSet状态
+
+    Args:
+        namespace (str, optional): 要检查的命名空间
+        config (RunnableConfig): 工具配置
+    """
+    prepare_context(config)
+    try:
+        apps_v1 = client.AppsV1Api()
+
+        if namespace:
+            statefulsets = apps_v1.list_namespaced_stateful_set(namespace)
+        else:
+            statefulsets = apps_v1.list_stateful_set_for_all_namespaces()
+
+        result = []
+        for sts in statefulsets.items:
+            sts_info = {
+                "name": sts.metadata.name,
+                "namespace": sts.metadata.namespace,
+                "replicas": sts.spec.replicas,
+                "ready_replicas": sts.status.ready_replicas,
+                "current_replicas": sts.status.current_replicas,
+                "updated_replicas": sts.status.updated_replicas,
+                "service_name": sts.spec.service_name,
+                "update_strategy": sts.spec.update_strategy.type if sts.spec.update_strategy else None,
+                "partition": sts.spec.update_strategy.rolling_update.partition if sts.spec.update_strategy and sts.spec.update_strategy.rolling_update else None,
+                "creation_time": sts.metadata.creation_timestamp.strftime("%Y-%m-%d %H:%M:%S") if sts.metadata.creation_timestamp else None
+            }
+            result.append(sts_info)
+
+        return json.dumps(result)
+    except ApiException as e:
+        return json.dumps({"error": str(e)}), 500
+
+
+@tool()
+def check_kubernetes_jobs(namespace=None, config: RunnableConfig = None):
+    """
+    检查Job和CronJob状态
+
+    Args:
+        namespace (str, optional): 要检查的命名空间
+        config (RunnableConfig): 工具配置
+    """
+    prepare_context(config)
+    try:
+        batch_v1 = client.BatchV1Api()
+        batch_v1beta1 = client.BatchV1beta1Api()
+
+        result = {"jobs": [], "cronjobs": []}
+
+        # 检查Jobs
+        if namespace:
+            jobs = batch_v1.list_namespaced_job(namespace)
+        else:
+            jobs = batch_v1.list_job_for_all_namespaces()
+
+        for job in jobs.items:
+            job_info = {
+                "name": job.metadata.name,
+                "namespace": job.metadata.namespace,
+                "completions": job.spec.completions,
+                "parallelism": job.spec.parallelism,
+                "active": job.status.active,
+                "succeeded": job.status.succeeded,
+                "failed": job.status.failed,
+                "start_time": job.status.start_time.strftime("%Y-%m-%d %H:%M:%S") if job.status.start_time else None,
+                "completion_time": job.status.completion_time.strftime("%Y-%m-%d %H:%M:%S") if job.status.completion_time else None,
+                "creation_time": job.metadata.creation_timestamp.strftime("%Y-%m-%d %H:%M:%S") if job.metadata.creation_timestamp else None
+            }
+            result["jobs"].append(job_info)
+
+        # 检查CronJobs
+        try:
+            if namespace:
+                cronjobs = batch_v1beta1.list_namespaced_cron_job(namespace)
+            else:
+                cronjobs = batch_v1beta1.list_cron_job_for_all_namespaces()
+
+            for cronjob in cronjobs.items:
+                cronjob_info = {
+                    "name": cronjob.metadata.name,
+                    "namespace": cronjob.metadata.namespace,
+                    "schedule": cronjob.spec.schedule,
+                    "suspend": cronjob.spec.suspend,
+                    "active_jobs": len(cronjob.status.active) if cronjob.status.active else 0,
+                    "last_schedule": cronjob.status.last_schedule_time.strftime("%Y-%m-%d %H:%M:%S") if cronjob.status.last_schedule_time else None,
+                    "creation_time": cronjob.metadata.creation_timestamp.strftime("%Y-%m-%d %H:%M:%S") if cronjob.metadata.creation_timestamp else None
+                }
+                result["cronjobs"].append(cronjob_info)
+        except:
+            # 如果CronJob API不可用，跳过
+            result["cronjobs"] = []
+
+        return json.dumps(result)
+    except ApiException as e:
+        return json.dumps({"error": str(e)}), 500
+
+
+@tool()
+def check_kubernetes_endpoints(namespace=None, config: RunnableConfig = None):
+    """
+    检查Service的Endpoints状态，帮助诊断服务发现问题
+
+    Args:
+        namespace (str, optional): 要检查的命名空间
+        config (RunnableConfig): 工具配置
+    """
+    prepare_context(config)
+    try:
+        core_v1 = client.CoreV1Api()
+
+        if namespace:
+            endpoints = core_v1.list_namespaced_endpoints(namespace)
+        else:
+            endpoints = core_v1.list_endpoints_for_all_namespaces()
+
+        result = []
+        for endpoint in endpoints.items:
+            addresses = []
+            not_ready_addresses = []
+
+            if endpoint.subsets:
+                for subset in endpoint.subsets:
+                    if subset.addresses:
+                        for addr in subset.addresses:
+                            addresses.append({
+                                "ip": addr.ip,
+                                "target_ref": {
+                                    "kind": addr.target_ref.kind if addr.target_ref else None,
+                                    "name": addr.target_ref.name if addr.target_ref else None
+                                }
+                            })
+
+                    if subset.not_ready_addresses:
+                        for addr in subset.not_ready_addresses:
+                            not_ready_addresses.append({
+                                "ip": addr.ip,
+                                "target_ref": {
+                                    "kind": addr.target_ref.kind if addr.target_ref else None,
+                                    "name": addr.target_ref.name if addr.target_ref else None
+                                }
+                            })
+
+            endpoint_info = {
+                "name": endpoint.metadata.name,
+                "namespace": endpoint.metadata.namespace,
+                "ready_addresses": addresses,
+                "not_ready_addresses": not_ready_addresses,
+                "total_ready": len(addresses),
+                "total_not_ready": len(not_ready_addresses)
+            }
+            result.append(endpoint_info)
+
+        return json.dumps(result)
+    except ApiException as e:
+        return json.dumps({"error": str(e)}), 500
+
+
+@tool()
+def diagnose_kubernetes_pod_issues(namespace, pod_name, config: RunnableConfig = None):
+    """
+    综合诊断指定Pod的问题，包括事件、状态、资源使用等
+
+    Args:
+        namespace (str): Pod所在的命名空间
+        pod_name (str): Pod名称
+        config (RunnableConfig): 工具配置
+    """
+    prepare_context(config)
+    try:
+        core_v1 = client.CoreV1Api()
+
+        # 获取Pod详细信息
+        try:
+            pod = core_v1.read_namespaced_pod(pod_name, namespace)
+        except ApiException as e:
+            if e.status == 404:
+                return json.dumps({"error": f"Pod '{pod_name}' not found in namespace '{namespace}'"}), 404
+            raise
+
+        # 获取相关事件
+        events = core_v1.list_namespaced_event(
+            namespace,
+            field_selector=f"involvedObject.name={pod_name},involvedObject.kind=Pod"
+        )
+
+        # 整理诊断信息
+        diagnosis = {
+            "pod_name": pod_name,
+            "namespace": namespace,
+            "phase": pod.status.phase,
+            "node": pod.spec.node_name,
+            "restart_policy": pod.spec.restart_policy,
+            "conditions": [],
+            "containers": [],
+            "init_containers": [],
+            "recent_events": [],
+            "resource_requests": {},
+            "resource_limits": {},
+            "volumes": []
+        }
+
+        # Pod条件
+        if pod.status.conditions:
+            for condition in pod.status.conditions:
+                diagnosis["conditions"].append({
+                    "type": condition.type,
+                    "status": condition.status,
+                    "reason": condition.reason,
+                    "message": condition.message,
+                    "last_transition": condition.last_transition_time.strftime("%Y-%m-%d %H:%M:%S") if condition.last_transition_time else None
+                })
+
+        # 容器状态
+        if pod.status.container_statuses:
+            for status in pod.status.container_statuses:
+                container_info = {
+                    "name": status.name,
+                    "image": status.image,
+                    "ready": status.ready,
+                    "restart_count": status.restart_count,
+                    "state": {}
+                }
+
+                if status.state.running:
+                    container_info["state"] = {
+                        "status": "running",
+                        "started_at": status.state.running.started_at.strftime("%Y-%m-%d %H:%M:%S") if status.state.running.started_at else None
+                    }
+                elif status.state.waiting:
+                    container_info["state"] = {
+                        "status": "waiting",
+                        "reason": status.state.waiting.reason,
+                        "message": status.state.waiting.message
+                    }
+                elif status.state.terminated:
+                    container_info["state"] = {
+                        "status": "terminated",
+                        "reason": status.state.terminated.reason,
+                        "exit_code": status.state.terminated.exit_code,
+                        "message": status.state.terminated.message,
+                        "started_at": status.state.terminated.started_at.strftime("%Y-%m-%d %H:%M:%S") if status.state.terminated.started_at else None,
+                        "finished_at": status.state.terminated.finished_at.strftime("%Y-%m-%d %H:%M:%S") if status.state.terminated.finished_at else None
+                    }
+
+                diagnosis["containers"].append(container_info)
+
+        # Init容器状态
+        if pod.status.init_container_statuses:
+            for status in pod.status.init_container_statuses:
+                init_container_info = {
+                    "name": status.name,
+                    "image": status.image,
+                    "ready": status.ready,
+                    "restart_count": status.restart_count,
+                    "state": {}
+                }
+
+                if status.state.running:
+                    init_container_info["state"] = {"status": "running"}
+                elif status.state.waiting:
+                    init_container_info["state"] = {
+                        "status": "waiting",
+                        "reason": status.state.waiting.reason,
+                        "message": status.state.waiting.message
+                    }
+                elif status.state.terminated:
+                    init_container_info["state"] = {
+                        "status": "terminated",
+                        "reason": status.state.terminated.reason,
+                        "exit_code": status.state.terminated.exit_code,
+                        "message": status.state.terminated.message
+                    }
+
+                diagnosis["init_containers"].append(init_container_info)
+
+        # 资源请求和限制
+        if pod.spec.containers:
+            for container in pod.spec.containers:
+                if container.resources:
+                    if container.resources.requests:
+                        diagnosis["resource_requests"][container.name] = dict(
+                            container.resources.requests)
+                    if container.resources.limits:
+                        diagnosis["resource_limits"][container.name] = dict(
+                            container.resources.limits)
+
+        # 卷信息
+        if pod.spec.volumes:
+            for volume in pod.spec.volumes:
+                volume_info = {
+                    "name": volume.name,
+                    "type": None
+                }
+
+                if volume.config_map:
+                    volume_info["type"] = "configMap"
+                    volume_info["source"] = volume.config_map.name
+                elif volume.secret:
+                    volume_info["type"] = "secret"
+                    volume_info["source"] = volume.secret.secret_name
+                elif volume.persistent_volume_claim:
+                    volume_info["type"] = "persistentVolumeClaim"
+                    volume_info["source"] = volume.persistent_volume_claim.claim_name
+                elif volume.empty_dir:
+                    volume_info["type"] = "emptyDir"
+
+                diagnosis["volumes"].append(volume_info)
+
+        # 最近的事件
+        for event in sorted(events.items, key=lambda e: e.last_timestamp if e.last_timestamp else datetime.min, reverse=True)[:10]:
+            diagnosis["recent_events"].append({
+                "type": event.type,
+                "reason": event.reason,
+                "message": event.message,
+                "count": event.count,
+                "last_timestamp": event.last_timestamp.strftime("%Y-%m-%d %H:%M:%S") if event.last_timestamp else None
+            })
+
+        return json.dumps(diagnosis)
+    except ApiException as e:
+        return json.dumps({"error": str(e)}), 500
+
+
+def parse_resource_quantity(quantity_str):
+    """
+    解析Kubernetes资源数量字符串为数值
+
+    Args:
+        quantity_str (str): 如 "100m", "1Gi", "500Mi" 等
+
+    Returns:
+        float: 转换后的数值
+    """
+    if not quantity_str:
+        return 0
+
+    # CPU资源 (cores)
+    if quantity_str.endswith('m'):
+        return float(quantity_str[:-1]) / 1000
+
+    # 内存资源 (bytes)
+    multipliers = {
+        'Ki': 1024,
+        'Mi': 1024**2,
+        'Gi': 1024**3,
+        'Ti': 1024**4,
+        'K': 1000,
+        'M': 1000**2,
+        'G': 1000**3,
+        'T': 1000**4
+    }
+
+    for suffix, multiplier in multipliers.items():
+        if quantity_str.endswith(suffix):
+            return float(quantity_str[:-len(suffix)]) * multiplier
+
+    # 无单位，直接转换
+    try:
+        return float(quantity_str)
+    except ValueError:
+        return 0

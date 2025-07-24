@@ -12,6 +12,8 @@ def get_cmdb_module_data(module, child_module, page, page_size, group_id):
     """
         获取cmdb模块实例数据
     """
+    page = int(page)
+    page_size = int(page_size)
     if module == PERMISSION_TASK:
         # 计算分页
         start = (page - 1) * page_size
@@ -21,7 +23,7 @@ def get_cmdb_module_data(module, child_module, page, page_size, group_id):
         queryset = [{"id": str(i['id']), "name": f"{i['model_id']}_{i['name']}"} for i in instances]
     elif module == PERMISSION_INSTANCES:
         instances, count = InstanceManage.instance_list(
-            user_groups=[group_id],  # 改为列表
+            user_groups=[{'id': int(group_id)}],  # 改为列表
             roles=[],  # 空列表
             model_id=child_module,  # 使用实际模型ID
             params=[],  # 空查询条件（或按需添加）
@@ -37,9 +39,9 @@ def get_cmdb_module_data(module, child_module, page, page_size, group_id):
                 "id": instance["inst_name"]
             })
     elif module == PERMISSION_MODEL:
-        models = ModelManage.search_model(classification_id=child_module)
+        models = ModelManage.search_model(classification_ids=[child_module])
         count = len(models)
-        queryset = [{"name": model["model_id"], "display_name": model["model_name"]} for model in models]
+        queryset = [{"id": model["model_id"], "name": model["model_name"]} for model in models]
 
     else:
         raise ValueError("Invalid module type")

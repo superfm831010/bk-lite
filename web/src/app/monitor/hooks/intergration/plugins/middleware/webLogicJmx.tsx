@@ -92,9 +92,8 @@ export const useWebLogicJmx = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: webLogicFormItems.getCommonFormItems(),
           initTableItems: {
             jmx_url: null,
@@ -168,7 +167,6 @@ export const useWebLogicJmx = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const base: Record<string, any> = cloneDeep(
@@ -262,6 +260,11 @@ rules:
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };
