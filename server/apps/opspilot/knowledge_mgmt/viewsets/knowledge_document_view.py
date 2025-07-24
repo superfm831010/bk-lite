@@ -151,6 +151,38 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             }
         )
 
+    @action(methods=["GET"], detail=False)
+    def get_chunk_detail(self, request):
+        knowledge_id = request.GET.get("knowledge_id")
+        instance = KnowledgeDocument.objects.get(id=knowledge_id)
+        chunk_id = request.GET.get("chunk_id")
+        index_name = instance.knowledge_index_name()
+        res = ChunkHelper.get_document_es_chunk(
+            index_name,
+            1,
+            1,
+            "",
+            metadata_filter={"chunk_id": chunk_id, "is_doc": "1"},
+        )
+        if res["documents"]:
+            return_data = res["documents"][0]
+            return JsonResponse(
+                {
+                    "result": True,
+                    "data": {
+                        "id": return_data["metadata"]["chunk_id"],
+                        "content": return_data["page_content"],
+                        "index_name": index_name,
+                    },
+                }
+            )
+        return JsonResponse(
+            {
+                "result": False,
+                "message": _("Chunk not found"),
+            }
+        )
+
     @action(methods=["POST"], detail=True)
     def enable_chunk(self, request, *args, **kwargs):
         instance: KnowledgeDocument = self.get_object()

@@ -51,7 +51,7 @@ class InstanceViewSet(viewsets.ViewSet):
         model_permission_map = CmdbRulesFormatUtil.format_permission_map(rules=rules, model_id=model_id).get(model_id,
                                                                                                              {})
         inst_name_permission_map = model_permission_map.get("permission_map", {})
-        select_all = model_permission_map.get("select_all")
+        select_all = model_permission_map.get("select_all", True)
         inst_names = [] if select_all else list(inst_name_permission_map.keys())
 
         # 修改权限过滤逻辑：有权限的实例或者自己创建的实例 (OR关系)

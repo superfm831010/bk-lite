@@ -49,11 +49,13 @@ const SkillSettingsPage: React.FC = () => {
   const [skillPermissions, setSkillPermissions] = useState<string[]>([]);
   const [enableKmRoute, setEnableKmRoute] = useState(true);
   const [kmLlmModel, setKmLlmModel] = useState<number | null>(null);
+  const [guideValue, setGuideValue] = useState<string>('');
 
   useEffect(() => {
     const fetchFormData = async (knowledgeBases: KnowledgeBase[]) => {
       try {
         const data = await fetchSkillDetail(id);
+        const initialGuide = '您好，请问有什么可以帮助您的吗？可以点击如下问题进行快速提问。\n[问题1]\n[问题2]'
         form.setFieldsValue({
           name: data.name,
           group: data.team,
@@ -61,8 +63,10 @@ const SkillSettingsPage: React.FC = () => {
           llmModel: data.llm_model,
           temperature: data.temperature || 0.7,
           prompt: data.skill_prompt,
+          guide: data.guide || initialGuide,
           show_think: data.show_think,
         });
+        setGuideValue(data.guide || initialGuide);
         const selected = llmModels.find(model => model.id === data.llm_model);
         setIsDeepSeek(selected?.llm_model_type === 'deep-seek');
         setChatHistoryEnabled(data.enable_conversation_history);
@@ -149,6 +153,7 @@ const SkillSettingsPage: React.FC = () => {
         show_think: values.show_think,
         enable_km_route: enableKmRoute,
         km_llm_model: enableKmRoute ? kmLlmModel : undefined,
+        guide: values.guide,
         tools: selectedTools.map((tool: any) => ({
           id: tool.id,
           name: tool.name,
@@ -314,6 +319,15 @@ const SkillSettingsPage: React.FC = () => {
                       rules={[{ required: true, message: `${t('common.input')} ${t('skill.form.prompt')}` }]}>
                       <TextArea rows={4} />
                     </Form.Item>
+                    <Form.Item
+                      label={t('skill.form.guide')}
+                      name="guide"
+                      tooltip={t('skill.form.guideTip')}>
+                      <TextArea 
+                        rows={4} 
+                        onChange={(e) => setGuideValue(e.target.value)}
+                      />
+                    </Form.Item>
                   </Form>
                 </div>
               </div>
@@ -424,7 +438,10 @@ const SkillSettingsPage: React.FC = () => {
             </div>
           </div>
           <div className="w-1/2 space-y-4">
-            <CustomChatSSE handleSendMessage={handleSendMessage} />
+            <CustomChatSSE 
+              handleSendMessage={handleSendMessage} 
+              guide={guideValue} 
+            />
           </div>
         </div>
       )}
