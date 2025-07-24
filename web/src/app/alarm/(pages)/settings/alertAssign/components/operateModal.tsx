@@ -246,6 +246,11 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
             mode="multiple"
             options={personnelOptions}
             placeholder={`${t('common.selectMsg')}`}
+            filterOption={(input, option) =>
+              (option?.label as string)
+                ?.toLowerCase()
+                .includes(input.toLowerCase())
+            }
           />
         </Form.Item>
         <Form.Item

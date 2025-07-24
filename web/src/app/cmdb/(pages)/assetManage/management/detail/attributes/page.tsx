@@ -21,6 +21,10 @@ const Attributes = () => {
   const commonContext = useCommon();
   const searchParams = useSearchParams();
   const modelId = searchParams.get('model_id');
+  const permissionParam = searchParams.get('permission');
+  const modelPermission = permissionParam
+    ? decodeURIComponent(permissionParam).split(',')
+    : [];
   const permissionGroupsInfo = useRef(
     commonContext?.permissionGroupsInfo || null
   );
@@ -104,7 +108,7 @@ const Attributes = () => {
         <>
           <PermissionWrapper
             requiredPermissions={['Edit Model']}
-            instPermissions={record.permission}
+            instPermissions={modelPermission}
           >
             <Button
               type="link"
@@ -117,7 +121,7 @@ const Attributes = () => {
           </PermissionWrapper>
           <PermissionWrapper
             requiredPermissions={['Edit Model']}
-            instPermissions={record.permission}
+            instPermissions={modelPermission}
           >
             <Button
               type="link"
@@ -228,7 +232,10 @@ const Attributes = () => {
             />
           </div>
           <div className="right-side">
-            <PermissionWrapper requiredPermissions={['Edit Model']}>
+            <PermissionWrapper
+              requiredPermissions={['Edit Model']}
+              instPermissions={modelPermission}
+            >
               <Button
                 type="primary"
                 className="mr-[8px]"

@@ -146,7 +146,21 @@ const EventTable: React.FC<EventTableProps> = ({
         width={600}
         onClose={() => setRawVisible(false)}
       >
-        <pre>{JSON.stringify(rawData, null, 2)}</pre>
+        <pre
+          style={{
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            overflow: 'auto',
+            maxHeight: 'calc(100vh - 120px)',
+            backgroundColor: '#f6f8fa',
+            padding: '16px',
+            borderRadius: '6px',
+            fontSize: '14px',
+            lineHeight: '1.5',
+          }}
+        >
+          {JSON.stringify(rawData, null, 2)}
+        </pre>
       </Drawer>
     </>
   );

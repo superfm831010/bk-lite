@@ -27,7 +27,7 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
   const classificationId: string = searchParams.get('classification_id') || '';
   const isPre = searchParams.get('is_pre') === 'true';
   const permissionParam = searchParams.get('permission');
-  const permission = permissionParam
+  const modelPermission = permissionParam
     ? decodeURIComponent(permissionParam).split(',')
     : [];
   const modelRef = useRef<any>(null);
@@ -48,7 +48,8 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   const onSuccess = (info: any) => {
-    const currentPermission = permission.length > 0 ? permission.join(',') : '';
+    const currentPermission =
+      modelPermission.length > 0 ? modelPermission.join(',') : '';
     const params = new URLSearchParams({
       icn: info.icn || objIcon,
       model_name: info.model_name,
@@ -118,7 +119,7 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="self-start">
               <PermissionWrapper
                 requiredPermissions={['Edit Model']}
-                instPermissions={permission}
+                instPermissions={modelPermission}
               >
                 <EditTwoTone
                   className="edit mr-[10px] text-[14px] cursor-pointer"
@@ -134,7 +135,7 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
               </PermissionWrapper>
               <PermissionWrapper
                 requiredPermissions={['Delete Model']}
-                instPermissions={permission}
+                instPermissions={modelPermission}
               >
                 <DeleteTwoTone
                   className="delete text-[14px] cursor-pointer"
