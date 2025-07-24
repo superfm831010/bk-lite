@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Icon from '@/components/icon';
-import ComponentConfigDrawer from './compConfig';
+import ComponentConfigDrawer from './baseConfig';
 import { Modal, Menu, List, Input } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { ComponentSelectorProps } from '@/app/ops-analysis/types/dashBoard';

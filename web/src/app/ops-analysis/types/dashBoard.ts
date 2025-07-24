@@ -21,6 +21,7 @@ export interface LayoutItem {
   h: number;
   widget: string;
   title: string;
+  description?: string;
   config?: WidgetConfig;
 }
 
@@ -41,6 +42,7 @@ export interface BaseWidgetProps {
   config?: any;
   globalTimeRange?: any;
   globalInstances?: string[];
+  refreshKey?: number; 
   onDataChange?: (data: any) => void;
 }
 

@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import dayjs from 'dayjs';
 import ReactEcharts from 'echarts-for-react';
+import { Spin } from 'antd';
 import { BaseWidgetProps } from '@/app/ops-analysis/types/dashBoard';
-import { useDashBoardApi } from '@/app/ops-analysis/api/dashBoard';
+import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 
-const TrendLine: React.FC<BaseWidgetProps> = ({ config, globalTimeRange }) => {
+const TrendLine: React.FC<BaseWidgetProps> = ({
+  config,
+  globalTimeRange,
+  refreshKey,
+}) => {
   const [chartData, setChartData] = useState<{
     dates: string[];
     values: number[];
@@ -12,14 +18,40 @@ const TrendLine: React.FC<BaseWidgetProps> = ({ config, globalTimeRange }) => {
     values: [],
   });
   const [loading, setLoading] = useState(true);
-  const { getTrendData } = useDashBoardApi();
+  const { getSourceDataByApiId } = useDataSourceApi();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response: any = await getTrendData();
-        setChartData(response.data);
+        const timeParams = globalTimeRange || config?.timeRange;
+        let startTime, endTime;
+        if (timeParams && typeof timeParams === 'number') {
+          endTime = dayjs().valueOf();
+          startTime = dayjs().subtract(timeParams, 'minute').valueOf();
+        } else if (timeParams && timeParams.start && timeParams.end) {
+          startTime = timeParams.start;
+          endTime = timeParams.end;
+        } else {
+          endTime = timeParams[1];
+          startTime = timeParams[0];
+        }
+        const startTimeStr = dayjs(startTime).format('YYYY-MM-DD HH:mm:ss');
+        const endTimeStr = dayjs(endTime).format('YYYY-MM-DD HH:mm:ss');
+        const data: any = await getSourceDataByApiId(config.dataSource, {
+          group_by: config?.groupBy || 'day',
+          filters: {
+            start_time: startTimeStr,
+            end_time: endTimeStr,
+          },
+        });
+        if (Array.isArray(data) && data.length > 0) {
+          const dates = data.map((item: any[]) => item[0]);
+          const values = data.map((item: any[]) => item[1]);
+          setChartData({ dates, values });
+        } else {
+          setChartData({ dates: [], values: [] });
+        }
       } catch (error) {
         console.error('获取趋势数据失败:', error);
       } finally {
@@ -28,7 +60,7 @@ const TrendLine: React.FC<BaseWidgetProps> = ({ config, globalTimeRange }) => {
     };
 
     fetchData();
-  }, [globalTimeRange]);
+  }, [config, globalTimeRange, refreshKey]);
 
   const option: any = {
     color: [config?.lineColor || '#1890ff'],
@@ -40,9 +72,9 @@ const TrendLine: React.FC<BaseWidgetProps> = ({ config, globalTimeRange }) => {
     tooltip: {
       trigger: 'axis',
       axisPointer: {
-        type: 'cross', // 交叉指示器
+        type: 'cross',
       },
-      enterable: true, // 鼠标是否可进入提示框浮层中
+      enterable: true,
       confine: true,
       extraCssText: 'box-shadow: 0 0 3px rgba(150,150,150, 0.7);',
       textStyle: {
@@ -86,6 +118,7 @@ const TrendLine: React.FC<BaseWidgetProps> = ({ config, globalTimeRange }) => {
     },
     yAxis: {
       type: 'value',
+      minInterval: 1,
       axisTick: { show: false },
       axisLine: { show: false },
       axisLabel: {
@@ -108,7 +141,7 @@ const TrendLine: React.FC<BaseWidgetProps> = ({ config, globalTimeRange }) => {
     },
     series: [
       {
-        name: 'Value',
+        name: '告警数',
         type: 'line',
         data: chartData.values,
         smooth: true,
@@ -129,7 +162,7 @@ const TrendLine: React.FC<BaseWidgetProps> = ({ config, globalTimeRange }) => {
       <div className="flex-1">
         {loading ? (
           <div className="h-full flex items-center justify-center">
-            <div className="text-gray-500">加载中...</div>
+            <Spin spinning={loading}></Spin>
           </div>
         ) : (
           <ReactEcharts

@@ -62,6 +62,8 @@ const Topology: React.FC = () => {
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [tempTextInput, setTempTextInput] = useState('');
   const [editPosition, setEditPosition] = useState({ x: 0, y: 0 });
+  const [inputWidth, setInputWidth] = useState(120);
+  const [originalText, setOriginalText] = useState('');
 
   const finishTextEditRef = useRef<(() => void) | null>(null);
   const startTextEditRef = useRef<((nodeId: string, currentText: string) => void) | null>(null);
@@ -288,6 +290,22 @@ const Topology: React.FC = () => {
         const relativeY = screenY;
 
         setEditPosition({ x: relativeX, y: relativeY });
+
+        // 计算输入框宽度，至少要能容纳当前文本，并留有余量
+        const textDisplayWidth = Math.max(currentText.length * 14 + 20, 100);
+        const nodeWidth = bbox.width * scale.sx;
+        const calculatedWidth = Math.max(textDisplayWidth, nodeWidth);
+        setInputWidth(calculatedWidth);
+
+        // 保存原始文本
+        setOriginalText(currentText);
+
+        // 隐藏节点的文本内容，避免与输入框重叠
+        node.setAttrs({
+          label: {
+            text: '',
+          },
+        });
       }
 
       setIsEditingText(true);
@@ -340,6 +358,8 @@ const Topology: React.FC = () => {
     setEditingNodeId(null);
     setTempTextInput('');
     setEditPosition({ x: 0, y: 0 });
+    setInputWidth(120);
+    setOriginalText('');
   }, [graphInstance, editingNodeId, tempTextInput, isEditingText]);
 
   finishTextEditRef.current = finishTextEdit;
@@ -347,11 +367,25 @@ const Topology: React.FC = () => {
   isEditModeRef.current = isEditMode;
 
   const cancelTextEdit = useCallback(() => {
+    // 恢复原始文本
+    if (graphInstance && editingNodeId && originalText !== '') {
+      const node = graphInstance.getCellById(editingNodeId);
+      if (node) {
+        node.setAttrs({
+          label: {
+            text: originalText,
+          },
+        });
+      }
+    }
+
     setIsEditingText(false);
     setEditingNodeId(null);
     setTempTextInput('');
     setEditPosition({ x: 0, y: 0 });
-  }, []);
+    setInputWidth(120);
+    setOriginalText('');
+  }, [graphInstance, editingNodeId, originalText]);
 
   // 切换编辑模式
   const toggleEditMode = useCallback(() => {
@@ -480,17 +514,10 @@ const Topology: React.FC = () => {
     const hideCtx = () => setContextMenuVisible(false);
     document.addEventListener('click', hideCtx);
     graph.on('node:contextmenu', ({ e, node }) => {
-      if (!isEditModeRef.current) return;
-
       e.preventDefault();
       setContextMenuVisible(true);
       setContextMenuPosition({ x: e.clientX, y: e.clientY });
       setContextMenuNodeId(node.id);
-    });
-
-    // 添加更多连接相关的事件监听
-    graph.on('edge:connecting', () => {
-      console.log('Edge connecting started');
     });
 
     graph.on('edge:connected', ({ edge, isNew }: any) => {
@@ -728,211 +755,226 @@ const Topology: React.FC = () => {
   const handleMenuClick = ({ key }: { key: string }) => {
     setContextMenuVisible(false);
 
-    if (graphInstance) {
-      // 设置当前连接类型
-      const connectionType = key as 'none' | 'single' | 'double';
+    if (!graphInstance) return;
 
-      // 获取起始节点
+    // 视图模式下的菜单处理
+    if (!isEditMode) {
       const sourceNode = graphInstance.getCellById(contextMenuNodeId);
       if (!sourceNode) return;
 
-      // 获取当前鼠标位置
-      const getCurrentMousePosition = (e: MouseEvent) => {
-        return graphInstance.clientToLocal(e.clientX, e.clientY);
-      };
+      const nodeName = sourceNode.getAttrs()?.label?.text || sourceNode.id;
 
-      let tempEdge: Edge | null = null;
+      if (key === 'viewAlarms') {
+        // TODO: 查看告警列表
+        console.log('查看告警列表:', nodeName);
+      } else if (key === 'viewMonitor') {
+        // TODO: 查看监控详情
+        console.log('查看监控详情:', nodeName);
+      }
+      return;
+    }
+    // 设置当前连接类型
+    const connectionType = key as 'none' | 'single' | 'double';
 
-      // 监听键盘事件处理取消连线
-      const onKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape' && tempEdge && isDrawingRef.current) {
-          e.preventDefault();
-          e.stopPropagation();
+    // 获取起始节点
+    const sourceNode = graphInstance.getCellById(contextMenuNodeId);
+    if (!sourceNode) return;
 
-          // 取消连线
-          document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
-          document.removeEventListener('keydown', onKeyDown);
+    // 获取当前鼠标位置
+    const getCurrentMousePosition = (e: MouseEvent) => {
+      return graphInstance.clientToLocal(e.clientX, e.clientY);
+    };
 
-          if (tempEdge) {
-            tempEdge.remove();
-          }
+    let tempEdge: Edge | null = null;
 
-          updateDrawingState(false);
-          drawingEdgeRef.current = null;
-          tempEdge = null;
-        }
-      };
+    // 监听键盘事件处理取消连线
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && tempEdge && isDrawingRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
 
-      // 监听鼠标移动开始绘制
-      const onMouseMove = (e: MouseEvent) => {
-        if (!graphInstance) return;
-
-        const currentPoint = getCurrentMousePosition(e);
-
-        if (!tempEdge) {
-          // 创建临时连线
-          tempEdge = graphInstance.addEdge({
-            source: { cell: contextMenuNodeId },
-            target: currentPoint,
-            ...getEdgeStyle(connectionType),
-            data: { connectionType, isTemporary: true },
-            zIndex: 1000,
-          });
-          drawingEdgeRef.current = tempEdge;
-          updateDrawingState(true);
-        } else {
-          // 更新目标位置
-          tempEdge.setTarget(currentPoint);
-        }
-      };
-
-      // 监听鼠标释放完成连接
-      const onMouseUp = (e: MouseEvent) => {
-        if (!tempEdge || !isDrawingRef.current || !graphInstance) {
-          return;
-        }
-
+        // 取消连线
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
         document.removeEventListener('keydown', onKeyDown);
-        updateDrawingState(false);
 
-        // 将鼠标位置转换为画布坐标
-        const localPoint = getCurrentMousePosition(e);
-
-        // 查找目标节点
-        let targetCell: any = null;
-        let targetPort: string | null = null;
-
-        graphInstance.getNodes().forEach((node) => {
-          if (node.id === contextMenuNodeId) return; // 跳过起始节点
-
-          const bbox = node.getBBox();
-
-          // 检查是否在节点范围内
-          if (
-            localPoint.x >= bbox.x &&
-            localPoint.x <= bbox.x + bbox.width &&
-            localPoint.y >= bbox.y &&
-            localPoint.y <= bbox.y + bbox.height
-          ) {
-            targetCell = node;
-
-            // 计算图标区域的实际位置（基于节点样式中的图标定义）
-            const iconX = bbox.x + 25; // 图标相对节点的 x 偏移
-            const iconY = bbox.y + 5; // 图标相对节点的 y 偏移
-            const iconWidth = 70; // 图标宽度
-            const iconHeight = 50; // 图标高度
-
-            // 检查是否点击在图标区域内
-            if (
-              localPoint.x >= iconX &&
-              localPoint.x <= iconX + iconWidth &&
-              localPoint.y >= iconY &&
-              localPoint.y <= iconY + iconHeight
-            ) {
-              // 基于图标区域计算锚点位置
-              const ports = ['top', 'bottom', 'left', 'right'];
-              const portPositions = {
-                top: { x: iconX + iconWidth / 2, y: iconY },
-                bottom: { x: iconX + iconWidth / 2, y: iconY + iconHeight },
-                left: { x: iconX, y: iconY + iconHeight / 2 },
-                right: { x: iconX + iconWidth, y: iconY + iconHeight / 2 },
-              };
-
-              let minDistance = Infinity;
-              let nearestPort = 'top';
-
-              ports.forEach((port) => {
-                const portPos =
-                  portPositions[port as keyof typeof portPositions];
-                const distance = Math.sqrt(
-                  Math.pow(localPoint.x - portPos.x, 2) +
-                    Math.pow(localPoint.y - portPos.y, 2)
-                );
-
-                // 如果距离小于锚点半径（6px），认为是点击在锚点上
-                if (distance <= 6) {
-                  targetPort = port;
-                  return;
-                }
-
-                // 记录最近的锚点
-                if (distance < minDistance) {
-                  minDistance = distance;
-                  nearestPort = port;
-                }
-              });
-
-              // 如果没有直接点击锚点，则使用最近的锚点
-              if (!targetPort) {
-                targetPort = nearestPort;
-              }
-            } else {
-              // 如果点击在节点范围内但不在图标区域内，不设置目标端口
-              targetCell = null;
-            }
-          }
-        });
-
-        // 移除临时连线
         if (tempEdge) {
           tempEdge.remove();
         }
 
-        // 如果找到目标节点，创建正式连线
-        if (targetCell && targetCell.id !== contextMenuNodeId && targetPort) {
-          // 为起始节点选择最佳端口
-          const sourceNode = graphInstance.getCellById(contextMenuNodeId);
-          if (sourceNode) {
-            const sourceBbox = sourceNode.getBBox();
-            const targetBbox = targetCell.getBBox();
-
-            // 计算两个节点中心点的方向
-            const dx =
-              targetBbox.x +
-              targetBbox.width / 2 -
-              (sourceBbox.x + sourceBbox.width / 2);
-            const dy =
-              targetBbox.y +
-              targetBbox.height / 2 -
-              (sourceBbox.y + sourceBbox.height / 2);
-
-            let sourcePort = 'right';
-            // 根据方向选择起始端口
-            if (Math.abs(dx) > Math.abs(dy)) {
-              sourcePort = dx > 0 ? 'right' : 'left';
-            } else {
-              sourcePort = dy > 0 ? 'bottom' : 'top';
-            }
-
-            const finalEdge = graphInstance.addEdge({
-              source: { cell: contextMenuNodeId, port: sourcePort },
-              target: { cell: targetCell.id, port: targetPort },
-              ...getEdgeStyle(connectionType),
-              data: { connectionType, lineType: 'network line' },
-            });
-            addEdgeTools(finalEdge);
-
-            // 连线完成后自动打开配置面板
-            openEdgeConfig(finalEdge, sourceNode, targetCell);
-          }
-        }
-
-        // 重置连线状态
+        updateDrawingState(false);
         drawingEdgeRef.current = null;
         tempEdge = null;
-      };
-
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
-      document.addEventListener('keydown', onKeyDown);
-
-      // 确保容器获得焦点以接收键盘事件
-      if (containerRef.current) {
-        containerRef.current.focus();
       }
+    };
+
+    // 监听鼠标移动开始绘制
+    const onMouseMove = (e: MouseEvent) => {
+      if (!graphInstance) return;
+
+      const currentPoint = getCurrentMousePosition(e);
+
+      if (!tempEdge) {
+        // 创建临时连线
+        tempEdge = graphInstance.addEdge({
+          source: { cell: contextMenuNodeId },
+          target: currentPoint,
+          ...getEdgeStyle(connectionType),
+          data: { connectionType, isTemporary: true },
+          zIndex: 1000,
+        });
+        drawingEdgeRef.current = tempEdge;
+        updateDrawingState(true);
+      } else {
+        // 更新目标位置
+        tempEdge.setTarget(currentPoint);
+      }
+    };
+
+    // 监听鼠标释放完成连接
+    const onMouseUp = (e: MouseEvent) => {
+      if (!tempEdge || !isDrawingRef.current || !graphInstance) {
+        return;
+      }
+
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.removeEventListener('keydown', onKeyDown);
+      updateDrawingState(false);
+
+      // 将鼠标位置转换为画布坐标
+      const localPoint = getCurrentMousePosition(e);
+
+      // 查找目标节点
+      let targetCell: any = null;
+      let targetPort: string | null = null;
+
+      graphInstance.getNodes().forEach((node) => {
+        if (node.id === contextMenuNodeId) return; // 跳过起始节点
+
+        const bbox = node.getBBox();
+
+        // 检查是否在节点范围内
+        if (
+          localPoint.x >= bbox.x &&
+          localPoint.x <= bbox.x + bbox.width &&
+          localPoint.y >= bbox.y &&
+          localPoint.y <= bbox.y + bbox.height
+        ) {
+          targetCell = node;
+
+          // 计算图标区域的实际位置（基于节点样式中的图标定义）
+          const iconX = bbox.x + 25; // 图标相对节点的 x 偏移
+          const iconY = bbox.y + 5; // 图标相对节点的 y 偏移
+          const iconWidth = 70; // 图标宽度
+          const iconHeight = 50; // 图标高度
+
+          // 检查是否点击在图标区域内
+          if (
+            localPoint.x >= iconX &&
+            localPoint.x <= iconX + iconWidth &&
+            localPoint.y >= iconY &&
+            localPoint.y <= iconY + iconHeight
+          ) {
+            // 基于图标区域计算锚点位置
+            const ports = ['top', 'bottom', 'left', 'right'];
+            const portPositions = {
+              top: { x: iconX + iconWidth / 2, y: iconY },
+              bottom: { x: iconX + iconWidth / 2, y: iconY + iconHeight },
+              left: { x: iconX, y: iconY + iconHeight / 2 },
+              right: { x: iconX + iconWidth, y: iconY + iconHeight / 2 },
+            };
+
+            let minDistance = Infinity;
+            let nearestPort = 'top';
+
+            ports.forEach((port) => {
+              const portPos = portPositions[port as keyof typeof portPositions];
+              const distance = Math.sqrt(
+                Math.pow(localPoint.x - portPos.x, 2) +
+                  Math.pow(localPoint.y - portPos.y, 2)
+              );
+
+              // 如果距离小于锚点半径（6px），认为是点击在锚点上
+              if (distance <= 6) {
+                targetPort = port;
+                return;
+              }
+
+              // 记录最近的锚点
+              if (distance < minDistance) {
+                minDistance = distance;
+                nearestPort = port;
+              }
+            });
+
+            // 如果没有直接点击锚点，则使用最近的锚点
+            if (!targetPort) {
+              targetPort = nearestPort;
+            }
+          } else {
+            // 如果点击在节点范围内但不在图标区域内，不设置目标端口
+            targetCell = null;
+          }
+        }
+      });
+
+      // 移除临时连线
+      if (tempEdge) {
+        tempEdge.remove();
+      }
+
+      // 如果找到目标节点，创建正式连线
+      if (targetCell && targetCell.id !== contextMenuNodeId && targetPort) {
+        // 为起始节点选择最佳端口
+        const sourceNode = graphInstance.getCellById(contextMenuNodeId);
+        if (sourceNode) {
+          const sourceBbox = sourceNode.getBBox();
+          const targetBbox = targetCell.getBBox();
+
+          // 计算两个节点中心点的方向
+          const dx =
+            targetBbox.x +
+            targetBbox.width / 2 -
+            (sourceBbox.x + sourceBbox.width / 2);
+          const dy =
+            targetBbox.y +
+            targetBbox.height / 2 -
+            (sourceBbox.y + sourceBbox.height / 2);
+
+          let sourcePort = 'right';
+          // 根据方向选择起始端口
+          if (Math.abs(dx) > Math.abs(dy)) {
+            sourcePort = dx > 0 ? 'right' : 'left';
+          } else {
+            sourcePort = dy > 0 ? 'bottom' : 'top';
+          }
+
+          const finalEdge = graphInstance.addEdge({
+            source: { cell: contextMenuNodeId, port: sourcePort },
+            target: { cell: targetCell.id, port: targetPort },
+            ...getEdgeStyle(connectionType),
+            data: { connectionType, lineType: 'network line' },
+          });
+          addEdgeTools(finalEdge);
+
+          // 连线完成后自动打开配置面板
+          openEdgeConfig(finalEdge, sourceNode, targetCell);
+        }
+      }
+
+      // 重置连线状态
+      drawingEdgeRef.current = null;
+      tempEdge = null;
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('keydown', onKeyDown);
+
+    // 确保容器获得焦点以接收键盘事件
+    if (containerRef.current) {
+      containerRef.current.focus();
     }
   };
 
@@ -1017,13 +1059,22 @@ const Topology: React.FC = () => {
                 left: `${editPosition.x}px`,
                 top: `${editPosition.y}px`,
                 transform: 'translate(-50%, -50%)',
+                width: `${inputWidth}px`,
                 minWidth: '120px',
               }}
             >
               <input
                 type="text"
                 value={tempTextInput}
-                onChange={(e) => setTempTextInput(e.target.value)}
+                onChange={(e) => {
+                  setTempTextInput(e.target.value);
+                  // 动态调整输入框宽度
+                  const newWidth = Math.max(
+                    e.target.value.length * 14 + 20,
+                    100
+                  );
+                  setInputWidth(Math.max(newWidth, inputWidth));
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     finishTextEdit();
@@ -1054,6 +1105,7 @@ const Topology: React.FC = () => {
         visible={contextMenuVisible}
         position={contextMenuPosition}
         onMenuClick={handleMenuClick}
+        isEditMode={isEditMode}
       />
 
       <EdgeConfigPanel

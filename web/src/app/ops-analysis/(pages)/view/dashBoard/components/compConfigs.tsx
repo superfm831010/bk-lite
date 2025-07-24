@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Radio } from 'antd';
-import { useTranslation } from '@/utils/i18n';
 import TimeSelector from '@/components/time-selector';
 import dayjs from 'dayjs';
+import { Form, Input, Radio } from 'antd';
+import { useTranslation } from '@/utils/i18n';
+
+interface WidgetConfigProps {
+  form: any;
+  initialValues?: any;
+}
 
 const FormTimeSelector: React.FC<{
   value?: any;
@@ -20,8 +25,10 @@ const FormTimeSelector: React.FC<{
         setSelectValue(value);
         setRangeValue(null);
       }
+    } else {
+      onChange?.(10080);
     }
-  }, [value]);
+  }, [value, onChange]);
 
   const handleChange = (range: number[], originValue: number | null) => {
     if (originValue === 0) {
@@ -35,7 +42,6 @@ const FormTimeSelector: React.FC<{
     }
   };
 
-  // 将时间戳数组转换为 dayjs 对象数组
   const formatRangeValue = (value: any): [dayjs.Dayjs, dayjs.Dayjs] | null => {
     if (Array.isArray(value) && value.length === 2) {
       return [dayjs(value[0]), dayjs(value[1])];
@@ -57,12 +63,7 @@ const FormTimeSelector: React.FC<{
   );
 };
 
-interface WidgetConfigProps {
-  form: any;
-  initialValues?: any;
-}
-
-// 操作系统类型占比
+// 操作系统类型占比表单配置
 export const OsPieConfig: React.FC<WidgetConfigProps> = ({ form }) => {
   const { t } = useTranslation();
   return (
@@ -74,7 +75,7 @@ export const OsPieConfig: React.FC<WidgetConfigProps> = ({ form }) => {
         <Form.Item
           label={t('dashboard.filterType')}
           name="filterType"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: t('common.selectMsg') }]}
         >
           <Radio.Group>
             <Radio value="selector">{t('dashboard.selector')}</Radio>
@@ -94,7 +95,7 @@ export const OsPieConfig: React.FC<WidgetConfigProps> = ({ form }) => {
               <Form.Item
                 label={t('dashboard.timeRange')}
                 name="timeRange"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: t('common.selectMsg') }]}
               >
                 <FormTimeSelector />
               </Form.Item>
@@ -106,7 +107,7 @@ export const OsPieConfig: React.FC<WidgetConfigProps> = ({ form }) => {
   );
 };
 
-// Alarm趋势/天
+// Alarm趋势/天表单配置
 export const TrendLineConfig: React.FC<WidgetConfigProps> = ({ form }) => {
   const { t } = useTranslation();
   return (
@@ -129,7 +130,7 @@ export const TrendLineConfig: React.FC<WidgetConfigProps> = ({ form }) => {
         <Form.Item
           label={t('dashboard.filterType')}
           name="filterType"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: t('common.selectMsg') }]}
         >
           <Radio.Group>
             <Radio value="selector">{t('dashboard.selector')}</Radio>

@@ -4,7 +4,7 @@ import TrendLine from '../widgets/trendLine';
 import {
   OsPieConfig,
   TrendLineConfig,
-} from './formConfigs';
+} from './compConfigs';
 
 export const widgetRegistry: Record<string, WidgetDefinition> = {
   trendLine: {

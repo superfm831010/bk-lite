@@ -59,7 +59,6 @@
     "filterSettings": "筛选设置",
     "chartType": "图表类型",
     "chartTypeLabel": "图表类型",
-    "selectChartType": "请选择图表类型",
     "lineChart": "折线图",
     "barChart": "柱状图",
     "pieChart": "饼图"
@@ -95,6 +94,8 @@
     "selectMode": "框选",
     "addText": "添加文本",
     "deleteSelected": "删除选中",
-    "exitEdit": "退出编辑"
+    "exitEdit": "退出编辑",
+    "viewAlarmList": "查看告警列表",
+    "viewMonitorDetails": "查看监控详情"
   }
 }

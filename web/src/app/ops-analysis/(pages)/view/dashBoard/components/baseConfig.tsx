@@ -7,32 +7,22 @@ import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { DatasourceItem } from '@/app/ops-analysis/types/dataSource';
 
 const DataSourceSelect: React.FC<{
+  loading?: boolean;
   placeholder?: string;
   style?: any;
   value?: any;
+  disabled?: boolean;
+  dataSources?: DatasourceItem[];
   onChange?: (value: any) => void;
-}> = ({ placeholder, style = { width: '100%' }, value, onChange }) => {
-  const [dataSources, setDataSources] = useState<DatasourceItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { getDataSourceList } = useDataSourceApi();
-
-  useEffect(() => {
-    const fetchDataSources = async () => {
-      try {
-        setLoading(true);
-        const data: any = await getDataSourceList();
-        setDataSources(data || []);
-      } catch (error) {
-        console.error('获取数据源失败:', error);
-        setDataSources([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDataSources();
-  }, []);
-
+}> = ({
+  loading = false,
+  placeholder,
+  style = { width: '100%' },
+  value,
+  disabled = false,
+  dataSources = [],
+  onChange,
+}) => {
   const formatOptions = (sources: DatasourceItem[]) => {
     return sources.map((item) => ({
       label: `${item.name}（${item.rest_api}）`,
@@ -48,58 +38,8 @@ const DataSourceSelect: React.FC<{
       placeholder={placeholder}
       style={style}
       value={value}
+      disabled={disabled}
       onChange={onChange}
-    />
-  );
-};
-
-const DataSourceAttrSelect: React.FC<{
-  placeholder?: string;
-  style?: any;
-  value?: any;
-  dataSourceValue?: string;
-  onChange?: (value: any) => void;
-}> = ({
-  placeholder,
-  style = { width: '100%' },
-  value,
-  dataSourceValue,
-  onChange,
-}) => {
-  const [attrs, setAttrs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { getDataSourceAttrs } = useDataSourceApi();
-
-  useEffect(() => {
-    if (!dataSourceValue) {
-      setAttrs([]);
-      return;
-    }
-    const fetchAttrs = async () => {
-      try {
-        setLoading(true);
-        const response: any = await getDataSourceAttrs(dataSourceValue);
-        setAttrs(response.data || []);
-      } catch (error) {
-        console.error('获取数据源属性失败:', error);
-        setAttrs([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAttrs();
-  }, [dataSourceValue]);
-
-  return (
-    <Select
-      loading={loading}
-      options={attrs}
-      placeholder={placeholder}
-      style={style}
-      value={value}
-      onChange={onChange}
-      disabled={!dataSourceValue}
     />
   );
 };
@@ -112,22 +52,47 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
 }) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
+  const [dataSources, setDataSources] = useState<DatasourceItem[]>([]);
+  const [dataSourcesLoading, setDataSourcesLoading] = useState(false);
+  const { getDataSourceList } = useDataSourceApi();
 
-  let WidgetConfigForm: any = null;
-  if (item?.widget) {
-    WidgetConfigForm = getWidgetConfig(item.widget);
-  }
+  useEffect(() => {
+    const fetchDataSources = async () => {
+      try {
+        setDataSourcesLoading(true);
+        const data: DatasourceItem[] = await getDataSourceList();
+        setDataSources(data || []);
+      } catch (error) {
+        console.error('获取数据源失败:', error);
+        setDataSources([]);
+      } finally {
+        setDataSourcesLoading(false);
+      }
+    };
+    fetchDataSources();
+  }, []);
 
   useEffect(() => {
     if (open && item) {
-      form.setFieldsValue({
+      const formValues: any = {
         name: item.title,
         ...(item.config || {}),
-      });
+      };
+
+      if (item.widget === 'trendLine') {
+        const targetDataSource = dataSources.find(
+          (el: DatasourceItem) => el.rest_api === 'alert/get_alert_trend_data'
+        );
+        if (targetDataSource) {
+          formValues.dataSource = targetDataSource.id;
+        }
+        formValues.chartType = 'line';
+      }
+      form.setFieldsValue(formValues);
     } else {
       form.resetFields();
     }
-  }, [open, item, form]);
+  }, [open, item, form, dataSources]);
 
   const handleConfirm = async () => {
     try {
@@ -138,11 +103,16 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
     }
   };
 
+  let WidgetConfigForm: any = null;
+  if (item?.widget) {
+    WidgetConfigForm = getWidgetConfig(item.widget);
+  }
+
   return (
     <Drawer
       title={t('dashboard.componentConfig')}
       placement="right"
-      width={640}
+      width={600}
       open={open}
       onClose={onClose}
       footer={
@@ -178,33 +148,14 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
           <Form.Item
             label={t('dashboard.dataSourceType')}
             name="dataSource"
-            rules={[
-              { required: true, message: t('dashboard.selectDataSource') },
-            ]}
+            rules={[{ required: true, message: t('common.selectMsg') }]}
           >
-            <DataSourceSelect placeholder={t('dashboard.selectDataSource')} />
-          </Form.Item>
-          <Form.Item
-            noStyle
-            shouldUpdate={(prev, current) =>
-              prev.dataSource !== current.dataSource
-            }
-          >
-            {({ getFieldValue }) => {
-              const dataSourceValue = getFieldValue('dataSource');
-              return (
-                <Form.Item
-                  label={t('dashboard.dataSourceAttr')}
-                  name="dataSourceAttr"
-                  rules={[{ required: true, message: t('common.selectMsg') }]}
-                >
-                  <DataSourceAttrSelect
-                    placeholder={t('common.selectMsg')}
-                    dataSourceValue={dataSourceValue}
-                  />
-                </Form.Item>
-              );
-            }}
+            <DataSourceSelect
+              placeholder={t('common.selectMsg')}
+              disabled={item?.widget === 'trendLine'}
+              dataSources={dataSources}
+              loading={dataSourcesLoading}
+            />
           </Form.Item>
         </div>
 
@@ -216,12 +167,10 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
           <Form.Item
             label={t('dashboard.chartTypeLabel')}
             name="chartType"
-            rules={[
-              { required: true, message: t('dashboard.selectChartType') },
-            ]}
+            rules={[{ required: true, message: t('common.selectMsg') }]}
             initialValue="line"
           >
-            <Radio.Group>
+            <Radio.Group disabled={item?.widget === 'trendLine'}>
               <Radio.Button value="line">
                 {t('dashboard.lineChart')}
               </Radio.Button>

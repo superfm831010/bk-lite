@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
 import ComponentSelector from './components/compSelector';
-import ComponentConfig from './components/compConfig';
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
+import ComponentConfig from './components/baseConfig';
+import TimeSelector from '@/components/time-selector';
 // @ts-expect-error missing type declarations for react-grid-layout
 import GridLayout, { WidthProvider } from 'react-grid-layout';
 import { Button, Empty, Dropdown, Menu, Modal, Select } from 'antd';
@@ -12,7 +12,6 @@ import { useTranslation } from '@/utils/i18n';
 import { LayoutItem } from '@/app/ops-analysis/types/dashBoard';
 import { DirItem } from '@/app/ops-analysis/types';
 import { SaveOutlined, PlusOutlined, MoreOutlined } from '@ant-design/icons';
-import TimeSelector from '@/components/time-selector';
 import { useDashBoardApi } from '@/app/ops-analysis/api/dashBoard';
 import {
   getWidgetComponent,
@@ -20,6 +19,8 @@ import {
   needsGlobalTimeSelector,
   needsGlobalInstanceSelector,
 } from './components/registry';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
 
 interface DashboardProps {
   selectedDashboard?: DirItem | null;
@@ -34,15 +35,26 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
   const [layout, setLayout] = useState<LayoutItem[]>([]);
   const [configDrawerVisible, setConfigDrawerVisible] = useState(false);
   const [currentConfigItem, setCurrentConfigItem] = useState<any>(null);
-  const [globalTimeRange, setGlobalTimeRange] = useState<any>(null);
   const [globalInstances, setGlobalInstances] = useState<string[]>([]);
   const [instanceOptions, setInstanceOptions] = useState<any[]>([]);
   const [instancesLoading, setInstancesLoading] = useState(false);
-
+  const [refreshKey, setRefreshKey] = useState(0);
   const timeDefaultValue = {
     selectValue: 10080,
     rangePickerVaule: null,
   };
+  const getInitialTimeRange = () => {
+    const endTime = dayjs().valueOf();
+    const startTime = dayjs()
+      .subtract(timeDefaultValue.selectValue, 'minute')
+      .valueOf();
+    return { start: startTime, end: endTime };
+  };
+  const [globalTimeRange, setGlobalTimeRange] = useState<any>(
+    getInitialTimeRange()
+  );
+  const needGlobalTimeSelector = needsGlobalTimeSelector(layout);
+  const needGlobalInstanceSelector = needsGlobalInstanceSelector(layout);
 
   // 获取实例列表
   useEffect(() => {
@@ -62,18 +74,15 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
     fetchInstanceList();
   }, []);
 
+  const openAddModal = () => setAddModalVisible(true);
+
   const handleTimeChange = (timeData: any) => {
     setGlobalTimeRange(timeData);
-    console.log('Global time range changed:', timeData);
   };
 
   const handleRefresh = () => {
-    console.log('Dashboard refreshed');
+    setRefreshKey((prev) => prev + 1);
   };
-
-  const needGlobalTimeSelector = needsGlobalTimeSelector(layout);
-
-  const needGlobalInstanceSelector = needsGlobalInstanceSelector(layout);
 
   const handleInstancesChange = (instances: string[]) => {
     setGlobalInstances(instances);
@@ -92,8 +101,6 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
     });
   };
 
-  const openAddModal = () => setAddModalVisible(true);
-
   const handleAddComponent = (widget: string, config?: any) => {
     const newId = (layout.length + 1).toString();
     const widgetMeta = getWidgetMeta(widget);
@@ -105,6 +112,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
       h: 3,
       widget: widget,
       title: config?.name || `New ${widget}`,
+      description: widgetMeta?.description || '',
       config: {
         ...widgetMeta?.defaultConfig,
         ...config,
@@ -113,6 +121,8 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
     setLayout((prev) => [...prev, newWidget]);
     setAddModalVisible(false);
   };
+
+  // TODO
   const handleSave = () => {
     console.log('Save layout:', layout);
   };
@@ -187,14 +197,12 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
         <div className="flex items-center space-x-4 justify-between">
           {
             <div className="flex items-center space-x-2 py-2">
-              {needGlobalTimeSelector && (
-                <TimeSelector
-                  onlyTimeSelect
-                  defaultValue={timeDefaultValue}
-                  onChange={handleTimeChange}
-                  onRefresh={handleRefresh}
-                />
-              )}
+              <TimeSelector
+                onlyRefresh={!needGlobalTimeSelector}
+                defaultValue={timeDefaultValue}
+                onChange={handleTimeChange}
+                onRefresh={handleRefresh}
+              />
               {needGlobalInstanceSelector && (
                 <>
                   <span className="text-sm text-gray-600">
@@ -229,7 +237,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
 
       <div className="flex-1 bg-[#F0F2F5] rounded-lg overflow-auto">
         {(() => {
-          if (layout.length === 0) {
+          if (!layout.length) {
             return (
               <div className="h-full flex flex-col items-center justify-center">
                 <Empty
@@ -278,21 +286,22 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
                   </Menu>
                 );
 
-                let backgroundColor = '#fff';
-                if ((item.config as any)?.bgColor) {
-                  backgroundColor = (item.config as any).bgColor;
-                }
-
                 return (
                   <div
                     key={item.i}
                     className="widget bg-white rounded-lg shadow-sm overflow-hidden p-4 flex flex-col"
-                    style={{ backgroundColor }}
                   >
                     <div className="widget-header pb-4 flex justify-between items-center">
-                      <h4 className="text-md font-medium text-gray-800">
-                        {item.title}
-                      </h4>
+                      <div className="flex-1">
+                        <h4 className="text-md font-medium text-gray-800">
+                          {item.title}
+                        </h4>
+                        {item.description && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
                       <Dropdown overlay={menu} trigger={['click']}>
                         <button className="no-drag text-gray-500 hover:text-gray-800 transition-colors">
                           <MoreOutlined style={{ fontSize: '20px' }} />
@@ -301,9 +310,11 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
                     </div>
                     <div className="widget-body flex-1 h-full rounded-b overflow-hidden">
                       <WidgetComponent
+                        key={`${item.i}-${refreshKey}`}
                         config={item.config}
                         globalTimeRange={globalTimeRange}
                         globalInstances={globalInstances}
+                        refreshKey={refreshKey}
                       />
                     </div>
                   </div>

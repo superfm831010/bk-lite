@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactEcharts from 'echarts-for-react';
+import { Spin } from 'antd';
 import { BaseWidgetProps } from '@/app/ops-analysis/types/dashBoard';
 import { useDashBoardApi } from '@/app/ops-analysis/api/dashBoard';
 
@@ -109,7 +110,7 @@ const OsPie: React.FC<BaseWidgetProps> = ({ globalTimeRange }) => {
       <div className="flex-1">
         {loading ? (
           <div className="h-full flex items-center justify-center">
-            <div className="text-gray-500">加载中...</div>
+            <Spin spinning={loading}></Spin>
           </div>
         ) : (
           <ReactEcharts
