@@ -5,13 +5,14 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.constants import POLICY_MODULE, DEFAULT_PERMISSION
 from apps.monitor.filters.monitor_policy import MonitorPolicyFilter
-from apps.monitor.models import PolicyOrganization
-from apps.monitor.models.monitor_policy import MonitorPolicy
+from apps.monitor.models import PolicyOrganization, MonitorObject
+from apps.monitor.models.monitor_policy import MonitorPolicy, PolicyTemplate
 from apps.monitor.serializers.monitor_policy import MonitorPolicySerializer
 from apps.monitor.services.policy import PolicyService
 from apps.monitor.utils.system_mgmt_api import SystemMgmtUtils
@@ -168,4 +169,13 @@ class MonitorPolicyVieSet(viewsets.ModelViewSet):
     @action(methods=['post'], detail=False, url_path='template')
     def template(self, request):
         data = PolicyService.get_policy_templates(request.data['monitor_object_name'])
+        return WebUtils.response_success(data)
+
+    @swagger_auto_schema(
+        operation_id="template_monitor_object",
+        operation_description="获取策略模板监控对象",
+    )
+    @action(methods=['get'], detail=False, url_path='template/monitor_object')
+    def template_monitor_object(self, request):
+        data = PolicyService.get_policy_templates_monitor_object()
         return WebUtils.response_success(data)
