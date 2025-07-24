@@ -16,16 +16,11 @@ class PermissionManage:
 
     def get_permission_params(self):
         """获取条件，用于列表页查询"""
-
-        # 查询用户角色
-
         # 判断是否为超管, 超管返回空条件
         if "admin" in self.roles:
             return ""
-
         # 获取用户组织条件
         params = self.get_group_params()
-
         return params
 
 

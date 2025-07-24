@@ -100,7 +100,7 @@
     "hyperopt": "Hyperparameterization"
   },
   "model-release": {
-    "modelName": "Model Name",
+    "modelName": "Competence Name",
     "title": "Competence release",
     "detail": "Publishing management of trained models.",
     "modalTitle": "Select model version.",

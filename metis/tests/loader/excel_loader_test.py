@@ -1,8 +1,7 @@
+from src.loader.excel_loader import ExcelLoader
 import logging
 
 logger = logging.getLogger(__name__)
-
-from src.loader.excel_loader import ExcelLoader
 
 
 def test_excel_loader():
@@ -13,6 +12,6 @@ def test_excel_loader():
 
 def test_excel_loader_title_row_struct_load():
     loader = ExcelLoader(
-        'tests/assert/excel_loader_title_chunk.xlsx', mode='title_row_struct')
+        'tests/assert/excel_loader_title_chunk.xlsx', mode='excel_header_row_parse')
     rs = loader.title_row_struct_load()
     logger.info(rs)

@@ -1,12 +1,13 @@
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 
-from apps.cmdb.constants import ASSOCIATION_TYPE, OPERATOR_MODEL,PERMISSION_MODEL
+from apps.cmdb.constants import ASSOCIATION_TYPE, OPERATOR_MODEL, PERMISSION_MODEL, OPERATE, VIEW
 from apps.cmdb.language.service import SettingLanguage
 from apps.cmdb.models import DELETE_INST, UPDATE_INST
 from apps.cmdb.services.model import ModelManage
+from apps.cmdb.utils.base import get_cmdb_rules
 from apps.cmdb.utils.change_record import create_change_record
 from apps.cmdb.utils.permisssion_util import CmdbRulesFormatUtil
 from apps.core.decorators.api_permission import HasPermission
@@ -14,6 +15,36 @@ from apps.core.utils.web_utils import WebUtils
 
 
 class ModelViewSet(viewsets.ViewSet):
+
+    @HasPermission("model_management-View,asset_list-View,view_list-View")
+    @action(detail=False, methods=["get"], url_path="get_model_info/(?P<model_id>.+?)")
+    def get_model_info(self, request, model_id: str):
+        model_info = ModelManage.search_model_info(model_id)
+        if not model_info:
+            return WebUtils.response_error("模型不存在", status_code=status.HTTP_404_NOT_FOUND)
+
+        model_id = model_info["model_id"]
+        classification_id = model_info["classification_id"]
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
+        has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type=PERMISSION_MODEL,
+                                                                   classification_id=classification_id,
+                                                                   model_id=model_id, operator=VIEW)
+        if not has_permission:
+            return WebUtils.response_error("抱歉！您没有此模型的权限", status_code=status.HTTP_403_FORBIDDEN)
+
+        model_id_list, classification_id_list = CmdbRulesFormatUtil.get_rules_classification_id_list(rules=rules,
+                                                                                                     classification_id=classification_id)
+        if classification_id in classification_id_list or model_id in model_id_list:
+            model_permission = [OPERATE, VIEW]
+        else:
+            if not model_id_list and not classification_id_list:
+                model_permission = [OPERATE, VIEW]
+            else:
+                model_permission = []
+        model_info['permission'] = model_permission
+
+        return WebUtils.response_success(model_info)
+
     @swagger_auto_schema(
         operation_id="model_create",
         operation_description="创建模型",
@@ -30,13 +61,6 @@ class ModelViewSet(viewsets.ViewSet):
     )
     @HasPermission("model_management-Add Model")
     def create(self, request):
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
-        classification_id = request.data.get("classification_id")
-        model_id = request.data.get("model_id")
-        permission = CmdbRulesFormatUtil.has_single_permission(PERMISSION_MODEL,classification_id,rules,model_id,can_do)
-        if not permission:
-            return WebUtils.response_error("没有权限")
         result = ModelManage.create_model(request.data, username=request.user.username)
         return WebUtils.response_success(result)
 
@@ -46,14 +70,17 @@ class ModelViewSet(viewsets.ViewSet):
     )
     @HasPermission("model_management-View,asset_list-View,view_list-View")
     def list(self, request):
-        src_result = ModelManage.search_model(request.user.locale)
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "View"
-        result = CmdbRulesFormatUtil.has_model_list(PERMISSION_MODEL, src_result, rules, can_do)
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
+        model_id_list, classification_id_list = CmdbRulesFormatUtil.get_rules_classification_id_list(rules)
+        result = ModelManage.search_model(language=request.user.locale, classification_ids=classification_id_list,
+                                          model_list=model_id_list)
         for model in result:
-            cls_id = model['classification_id']
             model_id = model['model_id']
-            model_permission = CmdbRulesFormatUtil.get_permission_list(PERMISSION_MODEL,cls_id,rules,model_id)
+            cls_id = model['classification_id']
+            if cls_id in classification_id_list or model_id in model_id_list:
+                model_permission = [OPERATE, VIEW]
+            else:
+                model_permission = []
             model['permission'] = model_permission
         return WebUtils.response_success(result)
 
@@ -64,11 +91,17 @@ class ModelViewSet(viewsets.ViewSet):
     )
     @HasPermission("model_management-Delete Model")
     def destroy(self, request, pk: str):
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
-        permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL,pk,rules,can_do)
-        if not permission:
-            return WebUtils.response_error("没有权限")
+        model_id = pk
+        model_info = ModelManage.search_model_info(pk)
+        classification_id = model_info.get("classification_id")
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
+        has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type="model",
+                                                                   classification_id=classification_id,
+                                                                   model_id=model_id, operator=OPERATE)
+        if not has_permission:
+            return WebUtils.response_error(response_data=[], error_message="抱歉！您没有此模的权限",
+                                           status_code=status.HTTP_403_FORBIDDEN)
+
         # 校验模型是否存在关联
         ModelManage.check_model_exist_association(pk)
         # 校验模型是否存在实例
@@ -97,12 +130,17 @@ class ModelViewSet(viewsets.ViewSet):
     )
     @HasPermission("model_management-Edit Model")
     def update(self, request, pk: str):
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
-        permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL,pk,rules,can_do)
-        if not permission:
-            return WebUtils.response_error("没有权限")
+        model_id = pk
         model_info = ModelManage.search_model_info(pk)
+        classification_id = model_info.get("classification_id")
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
+        has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type="model",
+                                                                   classification_id=classification_id,
+                                                                   model_id=model_id, operator=OPERATE)
+        if not has_permission:
+            return WebUtils.response_error(response_data=[], error_message="抱歉！您没有此模的权限",
+                                           status_code=status.HTTP_403_FORBIDDEN)
+
         data = ModelManage.update_model(model_info.get("_id"), request.data)
         create_change_record(operator=request.user.username, model_id=model_info["model_id"], label="模型管理",
                              _type=UPDATE_INST, message=f"修改模型. 模型名称: {model_info['model_name']}",
@@ -131,17 +169,26 @@ class ModelViewSet(viewsets.ViewSet):
     @HasPermission("model_relationships-Add")
     @action(detail=False, methods=["post"], url_path="association")
     def model_association_create(self, request):
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
         src_model_id = request.data["src_model_id"]
         dst_model_id = request.data["dst_model_id"]
-        src_permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, src_model_id, rules, can_do)
-        dst_permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, dst_model_id, rules, can_do)
-        if not src_permission or not dst_permission:
-            return WebUtils.response_error("没有权限")
+        src_model_info = ModelManage.search_model_info(src_model_id)
+        src_classification_id = src_model_info.get("classification_id")
+        src_has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type="model",
+                                                                       classification_id=src_classification_id,
+                                                                       model_id=src_model_id, operator=OPERATE)
+        if not src_has_permission:
+            return WebUtils.response_error("抱歉！您没有源模型的权限", status_code=status.HTTP_403_FORBIDDEN)
+
+        dst_model_info = ModelManage.search_model_info(dst_model_id)
+        dst_classification_id = dst_model_info.get("classification_id")
+        dst_has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type="model",
+                                                                       classification_id=dst_classification_id,
+                                                                       model_id=dst_model_id, operator=OPERATE)
+        if not dst_has_permission:
+            return WebUtils.response_error("抱歉！您没有目标模型的权限", status_code=status.HTTP_403_FORBIDDEN)
+
         model_asst_id = f'{src_model_id}_{request.data["asst_id"]}_{dst_model_id}'
-        src_model_info = ModelManage.search_model_info(request.data["src_model_id"])
-        dst_model_info = ModelManage.search_model_info(request.data["dst_model_id"])
         result = ModelManage.model_association_create(
             src_id=src_model_info["_id"], dst_id=dst_model_info["_id"], model_asst_id=model_asst_id, **request.data
         )
@@ -162,15 +209,26 @@ class ModelViewSet(viewsets.ViewSet):
     @HasPermission("model_relationships-Delete")
     @action(detail=False, methods=["delete"], url_path="association/(?P<model_asst_id>.+?)")
     def model_association_delete(self, request, model_asst_id: str):
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
         association_info = ModelManage.model_association_info_search(model_asst_id)
-        src_model_id = association_info['edge']['src_model_id']
-        dst_model_id = association_info['edge']['dst_model_id']
-        src_permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, src_model_id, rules, can_do)
-        dst_permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, dst_model_id, rules, can_do)
-        if not src_permission or not dst_permission:
-            return WebUtils.response_error("没有权限")
+        src_model_id = association_info['src_model_id']
+        dst_model_id = association_info['dst_model_id']
+        src_model_info = ModelManage.search_model_info(src_model_id)
+        src_classification_id = src_model_info.get("classification_id")
+        src_has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type="model",
+                                                                       classification_id=src_classification_id,
+                                                                       model_id=src_model_id, operator=OPERATE)
+        if not src_has_permission:
+            return WebUtils.response_error("抱歉！您没有源模型的权限", status_code=status.HTTP_403_FORBIDDEN)
+
+        dst_model_info = ModelManage.search_model_info(dst_model_id)
+        dst_classification_id = dst_model_info.get("classification_id")
+        dst_has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type="model",
+                                                                       classification_id=dst_classification_id,
+                                                                       model_id=dst_model_id, operator=OPERATE)
+        if not dst_has_permission:
+            return WebUtils.response_error("抱歉！您没有目标模型的权限", status_code=status.HTTP_403_FORBIDDEN)
+
         ModelManage.model_association_delete(association_info.get("_id"))
         return WebUtils.response_success()
 
@@ -189,11 +247,18 @@ class ModelViewSet(viewsets.ViewSet):
     @HasPermission("model_relationships-View,asset_basic_information-View")
     @action(detail=False, methods=["get"], url_path="(?P<model_id>.+?)/association")
     def model_association_list(self, request, model_id: str):
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "View"
+        model_info = ModelManage.search_model_info(model_id)
+        classification_id = model_info.get("classification_id")
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
+        has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type="model",
+                                                                   classification_id=classification_id,
+                                                                   model_id=model_id, operator=OPERATE)
+        if not has_permission:
+            return WebUtils.response_error(response_data=[], error_message="抱歉！您没有此模的权限",
+                                           status_code=status.HTTP_403_FORBIDDEN)
+
         result = ModelManage.model_association_search(model_id)
-        final_result = CmdbRulesFormatUtil.has_bath_asso_permission(PERMISSION_MODEL, result, rules, model_id,can_do)
-        return WebUtils.response_success(final_result)
+        return WebUtils.response_success(result)
 
     @swagger_auto_schema(
         operation_id="model_attr_create",
@@ -225,11 +290,16 @@ class ModelViewSet(viewsets.ViewSet):
     @HasPermission("model_attributes-Add")
     @action(detail=False, methods=["post"], url_path="(?P<model_id>.+?)/attr")
     def model_attr_create(self, request, model_id):
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
-        permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL,model_id,rules,can_do)
-        if not permission:
-            return WebUtils.response_error("没有权限")
+        model_info = ModelManage.search_model_info(model_id)
+        classification_id = model_info.get("classification_id")
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
+        has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type="model",
+                                                                   classification_id=classification_id,
+                                                                   model_id=model_id, operator=OPERATE)
+        if not has_permission:
+            return WebUtils.response_error(response_data=[], error_message="抱歉！您没有此模的权限",
+                                           status_code=status.HTTP_403_FORBIDDEN)
+
         result = ModelManage.create_model_attr(model_id, request.data, username=request.user.username)
         return WebUtils.response_success(result)
 
@@ -261,11 +331,16 @@ class ModelViewSet(viewsets.ViewSet):
     @HasPermission("model_attributes-Edit")
     @action(detail=False, methods=["put"], url_path="(?P<model_id>.+?)/attr_update")
     def model_attr_update(self, request, model_id):
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
-        permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, model_id, rules, can_do)
-        if not permission:
-            return WebUtils.response_error("没有权限")
+        model_info = ModelManage.search_model_info(model_id)
+        classification_id = model_info.get("classification_id")
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
+        has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type="model",
+                                                                   classification_id=classification_id,
+                                                                   model_id=model_id, operator=OPERATE)
+        if not has_permission:
+            return WebUtils.response_error(response_data=[], error_message="抱歉！您没有此模的权限",
+                                           status_code=status.HTTP_403_FORBIDDEN)
+
         result = ModelManage.update_model_attr(model_id, request.data, username=request.user.username)
         return WebUtils.response_success(result)
 
@@ -294,11 +369,16 @@ class ModelViewSet(viewsets.ViewSet):
         url_path="(?P<model_id>.+?)/attr/(?P<attr_id>.+?)",
     )
     def model_attr_delete(self, request, model_id: str, attr_id: str):
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "Operate"
-        permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, model_id, rules, can_do)
-        if not permission:
-            return WebUtils.response_error("没有权限")
+        model_info = ModelManage.search_model_info(model_id)
+        classification_id = model_info.get("classification_id")
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
+        has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type="model",
+                                                                   classification_id=classification_id,
+                                                                   model_id=model_id, operator=OPERATE)
+        if not has_permission:
+            return WebUtils.response_error(response_data=[], error_message="抱歉！您没有此模的权限",
+                                           status_code=status.HTTP_403_FORBIDDEN)
+
         result = ModelManage.delete_model_attr(model_id, attr_id, username=request.user.username)
         return WebUtils.response_success(result)
 
@@ -317,16 +397,18 @@ class ModelViewSet(viewsets.ViewSet):
     @HasPermission("model_attributes-View,asset_relationships-View,asset_list-View")
     @action(detail=False, methods=["get"], url_path="(?P<model_id>.+?)/attr_list")
     def model_attr_list(self, request, model_id: str):
-        rules = request.user.rules['cmdb']['normal']
-        can_do = "View"
-        permission = CmdbRulesFormatUtil.has_model_permission(PERMISSION_MODEL, model_id, rules, can_do)
-        if not permission:
-            return WebUtils.response_error("没有权限")
-        cls_id = ModelManage.search_model_info(model_id)['classification_id']
-        model_list = [{"classification": cls_id, "model_id": model_id}]
-        permission = CmdbRulesFormatUtil.get_permission_list(PERMISSION_MODEL, model_list, rules)
+        model_info = ModelManage.search_model_info(model_id)
+        classification_id = model_info.get("classification_id")
+        rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
+        has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type="model",
+                                                                   classification_id=classification_id,
+                                                                   model_id=model_id, operator=OPERATE)
+        if not has_permission:
+            return WebUtils.response_error(response_data=[], error_message="抱歉！您没有此模的权限",
+                                           status_code=status.HTTP_403_FORBIDDEN)
+
         result = ModelManage.search_model_attr(model_id, request.user.locale)
-        return WebUtils.response_success(result,permission)
+        return WebUtils.response_success(result)
 
     @swagger_auto_schema(
         operation_id="model_association_type",

@@ -131,7 +131,7 @@ const TopMenu = () => {
       <Spin tip="Loading..." />
     </div>
   ) : (
-    <div className="grid grid-cols-3 gap-4 max-h-[350px] overflow-auto">
+    <div className="grid grid-cols-4 gap-4 max-h-[420px] overflow-auto">
       {clientData.map((app) => (
         <div
           key={app.name}

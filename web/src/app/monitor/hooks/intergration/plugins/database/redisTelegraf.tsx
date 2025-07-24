@@ -109,9 +109,8 @@ export const useRedisTelegraf = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: redisFormItems.getCommonFormItems(),
           initTableItems: {
             host: null,
@@ -186,7 +185,6 @@ export const useRedisTelegraf = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const server = formData?.child?.content?.config?.servers?.[0] || '';
@@ -226,6 +224,11 @@ export const useRedisTelegraf = () => {
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };

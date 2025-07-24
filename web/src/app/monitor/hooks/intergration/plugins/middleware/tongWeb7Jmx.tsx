@@ -92,9 +92,8 @@ export const useTongWeb7Jmx = () => {
         </>
       );
 
-      return {
+      const config = {
         auto: {
-          ...pluginConfig,
           formItems: activeMQFormItems.getCommonFormItems(),
           initTableItems: {
             jmx_url: null,
@@ -168,7 +167,6 @@ export const useTongWeb7Jmx = () => {
           },
         },
         edit: {
-          ...pluginConfig,
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
             const base: Record<string, any> = cloneDeep(
@@ -253,6 +251,11 @@ rules:
             });
           },
         },
+      };
+
+      return {
+        ...pluginConfig,
+        ...config[extra.mode],
       };
     },
   };
