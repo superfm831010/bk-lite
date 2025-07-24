@@ -41,12 +41,26 @@ class InstanceManage(object):
 
     @staticmethod
     def instance_list(user_groups: list, roles: list, model_id: str, params: list, page: int, page_size: int,
-                      order: str, inst_names: list = [], check_permission=True):
+                      order: str, inst_names: list = list, check_permission=True, creator: str = None):
         """实例列表"""
 
         params.append({"field": "model_id", "type": "str=", "value": model_id})
-        if len(inst_names):
+        
+        # 构建权限过滤条件：有权限的实例 OR 自己创建的实例
+        permission_or_creator_filter = None
+        if inst_names and creator:
+            # 既有实例名称权限限制，又有创建人条件，构建OR条件
+            permission_or_creator_filter = {
+                "inst_names": inst_names,
+                "creator": creator
+            }
+        elif inst_names:
+            # 只有实例名称权限限制
             params.append({"field": "inst_name", "type": "str[]", "value": inst_names})
+        elif creator:
+            # 只有创建人条件
+            params.append({"field": "_creator", "type": "str=", "value": creator})
+
         _page = dict(skip=(page - 1) * page_size, limit=page_size)
         if order and order.startswith("-"):
             order = f"{order.replace('-', '')} DESC"
@@ -62,6 +76,7 @@ class InstanceManage(object):
                 page=_page,
                 order=order,
                 permission_params=permission_params,
+                permission_or_creator_filter=permission_or_creator_filter,
             )
 
         return inst_list, count
@@ -446,14 +461,19 @@ class InstanceManage(object):
         return add_results, update_results
 
     @staticmethod
-    def inst_export(model_id: str, ids: list):
+    def inst_export(model_id: str, ids: list, inst_names: list):
         """实例导出"""
         attrs = ModelManage.search_model_attr_v2(model_id)
         with Neo4jClient() as ag:
             if ids:
                 inst_list = ag.query_entity_by_ids(ids)
             else:
-                inst_list, _ = ag.query_entity(INSTANCE, [{"field": "model_id", "type": "str=", "value": model_id}])
+                # 构建查询参数
+                query_params = [{"field": "model_id", "type": "str=", "value": model_id}]
+                # 如果有实例名称列表，添加实例名称过滤条件
+                if inst_names:
+                    query_params.append({"field": "inst_name", "type": "str[]", "value": inst_names})
+                inst_list, _ = ag.query_entity(INSTANCE, query_params)
         return Export(attrs).export_inst_list(inst_list)
 
     @staticmethod
@@ -510,8 +530,8 @@ class InstanceManage(object):
 
         with Neo4jClient() as ag:
             data = ag.entity_count(
-                INSTANCE, 
-                "model_id", 
+                INSTANCE,
+                "model_id",
                 [],
                 permission_params=permission_params,
                 instance_permission_params=instance_permission_params
@@ -519,9 +539,34 @@ class InstanceManage(object):
         return data
 
     @staticmethod
-    def fulltext_search(user_groups: list, roles: list, search: str):
+    def fulltext_search(user_groups: list, roles: list, search: str, rules: dict = dict):
         """全文检索"""
         permission_params = InstanceManage.get_permission_params(user_groups, roles)
+
+        # 构建实例权限过滤参数
+        instance_permission_params = []
+        if rules:
+            for group_id, models in rules.items():
+                for model_id, permissions in models.items():
+                    # 检查是否有具体的实例权限限制
+                    has_specific_instances = False
+                    specific_instance_names = []
+
+                    for perm in permissions:
+                        # id为'0'或'-1'表示全选，不需要过滤
+                        if perm.get('id') not in ['0', '-1']:
+                            has_specific_instances = True
+                            # 这里的id实际上是inst_name
+                            specific_instance_names.append(perm.get('id'))
+
+                    # 如果有具体的实例权限限制，添加到过滤参数中
+                    if has_specific_instances and specific_instance_names:
+                        instance_permission_params.append({
+                            'model_id': model_id,
+                            'inst_names': specific_instance_names
+                        })
+
         with Neo4jClient() as ag:
-            data = ag.full_text(search, permission_params=permission_params)
+            data = ag.full_text(search, permission_params=permission_params,
+                                instance_permission_params=instance_permission_params)
         return data

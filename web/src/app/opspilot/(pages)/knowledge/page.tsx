@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input, Dropdown, Menu, Modal, message, Spin } from 'antd';
 import Icon from '@/components/icon';
@@ -23,22 +23,86 @@ const KnowledgePage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCard, setEditingCard] = useState<null | KnowledgeValues>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const isFetching = useRef(false);
+
+  const fetchCards = useCallback(async (reset = false) => {
+    if (isFetching.current || (!reset && !hasMore)) return;
+    
+    isFetching.current = true;
+    
+    if (reset) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+    
+    try {
+      const pageToFetch = reset ? 1 : currentPage;
+      const data = await fetchKnowledgeBase({
+        page: pageToFetch,
+        page_size: 20,
+        search: searchTerm
+      });
+      
+      if (reset) {
+        setCards(Array.isArray(data.items) ? data.items : []);
+        setCurrentPage(1);
+      } else {
+        setCards(prev => [...prev, ...(Array.isArray(data.items) ? data.items : [])]);
+      }
+      
+      const hasMoreData = pageToFetch * 20 < (data.count || 0);
+      setHasMore(hasMoreData);
+      
+      if (hasMoreData) {
+        setCurrentPage(pageToFetch + 1);
+      }
+    } catch {
+      message.error(t('common.fetchFailed'));
+    } finally {
+      isFetching.current = false;
+      if (reset) {
+        setLoading(false);
+      } else {
+        setLoadingMore(false);
+      }
+    }
+  }, [currentPage, searchTerm, hasMore]);
 
   useEffect(() => {
-    const getKnowledgeBase = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchKnowledgeBase();
-        setCards(Array.isArray(data) ? data : []);
-      } catch {
-        message.error(t('common.fetchFailed'));
-      } finally {
-        setLoading(false);
-      }
-    };
+    setCurrentPage(1);
+    setCards([]);
+    setHasMore(true);
+    fetchCards(true);
+  }, [searchTerm]);
 
-    getKnowledgeBase();
-  }, []);
+  // Intersection Observer设置
+  useEffect(() => {
+    if (!loadMoreRef.current || loading || loadingMore || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isFetching.current) {
+          fetchCards();
+        }
+      },
+      {
+        root: null,
+        rootMargin: '100px',
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [loading, loadingMore, hasMore]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -161,6 +225,9 @@ const KnowledgePage = () => {
               </div>
             </div>
           ))}
+        </div>
+        <div ref={loadMoreRef} className="w-full h-6 flex items-center justify-center">
+          {loadingMore && <Spin size="small" />}
         </div>
       </Spin>
       <ModifyKnowledgeModal

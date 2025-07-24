@@ -206,7 +206,6 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
           <Button 
             onClick={toggleIconSelector}
             className="flex items-center justify-center text-left w-14 h-14 px-4 py-1"
-            disabled={isBuiltIn}
           >
             {selectedIcon ? (
               <div className="flex items-center">
@@ -217,7 +216,7 @@ const ApplicationFormModal: React.FC<ApplicationFormModalProps> = ({
             )}
           </Button>
           
-          {iconSelectorVisible && !isBuiltIn && (
+          {iconSelectorVisible && (
             <div 
               ref={iconSelectorRef}
               className="absolute z-50 left-0 right-0 mt-10 bg-white border border-gray-200 rounded-md shadow-lg p-4 max-h-[300px] overflow-y-auto"

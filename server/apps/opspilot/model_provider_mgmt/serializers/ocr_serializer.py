@@ -1,5 +1,5 @@
+from apps.core.utils.serializers import AuthSerializer
 from apps.opspilot.models import OCRProvider
-from config.drf.serializers import AuthSerializer
 
 
 class OCRProviderSerializer(AuthSerializer):

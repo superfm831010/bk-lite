@@ -5,14 +5,14 @@ from apps.system_mgmt.models import App
 
 
 class AppSerializer(serializers.ModelSerializer):
-    display_name = serializers.SerializerMethodField()
+    description_cn = serializers.SerializerMethodField()
 
     class Meta:
         model = App
         fields = "__all__"
 
     @staticmethod
-    def get_display_name(obj):
+    def get_description_cn(obj):
         # 如果是内置模块，翻译name
         if obj.is_build_in:
             return _(obj.description)
@@ -24,10 +24,10 @@ class AppSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         # 当是GET请求时，将name替换为已翻译的name
         if self.context.get("request") and self.context["request"].method == "GET":
-            data["description"] = data["display_name"]
+            data["description"] = data["description_cn"]
         # 删除辅助字段，避免在响应中包含
-        if "display_name" in data:
-            del data["display_name"]
+        if "description_cn" in data:
+            del data["description_cn"]
         return data
 
     def create(self, validated_data):

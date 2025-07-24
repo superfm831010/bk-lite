@@ -62,7 +62,8 @@ class KnowledgeBaseViewSet(AuthViewSet):
     def update_settings(self, request, *args, **kwargs):
         instance: KnowledgeBase = self.get_object()
         if not request.user.is_superuser:
-            has_permission = self.get_has_permission(request.user, instance)
+            current_team = request.COOKIES.get("current_team", "0")
+            has_permission = self.get_has_permission(request.user, instance, current_team)
             if not has_permission:
                 return JsonResponse(
                     {"result": False, "message": _("You do not have permission to update this instance")}
