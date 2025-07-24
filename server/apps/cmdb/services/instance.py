@@ -41,7 +41,7 @@ class InstanceManage(object):
 
     @staticmethod
     def instance_list(user_groups: list, roles: list, model_id: str, params: list, page: int, page_size: int,
-                      order: str, inst_names: list = list, check_permission=True, creator: str = None):
+                      order: str, inst_names: list = [], check_permission=True, creator: str = None):
         """实例列表"""
 
         params.append({"field": "model_id", "type": "str=", "value": model_id})
@@ -539,7 +539,7 @@ class InstanceManage(object):
         return data
 
     @staticmethod
-    def fulltext_search(user_groups: list, roles: list, search: str, rules: dict = dict):
+    def fulltext_search(user_groups: list, roles: list, search: str, rules: dict = {}):
         """全文检索"""
         permission_params = InstanceManage.get_permission_params(user_groups, roles)
 

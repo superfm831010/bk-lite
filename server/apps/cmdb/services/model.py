@@ -77,7 +77,7 @@ class ModelManage(object):
 
     @staticmethod
     def search_model(language: str = "en", order_type: str = "ASC", order: str = "id",
-                     classification_ids: list = list, model_list: list = list):
+                     classification_ids: list = [], model_list: list = []):
         """
         查询模型
         Args:
