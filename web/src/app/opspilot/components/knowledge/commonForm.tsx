@@ -94,13 +94,13 @@ const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValu
       <div className="flex items-center my-2 border p-2 rounded-md">
         <div className="flex-1">
           <div className="text-sm">
-            <h3 className='font-semibold'>释义</h3>
+            <h3 className='font-semibold'>{t('skill.form.explanation')}</h3>
             <p className='text-[var(--color-text-2)] mb-4'>{desc}</p>
-            <h3 className='font-semibold'>适用场景</h3>
-            <p className='text-[var(--color-text-2)] whitespace-pre-line'>{scene && `\n${scene}`}</p>
+            <h3 className='font-semibold'>{t('skill.form.scene')}</h3>
+            <p className='text-[var(--color-text-2)] whitespace-pre-line'>{scene && `${scene}`}</p>
           </div>
         </div>
-        <div className="ml-4 w-[240px] h-[240px] flex items-center justify-center">
+        <div className="ml-4 w-[240px] h-[200px] flex items-center justify-center">
           <Image
             src={(img as StaticImageData)?.src}
             alt="example"

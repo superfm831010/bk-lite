@@ -22,12 +22,11 @@ interface CustomChatSSEProps {
   showMarkOnly?: boolean;
   initialMessages?: CustomChatMessage[];
   mode?: 'preview' | 'chat';
+  guide?: string;
 }
 
-// Define action renderer type
 type ActionRender = (_: any, info: { components: { SendButton: React.ComponentType<ButtonProps>; LoadingButton: React.ComponentType<ButtonProps>; }; }) => ReactNode;
 
-// SSE data format interface
 interface SSEChunk {
   choices: Array<{
     delta: {
@@ -52,7 +51,13 @@ const md = new MarkdownIt({
   },
 });
 
-const CustomChatSSE: React.FC<CustomChatSSEProps> = ({ handleSendMessage, showMarkOnly = false, initialMessages = [], mode = 'chat' }) => {
+const CustomChatSSE: React.FC<CustomChatSSEProps> = ({ 
+  handleSendMessage, 
+  showMarkOnly = false, 
+  initialMessages = [], 
+  mode = 'chat',
+  guide
+}) => {
   const { t } = useTranslation();
   const { data: session } = useSession();
   const authContext = useAuth();
@@ -66,6 +71,41 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({ handleSendMessage, showMa
   const [annotation, setAnnotation] = useState<Annotation | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentBotMessageRef = useRef<CustomChatMessage | null>(null);
+
+  // Parse guide text and extract content within [] as quick send items
+  const parseGuideItems = useCallback((guideText: string) => {
+    if (!guideText) return { text: '', items: [], renderedHtml: '' };
+    
+    const regex = /\[([^\]]+)\]/g;
+    const items: string[] = [];
+    let match;
+    
+    // Extract all content within []
+    while ((match = regex.exec(guideText)) !== null) {
+      items.push(match[1]);
+    }
+    
+    // Preserve line breaks, convert newlines to <br> tags first, then process [] content
+    const processedText = guideText.replace(/\n/g, '<br>');
+    
+    // Convert [] content to clickable HTML elements
+    const renderedHtml = processedText.replace(regex, (match, content) => {
+      return `<span class="guide-clickable-item" data-content="${content}" style="color: #1890ff; cursor: pointer; font-weight: 600; margin: 0 2px;">${content}</span>`;
+    });
+    
+    return { text: guideText, items, renderedHtml };
+  }, []);
+
+  // Handle click events for clickable elements in guide text
+  const handleGuideClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('guide-clickable-item')) {
+      const content = target.getAttribute('data-content');
+      if (content && !loading && token) {
+        handleSend(content);
+      }
+    }
+  }, [loading, token]);
 
   const handleFullscreenToggle = () => {
     setIsFullscreen(!isFullscreen);
@@ -405,12 +445,14 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({ handleSendMessage, showMa
     updateMessagesAnnotation(id, undefined);
   };
 
-  // Cleanup SSE connection
+  // Cleanup SSE connection on component unmount
   React.useEffect(() => {
     return () => {
       stopSSEConnection();
     };
   }, [stopSSEConnection]);
+
+  const guideData = parseGuideItems(guide || '');
 
   return (
     <div className={`rounded-lg h-full ${isFullscreen ? styles.fullscreen : ''}`}>
@@ -425,6 +467,19 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({ handleSendMessage, showMa
         </div>
       }
       <div className={`flex flex-col rounded-lg p-4 h-full overflow-hidden ${styles.chatContainer}`} style={{ height: isFullscreen ? 'calc(100vh - 70px)' : (mode === 'chat' ? 'calc(100% - 40px)' : '100%') }}>
+        {/* Guide content display area */}
+        {guide && guideData.renderedHtml && (
+          <div className="mb-4 flex items-start gap-3" onClick={handleGuideClick}>
+            <div className="flex-shrink-0 mt-1">
+              <Icon type="jiqiren3" className={styles.guideAvatar} />
+            </div>
+            <div
+              dangerouslySetInnerHTML={{ __html: guideData.renderedHtml }}
+              className={`${styles.markdownBody} flex-1 p-3 bg-[var(--color-bg)] rounded-lg`}
+            />
+          </div>
+        )}
+        
         <div className="flex-1 chat-content-wrapper overflow-y-auto overflow-x-hidden pb-4">
           <Flex gap="small" vertical>
             {messages.map((msg) => (
@@ -449,6 +504,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({ handleSendMessage, showMa
             ))}
           </Flex>
         </div>
+        
         {mode === 'chat' && (
           <>
             <div className="flex justify-end pb-2">
