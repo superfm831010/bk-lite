@@ -1,5 +1,5 @@
 {
-  "common": {
+  "mlops-common": {
     "time": "Time",
     "action": "Action",
     "type": "Type",

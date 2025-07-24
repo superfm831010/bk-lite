@@ -1,16 +1,17 @@
 {
-  "common": {
+  "playground-common": {
     "functionExper": "Functional Experience",
     "or": "Or",
     "localUpload": "Local Upload",
     "clickTest": "Click to test",
     "useScenario": "Application Scenarios",
-    "selectMsg": "Please select a sample document",
+    "selectSampleMsg": "Please select a sample document",
     "uploadError": "Wrong type of file uploaded",
     "uploadMsg": "Please select a file or upload a file locally",
     "url": "URL",
     "active": "online now",
-    "inactive": "not yet on line"
+    "inactive": "not yet on line",
+    "onlineStatus": "status"
   },
   "manage": {
     "delCapability": "Deltee Capability",

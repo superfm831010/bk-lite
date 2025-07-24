@@ -48,17 +48,17 @@ const PlaygroundManage = () => {
       key: 'description'
     },
     {
-      title: t(`common.url`),
+      title: t(`playground-common.url`),
       dataIndex: 'url',
       key: 'url'
     },
     {
-      title: t(`common.status`),
+      title: t(`playground-common.onlineStatus`),
       dataIndex: 'status',
       key: 'status',
       render: (_, record) => {
         return <Tag color={record.is_active ? 'green' : 'red'}>
-          {record.is_active ? t(`common.active`) : t(`common.inactive`)}
+          {record.is_active ? t(`playground-common.active`) : t(`playground-common.inactive`)}
         </Tag>
       }
     },

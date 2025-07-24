@@ -141,14 +141,14 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes, onSuccess }, ref) => {
           <>
             <Form.Item
               name='url'
-              label={t(`common.url`)}
+              label={t(`playground-common.url`)}
               rules={[{ required: true, message: t('common.inputMsg') }]}
             >
               <Input placeholder={t(`common.inputMsg`)} />
             </Form.Item>
             <Form.Item
               name='is_active'
-              label={t(`common.status`)}
+              label={t(`playground-common.onlineStatus`)}
               rules={[{ required: true, message: t('common.selectMsg') }]}
               layout="horizontal"
             >

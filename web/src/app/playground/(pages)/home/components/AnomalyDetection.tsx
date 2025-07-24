@@ -233,7 +233,7 @@ const AnomalyDetection = () => {
     beforeUpload: (file) => {
       const isCSV = file.type === "text/csv" || file.name.endsWith('.csv');
       if (!isCSV) {
-        message.warning(t(`common.uploadError`));
+        message.warning(t(`playground-common.uploadError`));
       }
       return isCSV;
     },
@@ -250,7 +250,7 @@ const AnomalyDetection = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectId && !fileData) { return message.error(t(`common.uploadMsg`)) };
+    if (!selectId && !fileData) { return message.error(t(`playground-common.uploadMsg`)) };
     if (chartLoading) return;
     setChartLoading(true);
     try {
@@ -307,7 +307,7 @@ const AnomalyDetection = () => {
           </div> */}
       </div>
       <div className="model-experience mt-[80px] bg-[var(--color-bg-4)] py-4">
-        <div className="header text-3xl text-center">{t(`common.functionExper`)}</div>
+        <div className="header text-3xl text-center">{t(`playground-common.functionExper`)}</div>
         <div className="content flex flex-col">
           <div className="file-input w-[70%] mx-auto">
             <div className={`link-search mt-8 flex justify-center `}>
@@ -315,12 +315,12 @@ const AnomalyDetection = () => {
                 <Select className={`w-[70%] ${cssStyle.customSelect}`} size="large" allowClear options={[
                   { label: 'test1', value: 5 },
                   { label: 'test2', value: 6 },
-                ]} placeholder={t(`common.selectMsg`)} onChange={onSelectChange} />
-                <span className="mx-4 text-xl pt-1">{t(`common.or`)}</span>
+                ]} placeholder={t(`playground-common.selectSampleMsg`)} onChange={onSelectChange} />
+                <span className="mx-4 text-xl pt-1">{t(`playground-common.or`)}</span>
                 <Upload {...props}>
-                  <Button size="large" className="rounded-none">{t(`common.localUpload`)}</Button>
+                  <Button size="large" className="rounded-none">{t(`playground-common.localUpload`)}</Button>
                 </Upload>
-                <Button size="large" className="rounded-none ml-4" type="primary" onClick={handleSubmit}>{t(`common.clickTest`)}</Button>
+                <Button size="large" className="rounded-none ml-4" type="primary" onClick={handleSubmit}>{t(`playground-common.clickTest`)}</Button>
               </div>
             </div>
           </div>
@@ -350,7 +350,7 @@ const AnomalyDetection = () => {
       </div>
       <div className="usage-scenarios mt-[80px]">
         <div className="header text-center text-3xl">
-          {t(`common.useScenario`)}
+          {t(`playground-common.useScenario`)}
         </div>
         <div className="mt-8 w-[80%] mx-auto">
           {renderElement()}
