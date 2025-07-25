@@ -130,7 +130,15 @@
       "queryTime": "Query Time",
       "timeConsumption": "Query Time Consumption",
       "receiver": "Receiver",
-      "grammarExplanation": "Grammar Explanation"
+      "grammarExplanation": "Grammar Explanation",
+      "list": "List",
+      "terminal": "Terminal",
+      "listTotal": "List Total",
+      "exit": "Exit Full Screen",
+      "full": "Full screen display",
+      "clearLogs": "Clear logs",
+      "enableScrolling": "Enable auto-scrolling",
+      "stopScrolling": "Turn off auto-scrolling"
     },
     "integration": {
       "interval": "Interval",

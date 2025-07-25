@@ -294,6 +294,69 @@ def get_user_rules(group_id, username):
 
 
 @nats_client.register
+def get_user_rules_by_app(group_id, username, app, module, child_module=""):
+    # 构建基础查询条件
+    base_filter = Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
+    # 添加模块过滤条件
+    module_filter = Q(group_rule__rules__has_key=module)
+
+    # 如果指定了子模块，不在数据库层面过滤，在Python层面处理复杂嵌套
+    rules = UserRule.objects.filter(username=username, group_rule__app=app).filter(base_filter & module_filter)
+
+    if not rules:
+        return {}
+
+    return_data = {"instance": [], "team": []}
+    for rule in rules:
+        # 获取模块数据
+        module_data = rule.group_rule.rules.get(module, [])
+
+        # 如果指定了子模块，获取子模块数据
+        if child_module:
+            target_data = find_child_module_data(module_data, child_module)
+        else:
+            target_data = module_data
+        # 处理规则数据
+        has_all_permission, instance_data = process_rule_data(target_data)
+
+        if has_all_permission:
+            return_data["team"].append(rule.group_rule.group_id)
+        else:
+            return_data["instance"].extend(instance_data)
+
+    return return_data
+
+
+def find_child_module_data(module_data, target_child_module):
+    """在模块数据中查找子模块数据，支持嵌套结构"""
+    if not isinstance(module_data, dict):
+        return []
+
+    # 直接查找子模块
+    if target_child_module in module_data:
+        return module_data[target_child_module]
+
+    # 在嵌套结构中查找子模块
+    for key, value in module_data.items():
+        if isinstance(value, dict) and target_child_module in value:
+            return value[target_child_module]
+    return []
+
+
+def process_rule_data(rule_data):
+    """处理规则数据，返回是否为全部权限和具体实例数据"""
+    if not rule_data:
+        return True, []
+
+    if isinstance(rule_data, list):
+        ids = [item.get("id") for item in rule_data if isinstance(item, dict)]
+        has_all_permission = -1 in ids or 0 in ids or "0" in ids
+        return has_all_permission, rule_data if not has_all_permission else []
+
+    return True, []
+
+
+@nats_client.register
 def get_group_id(group_name):
     group = Group.objects.filter(name=group_name, parent_id=0).first()
     if not group:

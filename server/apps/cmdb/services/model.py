@@ -76,21 +76,40 @@ class ModelManage(object):
         return model[0]
 
     @staticmethod
-    def search_model(language: str = "en", order_type: str = "ASC", order: str = "id", classification_id: str = None):
+    def search_model(language: str = "en", order_type: str = "ASC", order: str = "id",
+                     classification_ids: list = [], model_list: list = []):
         """
         查询模型
         Args:
             language: 语言，默认英语
             order_type: 排序方式，asc升序/desc降序
             order: 排序字段，默认order_id
-            classification_id: 分类ID，可选，用于过滤特定分类下的模型
+            classification_ids: 分类ID列表，可选，用于过滤特定分类下的模型
+            model_list: 模型ID列表，可选，用于过滤特定模型
         """
         query_conditions = []
-        if classification_id:
-            query_conditions.append({"field": "classification_id", "type": "str=", "value": classification_id})
+
+        # 构造过滤条件 - classification_ids 和 model_list 是"或"关系
+        if classification_ids or model_list:
+            or_conditions = []
+
+            if classification_ids:
+                for classification_id in classification_ids:
+                    or_conditions.append({"field": "classification_id", "type": "str=", "value": classification_id})
+
+            if model_list:
+                for model_id in model_list:
+                    or_conditions.append({"field": "model_id", "type": "str=", "value": model_id})
+
+            query_conditions = or_conditions
 
         with Neo4jClient() as ag:
-            models, _ = ag.query_entity(MODEL, query_conditions, order=order, order_type=order_type)
+            # 如果有过滤条件，使用OR查询，否则查询所有
+            if query_conditions:
+                models, _ = ag.query_entity(MODEL, query_conditions, order=order, order_type=order_type,
+                                            param_type="OR")
+            else:
+                models, _ = ag.query_entity(MODEL, [], order=order, order_type=order_type)
 
         lan = SettingLanguage(language)
 

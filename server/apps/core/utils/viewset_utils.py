@@ -6,6 +6,8 @@ from django.utils.translation import gettext as _
 from rest_framework import viewsets
 from rest_framework.response import Response
 
+from apps.core.utils.permission_utils import get_permission_rules
+
 logger = logging.getLogger(__name__)
 
 
@@ -101,62 +103,21 @@ class AuthViewSet(MaintainerViewSet):
             else:
                 query = Q()
 
-            instance_ids = []
             if hasattr(self, "permission_key"):
-                guest_rules, normal_rules = self._get_permission_rules(user)
-                instance_ids = self.filter_rules(normal_rules)
-
-                if guest_rules:
-                    guest_instance_ids = self.filter_rules(guest_rules)
-                    if guest_instance_ids:
-                        query |= Q(id__in=guest_instance_ids)
-                    else:
-                        guest_group = [i for i in user.group_list if i["name"] == "OpsPilotGuest"]
-                        if guest_group:
-                            current_team += f",{guest_group[0]['id']}"
-            group_query = self._filter_by_user_groups(queryset, current_team)
-            if instance_ids:
-                queryset = queryset.filter(id__in=instance_ids)
-            queryset = queryset.filter(query | group_query)
+                app_name = self._get_app_name()
+                permission_data = get_permission_rules(user, current_team, app_name, self.permission_key)
+                instance_ids = [i["id"] for i in permission_data.get("instance", [])]
+                team = permission_data.get("team", [])
+                if instance_ids:
+                    query |= Q(id__in=instance_ids)
+                for i in team:
+                    query |= Q(team__contains=int(i))
+            queryset = queryset.filter(query)
             return self._list(queryset.order_by(self.ORDERING_FIELD))
 
         except Exception as e:
             logger.error(f"Error in query_by_groups: {e}")
             raise
-
-    def _get_permission_rules(self, user):
-        """获取用户权限规则"""
-        try:
-            app_name_map = {
-                "system_mgmt": "system-manager",
-                "node_mgmt": "node",
-                "console_mgmt": "ops-console",
-                "mlops": "mlops",
-            }
-            app_name = self._get_app_name()
-            app_name = app_name_map.get(app_name, app_name)
-            user_rules = getattr(user, "rules", {}).get(app_name, {})
-            if not isinstance(user_rules, dict):
-                return {}, {}
-            guest_rules_map = user_rules.get("guest", {})
-            normal_rules_map = user_rules.get("normal", {})
-            if "." in self.permission_key:
-                keys = self.permission_key.split(".", 1)
-                guest_rules = guest_rules_map.get(keys[0], {})
-                normal_rules = normal_rules_map.get(keys[0], {})
-                if isinstance(guest_rules, dict) and len(keys) > 1:
-                    guest_rules = guest_rules.get(keys[1], [])
-                if isinstance(normal_rules, dict) and len(keys) > 1:
-                    normal_rules = normal_rules.get(keys[1], [])
-            else:
-                guest_rules = guest_rules_map.get(self.permission_key, [])
-                normal_rules = normal_rules_map.get(self.permission_key, [])
-
-            return guest_rules, normal_rules
-
-        except Exception as e:
-            logger.error(f"Error getting permission rules: {e}")
-            return {}, {}
 
     def _filter_by_user_groups(self, queryset, current_team):
         """根据用户组过滤查询集"""
@@ -195,7 +156,8 @@ class AuthViewSet(MaintainerViewSet):
         if getattr(user, "is_superuser", False):
             return super().retrieve(request, *args, **kwargs)
         if hasattr(self, "permission_key"):
-            has_permission = self.get_has_permission(user, instance)
+            current_team = request.COOKIES.get("current_team", "0")
+            has_permission = self.get_has_permission(user, instance, current_team, is_check=True)
             if not has_permission:
                 return self.value_error(_("User does not have permission to view this instance"))
         serializer = self.get_serializer(instance)
@@ -211,7 +173,8 @@ class AuthViewSet(MaintainerViewSet):
         if getattr(user, "is_superuser", False):
             return super().destroy(request, *args, **kwargs)
         if hasattr(self, "permission_key"):
-            has_permission = self.get_has_permission(user, instance)
+            current_team = request.COOKIES.get("current_team", "0")
+            has_permission = self.get_has_permission(user, instance, current_team)
             if not has_permission:
                 return self.value_error(_("User does not have permission to delete this instance"))
         return super().destroy(request, *args, **kwargs)
@@ -232,7 +195,7 @@ class AuthViewSet(MaintainerViewSet):
             if current_team not in instance.team:
                 return self.value_error(_("User does not have permission to update this instance"))
             if hasattr(self, "permission_key"):
-                has_permission = self.get_has_permission(user, instance)
+                has_permission = self.get_has_permission(user, instance, current_team)
                 if not has_permission:
                     return self.value_error(_("User does not have permission to update this instance"))
             serializer = self.get_serializer(instance, data=data, partial=partial)
@@ -248,7 +211,7 @@ class AuthViewSet(MaintainerViewSet):
             logger.error(f"Error in update method: {e}")
             raise
 
-    def get_has_permission(self, user, instance, is_list=False):
+    def get_has_permission(self, user, instance, current_team, is_list=False, is_check=False):
         """获取规则实例ID"""
         user_groups = [int(i["id"]) for i in user.group_list]
         if is_list:
@@ -263,35 +226,14 @@ class AuthViewSet(MaintainerViewSet):
                 if not set(instance.team).intersection(set(user_groups)):
                     return False
             instance_id = [instance.id]
-
         try:
-            app_name_map = {
-                "system_mgmt": "system-manager",
-                "node_mgmt": "node",
-                "console_mgmt": "ops-console",
-                "mlops": "mlops",
-            }
             app_name = self._get_app_name()
-            app_name = app_name_map.get(app_name, app_name)
-            user_rules = getattr(user, "rules", {}).get(app_name, {})
-            if not isinstance(user_rules, dict):
+            permission_rules = get_permission_rules(user, current_team, app_name, self.permission_key)
+            if int(current_team) in permission_rules["team"]:
                 return True
-            normal_rules_map = user_rules.get("normal", {})
-            if "." in self.permission_key:
-                keys = self.permission_key.split(".", 1)
-                normal_rules = normal_rules_map.get(keys[0], {})
-                if isinstance(normal_rules, dict) and len(keys) > 1:
-                    normal_rules = normal_rules.get(keys[1], [])
-            else:
-                normal_rules = normal_rules_map.get(self.permission_key, [])
-            if not normal_rules:
-                return True
-            instance_list = []
-            for i in normal_rules:
-                if "Operate" in i["permission"]:
-                    instance_list.append(int(i["id"]))
-            if -1 in instance_list or 0 in instance_list:
-                return True
+
+            operate = "View" if is_check else "Operate"
+            instance_list = [int(i["id"]) for i in permission_rules["instance"] if operate in i["permission"]]
             return set(instance_id).issubset(set(instance_list))
         except Exception as e:
             logger.error(f"Error getting rule instances: {e}")

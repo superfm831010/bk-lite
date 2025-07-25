@@ -1,4 +1,26 @@
+from apps.rpc.system_mgmt import SystemMgmt
 from django.db.models import Q
+
+
+def get_permission_rules(user, current_team, app_name, permission_key):
+    """获取用户权限规则"""
+    app_name_map = {
+        "system_mgmt": "system-manager",
+        "node_mgmt": "node",
+        "console_mgmt": "ops-console",
+        "mlops": "mlops",
+    }
+    client = SystemMgmt()
+    try:
+        app_name = app_name_map.get(app_name, app_name)
+        module = permission_key
+        child_module = ""
+        if "." in permission_key:
+            module, child_module = permission_key.split(".")
+        permission_data = client.get_user_rules_by_app(int(current_team), user.username, app_name, module, child_module)
+        return permission_data
+    except Exception:
+        return {}
 
 
 def permission_filter(model, teams, permission, team_key="teams__id__in", id_key="id__in"):

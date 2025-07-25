@@ -2,6 +2,7 @@ from django.utils.translation import gettext as _
 from rest_framework import serializers
 from rest_framework.fields import empty
 
+from apps.core.utils.permission_utils import get_permission_rules
 from apps.system_mgmt.models import User
 
 
@@ -54,33 +55,19 @@ class AuthSerializer(UsernameSerializer):
         super().__init__(instance=instance, data=data, **kwargs)
         request = self.context["request"]
         self.rule_map = {}
-
-        # 获取当前应用名称
-        app_name = self._get_app_name()
-
-        if hasattr(self, "permission_key") and app_name:
-            # 获取应用下的规则
-            app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console"}
-            app_name = app_name_map.get(app_name, app_name)
-            app_rules = request.user.rules.get(app_name, {})
-            guest_rules_map = app_rules.get("guest", {})
-            normal_rules_map = app_rules.get("normal", {})
-            if "." in self.permission_key:
-                keys = self.permission_key.split(".", 1)
-                guest_rules = guest_rules_map.get(keys[0], {})
-                normal_rules = normal_rules_map.get(keys[0], {})
-                if isinstance(guest_rules, dict) and len(keys) > 1:
-                    guest_rules = guest_rules.get(keys[1], [])
-                if isinstance(normal_rules, dict) and len(keys) > 1:
-                    normal_rules = normal_rules.get(keys[1], [])
+        current_team = request.COOKIES.get("current_team", "0")
+        app_name = self.get_app_name()
+        permission_rules = get_permission_rules(request.user, current_team, app_name, self.permission_key)
+        self.auth_team = permission_rules.get("team", [])
+        self.rule_map = {}
+        for i in permission_rules.get("instance", []):
+            if int(i["id"]) in self.rule_map:
+                permission = list(set(self.rule_map[int(i["id"])] + i["permission"]))
+                self.rule_map[int(i["id"])] = permission
             else:
-                guest_rules = guest_rules_map.get(self.permission_key, [])
-                normal_rules = normal_rules_map.get(self.permission_key, [])
-            # 合并规则
-            rules = guest_rules + normal_rules
-            self.rule_map = {int(i["id"]): i["permission"] for i in rules if int(i["id"]) > 0}
+                self.rule_map[int(i["id"])] = i["permission"]
 
-    def _get_app_name(self):
+    def get_app_name(self):
         """获取当前序列化器所属的应用名称"""
         module_path = self.__class__.__module__
         if "apps." in module_path:
@@ -91,4 +78,7 @@ class AuthSerializer(UsernameSerializer):
         return None
 
     def get_permissions(self, instance):
+        if hasattr(instance, "team"):
+            if self.auth_team and instance.team and set(self.auth_team).intersection(set(instance.team)):
+                return ["View", "Operate"]
         return self.rule_map.get(instance.id, ["View", "Operate"])

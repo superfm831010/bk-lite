@@ -3,7 +3,7 @@
   "plugin_desc": "Collect runtime metrics of ClickHouse instances, such as memory, disk, query events, etc., for performance monitoring, resource tracking, and fault diagnosis, ensuring stable database operation.",
   "name": "ClickHouse",
   "icon": "zhongjianjian",
-  "type": "Middleware",
+  "type": "Database",
   "description": "",
   "default_metric": "any({instance_type='clickhouse'}) by (instance_id)",
   "instance_id_keys": ["instance_id"],

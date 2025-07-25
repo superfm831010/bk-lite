@@ -118,14 +118,16 @@ if os.path.exists(APPS_DIR):
         app_folders = [
             name
             for name in os.listdir(APPS_DIR)
-            if os.path.isdir(os.path.join(APPS_DIR, name)) 
+            if os.path.isdir(os.path.join(APPS_DIR, name))
             and name not in exclude_apps
-            and not name.startswith('_')
-            and not name.startswith('.')
+            and not name.startswith("_")
+            and not name.startswith(".")
         ]
-        
+
 else:
     app_folders = []
 
 INSTALLED_APPS += tuple(f"apps.{app}" for app in app_folders)
 
+# 文件上传数量限制
+DATA_UPLOAD_MAX_NUMBER_FILES = 100

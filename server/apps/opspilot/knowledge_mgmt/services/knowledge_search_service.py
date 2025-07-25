@@ -35,7 +35,7 @@ class KnowledgeSearchService:
         if kwargs["enable_rerank"]:
             rerank_config = rerank_model.decrypted_rerank_config_config
             rerank_model_address = rerank_config["base_url"]
-            rerank_model_api_key = rerank_config["api_key"]
+            rerank_model_api_key = rerank_config["api_key"] or " "
             rerank_model_name = rerank_model.rerank_config.get("model", rerank_model.name)
         params = {
             "index_name": knowledge_base_folder.knowledge_index_name(),
@@ -52,7 +52,7 @@ class KnowledgeSearchService:
             "rag_num_candidates": kwargs["rag_num_candidates"],
             "enable_rerank": kwargs["enable_rerank"],
             "embed_model_base_url": embed_mode_config["base_url"],
-            "embed_model_api_key": embed_mode_config["api_key"],
+            "embed_model_api_key": embed_mode_config["api_key"] or " ",
             "embed_model_name": embed_mode_config["model"],
             "rerank_model_base_url": rerank_model_address,
             "rerank_model_api_key": rerank_model_api_key,
@@ -77,11 +77,11 @@ class KnowledgeSearchService:
             rerank_config = graph_obj.rerank_model.decrypted_rerank_config_config
             graph_rag_request = {
                 "embed_model_base_url": embed_config["base_url"],
-                "embed_model_api_key": embed_config["api_key"],
+                "embed_model_api_key": embed_config["api_key"] or " ",
                 "embed_model_name": embed_config.get("model", graph_obj.embed_model.name),
                 "rerank_model_base_url": rerank_config["base_url"],
                 "rerank_model_name": rerank_config.get("model", graph_obj.rerank_model.name),
-                "rerank_model_api_key": rerank_config["api_key"],
+                "rerank_model_api_key": rerank_config["api_key"] or " ",
                 "size": knowledge_base_folder.graph_size,
                 "group_ids": ["graph-{}".format(graph_obj.id)],
                 "search_query": query,

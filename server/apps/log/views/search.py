@@ -71,3 +71,21 @@ class LogSearchViewSet(ViewSet):
 
         data = SearchService.search_hits(query, start_time, end_time, field, fields_limit, step)
         return WebUtils.response_success(data)
+
+    @swagger_auto_schema(
+        operation_description="Tail logs",
+        manual_parameters=[
+            openapi.Parameter('query', openapi.IN_QUERY, description="Query to filter logs", type=openapi.TYPE_STRING)
+        ],
+        tags=['LogSearch']
+    )
+    @action(methods=['get'], detail=False, url_path='tail')
+    def tail_logs(self, request):
+        """
+        实现长连接接口，用于实时获取日志数据
+        """
+        query = request.query_params.get("query", "")
+        if not query:
+            return WebUtils.response_error("Query parameters are required.")
+
+        return SearchService.tail(query)

@@ -56,6 +56,11 @@ LOGGING = {
             "formatter": "verbose",
             "filename": os.path.join(log_dir, "cmdb.log"),
         },
+        "operation_analysis": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "verbose",
+            "filename": os.path.join(log_dir, "operation_analysis.log"),
+        },
         "monitor": {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "verbose",
@@ -93,6 +98,7 @@ LOGGING = {
         "django.db.backends": {"handlers": ["db"], "level": "INFO", "propagate": True},
         "app": {"handlers": ["root", "console"], "level": "DEBUG", "propagate": True},
         "cmdb": {"handlers": ["cmdb", "console"], "level": "DEBUG", "propagate": True},
+        "operation_analysis": {"handlers": ["operation_analysis", "console"], "level": "DEBUG", "propagate": True},
         "monitor": {"handlers": ["monitor", "console"], "level": "DEBUG", "propagate": True},
         "node": {"handlers": ["node", "console"], "level": "DEBUG", "propagate": True},
         "ops-console": {"handlers": ["ops-console", "console"], "level": "DEBUG", "propagate": True},

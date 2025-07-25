@@ -1,8 +1,8 @@
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 
+from apps.core.utils.serializers import AuthSerializer, TeamSerializer
 from apps.opspilot.models import LLMModel, LLMSkill, SkillRequestLog, SkillTools
-from config.drf.serializers import AuthSerializer, TeamSerializer
 
 
 class LLMModelSerializer(AuthSerializer):

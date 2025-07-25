@@ -37,6 +37,11 @@ init_alerts() {
     python manage.py create_builtin_rules --update || true
 }
 
+init_operation_analysis() {
+    echo "运营分析系统资源初始化..."
+    python manage.py init_source_api_data || true
+}
+
 init_opspilot() {
     echo "OpsPilot资源初始化..."
     python manage.py init_bot || true
@@ -65,6 +70,7 @@ if [ -z "$INSTALL_APPS" ]; then
     init_monitor
     init_node_mgmt
     init_alerts
+    init_operation_analysis
     init_opspilot
     init_log
     opspilot_installed=true
@@ -94,6 +100,9 @@ else
                 ;;
             "alerts")
                 init_alerts
+                ;;
+            "operation_analysis")
+                init_operation_analysis
                 ;;
             "opspilot")
                 init_opspilot
