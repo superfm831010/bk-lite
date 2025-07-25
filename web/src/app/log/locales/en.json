@@ -138,7 +138,8 @@
       "full": "Full screen display",
       "clearLogs": "Clear logs",
       "enableScrolling": "Enable auto-scrolling",
-      "stopScrolling": "Turn off auto-scrolling"
+      "stopScrolling": "Turn off auto-scrolling",
+      "selectGroup": "Please select the group"
     },
     "integration": {
       "interval": "Interval",

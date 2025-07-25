@@ -6,18 +6,18 @@ import {
   IntergrationMonitoredObject,
 } from '@/app/monitor/types/monitor';
 import { TableDataItem } from '@/app/monitor/types';
-import { useElasticSearchExporterFormItems } from '../../common/elasticSearchExporterFormItems';
+import { useClickHouseExporterFormItems } from '../../common/clickHouseExporterFormItems';
 import { cloneDeep } from 'lodash';
 
-export const useElasticSearchExporter = () => {
+export const useClickHouseExporter = () => {
   const { t } = useTranslation();
-  const elasticSearchExporterFormItems = useElasticSearchExporterFormItems();
+  const clickHouseExporterFormItems = useClickHouseExporterFormItems();
   const pluginConfig = {
     collect_type: 'exporter',
-    config_type: ['elasticsearch'],
-    collector: 'ElasticSearch-Exporter',
-    instance_type: 'elasticsearch',
-    object_name: 'ElasticSearch',
+    config_type: ['clickhouse'],
+    collector: 'ClickHouse-Exporter',
+    instance_type: 'clickhouse',
+    object_name: 'ClickHouse',
   };
 
   return {
@@ -51,7 +51,7 @@ export const useElasticSearchExporter = () => {
 
       const formItems = (
         <>
-          {elasticSearchExporterFormItems.getCommonFormItems()}
+          {clickHouseExporterFormItems.getCommonFormItems()}
           <Form.Item label={t('monitor.intergrations.listeningPort')} required>
             <Form.Item
               noStyle
@@ -76,7 +76,7 @@ export const useElasticSearchExporter = () => {
           <Form.Item label={t('monitor.intergrations.url')} required>
             <Form.Item
               noStyle
-              name="ES_URI"
+              name="SCRAPE_URI"
               rules={[
                 {
                   required: true,
@@ -95,13 +95,10 @@ export const useElasticSearchExporter = () => {
 
       const config = {
         auto: {
-          formItems: elasticSearchExporterFormItems.getCommonFormItems(
-            {},
-            'auto'
-          ),
+          formItems: clickHouseExporterFormItems.getCommonFormItems({}, 'auto'),
           initTableItems: {
             ENV_LISTEN_PORT: null,
-            ENV_ES_URI: null,
+            ENV_SCRAPE_URI: null,
           },
           defaultForm: {},
           columns: [
@@ -127,17 +124,17 @@ export const useElasticSearchExporter = () => {
             },
             {
               title: t('monitor.intergrations.url'),
-              dataIndex: 'ENV_ES_URI',
-              key: 'ENV_ES_URI',
+              dataIndex: 'ENV_SCRAPE_URI',
+              key: 'ENV_SCRAPE_URI',
               width: 200,
               render: (_: unknown, record: TableDataItem, index: number) => (
                 <Input
-                  value={record.ENV_ES_URI}
+                  value={record.ENV_SCRAPE_URI}
                   onChange={(e) =>
                     handleFieldAndInstNameChange(e, {
                       index,
-                      field: 'ENV_ES_URI',
-                      dataIndex: 'ENV_ES_URI',
+                      field: 'ENV_SCRAPE_URI',
+                      dataIndex: 'ENV_SCRAPE_URI',
                     })
                   }
                 />
@@ -163,10 +160,9 @@ export const useElasticSearchExporter = () => {
                 return {
                   ...item,
                   ENV_LISTEN_PORT: String(item.ENV_LISTEN_PORT),
-                  ENV_ES_URI: String(item.ENV_ES_URI),
                   node_ids: [item.node_ids].flat(),
                   instance_type: pluginConfig.instance_type,
-                  instance_id: item.ENV_ES_URI,
+                  instance_id: item.ENV_SCRAPE_URI,
                 };
               }),
             };
@@ -178,13 +174,16 @@ export const useElasticSearchExporter = () => {
             return formData?.base?.env_config || {};
           },
           getParams: (formData: TableDataItem, configForm: TableDataItem) => {
-            ['LISTEN_PORT', 'ES_URI', 'ES_USERNAME', 'ES_PASSWORD'].forEach(
-              (item) => {
-                if (formData[item]) {
-                  configForm.base.env_config[item] = String(formData[item]);
-                }
+            [
+              'LISTEN_PORT',
+              'SCRAPE_URI',
+              'CLICKHOUSE_USER',
+              'CLICKHOUSE_PASSWORD',
+            ].forEach((item) => {
+              if (formData[item]) {
+                configForm.base.env_config[item] = String(formData[item]);
               }
-            );
+            });
             return configForm;
           },
         },
@@ -192,7 +191,7 @@ export const useElasticSearchExporter = () => {
           defaultForm: {},
           formItems,
           getParams: (row: TableDataItem) => {
-            const instanceId = row.ES_URI;
+            const instanceId = row.SCRAPE_URI;
             return {
               instance_id: instanceId,
               instance_name: instanceId,
