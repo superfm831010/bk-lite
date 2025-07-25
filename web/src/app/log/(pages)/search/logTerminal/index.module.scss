@@ -1,0 +1,142 @@
+.logTerminal {
+    min-height: 100px;
+    background: var(--color-bg-1);
+    overflow: hidden;
+    border: 1px solid var(--color-border-1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 4px 6px var(--color-fill-1);
+
+    &.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 9999;
+    }
+
+    .terminalHeader {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        background: var(--color-fill-3);
+        border-bottom: 1px solid var(--color-border-1);
+        padding: 10px 16px;
+        min-height: 36px;
+    }
+
+    .controls {
+        display: flex;
+        gap: 8px;
+
+        button {
+            border: none;
+            box-shadow: none;
+        }
+    }
+
+
+    .logContainer {
+        flex: 1;
+        background: var(--color-bg-1);
+        overflow-y: auto;
+        overflow-x: hidden;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 12px;
+        line-height: 2;
+
+        -webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+            background-color: var(--color-bg-7);
+            border-radius: 10px;
+        }
+
+        -webkit-scrollbar-thumb {
+            border-radius: 10px;
+            background: var(--color-fill-4);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        -webkit-scrollbar-thumb:hover {
+            opacity: 1;
+            background: var(--color-fill-4);
+            box-shadow: inset 0 0 6px var(--color-fill-4);
+        }
+    }
+
+    .logLine {
+        display: flex;
+        min-height: 20px;
+        transition: background-color 0.1s;
+
+        &:hover {
+            background: var(--color-fill-1);
+        }
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    .lineNumber {
+        flex-shrink: 0;
+        width: 50px;
+        padding: 2px 8px;
+        background: var(--color-fill-1);
+        color: var(--color-text-3);
+        text-align: right;
+        border-right: 1px solid var(--color-border-1);
+        font-size: 12px;
+        user-select: none;
+    }
+
+    .logContent {
+        flex: 1;
+        padding: 2px 12px;
+        word-break: break-all;
+        white-space: pre-wrap;
+        color: var(--color-text-1);
+    }
+
+    // 响应式设计
+    @media (max-width: 768px) {
+        .controls {
+            gap: 4px;
+
+            button {
+                padding: 4px 6px;
+                font-size: 12px;
+            }
+        }
+
+        .lineNumber {
+            width: 40px;
+            font-size: 11px;
+        }
+
+        .logContent {
+            font-size: 12px;
+            padding: 2px 8px;
+        }
+    }
+
+    // 动画效果
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .logLine {
+        animation: fadeIn 0.2s ease-out;
+    }
+}

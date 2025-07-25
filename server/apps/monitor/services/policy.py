@@ -21,3 +21,12 @@ class PolicyService:
         for obj in objs:
             templates.extend(obj.templates)
         return templates
+
+    @staticmethod
+    def get_policy_templates_monitor_object():
+        """获取监控策略模板"""
+        objs = PolicyTemplate.objects.distinct("monitor_object_id")
+        monitor_objects = []
+        for obj in objs:
+            monitor_objects.append(obj.monitor_object_id)
+        return monitor_objects
