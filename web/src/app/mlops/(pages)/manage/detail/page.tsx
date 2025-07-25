@@ -1,53 +1,15 @@
 'use client'
-import React, { memo, useMemo } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useTranslation } from '@/utils/i18n';
+import React, { useMemo } from 'react';
+import { 
+  useSearchParams, 
+} from 'next/navigation';
 import AnomalyDetail from './AnomalyDetail';
-import Icon from '@/components/icon';
-import SubLayout from '@/components/sub-layout';
+import PageLayout from '@/components/page-layout';
+import TopSection from '@/components/top-section';
 
-const Intro = memo(({
-  folder_name,
-  // description,
-}: {
-  folder_name: string;
-  description: string;
-}) => {
-  return (
-    <div>
-      <div className="flex items-center w-full">
-        <Icon
-          type="chakanshuji"
-          className="h-16 w-16"
-          style={{ height: '36px', width: '36px', color: 'blue' }}
-        />
-        <h1 className="ml-2 text-center truncate">{folder_name}</h1>
-      </div>
-    </div>
-  )
-});
-Intro.displayName = 'Intro';
-
-const Topsection = memo(({
-  t
-}: {
-  t: (id: string) => string
-}) => {
-  return (
-    <div className="flex flex-col h-[90px] p-4 overflow-hidden">
-      <h1 className="text-lg truncate w-full mb-1">{t('datasets.title')}</h1>
-      <p className="text-sm overflow-hidden w-full min-w-[1000px] mt-[8px]">
-        {t('datasets.detail')}
-      </p>
-    </div>
-  );
-});
-Topsection.displayName = 'Topsection';
 
 const Detail = () => {
-  const { t } = useTranslation();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const {
     folder_name,
     description,
@@ -65,16 +27,14 @@ const Detail = () => {
   return (
     <>
       <div className='w-full'>
-        <SubLayout
-          topSection={<Topsection t={t} />}
-          intro={<Intro folder_name={folder_name} description={description} />}
-          onBackButtonClick={() => router.back()}
-          showSideMenu={false}
-        >
-          <div className='w-full relative'>
-            {renderPage[activeTap]}
-          </div>
-        </SubLayout>
+        <PageLayout
+          topSection={<TopSection title={folder_name} content={description} />}
+          rightSection={
+            <div className='w-full relative'>
+              {renderPage[activeTap]}
+            </div>
+          }
+        />
       </div>
     </>
   )

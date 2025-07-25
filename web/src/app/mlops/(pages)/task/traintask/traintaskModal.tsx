@@ -35,7 +35,7 @@ interface ModalState {
   formData: TrainJob | null
 }
 
-const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptions, onSuccess }, ref) => {
+const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptions, activeTag, onSuccess }, ref) => {
   const { t } = useTranslation();
   const { addAnomalyTrainTask, updateAnomalyTrainTask } = useMlopsTaskApi();
   const { getAnomalyTrainData, getAnomalyTrainDataInfo } = useMlopsManageApi();
@@ -232,10 +232,23 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
     setIsShow(true);
   };
 
+  const handleAddMap: Record<string, any> = {
+    'anomaly': async (params: any) => {
+      await addAnomalyTrainTask(params);
+    }
+  };
+
+  const handleUpdateMap: Record<string, any> = {
+    'anomaly': async (id: string, params: any) => {
+      await updateAnomalyTrainTask(id, params);
+    }
+  };
+
   const handleSubmit = useCallback(async () => {
     if (loadingState.confirm) return;
     setLoadingState((prev) => ({ ...prev, confirm: true }));
     try {
+      const [tagName] = activeTag;
       const value = await formRef.current?.validateFields();
       const hyperopt_config = renderParams(value?.hyperopt_config);
       const params = {
@@ -244,11 +257,10 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
         hyperopt_config,
         description: value.name || ''
       };
-      console.log(params);
       if (modalState.type === 'add') {
-        await addAnomalyTrainTask(params);
+        await handleAddMap[tagName](params);
       } else {
-        await updateAnomalyTrainTask(modalState.formData?.id as string, params);
+        await handleUpdateMap[tagName](modalState.formData?.id as string, params)
       }
       setModalState((prev) => ({ ...prev, isOpen: false }))
       message.success(t(`datasets.${modalState.type}Success`));

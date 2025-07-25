@@ -4,7 +4,18 @@ import CustomTable from '@/components/custom-table';
 import TopSection from '@/components/top-section';
 import { ColumnItem } from '@/types';
 import type { DataNode as TreeDataNode } from 'antd/lib/tree';
-import { Input, Button, Tree, Spin, Dropdown, Menu, Modal, message } from 'antd';
+import {
+  Input,
+  Button,
+  Tree,
+  Spin,
+  Dropdown,
+  Menu,
+  Modal,
+  message,
+  Popconfirm,
+  Tag
+} from 'antd';
 import { PlusOutlined, MoreOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { useEffect, useState, useRef } from 'react';
@@ -16,48 +27,59 @@ const { confirm } = Modal;
 
 const PlaygroundManage = () => {
   const { t } = useTranslation();
-  const { getCategoryList, getCapabilityList, deleteCategory } = usePlayroundApi();
+  const { getCategoryList, getCapabilityList, deleteCategory, deleteCapability } = usePlayroundApi();
   const modalRef = useRef<ModalRef>(null)
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [treeLoading, setTreeLoading] = useState<boolean>(false);
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>('');
-  // const [selectCategory, setSelectCategory] = useState<number | null>(null);
+  const [selectCategory, setSelectCategory] = useState<number[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
   const columns: ColumnItem[] = [
     {
-      title: '名称',
+      title: t(`common.name`),
       dataIndex: 'name',
       key: 'name'
     },
     {
-      title: '介绍',
+      title: t(`common.description`),
       dataIndex: 'description',
       key: 'description'
     },
     {
-      title: '地址',
+      title: t(`playground-common.url`),
       dataIndex: 'url',
       key: 'url'
     },
     {
-      title: '状态',
+      title: t(`playground-common.onlineStatus`),
       dataIndex: 'status',
       key: 'status',
       render: (_, record) => {
-        return <p>{record.is_active ? '已上线' : '未上线'}</p>;
+        return <Tag color={record.is_active ? 'green' : 'red'}>
+          {record.is_active ? t(`playground-common.active`) : t(`playground-common.inactive`)}
+        </Tag>
       }
     },
     {
       title: t(`common.action`),
       dataIndex: 'action',
       key: 'action',
-      render: () => {
+      render: (_, record) => {
         return (
           <>
-            <Button type='link' className='mr-2'>修改配置</Button>
-            <Button type='link' className='mr-2'>内容</Button>
-            <Button type='link' danger>删除</Button>
+            <Button type='link' className='mr-2' onClick={() => openModal({ type: 'updateCapability', title: 'update', form: record })}>修改配置</Button>
+            <Popconfirm
+              title={t(`manage.delCapability`)}
+              description={t(`manage.delCapabilityText`)}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              okButtonProps={{ loading: confirmLoading }}
+              onConfirm={() => handleDelCapability(record.id)}
+            >
+              <Button type='link' danger>{t(`common.delete`)}</Button>
+            </Popconfirm>
           </>
         )
       }
@@ -69,15 +91,15 @@ const PlaygroundManage = () => {
     getAllCapability();
     setSearchValue('');
 
-    setTableData([
-      {
-        id: 1,
-        name: 'test',
-        description: 'test',
-        url: '/playground/home?page=anomaly-detection',
-        is_active: true
-      }
-    ])
+    // setTableData([
+    //   {
+    //     id: 1,
+    //     name: 'test',
+    //     description: 'test',
+    //     url: 'http://localhost:3000/playground/home?page=anomaly-detection',
+    //     is_active: true
+    //   }
+    // ]);
   }, []);
 
   const renderNode = (data: any[], isChildren = false) => {
@@ -93,7 +115,7 @@ const PlaygroundManage = () => {
       };
       return node;
     });
-    
+
     treeData.sort((a, b) => {
       const aHasChildren = a.children.length > 0;
       const bHasChildren = b.children.length > 0;
@@ -129,6 +151,7 @@ const PlaygroundManage = () => {
     setTableLoading(true);
     try {
       const data = await getCapabilityList();
+      setTableData(data);
       console.log(data);
     } catch (e) {
       console.log(e)
@@ -168,7 +191,6 @@ const PlaygroundManage = () => {
                     label: t(`common.delete`),
                   }
                 ]}
-
               />
             }
             trigger={['click']}
@@ -201,10 +223,11 @@ const PlaygroundManage = () => {
 
   const onSelect = (keys: any) => {
     console.log(keys);
+    setSelectCategory(keys);
   };
 
   const topSection = (
-    <TopSection title={'门户管理'} content={'管理门户的所有类别和所有的能力演示菜单。'} />
+    <TopSection title={t(`manage.manageTitle`)} content={t(`manage.description`)} />
   );
 
   const leftSection = (
@@ -228,7 +251,8 @@ const PlaygroundManage = () => {
             expandAction={false}
             defaultExpandAll
             autoExpandParent
-            defaultSelectedKeys={['hardware']}
+            // defaultSelectedKeys={['hardware']}
+            selectedKeys={selectCategory}
             treeData={renderTreeNode()}
             onSelect={onSelect}
           />
@@ -243,28 +267,44 @@ const PlaygroundManage = () => {
 
   const handleDelCategory = (id: number) => {
     confirm({
-      title: `确认要删除此类别吗`,
+      title: t(`manage.delCategory`),
       okText: t(`common.confirm`),
       cancelText: t(`common.cancel`),
       onOk: async () => {
         try {
           await deleteCategory(id);
-          message.success(`删除成功`);
+          message.success(t(`common.delSuccess`));
         } catch (e) {
           console.log(e);
-          message.error(`删除失败`);
+          message.error(t(`common.delFailed`));
         } finally {
           getAllCategory();
         }
       }
     })
-  }
+  };
+
+  const handleDelCapability = async (id: number) => {
+    setConfirmLoading(true);
+    try {
+      await deleteCapability(id);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
 
   const rightSection = (
     <>
       <div className='flex justify-end mb-4'>
         <Search className='w-[240px] mr-4' placeholder={t(`common.search`)} enterButton onSearch={onSearch} />
-        <Button type='primary' icon={<PlusOutlined />} onClick={() => openModal({ type: 'addCapability', title: 'add', form: null })}>添加</Button>
+        <Button
+          type='primary'
+          icon={<PlusOutlined />}
+          onClick={() => openModal({ type: 'addCapability', title: 'add', form: null })}>
+          {t(`common.add`)}
+        </Button>
       </div>
       <CustomTable
         rowKey='id'
@@ -275,6 +315,11 @@ const PlaygroundManage = () => {
     </>
   );
 
+  const onSuccess = () => {
+    getAllCategory();
+    getAllCapability();
+  };
+
   return (
     <>
       <PageLayout
@@ -282,7 +327,7 @@ const PlaygroundManage = () => {
         leftSection={leftSection}
         topSection={topSection}
       />
-      <ManageModal ref={modalRef} nodes={filteredTreeData} />
+      <ManageModal ref={modalRef} nodes={filteredTreeData} onSuccess={onSuccess} activeTag={selectCategory} />
     </>
   )
 };
