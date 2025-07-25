@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.playground.models.playground_category import PlayGroundCategory
-from config.drf.serializers import AuthSerializer
+from apps.core.utils.serializers import AuthSerializer
 
 class PlayGroundCategorySerializer(AuthSerializer):
     """

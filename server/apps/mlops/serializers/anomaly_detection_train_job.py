@@ -1,5 +1,5 @@
 from apps.mlops.models.anomaly_detection_train_job import AnomalyDetectionTrainJob
-from config.drf.serializers import AuthSerializer
+from apps.core.utils.serializers import AuthSerializer
 
 
 class AnomalyDetectionTrainJobSerializer(AuthSerializer):

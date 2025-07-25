@@ -14,3 +14,5 @@ class ChannelChoices(models.TextChoices):
 class SkillTypeChoices(models.IntegerChoices):
     BASIC_TOOL = 1, _("Basic Tool")
     KNOWLEDGE_TOOL = 2, _("Knowledge Tool")
+    PLAN_EXECUTE = 3, _("Plan Execute")
+    LATS = 4, _("Lats")

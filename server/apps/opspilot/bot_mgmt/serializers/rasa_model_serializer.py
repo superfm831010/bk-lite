@@ -1,5 +1,5 @@
+from apps.core.utils.serializers import I18nSerializer
 from apps.opspilot.models import RasaModel
-from config.drf.serializers import I18nSerializer
 
 
 class RasaModelSerializer(I18nSerializer):

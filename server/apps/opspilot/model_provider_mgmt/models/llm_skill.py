@@ -41,6 +41,7 @@ class LLMSkill(MaintainerInfo):
     km_llm_model = models.ForeignKey(
         "LLMModel", on_delete=models.CASCADE, blank=True, null=True, related_name="km_llm_model"
     )
+    guide = models.TextField(default="", verbose_name="技能引导", blank=True, null=True)
 
     def __str__(self):
         return self.name

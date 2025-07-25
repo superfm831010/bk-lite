@@ -54,6 +54,8 @@ const EntityList = <T,>({
   const typeOptions = [
     { key: 2, title: t('skill.form.qaType') },
     { key: 1, title: t('skill.form.toolsType') },
+    { key: 3, title: t('skill.form.planType') },
+    { key: 4, title: t('skill.form.complexType') }
   ];
 
   const handleTypeChange = (value: string | undefined) => {

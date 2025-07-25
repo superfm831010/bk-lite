@@ -11,10 +11,12 @@
     }
 
     .searchCondition {
+        margin: 10px 0;
+
         :global {
-           .ant-input-group-addon {
-            padding: 0;
-           } 
+            .ant-input-group-addon {
+                padding: 0;
+            }
         }
     }
 

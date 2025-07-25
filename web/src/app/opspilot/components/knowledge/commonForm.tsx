@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Select, Tooltip } from 'antd';
+import { Form, Input, Select, Image } from 'antd';
+import type { StaticImageData } from 'next/image';
 import { useTranslation } from '@/utils/i18n';
 import { useUserInfoContext } from '@/context/userInfo';
 import GroupTreeSelect from '@/components/group-tree-select';
-import Icon from '@/components/icon';
+import LatsAgent from '@/app/opspilot/img/lats_agent.png';
+import PlanAgent from '@/app/opspilot/img/plan_agent.png';
+import RagAgent from '@/app/opspilot/img/rag_agent.png';
+import ReActAgent from '@/app/opspilot/img/reAct_agent.png';
 
 const { Option } = Select;
 
@@ -27,14 +31,30 @@ const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValu
       key: 2, 
       title: t('skill.form.qaType'), 
       desc: t('skill.form.qaTypeDesc'), 
-      icon: 'liaotian' 
+      scene: t('skill.form.qaTypeScene'),
+      img: RagAgent
     },
     { 
       key: 1, 
       title: t('skill.form.toolsType'), 
       desc: t('skill.form.toolsTypeDesc'), 
-      icon: 'gongju'
+      scene: t('skill.form.toolsTypeScene'),
+      img: ReActAgent
     },
+    { 
+      key: 3, 
+      title: t('skill.form.planType'), 
+      desc: t('skill.form.planTypeDesc'),
+      scene: t('skill.form.planTypeScene'), 
+      img: PlanAgent
+    },
+    { 
+      key: 4, 
+      title: t('skill.form.complexType'), 
+      desc: t('skill.form.complexTypeDesc'), 
+      scene: t('skill.form.complexTypeScene'),
+      img: LatsAgent
+    }
   ];
 
   useEffect(() => {
@@ -64,30 +84,55 @@ const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValu
     form.setFieldsValue({ skill_type: typeKey });
   };
 
+  const renderSelectedTypeDetails = () => {
+    const selectedTypeDetails = typeOptions.find((type) => type.key === selectedType);
+    if (!selectedTypeDetails) return null;
+
+    const { desc, scene, img } = selectedTypeDetails;
+
+    return (
+      <div className="flex items-center my-2 border p-2 rounded-md">
+        <div className="flex-1">
+          <div className="text-sm">
+            <h3 className='font-semibold'>{t('skill.form.explanation')}</h3>
+            <p className='text-[var(--color-text-2)] mb-4'>{desc}</p>
+            <h3 className='font-semibold'>{t('skill.form.scene')}</h3>
+            <p className='text-[var(--color-text-2)] whitespace-pre-line'>{scene && `${scene}`}</p>
+          </div>
+        </div>
+        <div className="ml-4 w-[240px] h-[200px] flex items-center justify-center">
+          <Image
+            src={(img as StaticImageData)?.src}
+            alt="example"
+            className="rounded-md max-w-full max-h-full object-contain"
+          />
+        </div> 
+      </div>
+    );
+  };
+
   return (
     <Form form={form} layout="vertical" name={`${formType}_form`}>
       {formType === 'skill' && (
-        <Form.Item name="skill_type">
-          <div className="grid grid-cols-2 gap-4">
+        <Form.Item
+          name="skill_type"
+          label={t('skill.form.type')}
+          initialValue={typeOptions[0].key}
+          rules={[{ required: true, message: `${t('common.selectMsg')}${t('skill.form.type')}!` }]}
+        >
+          <Select
+            placeholder={`${t('common.selectMsg')}${t('skill.form.type')}`}
+            onChange={handleTypeSelection}
+          >
             {typeOptions.map((type) => (
-              <Tooltip key={type.key} title={type.desc}>
-                <div
-                  className={`p-4 rounded-lg cursor-pointer ${
-                    selectedType === type.key ? 'border-2 bg-[var(--color-primary-bg-active)] border-[var(--color-primary)]' : 'border'
-                  }`}
-                  onClick={() => handleTypeSelection(type.key)}
-                >
-                  <div className="flex items-center mb-2">
-                    <Icon type={type.icon} className="text-2xl mr-2" />
-                    <h3 className="text-sm font-semibold">{type.title}</h3>
-                  </div>
-                  <p className="text-xs text-[var(--color-text-3)] line-clamp-3">{type.desc}</p>
-                </div>
-              </Tooltip>
+              <Option key={type.key} value={type.key}>
+                {type.title}
+              </Option>
             ))}
-          </div>
+          </Select>
         </Form.Item>
       )}
+      {formType === 'skill' && renderSelectedTypeDetails()}
       <Form.Item
         name="name"
         label={t(`${formType}.form.name`)}

@@ -197,6 +197,10 @@ class LLMService:
         url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_chatbot_workflow"
         if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
             url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_react_agent"
+        elif kwargs["skill_type"] == SkillTypeChoices.PLAN_EXECUTE:
+            url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_plan_and_execute_agent"
+        elif kwargs["skill_type"] == SkillTypeChoices.LATS:
+            url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_lats_agent"
         result = ChatServerHelper.post_chat_server(chat_kwargs, url)
         data = result["message"]
 
@@ -332,13 +336,13 @@ class LLMService:
     def set_default_naive_rag_kwargs(knowledge_base, score_threshold_map):
         embed_config = knowledge_base.embed_model.decrypted_embed_config
         embed_model_base_url = embed_config["base_url"]
-        embed_model_api_key = embed_config["api_key"]
+        embed_model_api_key = embed_config["api_key"] or " "
         embed_model_name = embed_config.get("model", knowledge_base.embed_model.name)
         rerank_model_base_url = rerank_model_api_key = rerank_model_name = ""
         if knowledge_base.rerank_model:
             rerank_config = knowledge_base.rerank_model.decrypted_rerank_config_config
             rerank_model_base_url = rerank_config["base_url"]
-            rerank_model_api_key = rerank_config["api_key"]
+            rerank_model_api_key = rerank_config["api_key"] or " "
             rerank_model_name = rerank_config.get("model", knowledge_base.rerank_model.name)
         score_threshold = score_threshold_map.get(knowledge_base.id, 0.7)
         kwargs = {

@@ -1,5 +1,5 @@
+from apps.core.utils.serializers import I18nSerializer
 from apps.opspilot.models import BotConversationHistory
-from config.drf.serializers import I18nSerializer
 
 
 class HistorySerializer(I18nSerializer):

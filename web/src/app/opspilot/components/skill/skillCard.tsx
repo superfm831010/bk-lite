@@ -18,6 +18,8 @@ const StudioCard: React.FC<StudioCardProps> = (props) => {
   const skillTypeMapping = {
     2: t('skill.form.qaType'),
     1: t('skill.form.toolsType'),
+    3: t('skill.form.planType'),
+    4: t('skill.form.complexType')
   };
   const skillType = skillTypeMapping[skill_type as keyof typeof skillTypeMapping] || 'Unknown';
 
