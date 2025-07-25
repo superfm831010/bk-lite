@@ -53,8 +53,6 @@ export interface WidgetMeta {
   icon: string;
   category: string;
   defaultConfig?: any;
-  needsTimeSelector?: boolean;
-  needsInstanceSelector?: boolean;
 }
 
 export interface WidgetDefinition {

@@ -90,9 +90,11 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
                   className="cursor-pointer hover:bg-blue-50 flex items-center gap-3 justify-between"
                   onClick={() => handleConfig(item)}
                 >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{item.name}</span>
-                    <span className="text-xs text-gray-500">{item.desc}</span>
+                  <div className="flex flex-col gap-1 leading-relaxed">
+                    <span className="font-medium leading-5">{item.name}</span>
+                    <span className="text-xs text-[var(--color-text-2)] leading-4">
+                      {item.desc}
+                    </span>
                   </div>
                   <Icon
                     type={item.icon}

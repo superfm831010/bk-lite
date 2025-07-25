@@ -14,8 +14,6 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
       description: '按照天的维度对Alarm产生的数量以趋势图的方式呈现',
       icon: 'zhexiantu',
       category: '告警',
-      needsTimeSelector: true,
-      needsInstanceSelector: false,
       defaultConfig: {
         barColor: '#52c41a',
         filterType: 'selector',
@@ -31,8 +29,6 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
       description: '以操作系统类型的维度对所有主机进行分析',
       icon: 'tubiao2',
       category: '监控',
-      needsTimeSelector: true,
-      needsInstanceSelector: false,
       defaultConfig: {
         lineColor: '#1890ff',
         filterType: 'selector',
@@ -78,22 +74,4 @@ export const getWidgetsByCategory = () => {
   return categories;
 };
 
-// 检查是否需要全局时间选择器
-export const needsGlobalTimeSelector = (layouts: any[]) => {
-  return layouts.some((item) => {
-    const meta = getWidgetMeta(item.widget);
-    if (!meta?.needsTimeSelector) return false;
-    const filterType = item.config?.filterType || meta.defaultConfig?.filterType;
-    return filterType === 'selector';
-  });
-};
 
-// 检查是否需要全局实例选择器
-export const needsGlobalInstanceSelector = (layouts: any[]) => {
-  return layouts.some((item) => {
-    const meta = getWidgetMeta(item.widget);
-    if (!meta?.needsInstanceSelector) return false;
-    const filterType = item.config?.filterType || meta.defaultConfig?.filterType;
-    return filterType === 'selector';
-  });
-};

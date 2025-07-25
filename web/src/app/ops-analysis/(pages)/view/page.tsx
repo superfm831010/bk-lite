@@ -16,11 +16,11 @@ const ViewPage: React.FC = () => {
 
   return (
     <div
-      className="flex w-full h-[calc(100vh-90px)] relative bg-white rounded-lg"
+      className="flex w-full h-[calc(100vh-90px)] relative bg-[var(--color-bg-1)] rounded-lg"
       style={{ minWidth: collapsed ? 0 : 280 }}
     >
       <div
-        className={`h-full border-r border-gray-200 relative transition-all duration-300 ${
+        className={`h-full border-r border-[var(--color-border-2)] relative transition-all duration-300 ${
           collapsed ? 'w-0 min-w-0' : 'w-[280px] min-w-[280px]'
         }`}
         style={{

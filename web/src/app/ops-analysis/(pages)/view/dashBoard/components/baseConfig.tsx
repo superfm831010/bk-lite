@@ -87,6 +87,8 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
           formValues.dataSource = targetDataSource.id;
         }
         formValues.chartType = 'line';
+      } else if (item.widget === 'osPie') {
+        formValues.chartType = 'pie';
       }
       form.setFieldsValue(formValues);
     } else {
@@ -128,7 +130,7 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
     >
       <Form form={form} labelCol={{ span: 4 }}>
         <div className="mb-6">
-          <div className="font-bold text-gray-800 mb-4">
+          <div className="font-bold text-[var(--color-text-1)] mb-4">
             {t('dashboard.basicSettings')}
           </div>
           <Form.Item
@@ -142,7 +144,7 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
 
         {/* 数据源部分 */}
         <div className="mb-6">
-          <div className="font-bold text-gray-800 mb-4">
+          <div className="font-bold text-[var(--color-text-1)] mb-4">
             {t('dashboard.dataSource')}
           </div>
           <Form.Item
@@ -161,7 +163,7 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
 
         {/* 图表类型部分 */}
         <div className="mb-6">
-          <div className="font-bold text-gray-800 mb-4">
+          <div className="font-bold text-[var(--color-text-1)] mb-4">
             {t('dashboard.chartType')}
           </div>
           <Form.Item
@@ -170,7 +172,9 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
             rules={[{ required: true, message: t('common.selectMsg') }]}
             initialValue="line"
           >
-            <Radio.Group disabled={item?.widget === 'trendLine'}>
+            <Radio.Group
+              disabled={['trendLine', 'osPie'].includes(item?.widget || '')}
+            >
               <Radio.Button value="line">
                 {t('dashboard.lineChart')}
               </Radio.Button>

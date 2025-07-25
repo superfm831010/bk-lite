@@ -19,7 +19,7 @@ const InstanceTree: React.FC<InstanceTreeProps> = ({
   onInputChange,
   onSelect,
 }) => (
-  <div className="w-[200px] p-4 pl-2 overflow-auto bg-gray-50 border-r border-[var(--color-border-2)]">
+  <div className="w-[200px] p-4 pl-2 overflow-auto bg-[var(--color-fill-1)] border-r border-[var(--color-border-2)]">
     <div className="flex items-center mb-4 pl-2">
       <Input
         placeholder={placeholder}
@@ -35,9 +35,7 @@ const InstanceTree: React.FC<InstanceTreeProps> = ({
       defaultExpandAll
       blockNode
       treeData={treeData}
-      style={{
-        backgroundColor: 'rgb(249 250 251 / var(--tw-bg-opacity, 1))',
-      }}
+      className="bg-transparent"
       onSelect={onSelect}
     />
   </div>

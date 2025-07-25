@@ -428,6 +428,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelect }) => {
                 }
               }
             }}
+            className="bg-transparent"
           />
         ) : (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />

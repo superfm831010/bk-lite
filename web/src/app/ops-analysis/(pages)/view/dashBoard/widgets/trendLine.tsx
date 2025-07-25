@@ -24,7 +24,7 @@ const TrendLine: React.FC<BaseWidgetProps> = ({
     const fetchData = async () => {
       try {
         setLoading(true);
-        const timeParams = globalTimeRange || config?.timeRange;
+        const timeParams = config?.timeRange || globalTimeRange;
         let startTime, endTime;
         if (timeParams && typeof timeParams === 'number') {
           endTime = dayjs().valueOf();

@@ -117,7 +117,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
           strong
           style={{
             fontSize: 14,
-            color: '#333',
+            color: 'var(--color-text-3)',
             marginBottom: 8,
             display: 'block',
           }}
@@ -127,10 +127,10 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
         <div
           style={{
             padding: '16px',
-            backgroundColor: '#f8f9fa',
+            backgroundColor: 'var(--color-fill-1)',
             borderRadius: '8px',
             marginTop: '6px',
-            border: '1px solid #e9ecef',
+            border: '1px solid var(--color-border-2)',
           }}
         >
           <Form.Item

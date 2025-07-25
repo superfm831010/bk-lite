@@ -170,6 +170,7 @@ const Datasource: React.FC = () => {
           marginBottom: '16px',
           paddingLeft: '12px',
           borderLeftWidth: '0px',
+          borderTopWidth: '0px',
         }}
         styles={{
           body: { padding: '16px' },
@@ -178,7 +179,9 @@ const Datasource: React.FC = () => {
         <p className="font-extrabold text-base mb-2">
           {t('dataSource.introTitle')}
         </p>
-        <p className="text-sm text-gray-600">{t('dataSource.introMsg')}</p>
+        <p className="text-sm text-[var(--color-text-2)]">
+          {t('dataSource.introMsg')}
+        </p>
       </Card>
       <div className="px-6 pb-0">
         <div className="flex justify-between mb-[20px]">

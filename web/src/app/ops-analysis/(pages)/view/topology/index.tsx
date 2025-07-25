@@ -1048,13 +1048,13 @@ const Topology: React.FC = () => {
         >
           {collapsed ? <RightOutlined /> : <LeftOutlined />}
         </Button>
-        <div className="flex-1 bg-white relative">
+        <div className="flex-1 bg-[var(--color-bg-1)] relative">
           <div ref={containerRef} className="absolute inset-0" tabIndex={-1} />
 
           {/* 文本编辑输入框 - 放在画布容器内 */}
           {isEditingText && editingNodeId && (
             <div
-              className="absolute z-50 bg-white border border-gray-300 rounded px-2 py-1 shadow-lg"
+              className="absolute z-50 bg-[var(--color-bg-1)] border border-gray-300 rounded px-2 py-1 shadow-lg"
               style={{
                 left: `${editPosition.x}px`,
                 top: `${editPosition.y}px`,

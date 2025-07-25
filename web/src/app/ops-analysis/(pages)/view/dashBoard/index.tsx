@@ -13,12 +13,7 @@ import { LayoutItem } from '@/app/ops-analysis/types/dashBoard';
 import { DirItem } from '@/app/ops-analysis/types';
 import { SaveOutlined, PlusOutlined, MoreOutlined } from '@ant-design/icons';
 import { useDashBoardApi } from '@/app/ops-analysis/api/dashBoard';
-import {
-  getWidgetComponent,
-  getWidgetMeta,
-  needsGlobalTimeSelector,
-  needsGlobalInstanceSelector,
-} from './components/registry';
+import { getWidgetComponent, getWidgetMeta } from './components/registry';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -39,6 +34,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
   const [instanceOptions, setInstanceOptions] = useState<any[]>([]);
   const [instancesLoading, setInstancesLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [timeRefreshKey, setTimeRefreshKey] = useState(0);
   const timeDefaultValue = {
     selectValue: 10080,
     rangePickerVaule: null,
@@ -53,8 +49,23 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
   const [globalTimeRange, setGlobalTimeRange] = useState<any>(
     getInitialTimeRange()
   );
-  const needGlobalTimeSelector = needsGlobalTimeSelector(layout);
-  const needGlobalInstanceSelector = needsGlobalInstanceSelector(layout);
+
+  // 直接从 layout 判断是否需要全局选择器
+  const needGlobalTimeSelector = layout.some((item) => {
+    const meta = getWidgetMeta(item.widget);
+    const filterType =
+      item.config?.filterType || meta.defaultConfig?.filterType;
+    return filterType === 'selector';
+  });
+
+  const needGlobalInstanceSelector = false;
+
+  const componentNeedsGlobalTime = (item: LayoutItem) => {
+    const meta = getWidgetMeta(item.widget);
+    const filterType =
+      item.config?.filterType || meta.defaultConfig?.filterType;
+    return filterType === 'selector';
+  };
 
   // 获取实例列表
   useEffect(() => {
@@ -78,6 +89,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
 
   const handleTimeChange = (timeData: any) => {
     setGlobalTimeRange(timeData);
+    setTimeRefreshKey((prev) => prev + 1);
   };
 
   const handleRefresh = () => {
@@ -184,11 +196,11 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
       <div className="w-full mb-4 flex items-center justify-between rounded-lg shadow-sm">
         {selectedDashboard && (
           <div className="p-2 pt-0">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">
+            <h2 className="text-xl font-semibold mb-2 text-[var(--color-text-1)]">
               {selectedDashboard.name}
             </h2>
             {selectedDashboard.description && (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-[var(--color-text-2)]">
                 {selectedDashboard.description}
               </p>
             )}
@@ -205,7 +217,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
               />
               {needGlobalInstanceSelector && (
                 <>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-[var(--color-text-2)]">
                     {t('dashboard.instanceList')}:
                   </span>
                   <Select
@@ -235,7 +247,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
         </div>
       </div>
 
-      <div className="flex-1 bg-[#F0F2F5] rounded-lg overflow-auto">
+      <div className="flex-1 bg-[var(--color-fill-1)] rounded-lg overflow-auto">
         {(() => {
           if (!layout.length) {
             return (
@@ -243,7 +255,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   description={
-                    <span className="text-gray-500">
+                    <span className="text-[var(--color-text-2)]">
                       {t('dashboard.addView')}
                     </span>
                   }
@@ -289,28 +301,32 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
                 return (
                   <div
                     key={item.i}
-                    className="widget bg-white rounded-lg shadow-sm overflow-hidden p-4 flex flex-col"
+                    className="widget bg-[var(--color-bg-1)] rounded-lg shadow-sm overflow-hidden p-4 flex flex-col"
                   >
                     <div className="widget-header pb-4 flex justify-between items-center">
                       <div className="flex-1">
-                        <h4 className="text-md font-medium text-gray-800">
+                        <h4 className="text-md font-medium text-[var(--color-text-1)]">
                           {item.title}
                         </h4>
                         {item.description && (
-                          <p className="text-sm text-gray-500 mt-1">
+                          <p className="text-sm text-[var(--color-text-2)] mt-1">
                             {item.description}
                           </p>
                         )}
                       </div>
                       <Dropdown overlay={menu} trigger={['click']}>
-                        <button className="no-drag text-gray-500 hover:text-gray-800 transition-colors">
+                        <button className="no-drag text-[var(--color-text-2)] hover:text-[var(--color-text-1)] transition-colors">
                           <MoreOutlined style={{ fontSize: '20px' }} />
                         </button>
                       </Dropdown>
                     </div>
                     <div className="widget-body flex-1 h-full rounded-b overflow-hidden">
                       <WidgetComponent
-                        key={`${item.i}-${refreshKey}`}
+                        key={`${item.i}-${
+                          componentNeedsGlobalTime(item)
+                            ? `${refreshKey}-${timeRefreshKey}`
+                            : refreshKey
+                        }`}
                         config={item.config}
                         globalTimeRange={globalTimeRange}
                         globalInstances={globalInstances}

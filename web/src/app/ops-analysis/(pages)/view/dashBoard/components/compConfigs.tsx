@@ -63,46 +63,63 @@ const FormTimeSelector: React.FC<{
   );
 };
 
+// 公共的过滤配置组件
+const FilterConfig: React.FC<{ form: any }> = ({ form }) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="mb-6">
+      <div className="font-bold text-[var(--color-text-1)] mb-4">
+        {t('dashboard.filterSettings')}
+      </div>
+      <Form.Item
+        label={t('dashboard.filterType')}
+        name="filterType"
+        initialValue="selector"
+        rules={[{ required: true, message: t('common.selectMsg') }]}
+      >
+        <Radio.Group
+          onChange={(e) => {
+            if (e.target.value === 'selector') {
+              form.setFieldValue('timeRange', undefined);
+            } else {
+              form.setFieldValue('timeRange', 10080);
+            }
+          }}
+        >
+          <Radio value="selector">{t('dashboard.selector')}</Radio>
+          <Radio value="fixed">{t('dashboard.fixed')}</Radio>
+        </Radio.Group>
+      </Form.Item>
+
+      <Form.Item
+        noStyle
+        shouldUpdate={(prevValues, currentValues) =>
+          prevValues.filterType !== currentValues.filterType
+        }
+      >
+        {() => {
+          const filterType = form.getFieldValue('filterType');
+          return filterType === 'fixed' ? (
+            <Form.Item
+              label={t('dashboard.timeRange')}
+              name="timeRange"
+              rules={[{ required: true, message: t('common.selectMsg') }]}
+            >
+              <FormTimeSelector />
+            </Form.Item>
+          ) : null;
+        }}
+      </Form.Item>
+    </div>
+  );
+};
+
 // 操作系统类型占比表单配置
 export const OsPieConfig: React.FC<WidgetConfigProps> = ({ form }) => {
-  const { t } = useTranslation();
   return (
     <>
-      <div className="mb-6">
-        <div className="font-bold text-gray-800 mb-4">
-          {t('dashboard.filterSettings')}
-        </div>
-        <Form.Item
-          label={t('dashboard.filterType')}
-          name="filterType"
-          rules={[{ required: true, message: t('common.selectMsg') }]}
-        >
-          <Radio.Group>
-            <Radio value="selector">{t('dashboard.selector')}</Radio>
-            <Radio value="fixed">{t('dashboard.fixed')}</Radio>
-          </Radio.Group>
-        </Form.Item>
-
-        <Form.Item
-          noStyle
-          shouldUpdate={(prevValues, currentValues) =>
-            prevValues.filterType !== currentValues.filterType
-          }
-        >
-          {() => {
-            const filterType = form.getFieldValue('filterType');
-            return filterType === 'fixed' ? (
-              <Form.Item
-                label={t('dashboard.timeRange')}
-                name="timeRange"
-                rules={[{ required: true, message: t('common.selectMsg') }]}
-              >
-                <FormTimeSelector />
-              </Form.Item>
-            ) : null;
-          }}
-        </Form.Item>
-      </div>
+      <FilterConfig form={form} />
     </>
   );
 };
@@ -112,7 +129,7 @@ export const TrendLineConfig: React.FC<WidgetConfigProps> = ({ form }) => {
   const { t } = useTranslation();
   return (
     <>
-      <div className="font-bold text-gray-800 mb-4">
+      <div className="font-bold text-[var(--color-text-1)] mb-4">
         {t('dashboard.styleSettings')}
       </div>
       <Form.Item
@@ -123,41 +140,7 @@ export const TrendLineConfig: React.FC<WidgetConfigProps> = ({ form }) => {
         <Input type="color" style={{ width: 60, height: 32, padding: 2 }} />
       </Form.Item>
 
-      <div className="mb-6">
-        <div className="font-bold text-gray-800 mb-4">
-          {t('dashboard.filterSettings')}
-        </div>
-        <Form.Item
-          label={t('dashboard.filterType')}
-          name="filterType"
-          rules={[{ required: true, message: t('common.selectMsg') }]}
-        >
-          <Radio.Group>
-            <Radio value="selector">{t('dashboard.selector')}</Radio>
-            <Radio value="fixed">{t('dashboard.fixed')}</Radio>
-          </Radio.Group>
-        </Form.Item>
-
-        <Form.Item
-          noStyle
-          shouldUpdate={(prevValues, currentValues) =>
-            prevValues.filterType !== currentValues.filterType
-          }
-        >
-          {() => {
-            const filterType = form.getFieldValue('filterType');
-            return filterType === 'fixed' ? (
-              <Form.Item
-                label={t('dashboard.timeRange')}
-                name="timeRange"
-                rules={[{ required: true, message: t('common.selectMsg') }]}
-              >
-                <FormTimeSelector />
-              </Form.Item>
-            ) : null;
-          }}
-        </Form.Item>
-      </div>
+      <FilterConfig form={form} />
     </>
   );
 };
