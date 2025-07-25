@@ -21,16 +21,8 @@ import LineChart from "@/app/mlops/components/charts/lineChart";
 import CustomTable from "@/components/custom-table";
 import PermissionWrapper from '@/components/permission';
 import { ColumnItem, TableDataItem, } from '@/app/mlops/types';
-import { AnomalyTrainData } from '@/app/mlops/types/manage';
+import { AnomalyTrainData, AnnotationData } from '@/app/mlops/types/manage';
 import sideMenuStyle from './aside/index.module.scss';
-
-interface AnnotationData {
-  timestamp: number;
-  value: number;
-  label: number;
-  index?: number;
-  [key: string]: unknown;
-}
 
 const AnnotationPage = () => {
   const searchParams = useSearchParams();
@@ -118,17 +110,16 @@ const AnnotationPage = () => {
       const containerHeight = containerElement.clientHeight;
 
       // 计算需要减去的各个部分高度
-      const buttonHeight = 60; // 底部按钮区域高度（包括 margin）
-      const tableHeaderHeight = 40; // 表格头部高度
-      const padding = 16; // 额外的padding和边距
+      const buttonHeight = 60;
+      const tableHeaderHeight = 40;
+      const padding = 16;
 
       // 计算最终的表格内容滚动高度
       const calculatedHeight = containerHeight - buttonHeight - tableHeaderHeight - padding;
-      const tableHeight = Math.max(150, calculatedHeight); // 最小高度150px
+      const tableHeight = Math.max(150, calculatedHeight);
 
       setTableScrollHeight(tableHeight);
     } else {
-      // 如果无法获取容器元素，使用默认计算
       const viewportHeight = window.innerHeight;
       const fallbackHeight = Math.max(200, viewportHeight - 300);
       setTableScrollHeight(fallbackHeight);
@@ -299,12 +290,7 @@ const AnnotationPage = () => {
         dataset: folder_id as string
       });
       const data = await getAnomalyTrainDataInfo(id as string, true, true);
-      // const { is_train_data, is_val_data, is_test_data } = data;
-      // const activeTypes = Object.entries({ is_train_data, is_val_data, is_test_data })
-      //   .filter(([, value]) => value === true)
-      //   .map(([key]) => key);
       handleLabelData(data?.train_data, data?.metadata?.anomaly_point);
-      // setSelectedTags(activeTypes);
       setMenuItems(fileList);
     } catch (e) {
       console.log(e);
@@ -384,18 +370,11 @@ const AnnotationPage = () => {
     setLoadingState(prev => ({ ...prev, saveLoading: true }));
     const id = searchParams.get('id');
     try {
-      // if (!selectedTags.length) {
-      //   message.error(t(`datasets.selectWarn`));
-      //   return;
-      // }
       const points = tableData.map(item => item.index);
       const params = {
         metadata: {
           anomaly_point: points
         },
-        // is_train_data: selectedTags.includes('is_train_data'),
-        // is_val_data: selectedTags.includes('is_val_data'),
-        // is_test_data: selectedTags.includes('is_test_data')
       }
       await labelingData(id as string, params);
       message.success(t('datasets.saveSuccess'));
@@ -454,7 +433,6 @@ const AnnotationPage = () => {
             }}
           >
             <Spin className="w-full" spinning={loadingState.chartLoading}>
-
               <div
                 className="flex justify-between"
                 style={{

@@ -4,6 +4,7 @@ import usePlayroundApi from '@/app/playground/api';
 import { forwardRef, useImperativeHandle, useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import { Button, Form, FormInstance, Input, message, Select, Switch } from 'antd';
 import { ModalRef } from "@/app/playground/types";
+import { CONTENT_MAP } from "@/app/playground/constants";
 const { TextArea } = Input;
 
 interface ModalProps {
@@ -17,7 +18,7 @@ interface ModalProps {
   config?: object;
 }
 
-const ManageModal = forwardRef<ModalRef, any>(({ nodes, onSuccess }, ref) => {
+const ManageModal = forwardRef<ModalRef, any>(({ nodes, activeTag, onSuccess }, ref) => {
   const { t } = useTranslation();
   const formRef = useRef<FormInstance>(null);
   const { createCategory, createCapability, updateCapability, updateCategory } = usePlayroundApi();
@@ -36,7 +37,6 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes, onSuccess }, ref) => {
       setType(type);
       setTitle(title as string);
       setFormData(form);
-
     }
   }));
 
@@ -57,7 +57,7 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes, onSuccess }, ref) => {
     if (!formRef.current) return;
     formRef.current?.resetFields();
     if (type.trim().startsWith('update')) {
-      if(formData?.level === 0) setIsAddChildren(true);
+      if (formData?.level === 0) setIsAddChildren(true);
       formRef.current?.setFieldsValue({
         name: formData?.name,
         description: formData?.description,
@@ -85,16 +85,24 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes, onSuccess }, ref) => {
     setConfirm(true);
     try {
       const data = await formRef.current?.validateFields();
+      const [id] = activeTag;
+      const config = type.endsWith('Capability') ? { config: CONTENT_MAP['anomaly_detection'] } : {};
+      const params = {
+        category: id,
+        ...data,
+        ...config
+      }
+      if(!id) return message.error('未选择类别');
       if (type.trim().startsWith('add')) {
-        await handleAdd[type](data);
+        await handleAdd[type](params);
       } else {
-        await handleAdd[type](formData?.id, data);
+        await handleAdd[type](formData?.id, params);
       }
       setOpen(false);
       message.success(`common.${title}Success`);
       onSuccess();
     } catch (e) {
-      console.log(e)
+      console.log(e);
     } finally {
       setConfirm(false);
     }

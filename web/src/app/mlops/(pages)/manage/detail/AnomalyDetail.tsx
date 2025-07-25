@@ -1,5 +1,6 @@
 import { useCallback, useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useTranslation } from "@/utils/i18n";
 import useMlopsManageApi from '@/app/mlops/api/manage';
 import CustomTable from "@/components/custom-table";
 import PermissionWrapper from '@/components/permission';
@@ -15,7 +16,6 @@ import {
   type CheckboxOptionType,
   message,
 } from "antd";
-import { useTranslation } from "@/utils/i18n";
 import { TYPE_CONTENT, TYPE_COLOR } from "@/app/mlops/constants";
 import { ColumnItem, ModalRef, Pagination, TableData } from '@/app/mlops/types';
 const { Search } = Input;

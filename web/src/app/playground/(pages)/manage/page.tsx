@@ -33,7 +33,7 @@ const PlaygroundManage = () => {
   const [treeLoading, setTreeLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>('');
-  // const [selectCategory, setSelectCategory] = useState<number | null>(null);
+  const [selectCategory, setSelectCategory] = useState<number[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
   const columns: ColumnItem[] = [
@@ -91,15 +91,15 @@ const PlaygroundManage = () => {
     getAllCapability();
     setSearchValue('');
 
-    setTableData([
-      {
-        id: 1,
-        name: 'test',
-        description: 'test',
-        url: 'http://localhost:3000/playground/home?page=anomaly-detection',
-        is_active: true
-      }
-    ]);
+    // setTableData([
+    //   {
+    //     id: 1,
+    //     name: 'test',
+    //     description: 'test',
+    //     url: 'http://localhost:3000/playground/home?page=anomaly-detection',
+    //     is_active: true
+    //   }
+    // ]);
   }, []);
 
   const renderNode = (data: any[], isChildren = false) => {
@@ -151,7 +151,7 @@ const PlaygroundManage = () => {
     setTableLoading(true);
     try {
       const data = await getCapabilityList();
-      // setTableData(data);
+      setTableData(data);
       console.log(data);
     } catch (e) {
       console.log(e)
@@ -223,6 +223,7 @@ const PlaygroundManage = () => {
 
   const onSelect = (keys: any) => {
     console.log(keys);
+    setSelectCategory(keys);
   };
 
   const topSection = (
@@ -250,7 +251,8 @@ const PlaygroundManage = () => {
             expandAction={false}
             defaultExpandAll
             autoExpandParent
-            defaultSelectedKeys={['hardware']}
+            // defaultSelectedKeys={['hardware']}
+            selectedKeys={selectCategory}
             treeData={renderTreeNode()}
             onSelect={onSelect}
           />
@@ -325,7 +327,7 @@ const PlaygroundManage = () => {
         leftSection={leftSection}
         topSection={topSection}
       />
-      <ManageModal ref={modalRef} nodes={filteredTreeData} onSuccess={onSuccess} />
+      <ManageModal ref={modalRef} nodes={filteredTreeData} onSuccess={onSuccess} activeTag={selectCategory} />
     </>
   )
 };
