@@ -310,6 +310,8 @@ const APPOINT_METRIC_IDS: string[] = [
 
 const TIMEOUT_UNITS: string[] = ['s'];
 
+const CONNECTION_LIFETIME_UNITS: string[] = ['m'];
+
 const NODE_STATUS_MAP: ObjectIconMap = {
   normal: 'green',
   inactive: 'yellow',
@@ -362,6 +364,7 @@ export {
   SCHEDULE_UNIT_MAP,
   APPOINT_METRIC_IDS,
   TIMEOUT_UNITS,
+  CONNECTION_LIFETIME_UNITS,
   NODE_STATUS_MAP,
   INIT_VIEW_MODAL_FORM,
   STRATEGY_TEMPLATES,
