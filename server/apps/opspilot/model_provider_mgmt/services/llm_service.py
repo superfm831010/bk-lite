@@ -158,7 +158,7 @@ class LLMService:
             extra_config.update({"enable_rag_source": True})
         if kwargs.get("enable_rag_strict_mode"):
             extra_config.update({"enable_rag_strict_mode": kwargs["enable_rag_strict_mode"]})
-        if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
+        if kwargs["skill_type"] != SkillTypeChoices.KNOWLEDGE_TOOL:
             for tool in kwargs.get("tools", []):
                 for i in tool.get("kwargs", []):
                     if i["type"] == "password":
