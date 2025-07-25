@@ -294,14 +294,22 @@ def get_user_rules(group_id, username):
 
 
 @nats_client.register
-def get_user_rules_by_app(group_id, username, app, module, child_module=""):
+def get_user_rules_by_app(group_id, username, domain, app, module, child_module=""):
     # 构建基础查询条件
+    admin_list = list(Role.objects.filter(name="admin").filter(Q(app="") | Q(app=app)).values_list("id", flat=True))
+    user_obj = User.objects.filter(username=username, domain=domain).first()
+    if not user_obj:
+        return {"instance": [], "team": []}
+    if set(user_obj.role_list).intersection(admin_list):
+        return {"instance": [], "team": [int(group_id), Group.objects.get(name="OpsPilotGuest").id]}
     base_filter = Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
     # 添加模块过滤条件
     module_filter = Q(group_rule__rules__has_key=module)
 
     # 如果指定了子模块，不在数据库层面过滤，在Python层面处理复杂嵌套
-    rules = UserRule.objects.filter(username=username, group_rule__app=app).filter(base_filter & module_filter)
+    rules = UserRule.objects.filter(username=username, domain=domain, group_rule__app=app).filter(
+        base_filter & module_filter
+    )
 
     if not rules:
         return {}
