@@ -3,6 +3,7 @@ import os
 
 import requests
 
+from apps.core.logger import opspilot_logger as logger
 from apps.core.utils.crypto.password_crypto import PasswordCrypto
 
 
@@ -35,8 +36,10 @@ class ChatServerHelper(object):
         headers = cls.get_chat_server_header()
         response = requests.post(url, headers=headers, json=params, stream=stream, verify=False)
         if response.status_code != 200:
-            raise Exception(response.text)
+            logger.error(f"调用接口失败: {response.status_code} {url} {response.text}")
+            return {}
         result = response.json()
         if result.get("status", "success") != "success":
-            raise Exception(result["message"])
+            logger.error(f"调用接口失败: {response.status_code} {url} {response.text}")
+            return {}
         return result

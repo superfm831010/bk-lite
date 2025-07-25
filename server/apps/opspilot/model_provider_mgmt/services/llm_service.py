@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from django.conf import settings
+from django.utils.translation import gettext as _
 
 from apps.core.logger import opspilot_logger as logger
 from apps.core.mixinx import EncryptMixin
@@ -202,6 +203,8 @@ class LLMService:
         elif kwargs["skill_type"] == SkillTypeChoices.LATS:
             url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_lats_agent"
         result = ChatServerHelper.post_chat_server(chat_kwargs, url)
+        if not result:
+            return {"message": _("URL request failed")}, doc_map, title_map
         data = result["message"]
 
         # 更新团队令牌使用信息

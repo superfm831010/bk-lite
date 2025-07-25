@@ -123,7 +123,8 @@ class KnowledgeSearchService:
 
         url = f"{settings.METIS_SERVER_URL}/api/rag/naive_rag_test"
         result = ChatServerHelper.post_chat_server(params, url)
-
+        if not result:
+            return []
         # 处理搜索结果
         for doc in result["documents"]:
             score = doc["metadata"]["_score"]
