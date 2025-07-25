@@ -26,6 +26,10 @@ const Associations = () => {
   const { get, del } = useApiClient();
   const searchParams = useSearchParams();
   const modelId = searchParams.get('model_id');
+  const permissionParam = searchParams.get('permission');
+  const modelPermission = permissionParam
+    ? decodeURIComponent(permissionParam).split(',')
+    : [];
   const { t } = useTranslation();
   const commonContext = useCommon();
   const permissionGroupsInfo = useRef(
@@ -115,8 +119,8 @@ const Associations = () => {
       render: (_, record) => (
         <>
           <PermissionWrapper
-            requiredPermissions={['Delete']}
-            instPermissions={record.permission}
+            requiredPermissions={['Edit Model']}
+            instPermissions={modelPermission}
           >
             <Button
               type="link"
@@ -261,7 +265,10 @@ const Associations = () => {
             />
           </div>
           <div className="right-side">
-            <PermissionWrapper requiredPermissions={['Edit Model']}>
+            <PermissionWrapper
+              requiredPermissions={['Edit Model']}
+              instPermissions={modelPermission}
+            >
               <Button
                 type="primary"
                 className="mr-[8px]"

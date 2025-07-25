@@ -576,6 +576,8 @@ const AssetDataContent = () => {
     setQueryList(null);
     setSelectedTreeKeys([key]);
     setModelId(key);
+    setSelectedRowKeys([]);
+    setPagination({ ...pagination, current: 1 });
     modelGroup.forEach((group) => {
       if (group.list.some((item) => item.model_id === key)) {
         setGroupId(group.classification_id);
