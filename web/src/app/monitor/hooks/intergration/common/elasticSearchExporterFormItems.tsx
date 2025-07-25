@@ -3,7 +3,7 @@ import { Form, Input } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import Password from '@/app/monitor/components/password';
 
-const useElasticSearchExportFormItems = () => {
+const useElasticSearchExporterFormItems = () => {
   const { t } = useTranslation();
 
   return {
@@ -58,4 +58,4 @@ const useElasticSearchExportFormItems = () => {
     },
   };
 };
-export { useElasticSearchExportFormItems };
+export { useElasticSearchExporterFormItems };
