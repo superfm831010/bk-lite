@@ -315,7 +315,9 @@ const SearchView: React.FC = () => {
         ) : (
           <Spin spinning={tableLoading}>
             <LogTerminal
-              className="h-[calc(100vh-434px)]"
+              className={
+                expand ? 'h-[calc(100vh-434px)]' : 'h-[calc(100vh-354px)]'
+              }
               searchParams={getParams}
               fetchData={(val) => setTableLoading(val)}
             />
