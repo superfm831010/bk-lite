@@ -367,6 +367,18 @@ export const useKnowledgeApi = () => {
     });
   };
 
+  const getChunkDetail = async (
+    knowledge_id: string,
+    chunk_id: string | null
+  ): Promise<any> => {
+    return get(`/opspilot/knowledge_mgmt/knowledge_document/get_chunk_detail/`, { 
+      params: {
+        knowledge_id,
+        chunk_id,
+      },
+    });
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -407,5 +419,6 @@ export const useKnowledgeApi = () => {
     updateKnowledgeGraph,
     rebuildKnowledgeGraphCommunity,
     importQaJson,
+    getChunkDetail,
   };
 };

@@ -408,7 +408,7 @@ const SkillSettingsPage: React.FC = () => {
                     )}
                   </Form>
                 </div>
-                {skillType === 1 && (
+                {skillType !== 2 && (
                   <div className={`p-4 rounded-md pb-0 ${styles.contentWrapper}`}>
                     <Form labelCol={{flex: '0 0 135px'}} wrapperCol={{flex: '1'}}>
                       <div className="flex justify-between">

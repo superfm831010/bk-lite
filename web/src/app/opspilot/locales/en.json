@@ -462,7 +462,8 @@
     "saveToKnowledgeBase": "Save to Knowledge Base",
     "removeAnnotationConfirm": "Are you sure you want to remove this annotation?",
     "noKnowledge": "No knowledge available.",
-    "knowledgeDetails": "Knowledge Details"
+    "knowledgeDetails": "Knowledge Details",
+    "chunkDetails": "Chunk Details"
   },
   "settings": {
     "menu": "Settings",
