@@ -16,18 +16,18 @@ class ChangeRecordViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_class = ChangeRecordFilter
     pagination_class = CustomPageNumberPagination
 
-    @HasPermission("operation_log-View,asset_change_records-View")
+    @HasPermission("operation_log-View")
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @HasPermission("operation_log-View,asset_change_records-View")
+    @HasPermission("operation_log-View")
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return WebUtils.response_success(serializer.data)
 
     @action(methods=["get"], detail=False)
-    @HasPermission("operation_log-View,asset_change_records-View")
+    @HasPermission("operation_log-View")
     def enum_data(self, request, *args, **kwargs):
         lan = SettingLanguage(request.user.locale)
         result = dict(OPERATE_TYPE_CHOICES)

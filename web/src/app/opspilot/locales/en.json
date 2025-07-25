@@ -237,6 +237,8 @@
       "temperatureTip": "Used to control the randomness and creativity of text generation; a low temperature produces more definitive results, while a high temperature increases the diversity and randomness of the text.",
       "prompt": "Prompt",
       "promptTip": "You can input relevant prompts to guide the model in generating specific responses by providing context or questions to adjust the direction and quality of the output content.",
+      "guide": "Guide",
+      "guideTip": "An initialization message sent at the start of each conversation. Supports standard Markdown syntax and additional tags. [Quick Key]: Users can click to send this question directly.",
       "type": "Skill Type",
       "qaType": "RAG Agent",
       "qaTypeDesc": "Combines retrieval and generation technologies to retrieve relevant information from external knowledge bases and generate accurate Q&A content, suitable for dynamic knowledge Q&A in open domains.",
@@ -249,7 +251,9 @@
       "planTypeScene": "Project Management  : Decompose tasks and track the execution of each phase.\nProduct Development: Develop a research and development plan and coordinate execution across multiple departments.\nDaily Planning: Design travel routes and budget arrangements.",
       "complexType": "LATS Agent",
       "complexTypeDesc": "Simulates multi-step decision paths through tree search algorithms, suitable for high-complexity, high-uncertainty decision scenarios.",
-      "complexTypeScene": "Investment Analysis: Predict various market changes and optimize investment strategies.\nStrategic Planning: Develop long-term development plans and anticipate risks."
+      "complexTypeScene": "Investment Analysis: Predict various market changes and optimize investment strategies.\nStrategic Planning: Develop long-term development plans and anticipate risks.",
+      "explanation": "Explanation",
+      "scene": "Applicable Scenarios"
     },
     "useTemp": "Use This Template",
     "chatEnhancement": "Chat Enhancement",
@@ -458,7 +462,8 @@
     "saveToKnowledgeBase": "Save to Knowledge Base",
     "removeAnnotationConfirm": "Are you sure you want to remove this annotation?",
     "noKnowledge": "No knowledge available.",
-    "knowledgeDetails": "Knowledge Details"
+    "knowledgeDetails": "Knowledge Details",
+    "chunkDetails": "Chunk Details"
   },
   "settings": {
     "menu": "Settings",

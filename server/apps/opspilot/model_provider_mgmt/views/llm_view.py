@@ -159,7 +159,7 @@ class LLMViewSet(AuthViewSet):
             skill_obj = LLMSkill.objects.get(id=int(params["skill_id"]))
             if not request.user.is_superuser:
                 current_team = request.COOKIES.get("current_team", "0")
-                has_permission = self.get_has_permission(request.user, skill_obj, current_team)
+                has_permission = self.get_has_permission(request.user, skill_obj, current_team, is_check=True)
                 if not has_permission:
                     return self._create_error_stream_response(_("You do not have permission to update this agent."))
 

@@ -46,6 +46,7 @@ import { useClusterConfig } from './objects/k8s/cluster';
 import { useNodeConfig } from './objects/k8s/node';
 import { usePodConfig } from './objects/k8s/pod';
 import { useDockerContainerConfig } from './objects/containerManagement/dockerContainer';
+import { useDmConfig } from './objects/database/dm';
 
 export const useMonitorConfig = () => {
   const hardwareConfig = useHardwareConfig();
@@ -94,6 +95,7 @@ export const useMonitorConfig = () => {
   const podConfig = usePodConfig();
   const nodeConfig = useNodeConfig();
   const dockerContainerConfig = useDockerContainerConfig();
+  const dmConfig = useDmConfig();
 
   const config: any = useMemo(
     () => ({
@@ -143,6 +145,7 @@ export const useMonitorConfig = () => {
       DataStorage: dataStorageConfig,
       ESXI: esxiConfig,
       VM: vmConfig,
+      DM: dmConfig,
     }),
     []
   );
