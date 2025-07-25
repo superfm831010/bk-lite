@@ -11,8 +11,8 @@ from apps.operation_analysis.constants import DashboardType
 
 
 class DataSourceAPIModel(MaintainerInfo, TimeInfo):
-    name = models.CharField(max_length=255, verbose_name="数据源名称", unique=True)
-    rest_api = models.CharField(max_length=255, verbose_name="REST API URL", unique=True)
+    name = models.CharField(max_length=255, verbose_name="数据源名称")
+    rest_api = models.CharField(max_length=255, verbose_name="REST API URL")
     desc = models.TextField(verbose_name="描述", blank=True, null=True)
     is_active = models.BooleanField(default=True, verbose_name="是否启用")
     params = JSONField(help_text="API请求参数", verbose_name="请求参数", blank=True, null=True)
@@ -20,6 +20,12 @@ class DataSourceAPIModel(MaintainerInfo, TimeInfo):
     class Meta:
         db_table = "operation_analysis_data_source_api"
         verbose_name = "数据源API"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'rest_api'],
+                name='unique_name_rest_api'
+            ),
+        ]
 
 
 class Dashboard(MaintainerInfo, TimeInfo):
@@ -37,6 +43,6 @@ class Dashboard(MaintainerInfo, TimeInfo):
         constraints = [
             models.UniqueConstraint(
                 fields=['name', 'type'],
-                name='unique_session_event'
+                name='unique_name_type'
             ),
         ]

@@ -37,7 +37,7 @@ class DataSourceAPIModelViewSet(ModelViewSet):
             logger.error("获取数据源数据失败: {}".format(e))
             result = {}
 
-        return Response(result)
+        return Response(result.get("data", []))
 
 
 class DashboardModelViewSet(ModelViewSet):

@@ -29,7 +29,7 @@ class ClassificationViewSet(viewsets.ViewSet):
         operation_id="classification_search",
         operation_description="查询模型分类",
     )
-    @HasPermission("model_management-View,view_list-View")
+    @HasPermission("model_management-View")
     def list(self, request):
         result = ClassificationManage.search_model_classification(request.user.locale)
         return WebUtils.response_success(result)
