@@ -1,4 +1,4 @@
-import { useClickHouseTelegraf } from '../../plugins/middleware/clickHouseTelegraf';
+import { useClickHouseTelegraf } from '../../plugins/database/clickHouseTelegraf';
 
 export const useClickHouseConfig = () => {
   const clickHouseTelegraf = useClickHouseTelegraf();
