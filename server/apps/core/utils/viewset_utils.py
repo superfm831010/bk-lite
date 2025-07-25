@@ -157,7 +157,7 @@ class AuthViewSet(MaintainerViewSet):
             return super().retrieve(request, *args, **kwargs)
         if hasattr(self, "permission_key"):
             current_team = request.COOKIES.get("current_team", "0")
-            has_permission = self.get_has_permission(user, instance, current_team)
+            has_permission = self.get_has_permission(user, instance, current_team, is_check=True)
             if not has_permission:
                 return self.value_error(_("User does not have permission to view this instance"))
         serializer = self.get_serializer(instance)
@@ -211,7 +211,7 @@ class AuthViewSet(MaintainerViewSet):
             logger.error(f"Error in update method: {e}")
             raise
 
-    def get_has_permission(self, user, instance, current_team, is_list=False):
+    def get_has_permission(self, user, instance, current_team, is_list=False, is_check=False):
         """获取规则实例ID"""
         user_groups = [int(i["id"]) for i in user.group_list]
         if is_list:
@@ -231,7 +231,9 @@ class AuthViewSet(MaintainerViewSet):
             permission_rules = get_permission_rules(user, current_team, app_name, self.permission_key)
             if int(current_team) in permission_rules["team"]:
                 return True
-            instance_list = [int(i["id"]) for i in permission_rules["instance"] if "Operate" in i["permission"]]
+
+            operate = "View" if is_check else "Operate"
+            instance_list = [int(i["id"]) for i in permission_rules["instance"] if operate in i["permission"]]
             return set(instance_id).issubset(set(instance_list))
         except Exception as e:
             logger.error(f"Error getting rule instances: {e}")
