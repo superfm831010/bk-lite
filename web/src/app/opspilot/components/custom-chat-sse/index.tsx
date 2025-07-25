@@ -1,5 +1,5 @@
-import React, { useState, useCallback, ReactNode, useRef } from 'react';
-import { Popconfirm, Button, Tooltip, Flex, ButtonProps } from 'antd';
+import React, { useState, useCallback, useRef, ReactNode } from 'react';
+import { Popconfirm, Button, Tooltip, Flex, Spin, Drawer, ButtonProps } from 'antd';
 import { FullscreenOutlined, FullscreenExitOutlined, SendOutlined } from '@ant-design/icons';
 import { Bubble, Sender } from '@ant-design/x';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,31 +16,18 @@ import PermissionWrapper from '@/components/permission';
 import { CustomChatMessage, Annotation } from '@/app/opspilot/types/global';
 import { useSession } from 'next-auth/react';
 import { useAuth } from '@/context/auth';
-
-interface CustomChatSSEProps {
-  handleSendMessage?: (userMessage: string) => Promise<{ url: string; payload: any }>;
-  showMarkOnly?: boolean;
-  initialMessages?: CustomChatMessage[];
-  mode?: 'preview' | 'chat';
-  guide?: string;
-}
-
-type ActionRender = (_: any, info: { components: { SendButton: React.ComponentType<ButtonProps>; LoadingButton: React.ComponentType<ButtonProps>; }; }) => ReactNode;
-
-interface SSEChunk {
-  choices: Array<{
-    delta: {
-      content?: string;
-    };
-    index: number;
-    finish_reason: string | null;
-  }>;
-  id: string;
-  object: string;
-  created: number;
-}
+import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
+import {
+  CustomChatSSEProps,
+  ActionRender,
+  SSEChunk,
+  ReferenceModalState,
+  DrawerContentState,
+  GuideParseResult
+} from '@/app/opspilot/types/chat';
 
 const md = new MarkdownIt({
+  html: true,
   highlight: function (str: string, lang: string) {
     if (lang && hljs.getLanguage(lang)) {
       try {
@@ -59,7 +46,15 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
   guide
 }) => {
   const { t } = useTranslation();
-  const { data: session } = useSession();
+  
+  let session = null;
+  try {
+    const sessionData = useSession();
+    session = sessionData.data;
+  } catch (error) {
+    console.warn('useSession hook error, falling back to auth context:', error);
+  }
+  
   const authContext = useAuth();
   const token = session?.user?.token || authContext?.token || null;
 
@@ -72,8 +67,23 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentBotMessageRef = useRef<CustomChatMessage | null>(null);
 
+  const [referenceModal, setReferenceModal] = useState<ReferenceModalState>({
+    visible: false,
+    loading: false,
+    title: '',
+    content: ''
+  });
+
+  const [drawerContent, setDrawerContent] = useState<DrawerContentState>({
+    visible: false,
+    title: '',
+    content: ''
+  });
+
+  const { getChunkDetail } = useKnowledgeApi();
+
   // Parse guide text and extract content within [] as quick send items
-  const parseGuideItems = useCallback((guideText: string) => {
+  const parseGuideItems = useCallback((guideText: string): GuideParseResult => {
     if (!guideText) return { text: '', items: [], renderedHtml: '' };
     
     const regex = /\[([^\]]+)\]/g;
@@ -96,6 +106,38 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
     return { text: guideText, items, renderedHtml };
   }, []);
 
+  // Parse and handle reference links in content
+  const parseReferenceLinks = useCallback((content: string) => {
+    // Match pattern like [[48]](chunk_id=3444444|knowledge_id=4555)
+    const referenceRegex = /\[\[(\d+)\]\]\(([^)]+)\)/g;
+    
+    return content.replace(referenceRegex, (match, refNumber, params) => {
+      // Parse parameters from the link using | as separator
+      const paramPairs = params.split('|');
+      const urlParams = new Map();
+      
+      paramPairs.forEach((pair: string) => {
+        const [key, value] = pair.split(':');
+        if (key && value) {
+          urlParams.set(key, value);
+        }
+      });
+      
+      const chunkId = urlParams.get('chunk_id');
+      const knowledgeId = urlParams.get('knowledge_id');
+      console.log('Parsed reference:', { refNumber, chunkId, knowledgeId });
+      
+      // Create a clickable span with data attributes
+      return `<span class="reference-link" 
+                data-ref-number="${refNumber}" 
+                data-chunk-id="${chunkId}" 
+                data-knowledge-id="${knowledgeId}" 
+                style="color: #1890ff; cursor: pointer; margin: 0 2px;">
+                [${refNumber}]
+              </span>`;
+    });
+  }, []);
+
   // Handle click events for clickable elements in guide text
   const handleGuideClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
@@ -106,6 +148,48 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
       }
     }
   }, [loading, token]);
+
+  // Handle reference link click
+  const handleReferenceClick = useCallback(async (event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('reference-link')) {
+      const chunkId = target.getAttribute('data-chunk-id');
+      const knowledgeId = target.getAttribute('data-knowledge-id');
+      
+      if (!knowledgeId) {
+        console.warn('Missing knowledge_id in reference link');
+        return;
+      }
+
+      setDrawerContent({
+        visible: true,
+        title: `${t('chat.chunkDetails')}`,
+        content: ''
+      });
+
+      setReferenceModal(prev => ({
+        ...prev,
+        loading: true
+      }));
+
+      try {
+        // Fetch knowledge details using the knowledge_id
+        const data = await getChunkDetail(knowledgeId, chunkId);
+        
+        setDrawerContent(prev => ({
+          ...prev,
+          content: data?.content || '--'
+        }));
+      } catch (error) {
+        console.error('Failed to fetch reference details:', error);
+      } finally {
+        setReferenceModal(prev => ({
+          ...prev,
+          loading: false
+        }));
+      }
+    }
+  }, []);
 
   const handleFullscreenToggle = () => {
     setIsFullscreen(!isFullscreen);
@@ -357,11 +441,15 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
 
   const renderContent = (msg: CustomChatMessage) => {
     const { content, knowledgeBase } = msg;
+    // Parse reference links and make them clickable
+    const parsedContent = parseReferenceLinks(content || '...');
+    
     return (
       <>
         <div
-          dangerouslySetInnerHTML={{ __html: md.render(content || '...') }}
+          dangerouslySetInnerHTML={{ __html: md.render(parsedContent) }}
           className={styles.markdownBody}
+          onClick={handleReferenceClick}
         />
         {(Array.isArray(knowledgeBase) && knowledgeBase.length) ? <KnowledgeBase knowledgeList={knowledgeBase} /> : null}
       </>
@@ -452,6 +540,14 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
     };
   }, [stopSSEConnection]);
 
+  const closeDrawer = useCallback(() => {
+    setDrawerContent({
+      visible: false,
+      title: '',
+      content: ''
+    });
+  }, []);
+
   const guideData = parseGuideItems(guide || '');
 
   return (
@@ -540,6 +636,24 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
           onCancel={() => setAnnotationModalVisible(false)}
         />
       )}
+      
+      {/* Reference Details Drawer */}
+      <Drawer
+        width={480}
+        visible={drawerContent.visible}
+        title={drawerContent.title}
+        onClose={closeDrawer}
+      >
+        {referenceModal.loading ? (
+          <div className="flex justify-center items-center h-32">
+            <Spin size="large" />
+          </div>
+        ) : (
+          <div className="whitespace-pre-wrap leading-6">
+            {drawerContent.content}
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 };

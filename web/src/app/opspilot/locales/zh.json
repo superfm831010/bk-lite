@@ -465,7 +465,8 @@
     "saveToKnowledgeBase": "保存到知识库",
     "removeAnnotationConfirm": "你确定要移除此标注吗？",
     "noKnowledge": "暂无知识。",
-    "knowledgeDetails": "知识详情"
+    "knowledgeDetails": "知识详情",
+    "chunkDetails": "分块详情"
   },
   "settings": {
     "menu": "设置",
