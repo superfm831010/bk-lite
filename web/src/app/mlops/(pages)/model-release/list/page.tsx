@@ -9,6 +9,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import PageLayout from '@/components/page-layout';
 import TopSection from "@/components/top-section";
 import ReleaseModal from "./releaseModal";
+import PermissionWrapper from '@/components/permission';
 import { ModalRef, Option, Pagination, TableData } from "@/app/mlops/types";
 import { ColumnItem } from "@/types";
 import { TrainJob } from "@/app/mlops/types/task";
@@ -68,16 +69,20 @@ const ModelRelease = () => {
       key: 'action',
       width: 180,
       render: (_, record: TableData) => (<>
-        <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
-        <Popconfirm
-          title={t(`model-release.delModel`)}
-          description={t(`model-release.delModelContent`)}
-          okText={t('common.confirm')}
-          cancelText={t('common.cancel')}
-          onConfirm={() => handleDelete(record.id)}
-        >
-          <Button type="link" danger>{t(`common.delete`)}</Button>
-        </Popconfirm>
+        <PermissionWrapper requiredPermissions={['Edit']}>
+          <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
+        </PermissionWrapper>
+        <PermissionWrapper requiredPermissions={['Delete']}>
+          <Popconfirm
+            title={t(`model-release.delModel`)}
+            description={t(`model-release.delModelContent`)}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => handleDelete(record.id)}
+          >
+            <Button type="link" danger>{t(`common.delete`)}</Button>
+          </Popconfirm>
+        </PermissionWrapper>
       </>)
     }
   ];
@@ -161,7 +166,9 @@ const ModelRelease = () => {
           (
             <>
               <div className="flex justify-end mb-2">
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => publish({})}>{t(`model-release.modelRelease`)}</Button>
+                <PermissionWrapper requiredPermissions={['Add']}>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => publish({})}>{t(`model-release.modelRelease`)}</Button>
+                </PermissionWrapper>
               </div>
               <div className="flex-1 relative">
                 <div className="absolute w-full">

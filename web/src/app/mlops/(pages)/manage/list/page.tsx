@@ -72,7 +72,7 @@ const DatasetManagePage = () => {
             id: item.id,
             name: item.name,
             description: item.description || '--',
-            icon: 'chakanshuji',
+            icon: 'tucengshuju',
             creator: item?.created_by || '--',
             tenant_id: item.tenant_id
           }

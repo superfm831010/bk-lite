@@ -7,14 +7,15 @@ import { Button, Input, Popconfirm, message, Tag, Tree } from 'antd';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/custom-table';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import PageLayout from '@/components/page-layout';
+import TopSection from '@/components/top-section';
+import PermissionWrapper from '@/components/permission';
 import TrainTaskModal from './traintaskModal';
 import { useTranslation } from '@/utils/i18n';
 import { ModalRef, ColumnItem, Option } from '@/app/mlops/types';
 import type { TreeDataNode } from 'antd';
 import { TrainJob } from '@/app/mlops/types/task';
 import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
-import PageLayout from '@/components/page-layout';
-import TopSection from '@/components/top-section';
 import { JointContent } from 'antd/es/message/interface';
 import { DataSet } from '@/app/mlops/types/manage';
 const { Search } = Input;
@@ -119,36 +120,42 @@ const TrainTask = () => {
       align: 'center',
       render: (_: unknown, record: TrainJob) => (
         <>
-          <Popconfirm
-            title={t('traintask.trainStartTitle')}
-            description={t('traintask.trainStartContent')}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            onConfirm={() => onTrainStart(record)}
-          >
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Popconfirm
+              title={t('traintask.trainStartTitle')}
+              description={t('traintask.trainStartContent')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => onTrainStart(record)}
+            >
+              <Button
+                type="link"
+                className="mr-[10px]"
+              >
+                {t('traintask.train')}
+              </Button>
+            </Popconfirm>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Edit']}>
             <Button
               type="link"
               className="mr-[10px]"
+              onClick={() => handleEdit(record)}
             >
-              {t('traintask.train')}
+              {t('common.edit')}
             </Button>
-          </Popconfirm>
-          <Button
-            type="link"
-            className="mr-[10px]"
-            onClick={() => handleEdit(record)}
-          >
-            {t('common.edit')}
-          </Button>
-          <Popconfirm
-            title={t('traintask.delTraintask')}
-            description={t(`traintask.delTraintaskContent`)}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            onConfirm={() => onDelete(record)}
-          >
-            <Button type="link" danger>{t('common.delete')}</Button>
-          </Popconfirm>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Delete']}>
+            <Popconfirm
+              title={t('traintask.delTraintask')}
+              description={t(`traintask.delTraintaskContent`)}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => onDelete(record)}
+            >
+              <Button type="link" danger>{t('common.delete')}</Button>
+            </Popconfirm>
+          </PermissionWrapper>
         </>
       ),
     },
@@ -314,9 +321,11 @@ const TrainTask = () => {
                   onSearch={onSearch}
                   style={{ fontSize: 15 }}
                 />
-                <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow mr-2" onClick={() => handleAdd()}>
-                  {t('common.add')}
-                </Button>
+                <PermissionWrapper requiredPermissions={['Add']}>
+                  <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow mr-2" onClick={() => handleAdd()}>
+                    {t('common.add')}
+                  </Button>
+                </PermissionWrapper>
                 <ReloadOutlined onClick={onRefresh} />
               </div>
             </div>

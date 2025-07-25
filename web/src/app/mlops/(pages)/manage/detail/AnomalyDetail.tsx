@@ -2,6 +2,7 @@ import { useCallback, useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
 import useMlopsManageApi from '@/app/mlops/api/manage';
 import CustomTable from "@/components/custom-table";
+import PermissionWrapper from '@/components/permission';
 import UploadModal from "./uploadModal";
 import OperateModal from "@/components/operate-modal";
 import {
@@ -90,25 +91,29 @@ const AnomalyDetail = () => {
           >
             {t('datasets.annotate')}
           </Button>
-          <Button
-            type="link"
-            className="mr-[10px]"
-            onClick={() => openModal(record)}
-          >
-            {t('common.edit')}
-          </Button>
-          <Popconfirm
-            title={t('datasets.deleteTitle')}
-            description={t('datasets.deleteContent')}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            okButtonProps={{ loading: confirmLoading }}
-            onConfirm={() => onDelete(record)}
-          >
-            <Button type="link" danger>
-              {t('common.delete')}
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Button
+              type="link"
+              className="mr-[10px]"
+              onClick={() => openModal(record)}
+            >
+              {t('common.edit')}
             </Button>
-          </Popconfirm>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Delete']}>
+            <Popconfirm
+              title={t('datasets.deleteTitle')}
+              description={t('datasets.deleteContent')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              okButtonProps={{ loading: confirmLoading }}
+              onConfirm={() => onDelete(record)}
+            >
+              <Button type="link" danger>
+                {t('common.delete')}
+              </Button>
+            </Popconfirm>
+          </PermissionWrapper>
         </>
       ),
     },
@@ -254,9 +259,11 @@ const AnomalyDetail = () => {
             onSearch={onSearch}
             style={{ fontSize: 15 }}
           />
-          <Button type="primary" className="rounded-md text-xs shadow" onClick={onUpload}>
-            {t("datasets.upload")}
-          </Button>
+          <PermissionWrapper requiredPermissions={['Add']}>
+            <Button type="primary" className="rounded-md text-xs shadow" onClick={onUpload}>
+              {t("datasets.upload")}
+            </Button>
+          </PermissionWrapper>
         </div>
       </div>
       <div className="flex-1 relative">

@@ -19,6 +19,7 @@ import {
 import Aside from "./aside";
 import LineChart from "@/app/mlops/components/charts/lineChart";
 import CustomTable from "@/components/custom-table";
+import PermissionWrapper from '@/components/permission';
 import { ColumnItem, TableDataItem, } from '@/app/mlops/types';
 import { AnomalyTrainData } from '@/app/mlops/types/manage';
 import sideMenuStyle from './aside/index.module.scss';
@@ -99,9 +100,11 @@ const AnnotationPage = () => {
         width: 30,
         render: (_, record) => {
           return (
-            <Button color="danger" variant="link" onClick={() => handleDelete(record)}>
-              {t('common.delete')}
-            </Button>
+            <PermissionWrapper requiredPermissions={['Delete']}>
+              <Button color="danger" variant="link" onClick={() => handleDelete(record)}>
+                {t('common.delete')}
+              </Button>
+            </PermissionWrapper>
           )
         }
       }
@@ -523,7 +526,9 @@ const AnnotationPage = () => {
                     />
                     <div className="absolute bottom-0 right-0 flex justify-end gap-2 mb-4">
                       <Button className="mr-4" onClick={handleCancel}>{t('common.cancel')}</Button>
-                      <Button type="primary" loading={loadingState.saveLoading} onClick={handleSava}>{t('common.save')}</Button>
+                      <PermissionWrapper requiredPermissions={['Edit']}>
+                        <Button type="primary" loading={loadingState.saveLoading} onClick={handleSava}>{t('common.save')}</Button>
+                      </PermissionWrapper>
                     </div>
                   </div>
                 </div>
