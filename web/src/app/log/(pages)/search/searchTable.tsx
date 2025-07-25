@@ -39,7 +39,7 @@ const SearchTable: React.FC<SearchTableProps> = ({
       ),
     },
     {
-      title: 'source',
+      title: 'message',
       dataIndex: '_msg',
       key: '_msg',
     },

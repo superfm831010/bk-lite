@@ -216,7 +216,7 @@ const SearchView: React.FC = () => {
               allowClear
               mode="tags"
               maxTagCount="responsive"
-              placeholder={t('common.select')}
+              placeholder={t('log.search.selectGroup')}
               value={groups}
               onChange={(val) => setGroups(val)}
             >

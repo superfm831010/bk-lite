@@ -30,7 +30,7 @@ export interface LogStream {
 }
 
 export interface DetailItem {
-  instance_id: string;
+  stream: string;
   value: number;
 }
 
