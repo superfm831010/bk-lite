@@ -6,12 +6,10 @@ import {
   IntergrationMonitoredObject,
 } from '@/app/monitor/types/monitor';
 import { TableDataItem } from '@/app/monitor/types';
-import { useClickHouseExporterFormItems } from '../../common/clickHouseExporterFormItems';
 import { cloneDeep } from 'lodash';
 
 export const useClickHouseExporter = () => {
   const { t } = useTranslation();
-  const clickHouseExporterFormItems = useClickHouseExporterFormItems();
   const pluginConfig = {
     collect_type: 'exporter',
     config_type: ['clickhouse'],
@@ -51,7 +49,6 @@ export const useClickHouseExporter = () => {
 
       const formItems = (
         <>
-          {clickHouseExporterFormItems.getCommonFormItems()}
           <Form.Item label={t('monitor.intergrations.listeningPort')} required>
             <Form.Item
               noStyle
@@ -95,7 +92,7 @@ export const useClickHouseExporter = () => {
 
       const config = {
         auto: {
-          formItems: clickHouseExporterFormItems.getCommonFormItems({}, 'auto'),
+          formItems: null,
           initTableItems: {
             ENV_LISTEN_PORT: null,
             ENV_SCRAPE_URI: null,

@@ -8,7 +8,7 @@ class PlayGroundCapabilitySerializer(AuthSerializer):
     关键业务逻辑：category 字段序列化为嵌套对象。
     """
     category = serializers.SerializerMethodField()
-
+    permission_key = "capability.playground_capability"
     class Meta:
         model = PlayGroundCapability
         fields = "__all__"

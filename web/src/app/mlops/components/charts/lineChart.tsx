@@ -26,7 +26,6 @@ import DimensionTable from './dimensionTable';
 import { ChartData, ListItem, TableDataItem } from '@/app/mlops/types';
 import { MetricItem, ThresholdField } from '@/app/mlops/types';
 import { LEVEL_MAP } from '@/app/mlops/constants';
-// import useApiClient from '@/utils/request';
 import { isNumber } from 'lodash';
 
 interface LineChartProps {
@@ -80,7 +79,6 @@ const LineChart: React.FC<LineChartProps> = ({
   onAnnotationClick = () => { },
 }) => {
   const { formatTime } = useFormatTime();
-  // const { get } = useApiClient();
   const [startX, setStartX] = useState<number | null>(null);
   const [endX, setEndX] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -89,10 +87,6 @@ const LineChart: React.FC<LineChartProps> = ({
   const [details, setDetails] = useState<Record<string, any>>({});
   const [hasDimension, setHasDimension] = useState<boolean>(false);
   const [boxItems, setBoxItems] = useState<TableDataItem[]>([]);
-  // const [timeline, setTimeline] = useState<any>({
-  //   startIndex: 0,
-  //   endIndex: 0
-  // });
   // 获取数据中的最小和最大时间
   const [minTime, maxTime] = useMemo(() => {
     if (!data.length) return [0, 0];

@@ -15,6 +15,7 @@ interface TrainJob {
 interface TrainTaskModalProps {
   options?: any;
   onSuccess: () => void;
+  activeTag: string[];
   [key: string]: any
 }
 

@@ -46,7 +46,7 @@ const RangeInput: React.FC<RangeInputProps> = ({
           </div>
           <InputNumber
             style={{ width: '100%' }}
-            placeholder={t(`common.${placeholder[0]}`)}
+            placeholder={t(`mlops-common.${placeholder[0]}`)}
             value={minValue}
             onChange={handleMinChange}
             min={min}
@@ -64,7 +64,7 @@ const RangeInput: React.FC<RangeInputProps> = ({
           </div>
           <InputNumber
             style={{ width: '100%' }}
-            placeholder={t(`common.${placeholder[1]}`)}
+            placeholder={t(`mlops-common.${placeholder[1]}`)}
             value={maxValue}
             onChange={handleMaxChange}
             min={minValue || min}
