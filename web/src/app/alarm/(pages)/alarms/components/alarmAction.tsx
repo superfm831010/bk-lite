@@ -187,7 +187,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
     <PermissionWrapper requiredPermissions={['Edit']}>
       <Dropdown overlay={<Menu items={menuItems} />} trigger={['click']}>
         <Button size={btnSize} type="primary">
-          {t('common.actions')}
+          {t('alarmCommon.actions')}
           <DownOutlined />
         </Button>
       </Dropdown>
