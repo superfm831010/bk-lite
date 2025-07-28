@@ -531,17 +531,23 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_info-View")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_export")
     def inst_export(self, request, model_id):
-        # TODO 权限补充上创建人是自己的条件
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_INSTANCES)
-        model_permission_map = CmdbRulesFormatUtil.format_permission_map(rules=rules, model_id=model_id).get(model_id,
-                                                                                                             {})
+        model_permission_map = CmdbRulesFormatUtil.format_permission_map(rules=rules, model_id=model_id).get(model_id, {})
         inst_name_permission_map = model_permission_map.get("permission_map", {})
-        select_all = model_permission_map.get("select_all")
+        select_all = model_permission_map.get("select_all", False)
         inst_names = [] if select_all else list(inst_name_permission_map.keys())
 
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        response["Content-Disposition"] = f"attachment;filename={f'{model_id}_import_template.xlsx'}"
-        response.write(InstanceManage.inst_export(model_id, request.data, inst_names).read())
+        response["Content-Disposition"] = f"attachment;filename={f'{model_id}_export.xlsx'}"
+        response.write(InstanceManage.inst_export(
+            model_id, 
+            request.data, 
+            format_group_params(request.COOKIES.get("current_team")),
+            request.user.roles,
+            rules,
+            inst_names,
+            request.user.username
+        ).read())
         return response
 
     @swagger_auto_schema(
@@ -565,7 +571,8 @@ class InstanceViewSet(viewsets.ViewSet):
             format_group_params(request.COOKIES.get("current_team")),
             request.user.roles,
             request.data.get("search", ""),
-            rules
+            rules,
+            created = request.user.username
         )
         return WebUtils.response_success(result)
 
@@ -644,8 +651,9 @@ class InstanceViewSet(viewsets.ViewSet):
     def model_inst_count(self, request):
         # TODO 权限补充上创建人是自己的条件
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_INSTANCES)
+        # rules = {}
         result = InstanceManage.model_inst_count(user_groups=format_group_params(request.COOKIES.get("current_team")),
-                                                 roles=request.user.roles, rules=rules)
+                                                 roles=request.user.roles, rules=rules, created=request.user.username)
         return WebUtils.response_success(result)
 
     @action(methods=["GET"], detail=False)
