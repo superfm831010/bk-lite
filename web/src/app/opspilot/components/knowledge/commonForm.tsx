@@ -100,7 +100,7 @@ const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValu
             <p className='text-[var(--color-text-2)] whitespace-pre-line'>{scene && `${scene}`}</p>
           </div>
         </div>
-        <div className="ml-4 w-[240px] h-[200px] flex items-center justify-center">
+        <div className="ml-4 w-[340px] flex items-center justify-center">
           <Image
             src={(img as StaticImageData)?.src}
             alt="example"

@@ -93,9 +93,6 @@ export const aggregateLogs = (logs: LogStream[]) => {
     const timeMap = new Map<string, { value: number; details: DetailItem[] }>();
 
     logs.forEach((log) => {
-      const instanceIdMatch = log.fields._stream.match(/instance_id="([^"]+)"/);
-      const instanceId = instanceIdMatch ? instanceIdMatch[1] : '';
-
       log.timestamps.forEach((timestamp, index) => {
         const value = log.values[index];
 
@@ -109,7 +106,7 @@ export const aggregateLogs = (logs: LogStream[]) => {
         const entry = timeMap.get(timestamp)!;
         entry.value += value;
         entry.details.push({
-          instance_id: instanceId,
+          stream: log.fields?._stream || '--',
           value: value,
         });
       });

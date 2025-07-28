@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.utils.translation import gettext as _
 
 from apps.opspilot.knowledge_mgmt.models.knowledge_graph import GraphChunkMap, KnowledgeGraph
 from apps.opspilot.utils.chunk_helper import ChunkHelper
@@ -66,6 +67,8 @@ class GraphUtils(ChunkHelper):
         }
         try:
             res = cls.post_chat_server(kwargs, url)
+            if not res:
+                return {"result": False, "message": _("Failed to create graph. Please check the server logs.")}
         except Exception as e:
             return {"result": False, "message": str(e)}
         data_list = [
@@ -93,6 +96,8 @@ class GraphUtils(ChunkHelper):
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/search"
         try:
             res = cls.post_chat_server(kwargs, url)
+            if not res:
+                return {"result": False, "message": _("Failed to search graph. Please check the server logs.")}
         except Exception as e:
             return {"result": False, "message": str(e)}
         return {"result": True, "data": res["result"]}
@@ -106,6 +111,8 @@ class GraphUtils(ChunkHelper):
         kwargs = {"group_ids": [f"graph-{graph_id}"]}
         try:
             res = cls.post_chat_server(kwargs, url)
+            if not res:
+                return {"result": False, "message": _("Failed to search graph. Please check the server logs.")}
         except Exception as e:
             return {"result": False, "message": str(e)}
         return_data = {"result": True, "data": res["result"]}
@@ -116,8 +123,8 @@ class GraphUtils(ChunkHelper):
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/delete_index"
         kwargs = {"group_id": f"graph-{graph_obj.id}"}
         res = cls.post_chat_server(kwargs, url)
-        if res["status"] != "success":
-            raise Exception(res["message"])
+        if not res or res["status"] != "success":
+            raise Exception("Failed to Delete graph")
 
     @classmethod
     def delete_graph_chunk(cls, chunk_ids):
@@ -127,8 +134,8 @@ class GraphUtils(ChunkHelper):
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/delete_document"
         kwargs = {"uuids": chunk_ids}
         res = cls.post_chat_server(kwargs, url)
-        if res["status"] != "success":
-            raise Exception(res["message"])
+        if not res or res["status"] != "success":
+            raise Exception("Failed to Delete graph chunk")
 
     @classmethod
     def rebuild_graph_community(cls, graph_obj: KnowledgeGraph):
@@ -149,6 +156,6 @@ class GraphUtils(ChunkHelper):
             "rerank_model_api_key": rerank_config["api_key"] or " ",
         }
         res = cls.post_chat_server(kwargs, url)
-        if res["status"] != "success":
-            return {"result": False, "message": res["message"]}
+        if not res or res["status"] != "success":
+            raise Exception("Failed to rebuild graph community")
         return {"result": True}

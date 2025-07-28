@@ -1,0 +1,38 @@
+{
+    "client_id": "ops-analysis",
+    "name": "OpsAnalysis",
+    "url": "/ops-analysis/view",
+    "icon": "ops-analysis",
+    "description": "",
+    "menus": [
+        {
+            "name": "Operations Analysis",
+            "children": [
+                {
+                    "id": "analysis_view",
+                    "name": "View",
+                    "operation": [
+                        "View",
+                        "Add",
+                        "Edit",
+                        "Delete"
+                    ]
+                }
+            ]
+        }
+    ],
+    "roles": [
+        {
+            "name": "admin",
+            "role_name": "node_admin",
+            "menus": []
+        },
+        {
+            "name": "normal",
+            "role_name": "node_normal",
+            "menus": [
+                "analysis_view-View"
+            ]
+        }
+    ]
+}

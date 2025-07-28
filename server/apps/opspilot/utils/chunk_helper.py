@@ -30,6 +30,8 @@ class ChunkHelper(ChatServerHelper):
             "query": search_text,
         }
         res = cls.post_chat_server(query, url)
+        if not res:
+            return {"count": 0, "documents": []}
         count_res = {"count": 0}
         if get_count:
             count_url = f"{settings.METIS_SERVER_URL}/api/rag/count_index_document"

@@ -15,4 +15,5 @@ class GroupDataRule(models.Model):
 
 class UserRule(models.Model):
     username = models.CharField(max_length=100)
+    domain = models.CharField(max_length=100, default="domain.com")
     group_rule = models.ForeignKey(GroupDataRule, on_delete=models.CASCADE)
