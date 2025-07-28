@@ -58,7 +58,7 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
             bool(request.GET.get("add_metrics", False)),
         )
         # 如果有权限规则，则添加到数据中
-        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance")}
+        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
         for instance_info in data["results"]:
             if instance_info["instance_id"] in inst_permission_map:
                 instance_info["permission"] = inst_permission_map[instance_info["instance_id"]]
@@ -107,7 +107,7 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
         )
         data = search_obj.search()
         # 如果有权限规则，则添加到数据中
-        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance")}
+        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
         for instance_info in data["results"]:
             if instance_info["instance_id"] in inst_permission_map:
                 instance_info["permission"] = inst_permission_map[instance_info["instance_id"]]

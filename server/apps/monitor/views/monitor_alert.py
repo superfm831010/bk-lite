@@ -84,7 +84,7 @@ class MonitorAlertVieSet(
         policy_dict = {policy.id: policy for policy in policies}
 
         # 如果有权限规则，则添加到数据中
-        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance")}
+        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
 
         # 补充策略和实例到每个 alert 中
         for alert in results:

@@ -55,7 +55,7 @@ class MonitorPolicyVieSet(viewsets.ModelViewSet):
         results = serializer.data
 
         # 如果有权限规则，则添加到数据中
-        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance")}
+        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
 
         for instance_info in results:
             if instance_info['id'] in inst_permission_map:
