@@ -1,20 +1,21 @@
 'use client'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-// import { useRouter, usePathname } from 'next/navigation';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import useMlopsTaskApi from '@/app/mlops/api/task';
 import useMlopsManageApi from '@/app/mlops/api/manage';
-import { Button, Input, Popconfirm, message, Tag } from 'antd';
+import { Button, Input, Popconfirm, message, Tag, Tree } from 'antd';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/custom-table';
-import Icon from '@/components/icon';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import PageLayout from '@/components/page-layout';
+import TopSection from '@/components/top-section';
+import PermissionWrapper from '@/components/permission';
 import TrainTaskModal from './traintaskModal';
-// import TrainTaskDrawer from './traintaskDrawer';
 import { useTranslation } from '@/utils/i18n';
 import { ModalRef, ColumnItem, Option } from '@/app/mlops/types';
+import type { TreeDataNode } from 'antd';
 import { TrainJob } from '@/app/mlops/types/task';
 import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
-import SubLayout from '@/components/sub-layout';
 import { JointContent } from 'antd/es/message/interface';
 import { DataSet } from '@/app/mlops/types/manage';
 const { Search } = Input;
@@ -30,8 +31,6 @@ const getStatusText = (value: string, TrainText: Record<string, string>) => {
 const TrainTask = () => {
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
-  // const router = useRouter();
-  // const path = usePathname();
   const { getAnomalyDatasetsList } = useMlopsManageApi();
   const {
     getAnomalyTaskList,
@@ -41,14 +40,27 @@ const TrainTask = () => {
   const modalRef = useRef<ModalRef>(null);
   const [tableData, setTableData] = useState<TrainJob[]>([]);
   const [datasetOptions, setDatasetOptions] = useState<Option[]>([]);
-  // const [selectId, setSelectId] = useState<number | null>(null);
-  // const [open, setOpen] = useState<boolean>(false);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
     current: 1,
     total: 0,
     pageSize: 10,
   });
+
+  const treeData: TreeDataNode[] = [
+    {
+      title: t(`traintask.traintask`),
+      key: 'traintask',
+      selectable: false,
+      children: [
+        {
+          title: t(`datasets.anomaly`),
+          key: 'anomaly',
+        }
+      ]
+    }
+  ];
 
   const columns: ColumnItem[] = [
     {
@@ -57,15 +69,7 @@ const TrainTask = () => {
       dataIndex: 'name',
     },
     {
-      title: t('common.type'),
-      key: 'type',
-      dataIndex: 'type',
-      render: (_, record) => {
-        return (<>{t(`datasets.${record.type}`)}</>)
-      }
-    },
-    {
-      title: t('common.createdAt'),
+      title: t('mlops-common.createdAt'),
       key: 'created_at',
       dataIndex: 'created_at',
       render: (_, record) => {
@@ -73,12 +77,32 @@ const TrainTask = () => {
       }
     },
     {
-      title: t('common.creator'),
+      title: t('mlops-common.creator'),
       key: 'creator',
       dataIndex: 'creator',
+      render: (_, { creator }) => {
+        return creator ? (
+          <div className="flex h-full items-center" title={creator}>
+            <span
+              className="block w-[18px] h-[18px] leading-[18px] text-center content-center rounded-[50%] mr-2 text-white"
+              style={{ background: 'blue' }}
+            >
+              {creator.slice(0, 1).toLocaleUpperCase()}
+            </span>
+            <span>
+              <EllipsisWithTooltip
+                className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
+                text={creator}
+              />
+            </span>
+          </div>
+        ) : (
+          <>--</>
+        );
+      }
     },
     {
-      title: t('common.status'),
+      title: t('mlops-common.status'),
       key: 'status',
       dataIndex: 'status',
       render: (_, record: TrainJob) => {
@@ -96,107 +120,104 @@ const TrainTask = () => {
       align: 'center',
       render: (_: unknown, record: TrainJob) => (
         <>
-          <Popconfirm
-            title={t('traintask.trainStartTitle')}
-            description={t('traintask.trainStartContent')}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            onConfirm={() => onTrainStart(record)}
-          >
+          <PermissionWrapper requiredPermissions={['Edit']}>
+            <Popconfirm
+              title={t('traintask.trainStartTitle')}
+              description={t('traintask.trainStartContent')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => onTrainStart(record)}
+            >
+              <Button
+                type="link"
+                className="mr-[10px]"
+              >
+                {t('traintask.train')}
+              </Button>
+            </Popconfirm>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Edit']}>
             <Button
               type="link"
               className="mr-[10px]"
+              onClick={() => handleEdit(record)}
             >
-              {t('traintask.train')}
+              {t('common.edit')}
             </Button>
-          </Popconfirm>
-          <Button
-            type="link"
-            className="mr-[10px]"
-            onClick={() => handleEdit(record)}
-          >
-            {t('common.edit')}
-          </Button>
-          {/* <Button
-            type="link"
-            className="mr-[10px]"
-            onClick={() => openHistortDrawer(record)}
-          >
-            {t('traintask.history')}
-          </Button> */}
-          <Popconfirm
-            title={t('traintask.delTraintask')}
-            description={t(`traintask.delTraintaskContent`)}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            onConfirm={() => onDelete(record)}
-          >
-            <Button type="link" danger>{t('common.delete')}</Button>
-          </Popconfirm>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['Delete']}>
+            <Popconfirm
+              title={t('traintask.delTraintask')}
+              description={t(`traintask.delTraintaskContent`)}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              onConfirm={() => onDelete(record)}
+            >
+              <Button type="link" danger>{t('common.delete')}</Button>
+            </Popconfirm>
+          </PermissionWrapper>
         </>
       ),
     },
   ];
 
-  const Topsection = useMemo(() => {
-    // const name = path.split('/')[2];
-    // console.log(name);
-
+  const topSection = useMemo(() => {
     return (
-      <div className="flex flex-col h-[90px] p-4 overflow-hidden">
-        <h1 className="text-lg w-full truncate mb-1">{t('traintask.traintask')}</h1>
-        <p className="text-sm overflow-hidden w-full min-w-[1000px] mt-[8px]">
-          {t('traintask.description')}
-        </p>
-      </div>
+      <TopSection title={t('traintask.traintask')} content={t('traintask.description')} />
     );
   }, [t]);
 
-  const Intro = useMemo(() => {
-    return (
-      <div className="flex h-[58px] flex-row items-center">
-        <Icon
-          type="yunquyu"
-          className="h-16 w-16"
-          style={{ height: '36px', width: '36px' }}
-        ></Icon>
-        <h1 className="ml-2 text-center truncate">{t(`traintask.traintask`)}</h1>
-      </div>
-    );
+  const leftSection = (
+    <div className='w-full'>
+      <Tree
+        treeData={treeData}
+        showLine
+        selectedKeys={selectedKeys}
+        defaultExpandedKeys={['anomaly']}
+        onSelect={(keys) => setSelectedKeys(keys as string[])}
+      />
+    </div>
+  );
+
+  useEffect(() => {
+    setSelectedKeys(['anomaly']);
   }, []);
 
   useEffect(() => {
     getDatasetList();
-  }, [])
+  }, [selectedKeys])
 
   useEffect(() => {
     getTasks();
-  }, [pagination.current, pagination.pageSize]);
+  }, [pagination.current, pagination.pageSize, selectedKeys]);
 
   const getTasks = async () => {
+    const [activeTab] = selectedKeys;
+    if (!activeTab) return;
     setLoading(true);
     try {
-      const { items, count } = await fetchTaskList(pagination.current, pagination.pageSize);
-      const _data =
-        items?.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          type: 'anomaly',
-          train_data_id: item.train_data_id,
-          val_data_id: item.val_data_id,
-          test_data_id: item.test_data_id,
-          created_at: item.created_at,
-          creator: item?.created_by,
-          status: item?.status,
-          max_evals: item.max_evals,
-          algorithm: item.algorithm,
-          hyperopt_config: item.hyperopt_config
-        })) || [];
-      setTableData(_data as TrainJob[]);
-      setPagination(prev => ({
-        ...prev,
-        total: count,
-      }));
+      if (activeTab === 'anomaly') {
+        const { items, count } = await fetchTaskList(pagination.current, pagination.pageSize);
+        const _data =
+          items?.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            train_data_id: item.train_data_id,
+            val_data_id: item.val_data_id,
+            test_data_id: item.test_data_id,
+            created_at: item.created_at,
+            creator: item?.created_by,
+            status: item?.status,
+            max_evals: item.max_evals,
+            algorithm: item.algorithm,
+            hyperopt_config: item.hyperopt_config
+          })) || [];
+        setTableData(_data as TrainJob[]);
+        setPagination(prev => ({
+          ...prev,
+          total: count || 1,
+        }));
+      }
     } catch (e) {
       console.log(e);
     } finally {
@@ -205,14 +226,18 @@ const TrainTask = () => {
   };
 
   const getDatasetList = async () => {
-    const data = await getAnomalyDatasetsList({});
-    const items = data.map((item: DataSet) => {
-      return {
-        value: item.id,
-        label: item.name
-      }
-    }) || [];
-    setDatasetOptions(items);
+    const [activeTab] = selectedKeys;
+    if (!activeTab) return;
+    if (activeTab === 'anomaly') {
+      const data = await getAnomalyDatasetsList({});
+      const items = data.map((item: DataSet) => {
+        return {
+          value: item.id,
+          label: item.name
+        }
+      }) || [];
+      setDatasetOptions(items);
+    }
   };
 
   const fetchTaskList = useCallback(async (page: number = 1, pageSize: number = 10) => {
@@ -255,10 +280,6 @@ const TrainTask = () => {
     }
   };
 
-  // const openHistortDrawer = (record: TrainJob) => {
-  //   setSelectId(record.id as number);
-  //   setOpen(true);
-  // };
 
   const handleChange = (value: any) => {
     setPagination(value);
@@ -274,7 +295,7 @@ const TrainTask = () => {
     } catch (e) {
       console.log(e);
     } finally {
-      message.success(t('common.successfullyDeleted'));
+      message.success(t('common.delSuccess'));
       getTasks();
     }
   };
@@ -282,52 +303,50 @@ const TrainTask = () => {
   const onRefresh = () => {
     getTasks();
     getDatasetList();
-  }
-
-  // const onCancel = () => {
-  //   setOpen(false);
-  // };
+  };
 
   return (
     <>
-      <div className='w-full'>
-        <SubLayout
-          topSection={Topsection}
-          intro={Intro}
-        >
-          <div className="flex justify-end items-center mb-4 gap-2">
-            <div className="flex">
-              <Search
-                className="w-[240px] mr-1.5"
-                placeholder={t('traintask.searchText')}
-                enterButton
-                onSearch={onSearch}
-                style={{ fontSize: 15 }}
-              />
-              <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow mr-2" onClick={() => handleAdd()}>
-                {t('common.add')}
-              </Button>
-              <ReloadOutlined onClick={onRefresh} />
+      <PageLayout
+        topSection={topSection}
+        leftSection={leftSection}
+        rightSection={
+          (<>
+            <div className="flex justify-end items-center mb-4 gap-2">
+              <div className="flex">
+                <Search
+                  className="w-[240px] mr-1.5"
+                  placeholder={t('traintask.searchText')}
+                  enterButton
+                  onSearch={onSearch}
+                  style={{ fontSize: 15 }}
+                />
+                <PermissionWrapper requiredPermissions={['Add']}>
+                  <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow mr-2" onClick={() => handleAdd()}>
+                    {t('common.add')}
+                  </Button>
+                </PermissionWrapper>
+                <ReloadOutlined onClick={onRefresh} />
+              </div>
             </div>
-          </div>
-          <div className="flex-1 relative">
-            <div className='absolute w-full'>
-              <CustomTable
-                rowKey="id"
-                className="mt-3"
-                scroll={{ x: '100%', y: 'calc(100vh - 420px)' }}
-                dataSource={tableData}
-                columns={columns}
-                pagination={pagination}
-                loading={loading}
-                onChange={handleChange}
-              />
+            <div className="flex-1 relative">
+              <div className='absolute w-full'>
+                <CustomTable
+                  rowKey="id"
+                  className="mt-3"
+                  scroll={{ x: '100%', y: 'calc(100vh - 420px)' }}
+                  dataSource={tableData}
+                  columns={columns}
+                  pagination={pagination}
+                  loading={loading}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
-          </div>
-        </SubLayout>
-      </div>
+          </>)
+        }
+      />
       <TrainTaskModal ref={modalRef} onSuccess={() => onRefresh()} datasetOptions={datasetOptions} />
-      {/* <TrainTaskDrawer open={open} selectId={selectId} onCancel={onCancel} /> */}
     </>
   );
 };

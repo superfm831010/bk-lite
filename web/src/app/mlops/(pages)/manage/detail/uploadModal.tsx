@@ -4,7 +4,7 @@ import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { exportToCSV } from '@/app/mlops/utils/common';
 import useMlopsManageApi from '@/app/mlops/api/manage';
-import { Upload, Button, message, type UploadFile, type UploadProps } from 'antd';
+import { Upload, Button, message, Select, type UploadFile, type UploadProps } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import { ModalConfig, ModalRef, TableData } from '@/app/mlops/types';
 import { TrainDataParams } from '@/app/mlops/types/manage';
@@ -20,6 +20,9 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
   const [visiable, setVisiable] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [fileList, setFileList] = useState<UploadFile<any>[]>([]);
+  const [selectTags, setSelectTags] = useState<{
+    [key: string]: boolean
+  }>({});
   const [formData, setFormData] = useState<TableData>();
 
   useImperativeHandle(ref, () => ({
@@ -65,7 +68,17 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
       }, {});
     });
     return data as TrainDataParams[];
-  }
+  };
+
+  const onSelectChange = (value: string[]) => {
+    const object = value.reduce((prev: object, current: string) => {
+      return {
+        ...prev,
+        [current]: true
+      };
+    }, {});
+    setSelectTags(object);
+  };
 
   const handleSubmit = async () => {
     setConfirmLoading(true);
@@ -75,33 +88,32 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
         setConfirmLoading(false);
         return message.error(t('datasets.pleaseUpload'));
       }
-      const text = await file?.originFileObj.text();
-      const data: TrainDataParams[] = handleFileRead(text);
-      const train_data = data.map(item => ({ timestamp: item.timestamp, value: item.value }));
-      const points = data.filter(item => item?.label === 1).map(k => k.index);
-      const params = {
-        dataset: formData?.dataset_id,
-        name: file.name,
-        train_data: train_data,
-        metadata: {
-          anomaly_point: points
-        },
-        is_train_data: true,
-        is_val_data: false,
-        is_test_data: false,
+      if (formData?.activeTap === 'anomaly') {
+        const text = await file?.originFileObj.text();
+        const data: TrainDataParams[] = handleFileRead(text);
+        const train_data = data.map(item => ({ timestamp: item.timestamp, value: item.value }));
+        const points = data.filter(item => item?.label === 1).map(k => k.index);
+        const params = {
+          dataset: formData?.dataset_id,
+          name: file.name,
+          train_data: train_data,
+          metadata: {
+            anomaly_point: points
+          },
+          ...selectTags
+        };
+        await addAnomalyTrainData(params);
+        setConfirmLoading(false);
+        setVisiable(false);
+        message.success(t('datasets.uploadSuccess'));
+        onSuccess();
       }
-      await addAnomalyTrainData(params);
-      setConfirmLoading(false);
-      setVisiable(false);
-      message.success(t('datasets.uploadSuccess'));
-      onSuccess();
     } catch (e) {
-      console.log(e)
+      console.log(e);
     } finally {
       setConfirmLoading(false);
       setFileList([]);
     }
-    // message.error(`${error.message}`);
   };
 
   const handleCancel = () => {
@@ -157,8 +169,7 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
     } else {
       message.error(t('datasets.downloadError'));
     }
-    console.log('download');
-  }
+  };
 
   return (
     <OperateModal
@@ -181,6 +192,11 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
         <p className="ant-upload-text">{t('datasets.uploadText')}</p>
       </Dragger>
       <p>{t('datasets.downloadText')}<Button type='link' onClick={downloadTemplate}>{t('datasets.template')}</Button></p>
+      <Select className='min-w-[240px] mt-2' mode='multiple' placeholder={t(`datasets.typeSelect`)} allowClear options={[
+        { label: t(`datasets.train`), value: 'is_train_data' },
+        { label: t(`datasets.validate`), value: 'is_val_data' },
+        { label: t(`datasets.test`), value: 'is_test_data' },
+      ]} onChange={onSelectChange} />
     </OperateModal>
   )
 });

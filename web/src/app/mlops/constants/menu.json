@@ -41,7 +41,7 @@
     },
     {
       "title": "能力发布",
-      "icon": "renwu",
+      "icon": "fabu1",
       "url": "/mlops/model-release",
       "name": "train_tasks",
       "children": [

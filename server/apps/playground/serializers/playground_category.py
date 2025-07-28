@@ -10,7 +10,7 @@ class PlayGroundCategorySerializer(AuthSerializer):
     class Meta:
         model = PlayGroundCategory
         fields = "__all__"
-
+    permission_key = "capability.playground_category"
     def to_representation(self, instance):
         # 支持树形结构展示
         representation = super().to_representation(instance)

@@ -13,7 +13,7 @@ import { useWebLogicConfig } from './objects/middleware/webLogic';
 import { useNginxConfig } from './objects/middleware/nginx';
 import { useApacheConfig } from './objects/middleware/apache';
 import { useConsulConfig } from './objects/middleware/consul';
-import { useClickHouseConfig } from './objects/middleware/clickHouse';
+import { useClickHouseConfig } from './objects/database/clickHouse';
 import { useTomcatConfig } from './objects/middleware/tomcat';
 import { useMinioBkpullConfig } from './objects/middleware/minio';
 import { useJettyJmxConfig } from './objects/middleware/jetty';
@@ -47,6 +47,8 @@ import { useNodeConfig } from './objects/k8s/node';
 import { usePodConfig } from './objects/k8s/pod';
 import { useDockerContainerConfig } from './objects/containerManagement/dockerContainer';
 import { useDmConfig } from './objects/database/dm';
+import { useDb2Config } from './objects/database/db2';
+import { useGreenPlumConfig } from './objects/database/greenPlum';
 
 export const useMonitorConfig = () => {
   const hardwareConfig = useHardwareConfig();
@@ -96,6 +98,8 @@ export const useMonitorConfig = () => {
   const nodeConfig = useNodeConfig();
   const dockerContainerConfig = useDockerContainerConfig();
   const dmConfig = useDmConfig();
+  const db2Config = useDb2Config();
+  const greenPlumConfig = useGreenPlumConfig();
 
   const config: any = useMemo(
     () => ({
@@ -146,6 +150,8 @@ export const useMonitorConfig = () => {
       ESXI: esxiConfig,
       VM: vmConfig,
       DM: dmConfig,
+      DB2: db2Config,
+      GreenPlum: greenPlumConfig,
     }),
     []
   );

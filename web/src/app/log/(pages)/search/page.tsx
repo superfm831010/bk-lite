@@ -216,7 +216,7 @@ const SearchView: React.FC = () => {
               allowClear
               mode="tags"
               maxTagCount="responsive"
-              placeholder={t('common.select')}
+              placeholder={t('log.search.selectGroup')}
               value={groups}
               onChange={(val) => setGroups(val)}
             >
@@ -315,7 +315,9 @@ const SearchView: React.FC = () => {
         ) : (
           <Spin spinning={tableLoading}>
             <LogTerminal
-              className="h-[calc(100vh-434px)]"
+              className={
+                expand ? 'h-[calc(100vh-434px)]' : 'h-[calc(100vh-354px)]'
+              }
               searchParams={getParams}
               fetchData={(val) => setTableLoading(val)}
             />

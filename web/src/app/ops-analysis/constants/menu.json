@@ -1,0 +1,20 @@
+{
+  "zh": [
+    {
+        "title": "运营分析",
+        "icon": "ops-analysis",
+        "url": "/ops-analysis/view",
+        "name": "analysis_view",
+        "isNotMenuItem": true
+    }
+  ],
+  "en": [
+    {
+      "title": "Operations Analysis",
+      "icon": "ops-analysis",
+      "url": "/ops-analysis/view",
+      "name": "analysis_view",
+      "isNotMenuItem": true
+    }
+  ]
+}

@@ -20,6 +20,12 @@ def create_default_config(node):
 
                 if not config_template:
                     continue
+
+                # 如果已经存在关联的配置就跳过
+                if CollectorConfiguration.objects.filter(collector=collector_obj, nodes=node).exists():
+                    logger.info(f"Node {node.id} already has a configuration for collector {collector_obj.name}, skipping.")
+                    continue
+
                 configuration = CollectorConfiguration.objects.create(
                     name=f'{collector_obj.name}-{node.id}',
                     collector=collector_obj,

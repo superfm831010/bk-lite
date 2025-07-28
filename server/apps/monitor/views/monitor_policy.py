@@ -5,17 +5,16 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 
 from apps.core.exceptions.base_app_exception import BaseAppException
+from apps.core.utils.permission_utils import get_permission_rules, permission_filter
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.constants import POLICY_MODULE, DEFAULT_PERMISSION
 from apps.monitor.filters.monitor_policy import MonitorPolicyFilter
-from apps.monitor.models import PolicyOrganization, MonitorObject
-from apps.monitor.models.monitor_policy import MonitorPolicy, PolicyTemplate
+from apps.monitor.models import PolicyOrganization
+from apps.monitor.models.monitor_policy import MonitorPolicy
 from apps.monitor.serializers.monitor_policy import MonitorPolicySerializer
 from apps.monitor.services.policy import PolicyService
-from apps.monitor.utils.system_mgmt_api import SystemMgmtUtils
 from config.drf.pagination import CustomPageNumberPagination
 
 
@@ -27,17 +26,18 @@ class MonitorPolicyVieSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         monitor_object_id = request.query_params.get('monitor_object_id', None)
-        permission = SystemMgmtUtils.format_rules(POLICY_MODULE, monitor_object_id, request.user.rules)
 
-        queryset = self.filter_queryset(self.get_queryset())
+        permission = get_permission_rules(
+            request.user,
+            request.COOKIES.get("current_team"),
+            "monitor",
+            f"{POLICY_MODULE}.{monitor_object_id}",
+        )
+        qs = permission_filter(MonitorPolicy, permission, team_key="policyorganization__organization__in", id_key="id__in")
 
-        if permission:
-            queryset = queryset.filter(id__in=list(permission.keys()))
+        queryset = self.filter_queryset(qs)
 
-        orgs = {i["id"] for i in request.user.group_list if i["name"] == "OpsPilotGuest"}
-        orgs.add(request.COOKIES.get("current_team"))
-
-        queryset = queryset.filter(policyorganization__organization__in=orgs).distinct()
+        queryset = queryset.distinct()
 
         # 获取分页参数
         page = int(request.GET.get('page', 1))  # 默认第1页
@@ -54,11 +54,14 @@ class MonitorPolicyVieSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(page_data, many=True)
         results = serializer.data
 
+        # 如果有权限规则，则添加到数据中
+        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
+
         for instance_info in results:
-            if permission:
-                instance_info["permission"] = permission.get(instance_info["id"], DEFAULT_PERMISSION)
+            if instance_info['id'] in inst_permission_map:
+                instance_info['permission'] = inst_permission_map[instance_info['id']]
             else:
-                instance_info["permission"] = DEFAULT_PERMISSION
+                instance_info['permission'] = DEFAULT_PERMISSION
 
         return WebUtils.response_success(dict(count=queryset.count(), items=results))
 

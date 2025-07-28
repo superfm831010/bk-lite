@@ -10,9 +10,10 @@ const { TextArea } = Input;
 interface ReleaseModalProps {
   trainjobs: Option[],
   onSuccess: () => void;
+  activeTag: string[];
 }
 
-const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, onSuccess }, ref) => {
+const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, activeTag, onSuccess }, ref) => {
   const { t } = useTranslation();
   const { addAnomalyServings, updateAnomalyServings } = useMlopsModelReleaseApi();
   const formRef = useRef<FormInstance>(null);
@@ -27,7 +28,6 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, onSuc
       setFormData(form);
       setModalOpen(true);
       setConfirmLoading(false);
-      console.log(formData);
     }
   }));
 
@@ -53,9 +53,22 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, onSuc
     }
   };
 
+  const handleAddMap: Record<string, any> = {
+    'anomaly': async (params: any) => {
+      await addAnomalyServings(params);
+    },
+  };
+
+  const handleUpdateMap: Record<string, any> = {
+    'anomaly': async (id: number, params: any) => {
+      await updateAnomalyServings(id, params);
+    },
+  };
+
   const handleConfirm = async () => {
     setConfirmLoading(true);
     try {
+      const [tagName] = activeTag;
       const data = await formRef.current?.validateFields();
       const params = {
         ...data,
@@ -63,10 +76,10 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, onSuc
       };
 
       if (type === 'add') {
-        await addAnomalyServings(params);
+        await handleAddMap[tagName](params);
         message.success(t(`model-release.publishSuccess`));
       } else {
-        await updateAnomalyServings(formData.id, params);
+        await handleUpdateMap[tagName](params);
         message.success(t(`common.updateSuccess`));
       }
       setModalOpen(false);
@@ -125,7 +138,7 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, onSuc
           </Form.Item>
           <Form.Item
             name='status'
-            label={t(`common.status`)}
+            label={t(`mlops-common.status`)}
             layout="horizontal"
           >
             <Switch checkedChildren="是" unCheckedChildren="否" />
