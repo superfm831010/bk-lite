@@ -313,35 +313,36 @@ class Neo4jClient:
         查询实体
         """
         label_str = f":{label}" if label else ""
-        
+
         # 处理权限或创建人的OR条件
         if permission_or_creator_filter:
             inst_names = permission_or_creator_filter.get("inst_names", [])
             creator = permission_or_creator_filter.get("creator")
-            
+
             # 构建OR条件：有权限的实例 OR 自己创建的实例
             or_conditions = []
             if inst_names:
                 or_conditions.append(f"n.inst_name IN {inst_names}")
             if creator:
                 or_conditions.append(f"n._creator = '{creator}'")
-            
+
             or_condition_str = " OR ".join(or_conditions)
-            
+
             # 将OR条件与其他条件结合
             params_str = self.format_search_params(params, param_type=param_type)
             if params_str:
                 params_str = f"({params_str}) AND ({or_condition_str})"
             else:
                 params_str = f"({or_condition_str})"
-            
+
             # 结合权限参数
             if permission_params:
                 params_str = f"{params_str} AND {permission_params}"
         else:
             # 原有逻辑
-            params_str = self.format_final_params(params, search_param_type=param_type, permission_params=permission_params)
-        
+            params_str = self.format_final_params(params, search_param_type=param_type,
+                                                  permission_params=permission_params)
+
         params_str = f"WHERE {params_str}" if params_str else params_str
 
         sql_str = f"MATCH (n{label_str}) {params_str} RETURN n"
@@ -592,88 +593,91 @@ class Neo4jClient:
                 return entity
         return None
 
+    @staticmethod
+    def format_instance_permission_params(instance_permission_params: list, created: str = ""):
+        model_list = []
+        instance_conditions = []
+        for perm_param in instance_permission_params:
+            model_id = perm_param.get('model_id')
+            instance_names = perm_param.get('inst_names', [])
+            if model_id and instance_names:
+                # 对于有具体实例权限的模型，只统计指定的实例
+                condition = f"(n.model_id = '{model_id}' AND n.inst_name IN {instance_names})"
+                instance_conditions.append(condition)
+                model_list.append(model_id)
+
+        # 如果有模型ID但没有实例名称，则只统计该模型的所有实例
+        instance_condition_str = " OR ".join(instance_conditions) if instance_conditions else ""
+        
+        # 只有在存在具体模型限制时才排除其他模型
+        if model_list and instance_conditions:
+            instance_condition_str += f" OR (NOT n.model_id IN {model_list})"
+
+        # 判断是否为全部权限：没有具体的实例限制条件
+        has_full_permission = not instance_conditions and not model_list
+        
+        # 个人创建的过滤 - 只有在没有全部权限时才添加
+        if created and not has_full_permission:
+            if instance_condition_str:
+                instance_condition_str += f" OR (n._creator = '{created}')"
+            else:
+                instance_condition_str = f"n._creator = '{created}'"
+
+        return instance_condition_str
+
     def entity_count(self, label: str, group_by_attr: str, params: list, permission_params: str = "",
-                     instance_permission_params: list = None):
-        """实体数量"""
+                     instance_permission_params: list = {}, created: str = ""):
 
         label_str = f":{label}" if label else ""
-        base_params_str = self.format_search_params(params)
 
-        # 处理权限参数
-        if instance_permission_params:
-            # 构建实例权限过滤条件
-            instance_conditions = []
-            for perm_param in instance_permission_params:
-                model_id = perm_param.get('model_id')
-                instance_names = perm_param.get('inst_names', [])
-                if model_id and instance_names:
-                    # 对于有具体实例权限的模型，只统计指定的实例
-                    condition = f"(n.{group_by_attr} = '{model_id}' AND n.inst_name IN {instance_names})"
-                    instance_conditions.append(condition)
+        # 首先应用基础查询参数和组织权限
+        final_params_str = self.format_final_params(params, permission_params=permission_params)
 
-            if instance_conditions:
-                instance_condition_str = " OR ".join(instance_conditions)
-                # 组织权限和实例权限是OR关系
-                if permission_params:
-                    combined_permission = f"({permission_params}) OR ({instance_condition_str})"
-                else:
-                    combined_permission = instance_condition_str
-                
-                # 组合基础查询参数和权限参数
-                if base_params_str:
-                    params_str = f"WHERE {base_params_str} AND ({combined_permission})"
-                else:
-                    params_str = f"WHERE ({combined_permission})"
-            else:
-                # 没有实例权限，只使用组织权限
-                params_str = self.format_final_params(params, permission_params=permission_params)
-                params_str = f"WHERE {params_str}" if params_str else params_str
-        else:
-            # 没有实例权限参数，使用原有逻辑
-            params_str = self.format_final_params(params, permission_params=permission_params)
-            params_str = f"WHERE {params_str}" if params_str else params_str
+        # 在组织权限基础上，添加实例权限过滤
+        instance_permission_str = self.format_instance_permission_params(instance_permission_params, created)
 
-        data = self.session.run(
-            f"MATCH (n{label_str}) {params_str} RETURN n.{group_by_attr} AS {group_by_attr}, COUNT(n) AS count"
-        )
+        if instance_permission_str:
+            final_params_str += f" AND ({instance_permission_str})"
+
+        if final_params_str:
+            final_params_str = f"WHERE {final_params_str}"
+
+        count_sql = f"MATCH (n{label_str}) {final_params_str} RETURN n.{group_by_attr} AS {group_by_attr}, COUNT(n) AS count"
+        data = self.session.run(count_sql)
 
         return {i[group_by_attr]: i["count"] for i in data}
 
-    def full_text(self, search: str, permission_params: str = "", instance_permission_params: list = None):
+    def full_text(self, search: str, permission_params: str = "", instance_permission_params: list = {},
+                  created: str = ""):
         """全文检索"""
 
-        base_params = f"{permission_params} AND" if permission_params else ""
+        # 构建基础权限条件（组织权限）
+        base_condition = permission_params or ""
 
-        # 处理权限参数
-        if instance_permission_params:
-            # 构建实例权限过滤条件
-            instance_conditions = []
-            for perm_param in instance_permission_params:
-                model_id = perm_param.get('model_id')
-                instance_names = perm_param.get('inst_names', [])
-                if model_id and instance_names:
-                    # 对于有具体实例权限的模型，只检索指定的实例
-                    condition = f"(n.model_id = '{model_id}' AND n.inst_name IN {instance_names})"
-                    instance_conditions.append(condition)
+        # 在组织权限基础上，添加实例权限过滤
+        instance_permission_str = self.format_instance_permission_params(instance_permission_params, created)
 
-            if instance_conditions:
-                instance_condition_str = " OR ".join(instance_conditions)
-                # 组织权限和实例权限是OR关系
-                if permission_params:
-                    combined_permission = f"({permission_params}) OR ({instance_condition_str})"
-                else:
-                    combined_permission = instance_condition_str
-                
-                # 组合权限参数和全文检索条件
-                params = f"{combined_permission} AND" if combined_permission else ""
+        # 组合最终权限条件
+        permission_conditions = []
+        
+        # 如果有组织权限，所有条件都必须在组织权限范围内
+        if base_condition:
+            if instance_permission_str:
+                # 组织权限 AND (实例权限 OR 创建人权限)
+                permission_conditions.append(f"{base_condition} AND ({instance_permission_str})")
             else:
-                # 没有实例权限，只使用组织权限
-                params = base_params
-        else:
-            # 没有实例权限参数，使用原有逻辑
-            params = base_params
+                # 仅组织权限
+                permission_conditions.append(base_condition)
+        elif instance_permission_str:
+            # 仅实例权限（包含创建人权限）
+            permission_conditions.append(f"({instance_permission_str})")
+        
+        final_permission_condition = " OR ".join(permission_conditions) if permission_conditions else ""
 
-        query = f"""MATCH (n:{INSTANCE}) WHERE {params} ANY(key IN keys(n) WHERE (NOT n[key] IS NULL AND ANY(value IN n[key] WHERE toString(value) CONTAINS '{search}'))) RETURN n"""  # noqa
+        # 组合权限条件和全文检索条件
+        where_condition = f"({final_permission_condition}) AND" if final_permission_condition else ""
+
+        query = f"""MATCH (n:{INSTANCE}) WHERE {where_condition} ANY(key IN keys(n) WHERE (NOT n[key] IS NULL AND ANY(value IN n[key] WHERE toString(value) CONTAINS '{search}'))) RETURN n"""  # noqa
         objs = self.session.run(query)
         return self.entity_to_list(objs)
 
