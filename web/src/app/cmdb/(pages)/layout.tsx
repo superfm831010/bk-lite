@@ -4,7 +4,7 @@ import React from 'react';
 import CommonProvider from '@/app/cmdb/context/common';
 import { AliveScope } from 'react-activation';
 
-export const CMDBRootLayout = ({ children }: { children: React.ReactNode }) => {
+export default function CMDBLayout({ children }: { children: React.ReactNode }) {
   return (
     <CommonProvider>
       <AliveScope>
@@ -12,6 +12,4 @@ export const CMDBRootLayout = ({ children }: { children: React.ReactNode }) => {
       </AliveScope>
     </CommonProvider>
   );
-};
-
-export default CMDBRootLayout;
+}
