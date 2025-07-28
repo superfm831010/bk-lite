@@ -1,17 +1,7 @@
 {
-    "common": {
-        "select": "Select",
-        "selectMsg": "Please select",
-        "inputMsg": "Please input the",
-        "searchPlaceHolder": "Search...",
-        "confirm": "Confirm",
-        "cancel": "Cancel",
-        "edit": "Edit",
-        "detail": "Detail",
+    "alarmCommon": {
         "time": "Time",
         "operator": "Operator",
-        "close": "Close",
-        "more": "More",
         "action": "Action",
         "linkAlert": "Link Alert",
         "unlinkAlert": "Unlink Alert",
@@ -24,8 +14,7 @@
         "advanced": "Advanced",
         "partialFailure": "Partial failure",
         "successOperate": "Successfully",
-        "all": "All",
-        "actions": "Actions"
+        "all": "All"
     },
     "incidents": {
         "table": "Table",

@@ -159,7 +159,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
       } else {
         await createCorrelationRule(params);
       }
-      message.success(t('common.successOperate'));
+      message.success(t('alarmCommon.successOperate'));
       form.resetFields();
       onSuccess();
       onClose();
@@ -203,19 +203,19 @@ const OperateModal: React.FC<OperateModalProps> = ({
         <Form.Item
           name="name"
           label={t('settings.assignName')}
-          rules={[{ required: true, message: t('common.inputMsg') }]}
+          rules={[{ required: true, message: t('common.inputTip') }]}
         >
-          <Input placeholder={t('common.inputMsg')} />
+          <Input placeholder={t('common.inputTip')} />
         </Form.Item>
 
         <Form.Item
           name="ruleId"
           label={t('settings.correlation.type')}
-          rules={[{ required: true, message: t('common.selectMsg') }]}
+          rules={[{ required: true, message: t('common.selectTip') }]}
         >
           <Select
             loading={optionsLoading}
-            placeholder={t('common.selectMsg')}
+            placeholder={t('common.selectTip')}
             options={aggOptions}
             disabled={!!currentRow || optionsLoading}
           />
@@ -249,14 +249,14 @@ const OperateModal: React.FC<OperateModalProps> = ({
           </Form.Item>
         )}
         <Form.Item name="scope" label={t('settings.correlation.scope')}>
-          <span>{t('common.all')}</span>
+          <span>{t('alarmCommon.all')}</span>
         </Form.Item>
         <Form.Item
           name="windowType"
           label={t('settings.correlation.windowType')}
           initialValue="sliding"
           className="mb-2"
-          rules={[{ required: true, message: t('common.selectMsg') }]}
+          rules={[{ required: true, message: t('common.selectTip') }]}
         >
           <Radio.Group>
             <Radio value="sliding">
@@ -298,7 +298,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
         <Form.Item
           name="windowTime"
           initialValue={10}
-          rules={[{ required: true, message: t('common.inputMsg') }]}
+          rules={[{ required: true, message: t('common.inputTip') }]}
           label={
             windowType === 'session'
               ? t('settings.correlation.timeOut')

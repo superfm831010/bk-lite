@@ -153,7 +153,7 @@ const VMTask: React.FC<VMTaskFormProps> = ({
                 label={t('Collection.VMTask.username')}
                 rules={rules.username}
               >
-                <Input placeholder={t('common.pleaseInput')} />
+                <Input placeholder={t('common.inputTip')} />
               </Form.Item>
 
               <Form.Item
@@ -161,7 +161,7 @@ const VMTask: React.FC<VMTaskFormProps> = ({
                 label={t('Collection.VMTask.password')}
                 rules={rules.password}
               >
-                <Input.Password placeholder={t('common.pleaseInput')} />
+                <Input.Password placeholder={t('common.inputTip')} />
               </Form.Item>
 
               <Form.Item
@@ -172,7 +172,7 @@ const VMTask: React.FC<VMTaskFormProps> = ({
                 <InputNumber
                   min={1}
                   max={65535}
-                  placeholder={t('common.pleaseInput')}
+                  placeholder={t('common.inputTip')}
                   className="w-32"
                   defaultValue={443}
                 />

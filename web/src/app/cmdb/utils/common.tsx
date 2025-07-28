@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { AttrFieldType } from '@/app/cmdb/types/assetManage';
 import { Tag, Select, Input, Cascader, DatePicker } from 'antd';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import UserAvatar from '@/app/cmdb/components/userAvatar';
+import UserAvatar from '@/components/user-avatar';
 import {
   ModelIconItem,
   ColumnItem,

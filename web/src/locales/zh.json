@@ -46,6 +46,8 @@
     "inputMsg": "请输入",
     "input": "输入",
     "select": "选择",
+    "selectTip": "请选择",
+    "inputTip": "请输入",
     "serverError": "服务器错误，请稍后再试。",
     "fileType": "不支持的文件类型",
     "invalidData": "数据格式不正确",
