@@ -162,19 +162,25 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
     initForm();
   }, [modelId]);
 
-  const RegionSelect: React.FC<RegionSelectProps> = ({ value, loading, options, onChange, onRefresh }) => (
+  const RegionSelect: React.FC<RegionSelectProps> = ({
+    value,
+    loading,
+    options,
+    onChange,
+    onRefresh,
+  }) => (
     <div className="flex items-center gap-2">
       <Select
         value={value}
         onChange={onChange}
         className="flex-1"
         loading={loading}
-        placeholder={t('common.pleaseSelect')}
+        placeholder={t('common.selectTip')}
         options={options}
       />
-      <SyncOutlined 
+      <SyncOutlined
         spin={loading}
-        className="cursor-pointer" 
+        className="cursor-pointer"
         onClick={onRefresh}
       />
     </div>
@@ -225,8 +231,8 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
                 name="accessKey"
                 rules={[{ required: true }]}
               >
-                <Input 
-                  placeholder={t('common.pleaseInput')} 
+                <Input
+                  placeholder={t('common.inputTip')}
                   onChange={handleCredentialChange}
                 />
               </Form.Item>
@@ -236,8 +242,8 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
                 name="accessSecret"
                 rules={[{ required: true }]}
               >
-                <Input.Password 
-                  placeholder={t('common.pleaseInput')} 
+                <Input.Password
+                  placeholder={t('common.inputTip')}
                   onChange={handleCredentialChange}
                 />
               </Form.Item>
@@ -250,9 +256,9 @@ const CloudTask: React.FC<cloudTaskFormProps> = ({
                 <RegionSelect
                   loading={loadingRegions}
                   onRefresh={handleRefreshRegions}
-                  options={regions.map(item => ({
+                  options={regions.map((item) => ({
                     label: item.resource_name,
-                    value: item.resource_id
+                    value: item.resource_id,
                   }))}
                 />
               </Form.Item>

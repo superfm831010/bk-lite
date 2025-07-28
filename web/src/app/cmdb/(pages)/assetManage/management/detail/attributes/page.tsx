@@ -74,7 +74,7 @@ const Attributes = () => {
       ),
     },
     {
-      title: t('editable'),
+      title: t('common.editable'),
       key: 'editable',
       dataIndex: 'editable',
       render: (_, { editable }) => (
@@ -102,7 +102,7 @@ const Attributes = () => {
       ),
     },
     {
-      title: t('action'),
+      title: t('common.action'),
       key: 'action',
       render: (_, record) => (
         <>
@@ -116,7 +116,7 @@ const Attributes = () => {
               disabled={!isAdmin && record.is_pre}
               onClick={() => showAttrModal('edit', record)}
             >
-              {t('edit')}
+              {t('common.edit')}
             </Button>
           </PermissionWrapper>
           <PermissionWrapper
@@ -132,7 +132,7 @@ const Attributes = () => {
                 })
               }
             >
-              {t('delete')}
+              {t('common.delete')}
             </Button>
           </PermissionWrapper>
         </>
@@ -158,8 +158,8 @@ const Attributes = () => {
 
   const showDeleteConfirm = (row = { attr_id: '' }) => {
     confirm({
-      title: t('deleteTitle'),
-      content: t('deleteContent'),
+      title: t('common.deleteTitle'),
+      content: t('common.deleteContent'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
@@ -223,7 +223,7 @@ const Attributes = () => {
         <div className="nav-box flex justify-end mb-[16px]">
           <div className="left-side w-[240px] mr-[8px]">
             <Input
-              placeholder={t('search')}
+              placeholder={t('common.search')}
               value={searchText}
               allowClear
               onChange={onSearchTxtChange}
