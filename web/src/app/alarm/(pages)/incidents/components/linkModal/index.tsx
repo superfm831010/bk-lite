@@ -97,7 +97,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
 
   return (
     <Drawer
-      title={t('common.linkAlert')}
+      title={t('alarmCommon.linkAlert')}
       width={820}
       onClose={onClose}
       open={visible}
@@ -128,7 +128,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
           onClick={() => onLink(selectedKeys)}
           loading={confirmLoading}
         >
-          {t('common.linkAlert')}
+          {t('alarmCommon.linkAlert')}
         </Button>
       </div>
       <AlarmTable
@@ -151,7 +151,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
             type="link"
             onClick={() => onLink([record.id as number])}
           >
-            {t('common.linkAlert')}
+            {t('alarmCommon.linkAlert')}
           </Button>
         )}
       />

@@ -99,9 +99,9 @@ const GroupMoadal = forwardRef<GroupModalRef, GroupModalProps>(
                 loading={confirmLoading}
                 onClick={handleSubmit}
               >
-                {t('confirm')}
+                {t('common.confirm')}
               </Button>
-              <Button onClick={handleCancel}>{t('cancel')}</Button>
+              <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
         >
@@ -116,14 +116,17 @@ const GroupMoadal = forwardRef<GroupModalRef, GroupModalProps>(
               name="classification_id"
               rules={[{ required: true, message: t('required') }]}
             >
-              <Input disabled={type === 'edit'} placeholder={t('common.pleaseInput')} />
+              <Input
+                disabled={type === 'edit'}
+                placeholder={t('common.inputTip')}
+              />
             </Form.Item>
             <Form.Item<GroupFieldType>
               label="Name"
               name="classification_name"
               rules={[{ required: true, message: t('required') }]}
             >
-              <Input placeholder={t('common.pleaseInput')} />
+              <Input placeholder={t('common.inputTip')} />
             </Form.Item>
           </Form>
         </OperateModal>

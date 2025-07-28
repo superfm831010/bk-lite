@@ -105,10 +105,10 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
           });
           if (Object.values(data).some((res: any) => !res.result)) {
             message.error(
-              `${t(`alarms.${type}`)}${t(`alarms.alert`)}${t('common.partialFailure')}`
+              `${t(`alarms.${type}`)}${t(`alarms.alert`)}${t('alarmCommon.partialFailure')}`
             );
           } else {
-            message.success(t(`alarms.${type}`) + t('common.success'));
+            message.success(t(`alarms.${type}`) + t('alarmCommon.success'));
             onAction();
           }
         } catch (err) {

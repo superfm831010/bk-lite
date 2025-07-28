@@ -199,7 +199,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
           return (
             <Select
               disabled={fieldDisabled}
-              placeholder={t('common.pleaseSelect')}
+              placeholder={t('common.selectTip')}
             >
               {proxyOptions.map((opt) => (
                 <Select.Option key={opt.proxy_id} value={opt.proxy_id}>
@@ -215,7 +215,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
               <Select
                 showSearch
                 disabled={fieldDisabled}
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
                 filterOption={(input, opt: any) => {
                   if (typeof opt?.children?.props?.text === 'string') {
                     return opt?.children?.props?.text
@@ -240,7 +240,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
               <Select
                 showSearch
                 disabled={fieldDisabled}
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
                 filterOption={(input, opt: any) => {
                   if (typeof opt?.children === 'string') {
                     return opt?.children
@@ -261,7 +261,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             return (
               <Select
                 disabled={fieldDisabled}
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
               >
                 {[
                   { id: true, name: 'Yes' },
@@ -276,7 +276,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
           case 'time':
             return (
               <DatePicker
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
                 showTime
                 disabled={fieldDisabled}
                 format="YYYY-MM-DD HH:mm:ss"
@@ -296,13 +296,13 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
               <InputNumber
                 disabled={fieldDisabled}
                 style={{ width: '100%' }}
-                placeholder={t('common.pleaseInput')}
+                placeholder={t('common.inputTip')}
               />
             );
           default:
             return (
               <Input
-                placeholder={t('common.pleaseInput')}
+                placeholder={t('common.inputTip')}
                 disabled={fieldDisabled || hostDisabled}
               />
             );
@@ -332,7 +332,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             (enabled) => enabled
           );
           if (!hasEnabledFields) {
-            message.warning(t('common.pleaseInput'));
+            message.warning(t('common.inputTip'));
             return;
           }
         }
@@ -347,7 +347,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
           }, {} as any);
         } else {
           formData = params;
-        }   
+        }
         const msg: string = t(
           type === 'add' ? 'successfullyAdded' : 'successfullyModified'
         );
@@ -407,7 +407,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
                 loading={confirmLoading}
                 onClick={() => handleSubmit()}
               >
-                {t('confirm')}
+                {t('common.confirm')}
               </Button>
               {type === 'add' && (
                 <Button
@@ -418,13 +418,13 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
                   {t('Model.confirmAndAssociate')}
                 </Button>
               )}
-              <Button onClick={handleCancel}>{t('cancel')}</Button>
+              <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
         >
           <Form form={form} layout="vertical">
             <div className="font-[600] text-[var(--color-text-2)] text-[18px] pl-[12px] pb-[14px]">
-              {t('group')}
+              {t('common.group')}
             </div>
             <Row gutter={24}>
               {formItems

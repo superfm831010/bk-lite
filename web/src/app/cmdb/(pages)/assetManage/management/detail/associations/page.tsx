@@ -114,7 +114,7 @@ const Associations = () => {
       },
     },
     {
-      title: t('action'),
+      title: t('common.action'),
       key: 'action',
       render: (_, record) => (
         <>
@@ -127,7 +127,7 @@ const Associations = () => {
               disabled={!isAdmin && record.is_pre}
               onClick={() => showDeleteConfirm(record.model_asst_id)}
             >
-              {t('delete')}
+              {t('common.delete')}
             </Button>
           </PermissionWrapper>
         </>
@@ -159,8 +159,8 @@ const Associations = () => {
 
   const showDeleteConfirm = (id: string) => {
     confirm({
-      title: t('deleteTitle'),
-      content: t('deleteContent'),
+      title: t('common.deleteTitle'),
+      content: t('common.deleteContent'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
@@ -256,7 +256,7 @@ const Associations = () => {
         <div className="nav-box flex justify-end mb-[16px]">
           <div className="left-side w-[240px] mr-[8px]">
             <Input
-              placeholder={t('search')}
+              placeholder={t('common.search')}
               value={searchText}
               allowClear
               onChange={onSearchTxtChange}

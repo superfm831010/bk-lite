@@ -246,7 +246,7 @@ const RecordDetail = forwardRef<FieldModalRef, RecordDetailProps>(
           onCancel={handleCancel}
           footer={
             <div>
-              <Button onClick={handleCancel}>{t('cancel')}</Button>
+              <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
         >

@@ -62,7 +62,7 @@ const CorrelationRulesPage: React.FC = () => {
             getTableList();
           }
         } catch {
-          message.error(t('common.operateFailed'));
+          message.error(t('alarmCommon.operateFailed'));
         }
       },
     });
@@ -139,7 +139,7 @@ const CorrelationRulesPage: React.FC = () => {
         key: 'scope',
         width: 150,
         render: (text: string) => {
-          return text === 'all' ? t('common.all') : '';
+          return text === 'all' ? t('alarmCommon.all') : '';
         },
       },
       {
@@ -175,7 +175,7 @@ const CorrelationRulesPage: React.FC = () => {
                 size="small"
                 onClick={() => handleEdit('edit', row)}
               >
-                {t('edit')}
+                {t('common.edit')}
               </Button>
             </PermissionWrapper>
             <PermissionWrapper requiredPermissions={['Delete']}>
@@ -184,7 +184,7 @@ const CorrelationRulesPage: React.FC = () => {
                 size="small"
                 onClick={() => handleDelete(row)}
               >
-                {t('delete')}
+                {t('common.delete')}
               </Button>
             </PermissionWrapper>
           </div>
@@ -203,7 +203,7 @@ const CorrelationRulesPage: React.FC = () => {
         title={t('settings.correlationRules')}
         message={t('settings.correlationRulesMessage')}
       />
-      <div className="p-4 pt-0 bg-white rounded-lg shadow">
+      <div className="p-4 pt-0 bg-[var(--color-bg-1)] rounded-lg shadow">
         <Tabs
           activeKey={activeTab}
           onChange={(key) => setActiveTab(key as 'Event' | 'Alert')}
@@ -219,7 +219,7 @@ const CorrelationRulesPage: React.FC = () => {
                 <Input
                   allowClear
                   value={searchKey}
-                  placeholder={t('common.searchPlaceHolder')}
+                  placeholder={t('common.search')}
                   style={{ width: 250 }}
                   onChange={(e) => setSearchKey(e.target.value)}
                   onPressEnter={handleFilterChange}
@@ -254,7 +254,7 @@ const CorrelationRulesPage: React.FC = () => {
           </div>
         )}
         {activeTab === 'Alert' && (
-          <div className="p-4 bg-white rounded-lg shadow text-center">
+          <div className="p-4 bg-[var(--color-bg-1)] rounded-lg shadow text-center">
             {t('settings.correlationAlertPlaceholder')}
           </div>
         )}

@@ -178,9 +178,9 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
           color: 'blue',
           children: (
             <div className="flex px-4 text-sm font-semibold">
-              <span className="w-[160px]">{t('common.time')}</span>
-              <span className="w-[160px]">{t('common.action')}</span>
-              <span className="w-[120px]">{t('common.operator')}</span>
+              <span className="w-[160px]">{t('alarmCommon.time')}</span>
+              <span className="w-[160px]">{t('alarmCommon.action')}</span>
+              <span className="w-[120px]">{t('alarmCommon.operator')}</span>
               <span className="flex-1">
                 {t('settings.operationLog.summary')}
               </span>
@@ -234,7 +234,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
 
     const copyToClipboard = (text: string) => {
       navigator.clipboard.writeText(text);
-      message.success(t('common.copied'));
+      message.success(t('alarmCommon.copied'));
     };
 
     return (

@@ -27,10 +27,10 @@ const useNotifiedStateMap = () => {
   const { t } = useTranslation();
   return useMemo(() => {
     return {
-      not_notified: t('common.notNotified'),
-      success: t('common.success'),
-      fail: t('common.fail'),
-      partial_success: t('common.partialSuccess'),
+      not_notified: t('alarmCommon.notNotified'),
+      success: t('alarmCommon.success'),
+      fail: t('alarmCommon.fail'),
+      partial_success: t('alarmCommon.partialSuccess'),
     };
   }, [t]);
 };

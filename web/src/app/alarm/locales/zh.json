@@ -1,17 +1,7 @@
 {
-    "common": {
-        "select": "选择",
-        "selectMsg": "请选择",
-        "inputMsg": "请输入",
-        "searchPlaceHolder": "搜索...",
-        "confirm": "确认",
-        "cancel": "取消",
-        "edit": "编辑",
-        "detail": "详情",
+    "alarmCommon": {
         "time": "时间",
         "operator": "处理人",
-        "close": "关闭",
-        "more": "详情",
         "action": "操作",
         "linkAlert": "关联告警",
         "unlinkAlert": "解除告警",
@@ -24,8 +14,7 @@
         "advanced": "高级",
         "partialFailure": "部分失败",
         "successOperate": "操作成功",
-        "all": "全部",
-        "actions": "操作"
+        "all": "全部"
     },
     "incidents": {
         "table": "表格",

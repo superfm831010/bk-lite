@@ -70,12 +70,12 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
         await createShield(params);
       }
       message.success(
-        currentRow ? t('common.successOperate') : t('common.addSuccess')
+        currentRow ? t('alarmCommon.successOperate') : t('common.addSuccess')
       );
       handleClose();
       onSuccess?.();
     } catch {
-      message.error(t('common.operateFailed'));
+      message.error(t('alarmCommon.operateFailed'));
     } finally {
       setSubmitLoading(false);
     }
@@ -119,17 +119,17 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
           rules={[
             {
               required: true,
-              message: t('common.inputMsg'),
+              message: t('common.inputTip'),
             },
           ]}
         >
-          <Input placeholder={t('common.inputMsg')} />
+          <Input placeholder={t('common.inputTip')} />
         </Form.Item>
         <Form.Item
           initialValue="all"
           name="match_type"
           label={t('settings.assignStrategy.formMatchingRules')}
-          rules={[{ required: true, message: t('common.inputMsg') }]}
+          rules={[{ required: true, message: t('common.inputTip') }]}
         >
           <Radio.Group className="mt-1">
             <Radio value="all">{t('settings.assignStrategy.ruleAll')}</Radio>
@@ -152,11 +152,11 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
               {
                 validator: (_, value: any[][]) => {
                   if (!Array.isArray(value) || value.length === 0) {
-                    return Promise.reject(new Error(t('common.inputMsg')));
+                    return Promise.reject(new Error(t('common.inputTip')));
                   }
                   for (const orGroup of value) {
                     if (!Array.isArray(orGroup) || orGroup.length === 0) {
-                      return Promise.reject(new Error(t('common.inputMsg')));
+                      return Promise.reject(new Error(t('common.inputTip')));
                     }
                     for (const item of orGroup) {
                       if (
@@ -164,7 +164,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
                         !item.operator ||
                         (!item.value && item.value !== 0)
                       ) {
-                        return Promise.reject(new Error(t('common.inputMsg')));
+                        return Promise.reject(new Error(t('common.inputTip')));
                       }
                     }
                   }
@@ -181,7 +181,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
           name="suppression_time"
           label={t('settings.assignStrategy.effectiveTime')}
           initialValue={defaultEffectiveTime}
-          rules={[{ required: true, message: t('common.selectMsg') }]}
+          rules={[{ required: true, message: t('common.selectTip') }]}
         >
           <EffectiveTime open={open} />
         </Form.Item>

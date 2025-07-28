@@ -63,10 +63,10 @@ const OidLibrary: React.FC = () => {
 
   const delMap = async (row: ListItem) => {
     Modal.confirm({
-      title: t('deleteTitle'),
-      content: t('deleteContent'),
-      okText: t('confirm'),
-      cancelText: t('cancel'),
+      title: t('common.deleteTitle'),
+      content: t('common.deleteContent'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk: async () => {
         try {
@@ -187,7 +187,7 @@ const OidLibrary: React.FC = () => {
         render: (type: string) => getDeviceType(type),
       },
       {
-        title: t('action'),
+        title: t('common.action'),
         key: 'operation',
         width: 140,
         render: (text: any, record: ListItem) => (
@@ -202,7 +202,7 @@ const OidLibrary: React.FC = () => {
                 disabled={record.built_in}
                 onClick={() => operateMap('edit', record)}
               >
-                {t('edit')}
+                {t('common.edit')}
               </Button>
             </PermissionWrapper>
             <PermissionWrapper
@@ -215,7 +215,7 @@ const OidLibrary: React.FC = () => {
                 disabled={record.built_in}
                 onClick={() => delMap(record)}
               >
-                {t('delete')}
+                {t('common.delete')}
               </Button>
             </PermissionWrapper>
           </div>

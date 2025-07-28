@@ -46,6 +46,8 @@
     "inputMsg": "Please input the ",
     "input": "Input",
     "select": "Select",
+    "selectTip": "Please select",
+    "inputTip": "Please input",
     "serverError": "Server error, please try again later.",
     "fileType": "is not a supported file type.",
     "invalidData": "Invalid data format",
