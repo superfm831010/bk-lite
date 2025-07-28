@@ -159,7 +159,6 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
     const param = { dataset: data };
     const { formData } = modalState;
     setLoadingState(prev => ({ ...prev, select: true }));
-
     try {
       const trainData = await getAnomalyTrainData(param);
       const options = {
@@ -168,6 +167,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
         testOption: trainData.filter((item: TrainData) => item.is_test_data).map((item: TrainData) => ({ label: item.name, value: item.id })),
       };
       setTrainDataOption(options);
+      console.log(formData);
       formRef.current.setFieldsValue({
         train_data_id: formData?.train_data_id,
         val_data_id: formData?.val_data_id,

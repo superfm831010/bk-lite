@@ -4,7 +4,7 @@ import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { exportToCSV } from '@/app/mlops/utils/common';
 import useMlopsManageApi from '@/app/mlops/api/manage';
-import { Upload, Button, message, Select, type UploadFile, type UploadProps } from 'antd';
+import { Upload, Button, message, Checkbox, type UploadFile, type UploadProps } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import { ModalConfig, ModalRef, TableData } from '@/app/mlops/types';
 import { TrainDataParams } from '@/app/mlops/types/manage';
@@ -20,6 +20,7 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
   const [visiable, setVisiable] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [fileList, setFileList] = useState<UploadFile<any>[]>([]);
+  const [checkedType, setCheckedType] = useState<string[]>([]);
   const [selectTags, setSelectTags] = useState<{
     [key: string]: boolean
   }>({});
@@ -71,6 +72,7 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
   };
 
   const onSelectChange = (value: string[]) => {
+    setCheckedType(value);
     const object = value.reduce((prev: object, current: string) => {
       return {
         ...prev,
@@ -118,7 +120,8 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
 
   const handleCancel = () => {
     setVisiable(false);
-    setFileList([])
+    setFileList([]);
+    setCheckedType([]);
   };
 
   const downloadTemplate = async () => {
@@ -171,18 +174,32 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
     }
   };
 
+  const CheckedType = () => (
+    <div className='text-left flex justify-between items-center'>
+      <div className='flex-1'>
+        <span className='leading-[32px] mr-2'>{t(`mlops-common.type`) + ": "} </span>
+        <Checkbox.Group onChange={onSelectChange} value={checkedType}>
+          <Checkbox value={'is_train_data'}>{t(`datasets.train`)}</Checkbox>
+          <Checkbox value={'is_val_data'}>{t(`datasets.validate`)}</Checkbox>
+          <Checkbox value={'is_test_data'}>{t(`datasets.test`)}</Checkbox>
+        </Checkbox.Group>
+      </div>
+      <Button key="submit" className='mr-2' loading={confirmLoading} type="primary" onClick={handleSubmit}>
+        {t('common.confirm')}
+      </Button>
+      <Button key="cancel" onClick={handleCancel}>
+        {t('common.cancel')}
+      </Button>
+    </div>
+  );
+
   return (
     <OperateModal
       title={t(`datasets.upload`)}
       open={visiable}
       onCancel={() => handleCancel()}
       footer={[
-        <Button key="submit" loading={confirmLoading} type="primary" onClick={handleSubmit}>
-          {t('common.confirm')}
-        </Button>,
-        <Button key="cancel" onClick={handleCancel}>
-          {t('common.cancel')}
-        </Button>,
+        <CheckedType key="checked" />,
       ]}
     >
       <Dragger {...props}>
@@ -192,11 +209,6 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
         <p className="ant-upload-text">{t('datasets.uploadText')}</p>
       </Dragger>
       <p>{t('datasets.downloadText')}<Button type='link' onClick={downloadTemplate}>{t('datasets.template')}</Button></p>
-      <Select className='min-w-[240px] mt-2' mode='multiple' placeholder={t(`datasets.typeSelect`)} allowClear options={[
-        { label: t(`datasets.train`), value: 'is_train_data' },
-        { label: t(`datasets.validate`), value: 'is_val_data' },
-        { label: t(`datasets.test`), value: 'is_test_data' },
-      ]} onChange={onSelectChange} />
     </OperateModal>
   )
 });
