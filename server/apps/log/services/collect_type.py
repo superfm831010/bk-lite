@@ -5,7 +5,7 @@ import yaml
 from django.db import transaction
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.log.models import CollectInstance, CollectInstanceOrganization, CollectConfig
+from apps.log.models import CollectInstance, CollectInstanceOrganization, CollectConfig, CollectType
 from apps.log.plugins.controller import Controller
 from apps.rpc.node_mgmt import NodeMgmt
 
@@ -124,6 +124,37 @@ class CollectTypeService:
             if not config_obj:
                 return
             content = toml.dumps(child_info["content"]) if child_info else None
+            NodeMgmt().update_child_config_content(child_info["id"], content, child_env)
+
+    @staticmethod
+    def update_instance_config_v2(child_info, base_info, collect_type_id):
+
+        child_env = None
+        collect_type_obj = CollectType.objects.filter(id=collect_type_id).first()
+        if not collect_type_obj:
+            raise BaseAppException("collect_type does not exist")
+        col_obj = Controller(
+            {
+                "collector": collect_type_obj.collector,
+                "collect_type": collect_type_obj.name,
+                "collect_type_id": collect_type_id,
+            }
+        )
+
+        if base_info:
+            config_obj = CollectConfig.objects.filter(id=base_info["id"]).first()
+            if config_obj:
+                content = col_obj.render_config_template_content("base", base_info["content_data"])
+                env_config = base_info.get("env_config")
+                if env_config:
+                    child_env = {k: v for k, v in env_config.items()}
+                NodeMgmt().update_config_content(base_info["id"], content, env_config)
+
+        if child_info or child_env:
+            config_obj = CollectConfig.objects.filter(id=child_info["id"]).first()
+            if not config_obj:
+                return
+            content = col_obj.render_config_template_content("child", base_info["content_data"])
             NodeMgmt().update_child_config_content(child_info["id"], content, child_env)
 
     @staticmethod
