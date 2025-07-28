@@ -5,7 +5,7 @@ from collections import defaultdict
 from django.db import transaction
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.monitor.constants import OBJ_ORDER, DEFAULT_OBJ_ORDER, MONITOR_OBJ_KEYS, DEFAULT_PERMISSION
+from apps.monitor.constants import OBJ_ORDER, DEFAULT_OBJ_ORDER, MONITOR_OBJ_KEYS
 from apps.monitor.models.monitor_metrics import Metric
 from apps.monitor.models.monitor_object import MonitorInstance, MonitorObject, MonitorInstanceOrganization
 from apps.monitor.models.setting import Setting
@@ -56,17 +56,14 @@ class MonitorObjectService:
                 conf_info["status"] = calculation_status(conf_info["time"])
 
     @staticmethod
-    def get_monitor_instance(monitor_object_id, page, page_size, name, group_ids, is_super, add_metrics=False, permission=None):
+    def get_monitor_instance(monitor_object_id, page, page_size, name, qs, add_metrics=False):
         """获取监控对象实例"""
         start = (page - 1) * page_size
         end = start + page_size
-        qs = MonitorInstance.objects.filter(monitor_object_id=monitor_object_id, is_deleted=False)
-        if not is_super:
-            qs = qs.filter(monitorinstanceorganization__organization__in=group_ids)
+
+        qs = qs.filter(monitor_object_id=monitor_object_id, is_deleted=False)
         if name:
             qs = qs.filter(name__icontains=name)
-        if permission:
-            qs = qs.filter(id__in=list(permission.keys()))
 
         # 去除重复
         qs = qs.distinct("id")
@@ -125,12 +122,6 @@ class MonitorObjectService:
                     instance[metric_obj.name] = _metric_map.get(instance["instance_id"])
 
         MonitorObjectService.add_attr(result)
-
-        for instance_info in result:
-            if permission:
-                instance_info["permission"] = permission.get(instance_info["instance_id"], DEFAULT_PERMISSION)
-            else:
-                instance_info["permission"] = DEFAULT_PERMISSION
 
         return  dict(count=count, results=result)
 
