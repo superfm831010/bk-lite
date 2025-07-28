@@ -4,12 +4,12 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 
 from apps.core.exceptions.base_app_exception import BaseAppException
+from apps.core.utils.permission_utils import get_permission_rules, permission_filter
 from apps.core.utils.web_utils import WebUtils
-from apps.monitor.constants import INSTANCE_MODULE
+from apps.monitor.constants import INSTANCE_MODULE, DEFAULT_PERMISSION
 from apps.monitor.models import MonitorInstance, MonitorObject, CollectConfig
 from apps.monitor.services.monitor_instance import InstanceSearch
 from apps.monitor.services.monitor_object import MonitorObjectService
-from apps.monitor.utils.system_mgmt_api import SystemMgmtUtils
 from apps.rpc.node_mgmt import NodeMgmt
 
 
@@ -41,22 +41,30 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
     )
     @action(methods=['get'], detail=False, url_path='(?P<monitor_object_id>[^/.]+)/list')
     def monitor_instance_list(self, request, monitor_object_id):
-        permission = SystemMgmtUtils.format_rules(INSTANCE_MODULE, monitor_object_id, request.user.rules)
+        permission = get_permission_rules(
+            request.user,
+            request.COOKIES.get("current_team"),
+            "monitor",
+            f"{INSTANCE_MODULE}.{monitor_object_id}",
+        )
+        qs = permission_filter(MonitorInstance, permission, team_key="monitorinstanceorganization__organization__in", id_key="id__in")
         page, page_size = request.GET.get("page", 1), request.GET.get("page_size", 10)
-
-        orgs = {i["id"] for i in request.user.group_list if i["name"] == "OpsPilotGuest"}
-        orgs.add(request.COOKIES.get("current_team"))
-
         data = MonitorObjectService.get_monitor_instance(
             int(monitor_object_id),
             int(page),
             int(page_size),
             request.GET.get("name"),
-            orgs,
-            request.user.is_superuser,
+            qs,
             bool(request.GET.get("add_metrics", False)),
-            permission
         )
+        # 如果有权限规则，则添加到数据中
+        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
+        for instance_info in data["results"]:
+            if instance_info["instance_id"] in inst_permission_map:
+                instance_info["permission"] = inst_permission_map[instance_info["instance_id"]]
+            else:
+                instance_info["permission"] = DEFAULT_PERMISSION
+
         return WebUtils.response_success(data)
 
     @swagger_auto_schema(
@@ -80,21 +88,31 @@ class MonitorInstanceVieSet(viewsets.ViewSet):
     @action(methods=['post'], detail=False, url_path='(?P<monitor_object_id>[^/.]+)/search')
     def monitor_instance_search(self, request, monitor_object_id):
 
-        permission = SystemMgmtUtils.format_rules(INSTANCE_MODULE, monitor_object_id, request.user.rules)
-
         monitor_obj = MonitorObject.objects.filter(id=monitor_object_id).first()
         if not monitor_obj:
             raise BaseAppException("Monitor object does not exist")
-        orgs = {i["id"] for i in request.user.group_list if i["name"] == "OpsPilotGuest"}
-        orgs.add(request.COOKIES.get("current_team"))
+
+        permission = get_permission_rules(
+            request.user,
+            request.COOKIES.get("current_team"),
+            "monitor",
+            f"{INSTANCE_MODULE}.{monitor_object_id}",
+        )
+        qs = permission_filter(MonitorInstance, permission, team_key="monitorinstanceorganization__organization__in", id_key="id__in")
+
         search_obj = InstanceSearch(
             monitor_obj,
-            dict(group_ids=orgs,
-                 is_superuser=request.user.is_superuser,
-                 **request.data),
-            permission=permission,
+            dict(**request.data),
+            qs=qs,
         )
         data = search_obj.search()
+        # 如果有权限规则，则添加到数据中
+        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
+        for instance_info in data["results"]:
+            if instance_info["instance_id"] in inst_permission_map:
+                instance_info["permission"] = inst_permission_map[instance_info["instance_id"]]
+            else:
+                instance_info["permission"] = DEFAULT_PERMISSION
         return WebUtils.response_success(data)
 
     @swagger_auto_schema(

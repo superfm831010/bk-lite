@@ -35,7 +35,7 @@ class InstanceViewSet(viewsets.ViewSet):
             required=["model_id"],
         ),
     )
-    @HasPermission("asset_list-View")
+    @HasPermission("asset_info-View")
     @action(methods=["post"], detail=False)
     def search(self, request):
         """
@@ -51,7 +51,7 @@ class InstanceViewSet(viewsets.ViewSet):
         model_permission_map = CmdbRulesFormatUtil.format_permission_map(rules=rules, model_id=model_id).get(model_id,
                                                                                                              {})
         inst_name_permission_map = model_permission_map.get("permission_map", {})
-        select_all = model_permission_map.get("select_all")
+        select_all = model_permission_map.get("select_all", True)
         inst_names = [] if select_all else list(inst_name_permission_map.keys())
 
         # 修改权限过滤逻辑：有权限的实例或者自己创建的实例 (OR关系)
@@ -81,7 +81,7 @@ class InstanceViewSet(viewsets.ViewSet):
             openapi.Parameter("id", openapi.IN_PATH, description="实例ID", type=openapi.TYPE_INTEGER),
         ],
     )
-    @HasPermission("asset_basic_information-View")
+    @HasPermission("asset_info-View")
     def retrieve(self, request, pk: str):
         data = InstanceManage.query_entity_by_id(int(pk))
         if not data:
@@ -130,7 +130,7 @@ class InstanceViewSet(viewsets.ViewSet):
             required=["model_id", "instance_info"],
         ),
     )
-    @HasPermission("asset_list-Add")
+    @HasPermission("asset_info-Add")
     def create(self, request):
         model_id = request.data.get("model_id")
         inst = InstanceManage.instance_create(
@@ -145,7 +145,7 @@ class InstanceViewSet(viewsets.ViewSet):
         operation_description="删除实例",
         manual_parameters=[openapi.Parameter("id", openapi.IN_PATH, description="实例ID", type=openapi.TYPE_INTEGER)],
     )
-    @HasPermission("asset_list-Delete")
+    @HasPermission("asset_info-Delete")
     def destroy(self, request, pk: int):
         instance = InstanceManage.query_entity_by_id(pk)
         if instance.get("_creator") != request.user.username:
@@ -174,7 +174,7 @@ class InstanceViewSet(viewsets.ViewSet):
             items=openapi.Schema(type=openapi.TYPE_INTEGER, description="实例ID"),
         ),
     )
-    @HasPermission("asset_list-Delete")
+    @HasPermission("asset_info-Delete")
     @action(detail=False, methods=["post"], url_path="batch_delete")
     def instance_batch_delete(self, request):
         instances = InstanceManage.query_entity_by_ids(request.data)
@@ -211,7 +211,7 @@ class InstanceViewSet(viewsets.ViewSet):
             description="实例信息",
         ),
     )
-    @HasPermission("asset_list-Edit,asset_basic_information-Edit")
+    @HasPermission("asset_info-Edit")
     def partial_update(self, request, pk: int):
         instance = InstanceManage.query_entity_by_id(pk)
         if instance.get("_creator") != request.user.username:
@@ -249,7 +249,7 @@ class InstanceViewSet(viewsets.ViewSet):
             required=["inst_ids", "update_data"],
         ),
     )
-    @HasPermission("asset_list-Edit")
+    @HasPermission("asset_info-Edit")
     @action(detail=False, methods=["post"], url_path="batch_update")
     def instance_batch_update(self, request):
         instances = InstanceManage.query_entity_by_ids(request.data["inst_ids"])
@@ -301,7 +301,7 @@ class InstanceViewSet(viewsets.ViewSet):
             ],
         ),
     )
-    @HasPermission("asset_list-Add,asset_relationships-Add")
+    @HasPermission("asset_info-Add Associate")
     @action(detail=False, methods=["post"], url_path="association")
     def instance_association_create(self, request):
         dst_model_id = request.data.get("dst_model_id")
@@ -342,7 +342,7 @@ class InstanceViewSet(viewsets.ViewSet):
         manual_parameters=[
             openapi.Parameter("id", openapi.IN_PATH, description="实例关联ID", type=openapi.TYPE_INTEGER)],
     )
-    @HasPermission("asset_list-Delete,asset_relationships-Delete")
+    @HasPermission("asset_info-Delete Associate")
     @action(detail=False, methods=["delete"], url_path="association/(?P<id>.+?)")
     def instance_association_delete(self, request, id: int):
         # rules = rules = get_cmdb_rules(request=request, permission_key=PERMISSION_INSTANCES)
@@ -375,7 +375,7 @@ class InstanceViewSet(viewsets.ViewSet):
         methods=["get"],
         url_path="association_instance_list/(?P<model_id>.+?)/(?P<inst_id>.+?)",
     )
-    @HasPermission("asset_list-View,asset_relationships-View")
+    @HasPermission("asset_info-View")
     def instance_association_instance_list(self, request, model_id: str, inst_id: int):
         instance = InstanceManage.query_entity_by_id(int(inst_id))
         if instance.get("_creator") != request.user.username:
@@ -407,7 +407,7 @@ class InstanceViewSet(viewsets.ViewSet):
         methods=["get"],
         url_path="instance_association/(?P<model_id>.+?)/(?P<inst_id>.+?)",
     )
-    @HasPermission("asset_relationships-View,asset_list-View")
+    @HasPermission("asset_info-View")
     def instance_association(self, request, model_id: str, inst_id: int):
         instance = InstanceManage.query_entity_by_id(int(inst_id))
         if instance.get("_creator") != request.user.username:
@@ -435,7 +435,7 @@ class InstanceViewSet(viewsets.ViewSet):
             )
         ],
     )
-    @HasPermission("asset_list-Add")
+    @HasPermission("asset_info-Add")
     @action(methods=["get"], detail=False, url_path=r"(?P<model_id>.+?)/download_template")
     def download_template(self, request, model_id):
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -466,7 +466,7 @@ class InstanceViewSet(viewsets.ViewSet):
             required=["file"],
         ),
     )
-    @HasPermission("asset_list-Add")
+    @HasPermission("asset_info-Add")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import")
     def inst_import(self, request, model_id):
         result = InstanceManage.inst_import(
@@ -499,7 +499,7 @@ class InstanceViewSet(viewsets.ViewSet):
             required=["file"],
         ),
     )
-    @HasPermission("asset_list-Add")
+    @HasPermission("asset_info-Edit")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import_support_edit")
     def inst_import_support_edit(self, request, model_id):
         add_result, update_result = InstanceManage.inst_import_support_edit(
@@ -528,7 +528,7 @@ class InstanceViewSet(viewsets.ViewSet):
             items=openapi.Schema(type=openapi.TYPE_INTEGER, description="实例ID"),
         ),
     )
-    @HasPermission("asset_list-View")
+    @HasPermission("asset_info-View")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_export")
     def inst_export(self, request, model_id):
         # TODO 权限补充上创建人是自己的条件
@@ -587,7 +587,7 @@ class InstanceViewSet(viewsets.ViewSet):
         methods=["get"],
         url_path=r"topo_search/(?P<model_id>.+?)/(?P<inst_id>.+?)",
     )
-    @HasPermission("asset_list-View,asset_basic_information-View,asset_relationships-View")
+    @HasPermission("asset_info-View")
     def topo_search(self, request, model_id: str, inst_id: int):
         instance = InstanceManage.query_entity_by_id(inst_id)
         if not instance:
@@ -619,7 +619,7 @@ class InstanceViewSet(viewsets.ViewSet):
         detail=False,
         url_path=r"(?P<model_id>.+?)/show_field/settings",
     )
-    @HasPermission("asset_list-View")
+    @HasPermission("asset_info-View")
     def create_or_update(self, request, model_id):
         data = dict(
             model_id=model_id,
@@ -630,7 +630,7 @@ class InstanceViewSet(viewsets.ViewSet):
         return WebUtils.response_success(result)
 
     @action(methods=["get"], detail=False, url_path=r"(?P<model_id>.+?)/show_field/detail")
-    @HasPermission("asset_list-View")
+    @HasPermission("asset_info-View")
     def get_info(self, request, model_id):
         result = InstanceManage.get_info(model_id, request.user.username)
         return WebUtils.response_success(result)
@@ -640,7 +640,7 @@ class InstanceViewSet(viewsets.ViewSet):
         operation_description="模型实例数量",
     )
     @action(methods=["get"], detail=False, url_path=r"model_inst_count")
-    @HasPermission("asset_list-View,view_list-View")
+    @HasPermission("asset_info-View")
     def model_inst_count(self, request):
         # TODO 权限补充上创建人是自己的条件
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_INSTANCES)
@@ -649,7 +649,7 @@ class InstanceViewSet(viewsets.ViewSet):
         return WebUtils.response_success(result)
 
     @action(methods=["GET"], detail=False)
-    @HasPermission("asset_list-View")
+    @HasPermission("asset_info-View")
     def list_proxys(self, requests, *args, **kwargs):
         """
         查询云区域数据

@@ -30,6 +30,8 @@ class ChunkHelper(ChatServerHelper):
             "query": search_text,
         }
         res = cls.post_chat_server(query, url)
+        if not res:
+            return {"count": 0, "documents": []}
         count_res = {"count": 0}
         if get_count:
             count_url = f"{settings.METIS_SERVER_URL}/api/rag/count_index_document"
@@ -54,7 +56,7 @@ class ChunkHelper(ChatServerHelper):
             "knowledge_base_id": knowledge_base_id,
             "knowledge_id": chunk_obj["knowledge_id"],
             "embed_model_base_url": embed_config.get("base_url", ""),
-            "embed_model_api_key": embed_config.get("api_key", ""),
+            "embed_model_api_key": embed_config.get("api_key", "") or " ",
             "embed_model_name": embed_config.get("model", embed_model_name),
             "chunk_mode": "full",
             "chunk_size": 9999,

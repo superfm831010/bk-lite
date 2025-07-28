@@ -65,6 +65,7 @@ const Alert: React.FC = () => {
       pageSize: number;
       showChart: boolean;
       myAlarms: boolean;
+      stateFilters: string[];
     }>
   ) => {
     localStorage.setItem(
@@ -99,10 +100,13 @@ const Alert: React.FC = () => {
       rangePickerVaule: null,
     })?.current || {};
 
-  const [filters, setFilters] = useState<FiltersConfig>({
-    level: [],
-    state: [],
-    alarm_source: [],
+  const [filters, setFilters] = useState<FiltersConfig>(() => {
+    const { stateFilters } = getSettings();
+    return {
+      level: [],
+      state: stateFilters || ['pending', 'processing'],
+      alarm_source: [],
+    };
   });
 
   const [showChart, setShowChart] = useState<boolean>(() => {
@@ -284,6 +288,10 @@ const Alert: React.FC = () => {
         ...pre,
       };
     });
+
+    if (field === 'state') {
+      saveSettings({ stateFilters: checkedValues });
+    }
   };
 
   const clearFilters = (field: keyof FiltersConfig) => {

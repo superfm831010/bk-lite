@@ -1,39 +1,57 @@
 'use client';
-import React from 'react';
-import Link from 'next/link';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import { usePathname, useSearchParams, useRouter } from 'next/navigation';
-import { Spin, Modal } from 'antd';
+import {
+  useSearchParams,
+  useRouter
+} from 'next/navigation';
+import { Spin, Modal, Menu, Button } from 'antd';
 import Icon from '@/components/icon';
-import { ArrowLeftOutlined } from '@ant-design/icons';
-import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import { AnomalyTrainData, AsideProps } from '@/app/mlops/types/manage'
+import { ArrowLeftOutlined, MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons';
+import {
+  AsideProps
+} from '@/app/mlops/types/manage'
 import sideMenuStyle from './index.module.scss';
+import { MenuItemType } from 'antd/es/menu/interface';
 const { confirm } = Modal;
 
 const Aside = ({
-  children,
   menuItems,
   loading,
   isChange,
   onChange,
   changeFlag }: AsideProps) => {
-  const pathname = usePathname();
   const { t } = useTranslation();
   const searchParams = useSearchParams();
+  const file_id = searchParams.get('id') || '';
   const folder_id = searchParams.get('folder_id') || '';
   const folder_name = searchParams.get('folder_name') || '';
   const description = searchParams.get('description');
   const activeTap = searchParams.get('activeTap');
   const router = useRouter();
+  const [collapsed, setCollapsed] = useState(false);
+
+  const selectKey = useMemo(() => {
+    return [file_id];
+  }, [searchParams])
+
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
+  };
 
   const buildUrlWithParams = (id: number) => {
     return `?id=${id}&folder_id=${folder_id}&folder_name=${folder_name}&description=${description}&activeTap=${activeTap}`;
   };
 
-  const isActive = (id: number): boolean => {
-    if (pathname === null) return false;
-    return searchParams.get('id') === id.toString();
+  const renderMenuItems: () => MenuItemType[] = () => {
+    return menuItems.map((item: any) => {
+      return {
+        key: item.id?.toString(),
+        label: item.name,
+        title: item.name,
+        icon: <Icon type={'yingpan'} className="!text-xl pr-1.5" />
+      }
+    })
   };
 
   const goBack = (e: any) => {
@@ -76,8 +94,7 @@ const Aside = ({
     })
   };
 
-  const onClick = async (e: any, item: AnomalyTrainData) => {
-    e.preventDefault();
+  const onMenuItemClick = async (item: any) => {
     if (isChange) {
       return showConfirm(item.id)
     }
@@ -85,42 +102,81 @@ const Aside = ({
     router.push(buildUrlWithParams(item.id));
   };
 
+  // 动态计算容器宽度和样式
+  const asideStyle: React.CSSProperties = {
+    width: collapsed ? '80px' : '200px',
+    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden'
+  };
+
+  const navStyle: React.CSSProperties = {
+    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden'
+  };
+
+  const menuStyle: React.CSSProperties = {
+    width: collapsed ? 80 : 190,
+    maxWidth: collapsed ? 80 : 190,
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+    border: 0
+  };
+
   return (
     <>
-      <aside className={`w-[216px] pr-4 flex flex-shrink-0 flex-col h-full ${sideMenuStyle.sideMenu} font-sans`}>
-        <div className={`p-4 rounded-md mb-3 h-[80px] ${sideMenuStyle.introduction}`}>
-          {children}
-        </div>
-        <nav className={`flex-1 relative rounded-md ${sideMenuStyle.nav}`}>
+      <aside
+        className={`relative mr-4 flex flex-shrink-0 flex-col h-full ${sideMenuStyle.sideMenu} font-sans`}
+        style={asideStyle}
+      >
+        <button
+          className="absolute z-10 top-4 left-3 flex items-center content-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
+          onClick={goBack}
+          style={{
+            transition: 'all 0.2s ease',
+            zIndex: 20
+          }}
+        >
+          <ArrowLeftOutlined className="mr-2" />
+        </button>
+        <nav
+          className={`flex-1 pt-[54px] relative rounded-md ${sideMenuStyle.nav}`}
+          style={navStyle}
+        >
           {loading ? (
             <div className="min-h-[300px] flex items-center justify-center">
               <Spin spinning={loading}></Spin>
             </div>
           ) : (
-            <ul className="p-3 overflow-auto max-h-[65vh]">
-              {menuItems.map((item: any) => (
-                <li key={item.id} className={`rounded-md mb-1 ${isActive(item.id) ? `${sideMenuStyle.active} bg-blue-50 text-blue-600` : ''}`}>
-                  <Link
-                    href={buildUrlWithParams(item.id)}
-                    className="group flex items-center overflow-hidden h-9 rounded-md py-2 px-3"
-                    onClick={(e) => onClick(e, item)}
-                  >
-                    <Icon type={'chakanshuji'} className="text-xl pr-1.5" />
-                    <EllipsisWithTooltip
-                      text={item.name}
-                      className={`w-[100px] overflow-hidden text-ellipsis whitespace-nowrap}`}
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <>
+              <Menu
+                items={renderMenuItems()}
+                inlineCollapsed={collapsed}
+                selectedKeys={selectKey}
+                style={menuStyle}
+                mode='inline'
+                onClick={({ key, domEvent }) => {
+                  domEvent.preventDefault();
+                  const item = menuItems.find((item: any) => item.id.toString() === key);
+                  if (item && item.id.toString() !== file_id) {
+                    onMenuItemClick(item);
+                  }
+                }}
+              />
+              <Button
+                color="default" variant="link"
+                onClick={toggleCollapsed}
+                style={{
+                  marginBottom: 16,
+                  transition: 'all 0.3s ease',
+                  width: collapsed ? '40px' : 'auto',
+                }}
+                className='absolute left-3 bottom-2'
+              >
+                {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              </Button>
+            </>
           )}
-          <button
-            className="absolute bottom-4 left-4 flex items-center content-center py-2 px-4 rounded-md text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600"
-            onClick={goBack}
-          >
-            <ArrowLeftOutlined className="mr-2" />
-          </button>
         </nav>
       </aside>
     </>

@@ -1,12 +1,24 @@
 {
-  "common": {
+  "playground-common": {
     "functionExper": "Functional Experience",
     "or": "Or",
     "localUpload": "Local Upload",
     "clickTest": "Click to test",
     "useScenario": "Application Scenarios",
-    "selectMsg": "Please select a sample document",
+    "selectSampleMsg": "Please select a sample document",
     "uploadError": "Wrong type of file uploaded",
-    "uploadMsg": "Please select a file or upload a file locally"
+    "uploadMsg": "Please select a file or upload a file locally",
+    "url": "URL",
+    "active": "online now",
+    "inactive": "not yet on line",
+    "onlineStatus": "status"
+  },
+  "manage": {
+    "delCapability": "Deltee Capability",
+    "delCapabilityText": "Are you sure you want to delete this capability demo?",
+    "manageTitle": "Portal Management",
+    "description": "All categories and all capability demonstration menus in the management portal.",
+    "delCategory": "Are you sure you want to delete this category?",
+    "parentCategory": "Parent category"
   }
 }

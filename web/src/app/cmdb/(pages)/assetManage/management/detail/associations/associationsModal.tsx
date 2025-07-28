@@ -156,6 +156,21 @@ const AssociationsModal = forwardRef<AssoModalRef, AssoModalProps>(
               <Select
                 allowClear
                 showSearch
+                filterOption={(input, option) => {
+                  if (option?.label && typeof option.label === 'string') {
+                    return option.label
+                      .toLowerCase()
+                      .includes(input.toLowerCase());
+                  }
+                  if (option?.options) {
+                    return option.options.some((subOption: any) =>
+                      subOption.label
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    );
+                  }
+                  return false;
+                }}
                 options={groups.map((item) => ({
                   label: item.classification_name,
                   title: item.classification_name,

@@ -3,66 +3,26 @@ import {
   useEffect,
   useState,
   useMemo,
-  memo,
-  useCallback
+  useCallback,
+  useRef
 } from "react";
 import { useSearchParams } from 'next/navigation';
 import { cloneDeep } from "lodash";
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { useTranslation } from "@/utils/i18n";
-import { TYPE_CONTENT } from "@/app/mlops/constants";
 import useMlopsManageApi from "@/app/mlops/api/manage";
 import {
   Button,
   message,
   Spin,
-  TablePaginationConfig,
-  Tag
 } from "antd";
 import Aside from "./aside";
-import Icon from '@/components/icon';
 import LineChart from "@/app/mlops/components/charts/lineChart";
 import CustomTable from "@/components/custom-table";
-import { ColumnItem, TableDataItem, Pagination, } from '@/app/mlops/types';
-import { AnomalyTrainData } from '@/app/mlops/types/manage';
+import PermissionWrapper from '@/components/permission';
+import { ColumnItem, TableDataItem, } from '@/app/mlops/types';
+import { AnomalyTrainData, AnnotationData } from '@/app/mlops/types/manage';
 import sideMenuStyle from './aside/index.module.scss';
-
-interface AnnotationData {
-  timestamp: number;
-  value: number;
-  label: number;
-  index?: number;
-  [key: string]: unknown;
-}
-
-const AnnotationIntro = memo(() => {
-  const searchParams = useSearchParams();
-  const folder_name = searchParams.get('folder_name');
-  return (
-    <div className="flex h-[58px] flex-row items-center">
-      <Icon
-        type="shiyongwendang"
-        className="h-16 w-16"
-        style={{ height: '36px', width: '36px', color: 'blue' }}
-      ></Icon>
-      <h1 className="ml-2 text-center truncate">{folder_name}</h1>
-    </div>
-  );
-});
-AnnotationIntro.displayName = 'AnnotationIntro';
-
-const Topsection = memo(() => {
-  const { t } = useTranslation();
-  return (
-    <div className="flex flex-col h-[90px] p-4 overflow-hidden">
-      <h1 className="text-lg truncate w-full mb-1">{t('datasets.title')}</h1>
-      <p className="text-xs truncate w-full min-w-[1000px] mt-[8px]">
-        {t('datasets.detail')}
-      </p>
-    </div>
-  );
-});
-Topsection.displayName = 'Topsection';
 
 const AnnotationPage = () => {
   const searchParams = useSearchParams();
@@ -77,25 +37,25 @@ const AnnotationPage = () => {
     chartLoading: false,
     saveLoading: false,
   });
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  // const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isChange, setIsChange] = useState<boolean>(false);
   const [flag, setFlag] = useState<boolean>(true);
-  const [pagination, setPagination] = useState<Pagination>({
-    current: 1,
-    total: 0,
-    pageSize: 20,
-  });
   const [timeline, setTimeline] = useState<any>({
     startIndex: 0,
     endIndex: 0,
   });
+  const [tableScrollHeight, setTableScrollHeight] = useState<number>(400);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [chartData, setChartData] = useState<AnnotationData[]>([]);
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const tagsData = ['is_train_data', 'is_val_data', 'is_test_data'];
+  // const tagsData = ['is_train_data', 'is_val_data', 'is_test_data'];
 
   const colmuns: ColumnItem[] = useMemo(() => {
     return [
       {
-        title: t('common.time'),
+        title: t('mlops-common.time'),
         key: 'timestamp',
         dataIndex: 'timestamp',
         width: 80,
@@ -125,42 +85,55 @@ const AnnotationPage = () => {
         hidden: true
       },
       {
-        title: t('common.action'),
+        title: t('mlops-common.action'),
         key: 'action',
         dataIndex: 'action',
         align: 'center',
         width: 30,
         render: (_, record) => {
           return (
-            <Button color="danger" variant="link" onClick={() => handleDelete(record)}>
-              {t('common.delete')}
-            </Button>
+            <PermissionWrapper requiredPermissions={['Delete']}>
+              <Button color="danger" variant="link" onClick={() => handleDelete(record)}>
+                {t('common.delete')}
+              </Button>
+            </PermissionWrapper>
           )
         }
       }
     ];
   }, [t, convertToLocalizedTime]);
 
+  // 动态计算表格滚动高度
+  const calculateTableHeight = useCallback(() => {
+    if (tableContainerRef.current) {
+      const containerElement = tableContainerRef.current;
+      const containerHeight = containerElement.clientHeight;
+
+      // 计算需要减去的各个部分高度
+      const buttonHeight = 60;
+      const tableHeaderHeight = 40;
+      const padding = 16;
+
+      // 计算最终的表格内容滚动高度
+      const calculatedHeight = containerHeight - buttonHeight - tableHeaderHeight - padding;
+      const tableHeight = Math.max(150, calculatedHeight);
+
+      setTableScrollHeight(tableHeight);
+    } else {
+      const viewportHeight = window.innerHeight;
+      const fallbackHeight = Math.max(200, viewportHeight - 300);
+      setTableScrollHeight(fallbackHeight);
+    }
+  }, []);
+
   const pagedData = useMemo(() => {
     if (!tableData.length) return [];
-    return tableData.slice(
-      (pagination.current! - 1) * pagination.pageSize!,
-      pagination.current! * pagination.pageSize!
-    );
-  }, [tableData, pagination.current, pagination.pageSize]);
+    return tableData;
+  }, [tableData]);
 
   useEffect(() => {
     getCurrentFileData();
   }, [searchParams]);
-
-  useEffect(() => {
-    setPagination((prev) => {
-      return {
-        ...prev,
-        total: tableData.length
-      }
-    });
-  }, [tableData]);
 
   useEffect(() => {
     if (currentFileData.length && flag) {
@@ -171,6 +144,121 @@ const AnnotationPage = () => {
       setFlag(false);
     }
   }, [currentFileData]);
+
+  // 监听容器高度变化
+  useEffect(() => {
+    // 延迟初始计算，确保DOM渲染完成
+    const timeoutId = setTimeout(calculateTableHeight, 300);
+
+    const handleResize = () => {
+      setTimeout(calculateTableHeight, 100);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // 使用 ResizeObserver 监听容器大小变化
+    let resizeObserver: ResizeObserver | null = null;
+
+    if (tableContainerRef.current && window.ResizeObserver) {
+      resizeObserver = new ResizeObserver(() => {
+        // 防抖处理，避免频繁计算
+        setTimeout(calculateTableHeight, 50);
+      });
+      resizeObserver.observe(tableContainerRef.current);
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', handleResize);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, [calculateTableHeight]);
+
+  // 当数据加载完成后重新计算高度
+  useEffect(() => {
+    if (!loadingState.loading && tableData.length > 0) {
+      setTimeout(calculateTableHeight, 100);
+    }
+  }, [loadingState.loading, tableData.length, calculateTableHeight]);
+
+  // 监听侧边栏宽度变化，管理图表动画状态
+  useEffect(() => {
+    let observer: MutationObserver | null = null;
+
+    const handleAnimationStart = () => {
+      if (!isAnimating) {
+        setIsAnimating(true);
+        setChartData([]);
+        setLoadingState(prev => ({ ...prev, chartLoading: true }));
+
+        // 清除之前的定时器
+        if (animationTimeoutRef.current) {
+          clearTimeout(animationTimeoutRef.current);
+        }
+      }
+    };
+
+    const handleAnimationEnd = () => {
+      animationTimeoutRef.current = setTimeout(() => {
+        setIsAnimating(false);
+        setChartData(currentFileData);
+        setLoadingState(prev => ({ ...prev, chartLoading: false }));
+        calculateTableHeight();
+      }, 100);
+    };
+
+    if (window.MutationObserver) {
+      observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+            const target = mutation.target as HTMLElement;
+            // 检查是否是侧边栏的宽度变化
+            if (target.tagName === 'ASIDE' && target.style.transition && target.style.transition.includes('width')) {
+              handleAnimationStart();
+
+              // 监听过渡结束事件
+              const onTransitionEnd = (e: TransitionEvent) => {
+                if (e.propertyName === 'width') {
+                  handleAnimationEnd();
+                  target.removeEventListener('transitionend', onTransitionEnd);
+                }
+              };
+
+              target.addEventListener('transitionend', onTransitionEnd);
+            }
+          }
+        });
+      });
+
+      // 观察侧边栏容器
+      const asideElement = document.querySelector('aside');
+      if (asideElement) {
+        observer.observe(asideElement, {
+          attributes: true,
+          attributeFilter: ['style'],
+          subtree: false
+        });
+      }
+    }
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, [currentFileData, calculateTableHeight, isAnimating]);
+
+  // 初始化图表数据
+  useEffect(() => {
+    if (!isAnimating) {
+      setChartData(currentFileData);
+    }
+  }, [currentFileData, isAnimating]);
 
   const handleLabelData = useCallback((data: any[], points: number[] | undefined) => {
     const _data = cloneDeep(data).map((item, index) => ({
@@ -202,12 +290,7 @@ const AnnotationPage = () => {
         dataset: folder_id as string
       });
       const data = await getAnomalyTrainDataInfo(id as string, true, true);
-      const { is_train_data, is_val_data, is_test_data } = data;
-      const activeTypes = Object.entries({ is_train_data, is_val_data, is_test_data })
-        .filter(([, value]) => value === true)
-        .map(([key]) => key);
       handleLabelData(data?.train_data, data?.metadata?.anomaly_point);
-      setSelectedTags(activeTypes);
       setMenuItems(fileList);
     } catch (e) {
       console.log(e);
@@ -268,16 +351,6 @@ const AnnotationPage = () => {
     }
   }, [currentFileData]);
 
-  const handleChange = (value: TablePaginationConfig) => {
-    setPagination((prev) => {
-      return {
-        current: value.current as number,
-        pageSize: value.pageSize as number,
-        total: prev.total as number,
-      }
-    })
-  };
-
   const handleDelete = useCallback((record: ColumnItem) => {
     setIsChange(true);
     setLoadingState(prev => ({ ...prev, chartLoading: true }));
@@ -297,18 +370,11 @@ const AnnotationPage = () => {
     setLoadingState(prev => ({ ...prev, saveLoading: true }));
     const id = searchParams.get('id');
     try {
-      if (!selectedTags.length) {
-        message.error(t(`datasets.selectWarn`));
-        return;
-      }
       const points = tableData.map(item => item.index);
       const params = {
         metadata: {
           anomaly_point: points
         },
-        is_train_data: selectedTags.includes('is_train_data'),
-        is_val_data: selectedTags.includes('is_val_data'),
-        is_test_data: selectedTags.includes('is_test_data')
       }
       await labelingData(id as string, params);
       message.success(t('datasets.saveSuccess'));
@@ -331,15 +397,17 @@ const AnnotationPage = () => {
     setTimeline(value);
   };
 
-  const handleTagChange = (tag: string, checked: boolean) => {
-    if (!isChange) setIsChange(true);
-    const nextSelectedTag = checked ? [...selectedTags, tag] : selectedTags.filter((t) => t !== tag);
-    setSelectedTags(nextSelectedTag);
-  };
-
   return (
     <div className={`flex w-full h-full text-sm ${sideMenuStyle.sideMenuLayout} grow`}>
-      <div className="w-full flex grow flex-1 h-full">
+      <div
+        className="w-full flex grow flex-1 h-full"
+        style={{
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          willChange: 'width',
+          position: 'relative',
+          height: '100%',
+        }}
+      >
         <Aside
           loading={loadingState.loading}
           menuItems={menuItems}
@@ -347,57 +415,100 @@ const AnnotationPage = () => {
           onChange={(value: boolean) => setIsChange(value)}
           changeFlag={(value: boolean) => setFlag(value)}
         >
-          <AnnotationIntro />
         </Aside>
-        <section className="flex-1 flex flex-col overflow-hidden">
-          <div className={`mb-4 w-full rounded-md ${sideMenuStyle.sectionContainer}`}>
-            <Topsection />
-          </div>
-          <div className={`pt-4 pr-4 flex-1 rounded-md overflow-auto ${sideMenuStyle.sectionContainer} ${sideMenuStyle.sectionContext}`}>
+        <section
+          className="flex-1 flex flex-col overflow-hidden"
+          style={{
+            transition: 'flex 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'flex',
+            height: '100%',
+          }}
+        >
+          <div
+            className={`pt-4 pr-4 flex-1 rounded-md overflow-auto ${sideMenuStyle.sectionContainer} ${sideMenuStyle.sectionContext}`}
+            style={{
+              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'width',
+              height: '100%',
+            }}
+          >
             <Spin className="w-full" spinning={loadingState.chartLoading}>
-              <div className="flex justify-end gap-2 mb-4">
-                <div>
-                  <span className="mr-2">文件类型: </span>
-                  {tagsData.map((tag) => (
-                    <Tag.CheckableTag
-                      className={`h-full content-center`}
-                      key={tag}
-                      checked={selectedTags.includes(tag)}
-                      style={{
-                        backgroundColor: selectedTags.includes(tag) ? '#1890ff' : '',
-                        color: selectedTags.includes(tag) ? `var(--color-secondary)` : `var(--color-text-1)`,
-                      }}
-                      onChange={(checked) => handleTagChange(tag, checked)}
-                    >
-                      {t(`datasets.${TYPE_CONTENT[tag]}`)}
-                    </Tag.CheckableTag>
-                  ))}
+              <div
+                className="flex justify-between"
+                style={{
+                  transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  height: `calc(100vh - 120px)`,
+                  minHeight: `calc(100vh - 120px)`,
+                  transform: 'translateZ(0)',
+                  willChange: 'width',
+                  backfaceVisibility: 'hidden',
+                }}
+              >
+                <div className="w-[74%]">
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      // 在动画期间禁用pointer events提升性能
+                      pointerEvents: isAnimating ? 'none' : 'auto',
+                      // 启用硬件加速
+                      transform: 'translateZ(0)',
+                      backfaceVisibility: 'hidden',
+                    }}
+                  >
+                    <LineChart
+                      key="main-line-chart"
+                      data={chartData}
+                      timeline={timeline}
+                      showDimensionTable
+                      showDimensionFilter
+                      onXRangeChange={onXRangeChange}
+                      onTimeLineChange={onTimeLineChange}
+                      onAnnotationClick={onAnnotationClick}
+                    />
+                  </div>
                 </div>
-                <Button className="mr-4" onClick={handleCancel}>{t('common.cancel')}</Button>
-                <Button type="primary" loading={loadingState.saveLoading} onClick={handleSava}>{t('common.save')}</Button>
-              </div>
-              <div className="flex justify-between">
-                <div className="w-[74%]" style={{ height: `calc(100vh - 270px)` }}>
-                  <LineChart
-                    data={currentFileData}
-                    timeline={timeline}
-                    showDimensionTable
-                    showDimensionFilter
-                    onXRangeChange={onXRangeChange}
-                    onTimeLineChange={onTimeLineChange}
-                    onAnnotationClick={onAnnotationClick}
-                  />
-                </div>
-                <div className="w-[25%] anomaly-container" style={{ height: `calc(100vh - 240px)` }}>
-                  <CustomTable
-                    size="small"
-                    rowKey="timestamp"
-                    scroll={{ y: 'calc(100vh - 340px)' }}
-                    columns={colmuns}
-                    dataSource={pagedData}
-                    pagination={pagination}
-                    onChange={handleChange}
-                  />
+                <div
+                  className="w-[25%] min-w-[285px] anomaly-container relative"
+                  ref={tableContainerRef}
+                  style={{
+                    height: `calc(100vh - 120px)`,
+                    minHeight: `calc(100vh - 120px)`,
+                    maxHeight: `calc(100vh - 120px)`,
+                    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    willChange: 'width',
+                    overflow: 'hidden',
+                    position: 'relative',
+                  }}
+                >
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    pointerEvents: isAnimating ? 'none' : 'auto',
+                    transform: 'translateZ(0)',
+                    backfaceVisibility: 'hidden',
+                  }}>
+                    <CustomTable
+                      virtual
+                      size="small"
+                      rowKey="timestamp"
+                      scroll={{ y: tableScrollHeight }}
+                      columns={colmuns}
+                      dataSource={pagedData}
+                    />
+                    <div className="absolute bottom-0 right-0 flex justify-end gap-2 mb-4">
+                      <Button className="mr-4" onClick={handleCancel}>{t('common.cancel')}</Button>
+                      <PermissionWrapper requiredPermissions={['Edit']}>
+                        <Button type="primary" loading={loadingState.saveLoading} onClick={handleSava}>{t('common.save')}</Button>
+                      </PermissionWrapper>
+                    </div>
+                  </div>
                 </div>
               </div>
             </Spin>

@@ -8,6 +8,7 @@ import styles from './index.module.scss';
 import { SelectTool } from '@/app/opspilot/types/tool';
 import { useSkillApi } from '@/app/opspilot/api/skill';
 import OperateModal from '@/components/operate-modal';
+import EditablePasswordField from '@/components/dynamic-form/editPasswordField';
 
 interface ToolSelectorProps {
   defaultTools: SelectTool[];
@@ -176,7 +177,7 @@ const ToolSelector: React.FC<ToolSelectorProps> = ({ defaultTools, onChange }) =
                     rules={[{ required: form.getFieldValue(['kwargs', name, 'isRequired']), message: `${t('common.inputMsg')}${form.getFieldValue(['kwargs', name, 'key'])}` }]}
                   >
                     {
-                      form.getFieldValue(['kwargs', name, 'type']) === 'text' ? <Input /> : <Input.Password placeholder="input password" />
+                      form.getFieldValue(['kwargs', name, 'type']) === 'text' ? <Input /> : <EditablePasswordField />
                     }
                   </Form.Item>
                 ))}

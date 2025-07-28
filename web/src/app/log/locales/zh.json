@@ -130,7 +130,16 @@
       "queryTime": "查询时间",
       "timeConsumption": "查询耗时",
       "receiver": "接收器",
-      "grammarExplanation": "语法说明"
+      "grammarExplanation": "语法说明",
+      "list": "列表",
+      "terminal": "终端",
+      "listTotal": "列表总条数",
+      "exit": "退出全屏",
+      "full": "全屏展示",
+      "clearLogs": "清空日志",
+      "enableScrolling": "开启自动滚动",
+      "stopScrolling": "关闭自动滚动",
+      "selectGroup": "请选择分组"
     },
     "integration": {
       "interval": "间隔",

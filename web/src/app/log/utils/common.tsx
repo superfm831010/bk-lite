@@ -1,5 +1,8 @@
 import { CascaderItem, SubGroupItem } from '@/app/log/types';
 import { Group } from '@/types';
+import { DetailItem, LogStream } from '@/app/log/types/search';
+import dayjs from 'dayjs';
+import React from 'react';
 
 // 获取头像随机色
 export const getRandomColor = () => {
@@ -82,4 +85,44 @@ export const showGroupName = (
     groupNames.push(findGroupNameById(organizationList, Number(el)));
   });
   return groupNames.filter((item) => !!item).join(',') || '--';
+};
+
+// 日志搜索数据处理
+export const aggregateLogs = (logs: LogStream[]) => {
+  try {
+    const timeMap = new Map<string, { value: number; details: DetailItem[] }>();
+
+    logs.forEach((log) => {
+      log.timestamps.forEach((timestamp, index) => {
+        const value = log.values[index];
+
+        if (!timeMap.has(timestamp)) {
+          timeMap.set(timestamp, {
+            value: 0,
+            details: [],
+          });
+        }
+
+        const entry = timeMap.get(timestamp)!;
+        entry.value += value;
+        entry.details.push({
+          stream: log.fields?._stream || '--',
+          value: value,
+        });
+      });
+    });
+
+    return Array.from(timeMap.entries()).map(([time, { value, details }]) => ({
+      time: dayjs(time).valueOf(),
+      value,
+      detail: details,
+    }));
+  } catch {
+    return [];
+  }
+};
+
+// 数组转义
+export const escapeArrayToJson = (arr: React.Key[]) => {
+  return JSON.stringify(arr).replace(/"/g, '\\"');
 };
