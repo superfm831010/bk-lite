@@ -43,7 +43,7 @@
     },
     {
       "title": "能力发布",
-      "icon": "fabu1",
+      "icon": "fabu",
       "url": "/mlops/model-release",
       "name": "train_tasks",
       "children": [

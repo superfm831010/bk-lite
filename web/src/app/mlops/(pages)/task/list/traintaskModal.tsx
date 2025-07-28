@@ -32,7 +32,6 @@ interface ModalState {
   isOpen: boolean;
   type: string;
   title: string;
-  formData: TrainJob | null
 }
 
 const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptions, activeTag, onSuccess }, ref) => {
@@ -43,8 +42,8 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
     isOpen: false,
     type: 'add',
     title: 'addtask',
-    formData: null
   });
+  const [formData, setFormData] = useState<TrainJob | null>(null);
   const [loadingState, setLoadingState] = useState<{
     confirm: boolean,
     dataset: boolean,
@@ -68,25 +67,24 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, title, form }) => {
-      console.log(form)
-      setLoadingState((prev) => ({ ...prev, select: false }))
+      setLoadingState((prev) => ({ ...prev, select: false }));
+      setFormData(form);
       setModalState({
         isOpen: true,
         type,
         title: title as string,
-        formData: form
       })
     }
   }));
 
   useEffect(() => {
-    if (modalState.isOpen) {
-      initializeForm();
+    if (formData && modalState.isOpen) {
+      initializeForm(formData);
     }
-  }, [modalState.isOpen]);
+  }, [modalState.isOpen, formData]);
 
 
-  const initializeForm = useCallback(async () => {
+  const initializeForm = useCallback(async (formData: TrainJob) => {
     const defaultParams: Record<string, any> = {};
     ALGORITHMS_PARAMS['RandomForest'].forEach(item => {
       defaultParams[item.name] = item.default;
@@ -99,9 +97,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
       formRef.current.setFieldsValue({
         hyperopt_config: defaultParams
       });
-    } else if (modalState.formData) {
-      const { formData } = modalState;
-
+    } else if (formData) {
       const immediateData = {
         name: formData.name,
         type: formData.type,
@@ -112,11 +108,11 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
 
       formRef.current.setFieldsValue(immediateData);
       setIsShow(true);
-      handleAsyncDataLoading(formData.train_data_id as number);
+      handleAsyncDataLoading(formData.train_data_id as number, formData);
     }
-  }, [modalState.type, modalState.formData]);
+  }, [modalState.type]);
 
-  const handleAsyncDataLoading = useCallback(async (trainDataId: number) => {
+  const handleAsyncDataLoading = useCallback(async (trainDataId: number, formData: TrainJob) => {
     if (!trainDataId) return;
 
     setLoadingState((prev) => ({ ...prev, select: true }));
@@ -131,7 +127,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
         });
 
         // 加载训练数据选项
-        await renderFileOption(dataset);
+        await renderFileOption(dataset, formData);
       }
     } catch (e) {
       console.log(e);
@@ -154,10 +150,9 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
   }, [getAnomalyTrainDataInfo]);
 
   // 生成训练文件选项
-  const renderFileOption = useCallback(async (data: number) => {
-    if (!formRef.current || !data) return;
-    const param = { dataset: data };
-    const { formData } = modalState;
+  const renderFileOption = useCallback(async (id: number, formData: TrainJob) => {
+    if (!formRef.current || !id) return;
+    const param = { dataset: id };
     setLoadingState(prev => ({ ...prev, select: true }));
     try {
       const trainData = await getAnomalyTrainData(param);
@@ -167,7 +162,6 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
         testOption: trainData.filter((item: TrainData) => item.is_test_data).map((item: TrainData) => ({ label: item.name, value: item.id })),
       };
       setTrainDataOption(options);
-      console.log(formData);
       formRef.current.setFieldsValue({
         train_data_id: formData?.train_data_id,
         val_data_id: formData?.val_data_id,
@@ -260,9 +254,9 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
       if (modalState.type === 'add') {
         await handleAddMap[tagName](params);
       } else {
-        await handleUpdateMap[tagName](modalState.formData?.id as string, params)
+        await handleUpdateMap[tagName](formData?.id as string, params)
       }
-      setModalState((prev) => ({ ...prev, isOpen: false }))
+      setModalState((prev) => ({ ...prev, isOpen: false }));
       message.success(t(`datasets.${modalState.type}Success`));
       onSuccess();
     } catch (e) {
@@ -270,7 +264,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
     } finally {
       setLoadingState((prev) => ({ ...prev, confirm: false }));
     }
-  }, [modalState.type, modalState.formData, onSuccess]);
+  }, [modalState.type, formData, onSuccess]);
 
   const handleCancel = () => {
     setModalState((prev) => ({
@@ -342,7 +336,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
             label={t('traintask.datasets')}
             rules={[{ required: true, message: t('traintask.selectDatasets') }]}
           >
-            <Select placeholder={t('traintask.selectDatasets')} loading={loadingState.select} options={datasetOptions} onChange={renderFileOption} />
+            <Select placeholder={t('traintask.selectDatasets')} loading={loadingState.select} options={datasetOptions}  />
           </Form.Item>
           {isShow && (<>
             <Divider orientation='start' orientationMargin={'0'} plain style={{ borderColor: '#d1d5db' }}>{t(`traintask.trainfile`)}</Divider>
