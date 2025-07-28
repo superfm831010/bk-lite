@@ -39,7 +39,7 @@ const SearchTable: React.FC<SearchTableProps> = ({
       ),
     },
     {
-      title: 'source',
+      title: 'message',
       dataIndex: '_msg',
       key: '_msg',
     },
@@ -88,7 +88,7 @@ const SearchTable: React.FC<SearchTableProps> = ({
               <li className="flex items-start mt-[10px]" key={index}>
                 <div className="flex items-center min-w-[250px] w-[250px] mr-[10px]">
                   <CustomPopover
-                    title={`${item.label} = string`}
+                    title={item.label}
                     content={(onClose) => (
                       <ul>
                         <li>

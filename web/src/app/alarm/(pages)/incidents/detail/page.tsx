@@ -279,13 +279,11 @@ const IncidentDetail: React.FC = () => {
         color: 'blue',
         children: (
           <div className="flex px-4 text-sm">
-            <span className="w-[200px]">
+            <span className="w-[160px]">
               {item.created_at ? convertToLocalizedTime(item.created_at) : '--'}
             </span>
-            <span className="w-[140px]">
-              {t(`settings.operationLog.operationOpts.${item.action}`)}
-            </span>
-            <span className="w-[200px]">{item.operator || '--'}</span>
+            <span className="w-[160px]">{item.operator_object || '--'}</span>
+            <span className="w-[120px]">{item.operator || '--'}</span>
             <span className="flex-1">{item.overview || '--'}</span>
           </div>
         ),
@@ -294,9 +292,9 @@ const IncidentDetail: React.FC = () => {
         color: 'blue',
         children: (
           <div className="flex px-4 text-sm font-semibold">
-            <span className="w-[200px]">{t('common.time')}</span>
-            <span className="w-[140px]">{t('common.action')}</span>
-            <span className="w-[200px]">{t('common.operator')}</span>
+            <span className="w-[160px]">{t('common.time')}</span>
+            <span className="w-[160px]">{t('common.action')}</span>
+            <span className="w-[120px]">{t('common.operator')}</span>
             <span className="flex-1">{t('settings.operationLog.summary')}</span>
           </div>
         ),

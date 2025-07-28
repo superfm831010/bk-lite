@@ -1,5 +1,6 @@
-from apps.rpc.system_mgmt import SystemMgmt
 from django.db.models import Q
+
+from apps.rpc.system_mgmt import SystemMgmt
 
 
 def get_permission_rules(user, current_team, app_name, permission_key):
@@ -17,7 +18,9 @@ def get_permission_rules(user, current_team, app_name, permission_key):
         child_module = ""
         if "." in permission_key:
             module, child_module = permission_key.split(".")
-        permission_data = client.get_user_rules_by_app(int(current_team), user.username, app_name, module, child_module)
+        permission_data = client.get_user_rules_by_app(
+            int(current_team), user.username, app_name, module, child_module, user.domain
+        )
         return permission_data
     except Exception:
         return {}

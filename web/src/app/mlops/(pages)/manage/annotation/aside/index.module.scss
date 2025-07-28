@@ -1,14 +1,19 @@
 .sideMenuLayout {
   height: var(--custom-height, calc(100vh - 90px));
   overflow: hidden;
+  position: relative;
 
   .sectionContainer {
     background: var( --color-bg);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: width;
   }
 
   .sectionContext {
     height: 100%;
     overflow: auto;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: width;
   }
 }
 

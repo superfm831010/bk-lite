@@ -12,7 +12,7 @@ import { replaceTemplate } from '@/app/monitor/utils/intergration';
 export const useClickHouseTelegraf = () => {
   const { t } = useTranslation();
   const pluginConfig = {
-    collect_type: 'middleware',
+    collect_type: 'database',
     config_type: ['clickhouse'],
     collector: 'Telegraf',
     instance_type: 'clickhouse',

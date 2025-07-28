@@ -186,6 +186,11 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
                   maxTagCount={4}
                   placeholder={t('common.selectMsg')}
                   options={assigneeOptions}
+                  filterOption={(input, option) =>
+                    (option?.label as string)
+                      ?.toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
                 />
               </Form.Item>
             </>

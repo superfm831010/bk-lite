@@ -151,15 +151,12 @@ class LLMViewSet(AuthViewSet):
         params = request.data
         params["username"] = request.user.username
         params["user_id"] = request.user.id
-        skill_type = SkillTypeChoices.KNOWLEDGE_TOOL
-        if params.get("tools"):
-            skill_type = SkillTypeChoices.BASIC_TOOL
         try:
             # 获取客户端IP
             skill_obj = LLMSkill.objects.get(id=int(params["skill_id"]))
             if not request.user.is_superuser:
                 current_team = request.COOKIES.get("current_team", "0")
-                has_permission = self.get_has_permission(request.user, skill_obj, current_team)
+                has_permission = self.get_has_permission(request.user, skill_obj, current_team, is_check=True)
                 if not has_permission:
                     return self._create_error_stream_response(_("You do not have permission to update this agent."))
 
@@ -173,7 +170,7 @@ class LLMViewSet(AuthViewSet):
             if not request.user.is_superuser:
                 validate_remaining_token(skill_obj)
                 # 这里可以添加具体的配额检查逻辑
-            params["skill_type"] = skill_type
+            params["skill_type"] = skill_obj.skill_type
             params["tools"] = params.get("tools", [])
             params["group"] = params["group"] if params.get("group") else skill_obj.team[0]
             params["enable_km_route"] = (

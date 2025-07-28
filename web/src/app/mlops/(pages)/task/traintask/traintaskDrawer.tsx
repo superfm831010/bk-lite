@@ -76,7 +76,7 @@ const TrainTaskDrawer = ({ open, onCancel, selectId }:
       width: 120
     },
     {
-      title: t('common.type'),
+      title: t('mlops-common.type'),
       dataIndex: 'type',
       key: 'type',
       width: 120,
