@@ -8,6 +8,7 @@ from langgraph.prebuilt import create_react_agent
 from sanic.log import logger
 from pydantic import BaseModel, Field
 
+from src import summarize
 from src.agent.plan_and_execute_agent.plan_and_execute_agent_state import PlanAndExecuteAgentState
 from src.core.node.tools_node import ToolsNodes
 
@@ -81,7 +82,8 @@ class PlanAndExecuteAgentNode(ToolsNodes):
     
 如果这是最后一个步骤，请确保提供完整的最终答案。"""
 
-        self.log(config, f"执行计划步骤 {current_step_index + 1}/{total_steps}: {task}")
+        self.log(
+            config, f"执行计划步骤 {current_step_index + 1}/{total_steps}: {task}")
 
         # 创建人类消息
         human_message = HumanMessage(content=task_formatted)
@@ -138,6 +140,9 @@ class PlanAndExecuteAgentNode(ToolsNodes):
                 self.log(config, f"检测到最后一步似乎已完成任务，提取结果作为最终响应")
                 return {
                     "response": last_step_result,
+                    "messages": [
+                        AIMessage(content=f"任务已完成，最终结果：{last_step_result}")
+                    ]
                 }
 
             self.log(config, f"计划执行完毕，进行最终结果整理")
@@ -260,18 +265,29 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         )
 
         if isinstance(output.action, Response):
-            self.log(config,f"重新规划结果：完成任务，返回最终响应")
+            self.log(config, f"重新规划结果：完成任务，返回最终响应")
             # 生成最终响应
             ai_message = AIMessage(
                 content=f"任务已完成，最终结果：{output.action.response}")
+
+            # summarize_message=SystemMessage(
+            #     content=f"""
+            #     用户的问题是：{user_message}
+            #     任务的最终结果是：{output.action.response}
+            #     请根据任务的最终结果，按照用户的要求进行回复"""
+            # )
+            # llm.ainvoke({
+            #     "messages": [system_message, ai_message]
+            # })
+
             return {
-                "messages": [system_message, ai_message],
+                "messages": [ai_message],
                 "response": output.action.response
             }
         else:
             # 生成新计划
             new_plan = output.action.steps
-            self.log(config,f"重新规划结果：新计划包含 {len(new_plan)} 个步骤")
+            self.log(config, f"重新规划结果：新计划包含 {len(new_plan)} 个步骤")
             plan_str = "\n".join([f"- {step}" for step in new_plan])
             ai_message = AIMessage(content=f"已重新规划任务，新计划：\n{plan_str}")
 
@@ -307,13 +323,13 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         planner = planner_prompt | llm.with_structured_output(Plan)
 
         # 执行规划
-        self.log(config,f"为任务生成初始计划: {user_message}")
+        self.log(config, f"为任务生成初始计划: {user_message}")
         plan = await planner.ainvoke({"messages": [human_message]})
 
         # 格式化计划
         plan_str = "\n".join([f"- {step}" for step in plan.steps])
-        self.log(config,f"生成的初始计划包含 {len(plan.steps)} 个步骤")
-        self.log(config,f"生成的初始计划:\n{plan_str}")
+        self.log(config, f"生成的初始计划包含 {len(plan.steps)} 个步骤")
+        self.log(config, f"生成的初始计划:\n{plan_str}")
 
         # 创建系统消息和AI消息，以便将它们添加到状态
         system_message = SystemMessage(content="系统已为您的请求生成了执行计划")
