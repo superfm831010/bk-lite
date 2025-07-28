@@ -327,21 +327,6 @@ const INIT_VIEW_MODAL_FORM = {
   title: '',
 };
 
-const STRATEGY_TEMPLATES = [
-  'Host',
-  'Ping',
-  'Website',
-  'Switch',
-  'Router',
-  'Firewall',
-  'Loadbalance',
-  'Detection Device',
-  'Scanning Device',
-  'Bastion Host',
-  'Storage',
-  'Hardware Server',
-];
-
 const NEED_TAGS_ENTRY_OBJECTS = ['Docker', 'Cluster', 'vCenter', 'TCP'];
 
 const DERIVATIVE_OBJECTS = [
@@ -367,7 +352,6 @@ export {
   CONNECTION_LIFETIME_UNITS,
   NODE_STATUS_MAP,
   INIT_VIEW_MODAL_FORM,
-  STRATEGY_TEMPLATES,
   NEED_TAGS_ENTRY_OBJECTS,
   DERIVATIVE_OBJECTS,
   OBJECT_DEFAULT_ICON,
