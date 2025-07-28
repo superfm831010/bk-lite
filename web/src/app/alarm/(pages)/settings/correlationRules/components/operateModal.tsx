@@ -72,7 +72,8 @@ const OperateModal: React.FC<OperateModalProps> = ({
 
       const winType = currentRow.window_type;
       let winTime: number | undefined;
-      
+      let waitTime: number | undefined;
+
       const initialRuleId = aggOptions.find(
         (opt) => opt.id === currentRow.aggregation_rules?.[0]
       )?.value;
@@ -80,6 +81,9 @@ const OperateModal: React.FC<OperateModalProps> = ({
       if (winType === 'session') {
         winTime = currentRow.session_timeout
           ? parseInt(currentRow.session_timeout, 10)
+          : undefined;
+        waitTime = currentRow.waiting_time
+          ? parseInt(currentRow.waiting_time, 10)
           : undefined;
       } else {
         winTime = currentRow.window_size
@@ -91,6 +95,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
         ruleId: initialRuleId,
         windowType: winType,
         windowTime: winTime,
+        waitingTime: waitTime,
       });
     }
   }, [aggOptions, open, currentRow, form]);
@@ -99,14 +104,20 @@ const OperateModal: React.FC<OperateModalProps> = ({
     if (!currentRow && selectedType) {
       let defaultType = 'sliding';
       let defaultTime = 10;
+      let defaultWaitingTime = 10;
       if (selectedType === 'critical_event_aggregation') {
         defaultType = 'fixed';
         defaultTime = 1;
       } else if (selectedType === 'error_scenario_handling') {
         defaultType = 'session';
         defaultTime = 10;
+        defaultWaitingTime = 10;
       }
-      form.setFieldsValue({ windowType: defaultType, windowTime: defaultTime });
+      form.setFieldsValue({
+        windowType: defaultType,
+        windowTime: defaultTime,
+        waitingTime: defaultWaitingTime,
+      });
     }
   }, [selectedType, form, currentRow]);
 
@@ -150,6 +161,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
     };
     if (apiWinType === 'session') {
       params.session_timeout = timeStr;
+      params.waiting_time = `${values.waitingTime}min`;
     } else {
       params.window_size = timeStr;
     }
@@ -311,6 +323,20 @@ const OperateModal: React.FC<OperateModalProps> = ({
             addonAfter={t('settings.correlation.min')}
           />
         </Form.Item>
+        {windowType === 'session' && (
+          <Form.Item
+            name="waitingTime"
+            initialValue={10}
+            rules={[{ required: true, message: t('common.inputTip') }]}
+            label={t('settings.correlation.waitingTime')}
+          >
+            <InputNumber
+              min={0}
+              style={{ width: '140px' }}
+              addonAfter={t('settings.correlation.min')}
+            />
+          </Form.Item>
+        )}
       </Form>
     </Drawer>
   );

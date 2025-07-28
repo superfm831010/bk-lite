@@ -57,11 +57,13 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
         pending: ['acknowledge'],
         processing: ['reassign', 'close'],
         closed: [],
+        auto_close: [],
       }
       : {
         pending: ['acknowledge'],
         processing: ['close'],
         closed: ['reopen'],
+        auto_close: [],
       };
 
   const validStatusMap: Record<string, string[]> =
@@ -71,6 +73,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
         acknowledge: ['pending'],
         reassign: ['processing'],
         close: ['processing'],
+        auto_close: ['processing'],
       }
       : {
         acknowledge: ['pending'],
@@ -81,7 +84,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
   const availableTypes = showAll
     ? allTypes
     : rowData[0]?.status
-      ? statusActionMap[rowData[0].status]
+      ? statusActionMap?.[rowData[0].status] || []
       : [];
 
   const handleOperate = (type: ActionType) => {

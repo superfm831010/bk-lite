@@ -158,6 +158,12 @@ const CorrelationRulesPage: React.FC = () => {
         },
       },
       {
+        title: t('settings.correlation.executionTime'),
+        dataIndex: 'exec_time',
+        key: 'exec_time',
+        width: 150,
+      },
+      {
         title: t('settings.correlation.lastUpdateTime'),
         dataIndex: 'updated_at',
         key: 'updated_at',
