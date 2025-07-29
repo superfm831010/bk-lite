@@ -25,5 +25,8 @@ export interface ParamItem {
   value: any;
   alias_name: string;
   type?: string; 
-  id?: string; 
+  id?: string;
+  desc?: string;
+  required?: boolean;
+  options?: Array<{ label: string; value: any }>;
 }
