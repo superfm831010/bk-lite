@@ -300,7 +300,6 @@ def get_user_rules_by_app(group_id, username, domain, app, module, child_module=
     guest_group = Group.objects.filter(name="OpsPilotGuest").first()
     user_obj = User.objects.filter(username=username, domain=domain).first()
     admin_teams = [int(group_id)]
-    group_ids = [int(group_id), guest_group.id] if guest_group else [int(group_id)]
     if guest_group:
         admin_teams.append(guest_group.id)
     if not user_obj:
@@ -319,10 +318,8 @@ def get_user_rules_by_app(group_id, username, domain, app, module, child_module=
     if not rules:
         return {"instance": [], "team": admin_teams}
     group_list = {i.group_rule.group_id for i in rules}
-    return_data = {"instance": [], "team": [i for i in group_ids if i not in group_list]}
+    return_data = {"instance": [], "team": [i for i in admin_teams if i not in group_list]}
 
-    if group_id not in group_list:
-        return_data["team"].append(group_id)
     for rule in rules:
         # 获取模块数据
         module_data = rule.group_rule.rules.get(module, [])
