@@ -14,11 +14,10 @@ import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 
 const SearchTable: React.FC<SearchTableProps> = ({
   dataSource,
-  pagination,
-  expand,
   loading = false,
-  onChange,
+  scroll,
   addToQuery,
+  onLoadMore,
 }) => {
   const { t } = useTranslation();
   const { handleCopy } = useHandleCopy();
@@ -158,18 +157,21 @@ const SearchTable: React.FC<SearchTableProps> = ({
       columns={columns}
       dataSource={dataSource}
       loading={loading}
-      rowKey="_time"
-      scroll={{
-        y: `calc(100vh - ${expand ? '568px' : '488px'})`,
-      }}
-      pagination={pagination}
+      virtual
+      rowKey="id"
+      scroll={scroll || undefined}
       expandable={{
         columnWidth: 40,
         expandedRowRender: (record) => getRowExpandRender(record),
         expandedRowKeys: expandedRowKeys,
         onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as React.Key[]),
       }}
-      onChange={onChange}
+      onScroll={(e: any) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        if (scrollTop + clientHeight >= scrollHeight) {
+          onLoadMore?.();
+        }
+      }}
     />
   );
 };
