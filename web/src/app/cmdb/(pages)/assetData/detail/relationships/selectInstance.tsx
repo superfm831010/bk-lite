@@ -101,7 +101,7 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
             t,
           }),
           {
-            title: t('action'),
+            title: t('common.action'),
             dataIndex: 'action',
             key: 'action',
             fixed: 'right',
@@ -262,7 +262,7 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
     const cancelRelate = async (id: unknown) => {
       confirm({
         title: t('disassociationTitle'),
-        content: t('deleteContent'),
+        content: t('common.deleteContent'),
         centered: true,
         onOk() {
           return new Promise(async (resolve) => {
@@ -336,7 +336,7 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
         onCancel={handleCancel}
         footer={
           <div>
-            <Button onClick={handleCancel}>{t('cancel')}</Button>
+            <Button onClick={handleCancel}>{t('common.cancel')}</Button>
           </div>
         }
       >

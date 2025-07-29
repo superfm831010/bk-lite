@@ -59,7 +59,7 @@ const IntegrationDetail: FC = () => {
 
   const copySecret = (text: string = '') => {
     navigator.clipboard.writeText(text);
-    message.success(t('common.copied'));
+    message.success(t('alarmCommon.copied'));
   };
 
   const fetchEventList = async () => {
@@ -230,10 +230,10 @@ const IntegrationDetail: FC = () => {
           </div>
         ) : (
           <>
-            <div className="p-4 bg-white rounded">
+            <div className="p-4 bg-[var(--color-bg-1)] rounded">
               <IntegrationHeader />
             </div>
-            <div className="p-4 bg-white rounded pt-0 mt-4">
+            <div className="p-4 bg-[var(--color-bg-1)] rounded pt-0 mt-4">
               <Tabs activeKey={activeTab} onChange={setActiveTab}>
                 <Tabs.TabPane key="event" tab={t('integration.eventTab')}>
                   <div className="mb-4 flex items-center gap-6">

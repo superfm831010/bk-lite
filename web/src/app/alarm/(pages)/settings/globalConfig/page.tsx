@@ -167,7 +167,7 @@ export default function UnallocatedNotificationConfig() {
                     {
                       required: true,
                       message:
-                        t('common.inputMsg') +
+                        t('common.inputTip') +
                         t('settings.globalConfig.intervalLabel'),
                     },
                   ]}
@@ -187,7 +187,7 @@ export default function UnallocatedNotificationConfig() {
                     {
                       required: true,
                       message:
-                        t('common.selectMsg') +
+                        t('common.selectTip') +
                         t('settings.globalConfig.personnelLabel'),
                     },
                   ]}
@@ -216,7 +216,7 @@ export default function UnallocatedNotificationConfig() {
                     {
                       required: true,
                       message:
-                        t('common.selectMsg') +
+                        t('common.selectTip') +
                         t('settings.globalConfig.notificationMethodLabel'),
                     },
                   ]}

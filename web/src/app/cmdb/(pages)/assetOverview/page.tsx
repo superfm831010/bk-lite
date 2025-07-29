@@ -103,7 +103,7 @@ const AssetsOverview: React.FC = () => {
           className="w-[320px]"
           value={searchText}
           allowClear
-          placeholder={t('search')}
+          placeholder={t('common.search')}
           onPressEnter={handleSearch}
           onClear={handleClear}
           onChange={handleTextChange}

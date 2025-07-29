@@ -124,7 +124,7 @@ const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
       {policyList.map?.((orItem, index) => (
         <div key={index} className="relative -left-[15px] pb-[15px]">
           <div className={`absolute text-center ${styles.ruleOr}`}>或</div>
-          <div className="bg-gray-100 ml-[33px] relative top-[17px]">
+          <div className="bg-[var(--color-bg-4)] ml-[33px] relative top-[17px]">
             <div className="px-[16px] py-[16px] space-y-4">
               {orItem.map((i, ind) => (
                 <div key={ind} className="relative">
@@ -135,7 +135,7 @@ const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
                         <Select
                           allowClear
                           value={i.key}
-                          placeholder={`${t('common.selectMsg')}`}
+                          placeholder={`${t('common.selectTip')}`}
                           onChange={(value) => changeSelect(value, index, ind)}
                         >
                           {ruleList.map((item) => (
@@ -149,7 +149,7 @@ const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
                         <Select
                           allowClear
                           value={i.operator}
-                          placeholder={`${t('common.selectMsg')}`}
+                          placeholder={`${t('common.selectTip')}`}
                           onChange={(value) => {
                             const updatedPolicyList = [...policyList];
                             updatedPolicyList[index][ind].operator = value;
@@ -172,7 +172,7 @@ const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
                             value={i.value}
                             showSearch
                             loading={i.key === 'source_id' && sourceLoading}
-                            placeholder={`${t('common.selectMsg')}`}
+                            placeholder={`${t('common.selectTip')}`}
                             onChange={(value) => {
                               const updatedPolicyList = [...policyList];
                               updatedPolicyList[index][ind].value = value;
@@ -198,7 +198,7 @@ const RulesMatch: React.FC<MatchRuleProps> = ({ value, onChange }) => {
                         ) : (
                           <Input
                             value={i.value}
-                            placeholder={t('common.inputMsg')}
+                            placeholder={t('common.inputTip')}
                             onChange={(e) => {
                               const updatedPolicyList = [...policyList];
                               updatedPolicyList[index][ind].value =

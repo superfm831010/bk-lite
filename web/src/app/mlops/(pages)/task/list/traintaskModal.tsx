@@ -20,31 +20,31 @@ import {
 } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import useMlopsTaskApi from '@/app/mlops/api/task';
-import useMlopsManageApi from '@/app/mlops/api/manage';
+import useTrainDataLoader from '@/app/mlops/hooks/task/useTrainDataLoader';
+import useParamsUtil from '@/app/mlops/hooks/task/useParamsUtil';
 import { ModalRef, Option } from '@/app/mlops/types';
-import { TrainData } from '@/app/mlops/types/manage';
 import { TrainJob, TrainTaskModalProps, AlgorithmParam } from '@/app/mlops/types/task';
 import RangeInput from '@/app/mlops/components/range-input';
-import { ALGORITHMS_PARAMS, ALGORITHMS_TYPE } from '@/app/mlops/constants';
+import { ALGORITHMS_PARAMS } from '@/app/mlops/constants';
 import { JointContent } from 'antd/es/message/interface';
 
 interface ModalState {
   isOpen: boolean;
   type: string;
   title: string;
-  formData: TrainJob | null
 }
 
 const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptions, activeTag, onSuccess }, ref) => {
   const { t } = useTranslation();
   const { addAnomalyTrainTask, updateAnomalyTrainTask } = useMlopsTaskApi();
-  const { getAnomalyTrainData, getAnomalyTrainDataInfo } = useMlopsManageApi();
+  const { loadTrainOptions, getDatasetByTrainId } = useTrainDataLoader();
+  const { hyperoptConversion, renderParams } = useParamsUtil();
   const [modalState, setModalState] = useState<ModalState>({
     isOpen: false,
     type: 'add',
     title: 'addtask',
-    formData: null
   });
+  const [formData, setFormData] = useState<TrainJob | null>(null);
   const [loadingState, setLoadingState] = useState<{
     confirm: boolean,
     dataset: boolean,
@@ -68,25 +68,24 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, title, form }) => {
-      console.log(form)
-      setLoadingState((prev) => ({ ...prev, select: false }))
+      setLoadingState((prev) => ({ ...prev, select: false }));
+      setFormData(form);
       setModalState({
         isOpen: true,
         type,
         title: title as string,
-        formData: form
       })
     }
   }));
 
   useEffect(() => {
-    if (modalState.isOpen) {
-      initializeForm();
+    if (formData && modalState.isOpen) {
+      initializeForm(formData);
     }
-  }, [modalState.isOpen]);
+  }, [modalState.isOpen, formData]);
 
 
-  const initializeForm = useCallback(async () => {
+  const initializeForm = useCallback(async (formData: TrainJob) => {
     const defaultParams: Record<string, any> = {};
     ALGORITHMS_PARAMS['RandomForest'].forEach(item => {
       defaultParams[item.name] = item.default;
@@ -99,9 +98,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
       formRef.current.setFieldsValue({
         hyperopt_config: defaultParams
       });
-    } else if (modalState.formData) {
-      const { formData } = modalState;
-
+    } else if (formData) {
       const immediateData = {
         name: formData.name,
         type: formData.type,
@@ -112,107 +109,44 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
 
       formRef.current.setFieldsValue(immediateData);
       setIsShow(true);
-      handleAsyncDataLoading(formData.train_data_id as number);
+      handleAsyncDataLoading(formData.train_data_id as number, formData);
     }
-  }, [modalState.type, modalState.formData]);
+  }, [modalState.type]);
 
-  const handleAsyncDataLoading = useCallback(async (trainDataId: number) => {
+  const handleAsyncDataLoading = useCallback(async (trainDataId: number, formData: TrainJob) => {
     if (!trainDataId) return;
 
     setLoadingState((prev) => ({ ...prev, select: true }));
 
     try {
-      // 获取数据集ID
-      const dataset = await searchDatasetId(trainDataId);
+      const dataset = await getDatasetByTrainId(formData.train_data_id as number);
 
       if (dataset && formRef.current) {
         formRef.current.setFieldsValue({
           dataset_id: dataset
         });
 
-        // 加载训练数据选项
-        await renderFileOption(dataset);
+        await renderOptions(dataset);
       }
     } catch (e) {
       console.log(e);
     } finally {
       setLoadingState(prev => ({ ...prev, select: false }));
     }
-  }, [])
+  }, [getDatasetByTrainId, loadTrainOptions]);
 
-  const searchDatasetId = useCallback(async (traindataId: number) => {
-    if (!formRef.current || !traindataId) return;
-
-    setLoadingState((prev) => ({ ...prev, select: true }));
-    try {
-      const { dataset } = await getAnomalyTrainDataInfo(traindataId, false, false);
-      return dataset || null;
-    } catch (e) {
-      console.log(e);
-      return null;
-    }
-  }, [getAnomalyTrainDataInfo]);
-
-  // 生成训练文件选项
-  const renderFileOption = useCallback(async (data: number) => {
-    if (!formRef.current || !data) return;
-    const param = { dataset: data };
-    const { formData } = modalState;
-    setLoadingState(prev => ({ ...prev, select: true }));
-
-    try {
-      const trainData = await getAnomalyTrainData(param);
-      const options = {
-        trainOption: trainData.filter((item: TrainData) => item.is_train_data).map((item: TrainData) => ({ label: item.name, value: item.id })),
-        valOption: trainData.filter((item: TrainData) => item.is_val_data).map((item: TrainData) => ({ label: item.name, value: item.id })),
-        testOption: trainData.filter((item: TrainData) => item.is_test_data).map((item: TrainData) => ({ label: item.name, value: item.id })),
-      };
-      setTrainDataOption(options);
-      formRef.current.setFieldsValue({
-        train_data_id: formData?.train_data_id,
-        val_data_id: formData?.val_data_id,
-        test_data_id: formData?.test_data_id,
-      });
-    } catch (e) {
-      message.error(e as JointContent)
-    } finally {
-      setLoadingState((prev) => ({ ...prev, select: false }));
-    }
-  }, [getAnomalyTrainData]);
-
-  // 超参数转换成表单数据
-  const hyperoptConversion = (params: object) => {
-    if (!params) return;
-    const hyperopt_config: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value?.type === 'randint') {
-        hyperopt_config[key] = [value?.min, value?.max];
-      } else if (value?.type === 'choice') {
-        hyperopt_config[key] = value?.choice;
-      }
+  // 渲染文件选项
+  const renderOptions = useCallback(async (dataset: number) => {
+    if(!formRef.current || !dataset) return;
+    // 加载训练数据选项
+    const trainOptions = await loadTrainOptions(dataset);
+    setTrainDataOption(trainOptions);
+    formRef.current.setFieldsValue({
+      train_data_id: formData?.train_data_id,
+      val_data_id: formData?.val_data_id,
+      test_data_id: formData?.test_data_id,
     });
-    return hyperopt_config;
-  };
-
-  // 表单数据转为请求参数
-  const renderParams = (object: Record<string, any>) => {
-    const hyperopt_config: Record<string, any> = {};
-    Object.keys(object).forEach((item: string) => {
-      if (ALGORITHMS_TYPE['RandomForest'][item] == 'randint') {
-        hyperopt_config[item] = {
-          type: 'randint',
-          min: object[item][0],
-          max: object[item][1]
-        }
-      } else if (ALGORITHMS_TYPE['RandomForest'][item] == 'choice') {
-        hyperopt_config[item] = {
-          type: 'choice',
-          choice: object[item]
-        }
-      }
-    });
-    return hyperopt_config;
-  };
+  }, [loadTrainOptions]);
 
   // 渲染超参数表单项
   const renderItem = useCallback((param: AlgorithmParam[]) => {
@@ -260,17 +194,18 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
       if (modalState.type === 'add') {
         await handleAddMap[tagName](params);
       } else {
-        await handleUpdateMap[tagName](modalState.formData?.id as string, params)
+        await handleUpdateMap[tagName](formData?.id as string, params)
       }
-      setModalState((prev) => ({ ...prev, isOpen: false }))
+      setModalState((prev) => ({ ...prev, isOpen: false }));
       message.success(t(`datasets.${modalState.type}Success`));
       onSuccess();
     } catch (e) {
       console.log(e);
+      message.error(e as JointContent);
     } finally {
       setLoadingState((prev) => ({ ...prev, confirm: false }));
     }
-  }, [modalState.type, modalState.formData, onSuccess]);
+  }, [modalState.type, formData, onSuccess]);
 
   const handleCancel = () => {
     setModalState((prev) => ({
@@ -312,15 +247,6 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
           >
             <Input placeholder={t('common.inputMsg')} />
           </Form.Item>
-          {/* <Form.Item
-            name='type'
-            label={t('common.type')}
-            rules={[{ required: true, message: t('common.inputMsg') }]}
-          >
-            <Select placeholder={t('common.inputMsg')} onChange={onTypeChange} options={[
-              { value: 'anomaly', label: t('datasets.anomaly') },
-            ]} />
-          </Form.Item> */}
           <Form.Item
             name='algorithm'
             label={t('traintask.algorithms')}
@@ -342,7 +268,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
             label={t('traintask.datasets')}
             rules={[{ required: true, message: t('traintask.selectDatasets') }]}
           >
-            <Select placeholder={t('traintask.selectDatasets')} loading={loadingState.select} options={datasetOptions} onChange={renderFileOption} />
+            <Select placeholder={t('traintask.selectDatasets')} loading={loadingState.select} options={datasetOptions} onChange={renderOptions} />
           </Form.Item>
           {isShow && (<>
             <Divider orientation='start' orientationMargin={'0'} plain style={{ borderColor: '#d1d5db' }}>{t(`traintask.trainfile`)}</Divider>

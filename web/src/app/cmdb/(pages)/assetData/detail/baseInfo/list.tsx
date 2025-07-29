@@ -245,7 +245,7 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
           <CaretRightOutlined rotate={isActive ? 90 : 0} />
         )}
       >
-        <Panel header={t('group')} key="group">
+        <Panel header={t('common.group')} key="group">
           <Descriptions
             bordered
             items={fieldList?.filter((item) => item.key === 'organization')}

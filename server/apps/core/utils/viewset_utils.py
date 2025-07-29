@@ -112,6 +112,8 @@ class AuthViewSet(MaintainerViewSet):
                     query |= Q(id__in=instance_ids)
                 for i in team:
                     query |= Q(team__contains=int(i))
+                if not instance_ids and not team:
+                    return self._list(queryset.filter(id=0))
             queryset = queryset.filter(query)
             return self._list(queryset.order_by(self.ORDERING_FIELD))
 

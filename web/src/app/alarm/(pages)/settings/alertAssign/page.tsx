@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import OperateModal from './components/operateModal';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
-import UserAvatar from '@/app/alarm/components/userAvatar';
+import UserAvatar from '@/components/user-avatar';
 import Introduction from '@/app/alarm/components/introduction';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { AlertAssignListItem } from '@/app/alarm/types/settings';
@@ -134,7 +134,7 @@ const AlertAssign: React.FC = () => {
     try {
       const data = await patchAssignment(row.id, { is_active: checked });
       if (!data) {
-        message.error(t('common.operateFailed'));
+        message.error(t('alarmCommon.operateFailed'));
       } else {
         message.success(
           checked ? t('settings.enableSuccess') : t('settings.disableSuccess')
@@ -142,7 +142,7 @@ const AlertAssign: React.FC = () => {
       }
       getTableList();
     } catch {
-      console.error(t('common.operateFailed'));
+      console.error(t('alarmCommon.operateFailed'));
     } finally {
       setLoadingIds((ids) => {
         const nxt = { ...ids };
@@ -243,7 +243,7 @@ const AlertAssign: React.FC = () => {
                 size="small"
                 onClick={() => handleEdit('edit', row)}
               >
-                {t('edit')}
+                {t('common.edit')}
               </Button>
             </PermissionWrapper>
             <PermissionWrapper requiredPermissions={['Delete']}>
@@ -252,7 +252,7 @@ const AlertAssign: React.FC = () => {
                 size="small"
                 onClick={() => handleDelete(row)}
               >
-                {t('delete')}
+                {t('common.delete')}
               </Button>
             </PermissionWrapper>
           </div>
@@ -271,13 +271,13 @@ const AlertAssign: React.FC = () => {
         title={t('settings.alertAssign')}
         message={t('settings.assignStrategyMessage')}
       />
-      <div className="oid-library-container p-4 bg-white rounded-lg shadow">
+      <div className="oid-library-container p-4 bg-[var(--color-bg-1)] rounded-lg shadow">
         <div className="nav-box flex justify-between mb-[20px]">
           <div className="flex items-center">
             <Input
               allowClear
               value={searchKey}
-              placeholder={t('common.searchPlaceHolder')}
+              placeholder={t('common.search')}
               style={{ width: 250 }}
               onChange={(e) => setSearchKey(e.target.value)}
               onPressEnter={handleFilterChange}
