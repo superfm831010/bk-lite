@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import { mockInterfaces } from '../mockData';
+import { mockInterfaces } from '../../mockData';
 import {
   Drawer,
   Form,
@@ -64,7 +64,6 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
     }
   }, [edgeData, form]);
 
-  // 处理表单提交
   const handleFinish = (values: any) => {
     if (onConfirm) {
       const result = {
@@ -90,7 +89,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
     onClose();
   };
 
-  // 处理线条类型变化
+  // 线条类型变化
   const handleLineTypeChange = (lineType: string) => {
     if (lineType === 'network line') {
       form.setFieldValue('lineName', '');
