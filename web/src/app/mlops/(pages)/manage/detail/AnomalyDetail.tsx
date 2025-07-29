@@ -214,7 +214,7 @@ const AnomalyDetail = () => {
           is_test_data: selectedTags.includes('is_test_data')
         };
         await labelingData(currentData?.id, params);
-        message.success(`common.updateSuccess`);
+        message.success(t(`common.updateSuccess`));
         setModalOpen(false);
         getDataset();
       }

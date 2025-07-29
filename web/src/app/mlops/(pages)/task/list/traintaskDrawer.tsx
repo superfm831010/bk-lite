@@ -6,7 +6,6 @@ import { useTranslation } from "@/utils/i18n";
 import useMlopsTaskApi from "@/app/mlops/api/task";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
-import { JointContent } from "antd/es/message/interface";
 
 const getStatusColor = (value: string, TrainStatus: Record<string, string>) => {
   return TrainStatus[value] || '';
@@ -145,7 +144,7 @@ const TrainTaskDrawer = ({ open, onCancel, selectId }:
       setHistoryData(data);
     }catch (e) {
       console.log(e);
-      message.error(e as JointContent)
+      message.error(t(`common.error`))
     } finally {
       setLoading(false);
     }

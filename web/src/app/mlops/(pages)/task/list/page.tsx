@@ -16,7 +16,6 @@ import { ModalRef, ColumnItem, Option } from '@/app/mlops/types';
 import type { TreeDataNode } from 'antd';
 import { TrainJob } from '@/app/mlops/types/task';
 import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
-import { JointContent } from 'antd/es/message/interface';
 import { DataSet } from '@/app/mlops/types/manage';
 const { Search } = Input;
 
@@ -264,7 +263,7 @@ const TrainTask = () => {
   const handleEdit = (record: TrainJob) => {
     if (modalRef.current) {
       modalRef.current.showModal({
-        type: 'edit',
+        type: 'update',
         title: 'edittask',
         form: record
       })
@@ -276,7 +275,7 @@ const TrainTask = () => {
       await startAnomalyTrainTask(record.id);
     } catch (e) {
       console.log(e);
-      message.error(e as JointContent)
+      message.error(`common.error`);
     }
   };
 

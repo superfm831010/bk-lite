@@ -79,7 +79,7 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, activ
         await handleAddMap[tagName](params);
         message.success(t(`model-release.publishSuccess`));
       } else {
-        await handleUpdateMap[tagName](formData.id, params);
+        await handleUpdateMap[tagName](formData?.id, params);
         message.success(t(`common.updateSuccess`));
       }
       setModalOpen(false);
