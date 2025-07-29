@@ -283,6 +283,7 @@
     "selecteTool": "选择工具",
     "ragKnowledgeBaseRequired": "开启RAG时必须选择知识库",
     "ragToolRequired": "开启RAG时必须选择工具",
+    "formValidationFailed": "表单验证失败，请检查必填项",
     "settings": {
       "menu": "设置",
       "title": "智能体",
