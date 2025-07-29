@@ -3,7 +3,7 @@ import { Option } from "."
 interface TrainJob {
   id: string | number,
   name: string,
-  type: string,
+  // type: string,
   status: string,
   created_at: string,
   train_data_id: string | number;

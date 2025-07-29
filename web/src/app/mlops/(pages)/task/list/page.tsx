@@ -346,7 +346,7 @@ const TrainTask = () => {
           </>)
         }
       />
-      <TrainTaskModal ref={modalRef} onSuccess={() => onRefresh()} datasetOptions={datasetOptions} />
+      <TrainTaskModal ref={modalRef} onSuccess={() => onRefresh()} activeTag={selectedKeys} datasetOptions={datasetOptions} />
     </>
   );
 };
