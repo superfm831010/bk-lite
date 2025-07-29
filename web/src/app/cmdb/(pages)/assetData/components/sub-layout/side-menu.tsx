@@ -143,7 +143,9 @@ const SideMenu: React.FC<SideMenuProps> = ({
           {children}
         </div>
       )}
-      <nav className={`flex flex-1 overflow-hidden relative rounded-md ${sideMenuStyle.nav}`}>
+      <nav
+        className={`flex flex-1 overflow-hidden relative rounded-md ${sideMenuStyle.nav}`}
+      >
         <ul className="p-3 flex-1">
           {menuItems.map((item) => (
             <React.Fragment key={item.url}>
@@ -163,7 +165,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
               </li>
               {item.name === ASSET_NAME && !!relationData?.length && (
                 <div
-                  className={`ml-4 mt-2 mb-2 pb-1 border-b border-gray-200 ${sideMenuStyle.relationList}`}
+                  className={`ml-4 mt-2 mb-2 pb-1 border-b border-[var(--color-border-2)] ${sideMenuStyle.relationList}`}
                 >
                   {relationData.map((section, index) => (
                     <div key={section.title + index} className="mb-2">

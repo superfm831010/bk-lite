@@ -65,8 +65,8 @@ const AssetManage = () => {
 
   const showDeleteConfirm = (row: GroupItem) => {
     confirm({
-      title: t('deleteTitle'),
-      content: t('deleteContent'),
+      title: t('common.deleteTitle'),
+      content: t('common.deleteContent'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
@@ -203,7 +203,7 @@ const AssetManage = () => {
         <div className="nav-box flex justify-between mb-[10px]">
           <div className="left-side w-[240px]">
             <Input
-              placeholder={t('search')}
+              placeholder={t('common.search')}
               value={searchText}
               allowClear
               onChange={onSearchTxtChange}

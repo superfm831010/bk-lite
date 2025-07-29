@@ -215,7 +215,7 @@ const OperationLog: React.FC = () => {
                 allowClear
                 showSearch
                 style={{ width: 180 }}
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
                 options={operators}
                 value={filters.operator}
                 onChange={(value) => handleFilterChange('operator', value)}
@@ -235,7 +235,7 @@ const OperationLog: React.FC = () => {
               </label>
               <Select
                 style={{ width: 160 }}
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
                 options={operationTypes}
                 value={filters.type}
                 onChange={(value) => handleFilterChange('type', value)}
@@ -248,7 +248,7 @@ const OperationLog: React.FC = () => {
               </label>
               <Input
                 style={{ width: 220 }}
-                placeholder={t('common.pleaseInput')}
+                placeholder={t('common.inputTip')}
                 value={inputValue}
                 onChange={handleInputChange}
                 onPressEnter={handleInputSearch}

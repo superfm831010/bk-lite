@@ -119,9 +119,9 @@ const AssociationsModal = forwardRef<AssoModalRef, AssoModalProps>(
                 disabled={assoType === 'edit'}
                 onClick={handleSubmit}
               >
-                {t('confirm')}
+                {t('common.confirm')}
               </Button>
-              <Button onClick={handleCancel}>{t('cancel')}</Button>
+              <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
         >

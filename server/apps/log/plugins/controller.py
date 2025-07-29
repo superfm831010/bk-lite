@@ -2,6 +2,8 @@ import os
 import uuid
 
 from jinja2 import Environment, FileSystemLoader, DebugUndefined
+
+from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.log.models import CollectConfig, Stream
 from apps.log.plugins import PLUGIN_DIRECTORY
 from apps.log.utils.stream import StreamUtils
@@ -137,3 +139,29 @@ class Controller:
         NodeMgmt().batch_add_node_config(node_configs)
         # 创建子配置
         NodeMgmt().batch_add_node_child_config(node_child_configs)
+
+    def render_config_template_content(self, file_type, context_data):
+        """ 渲染配置模板内容。"""
+
+        template_dir = os.path.join(PLUGIN_DIRECTORY, self.data["collector"], self.data["collect_type"])
+        templates = self.get_template_info_by_type(template_dir, self.data["collect_type"])
+
+        template = None
+
+        for _template in templates:
+            if _template["config_type"] != file_type:
+                continue
+            template = _template
+
+        if template is None:
+            raise BaseAppException(f"No matching template found for {self.data['collect_type']} with file type {file_type}")
+
+        # 生成配置
+        content = self.render_template(
+            template_dir,
+            f"{template['type']}.{template['config_type']}.{template['file_type']}.j2",
+            context_data,
+            self.stream_rules
+        )
+
+        return content

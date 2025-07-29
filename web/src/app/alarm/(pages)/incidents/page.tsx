@@ -6,7 +6,7 @@ import AlarmFilters from '@/app/alarm/components/alarmFilters';
 import CustomTable from '@/components/custom-table';
 import alertStyle from './index.module.scss';
 import TimeSelector from '@/components/time-selector';
-import UserAvatar from '@/app/alarm/components/userAvatar';
+import UserAvatar from '@/components/user-avatar';
 import type { ColumnsType } from 'antd/es/table';
 import { useIncidentsApi } from '@/app/alarm/api/incidents';
 import { Input, Button, Tag } from 'antd';
@@ -122,7 +122,7 @@ const IncidentsPage: React.FC = () => {
         operator_users ? <UserAvatar userName={operator_users} /> : '--',
     },
     {
-      title: t('common.action'),
+      title: t('alarmCommon.action'),
       key: 'action',
       fixed: 'right',
       width: 100,
@@ -217,7 +217,7 @@ const IncidentsPage: React.FC = () => {
           <Input
             allowClear
             className="w-[300px]"
-            placeholder={t('common.searchPlaceHolder')}
+            placeholder={t('common.search')}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             onPressEnter={handleSearch}

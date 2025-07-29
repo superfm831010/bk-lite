@@ -95,8 +95,8 @@ const TaskTable: React.FC<TaskTableProps> = ({
     Modal.confirm({
       title: t('Collection.taskDetail.approvalConfirm'),
       content: `确定审批选中的 ${selectedRowKeys.length} 条数据吗？`,
-      okText: t('confirm'),
-      cancelText: t('cancel'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk: async () => {
         try {
@@ -277,7 +277,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({
 
   return (
     <div
-      className={`flex flex-col h-full bg-white rounded-lg ${styles.taskDetail}`}
+      className={`flex flex-col h-full rounded-lg ${styles.taskDetail}`}
     >
       <Tabs defaultActiveKey="add" items={tabItems} className="flex-1" />
     </div>

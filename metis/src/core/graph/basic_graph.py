@@ -58,7 +58,7 @@ class BasicGraph(ABC):
     async def invoke(self, graph, request: BasicLLMRequest, stream_mode='values'):
         config = {
             "graph_request": request,
-            "recursion_limit": 10,
+            "recursion_limit": 50,
             "trace_id": str(uuid.uuid4()),
             "configurable": {
                 **request.extra_config,

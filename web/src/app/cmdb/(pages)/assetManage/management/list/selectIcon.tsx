@@ -59,9 +59,9 @@ const SelectIcon = forwardRef<SelectIconRef, SelectIconProps>(
                 className="mr-[10px]"
                 onClick={handleSubmit}
               >
-                {t('confirm')}
+                {t('common.confirm')}
               </Button>
-              <Button onClick={handleCancel}>{t('cancel')}</Button>
+              <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
         >
