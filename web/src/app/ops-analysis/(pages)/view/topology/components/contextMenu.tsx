@@ -5,15 +5,15 @@ import { useTranslation } from '@/utils/i18n';
 interface ContextMenuProps {
   visible: boolean;
   position: { x: number; y: number };
-  onMenuClick: (e: { key: string }) => void;
   isEditMode?: boolean;
+  onMenuClick: (e: { key: string }) => void;
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
   visible,
   position,
-  onMenuClick,
   isEditMode = false,
+  onMenuClick,
 }) => {
   const { t } = useTranslation();
 
