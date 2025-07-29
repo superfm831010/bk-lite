@@ -142,9 +142,9 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
                 loading={confirmLoading}
                 onClick={handleSubmit}
               >
-                {t('confirm')}
+                {t('common.confirm')}
               </Button>
-              <Button onClick={handleCancel}>{t('cancel')}</Button>
+              <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
         >
@@ -172,13 +172,13 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
             wrapperCol={{ span: 20 }}
           >
             <Form.Item<ModelItem>
-              label={t('group')}
+              label={t('common.group')}
               name="classification_id"
               rules={[{ required: true, message: t('required') }]}
             >
               <Select
                 disabled={type === 'edit'}
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
               >
                 {groupList.map((item) => {
                   return (
@@ -197,14 +197,17 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
               name="model_id"
               rules={[{ required: true, message: t('required') }]}
             >
-              <Input disabled={type === 'edit'} placeholder={t('common.pleaseInput')} />
+              <Input
+                disabled={type === 'edit'}
+                placeholder={t('common.inputTip')}
+              />
             </Form.Item>
             <Form.Item<ModelItem>
               label={t('name')}
               name="model_name"
               rules={[{ required: true, message: t('required') }]}
             >
-              <Input placeholder={t('common.pleaseInput')} />
+              <Input placeholder={t('common.inputTip')} />
             </Form.Item>
           </Form>
         </OperateModal>

@@ -1,13 +1,15 @@
-import { Pagination, TableDataItem } from '@/app/log/types';
+import { TableDataItem } from '@/app/log/types';
 import React from 'react';
 
 export interface SearchTableProps {
   dataSource: TableDataItem[];
-  pagination: Pagination;
-  expand: boolean;
   loading?: boolean;
-  onChange: (pagination: any) => void;
+  scroll?: {
+    x?: string | number;
+    y?: string | number;
+  };
   addToQuery: (row: TableDataItem, type: string) => void;
+  onLoadMore?: () => void;
 }
 
 export interface SearchParams {

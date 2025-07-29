@@ -338,8 +338,8 @@ const AssetDataContent = () => {
 
   const showDeleteConfirm = (row = { _id: '' }) => {
     confirm({
-      title: t('deleteTitle'),
-      content: t('deleteContent'),
+      title: t('common.deleteTitle'),
+      content: t('common.deleteContent'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
@@ -363,8 +363,8 @@ const AssetDataContent = () => {
 
   const batchDeleteConfirm = () => {
     confirm({
-      title: t('deleteTitle'),
-      content: t('deleteContent'),
+      title: t('common.deleteTitle'),
+      content: t('common.deleteContent'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
@@ -425,7 +425,7 @@ const AssetDataContent = () => {
   };
 
   const showAttrModal = (type: string, row = {}) => {
-    const title = type === 'add' ? t('common.addNew') : t('edit');
+    const title = type === 'add' ? t('common.addNew') : t('common.edit');
     fieldRef.current?.showModal({
       title,
       type,
@@ -606,7 +606,7 @@ const AssetDataContent = () => {
       const tableColumns = [
         ...attrList,
         {
-          title: t('action'),
+          title: t('common.action'),
           key: 'action',
           dataIndex: 'action',
           width: 230,
@@ -618,7 +618,7 @@ const AssetDataContent = () => {
                 className="mr-[10px]"
                 onClick={() => checkDetail(record)}
               >
-                {t('detail')}
+                {t('common.detail')}
               </Button>
               <PermissionWrapper
                 requiredPermissions={['Add Associate']}
@@ -641,7 +641,7 @@ const AssetDataContent = () => {
                   className="mr-[10px]"
                   onClick={() => showAttrModal('edit', record)}
                 >
-                  {t('edit')}
+                  {t('common.edit')}
                 </Button>
               </PermissionWrapper>
               <PermissionWrapper
@@ -649,7 +649,7 @@ const AssetDataContent = () => {
                 instPermissions={record.permission}
               >
                 <Button type="link" onClick={() => showDeleteConfirm(record)}>
-                  {t('delete')}
+                  {t('common.delete')}
                 </Button>
               </PermissionWrapper>
             </>
@@ -657,7 +657,7 @@ const AssetDataContent = () => {
         },
       ];
       setColumns(tableColumns);
-      const actionCol = tableColumns.find(col => col.key === 'action');
+      const actionCol = tableColumns.find((col) => col.key === 'action');
       const ordered = [
         ...tableColumns
           .filter(col => displayFieldKeys.includes(col.key as string))
@@ -691,7 +691,7 @@ const AssetDataContent = () => {
       key: 'batchDelete',
       label: (
         <PermissionWrapper requiredPermissions={['Delete']}>
-          <a onClick={batchDeleteConfirm}>{t('batchDelete')}</a>
+          <a onClick={batchDeleteConfirm}>{t('common.batchDelete')}</a>
         </PermissionWrapper>
       ),
       disabled: !selectedRowKeys.length,
@@ -704,7 +704,7 @@ const AssetDataContent = () => {
         <div className={`${assetDataStyle.groupSelector}`}>
           <div className={assetDataStyle.treeSearchWrapper}>
             <Input.Search
-              placeholder={t('searchTxt')}
+              placeholder={t('common.search')}
               value={treeSearchText}
               allowClear
               enterButton
@@ -736,7 +736,7 @@ const AssetDataContent = () => {
           <div className="flex justify-between mb-4">
             <Space>
               <Cascader
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
                 options={organizationList}
                 value={organization}
                 onChange={selectOrganization}

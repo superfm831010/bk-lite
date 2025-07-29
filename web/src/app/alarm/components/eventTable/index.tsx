@@ -62,7 +62,7 @@ const EventTable: React.FC<EventTableProps> = ({
       },
     },
     {
-      title: t('common.time'),
+      title: t('alarmCommon.time'),
       dataIndex: 'start_time',
       key: 'start_time',
       width: 180,
@@ -108,7 +108,7 @@ const EventTable: React.FC<EventTableProps> = ({
       width: 120,
     },
     {
-      title: t('common.action'),
+      title: t('alarmCommon.action'),
       key: 'action',
       fixed: 'right',
       width: 100,

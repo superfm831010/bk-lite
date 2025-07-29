@@ -57,11 +57,13 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
         pending: ['acknowledge'],
         processing: ['reassign', 'close'],
         closed: [],
+        auto_close: [],
       }
       : {
         pending: ['acknowledge'],
         processing: ['close'],
         closed: ['reopen'],
+        auto_close: [],
       };
 
   const validStatusMap: Record<string, string[]> =
@@ -71,6 +73,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
         acknowledge: ['pending'],
         reassign: ['processing'],
         close: ['processing'],
+        auto_close: ['processing'],
       }
       : {
         acknowledge: ['pending'],
@@ -81,7 +84,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
   const availableTypes = showAll
     ? allTypes
     : rowData[0]?.status
-      ? statusActionMap[rowData[0].status]
+      ? statusActionMap?.[rowData[0].status] || []
       : [];
 
   const handleOperate = (type: ActionType) => {
@@ -105,10 +108,10 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
           });
           if (Object.values(data).some((res: any) => !res.result)) {
             message.error(
-              `${t(`alarms.${type}`)}${t(`alarms.alert`)}${t('common.partialFailure')}`
+              `${t(`alarms.${type}`)}${t(`alarms.alert`)}${t('alarmCommon.partialFailure')}`
             );
           } else {
-            message.success(t(`alarms.${type}`) + t('common.success'));
+            message.success(t(`alarms.${type}`) + t('alarmCommon.success'));
             onAction();
           }
         } catch (err) {
@@ -184,7 +187,7 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
     <PermissionWrapper requiredPermissions={['Edit']}>
       <Dropdown overlay={<Menu items={menuItems} />} trigger={['click']}>
         <Button size={btnSize} type="primary">
-          {t('common.actions')}
+          {t('alarmCommon.actions')}
           <DownOutlined />
         </Button>
       </Dropdown>

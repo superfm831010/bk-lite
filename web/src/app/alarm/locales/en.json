@@ -1,17 +1,7 @@
 {
-    "common": {
-        "select": "Select",
-        "selectMsg": "Please select",
-        "inputMsg": "Please input the",
-        "searchPlaceHolder": "Search...",
-        "confirm": "Confirm",
-        "cancel": "Cancel",
-        "edit": "Edit",
-        "detail": "Detail",
+    "alarmCommon": {
         "time": "Time",
         "operator": "Operator",
-        "close": "Close",
-        "more": "More",
         "action": "Action",
         "linkAlert": "Link Alert",
         "unlinkAlert": "Unlink Alert",
@@ -24,8 +14,7 @@
         "advanced": "Advanced",
         "partialFailure": "Partial failure",
         "successOperate": "Successfully",
-        "all": "All",
-        "actions": "Actions"
+        "all": "All"
     },
     "incidents": {
         "table": "Table",
@@ -74,6 +63,7 @@
         "batchOperations": "Batch Operations",
         "new": "New",
         "unassigned": "Unassigned",
+        "auto_close": "Auto Closed",
         "recovered": "Recovery",
         "resolved": "Resolved",
         "closed": "Closed",
@@ -159,6 +149,7 @@
             "describe": "Describe",
             "type": "Type",
             "scope": "Scope",
+            "executionTime": "Execution Time",
             "lastUpdateTime": "Last Update Time",
             "windowType": "Window Type",
             "slidingWindow": "Sliding Window",
@@ -166,6 +157,7 @@
             "sessionWindow": "Session Window",
             "windowTime": "Window Time",
             "timeOut": "Timeout",
+            "waitingTime": "Waiting Time",
             "slidingMsg": "There are two key parameters for sliding windows, namely window size and sliding step size. It will slide forward with a fixed step size, and there is overlap between the windows. Suitable for partial context linkage analysis, such as checking a single server's past 1-minute Event every 10 seconds, generating an Alert when a fatal level Event occurs, and continuously aggregating the Event into one Alert for comprehensive analysis of faults.",
             "fixedMsg": "Also known as a rolling window, it is characterized by a fixed time length and no overlap between windows, meaning that the window time is the same as the step size. Suitable for aggregation calculations with clear requirements for time range, such as triggering an alarm if the number of errors exceeds 100 within an hour.",
             "sessionMsg": "The boundary of the session window is determined by the interval time between events (session timeout or specific events). If no new events arrive within the specified time, the current window will close and a new window will open for subsequent events. Suitable for analyzing user session related scenarios, such as: after pipeline packaging failure, if there is no further processing within 10 minutes, it means that the code problem cannot be solved in a short period of time and an alarm is issued",
