@@ -101,6 +101,7 @@ class AlertStatus:
     PROCESSING = "processing"
     CLOSED = "closed"
     UNASSIGNED = "unassigned"
+    AUTO_CLOSE = "auto_close"
 
     CHOICES = (
         (PENDING, "待响应"),
@@ -108,6 +109,7 @@ class AlertStatus:
         (RESOLVED, "已处理"),
         (CLOSED, "已关闭"),
         (UNASSIGNED, "未分派"),
+        (AUTO_CLOSE, "自动关闭"),
     )
     ACTIVATE_STATUS = (PENDING, PROCESSING, UNASSIGNED)
 
@@ -117,13 +119,13 @@ class AlertOperate:
     ACKNOWLEDGE = "acknowledge"
     CLOSE = "close"
     REASSIGN = "reassign"
-    Assign = "assign"
+    ASSIGN = "assign"
 
     CHOICES = (
         (ACKNOWLEDGE, "认领"),
         (CLOSE, "关闭"),
         (REASSIGN, "转派"),
-        (Assign, "分派"),
+        (ASSIGN, "分派"),
     )
 
 

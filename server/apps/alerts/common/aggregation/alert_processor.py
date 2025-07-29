@@ -633,8 +633,8 @@ class AlertProcessor:
         format_alert_list = []
         update_alert_list = []
 
-        try:
-            for correlation_rule in correlation_rules:
+        for correlation_rule in correlation_rules:
+            try:
                 # 获取该关联规则的聚合规则
                 aggregation_rules = correlation_rule.aggregation_rules.filter(is_active=True)
                 if not aggregation_rules.exists():
@@ -661,8 +661,10 @@ class AlertProcessor:
                     logger.info(
                         f"关联规则 {correlation_rule.name} 产生告警: {len(window_alerts)} 个新告警, {len(window_updates)} 个更新")
 
-        except Exception as e:
-            logger.error(f"批量处理关联规则失败: {window_type} - {str(e)}")
+            except Exception as e:
+                logger.error(f"批量处理关联规则失败: {window_type} - {str(e)}")
+            finally:
+                CorrelationRules.objects.filter(id=correlation_rule.id).update(exec_time=timezone.now())
 
         return format_alert_list, update_alert_list
 

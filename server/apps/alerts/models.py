@@ -337,6 +337,8 @@ class CorrelationRules(MaintainerInfo, TimeInfo):
     session_timeout = models.CharField(max_length=20, default="10min", help_text="会话窗口超时时间")
     max_window_size = models.CharField(max_length=20, null=True, blank=True, help_text="最大窗口大小限制")
     session_key_fields = JSONField(default=list, help_text="会话窗口分组字段，空数组表示使用事件指纹")
+    exec_time = models.DateTimeField(help_text="规则执行时间", null=True, blank=True)
+    waiting_time = models.CharField(max_length=20, null=True, blank=True, help_text="会话告警等待时间")  # 例如 "10min"
 
     class Meta:
         db_table = 'alerts_correlation_rules'
