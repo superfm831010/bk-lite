@@ -81,8 +81,12 @@ const useIntegrationApi = () => {
   };
 
   const updateInstanceCollectConfig = async (data: {
-    id: React.Key;
-    content: any;
+    instance_id?: React.Key;
+    collect_type_id?: React.Key;
+    child: {
+      id: string;
+      content_data: any;
+    };
   }) => {
     return await post(
       `/log/collect_configs/update_instance_collect_config/`,
