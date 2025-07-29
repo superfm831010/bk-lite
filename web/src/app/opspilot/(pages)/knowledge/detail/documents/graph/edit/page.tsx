@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Form, Button, Select, message, Space, Tag, Empty, Drawer, Tabs, Divider, Skeleton } from 'antd';
+import { Form, Button, Select, message, Space, Tag, Empty, Drawer, Tabs, Divider } from 'antd';
 import { SaveOutlined, PlusOutlined, CloseOutlined, ClearOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import PermissionWrapper from '@/components/permission';
@@ -33,10 +33,11 @@ const KnowledgeGraphEditPage: React.FC = () => {
   const [form] = Form.useForm();
   
   const id = searchParams?.get('id');
+  const desc = searchParams?.get('desc');
+  const name = searchParams?.get('name');
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [fetchingConfig, setFetchingConfig] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [graphId, setGraphId] = useState<number | null>(null);
   
@@ -142,7 +143,6 @@ const KnowledgeGraphEditPage: React.FC = () => {
               currentGraphId = graphDetails.graph_id;
               setGraphId(currentGraphId);
               
-              setFetchingConfig(true);
               try {
                 existingConfig = await fetchKnowledgeGraphById(currentGraphId);
                 console.log('获取到的现有配置:', existingConfig);
@@ -153,8 +153,10 @@ const KnowledgeGraphEditPage: React.FC = () => {
                 
                 setSelectedDocuments(selectedDocIds);
                 
-              } finally {
-                setFetchingConfig(false);
+              } catch (error) {
+                console.warn('获取知识图谱配置失败，将使用新建模式:', error);
+                setIsEditMode(false);
+                setGraphId(null);
               }
             } else {
               setIsEditMode(false);
@@ -167,7 +169,6 @@ const KnowledgeGraphEditPage: React.FC = () => {
           }
         }
         
-        // 3. 设置表单默认值
         const defaultConfig = {
           selectedDocuments: selectedDocIds,
           llmModel: existingConfig?.llm_model || (llmData.length > 0 ? llmData[0].id : 0),
@@ -345,7 +346,7 @@ const KnowledgeGraphEditPage: React.FC = () => {
         message.success(t('knowledge.knowledgeGraph.rebuildSuccess'));
       }
       
-      router.back();
+      router.push(`/opspilot/knowledge/detail/documents?type=knowledge_graph&id=${id}&name=${name}&desc=${desc}`);
       
     } catch (error) {
       console.error('Failed to save config:', error);
@@ -381,15 +382,6 @@ const KnowledgeGraphEditPage: React.FC = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      {fetchingConfig && (
-        <div className="mb-4 p-4 border rounded-lg bg-blue-50">
-          <div className="flex items-center space-x-2">
-            <Skeleton.Avatar size="small" active />
-            <Skeleton.Input style={{ width: 200 }} active />
-          </div>
-        </div>
-      )}
-
       <Form
         form={form}
         layout="vertical"
