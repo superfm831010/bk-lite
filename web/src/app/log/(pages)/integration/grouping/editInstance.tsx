@@ -34,7 +34,8 @@ interface ModalProps {
 
 const EditInstance = forwardRef<ModalRef, ModalProps>(
   ({ onSuccess, collectTypes }, ref) => {
-    const { createLogStreams, updateLogStreams } = useLogApi();
+    const { createLogStreams, updateLogStreams, updateDefaultLogStreams } =
+      useLogApi();
     const { t } = useTranslation();
     const CONDITION_LIST = useConditionList();
     const TERM_LIST = useTermList();
@@ -54,8 +55,12 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
     ]);
     const [collectType, setCollectType] = useState<React.Key | null>();
 
-    const isEdit = useMemo(() => {
-      return modalType === 'edit';
+    const isAdd = useMemo(() => {
+      return modalType === 'add';
+    }, [modalType]);
+
+    const isBuiltIn = useMemo(() => {
+      return modalType === 'builtIn';
     }, [modalType]);
 
     const labels: string[] = useMemo(() => {
@@ -69,7 +74,7 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
         setModalType(type);
         setConfigForm(cloneDeep(form));
         setVisible(true);
-        if (type === 'edit') {
+        if (type !== 'add') {
           setCollectType(form.collect_type);
           setTerm(form.rule?.mode || null);
           setConditions(form.rule?.conditions || []);
@@ -91,7 +96,11 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
     const handleOperate = async (params: GroupInfo) => {
       try {
         setConfirmLoading(true);
-        const request = isEdit ? updateLogStreams : createLogStreams;
+        const request = isAdd
+          ? createLogStreams
+          : isBuiltIn
+            ? updateDefaultLogStreams
+            : updateLogStreams;
         await request(params);
         message.success(t('common.successfullyModified'));
         handleCancel();
@@ -111,7 +120,7 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
             mode: term,
             conditions,
           },
-          id: isEdit ? configForm.id : uuidv4(),
+          id: isAdd ? uuidv4() : configForm.id,
         };
         handleOperate(params);
       });
@@ -218,115 +227,124 @@ const EditInstance = forwardRef<ModalRef, ModalProps>(
           }
         >
           <Form ref={formRef} name="basic" layout="vertical">
-            <Form.Item<GroupInfo>
-              label={t('common.name')}
-              name="name"
-              rules={[{ required: true, message: t('common.required') }]}
-            >
-              <Input placeholder={t('common.name')} />
-            </Form.Item>
-            <Form.Item<GroupInfo>
-              label={t('log.integration.collectType')}
-              name="collect_type_id"
-              rules={[{ required: true, message: t('common.required') }]}
-            >
-              <Select
-                placeholder={t('log.integration.collectType')}
-                showSearch
-                allowClear
-                onChange={(val) => handleCollectTypeChange(val)}
-              >
-                {collectTypes.map((item: ListItem) => (
-                  <Option value={item.id} key={item.id}>
-                    {item.name}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-            <Form.Item<GroupInfo>
-              label={t('log.integration.rule')}
-              name="rule"
-              rules={[{ required: true, validator: validateDimensions }]}
-            >
-              <div className="flex items-center mb-[20px]">
-                <span>{t('log.integration.meetRule')}</span>
-                <Select
-                  className="ml-[8px] flex-1"
-                  placeholder={t('log.integration.rule')}
-                  showSearch
-                  value={term}
-                  onChange={(val) => setTerm(val)}
+            {!isBuiltIn && (
+              <>
+                <Form.Item<GroupInfo>
+                  label={t('common.name')}
+                  name="name"
+                  rules={[{ required: true, message: t('common.required') }]}
                 >
-                  {TERM_LIST.map((item: ListItem) => (
-                    <Option value={item.id} key={item.id}>
-                      {item.name}
-                    </Option>
-                  ))}
-                </Select>
-              </div>
-              <div className={groupingStyle.conditionItem}>
-                {conditions.length ? (
-                  <ul className={groupingStyle.conditions}>
-                    {conditions.map((conditionItem, index) => (
-                      <li
-                        className={`${groupingStyle.itemOption} ${groupingStyle.filter}`}
-                        key={index}
-                      >
-                        <Select
-                          style={{
-                            width: '180px',
-                          }}
-                          placeholder={t('log.label')}
-                          showSearch
-                          value={conditionItem.field}
-                          onChange={(val) => handleLabelChange(val, index)}
-                        >
-                          {labels.map((item: string) => (
-                            <Option value={item} key={item}>
-                              {item}
-                            </Option>
-                          ))}
-                        </Select>
-                        <Select
-                          style={{
-                            width: '118px',
-                          }}
-                          placeholder={t('log.term')}
-                          value={conditionItem.op}
-                          onChange={(val) => handleConditionChange(val, index)}
-                        >
-                          {CONDITION_LIST.map((item: ListItem) => (
-                            <Option value={item.id} key={item.id}>
-                              {item.name}
-                            </Option>
-                          ))}
-                        </Select>
-                        <Input
-                          style={{
-                            width: '180px',
-                          }}
-                          placeholder={t('log.value')}
-                          value={conditionItem.value}
-                          onChange={(e) => handleValueChange(e, index)}
-                        ></Input>
-                        {!!index && (
-                          <Button
-                            icon={<CloseOutlined />}
-                            onClick={() => deleteConditionItem(index)}
-                          />
-                        )}
-                        <Button
-                          icon={<PlusOutlined />}
-                          onClick={addConditionItem}
-                        />
-                      </li>
+                  <Input placeholder={t('common.name')} />
+                </Form.Item>
+                <Form.Item<GroupInfo>
+                  label={t('log.integration.collectType')}
+                  name="collect_type_id"
+                  rules={[{ required: true, message: t('common.required') }]}
+                >
+                  <Select
+                    placeholder={t('log.integration.collectType')}
+                    showSearch
+                    allowClear
+                    onChange={(val) => handleCollectTypeChange(val)}
+                  >
+                    {collectTypes.map((item: ListItem) => (
+                      <Option value={item.id} key={item.id}>
+                        {item.name}
+                      </Option>
                     ))}
-                  </ul>
-                ) : (
-                  <Button icon={<PlusOutlined />} onClick={addConditionItem} />
-                )}
-              </div>
-            </Form.Item>
+                  </Select>
+                </Form.Item>
+                <Form.Item<GroupInfo>
+                  label={t('log.integration.rule')}
+                  name="rule"
+                  rules={[{ required: true, validator: validateDimensions }]}
+                >
+                  <div className="flex items-center mb-[20px]">
+                    <span>{t('log.integration.meetRule')}</span>
+                    <Select
+                      className="ml-[8px] flex-1"
+                      placeholder={t('log.integration.rule')}
+                      showSearch
+                      value={term}
+                      onChange={(val) => setTerm(val)}
+                    >
+                      {TERM_LIST.map((item: ListItem) => (
+                        <Option value={item.id} key={item.id}>
+                          {item.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div className={groupingStyle.conditionItem}>
+                    {conditions.length ? (
+                      <ul className={groupingStyle.conditions}>
+                        {conditions.map((conditionItem, index) => (
+                          <li
+                            className={`${groupingStyle.itemOption} ${groupingStyle.filter}`}
+                            key={index}
+                          >
+                            <Select
+                              style={{
+                                width: '180px',
+                              }}
+                              placeholder={t('log.label')}
+                              showSearch
+                              value={conditionItem.field}
+                              onChange={(val) => handleLabelChange(val, index)}
+                            >
+                              {labels.map((item: string) => (
+                                <Option value={item} key={item}>
+                                  {item}
+                                </Option>
+                              ))}
+                            </Select>
+                            <Select
+                              style={{
+                                width: '118px',
+                              }}
+                              placeholder={t('log.term')}
+                              value={conditionItem.op}
+                              onChange={(val) =>
+                                handleConditionChange(val, index)
+                              }
+                            >
+                              {CONDITION_LIST.map((item: ListItem) => (
+                                <Option value={item.id} key={item.id}>
+                                  {item.name}
+                                </Option>
+                              ))}
+                            </Select>
+                            <Input
+                              style={{
+                                width: '180px',
+                              }}
+                              placeholder={t('log.value')}
+                              value={conditionItem.value}
+                              onChange={(e) => handleValueChange(e, index)}
+                            ></Input>
+                            {!!index && (
+                              <Button
+                                icon={<CloseOutlined />}
+                                onClick={() => deleteConditionItem(index)}
+                              />
+                            )}
+                            <Button
+                              icon={<PlusOutlined />}
+                              onClick={addConditionItem}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <Button
+                        icon={<PlusOutlined />}
+                        onClick={addConditionItem}
+                      />
+                    )}
+                  </div>
+                </Form.Item>
+              </>
+            )}
             <Form.Item<GroupInfo>
               label={t('log.group')}
               name="organizations"
