@@ -297,11 +297,16 @@ def get_user_rules(group_id, username):
 def get_user_rules_by_app(group_id, username, domain, app, module, child_module=""):
     # 构建基础查询条件
     admin_list = list(Role.objects.filter(name="admin").filter(Q(app="") | Q(app=app)).values_list("id", flat=True))
+    guest_group = Group.objects.filter(name="OpsPilotGuest").first()
     user_obj = User.objects.filter(username=username, domain=domain).first()
+    admin_teams = [int(group_id)]
+    group_ids = [int(group_id), guest_group.id] if guest_group else [int(group_id)]
+    if guest_group:
+        admin_teams.append(guest_group.id)
     if not user_obj:
         return {"instance": [], "team": []}
     if set(user_obj.role_list).intersection(admin_list):
-        return {"instance": [], "team": [int(group_id), Group.objects.get(name="OpsPilotGuest").id]}
+        return {"instance": [], "team": admin_teams}
     base_filter = Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
     # 添加模块过滤条件
     module_filter = Q(group_rule__rules__has_key=module)
@@ -312,9 +317,12 @@ def get_user_rules_by_app(group_id, username, domain, app, module, child_module=
     )
 
     if not rules:
-        return {}
+        return {"instance": [], "team": admin_teams}
+    group_list = {i.group_rule.group_id for i in rules}
+    return_data = {"instance": [], "team": [i for i in group_ids if i not in group_list]}
 
-    return_data = {"instance": [], "team": []}
+    if group_id not in group_list:
+        return_data["team"].append(group_id)
     for rule in rules:
         # 获取模块数据
         module_data = rule.group_rule.rules.get(module, [])
