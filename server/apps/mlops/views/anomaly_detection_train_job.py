@@ -5,7 +5,6 @@ from django.http import Http404
 import pandas as pd
 
 from apps.core.decorators.api_permission import HasPermission
-
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.mlops.filters.anomaly_detection_dataset import AnomalyDetectionDatasetFilter
 from apps.mlops.filters.anomaly_detection_train_job import AnomalyDetectionTrainJobFilter
@@ -24,7 +23,6 @@ class AnomalyDetectionTrainJobViewSet(AuthViewSet):
    pagination_class=CustomPageNumberPagination
    permission_key = "dataset.anomaly_detection_train_job"
 
-      
    @action(detail=True, methods=['post'], url_path='train')
    @HasPermission("train_tasks-Train")
    def train(self, request, pk=None):
