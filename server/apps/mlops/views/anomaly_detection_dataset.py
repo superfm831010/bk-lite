@@ -18,7 +18,7 @@ class AnomalyDetectionDatasetViewSet(AuthViewSet):
     ordering = ("-id",)
     permission_key = "dataset.anomaly_detection_dataset"
 
-    @HasPermission(" anomaly_detection_datasets-View")
+    @HasPermission("anomaly_detection_datasets-View")
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
