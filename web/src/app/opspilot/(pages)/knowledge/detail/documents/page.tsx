@@ -33,9 +33,16 @@ const DocumentsPage: React.FC = () => {
   const desc = searchParams ? searchParams.get('desc') : null;
   const type = searchParams ? searchParams.get('type') : null;
 
-  const [mainTabKey, setMainTabKey] = useState<string>(type === 'qa_pairs' ? 'qa_pairs' : 'source_files');
-  const [sourceFileType, setSourceFileType] = useState<string>(type && type !== 'qa_pairs' ? type : 'file');
-  const [activeTabKey, setActiveTabKey] = useState<string>(type || 'file');
+  const [mainTabKey, setMainTabKey] = useState<string>(['knowledge_graph', 'qa_pairs'].includes(type || '') ? type || 'qa_pairs' : 'source_files');
+  const [activeTabKey, setActiveTabKey] = useState<string>(() => {
+    if (type === 'knowledge_graph' || type === 'qa_pairs') {
+      return type;
+    }
+    if (['file', 'web_page', 'manual'].includes(type || '')) {
+      return type || 'file';
+    }
+    return 'file';
+  });
 
   const [searchText, setSearchText] = useState<string>('');
   const [pagination, setPagination] = useState<PaginationProps>({
@@ -307,7 +314,6 @@ const DocumentsPage: React.FC = () => {
     }
   }, [qaPairPagination.current, qaPairPagination.pageSize, id]);
 
-  // Delete single QA pair
   const handleDeleteSingleQAPair = async (qaPairId: number) => {
     confirm({
       title: t('common.delConfirm'),
@@ -317,6 +323,7 @@ const DocumentsPage: React.FC = () => {
         try {
           await deleteQAPair(qaPairId);
           fetchQAPairData();
+          setSelectedQAPairKeys([]);
           message.success(t('common.delSuccess'));
         } catch {
           message.error(t('common.delFailed'));
@@ -345,6 +352,7 @@ const DocumentsPage: React.FC = () => {
           message.success(t('common.delSuccess'));
         } catch {
           message.error(t('common.delFailed'));
+          setSelectedQAPairKeys([]);
         }
       },
     });
@@ -497,7 +505,7 @@ const DocumentsPage: React.FC = () => {
     if (mainTabKey === 'source_files') {
       fetchData(searchText);
     }
-  }, [id, sourceFileType]);
+  }, [id, activeTabKey]);
 
   useEffect(() => {
     if (mainTabKey === 'qa_pairs') {
@@ -518,7 +526,7 @@ const DocumentsPage: React.FC = () => {
   const handleMainTabChange = (key: string) => {
     setMainTabKey(key);
     if (key === 'source_files') {
-      setActiveTabKey(sourceFileType);
+      setActiveTabKey('file');
     } else if (key === 'qa_pairs') {
       setActiveTabKey('qa_pairs');
     } else if (key === 'knowledge_graph') {
@@ -533,7 +541,6 @@ const DocumentsPage: React.FC = () => {
 
   const handleSourceFileTypeChange = (e: any) => {
     const newType = e.target.value;
-    setSourceFileType(newType);
     setActiveTabKey(newType);
     setPagination({
       current: 1,
@@ -681,7 +688,7 @@ const DocumentsPage: React.FC = () => {
         <div className='left-side'>
           {mainTabKey === 'source_files' && (
             <Radio.Group
-              value={sourceFileType}
+              value={activeTabKey}
               onChange={handleSourceFileTypeChange}
             >
               <Radio.Button value="file">{t('knowledge.localFile')}</Radio.Button>
@@ -756,7 +763,12 @@ const DocumentsPage: React.FC = () => {
         </div>
       </div>
       {activeTabKey === 'knowledge_graph' ? (
-        <KnowledgeGraphPage knowledgeBaseId={id} />
+        <KnowledgeGraphPage 
+          knowledgeBaseId={id} 
+          name={name}
+          desc={desc}
+          type={activeTabKey}
+        />
       ) : activeTabKey === 'qa_pairs' ? (
         <CustomTable
           rowKey="id"
@@ -786,7 +798,7 @@ const DocumentsPage: React.FC = () => {
       )}
       {mainTabKey === 'source_files' && (
         <SelectSourceModal
-          defaultSelected={sourceFileType}
+          defaultSelected={activeTabKey}
           visible={isModalVisible}
           onCancel={handleModalCancel}
           onConfirm={handleModalConfirm}

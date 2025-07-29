@@ -12,6 +12,9 @@ import { GraphData, GraphNode, GraphEdge } from '@/app/opspilot/types/knowledge'
 
 interface KnowledgeGraphPageProps {
   knowledgeBaseId: string | null;
+  name: string | null;
+  desc: string | null;
+  type: string | null;
 }
 
 const transformApiDataToGraphData = (data: any): GraphData => {
@@ -67,7 +70,7 @@ const transformApiDataToGraphData = (data: any): GraphData => {
   return { nodes: [], edges: [] };
 };
 
-const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId }) => {
+const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId, desc, name, type }) => {
   const { t } = useTranslation();
   const router = useRouter();
   const { fetchKnowledgeGraphDetails, rebuildKnowledgeGraphCommunity } = useKnowledgeApi();
@@ -123,7 +126,7 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
   }, [knowledgeBaseId]);
 
   const handleSettingsClick = () => {
-    router.push(`/opspilot/knowledge/detail/documents/graph/edit?id=${knowledgeBaseId}`);
+    router.push(`/opspilot/knowledge/detail/documents/graph/edit?id=${knowledgeBaseId}&name=${name}&desc=${desc}&type=${type}`);
   };
 
   const handleNodeClick = (node: GraphNode) => {

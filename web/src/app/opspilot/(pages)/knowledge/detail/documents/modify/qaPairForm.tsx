@@ -184,7 +184,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       const docInfo = getSelectedDocumentInfo(key);
       return docInfo ? { ...docInfo } : { key, title: `文档 ${key}`, type: 'unknown' };
     }).filter(Boolean);
-  }, [tempSelectedDocuments, getSelectedDocumentInfo]);
+  }, [tempSelectedDocuments]);
 
   const getDocumentTypeLabel = useCallback((type: string) => {
     switch (type) {
