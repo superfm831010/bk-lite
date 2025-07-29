@@ -16,7 +16,11 @@
             "View",
             "Add",
             "Edit",
-            "Delete"
+            "Delete",
+            "File Tag",
+            "File Delete",
+            "File Upload",
+            "File Edit"
           ]
         }
       ]
@@ -37,6 +41,22 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Model Release",
+      "children": [
+        {
+          "id": "model_release",
+          "display_name": "Model Release",
+          "name": "model_release",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
+        }
+      ]
     }
   ],
   "roles": [
@@ -44,6 +64,11 @@
       "name": "admin",
       "role_name": "mlops_admin",
       "menus": []
+    },
+    {
+      "name": "normal",
+      "role_name": "mlops_normal",
+      "menus": ["anomaly_detection_datasets-View","train_tasks-View","model_release-View"]
     }
   ]
 }
