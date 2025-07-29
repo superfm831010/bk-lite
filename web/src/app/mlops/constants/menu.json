@@ -4,7 +4,7 @@
       "title": "数据集",
       "icon": "Gc_103_face-Data",
       "url": "/mlops/manage",
-      "name": "Datasets",
+      "name": "anomaly_detection_datasets",
       "children": [
         {
           "title": "异常检测",
@@ -30,7 +30,7 @@
       "title": "训练任务",
       "icon": "renwu",
       "url": "/mlops/task",
-      "name": "TrainTask",
+      "name": "train_tasks",
       "children": [
         {
           "title": "任务列表",
