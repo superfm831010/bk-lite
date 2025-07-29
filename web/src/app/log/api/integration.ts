@@ -14,7 +14,7 @@ interface NodeConfigParam {
 }
 
 const useIntegrationApi = () => {
-  const { get, post, put, del } = useApiClient();
+  const { get, post, put, del, patch } = useApiClient();
 
   const getCollectTypes = async (
     params: {
@@ -100,6 +100,12 @@ const useIntegrationApi = () => {
     return await put(`/log/streams/${data.id}/`, params);
   };
 
+  const updateDefaultLogStreams = async (data: GroupInfo) => {
+    const params = cloneDeep(data);
+    delete params.id;
+    return await patch(`/log/streams/${data.id}/`, params);
+  };
+
   const getLogStreams = async (
     params: {
       name?: string;
@@ -131,6 +137,7 @@ const useIntegrationApi = () => {
     createLogStreams,
     updateLogStreams,
     deleteLogStream,
+    updateDefaultLogStreams,
   };
 };
 
