@@ -17,8 +17,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="correlationrules",
-            name="waiting_time",
-            field=models.CharField(blank=True, help_text="会话告警等待时间", max_length=20, null=True),
+            name="close_time",
+            field=models.CharField(blank=True, help_text="自动关闭时间", max_length=20, null=True),
         ),
         migrations.AlterField(
             model_name="alert",
