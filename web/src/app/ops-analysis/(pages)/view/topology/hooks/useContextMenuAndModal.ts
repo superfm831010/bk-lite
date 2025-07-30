@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useMemo } from 'react';
-import type { DataNode } from 'antd/lib/tree';
+import { useCallback } from 'react';
 import type { Edge } from '@antv/x6';
-import { getEdgeStyle, addEdgeTools, getNodeStyle, filterTree } from '../utils/topologyUtils';
-import { mockGroups, mockInstances } from '../../mockData';
+import { getEdgeStyle, addEdgeTools } from '../utils/topologyUtils';
 
 export const useContextMenuAndModal = (
   containerRef: React.RefObject<HTMLDivElement>,
@@ -18,13 +16,6 @@ export const useContextMenuAndModal = (
     isDrawingRef,
     drawingEdgeRef,
     updateDrawingState,
-    setModalVisible,
-    selectedRowKeys,
-    setSelectedRowKeys,
-    instanceOptions,
-    setInstanceOptions,
-    searchTerm,
-    setInputValue,
   } = state;
 
   // 处理线条类型变更
@@ -397,61 +388,11 @@ export const useContextMenuAndModal = (
     ]
   );
 
-  // 处理树节点选择
-  const onTreeSelect = useCallback(
-    (keys: React.Key[], info: { node: DataNode }) => {
-      const key = keys[0] as string;
-      if (!info.node.children) {
-        setInstanceOptions(mockInstances[key] || []);
-        setSelectedRowKeys([]);
-        setModalVisible(true);
-      }
-    },
-    [setInstanceOptions, setSelectedRowKeys, setModalVisible]
-  );
-
-  // 处理模态框确认
-  const onModalOk = useCallback(() => {
-    if (graphInstance && selectedRowKeys.length > 0) {
-      selectedRowKeys.forEach((id: any, idx: any) => {
-        const inst = instanceOptions.find((i: any) => i.id === id);
-        if (inst) {
-          graphInstance.addNode({
-            x: 50 + (idx % 3) * 180,
-            y: 50 + Math.floor(idx / 3) * 120,
-            label: inst.name,
-            ...getNodeStyle(),
-          });
-        }
-      });
-    }
-    setModalVisible(false);
-  }, [graphInstance, selectedRowKeys, instanceOptions, setModalVisible]);
-
-  const onModalCancel = useCallback(() => {
-    setModalVisible(false);
-  }, [setModalVisible]);
-
-  // 同步搜索词
-  useEffect(() => {
-    setInputValue(searchTerm);
-  }, [searchTerm, setInputValue]);
-
-  // 过滤树数据
-  const filteredTreeData = useMemo(
-    () => filterTree(mockGroups, searchTerm),
-    [searchTerm]
-  );
-
   return {
-    filteredTreeData,
     handleLineTypeChange,
     handleLineNameChange,
     handleEdgeConfigConfirm,
     closeEdgeConfig,
-    handleMenuClick,
-    onTreeSelect,
-    onModalOk,
-    onModalCancel,
+    handleMenuClick
   };
 };
