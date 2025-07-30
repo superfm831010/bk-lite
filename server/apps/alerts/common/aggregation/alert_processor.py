@@ -739,7 +739,7 @@ class AlertProcessor:
 
         Args:
             session: 会话窗口对象
-            events: 匹配会话的事件列表
+            event: 匹配会话的事件列表
             aggregation_rules: 聚合规则列表
 
         Returns:
