@@ -68,8 +68,6 @@ class CollectTypeService:
         for instance_id, instance_info in instance_map.items():
             group_ids = instance_info.pop("group_ids")
             streams = instance_info.pop("stream_ids", [])
-            if not streams:
-                raise BaseAppException("streams is required for collect instance")
             for group_id in group_ids:
                 assos.append((instance_id, group_id))
             for stream in streams:
@@ -147,15 +145,12 @@ class CollectTypeService:
         if not collect_type_obj:
             raise BaseAppException("collect_type does not exist")
 
-        # 更新实例数据流
-        if not stream_ids:
-            raise BaseAppException("streams is required for collect instance")
-
         StreamCollectInstance.objects.filter(collect_instance_id=instance_id).delete()
-        StreamCollectInstance.objects.bulk_create(
-            [StreamCollectInstance(stream_id=stream_id, collect_instance_id=instance_id) for stream_id in stream_ids],
-            ignore_conflicts=True
-        )
+        if stream_ids:
+            StreamCollectInstance.objects.bulk_create(
+                [StreamCollectInstance(stream_id=stream_id, collect_instance_id=instance_id) for stream_id in stream_ids],
+                ignore_conflicts=True
+            )
 
         col_obj = Controller(
             {

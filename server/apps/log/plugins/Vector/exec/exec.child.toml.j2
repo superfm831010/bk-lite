@@ -16,7 +16,7 @@ inputs = ["exec_{{ instance_id }}"]
 source = '''
 .collect_type = "exec"
 .instance_id = "{{ instance_id }}"
-.streams = []
+.streams = ["default"]
 '''
 
 {% if streams %}

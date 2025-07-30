@@ -15,7 +15,7 @@ inputs = ["syslog_{{ instance_id }}"]
 source = '''
 .collect_type = "syslog"
 .instance_id = "{{ instance_id }}"
-.streams = []
+.streams = ["default"]
 '''
 
 {% if streams %}
