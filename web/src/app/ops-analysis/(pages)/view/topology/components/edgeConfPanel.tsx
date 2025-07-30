@@ -19,6 +19,7 @@ interface InterfaceConfig {
 
 interface EdgeConfigPanelProps {
   visible: boolean;
+  readonly?: boolean;
   edgeData: {
     id: string;
     lineType: string;
@@ -42,6 +43,7 @@ interface EdgeConfigPanelProps {
 
 const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
   visible,
+  readonly = false,
   edgeData,
   onLineTypeChange,
   onLineNameChange,
@@ -53,14 +55,15 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
 
   useEffect(() => {
     if (edgeData) {
-      form.setFieldsValue({
-        lineType: edgeData.lineType,
+      const initialValues = {
+        lineType: edgeData.lineType || 'network line',
         lineName: edgeData.lineName || '',
         sourceInterfaceType: edgeData.sourceInterface?.type || 'existing',
         sourceInterfaceValue: edgeData.sourceInterface?.value || '',
         targetInterfaceType: edgeData.targetInterface?.type || 'existing',
         targetInterfaceValue: edgeData.targetInterface?.value || '',
-      });
+      };
+      form.setFieldsValue(initialValues);
     }
   }, [edgeData, form]);
 
@@ -145,7 +148,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
               label={`${t('topology.interface')}：`}
               style={{ marginBottom: 8 }}
             >
-              <Radio.Group>
+              <Radio.Group disabled={readonly}>
                 <Radio value="existing">
                   {t('topology.existingInterface')}
                 </Radio>
@@ -171,6 +174,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
                     <Select
                       placeholder={t('common.selectMsg')}
                       options={mockInterfaces}
+                      disabled={readonly}
                     />
                   </Form.Item>
                 ) : (
@@ -179,7 +183,10 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
                     rules={[{ required: true, message: t('common.inputMsg') }]}
                     style={{ marginBottom: '10px' }}
                   >
-                    <Input placeholder={t('common.inputMsg')} />
+                    <Input
+                      placeholder={t('common.inputMsg')}
+                      disabled={readonly}
+                    />
                   </Form.Item>
                 );
               }}
@@ -206,7 +213,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
             name="lineName"
             rules={[{ required: true, message: t('common.inputMsg') }]}
           >
-            <Input placeholder={t('common.inputMsg')} />
+            <Input placeholder={t('common.inputMsg')} disabled={readonly} />
           </Form.Item>
         ) : null;
       }}
@@ -223,11 +230,11 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
     >
       {({ getFieldValue }) => {
         const lineType = getFieldValue('lineType');
-        return lineType === 'network line' ? (
+        return lineType === 'network line' && edgeData ? (
           <div style={{ marginTop: '24px' }}>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-              {renderInterfaceConfig('source', edgeData!.sourceNode.name)}
-              {renderInterfaceConfig('target', edgeData!.targetNode.name)}
+              {renderInterfaceConfig('source', edgeData.sourceNode.name)}
+              {renderInterfaceConfig('target', edgeData.targetNode.name)}
             </Space>
           </div>
         ) : null;
@@ -239,7 +246,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
 
   return (
     <Drawer
-      title={t('topology.edgeConfig')}
+      title={readonly ? t('topology.edgeView') : t('topology.edgeConfig')}
       placement="right"
       width={600}
       open={visible}
@@ -248,10 +255,14 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
       footer={
         <div style={{ textAlign: 'right', padding: '16px 24px' }}>
           <Space>
-            <Button onClick={onClose}>{t('common.cancel')}</Button>
-            <Button type="primary" onClick={() => form.submit()}>
-              {t('common.confirm')}
+            <Button onClick={onClose}>
+              {readonly ? t('common.close') : t('common.cancel')}
             </Button>
+            {!readonly && (
+              <Button type="primary" onClick={() => form.submit()}>
+                {t('common.confirm')}
+              </Button>
+            )}
           </Space>
         </div>
       }
@@ -262,12 +273,12 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
           layout="vertical"
           onFinish={handleFinish}
           initialValues={{
-            lineType: edgeData.lineType,
-            lineName: edgeData.lineName || '',
-            sourceInterfaceType: edgeData.sourceInterface?.type || 'existing',
-            sourceInterfaceValue: edgeData.sourceInterface?.value || '',
-            targetInterfaceType: edgeData.targetInterface?.type || 'existing',
-            targetInterfaceValue: edgeData.targetInterface?.value || '',
+            lineType: edgeData?.lineType || 'network line',
+            lineName: edgeData?.lineName || '',
+            sourceInterfaceType: edgeData?.sourceInterface?.type || 'existing',
+            sourceInterfaceValue: edgeData?.sourceInterface?.value || '',
+            targetInterfaceType: edgeData?.targetInterface?.type || 'existing',
+            targetInterfaceValue: edgeData?.targetInterface?.value || '',
           }}
         >
           {/* 线条类型选择 */}
@@ -279,6 +290,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
             <Select
               placeholder={t('common.selectMsg')}
               onChange={handleLineTypeChange}
+              disabled={readonly}
             >
               <Select.Option value="network line">
                 {t('topology.networkLine')}

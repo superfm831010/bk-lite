@@ -1,5 +1,3 @@
-import type { DataNode } from 'antd/lib/tree';
-
 export const getNodeStyle = () => ({
   width: 120,
   height: 80,
@@ -212,24 +210,6 @@ export const hideAllPorts = (graph: any) => {
       );
     }
   });
-};
-
-export const filterTree = (
-  nodes: DataNode[],
-  searchTerm: string
-): DataNode[] => {
-  return nodes
-    .filter(
-      (node) =>
-        typeof node.title === 'string' &&
-        node.title.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .map((node) => ({
-      ...node,
-      children: node.children
-        ? filterTree(node.children, searchTerm)
-        : undefined,
-    }));
 };
 
 // 添加文本节点样式配置

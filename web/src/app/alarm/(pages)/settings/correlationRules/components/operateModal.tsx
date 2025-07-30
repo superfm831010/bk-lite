@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { useSettingApi } from '@/app/alarm/api/settings';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import type {
   AggregationRule,
   CorrelationRule,
@@ -16,6 +17,7 @@ import {
   Radio,
   InputNumber,
   message,
+  Tooltip,
 } from 'antd';
 
 interface OperateModalProps {
@@ -69,10 +71,8 @@ const OperateModal: React.FC<OperateModalProps> = ({
 
   useEffect(() => {
     if (open && currentRow && aggOptions.length) {
-
       const winType = currentRow.window_type;
       let winTime: number | undefined;
-      let waitTime: number | undefined;
 
       const initialRuleId = aggOptions.find(
         (opt) => opt.id === currentRow.aggregation_rules?.[0]
@@ -82,9 +82,6 @@ const OperateModal: React.FC<OperateModalProps> = ({
         winTime = currentRow.session_timeout
           ? parseInt(currentRow.session_timeout, 10)
           : undefined;
-        waitTime = currentRow.waiting_time
-          ? parseInt(currentRow.waiting_time, 10)
-          : undefined;
       } else {
         winTime = currentRow.window_size
           ? parseInt(currentRow.window_size, 10)
@@ -92,10 +89,12 @@ const OperateModal: React.FC<OperateModalProps> = ({
       }
       form.setFieldsValue({
         name: currentRow.name,
+        closeTime: currentRow.close_time
+          ? parseInt(currentRow.close_time, 10)
+          : 0,
         ruleId: initialRuleId,
         windowType: winType,
         windowTime: winTime,
-        waitingTime: waitTime,
       });
     }
   }, [aggOptions, open, currentRow, form]);
@@ -104,19 +103,17 @@ const OperateModal: React.FC<OperateModalProps> = ({
     if (!currentRow && selectedType) {
       let defaultType = 'sliding';
       let defaultTime = 10;
-      let defaultWaitingTime = 10;
       if (selectedType === 'critical_event_aggregation') {
         defaultType = 'fixed';
         defaultTime = 1;
       } else if (selectedType === 'error_scenario_handling') {
         defaultType = 'session';
         defaultTime = 10;
-        defaultWaitingTime = 10;
       }
       form.setFieldsValue({
         windowType: defaultType,
         windowTime: defaultTime,
-        waitingTime: defaultWaitingTime,
+        closeTime: 0,
       });
     }
   }, [selectedType, form, currentRow]);
@@ -154,6 +151,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
     const timeStr = `${values.windowTime}min`;
     const params: any = {
       name: values.name,
+      close_time: `${values.closeTime}min`,
       aggregation_rules: [selectedOpt?.id],
       scope: 'all',
       rule_type: 'alert',
@@ -161,7 +159,6 @@ const OperateModal: React.FC<OperateModalProps> = ({
     };
     if (apiWinType === 'session') {
       params.session_timeout = timeStr;
-      params.waiting_time = `${values.waitingTime}min`;
     } else {
       params.window_size = timeStr;
     }
@@ -209,7 +206,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
       <Form
         form={form}
         layout="horizontal"
-        labelCol={{ span: locale === 'en' ? 4 : 3 }}
+        labelCol={{ span: locale === 'en' ? 5 : 4 }}
         onFinish={handleFinish}
       >
         <Form.Item
@@ -218,6 +215,26 @@ const OperateModal: React.FC<OperateModalProps> = ({
           rules={[{ required: true, message: t('common.inputTip') }]}
         >
           <Input placeholder={t('common.inputTip')} />
+        </Form.Item>
+
+        <Form.Item
+          name="closeTime"
+          initialValue={0}
+          label={
+            <span style={{ display: 'flex', alignItems: 'center' }}>
+              {t('settings.correlation.closeTime')}
+              <Tooltip title={t('settings.correlation.closeTimeTip')}>
+                <QuestionCircleOutlined style={{ marginLeft: 6 }} />
+              </Tooltip>
+            </span>
+          }
+          rules={[{ required: true, message: t('common.inputTip') }]}
+        >
+          <InputNumber
+            min={0}
+            style={{ width: '140px' }}
+            addonAfter={t('settings.correlation.min')}
+          />
         </Form.Item>
 
         <Form.Item
@@ -323,20 +340,6 @@ const OperateModal: React.FC<OperateModalProps> = ({
             addonAfter={t('settings.correlation.min')}
           />
         </Form.Item>
-        {windowType === 'session' && (
-          <Form.Item
-            name="waitingTime"
-            initialValue={10}
-            rules={[{ required: true, message: t('common.inputTip') }]}
-            label={t('settings.correlation.waitingTime')}
-          >
-            <InputNumber
-              min={0}
-              style={{ width: '140px' }}
-              addonAfter={t('settings.correlation.min')}
-            />
-          </Form.Item>
-        )}
       </Form>
     </Drawer>
   );

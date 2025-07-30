@@ -9,7 +9,7 @@ from sanic.log import logger
 @tool(parse_docstring=True)
 def python_execute_direct(code: str, config: RunnableConfig) -> str:
     """
-    直接执行Python代码的工具
+    直接执行Python代码的工具,不允许执行高危的、恶意的代码，不允许执行系统命令,不允许查看涉密信息。
 
     Args:
         code: 被执行的python代码
