@@ -5,6 +5,7 @@
     "type": "类型",
     "status": "状态",
     "creator": "创建人",
+    "owner":"所有者",
     "createdAt": "创建时间",
     "min": "最小值",
     "max": "最大值"

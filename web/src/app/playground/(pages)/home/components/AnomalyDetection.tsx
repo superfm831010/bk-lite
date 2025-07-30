@@ -1,6 +1,6 @@
 
-import { Button, Collapse, Upload, message, Select, Spin } from "antd";
-import type { CollapseProps, UploadProps } from 'antd';
+import { Button, Upload, message, Select, Spin } from "antd";
+import type { UploadProps } from 'antd';
 import { handleFileRead, formatProbability } from "@/app/playground/utils/common";
 import { useCallback, useState, useEffect, useMemo } from "react";
 import { useTranslation } from "@/utils/i18n";
@@ -19,7 +19,7 @@ const AnomalyDetection = () => {
   const [currentFileId, setCurrentFileId] = useState<string | null>(null);
   const [fileData, setFileData] = useState<any>(null);
   const [selectId, setSelectId] = useState<number | null>(null);
-  const [activeKey, setActiveKey] = useState<string[]>(['request']);
+  // const [activeKey, setActiveKey] = useState<string[]>(['request']);
   const [chartData, setChartData] = useState<any[]>([]);
   const [infoText, setInfoText] = useState<any>({
     bannerTitle: '',
@@ -68,70 +68,70 @@ const AnomalyDetection = () => {
     }
   ], [convertToLocalizedTime]);
 
-  const anomalyData = useMemo(() =>
-    chartData.filter((item) => item.label === 1),
-  [chartData]);
+  const anomalyData = useMemo(() => {
+    return chartData.filter((item) => item.label === 1)
+  }, [chartData]);
 
-  const RequestContent = useMemo(() => {
-    const params = {
-      // serving_id: 1,
-      model_name: "RandomForest_1",
-      model_version: "latest",
-      algorithm: "RandomForest",
-      // data: [
-      //   {
-      //     "timestamp": "2026-03-01",
-      //     "value": 0.498,
-      //     "label": 0
-      //   },
-      //   "..."
-      // ],
-      anomaly_threshold: 0.5,
-    };
+  // const RequestContent = useMemo(() => {
+  //   const params = {
+  //     // serving_id: 1,
+  //     model_name: "RandomForest_1",
+  //     model_version: "latest",
+  //     algorithm: "RandomForest",
+  //     // data: [
+  //     //   {
+  //     //     "timestamp": "2026-03-01",
+  //     //     "value": 0.498,
+  //     //     "label": 0
+  //     //   },
+  //     //   "..."
+  //     // ],
+  //     anomaly_threshold: 0.5,
+  //   };
 
-    return (
-      <div className="h-[491px]">
-        <div className="ml-4">
-          <div className="text-[var(--color-text-1)] text-base">Params</div>
-          <div className="text-[var(--color-text-2)]">
-            <pre>
-              {JSON.stringify(params, null, 2)}
-            </pre>
-          </div>
-        </div>
-      </div>
-    )
-  }, []);
+  //   return (
+  //     <div className="h-[491px]">
+  //       <div className="ml-4">
+  //         <div className="text-[var(--color-text-1)] text-base">Params</div>
+  //         <div className="text-[var(--color-text-2)]">
+  //           <pre>
+  //             {JSON.stringify(params, null, 2)}
+  //           </pre>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   )
+  // }, []);
 
-  const ResponseContent = useMemo(() => {
-    return (
-      <div className="h-[491px] overflow-auto">
-        <div>
-          <div className="text-[var(--color-text-2)]">
-            {/* <pre>
-              {JSON.stringify(response, null, 2)}
-            </pre> */}
-            <CustomTable
-              rowKey='timestamp'
-              columns={columns}
-              sticky={{ offsetHeader: 0 }}
-              dataSource={anomalyData}
-            />
-          </div>
-        </div>
-      </div>
-    )
-  }, [columns, anomalyData]);
+  // const ResponseContent = useMemo(() => {
+  //   return (
+  //     <div className="h-[491px] overflow-auto">
+  //       <div>
+  //         <div className="text-[var(--color-text-2)]">
+  //           {/* <pre>
+  //             {JSON.stringify(response, null, 2)}
+  //           </pre> */}
+  //           <CustomTable
+  //             rowKey='timestamp'
+  //             columns={columns}
+  //             sticky={{ offsetHeader: 0 }}
+  //             dataSource={anomalyData}
+  //           />
+  //         </div>
+  //       </div>
+  //     </div>
+  //   )
+  // }, [columns, anomalyData]);
 
-  const panelStyle: React.CSSProperties = {
-    borderRadius: 0,
-    padding: 0,
-  }
+  // const panelStyle: React.CSSProperties = {
+  //   borderRadius: 0,
+  //   padding: 0,
+  // }
 
-  const items: CollapseProps['items'] = [
-    { key: 'request', label: 'Request', children: RequestContent, style: panelStyle },
-    { key: 'response', label: 'Response', children: ResponseContent, style: panelStyle }
-  ];
+  // const items: CollapseProps['items'] = [
+  //   // { key: 'request', label: 'Request', children: RequestContent, style: panelStyle },
+  //   { key: 'response', label: 'Response', children: ResponseContent, style: panelStyle }
+  // ];
 
   useEffect(() => {
     setInfoText({
@@ -140,19 +140,23 @@ const AnomalyDetection = () => {
       applicationScenario: [
         {
           title: '系统监控',
-          content: '实时监控服务器性能指标、网络流量、应用响应时间等关键指标，及时发现系统异常，确保业务连续性。支持CPU使用率、内存占用、磁盘I/O等多维度监控。'
+          content: '实时监控服务器性能指标、网络流量、应用响应时间等关键指标，及时发现系统异常，确保业务连续性。支持CPU使用率、内存占用、磁盘I/O等多维度监控。',
+          img: `bg-[url(/app/anomaly_detection_1.png)]`
         },
         {
           title: '工业设备监控',
-          content: '对生产线设备的温度、压力、振动等传感器数据进行实时监控，提前预警设备故障风险。通过异常检测算法识别设备性能衰减趋势，实现预测性维护。'
+          content: '对生产线设备的温度、压力、振动等传感器数据进行实时监控，提前预警设备故障风险。通过异常检测算法识别设备性能衰减趋势，实现预测性维护。',
+          img: `bg-[url(/app/anomaly_detection_2.png)]`
         },
         {
           title: '网络安全',
-          content: '分析网络流量模式，识别DDoS攻击、恶意入侵等安全威胁。通过监控网络连接行为、数据传输模式等，及时发现异常访问，保障网络安全。'
+          content: '分析网络流量模式，识别DDoS攻击、恶意入侵等安全威胁。通过监控网络连接行为、数据传输模式等，及时发现异常访问，保障网络安全。',
+          img: `bg-[url(/app/anomaly_detection_3.png)]`
         },
         {
           title: '质量检测',
-          content: '应用于制造业产品质量控制，检测生产过程中的异常波动。通过分析产品尺寸、重量、成分等关键指标，快速识别不合格产品，提高产品质量。'
+          content: '应用于制造业产品质量控制，检测生产过程中的异常波动。通过分析产品尺寸、重量、成分等关键指标，快速识别不合格产品，提高产品质量。',
+          img: `bg-[url(/app/anomaly_detection_4.png)]`
         },
       ]
     })
@@ -172,7 +176,7 @@ const AnomalyDetection = () => {
   }, [chartData.length]);
 
   const onSelectChange = async (value: number) => {
-    setActiveKey(['request']);
+    // setActiveKey(['request']);
     if (!value) {
       setSelectId(null);
       setChartData([]);
@@ -220,7 +224,7 @@ const AnomalyDetection = () => {
       setFileData(null);
     } finally {
       setChartLoading(false);
-      setActiveKey(['request']);
+      // setActiveKey(['request']);
     }
   }, [currentFileId]);
 
@@ -240,14 +244,14 @@ const AnomalyDetection = () => {
     accept: '.csv'
   };
 
-  const onKeyChange = (keys: string[]) => {
-    const [key] = activeKey;
-    if (keys.length === 0) {
-      setActiveKey(key === 'request' ? ['response'] : ['request']);
-    } else {
-      setActiveKey(keys);
-    }
-  };
+  // const onKeyChange = (keys: string[]) => {
+  //   const [key] = activeKey;
+  //   if (keys.length === 0) {
+  //     setActiveKey(key === 'request' ? ['response'] : ['request']);
+  //   } else {
+  //     setActiveKey(keys);
+  //   }
+  // };
 
   const handleSubmit = async () => {
     if (!selectId && !fileData) { return message.error(t(`playground-common.uploadMsg`)) };
@@ -271,7 +275,7 @@ const AnomalyDetection = () => {
           anomaly_probability: item.anomaly_probability
         }
       });
-      setActiveKey(['response']);
+      // setActiveKey(['response']);
       setChartData(labelData);
     } catch (e) {
       console.log(e)
@@ -283,7 +287,7 @@ const AnomalyDetection = () => {
   const renderElement = () => {
     return infoText.applicationScenario.map((item: any) => (
       <div key={item.title} className="content overflow-auto pb-[20px] border-b mt-4">
-        <div className="float-right w-[250px] h-[160px] bg-slate-400"></div>
+        <div className={`float-right w-[250px] h-[160px] ${item.img} bg-cover`}></div>
         <div className="content-info mr-[300px]">
           <div className="content-title text-xl font-bold">{item.title}</div>
           <div className="content-intro mt-3">{item.content}</div>
@@ -293,9 +297,9 @@ const AnomalyDetection = () => {
   };
 
   return (
-    <div className="relative pb-8">
-      <div className="banner-content w-[90%] h-[380px] pr-[400px] mx-auto">
-        <div className="banner-title text-5xl pt-5">
+    <div className="relative">
+      <div className="banner-content w-full h-[460px] pr-[400px] pl-[200px] pt-[80px] bg-[url(/app/pg_banner_1.png)] bg-cover">
+        <div className="banner-title text-5xl font-bold pt-5">
           {infoText.bannerTitle}
         </div>
         <div className="banner-info mt-8">
@@ -306,13 +310,14 @@ const AnomalyDetection = () => {
             <Button type="default">技术文档</Button>
           </div> */}
       </div>
-      <div className="model-experience mt-[80px] bg-[var(--color-bg-4)] py-4">
+      <div className="model-experience bg-[#F8FCFF] py-4">
         <div className="header text-3xl text-center">{t(`playground-common.functionExper`)}</div>
         <div className="content flex flex-col">
-          <div className="file-input w-[70%] mx-auto">
+          <div className="file-input w-[90%] mx-auto">
             <div className={`link-search mt-8 flex justify-center `}>
-              <div className="flex w-[80%] justify-start items-start">
-                <Select className={`w-[70%] ${cssStyle.customSelect}`} size="large" allowClear options={[
+              <div className="flex w-full justify-center items-center">
+                <span className="align-middle text-base mr-4">使用系统样本文件: </span>
+                <Select className={`w-[70%] max-w-[500px] ${cssStyle.customSelect}`} size="large" allowClear options={[
                   { label: 'test1', value: 5 },
                   { label: 'test2', value: 6 },
                 ]} placeholder={t(`playground-common.selectSampleMsg`)} onChange={onSelectChange} />
@@ -324,7 +329,7 @@ const AnomalyDetection = () => {
               </div>
             </div>
           </div>
-          <div className="content w-[1180px] mx-auto h-[654px] mt-6">
+          <div className="content w-[1180px] mx-auto h-[604px] mt-6">
             <div className="flex h-full overflow-auto">
               <Spin spinning={chartLoading} wrapperClassName="w-[70%] h-full" className="h-full">
                 <div className="iframe w-full bg-[var(--color-bg-4)]" style={{ height: 604 }}>
@@ -335,20 +340,38 @@ const AnomalyDetection = () => {
                   />
                 </div>
               </Spin>
-              <div className="params w-[30%]">
-                <Collapse
+              <div className="params w-[30%] bg-[var(--color-bg-4)]">
+                <header className="pl-2 border-[1px]">
+                  <span className="inline-block h-[60px] text-[var(--color-text-2)] content-center ml-10 text-base">检测结果</span>
+                  <Button color="default" variant="link" className="text-base text-[var(--color-text-2)]">
+                    请求参数
+                  </Button>
+                  {/* <a href="#" className="text-base text-[var(--color-text-1)]">请求参数</a> */}
+                </header>
+                {/* <Collapse
                   accordion
                   items={items}
                   bordered={false}
                   activeKey={activeKey}
                   onChange={onKeyChange}
-                ></Collapse>
+                ></Collapse> */}
+                <div>
+                  <CustomTable
+                    virtual
+                    className="h-[542px]"
+                    scroll={{ y: 542 }}
+                    rowKey='timestamp'
+                    columns={columns}
+                    sticky={{ offsetHeader: 0 }}
+                    dataSource={anomalyData}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div className="usage-scenarios mt-[80px]">
+      <div className="usage-scenarios pt-[80px] bg-[#F8FCFF]">
         <div className="header text-center text-3xl">
           {t(`playground-common.useScenario`)}
         </div>

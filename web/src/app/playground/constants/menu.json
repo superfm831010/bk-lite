@@ -1,14 +1,14 @@
 {
   "zh": [
     {
-      "title": "能力体验",
+      "title": "模型体验",
       "icon": "tiyanzhongtai",
       "url": "/playground/home",
       "name": "capabilities",
       "isNotMenuItem": false
     },
     {
-      "title": "能力管理",
+      "title": "样本管理",
       "icon": "guanli",
       "url": "/playground/manage",
       "name": "categories",
@@ -17,14 +17,14 @@
   ],
   "en": [
     {
-      "title": "Capability Experience",
+      "title": "Model Experience",
       "icon": "jiqiren2",
       "url": "/playground/home",
       "name": "capabilities",
       "isNotMenuItem": false
     },
     {
-      "title": "Capability Management",
+      "title": "Sample Management",
       "icon": "jiqiren2",
       "url": "/playground/manage",
       "name": "categories",

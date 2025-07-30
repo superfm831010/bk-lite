@@ -5,6 +5,7 @@
     "type": "Type",
     "status": "Status",
     "creator": "Creator",
+    "owner": "Owner",
     "createdAt": "Create at",
     "min": "Min",
     "max": "Max"

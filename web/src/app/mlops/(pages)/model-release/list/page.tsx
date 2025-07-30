@@ -104,7 +104,7 @@ const ModelRelease = () => {
 
   useEffect(() => {
     setSelectedKeys(['anomaly']);
-  }, [])
+  }, []);
 
   useEffect(() => {
     getModelServings();
