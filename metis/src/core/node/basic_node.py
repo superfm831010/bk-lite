@@ -85,6 +85,7 @@ class BasicNode:
             state["messages"].append(
                 SystemMessage(content=system_message_prompt)
             )
+
         return state
 
     def add_chat_history_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:

@@ -32,6 +32,7 @@ class CorrelationRulesSerializer(serializers.ModelSerializer):
     """关联规则序列化器"""
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    exec_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     rule_names = serializers.SerializerMethodField()
 
     class Meta:
