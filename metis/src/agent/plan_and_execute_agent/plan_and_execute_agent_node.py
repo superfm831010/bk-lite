@@ -249,7 +249,8 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         replanner_prompt = self._create_planning_prompt(for_replanning=True)
 
         # 获取LLM客户端
-        llm = self.get_llm_client(config["configurable"]["graph_request"])
+        llm = self.get_llm_client(
+            config["configurable"]["graph_request"], disable_stream=True)
 
         # 人类消息的内容根据是否完成所有步骤有所不同
         message_content = ""
@@ -288,10 +289,10 @@ class PlanAndExecuteAgentNode(ToolsNodes):
 
         # 创建系统消息
         if isinstance(output.action, Response):
-            self.log(config, f"重新规划结果：完成任务，返回最终响应")
             # 生成最终响应
             ai_message = AIMessage(
                 content=f"任务已完成，最终结果：{output.action.response}")
+            self.log(config, f"生成最终响应：{output.action.response}")
             messages.append(ai_message)
             return {
                 "messages": messages,
@@ -333,7 +334,8 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         planner_prompt = self._create_planning_prompt(for_replanning=False)
 
         # 获取LLM客户端
-        llm = self.get_llm_client(config["configurable"]["graph_request"])
+        llm = self.get_llm_client(
+            config["configurable"]["graph_request"], disable_stream=True)
 
         # 通用结构化输出调用，兼容 Qwen Function
         self.log(config, f"为任务生成初始计划: {user_message}")
@@ -351,7 +353,7 @@ class PlanAndExecuteAgentNode(ToolsNodes):
 
         # 创建系统消息和AI消息，以便将它们添加到状态
         ai_message = AIMessage(
-            content=f"已为任务生成计划，包含 {len(plan.steps)} 个步骤:\n{plan_str}")
+            content=f"已为任务生成计划，包含 {len(plan.steps)} 个步骤:\n{plan_str}\n")
         messages.append(ai_message)
 
         # 返回更新的状态
