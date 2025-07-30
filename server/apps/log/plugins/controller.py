@@ -4,7 +4,7 @@ import uuid
 from jinja2 import Environment, FileSystemLoader, DebugUndefined
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.log.models import CollectConfig, Stream
+from apps.log.models import CollectConfig, Stream, StreamCollectInstance
 from apps.log.plugins import PLUGIN_DIRECTORY
 from apps.log.utils.stream import StreamUtils
 from apps.rpc.node_mgmt import NodeMgmt
@@ -13,19 +13,24 @@ from apps.rpc.node_mgmt import NodeMgmt
 class Controller:
     def __init__(self, data):
         self.data = data
-        self.stream_rules = self.get_stream_rules()
+        self.inst_streams_map = self.get_stream_rules()
 
     def get_stream_rules(self):
-        streams = Stream.objects.filter(collect_type_id=self.data["collect_type_id"])
-        stream_rules = []
-        for stream in streams:
-            stream_rules.append(
-                {
-                    "stream_id": stream.id,
-                    "condition": StreamUtils.json_to_jq_expression(stream.rule),
+        """ 获取实例对应的流规则映射。"""
+        instance_ids = [instance["instance_id"] for instance in self.data["instances"]]
+        assos = StreamCollectInstance.objects.filter(collect_instance_id__in=instance_ids)
+        stream_map = dict(Stream.objects.filter(id__in=[asso.stream_id for asso in assos]).values_list("id", "rule"))
+        stream_map = {k: StreamUtils.json_to_jq_expression(v) for k, v in stream_map.items()}
+        assos_map = {}
+        for asso in assos:
+            if asso.collect_instance_id not in assos_map:
+                assos_map[asso.collect_instance_id] = {}
+            assos_map[asso.collect_instance_id][asso.stream_id] = {
+                    "stream_id": asso.stream_id,
+                    "condition": stream_map[asso.stream_id],
                 }
-            )
-        return stream_rules
+
+        return {k: v.values() for k, v in assos_map.items()}
 
     def get_template_info_by_type(self, template_dir: str, type_name: str):
         """
@@ -93,11 +98,12 @@ class Controller:
                 collector_name = "Vector" if is_child else config_info["collector"]
                 config_id = str(uuid.uuid4().hex)
                 # 生成配置
+                stream_rules = self.inst_streams_map.get(config_info["instance_id"])
                 template_config = self.render_template(
                     template_dir,
                     f"{template['type']}.{template['config_type']}.{template['file_type']}.j2",
                     config_info,
-                    self.stream_rules
+                    stream_rules
                 )
 
                 # 节点管理创建配置
@@ -140,7 +146,7 @@ class Controller:
         # 创建子配置
         NodeMgmt().batch_add_node_child_config(node_child_configs)
 
-    def render_config_template_content(self, file_type, context_data):
+    def render_config_template_content(self, file_type, context_data, instance_id):
         """ 渲染配置模板内容。"""
 
         template_dir = os.path.join(PLUGIN_DIRECTORY, self.data["collector"], self.data["collect_type"])
@@ -156,12 +162,14 @@ class Controller:
         if template is None:
             raise BaseAppException(f"No matching template found for {self.data['collect_type']} with file type {file_type}")
 
+        stream_rules = self.inst_streams_map.get(instance_id, [])
+
         # 生成配置
         content = self.render_template(
             template_dir,
             f"{template['type']}.{template['config_type']}.{template['file_type']}.j2",
-            context_data,
-            self.stream_rules
+            {"instance_id": instance_id,  **context_data},
+            stream_rules
         )
 
         return content

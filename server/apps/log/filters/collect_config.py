@@ -1,5 +1,6 @@
 from django_filters import rest_framework as filters
-from apps.log.models.collect_config import CollectType, CollectInstance, CollectConfig
+
+from apps.log.models import CollectType, CollectInstance, CollectConfig
 
 
 class CollectTypeFilter(filters.FilterSet):

@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from apps.core.utils.web_utils import WebUtils
-from apps.log.models.collect_config import CollectType, CollectInstance, CollectConfig
+from apps.log.models import CollectType, CollectInstance, CollectConfig
 from apps.log.serializers.collect_config import CollectTypeSerializer
 from apps.log.filters.collect_config import CollectTypeFilter
 from apps.log.services.collect_type import CollectTypeService
@@ -78,6 +78,7 @@ class CollectInstanceViewSet(ViewSet):
                             "instance_name": openapi.Schema(type=openapi.TYPE_STRING, description="实例类型"),
                             "group_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_INTEGER), description="组织id列表"),
                             "node_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_INTEGER), description="节点id列表"),
+                            "stream_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_STRING), description="数据流ID列表"),
                             "...": openapi.Schema(type=openapi.TYPE_OBJECT, description="其他信息"),
                         }
                     )
@@ -214,18 +215,21 @@ class CollectConfigViewSet(ViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
+                "instance_id": openapi.Schema(type=openapi.TYPE_STRING, description="采集实例ID"),
+                "collect_type_id": openapi.Schema(type=openapi.TYPE_STRING, description="采集类型ID"),
+                "stream_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_STRING), description="数据流ID列表"),
                 "child": openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "id": openapi.Schema(type=openapi.TYPE_STRING, description="配置ID"),
-                        "content": openapi.Schema(type=openapi.TYPE_OBJECT, description="配置内容"),
+                        "content_data": openapi.Schema(type=openapi.TYPE_OBJECT, description="配置内容"),
                     },
                 ),
                 "base": openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "id": openapi.Schema(type=openapi.TYPE_STRING, description="配置ID"),
-                        "content": openapi.Schema(type=openapi.TYPE_OBJECT, description="配置内容"),
+                        "content_data": openapi.Schema(type=openapi.TYPE_OBJECT, description="配置内容"),
                         "env_config": openapi.Schema(type=openapi.TYPE_OBJECT, description="环境变量配置"),
                     },
                 ),
@@ -234,5 +238,11 @@ class CollectConfigViewSet(ViewSet):
     )
     @action(methods=['post'], detail=False, url_path='update_instance_collect_config')
     def update_instance_collect_config(self, request):
-        CollectTypeService.update_instance_config(request.data.get("child"), request.data.get("base"))
+        CollectTypeService.update_instance_config_v2(
+            request.data.get("child"),
+            request.data.get("base"),
+            request.data.get("instance_id"),
+            request.data.get("collect_type_id"),
+            request.data.get("stream_ids", [])
+        )
         return WebUtils.response_success()
