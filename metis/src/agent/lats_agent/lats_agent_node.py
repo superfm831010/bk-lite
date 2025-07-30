@@ -58,7 +58,8 @@ class LatsAgentNode(ToolsNodes):
         import asyncio
 
         async def reflection_chain_async(inputs):
-            llm = self.get_llm_client(config["configurable"]["graph_request"])
+            llm = self.get_llm_client(
+                config["configurable"]["graph_request"], disable_stream=True)
             prompt = ChatPromptTemplate.from_messages([
                 ("system", "对AI助手的回答进行反思和评分。评估回答的充分性、准确性和解决问题的能力。"),
                 ("user", "{input}"),
@@ -95,7 +96,8 @@ class LatsAgentNode(ToolsNodes):
             Returns:
                 候选解决方案消息列表
             """
-            llm = self.get_llm_client(config["configurable"]["graph_request"])
+            llm = self.get_llm_client(
+                config["configurable"]["graph_request"], disable_stream=True)
             bound_kwargs = llm.bind_tools(tools=self.tools).kwargs
 
             candidates = []

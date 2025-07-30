@@ -11,7 +11,8 @@ class ReActAgentNode(ToolsNodes):
         messages = state["messages"]
         llm = self.get_llm_client(config["configurable"]["graph_request"])
 
-        self.log(config, f"开始执行 agent_node 节点:输入消息数量: {len(state['messages'])}")
+        self.log(
+            config, f"开始执行 agent_node 节点:输入消息数量: {len(state['messages'])}")
 
         agent_executor = create_react_agent(llm, self.tools,
                                             debug=False,
