@@ -117,7 +117,7 @@ class AlertOperator(object):
 
             # 更新告警状态和处理人
             alert.status = AlertStatus.PENDING
-            alert.operate = AlertOperate.Assign
+            alert.operate = AlertOperate.ASSIGN
             alert.operator = assignee
             alert.updated_at = timezone.now()
             alert.save()
@@ -504,7 +504,7 @@ class BeatUpdateAlertStatu(object):
                     for alert in all_alerts_to_close:
                         # 再次检查状态，防止在获取锁的过程中状态被其他进程修改
                         if alert.status in AlertStatus.ACTIVATE_STATUS:
-                            alert.status = AlertStatus.CLOSED
+                            alert.status = AlertStatus.AUTO_CLOSE
                             alert.operate = AlertOperate.CLOSE
                             alert.updated_at = current_time
                             alert.save(update_fields=['status', 'operate', 'updated_at'])
