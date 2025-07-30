@@ -103,7 +103,7 @@
     "reset": "重置",
     "prompt": "提示",
     "batchEdit": "批量编辑",
-    "belongingGroup": "所属分组"
+    "belongingGroup": "所属组织"
   },
   "cutomTable": {
     "fieldSetting": "列表字段设置"
@@ -180,7 +180,10 @@
       "anySatisfy": "满足",
       "anyOneof": "条规则中的任意一条",
       "allSatisfy": "满足全部",
-      "allRules": "条规则"
+      "allRules": "条规则",
+      "logGroup": "日志分组",
+      "logGroupTips": "请为接收进来的日志划分分组，则日志的查看权限会按照日志分组进行权限隔离。",
+      "belongingGroupTips": "接收实例的查看和操作，按照其所属组织进行权限隔离。"
     }
   }
 }

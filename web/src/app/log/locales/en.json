@@ -103,7 +103,7 @@
     "reset": "Reset",
     "prompt": "Prompt",
     "batchEdit": "Batch Edit",
-    "belongingGroup": "Belonging group"
+    "belongingGroup": "Belonging Group"
   },
   "cutomTable": {
     "fieldSetting": "List field settings"
@@ -180,7 +180,10 @@
       "anySatisfy": "Satisfy any one of the",
       "anyOneof": "rules",
       "allSatisfy": "Satisfy all",
-      "allRules": "rules"
+      "allRules": "rules",
+      "logGroup": "Log Group",
+      "logGroupTips": "Please divide the received logs into groups, and the viewing permissions for the logs will be isolated according to the log groups.",
+      "belongingGroupTips": "Receive instance viewing and operations, and isolate permissions according to their organization."
     }
   }
 }
