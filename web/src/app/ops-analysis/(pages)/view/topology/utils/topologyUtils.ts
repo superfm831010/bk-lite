@@ -1,6 +1,6 @@
 export const getNodeStyle = () => ({
   width: 120,
-  height: 80,
+  height: 120,
   markup: [
     {
       tagName: 'image',
@@ -17,12 +17,10 @@ export const getNodeStyle = () => ({
   ],
   attrs: {
     icon: {
-      x: 25,
-      y: 5,
-      width: 70,
-      height: 50,
-      'xlink:href':
-        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA3MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNzAiIGhlaWdodD0iNTAiIHJ4PSI4IiBmaWxsPSIjZjBmOGZmIiBzdHJva2U9IiMxODkwRkYiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxyZWN0IHg9IjE1IiB5PSIxMiIgd2lkdGg9IjQwIiBoZWlnaHQ9IjI2IiByeD0iNCIgZmlsbD0iIzE4OTBGRiIvPgogIDxjaXJjbGUgY3g9IjI1IiBjeT0iMjUiIHI9IjQiIGZpbGw9IndoaXRlIi8+CiAgPGNpcmNsZSBjeD0iMzUiIGN5PSIyMCIgcj0iMyIgZmlsbD0id2hpdGUiLz4KICA8Y2lyY2xlIGN4PSI0NSIgY3k9IjMwIiByPSIzIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K',
+      x: 30,
+      y: 10,
+      width: 60,
+      height: 60,
     },
     label: {
       fill: '#262626',
@@ -42,43 +40,43 @@ export const getNodeStyle = () => ({
           circle: {
             magnet: true,
             stroke: '#1890FF',
-            r: 6,
+            r: 4,
             fill: '#FFFFFF',
             opacity: 0,
           },
         },
       },
       bottom: {
-        position: { name: 'absolute', args: { x: 60, y: 55 } },
+        position: { name: 'absolute', args: { x: 60, y: 75 } },
         attrs: {
           circle: {
             magnet: true,
             stroke: '#1890FF',
-            r: 6,
+            r: 4,
             fill: '#FFFFFF',
             opacity: 0,
           },
         },
       },
       left: {
-        position: { name: 'absolute', args: { x: 25, y: 30 } }, 
+        position: { name: 'absolute', args: { x: 25, y: 40 } }, 
         attrs: {
           circle: {
             magnet: true,
             stroke: '#1890FF',
-            r: 6,
+            r: 4,
             fill: '#FFFFFF',
             opacity: 0,
           },
         },
       },
       right: {
-        position: { name: 'absolute', args: { x: 95, y: 30 } }, 
+        position: { name: 'absolute', args: { x: 95, y: 40 } }, 
         attrs: {
           circle: {
             magnet: true,
             stroke: '#1890FF',
-            r: 6,
+            r: 4,
             fill: '#FFFFFF',
             opacity: 0,
           },
@@ -107,7 +105,7 @@ export const getEdgeStyle = (connectionType: 'none' | 'single' | 'double') => {
   return {
     attrs: {
       line: {
-        stroke: '#8C8C8C',
+        stroke: '#a7b5c4',
         strokeWidth: 2,
         ...arrowConfig[connectionType],
       },
@@ -137,10 +135,14 @@ export const getEdgeStyle = (connectionType: 'none' | 'single' | 'double') => {
 };
 
 export const addEdgeTools = (edge: any) => {
+  // 添加顶点编辑工具（默认透明）
   edge.addTools({
     name: 'vertices',
     args: {
-      attrs: { fill: '#1890FF' },
+      attrs: {
+        fill: '#1890FF',
+        opacity: 0, // 默认透明
+      },
       snapRadius: 20,
       addable: true,
       removable: true,
@@ -148,32 +150,96 @@ export const addEdgeTools = (edge: any) => {
     },
   });
 
-  const data = edge.getData() || {};
-  const connectionType = data.connectionType || 'single';
-
-  if (connectionType === 'single' || connectionType === 'double') {
-    edge.addTools({
-      name: 'target-arrowhead',
-      args: {
-        attrs: {
-          d: 'M 0 -6 A 6 6 0 1 0 0 6 A 6 6 0 1 0 0 -6',
-          fill: '#1890FF',
-        },
+  // 添加源端点工具（起点，默认透明）
+  edge.addTools({
+    name: 'source-arrowhead',
+    args: {
+      attrs: {
+        d: 'M 0 -6 A 6 6 0 1 0 0 6 A 6 6 0 1 0 0 -6',
+        fill: '#1890FF',
+        stroke: '#ffffff',
+        strokeWidth: 1,
+        cursor: 'move',
+        opacity: 0, // 默认透明
       },
-    });
-  }
+    },
+  });
 
-  if (connectionType === 'double') {
-    edge.addTools({
-      name: 'source-arrowhead',
-      args: {
-        attrs: {
-          d: 'M 0 -6 A 6 6 0 1 0 0 6 A 6 6 0 1 0 0 -6',
-          fill: '#1890FF',
-        },
+  // 添加目标端点工具（终点，默认透明）
+  edge.addTools({
+    name: 'target-arrowhead',
+    args: {
+      attrs: {
+        d: 'M 0 -6 A 6 6 0 1 0 0 6 A 6 6 0 1 0 0 -6',
+        fill: '#1890FF',
+        stroke: '#ffffff',
+        strokeWidth: 1,
+        cursor: 'move',
+        opacity: 0, // 默认透明
       },
-    });
-  }
+    },
+  });
+};
+
+// 显示边工具
+export const showEdgeTools = (edge: any) => {
+  edge.removeTools();
+
+  edge.addTools({
+    name: 'vertices',
+    args: {
+      attrs: {
+        fill: '#1890FF',
+        opacity: 1,
+      },
+      snapRadius: 20,
+      addable: true,
+      removable: true,
+      removeRedundancies: true,
+    },
+  });
+
+  // 添加可见的源端点工具
+  edge.addTools({
+    name: 'source-arrowhead',
+    args: {
+      attrs: {
+        d: 'M 0 -6 A 6 6 0 1 0 0 6 A 6 6 0 1 0 0 -6',
+        fill: '#1890FF',
+        stroke: '#ffffff',
+        strokeWidth: 1,
+        cursor: 'move',
+        opacity: 1,
+      },
+    },
+  });
+
+  // 添加可见的目标端点工具
+  edge.addTools({
+    name: 'target-arrowhead',
+    args: {
+      attrs: {
+        d: 'M 0 -6 A 6 6 0 1 0 0 6 A 6 6 0 1 0 0 -6',
+        fill: '#1890FF',
+        stroke: '#ffffff',
+        strokeWidth: 1,
+        cursor: 'move',
+        opacity: 1,
+      },
+    },
+  });
+};
+
+// 隐藏边工具
+export const hideEdgeTools = (edge: any) => {
+  edge.removeTools();
+};
+
+// 隐藏所有边的工具
+export const hideAllEdgeTools = (graph: any) => {
+  graph.getEdges().forEach((edge: any) => {
+    hideEdgeTools(edge);
+  });
 };
 
 export const showPorts = (graph: any, cell: any) => {
@@ -248,3 +314,138 @@ export const getTextNodeStyle = () => ({
     items: [],
   },
 });
+
+// 获取logo URL的辅助函数
+export const getLogoUrl = (nodeConfig: any, iconList: any[]) => {
+  if (nodeConfig.logoType === 'default' && nodeConfig.logo) {
+    const iconItem = iconList.find((item) => item.key === nodeConfig.logo);
+    if (iconItem) {
+      return `/app/assets/assetModelIcon/${iconItem.url}.svg`;
+    }
+    return `/app/assets/assetModelIcon/${nodeConfig.logo}.svg`;
+  } else if (nodeConfig.logoType === 'custom' && nodeConfig.logo) {
+    return nodeConfig.logo;
+  }
+  // 默认图标
+  return '/app/assets/assetModelIcon/cc-default_默认.svg';
+};
+
+// 单值节点样式配置
+export const getSingleValueNodeStyle = (nodeConfig: any) => ({
+  id: nodeConfig.id,
+  x: nodeConfig.x || 100,
+  y: nodeConfig.y || 100,
+  shape: 'rect',
+  width: 120,
+  height: 40,
+  label: nodeConfig.name,
+  data: {
+    type: nodeConfig.type,
+    name: nodeConfig.name,
+    dataSource: nodeConfig.dataSource,
+    config: nodeConfig.config,
+  },
+  attrs: {
+    body: {
+      fill: '#ffffff',
+      stroke: '#d9d9d9',
+      strokeWidth: 1,
+      rx: 6,
+      ry: 6,
+    },
+    label: {
+      text: nodeConfig.name,
+      fill: '#333333',
+      fontSize: 14,
+      fontFamily: 'Arial, sans-serif',
+      textAnchor: 'middle',
+      textVerticalAnchor: 'middle',
+    },
+  },
+  ports: {
+    groups: {
+      top: {
+        position: { name: 'absolute', args: { x: 60, y: 0 } },
+        attrs: {
+          circle: {
+            magnet: true,
+            stroke: '#1890FF',
+            r: 4,
+            fill: '#FFFFFF',
+            opacity: 0,
+          },
+        },
+      },
+      bottom: {
+        position: { name: 'absolute', args: { x: 60, y: 40 } },
+        attrs: {
+          circle: {
+            magnet: true,
+            stroke: '#1890FF',
+            r: 4,
+            fill: '#FFFFFF',
+            opacity: 0,
+          },
+        },
+      },
+      left: {
+        position: { name: 'absolute', args: { x: 0, y: 20 } },
+        attrs: {
+          circle: {
+            magnet: true,
+            stroke: '#1890FF',
+            r: 4,
+            fill: '#FFFFFF',
+            opacity: 0,
+          },
+        },
+      },
+      right: {
+        position: { name: 'absolute', args: { x: 120, y: 20 } },
+        attrs: {
+          circle: {
+            magnet: true,
+            stroke: '#1890FF',
+            r: 4,
+            fill: '#FFFFFF',
+            opacity: 0,
+          },
+        },
+      },
+    },
+    items: [
+      { id: 'top', group: 'top' },
+      { id: 'bottom', group: 'bottom' },
+      { id: 'left', group: 'left' },
+      { id: 'right', group: 'right' },
+    ],
+  },
+});
+
+// 图标节点样式配置
+export const getIconNodeStyle = (nodeConfig: any, logoUrl: string) => {
+  const baseNodeStyle = getNodeStyle();
+
+  return {
+    id: nodeConfig.id,
+    x: nodeConfig.x || 100,
+    y: nodeConfig.y || 100,
+    label: nodeConfig.name,
+    data: {
+      type: nodeConfig.type,
+      name: nodeConfig.name,
+      logo: nodeConfig.logo,
+      logoType: nodeConfig.logoType,
+      config: nodeConfig.config,
+    },
+    ...baseNodeStyle,
+    // 覆盖图标的 URL
+    attrs: {
+      ...baseNodeStyle.attrs,
+      icon: {
+        ...baseNodeStyle.attrs.icon,
+        'xlink:href': logoUrl,
+      },
+    },
+  };
+};

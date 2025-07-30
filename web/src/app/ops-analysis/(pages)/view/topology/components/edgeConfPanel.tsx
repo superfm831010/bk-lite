@@ -35,8 +35,6 @@ interface EdgeConfigPanelProps {
     sourceInterface?: InterfaceConfig;
     targetInterface?: InterfaceConfig;
   } | null;
-  onLineTypeChange: (lineType: string) => void;
-  onLineNameChange?: (lineName: string) => void;
   onClose: () => void;
   onConfirm?: (values: any) => void;
 }
@@ -45,8 +43,6 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
   visible,
   readonly = false,
   edgeData,
-  onLineTypeChange,
-  onLineNameChange,
   onClose,
   onConfirm,
 }) => {
@@ -81,13 +77,6 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
         },
       };
       onConfirm(result);
-    } else {
-      if (values.lineType !== edgeData?.lineType) {
-        onLineTypeChange(values.lineType);
-      }
-      if (values.lineName !== edgeData?.lineName && onLineNameChange) {
-        onLineNameChange(values.lineName || '');
-      }
     }
     onClose();
   };

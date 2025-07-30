@@ -37,13 +37,8 @@ const Topology: React.FC<TopologyProps> = ({ selectedTopology }) => {
     state
   );
 
-  const {
-    handleLineTypeChange,
-    handleLineNameChange,
-    handleEdgeConfigConfirm,
-    closeEdgeConfig,
-    handleMenuClick,
-  } = useContextMenuAndModal(containerRef, state);
+  const { handleEdgeConfigConfirm, closeEdgeConfig, handleMenuClick } =
+    useContextMenuAndModal(containerRef, state);
 
   const handleSelectMode = () => {
     state.setIsSelectMode(!state.isSelectMode);
@@ -109,8 +104,6 @@ const Topology: React.FC<TopologyProps> = ({ selectedTopology }) => {
         readonly={!state.isEditMode}
         onClose={closeEdgeConfig}
         edgeData={state.currentEdgeData}
-        onLineTypeChange={handleLineTypeChange}
-        onLineNameChange={handleLineNameChange}
         onConfirm={handleEdgeConfigConfirm}
       />
 
