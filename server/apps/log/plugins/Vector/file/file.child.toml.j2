@@ -8,6 +8,16 @@ data_dir = "/opt/fusion-collectors"
 ignore_older = 86400  # 忽略24小时以前的日志，可按需调整
 # encoding = "utf-8"  # 如有乱码可手动开启
 
+{% if start_pattern and start_pattern != '.*' %}
+# ====================================
+# 多行日志处理
+# ====================================
+multiline.condition_pattern = '^(?!{{ start_pattern }})'
+multiline.mode = "halt_before"
+multiline.start_pattern = '{{ start_pattern }}'
+multiline.timeout_ms = 1000
+{% endif %}
+
 # ====================================
 # enrich（字段补全）
 # ====================================
