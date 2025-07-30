@@ -27,7 +27,7 @@ inputs = ["multiline_{{ instance_id }}"]
 source = '''
 .collect_type = "docker"
 .instance_id = "{{ instance_id }}"
-.streams = ["default"]
+.streams = []
 '''
 
 {% else %}
@@ -41,7 +41,7 @@ inputs = ["docker_{{ instance_id }}"]
 source = '''
 .collect_type = "docker"
 .instance_id = "{{ instance_id }}"
-.streams = ["default"]
+.streams = []
 '''
 
 {% endif %}

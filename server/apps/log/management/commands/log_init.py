@@ -8,8 +8,10 @@ def init_stream():
     from apps.log.models import Stream, StreamOrganization
     from apps.rpc.system_mgmt import SystemMgmt
 
+    rule = {"mode": "OR", "conditions": [{"op": "==", "field": ".", "value": "."}]}
+
     if not Stream.objects.filter(id='default').exists():
-        Stream.objects.create(id='default', name='Default', created_by="system", updated_by="system")
+        Stream.objects.create(id='default', name='Default', rule=rule, created_by="system", updated_by="system")
 
         client = SystemMgmt()
         res = client.get_group_id("Default")

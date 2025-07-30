@@ -17,7 +17,7 @@ inputs = ["file_{{ instance_id }}"]
 source = '''
 .collect_type = "file"
 .instance_id = "{{ instance_id }}"
-.streams = ["default"]
+.streams = []
 '''
 
 {% if streams %}
