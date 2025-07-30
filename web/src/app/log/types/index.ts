@@ -124,6 +124,7 @@ export interface ViewQueryKeyValuePairs {
 
 export interface ModalProps {
   onSuccess: () => void;
+  [key: string]: any;
 }
 
 export interface HexagonData {
