@@ -25,3 +25,68 @@
     color: var(--color-primary);
   }
 }
+
+/* 子菜单面板样式 */
+:global(.top-menu-submenu-popover) {
+  .ant-popover-inner {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .ant-popover-title {
+    font-weight: 600;
+    color: var(--color-text-1);
+    border-bottom: 1px solid var(--color-border-2);
+  }
+  
+  .ant-popover-inner-content {
+    padding: 8px 0;
+  }
+}
+
+.subMenuPanel {
+  .menuItem {
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 2px 0;
+    transition: all 0.2s ease;
+    color: var(--color-text-2);
+    
+    &:hover {
+      background: var(--color-fill-2);
+      color: var(--color-text-1);
+    }
+    
+    .menuIcon {
+      color: var(--color-text-3);
+      transition: color 0.2s ease;
+    }
+    
+    &:hover .menuIcon {
+      color: var(--color-primary);
+    }
+  }
+  
+  .menuLevel {
+    &.level1 {
+      .menuItem {
+        font-weight: 500;
+      }
+    }
+    
+    &.level2 {
+      .menuItem {
+        font-size: 13px;
+        padding-left: 20px;
+      }
+    }
+    
+    &.level3 {
+      .menuItem {
+        font-size: 12px;
+        padding-left: 32px;
+        color: var(--color-text-3);
+      }
+    }
+  }
+}
