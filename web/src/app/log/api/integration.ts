@@ -115,6 +115,7 @@ const useIntegrationApi = () => {
       name?: string;
       page?: number;
       page_size?: number;
+      collect_type_id?: React.Key;
     } = {}
   ) => {
     return await get('/log/streams/', {
