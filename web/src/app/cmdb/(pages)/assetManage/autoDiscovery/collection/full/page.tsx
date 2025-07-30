@@ -82,7 +82,7 @@ const FullCollection: React.FC = () => {
             {t('Collection.addTaskTitle')}
           </Button>
         </div>
-        <div className="bg-white rounded-lg shadow-sm flex-1 overflow-auto">
+        <div className="rounded-lg shadow-sm flex-1 overflow-auto">
           <Table
             columns={fullColumns}
             dataSource={fullData}

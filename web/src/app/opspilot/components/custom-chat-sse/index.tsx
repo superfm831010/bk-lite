@@ -368,7 +368,17 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
 
       try {
         if (handleSendMessage) {
-          const { url, payload } = await handleSendMessage(msg);
+          const result = await handleSendMessage(msg);
+          
+          // If handleSendMessage returns null, form validation failed, prevent sending
+          if (result === null) {
+            // Remove added messages
+            setMessages(messages);
+            setLoading(false);
+            return;
+          }
+          
+          const { url, payload } = result;
           await handleSSEStream(url, payload, botLoadingMessage);
         }
       } catch (error: any) {
@@ -420,7 +430,17 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
 
         try {
           if (handleSendMessage) {
-            const { url, payload } = await handleSendMessage(lastUserMessage.content);
+            const result = await handleSendMessage(lastUserMessage.content);
+            
+            // If handleSendMessage returns null, form validation failed, prevent regeneration
+            if (result === null) {
+              // Remove added messages and restore original state
+              setMessages(messages);
+              setLoading(false);
+              return;
+            }
+            
+            const { url, payload } = result;
             await handleSSEStream(url, payload, newMessage);
           }
         } catch (error: any) {

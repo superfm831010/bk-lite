@@ -1,11 +1,6 @@
 'use client';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import RedirectToFirstMenu from '@/components/redirect-menu';
 
-export default function IntegrationPage() {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace('/ops-analysis/view');
-  }, [router]);
-  return null;
+export default function OpsAnalysisPage() {
+  return <RedirectToFirstMenu />;
 }

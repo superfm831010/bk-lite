@@ -156,7 +156,7 @@ export default function GanttChart({
                                 {d.last_event_time || '--'}
                               </div>
                               <div>
-                                {t('common.operator')}:{' '}
+                                {t('alarmCommon.operator')}:{' '}
                                 {d.operator_user || '--'}
                               </div>
                             </>

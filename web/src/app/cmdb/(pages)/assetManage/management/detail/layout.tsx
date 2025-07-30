@@ -67,8 +67,8 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
 
   const showDeleteConfirm = (row = { model_id: '' }) => {
     confirm({
-      title: t('deleteTitle'),
-      content: t('deleteContent'),
+      title: t('common.deleteTitle'),
+      content: t('common.deleteContent'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {

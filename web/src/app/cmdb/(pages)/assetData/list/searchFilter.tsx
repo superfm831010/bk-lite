@@ -96,7 +96,7 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
     if (selectedAttr?.attr_id === 'cloud' && proxyOptions.length) {
       return (
         <Select
-          placeholder={t('common.pleaseSelect')}
+          placeholder={t('common.selectTip')}
           allowClear
           showSearch
           className="value"

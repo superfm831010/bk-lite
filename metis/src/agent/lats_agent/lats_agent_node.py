@@ -54,49 +54,26 @@ class LatsAgentNode(ToolsNodes):
         return ToolNode(self.tools, handle_tool_errors=True)
 
     def get_reflection_chain(self, state: LatsAgentState, config: RunnableConfig):
-        """获取用于反思和评分候选解决方案的链
+        """获取用于反思和评分候选解决方案的链，统一走健壮结构化输出逻辑"""
+        import asyncio
 
-        创建一个专门用于评估LLM生成的解决方案质量的反思链。该链通过Reflection工具
-        对解决方案进行打分(0-10)、提供反思性评价，并判断是否完全解决了用户问题。
-
-        Args:
-            state: 当前搜索状态
-            config: 运行时配置，包含请求信息
-
-        Returns:
-            可执行的反思评估链
-        """
-        # 获取配置的LLM客户端
-        llm = self.get_llm_client(config["configurable"]["graph_request"])
-
-        # 创建反思提示模板
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "对AI助手的回答进行反思和评分。评估回答的充分性、准确性和解决问题的能力。",
-                ),
-                ("user", "{input}"),  # 用户的原始问题
-                MessagesPlaceholder(variable_name="candidate"),  # 候选解决方案
-            ]
-        )
-
-        # 构建反思链，使用Reflection工具强制输出结构化评估
-        reflection_llm_chain = (
-                prompt
-                | llm.bind_tools(
-            tools=[Reflection],
-            tool_choice="Reflection"  # 强制使用Reflection工具
-        ).with_config(
-            run_name="Reflection",  # 为追踪添加运行名称
-            configurable={"verbose": False},  # 禁止输出到控制台
-            callbacks=[]  # 清空回调，防止输出
-        )
-                | PydanticToolsParser(tools=[Reflection])  # 解析成Reflection对象
-        )
-
-        logger.debug("反思评估链创建完成")
-        return reflection_llm_chain
+        async def reflection_chain_async(inputs):
+            llm = self.get_llm_client(config["configurable"]["graph_request"])
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", "对AI助手的回答进行反思和评分。评估回答的充分性、准确性和解决问题的能力。"),
+                ("user", "{input}"),
+                MessagesPlaceholder(variable_name="candidate"),
+            ])
+            # 直接传递 dict，call_with_structured_output 会自动适配
+            result = await self.call_with_structured_output(
+                llm=llm,
+                prompt=prompt,
+                pydantic_model=Reflection,
+                messages=inputs
+            )
+            return result
+        logger.debug("反思评估链创建完成（call_with_structured_output 版本）")
+        return reflection_chain_async
 
     def get_expansion_chain(self, state: LatsAgentState, config: RunnableConfig):
         """获取用于生成候选解决方案的链
@@ -138,7 +115,8 @@ class LatsAgentNode(ToolsNodes):
                 self.tools_completions_tokens += candidate.usage_metadata['output_tokens']
 
                 logger.debug(f"候选解决方案 #{i + 1}: {candidate}...")
-                logger.debug(f"候选解决方案 #{i + 1}: Token用量:{candidate.usage_metadata}")
+                logger.debug(
+                    f"候选解决方案 #{i + 1}: Token用量:{candidate.usage_metadata}")
 
             return candidates
 
@@ -186,7 +164,7 @@ class LatsAgentNode(ToolsNodes):
         logger.debug(f"从根节点选择了路径: {path}，最终选择深度为{node.depth}的节点")
         return node
 
-    def _process_candidates(
+    async def _process_candidates(
             self,
             candidates: List[BaseMessage],
             state: LatsAgentState,
@@ -254,42 +232,16 @@ class LatsAgentNode(ToolsNodes):
             output_messages.append([candidate] + collected_responses[idx])
 
         # 创建反思链进行评估
-        @as_runnable
-        def reflection_chain(inputs) -> Reflection:
-            # 创建无输出的配置
-            silent_config = {
-                "callbacks": [],  # 清空回调函数
-                "configurable": {"verbose": False}  # 设置为非详细模式
-            }
-
-            # 融合现有配置与静默配置
-            invoke_config = {**config, **silent_config}
-
-            # 调用反思链，但禁止输出
-            tool_choices = self.get_reflection_chain(
-                state, config).invoke(inputs, config=invoke_config)
-            reflection = tool_choices[0]
-
-            # 如果最后一条消息不是AI消息，则无法解决问题
-            if not isinstance(inputs["candidate"][-1], AIMessage):
-                reflection.found_solution = False
-            return reflection
-
-        # 批量评估所有候选解决方案
+        import asyncio
         user_message = config["configurable"]["graph_request"].user_message
+        reflection_func = self.get_reflection_chain(state, config)
         reflection_inputs = [
             {"input": user_message, "candidate": messages}
             for messages in output_messages
         ]
-
-        # 创建批量处理的静默配置
-        batch_config = {**config, "callbacks": [], "configurable": {**
-                                                                    (config.get("configurable") or {}),
-                                                                    "verbose": False}}
-
-        # 使用静默配置执行批量反思评估
-        reflections = reflection_chain.batch(
-            reflection_inputs, config=batch_config)
+        reflections = await asyncio.gather(*[
+            reflection_func(inputs) for inputs in reflection_inputs
+        ])
 
         # 记录反思结果，使用紧凑格式输出候选方案评估信息
         summary_header = "📊 候选解决方案评估结果汇总"
@@ -304,7 +256,8 @@ class LatsAgentNode(ToolsNodes):
             # 截取反思内容的前50个字符作为概要，避免日志过长
             summary = reflection.reflections[:50] + "..." if len(
                 reflection.reflections) > 50 else reflection.reflections
-            rows.append(f"{idx + 1:^5} | {reflection.score:^6}/10 | {solution_status:^8} | {summary}")
+            rows.append(
+                f"{idx + 1:^5} | {reflection.score:^6}/10 | {solution_status:^8} | {summary}")
 
             # 在DEBUG级别输出完整的反思内容
             logger.debug(f"候选方案 #{idx + 1} 完整评估:\n{reflection.reflections}")
@@ -342,7 +295,7 @@ class LatsAgentNode(ToolsNodes):
 
         return output_messages, reflections
 
-    def expand(self, state: LatsAgentState, config: RunnableConfig) -> LatsAgentState:
+    async def expand(self, state: LatsAgentState, config: RunnableConfig) -> LatsAgentState:
         """扩展搜索树，生成新的候选解决方案
 
         Langgraph 执行过程中的主要搜索步骤，负责选择最佳候选节点并生成新的解决方案
@@ -382,7 +335,7 @@ class LatsAgentNode(ToolsNodes):
         logger.debug(f"成功生成{len(new_candidates)}个新候选解决方案")
 
         # 处理候选解决方案并获取反思评估
-        output_messages, reflections = self._process_candidates(
+        output_messages, reflections = await self._process_candidates(
             new_candidates, state, config
         )
 
@@ -553,16 +506,8 @@ class LatsAgentNode(ToolsNodes):
         logger.debug("初始回答生成链创建完成")
         return initial_answer_chain
 
-    def generate_initial_response(self, state: LatsAgentState, config: RunnableConfig) -> dict:
-        """生成初始响应并构建搜索树根节点
-
-        Args:
-            state: 当前状态
-            config: 运行配置
-
-        Returns:
-            更新后的状态
-        """
+    async def generate_initial_response(self, state: LatsAgentState, config: RunnableConfig) -> dict:
+        """生成初始响应并构建搜索树根节点 (异步)"""
         logger.info("开始生成初始响应...")
 
         # 获取用户消息并生成初始回答
@@ -598,15 +543,13 @@ class LatsAgentNode(ToolsNodes):
         output_messages = [res] + [tr["messages"][0] for tr in tool_responses]
 
         # 对初始回答进行反思评估（使用静默配置）
-        silent_config = {**config, "callbacks": [],
-                         "configurable": {"verbose": False}}
-        reflection = self.get_reflection_chain(state, config).invoke(
-            {"input": user_message, "candidate": output_messages},
-            config=silent_config
-        )
-
-        # 创建搜索树根节点
-        r = reflection[0]
+        # 注意：get_reflection_chain 返回 async function，需要 await 调用
+        reflection_func = self.get_reflection_chain(state, config)
+        reflection = await reflection_func({
+            "input": user_message, "candidate": output_messages
+        })
+        # reflection 直接是 Reflection 对象
+        r = reflection
         r.found_solution = False  # 初始响应通常不算作最终解决方案
         root = Node(output_messages, reflection=r)
 

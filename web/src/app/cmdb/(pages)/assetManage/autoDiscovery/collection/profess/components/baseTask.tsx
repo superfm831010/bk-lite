@@ -136,7 +136,11 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     };
 
     const isHost = nodeId === 'host_manage';
-    const isCommonSelectInstNode = ['databases', 'cloud', 'host_manage'].includes(nodeId as string);
+    const isCommonSelectInstNode = [
+      'databases',
+      'cloud',
+      'host_manage',
+    ].includes(nodeId as string);
 
     const instColumns = [
       {
@@ -152,7 +156,6 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         render: (text: any) => text || '--',
       },
     ];
-
 
     useEffect(() => {
       if (selectedData.length && instData.length) {
@@ -215,7 +218,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     const handleDrawerConfirm = () => {
       setInstVisible(false);
       setSelectedData(selectedRows.map((item) => item));
-      form.setFieldValue('assetInst', selectedRows); 
+      form.setFieldValue('assetInst', selectedRows);
     };
 
     const handleDeleteRow = (record: TableItem) => {
@@ -223,7 +226,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         (item: any) => item._id !== record._id
       );
       setSelectedData(newSelectedData);
-      form.setFieldValue('assetInst', newSelectedData); 
+      form.setFieldValue('assetInst', newSelectedData);
     };
 
     const handleBatchDelete = () => {
@@ -234,7 +237,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         (item: any) => !displaySelectedKeys.includes(item._id)
       );
       setSelectedData(newSelectedData);
-      form.setFieldValue('assetInst', newSelectedData); 
+      form.setFieldValue('assetInst', newSelectedData);
       setDisplaySelectedKeys([]);
     };
 
@@ -246,7 +249,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         render: (text: any, record: any) => record.inst_name || '--',
       },
       {
-        title: t('action'),
+        title: t('common.action'),
         key: 'action',
         width: 120,
         render: (_: any, record: TableItem) => (
@@ -255,7 +258,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             size="small"
             onClick={() => handleDeleteRow(record)}
           >
-            {t('delete')}
+            {t('common.delete')}
           </Button>
         ),
       },
@@ -285,10 +288,10 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
       try {
         const res = await get('/cmdb/api/collect/model_instances/', {
           params: {
-            task_type: modelItem.task_type
-          }
+            task_type: modelItem.task_type,
+          },
         });
-        return res.map((item: any) => item.id)
+        return res.map((item: any) => item.id);
       } catch (error) {
         console.error('获取已选择实例失败:', error);
       }
@@ -309,8 +312,8 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             value: item._id,
             origin: item,
             disabled: (instIds.length ? instIds : selectedInstIds)
-              .filter(id => id !== currentInstId)
-              .includes(item._id)
+              .filter((id) => id !== currentInstId)
+              .includes(item._id),
           }))
         );
       } catch (error) {
@@ -366,7 +369,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         setIpRange(ipRange);
       } else {
         setSelectedData(value || []);
-        form.setFieldValue('assetInst', value || []); 
+        form.setFieldValue('assetInst', value || []);
       }
       setCollectionType(type);
     };
@@ -378,7 +381,8 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
       collectionType,
       ipRange: ipRange,
       organization: ipRangeOrg,
-      initCollectionType: (value: any, type: string) => initCollectionType(value, type),
+      initCollectionType: (value: any, type: string) =>
+        initCollectionType(value, type),
     }));
 
     return (
@@ -393,7 +397,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
               label={t('Collection.taskNameLabel')}
               rules={rules.taskName}
             >
-              <Input placeholder={t('common.pleaseInput')} />
+              <Input placeholder={t('common.inputTip')} />
             </Form.Item>
 
             {/* 扫描周期 */}
@@ -416,7 +420,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                         <TimePicker
                           className="w-40 ml-2"
                           format="HH:mm"
-                          placeholder={t('common.pleaseSelect')}
+                          placeholder={t('common.selectTip')}
                         />
                       </Form.Item>
                     </Radio>
@@ -434,7 +438,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                           <InputNumber
                             className="w-20"
                             min={5}
-                            placeholder={t('common.pleaseInput')}
+                            placeholder={t('common.inputTip')}
                           />
                         </Form.Item>
                         {t('Collection.executeInterval')}
@@ -455,7 +459,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                   <Form.Item name="instId" rules={rules.instId} noStyle>
                     <Select
                       style={{ width: '400px' }}
-                      placeholder={t('common.pleaseSelect')}
+                      placeholder={t('common.selectTip')}
                       options={instOptions}
                       loading={instOptLoading}
                       showSearch
@@ -476,18 +480,21 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             )}
 
             {/* ip选择 */}
-            {nodeId && ['network_topo', 'network', 'databases', 'host_manage'].includes(nodeId) && (
+            {nodeId &&
+              ['network_topo', 'network', 'databases', 'host_manage'].includes(
+                nodeId
+              ) && (
               <>
-                { !isHost && 
-                <Radio.Group
-                  value={collectionType}
-                  className="ml-8 mb-6"
-                  onChange={(e) => setCollectionType(e.target.value)}
-                >
-                  <Radio value="ip">{t('Collection.chooseIp')}</Radio>
-                  <Radio value="asset">{t('Collection.chooseAsset')}</Radio>
-                </Radio.Group>
-                }
+                {!isHost && (
+                  <Radio.Group
+                    value={collectionType}
+                    className="ml-8 mb-6"
+                    onChange={(e) => setCollectionType(e.target.value)}
+                  >
+                    <Radio value="ip">{t('Collection.chooseIp')}</Radio>
+                    <Radio value="asset">{t('Collection.chooseAsset')}</Radio>
+                  </Radio.Group>
+                )}
 
                 {collectionType === 'ip' && !isHost ? (
                   <>
@@ -500,7 +507,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                         {
                           required: true,
                           message:
-                            t('common.inputMsg') + t('Collection.ipRange'),
+                              t('common.inputMsg') + t('Collection.ipRange'),
                         },
                       ]}
                     >
@@ -517,7 +524,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                       ]}
                     >
                       <Cascader
-                        placeholder={t('common.pleaseSelect')}
+                        placeholder={t('common.selectTip')}
                         options={organizationList}
                         value={ipRangeOrg}
                         onChange={(value) => setIpRangeOrg(value)}
@@ -525,10 +532,10 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                     </Form.Item>
                   </>
                 ) : (
-                  /* 选择资产 */
-                  <Form.Item 
-                    name="assetInst" 
-                    label={instPlaceholder} 
+                /* 选择资产 */
+                  <Form.Item
+                    name="assetInst"
+                    label={instPlaceholder}
                     required
                     rules={rules.assetInst}
                     trigger="onChange"
@@ -541,7 +548,10 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                           </Button>
                         ) : (
                           <Dropdown
-                            menu={{ ...dropdownItems, onClick: handleMenuClick }}
+                            menu={{
+                              ...dropdownItems,
+                              onClick: handleMenuClick,
+                            }}
                           >
                             <Button type="primary">
                               {t('common.select')} <DownOutlined />
@@ -552,7 +562,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                           onClick={handleBatchDelete}
                           disabled={displaySelectedKeys.length === 0}
                         >
-                          {t('batchDelete')}
+                          {t('common.batchDelete')}
                         </Button>
                       </Space>
                       <CustomTable
@@ -575,7 +585,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
               </>
             )}
             {/* 接入点 */}
-            { nodeId !== 'k8s'  && (
+            {nodeId !== 'k8s' && (
               <Form.Item
                 label={t('Collection.accessPoint')}
                 name="accessPointId"
@@ -588,7 +598,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                 ]}
               >
                 <Select
-                  placeholder={t('common.pleaseSelect')}
+                  placeholder={t('common.selectTip')}
                   options={accessPoints}
                   loading={accessPointLoading}
                 />
@@ -656,7 +666,11 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         />
 
         <Drawer
-          title={isCommonSelectInstNode ? t('Collection.chooseAsset') : `选择${dropdownItems.items.find((item) => item.key === relateType)?.label || '资产'}`}
+          title={
+            isCommonSelectInstNode
+              ? t('Collection.chooseAsset')
+              : `选择${dropdownItems.items.find((item) => item.key === relateType)?.label || '资产'}`
+          }
           width={620}
           open={instVisible}
           onClose={handleDrawerClose}
@@ -682,7 +696,12 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             scroll={{ y: 'calc(100vh - 280px)' }}
             pagination={{
               ...instPagination,
-              onChange: (page, pageSize) => fetchInstData(isCommonSelectInstNode ? modelId : relateType, page, pageSize),
+              onChange: (page, pageSize) =>
+                fetchInstData(
+                  isCommonSelectInstNode ? modelId : relateType,
+                  page,
+                  pageSize
+                ),
             }}
             rowSelection={{
               type: 'checkbox',

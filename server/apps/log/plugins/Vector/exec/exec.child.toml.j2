@@ -19,6 +19,7 @@ source = '''
 .streams = ["default"]
 '''
 
+{% if streams %}
 # ====================================
 # 日志数据流
 # ====================================
@@ -52,6 +53,18 @@ inputs = [
 ]
 subject = "vector"
 url = "nats://${NATS_SERVERS}"
+
+{% else %}
+# ====================================
+# sinks
+# ====================================
+[sinks.vmlogs_{{ instance_id }}]
+type = "nats"
+inputs = ["exec_enrich_{{ instance_id }}"]
+subject = "vector"
+url = "nats://${NATS_SERVERS}"
+
+{% endif %}
 
 [sinks.vmlogs_{{ instance_id }}.auth]
 strategy = "user_password"

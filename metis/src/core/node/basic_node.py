@@ -20,6 +20,8 @@ class BasicNode:
     def get_llm_client(self, request: BasicLLMRequest) -> ChatOpenAI:
         llm = ChatOpenAI(model=request.model, base_url=request.openai_api_base,
                          api_key=request.openai_api_key, temperature=request.temperature)
+        if 'qwen' in request.model.lower():
+            llm.extra_body = {"enable_thinking": False}
         return llm
 
     def prompt_message_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
@@ -83,6 +85,7 @@ class BasicNode:
             state["messages"].append(
                 SystemMessage(content=system_message_prompt)
             )
+
         return state
 
     def add_chat_history_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:

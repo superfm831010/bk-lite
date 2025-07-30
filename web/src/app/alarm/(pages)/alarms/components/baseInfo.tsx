@@ -12,7 +12,7 @@ const BaseInfo: React.FC<{ detail: AlarmTableDataItem }> = ({ detail }) => {
   const descriptionItems = [
     {
       key: 'operator',
-      label: t('common.operator'),
+      label: t('alarmCommon.operator'),
       value: detail.operator_user,
     },
     {

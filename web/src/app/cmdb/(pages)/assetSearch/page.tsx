@@ -352,7 +352,7 @@ const AssetSearch = () => {
                   onClick={handleSearch}
                 >
                   <SearchOutlined className="pr-[8px]" />
-                  {t('searchTxt')}
+                  {t('common.search')}
                 </div>
               }
               onChange={handleTextChange}
@@ -397,7 +397,7 @@ const AssetSearch = () => {
                   onClick={handleSearch}
                 >
                   <SearchOutlined className="pr-[8px]" />
-                  {t('searchTxt')}
+                  {t('common.search')}
                 </div>
               }
               onChange={handleTextChange}

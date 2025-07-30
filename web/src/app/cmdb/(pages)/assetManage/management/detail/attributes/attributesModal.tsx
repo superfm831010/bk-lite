@@ -227,9 +227,9 @@ const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
                 loading={confirmLoading}
                 onClick={handleSubmit}
               >
-                {t('confirm')}
+                {t('common.confirm')}
               </Button>
-              <Button onClick={handleCancel}> {t('cancel')}</Button>
+              <Button onClick={handleCancel}> {t('common.cancel')}</Button>
             </div>
           }
         >
@@ -319,7 +319,7 @@ const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
               }
             </Form.Item>
             <Form.Item<AttrFieldType>
-              label={t('editable')}
+              label={t('common.editable')}
               name="editable"
               rules={[{ required: true, message: t('required') }]}
             >

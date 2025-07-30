@@ -1,7 +1,7 @@
 from datetime import datetime
 import uuid
 import json as json_util
-from langchain_core.messages import AIMessageChunk, ToolMessage
+from langchain_core.messages import AIMessageChunk, ToolMessage, AIMessage
 
 
 async def stream_response(workflow, body, res):
@@ -42,7 +42,7 @@ async def stream_response(workflow, body, res):
     result = await workflow.stream(body)
 
     async for chunk in result:
-        if isinstance(chunk[0], (ToolMessage, AIMessageChunk)):
+        if isinstance(chunk[0], (ToolMessage, AIMessage, AIMessageChunk)):
             content = chunk[0].content
             completion_token += workflow.count_tokens(content)
 
@@ -52,8 +52,7 @@ async def stream_response(workflow, body, res):
                     "tool_name": chunk[0].name,
                     "tool_result": chunk[0].content
                 }
-                # delta_content = f"执行工具: {tool_info['tool_name']}\n工具执行结果: {tool_info['tool_result']}\n"
-                delta_content = f"执行工具: {tool_info['tool_name']}\n"
+                delta_content = f"\n[执行工具: {tool_info['tool_name']}]\n"
             else:  # AIMessageChunk
                 delta_content = content
 
