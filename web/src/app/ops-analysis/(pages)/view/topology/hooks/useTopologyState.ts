@@ -1,12 +1,19 @@
 import { useState, useRef, useCallback } from 'react';
 import type { Graph, Edge } from '@antv/x6';
 
+interface InterfaceConfig {
+  type: 'existing' | 'custom';
+  value: string;
+}
+
 export interface EdgeData {
   id: string;
   lineType: string;
   lineName?: string;
   sourceNode: { id: string; name: string };
   targetNode: { id: string; name: string };
+  sourceInterface?: InterfaceConfig;
+  targetInterface?: InterfaceConfig;
 }
 
 export const useTopologyState = () => {
@@ -16,14 +23,7 @@ export const useTopologyState = () => {
   const [selectedCells, setSelectedCells] = useState<string[]>([]);
   const [isSelectMode, setIsSelectMode] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-
-  // 模态框和实例相关状态
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [instanceOptions, setInstanceOptions] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
+  const [collapsed, setCollapsed] = useState(true);
 
   // 右键菜单状态
   const [contextMenuNodeId, setContextMenuNodeId] = useState<string>('');
@@ -32,10 +32,6 @@ export const useTopologyState = () => {
     x: 0,
     y: 0,
   });
-
-  // 搜索相关状态
-  const [searchTerm, setSearchTerm] = useState('');
-  const [inputValue, setInputValue] = useState('');
 
   // 文本编辑相关状态
   const [isEditingText, setIsEditingText] = useState(false);
@@ -48,6 +44,10 @@ export const useTopologyState = () => {
   // 边配置相关状态
   const [edgeConfigVisible, setEdgeConfigVisible] = useState(false);
   const [currentEdgeData, setCurrentEdgeData] = useState<EdgeData | null>(null);
+
+  // 节点编辑相关状态
+  const [nodeEditVisible, setNodeEditVisible] = useState(false);
+  const [editingNodeData, setEditingNodeData] = useState<any>(null);
 
   // Refs
   const isDrawingRef = useRef(false);
@@ -90,6 +90,37 @@ export const useTopologyState = () => {
     }
   }, [isEditMode, graphInstance, isEditingText]);
 
+  // 获取编辑节点的初始值
+  const getEditNodeInitialValues = useCallback(() => {
+    if (!editingNodeData) return {};
+
+    if (editingNodeData.type === 'single-value') {
+      return {
+        name: editingNodeData.name,
+        dataSource: editingNodeData.dataSource,
+      };
+    }
+
+    return {
+      name: editingNodeData.name,
+      logoType: editingNodeData.logoType || 'default',
+      logoIcon:
+        editingNodeData.logoType === 'default'
+          ? editingNodeData.logo
+          : 'cc-host',
+      logoUrl:
+        editingNodeData.logoType === 'custom'
+          ? editingNodeData.logo
+          : undefined,
+    };
+  }, [editingNodeData]);
+
+  // 关闭节点编辑面板
+  const handleNodeEditClose = useCallback(() => {
+    setNodeEditVisible(false);
+    setEditingNodeData(null);
+  }, []);
+
   return {
     // 图形相关
     graphInstance,
@@ -106,14 +137,6 @@ export const useTopologyState = () => {
     setCollapsed,
     toggleEditMode,
 
-    // 模态框和实例
-    modalVisible,
-    setModalVisible,
-    selectedRowKeys,
-    setSelectedRowKeys,
-    instanceOptions,
-    setInstanceOptions,
-
     // 右键菜单
     contextMenuNodeId,
     setContextMenuNodeId,
@@ -121,12 +144,6 @@ export const useTopologyState = () => {
     setContextMenuVisible,
     contextMenuPosition,
     setContextMenuPosition,
-
-    // 搜索
-    searchTerm,
-    setSearchTerm,
-    inputValue,
-    setInputValue,
 
     // 文本编辑
     isEditingText,
@@ -147,6 +164,14 @@ export const useTopologyState = () => {
     setEdgeConfigVisible,
     currentEdgeData,
     setCurrentEdgeData,
+
+    // 节点编辑
+    nodeEditVisible,
+    setNodeEditVisible,
+    editingNodeData,
+    setEditingNodeData,
+    getEditNodeInitialValues,
+    handleNodeEditClose,
 
     // Refs
     isDrawingRef,

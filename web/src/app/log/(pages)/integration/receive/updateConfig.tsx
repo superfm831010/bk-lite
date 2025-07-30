@@ -97,15 +97,16 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(({ onSuccess }, ref) => {
 
   const handleSubmit = () => {
     form.validateFields().then((values) => {
-      operateConfig({
-        rowId: formData.id,
-        ...values,
-      });
+      operateConfig(values);
     });
   };
 
   const operateConfig = async (params: TableDataItem) => {
-    const data = configsInfo.getParams(params, configForm);
+    const data = {
+      instance_id: formData.id,
+      collect_type_id: formData.collect_type_id,
+      ...configsInfo.getParams(params, configForm),
+    };
     try {
       setConfirmLoading(true);
       await updateInstanceCollectConfig(data);

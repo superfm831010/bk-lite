@@ -10,5 +10,5 @@ export interface DirItem {
 }
 
 export interface SidebarProps {
-    onSelect?: (type: DirectoryType, dashboardInfo?: DirItem) => void;
+  onSelect?: (type: DirectoryType, itemInfo?: DirItem) => void;
 }

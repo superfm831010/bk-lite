@@ -13,6 +13,7 @@ const ViewPage: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedType, setSelectedType] = useState<DirectoryType>('group');
   const [selectedDashboard, setSelectedDashboard] = useState<any>(null);
+  const [selectedTopology, setSelectedTopology] = useState<any>(null);
 
   return (
     <div
@@ -20,7 +21,7 @@ const ViewPage: React.FC = () => {
       style={{ minWidth: collapsed ? 0 : 280 }}
     >
       <div
-        className={`h-full border-r border-[var(--color-border-2)] relative transition-all duration-300 ${
+        className={`h-full border-r border-[var(--color-border-1)] relative transition-all duration-300 ${
           collapsed ? 'w-0 min-w-0' : 'w-[280px] min-w-[280px]'
         }`}
         style={{
@@ -32,12 +33,17 @@ const ViewPage: React.FC = () => {
       >
         <div className="w-full h-full overflow-hidden">
           <Sidebar
-            onSelect={(type, dashboardInfo) => {
+            onSelect={(type, itemInfo) => {
               setSelectedType(type);
-              if (type === 'dashboard' && dashboardInfo) {
-                setSelectedDashboard(dashboardInfo);
+              if (type === 'dashboard' && itemInfo) {
+                setSelectedDashboard(itemInfo);
+                setSelectedTopology(null);
+              } else if (type === 'topology' && itemInfo) {
+                setSelectedTopology(itemInfo);
+                setSelectedDashboard(null);
               } else {
                 setSelectedDashboard(null);
+                setSelectedTopology(null);
               }
             }}
           />
@@ -56,7 +62,7 @@ const ViewPage: React.FC = () => {
       </div>
       <div className="h-full flex-1 flex" style={{ minWidth: 0 }}>
         {selectedType === 'topology' ? (
-          <Topology />
+          <Topology selectedTopology={selectedTopology} />
         ) : selectedType === 'dashboard' ? (
           <Dashboard selectedDashboard={selectedDashboard} />
         ) : selectedType === 'datasource' ? (

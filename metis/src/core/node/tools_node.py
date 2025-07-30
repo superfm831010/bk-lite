@@ -1,7 +1,7 @@
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from sanic.log import logger
 import json
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from src.tools.tools_loader import ToolsLoader
 from src.core.node.basic_node import BasicNode
 import json_repair
@@ -156,26 +156,20 @@ class StructuredOutputParser:
         """使用聊天模式解析 (适用于不支持结构化输出的模型)"""
         self._prepare_llm_for_chat_mode()
 
-        # 转换为消息列表格式
-        if isinstance(messages, dict):
-            input_msg = HumanMessage(content=messages.get("input", ""))
-            candidate_msgs = messages.get("candidate", [])
-            msg_list = [input_msg] + candidate_msgs
-        else:
-            msg_list = messages.copy()
-
         # 添加schema提示
         schema_prompt = self._generate_schema_prompt(pydantic_class)
-        if msg_list and isinstance(msg_list[-1], HumanMessage):
-            msg_list[-1].content += f"\n\n{schema_prompt}"
+
+        if messages and isinstance(messages[-1], HumanMessage):
+            schema_msg = HumanMessage(
+                content=messages[-1].content+schema_prompt)
         else:
-            msg_list.append(HumanMessage(content=schema_prompt))
+            schema_msg = HumanMessage(content=schema_prompt)
 
         last_error = None
 
         for attempt in range(self.max_retries):
             try:
-                response = await self.llm.ainvoke(msg_list)
+                response = await self.llm.ainvoke([schema_msg])
                 response_text = getattr(response, 'content', str(response))
                 logger.debug(
                     f"聊天模式尝试 {attempt + 1}: LLM响应: {response_text[:200]}...")
@@ -197,7 +191,7 @@ class StructuredOutputParser:
 
 之前的响应: {response_text[:200]}...
 """
-                    msg_list.append(HumanMessage(content=error_msg))
+                    messages.append(AIMessage(content=error_msg))
 
             except Exception as e:
                 last_error = e

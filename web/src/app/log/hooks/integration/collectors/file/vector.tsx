@@ -55,10 +55,12 @@ export const useVectorConfig = () => {
             };
           },
           getParams: (formData: TableDataItem, configForm: TableDataItem) => {
-            configForm.child.content.sources[
-              pluginConfig.collect_type + '_' + formData.rowId
-            ].include = [formData.file_path];
-            return configForm;
+            return {
+              child: {
+                id: configForm.child.id,
+                content_data: formData,
+              },
+            };
           },
         },
         manual: {
