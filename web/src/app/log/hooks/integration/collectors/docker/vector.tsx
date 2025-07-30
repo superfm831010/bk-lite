@@ -23,7 +23,7 @@ export const useVectorConfig = () => {
           initTableItems: {},
           defaultForm: {
             docker_host: 'unix:///var/run/docker.sock',
-            start_pattern: '.*',
+            start_pattern: '^(INFO|ERROR|DEBUG|WARN)',
           },
           columns: [],
           getParams: (row: IntegrationLogInstance, config: TableDataItem) => {
