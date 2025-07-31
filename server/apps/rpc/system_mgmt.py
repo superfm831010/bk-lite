@@ -1,10 +1,9 @@
-from apps.rpc.base import RpcClient
+from apps.rpc.base import RpcClient, AppClient
 
 
 class SystemMgmt(object):
-    def __init__(self):
-        self.client = RpcClient()
-        # self.client = AppClient("apps.system_mgmt.nats_api")
+    def __init__(self, is_local_client=False):
+        self.client = AppClient("apps.system_mgmt.nats_api") if is_local_client else RpcClient()
 
     def login(self, username, password):
         """
