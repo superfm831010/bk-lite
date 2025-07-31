@@ -130,7 +130,11 @@ const Grouping = () => {
               okButtonProps={{ loading: confirmLoading }}
               onConfirm={() => deleteInstConfirm(record)}
             >
-              <Button type="link" className="ml-[10px]">
+              <Button
+                type="link"
+                className="ml-[10px]"
+                disabled={record.id === 'default'}
+              >
                 {t('common.remove')}
               </Button>
             </Popconfirm>
@@ -163,6 +167,9 @@ const Grouping = () => {
 
   const getRuleDisplay = (rule: GroupInfo) => {
     const { mode, conditions = [] } = rule || {};
+    if (!mode) {
+      return '*';
+    }
     if (mode === 'OR') {
       return `${t('log.integration.anySatisfy')}${conditions.length}${t(
         'log.integration.anyOneof'
@@ -178,10 +185,10 @@ const Grouping = () => {
     setCollectTypes(data);
   };
 
-  const openInstanceModal = (row = {}, type: string) => {
+  const openInstanceModal = (row: TableDataItem, type: string) => {
     instanceRef.current?.showModal({
       title: t(`common.${type}`),
-      type,
+      type: row.id === 'default' ? 'builtIn' : type,
       form: row,
     });
   };

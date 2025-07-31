@@ -1,7 +1,6 @@
 .alert {
     display: flex;
     overflow: hidden;
-    flex-direction: row;
     width: 100%;
 
     .filters {
@@ -12,55 +11,49 @@
         margin-right: 10px;
         height: calc(100vh - 144px);
         overflow-y: auto;
-
-        .level {
-            border-left: 4px solid #F43B2C;
-            padding-left: 8px;
-        }
-
-        .assetType {
-            :global {
-                .collapse-title {
-                    padding: 0 !important;
-                    background-color: var(--color-bg-1);
-                }
-            }
-        }
-
-        :global {
-            .collapse-title {
-                padding: 3px 10px;
-                border-radius: 2px;
-
-                .title {
-                    font-weight: 500 !important;
-                }
-            }
-        }
     }
 
-    .chartWrapper {
-        background-color: var(--color-bg-1);
-        padding: 20px 20px 0 10px;
-        margin-bottom: 10px;
+    .alarmList {
+        width: calc(100vw - 246px);
+        min-width: 800px;
 
-        .chart {
-            height: 100px;
+        .searchCondition {
+            padding: 10px 20px;
+            background-color: var(--color-bg-1);
+            margin-bottom: 10px;
 
-            :global {
-                .ant-empty-normal {
-                    margin: 0;
-                    transform: translateY(20px);
+            .condition {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .chartWrapper {
+            background-color: var(--color-bg-1);
+            padding: 20px 20px 0 10px;
+            margin-bottom: 10px;
+            width: 100%;
+
+            .chart {
+                height: 100px;
+
+                :global {
+                    .ant-empty-normal {
+                        margin: 0;
+                        transform: translateY(20px);
+                    }
                 }
             }
         }
-    }
 
-    .table {
-        width: calc(100vw - 250px);
-        background-color: var(--color-bg-1);
-        height: calc(100vh - 308px);
-        padding: 10px 20px 20px 20px;
+        .table {
+            width: 100%;
+            background-color: var(--color-bg-1);
+            height: 100%;
+            padding: 10px 20px 20px 20px;
+        }
+
     }
 }
 

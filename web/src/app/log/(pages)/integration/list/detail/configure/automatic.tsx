@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useSearchParams, useRouter } from 'next/navigation';
 import useApiClient from '@/utils/request';
 import useIntegrationApi from '@/app/log/api/integration';
-import { TableDataItem } from '@/app/log/types';
+import { ListItem, TableDataItem } from '@/app/log/types';
 import {
   IntegrationAccessProps,
   IntegrationLogInstance,
@@ -22,7 +22,8 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const { isLoading } = useApiClient();
-  const { getLogNodeList, batchCreateInstances } = useIntegrationApi();
+  const { getLogNodeList, batchCreateInstances, getLogStreams } =
+    useIntegrationApi();
   const router = useRouter();
   const { getCollectTypeConfig } = useCollectTypeConfig();
   const columnsConfig = useCommonColumns();
@@ -35,10 +36,11 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = () => {
   const [dataSource, setDataSource] = useState<IntegrationLogInstance[]>([]);
   const [nodeList, setNodeList] = useState<TableDataItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
-  const [nodesLoading, setNodesLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [initTableItems, setInitTableItems] = useState<IntegrationLogInstance>(
     {}
   );
+  const [streamList, setStreamList] = useState<ListItem[]>([]);
 
   const onTableDataChange = (data: IntegrationLogInstance[]) => {
     setDataSource(data);
@@ -56,7 +58,7 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = () => {
 
   const columns = useMemo(() => {
     const commonColumns = columnsConfig.getCommonColumns({
-      nodesLoading,
+      streamList,
       nodeList,
       dataSource,
       initTableItems,
@@ -64,7 +66,7 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = () => {
     });
     const displaycolumns = configsInfo.columns;
     return [commonColumns[0], ...displaycolumns, ...commonColumns.slice(1, 5)];
-  }, [columnsConfig, nodesLoading, nodeList, dataSource, configsInfo, type]);
+  }, [columnsConfig, streamList, nodeList, dataSource, configsInfo, type]);
 
   const formItems = useMemo(() => {
     return configsInfo.formItems;
@@ -72,7 +74,6 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = () => {
 
   useEffect(() => {
     if (isLoading) return;
-    getNodeList();
     initData();
   }, [isLoading]);
 
@@ -83,6 +84,7 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = () => {
         node_ids: null,
         instance_name: null,
         group_ids: groupId,
+        stream_ids: [],
         instance_id: uuidv4(),
       };
       setInitTableItems(initItems);
@@ -94,21 +96,29 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = () => {
     form.setFieldsValue({
       ...configsInfo.defaultForm,
     });
+    setLoading(true);
+    Promise.all([getNodeList(), getGroups()]).finally(() => {
+      setLoading(false);
+    });
   };
 
   const getNodeList = async () => {
-    setNodesLoading(true);
-    try {
-      const data = await getLogNodeList({
-        cloud_region_id: 0,
-        page: 1,
-        page_size: -1,
-        is_active: true,
-      });
-      setNodeList(data.nodes || []);
-    } finally {
-      setNodesLoading(false);
-    }
+    const data = await getLogNodeList({
+      cloud_region_id: 0,
+      page: 1,
+      page_size: -1,
+      is_active: true,
+    });
+    setNodeList(data.nodes || []);
+  };
+
+  const getGroups = async () => {
+    const data = await getLogStreams({
+      page_size: 99999999999,
+      collect_type_id: collectTypeId,
+      page: 1,
+    });
+    setStreamList(data?.items || []);
   };
 
   const handleSave = () => {
@@ -150,9 +160,13 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = () => {
                   return Promise.reject(new Error(t('common.required')));
                 }
                 if (
-                  dataSource.some((item) =>
-                    Object.values(item).some((value) => !value)
-                  )
+                  dataSource.some((item) => {
+                    const { stream_ids, ...rest } = item;
+                    return (
+                      stream_ids &&
+                      Object.values(rest).some((value) => !value?.length)
+                    );
+                  })
                 ) {
                   return Promise.reject(new Error(t('common.required')));
                 }
@@ -166,7 +180,7 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = () => {
             dataSource={dataSource}
             columns={columns}
             rowKey="instance_id"
-            loading={nodesLoading}
+            loading={loading}
             pagination={false}
           />
         </Form.Item>

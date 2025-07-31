@@ -8,7 +8,6 @@ from celery import shared_task
 
 from apps.alerts.common.notify.notify import Notify
 from apps.alerts.models import SystemSetting
-from apps.alerts.service.alter_operator import BeatUpdateAlertStatu
 from apps.alerts.service.notify_service import NotifyResultService
 from apps.alerts.service.un_dispatch import UnDispatchService
 from apps.core.logger import alert_logger as logger
@@ -38,7 +37,6 @@ def event_aggregation_alert():
             return
 
         # 3. 按窗口类型优先级顺序处理（滑动、固定、会话）
-        # window_order = ['session', 'sliding', 'fixed']
         window_order = ['sliding', 'fixed', 'session']
         # window_order = ['session']
         processing_stats = {}
@@ -102,8 +100,15 @@ def beat_close_alert():
     告警关闭兜底机制
     """
     logger.info("== beat close alert task start ==")
-    beat_update = BeatUpdateAlertStatu(times=3)  # 3个窗口内
-    beat_update.beat_close_alert()
+    try:
+        logger.info("开始执行告警自动关闭定时任务")
+        from apps.alerts.common.auto_close import AlertAutoClose
+        auto_closer = AlertAutoClose()
+        auto_closer.main()
+        logger.info("告警自动关闭定时任务执行完成")
+    except Exception as e:
+        logger.error(f"告警自动关闭定时任务执行失败: {str(e)}")
+        raise
     logger.info("== beat close alert task end ==")
 
 

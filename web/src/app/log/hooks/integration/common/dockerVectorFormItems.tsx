@@ -43,6 +43,8 @@ const useDockerVectorFormItems = () => {
                 style={{ width: '300px' }}
                 placeholder={t('log.integration.containerPlaceholder')}
                 disabled={extra.disabledFormItems.include_containers}
+                suffixIcon={null}
+                open={false}
               />
             </Form.Item>
           )}
@@ -56,6 +58,8 @@ const useDockerVectorFormItems = () => {
                 style={{ width: '300px' }}
                 placeholder={t('log.integration.containerPlaceholder')}
                 disabled={extra.disabledFormItems.exclude_containers}
+                suffixIcon={null}
+                open={false}
               />
             </Form.Item>
           )}

@@ -1,3 +1,5 @@
+from email import message
+from pyexpat.errors import messages
 from typing import List, Union, Dict, Any, Optional, Tuple
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -49,10 +51,15 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         Returns:
             包含执行结果的新状态
         """
+        messages = state['messages']
+
         # 检查计划是否为空
         if not state.get("plan"):
             self.log(config, "没有可执行的计划步骤，需要重新规划")
-            return {"current_step_index": state.get("current_step_index", 0) + 1, "replan_needed": True}
+            return {
+                "current_step_index": state.get("current_step_index", 0) + 1,
+                "replan_needed": True
+            }
 
         plan = state["plan"]
         plan_str = "\n".join(f"{i + 1}. {step}" for i, step in enumerate(plan))
@@ -87,11 +94,12 @@ class PlanAndExecuteAgentNode(ToolsNodes):
 
         # 创建人类消息
         human_message = HumanMessage(content=task_formatted)
+        messages.append(human_message)
 
         # 执行代理
         try:
             agent_response = await agent_executor.ainvoke(
-                {"messages": [human_message]}
+                {"messages": messages}
             )
             ai_response = agent_response["messages"][-1]
             step_result = ai_response.content
@@ -104,7 +112,7 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         response = None
 
         # 判断是否获得最终答案（只在最后一步）
-        if is_last_step and ai_response and ("最终结果" in ai_response.content or "最终答案" in ai_response.content):
+        if is_last_step and ai_response and ("结果" in ai_response.content or "答案" in ai_response.content):
             response = ai_response.content
             self.log(config, f"检测到最终答案，任务完成")
 
@@ -118,8 +126,9 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         if ai_response is None:
             replan_needed = True
 
+        messages.append(ai_response)
         result = {
-            "messages": [human_message] + ([ai_response] if ai_response else []),
+            "messages": messages,
             "past_steps": new_past_steps,
             "current_step_index": current_step_index + 1,
             "plan": plan[1:],
@@ -217,6 +226,8 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         Returns:
             包含新计划或最终响应的状态更新
         """
+        messages = state['messages']
+
         user_message = config["configurable"]["graph_request"].user_message
 
         # 检查是否已经有响应
@@ -230,11 +241,6 @@ class PlanAndExecuteAgentNode(ToolsNodes):
             for i, step in enumerate(state["past_steps"])
         ])
 
-        # 格式化原始计划（如果有）
-        original_plan_formatted = "\n".join([
-            f"步骤 {i + 1}: {step}" for i, step in enumerate(state.get("plan", []))
-        ]) if state.get("plan") else "无"
-
         # 检查是否所有步骤已完成
         all_steps_completed = len(state.get("plan", [])) == 0 and len(
             state.get("past_steps", [])) > 0
@@ -243,7 +249,8 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         replanner_prompt = self._create_planning_prompt(for_replanning=True)
 
         # 获取LLM客户端
-        llm = self.get_llm_client(config["configurable"]["graph_request"])
+        llm = self.get_llm_client(
+            config["configurable"]["graph_request"], disable_stream=True)
 
         # 人类消息的内容根据是否完成所有步骤有所不同
         message_content = ""
@@ -268,6 +275,7 @@ class PlanAndExecuteAgentNode(ToolsNodes):
 
         # 人类消息
         human_message = HumanMessage(content=message_content)
+        messages.append(human_message)
 
         # 通用结构化输出调用，兼容 Qwen Function
         self.log(config,
@@ -276,22 +284,18 @@ class PlanAndExecuteAgentNode(ToolsNodes):
             llm=llm,
             prompt=replanner_prompt,
             pydantic_model=Act,
-            messages=[human_message,],
+            messages=messages,
         )
 
         # 创建系统消息
-        system_message = SystemMessage(
-            content=f"系统已基于执行结果重新规划任务步骤"
-        )
-
         if isinstance(output.action, Response):
-            self.log(config, f"重新规划结果：完成任务，返回最终响应")
             # 生成最终响应
             ai_message = AIMessage(
                 content=f"任务已完成，最终结果：{output.action.response}")
-
+            self.log(config, f"生成最终响应：{output.action.response}")
+            messages.append(ai_message)
             return {
-                "messages": [ai_message],
+                "messages": messages,
                 "response": output.action.response
             }
         else:
@@ -300,9 +304,10 @@ class PlanAndExecuteAgentNode(ToolsNodes):
             self.log(config, f"重新规划结果：新计划包含 {len(new_plan)} 个步骤")
             plan_str = "\n".join([f"- {step}" for step in new_plan])
             ai_message = AIMessage(content=f"已重新规划任务，新计划：\n{plan_str}")
+            messages.append(ai_message)
 
             return {
-                "messages": [system_message, ai_message],
+                "messages": messages,
                 "plan": new_plan,
                 "current_step_index": 0
             }
@@ -317,6 +322,8 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         Returns:
             包含初始计划的状态更新
         """
+        messages = state['messages']
+
         # 获取用户消息
         user_message = config["configurable"]["graph_request"].user_message
 
@@ -327,7 +334,8 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         planner_prompt = self._create_planning_prompt(for_replanning=False)
 
         # 获取LLM客户端
-        llm = self.get_llm_client(config["configurable"]["graph_request"])
+        llm = self.get_llm_client(
+            config["configurable"]["graph_request"], disable_stream=True)
 
         # 通用结构化输出调用，兼容 Qwen Function
         self.log(config, f"为任务生成初始计划: {user_message}")
@@ -344,13 +352,13 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         self.log(config, f"生成的初始计划:\n{plan_str}")
 
         # 创建系统消息和AI消息，以便将它们添加到状态
-        system_message = SystemMessage(content="系统已为您的请求生成了执行计划")
         ai_message = AIMessage(
-            content=f"已为任务生成计划，包含 {len(plan.steps)} 个步骤:\n{plan_str}")
+            content=f"已为任务生成计划，包含 {len(plan.steps)} 个步骤:\n{plan_str}\n")
+        messages.append(ai_message)
 
         # 返回更新的状态
         return {
-            "messages": [human_message, system_message, ai_message],
+            "messages": messages,
             "plan": plan.steps,
             "current_step_index": 0,
             "past_steps": []

@@ -15,6 +15,8 @@ CONVERSATION_DOCKER_NETWORK = os.getenv("CONVERSATION_DOCKER_NETWORK", "bklite-p
 # MINIO 配置
 MINIO_PRIVATE_BUCKETS = ["munchkin-private"]
 MINIO_PUBLIC_BUCKETS = ["munchkin-public"]
+
+
 KUBE_CONFIG_FILE = os.getenv("KUBE_CONFIG_FILE", "")
 OPSPILOT_WEB_URL = os.getenv("OPSPILOT_WEB_URL", "https://ops-pilot.canway.net/")
 

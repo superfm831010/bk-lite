@@ -73,7 +73,6 @@ class PlaywrightManager:
                         '--disable-ipc-flooding-protection',
                         '--enable-features=NetworkService,NetworkServiceLogging',
                         '--disable-features=TranslateUI,BlinkGenPropertyTrees',
-                        '--window-size=1920,1080'
                     ]
                 )
                 logger.info("get_browser: Chromium 启动成功")

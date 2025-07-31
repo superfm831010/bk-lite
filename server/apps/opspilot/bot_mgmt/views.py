@@ -19,6 +19,7 @@ from apps.opspilot.model_provider_mgmt.services.llm_service import llm_service
 from apps.opspilot.models import Bot, BotChannel, BotConversationHistory, LLMSkill, TokenConsumption
 from apps.opspilot.quota_rule_mgmt.quota_utils import QuotaUtils
 from apps.opspilot.utils.sse_chat import generate_stream_error, stream_chat
+from apps.rpc.system_mgmt import SystemMgmt
 
 
 @api_exempt
@@ -80,6 +81,21 @@ def validate_openai_token(token):
     return True, user
 
 
+def validate_header_token(token, bot_id):
+    if not token:
+        return False, {"choices": [{"message": {"role": "assistant", "content": "No authorization"}}]}
+    bot_obj = Bot.objects.filter(id=bot_id, online=True).first()
+    if not bot_obj:
+        return False, {"choices": [{"message": {"role": "assistant", "content": "No bot online"}}]}
+    token = token.split("Bearer ")[-1]
+    client = SystemMgmt()
+    # res = client.verify_token(token)
+    res = client.get_pilot_permission_by_token(token, bot_id, bot_obj.team)
+    if not res.get("result"):
+        return False, {"choices": [{"message": {"role": "assistant", "content": "No authorization"}}]}
+    return True, {"username": res["data"]["username"]}
+
+
 def validate_remaining_token(skill_obj: LLMSkill):
     try:
         current_team = skill_obj.team[0]
@@ -91,10 +107,13 @@ def validate_remaining_token(skill_obj: LLMSkill):
         raise Exception(_("Token used up"))
 
 
-def get_skill_and_params(kwargs, team):
+def get_skill_and_params(kwargs, team, bot_id=None):
     """Get skill object and prepare parameters for LLM invocation"""
     skill_id = kwargs.get("model")
-    skill_obj = LLMSkill.objects.filter(name=skill_id, team__contains=int(team)).first()
+    if not bot_id:
+        skill_obj = LLMSkill.objects.filter(name=skill_id, team__contains=int(team)).first()
+    else:
+        skill_obj = LLMSkill.objects.filter(name=skill_id, bot=bot_id).first()
 
     if not skill_obj:
         return None, None, {"choices": [{"message": {"role": "assistant", "content": "No skill"}}]}
@@ -202,6 +221,45 @@ def openai_completions(request):
         else:
             return JsonResponse({"choices": [{"message": {"role": "assistant", "content": str(e)}}]})
     params["user_id"] = user.username
+    params["enable_km_route"] = skill_obj.enable_km_route
+    params["km_llm_model"] = skill_obj.km_llm_model
+    user_message = params.get("user_message")
+    if not stream_mode:
+        return invoke_chat(params, skill_obj, kwargs, current_ip, user_message)
+    return stream_chat(params, skill_obj.name, kwargs, current_ip, user_message)
+
+
+@api_exempt
+def lobe_skill_execute(request):
+    kwargs = json.loads(request.body)
+    current_ip = get_client_ip(request)
+
+    stream_mode = kwargs.get("stream", False)
+    # stream_mode = False
+    token = request.META.get("HTTP_AUTHORIZATION") or request.META.get(settings.API_TOKEN_HEADER_NAME)
+    is_valid, msg = validate_header_token(token, int(kwargs["studio_id"]))
+    if not is_valid:
+        if stream_mode:
+            return generate_stream_error(msg["choices"][0]["message"]["content"])
+        else:
+            return JsonResponse(msg)
+    user = msg
+    try:
+        skill_obj, params, error = get_skill_and_params(kwargs, "", kwargs.get("studio_id"))
+        if error:
+            if skill_obj:
+                user_message = params.get("user_message")
+                insert_skill_log(current_ip, skill_obj.id, error, kwargs, False, user_message)
+            if stream_mode:
+                return generate_stream_error(error["choices"][0]["message"]["content"])
+            else:
+                return JsonResponse(error)
+    except Exception as e:
+        if stream_mode:
+            return generate_stream_error(str(e))
+        else:
+            return JsonResponse({"choices": [{"message": {"role": "assistant", "content": str(e)}}]})
+    params["user_id"] = user["username"]
     params["enable_km_route"] = skill_obj.enable_km_route
     params["km_llm_model"] = skill_obj.km_llm_model
     user_message = params.get("user_message")
