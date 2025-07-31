@@ -574,7 +574,6 @@ const Alert: React.FC = () => {
           <div className={alertStyle.filters}>
             <TreeSelector
               data={treeData}
-              loading={pageLoading}
               defaultSelectedKey={defaultSelectObj as string}
               onNodeSelect={handleObjectChange}
             />
