@@ -1,11 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import WithSideMenuLayout from '@/components/sub-layout';
 import OnelineEllipsisIntro from '@/app/opspilot/components/oneline-ellipsis-intro';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
 import TopSection from "@/components/top-section";
+import { useStudioApi } from '@/app/opspilot/api/studio';
+import { usePermissions } from '@/context/permissions';
+import { MenuItem } from '@/types/index';
 
 const KnowledgeDetailLayout = ({ children }: { children: React.ReactNode }) => {
   const { t } = useTranslation();
@@ -15,7 +18,52 @@ const KnowledgeDetailLayout = ({ children }: { children: React.ReactNode }) => {
   const id = searchParams ? searchParams.get('id') : null;
   const name = searchParams ? searchParams.get('name') : null;
   const desc = searchParams ? searchParams.get('desc') : null;
+  const { fetchBotDetail } = useStudioApi();
+  const { menus } = usePermissions();
+  
+  const [botType, setBotType] = useState<number | null>(null);
 
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchBotData = async () => {
+      try {
+        const botData = await fetchBotDetail(id);
+        setBotType(botData.bot_type);
+      } catch (error) {
+        console.error('Failed to fetch bot data:', error);
+      }
+    };
+
+    fetchBotData();
+  }, [id]);
+
+  // 在layout中处理菜单逻辑
+  const processedMenuItems = useMemo(() => {
+    // 获取当前路径对应的菜单项
+    const getMenuItemsForPath = (menus: MenuItem[], currentPath: string): MenuItem[] => {
+      const matchedMenu = menus.find(menu => 
+        menu.url && menu.url !== currentPath && currentPath.startsWith(menu.url)
+      );
+
+      if (matchedMenu?.children?.length) {
+        const validChildren = matchedMenu.children.filter(m => !m.isNotMenuItem);
+        return validChildren;
+      }
+
+      return [];
+    };
+
+    const originalMenuItems = getMenuItemsForPath(menus, pathname ?? '');
+    
+    // 如果bot_type为2，只返回第一个菜单项
+    if (botType === 2 && originalMenuItems.length > 0) {
+      return [originalMenuItems[0]];
+    }
+    
+    // 否则返回所有菜单项
+    return originalMenuItems;
+  }, [menus, pathname, botType]);
 
   const handleBackButtonClick = () => {
     const pathSegments = pathname ? pathname.split('/').filter(Boolean) : [];
@@ -95,6 +143,7 @@ const KnowledgeDetailLayout = ({ children }: { children: React.ReactNode }) => {
       intro={intro}
       showBackButton={true}
       onBackButtonClick={handleBackButtonClick}
+      customMenuItems={processedMenuItems}
     >
       {children}
     </WithSideMenuLayout>
