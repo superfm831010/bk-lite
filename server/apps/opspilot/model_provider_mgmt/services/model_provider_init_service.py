@@ -42,7 +42,7 @@ class ModelProviderInitService:
                 defaults={
                     "rerank_config": {
                         "base_url": "local:bce:maidalun1020/bce-reranker-base_v1",
-                        "api_key": "",
+                        "api_key": "bklite",
                         "model": "bce-reranker-base_v1",
                     },
                     "team": [self.group_id],
@@ -56,7 +56,7 @@ class ModelProviderInitService:
                 defaults={
                     "embed_config": {
                         "base_url": "local:huggingface_embedding:maidalun1020/bce-embedding-base_v1",
-                        "api_key": "",
+                        "api_key": "bklite",
                         "model": "bce-embedding-base_v1",
                     },
                     "team": [self.group_id],
@@ -70,7 +70,7 @@ class ModelProviderInitService:
                 defaults={
                     "embed_config": {
                         "base_url": "local:huggingface_embedding:BAAI/bge-small-zh-v1.5",
-                        "api_key": "",
+                        "api_key": "bklite",
                         "model": "FastEmbed(BAAI/bge-small-zh-v1.5)",
                     },
                     "team": [self.group_id],
@@ -99,6 +99,10 @@ class ModelProviderInitService:
             defaults={
                 "team": [self.group_id],
                 "enabled": True,
+                "ocr_config": {
+                    "base_url": "http://ocr-server/azure_ocr",
+                    "api_key": "bklite",
+                },
             },
         )
 
