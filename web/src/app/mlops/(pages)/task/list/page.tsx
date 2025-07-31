@@ -273,6 +273,7 @@ const TrainTask = () => {
   const onTrainStart = async (record: TrainJob) => {
     try {
       await startAnomalyTrainTask(record.id);
+      message.success(`traintask.trainStartSucess`);
     } catch (e) {
       console.log(e);
       message.error(`common.error`);

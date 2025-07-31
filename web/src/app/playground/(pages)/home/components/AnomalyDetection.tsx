@@ -302,7 +302,7 @@ const AnomalyDetection = () => {
         <div className="banner-title text-5xl font-bold pt-5">
           {infoText.bannerTitle}
         </div>
-        <div className="banner-info mt-8">
+        <div className="banner-info mt-8 max-w-[500px]">
           {infoText.bannerInfo}
         </div>
         {/* <div className="banner-btn-list mt-[80px]">
