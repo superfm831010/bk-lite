@@ -186,9 +186,7 @@ export const useGraphOperations = (
       if (e.shiftKey) {
         return;
       }
-      
       const nodeData = node.getData();
-      // 排除文本节点
       if (nodeData?.type !== 'text') {
         setEditingNodeData({
           ...nodeData,
@@ -199,12 +197,10 @@ export const useGraphOperations = (
       }
     });
 
-    // 边点击事件 - 查看/编辑边
     graph.on('edge:click', ({ e, edge }) => {
       if (e.shiftKey) {
         return;
       }
-      
       const edgeData = edge.getData();
       const sourceNode = edge.getSourceNode();
       const targetNode = edge.getTargetNode();
@@ -338,8 +334,7 @@ export const useGraphOperations = (
           },
         });
       });
-      
-      // 清除选中状态
+
       graph.cleanSelection();
       setSelectedCells([]);
       
