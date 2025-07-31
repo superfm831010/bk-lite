@@ -174,3 +174,16 @@ class SystemMgmt(object):
 
     def get_user_rules_by_app(self, group_id, username, app, module, child_module="", domain="domain.com"):
         return self.client.run("get_user_rules_by_app", group_id, username, domain, app, module, child_module)
+
+    def get_user_rules_by_module(self, group_id, username, app, module, domain="domain.com"):
+        return self.client.run(
+            "get_user_rules_by_module",
+            group_id,
+            username,
+            domain,
+            app,
+            module,
+        )
+
+    def get_pilot_permission_by_token(self, token, bot_id, group_list):
+        return self.client.run("get_pilot_permission_by_token", token, bot_id, group_list)
