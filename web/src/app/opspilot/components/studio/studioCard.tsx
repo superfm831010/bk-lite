@@ -10,8 +10,12 @@ interface StudioCardProps extends Studio {
 }
 
 const StudioCard: React.FC<StudioCardProps> = (props) => {
-  const { id, name, introduction, created_by, team_name, team, index, online, permissions, onMenuClick } = props;
+  const { id, name, introduction, created_by, team_name, team, online, bot_type, permissions, onMenuClick } = props;
   const iconTypeMapping: [string, string] = ['jiqirenjiaohukapian', 'jiqiren'];
+  const botTypeMapping: { [key: number]: string } = {
+    1: 'Pilot',
+    2: 'LobeChat'
+  };
 
   return (
     <EntityCard
@@ -21,8 +25,8 @@ const StudioCard: React.FC<StudioCardProps> = (props) => {
       created_by={created_by}
       team_name={team_name}
       team={team}
-      index={index}
       online={online}
+      botType={botTypeMapping[bot_type] || ''}
       permissions={permissions}
       onMenuClick={onMenuClick}
       redirectUrl="/opspilot/studio/detail"
