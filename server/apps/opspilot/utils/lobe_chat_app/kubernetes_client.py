@@ -11,10 +11,10 @@ from apps.opspilot.utils.template_loader import core_template
 
 class LobeKubernetesClient(object):
     def __init__(self):
-        if settings.LOBE_KUBE_CONFIG_FILE == "":
+        if settings.KUBE_CONFIG_FILE == "":
             config.load_incluster_config()
         else:
-            config.load_kube_config(config_file=settings.LOBE_KUBE_CONFIG_FILE)
+            config.load_kube_config(config_file=settings.KUBE_CONFIG_FILE)
 
         self.core_api = client.CoreV1Api()
         self.app_api = client.AppsV1Api()
@@ -25,7 +25,7 @@ class LobeKubernetesClient(object):
 
         self.argo_resource_group = "argoproj.io"
         self.argo_resource_version = "v1alpha1"
-        self.namespace = settings.LOBE_KUBE_NAMESPACE
+        self.namespace = settings.KUBE_NAMESPACE
 
     def start_pilot(self, bot) -> bool:
         skill_list = [f"+{i.name}" for i in bot.llm_skills.all()]
