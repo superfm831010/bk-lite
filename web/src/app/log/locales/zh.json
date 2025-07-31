@@ -174,7 +174,6 @@
       "host": "主机",
       "includeContainers": "指定的容器",
       "excludeContainers": "忽略的容器",
-      "startPattern": "合并正则",
       "containerPlaceholder": "请输入容器按回车键结束",
       "collectType": "采集类型",
       "anySatisfy": "满足",
@@ -183,7 +182,13 @@
       "allRules": "条规则",
       "logGroup": "日志分组",
       "logGroupTips": "请为接收进来的日志划分分组，则日志的查看权限会按照日志分组进行权限隔离。",
-      "belongingGroupTips": "接收实例的查看和操作，按照其所属组织进行权限隔离。"
+      "belongingGroupTips": "接收实例的查看和操作，按照其所属组织进行权限隔离。",
+      "multiline": "多行聚合",
+      "multilineAllRequired": "所有值都要填或都不填",
+      "mode": "聚合模式",
+      "timeoutMs": "超时时间",
+      "startPattern": "消息开头正则",
+      "conditionPattern": "合并规则"
     }
   }
 }
