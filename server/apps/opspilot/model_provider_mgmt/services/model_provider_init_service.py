@@ -100,7 +100,7 @@ class ModelProviderInitService:
                 "team": [self.group_id],
                 "enabled": True,
                 "ocr_config": {
-                    "base_url": "http://ocr-server/azure_ocr",
+                    "base_url": "local:ocr:paddleocr",
                     "api_key": "bklite",
                 },
             },
