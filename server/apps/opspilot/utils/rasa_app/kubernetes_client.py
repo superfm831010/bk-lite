@@ -80,7 +80,7 @@ class KubernetesClient(object):
             except Exception as e:
                 logger.error(f"启动Pilot[{bot.id}] Middleware失败: {e}")
 
-            try:    
+            try:
                 ingress_template = core_template.get_template("pilot/ingress.yml")
                 ingress = ingress_template.render(dynamic_dict)
                 self.custom_object_api.create_namespaced_custom_object(
@@ -118,7 +118,7 @@ class KubernetesClient(object):
             )
         except Exception as e:
             logger.error(f"停止Pilot[{bot_id}]Middleware失败: {e}")
-        
+
         try:
             self.custom_object_api.delete_namespaced_custom_object(
                 group=self.traefik_resource_group,
