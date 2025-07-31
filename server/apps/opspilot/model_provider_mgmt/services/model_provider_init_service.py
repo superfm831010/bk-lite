@@ -27,7 +27,7 @@ class ModelProviderInitService:
         except Exception:
             from apps.rpc.system_mgmt import SystemMgmt
 
-            client = SystemMgmt(is_local_client=True)
+            client = SystemMgmt()
             res = client.get_group_id("Default")
             if not res["result"]:
                 return 0
