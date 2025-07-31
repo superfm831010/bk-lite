@@ -161,7 +161,7 @@ const SearchTable: React.FC<SearchTableProps> = ({
       rowKey="id"
       scroll={scroll || undefined}
       expandable={{
-        columnWidth: 40,
+        columnWidth: 36,
         expandedRowRender: (record) => getRowExpandRender(record),
         expandedRowKeys: expandedRowKeys,
         onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as React.Key[]),
