@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import Icon from '@/components/icon';
 import { Button, Drawer } from 'antd';
 import {
   RightOutlined,
   LeftOutlined,
-  NumberOutlined,
   AppstoreOutlined,
 } from '@ant-design/icons';
 import NodeConfPanel from './nodeConfPanel';
@@ -44,7 +44,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'single-value',
       name: '单值',
-      icon: <NumberOutlined className="text-blue-500" />,
+      icon: (
+        <Icon
+          type="danzhitu"
+          className="text-blue-500"
+          style={{ fontSize: '16px' }}
+        />
+      ),
       description: '添加单个数值显示节点',
     },
     {
