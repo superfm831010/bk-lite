@@ -22,9 +22,3 @@ OPSPILOT_WEB_URL = os.getenv("OPSPILOT_WEB_URL", "https://ops-pilot.canway.net/"
 
 # 运行时环境配置，kubernetes 或 docker
 PILOT_RUNTIME = os.getenv("PILOT_RUNTIME", "kubernetes")
-
-# LobeChat 环境变量配置
-LOBE_KUBE_NAMESPACE = os.getenv("LOBE_KUBE_NAMESPACE", "lite")
-
-LOBE_KUBE_CONFIG_FILE = os.getenv("LOBE_KUBE_CONFIG_FILE", "")
-LOBE_RUNTIME = os.getenv("LOBE_RUNTIME", "kubernetes")

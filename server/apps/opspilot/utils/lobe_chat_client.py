@@ -1,5 +1,6 @@
+from django.conf import settings
+
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.config import LOBE_RUNTIME
 from apps.opspilot.models import Bot
 from apps.opspilot.utils.lobe_chat_app.docker_client import LobeDockerClient
 from apps.opspilot.utils.lobe_chat_app.kubernetes_client import LobeKubernetesClient
@@ -11,7 +12,7 @@ class LobeChatClient(object):
         初始化Pilot客户端
         根据环境变量PILOT_RUNTIME决定使用Kubernetes还是Docker
         """
-        if LOBE_RUNTIME.lower() == "docker":
+        if settings.PILOT_RUNTIME.lower() == "docker":
             logger.info("使用Docker运行时")
             self.client = LobeDockerClient()
         else:
