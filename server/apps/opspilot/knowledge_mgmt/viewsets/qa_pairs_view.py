@@ -39,6 +39,7 @@ class QAPairsViewSet(MaintainerViewSet):
                     document_source=i.get("document_source", "file"),
                     created_by=request.user.username,
                     domain=request.user.domain,
+                    status="pending",
                 )
             )
         add_list = QAPairs.objects.bulk_create(qa_list, batch_size=100)

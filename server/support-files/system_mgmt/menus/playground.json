@@ -4,6 +4,10 @@
   "url": "/playground",
   "description": "Users can experience relevant capabilities here, including AIOps model testing, intelligent agent usage, and more.",
   "icon": "tiyanzhongtai",
+  "tags": [
+    "模型体验",
+    "智能体体验"
+  ],
   "menus": [
     {
       "name": "Categories",

@@ -241,8 +241,12 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
     openai_api_base = llm_model.decrypted_llm_config["openai_base_url"]
     openai_api_key = llm_model.decrypted_llm_config["openai_api_key"]
     model = llm_model.decrypted_llm_config["model"]
-    try:
-        for qa_pairs_obj in qa_pairs_list:
+    for qa_pairs_obj in qa_pairs_list:
+        # 修改状态为生成中
+        try:
+            qa_pairs_obj.status = "generating"
+            qa_pairs_obj.save()
+            success_count = 0
             content_list = get_qa_content(qa_pairs_obj, es_index)
             for i in content_list:
                 params = {
@@ -256,14 +260,24 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
                 if res.get("status", "fail") != "success":
                     logger.error(f"Failed to create QA pairs for Chunk ID {i['chunk_id']}.")
                     continue
-                ChunkHelper.create_qa_pairs(
-                    res["message"], i, es_index, embed_config, embed_model_name, qa_pairs_obj.id
-                )
-            task_progress = task_obj.train_progress + train_progress
-            task_obj.train_progress = round(task_progress, 2)
-            task_obj.save()
-    except Exception as e:
-        logger.exception(f"Error creating QA pairs: {str(e)}")
+                try:
+                    success_count += ChunkHelper.create_qa_pairs(
+                        res["message"], i, es_index, embed_config, embed_model_name, qa_pairs_obj.id
+                    )
+                except Exception as e:
+                    logger.exception(e)
+        except Exception as e:
+            logger.exception(e)
+            qa_pairs_obj.status = "failed"
+            qa_pairs_obj.save()
+        else:
+            qa_pairs_obj.status = "completed"
+            qa_pairs_obj.generate_count = success_count
+            qa_pairs_obj.save()
+        task_progress = task_obj.train_progress + train_progress
+        task_obj.train_progress = round(task_progress, 2)
+        task_obj.save()
+
     task_obj.delete()
 
 
@@ -293,21 +307,29 @@ def get_qa_content(qa_pairs_obj: QAPairs, es_index):
 @shared_task
 def rebuild_graph_community_by_instance(instance_id):
     graph_obj = KnowledgeGraph.objects.get(id=instance_id)
+    graph_obj.status = "rebuilding"
+    graph_obj.save()
     res = GraphUtils.rebuild_graph_community(graph_obj)
     if not res["result"]:
-        logger.error("Failed to rebuild graph community: {}".format(res["message"]))
+        logger.error("Failed to rebuild graph community")
     logger.info("Graph community rebuild completed for instance ID: {}".format(instance_id))
+    graph_obj.status = "completed"
+    graph_obj.save()
 
 
 @shared_task
 def create_graph(instance_id):
     logger.info("Start creating graph for instance ID: {}".format(instance_id))
     instance = KnowledgeGraph.objects.get(id=instance_id)
+    instance.status = "training"
+    instance.save()
     res = GraphUtils.create_graph(instance)
     if not res["result"]:
         instance.delete()
         logger.error("Failed to create graph: {}".format(res["message"]))
     else:
+        instance.status = "completed"
+        instance.save()
         logger.info("Graph created completed: {}".format(instance.name))
 
 
@@ -315,10 +337,16 @@ def create_graph(instance_id):
 def update_graph(instance_id, old_doc_list):
     logger.info("Start updating graph for instance ID: {}".format(instance_id))
     instance = KnowledgeGraph.objects.get(id=instance_id)
+    instance.status = "training"
+    instance.save()
     res = GraphUtils.update_graph(instance, old_doc_list)
     if not res["result"]:
+        instance.status = "failed"
+        instance.save()
         logger.error("Failed to update graph: {}".format(res["message"]))
     else:
+        instance.status = "completed"
+        instance.save()
         logger.info("Graph updated completed: {}".format(instance.name))
 
 
@@ -391,6 +419,7 @@ def _process_qa_pairs_batch(qa_pairs_list, file_data, knowledge_base, task_obj):
 
         # 更新问答对数量和任务进度
         qa_pairs.qa_count += success_count
+        qa_pairs.generate_count += success_count
         qa_pairs.save()
         task_progress = task_obj.train_progress + train_progress
         task_obj.train_progress = round(task_progress, 2)

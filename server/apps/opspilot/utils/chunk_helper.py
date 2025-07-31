@@ -50,6 +50,7 @@ class ChunkHelper(ChatServerHelper):
 
     @classmethod
     def create_qa_pairs(cls, qa_paris, chunk_obj, knowledge_base_id, embed_config, embed_model_name, qa_pairs_id):
+        success_count = 0
         cls.delete_es_content(knowledge_base_id, qa_pairs_id)
         url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
         kwargs = {
@@ -79,4 +80,7 @@ class ChunkHelper(ChatServerHelper):
             params["metadata"] = json.dumps(dict(metadata, **{"qa_question": i["question"], "qa_answer": i["answer"]}))
             res = requests.post(url, headers=cls.get_chat_server_header(), data=params, verify=False).json()
             if res["status"] != "success":
-                raise Exception(f"创建问答对失败: {res['message']}")
+                logger.exception(f"创建问答对失败: {res['message']}")
+                continue
+            success_count += 1
+        return success_count

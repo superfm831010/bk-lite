@@ -3,6 +3,12 @@
   "name": "Setting",
   "url": "/system-manager/user",
   "icon": "system-manager",
+  "tags": [
+    "用户管理",
+    "组织架构",
+    "角色权限",
+    "通用设置"
+  ],
   "description": "Covering user and organizational role permission management, ensuring resource access security through fine-grained permission control while improving operational efficiency. Provides flexible configuration and management to meet different business needs",
   "menus": [
     {
@@ -89,7 +95,8 @@
     {
       "name": "Security Management",
       "children": [
-        {"id": "security_management",
+        {
+          "id": "security_management",
           "name": "Security Management",
           "operation": [
             "View",
