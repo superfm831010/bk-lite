@@ -1,16 +1,18 @@
-from django.db.models import Count
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
+from apps.core.utils.permission_utils import get_permissions_rules
 from apps.core.utils.web_utils import WebUtils
+from apps.monitor.constants import INSTANCE_MODULE, POLICY_MODULE
 from apps.monitor.filters.monitor_object import MonitorObjectFilter
 from apps.monitor.language.service import SettingLanguage
 from apps.monitor.models import MonitorInstance, MonitorPolicy
 from apps.monitor.models.monitor_object import MonitorObject
 from apps.monitor.serializers.monitor_object import MonitorObjectSerializer
 from apps.monitor.services.monitor_object import MonitorObjectService
+from apps.monitor.utils.check_permission import check_permission
 from config.drf.pagination import CustomPageNumberPagination
 
 
@@ -37,22 +39,57 @@ class MonitorObjectVieSet(viewsets.ModelViewSet):
         orgs.add(request.COOKIES.get("current_team"))
 
         if request.GET.get("add_instance_count") in ["true", "True"]:
-            inst_qs = MonitorInstance.objects.filter(is_deleted=False)
-            if not request.user.is_superuser:
-                inst_qs = inst_qs.filter(monitorinstanceorganization__organization__in=orgs)
-            count_data = inst_qs.values('monitor_object_id').annotate(instance_count=Count('id'))
-            count_map = {i["monitor_object_id"]: i["instance_count"] for i in count_data}
+
+            inst_res = get_permissions_rules(
+                request.user,
+                request.COOKIES.get("current_team"),
+                "monitor",
+                f"{INSTANCE_MODULE}",
+            )
+
+            instance_permissions, cur_team = inst_res.get("data", {}), inst_res.get("team", [])
+
+            inst_objs = MonitorInstance.objects.all().prefetch_related("monitorinstanceorganization_set")
+            inst_map = {}
+            for inst_obj in inst_objs:
+                monitor_object_id = inst_obj.monitor_object_id
+                instance_id = inst_obj.id
+                teams = {i.organization for i in inst_obj.monitorinstanceorganization_set.all()}
+                _check = check_permission(monitor_object_id, instance_id, teams, instance_permissions, cur_team)
+                if not _check:
+                    continue
+                if monitor_object_id not in inst_map:
+                    inst_map[monitor_object_id] = 0
+                inst_map[monitor_object_id] += 1
+
             for result in results:
-                result["instance_count"] = count_map.get(result["id"], 0)
+                result["instance_count"] = inst_map.get(result["id"], 0)
 
         if request.GET.get("add_policy_count") in ["true", "True"]:
-            policy_qs = MonitorPolicy.objects.filter()
-            if not request.user.is_superuser:
-                policy_qs = policy_qs.filter(policyorganization__organization__in=orgs)
-            count_data = policy_qs.values('monitor_object_id').annotate(policy_count=Count('id'))
-            count_map = {i["monitor_object_id"]: i["policy_count"] for i in count_data}
+            policy_res = get_permissions_rules(
+                request.user,
+                request.COOKIES.get("current_team"),
+                "monitor",
+                f"{POLICY_MODULE}",
+            )
+
+            policy_permissions, cur_team = policy_res.get("data", {}), policy_res.get("team", [])
+
+            policy_objs = MonitorPolicy.objects.all().prefetch_related("policyorganization_set")
+            policy_map = {}
+            for policy_obj in policy_objs:
+                monitor_object_id = policy_obj.monitor_object_id
+                instance_id = policy_obj.id
+                teams = {i.organization for i in policy_obj.policyorganization_set.all()}
+                _check = check_permission(monitor_object_id, instance_id, teams, policy_permissions, cur_team)
+                if not _check:
+                    continue
+                if monitor_object_id not in policy_map:
+                    policy_map[monitor_object_id] = 0
+                policy_map[monitor_object_id] += 1
+
             for result in results:
-                result["policy_count"] = count_map.get(result["id"], 0)
+                result["policy_count"] = policy_map.get(result["id"], 0)
 
         # 排序
         sorted_results = MonitorObjectService.sort_items(results)
