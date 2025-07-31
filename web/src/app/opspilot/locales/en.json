@@ -371,7 +371,12 @@
     "add": "Add New Studio",
     "edit": "Edit Studio",
     "information": "Information",
+    "pilot": "Pilot",
+    "pilotDesc": "An application created based on Rasa, supporting external channels such as chat interfaces, WeChat Work, DingTalk, etc.",
+    "lobeChat": "LobeChat",
+    "lobeChatDesc": "Supports connecting to the LobeChat web interface as an interaction channel with users.",
     "form": {
+      "type": "Studio Type",
       "name": "Name",
       "group": "Group",
       "introduction": "Introduction",

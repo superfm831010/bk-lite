@@ -33,7 +33,6 @@
 .statusTag {
   display: flex;
   align-items: center;
-  border: none;
   font-size: 10px;
   width: fit-content;
 
@@ -52,8 +51,12 @@
   background-color: #389e0d;
 }
 
+.offline {
+  color: #a3a3a3;
+}
+
 .offline::before {
-  background-color: #e4e4e4;
+  background-color: #cdcdcd;
 }
 
 .cardFillColor {

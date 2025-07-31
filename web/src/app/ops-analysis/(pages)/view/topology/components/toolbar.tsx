@@ -42,19 +42,17 @@ const TopologyToolbar: React.FC<Props> = ({
   const { t } = useTranslation();
 
   return (
-    <div className="w-full mb-4 flex items-center justify-between rounded-lg shadow-sm bg-[var(--color-bg-1)] p-4 border border-[var(--color-border-2)]">
+    <div className="w-full mb-2 flex items-center justify-between rounded-lg shadow-sm bg-[var(--color-bg-1)] p-3 border border-[var(--color-border-2)]">
       {/* 左侧：拓扑信息 */}
       <div className="flex-1 mr-8">
         {selectedTopology && (
-          <div>
-            <h2 className="text-xl font-semibold mb-1 text-[var(--color-text-1)] flex items-center">
+          <div className="p-1 pt-0">
+            <h2 className="text-xl font-semibold mb-1 text-[var(--color-text-1)]">
               {selectedTopology.name}
             </h2>
-            {selectedTopology.description && (
-              <p className="text-sm text-[var(--color-text-2)]">
-                {selectedTopology.description}
-              </p>
-            )}
+            <p className="text-sm text-[var(--color-text-2)]">
+              {selectedTopology.desc}
+            </p>
           </div>
         )}
       </div>

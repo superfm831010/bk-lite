@@ -141,7 +141,7 @@ export const addEdgeTools = (edge: any) => {
     args: {
       attrs: {
         fill: '#1890FF',
-        opacity: 0, // 默认透明
+        opacity: 0, 
       },
       snapRadius: 20,
       addable: true,
@@ -160,7 +160,7 @@ export const addEdgeTools = (edge: any) => {
         stroke: '#ffffff',
         strokeWidth: 1,
         cursor: 'move',
-        opacity: 0, // 默认透明
+        opacity: 0,
       },
     },
   });
@@ -175,7 +175,7 @@ export const addEdgeTools = (edge: any) => {
         stroke: '#ffffff',
         strokeWidth: 1,
         cursor: 'move',
-        opacity: 0, // 默认透明
+        opacity: 0, 
       },
     },
   });
@@ -308,7 +308,6 @@ export const getTextNodeStyle = () => ({
       refY: '50%',
     },
   },
-  // 文本节点不需要连接端口
   ports: {
     groups: {},
     items: [],
@@ -326,7 +325,6 @@ export const getLogoUrl = (nodeConfig: any, iconList: any[]) => {
   } else if (nodeConfig.logoType === 'custom' && nodeConfig.logo) {
     return nodeConfig.logo;
   }
-  // 默认图标
   return '/app/assets/assetModelIcon/cc-default_默认.svg';
 };
 
