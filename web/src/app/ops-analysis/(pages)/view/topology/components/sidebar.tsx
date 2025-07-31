@@ -173,32 +173,23 @@ const Sidebar: React.FC<SidebarProps> = ({
             const nodeType = nodeTypes.find(nt => nt.id === dropData.nodeTypeId);
             
             if (nodeType) {
-              // 尝试多个可能的画布元素选择器
-              const canvasSelectors = [
-                '.x6-graph-scroller',
-                '.x6-graph',
-                '[data-testid="graph-container"]',
-                '.topology-canvas',
-                '#topology-container'
-              ];
-              
-              let canvasElement = null;
-              for (const selector of canvasSelectors) {
-                canvasElement = document.querySelector(selector);
-                if (canvasElement) break;
-              }
+              const canvasElement = document.querySelector('.x6-graph-svg') || 
+                                   document.querySelector('.x6-graph') ||
+                                   document.querySelector('.x6-graph-scroller');
               
               if (canvasElement) {
                 const rect = canvasElement.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                let x = e.clientX - rect.left;
+                let y = e.clientY - rect.top;
                 
-                // 记录拖拽落下的位置
+                // 节点应该相对于其中心位置放置
+                x = Math.max(0, x - 60);
+                y = Math.max(0, y - 40); 
+                
                 setDropPosition({ x, y });
                 setSelectedNodeType(nodeType);
                 setDrawerVisible(true);
               } else {
-                // 即使没找到画布元素，也要打开弹窗
                 setDropPosition({ x: 300, y: 200 });
                 setSelectedNodeType(nodeType);
                 setDrawerVisible(true);
@@ -252,14 +243,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         {!collapsed && (
           <div className="h-full p-4 opacity-100 transition-opacity duration-300">
             <div className="h-full overflow-auto">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {nodeTypes.map((nodeType) => (
                   <div
                     key={nodeType.id}
-                    className={`p-2 rounded-lg border transition-all duration-200 ${
+                    className={`px-2 py-1.5 rounded-lg transition-all duration-200 bg-[var(--color-bg-1)] ${
                       isEditMode
-                        ? 'border-[var(--color-border-2)] hover:border-blue-300 cursor-grab active:cursor-grabbing bg-[var(--color-bg-1)] hover:bg-[var(--color-fill-2)]'
-                        : 'border-[var(--color-border-3)] cursor-not-allowed bg-[var(--color-fill-1)] opacity-50'
+                        ? 'cursor-grab active:cursor-grabbing'
+                        : 'cursor-not-allowed'
                     }`}
                     draggable={isEditMode}
                     onClick={() => handleNodeTypeClick(nodeType)}

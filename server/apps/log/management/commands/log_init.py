@@ -11,7 +11,7 @@ def init_stream():
     if not Stream.objects.filter(id='default').exists():
         Stream.objects.create(id='default', name='Default', created_by="system", updated_by="system")
 
-        client = SystemMgmt()
+        client = SystemMgmt(is_local_client=True)
         res = client.get_group_id("Default")
 
         StreamOrganization.objects.create(

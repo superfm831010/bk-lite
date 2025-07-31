@@ -116,7 +116,7 @@ class LLMService:
                         if image_url:
                             image_list.append(image_url)
                     else:
-                        msg = item["message"]
+                        msg = item.get("text", "") or item.get("message", "")
                 processed_history.append({"event": "user", "message": msg, "image_data": image_list})
             else:
                 txt = user_msg.get("message", user_msg.get("text", ""))

@@ -8,7 +8,7 @@ from django_yaml_field import YAMLField
 
 from apps.core.mixinx import EncryptMixin
 from apps.core.models.maintainer_info import MaintainerInfo
-from apps.opspilot.enum import ChannelChoices
+from apps.opspilot.enum import BotTypeChoice, ChannelChoices
 
 
 class Bot(MaintainerInfo):
@@ -27,6 +27,7 @@ class Bot(MaintainerInfo):
     enable_ssl = models.BooleanField(verbose_name="启用SSL", default=False)
     api_token = models.CharField(max_length=64, default="", blank=True, null=True, verbose_name="API Token")
     replica_count = models.IntegerField(verbose_name="副本数量", default=1)
+    bot_type = models.IntegerField(default=BotTypeChoice.PILOT, verbose_name="类型", choices=BotTypeChoice.choices)
 
     def __str__(self):
         return self.name

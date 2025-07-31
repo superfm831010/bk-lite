@@ -61,7 +61,7 @@ class MonitorPolicy(TimeInfo, MaintainerInfo):
 
 class PolicyOrganization(TimeInfo, MaintainerInfo):
     policy = models.ForeignKey(MonitorPolicy, on_delete=models.CASCADE, verbose_name='监控策略')
-    organization = models.CharField(db_index=True, max_length=100, verbose_name='组织id')
+    organization = models.IntegerField(verbose_name='组织id')
 
     class Meta:
         verbose_name = '监控策略组织'

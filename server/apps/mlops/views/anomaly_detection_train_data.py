@@ -25,22 +25,22 @@ class AnomalyDetectionTrainDataViewSet(AuthViewSet):
     pagination_class = CustomPageNumberPagination
     permission_key = "dataset.anomaly_detection_train_data"
 
-    @HasPermission("anomaly_detection_datasets-View")
+    @HasPermission("anomaly_detection_datasets_detail-File View")
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @HasPermission("anomaly_detection_datasets-File Upload")
+    @HasPermission("anomaly_detection_datasets_detail-File Upload")
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
-    @HasPermission("anomaly_detection_datasets-File Delete")
+    @HasPermission("anomaly_detection_datasets_detail-File Delete")
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
-    @HasPermission("anomaly_detection_datasets-File Edit,anomaly_detection_datasets-File Tag")
+    @HasPermission("anomaly_detection_datasets_detail-File Edit,anomaly_detection_datasets_tag-File Tag")
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
-    @HasPermission("anomaly_detection_datasets-View")
+    @HasPermission("anomaly_detection_datasets_detail-File View")
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
