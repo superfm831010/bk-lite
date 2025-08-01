@@ -107,43 +107,21 @@ const LogTerminal: React.FC<LogTerminalProps> = ({
           for (const line of lines) {
             const trimmed = line.trim();
             // 跳过空行和SSE协议行
-            if (
-              !trimmed ||
-              trimmed.startsWith('event:') ||
-              trimmed === 'data:'
-            ) {
+            if (!trimmed) {
               continue;
             }
-            // 处理data:开头的数据行
-            if (trimmed.startsWith('data:')) {
-              const data = trimmed.substring(5).trim(); // 移除"data:"前缀
-              if (data && data !== '[DONE]') {
-                try {
-                  // 尝试解析JSON数据
-                  const logData = JSON.parse(data);
-                  const logMessage = logData['_msg'] || logData.message || data;
-                  setLogs((prevLogs) => {
-                    const newLogs = [...prevLogs, logMessage];
-                    return newLogs.slice(-1000); // 限制日志条数
-                  });
-                } catch {
-                  // 如果不是JSON，直接作为文本处理
-                  setLogs((prevLogs) => {
-                    const newLogs = [...prevLogs, data];
-                    return newLogs.slice(-1000);
-                  });
-                }
-              }
-            } else if (trimmed) {
-              // 处理非SSE格式的普通文本
+            try {
               let logContent = trimmed;
-              const msgMatch = trimmed.match(/_msg\s*:\s*([^,}]*?)(?:[,}]|$)/);
+              const msgMatch = trimmed.match(/"_msg"\s*:\s*"(.*?)",/);
               if (msgMatch && msgMatch[1]) {
-                logContent = msgMatch[1].trim();
+                logContent = msgMatch[1];
               }
               setLogs((prevLogs) => {
-                const newLogs = [...prevLogs, logContent];
-                return newLogs.slice(-1000);
+                return [...prevLogs, logContent];
+              });
+            } catch {
+              setLogs((prevLogs) => {
+                return [...prevLogs, trimmed];
               });
             }
           }

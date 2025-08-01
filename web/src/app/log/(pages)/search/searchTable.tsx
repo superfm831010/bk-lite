@@ -168,7 +168,7 @@ const SearchTable: React.FC<SearchTableProps> = ({
       }}
       onScroll={(e: any) => {
         const { scrollTop, scrollHeight, clientHeight } = e.target;
-        if (scrollTop + clientHeight >= scrollHeight) {
+        if (scrollTop + clientHeight + 10 >= scrollHeight) {
           onLoadMore?.();
         }
       }}
