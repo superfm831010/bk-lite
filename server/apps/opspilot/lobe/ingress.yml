@@ -11,7 +11,7 @@ spec:
     - web
     {% endif %}
   routes:
-    - match: Host(`{{bot_domain}}`) && PathPrefix(`/lobe-chat-{{bot_id}}`)
+    - match: Host(`{{bot_domain}}`)
       kind: Rule
       services:
         - name: lobe-chat-{{ bot_id }}-service
