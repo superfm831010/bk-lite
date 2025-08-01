@@ -16,7 +16,7 @@ func Execute(req ExecuteRequest, instanceId string) ExecuteResponse {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(req.ExecuteTimeout)*time.Second)
 	defer cancel()
 
-	log.Printf("Executing command: %s with timeout: %d seconds", req.Command, req.ExecuteTimeout)
+	//log.Printf("Executing command: %s with timeout: %d seconds", req.Command, req.ExecuteTimeout)
 	cmd := exec.CommandContext(ctx, "sh", "-c", req.Command)
 	output, err := cmd.CombinedOutput()
 	response := ExecuteResponse{
@@ -39,7 +39,7 @@ func Execute(req ExecuteRequest, instanceId string) ExecuteResponse {
 
 func SubscribeLocalExecutor(nc *nats.Conn, instanceId *string) {
 	subject := fmt.Sprintf("local.execute.%s", *instanceId)
-	log.Printf("Subscribing to subject: %s", subject)
+	//log.Printf("Subscribing to subject: %s", subject)
 	nc.Subscribe(subject, func(msg *nats.Msg) {
 		// 定义一个临时结构来接收请求方格式
 		var incoming struct {
@@ -62,7 +62,7 @@ func SubscribeLocalExecutor(nc *nats.Conn, instanceId *string) {
 			return
 		}
 
-		log.Printf("Received command: %s", localExecuteRequest.Command)
+		//log.Printf("Received command: %s", localExecuteRequest.Command)
 		responseData := Execute(localExecuteRequest, *instanceId)
 		log.Printf("Publishing response to subject: local.execute.response")
 
@@ -76,7 +76,7 @@ func SubscribeLocalExecutor(nc *nats.Conn, instanceId *string) {
 
 func SubscribeDownloadToLocal(nc *nats.Conn, instanceId *string) {
 	subject := fmt.Sprintf("download.local.%s", *instanceId)
-	log.Printf("Subscribing to subject: %s", subject)
+	//log.Printf("Subscribing to subject: %s", subject)
 
 	nc.Subscribe(subject, func(msg *nats.Msg) {
 		var incoming struct {
@@ -100,7 +100,7 @@ func SubscribeDownloadToLocal(nc *nats.Conn, instanceId *string) {
 			return
 		}
 
-		log.Printf("Starting download from bucket %s, file %s to local path %s", downloadRequest.BucketName, downloadRequest.FileKey, downloadRequest.TargetPath)
+		//log.Printf("Starting download from bucket %s, file %s to local path %s", downloadRequest.BucketName, downloadRequest.FileKey, downloadRequest.TargetPath)
 
 		var resp ExecuteResponse
 
@@ -131,7 +131,7 @@ func SubscribeDownloadToLocal(nc *nats.Conn, instanceId *string) {
 
 func SubscribeUnzipToLocal(nc *nats.Conn, instanceId *string) {
 	subject := fmt.Sprintf("unzip.local.%s", *instanceId)
-	log.Printf("Subscribing to subject: %s", subject)
+	//log.Printf("Subscribing to subject: %s", subject)
 
 	nc.Subscribe(subject, func(msg *nats.Msg) {
 		var incoming struct {
