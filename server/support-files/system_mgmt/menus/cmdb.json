@@ -3,6 +3,7 @@
   "name": "CMDB",
   "url": "/cmdb/assetSearch",
   "description": "Platform for centralized management of all IT assets and resources of an enterprise, helping organizations effectively track asset lifecycle, optimize resource allocation and ensure system security",
+  "tags": ["资产管理","自动发现","模型自定义"],
   "menus": [
     {
       "name": "Search",

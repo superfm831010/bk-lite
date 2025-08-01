@@ -26,35 +26,39 @@ class LobeDockerClient(object):
         :param bot: Bot模型实例
         :return: 是否成功启动
         """
-        container_name = f"lobe_chat-{bot.id}"
+        container_name = f"lobe-chat-{bot.id}"
         skill_list = [f"+{i.name}" for i in bot.llm_skills.all()]
 
         # 构建环境变量
         environment = {
             "TZ": "Asia/Shanghai",
             "OPENAI_API_KEY": bot.api_token,  # 使用bot的api_token作为OpenAI API Key
-            "OPENAI_PROXY_URL": settings.MUNCHKIN_BASE_URL.strip("/") + "/opspilot/bot_mgmt/lobe_chat/v1/",  # 代理URL配置
+            "OPENAI_PROXY_URL": settings.MUNCHKIN_BASE_URL.strip("/") + "/bot_mgmt/lobe_chat/v1/",  # 代理URL配置
             "BK_LITE_APP_ID": bot.id,
             "OPENAI_MODEL_LIST": ",".join(skill_list),
+            "NEXT_PUBLIC_ENABLE_NEXT_AUTH": "1",
+            "NEXT_AUTH_SECRET": bot.api_token,
+            "NEXT_AUTH_SSO_PROVIDERS": "bklite",
+            "AUTH_BKLITE_API_URL": settings.LOGIN_URL,
         }
 
         # 端口映射配置 - 修改为3000端口
-        ports = {"3000/tcp": None}  # 默认随机分配主机端口
+        ports = {}  # 默认随机分配主机端口
         if bot.enable_node_port and bot.node_port:
-            ports["3000/tcp"] = bot.node_port
+            ports["3210/tcp"] = bot.node_port
 
         # 配置标签
-        labels = {"app": "lobe_chat", "bot-id": str(bot.id)}
+        labels = {"app": "lobe-chat", "bot-id": str(bot.id)}
 
         # 如果存在bot_domain，添加Traefik相关标签
         if bot.bot_domain:
             labels.update(
                 {
                     "traefik.enable": "true",
-                    f"traefik.http.routers.lobe_chat-{bot.id}.rule": f"Host(`{bot.bot_domain}`)",
-                    f"traefik.http.routers.lobe_chat-{bot.id}.entrypoints": "https",
-                    f"traefik.http.routers.lobe_chat-{bot.id}.tls": "true",
-                    f"traefik.http.services.lobe_chat-{bot.id}.loadbalancer.server.port": "3000",
+                    f"traefik.http.routers.lobe-chat-{bot.id}.rule": f"Host(`{bot.bot_domain}`)",
+                    f"traefik.http.routers.lobe-chat-{bot.id}.entrypoints": "https",
+                    f"traefik.http.routers.lobe-chat-{bot.id}.tls": "true",
+                    f"traefik.http.services.lobe-chat-{bot.id}.loadbalancer.server.port": "3210",
                 }
             )
 
@@ -90,7 +94,7 @@ class LobeDockerClient(object):
         :param bot_id: Bot ID
         :return: 是否成功停止
         """
-        container_name = f"lobe_chat-{bot_id}"
+        container_name = f"lobe-chat-{bot_id}"
         try:
             return self._remove_container_if_exists(container_name)
         except Exception as e:
@@ -103,7 +107,7 @@ class LobeDockerClient(object):
         :return: 容器列表
         """
         try:
-            containers = self.client.containers.list(all=True, filters={"label": "app=lobe_chat"})
+            containers = self.client.containers.list(all=True, filters={"label": "app=lobe-chat"})
             container_list = [
                 {"name": container.name, "status": container.status, "id": container.id[:12]}
                 for container in containers

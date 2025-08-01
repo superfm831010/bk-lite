@@ -27,6 +27,14 @@ spec:
               value: "{{bot_id}}"
             - name: OPENAI_MODEL_LIST
               value: "{{model_list}}"
+            - name: NEXT_PUBLIC_ENABLE_NEXT_AUTH
+              value: "1"
+            - name: NEXT_AUTH_SECRET
+              value: "{{api_key}}"
+            - name: NEXT_AUTH_SSO_PROVIDERS
+              value: "bklite"
+            - name: AUTH_BKLITE_API_URL
+              value: "{{login_url}}"
           ports:
-            - containerPort: 3000
+            - containerPort: 3210
 
