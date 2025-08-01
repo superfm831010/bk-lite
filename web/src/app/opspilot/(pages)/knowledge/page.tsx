@@ -211,7 +211,7 @@ const KnowledgePage = () => {
                   </div>
                 </Dropdown>
               </div>
-              <div className="flex items-center mb-2">
+              <div className="flex items-center mb-2" style={{width: 'calc(100% - 10px)'}}>
                 <div className="rounded-full">
                   <Icon type={getIconTypeByIndex(index)} className="text-4xl" />
                 </div>

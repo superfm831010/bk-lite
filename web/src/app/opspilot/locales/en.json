@@ -83,7 +83,14 @@
       "clickedNode": "Clicked node: ",
       "clickedRelationship": "Clicked relationship: ",
       "unknownRelationship": "Unknown relationship",
-      "knowledgeBaseIdNotFound": "Knowledge base ID not found"
+      "knowledgeBaseIdNotFound": "Knowledge base ID not found",
+      "status": {
+        "completed": "Completed",
+        "rebuilding": "Rebuilding Community",
+        "training": "Training",
+        "failed": "Training Failed",
+        "pending": "Pending Training"
+      }
     },
     "applyConfig": "Apply Config",
     "ranking": "Ranking",
@@ -136,6 +143,7 @@
       "syncEnabledTip": "After enabling automatic sync, the system will regularly pull the latest content from the website according to the scheduled time and perform training",
       "syncTime": "Sync Time",
       "everyday": "Every day",
+      "notSync": "Not Sync",
       "selectTime": "Select Time",
       "syncOnce": "scheduled sync once",
       "webLinkSaveSuccess": "Web link data saved successfully",

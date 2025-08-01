@@ -113,6 +113,7 @@ const StudioSettingsPage: React.FC = () => {
     setSaveLoading(true);
     try {
       const values = await form.validateFields();
+      const isBot = botType === 2
 
       const payload = {
         channels: selectedChannels,
@@ -120,11 +121,11 @@ const StudioSettingsPage: React.FC = () => {
         introduction: values.introduction,
         team: values.group,
         replica_count: values.replica_count,
-        enable_bot_domain: isDomainEnabled,
-        bot_domain: isDomainEnabled ? botDomain : null,
+        enable_bot_domain: isBot ? !!botDomain : isDomainEnabled,
+        bot_domain: (isBot ? !!botDomain : isDomainEnabled) ? botDomain : null,
         enable_ssl: isDomainEnabled ? enableSsl : false,
-        enable_node_port: isPortMappingEnabled,
-        node_port: isPortMappingEnabled ? nodePort : null,
+        enable_node_port: isBot ? !!nodePort : isPortMappingEnabled,
+        node_port: (isBot ? !!nodePort : isPortMappingEnabled) ? nodePort : null,
         rasa_model: values.rasa_model,
         llm_skills: selectedSkills,
         is_publish: isPublish
