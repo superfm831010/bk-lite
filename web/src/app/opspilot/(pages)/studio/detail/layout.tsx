@@ -22,16 +22,23 @@ const KnowledgeDetailLayout = ({ children }: { children: React.ReactNode }) => {
   const { menus } = usePermissions();
   
   const [botType, setBotType] = useState<number | null>(null);
+  const [isLoadingBotType, setIsLoadingBotType] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setIsLoadingBotType(false);
+      return;
+    }
 
     const fetchBotData = async () => {
       try {
+        setIsLoadingBotType(true);
         const botData = await fetchBotDetail(id);
         setBotType(botData.bot_type);
       } catch (error) {
         console.error('Failed to fetch bot data:', error);
+      } finally {
+        setIsLoadingBotType(false);
       }
     };
 
@@ -53,13 +60,19 @@ const KnowledgeDetailLayout = ({ children }: { children: React.ReactNode }) => {
     };
 
     const originalMenuItems = getMenuItemsForPath(menus, pathname ?? '');
+
+    // Return empty array to prevent menu flashing if still loading botType
+    if (isLoadingBotType) {
+      return [originalMenuItems[0]];
+    }
     
+    // For bot type 2, only show the first menu item
     if (botType === 2 && originalMenuItems.length > 0) {
       return [originalMenuItems[0]];
     }
     
     return originalMenuItems;
-  }, [menus, pathname, botType]);
+  }, [menus, pathname, botType, isLoadingBotType]);
 
   const handleBackButtonClick = () => {
     const pathSegments = pathname ? pathname.split('/').filter(Boolean) : [];
