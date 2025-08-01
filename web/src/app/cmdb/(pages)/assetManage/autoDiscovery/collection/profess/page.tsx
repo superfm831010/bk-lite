@@ -79,7 +79,7 @@ const ProfessionalCollection: React.FC = () => {
   const [searchTextUI, setSearchTextUI] = useState('');
   const [paginationUI, setPaginationUI] = useState({
     current: 1,
-    pageSize: 10,
+    pageSize: 20,
     total: 0,
   });
 
@@ -126,15 +126,19 @@ const ProfessionalCollection: React.FC = () => {
       if (showLoading) {
         setTableLoading(false);
       }
-      resetTimer();
+      resetTimer(tabId);
     }
   };
 
-  const resetTimer = () => {
+  const resetTimer = (tabId?: string) => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
-    timerRef.current = setTimeout(() => fetchData(false), 10 * 1000);
+    const currentTabId = tabId || activeTab;
+    timerRef.current = setTimeout(
+      () => fetchData(false, currentTabId),
+      10 * 1000
+    );
   };
 
   useEffect(() => {
@@ -572,6 +576,11 @@ const ProfessionalCollection: React.FC = () => {
 
   const handleTabChange = (newActiveTab: string) => {
     setActiveTab(newActiveTab);
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
 
     setSearchTextUI('');
     stateRef.current.searchText = '';
