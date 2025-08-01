@@ -27,6 +27,11 @@ const usePlayroundApi = () => {
     return await get(`/playground/category/`);
   };
 
+  // 获取能力发布列表
+  const getServingsList = async () => {
+    return await get(`/mlops/anomaly_detection_servings/`);
+  };
+
   // 查询单个类别
   const getCategoryDetail = async (id: number) => {
     return await get(`/playground/category/${id}`);
@@ -99,6 +104,7 @@ const usePlayroundApi = () => {
 
   return {
     getCategoryList,
+    getServingsList,
     getCategoryDetail,
     getCapabilityList,
     getCapabilityDetail,

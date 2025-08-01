@@ -20,7 +20,24 @@ const AnomalyDetection = () => {
   const [fileData, setFileData] = useState<any>(null);
   const [selectId, setSelectId] = useState<number | null>(null);
   // const [activeKey, setActiveKey] = useState<string[]>(['request']);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<any[]>([
+    {
+      "value": 27.43789942218143,
+      "timestamp": 1704038400
+    },
+    {
+      "value": 26.033612999373652,
+      "timestamp": 1704038460
+    },
+    {
+      "value": 36.30777324191053,
+      "timestamp": 1704038520
+    },
+    {
+      "value": 33.70226097527219,
+      "timestamp": 1704038580
+    }
+  ]);
   const [infoText, setInfoText] = useState<any>({
     bannerTitle: '',
     bannerInfo: "",
@@ -139,27 +156,28 @@ const AnomalyDetection = () => {
       bannerInfo: "基于机器学习的智能异常检测服务，能够自动识别时序数据中的异常模式和突变点。支持CSV文件上传，提供实时数据分析和可视化结果，帮助用户快速发现数据中的异常情况。广泛应用于系统监控、质量检测、金融风控、工业设备监控等场景。",
       applicationScenario: [
         {
-          title: '系统监控',
-          content: '实时监控服务器性能指标、网络流量、应用响应时间等关键指标，及时发现系统异常，确保业务连续性。支持CPU使用率、内存占用、磁盘I/O等多维度监控。',
+          title: '资源状态监控',
+          content: '通过持续采集CPU、内存、磁盘等关键指标时序数据，构建动态基线模型，可精准识别资源使用率异常波动、内存泄漏等潜在风险。',
           img: `bg-[url(/app/anomaly_detection_1.png)]`
         },
         {
-          title: '工业设备监控',
-          content: '对生产线设备的温度、压力、振动等传感器数据进行实时监控，提前预警设备故障风险。通过异常检测算法识别设备性能衰减趋势，实现预测性维护。',
+          title: '网络流量分析',
+          content: '基于流量时序特征建模，检测DDoS攻击、端口扫描等异常流量模式，支持实时阻断与安全告警',
           img: `bg-[url(/app/anomaly_detection_2.png)]`
         },
         {
-          title: '网络安全',
-          content: '分析网络流量模式，识别DDoS攻击、恶意入侵等安全威胁。通过监控网络连接行为、数据传输模式等，及时发现异常访问，保障网络安全。',
+          title: '数据库性能诊断',
+          content: '分析SQL执行耗时、事务日志等时序数据，定位慢查询、死锁等性能瓶颈问题。',
           img: `bg-[url(/app/anomaly_detection_3.png)]`
         },
         {
-          title: '质量检测',
-          content: '应用于制造业产品质量控制，检测生产过程中的异常波动。通过分析产品尺寸、重量、成分等关键指标，快速识别不合格产品，提高产品质量。',
+          title: '容器健康管理',
+          content: '监控容器化环境中Pod的资源使用、重启频率等时序指标，实现服务异常的早期预警。',
           img: `bg-[url(/app/anomaly_detection_4.png)]`
         },
       ]
-    })
+    });
+    handleSubmit();
   }, [])
 
   useEffect(() => {
@@ -254,7 +272,8 @@ const AnomalyDetection = () => {
   // };
 
   const handleSubmit = async () => {
-    if (!selectId && !fileData) { return message.error(t(`playground-common.uploadMsg`)) };
+    console.log(selectId, fileData);
+    if (!chartData) { return message.error(t(`playground-common.uploadMsg`)) };
     if (chartLoading) return;
     setChartLoading(true);
     try {
@@ -278,7 +297,8 @@ const AnomalyDetection = () => {
       // setActiveKey(['response']);
       setChartData(labelData);
     } catch (e) {
-      console.log(e)
+      console.log(e);
+      message.error(t(`common.error`))
     } finally {
       setChartLoading(false);
     }
@@ -289,8 +309,8 @@ const AnomalyDetection = () => {
       <div key={item.title} className="content overflow-auto pb-[20px] border-b mt-4">
         <div className={`float-right w-[250px] h-[160px] ${item.img} bg-cover`}></div>
         <div className="content-info mr-[300px]">
-          <div className="content-title text-xl font-bold">{item.title}</div>
-          <div className="content-intro mt-3">{item.content}</div>
+          <div className="content-title text-lg font-bold">{item.title}</div>
+          <div className="content-intro mt-3 text-sm text-[var(--color-text-3)]">{item.content}</div>
         </div>
       </div>
     ))
@@ -302,7 +322,7 @@ const AnomalyDetection = () => {
         <div className="banner-title text-5xl font-bold pt-5">
           {infoText.bannerTitle}
         </div>
-        <div className="banner-info mt-8 max-w-[500px]">
+        <div className="banner-info mt-8 max-w-[500px] text-[var(--color-text-3)]">
           {infoText.bannerInfo}
         </div>
         {/* <div className="banner-btn-list mt-[80px]">
@@ -316,23 +336,23 @@ const AnomalyDetection = () => {
           <div className="file-input w-[90%] mx-auto">
             <div className={`link-search mt-8 flex justify-center `}>
               <div className="flex w-full justify-center items-center">
-                <span className="align-middle text-base mr-4">使用系统样本文件: </span>
-                <Select className={`w-[70%] max-w-[500px] ${cssStyle.customSelect}`} size="large" allowClear options={[
+                <span className="align-middle text-sm mr-4">使用系统样本文件: </span>
+                <Select className={`w-[70%] max-w-[500px] text-sm ${cssStyle.customSelect}`} size="large" allowClear options={[
                   { label: 'test1', value: 5 },
                   { label: 'test2', value: 6 },
                 ]} placeholder={t(`playground-common.selectSampleMsg`)} onChange={onSelectChange} />
-                <span className="mx-4 text-xl pt-1">{t(`playground-common.or`)}</span>
+                <span className="mx-4 text-base pt-1">{t(`playground-common.or`)}</span>
                 <Upload {...props}>
-                  <Button size="large" className="rounded-none">{t(`playground-common.localUpload`)}</Button>
+                  <Button size="large" className="rounded-none text-sm">{t(`playground-common.localUpload`)}</Button>
                 </Upload>
-                <Button size="large" className="rounded-none ml-4" type="primary" onClick={handleSubmit}>{t(`playground-common.clickTest`)}</Button>
+                <Button size="large" className="rounded-none ml-4 text-sm" type="primary" onClick={handleSubmit}>{t(`playground-common.clickTest`)}</Button>
               </div>
             </div>
           </div>
           <div className="content w-[1180px] mx-auto h-[604px] mt-6">
             <div className="flex h-full overflow-auto">
               <Spin spinning={chartLoading} wrapperClassName="w-[70%] h-full" className="h-full">
-                <div className="iframe w-full bg-[var(--color-bg-4)]" style={{ height: 604 }}>
+                <div className="iframe w-full bg-[var(--color-bg-4)] border" style={{ height: 604 }}>
                   <LineChart
                     data={chartData}
                     timeline={timeline}
@@ -341,25 +361,22 @@ const AnomalyDetection = () => {
                 </div>
               </Spin>
               <div className="params w-[30%] bg-[var(--color-bg-4)]">
-                <header className="pl-2 border-[1px]">
-                  <span className="inline-block h-[60px] text-[var(--color-text-2)] content-center ml-10 text-base">检测结果</span>
-                  <Button color="default" variant="link" className="text-base text-[var(--color-text-2)]">
-                    请求参数
-                  </Button>
+                <header className="pl-2">
+                  <span className="inline-block h-[60px] text-[var(--color-text-2)] content-center ml-10 text-sm">检测结果</span>
+                  <span
+                    className={`
+                      inline-block h-[60px] text-[var(--color-text-2)] 
+                      content-center ml-10 text-sm 
+                      hover:text-[var(--color-text-active)] cursor-pointer`
+                    }
+                  >请求参数</span>
                   {/* <a href="#" className="text-base text-[var(--color-text-1)]">请求参数</a> */}
                 </header>
-                {/* <Collapse
-                  accordion
-                  items={items}
-                  bordered={false}
-                  activeKey={activeKey}
-                  onChange={onKeyChange}
-                ></Collapse> */}
-                <div>
+                <div className="border-r [&_.ant-table]:!h-[543px]">
                   <CustomTable
                     virtual
-                    className="h-[542px]"
-                    scroll={{ y: 542 }}
+                    className="h-[543px]"
+                    scroll={{ y: 543 }}
                     rowKey='timestamp'
                     columns={columns}
                     sticky={{ offsetHeader: 0 }}

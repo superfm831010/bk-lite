@@ -1,38 +1,49 @@
 import OperateModal from "@/components/operate-modal";
 import { useTranslation } from "@/utils/i18n";
 import usePlayroundApi from '@/app/playground/api';
-import { forwardRef, useImperativeHandle, useState, useRef, useMemo, useCallback, useEffect } from 'react';
-import { Button, Form, FormInstance, Input, message, Select, Switch } from 'antd';
+import { forwardRef, useImperativeHandle, useState, useRef, useCallback, useEffect } from 'react';
+import { Button, Form, FormInstance, Input, message, Switch, Select } from 'antd';
 import { ModalRef } from "@/app/playground/types";
-import { CONTENT_MAP } from "@/app/playground/constants";
+import { Option } from "@/types";
+// import { CONTENT_MAP } from "@/app/playground/constants";
 const { TextArea } = Input;
 
 interface ModalProps {
   id: number;
   name: string;
+  categoryID?: number;
   description?: string;
   parent?: number;
   is_active?: boolean;
   url?: string;
   level?: number;
-  config?: object;
+  config?: any;
 }
 
-const ManageModal = forwardRef<ModalRef, any>(({ nodes, activeTag, onSuccess }, ref) => {
+const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
   const { t } = useTranslation();
   const formRef = useRef<FormInstance>(null);
-  const { createCategory, createCapability, updateCapability, updateCategory } = usePlayroundApi();
+  const {
+    getServingsList,
+    createCategory,
+    createCapability,
+    updateCapability,
+    updateCategory
+  } = usePlayroundApi();
   const [open, setOpen] = useState<boolean>(false);
+  const [selectLoading, setSelectLoading] = useState<boolean>(false);
   const [confirm, setConfirm] = useState<boolean>(false);
-  const [isAddChildren, setIsAddChildren] = useState<boolean>(false);
-  const [title, setTitle] = useState<string>('add');
+  const [servingsOptions, setServingsOptions] = useState<Option[]>([]);
+  const [title, setTitle] = useState<string>('addCategory');
   const [type, setType] = useState<string>('');
   const [formData, setFormData] = useState<ModalProps | null>(null);
-  const CategoryType = ['addCategory', 'updateCategory'];
+  const [servingConfig, setServingConfig] = useState<any>(null);
+  // const CategoryType = ['addCategory', 'updateCategory'];
   const CapabilityType = ['addCapability', 'updateCapability'];
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, title, form }) => {
+      console.log(type);
       setOpen(true);
       setType(type);
       setTitle(title as string);
@@ -46,31 +57,23 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes, activeTag, onSuccess }, 
     }
   }, [open]);
 
-  const parentOptions = useMemo(() => {
-    return nodes.map((item: any) => ({
-      label: item.name,
-      value: item.key
-    }));
-  }, [nodes]);
-
-  const initForm = useCallback(() => {
+  const initForm = useCallback(async () => {
     if (!formRef.current) return;
     formRef.current?.resetFields();
     if (type.trim().startsWith('update')) {
-      if (formData?.level === 0) setIsAddChildren(true);
       formRef.current?.setFieldsValue({
         name: formData?.name,
         description: formData?.description,
-        parent: formData?.level === 0 ? null : formData?.parent,
         url: formData?.url,
         is_active: formData?.is_active
       });
-    } else if (formData && type.trim().startsWith('add')) {
-      setIsAddChildren(true);
-      formRef.current?.setFieldsValue({
-        parent: formData?.id
-      });
-    }
+    };
+    await renderServingsOption();
+    // else if (formData && type.trim().startsWith('add')) {
+    //   formRef.current?.setFieldsValue({
+    //     parent: formData?.id
+    //   });
+    // }
   }, [type, formData]);
 
   const handleAdd: Record<string, any> = {
@@ -80,26 +83,58 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes, activeTag, onSuccess }, 
     'updateCapability': async (id: number, data: any) => await updateCapability(id, data),
   };
 
+  const renderServingsOption = async () => {
+    setSelectLoading(true);
+    try {
+      const data = await getServingsList();
+      const options = data?.filter((item: any) => item?.status === 'active').map((item: any) => {
+        return {
+          label: item?.name,
+          value: item?.id,
+          data: {
+            serving_id: item.id,
+            model_name: `RandomForest_${item.id}`,
+            model_version: item.model_version,
+            algorithm: "RandomForest",
+            anomaly_threshold: item.anomaly_threshold
+          }
+        }
+      });
+      setServingsOptions(options);
+      if(type.startsWith('update')) {
+        const servingID = formData?.config?.serving_id;
+        const config = options.find((k:any) => k.value === servingID)?.data || {};
+        formRef.current?.setFieldValue('serving_id', servingID);
+        setServingConfig(config)
+      }
+    } catch (e) {
+      console.log(e);
+      message.error('获取模型失败');
+    } finally {
+      setSelectLoading(false);
+      
+    }
+  };
 
   const handleSubmit = async () => {
     setConfirm(true);
     try {
+      if (!formData?.categoryID && type === 'addCapability') return message.error('参数错误');
       const data = await formRef.current?.validateFields();
-      const [id] = activeTag;
-      const config = type.endsWith('Capability') ? { config: CONTENT_MAP['anomaly_detection'] } : {};
+      // const config = type.endsWith('Capability') ? { category: formData?.category, config: CONTENT_MAP['anomaly_detection'] } : {};
       const params = {
-        category: id,
         ...data,
-        ...config
-      }
-      if(!id) return message.error('未选择类别');
+        config: servingConfig,
+        category: formData?.categoryID
+      };
+      console.log(params);
       if (type.trim().startsWith('add')) {
         await handleAdd[type](params);
       } else {
         await handleAdd[type](formData?.id, params);
       }
       setOpen(false);
-      message.success(`common.${title}Success`);
+      message.success(t(`manage.${title}Success`));
       onSuccess();
     } catch (e) {
       console.log(e);
@@ -111,13 +146,13 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes, activeTag, onSuccess }, 
   const handleCancel = () => {
     setOpen(false);
     setConfirm(false);
-    setIsAddChildren(false);
+    // setIsAddChildren(false);
     setFormData(null);
   };
 
   return (
     <OperateModal
-      title={t(`common.${title}`)}
+      title={t(`manage.${title}`)}
       open={open}
       onCancel={handleCancel}
       footer={[
@@ -137,14 +172,6 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes, activeTag, onSuccess }, 
         >
           <Input placeholder={t(`common.inputMsg`)} />
         </Form.Item>
-        {CategoryType.includes(type) && (
-          <Form.Item
-            name='parent'
-            label={t(`manage.parentCategory`)}
-          >
-            <Select disabled={isAddChildren} options={parentOptions} allowClear />
-          </Form.Item>
-        )}
         {CapabilityType.includes(type) && (
           <>
             <Form.Item
@@ -153,6 +180,23 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes, activeTag, onSuccess }, 
               rules={[{ required: true, message: t('common.inputMsg') }]}
             >
               <Input placeholder={t(`common.inputMsg`)} />
+            </Form.Item>
+            <Form.Item
+              name='serving_id'
+              label={t(`manage.servingsSelect`)}
+              rules={[{ required: true, message: t('common.selectMsg') }]}
+            >
+              <Select
+                options={servingsOptions}
+                loading={selectLoading}
+                onChange={(value, option) => {
+                  if (option && typeof option === 'object' && 'data' in option) {
+                    setServingConfig(option.data);
+                  }
+                }}
+                placeholder={t(`manage.servingsMsg`)}
+                allowClear
+              />
             </Form.Item>
             <Form.Item
               name='is_active'
@@ -167,6 +211,7 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes, activeTag, onSuccess }, 
         <Form.Item
           name='description'
           label={t(`common.description`)}
+          rules={[{ required: true, message: t('common.inputMsg') }]}
         >
           <TextArea rows={3} />
         </Form.Item>
@@ -175,5 +220,5 @@ const ManageModal = forwardRef<ModalRef, any>(({ nodes, activeTag, onSuccess }, 
   )
 })
 
-ManageModal.displayName = 'ManageModal';
-export default ManageModal;
+CategoryManageModal.displayName = 'CategoryManageModal';
+export default CategoryManageModal;

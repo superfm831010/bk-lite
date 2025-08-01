@@ -119,7 +119,7 @@ const TrainTask = () => {
       align: 'center',
       render: (_: unknown, record: TrainJob) => (
         <>
-          <PermissionWrapper requiredPermissions={['Edit']}>
+          <PermissionWrapper requiredPermissions={['Train']}>
             <Popconfirm
               title={t('traintask.trainStartTitle')}
               description={t('traintask.trainStartContent')}

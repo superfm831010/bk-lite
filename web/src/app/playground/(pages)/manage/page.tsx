@@ -14,25 +14,31 @@ import {
   Modal,
   message,
   Popconfirm,
-  Tag
+  Switch,
+  // Tag
 } from 'antd';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { PlusOutlined, MoreOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
+import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { useEffect, useState, useRef } from 'react';
 import usePlayroundApi from '@/app/playground/api';
-import ManageModal from './manageModal';
+import CategoryManageModal from './categoryManageModal';
+import SampleManageModal from './sampleManageModal';
 import { ModalRef, TableData } from '@/app/playground/types';
 const { Search } = Input;
 const { confirm } = Modal;
 
 const PlaygroundManage = () => {
   const { t } = useTranslation();
+  const { convertToLocalizedTime } = useLocalizedTime();
   const { getCategoryList, getCapabilityList, deleteCategory, deleteCapability } = usePlayroundApi();
-  const modalRef = useRef<ModalRef>(null)
+  const categoryModalRef = useRef<ModalRef>(null);
+  const sampleModalRef = useRef<ModalRef>(null);
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [treeLoading, setTreeLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
-  const [searchValue, setSearchValue] = useState<string>('');
+  // const [searchValue, setSearchValue] = useState<string>('');
   const [selectCategory, setSelectCategory] = useState<number[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
@@ -48,18 +54,44 @@ const PlaygroundManage = () => {
       key: 'description'
     },
     {
-      title: t(`playground-common.url`),
-      dataIndex: 'url',
-      key: 'url'
+      title: t(`manage.createAt`),
+      dataIndex: 'create_at',
+      key: 'create_at',
+      render: (_, record) => {
+        return (<p>{convertToLocalizedTime(record.created_at, 'YYYY-MM-DD HH:mm:ss')}</p>)
+      }
     },
     {
-      title: t(`playground-common.onlineStatus`),
+      title: t(`manage.createdBy`),
+      dataIndex: 'created_by',
+      key: 'created_by',
+      render: (_, { creator }) => {
+        return creator ? (
+          <div className="flex h-full items-center" title={creator}>
+            <span
+              className="block w-[18px] h-[18px] leading-[18px] text-center content-center rounded-[50%] mr-2 text-white"
+              style={{ background: 'blue' }}
+            >
+              {creator.slice(0, 1).toLocaleUpperCase()}
+            </span>
+            <span>
+              <EllipsisWithTooltip
+                className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
+                text={creator}
+              />
+            </span>
+          </div>
+        ) : (
+          <>--</>
+        );
+      }
+    },
+    {
+      title: t(`manage.sampleStatus`),
       dataIndex: 'status',
       key: 'status',
       render: (_, record) => {
-        return <Tag color={record.is_active ? 'green' : 'red'}>
-          {record.is_active ? t(`playground-common.active`) : t(`playground-common.inactive`)}
-        </Tag>
+        return <Switch checked={record.is_active} onChange={handleSampleActiveChange} />
       }
     },
     {
@@ -69,7 +101,7 @@ const PlaygroundManage = () => {
       render: (_, record) => {
         return (
           <>
-            <Button type='link' className='mr-2' onClick={() => openModal({ type: 'updateCapability', title: 'update', form: record })}>修改配置</Button>
+            {/* <Button type='link' className='mr-2' onClick={() => openCategoryModal({ type: 'updateCapability', title: 'update', form: record })}>修改配置</Button> */}
             <Popconfirm
               title={t(`manage.delCapability`)}
               description={t(`manage.delCapabilityText`)}
@@ -86,32 +118,74 @@ const PlaygroundManage = () => {
     }
   ];
 
-  useEffect(() => {
-    getAllCategory();
-    getAllCapability();
-    setSearchValue('');
+  const CategoryMenuItems = [
+    {
+      key: 'add',
+      label: t(`common.add`),
+    },
+    {
+      key: 'update',
+      label: t(`common.update`)
+    },
+    {
+      key: 'delete',
+      label: t(`common.delete`),
+    }
+  ];
 
-    // setTableData([
-    //   {
-    //     id: 1,
-    //     name: 'test',
-    //     description: 'test',
-    //     url: 'http://localhost:3000/playground/home?page=anomaly-detection',
-    //     is_active: true
-    //   }
-    // ]);
+  const CapabilityMenuItems = [
+    {
+      key: 'update',
+      label: t(`common.update`)
+    },
+    {
+      key: 'delete',
+      label: t(`common.delete`),
+    }
+  ];
+
+  useEffect(() => {
+    getAllTreeData();
+    // getAllCapability();
+    // setSearchValue('');
+    setTableLoading(true);
+    setTableData([
+      {
+        id: 1,
+        name: 'test',
+        description: 'test',
+        create_at: '',
+        creator: 'test',
+        url: 'http://localhost:3000/playground/home?page=anomaly-detection',
+        is_active: true
+      }
+    ]);
+    setTableLoading(false);
   }, []);
 
-  const renderNode = (data: any[], isChildren = false) => {
-    const filterData = isChildren ? data : data.filter(item => item.level === 0);
+  const renderCapabilityNode = (categoryId: number, capabilityData: any[]) => {
+    console.log(categoryId, capabilityData);
+    const filterData = capabilityData.filter(item => {
+      const { id } = item.category;
+      return categoryId === id;
+    });
+    return filterData.map((item: any) => ({
+      key: `${item.id}_${item.name}`,
+      title: renderCapabilityTitle(item),
+      ...item
+    }));
+  };
+
+  const renderNode = (categoryData: any[], capabilityData: any[]) => {
+    const filterData = categoryData.filter(item => item.level === 0);
     const treeData = filterData.map((item: any) => {
-      const { children } = item;
+      // const { children } = item;
       const node: any = {
         key: item?.id,
         name: item?.name,
-        title: renderTitle(item),
-        selectable: item.level === 0 ? false : true,
-        children: children?.length > 0 ? renderNode(children, true) : [],
+        title: renderTitle({ ...item, mode: 'capability' }), // 二层菜单
+        selectable: false,
+        children: renderCapabilityNode(item?.id, capabilityData),
       };
       return node;
     });
@@ -133,13 +207,32 @@ const PlaygroundManage = () => {
     return treeData;
   };
 
-  const getAllCategory = async () => {
+  const getAllTreeData = async () => {
     setTreeLoading(true);
     try {
-      const data = await getCategoryList();
-      const nodes = renderNode(data);
+      const [categoryData, capabilityData] = await Promise.all([getCategoryList(), getCapabilityList()]);
+      const nodes = [
+        {
+          key: 'model_experience',
+          name: 'model_experience',
+          selectable: false,
+          title: renderTitle({
+            name: '模型体验',
+            // mode: 'category'
+          }), // 一层菜单操作
+          children: renderNode(categoryData, capabilityData)
+        },
+        {
+          key: 'agent_experience',
+          name: 'agent_experience',
+          selectable: false,
+          title: renderTitle({
+            name: '智能体体验',
+            // mode: 'category'
+          })
+        }
+      ];;
       setFilteredTreeData(nodes);
-      console.log(nodes);
     } catch (e) {
       console.log(e)
     } finally {
@@ -147,17 +240,50 @@ const PlaygroundManage = () => {
     }
   };
 
-  const getAllCapability = async () => {
-    setTableLoading(true);
-    try {
-      const data = await getCapabilityList();
-      setTableData(data);
-      console.log(data);
-    } catch (e) {
-      console.log(e)
-    } finally {
-      setTableLoading(false);
-    }
+  // const getAllCapability = async () => {
+  //   setTableLoading(true);
+  //   try {
+  //     const data = await getCapabilityList();
+  //     setTableData(data);
+  //   } catch (e) {
+  //     console.log(e)
+  //   } finally {
+  //     setTableLoading(false);
+  //   }
+  // };
+
+  const renderCapabilityTitle = (data: any) => {
+    return (
+      <div className='w-full flex justify-between'>
+        <span className='truncate'>{data?.name || '--'}</span>
+        <span>
+          <Dropdown
+            overlay={
+              <Menu
+                onClick={({ key, domEvent }) => {
+                  domEvent.stopPropagation();
+                  if (key !== 'delete') {
+                    openCategoryModal({ type: `${key}Capability`, title: `${key}Capability`, form: data })
+                  } else {
+                    handleDelCapability(data?.id)
+                  }
+                }}
+                items={CapabilityMenuItems}
+              />
+            }
+            trigger={['click']}
+          >
+            <MoreOutlined
+              className="cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            />
+          </Dropdown>
+        </span>
+      </div>
+    );
   };
 
   const renderTitle = (data: any) => {
@@ -170,27 +296,20 @@ const PlaygroundManage = () => {
               <Menu
                 onClick={({ key, domEvent }) => {
                   domEvent.stopPropagation();
-                  if (key !== 'delete') {
-                    openModal({ type: `${key}Category`, title: key, form: data })
+                  if (key === 'add' && data?.mode === 'capability') {
+                    openCategoryModal({ type: `${key}Capability`, title: `${key}Capability`, form: { categoryID: data?.id } })
+                  } else if (key !== 'delete') {
+                    openCategoryModal({ type: `${key}Category`, title: `${key}Category`, form: data })
                   } else {
-                    handleDelCategory(data.id)
+                    handleDelCategory(data?.id)
                   }
                 }}
-                items={[
-                  {
+                items={
+                  data?.mode ? CategoryMenuItems : [{
                     key: 'add',
                     label: t(`common.add`),
-                    disabled: data.level !== 0
-                  },
-                  {
-                    key: 'update',
-                    label: t(`common.update`)
-                  },
-                  {
-                    key: 'delete',
-                    label: t(`common.delete`),
-                  }
-                ]}
+                  }]
+                }
               />
             }
             trigger={['click']}
@@ -212,18 +331,29 @@ const PlaygroundManage = () => {
     return filteredTreeData
   };
 
-  const openModal = (data: {
+  const openCategoryModal = (data: {
     type: string;
     title: string;
     form: any
   }) => {
-    modalRef.current?.showModal(data)
+    categoryModalRef.current?.showModal(data)
   };
 
+  const openSampleModal = (data: {
+    type: string;
+    title: string;
+    form: any
+  }) => {
+    sampleModalRef.current?.showModal(data);
+  }
 
   const onSelect = (keys: any) => {
     console.log(keys);
     setSelectCategory(keys);
+  };
+
+  const handleSampleActiveChange = (checked: boolean) => {
+    console.log(checked);
   };
 
   const topSection = (
@@ -234,7 +364,7 @@ const PlaygroundManage = () => {
     <div className={`w-full h-full flex flex-col`}>
       <Spin spinning={treeLoading}>
         <div className='min-h-[370px] overflow-auto'>
-          <div className="flex items-center mb-4">
+          {/* <div className="flex items-center mb-4">
             <Input
               size="small"
               className="flex-1"
@@ -243,7 +373,7 @@ const PlaygroundManage = () => {
               value={searchValue}
             />
             <Button type="primary" size="small" icon={<PlusOutlined />} className="ml-2" onClick={() => openModal({ type: 'addCategory', title: 'add', form: null })} />
-          </div>
+          </div> */}
           <Tree
             className="w-full flex-1"
             showLine
@@ -278,7 +408,7 @@ const PlaygroundManage = () => {
           console.log(e);
           message.error(t(`common.delFailed`));
         } finally {
-          getAllCategory();
+          getAllTreeData();
         }
       }
     })
@@ -302,7 +432,7 @@ const PlaygroundManage = () => {
         <Button
           type='primary'
           icon={<PlusOutlined />}
-          onClick={() => openModal({ type: 'addCapability', title: 'add', form: null })}>
+          onClick={() => openSampleModal({ type: 'add', title: 'add', form: { category: selectCategory } })}>
           {t(`common.add`)}
         </Button>
       </div>
@@ -316,8 +446,7 @@ const PlaygroundManage = () => {
   );
 
   const onSuccess = () => {
-    getAllCategory();
-    getAllCapability();
+    getAllTreeData();
   };
 
   return (
@@ -327,7 +456,8 @@ const PlaygroundManage = () => {
         leftSection={leftSection}
         topSection={topSection}
       />
-      <ManageModal ref={modalRef} nodes={filteredTreeData} onSuccess={onSuccess} activeTag={selectCategory} />
+      <CategoryManageModal ref={categoryModalRef} onSuccess={onSuccess} />
+      <SampleManageModal ref={sampleModalRef} onSuccess={onSuccess} />
     </>
   )
 };
