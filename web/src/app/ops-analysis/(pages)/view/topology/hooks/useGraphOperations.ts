@@ -1,20 +1,23 @@
 import { useCallback, useEffect } from 'react';
+import type { Graph as X6Graph, Edge } from '@antv/x6';
 import { Graph } from '@antv/x6';
 import { Selection } from '@antv/x6-plugin-selection';
-import type { Graph as X6Graph, Edge } from '@antv/x6';
+import { COLORS, FORM_DEFAULTS } from '../constants/nodeDefaults';
+import { iconList } from '@/app/cmdb/utils/common';
+import { mockTopologyNodes, mockTopologyEdges } from '../../mockData';
 import {
   getEdgeStyle,
+  getEdgeStyleWithLabel,
   addEdgeTools,
   showPorts,
   hideAllPorts,
   getSingleValueNodeStyle,
   getIconNodeStyle,
+  getTextNodeStyle,
   getLogoUrl,
   showEdgeTools,
   hideAllEdgeTools,
 } from '../utils/topologyUtils';
-import { iconList } from '@/app/cmdb/utils/common';
-import { mockTopologyNodes, mockTopologyEdges } from '../../mockData';
 
 export const useGraphOperations = (
   containerRef: React.RefObject<HTMLDivElement>,
@@ -139,6 +142,8 @@ export const useGraphOperations = (
 
       if (nodeConfig.type === 'single-value') {
         nodeData = getSingleValueNodeStyle(nodeConfig);
+      } else if (nodeConfig.type === 'text') {
+        nodeData = getTextNodeStyle(nodeConfig);
       } else {
         const logoUrl = getLogoUrl(nodeConfig, iconList);
         nodeData = getIconNodeStyle(nodeConfig, logoUrl);
@@ -147,8 +152,15 @@ export const useGraphOperations = (
       graph.addNode(nodeData);
     });
 
-    // 添加mock边
     mockTopologyEdges.forEach((edgeConfig) => {
+      const edgeData = {
+        lineType: edgeConfig.lineType as 'line' | 'network line',
+        lineName: edgeConfig.lineName,
+        sourceInterface: edgeConfig.sourceInterface,
+        targetInterface: edgeConfig.targetInterface,
+        config: edgeConfig.config,
+      };
+
       const edge = graph.createEdge({
         id: edgeConfig.id,
         source: edgeConfig.source,
@@ -156,14 +168,8 @@ export const useGraphOperations = (
         sourcePort: edgeConfig.sourcePort,
         targetPort: edgeConfig.targetPort,
         shape: 'edge',
-        ...getEdgeStyle('single'),
-        data: {
-          lineType: edgeConfig.lineType,
-          lineName: edgeConfig.lineName,
-          sourceInterface: edgeConfig.sourceInterface,
-          targetInterface: edgeConfig.targetInterface,
-          config: edgeConfig.config,
-        },
+        ...getEdgeStyleWithLabel(edgeData, 'single'),
+        data: edgeData,
       });
 
       graph.addEdge(edge);
@@ -267,7 +273,7 @@ export const useGraphOperations = (
         edge.setAttrs({
           line: {
             ...edge.getAttrs().line,
-            stroke: edge.getAttrs().line?.stroke || '#a7b5c4',
+            stroke: edge.getAttrs().line?.stroke || COLORS.EDGE.DEFAULT,
             strokeWidth: edge.getAttrs().line?.strokeWidth || 1,
           },
         });
@@ -278,7 +284,7 @@ export const useGraphOperations = (
           cell.setAttrs({
             line: {
               ...cell.getAttrs().line,
-              stroke: '#1890FF',
+              stroke: COLORS.EDGE.SELECTED,
               strokeWidth: 2,
             },
           });
@@ -323,13 +329,13 @@ export const useGraphOperations = (
       hideAllPorts(graph);
       hideAllEdgeTools(graph);
       setContextMenuVisible(false);
-      
+
       // 清除所有边的高亮效果
       graph.getEdges().forEach((edge: any) => {
         edge.setAttrs({
           line: {
             ...edge.getAttrs().line,
-            stroke: '#a7b5c4',
+            stroke: COLORS.EDGE.DEFAULT,
             strokeWidth: 2,
           },
         });
@@ -337,7 +343,7 @@ export const useGraphOperations = (
 
       graph.cleanSelection();
       setSelectedCells([]);
-      
+
       setTimeout(() => {
         finishTextEditRef.current?.();
       }, 0);
@@ -453,7 +459,7 @@ export const useGraphOperations = (
         edge.setAttrs({
           line: {
             ...edge.getAttrs().line,
-            stroke: '#a7b5c4',
+            stroke: COLORS.EDGE.DEFAULT,
             strokeWidth: 1,
           },
         });
@@ -556,15 +562,39 @@ export const useGraphOperations = (
     try {
       const values = await nodeEditFormInstance.validateFields();
 
-      const updatedConfig = {
-        id: state.editingNodeData.id,
-        type: state.editingNodeData.type,
-        name: values.name,
-        logo: values.logoType === 'default' ? values.logoIcon : values.logoUrl,
-        logoType: values.logoType,
-        dataSource: values.dataSource,
-        config: values,
-      };
+      let updatedConfig: any;
+
+      if (state.editingNodeData.type === 'single-value') {
+        updatedConfig = {
+          id: state.editingNodeData.id,
+          type: state.editingNodeData.type,
+          name: values.name,
+          dataSource: values.dataSource,
+          config: {
+            query: values.query || FORM_DEFAULTS.SINGLE_VALUE.query,
+            unit: values.unit || FORM_DEFAULTS.SINGLE_VALUE.unit,
+            threshold: values.threshold || FORM_DEFAULTS.SINGLE_VALUE.threshold,
+            textColor: values.textColor || FORM_DEFAULTS.SINGLE_VALUE.textColor,
+            fontSize: values.fontSize || FORM_DEFAULTS.SINGLE_VALUE.fontSize,
+            backgroundColor: values.backgroundColor || FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
+            borderColor: values.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor,
+          },
+        };
+      } else {
+        // 图标节点 - 保持原有逻辑
+        updatedConfig = {
+          id: state.editingNodeData.id,
+          type: state.editingNodeData.type,
+          name: values.name,
+          logo: values.logoType === 'default' ? values.logoIcon : values.logoUrl,
+          logoType: values.logoType,
+          dataSource: values.dataSource,
+          config: {
+            backgroundColor: values.backgroundColor || FORM_DEFAULTS.ICON_NODE.backgroundColor,
+            borderColor: values.borderColor || FORM_DEFAULTS.ICON_NODE.borderColor,
+          },
+        };
+      }
 
       updateNode(updatedConfig);
 
