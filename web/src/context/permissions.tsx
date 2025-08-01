@@ -35,7 +35,7 @@ const getClientIdFromRoute = (): string => {
     return pathSegments[0];
   }
   
-  return '';
+  return 'ops-console';
 };
 
 // Map route-based client_id to actual client name

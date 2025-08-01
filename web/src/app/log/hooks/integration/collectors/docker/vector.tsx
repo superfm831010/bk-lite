@@ -19,11 +19,15 @@ export const useVectorConfig = () => {
     }) => {
       const configs = {
         auto: {
-          formItems: commonFormItems.getCommonFormItems(),
+          formItems: commonFormItems.getCommonFormItems({
+            hiddenFormItems: {
+              start_pattern: true,
+            },
+            disabledFormItems: {},
+          }),
           initTableItems: {},
           defaultForm: {
             docker_host: 'unix:///var/run/docker.sock',
-            start_pattern: '^(INFO|ERROR|DEBUG|WARN)',
           },
           columns: [],
           getParams: (row: IntegrationLogInstance, config: TableDataItem) => {
@@ -44,7 +48,9 @@ export const useVectorConfig = () => {
         edit: {
           getFormItems: () => {
             return commonFormItems.getCommonFormItems({
-              hiddenFormItems: {},
+              hiddenFormItems: {
+                start_pattern: true,
+              },
               disabledFormItems: {},
             });
           },

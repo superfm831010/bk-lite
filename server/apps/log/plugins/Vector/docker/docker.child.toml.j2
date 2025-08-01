@@ -12,14 +12,14 @@ exclude_containers = [{{ exclude_containers | map('tojson') | join(', ') }}]
 {% endif %}
 
 
-{% if start_pattern and start_pattern != '.*' %}
+{% if multiline %}
 # ====================================
 # 多行日志处理
 # ====================================
-multiline.condition_pattern = '^(?!{{ start_pattern }})'
-multiline.mode = "halt_before"
-multiline.start_pattern = '{{ start_pattern }}'
-multiline.timeout_ms = 1000
+multiline.condition_pattern = '{{ multiline.condition_pattern }}'
+multiline.mode = "{{ multiline.mode }}"
+multiline.start_pattern = '{{ multiline.start_pattern }}'
+multiline.timeout_ms = {{ multiline.timeout_ms }}
 {% endif %}
 
 # ====================================

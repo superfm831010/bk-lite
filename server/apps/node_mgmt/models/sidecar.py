@@ -43,7 +43,7 @@ class Node(TimeInfo, MaintainerInfo):
 
 class NodeOrganization(TimeInfo, MaintainerInfo):
     node = models.ForeignKey(Node, on_delete=models.CASCADE, verbose_name="节点")
-    organization = models.CharField(max_length=100, verbose_name="组织id")
+    organization = models.IntegerField(verbose_name="组织id")
 
     class Meta:
         verbose_name = "节点组织"

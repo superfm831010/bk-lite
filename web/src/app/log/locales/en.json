@@ -174,7 +174,6 @@
       "host": "Host",
       "includeContainers": "Designated Containers",
       "excludeContainers": "Neglected Containers",
-      "startPattern": "Merging Regular",
       "containerPlaceholder": "Please enter the container and press Enter to end",
       "collectType": "Collect Type",
       "anySatisfy": "Satisfy any one of the",
@@ -183,7 +182,13 @@
       "allRules": "rules",
       "logGroup": "Log Group",
       "logGroupTips": "Please divide the received logs into groups, and the viewing permissions for the logs will be isolated according to the log groups.",
-      "belongingGroupTips": "Receive instance viewing and operations, and isolate permissions according to their organization."
+      "belongingGroupTips": "Receive instance viewing and operations, and isolate permissions according to their organization.",
+      "multiline": "Multiline aggregation",
+      "multilineAllRequired": "All values must be filled in or left blank",
+      "mode": "Aggregation Mode",
+      "timeoutMs": "Timeout",
+      "startPattern": "Beginning Regularity",
+      "conditionPattern": "Merging Rule"
     }
   }
 }

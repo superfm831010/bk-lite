@@ -3,6 +3,11 @@
   "name": "Node",
   "url": "/node-manager/cloudregion",
   "icon": "node",
+  "tags": [
+    "云区域",
+    "探针管理",
+    "节点管理"
+  ],
   "description": "Used to centrally manage nodes under various cloud regions and install various probes on each node to collect monitoring data, configuration information, logs and other information",
   "menus": [
     {
@@ -11,7 +16,12 @@
         {
           "id": "cloud_region_list",
           "name": "Cloud Region-List",
-          "operation": ["View", "Edit", "Add", "Delete"]
+          "operation": [
+            "View",
+            "Edit",
+            "Add",
+            "Delete"
+          ]
         },
         {
           "id": "cloud_region_node",
@@ -39,7 +49,12 @@
         {
           "id": "cloud_region_variable",
           "name": "Cloud Region-Variable",
-          "operation": ["View", "Add", "Edit", "Delete"]
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
         }
       ]
     },
@@ -49,22 +64,35 @@
         {
           "id": "controller_list",
           "name": "Controller-List",
-          "operation": ["View", "AddPacket"]
+          "operation": [
+            "View",
+            "AddPacket"
+          ]
         },
         {
           "id": "controller_packet",
           "name": "Controller-Packet",
-          "operation": ["Delete"]
+          "operation": [
+            "Delete"
+          ]
         },
         {
           "id": "collector_list",
           "name": "Collector-List",
-          "operation": ["View", "Add", "Edit", "Delete", "AddPacket"]
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete",
+            "AddPacket"
+          ]
         },
         {
           "id": "collector_packet",
           "name": "Collector-Packet",
-          "operation": ["Delete"]
+          "operation": [
+            "Delete"
+          ]
         }
       ]
     }

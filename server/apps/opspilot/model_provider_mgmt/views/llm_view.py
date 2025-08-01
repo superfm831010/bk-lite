@@ -10,7 +10,6 @@ from apps.core.logger import opspilot_logger as logger
 from apps.core.mixinx import EncryptMixin
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.bot_mgmt.views import validate_remaining_token
-from apps.opspilot.enum import SkillTypeChoices
 from apps.opspilot.knowledge_mgmt.models import KnowledgeBase
 from apps.opspilot.model_provider_mgmt.models import LLMModel, LLMSkill
 from apps.opspilot.model_provider_mgmt.models.llm_skill import SkillRequestLog, SkillTools
@@ -27,6 +26,14 @@ from apps.opspilot.utils.sse_chat import stream_chat
 class LLMFilter(FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     is_template = filters.NumberFilter(field_name="is_template", lookup_expr="exact")
+    skill_type = filters.CharFilter(method="filter_skill_type")
+
+    @staticmethod
+    def filter_skill_type(qs, field_name, value):
+        """查询类型"""
+        if not value:
+            return qs
+        return qs.filter(skill_type__in=[int(i.strip()) for i in value.split(",") if i.strip()])
 
 
 class LLMViewSet(AuthViewSet):

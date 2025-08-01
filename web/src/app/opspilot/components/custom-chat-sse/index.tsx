@@ -196,7 +196,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
   };
 
   const handleClearMessages = () => {
-    setMessages([]);
+    updateMessages([]);
   };
 
   const stopSSEConnection = useCallback(() => {
@@ -205,6 +205,12 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
       abortControllerRef.current = null;
     }
     setLoading(false);
+  }, []);
+
+  const updateMessages = useCallback((newMessages: CustomChatMessage[] | ((prev: CustomChatMessage[]) => CustomChatMessage[])) => {
+    setMessages(prevMessages => {
+      return typeof newMessages === 'function' ? newMessages(prevMessages) : newMessages;
+    });
   }, []);
 
   // Handle SSE streaming response
@@ -298,7 +304,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
                   accumulatedContent += choice.delta.content;
                   
                   // Update message content in real-time
-                  setMessages(prevMessages => 
+                  updateMessages(prevMessages => 
                     prevMessages.map(msgItem => 
                       msgItem.id === botMessage.id 
                         ? { 
@@ -327,7 +333,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
       console.error('SSE stream error:', error);
       
       // Update error message
-      setMessages(prevMessages => 
+      updateMessages(prevMessages => 
         prevMessages.map(msgItem => 
           msgItem.id === botMessage.id 
             ? { ...msgItem, content: `${t('chat.connectionError')}: ${error.message}` }
@@ -338,7 +344,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
       setLoading(false);
       abortControllerRef.current = null;
     }
-  }, [token, t]);
+  }, [token, t, updateMessages]);
 
   const handleSend = useCallback(async (msg: string) => {
     if (msg.trim() && !loading && token) {
@@ -363,17 +369,17 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
       };
 
       const updatedMessages = [...messages, newUserMessage, botLoadingMessage];
-      setMessages(updatedMessages);
+      updateMessages(updatedMessages);
       currentBotMessageRef.current = botLoadingMessage;
 
       try {
         if (handleSendMessage) {
-          const result = await handleSendMessage(msg);
+          const result = await handleSendMessage(msg, messages); // 传递当前消息数组
           
           // If handleSendMessage returns null, form validation failed, prevent sending
           if (result === null) {
             // Remove added messages
-            setMessages(messages);
+            updateMessages(messages);
             setLoading(false);
             return;
           }
@@ -384,7 +390,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
       } catch (error: any) {
         console.error(`${t('chat.sendFailed')}:`, error);
         
-        setMessages(prevMessages => 
+        updateMessages(prevMessages => 
           prevMessages.map(msgItem => 
             msgItem.id === botLoadingMessage.id 
               ? { ...msgItem, content: t('chat.connectionError') }
@@ -394,7 +400,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
         setLoading(false);
       }
     }
-  }, [loading, handleSendMessage, messages, t, token, handleSSEStream]);
+  }, [loading, handleSendMessage, messages, t, token, handleSSEStream, updateMessages]);
 
   const handleCopyMessage = (content: string) => {
     navigator.clipboard.writeText(content).then(() => {
@@ -405,7 +411,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
   };
 
   const handleDeleteMessage = (id: string) => {
-    setMessages(messages.filter(msg => msg.id !== id));
+    updateMessages(messages.filter(msg => msg.id !== id));
   };
 
   const handleRegenerateMessage = useCallback(async (id: string) => {
@@ -425,7 +431,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
         };
 
         const updatedMessages = [...messages, newMessage];
-        setMessages(updatedMessages);
+        updateMessages(updatedMessages);
         currentBotMessageRef.current = newMessage;
 
         try {
@@ -435,7 +441,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
             // If handleSendMessage returns null, form validation failed, prevent regeneration
             if (result === null) {
               // Remove added messages and restore original state
-              setMessages(messages);
+              updateMessages(messages);
               setLoading(false);
               return;
             }
@@ -446,7 +452,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
         } catch (error: any) {
           console.error(`${t('chat.regenerateFailed')}:`, error);
 
-          setMessages(prevMessages =>
+          updateMessages(prevMessages =>
             prevMessages.map(msgItem =>
               msgItem.id === newMessage.id
                 ? { ...msgItem, content: t('chat.connectionError') }
@@ -457,7 +463,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
         }
       }
     }
-  }, [messages, handleSendMessage, t, token, handleSSEStream]);
+  }, [messages, handleSendMessage, t, token, handleSSEStream, updateMessages]);
 
   const renderContent = (msg: CustomChatMessage) => {
     const { content, knowledgeBase } = msg;
@@ -534,7 +540,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
 
   const updateMessagesAnnotation = (id: string | undefined, newAnnotation?: Annotation) => {
     if (!id) return;
-    setMessages((prevMessages) =>
+    updateMessages((prevMessages) =>
       prevMessages.map((msg) =>
         msg.id === id
           ? { ...msg, annotation: newAnnotation }

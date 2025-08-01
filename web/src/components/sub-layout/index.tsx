@@ -20,6 +20,7 @@ interface WithSideMenuLayoutProps {
   layoutType?: 'sideMenu' | 'segmented';
   taskProgressComponent?: React.ReactNode;
   pagePathName?: string;
+  customMenuItems?: MenuItem[];
 }
 
 const WithSideMenuLayout: React.FC<WithSideMenuLayoutProps> = ({
@@ -32,7 +33,8 @@ const WithSideMenuLayout: React.FC<WithSideMenuLayoutProps> = ({
   showSideMenu = true,
   layoutType = 'sideMenu',
   taskProgressComponent,
-  pagePathName
+  pagePathName,
+  customMenuItems
 }) => {
   const router = useRouter();
   const curRouterName = usePathname();
@@ -62,7 +64,12 @@ const WithSideMenuLayout: React.FC<WithSideMenuLayoutProps> = ({
     return [];
   };
 
-  const updateMenuItems = useMemo(() => getMenuItemsForPath(menus, pathname ?? ''), [pathname]);
+  const updateMenuItems = useMemo(() => {
+    if (customMenuItems && customMenuItems.length > 0) {
+      return customMenuItems;
+    }
+    return getMenuItemsForPath(menus, pathname ?? '');
+  }, [pathname, menus, customMenuItems]);
 
   useEffect(() => {
     setMenuItems(updateMenuItems?.filter(menu => !menu.isNotMenuItem));

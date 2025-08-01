@@ -27,6 +27,7 @@ class AlertRule:
     severity: str = "medium"
     is_active: bool = True
     alert_sources: List[str] = None
+    aggregation_key: List[str] = None
     # 聚合策略配置详解：
     aggregation_strategy: str = "group_by"
     """
@@ -128,7 +129,8 @@ class RuleEngine:
                 # 新增聚合策略配置
                 aggregation_strategy=rule_config.get('aggregation_strategy', 'group_by'),
                 aggregation_window=rule_config.get('aggregation_window', '0'),
-                max_alerts_per_group=rule_config.get('max_alerts_per_group', 100)
+                max_alerts_per_group=rule_config.get('max_alerts_per_group', 100),
+                aggregation_key=rule_config.get('aggregation_key', ["resource_name", "resource_type"])
             )
         except Exception as e:
             logger.error(f"Rule {rule_config.get('name')} add failed: {e}")
@@ -549,7 +551,7 @@ class RuleEngine:
                     # 检查是否需要创建新告警（基于实例指纹）
                     should_create_new, related_alerts, operation_type = self._check_instance_alert_status(
                         instance_fingerprint, rule
-                        )
+                    )
 
                     results[rule_id] = {
                         'triggered': True,

@@ -36,6 +36,7 @@ class Command(BaseCommand):
                     "is_build_in": True,
                     "url": app_obj["url"],
                     "icon": app_obj.get("icon", app_obj["client_id"]),
+                    "tags": app_obj.get("tags", []),
                 },
             )
             print(f"create {app_obj['client_id']} success")
