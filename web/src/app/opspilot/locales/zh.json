@@ -83,7 +83,14 @@
       "clickedNode": "点击了节点:",
       "clickedRelationship": "点击了关系:",
       "unknownRelationship": "未知关系",
-      "knowledgeBaseIdNotFound": "知识库ID不存在"
+      "knowledgeBaseIdNotFound": "知识库ID不存在",
+      "status": {
+        "completed": "完成",
+        "rebuilding": "重建社区中",
+        "training": "训练中",
+        "failed": "训练失败",
+        "pending": "等待训练"
+      }
     },
     "applyConfig": "应用配置",
     "ranking": "排名",
@@ -139,6 +146,7 @@
       "syncEnabledTip": "开启自动同步后，将按照定时时间定时从网站拉取最新内容，并且进行训练",
       "syncTime": "同步时间",
       "everyday": "每天",
+      "notSync": "未定时同步",
       "selectTime": "选择时间",
       "syncOnce": "定时同步一次",
       "webLinkSaveSuccess": "网页链接数据保存成功",
