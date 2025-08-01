@@ -7,7 +7,7 @@ import json
 import os
 import base64
 from functools import wraps
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from django.utils.crypto import get_random_string
 
@@ -90,19 +90,23 @@ def image_to_base64(image_path, output_format="jpeg"):
     return f"data:image/{ext};base64,{encoded_string}"
 
 
-def generate_instance_fingerprint(event_data: Dict[str, Any]) -> str:
+def generate_instance_fingerprint(event_data: Dict[str, Any], fields: List = []) -> str:
     """
     生成实例指纹，用于标识唯一实例
 
     Args:
         event_data: 事件数据
+        fields: 用于生成指纹的字段列表，默认使用['item', 'resource_id', 'resource_type', 'alert_source']
 
     Returns:
         32位MD5哈希字符串作为实例指纹
     """
     fingerprint_data = {}
 
-    for field in ['item', 'resource_id', 'resource_type', 'alert_source']:
+    if not fields:
+        fields = ['item', 'resource_id', 'resource_type', 'alert_source']
+
+    for field in fields:
         value = event_data.get(field)
 
         # 处理None值和空字符串
