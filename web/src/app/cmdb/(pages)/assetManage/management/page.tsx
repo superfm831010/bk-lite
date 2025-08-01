@@ -17,12 +17,19 @@ import { getIconUrl } from '@/app/cmdb/utils/common';
 import GroupModal from './list/groupModal';
 import ModelModal from './list/modelModal';
 import { useRouter } from 'next/navigation';
-import useApiClient from '@/utils/request';
 import { useTranslation } from '@/utils/i18n';
 import PermissionWrapper from '@/components/permission';
+import {
+  useModelApi,
+  useClassificationApi,
+  useInstanceApi,
+} from '@/app/cmdb/api';
 
 const AssetManage = () => {
-  const { get, del, isLoading } = useApiClient();
+  const { getModelList } = useModelApi();
+  const { getClassificationList, deleteClassification } =
+    useClassificationApi();
+  const { getModelInstanceCount } = useInstanceApi();
   const { confirm } = Modal;
   const { t } = useTranslation();
   const router = useRouter();
@@ -37,9 +44,8 @@ const AssetManage = () => {
   const [rawModelGroup, setRawModelGroup] = useState<GroupItem[]>([]);
 
   useEffect(() => {
-    if (isLoading) return;
     getModelGroup();
-  }, [get, isLoading]);
+  }, []);
 
   useEffect(() => {
     if (!searchText.trim()) {
@@ -71,7 +77,7 @@ const AssetManage = () => {
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await del(`/cmdb/api/classification/${row.classification_id}/`);
+            await deleteClassification(row.classification_id);
             message.success(t('successfullyDeleted'));
             getModelGroup();
           } finally {
@@ -160,9 +166,9 @@ const AssetManage = () => {
     setLoading(true);
     try {
       const [modeldata, groupData, instCount] = await Promise.all([
-        get('/cmdb/api/model/'),
-        get('/cmdb/api/classification/'),
-        get('/cmdb/api/instance/model_inst_count/'),
+        getModelList(),
+        getClassificationList(),
+        getModelInstanceCount(),
       ]);
       const groups = deepClone(groupData).map((item: GroupItem) => ({
         ...item,

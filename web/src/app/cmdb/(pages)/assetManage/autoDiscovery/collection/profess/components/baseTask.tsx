@@ -8,7 +8,7 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import FieldModal from '@/app/cmdb/(pages)/assetData/list/fieldModal';
-import useApiClient from '@/utils/request';
+import { useInstanceApi, useCollectApi, useModelApi } from '@/app/cmdb/api';
 import styles from '../index.module.scss';
 import CustomTable from '@/components/custom-table';
 import IpRangeInput from '@/app/cmdb/components/ipInput';
@@ -96,7 +96,9 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
   ) => {
     const { model_id: modelId } = modelItem;
     const { t } = useTranslation();
-    const { post, get } = useApiClient();
+    const instanceApi = useInstanceApi();
+    const collectApi = useCollectApi();
+    const modelApi = useModelApi();
     const form = Form.useFormInstance();
     const fieldRef = useRef<FieldModalRef>(null);
     const commonContext = useCommon();
@@ -170,7 +172,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     const fetchInstData = async (modelId: string, page = 1, pageSize = 10) => {
       try {
         setInstLoading(true);
-        const res = await post('/cmdb/api/instance/search/', {
+        const res = await instanceApi.searchInstances({
           model_id: modelId,
           page,
           page_size: pageSize,
@@ -249,7 +251,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         render: (text: any, record: any) => record.inst_name || '--',
       },
       {
-        title: t('common.action'),
+        title: t('common.actions'),
         key: 'action',
         width: 120,
         render: (_: any, record: TableItem) => (
@@ -286,10 +288,8 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
 
     const fetchSelectedInstances = async () => {
       try {
-        const res = await get('/cmdb/api/collect/model_instances/', {
-          params: {
-            task_type: modelItem.task_type,
-          },
+        const res = await collectApi.getCollectModelInstances({
+          task_type: modelItem.task_type,
         });
         return res.map((item: any) => item.id);
       } catch (error) {
@@ -300,7 +300,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     const fetchOptions = async (instIds: number[] = []) => {
       try {
         setOptLoading(true);
-        const data = await post('/cmdb/api/instance/search/', {
+        const data = await instanceApi.searchInstances({
           model_id: modelId,
           page: 1,
           page_size: 10000,
@@ -326,12 +326,10 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     const fetchAccessPoints = async () => {
       try {
         setAccessPointLoading(true);
-        const res = await get('/cmdb/api/collect/nodes/', {
-          params: {
-            page: 1,
-            page_size: 10,
-            name: '',
-          },
+        const res = await collectApi.getCollectNodes({
+          page: 1,
+          page_size: 10,
+          name: '',
         });
         setAccessPoints(
           res.nodes?.map((node: any) => ({
@@ -349,7 +347,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
 
     const showFieldModal = async () => {
       try {
-        const attrList = await get(`/cmdb/api/model/${modelId}/attr_list/`);
+        const attrList = await modelApi.getModelAttrList(modelId);
         fieldRef.current?.showModal({
           type: 'add',
           attrList,

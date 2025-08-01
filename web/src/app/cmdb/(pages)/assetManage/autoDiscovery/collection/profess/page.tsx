@@ -10,7 +10,7 @@ import SQLTask from './components/sqlTask';
 import CloudTask from './components/cloudTask';
 import HostTask from './components/hostTask';
 import TaskDetail from './components/taskDetail';
-import useApiClient from '@/utils/request';
+import { useCollectApi } from '@/app/cmdb/api';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
 import type { TableColumnType } from 'antd';
@@ -42,7 +42,7 @@ type ExtendedColumnItem = ColumnType<CollectTask> & {
 
 const ProfessionalCollection: React.FC = () => {
   const { t } = useTranslation();
-  const { get, del, post } = useApiClient();
+  const collectApi = useCollectApi();
   const ExecStatusMap = React.useMemo(() => createExecStatusMap(t), [t]);
   const execStatusConfig = React.useMemo(() => getExecStatusConfig(t), [t]);
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -113,7 +113,7 @@ const ProfessionalCollection: React.FC = () => {
         setTableLoading(true);
       }
       const params = getParams(tabId);
-      const data = await get('/cmdb/api/collect/search/', { params });
+      const data = await collectApi.getCollectList(params);
       setTableData(data.items || []);
       tableCountRef.current = data.items.length || 0;
       setPaginationUI((prev) => ({
@@ -149,7 +149,7 @@ const ProfessionalCollection: React.FC = () => {
   const fetchTreeData = async () => {
     try {
       setTreeLoading(true);
-      const data = await get('/cmdb/api/collect/collect_model_tree/');
+      const data = await collectApi.getCollectModelTree();
       const treeData = data.map((node: TreeNode) => {
         getItems(node);
         return node;
@@ -277,7 +277,7 @@ const ProfessionalCollection: React.FC = () => {
       content: t('common.deleteContent'),
       onOk: async () => {
         try {
-          await del(`/cmdb/api/collect/${record.id}/`);
+          await collectApi.deleteCollect(record.id.toString());
           message.success(t('successfullyDeleted'));
           const currentPage = stateRef.current.pagination.current;
           if (currentPage > 1 && tableCountRef.current === 1) {
@@ -305,7 +305,7 @@ const ProfessionalCollection: React.FC = () => {
       }
       try {
         setExecutingTaskIds((prev) => [...prev, record.id]);
-        await post(`/cmdb/api/collect/${record.id}/exec_task/`);
+        await collectApi.executeCollect(record.id.toString());
         message.success(t('Collection.executeSuccess'));
         fetchData();
       } catch (error) {
