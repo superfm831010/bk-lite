@@ -254,7 +254,7 @@
       "guide": "Guide",
       "guideTip": "An initialization message sent at the start of each conversation. Supports standard Markdown syntax and additional tags. [Quick Key]: Users can click to send this question directly.",
       "type": "Skill Type",
-      "qaType": "RAG Agent",
+      "qaType": "RAG",
       "qaTypeDesc": "Combines retrieval and generation technologies to retrieve relevant information from external knowledge bases and generate accurate Q&A content, suitable for dynamic knowledge Q&A in open domains.",
       "qaTypeScene": "Enterprise Knowledge Base Query: Quickly answer common questions from customers or employees.\nProfessional Q&A: Provide Q&A and advice based on a specific professional field.",
       "toolsType": "ReAct Agent",
