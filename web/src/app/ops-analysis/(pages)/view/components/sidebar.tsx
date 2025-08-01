@@ -10,6 +10,7 @@ import React, {
 import { Form } from 'antd';
 import type { DataNode } from 'antd/lib/tree';
 import { useTranslation } from '@/utils/i18n';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { Input, Button, Modal, Dropdown, Menu, Tree, Empty, Spin } from 'antd';
 import { useDirectoryApi } from '@/app/ops-analysis/api/index';
 import {
@@ -290,14 +291,15 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
         data: { type: item.type },
         selectable: item.type !== 'directory',
         title: (
-          <span className="flex justify-between items-center">
+          <span className="flex justify-between items-center w-full py-1">
             <span
-              className={`flex items-center ${item.type === 'directory' ? 'cursor-default' : 'cursor-pointer'}`}
+              className={`flex items-center min-w-0 flex-1 ${item.type === 'directory' ? 'cursor-default' : 'cursor-pointer'}`}
             >
               {getDirectoryIcon(item.type)}
-              <span className={item.type === 'directory' ? 'font-medium' : ''}>
-                {item.name}
-              </span>
+              <EllipsisWithTooltip
+                className="max-w-[126px] whitespace-nowrap overflow-hidden text-ellipsis"
+                text={item.name || '--'}
+              />
             </span>
             <Dropdown
               overlay={menuFor(item, parentId)}
@@ -309,6 +311,8 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
                 type="text"
                 icon={<MoreOutlined />}
                 onClick={(e) => e.stopPropagation()}
+                className="flex-shrink-0"
+                size="small"
               />
             </Dropdown>
           </span>
@@ -430,6 +434,7 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
                   }
                 }}
                 className="bg-transparent"
+                style={{ overflow: 'hidden' }}
               />
             ) : (
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
