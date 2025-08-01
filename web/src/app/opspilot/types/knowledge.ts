@@ -85,6 +85,7 @@ export interface QAPairData {
   document_source: string;
   knowledge_base: number;
   llm_model: number;
+  status: string;
 }
 
 // 知识图谱相关类型定义
