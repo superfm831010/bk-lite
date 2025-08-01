@@ -1,12 +1,12 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Input, Button, Modal, message, Tag, Tabs, Tooltip, Dropdown, Menu, Space, Radio, Upload } from 'antd';
+import { Input, Button, Modal, message, Tabs, Tooltip, Dropdown, Menu, Space, Radio, Upload } from 'antd';
 import { PlusOutlined, DeleteOutlined, TrademarkOutlined, SyncOutlined, DownOutlined, InboxOutlined } from '@ant-design/icons';
 import { useAuth } from '@/context/auth';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
-import type { TableColumnsType, PaginationProps } from 'antd';
+import type { PaginationProps } from 'antd';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
 import SelectSourceModal from './selectSourceModal';
@@ -16,6 +16,7 @@ import ActionButtons from '@/app/opspilot/components/knowledge/actionButtons';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import KnowledgeGraphPage from '@/app/opspilot/components/knowledge/knowledgeGraphPage';
 import OperateModal from '@/components/operate-modal';
+import { getDocumentColumns, getQAPairColumns } from '@/app/opspilot/components/knowledge/tableColumns';
 
 const { confirm } = Modal;
 const { TabPane } = Tabs;
@@ -100,194 +101,6 @@ const DocumentsPage: React.FC = () => {
   useEffect(() => {
     fetchKnowledgeBaseDetails();
   }, []);
-
-  const columns: TableColumnsType<TableData> = [
-    {
-      title: t('knowledge.documents.name'),
-      dataIndex: 'name',
-      key: 'name',
-      render: (text, record) => (
-        <a
-          href="#"
-          style={{ color: '#155aef' }}
-          onClick={() => router.push(`/opspilot/knowledge/detail/documents/result?id=${id}&name=${name}&desc=${desc}&knowledgeId=${record.id}`)}
-        >
-          {text}
-        </a>
-      ),
-    },
-    {
-      title: t('knowledge.documents.chunkSize'),
-      dataIndex: 'chunk_size',
-      key: 'chunk_size',
-    },
-    {
-      title: t('knowledge.documents.createdAt'),
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (text) => convertToLocalizedTime(text),
-    },
-    {
-      title: t('knowledge.documents.createdBy'),
-      key: 'created_by',
-      dataIndex: 'created_by',
-      render: (_, { created_by }) => (
-        <div>
-          <div
-            className='inline-block text-center rounded-full text-white mr-2'
-            style={{ width: 20, height: 20, backgroundColor: getRandomColor() }}
-          >
-            {created_by.charAt(0).toUpperCase()}
-          </div>
-          {created_by}
-        </div>
-      ),
-    },
-    {
-      title: t('knowledge.documents.status'),
-      key: 'train_status',
-      dataIndex: 'train_status',
-      render: (_, { train_status, train_status_display }) => {
-        const statusColors: { [key: string]: string } = {
-          '0': 'orange',
-          '1': 'green',
-          '2': 'red',
-        };
-
-        const color = statusColors[train_status] || 'geekblue';
-        const text = train_status_display || '--';
-
-        return <Tag color={color}>{text}</Tag>;
-      },
-    },
-    ...(activeTabKey === 'web_page' ? [{
-      title: t('knowledge.documents.syncEnabled'),
-      key: 'sync_enabled',
-      dataIndex: 'sync_enabled',
-      render: (_: any, record: TableData) => {
-        const syncEnabled = record.sync_enabled;
-        const syncTime = record.sync_time;
-
-        if (syncEnabled && syncTime) {
-          return (
-            <div>
-              {syncTime && <div>【{t('knowledge.documents.everyday')} {syncTime}】</div>}
-            </div>
-          );
-        } else {
-          return <div>【未定时同步】</div>;
-        }
-      },
-    }] : []),
-    {
-      title: t('knowledge.documents.extractionMethod'),
-      key: 'mode',
-      dataIndex: 'mode',
-      render: (_, { mode }) => {
-        const modeMap: { [key: string]: string } = {
-          'full': t('knowledge.documents.fullTextExtraction'),
-          'paragraph': t('knowledge.documents.chapterExtraction'),
-          'page': t('knowledge.documents.pageExtraction'),
-          'excel_full_content_parse': t('knowledge.documents.worksheetExtraction'),
-          'excel_header_row_parse': t('knowledge.documents.rowExtraction'),
-        };
-        const text = modeMap[mode] || t('knowledge.documents.fullTextExtraction');
-        return <span>{text}</span>;
-      },
-    },
-    {
-      title: t('knowledge.documents.chunkingMethod'),
-      key: 'chunk_type',
-      dataIndex: 'chunk_type',
-      render: (_, { chunk_type }) => {
-        const chunkMap: { [key: string]: string } = {
-          'fixed_size': t('knowledge.documents.fixedChunk'),
-          'recursive': t('knowledge.documents.overlapChunk'),
-          'semantic': t('knowledge.documents.semanticChunk'),
-          'full': t('knowledge.documents.noChunk'),
-        };
-        const text = chunkMap[chunk_type] || t('knowledge.documents.fixedChunk');
-        return <span>{text}</span>;
-      },
-    },
-    {
-      title: t('knowledge.documents.actions'),
-      key: 'action',
-      render: (_, record) => (
-        <ActionButtons
-          record={record}
-          isFile={activeTabKey === 'file'}
-          instPermissions={knowledgeBasePermissions}
-          singleTrainLoading={singleTrainLoading}
-          onTrain={handleTrain}
-          onDelete={handleDelete}
-          onSet={handleSetClick}
-          onFileAction={handleFile}
-        />
-      ),
-    }
-  ];
-
-  const qaPairColumns: TableColumnsType<QAPairData> = [
-    {
-      title: t('knowledge.qaPairs.name'),
-      dataIndex: 'name',
-      key: 'name',
-      render: (text, record) => (
-        <a
-          href="#"
-          style={{ color: '#155aef' }}
-          onClick={() => router.push(`/opspilot/knowledge/detail/documents/qapair/result?id=${id}&name=${name}&desc=${desc}&qaPairId=${record.id}`)}
-        >
-          {text}
-        </a>
-      ),
-    },
-    {
-      title: t('knowledge.qaPairs.qaCount'),
-      dataIndex: 'qa_count',
-      key: 'qa_count',
-    },
-    {
-      title: t('knowledge.documents.createdAt'),
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (text) => convertToLocalizedTime(text),
-    },
-    {
-      title: t('knowledge.documents.createdBy'),
-      key: 'created_by',
-      dataIndex: 'created_by',
-      render: (_, { created_by }) => (
-        <div>
-          <div
-            className='inline-block text-center rounded-full text-white mr-2'
-            style={{ width: 20, height: 20, backgroundColor: getRandomColor() }}
-          >
-            {created_by.charAt(0).toUpperCase()}
-          </div>
-          {created_by}
-        </div>
-      ),
-    },
-    {
-      title: t('knowledge.documents.actions'),
-      key: 'action',
-      render: (_, record) => (
-        <PermissionWrapper
-          requiredPermissions={['Delete']}
-          instPermissions={knowledgeBasePermissions}>
-          <Button
-            type="link"
-            size="small"
-            onClick={() => handleDeleteSingleQAPair(record.id)}
-          >
-            {t('common.delete')}
-          </Button>
-        </PermissionWrapper>
-      ),
-    }
-  ];
 
   // Fetch QA pair data
   const fetchQAPairData = useCallback(async (text = '') => {
@@ -675,6 +488,36 @@ const DocumentsPage: React.FC = () => {
         </PermissionWrapper>
       </Menu.Item>
     </Menu>
+  );
+
+  const columns = getDocumentColumns(
+    t,
+    activeTabKey,
+    convertToLocalizedTime,
+    getRandomColor,
+    knowledgeBasePermissions,
+    singleTrainLoading,
+    handleTrain,
+    handleDelete,
+    handleSetClick,
+    handleFile,
+    router,
+    id,
+    name,
+    desc,
+    ActionButtons
+  );
+
+  const qaPairColumns = getQAPairColumns(
+    t,
+    convertToLocalizedTime,
+    getRandomColor,
+    knowledgeBasePermissions,
+    handleDeleteSingleQAPair,
+    router,
+    id,
+    name,
+    desc
   );
 
   return (

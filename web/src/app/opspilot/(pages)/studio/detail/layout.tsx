@@ -38,9 +38,7 @@ const KnowledgeDetailLayout = ({ children }: { children: React.ReactNode }) => {
     fetchBotData();
   }, [id]);
 
-  // 在layout中处理菜单逻辑
   const processedMenuItems = useMemo(() => {
-    // 获取当前路径对应的菜单项
     const getMenuItemsForPath = (menus: MenuItem[], currentPath: string): MenuItem[] => {
       const matchedMenu = menus.find(menu => 
         menu.url && menu.url !== currentPath && currentPath.startsWith(menu.url)
@@ -56,12 +54,10 @@ const KnowledgeDetailLayout = ({ children }: { children: React.ReactNode }) => {
 
     const originalMenuItems = getMenuItemsForPath(menus, pathname ?? '');
     
-    // 如果bot_type为2，只返回第一个菜单项
     if (botType === 2 && originalMenuItems.length > 0) {
       return [originalMenuItems[0]];
     }
     
-    // 否则返回所有菜单项
     return originalMenuItems;
   }, [menus, pathname, botType]);
 
