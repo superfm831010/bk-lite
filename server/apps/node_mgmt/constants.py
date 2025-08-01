@@ -18,7 +18,7 @@ WINDOWS_OS = "windows"
 
 # 控制器下发目录
 CONTROLLER_INSTALL_DIR = {
-    LINUX_OS: {"storage_dir": "/tmp", "install_dir": "/opt"},
+    LINUX_OS: {"storage_dir": "/tmp", "install_dir": "/tmp"},
     WINDOWS_OS: {"storage_dir": "/tmp", "install_dir": "C:\\gse"},
 }
 
@@ -30,7 +30,7 @@ COLLECTOR_INSTALL_DIR = {
 
 # 设置权限并运行命令
 RUN_COMMAND = {
-    LINUX_OS: "chmod -R +x /opt/fusion-collectors/* && cd /opt/fusion-collectors && ./install.sh {server_url}/node_mgmt/open_api/node {server_token} {cloud} {group} {node_name} {node_id}",
+    LINUX_OS: "sudo mv /tmp/fusion-collectors /opt/fusion-collectors && sudo chmod -R +x /opt/fusion-collectors/* && cd /opt/fusion-collectors && sudo bash ./install.sh {server_url}/node_mgmt/open_api/node {server_token} {cloud} {group} {node_name} {node_id}",
     WINDOWS_OS: "powershell -command \"Set-ExecutionPolicy Unrestricted -Force; & '{}\\install.ps1' -ServerUrl {} -ServerToken {} -Cloud {} -Group {} -NodeName {} -NodeId {}\"",
 }
 
