@@ -274,15 +274,15 @@ def create_default_rule(llm_model, ocr_model, embed_model, rerank_model):
             description="Guest组数据权限规则",
             group_name=guest_group.name,
             rules={
-                "skill": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
-                "tools": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
+                "skill": [{"id": 0, "name": "All", "permission": ["View"]}],
+                "tools": [{"id": 0, "name": "All", "permission": ["View"]}],
                 "provider": {
                     "llm_model": [{"id": llm_model["id"], "name": llm_model["name"], "permission": ["View"]}],
                     "ocr_model": [{"id": i["id"], "name": i["name"], "permission": ["View"]} for i in ocr_model],
                     "embed_model": [{"id": i["id"], "name": i["name"], "permission": ["View"]} for i in embed_model],
                     "rerank_model": [{"id": rerank_model["id"], "name": rerank_model["name"], "permission": ["View"]}],
                 },
-                "knowledge": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
+                "knowledge": [{"id": 0, "name": "All", "permission": ["View"]}],
             },
         ),
     )

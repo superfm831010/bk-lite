@@ -11,7 +11,7 @@ spec:
     - web
     {% endif %}
   routes:
-    - match: Host(`{{bot_domain}}`) && PathPrefix(`/pilot-{{bot_id}}`)
+    - match: Host(`{{bot_domain}}`)
       kind: Rule
       services:
         - name: pilot-{{ bot_id }}-service
