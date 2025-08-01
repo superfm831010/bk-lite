@@ -1,4 +1,4 @@
-from apps.core.utils.viewset_utils import AuthViewSet
+from config.drf.viewsets import ModelViewSet
 from apps.mlops.filters.anomaly_detection_dataset import AnomalyDetectionDatasetFilter
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
@@ -10,7 +10,7 @@ from apps.mlops.serializers.anomaly_detection_dataset import AnomalyDetectionDat
 from config.drf.pagination import CustomPageNumberPagination
 
 
-class AnomalyDetectionDatasetViewSet(AuthViewSet):
+class AnomalyDetectionDatasetViewSet(ModelViewSet):
     queryset = AnomalyDetectionDataset.objects.all()
     serializer_class = AnomalyDetectionDatasetSerializer
     pagination_class = CustomPageNumberPagination
@@ -30,7 +30,7 @@ class AnomalyDetectionDatasetViewSet(AuthViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
-    @HasPermission("anomaly_detection_datasets-Create")
+    @HasPermission("anomaly_detection_datasets-Add")
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
