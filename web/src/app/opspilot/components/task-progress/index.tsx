@@ -8,9 +8,14 @@ interface Task {
   id: number;
   task_name: string;
   train_progress: number;
+  is_qa_task: boolean;
 }
 
-const TaskProgress: React.FC = () => {
+interface TaskProgressProps {
+  activeTabKey?: string;
+}
+
+const TaskProgress: React.FC<TaskProgressProps> = ({ activeTabKey }) => {
   const { t } = useTranslation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const { fetchMyTasks } = useKnowledgeApi();
@@ -35,15 +40,40 @@ const TaskProgress: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Filter tasks based on activeTabKey
+  const filteredTasks = tasks.filter((task) => {
+    // Only show tasks for source_files and qa_pairs tabs
+    if (!activeTabKey || (activeTabKey !== 'source_files' && activeTabKey !== 'qa_pairs')) {
+      return false;
+    }
+
+    // For source_files tab, show tasks where is_qa_task is false
+    if (activeTabKey === 'source_files') {
+      return !task.is_qa_task;
+    }
+
+    // For qa_pairs tab, show tasks where is_qa_task is true
+    if (activeTabKey === 'qa_pairs') {
+      return task.is_qa_task;
+    }
+
+    return false;
+  });
+
+  // Don't render if no filtered tasks
+  if (filteredTasks.length === 0) {
+    return null;
+  }
+
   return (
     <div className="p-4 absolute bottom-10 left-0 w-full max-h-[300px] overflow-y-auto">
-      {tasks.map((task) => (
+      {filteredTasks.map((task) => (
         <div key={task.id} className="mb-2">
           <div className="flex justify-between items-center text-xs mb-1">
             <span className="flex-1 truncate" title={task.task_name}>
               {task.task_name}
             </span>
-            <span className="ml-2 flex-shrink-0">{task.train_progress}%</span>
+            <span className="ml-2 flex-shrink-0">{task.train_progress}</span>
           </div>
           <div className={`w-full h-2 rounded relative overflow-hidden ${styles.progressContainer}`}>
             <div className={`${styles.progressBar} h-full w-full`}></div>

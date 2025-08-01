@@ -79,6 +79,7 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
   const [loading, setLoading] = useState(true);
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [graphExists, setGraphExists] = useState(false);
+  const [status, setStatus] = useState<string>('');
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [nodeDetailVisible, setNodeDetailVisible] = useState(false);
   const [edgeDetailVisible, setEdgeDetailVisible] = useState(false);
@@ -95,6 +96,7 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
       const response = await fetchKnowledgeGraphDetails(parseInt(knowledgeBaseId));
       
       setGraphExists(response.is_exists || false);
+      setStatus(response.status || '');
       
       const transformedData = transformApiDataToGraphData(response.graph);
       
@@ -112,6 +114,7 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
       setHasGraph(false);
       setGraphData(null);
       setGraphExists(false);
+      setStatus('');
     } finally {
       setLoading(false);
     }
@@ -176,6 +179,35 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
     });
   };
 
+  const canClickSettings = () => {
+    return status === 'completed' || status === 'failed';
+  };
+
+  const canRebuildCommunity = () => {
+    return status === 'completed' || status === 'failed';
+  };
+
+  const getStatusText = (status: string) => {
+    if (!status) return '';
+    return t(`knowledge.knowledgeGraph.status.${status}`);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'text-green-600';
+      case 'failed':
+        return 'text-red-600';
+      case 'training':
+      case 'rebuilding':
+        return 'text-blue-600';
+      case 'pending':
+        return 'text-yellow-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
   if (!knowledgeBaseId) {
     return (
       <div className="knowledge-graph-container h-96 flex items-center justify-center">
@@ -197,7 +229,7 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
           loading={loading}
           className="shadow-lg"
         />
-        {graphExists && (
+        {graphExists && canRebuildCommunity() && (
           <Button
             icon={<BuildOutlined />}
             onClick={handleRebuildCommunity}
@@ -211,6 +243,7 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
           type="primary"
           icon={<SettingOutlined />}
           onClick={handleSettingsClick}
+          disabled={!canClickSettings()}
           className="shadow-lg"
         >
           {t('knowledge.knowledgeGraph.settings')}
@@ -240,6 +273,20 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               </div>
               <div className="text-gray-600">{t('knowledge.knowledgeGraph.loading')}</div>
+            </div>
+          ) : status ? (
+            <div className="text-center">
+              <div className={`flex items-center justify-center gap-2 text-sm font-medium mb-2 ${getStatusColor(status)}`}>
+                {(status === 'training' || status === 'rebuilding' || status === 'pending') && (
+                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                )}
+                {getStatusText(status)}
+              </div>
+              {status === 'failed' && (
+                <div className="text-gray-500 text-xs">
+                  {t('knowledge.knowledgeGraph.noGraphData')}
+                </div>
+              )}
             </div>
           ) : (
             <Empty
