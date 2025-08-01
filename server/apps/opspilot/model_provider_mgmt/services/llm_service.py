@@ -104,7 +104,7 @@ class LLMService:
         """
         num = window_size * -1
         processed_history = []
-
+        role_map = {"assistant": "bot"}
         for user_msg in chat_history[num:]:
             message = user_msg.get("message", user_msg.get("text", ""))
             if user_msg["event"] == "user" and isinstance(message, list):
@@ -122,7 +122,7 @@ class LLMService:
                 txt = user_msg.get("message", user_msg.get("text", ""))
                 if isinstance(txt, list):
                     txt = "\n".join([i.get("message", i.get("text")) for i in txt])
-                processed_history.append({"event": user_msg["event"], "message": txt})
+                processed_history.append({"event": role_map.get(user_msg["event"], user_msg["event"]), "message": txt})
 
         return processed_history
 

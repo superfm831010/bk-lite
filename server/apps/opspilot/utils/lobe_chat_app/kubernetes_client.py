@@ -40,6 +40,7 @@ class LobeKubernetesClient(object):
             "web_nodeport": bot.node_port,
             "bot_namespace": self.namespace,
             "model_list": ",".join(skill_list),
+            "login_url": settings.LOGIN_URL,
         }
         try:
             logger.info(f"当前工作目录: {os.getcwd()}")

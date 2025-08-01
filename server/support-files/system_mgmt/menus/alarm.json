@@ -1,118 +1,124 @@
 {
-    "client_id": "alarm",
-    "name": "Alarm",
-    "url": "/alarm/incidents",
-    "description": "Gather multiple sources of alarm events from enterprises, intelligently reduce noise, explore deep fault causes, improve operation and maintenance response efficiency, and help quickly locate problems.",
-    "menus": [
+  "client_id": "alarm",
+  "name": "Alarm",
+  "url": "/alarm/incidents",
+  "description": "Gather multiple sources of alarm events from enterprises, intelligently reduce noise, explore deep fault causes, improve operation and maintenance response efficiency, and help quickly locate problems.",
+  "tags": [
+    "统一告警",
+    "智能降噪",
+    "事故升级",
+    "自动分派"
+  ],
+  "menus": [
+    {
+      "name": "Incidents",
+      "children": [
         {
-            "name": "Incidents",
-            "children": [
-                {
-                    "id": "Incidents",
-                    "name": "Incidents",
-                    "operation": [
-                        "View",
-                        "Edit",
-                        "Delete"
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "Alarms",
-            "children": [
-                {
-                    "id": "Alarms",
-                    "name": "Alarms",
-                    "operation": [
-                        "View",
-                        "Edit",
-                        "Delete"
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "Integration",
-            "children": [
-                {
-                    "id": "Integration",
-                    "name": "Integration",
-                    "operation": [
-                        "View"
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "Settings",
-            "children": [
-                {
-                    "id": "correlation_rules",
-                    "name": "Correlation Rules",
-                    "operation": [
-                        "View",
-                        "Add",
-                        "Edit",
-                        "Delete"
-                    ]
-                },
-                {
-                    "id": "alert_assign",
-                    "name": "Alert Assign",
-                    "operation": [
-                        "View",
-                        "Add",
-                        "Edit",
-                        "Delete"
-                    ]
-                },
-                {
-                    "id": "shield_strategy",
-                    "name": "Shield Strategy",
-                    "operation": [
-                        "View",
-                        "Add",
-                        "Edit",
-                        "Delete"
-                    ]
-                },
-                {
-                    "id": "global_config",
-                    "name": "Global Config",
-                    "operation": [
-                        "View",
-                        "Edit"
-                    ]
-                }, 
-                {
-                    "id": "operation_log",
-                    "name": "Operation Log",
-                    "operation": [
-                        "View"
-                    ]
-                }
-            ]
+          "id": "Incidents",
+          "name": "Incidents",
+          "operation": [
+            "View",
+            "Edit",
+            "Delete"
+          ]
         }
-    ],
-    "icon": "alarm",
-    "roles": [
+      ]
+    },
+    {
+      "name": "Alarms",
+      "children": [
         {
-            "name": "admin",
-            "role_name": "alarm_admin",
-            "menus": []
+          "id": "Alarms",
+          "name": "Alarms",
+          "operation": [
+            "View",
+            "Edit",
+            "Delete"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Integration",
+      "children": [
+        {
+          "id": "Integration",
+          "name": "Integration",
+          "operation": [
+            "View"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "children": [
+        {
+          "id": "correlation_rules",
+          "name": "Correlation Rules",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
         },
         {
-            "name": "normal",
-            "role_name": "alarm_normal",
-            "menus": [
-                "Incidents-View",
-                "Integration-View",
-                "Alarms-View",
-                "correlation_rules-View",
-                "alert_assign-View",
-                "shield_strategy-View"
-            ]
+          "id": "alert_assign",
+          "name": "Alert Assign",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
+        },
+        {
+          "id": "shield_strategy",
+          "name": "Shield Strategy",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
+        },
+        {
+          "id": "global_config",
+          "name": "Global Config",
+          "operation": [
+            "View",
+            "Edit"
+          ]
+        },
+        {
+          "id": "operation_log",
+          "name": "Operation Log",
+          "operation": [
+            "View"
+          ]
         }
-    ]
+      ]
+    }
+  ],
+  "icon": "alarm",
+  "roles": [
+    {
+      "name": "admin",
+      "role_name": "alarm_admin",
+      "menus": []
+    },
+    {
+      "name": "normal",
+      "role_name": "alarm_normal",
+      "menus": [
+        "Incidents-View",
+        "Integration-View",
+        "Alarms-View",
+        "correlation_rules-View",
+        "alert_assign-View",
+        "shield_strategy-View"
+      ]
+    }
+  ]
 }
