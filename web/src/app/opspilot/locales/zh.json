@@ -51,7 +51,13 @@
       "uploadHint": "支持单个上传，仅允许JSON文件",
       "noFileSelected": "请先选择一个文件上传",
       "importSuccess": "导入问答对成功",
-      "importFailed": "导入问答对失败"
+      "importFailed": "导入问答对失败",
+      "status": {
+        "pending": "准备中",
+        "generating": "生成中",
+        "failed": "失败",
+        "completed": "完成"
+      }
     },
     "knowledgeGraph": {
       "title": "知识图谱",
@@ -210,7 +216,7 @@
       "fixedMethod": "按预设的固定长度分割内容，例如256个字符为一个分块。",
       "fixedDescription": "规则明确、处理高效，适合快速批量处理数据。但可能因机械分割导致语义断裂（如截断句子或表格），需权衡效率与内容完整性。",
       "overlapFormats": "长文本（PDF、TXT）。",
-      "overlapMethod": "在定长分块基础上，设置块间内容重叠（例如30个字符重复），通过滑动窗口保留上下文关联。",
+      "overlapMethod": "在定长分块基础上，设置块间内容重又（例如30个字符重复），通过滑动窗口保留上下文关联。",
       "overlapDescription": "通过重叠减少语义断裂，适合需要连续上下文的任务（如文本分析），但可能因重复内容导致存储冗余。",
       "semanticFormats": "结构化文档（Word、Markdown）、技术文档（PDF 带目录）。",
       "semanticMethod": "基于内容逻辑分割，基于算法对语义进行理解，从而识别不同的段落或者主题。",

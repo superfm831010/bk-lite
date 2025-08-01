@@ -216,7 +216,6 @@ export const getQAPairColumns = (
     key: 'status',
     dataIndex: 'status',
     render: (_: any, record: QAPairData) => {
-      // pending: 准备中，generating：生成中，failed：失败，completed: 完成
       const statusColors: { [key: string]: string } = {
         'pending': 'processing',
         'generating': 'orange',
@@ -224,15 +223,8 @@ export const getQAPairColumns = (
         'completed': 'green'
       };
 
-      const statusMaps: { [key: string]: string } = {
-        'pending': '准备中',
-        'generating': '生成中',
-        'failed': '失败',
-        'completed': '完成'
-      };
-
       const color = statusColors[record.status?.toString()] || 'processing';
-      const text = statusMaps[record.status] || '--';
+      const text = t(`knowledge.qaPairs.status.${record.status}`) || '--';
 
       return <Tag color={color}>{text}</Tag>;
     },

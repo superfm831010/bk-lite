@@ -51,7 +51,13 @@
       "uploadHint": "Support single upload, only JSON files are allowed",
       "noFileSelected": "Please select a file to upload",
       "importSuccess": "Import QA pairs successfully",
-      "importFailed": "Failed to import QA pairs"
+      "importFailed": "Failed to import QA pairs",
+      "status": {
+        "pending": "Pending",
+        "generating": "Generating",
+        "failed": "Failed",
+        "completed": "Completed"
+      }
     },
     "knowledgeGraph": {
       "title": "Knowledge Graph",

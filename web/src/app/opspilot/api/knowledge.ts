@@ -296,6 +296,7 @@ export const useKnowledgeApi = () => {
     graph_id?: number;
     is_exists: boolean;
     graph?: any;
+    status?: string;
   }> => {
     return get('/opspilot/knowledge_mgmt/knowledge_graph/get_details/', {
       params: {

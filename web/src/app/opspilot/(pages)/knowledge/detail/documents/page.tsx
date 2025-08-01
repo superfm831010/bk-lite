@@ -17,6 +17,7 @@ import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import KnowledgeGraphPage from '@/app/opspilot/components/knowledge/knowledgeGraphPage';
 import OperateModal from '@/components/operate-modal';
 import { getDocumentColumns, getQAPairColumns } from '@/app/opspilot/components/knowledge/tableColumns';
+import { useDocuments } from '@/app/opspilot/context/documentsContext';
 
 const { confirm } = Modal;
 const { TabPane } = Tabs;
@@ -34,16 +35,22 @@ const DocumentsPage: React.FC = () => {
   const desc = searchParams ? searchParams.get('desc') : null;
   const type = searchParams ? searchParams.get('type') : null;
 
-  const [mainTabKey, setMainTabKey] = useState<string>(['knowledge_graph', 'qa_pairs'].includes(type || '') ? type || 'qa_pairs' : 'source_files');
-  const [activeTabKey, setActiveTabKey] = useState<string>(() => {
+  // 使用 Context 管理状态
+  const { activeTabKey, setActiveTabKey, mainTabKey, setMainTabKey } = useDocuments();
+
+  // 初始化状态，从URL参数获取初始值
+  useEffect(() => {
     if (type === 'knowledge_graph' || type === 'qa_pairs') {
-      return type;
+      setMainTabKey(type);
+      setActiveTabKey(type);
+    } else if (['file', 'web_page', 'manual'].includes(type || '')) {
+      setMainTabKey('source_files');
+      setActiveTabKey(type || 'file');
+    } else {
+      setMainTabKey('source_files');
+      setActiveTabKey('file');
     }
-    if (['file', 'web_page', 'manual'].includes(type || '')) {
-      return type || 'file';
-    }
-    return 'file';
-  });
+  }, [type, setActiveTabKey, setMainTabKey]);
 
   const [searchText, setSearchText] = useState<string>('');
   const [pagination, setPagination] = useState<PaginationProps>({
