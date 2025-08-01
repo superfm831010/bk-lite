@@ -15,6 +15,6 @@ spec:
       kind: Rule
       services:
         - name: lobe-chat-{{ bot_id }}-service
-          port: 3000
+          port: 3210
       middlewares:
         - name: strip-{{bot_id}}-prefix

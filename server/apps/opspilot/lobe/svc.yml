@@ -9,8 +9,8 @@ spec:
   ports:
     - name: web
       protocol: TCP
-      port: 3000
-      targetPort: 3000
+      port: 3210
+      targetPort: 3210
       {% if enable_nodeport %}
       nodePort: {{ web_nodeport }}
       {% endif %}
