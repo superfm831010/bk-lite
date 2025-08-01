@@ -13,11 +13,11 @@ import OperateModal from '@/components/operate-modal';
 import SelectIcon from './selectIcon';
 import { getIconUrl } from '@/app/cmdb/utils/common';
 import type { FormInstance } from 'antd';
-import useApiClient from '@/utils/request';
 import { ModelItem, ModelConfig } from '@/app/cmdb/types/assetManage';
 import { deepClone } from '@/app/cmdb/utils/common';
 const { Option } = Select;
 import { useTranslation } from '@/utils/i18n';
+import { useModelApi } from '@/app/cmdb/api';
 
 interface ModelModalProps {
   onSuccess: (info?: unknown) => void;
@@ -30,7 +30,7 @@ export interface ModelModalRef {
 
 const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
   ({ onSuccess, groupList }, ref) => {
-    const { post, put } = useApiClient();
+    const { createModel, updateModel } = useModelApi();
     const { t } = useTranslation();
     const formRef = useRef<FormInstance>(null);
     const selectIconRef = useRef<any>(null);
@@ -73,8 +73,7 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
         const msg: string = t(
           type === 'add' ? 'successfullyAdded' : 'successfullyModified'
         );
-        const url: string =
-          type === 'add' ? '/cmdb/api/model/' : `/cmdb/api/model/${modelInfo.model_id}/`;
+
         let requestParams = deepClone(params);
         if (type !== 'add') {
           requestParams = {
@@ -83,8 +82,13 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
             icn: params.icn,
           };
         }
-        const requestType = type === 'add' ? post : put;
-        await requestType(url, requestParams);
+
+        if (type === 'add') {
+          await createModel(requestParams);
+        } else {
+          await updateModel(modelInfo.model_id, requestParams);
+        }
+
         message.success(msg);
         handleCancel();
         onSuccess(params);
