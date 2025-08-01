@@ -11,10 +11,8 @@ spec:
     - web
     {% endif %}
   routes:
-    - match: Host(`{{bot_domain}}`) && PathPrefix(`/lobe-chat-{{bot_id}}`)
+    - match: Host(`{{bot_domain}}`)
       kind: Rule
       services:
         - name: lobe-chat-{{ bot_id }}-service
-          port: 3000
-      middlewares:
-        - name: strip-{{bot_id}}-prefix
+          port: 3210

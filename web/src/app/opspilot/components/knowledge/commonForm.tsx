@@ -64,13 +64,13 @@ const CommonForm: React.FC<CommonFormProps> = ({ form, modelOptions, initialValu
       key: 1,
       title: t('studio.pilot'),
       desc: t('studio.pilotDesc'),
-      icon: 'caidandaohang'
+      icon: 'Copilot'
     },
     {
       key: 2,
       title: t('studio.lobeChat'),
       desc: t('studio.lobeChatDesc'),
-      icon: 'api'
+      icon: 'icon-192x192'
     }
   ];
 

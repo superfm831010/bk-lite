@@ -587,11 +587,12 @@ const Alert: React.FC = () => {
               <div className={alertStyle.condition}>
                 <ul className="flex">
                   <li className="mr-[8px]">
-                    <span className="mr-[8px] text-[var(--color-text-3)]">
+                    <span className="mr-[8px] text-[12px] text-[var(--color-text-3)]">
                       {t('monitor.events.level')}
                     </span>
                     <Select
                       style={{ width: 200 }}
+                      dropdownStyle={{ width: 130 }}
                       allowClear
                       mode="tags"
                       maxTagCount="responsive"
@@ -612,7 +613,7 @@ const Alert: React.FC = () => {
                     </Select>
                   </li>
                   <li>
-                    <span className="mr-[8px] text-[var(--color-text-3)]">
+                    <span className="mr-[8px] text-[12px] text-[var(--color-text-3)]">
                       {t('monitor.events.state')}
                     </span>
                     <Select
