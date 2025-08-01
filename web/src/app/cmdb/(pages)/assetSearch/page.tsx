@@ -14,6 +14,7 @@ import { Spin, Input, Tabs, Button, Tag, Empty } from 'antd';
 import useApiClient from '@/utils/request';
 import { useCommon } from '@/app/cmdb/context/common';
 import { deepClone, getFieldItem } from '@/app/cmdb/utils/common';
+import { useModelApi, useInstanceApi } from '@/app/cmdb/api';
 const { Search } = Input;
 interface AssetListItem {
   model_id: string;
@@ -34,8 +35,12 @@ interface TabJsxItem {
 
 const AssetSearch = () => {
   const { t } = useTranslation();
-  const { get, post, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
   const commonContext = useCommon();
+
+  const { getModelList, getModelAttrList } = useModelApi();
+  const { fulltextSearchInstances } = useInstanceApi();
+
   const authList = useRef(commonContext?.authOrganizations || []);
   const organizationList: Organization[] = authList.current;
   const users = useRef(commonContext?.userList || []);
@@ -76,7 +81,7 @@ const AssetSearch = () => {
   const getInitData = async () => {
     setPageLoading(true);
     try {
-      const data = await get('/cmdb/api/model/');
+      const data = await getModelList();
       setModelList(data);
     } finally {
       setPageLoading(false);
@@ -97,19 +102,16 @@ const AssetSearch = () => {
     setHistoryList(histories);
     setPageLoading(true);
     try {
-      const data: AssetListItem[] = await post(
-        '/cmdb/api/instance/fulltext_search/',
-        {
-          search: searchText,
-        }
-      );
+      const data: AssetListItem[] = await fulltextSearchInstances({
+        search: searchText,
+      });
       const tabItems: TabItem[] = getAssetList(data);
       const defaultTab = tabItems[0]?.key || '';
       if (!defaultTab) {
         setPageLoading(false);
         return;
       }
-      const attrList = await get(`/cmdb/api/model/${defaultTab}/attr_list/`);
+      const attrList = await getModelAttrList(defaultTab);
       setPropertyList(attrList);
       setInstData(tabItems);
       setActiveTab(defaultTab);
@@ -303,7 +305,7 @@ const AssetSearch = () => {
     setActiveTab(key);
     setPageLoading(true);
     try {
-      const attrList = await get(`/cmdb/api/model/${key}/attr_list/`);
+      const attrList = await getModelAttrList(key);
       setPropertyList(attrList);
       setActiveInstItem(-1);
     } finally {

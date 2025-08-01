@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
 import List from './list';
-import useApiClient from '@/utils/request';
+import { useModelApi, useInstanceApi } from '@/app/cmdb/api';
 import { useSearchParams } from 'next/navigation';
 import { Spin } from 'antd';
 import { useCommon } from '@/app/cmdb/context/common';
@@ -11,9 +11,11 @@ import {
   Organization,
   InstDetail,
 } from '@/app/cmdb/types/assetManage';
-  
+
 const BaseInfo = () => {
-  const { get, isLoading } = useApiClient();
+  const { getModelAttrList } = useModelApi();
+  const { getInstanceDetail } = useInstanceApi();
+
   const searchParams = useSearchParams();
   const commonContext = useCommon();
   const authList = useRef(commonContext?.authOrganizations || []);
@@ -28,26 +30,21 @@ const BaseInfo = () => {
   const [pageLoading, setPageLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isLoading) return;
     getInitData();
-  }, [isLoading]);
+  }, []);
 
-  const getInitData = () => {
-    const getAttrList = get(`/cmdb/api/model/${modelId}/attr_list/`);
-    const getInstDetail = get(`/cmdb/api/instance/${instId}/`);
+  const getInitData = async () => {
     setPageLoading(true);
     try {
-      Promise.all([getAttrList, getInstDetail])
-        .then((res) => {
-          const propertData: AttrFieldType[] = res[0];
-          const instDetail: InstDetail = res[1];
-          setPropertyList(propertData);
-          setInstDetail(instDetail);
-        })
-        .finally(() => {
-          setPageLoading(false);
-        });
+      const [propertData, instDetailData] = await Promise.all([
+        getModelAttrList(modelId),
+        getInstanceDetail(instId),
+      ]);
+      setPropertyList(propertData);
+      setInstDetail(instDetailData);
     } catch {
+      console.log('获取数据失败');
+    } finally {
       setPageLoading(false);
     }
   };
@@ -55,7 +52,8 @@ const BaseInfo = () => {
   const onsuccessEdit = async () => {
     setPageLoading(true);
     try {
-      await get(`/cmdb/api/instance/${instId}/`);
+      const data = await getInstanceDetail(instId);
+      setInstDetail(data);
     } finally {
       setPageLoading(false);
     }

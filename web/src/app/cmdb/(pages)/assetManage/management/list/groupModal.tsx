@@ -10,9 +10,9 @@ import React, {
 import { Input, Button, Form, message } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
-import useApiClient from '@/utils/request';
 import { GroupConfig, GroupFieldType } from '@/app/cmdb/types/assetManage';
 import { useTranslation } from '@/utils/i18n';
+import { useClassificationApi } from '@/app/cmdb/api';
 
 interface GroupModalProps {
   onSuccess: () => void;
@@ -24,7 +24,8 @@ export interface GroupModalRef {
 
 const GroupMoadal = forwardRef<GroupModalRef, GroupModalProps>(
   ({ onSuccess }, ref) => {
-    const { post, put } = useApiClient();
+    const { createClassification, updateClassification } =
+      useClassificationApi();
     const { t } = useTranslation();
     const formRef = useRef<FormInstance>(null);
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
@@ -58,12 +59,13 @@ const GroupMoadal = forwardRef<GroupModalRef, GroupModalProps>(
         const msg: string = t(
           type === 'add' ? 'successfullyAdded' : 'successfullyModified'
         );
-        const url: string =
-          type === 'add'
-            ? '/cmdb/api/classification/'
-            : `/cmdb/api/classification/${groupForm.classification_id}/`;
-        const requestType = type === 'add' ? post : put;
-        await requestType(url, params);
+
+        if (type === 'add') {
+          await createClassification(params);
+        } else {
+          await updateClassification(groupForm.classification_id!, params);
+        }
+
         message.success(msg);
         handleCancel();
         onSuccess();

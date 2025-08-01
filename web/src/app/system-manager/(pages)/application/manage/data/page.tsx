@@ -70,7 +70,11 @@ const convertPermissionsForApi = (
           });
         }
       });
-    } else {
+    }
+    
+    // 当specificData为空或者没有任何有效权限时，添加占位项来标识用户选择了specific类型
+    // 这确保了即使用户取消了所有选择，模块配置仍然会被保存
+    if (permissionArray.length === 0) {
       permissionArray.push({
         id: '-1',
         name: 'specific',
