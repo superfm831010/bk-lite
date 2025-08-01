@@ -121,7 +121,7 @@ const LogTerminal: React.FC<LogTerminalProps> = ({
                 try {
                   // 尝试解析JSON数据
                   const logData = JSON.parse(data);
-                  const logMessage = logData.message || logData.log || data;
+                  const logMessage = logData['_msg'] || logData.message || data;
                   setLogs((prevLogs) => {
                     const newLogs = [...prevLogs, logMessage];
                     return newLogs.slice(-1000); // 限制日志条数
@@ -136,8 +136,13 @@ const LogTerminal: React.FC<LogTerminalProps> = ({
               }
             } else if (trimmed) {
               // 处理非SSE格式的普通文本
+              let logContent = trimmed;
+              const msgMatch = trimmed.match(/_msg\s*:\s*([^,}]*?)(?:[,}]|$)/);
+              if (msgMatch && msgMatch[1]) {
+                logContent = msgMatch[1].trim();
+              }
               setLogs((prevLogs) => {
-                const newLogs = [...prevLogs, trimmed];
+                const newLogs = [...prevLogs, logContent];
                 return newLogs.slice(-1000);
               });
             }
