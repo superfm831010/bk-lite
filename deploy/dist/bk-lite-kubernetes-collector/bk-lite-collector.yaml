@@ -597,11 +597,11 @@ data:
           action: replace
           target_label: node
         - target_label: instance_id
-          replacement: "%{CLUSTER_NAME:-k8s-lite-cluster}"
+          replacement: "%{CLUSTER_NAME}"
         - target_label: instance_type
           replacement: k8s
         - target_label: instance_name
-          replacement: "%{CLUSTER_NAME:-k8s-lite-cluster}"
+          replacement: "%{CLUSTER_NAME}"
         - source_labels: [container_label_io_kubernetes_pod_name]
           target_label: pod
           action: replace
@@ -642,7 +642,7 @@ data:
     [global_tags]
       agent_id="$HOST_NODE_NAME"
       instance_id="$HOST_NODE_NAME"
-
+  
     [agent]
       interval = "10s"
       round_interval = true
@@ -671,22 +671,23 @@ data:
       collect_cpu_time = false
       report_active = false
       core_tags = false
-      tags = { "instance_name"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
+      tags = { "instance_name"="$HOST_NODE_NAME","node"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
 
     [[inputs.disk]]
       ignore_fs = ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "aufs", "squashfs"]
-      tags = { "instance_name"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
+      tags = { "instance_name"="$HOST_NODE_NAME","node"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
 
     [[inputs.diskio]]
-      tags = { "instance_name"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
+      tags = { "instance_name"="$HOST_NODE_NAME","node"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
+
     [[inputs.mem]]
-      tags = { "instance_name"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
+      tags = { "instance_name"="$HOST_NODE_NAME","node"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
 
     [[inputs.net]]
-      tags = { "instance_name"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
+      tags = { "instance_name"="$HOST_NODE_NAME","node"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
 
     [[inputs.processes]]
-      tags = { "instance_name"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
+      tags = { "instance_name"="$HOST_NODE_NAME","node"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }
 
     [[inputs.system]]
-      tags = { "instance_name"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }  
+      tags = { "instance_name"="$HOST_NODE_NAME","node"="$HOST_NODE_NAME","instance_type"="k8s","instance_id"="${CLUSTER_NAME:-k8s-lite-cluster}"  }  
