@@ -36,7 +36,7 @@ class KubernetesClient(object):
             "bot_id": bot.id,
             "replicas": bot.replica_count,
             "api_key": bot.api_token,
-            "base_url": settings.MUNCHKIN_BASE_URL.strip("/") + "/opspilot/bot_mgmt/lobe_chat/v1/",
+            "base_url": settings.MUNCHKIN_BASE_URL.strip("/") + "/bot_mgmt/lobe_chat/v1/",
             "enable_ssl": bot.enable_ssl,
             "bot_domain": bot.bot_domain or "",
             "enable_nodeport": bot.enable_node_port,
