@@ -31,3 +31,9 @@ test:
 
 build-base:
 	docker build -t bklite/metis:base -f ./support-files/Dockerfile.base .
+	docker push bklite/metis:base
+
+release:
+	docker build -t bklite/metis -f ./support-files/Dockerfile .
+	docker push bklite/metis
+
