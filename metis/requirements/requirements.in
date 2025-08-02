@@ -15,18 +15,17 @@ sanic-ext==23.12.0
 Sanic-HTTPAuth==0.2.0
 
 # LLM
-langchain==0.3.20
-langchain-openai==0.3.8
-langchain-community==0.3.19
+langchain==0.3.27
+langchain-openai==0.3.28
+langchain-community==0.3.27
 langchain-experimental==0.3.4
-langchain-mcp-adapters==0.1.0
-langgraph==0.3.34
+langchain-mcp-adapters==0.1.9
+langgraph==0.6.2
 langgraph-checkpoint-postgres==2.0.21
 langchain-elasticsearch==0.3.2
 langchain-huggingface==0.1.2
 json-repair==0.39.1
 neo4j-graphrag==1.7.0
-langchain-weaviate==0.0.4
 diskcache==5.6.3
 
 # File Processing
@@ -51,15 +50,7 @@ playwright==1.51.0
 python-jenkins==1.8.2
 kubernetes==32.0.1
 
-# AIOPS
-scikit-learn==1.6.1
+# Extra
 jieba==0.42.1
-pyod==2.0.5
-xgboost==3.0.0
-suod==0.1.4
 ansible==11.5.0
 ansible-runner==2.4.1
-mlflow==3.1.0
-hyperopt==0.2.7
-boto3==1.38.41
-imblearn==0.0
