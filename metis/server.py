@@ -7,7 +7,6 @@ from sanic.log import logger
 from sanic.logging.default import LOGGING_CONFIG_DEFAULTS
 import logging
 from src.api import api
-from src.core import graph
 from src.core.env.core_settings import core_settings
 from src.core.sanic_plus.auth.api_auth import auth
 from src.core.sanic_plus.utils.config import YamlConfig
@@ -62,13 +61,6 @@ def bootstrap() -> Sanic:
     async def show_banner(app, loop):
         with open(f"src/asserts/banner.txt") as f:
             print(f.read())
-
-        if core_settings.supabase_enabled():
-            logger.info(f"启动supabase能力,supabase地址{core_settings.supabase_url}")
-
-            from supabase import create_client
-            app.ctx.supabase = create_client(
-                core_settings.supabase_url, core_settings.supabase_key)
 
         if core_settings.graphiti_enabled():
             logger.info(f"启动Graphiti能力, Neo4j地址{core_settings.neo4j_host}")

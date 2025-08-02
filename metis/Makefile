@@ -28,3 +28,6 @@ dev:
 
 test:
 	pytest -n auto
+
+build-base:
+	docker build -t bklite/metis:base -f ./support-files/Dockerfile.base .
