@@ -18,4 +18,4 @@ ADD ./support-files/service.conf /etc/supervisor/conf.d/service.conf
 
 ADD . .
 RUN sanic server:bootstrap exec download_models
-RUN find . -mindepth 1 ! -name 'models' -exec rm -rf {} +
+RUN find . ! -name models -maxdepth 1 -exec rm -rvf {} +
