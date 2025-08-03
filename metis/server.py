@@ -31,7 +31,12 @@ def verify_password(username, password) -> bool:
 
     if username in users:
         encrypted_password = users.get(username)
-        return crypto.decrypt(encrypted_password) == crypto.decrypt(password)
+        try:
+            return crypto.decrypt(encrypted_password) == crypto.decrypt(password)
+        except Exception as e:
+            logger.error(f"请求鉴权失败: {e}, 用户名: {username}, 密码: {password}")
+            return False
+
     return False
 
 
@@ -45,6 +50,7 @@ def bootstrap() -> Sanic:
     LOGGING_CONFIG_DEFAULTS['formatters']['access'] = {
         'class': 'src.core.sanic_plus.log.sanic_log_formater.SanicAccessFormatter',
     }
+
     app = Sanic("Metis", config=config, log_config=LOGGING_CONFIG_DEFAULTS)
 
     app.blueprint(api)
@@ -63,11 +69,13 @@ def bootstrap() -> Sanic:
             print(f.read())
 
         if core_settings.graphiti_enabled():
-            logger.info(f"启动Graphiti能力, Neo4j地址{core_settings.neo4j_host}")
+            logger.info(f"启动知识图谱能力, Neo4j地址{core_settings.neo4j_host}")
 
             from src.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
             rag = GraphitiRAG()
             await rag.setup_graph()
+        else:
+            logger.info("未配置 NEO4J 地址，跳过知识图谱能力的启动......")
 
     @app.command
     def sync_db():
