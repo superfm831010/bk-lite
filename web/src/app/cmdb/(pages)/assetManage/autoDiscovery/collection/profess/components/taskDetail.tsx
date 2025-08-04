@@ -6,7 +6,7 @@ import CustomTable from '@/components/custom-table';
 import type { CollectTask } from '@/app/cmdb/types/autoDiscovery';
 import { CREATE_TASK_DETAIL_CONFIG } from '@/app/cmdb/constants/professCollection';
 import styles from '../index.module.scss';
-import useApiClient from '@/utils/request';
+import { useCollectApi, useModelApi } from '@/app/cmdb/api';
 import { useTranslation } from '@/utils/i18n';
 
 interface TaskDetailProps {
@@ -46,7 +46,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
   onSuccess,
   data,
 }) => {
-  const { post } = useApiClient();
+  const collectApi = useCollectApi();
   const { t } = useTranslation();
   const [displayData, setDisplayData] = useState<any[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -100,7 +100,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
       centered: true,
       onOk: async () => {
         try {
-          await post(`/cmdb/api/collect/${taskId}/approval/`, {
+          await collectApi.approveCollect(taskId.toString(), {
             instances: selectedRows,
           });
           message.success(t('Collection.taskDetail.approvalSuccess'));
@@ -159,7 +159,8 @@ const TaskDetail: React.FC<TaskDetailProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { get } = useApiClient();
+  const collectApi = useCollectApi();
+  const modelApi = useModelApi();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [associationMap, setAssociationMap] = useState<Record<string, string>>(
@@ -176,7 +177,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({
     const fetchDetailData = async () => {
       try {
         setLoading(true);
-        const response = await get(`/cmdb/api/collect/${task.id}/info/`);
+        const response = await collectApi.getCollectInfo(task.id.toString());
         setDetailData(response as TaskDetailData);
       } catch (error) {
         console.error('Failed to fetch task detail data:', error);
@@ -190,7 +191,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({
   useEffect(() => {
     const fetchAssociationTypes = async () => {
       try {
-        const response = await get('/cmdb/api/model/model_association_type');
+        const response = await modelApi.getModelAssociationTypes();
         const associationMap = response.reduce(
           (acc: Record<string, string>, item: any) => {
             acc[item.asst_id] = item.asst_name;
@@ -276,9 +277,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({
     });
 
   return (
-    <div
-      className={`flex flex-col h-full rounded-lg ${styles.taskDetail}`}
-    >
+    <div className={`flex flex-col h-full rounded-lg ${styles.taskDetail}`}>
       <Tabs defaultActiveKey="add" items={tabItems} className="flex-1" />
     </div>
   );

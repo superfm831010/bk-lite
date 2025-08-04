@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { XFlow, XFlowGraph, Grid, Snapline, Minimap } from '@antv/xflow';
 import useApiClient from '@/utils/request';
+import { useInstanceApi } from '@/app/cmdb/api';
 import { InitNode } from './topoData';
 import { Spin } from 'antd';
 import topoStyle from './index.module.scss';
@@ -12,7 +13,10 @@ const Topo: React.FC<AssoTopoProps> = ({
   modelId,
   instId,
 }) => {
-  const { get, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
+
+  const { topoSearchInstances } = useInstanceApi();
+
   const [topoData, setTopoData] = useState<TopoData>({});
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -24,7 +28,7 @@ const Topo: React.FC<AssoTopoProps> = ({
   const getTopoList = async () => {
     setLoading(true);
     try {
-      const data = await get(`/cmdb/api/instance/topo_search/${modelId}/${instId}/`);
+      const data = await topoSearchInstances(modelId, instId);
       setTopoData(data);
     } finally {
       setLoading(false);

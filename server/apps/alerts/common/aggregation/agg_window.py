@@ -654,10 +654,12 @@ class SessionWindowAggProcessor(BaseWindowProcessor):
             if not aggregation_rule:
                 return create_data, update_data
 
+            aggregation_key = self.processor.rule_manager.get_aggregation_key(aggregation_rule.rule_id)
+
             event_map = {}
             for session_event in session_events:
                 session_event["alert_source"] = session_event["source__name"]
-                fingerprint = generate_instance_fingerprint(session_event)
+                fingerprint = generate_instance_fingerprint(session_event, fields=aggregation_key)
                 event_map.setdefault(fingerprint, []).append(session_event)
 
             for _fingerprint, event_data in event_map.items():

@@ -9,3 +9,5 @@ class KnowledgeTask(models.Model):
     created_by = models.CharField(max_length=100, verbose_name="Created By")
     domain = models.CharField(max_length=100, default="domain.com", verbose_name="Domain")
     is_qa_task = models.BooleanField(default=False, verbose_name="Is QA Task")
+    completed_count = models.IntegerField(default=0)
+    total_count = models.IntegerField(default=0)

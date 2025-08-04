@@ -5,7 +5,7 @@
 [![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/TencentBlueKing/bk-cmdb/blob/master/LICENSE.txt)
 [![Release Version](https://img.shields.io/badge/release-dev--in--progress-orange.svg)](https://github.com/TencentBlueKing/bk-cmdb/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/TencentBlueKing/bk-cmdb/pulls)
-
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/TencentBlueKing/bk-lite)
 
 ![logo](./docs/resource/img/logo.png)
 

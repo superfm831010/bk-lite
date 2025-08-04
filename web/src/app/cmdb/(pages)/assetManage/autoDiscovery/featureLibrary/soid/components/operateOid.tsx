@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import useApiClient from '@/utils/request';
 import type { FormInstance } from 'antd';
 import { Drawer, Button, Form, Input, Select, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
+import { useOidApi } from '@/app/cmdb/api';
 
 interface DeviceType {
   key: string;
@@ -48,7 +48,9 @@ const OperateOid: React.FC<OperateOidProps> = ({
   onOk,
 }) => {
   const { t } = useTranslation();
-  const { post, put } = useApiClient();
+
+  const { createOid, updateOid } = useOidApi();
+
   const [loading, setLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState<OidDetail>(INITIAL_FORM_DATA);
   const [currentType, setCurrentType] = useState<string>('add');
@@ -94,9 +96,9 @@ const OperateOid: React.FC<OperateOidProps> = ({
       const params = { ...values };
       try {
         if (currentType === 'add') {
-          await post('/cmdb/api/oid/', params);
+          await createOid(params);
         } else {
-          await put(`/cmdb/api/oid/${formData.id}/`, params);
+          await updateOid(formData.id!, params);
         }
         message.success(
           t(

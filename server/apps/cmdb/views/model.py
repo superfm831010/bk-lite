@@ -34,7 +34,7 @@ class ModelViewSet(viewsets.ViewSet):
 
         model_id_list, classification_id_list = CmdbRulesFormatUtil.get_rules_classification_id_list(rules=rules,
                                                                                                      classification_id=classification_id)
-        if classification_id in classification_id_list or model_id in model_id_list:
+        if not rules or classification_id in classification_id_list or model_id in model_id_list:
             model_permission = [OPERATE, VIEW]
         else:
             if not model_id_list and not classification_id_list:
@@ -77,7 +77,7 @@ class ModelViewSet(viewsets.ViewSet):
         for model in result:
             model_id = model['model_id']
             cls_id = model['classification_id']
-            if cls_id in classification_id_list or model_id in model_id_list:
+            if not rules or cls_id in classification_id_list or model_id in model_id_list:
                 model_permission = [OPERATE, VIEW]
             else:
                 model_permission = []

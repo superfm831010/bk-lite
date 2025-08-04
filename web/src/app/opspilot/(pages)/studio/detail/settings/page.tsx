@@ -113,7 +113,6 @@ const StudioSettingsPage: React.FC = () => {
     setSaveLoading(true);
     try {
       const values = await form.validateFields();
-      const isBot = botType === 2
 
       const payload = {
         channels: selectedChannels,
@@ -121,11 +120,11 @@ const StudioSettingsPage: React.FC = () => {
         introduction: values.introduction,
         team: values.group,
         replica_count: values.replica_count,
-        enable_bot_domain: isBot ? !!botDomain : isDomainEnabled,
-        bot_domain: (isBot ? !!botDomain : isDomainEnabled) ? botDomain : null,
+        enable_bot_domain: isDomainEnabled,
+        bot_domain: isDomainEnabled ? botDomain : null,
         enable_ssl: isDomainEnabled ? enableSsl : false,
-        enable_node_port: isBot ? !!nodePort : isPortMappingEnabled,
-        node_port: (isBot ? !!nodePort : isPortMappingEnabled) ? nodePort : null,
+        enable_node_port: isPortMappingEnabled,
+        node_port: isPortMappingEnabled ? nodePort : null,
         rasa_model: values.rasa_model,
         llm_skills: selectedSkills,
         is_publish: isPublish
@@ -382,36 +381,64 @@ const StudioSettingsPage: React.FC = () => {
                   <h2 className="font-semibold mb-2 text-base">{t('studio.settings.domain')}</h2>
                   <div className="px-4 pt-4 border rounded-md shadow-sm">
                     <div className="mb-5">
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between">
                         <span className='text-sm'>{t('studio.settings.domain')}</span>
+                        <Switch size="small" checked={isDomainEnabled} onChange={(checked) => {
+                          setIsDomainEnabled(checked);
+                          if (!checked) {
+                            setBotDomain('');
+                            setEnableSsl(false);
+                          }
+                        }} />
                       </div>
-                      <Form.Item className="mb-0">
-                        <Input
-                          placeholder={`${t('common.inputMsg')}${t('studio.settings.domain')}`}
-                          value={botDomain}
-                          onChange={(e) => setBotDomain(e.target.value)}
-                        />
-                      </Form.Item>
+                      {isDomainEnabled && (
+                        <>
+                          <Form.Item className='mt-4 mb-0'>
+                            <div className='w-full flex items-center'>
+                              <Input
+                                className='flex-1 mr-3'
+                                placeholder={`${t('common.inputMsg')}${t('studio.settings.domain')}`}
+                                value={botDomain}
+                                onChange={(e) => setBotDomain(e.target.value)}
+                              />
+                              <Checkbox
+                                checked={enableSsl}
+                                onChange={(e) => setEnableSsl(e.target.checked)}
+                              >
+                                {t('studio.settings.enableSsl')}
+                              </Checkbox>
+                            </div>
+                          </Form.Item>
+                        </>
+                      )}
                     </div>
                     <div className="border-t border-[var(--color-border-1)] py-4">
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between">
                         <span className='text-sm'>{t('studio.settings.portMapping')}</span>
+                        <Switch size="small" checked={isPortMappingEnabled} onChange={(checked) => {
+                          setIsPortMappingEnabled(checked);
+                          if (!checked) {
+                            setNodePort(5005);
+                          }
+                        }} />
                       </div>
-                      <Form.Item className="mb-0">
-                        <Input
-                          placeholder={`${t('common.inputMsg')}${t('studio.settings.portMapping')}`}
-                          value={nodePort}
-                          onChange={(e) => {
-                            const value = Number(e.target.value);
-                            // 端口号的合法范围为 1-65535
-                            if (!Number.isNaN(value) && value > 0 && value <= 65535) {
-                              setNodePort(value);
-                            } else if (e.target.value === '') {
-                              setNodePort('');
-                            }
-                          }}
-                        />
-                      </Form.Item>
+                      {isPortMappingEnabled && (
+                        <Form.Item className="mt-4 mb-0">
+                          <Input
+                            placeholder={`${t('common.inputMsg')}${t('studio.settings.portMapping')}`}
+                            value={nodePort}
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              // 端口号的合法范围为 1-65535
+                              if (!Number.isNaN(value) && value > 0 && value <= 65535) {
+                                setNodePort(value);
+                              } else if (e.target.value === '') {
+                                setNodePort('');
+                              }
+                            }}
+                          />
+                        </Form.Item>
+                      )}
                     </div>
                   </div>
                 </div>

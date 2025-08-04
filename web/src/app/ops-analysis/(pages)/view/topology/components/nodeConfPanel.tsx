@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { DatasourceItem } from '@/app/ops-analysis/types/dataSource';
+import { NodeConfPanelProps } from '@/app/ops-analysis/types/topology';
 import { iconList } from '@/app/cmdb/utils/common';
+import { FORM_DEFAULTS } from '../constants/nodeDefaults';
 import SelectIcon, {
   SelectIconRef,
 } from '@/app/cmdb/(pages)/assetManage/management/list/selectIcon';
@@ -21,20 +23,6 @@ import {
   AppstoreOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-interface NodeConfPanelProps {
-  nodeType: 'single-value' | 'icon';
-  onFormReady?: (formInstance: any) => void;
-  readonly?: boolean;
-  initialValues?: {
-    name?: string;
-    logoType?: 'default' | 'custom';
-    logoIcon?: string;
-    logoUrl?: string;
-    dataSource?: number;
-    selectedFields?: string[];
-    fontSize?: number;
-  };
-}
 
 const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   nodeType,
@@ -95,6 +83,18 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         logoUrl: initialValues.logoUrl,
         dataSource: initialValues.dataSource,
         selectedFields: initialValues.selectedFields || [],
+        fontSize: initialValues.fontSize || FORM_DEFAULTS.SINGLE_VALUE.fontSize,
+        textColor:
+          initialValues.textColor || FORM_DEFAULTS.SINGLE_VALUE.textColor,
+        backgroundColor:
+          initialValues.backgroundColor ||
+          FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
+        borderColor:
+          initialValues.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor,
+        query: initialValues.query || FORM_DEFAULTS.SINGLE_VALUE.query,
+        unit: initialValues.unit || FORM_DEFAULTS.SINGLE_VALUE.unit,
+        threshold:
+          initialValues.threshold || FORM_DEFAULTS.SINGLE_VALUE.threshold,
       });
     } else {
       setSelectedIcon('cc-host');
@@ -380,7 +380,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
             <>
               <Form.Item label="字体大小" name="fontSize">
                 <InputNumber
-                  defaultValue={14}
+                  defaultValue={FORM_DEFAULTS.SINGLE_VALUE.fontSize}
                   min={10}
                   max={48}
                   step={1}
@@ -394,7 +394,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
               <Form.Item label="文本颜色" name="textColor">
                 <Input
                   type="color"
-                  defaultValue="#333333"
+                  defaultValue={FORM_DEFAULTS.SINGLE_VALUE.textColor}
                   className="w-20 h-8"
                   disabled={readonly}
                 />
@@ -405,7 +405,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
           <Form.Item label="背景颜色" name="backgroundColor">
             <Input
               type="color"
-              defaultValue="#ffffff"
+              defaultValue={FORM_DEFAULTS.SINGLE_VALUE.backgroundColor}
               className="w-20 h-8"
               disabled={readonly}
             />
@@ -414,7 +414,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
           <Form.Item label="边框颜色" name="borderColor">
             <Input
               type="color"
-              defaultValue="#d9d9d9"
+              defaultValue={FORM_DEFAULTS.SINGLE_VALUE.borderColor}
               className="w-20 h-8"
               disabled={readonly}
             />

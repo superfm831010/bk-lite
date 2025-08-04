@@ -1,9 +1,9 @@
-from apps.core.utils.viewset_utils import AuthViewSet
+from config.drf.viewsets import ModelViewSet
 from apps.playground.models.playground_capability import PlayGroundCapability
 from apps.playground.serializers.playground_capability import PlayGroundCapabilitySerializer
 from apps.playground.filters.playground_capability import PlayGroundCapabilityFilter
 
-class PlayGroundCapabilityViewSet(AuthViewSet):
+class PlayGroundCapabilityViewSet(ModelViewSet):
     """
     PlayGroundCapability 的视图集，支持增删改查和过滤。
     关键业务逻辑：category 字段嵌套展示，支持按分类、启用状态过滤。
