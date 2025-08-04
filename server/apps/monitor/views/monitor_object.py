@@ -49,7 +49,7 @@ class MonitorObjectVieSet(viewsets.ModelViewSet):
 
             instance_permissions, cur_team = inst_res.get("data", {}), inst_res.get("team", [])
 
-            inst_objs = MonitorInstance.objects.all().prefetch_related("monitorinstanceorganization_set")
+            inst_objs = MonitorInstance.objects.filter(is_deleted=False).prefetch_related("monitorinstanceorganization_set")
             inst_map = {}
             for inst_obj in inst_objs:
                 monitor_object_id = inst_obj.monitor_object_id
