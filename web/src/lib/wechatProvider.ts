@@ -113,7 +113,7 @@ export default function WeChatProvider<P extends WechatProfile>(
       });
 
       try {
-        const registerResponse = await fetch(`${process.env.NEXTAPI_URL}/core/api/wechat_user_register/`, {
+        const registerResponse = await fetch(`${process.env.NEXTAPI_URL}/api/v1/core/api/wechat_user_register/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
