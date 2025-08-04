@@ -21,7 +21,7 @@ import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { PlusOutlined, MoreOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import usePlayroundApi from '@/app/playground/api';
 import CategoryManageModal from './categoryManageModal';
 import SampleManageModal from './sampleManageModal';
@@ -32,14 +32,22 @@ const { confirm } = Modal;
 const PlaygroundManage = () => {
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
-  const { getCategoryList, getCapabilityList, deleteCategory, deleteCapability } = usePlayroundApi();
+  const {
+    getCategoryList,
+    getCapabilityList,
+    deleteCategory,
+    deleteCapability,
+    getAllSampleFileList,
+    updateSampleFile,
+    deleteSampleFile
+  } = usePlayroundApi();
   const categoryModalRef = useRef<ModalRef>(null);
   const sampleModalRef = useRef<ModalRef>(null);
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [treeLoading, setTreeLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   // const [searchValue, setSearchValue] = useState<string>('');
-  const [selectCategory, setSelectCategory] = useState<number[]>([]);
+  const [selectCapability, setSelectCapability] = useState<number[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
   const columns: ColumnItem[] = [
@@ -48,15 +56,15 @@ const PlaygroundManage = () => {
       dataIndex: 'name',
       key: 'name'
     },
-    {
-      title: t(`common.description`),
-      dataIndex: 'description',
-      key: 'description'
-    },
+    // {
+    //   title: t(`common.description`),
+    //   dataIndex: 'description',
+    //   key: 'description'
+    // },
     {
       title: t(`manage.createAt`),
-      dataIndex: 'create_at',
-      key: 'create_at',
+      dataIndex: 'created_at',
+      key: 'created_at',
       render: (_, record) => {
         return (<p>{convertToLocalizedTime(record.created_at, 'YYYY-MM-DD HH:mm:ss')}</p>)
       }
@@ -65,19 +73,19 @@ const PlaygroundManage = () => {
       title: t(`manage.createdBy`),
       dataIndex: 'created_by',
       key: 'created_by',
-      render: (_, { creator }) => {
-        return creator ? (
-          <div className="flex h-full items-center" title={creator}>
+      render: (_, { created_by }) => {
+        return created_by ? (
+          <div className="flex h-full items-center" title={created_by}>
             <span
               className="block w-[18px] h-[18px] leading-[18px] text-center content-center rounded-[50%] mr-2 text-white"
               style={{ background: 'blue' }}
             >
-              {creator.slice(0, 1).toLocaleUpperCase()}
+              {created_by.slice(0, 1).toLocaleUpperCase()}
             </span>
             <span>
               <EllipsisWithTooltip
                 className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
-                text={creator}
+                text={created_by}
               />
             </span>
           </div>
@@ -91,7 +99,7 @@ const PlaygroundManage = () => {
       dataIndex: 'status',
       key: 'status',
       render: (_, record) => {
-        return <Switch checked={record.is_active} onChange={handleSampleActiveChange} />
+        return <Switch checked={record.is_active} onChange={(value: boolean) => handleSampleActiveChange(record?.id, value)} />
       }
     },
     {
@@ -108,7 +116,7 @@ const PlaygroundManage = () => {
               okText={t('common.confirm')}
               cancelText={t('common.cancel')}
               okButtonProps={{ loading: confirmLoading }}
-              onConfirm={() => handleDelCapability(record.id)}
+              onConfirm={() => handleDelSampleFile(record.id)}
             >
               <Button type='link' danger>{t(`common.delete`)}</Button>
             </Popconfirm>
@@ -144,33 +152,28 @@ const PlaygroundManage = () => {
     }
   ];
 
+  const pageData = useMemo(() => {
+    return tableData.filter((item: any) => {
+      const { id } = item?.capability;
+      const [capability] = selectCapability
+      return id === capability;
+    })
+  }, [tableData, selectCapability]);
+
   useEffect(() => {
     getAllTreeData();
-    // getAllCapability();
-    // setSearchValue('');
     setTableLoading(true);
-    setTableData([
-      {
-        id: 1,
-        name: 'test',
-        description: 'test',
-        create_at: '',
-        creator: 'test',
-        url: 'http://localhost:3000/playground/home?page=anomaly-detection',
-        is_active: true
-      }
-    ]);
+    getAllSampleFile();
     setTableLoading(false);
   }, []);
 
   const renderCapabilityNode = (categoryId: number, capabilityData: any[]) => {
-    console.log(categoryId, capabilityData);
     const filterData = capabilityData.filter(item => {
       const { id } = item.category;
       return categoryId === id;
     });
     return filterData.map((item: any) => ({
-      key: `${item.id}_${item.name}`,
+      key: item?.id,
       title: renderCapabilityTitle(item),
       ...item
     }));
@@ -179,9 +182,8 @@ const PlaygroundManage = () => {
   const renderNode = (categoryData: any[], capabilityData: any[]) => {
     const filterData = categoryData.filter(item => item.level === 0);
     const treeData = filterData.map((item: any) => {
-      // const { children } = item;
       const node: any = {
-        key: item?.id,
+        key: `${item.id}_category`,
         name: item?.name,
         title: renderTitle({ ...item, mode: 'capability' }), // 二层菜单
         selectable: false,
@@ -240,17 +242,26 @@ const PlaygroundManage = () => {
     }
   };
 
-  // const getAllCapability = async () => {
-  //   setTableLoading(true);
-  //   try {
-  //     const data = await getCapabilityList();
-  //     setTableData(data);
-  //   } catch (e) {
-  //     console.log(e)
-  //   } finally {
-  //     setTableLoading(false);
-  //   }
-  // };
+  const getAllSampleFile = async () => {
+    setTableLoading(true);
+    try {
+      const data = await getAllSampleFileList();
+      const items = data?.map((item: any) => ({
+        id: item?.id,
+        name: item?.name,
+        created_at: item?.created_at,
+        created_by: item?.created_by,
+        is_active: item?.is_active,
+        capability: item?.capability
+      }));
+      setTableData(items)
+    } catch (e) {
+      console.log(e);
+      message.error('获取样本文件错误');
+    } finally {
+      setTableLoading(false);
+    }
+  };
 
   const renderCapabilityTitle = (data: any) => {
     return (
@@ -349,11 +360,22 @@ const PlaygroundManage = () => {
 
   const onSelect = (keys: any) => {
     console.log(keys);
-    setSelectCategory(keys);
+    setSelectCapability(keys);
   };
 
-  const handleSampleActiveChange = (checked: boolean) => {
-    console.log(checked);
+  const handleSampleActiveChange = async (id: number, checked: boolean) => {
+    setTableLoading(true);
+    try {
+      const params = {
+        is_active: checked
+      };
+      await updateSampleFile(id, params);
+    } catch (e) {
+      console.log(e);
+      message.error(t(`common.updateFailed`));
+    } finally {
+      getAllSampleFile();
+    }
   };
 
   const topSection = (
@@ -382,7 +404,7 @@ const PlaygroundManage = () => {
             defaultExpandAll
             autoExpandParent
             // defaultSelectedKeys={['hardware']}
-            selectedKeys={selectCategory}
+            selectedKeys={selectCapability}
             treeData={renderTreeNode()}
             onSelect={onSelect}
           />
@@ -411,17 +433,38 @@ const PlaygroundManage = () => {
           getAllTreeData();
         }
       }
-    })
+    });
   };
 
   const handleDelCapability = async (id: number) => {
+    confirm({
+      title: t(`manage.delCategory`),
+      okText: t(`common.confirm`),
+      cancelText: t(`common.cancel`),
+      onOk: async () => {
+        setConfirmLoading(true);
+        try {
+          await deleteCapability(id);
+        } catch (e) {
+          console.log(e);
+        } finally {
+          getAllTreeData();
+        }
+      }
+    });
+
+  };
+
+  const handleDelSampleFile = async (id: number) => {
     setConfirmLoading(true);
     try {
-      await deleteCapability(id);
+      await deleteSampleFile(id);
     } catch (e) {
       console.log(e);
+      message.error(t(`common.delFailed`));
     } finally {
       setConfirmLoading(false);
+      getAllSampleFile();
     }
   };
 
@@ -432,7 +475,7 @@ const PlaygroundManage = () => {
         <Button
           type='primary'
           icon={<PlusOutlined />}
-          onClick={() => openSampleModal({ type: 'add', title: 'add', form: { category: selectCategory } })}>
+          onClick={() => openSampleModal({ type: 'add', title: 'add', form: { capability: selectCapability } })}>
           {t(`common.add`)}
         </Button>
       </div>
@@ -440,7 +483,7 @@ const PlaygroundManage = () => {
         rowKey='id'
         columns={columns}
         loading={tableLoading}
-        dataSource={tableData}
+        dataSource={pageData}
       />
     </>
   );
@@ -457,7 +500,7 @@ const PlaygroundManage = () => {
         topSection={topSection}
       />
       <CategoryManageModal ref={categoryModalRef} onSuccess={onSuccess} />
-      <SampleManageModal ref={sampleModalRef} onSuccess={onSuccess} />
+      <SampleManageModal ref={sampleModalRef} onSuccess={getAllSampleFile} />
     </>
   )
 };

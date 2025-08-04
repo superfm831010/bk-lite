@@ -3,20 +3,35 @@ import OperateModal from '@/components/operate-modal';
 import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useTranslation } from '@/utils/i18n';
 // import { exportToCSV } from '@/app/mlops/utils/common';
-// import useMlopsManageApi from '@/app/mlops/api/manage';
 import { Upload, Button, message, type UploadFile, type UploadProps, Switch } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import { ModalConfig, ModalRef, TableData } from '@/app/mlops/types';
 import { TrainDataParams } from '@/app/mlops/types/manage';
+import usePlayroundApi from '../../api';
 const { Dragger } = Upload;
 
 interface UploadModalProps {
   onSuccess: () => void
 }
 
+// interface SampleFile {
+//   id: number; // 文件ID
+//   capability: number; // 能力演示id
+//   name: string, // 文件名称
+//   created_at: string, // 创建时间,
+//   created_by: string; // 创建者
+//   train_data: [
+//     {
+//       timestamp: string;
+//       value: number;
+//     }
+//   ], // 文件数据
+//   is_active: boolean; // 是否启用
+// }
+
 const SampleManageModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) => {
   const { t } = useTranslation();
-  // const { addAnomalyTrainData } = useMlopsManageApi();
+  const { createSampleFile } = usePlayroundApi();
   const [visiable, setVisiable] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [fileList, setFileList] = useState<UploadFile<any>[]>([]);
@@ -76,20 +91,17 @@ const SampleManageModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess },
         setConfirmLoading(false);
         return message.error(t('datasets.pleaseUpload'));
       }
-      const [category] = formData?.selectCategory || [1];
+      const [capability] = formData?.capability;
       const text = await file?.originFileObj.text();
       const data: TrainDataParams[] = handleFileRead(text);
       const train_data = data.map(item => ({ timestamp: item.timestamp, value: item.value }));
-      const points = data.filter(item => item?.label === 1).map(k => k.index);
       const params = {
         name: file.name,
-        category,
+        capability,
         train_data: train_data,
         is_active: checked,
-        metadata: {
-          anomaly_point: points
-        },
       };
+      await createSampleFile(params);
       console.log(params);
       setConfirmLoading(false);
       setVisiable(false);

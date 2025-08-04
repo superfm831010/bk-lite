@@ -1,61 +1,87 @@
 import useApiClient from "@/utils/request";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-const useModelExperience = () => {
+const useModelExperience = (shouldLoad: boolean = true) => {
   const [modelExpList, setModelExpList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { get } = useApiClient();
 
-  const getAllActiveMenu = useCallback(async () => {
-    // 🎯 避免重复请求
-    if (loading || modelExpList.length > 0) return;
+  useEffect(() => {
+    if (!shouldLoad) {
+      setLoading(false);
+      return;
+    }
 
+    let isCancelled = false;
     setLoading(true);
-    try {
-      const [categoryList, capabilityList] = await Promise.all([
-        await get(`/playground/category/`),
-        await get(`/playground/capability/`)
-      ]);
 
-      const data = categoryList.map((item: any) => {
-        const children = capabilityList.filter((child: any) => {
-          const { id } = child.category;
-          return (item.id === id) && child?.is_active;
-        }).map((child: any) => {
-          return {
+    const loadData = async () => {
+      try {
+        const [categoryList, capabilityList] = await Promise.all([
+          get(`/playground/category/`),
+          get(`/playground/capability/`)
+        ]);
+
+        if (isCancelled) return;
+
+        if (!categoryList || !capabilityList) {
+          throw new Error('fetch menu error');
+        }
+
+        const data = categoryList.map((item: any) => {
+          const children = capabilityList.filter((child: any) => {
+            const categoryId = child.category?.id || child.category;
+            return (item.id === categoryId) && child?.is_active;
+          }).map((child: any) => ({
             id: child.id,
-            name: child?.name,
-            description: child?.description,
-            url: child?.url + `?page=anomaly-detection&id=${child?.id}`,
-          }
+            name: child?.name || 'Unnamed',
+            description: child?.description || '',
+            url: `${child?.url}?page=anomaly-detection&id=${child?.id}&name=${child?.name}`,
+          }));
+
+          return {
+            category_id: item.id,
+            name: item.name || 'Unnamed Category',
+            description: item.description || '',
+            children
+          };
         });
 
-        return {
-          category_id: item.id,
-          name: item.name,
-          description: item.description,
-          children
+        setModelExpList(data);
+
+      } catch (e) {
+        if (!isCancelled) {
+          setError(e instanceof Error ? e.message : 'Unknown error');
         }
-      });
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+        }
+      }
+    };
 
-      setModelExpList(data);
-      console.log(data);
-    } catch (e) {
-      console.log(e);
-      setModelExpList([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [get, loading, modelExpList.length]);
+    loadData();
 
-  useEffect(() => {
-    getAllActiveMenu();
-  }, [getAllActiveMenu]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [shouldLoad, get]);
+
+  const reload = () => {
+    if (!shouldLoad) return;
+    
+    setLoading(true);
+    setError(null);
+    setModelExpList([]);
+  };
 
   return {
     modelExpList,
-    loading
-  }
+    loading,
+    error,
+    reload
+  };
 };
 
 export default useModelExperience;
