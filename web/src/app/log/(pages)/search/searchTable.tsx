@@ -29,7 +29,7 @@ const SearchTable: React.FC<SearchTableProps> = ({
       title: 'timestrap',
       dataIndex: '_time',
       key: '_time',
-      width: 150,
+      width: 160,
       render: (val: string) => (
         <EllipsisWithTooltip
           text={convertToLocalizedTime(val, 'YYYY-MM-DD HH:mm:ss')}
@@ -41,6 +41,7 @@ const SearchTable: React.FC<SearchTableProps> = ({
       title: 'message',
       dataIndex: '_msg',
       key: '_msg',
+      render: (val: string) => val || '--',
     },
   ];
 
