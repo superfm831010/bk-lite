@@ -16,10 +16,10 @@ const StudioCard: React.FC<StudioCardProps> = (props) => {
   const iconTypeMapping: [string, string] = ['jiqirenjiaohukapian', 'jiqiren'];
 
   const skillTypeMapping = {
-    2: t('skill.form.qaType'),
-    1: t('skill.form.toolsType'),
-    3: t('skill.form.planType'),
-    4: t('skill.form.complexType')
+    2: t('skill.form.qaTag'),
+    1: t('skill.form.toolsTag'),
+    3: t('skill.form.planTag'),
+    4: t('skill.form.complexTag')
   };
   const skillType = skillTypeMapping[skill_type as keyof typeof skillTypeMapping] || 'Unknown';
 
