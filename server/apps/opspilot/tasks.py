@@ -391,7 +391,7 @@ def _initialize_qa_task(file_data, knowledge_base_id, username, domain):
 
     # 创建问答对对象
     for qa_name in file_data.keys():
-        qa_pairs = create_qa_pairs_task(knowledge_base_id, qa_name)
+        qa_pairs = create_qa_pairs_task(knowledge_base_id, qa_name, username, domain)
         if qa_pairs.id not in qa_pairs_id_list:
             qa_pairs_list.append(qa_pairs)
             qa_pairs_id_list.append(qa_pairs.id)
@@ -498,12 +498,10 @@ def _send_qa_request_with_retry(params, url, headers, index):
     return True
 
 
-def create_qa_pairs_task(knowledge_base_id, qa_name):
+def create_qa_pairs_task(knowledge_base_id, qa_name, username, domain):
     # 创建或获取问答对对象
     qa_pairs, created = QAPairs.objects.get_or_create(
-        name=qa_name,
-        knowledge_base_id=knowledge_base_id,
-        document_id=0,
+        name=qa_name, knowledge_base_id=knowledge_base_id, document_id=0, username=username, domain=domain
     )
     logger.info(f"问答对对象{'创建' if created else '获取'}成功: {qa_pairs.name}")
     return qa_pairs
