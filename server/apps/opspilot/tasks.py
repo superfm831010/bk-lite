@@ -350,7 +350,7 @@ def update_graph(instance_id, old_doc_list):
     else:
         instance.status = "completed"
         instance.save()
-        logger.info("Graph updated completed: {}".format(instance.name))
+        logger.info("Graph updated completed: {}".format(instance.id))
 
 
 @shared_task

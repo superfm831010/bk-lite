@@ -5,7 +5,7 @@ from src.core.entity.basic_llm_request import BasicLLMRequest
 from src.core.graph.basic_graph import BasicGraph
 from src.agent.chatbot_workflow.chatbot_workflow_node import ChatBotWorkflowNode
 from src.agent.chatbot_workflow.chatbot_workflow_state import ChatBotWorkflowState
-from langgraph.pregel import RetryPolicy
+from langgraph.types import RetryPolicy
 
 
 class ChatBotWorkflowGraph(BasicGraph):

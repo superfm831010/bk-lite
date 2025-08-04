@@ -10,7 +10,6 @@ from apps.opspilot.bot_mgmt.serializers import BotSerializer
 from apps.opspilot.enum import BotTypeChoice, ChannelChoices
 from apps.opspilot.models import Bot, BotChannel, Channel, LLMSkill
 from apps.opspilot.quota_rule_mgmt.quota_utils import get_quota_client
-from apps.opspilot.utils.lobe_chat_client import LobeChatClient
 from apps.opspilot.utils.pilot_client import PilotClient
 
 
@@ -95,10 +94,7 @@ class BotViewSet(AuthViewSet):
         obj.updated_by = request.user.username
         obj.save()
         if is_publish:
-            if obj.bot_type == BotTypeChoice.PILOT:
-                client = PilotClient()
-            else:
-                client = LobeChatClient()
+            client = PilotClient()
             try:
                 client.start_pilot(obj)
             except Exception as e:
@@ -146,11 +142,8 @@ class BotViewSet(AuthViewSet):
     def destroy(self, request, *args, **kwargs):
         obj = self.get_object()
         if obj.online:
-            if obj.bot_type == BotTypeChoice.PILOT:
-                client = PilotClient()
-            else:
-                client = LobeChatClient()
-            client.stop_pilot(obj.id)
+            client = PilotClient()
+            client.stop_pilot(obj)
         return super().destroy(request, *args, **kwargs)
 
     @action(methods=["POST"], detail=False)
@@ -163,15 +156,11 @@ class BotViewSet(AuthViewSet):
             if not has_permission:
                 return JsonResponse({"result": False, "message": _("You do not have permission to start this bot.")})
         client = PilotClient()
-        lobe_client = LobeChatClient()
         for bot in bots:
             if not bot.api_token:
                 bot.api_token = bot.get_api_token()
             bot.save()
-            if bot.bot_type == BotTypeChoice.PILOT:
-                client.start_pilot(bot)
-            else:
-                lobe_client.start_pilot(bot)
+            client.start_pilot(bot)
             bot.online = True
             bot.save()
         return JsonResponse({"result": True})
@@ -187,12 +176,8 @@ class BotViewSet(AuthViewSet):
                 return JsonResponse({"result": False, "message": _("You do not have permission to stop this bot")})
 
         client = PilotClient()
-        lobe_client = LobeChatClient()
         for bot in bots:
-            if bot.bot_type == BotTypeChoice.PILOT:
-                client.stop_pilot(bot.id)
-            else:
-                lobe_client.stop_pilot(bot.id)
+            client.stop_pilot(bot)
             bot.api_token = ""
             bot.online = False
             bot.save()

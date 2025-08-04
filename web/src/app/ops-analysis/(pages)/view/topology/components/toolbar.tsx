@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Tooltip } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { DirItem } from '@/app/ops-analysis/types';
+import { ToolbarProps } from '@/app/ops-analysis/types/topology';
 import {
   ZoomInOutlined,
   ZoomOutOutlined,
@@ -12,21 +12,7 @@ import {
   EditOutlined,
 } from '@ant-design/icons';
 
-interface Props {
-  isSelectMode: boolean;
-  isEditMode?: boolean;
-  selectedTopology?: DirItem | null;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onEdit: () => void;
-  onSave: () => void;
-  onFit: () => void;
-  onDelete: () => void;
-  onSelectMode: () => void;
-  onAddText: () => void;
-}
-
-const TopologyToolbar: React.FC<Props> = ({
+const TopologyToolbar: React.FC<ToolbarProps> = ({
   isSelectMode,
   isEditMode = false,
   selectedTopology,
@@ -47,7 +33,7 @@ const TopologyToolbar: React.FC<Props> = ({
       <div className="flex-1 mr-8">
         {selectedTopology && (
           <div className="p-1 pt-0">
-            <h2 className="text-xl font-semibold mb-1 text-[var(--color-text-1)]">
+            <h2 className="text-lg font-semibold mb-1 text-[var(--color-text-1)]">
               {selectedTopology.name}
             </h2>
             <p className="text-sm text-[var(--color-text-2)]">

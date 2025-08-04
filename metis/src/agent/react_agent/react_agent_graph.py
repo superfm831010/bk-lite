@@ -8,7 +8,7 @@ from src.entity.agent.react_agent.react_agent_request import ReActAgentRequest
 from src.entity.agent.react_agent.react_agent_response import ReActAgentResponse
 from src.agent.react_agent.react_agent_node import ReActAgentNode
 from src.agent.react_agent.react_agent_state import ReActAgentState
-from langgraph.pregel import RetryPolicy
+from langgraph.types import RetryPolicy
 
 
 class ReActAgentGraph(ToolsGraph):
@@ -22,7 +22,8 @@ class ReActAgentGraph(ToolsGraph):
 
         last_edge = self.prepare_graph(graph_builder, node_builder)
 
-        graph_builder.add_node("agent", node_builder.agent_node, retry=RetryPolicy(max_attempts=5))
+        graph_builder.add_node(
+            "agent", node_builder.agent_node, retry=RetryPolicy(max_attempts=5))
 
         graph_builder.add_edge(last_edge, "agent")
         graph_builder.add_edge("agent", END)

@@ -196,7 +196,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
       <div className="w-full mb-2 flex items-center justify-between rounded-lg shadow-sm bg-[var(--color-bg-1)] p-3 border border-[var(--color-border-2)]">
         {selectedDashboard && (
           <div className="p-1 pt-0">
-            <h2 className="text-xl font-semibold mb-1 text-[var(--color-text-1)]">
+            <h2 className="text-lg font-semibold mb-1 text-[var(--color-text-1)]">
               {selectedDashboard.name}
             </h2>
             <p className="text-sm text-[var(--color-text-2)]">

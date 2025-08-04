@@ -1,14 +1,5 @@
 import React from 'react';
-
-interface TextEditInputProps {
-  isEditingText: boolean;
-  editPosition: { x: number; y: number };
-  inputWidth: number;
-  tempTextInput: string;
-  setTempTextInput: (text: string) => void;
-  finishTextEdit: () => void;
-  cancelTextEdit: () => void;
-}
+import { TextEditInputProps } from '@/app/ops-analysis/types/topology';
 
 const TextEditInput: React.FC<TextEditInputProps> = ({
   isEditingText,
