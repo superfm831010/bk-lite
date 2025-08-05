@@ -293,7 +293,7 @@ const TrainTask = () => {
       message.success(`traintask.trainStartSucess`);
     } catch (e) {
       console.log(e);
-      message.error(`common.error`);
+      message.error(t(`common.error`));
     }
   };
 
