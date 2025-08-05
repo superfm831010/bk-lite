@@ -4,7 +4,7 @@
 # @Author: windyzhao
 
 DEFAULT_SOURCE_CONFIG = {
-    "url": "/alerts/api/receiver_data/",
+    "url": "/api/v1/alerts/api/receiver_data/",
     "headers": {"SECRET": "your_source_secret"},
     "params": {
         "source_id": "",
@@ -12,7 +12,7 @@ DEFAULT_SOURCE_CONFIG = {
     },
     "examples":{
         "CURL": """
-        curl --location --request POST 'http://127.0.0.1:8000/alerts/api/receiver_data/' \
+        curl --location --request POST 'http://127.0.0.1:8000/api/v1/alerts/api/receiver_data/' \
         --header 'SECRET: QKY2ZupjkfEvypiU3bTg4afuqfVjpIwF' \
         --header 'Content-Type: application/json' \
         --data-raw '{
@@ -42,7 +42,7 @@ DEFAULT_SOURCE_CONFIG = {
         import requests
         import json
         
-        url = "http://127.0.0.1:8000/alerts/api/receiver_data/"
+        url = "http://127.0.0.1:8000/api/v1/alerts/api/receiver_data/"
         
         payload = json.dumps({
            "source_id": "restful",

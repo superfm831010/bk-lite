@@ -132,7 +132,7 @@ class AlertOperator(object):
             if notify_param:
                 from apps.alerts.tasks import sync_notify
                 transaction.on_commit(
-                    lambda: sync_notify.delay(*notify_param)
+                    lambda: sync_notify.delay(notify_param)
                 )
             else:
                 logger.warning(f"未找到有效的email通知参数，邮件通知失败！alert_id={alert_id}, assignee={assignee}")
@@ -287,7 +287,7 @@ class AlertOperator(object):
             if notify_param:
                 from apps.alerts.tasks import sync_notify
                 transaction.on_commit(
-                    lambda: sync_notify.delay(*notify_param)
+                    lambda: sync_notify.delay(notify_param)
                 )
             else:
                 logger.warning(f"未找到有效的email通知参数，邮件通知失败！alert_id={alert_id}, assignee={new_assignee}")
