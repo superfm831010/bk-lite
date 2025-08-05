@@ -32,6 +32,16 @@ class Policy(TimeInfo, MaintainerInfo):
         unique_together = ('name', 'collect_type')
 
 
+class PolicyOrganization(TimeInfo, MaintainerInfo):
+    policy = models.ForeignKey(Policy, on_delete=models.CASCADE, verbose_name='监控策略')
+    organization = models.IntegerField(verbose_name='组织id')
+
+    class Meta:
+        verbose_name = '策略组织'
+        verbose_name_plural = '策略组织'
+        unique_together = ('policy', 'organization')
+
+
 class Alert(TimeInfo):
     """
     告警记录
