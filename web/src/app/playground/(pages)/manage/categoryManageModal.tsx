@@ -43,7 +43,6 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, title, form }) => {
-      console.log(type);
       setOpen(true);
       setType(type);
       setTitle(title as string);
@@ -69,11 +68,6 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
       });
     };
     await renderServingsOption();
-    // else if (formData && type.trim().startsWith('add')) {
-    //   formRef.current?.setFieldsValue({
-    //     parent: formData?.id
-    //   });
-    // }
   }, [type, formData]);
 
   const handleAdd: Record<string, any> = {
@@ -121,13 +115,11 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
     try {
       if (!formData?.categoryID && type === 'addCapability') return message.error('参数错误');
       const data = await formRef.current?.validateFields();
-      // const config = type.endsWith('Capability') ? { category: formData?.category, config: CONTENT_MAP['anomaly_detection'] } : {};
       const params = {
         ...data,
         config: servingConfig,
         category: formData?.categoryID
       };
-      console.log(params);
       if (type.trim().startsWith('add')) {
         await handleAdd[type](params);
       } else {
@@ -146,7 +138,6 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
   const handleCancel = () => {
     setOpen(false);
     setConfirm(false);
-    // setIsAddChildren(false);
     setFormData(null);
   };
 

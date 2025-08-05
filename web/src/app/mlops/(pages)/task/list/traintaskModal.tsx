@@ -190,7 +190,6 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
         hyperopt_config,
         description: value.name || ''
       };
-      console.log(params);
       if (modalState.type === 'add') {
         await handleAddMap[tagName](params);
       } else {
