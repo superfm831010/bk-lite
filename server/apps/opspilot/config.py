@@ -24,4 +24,4 @@ OPSPILOT_WEB_URL = os.getenv("OPSPILOT_WEB_URL", "https://ops-pilot.canway.net/"
 PILOT_RUNTIME = os.getenv("PILOT_RUNTIME", "kubernetes")
 
 
-LOGIN_URL = os.getenv("LOGIN_URL", "http://bklite-server:8000/core/api/login/")
+LOGIN_URL = os.getenv("LOGIN_URL", "http://bklite-server:8000/api/v1/core/api/login/")

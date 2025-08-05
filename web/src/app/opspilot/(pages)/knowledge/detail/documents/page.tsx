@@ -65,6 +65,7 @@ const DocumentsPage: React.FC = () => {
   const [isTrainLoading, setIsTrainLoading] = useState(false);
   const [singleTrainLoading, setSingleTrainLoading] = useState<{ [key: string]: boolean }>({});
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
 
   const [qaPairData, setQaPairData] = useState<QAPairData[]>([]);
   const [qaPairPagination, setQaPairPagination] = useState<PaginationProps>({
@@ -388,6 +389,11 @@ const DocumentsPage: React.FC = () => {
       return;
     }
 
+    if (uploadingFiles.size > 0) {
+      message.warning(t('knowledge.qaPairs.uploadInProgress'));
+      return;
+    }
+
     try {
       setConfirmLoading(true);
       const formData = new FormData();
@@ -402,17 +408,43 @@ const DocumentsPage: React.FC = () => {
       setConfirmLoading(false);
       setUploadModalVisible(false);
       setUploadedFiles([]);
+      setUploadingFiles(new Set());
     }
   };
 
   const handleImportClick = () => {
     setUploadModalVisible(true);
     setUploadedFiles([]);
+    setUploadingFiles(new Set());
   };
 
   const handleFileUpload = (file: any) => {
-    setUploadedFiles(prev => [...prev, file]);
+    const fileId = file.uid || file.name;
+    
+    // 标记文件为上传中状态
+    setUploadingFiles(prev => new Set([...prev, fileId]));
+    
+    // 模拟文件处理完成（在实际项目中，这里可能是文件读取或验证）
+    setTimeout(() => {
+      setUploadedFiles(prev => [...prev, file]);
+      setUploadingFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fileId);
+        return newSet;
+      });
+    }, 1000); // 模拟1秒的处理时间
+    
     return false;
+  };
+
+  const handleRemoveFile = (file: any) => {
+    const fileId = file.uid || file.name;
+    setUploadedFiles(prev => prev.filter(f => f.uid !== fileId));
+    setUploadingFiles(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(fileId);
+      return newSet;
+    });
   };
 
   const batchOperationMenu = (
@@ -661,17 +693,31 @@ const DocumentsPage: React.FC = () => {
         confirmLoading={confirmLoading}
         onOk={handleUploadModalConfirm}
         onCancel={() => setUploadModalVisible(false)}
+        okButtonProps={{
+          disabled: uploadingFiles.size > 0 || uploadedFiles.length === 0
+        }}
       >
         <div>
           <Dragger
             accept="application/json"
             beforeUpload={handleFileUpload}
+            onRemove={handleRemoveFile}
+            fileList={uploadedFiles.map(file => {
+              const fileId = file.uid || file.name;
+              const isUploading = uploadingFiles.has(fileId);
+              return {
+                uid: fileId,
+                name: file.name,
+                status: isUploading ? 'uploading' : 'done',
+                percent: isUploading ? 50 : 100,
+              };
+            })}
           >
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
             </p>
             <p className="ant-upload-text">{t('knowledge.qaPairs.dragOrClick')}</p>
-            <p className="ant-upload-hint">{t('knowledge.qaPairs.uploadHint')}</p>
+            <p className="ant-upload-hint text-xs">{t('knowledge.qaPairs.uploadHint')}</p>
           </Dragger>
         </div>
       </OperateModal>

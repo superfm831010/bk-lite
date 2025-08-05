@@ -139,7 +139,8 @@
       "clearLogs": "Clear logs",
       "enableScrolling": "Enable auto-scrolling",
       "stopScrolling": "Turn off auto-scrolling",
-      "selectGroup": "Please select the group"
+      "selectGroup": "Please select the group",
+      "search": "搜索"
     },
     "integration": {
       "interval": "Interval",
