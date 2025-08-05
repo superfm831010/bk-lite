@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import { mockInterfaces } from '../../mockData';
 import { EdgeConfigPanelProps } from '@/app/ops-analysis/types/topology';
 import {
   Drawer,
@@ -22,6 +21,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
 }) => {
   const [form] = Form.useForm();
   const { t } = useTranslation();
+  const interfacesList: any = [];
 
   useEffect(() => {
     if (edgeData) {
@@ -136,7 +136,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
                   >
                     <Select
                       placeholder={t('common.selectTip')}
-                      options={mockInterfaces}
+                      options={interfacesList}
                       disabled={readonly}
                     />
                   </Form.Item>

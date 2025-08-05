@@ -449,7 +449,7 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
               // 清空tree选中状态
               setSelectedKeys([]);
               // 调用父组件的onSelect
-              onSelect && onSelect('datasource');
+              onSelect && onSelect('settings');
             }}
           >
             设置

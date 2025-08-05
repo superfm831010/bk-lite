@@ -1,0 +1,111 @@
+'use client';
+
+import React, { useState, useRef } from 'react';
+import Sidebar from './components/sidebar';
+import Dashboard from './dashBoard/index';
+import Topology from './topology/index';
+import { useTranslation } from '@/utils/i18n';
+import { DirectoryType, SidebarRef } from '@/app/ops-analysis/types';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { Button, Empty } from 'antd';
+import { useRouter, usePathname } from 'next/navigation';
+
+interface ViewLayoutProps {
+  children: React.ReactNode;
+}
+
+const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+  const [selectedType, setSelectedType] = useState<DirectoryType>('directory');
+  const [selectedItem, setSelectedItem] = useState<{
+    dashboard: any;
+    topology: any;
+  }>({
+    dashboard: null,
+    topology: null,
+  });
+  const sidebarRef = useRef<SidebarRef>(null);
+
+  const isInSettings = pathname.includes('/settings');
+
+  const handleSidebarDataUpdate = (updatedItem: any) => {
+    if (
+      selectedItem.dashboard &&
+      updatedItem.id === selectedItem.dashboard.id
+    ) {
+      setSelectedItem((prev) => ({ ...prev, dashboard: updatedItem }));
+    }
+    if (selectedItem.topology && updatedItem.id === selectedItem.topology.id) {
+      setSelectedItem((prev) => ({ ...prev, topology: updatedItem }));
+    }
+  };
+
+
+  return (
+    <div
+      className="flex w-full h-[calc(100vh-90px)] relative bg-[var(--color-bg-1)] rounded-lg"
+      style={{ minWidth: collapsed ? 0 : 280 }}
+    >
+      <div
+        className={`h-full border-r border-[var(--color-border-1)] relative transition-all duration-300 ${
+          collapsed ? 'w-0 min-w-0' : 'w-[280px] min-w-[280px]'
+        }`}
+        style={{
+          width: collapsed ? 0 : 280,
+          minWidth: collapsed ? 0 : 280,
+          maxWidth: collapsed ? 0 : 280,
+          flexShrink: 0,
+        }}
+      >
+        <div className="w-full h-full overflow-hidden">
+          <Sidebar
+            ref={sidebarRef}
+            onSelect={(type, itemInfo) => {
+              setSelectedType(type);
+              setSelectedItem({
+                dashboard: type === 'dashboard' ? itemInfo : null,
+                topology: type === 'topology' ? itemInfo : null,
+              });
+              if (type === 'settings') {
+                router.push('/ops-analysis/view/settings/dataSource');
+              } else {
+                router.push('/ops-analysis/view');
+              }
+            }}
+            onDataUpdate={handleSidebarDataUpdate}
+          />
+        </div>
+        <Button
+          type="text"
+          onClick={() => setCollapsed(!collapsed)}
+          className={`absolute z-10 w-6 h-6 top-4 p-0 border border-[var(--color-border-3)] bg-[var(--color-bg-1)] flex items-center justify-center cursor-pointer rounded-full transition-all duration-300 ${
+            collapsed
+              ? 'left-0 border-l-0 rounded-tl-none rounded-bl-none'
+              : 'left-[100%] -translate-x-1/2'
+          }`}
+        >
+          {collapsed ? <RightOutlined /> : <LeftOutlined />}
+        </Button>
+      </div>
+      <div className="h-full flex-1 flex" style={{ minWidth: 0 }}>
+        {isInSettings ? (
+          children
+        ) : selectedType === 'topology' ? (
+          <Topology selectedTopology={selectedItem.topology} />
+        ) : selectedType === 'dashboard' ? (
+          <Dashboard selectedDashboard={selectedItem.dashboard} />
+        ) : (
+          <Empty
+            className="w-full mt-[20vh]"
+            description={t('sidebar.selectItem')}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ViewLayout;

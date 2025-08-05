@@ -82,6 +82,20 @@
     "createDataSourceSuccess": "Data source created successfully",
     "operationFailed": "Operation failed"
   },
+"namespace": {
+    "title": "Namespace",
+    "name": "Name",
+    "account": "Account",
+    "password": "Password",
+    "domain": "Domain",
+    "describe": "Description",
+    "createdTime": "Created Time",
+    "introTitle": "Namespace",
+    "introMsg": "Define NATS for different namespaces, and specify the corresponding namespace data when setting up the data source.",
+    "updateNamespaceSuccess": "Namespace updated successfully",
+    "createNamespaceSuccess": "Namespace created successfully",
+    "operationFailed": "Operation failed"
+},
   "topology": {
     "edgeConfig": "Edge Configuration",
     "lineType": "Line Type",

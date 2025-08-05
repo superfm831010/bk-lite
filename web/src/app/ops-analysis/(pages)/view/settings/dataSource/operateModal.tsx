@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
 import CustomTable from '@/components/custom-table';

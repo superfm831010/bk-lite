@@ -1,18 +1,19 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import OperateModal from './operateModal';
 import CustomTable from '@/components/custom-table';
-// import PermissionWrapper from '@/components/permission';
 import { Button, Input, Card, message, Modal } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { DatasourceItem } from '@/app/ops-analysis/types/dataSource';
-import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
+import { NamespaceItem } from '@/app/ops-analysis/types/namespace';
+import { useNamespaceApi } from '@/app/ops-analysis/api/namespace';
 
-const Datasource: React.FC = () => {
+const Namespace: React.FC = () => {
   const { t } = useTranslation();
-  const { getDataSourceList, deleteDataSource } = useDataSourceApi();
+  const { getNamespaceList, deleteNamespace } = useNamespaceApi();
   const [searchKey, setSearchKey] = useState('');
   const [searchValue, setSearchValue] = useState('');
-  const [filteredList, setFilteredList] = useState<DatasourceItem[]>([]);
+  const [filteredList, setFilteredList] = useState<NamespaceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentRow, setCurrentRow] = useState<any>(null);
@@ -22,8 +23,8 @@ const Datasource: React.FC = () => {
     pageSize: 20,
   });
 
-  // 获取数据源列表
-  const fetchDataSources = async (
+  // 获取命名空间列表
+  const fetchNamespaces = async (
     searchKeyParam?: string,
     paginationParam?: { current?: number; pageSize?: number }
   ) => {
@@ -39,7 +40,7 @@ const Datasource: React.FC = () => {
       if (currentSearchKey && currentSearchKey.trim()) {
         params.search = currentSearchKey.trim();
       }
-      const { items, count } = await getDataSourceList(params);
+      const { items, count } = await getNamespaceList(params);
       if (items && Array.isArray(items)) {
         setFilteredList(items);
         setPagination((prev) => ({
@@ -50,7 +51,7 @@ const Datasource: React.FC = () => {
         }));
       }
     } catch (error) {
-      console.error('获取数据源列表失败:', error);
+      console.error('获取命名空间列表失败:', error);
       setFilteredList([]);
     } finally {
       setLoading(false);
@@ -58,7 +59,7 @@ const Datasource: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchDataSources();
+    fetchNamespaces();
   }, [pagination.current, pagination.pageSize]);
 
   const handleFilter = (value?: string) => {
@@ -67,10 +68,10 @@ const Datasource: React.FC = () => {
     setSearchValue(key);
     const newPagination = { current: 1, pageSize: pagination.pageSize };
     setPagination((prev) => ({ ...prev, current: 1 }));
-    fetchDataSources(key, newPagination);
+    fetchNamespaces(key, newPagination);
   };
 
-  const handleEdit = (type: 'add' | 'edit', row?: DatasourceItem) => {
+  const handleEdit = (type: 'add' | 'edit', row?: NamespaceItem) => {
     if (type === 'edit' && row) {
       setCurrentRow(row);
     } else {
@@ -79,7 +80,7 @@ const Datasource: React.FC = () => {
     setModalVisible(true);
   };
 
-  const handleDelete = (row: DatasourceItem) => {
+  const handleDelete = (row: NamespaceItem) => {
     Modal.confirm({
       title: t('common.confirmDelete'),
       content: `${t('common.confirmDeleteMsg')} "${row.name}"?`,
@@ -87,9 +88,9 @@ const Datasource: React.FC = () => {
       cancelText: t('common.cancel'),
       onOk: async () => {
         try {
-          await deleteDataSource(row.id);
+          await deleteNamespace(row.id);
           message.success(t('common.deleteSuccess'));
-          fetchDataSources();
+          fetchNamespaces();
         } catch (error: any) {
           message.error(error.message);
         }
@@ -106,44 +107,42 @@ const Datasource: React.FC = () => {
       ...prev,
       ...newPagination,
     }));
-    // 直接传递新的分页信息，避免状态更新延迟
-    fetchDataSources(undefined, newPagination);
+    fetchNamespaces(undefined, newPagination);
   };
 
   const columns = [
-    { title: t('dataSource.name'), dataIndex: 'name', key: 'name', width: 150 },
-    { title: 'REST API', dataIndex: 'rest_api', key: 'rest_api', width: 150 },
+    { title: t('namespace.name'), dataIndex: 'name', key: 'name', width: 150 },
     {
-      title: t('dataSource.describe'),
-      dataIndex: 'desc',
-      key: 'desc',
+      title: t('namespace.account'),
+      dataIndex: 'account',
+      key: 'account',
+      width: 150,
+    },
+    {
+      title: t('namespace.domain'),
+      dataIndex: 'domain',
+      key: 'domain',
+      width: 150,
+    },
+    {
+      title: t('namespace.describe'),
+      dataIndex: 'describe',
+      key: 'describe',
       width: 200,
     },
     {
-      title: '状态',
-      dataIndex: 'is_active',
-      key: 'is_active',
-      width: 100,
-      render: (isActive: boolean) => (
-        <span style={{ color: isActive ? '#52c41a' : '#ff4d4f' }}>
-          {isActive ? '活跃' : '禁用'}
-        </span>
-      ),
-    },
-    {
-      title: t('dataSource.createdTime'),
+      title: t('namespace.createdTime'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
       render: (text: string) => (text ? new Date(text).toLocaleString() : '-'),
     },
     {
-      title: t('common.edit'),
+      title: t('common.actions'),
       key: 'operation',
       width: 100,
-      render: (_: any, row: DatasourceItem) => (
+      render: (_: any, row: NamespaceItem) => (
         <div className="space-x-4">
-          {/* <PermissionWrapper requiredPermissions={['Edit']}> */}
           <Button
             type="link"
             size="small"
@@ -151,12 +150,9 @@ const Datasource: React.FC = () => {
           >
             {t('common.edit')}
           </Button>
-          {/* </PermissionWrapper> */}
-          {/* <PermissionWrapper requiredPermissions={['Delete']}> */}
           <Button type="link" size="small" onClick={() => handleDelete(row)}>
             {t('common.delete')}
           </Button>
-          {/* </PermissionWrapper> */}
         </div>
       ),
     },
@@ -177,10 +173,10 @@ const Datasource: React.FC = () => {
         }}
       >
         <p className="font-extrabold text-base mb-2">
-          {t('dataSource.introTitle')}
+          {t('namespace.introTitle')}
         </p>
         <p className="text-sm text-[var(--color-text-2)]">
-          {t('dataSource.introMsg')}
+          {t('namespace.introMsg')}
         </p>
       </Card>
       <div className="px-6 pb-0">
@@ -199,11 +195,9 @@ const Datasource: React.FC = () => {
               }}
             />
           </div>
-          {/* <PermissionWrapper requiredPermissions={['Add']}> */}
           <Button type="primary" onClick={() => handleEdit('add')}>
             {t('common.addNew')}
           </Button>
-          {/* </PermissionWrapper> */}
         </div>
         <CustomTable
           size="middle"
@@ -221,7 +215,7 @@ const Datasource: React.FC = () => {
           onClose={() => setModalVisible(false)}
           onSuccess={() => {
             setModalVisible(false);
-            fetchDataSources();
+            fetchNamespaces();
           }}
         />
       </div>
@@ -229,4 +223,4 @@ const Datasource: React.FC = () => {
   );
 };
 
-export default Datasource;
+export default Namespace;

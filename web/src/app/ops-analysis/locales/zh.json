@@ -62,16 +62,16 @@
     "introMsg": "选择NATS服务作为数据源",
     "paramType": "参数类型",
     "paramTypes": {
-        "string": "字符串",
-        "number": "数字",
-        "date": "日期",
-        "boolean": "布尔",
-        "timeRange": "时间范围"
+    "string": "字符串",
+    "number": "数字",
+    "date": "日期",
+    "boolean": "布尔",
+    "timeRange": "时间范围"
     },
     "filterTypes": {
-        "filter": "筛选",
-        "fixed": "固定",
-        "params": "参数"
+    "filter": "筛选",
+    "fixed": "固定",
+    "params": "参数"
     },
     "filterType": "筛选类型",
     "operation": "操作",
@@ -84,6 +84,20 @@
     "operationFailed": "操作失败",
     "fixedParamRequiredValue": "固定类型的参数必须有默认值",
     "required": "必填"
+},
+"namespace": {
+    "title": "命名空间",
+    "name": "名称",
+    "account": "账号",
+    "password": "密码",
+    "domain": "域名",
+    "describe": "描述",
+    "createdTime": "创建时间",
+    "introTitle": "命名空间",
+    "introMsg": "定义不同命名空间的NATS，在设置数据源的时候可以指定对应命名空间的数据。",
+    "updateNamespaceSuccess": "更新命名空间成功",
+    "createNamespaceSuccess": "创建命名空间成功",
+    "operationFailed": "操作失败"
 },
 "topology": {
     "edgeConfig": "连线配置",
