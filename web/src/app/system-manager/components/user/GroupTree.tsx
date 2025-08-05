@@ -45,6 +45,9 @@ const GroupTree: React.FC<GroupTreeProps> = ({
       return null;
     }
 
+    const nodeName = node ? (typeof node.title === 'string' ? node.title : String(node.title)) : '';
+    const isDefaultGroup = nodeName === 'Default';
+
     return (
       <Dropdown
         overlay={
@@ -64,6 +67,7 @@ const GroupTree: React.FC<GroupTreeProps> = ({
               },
               {
                 key: 'rename',
+                disabled: isDefaultGroup,
                 label: (
                   <PermissionWrapper requiredPermissions={['Edit Group']}>
                     {t('system.group.rename')}
@@ -72,6 +76,7 @@ const GroupTree: React.FC<GroupTreeProps> = ({
               },
               {
                 key: 'delete',
+                disabled: isDefaultGroup,
                 label: (
                   <PermissionWrapper requiredPermissions={['Delete Group']}>
                     {t('common.delete')}
