@@ -1,12 +1,12 @@
 from apps.core.utils.serializers import AuthSerializer
 from rest_framework import serializers
 from apps.playground.models.playground_example import PlayGroundFile
-from apps.playground.models.playground_capability import PlayGroundCapability
+from apps.mlops.models.anomaly_detection_serving import AnomalyDetectionServing
 
 class PlayGroundFileSerializer(AuthSerializer):
     permission_key = 'playground.playground_example'
-    capability = serializers.PrimaryKeyRelatedField(
-        queryset=PlayGroundCapability.objects.all(),
+    serving = serializers.PrimaryKeyRelatedField(
+        queryset=AnomalyDetectionServing.objects.all(),
         required=True,
     )
 
@@ -16,16 +16,16 @@ class PlayGroundFileSerializer(AuthSerializer):
         extra_kwargs = {
             'name': {'required': True},
             'train_data': {'required': False},
-            'capability': {'required': True},
+            'serving': {'required': True},
             'is_active': {'required': False},
         }
 
-    def get_capability(self, obj):
-        from apps.playground.serializers.playground_capability import PlayGroundCapabilitySerializer
-        return PlayGroundCapabilitySerializer(obj.capability).data if obj.capability else None
+    def get_serving(self, obj):
+        from apps.mlops.serializers.anomaly_detection_serving import AnomalyDetectionServingSerializer
+        return AnomalyDetectionServingSerializer(obj.serving).data if obj.serving else None
 
     def to_representation(self, instance):
-        from apps.playground.serializers.playground_capability import PlayGroundCapabilitySerializer
+        from apps.mlops.serializers.anomaly_detection_serving import AnomalyDetectionServingSerializer
         ret = super().to_representation(instance)
-        ret['capability'] = PlayGroundCapabilitySerializer(instance.capability, context=self.context).data
+        ret['serving_id'] = AnomalyDetectionServingSerializer(instance.serving, context=self.context).data
         return ret

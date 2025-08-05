@@ -1,11 +1,11 @@
 from django.db import models
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
-from apps.playground.models.playground_capability import PlayGroundCapability
+from apps.mlops.models.anomaly_detection_serving import AnomalyDetectionServing
 
 class PlayGroundFile(MaintainerInfo, TimeInfo):
-    capability = models.ForeignKey(
-        PlayGroundCapability,
+    serving = models.ForeignKey(
+        AnomalyDetectionServing,
         on_delete=models.CASCADE,
         related_name="files",
         verbose_name="能力演示ID"
