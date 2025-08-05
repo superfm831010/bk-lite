@@ -501,7 +501,7 @@ def _send_qa_request_with_retry(params, url, headers, index):
 def create_qa_pairs_task(knowledge_base_id, qa_name, username, domain):
     # 创建或获取问答对对象
     qa_pairs, created = QAPairs.objects.get_or_create(
-        name=qa_name, knowledge_base_id=knowledge_base_id, document_id=0, username=username, domain=domain
+        name=qa_name, knowledge_base_id=knowledge_base_id, document_id=0, created_by=username, domain=domain
     )
     logger.info(f"问答对对象{'创建' if created else '获取'}成功: {qa_pairs.name}")
     return qa_pairs
