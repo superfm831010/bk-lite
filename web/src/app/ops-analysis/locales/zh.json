@@ -1,20 +1,4 @@
 {
-  "common": {
-    "select": "选择",
-    "selectMsg": "请选择",
-    "inputMsg": "请输入",
-    "searchPlaceHolder": "搜索...",
-    "confirm": "确认",
-    "cancel": "取消",
-    "edit": "编辑",
-    "delete": "删除",
-    "save": "保存",
-    "operateFailed": "操作失败",
-    "successOperate": "操作成功",
-    "all": "全部",
-    "yes": "是",
-    "no": "否"
-  },
   "sidebar": {
     "title": "目录管理",
     "addDir": "新增目录",
@@ -29,7 +13,8 @@
     "deleteConfirm": "确认删除?",
     "inputPlaceholder": "请输入名称",
     "nameLabel": "名称",
-    "descLabel": "描述"
+    "descLabel": "描述",
+    "selectItem": "请选择仪表盘或拓扑"
   },
 "dashboard": {
     "addComponent": "添加视图",
@@ -61,7 +46,8 @@
     "chartTypeLabel": "图表类型",
     "lineChart": "折线图",
     "barChart": "柱状图",
-    "pieChart": "饼图"
+    "pieChart": "饼图",
+    "paramSettings": "参数设置"
   },
   "dataSource": {
     "title": "数据源",
@@ -73,7 +59,31 @@
     "aliasName": "别名",
     "defaultValue": "默认值",
     "introTitle": "数据源",
-    "introMsg": "选择NATS服务作为数据源"
+    "introMsg": "选择NATS服务作为数据源",
+    "paramType": "参数类型",
+    "paramTypes": {
+        "string": "字符串",
+        "number": "数字",
+        "date": "日期",
+        "boolean": "布尔",
+        "timeRange": "时间范围"
+    },
+    "filterTypes": {
+        "filter": "筛选",
+        "fixed": "固定",
+        "params": "参数"
+    },
+    "filterType": "筛选类型",
+    "operation": "操作",
+    "addParam": "添加参数",
+    "duplicateParamNames": "参数名重复：",
+    "paramNameNotAllowDuplicate": "参数名不允许重复",
+    "paramNameCannotBeEmpty": "参数名不能为空",
+    "updateDataSourceSuccess": "更新数据源成功",
+    "createDataSourceSuccess": "创建数据源成功",
+    "operationFailed": "操作失败",
+    "fixedParamRequiredValue": "固定类型的参数必须有默认值",
+    "required": "必填"
 },
 "topology": {
     "edgeConfig": "连线配置",

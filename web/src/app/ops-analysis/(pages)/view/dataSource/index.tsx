@@ -189,7 +189,7 @@ const Datasource: React.FC = () => {
             <Input
               allowClear
               value={searchValue}
-              placeholder={t('common.searchPlaceHolder')}
+              placeholder={t('common.search')}
               style={{ width: 250 }}
               onChange={(e) => setSearchValue(e.target.value)}
               onPressEnter={(e) => handleFilter(e.currentTarget.value)}

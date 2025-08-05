@@ -7,13 +7,13 @@ import ComponentConfig from './components/baseConfig';
 import TimeSelector from '@/components/time-selector';
 // @ts-expect-error missing type declarations for react-grid-layout
 import GridLayout, { WidthProvider } from 'react-grid-layout';
-import { Button, Empty, Dropdown, Menu, Modal, Select } from 'antd';
+import { Button, Empty, Dropdown, Menu, Modal, message, Spin } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { LayoutItem } from '@/app/ops-analysis/types/dashBoard';
 import { DirItem } from '@/app/ops-analysis/types';
 import { SaveOutlined, PlusOutlined, MoreOutlined } from '@ant-design/icons';
-import { useDashBoardApi } from '@/app/ops-analysis/api/dashBoard';
 import { getWidgetComponent, getWidgetMeta } from './components/registry';
+import { useDashBoardApi } from '@/app/ops-analysis/api/dashBoard';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -25,16 +25,14 @@ const ResponsiveGridLayout = WidthProvider(GridLayout);
 
 const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
   const { t } = useTranslation();
-  const { getInstanceList } = useDashBoardApi();
+  const { getDashboardDetail, saveDashboard } = useDashBoardApi();
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [layout, setLayout] = useState<LayoutItem[]>([]);
   const [configDrawerVisible, setConfigDrawerVisible] = useState(false);
   const [currentConfigItem, setCurrentConfigItem] = useState<any>(null);
-  const [globalInstances, setGlobalInstances] = useState<string[]>([]);
-  const [instanceOptions, setInstanceOptions] = useState<any[]>([]);
-  const [instancesLoading, setInstancesLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [timeRefreshKey, setTimeRefreshKey] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const timeDefaultValue = {
     selectValue: 10080,
     rangePickerVaule: null,
@@ -50,55 +48,53 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
     getInitialTimeRange()
   );
 
-  // 直接从 layout 判断是否需要全局选择器
+  // 判断是否需要全局时间选择器
   const needGlobalTimeSelector = layout.some((item) => {
-    const meta = getWidgetMeta(item.widget);
-    const filterType =
-      item.config?.filterType || meta.defaultConfig?.filterType;
-    return filterType === 'selector';
+    return (
+      item.config?.dataSourceParams &&
+      Array.isArray(item.config.dataSourceParams) &&
+      item.config.dataSourceParams.some(
+        (param: any) =>
+          param.filterType === 'filter' && param.type === 'timeRange'
+      )
+    );
   });
 
-  const needGlobalInstanceSelector = false;
-
-  const componentNeedsGlobalTime = (item: LayoutItem) => {
-    const meta = getWidgetMeta(item.widget);
-    const filterType =
-      item.config?.filterType || meta.defaultConfig?.filterType;
-    return filterType === 'selector';
-  };
-
-  // 获取实例列表
+  // 加载仪表盘数据
   useEffect(() => {
-    const fetchInstanceList = async () => {
+    const loadDashboardData = async () => {
+      if (!selectedDashboard) {
+        setLayout([]);
+        return;
+      }
       try {
-        setInstancesLoading(true);
-        const response: any = await getInstanceList();
-        setInstanceOptions(response.data || []);
+        setLoading(true);
+        const dashboardData = await getDashboardDetail(
+          selectedDashboard.data_id
+        );
+        if (dashboardData.view_sets && Array.isArray(dashboardData.view_sets)) {
+          setLayout(dashboardData.view_sets);
+        } else {
+          setLayout([]);
+        }
       } catch (error) {
-        console.error('获取实例列表失败:', error);
-        setInstanceOptions([]);
+        console.error('加载仪表盘数据失败:', error);
+        setLayout([]);
       } finally {
-        setInstancesLoading(false);
+        setLoading(false);
       }
     };
-
-    fetchInstanceList();
-  }, []);
+    loadDashboardData();
+  }, [selectedDashboard?.data_id]);
 
   const openAddModal = () => setAddModalVisible(true);
 
   const handleTimeChange = (timeData: any) => {
     setGlobalTimeRange(timeData);
-    setTimeRefreshKey((prev) => prev + 1);
   };
 
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
-  };
-
-  const handleInstancesChange = (instances: string[]) => {
-    setGlobalInstances(instances);
-    console.log('Global instances changed:', instances);
   };
 
   const onLayoutChange = (newLayout: any) => {
@@ -134,9 +130,30 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
     setAddModalVisible(false);
   };
 
-  // TODO
-  const handleSave = () => {
-    console.log('Save layout:', layout);
+  // 保存仪表盘
+  const handleSave = async () => {
+    if (!selectedDashboard) {
+      message.warning('请先选择一个仪表盘');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const saveData = {
+        name: selectedDashboard.name,
+        desc: selectedDashboard.desc || '',
+        filters: {},
+        other: {},
+        view_sets: layout,
+      };
+      await saveDashboard(selectedDashboard.data_id, saveData);
+      message.success(t('common.saveSuccess'));
+    } catch (error) {
+      console.error('保存仪表盘失败:', error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const removeWidget = (id: string) => {
@@ -213,25 +230,14 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
                 onChange={handleTimeChange}
                 onRefresh={handleRefresh}
               />
-              {needGlobalInstanceSelector && (
-                <>
-                  <span className="text-sm text-[var(--color-text-2)]">
-                    {t('dashboard.instanceList')}:
-                  </span>
-                  <Select
-                    mode="multiple"
-                    loading={instancesLoading}
-                    placeholder={t('dashboard.selectInstance')}
-                    style={{ width: 200 }}
-                    value={globalInstances}
-                    onChange={handleInstancesChange}
-                    options={instanceOptions}
-                  />
-                </>
-              )}
             </div>
           }
-          <Button icon={<SaveOutlined />} onClick={handleSave}>
+          <Button
+            icon={<SaveOutlined />}
+            loading={saving}
+            disabled={!selectedDashboard?.data_id}
+            onClick={handleSave}
+          >
             {t('common.save')}
           </Button>
           <Button
@@ -247,6 +253,14 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
 
       <div className="flex-1 bg-[var(--color-fill-1)] rounded-lg overflow-auto">
         {(() => {
+          if (loading) {
+            return (
+              <div className="h-full flex items-center justify-center">
+                <Spin size="large" />
+              </div>
+            );
+          }
+
           if (!layout.length) {
             return (
               <div className="h-full flex flex-col items-center justify-center">
@@ -320,14 +334,9 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
                     </div>
                     <div className="widget-body flex-1 h-full rounded-b overflow-hidden">
                       <WidgetComponent
-                        key={`${item.i}-${
-                          componentNeedsGlobalTime(item)
-                            ? `${refreshKey}-${timeRefreshKey}`
-                            : refreshKey
-                        }`}
+                        key={item.i}
                         config={item.config}
                         globalTimeRange={globalTimeRange}
-                        globalInstances={globalInstances}
                         refreshKey={refreshKey}
                       />
                     </div>

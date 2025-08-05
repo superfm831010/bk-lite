@@ -400,7 +400,7 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
         <h3 className="text-base font-semibold mb-4">{t('sidebar.title')}</h3>
         <div className="flex items-center mb-4">
           <Input.Search
-            placeholder={t('common.searchPlaceHolder')}
+            placeholder={t('common.search')}
             allowClear
             className="flex-1"
             onSearch={handleSearch}

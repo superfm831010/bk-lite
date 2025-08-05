@@ -25,8 +25,10 @@ export interface ParamItem {
   value: any;
   alias_name: string;
   type?: string; 
+  filterType?: string;
   id?: string;
   desc?: string;
   required?: boolean;
   options?: Array<{ label: string; value: any }>;
+  userValue?: any; // 用户配置的参数值
 }

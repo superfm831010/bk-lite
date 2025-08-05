@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
-import { v4 as uuidv4 } from 'uuid';
 import CustomTable from '@/components/custom-table';
-import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import TimeSelector from '@/components/time-selector';
+import { v4 as uuidv4 } from 'uuid';
+import { PlusCircleOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { useTranslation } from '@/utils/i18n';
 import {
@@ -20,12 +21,60 @@ import {
   message,
 } from 'antd';
 
-const paramTypeOptions = [
-  { label: '字符串', value: 'string' },
-  { label: '数字', value: 'number' },
-  { label: '日期', value: 'date' },
-  { label: '布尔', value: 'boolean' },
-];
+const FormTimeSelector: React.FC<{
+  value?: any;
+  onChange?: (value: any) => void;
+}> = ({ value, onChange }) => {
+  const [selectValue, setSelectValue] = React.useState(10080);
+  const [rangeValue, setRangeValue] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (value !== undefined) {
+      if (Array.isArray(value)) {
+        setSelectValue(0);
+        setRangeValue(value);
+      } else {
+        setSelectValue(value);
+        setRangeValue(null);
+      }
+    } else {
+      onChange?.(10080);
+    }
+  }, [value, onChange]);
+
+  const handleChange = (range: number[], originValue: number | null) => {
+    if (originValue === 0) {
+      setSelectValue(0);
+      setRangeValue(range);
+      onChange?.(range);
+    } else if (originValue !== null) {
+      setSelectValue(originValue);
+      setRangeValue(null);
+      onChange?.(originValue);
+    }
+  };
+
+  const formatRangeValue = (value: any): [dayjs.Dayjs, dayjs.Dayjs] | null => {
+    if (Array.isArray(value) && value.length === 2) {
+      return [dayjs(value[0]), dayjs(value[1])];
+    }
+    return null;
+  };
+
+  return (
+    <div className="w-full">
+      <TimeSelector
+        onlyTimeSelect
+        className="w-full"
+        defaultValue={{
+          selectValue: selectValue,
+          rangePickerVaule: formatRangeValue(rangeValue),
+        }}
+        onChange={handleChange}
+      />
+    </div>
+  );
+};
 
 const OperateModal: React.FC<OperateModalProps> = ({
   open,
@@ -40,27 +89,62 @@ const OperateModal: React.FC<OperateModalProps> = ({
   const [duplicateNames, setDuplicateNames] = React.useState<string[]>([]);
   const { createDataSource, updateDataSource } = useDataSourceApi();
 
+  const paramTypeOptions = [
+    { label: t('dataSource.paramTypes.string'), value: 'string' },
+    { label: t('dataSource.paramTypes.number'), value: 'number' },
+    { label: t('dataSource.paramTypes.date'), value: 'date' },
+    { label: t('dataSource.paramTypes.boolean'), value: 'boolean' },
+    { label: t('dataSource.paramTypes.timeRange'), value: 'timeRange' },
+  ];
+
+  const filterTypeOptions = [
+    { label: t('dataSource.filterTypes.filter'), value: 'filter' },
+    { label: t('dataSource.filterTypes.fixed'), value: 'fixed' },
+    { label: t('dataSource.filterTypes.params'), value: 'params' },
+  ];
+
+  const createDefaultParam = (): ParamItem => ({
+    id: uuidv4(),
+    name: '',
+    value: '',
+    type: 'string',
+    filterType: 'fixed',
+    alias_name: '',
+  });
+
   useEffect(() => {
-    if (open) {
-      form.resetFields();
-      setParams([]);
-      setDuplicateNames([]);
-      if (currentRow) {
-        form.setFieldsValue(currentRow);
-        if (currentRow.params && Array.isArray(currentRow.params)) {
-          setParams(
-            currentRow.params.map((param: any) => ({
-              ...param,
-              type: param.type || 'string',
-              id: param.id || uuidv4(), // 为现有参数生成ID
-            }))
-          );
-        }
-      }
+    if (!open) return;
+
+    form.resetFields();
+    setDuplicateNames([]);
+
+    if (!currentRow) {
+      setParams([createDefaultParam()]);
+      return;
+    }
+
+    form.setFieldsValue(currentRow);
+    const hasValidParams =
+      currentRow.params &&
+      Array.isArray(currentRow.params) &&
+      currentRow.params.length > 0;
+
+    if (hasValidParams) {
+      setParams(
+        currentRow.params.map((param: any) => ({
+          ...param,
+          type: param.type || 'string',
+          filterType:
+            param.filterType ||
+            (param.type === 'timeRange' ? 'filter' : 'fixed'),
+          id: param.id || uuidv4(),
+        }))
+      );
+    } else {
+      setParams([createDefaultParam()]);
     }
   }, [open, currentRow, form]);
 
-  // 检查参数名重复
   const checkDuplicateNames = (currentParams: ParamItem[]) => {
     const nameCount: { [key: string]: number } = {};
     const duplicates: string[] = [];
@@ -100,10 +184,12 @@ const OperateModal: React.FC<OperateModalProps> = ({
           if (!val) {
             newValue = '';
           } else if (val.format) {
-            newValue = val.format('YYYY-MM-DD');
+            newValue = val.format('YYYY-MM-DD HH:mm:ss');
           } else {
             newValue = val;
           }
+        } else if (type === 'timeRange') {
+          newValue = val;
         }
         return { ...item, value: newValue };
       })
@@ -115,31 +201,55 @@ const OperateModal: React.FC<OperateModalProps> = ({
       prev.map((item) => {
         if (item.id !== id) return item;
         let newValue: any = '';
+        let newFilterType = item.filterType;
+
         if (val === 'boolean') {
           newValue = false;
         } else if (val === 'number') {
           newValue = 0;
         } else if (val === 'date') {
           newValue = '';
+        } else if (val === 'timeRange') {
+          newValue = 10080;
+        } else {
+          newValue = '';
         }
-        return { ...item, type: val, value: newValue };
+
+        if (val !== 'timeRange' && newFilterType === 'filter') {
+          newFilterType = 'fixed';
+        }
+
+        return {
+          ...item,
+          type: val,
+          value: newValue,
+          filterType: newFilterType,
+        };
       })
     );
   };
 
-  const handleAddParam = () => {
-    const newParam: ParamItem = {
-      id: uuidv4(),
-      name: '',
-      value: '',
-      type: 'string',
-      alias_name: '',
-    };
-    setParams([...params, newParam]);
+  const handleFilterTypeChange = (val: string, id: string) => {
+    setParams((prev: ParamItem[]) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        return { ...item, filterType: val };
+      })
+    );
+  };
+
+  const handleAddParamAfter = (index: number) => {
+    const newParam = createDefaultParam();
+    const newParams = [...params];
+    newParams.splice(index + 1, 0, newParam);
+    setParams(newParams);
   };
 
   const handleDeleteParam = (id: string) => {
     const newParams = params.filter((item) => item.id !== id);
+    if (newParams.length === 0) {
+      newParams.push(createDefaultParam());
+    }
     setParams(newParams);
     checkDuplicateNames(newParams);
   };
@@ -182,7 +292,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
       render: (_: any, record: ParamItem) => (
         <Input
           value={record.name}
-          placeholder="名称"
+          placeholder={t('dataSource.name')}
           onChange={(e) => handleParamNameChange(e.target.value, record.id!)}
           onBlur={(e) => handleParamNameBlur(e.target.value, record.id!)}
           status={duplicateNames.includes(record.name) ? 'error' : undefined}
@@ -197,16 +307,16 @@ const OperateModal: React.FC<OperateModalProps> = ({
       render: (_: any, record: ParamItem) => (
         <Input
           value={record.alias_name || record.name}
-          placeholder="别名"
+          placeholder={t('dataSource.aliasName')}
           onChange={(e) => handleAliasChange(e.target.value, record.id!)}
         />
       ),
     },
     {
-      title: '参数类型',
+      title: t('dataSource.paramType'),
       dataIndex: 'type',
       key: 'type',
-      width: 120,
+      width: 110,
       render: (_: any, record: ParamItem) => (
         <Select
           value={record.type || 'string'}
@@ -217,20 +327,68 @@ const OperateModal: React.FC<OperateModalProps> = ({
       ),
     },
     {
+      title: t('dataSource.filterType'),
+      dataIndex: 'filterType',
+      key: 'filterType',
+      width: 100,
+      render: (_: any, record: ParamItem) => {
+        const getFilterTypeOptions = (paramType: string) => {
+          if (paramType === 'timeRange') {
+            return filterTypeOptions;
+          } else {
+            return filterTypeOptions.filter(
+              (option) => option.value === 'fixed' || option.value === 'params'
+            );
+          }
+        };
+
+        return (
+          <Select
+            value={record.filterType || 'fixed'}
+            options={getFilterTypeOptions(record.type || 'string')}
+            style={{ width: '100%' }}
+            onChange={(val) => handleFilterTypeChange(val, record.id!)}
+          />
+        );
+      },
+    },
+    {
       title: t('dataSource.defaultValue'),
       dataIndex: 'value',
       key: 'value',
-      width: 150,
+      width: 200,
       render: (text: any, record: ParamItem) => {
         const type = record.type || 'string';
+        const isFixed = record.filterType === 'fixed';
+        const commonProps = {
+          style: {
+            width: '100%',
+            ...(isFixed && !text && text !== 0 && text !== false
+              ? { borderColor: 'var(--color-fail)' }
+              : {}),
+          },
+        };
+
         if (type === 'date') {
           return (
             <DatePicker
+              showTime
               value={text ? dayjs(text) : undefined}
               onChange={(date: Dayjs | null) =>
                 handleDefaultChange(date, record.id!, 'date')
               }
               style={{ width: '100%' }}
+              format="YYYY-MM-DD HH:mm:ss"
+            />
+          );
+        }
+        if (type === 'timeRange') {
+          return (
+            <FormTimeSelector
+              value={text}
+              onChange={(val: any) =>
+                handleDefaultChange(val, record.id!, 'timeRange')
+              }
             />
           );
         }
@@ -249,36 +407,59 @@ const OperateModal: React.FC<OperateModalProps> = ({
             <Input
               type="number"
               value={text}
-              placeholder="默认值"
+              placeholder={
+                isFixed
+                  ? t('dataSource.required')
+                  : t('dataSource.defaultValue')
+              }
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 handleDefaultChange(e.target.value, record.id!, 'number')
               }
+              {...commonProps}
             />
           );
         }
         return (
           <Input
             value={text}
-            placeholder="默认值"
+            placeholder={
+              isFixed ? t('dataSource.required') : t('dataSource.defaultValue')
+            }
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleDefaultChange(e.target.value, record.id!, 'string')
             }
+            {...commonProps}
           />
         );
       },
     },
     {
-      title: '操作',
+      title: t('dataSource.operation'),
       key: 'action',
       width: 80,
-      render: (_: any, record: ParamItem) => (
-        <Button
-          type="text"
-          danger
-          size="small"
-          icon={<MinusCircleOutlined />}
-          onClick={() => handleDeleteParam(record.id!)}
-        />
+      render: (_: any, record: ParamItem, index: number) => (
+        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+          <Button
+            type="text"
+            size="small"
+            icon={<PlusCircleOutlined />}
+            onClick={() => handleAddParamAfter(index)}
+            style={{
+              border: 'none',
+              padding: '4px',
+            }}
+          />
+          <Button
+            type="text"
+            size="small"
+            icon={<MinusCircleOutlined />}
+            onClick={() => handleDeleteParam(record.id!)}
+            style={{
+              border: 'none',
+              padding: '4px',
+            }}
+          />
+        </div>
       ),
     },
   ];
@@ -287,46 +468,54 @@ const OperateModal: React.FC<OperateModalProps> = ({
     try {
       setLoading(true);
 
-      // 检查参数名是否有重复
-      if (!checkDuplicateNames(params)) {
-        message.error('参数名不允许重复');
+      const validParams = params.filter(
+        (param) => param.name && param.name.trim()
+      );
+      if (!checkDuplicateNames(validParams)) {
+        message.error(t('dataSource.paramNameNotAllowDuplicate'));
         setLoading(false);
         return;
       }
 
-      // 检查是否有空的参数名
-      const hasEmptyName = params.some(
-        (param) => !param.name || !param.name.trim()
-      );
-      if (hasEmptyName) {
-        message.error('参数名不能为空');
+      // 检查fixed类型的参数是否有默认值
+      const hasEmptyFixedValue = validParams.some((param) => {
+        if (param.filterType === 'fixed') {
+          const value = param.value;
+          return value === '' || value === null || value === undefined;
+        }
+        return false;
+      });
+      if (hasEmptyFixedValue) {
+        message.error(t('dataSource.fixedParamRequiredValue'));
         setLoading(false);
         return;
       }
 
       const submitData = {
         ...values,
-        // 提交时去除id字段，只保留业务字段
-        params: params.map((param) => ({
-          name: param.name,
-          alias_name: param.alias_name,
-          type: param.type,
-          value: param.value,
-        })),
+        params: params
+          .filter((param) => param.name && param.name.trim())
+          .map((param) => ({
+            name: param.name,
+            alias_name: param.alias_name,
+            type: param.type,
+            filterType: param.filterType,
+            value: param.value,
+          })),
       };
 
       if (currentRow) {
         await updateDataSource(currentRow.id, submitData);
-        message.success('更新数据源成功');
+        message.success(t('dataSource.updateDataSourceSuccess'));
       } else {
         await createDataSource(submitData);
-        message.success('创建数据源成功');
+        message.success(t('dataSource.createDataSourceSuccess'));
       }
 
       onClose();
       onSuccess && onSuccess();
     } catch (error: any) {
-      message.error(error.message || '操作失败');
+      message.error(error.message || t('dataSource.operationFailed'));
     } finally {
       setLoading(false);
     }
@@ -340,7 +529,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
           : `${t('common.add')}${t('dataSource.title')}`
       }
       placement="right"
-      width={750}
+      width={900}
       open={open}
       onClose={onClose}
       footer={
@@ -381,43 +570,36 @@ const OperateModal: React.FC<OperateModalProps> = ({
         <Form.Item name="desc" label={t('dataSource.describe')}>
           <Input.TextArea rows={3} placeholder={t('common.inputMsg')} />
         </Form.Item>
-        <Form.Item label={t('dataSource.params')} colon={false}>
-          <div style={{ marginBottom: 16 }}>
-            <Button
-              type="dashed"
-              onClick={handleAddParam}
-              icon={<PlusOutlined />}
-              block
-            >
-              添加参数
-            </Button>
+        <div style={{ margin: '0 0 0 66px' }}>
+          <div
+            style={{
+              marginBottom: '8px',
+              color: 'var(--color-text-1)',
+              fontSize: '14px',
+            }}
+          >
+            {t('dataSource.params')}：
           </div>
-          {params.length > 0 && (
-            <>
-              <CustomTable
-                rowKey="id"
-                columns={columns}
-                dataSource={params}
-                pagination={false}
-              />
-              {duplicateNames.length > 0 && (
-                <div
-                  style={{
-                    color: '#ff4d4f',
-                    fontSize: '12px',
-                    marginTop: '8px',
-                    padding: '4px 8px',
-                    backgroundColor: '#fff2f0',
-                    border: '1px solid #ffccc7',
-                    borderRadius: '4px',
-                  }}
-                >
-                  参数名重复：{duplicateNames.join('、')}
-                </div>
-              )}
-            </>
+          <CustomTable
+            rowKey="id"
+            columns={columns}
+            dataSource={params}
+            pagination={false}
+          />
+          {duplicateNames.length > 0 && (
+            <div
+              style={{
+                color: 'var(--color-fail)',
+                fontSize: '12px',
+                marginTop: '4px',
+                padding: '4px 8px',
+              }}
+            >
+              {t('dataSource.duplicateParamNames')}
+              {duplicateNames.join('、')}
+            </div>
           )}
-        </Form.Item>
+        </div>
       </Form>
     </Drawer>
   );

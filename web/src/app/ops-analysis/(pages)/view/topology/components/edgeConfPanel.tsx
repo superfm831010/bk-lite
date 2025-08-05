@@ -131,11 +131,11 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
                 return interfaceType === 'existing' ? (
                   <Form.Item
                     name={interfaceValueField}
-                    rules={[{ required: true, message: t('common.selectMsg') }]}
+                    rules={[{ required: true, message: t('common.selectTip') }]}
                     style={{ marginBottom: '10px' }}
                   >
                     <Select
-                      placeholder={t('common.selectMsg')}
+                      placeholder={t('common.selectTip')}
                       options={mockInterfaces}
                       disabled={readonly}
                     />
@@ -248,10 +248,10 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
           <Form.Item
             label={t('topology.lineType')}
             name="lineType"
-            rules={[{ required: true, message: t('common.selectMsg') }]}
+            rules={[{ required: true, message: t('common.selectTip') }]}
           >
             <Select
-              placeholder={t('common.selectMsg')}
+              placeholder={t('common.selectTip')}
               onChange={handleLineTypeChange}
               disabled={readonly}
             >

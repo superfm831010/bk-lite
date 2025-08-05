@@ -5,11 +5,13 @@ import Sidebar from './components/sidebar';
 import Dashboard from './dashBoard/index';
 import Topology from './topology/index';
 import Datasource from './dataSource/index';
+import { useTranslation } from '@/utils/i18n';
 import { DirectoryType, SidebarRef } from '@/app/ops-analysis/types';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { Button, Empty } from 'antd';
 
 const ViewPage: React.FC = () => {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [selectedType, setSelectedType] = useState<DirectoryType>('directory');
   const [selectedItem, setSelectedItem] = useState<{
@@ -84,7 +86,7 @@ const ViewPage: React.FC = () => {
         ) : (
           <Empty
             className="w-full mt-[20vh]"
-            description="请选择仪表盘或拓扑"
+            description={t('sidebar.selectItem')}
           />
         )}
       </div>
