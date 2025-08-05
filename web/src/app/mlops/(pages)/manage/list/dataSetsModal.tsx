@@ -45,13 +45,13 @@ const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess, activ
     }
   }, [formData, isModalOpen]);
 
-  const handleAddMap: Record<string, any> = {
+  const handleAddMap: Record<string, (params: any) => Promise<void>> = {
     'anomaly': async (params: any) => {
       await addAnomalyDatasets(params);
     }
   };
 
-  const handleUpdateMap: Record<string, any> = {
+  const handleUpdateMap: Record<string, (id: number, params: any) => Promise<void>> = {
     'anomaly': async (id: number, params: any) => {
       await updateAnomalyDatasets(id, params);
     }

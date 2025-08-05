@@ -43,10 +43,6 @@ const DatasetManagePage = () => {
           title: t(`datasets.anomaly`),
           key: 'anomaly',
         },
-        {
-          title: '日志',
-          key: 'log'
-        }
       ]
     }
   ];
@@ -127,8 +123,8 @@ const DatasetManagePage = () => {
   };
 
   const infoText = (item: any) => {
-    return <p className='text-right'>所有者: {item.creator}</p>;
-  }
+    return <p className='text-right'>{`${t(`mlops-common.owner`)}: ${item.creator}`}</p>;
+  };
 
   const menuActions = (item: any) => {
     return (
