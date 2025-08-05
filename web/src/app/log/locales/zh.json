@@ -139,7 +139,8 @@
       "clearLogs": "清空日志",
       "enableScrolling": "开启自动滚动",
       "stopScrolling": "关闭自动滚动",
-      "selectGroup": "请选择分组"
+      "selectGroup": "请选择分组",
+      "search": "搜索"
     },
     "integration": {
       "interval": "间隔",
