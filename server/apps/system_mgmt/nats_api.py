@@ -342,8 +342,9 @@ def get_user_rules_by_module(group_id, username, domain, app, module):
     guest_group = Group.objects.filter(name="OpsPilotGuest").first()
     user_obj = User.objects.filter(username=username, domain=domain).first()
     admin_teams = [int(group_id)]
-    has_guest_group = guest_group.id in user_obj.group_list
-    if guest_group and has_guest_group:
+    has_guest_group = False
+    if guest_group and guest_group.id in user_obj.group_list:
+        has_guest_group = True
         admin_teams.append(guest_group.id)
 
     if not user_obj:
@@ -397,8 +398,9 @@ def get_user_rules_by_app(group_id, username, domain, app, module, child_module=
     guest_group = Group.objects.filter(name="OpsPilotGuest").first()
     user_obj = User.objects.filter(username=username, domain=domain).first()
     admin_teams = [int(group_id)]
-    has_guest_group = guest_group.id in user_obj.group_list
-    if guest_group and has_guest_group:
+    has_guest_group = False
+    if guest_group and guest_group.id in user_obj.group_list:
+        has_guest_group = True
         admin_teams.append(guest_group.id)
     if not user_obj:
         return {"instance": [], "team": []}

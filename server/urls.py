@@ -47,8 +47,6 @@ for app_config in apps.get_app_configs():
         if app_name.startswith("apps."):
             urls_module = __import__(f"{app_name}.urls", fromlist=["urlpatterns"])
             url_path = app_name.split("apps.")[-1]
-            # TODO 添加api/v1 前缀
-
             urlpatterns.append(path(f"api/v1/{url_path}/", include(urls_module)))
 
     except ImportError as e:  # noqa
