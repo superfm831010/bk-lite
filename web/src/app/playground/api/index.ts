@@ -31,6 +31,11 @@ const usePlayroundApi = () => {
   const getServingsList = async () => {
     return await get(`/mlops/anomaly_detection_servings/`);
   };
+  
+  // 获取能力发布详情
+  const getServingsDetail = async (id: string) => {
+    return await get(`/mlops/anomaly_detection_servings/${id}/`)
+  };
 
   // 查询单个类别
   const getCategoryDetail = async (id: number) => {
@@ -53,8 +58,8 @@ const usePlayroundApi = () => {
   };
   
   // 查询指定能力体验下的样本文件
-  const getSampleFileOfCapability = async (capability: string) => {
-    return await get(`/playground/example/?capability=${capability}`);
+  const getSampleFileOfServing = async (serving: string) => {
+    return await get(`/playground/example/?serving=${serving}`);
   };
 
   // 获取指定样本文件详情
@@ -105,7 +110,7 @@ const usePlayroundApi = () => {
   // 创建样本文件
   const createSampleFile = async (params: {
     name: string;
-    capability: number;
+    serving: number;
     train_data: LabelData[],
     is_active: boolean;
   }) => {
@@ -136,7 +141,7 @@ const usePlayroundApi = () => {
 
   // 删除指定样本文件
   const deleteSampleFile = async (id: number) => {
-    return await del(`/playground/capability/${id}`);
+    return await del(`/playground/example/${id}`);
   };
 
   return {
@@ -147,7 +152,8 @@ const usePlayroundApi = () => {
     getCapabilityDetail,
     getAllSampleFileList,
     getSampleFileDetail,
-    getSampleFileOfCapability,
+    getServingsDetail,
+    getSampleFileOfServing,
     createCategory,
     createCapability,
     createSampleFile,

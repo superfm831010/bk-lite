@@ -137,31 +137,29 @@ const TopMenu = () => {
   const renderSubMenuPanel = useMemo(() => {
     if (modelExpLoading) return;
     const renderMenu = () => (
-      modelExpList?.map((item: any, index: number) => {
-        return (
-          <div key={`category_${index}`}>
-            <h3 className='text-base font-bold mb-4'>{item.name}</h3>
-            <div className='flex flex-wrap justify-between'>
-              {item?.children && item.children.map((child: any) => {
-                return (
-                  <div key={`child_${child?.id}`} className='mr-2 mb-4 w-[150px]'>
-                    <Link href={child.url} prefetch={false}>
-                      <div className={`${styles.menuItem} flex items-center cursor-pointer text-sm`}>
-                        <span>{child.name}</span>
-                      </div>
-                      <p className='truncate text-[--color-text-3] text-sm'>{child.description}</p>
-                    </Link>
-                  </div>
-                )
-              })}
-            </div>
+      <>
+        <div>
+          <h3 className='text-sm font-bold mb-2'>异常检测</h3>
+          <div className='flex flex-wrap justify-between ml-2'>
+            {modelExpList?.map((child: any) => {
+              return (
+                <div key={`child_${child?.id}`} className='mr-2 mb-4 w-[150px]'>
+                  <Link href={child.url} prefetch={false}>
+                    <div className={`${styles.menuItem} flex items-center cursor-pointer text-sm`}>
+                      <span>{child.name}</span>
+                    </div>
+                    <p className='truncate text-[--color-text-3] text-sm'>{child.description}</p>
+                  </Link>
+                </div>
+              )
+            })}
           </div>
-        )
-      })
+        </div>
+      </>
     )
 
     return (
-      <div className='flex max-w-[80vw] ml-6 max-h-[80vh] overflow-y-auto'>
+      <div className='flex max-w-[80vw] ml-2 max-h-[80vh] overflow-y-auto'>
         <div>{renderMenu()}</div>
       </div>
     );

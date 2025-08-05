@@ -19,14 +19,14 @@ const AnomalyDetection = () => {
   const { convertToLocalizedTime } = useLocalizedTime();
   const {
     anomalyDetectionReason,
-    getCapabilityDetail,
-    getSampleFileOfCapability,
+    getServingsDetail,
+    getSampleFileOfServing,
     getSampleFileDetail
   } = usePlayroundApi();
   const [currentFileId, setCurrentFileId] = useState<string | null>(null);
   const [fileData, setFileData] = useState<any>(null);
   const [selectId, setSelectId] = useState<number | null>(null);
-  const [capabilityData, setCapabilityData] = useState<any>(null);
+  const [servingData, setServingData] = useState<any>(null);
   const [sampleOptions, setSampleOptions] = useState<Option[]>([]);
   const [chartData, setChartData] = useState<any[]>([
     {
@@ -137,14 +137,14 @@ const AnomalyDetection = () => {
   const getConfigData = async () => {
     const id = searchParams.get('id') || '';
     try {
-      const data = await getCapabilityDetail(id);
-      const sampleList = await getSampleFileOfCapability(id);
+      const data = await getServingsDetail(id);
+      const sampleList = await getSampleFileOfServing(id);
       const options = sampleList.filter((item: any) => item?.is_active).map((item: any) => ({
         label: item?.name,
         value: item?.id,
       }));
       setSampleOptions(options);
-      setCapabilityData(data);
+      setServingData(data);
       handleSubmit(data);
     } catch (e) {
       console.log(e);
@@ -218,15 +218,18 @@ const AnomalyDetection = () => {
     accept: '.csv'
   };
 
-  const handleSubmit = useCallback(async (capability = capabilityData) => {
+  const handleSubmit = useCallback(async (serving = servingData) => {
     console.log(selectId, fileData);
     if (!chartData) { return message.error(t(`playground-common.uploadMsg`)) };
     if (chartLoading) return;
     setChartLoading(true);
     try {
-      const { config } = capability;
       const params = {
-        ...config,
+        serving_id: serving.id,
+        model_name: `RandomForest_${serving.id}`,
+        algorithm: "RandomForest",
+        model_version: serving.model_version,
+        anomaly_threshold: serving.anomaly_threshold,
         data: chartData,
       };
       const data = await anomalyDetectionReason(params);
@@ -248,17 +251,19 @@ const AnomalyDetection = () => {
   }, []);
 
   const renderBanner = useMemo(() => {
+    const name = searchParams.get('name') || '异常检测';
+    const description = searchParams.get('description');
     return (
       <>
         <div className="banner-title text-5xl font-bold pt-5">
-          {capabilityData?.name || '异常检测'}
+          {name}
         </div>
         <div className="banner-info mt-8 max-w-[500px] text-[var(--color-text-3)]">
-          {capabilityData?.description || '基于机器学习的智能异常检测服务，能够自动识别时序数据中的异常模式和突变点。支持CSV文件上传，提供实时数据分析和可视化结果，帮助用户快速发现数据中的异常情况。广泛应用于系统监控、质量检测、金融风控、工业设备监控等场景。'}
+          {description || '基于机器学习的智能异常检测服务，能够自动识别时序数据中的异常模式和突变点。支持CSV文件上传，提供实时数据分析和可视化结果，帮助用户快速发现数据中的异常情况。广泛应用于系统监控、质量检测、金融风控、工业设备监控等场景。'}
         </div>
       </>
     )
-  }, [capabilityData]);
+  }, [searchParams]);
 
   const renderElement = () => {
     return infoText.applicationScenario.map((item: any) => (

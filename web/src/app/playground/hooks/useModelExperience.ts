@@ -18,33 +18,20 @@ const useModelExperience = (shouldLoad: boolean = true) => {
 
     const loadData = async () => {
       try {
-        const [categoryList, capabilityList] = await Promise.all([
-          get(`/playground/category/`),
-          get(`/playground/capability/`)
-        ]);
+        const servingsList = await get(`/mlops/anomaly_detection_servings/`);
 
         if (isCancelled) return;
 
-        if (!categoryList || !capabilityList) {
+        if (!servingsList) {
           throw new Error('fetch menu error');
         }
 
-        const data = categoryList.map((item: any) => {
-          const children = capabilityList.filter((child: any) => {
-            const categoryId = child.category?.id || child.category;
-            return (item.id === categoryId) && child?.is_active;
-          }).map((child: any) => ({
-            id: child.id,
-            name: child?.name || 'Unnamed',
-            description: child?.description || '',
-            url: `${child?.url}?page=anomaly-detection&id=${child?.id}&name=${child?.name}`,
-          }));
-
+        const data = servingsList.map((item: any) => {
           return {
-            category_id: item.id,
-            name: item.name || 'Unnamed Category',
-            description: item.description || '',
-            children
+            id: item.id,
+            name: item?.name || 'Unnamed',
+            description: item?.description || '',
+            url: `/playground/home?page=anomaly-detection&id=${item?.id}&name=${item?.name}&description=${item.description}`,
           };
         });
 
@@ -70,7 +57,7 @@ const useModelExperience = (shouldLoad: boolean = true) => {
 
   const reload = () => {
     if (!shouldLoad) return;
-    
+
     setLoading(true);
     setError(null);
     setModelExpList([]);
