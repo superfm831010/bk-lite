@@ -5,7 +5,7 @@ from django.http import Http404
 import pandas as pd
 
 from apps.core.decorators.api_permission import HasPermission
-from apps.core.utils.viewset_utils import AuthViewSet
+from config.drf.viewsets import ModelViewSet
 from apps.mlops.filters.anomaly_detection_dataset import AnomalyDetectionDatasetFilter
 from apps.mlops.filters.anomaly_detection_train_job import AnomalyDetectionTrainJobFilter
 from apps.mlops.models.anomaly_detection_train_job import AnomalyDetectionTrainJob
@@ -16,7 +16,7 @@ from apps.mlops.algorithm.anomaly_detection.random_forest_detector import Random
 from config.drf.pagination import CustomPageNumberPagination
 
 
-class AnomalyDetectionTrainJobViewSet(AuthViewSet):
+class AnomalyDetectionTrainJobViewSet(ModelViewSet):
    queryset= AnomalyDetectionTrainJob.objects.all()
    serializer_class = AnomalyDetectionTrainJobSerializer
    filterset_class = AnomalyDetectionTrainJobFilter
@@ -49,7 +49,7 @@ class AnomalyDetectionTrainJobViewSet(AuthViewSet):
    def list(self, request, *args, **kwargs):
       return super().list(request, *args, **kwargs)
 
-   @HasPermission("train_tasks-Add")
+   @HasPermission("train_tasks-Add,anomaly_detection_datasets_detail-File View,anomaly_detection_datasets-View")
    def create(self, request, *args, **kwargs):
       return super().create(request, *args, **kwargs)
 

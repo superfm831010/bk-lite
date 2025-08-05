@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { mockInterfaces } from '../../mockData';
+import { EdgeConfigPanelProps } from '@/app/ops-analysis/types/topology';
 import {
   Drawer,
   Form,
@@ -12,41 +13,10 @@ import {
   Radio,
 } from 'antd';
 
-interface InterfaceConfig {
-  type: 'existing' | 'custom';
-  value: string;
-}
-
-interface EdgeConfigPanelProps {
-  visible: boolean;
-  readonly?: boolean;
-  edgeData: {
-    id: string;
-    lineType: string;
-    lineName?: string;
-    sourceNode: {
-      id: string;
-      name: string;
-    };
-    targetNode: {
-      id: string;
-      name: string;
-    };
-    sourceInterface?: InterfaceConfig;
-    targetInterface?: InterfaceConfig;
-  } | null;
-  onLineTypeChange: (lineType: string) => void;
-  onLineNameChange?: (lineName: string) => void;
-  onClose: () => void;
-  onConfirm?: (values: any) => void;
-}
-
 const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
   visible,
   readonly = false,
   edgeData,
-  onLineTypeChange,
-  onLineNameChange,
   onClose,
   onConfirm,
 }) => {
@@ -81,13 +51,6 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
         },
       };
       onConfirm(result);
-    } else {
-      if (values.lineType !== edgeData?.lineType) {
-        onLineTypeChange(values.lineType);
-      }
-      if (values.lineName !== edgeData?.lineName && onLineNameChange) {
-        onLineNameChange(values.lineName || '');
-      }
     }
     onClose();
   };

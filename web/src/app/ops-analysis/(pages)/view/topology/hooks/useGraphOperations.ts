@@ -1,19 +1,23 @@
 import { useCallback, useEffect } from 'react';
+import type { Graph as X6Graph, Edge } from '@antv/x6';
 import { Graph } from '@antv/x6';
 import { Selection } from '@antv/x6-plugin-selection';
-import type { Graph as X6Graph, Edge } from '@antv/x6';
+import { COLORS, FORM_DEFAULTS } from '../constants/nodeDefaults';
+import { iconList } from '@/app/cmdb/utils/common';
+import { mockTopologyNodes, mockTopologyEdges } from '../../mockData';
 import {
-  getNodeStyle,
   getEdgeStyle,
+  getEdgeStyleWithLabel,
   addEdgeTools,
   showPorts,
   hideAllPorts,
+  getSingleValueNodeStyle,
+  getIconNodeStyle,
+  getTextNodeStyle,
+  getLogoUrl,
+  showEdgeTools,
+  hideAllEdgeTools,
 } from '../utils/topologyUtils';
-import {
-  mockInitialNodes,
-  mockInitialEdges,
-} from '../../mockData';
-import { iconList } from '@/app/cmdb/utils/common';
 
 export const useGraphOperations = (
   containerRef: React.RefObject<HTMLDivElement>,
@@ -121,37 +125,62 @@ export const useGraphOperations = (
     );
 
     setGraphInstance(graph);
-
-    // 添加初始节点和边
-    mockInitialNodes.forEach((nodeConfig: any) => {
-      graph.addNode({
-        ...nodeConfig,
-        ...getNodeStyle(),
-      });
-    });
-
-    mockInitialEdges.forEach((edgeConfig: any) => {
-      const edge = graph.addEdge({
-        ...edgeConfig,
-        ...getEdgeStyle('single'),
-      });
-      addEdgeTools(edge);
-    });
-
-    // 绑定事件
     bindGraphEvents(graph);
+
+    initializeMockData(graph);
 
     return () => {
       graph.dispose();
     };
   }, []);
 
+  // 初始化mock数据
+  const initializeMockData = (graph: X6Graph) => {
+    // 添加mock节点
+    mockTopologyNodes.forEach((nodeConfig) => {
+      let nodeData: any;
+
+      if (nodeConfig.type === 'single-value') {
+        nodeData = getSingleValueNodeStyle(nodeConfig);
+      } else if (nodeConfig.type === 'text') {
+        nodeData = getTextNodeStyle(nodeConfig);
+      } else {
+        const logoUrl = getLogoUrl(nodeConfig, iconList);
+        nodeData = getIconNodeStyle(nodeConfig, logoUrl);
+      }
+
+      graph.addNode(nodeData);
+    });
+
+    mockTopologyEdges.forEach((edgeConfig) => {
+      const edgeData = {
+        lineType: edgeConfig.lineType as 'line' | 'network line',
+        lineName: edgeConfig.lineName,
+        sourceInterface: edgeConfig.sourceInterface,
+        targetInterface: edgeConfig.targetInterface,
+        config: edgeConfig.config,
+      };
+
+      const edge = graph.createEdge({
+        id: edgeConfig.id,
+        source: edgeConfig.source,
+        target: edgeConfig.target,
+        sourcePort: edgeConfig.sourcePort,
+        targetPort: edgeConfig.targetPort,
+        shape: 'edge',
+        ...getEdgeStyleWithLabel(edgeData, 'single'),
+        data: edgeData,
+      });
+
+      graph.addEdge(edge);
+    });
+  };
+
   // 绑定图形事件
   const bindGraphEvents = (graph: X6Graph) => {
     const hideCtx = () => setContextMenuVisible(false);
     document.addEventListener('click', hideCtx);
 
-    // 右键菜单事件
     graph.on('node:contextmenu', ({ e, node }) => {
       e.preventDefault();
       setContextMenuVisible(true);
@@ -159,10 +188,11 @@ export const useGraphOperations = (
       setContextMenuNodeId(node.id);
     });
 
-    // 节点点击事件 - 查看/编辑节点
-    graph.on('node:click', ({ node }) => {
+    graph.on('node:click', ({ e, node }) => {
+      if (e.shiftKey) {
+        return;
+      }
       const nodeData = node.getData();
-      // 排除文本节点
       if (nodeData?.type !== 'text') {
         setEditingNodeData({
           ...nodeData,
@@ -173,8 +203,10 @@ export const useGraphOperations = (
       }
     });
 
-    // 边点击事件 - 查看/编辑边
-    graph.on('edge:click', ({ edge }) => {
+    graph.on('edge:click', ({ e, edge }) => {
+      if (e.shiftKey) {
+        return;
+      }
       const edgeData = edge.getData();
       const sourceNode = edge.getSourceNode();
       const targetNode = edge.getTargetNode();
@@ -237,10 +269,31 @@ export const useGraphOperations = (
 
       setSelectedCells(selected.map((cell) => cell.id));
 
+      graph.getEdges().forEach((edge: any) => {
+        edge.setAttrs({
+          line: {
+            ...edge.getAttrs().line,
+            stroke: edge.getAttrs().line?.stroke || COLORS.EDGE.DEFAULT,
+            strokeWidth: edge.getAttrs().line?.strokeWidth || 1,
+          },
+        });
+      });
+
+      selected.forEach((cell) => {
+        if (cell.isEdge()) {
+          cell.setAttrs({
+            line: {
+              ...cell.getAttrs().line,
+              stroke: COLORS.EDGE.SELECTED,
+              strokeWidth: 2,
+            },
+          });
+          addEdgeTools(cell);
+        }
+      });
+
       if (selected.length === 1 && selected[0].isEdge()) {
         const edge = selected[0];
-        addEdgeTools(edge);
-
         const sourceId = edge.getSourceCellId();
         const targetId = edge.getTargetCellId();
         const sourceNode = graph.getCellById(sourceId);
@@ -249,12 +302,6 @@ export const useGraphOperations = (
         if (sourceNode && targetNode) {
           openEdgeConfig(edge, sourceNode, targetNode);
         }
-      } else {
-        selected.forEach((cell) => {
-          if (cell.isEdge()) {
-            addEdgeTools(cell);
-          }
-        });
       }
     });
 
@@ -280,7 +327,23 @@ export const useGraphOperations = (
     // 空白点击事件
     graph.on('blank:click', () => {
       hideAllPorts(graph);
+      hideAllEdgeTools(graph);
       setContextMenuVisible(false);
+
+      // 清除所有边的高亮效果
+      graph.getEdges().forEach((edge: any) => {
+        edge.setAttrs({
+          line: {
+            ...edge.getAttrs().line,
+            stroke: COLORS.EDGE.DEFAULT,
+            strokeWidth: 2,
+          },
+        });
+      });
+
+      graph.cleanSelection();
+      setSelectedCells([]);
+
       setTimeout(() => {
         finishTextEditRef.current?.();
       }, 0);
@@ -289,16 +352,26 @@ export const useGraphOperations = (
     // 鼠标进入/离开事件
     graph.on('node:mouseenter', ({ node }) => {
       hideAllPorts(graph);
+      hideAllEdgeTools(graph);
       showPorts(graph, node);
     });
 
     graph.on('edge:mouseenter', ({ edge }) => {
       hideAllPorts(graph);
+      hideAllEdgeTools(graph);
       showPorts(graph, edge);
+      showEdgeTools(edge);
     });
 
-    graph.on('node:mouseleave', () => hideAllPorts(graph));
-    graph.on('edge:mouseleave', () => hideAllPorts(graph));
+    graph.on('node:mouseleave', () => {
+      hideAllPorts(graph);
+      hideAllEdgeTools(graph);
+    });
+
+    graph.on('edge:mouseleave', () => {
+      hideAllPorts(graph);
+      hideAllEdgeTools(graph);
+    });
 
     // 初始化端口透明度
     graph.getNodes().forEach((node) => {
@@ -379,6 +452,18 @@ export const useGraphOperations = (
 
     if (graphInstance) {
       graphInstance.disablePlugins(['selection']);
+      hideAllPorts(graphInstance);
+      hideAllEdgeTools(graphInstance);
+
+      graphInstance.getEdges().forEach((edge: any) => {
+        edge.setAttrs({
+          line: {
+            ...edge.getAttrs().line,
+            stroke: COLORS.EDGE.DEFAULT,
+            strokeWidth: 1,
+          },
+        });
+      });
 
       if (isEditingText) {
         setIsEditingText(false);
@@ -401,144 +486,13 @@ export const useGraphOperations = (
       return;
     }
 
-    const getLogoUrl = (nodeConfig: any) => {
-      if (nodeConfig.logoType === 'default' && nodeConfig.logo) {
-        const iconItem = iconList.find((item) => item.key === nodeConfig.logo);
-        if (iconItem) {
-          const url = `/app/assets/assetModelIcon/${iconItem.url}.svg`;
-          return url;
-        }
-        const fallbackUrl = `/app/assets/assetModelIcon/${nodeConfig.logo}.svg`;
-        return fallbackUrl;
-      } else if (nodeConfig.logoType === 'custom' && nodeConfig.logo) {
-        return nodeConfig.logo;
-      }
-      // 默认图标
-      const defaultUrl = '/app/assets/assetModelIcon/cc-default_默认.svg';
-      return defaultUrl;
-    };
-
     let nodeData: any;
 
     if (nodeConfig.type === 'single-value') {
-      // 单值节点 - 纯文本显示
-      nodeData = {
-        id: nodeConfig.id,
-        x: nodeConfig.x || 100,
-        y: nodeConfig.y || 100,
-        shape: 'rect',
-        width: 120,
-        height: 40,
-        label: nodeConfig.name,
-        data: {
-          type: nodeConfig.type,
-          name: nodeConfig.name,
-          dataSource: nodeConfig.dataSource,
-          config: nodeConfig.config,
-        },
-        attrs: {
-          body: {
-            fill: '#ffffff',
-            stroke: '#d9d9d9',
-            strokeWidth: 1,
-            rx: 6,
-            ry: 6,
-          },
-          label: {
-            text: nodeConfig.name,
-            fill: '#333333',
-            fontSize: 14,
-            fontFamily: 'Arial, sans-serif',
-            textAnchor: 'middle',
-            textVerticalAnchor: 'middle',
-          },
-        },
-        ports: {
-          groups: {
-            top: {
-              position: { name: 'absolute', args: { x: 60, y: 0 } },
-              attrs: {
-                circle: {
-                  magnet: true,
-                  stroke: '#1890FF',
-                  r: 6,
-                  fill: '#FFFFFF',
-                  opacity: 0,
-                },
-              },
-            },
-            bottom: {
-              position: { name: 'absolute', args: { x: 60, y: 40 } },
-              attrs: {
-                circle: {
-                  magnet: true,
-                  stroke: '#1890FF',
-                  r: 6,
-                  fill: '#FFFFFF',
-                  opacity: 0,
-                },
-              },
-            },
-            left: {
-              position: { name: 'absolute', args: { x: 0, y: 20 } },
-              attrs: {
-                circle: {
-                  magnet: true,
-                  stroke: '#1890FF',
-                  r: 6,
-                  fill: '#FFFFFF',
-                  opacity: 0,
-                },
-              },
-            },
-            right: {
-              position: { name: 'absolute', args: { x: 120, y: 20 } },
-              attrs: {
-                circle: {
-                  magnet: true,
-                  stroke: '#1890FF',
-                  r: 6,
-                  fill: '#FFFFFF',
-                  opacity: 0,
-                },
-              },
-            },
-          },
-          items: [
-            { id: 'top', group: 'top' },
-            { id: 'bottom', group: 'bottom' },
-            { id: 'left', group: 'left' },
-            { id: 'right', group: 'right' },
-          ],
-        },
-      };
+      nodeData = getSingleValueNodeStyle(nodeConfig);
     } else {
-      // 图标节点 - 显示logo和名称
-      const baseNodeStyle = getNodeStyle();
-      const logoUrl = getLogoUrl(nodeConfig);
-
-      nodeData = {
-        id: nodeConfig.id,
-        x: nodeConfig.x || 100,
-        y: nodeConfig.y || 100,
-        label: nodeConfig.name,
-        data: {
-          type: nodeConfig.type,
-          name: nodeConfig.name,
-          logo: nodeConfig.logo,
-          logoType: nodeConfig.logoType,
-          config: nodeConfig.config,
-        },
-        ...baseNodeStyle,
-        // 覆盖图标的 URL
-        attrs: {
-          ...baseNodeStyle.attrs,
-          icon: {
-            ...baseNodeStyle.attrs.icon,
-            'xlink:href': logoUrl,
-          },
-        },
-      };
+      const logoUrl = getLogoUrl(nodeConfig, iconList);
+      nodeData = getIconNodeStyle(nodeConfig, logoUrl);
     }
 
     graphInstance.addNode(nodeData);
@@ -554,20 +508,6 @@ export const useGraphOperations = (
     if (!node) {
       return;
     }
-
-    // 获取logo URL
-    const getLogoUrl = (nodeConfig: any) => {
-      if (nodeConfig.logoType === 'default' && nodeConfig.logo) {
-        const iconItem = iconList.find((item: any) => item.key === nodeConfig.logo);
-        if (iconItem) {
-          return `/app/assets/assetModelIcon/${iconItem.url}.svg`;
-        }
-        return `/app/assets/assetModelIcon/${nodeConfig.logo}.svg`;
-      } else if (nodeConfig.logoType === 'custom' && nodeConfig.logo) {
-        return nodeConfig.logo;
-      }
-      return '/app/assets/assetModelIcon/cc-default_默认.svg';
-    };
 
     // 更新节点标签
     node.setLabel(nodeConfig.name);
@@ -597,7 +537,7 @@ export const useGraphOperations = (
       }
     } else {
       // 图标节点 - 更新logo和其他属性
-      const logoUrl = getLogoUrl(nodeConfig);
+      const logoUrl = getLogoUrl(nodeConfig, iconList);
 
       node.setData({
         type: nodeConfig.type,
@@ -622,15 +562,39 @@ export const useGraphOperations = (
     try {
       const values = await nodeEditFormInstance.validateFields();
 
-      const updatedConfig = {
-        id: state.editingNodeData.id,
-        type: state.editingNodeData.type,
-        name: values.name,
-        logo: values.logoType === 'default' ? values.logoIcon : values.logoUrl,
-        logoType: values.logoType,
-        dataSource: values.dataSource,
-        config: values,
-      };
+      let updatedConfig: any;
+
+      if (state.editingNodeData.type === 'single-value') {
+        updatedConfig = {
+          id: state.editingNodeData.id,
+          type: state.editingNodeData.type,
+          name: values.name,
+          dataSource: values.dataSource,
+          config: {
+            query: values.query || FORM_DEFAULTS.SINGLE_VALUE.query,
+            unit: values.unit || FORM_DEFAULTS.SINGLE_VALUE.unit,
+            threshold: values.threshold || FORM_DEFAULTS.SINGLE_VALUE.threshold,
+            textColor: values.textColor || FORM_DEFAULTS.SINGLE_VALUE.textColor,
+            fontSize: values.fontSize || FORM_DEFAULTS.SINGLE_VALUE.fontSize,
+            backgroundColor: values.backgroundColor || FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
+            borderColor: values.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor,
+          },
+        };
+      } else {
+        // 图标节点 - 保持原有逻辑
+        updatedConfig = {
+          id: state.editingNodeData.id,
+          type: state.editingNodeData.type,
+          name: values.name,
+          logo: values.logoType === 'default' ? values.logoIcon : values.logoUrl,
+          logoType: values.logoType,
+          dataSource: values.dataSource,
+          config: {
+            backgroundColor: values.backgroundColor || FORM_DEFAULTS.ICON_NODE.backgroundColor,
+            borderColor: values.borderColor || FORM_DEFAULTS.ICON_NODE.borderColor,
+          },
+        };
+      }
 
       updateNode(updatedConfig);
 
@@ -650,6 +614,6 @@ export const useGraphOperations = (
     handleSave,
     addNode,
     updateNode,
-    handleNodeUpdate,
+    handleNodeUpdate
   };
 };

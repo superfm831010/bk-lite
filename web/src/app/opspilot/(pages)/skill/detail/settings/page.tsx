@@ -171,7 +171,7 @@ const SkillSettingsPage: React.FC = () => {
     }
   };
 
-  const handleSendMessage = async (userMessage: string): Promise<{ url: string; payload: any } | null> => {
+  const handleSendMessage = async (userMessage: string, currentMessages: any[] = []): Promise<{ url: string; payload: any } | null> => {
     try {
       const values = await form.validateFields();
       
@@ -192,6 +192,13 @@ const SkillSettingsPage: React.FC = () => {
         score: ragSources.find(base => base.id === id)?.score || 0.7,
       }));
 
+      const chatHistory = chatHistoryEnabled && quantity 
+        ? currentMessages.slice(-quantity).map(msg => ({ 
+          message: msg.content, 
+          event: msg.role 
+        }))
+        : [];
+
       const payload = {
         user_message: userMessage,
         llm_model: values.llmModel,
@@ -200,7 +207,7 @@ const SkillSettingsPage: React.FC = () => {
         enable_rag_knowledge_source: showRagSource,
         enable_rag_strict_mode: ragStrictMode,
         rag_score_threshold: ragScoreThreshold,
-        chat_history: quantity ? [] : [],
+        chat_history: chatHistory,
         conversation_window_size: chatHistoryEnabled ? quantity : undefined,
         temperature: temperature,
         show_think: values.show_think,
@@ -462,7 +469,7 @@ const SkillSettingsPage: React.FC = () => {
           <div className="w-1/2 space-y-4">
             <CustomChatSSE 
               handleSendMessage={handleSendMessage} 
-              guide={guideValue} 
+              guide={guideValue}
             />
           </div>
         </div>

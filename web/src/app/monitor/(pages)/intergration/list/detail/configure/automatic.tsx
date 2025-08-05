@@ -133,7 +133,6 @@ const AutomaticConfiguration: React.FC<IntergrationAccessProps> = ({
   const handleSave = () => {
     form.validateFields().then((values) => {
       const row = cloneDeep(values);
-      delete row.metric_type;
       delete row.nodes;
       const params = configsInfo.getParams(row, { dataSource, nodeList });
       params.monitor_object_id = +objectId;

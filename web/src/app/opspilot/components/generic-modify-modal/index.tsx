@@ -35,7 +35,6 @@ const GenericModifyModal: React.FC<GenericModifyModalProps> = ({ visible, onCanc
     try {
       setConfirmLoading(true);
       const values = await form.validateFields();
-      console.log('values', values);
       await onConfirm(values);
       form.resetFields();
       setConfirmLoading(false);

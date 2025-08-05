@@ -193,17 +193,15 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
 
   return (
     <div className="h-full flex-1 p-4 pb-0 overflow-auto flex flex-col ">
-      <div className="w-full mb-4 flex items-center justify-between rounded-lg shadow-sm">
+      <div className="w-full mb-2 flex items-center justify-between rounded-lg shadow-sm bg-[var(--color-bg-1)] p-3 border border-[var(--color-border-2)]">
         {selectedDashboard && (
-          <div className="p-2 pt-0">
-            <h2 className="text-xl font-semibold mb-2 text-[var(--color-text-1)]">
+          <div className="p-1 pt-0">
+            <h2 className="text-lg font-semibold mb-1 text-[var(--color-text-1)]">
               {selectedDashboard.name}
             </h2>
-            {selectedDashboard.description && (
-              <p className="text-sm text-[var(--color-text-2)]">
-                {selectedDashboard.description}
-              </p>
-            )}
+            <p className="text-sm text-[var(--color-text-2)]">
+              {selectedDashboard.desc}
+            </p>
           </div>
         )}
         <div className="flex items-center space-x-4 justify-between">
@@ -308,11 +306,11 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
                         <h4 className="text-md font-medium text-[var(--color-text-1)]">
                           {item.title}
                         </h4>
-                        {item.description && (
+                        {
                           <p className="text-sm text-[var(--color-text-2)] mt-1">
-                            {item.description}
+                            {item.description || '--'}
                           </p>
-                        )}
+                        }
                       </div>
                       <Dropdown overlay={menu} trigger={['click']}>
                         <button className="no-drag text-[var(--color-text-2)] hover:text-[var(--color-text-1)] transition-colors">

@@ -44,26 +44,46 @@ const EntityList = <T,>({
   const [editingItem, setEditingItem] = useState<null | T>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
+  const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const observer = useRef<IntersectionObserver>();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const isFetching = useRef(false);
 
-  const typeOptions = [
-    { key: 2, title: t('skill.form.qaType') },
-    { key: 1, title: t('skill.form.toolsType') },
-    { key: 3, title: t('skill.form.planType') },
-    { key: 4, title: t('skill.form.complexType') }
-  ];
+  const getTypeConfig = () => {
+    if (itemTypeSingle === 'skill') {
+      return {
+        options: [
+          { key: 2, title: t('skill.form.qaTag') },
+          { key: 1, title: t('skill.form.toolsTag') },
+          { key: 3, title: t('skill.form.planTag') },
+          { key: 4, title: t('skill.form.complexTag') }
+        ],
+        searchField: 'skill_type'
+      };
+    } else if (itemTypeSingle === 'studio') {
+      return {
+        options: [
+          { key: 1, title: t('studio.pilot') },
+          { key: 2, title: t('studio.lobeChat') }
+        ],
+        searchField: 'bot_type'
+      };
+    }
+    return { options: [], searchField: '' };
+  };
 
-  const handleTypeChange = (value: string | undefined) => {
-    setSelectedType(value);
+  const { options: currentTypeOptions, searchField } = getTypeConfig();
+
+  const handleTypeChange = (values: number[]) => {
+    setSelectedTypes(values || []);
     setCurrentPage(1);
     setItems([]);
     setHasMore(true);
-    fetchItems(true);
+    setTimeout(() => {
+      fetchItems(true);
+    }, 0);
   };
 
   const fetchItems = useCallback(async (reset = false) => {
@@ -82,13 +102,15 @@ const EntityList = <T,>({
         ...queryParams,
         page: reset ? 1 : currentPage,
         page_size: pageSize,
-        search: searchTerm,
-        ...(selectedType && { skill_type: selectedType })
+        name: searchTerm,
+        ...(selectedTypes.length > 0 && { [searchField]: selectedTypes.join(',') })
       };
       
       const queryString = new URLSearchParams(
         Object.entries(params).reduce((acc, [key, value]) => {
-          acc[key] = value?.toString();
+          if (value !== undefined && value !== null) {
+            acc[key] = value.toString();
+          }
           return acc;
         }, {} as Record<string, string>)
       ).toString();
@@ -100,8 +122,6 @@ const EntityList = <T,>({
       } else {
         setItems(prevItems => [...prevItems, ...(response.items || [])]);
       }
-      
-      // setTotalCount(response.count || 0);
       
       const hasMoreData = (reset ? 1 : currentPage) * pageSize < (response.count || 0);
       setHasMore(hasMoreData);
@@ -119,14 +139,14 @@ const EntityList = <T,>({
         setLoadingMore(false);
       }
     }
-  }, [get, queryParams, currentPage, pageSize, searchTerm, selectedType, hasMore]);
+  }, [currentPage, pageSize, searchTerm, selectedTypes, hasMore, searchField]);
 
   useEffect(() => {
     setCurrentPage(1);
     setItems([]);
     setHasMore(true);
     fetchItems(true);
-  }, [searchTerm, selectedType]);
+  }, [searchTerm, selectedTypes]);
 
   useEffect(() => {
     if (!loadMoreRef.current || loading || loadingMore || !hasMore) return;
@@ -203,6 +223,7 @@ const EntityList = <T,>({
   };
 
   const handleMenuClick = (action: string, item: T) => {
+    console.log('Menu action:', action, 'for item:', item);
     if (action === 'edit') {
       setEditingItem(item);
       setIsModalVisible(true);
@@ -217,22 +238,19 @@ const EntityList = <T,>({
     }
   };
 
-  const filteredItems = items.filter(item =>
-    (item as any).name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (!selectedType || (item as any).skill_type === selectedType)
-  );
-
   return (
     <div className="w-full h-full">
       <div className="flex justify-end mb-4">
-        {itemTypeSingle === 'skill' ? (
+        {(itemTypeSingle === 'skill' || itemTypeSingle === 'studio') ? (
           <Space.Compact>
             <Select
+              mode="multiple"
               allowClear
               placeholder={t('common.select')}
               className="w-40"
               onChange={handleTypeChange}
-              options={typeOptions.map(option => ({ value: option.key, label: option.title }))}
+              options={currentTypeOptions.map(option => ({ value: option.key, label: option.title }))}
+              maxTagCount="responsive"
             />
             <Search
               allowClear
@@ -296,7 +314,7 @@ const EntityList = <T,>({
               </div>
             </PermissionWrapper>
           )}
-          {filteredItems.map((item, index) => (
+          {items.map((item, index) => (
             <CardComponent
               key={(item as any).id || index}
               {...item}

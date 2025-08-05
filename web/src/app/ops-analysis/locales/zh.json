@@ -91,7 +91,7 @@
     "zoomIn": "放大",
     "zoomOut": "缩小",
     "fitView": "适配视图",
-    "selectMode": "框选",
+    "selectMode": "按住shift框选",
     "addText": "添加文本",
     "deleteSelected": "删除选中",
     "exitEdit": "退出编辑",

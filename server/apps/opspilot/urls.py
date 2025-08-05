@@ -65,6 +65,7 @@ urlpatterns += [
     path(r"bot_mgmt/rasa_model_download/", views.model_download, name="model_download"),
     path(r"bot_mgmt/skill_execute/", views.skill_execute, name="skill_execute"),
     path(r"bot_mgmt/v1/chat/completions", views.openai_completions, name="openai_completions"),
+    path(r"bot_mgmt/lobe_chat/v1/chat/completions", views.lobe_skill_execute, name="openai_completions"),
     path(r"bot_mgmt/get_active_users_line_data/", views.get_active_users_line_data, name="get_active_users_line_data"),
     path(
         r"bot_mgmt/get_conversations_line_data/", views.get_conversations_line_data, name="get_conversations_line_data"

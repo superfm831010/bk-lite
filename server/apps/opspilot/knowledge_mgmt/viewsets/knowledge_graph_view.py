@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.utils.translation import gettext as _
 from django_filters import filters
 from django_filters.rest_framework import FilterSet
 from rest_framework.decorators import action
@@ -27,15 +28,21 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
         obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base_id).first()
         if not obj:
             return JsonResponse({"result": True, "data": {"is_exists": False}})
+        if obj.status != "completed":
+            return JsonResponse(
+                {"result": True, "data": {"graph": {}, "graph_id": obj.id, "is_exists": True, "status": obj.status}}
+            )
         res = GraphUtils.get_graph(obj.id)
         if not res["result"]:
             return JsonResponse(res)
-        return_data = {"graph": res["data"], "graph_id": obj.id, "is_exists": True}
+        return_data = {"graph": res["data"], "graph_id": obj.id, "status": obj.status, "is_exists": True}
         return JsonResponse({"result": True, "data": return_data})
 
     @action(methods=["POST"], detail=False)
     def delete_graph(self, request):
         instance = KnowledgeGraph.objects.get(knowledge_base_id=request.data.get("knowledge_base_id"))
+        if instance.status == "training":
+            return JsonResponse({"result": False, "message": _("Knowledge graph is training, cannot delete")})
         try:
             GraphUtils.delete_graph(instance)
         except Exception as e:
@@ -47,8 +54,10 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
     def rebuild_graph_community(self, request):
         knowledge_base_id = request.data.get("knowledge_base_id")
         graph_obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base_id).first()
+        if graph_obj.status != "completed":
+            return JsonResponse({"result": False, "message": _("Knowledge graph is not completed")})
         if not graph_obj:
-            return JsonResponse({"result": False, "message": "Knowledge graph not found."}, status=404)
+            return JsonResponse({"result": False, "message": _("Knowledge graph not found")})
         try:
             rebuild_graph_community_by_instance.delay(graph_obj.id)
             return JsonResponse({"result": True})

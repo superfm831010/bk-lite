@@ -111,6 +111,11 @@ class InstanceViewSet(viewsets.ViewSet):
         """
         model_permission_map = CmdbRulesFormatUtil.format_permission_map(rules=rules, model_id=model_id).get(model_id,
                                                                                                              {})
+        if not model_permission_map:
+            # 如果没有权限配置，则默认所有实例都没有权限
+            for instance in instances:
+                instance['permission'] = [VIEW, OPERATE]
+            return
         inst_name_permission_map_or_list = model_permission_map.get("permission_map", {})
         select_all = model_permission_map.get("select_all")
         for instance in instances:
@@ -532,7 +537,8 @@ class InstanceViewSet(viewsets.ViewSet):
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_export")
     def inst_export(self, request, model_id):
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_INSTANCES)
-        model_permission_map = CmdbRulesFormatUtil.format_permission_map(rules=rules, model_id=model_id).get(model_id, {})
+        model_permission_map = CmdbRulesFormatUtil.format_permission_map(rules=rules, model_id=model_id).get(model_id,
+                                                                                                             {})
         inst_name_permission_map = model_permission_map.get("permission_map", {})
         select_all = model_permission_map.get("select_all", False)
         inst_names = [] if select_all else list(inst_name_permission_map.keys())
@@ -540,8 +546,8 @@ class InstanceViewSet(viewsets.ViewSet):
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         response["Content-Disposition"] = f"attachment;filename={f'{model_id}_export.xlsx'}"
         response.write(InstanceManage.inst_export(
-            model_id, 
-            request.data, 
+            model_id,
+            request.data,
             format_group_params(request.COOKIES.get("current_team")),
             request.user.roles,
             rules,
@@ -572,7 +578,7 @@ class InstanceViewSet(viewsets.ViewSet):
             request.user.roles,
             request.data.get("search", ""),
             rules,
-            created = request.user.username
+            created=request.user.username
         )
         return WebUtils.response_success(result)
 

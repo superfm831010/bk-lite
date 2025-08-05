@@ -91,9 +91,6 @@ class AuthViewSet(MaintainerViewSet):
             user = getattr(request, "user", None)
             if not user:
                 return self.value_error(_("User not found in request"))
-
-            if getattr(user, "is_superuser", False):
-                return self._list(queryset.order_by(self.ORDERING_FIELD))
             current_team = request.COOKIES.get("current_team", "0")
             fields = [i.name for i in queryset.model._meta.fields]
             if "created_by" in fields:

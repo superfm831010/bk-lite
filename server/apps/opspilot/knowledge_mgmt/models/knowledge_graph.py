@@ -11,6 +11,7 @@ class KnowledgeGraph(MaintainerInfo, TimeInfo):
     embed_model = models.ForeignKey("EmbedProvider", on_delete=models.CASCADE, null=True, blank=True)
     rebuild_community = models.BooleanField(default=False, verbose_name="是否重建社区")
     doc_list = models.JSONField(default=list)
+    status = models.CharField(max_length=50, default="completed", verbose_name="状态")
 
 
 class GraphChunkMap(models.Model):

@@ -1,13 +1,16 @@
 import React from 'react';
 import { Menu, Dropdown } from 'antd';
 import { useTranslation } from '@/utils/i18n';
+import type { ContextMenuProps } from '@/app/ops-analysis/types/topology';
+import {
+  VerticalAlignTopOutlined,
+  UpOutlined,
+  DownOutlined,
+  LinkOutlined,
+  ArrowRightOutlined,
+  SwapOutlined,
+} from '@ant-design/icons';
 
-interface ContextMenuProps {
-  visible: boolean;
-  position: { x: number; y: number };
-  isEditMode?: boolean;
-  onMenuClick: (e: { key: string }) => void;
-}
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
   visible,
@@ -19,9 +22,25 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 
   const menu = isEditMode ? (
     <Menu onClick={onMenuClick}>
-      <Menu.Item key="none">无箭头连接</Menu.Item>
-      <Menu.Item key="single">单向连接</Menu.Item>
-      <Menu.Item key="double">双向连接</Menu.Item>
+      <Menu.Item key="bringToFront" icon={<VerticalAlignTopOutlined />}>
+        置顶
+      </Menu.Item>
+      <Menu.Item key="bringForward" icon={<UpOutlined />}>
+        上移一层
+      </Menu.Item>
+      <Menu.Item key="sendBackward" icon={<DownOutlined />}>
+        下移一层
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="none" icon={<LinkOutlined />}>
+        无箭头连接
+      </Menu.Item>
+      <Menu.Item key="single" icon={<ArrowRightOutlined />}>
+        单向连接
+      </Menu.Item>
+      <Menu.Item key="double" icon={<SwapOutlined />}>
+        双向连接
+      </Menu.Item>
     </Menu>
   ) : (
     <Menu onClick={onMenuClick}>

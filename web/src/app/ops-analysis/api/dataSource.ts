@@ -23,27 +23,8 @@ export const useDataSourceApi = () => {
     return get(`/operation_analysis/api/data_source/${id}/`);
   };
 
-  const getSourceDataByApiId = async (id: number, params: any) => {
+  const getSourceDataByApiId = async (id: number, params?: any) => {
     return post(`/operation_analysis/api/data_source/get_source_data/${id}/`, params);
-  }
-
-  async function getDataSourceAttrs(dataSourceValue: string) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const attrMap: Record<string, any[]> = {
-          mysql_source: [
-            { label: 'CPU使用率', value: 'cpu_usage' },
-            { label: '内存使用率', value: 'memory_usage' },
-            { label: '连接数', value: 'connections' },
-            { label: '查询数', value: 'queries' },
-          ]
-        };
-
-        resolve({
-          data: attrMap[dataSourceValue] || [],
-        });
-      }, 200);
-    });
   }
 
   return {
@@ -52,7 +33,6 @@ export const useDataSourceApi = () => {
     updateDataSource,
     deleteDataSource,
     getDataSourceDetail,
-    getDataSourceAttrs,
     getSourceDataByApiId
   };
 };

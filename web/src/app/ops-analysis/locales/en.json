@@ -90,7 +90,7 @@
     "zoomIn": "Zoom In",
     "zoomOut": "Zoom Out",
     "fitView": "Fit View",
-    "selectMode": "Select Mode",
+    "selectMode": "hold shift to select",
     "addText": "Add Text",
     "deleteSelected": "Delete Selected",
     "exitEdit": "Exit Edit",

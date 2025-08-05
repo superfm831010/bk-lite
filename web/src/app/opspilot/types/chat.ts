@@ -3,10 +3,10 @@ import { ButtonProps } from 'antd';
 import { CustomChatMessage, Annotation } from '@/app/opspilot/types/global';
 
 export interface CustomChatSSEProps {
-  handleSendMessage?: (userMessage: string) => Promise<{ url: string; payload: any } | null>;
+  handleSendMessage?: (message: string, currentMessages?: any[]) => Promise<{ url: string; payload: any } | null>;
   showMarkOnly?: boolean;
   initialMessages?: CustomChatMessage[];
-  mode?: 'preview' | 'chat';
+  mode?: 'chat' | 'display';
   guide?: string;
 }
 

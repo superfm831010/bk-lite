@@ -1,12 +1,12 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Input, Button, Modal, message, Tag, Tabs, Tooltip, Dropdown, Menu, Space, Radio, Upload } from 'antd';
+import { Input, Button, Modal, message, Tabs, Tooltip, Dropdown, Menu, Space, Radio, Upload } from 'antd';
 import { PlusOutlined, DeleteOutlined, TrademarkOutlined, SyncOutlined, DownOutlined, InboxOutlined } from '@ant-design/icons';
 import { useAuth } from '@/context/auth';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
-import type { TableColumnsType, PaginationProps } from 'antd';
+import type { PaginationProps } from 'antd';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
 import SelectSourceModal from './selectSourceModal';
@@ -16,6 +16,8 @@ import ActionButtons from '@/app/opspilot/components/knowledge/actionButtons';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import KnowledgeGraphPage from '@/app/opspilot/components/knowledge/knowledgeGraphPage';
 import OperateModal from '@/components/operate-modal';
+import { getDocumentColumns, getQAPairColumns } from '@/app/opspilot/components/knowledge/tableColumns';
+import { useDocuments } from '@/app/opspilot/context/documentsContext';
 
 const { confirm } = Modal;
 const { TabPane } = Tabs;
@@ -33,16 +35,22 @@ const DocumentsPage: React.FC = () => {
   const desc = searchParams ? searchParams.get('desc') : null;
   const type = searchParams ? searchParams.get('type') : null;
 
-  const [mainTabKey, setMainTabKey] = useState<string>(['knowledge_graph', 'qa_pairs'].includes(type || '') ? type || 'qa_pairs' : 'source_files');
-  const [activeTabKey, setActiveTabKey] = useState<string>(() => {
+  // 使用 Context 管理状态
+  const { activeTabKey, setActiveTabKey, mainTabKey, setMainTabKey } = useDocuments();
+
+  // 初始化状态，从URL参数获取初始值
+  useEffect(() => {
     if (type === 'knowledge_graph' || type === 'qa_pairs') {
-      return type;
+      setMainTabKey(type);
+      setActiveTabKey(type);
+    } else if (['file', 'web_page', 'manual'].includes(type || '')) {
+      setMainTabKey('source_files');
+      setActiveTabKey(type || 'file');
+    } else {
+      setMainTabKey('source_files');
+      setActiveTabKey('file');
     }
-    if (['file', 'web_page', 'manual'].includes(type || '')) {
-      return type || 'file';
-    }
-    return 'file';
-  });
+  }, [type, setActiveTabKey, setMainTabKey]);
 
   const [searchText, setSearchText] = useState<string>('');
   const [pagination, setPagination] = useState<PaginationProps>({
@@ -57,6 +65,7 @@ const DocumentsPage: React.FC = () => {
   const [isTrainLoading, setIsTrainLoading] = useState(false);
   const [singleTrainLoading, setSingleTrainLoading] = useState<{ [key: string]: boolean }>({});
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
 
   const [qaPairData, setQaPairData] = useState<QAPairData[]>([]);
   const [qaPairPagination, setQaPairPagination] = useState<PaginationProps>({
@@ -100,194 +109,6 @@ const DocumentsPage: React.FC = () => {
   useEffect(() => {
     fetchKnowledgeBaseDetails();
   }, []);
-
-  const columns: TableColumnsType<TableData> = [
-    {
-      title: t('knowledge.documents.name'),
-      dataIndex: 'name',
-      key: 'name',
-      render: (text, record) => (
-        <a
-          href="#"
-          style={{ color: '#155aef' }}
-          onClick={() => router.push(`/opspilot/knowledge/detail/documents/result?id=${id}&name=${name}&desc=${desc}&knowledgeId=${record.id}`)}
-        >
-          {text}
-        </a>
-      ),
-    },
-    {
-      title: t('knowledge.documents.chunkSize'),
-      dataIndex: 'chunk_size',
-      key: 'chunk_size',
-    },
-    {
-      title: t('knowledge.documents.createdAt'),
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (text) => convertToLocalizedTime(text),
-    },
-    {
-      title: t('knowledge.documents.createdBy'),
-      key: 'created_by',
-      dataIndex: 'created_by',
-      render: (_, { created_by }) => (
-        <div>
-          <div
-            className='inline-block text-center rounded-full text-white mr-2'
-            style={{ width: 20, height: 20, backgroundColor: getRandomColor() }}
-          >
-            {created_by.charAt(0).toUpperCase()}
-          </div>
-          {created_by}
-        </div>
-      ),
-    },
-    {
-      title: t('knowledge.documents.status'),
-      key: 'train_status',
-      dataIndex: 'train_status',
-      render: (_, { train_status, train_status_display }) => {
-        const statusColors: { [key: string]: string } = {
-          '0': 'orange',
-          '1': 'green',
-          '2': 'red',
-        };
-
-        const color = statusColors[train_status] || 'geekblue';
-        const text = train_status_display || '--';
-
-        return <Tag color={color}>{text}</Tag>;
-      },
-    },
-    ...(activeTabKey === 'web_page' ? [{
-      title: t('knowledge.documents.syncEnabled'),
-      key: 'sync_enabled',
-      dataIndex: 'sync_enabled',
-      render: (_: any, record: TableData) => {
-        const syncEnabled = record.sync_enabled;
-        const syncTime = record.sync_time;
-
-        if (syncEnabled && syncTime) {
-          return (
-            <div>
-              {syncTime && <div>【{t('knowledge.documents.everyday')} {syncTime}】</div>}
-            </div>
-          );
-        } else {
-          return <div>【未定时同步】</div>;
-        }
-      },
-    }] : []),
-    {
-      title: t('knowledge.documents.extractionMethod'),
-      key: 'mode',
-      dataIndex: 'mode',
-      render: (_, { mode }) => {
-        const modeMap: { [key: string]: string } = {
-          'full': t('knowledge.documents.fullTextExtraction'),
-          'paragraph': t('knowledge.documents.chapterExtraction'),
-          'page': t('knowledge.documents.pageExtraction'),
-          'excel_full_content_parse': t('knowledge.documents.worksheetExtraction'),
-          'excel_header_row_parse': t('knowledge.documents.rowExtraction'),
-        };
-        const text = modeMap[mode] || t('knowledge.documents.fullTextExtraction');
-        return <span>{text}</span>;
-      },
-    },
-    {
-      title: t('knowledge.documents.chunkingMethod'),
-      key: 'chunk_type',
-      dataIndex: 'chunk_type',
-      render: (_, { chunk_type }) => {
-        const chunkMap: { [key: string]: string } = {
-          'fixed_size': t('knowledge.documents.fixedChunk'),
-          'recursive': t('knowledge.documents.overlapChunk'),
-          'semantic': t('knowledge.documents.semanticChunk'),
-          'full': t('knowledge.documents.noChunk'),
-        };
-        const text = chunkMap[chunk_type] || t('knowledge.documents.fixedChunk');
-        return <span>{text}</span>;
-      },
-    },
-    {
-      title: t('knowledge.documents.actions'),
-      key: 'action',
-      render: (_, record) => (
-        <ActionButtons
-          record={record}
-          isFile={activeTabKey === 'file'}
-          instPermissions={knowledgeBasePermissions}
-          singleTrainLoading={singleTrainLoading}
-          onTrain={handleTrain}
-          onDelete={handleDelete}
-          onSet={handleSetClick}
-          onFileAction={handleFile}
-        />
-      ),
-    }
-  ];
-
-  const qaPairColumns: TableColumnsType<QAPairData> = [
-    {
-      title: t('knowledge.qaPairs.name'),
-      dataIndex: 'name',
-      key: 'name',
-      render: (text, record) => (
-        <a
-          href="#"
-          style={{ color: '#155aef' }}
-          onClick={() => router.push(`/opspilot/knowledge/detail/documents/qapair/result?id=${id}&name=${name}&desc=${desc}&qaPairId=${record.id}`)}
-        >
-          {text}
-        </a>
-      ),
-    },
-    {
-      title: t('knowledge.qaPairs.qaCount'),
-      dataIndex: 'qa_count',
-      key: 'qa_count',
-    },
-    {
-      title: t('knowledge.documents.createdAt'),
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (text) => convertToLocalizedTime(text),
-    },
-    {
-      title: t('knowledge.documents.createdBy'),
-      key: 'created_by',
-      dataIndex: 'created_by',
-      render: (_, { created_by }) => (
-        <div>
-          <div
-            className='inline-block text-center rounded-full text-white mr-2'
-            style={{ width: 20, height: 20, backgroundColor: getRandomColor() }}
-          >
-            {created_by.charAt(0).toUpperCase()}
-          </div>
-          {created_by}
-        </div>
-      ),
-    },
-    {
-      title: t('knowledge.documents.actions'),
-      key: 'action',
-      render: (_, record) => (
-        <PermissionWrapper
-          requiredPermissions={['Delete']}
-          instPermissions={knowledgeBasePermissions}>
-          <Button
-            type="link"
-            size="small"
-            onClick={() => handleDeleteSingleQAPair(record.id)}
-          >
-            {t('common.delete')}
-          </Button>
-        </PermissionWrapper>
-      ),
-    }
-  ];
 
   // Fetch QA pair data
   const fetchQAPairData = useCallback(async (text = '') => {
@@ -568,6 +389,11 @@ const DocumentsPage: React.FC = () => {
       return;
     }
 
+    if (uploadingFiles.size > 0) {
+      message.warning(t('knowledge.qaPairs.uploadInProgress'));
+      return;
+    }
+
     try {
       setConfirmLoading(true);
       const formData = new FormData();
@@ -582,17 +408,43 @@ const DocumentsPage: React.FC = () => {
       setConfirmLoading(false);
       setUploadModalVisible(false);
       setUploadedFiles([]);
+      setUploadingFiles(new Set());
     }
   };
 
   const handleImportClick = () => {
     setUploadModalVisible(true);
     setUploadedFiles([]);
+    setUploadingFiles(new Set());
   };
 
   const handleFileUpload = (file: any) => {
-    setUploadedFiles(prev => [...prev, file]);
+    const fileId = file.uid || file.name;
+    
+    // 标记文件为上传中状态
+    setUploadingFiles(prev => new Set([...prev, fileId]));
+    
+    // 模拟文件处理完成（在实际项目中，这里可能是文件读取或验证）
+    setTimeout(() => {
+      setUploadedFiles(prev => [...prev, file]);
+      setUploadingFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fileId);
+        return newSet;
+      });
+    }, 1000); // 模拟1秒的处理时间
+    
     return false;
+  };
+
+  const handleRemoveFile = (file: any) => {
+    const fileId = file.uid || file.name;
+    setUploadedFiles(prev => prev.filter(f => f.uid !== fileId));
+    setUploadingFiles(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(fileId);
+      return newSet;
+    });
   };
 
   const batchOperationMenu = (
@@ -675,6 +527,36 @@ const DocumentsPage: React.FC = () => {
         </PermissionWrapper>
       </Menu.Item>
     </Menu>
+  );
+
+  const columns = getDocumentColumns(
+    t,
+    activeTabKey,
+    convertToLocalizedTime,
+    getRandomColor,
+    knowledgeBasePermissions,
+    singleTrainLoading,
+    handleTrain,
+    handleDelete,
+    handleSetClick,
+    handleFile,
+    router,
+    id,
+    name,
+    desc,
+    ActionButtons
+  );
+
+  const qaPairColumns = getQAPairColumns(
+    t,
+    convertToLocalizedTime,
+    getRandomColor,
+    knowledgeBasePermissions,
+    handleDeleteSingleQAPair,
+    router,
+    id,
+    name,
+    desc
   );
 
   return (
@@ -811,17 +693,31 @@ const DocumentsPage: React.FC = () => {
         confirmLoading={confirmLoading}
         onOk={handleUploadModalConfirm}
         onCancel={() => setUploadModalVisible(false)}
+        okButtonProps={{
+          disabled: uploadingFiles.size > 0 || uploadedFiles.length === 0
+        }}
       >
         <div>
           <Dragger
             accept="application/json"
             beforeUpload={handleFileUpload}
+            onRemove={handleRemoveFile}
+            fileList={uploadedFiles.map(file => {
+              const fileId = file.uid || file.name;
+              const isUploading = uploadingFiles.has(fileId);
+              return {
+                uid: fileId,
+                name: file.name,
+                status: isUploading ? 'uploading' : 'done',
+                percent: isUploading ? 50 : 100,
+              };
+            })}
           >
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
             </p>
             <p className="ant-upload-text">{t('knowledge.qaPairs.dragOrClick')}</p>
-            <p className="ant-upload-hint">{t('knowledge.qaPairs.uploadHint')}</p>
+            <p className="ant-upload-hint text-xs">{t('knowledge.qaPairs.uploadHint')}</p>
           </Dragger>
         </div>
       </OperateModal>

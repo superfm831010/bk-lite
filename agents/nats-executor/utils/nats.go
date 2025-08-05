@@ -22,7 +22,7 @@ func DownloadFile(req DownloadFileRequest, nc *nats.Conn) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(req.ExecuteTimeout)*time.Second)
 	defer cancel()
 
-	log.Printf("Starting download with file_key: %s, target_path: %s, file_name: %s, timeout: %d seconds", req.FileKey, req.TargetPath, req.FileName, req.ExecuteTimeout)
+	//log.Printf("Starting download with file_key: %s, target_path: %s, file_name: %s, timeout: %d seconds", req.FileKey, req.TargetPath, req.FileName, req.ExecuteTimeout)
 
 	// 创建 JetStream 客户端
 	client, err := jetstream.NewJetStreamClient(nc, req.BucketName)

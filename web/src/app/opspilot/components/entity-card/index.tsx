@@ -19,11 +19,11 @@ interface EntityCardProps {
   created_by: string;
   team_name: string | string[];
   team: any[];
-  index: number;
   online?: boolean;
   modelName?: string;
   skillType?: string;
   skill_type?: number;
+  bot_type?: number;
   permissions?: string[];
   onMenuClick: (action: string, entity: any) => void;
   redirectUrl: string;
@@ -37,11 +37,11 @@ const EntityCard: React.FC<EntityCardProps> = ({
   created_by,
   team_name,
   team,
-  index,
   online,
   modelName,
   skillType,
   skill_type,
+  bot_type,
   permissions,
   onMenuClick,
   redirectUrl,
@@ -56,21 +56,70 @@ const EntityCard: React.FC<EntityCardProps> = ({
         <PermissionWrapper
           requiredPermissions={['Edit']}
           instPermissions={permissions}>
-          <span className="block" onClick={() => onMenuClick('edit', { id, name, introduction, created_by, team_name, team, online, skill_type })}>{t('common.edit')}</span>
+          <span 
+            className="block" 
+            onClick={() => onMenuClick('edit', { 
+              id, 
+              name, 
+              introduction, 
+              created_by, 
+              team_name, 
+              team, 
+              online, 
+              skill_type, 
+              bot_type 
+            })}>
+            {t('common.edit')}
+          </span>
         </PermissionWrapper>
       </Menu.Item>
       <Menu.Item key={`delete-${id}`}>
         <PermissionWrapper 
           requiredPermissions={['Delete']} 
           instPermissions={permissions}>
-          <span className="block" onClick={() => onMenuClick('delete', { id, name, introduction, created_by, team_name, team, online, skill_type })}>{t('common.delete')}</span>
+          <span 
+            className="block" 
+            onClick={() => onMenuClick('delete', { 
+              id, 
+              name, 
+              introduction, 
+              created_by, 
+              team_name, 
+              team, 
+              online, 
+              skill_type, 
+              bot_type 
+            })}>
+            {t('common.delete')}
+          </span>
         </PermissionWrapper>
       </Menu.Item>
     </Menu>
   );
 
-  const iconType = index % 2 === 0 ? iconTypeMapping[0] : iconTypeMapping[1];
-  const avatar = index % 2 === 0 ? '/app/banner_bg_1.jpg' : '/app/banner_bg_2.jpg';
+  const getStableRandom = (seed: string | number, max: number) => {
+    const hash = seed.toString().split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return Math.abs(hash) % max;
+  };
+
+  const getIconType = () => {
+    if (bot_type !== undefined) {
+      const botTypeMap: { [key: number]: string } = {
+        1: 'Copilot',
+        2: 'icon-192x192'
+      };
+
+      return botTypeMap[bot_type] || iconTypeMapping[getStableRandom(id, iconTypeMapping.length)];
+    }
+    
+    return iconTypeMapping[getStableRandom(id, iconTypeMapping.length)];
+  };
+
+  const iconType = getIconType();
+  const avatar = getStableRandom(id + 'avatar', 2) === 0 ? '/app/banner_bg_1.jpg' : '/app/banner_bg_2.jpg';
 
   return (
     <Card

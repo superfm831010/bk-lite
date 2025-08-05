@@ -5,9 +5,17 @@ from apps.log.plugins.plugin_migrate import migrate_collector, migrate_collect_t
 
 
 def init_stream():
-    from apps.log.models import Stream
+    from apps.log.models import Stream, StreamOrganization
+    from apps.rpc.system_mgmt import SystemMgmt
+
     if not Stream.objects.filter(id='default').exists():
         Stream.objects.create(id='default', name='Default', created_by="system", updated_by="system")
+
+        client = SystemMgmt(is_local_client=True)
+        res = client.get_group_id("Default")
+
+        StreamOrganization.objects.create(
+            stream_id='default', organization=res.get("data", 0), created_by="system", updated_by="system")
 
 
 class Command(BaseCommand):

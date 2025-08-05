@@ -41,17 +41,12 @@ class MonitorAlertVieSet(
         )
         qs = permission_filter(MonitorPolicy, permission, team_key="policyorganization__organization__in", id_key="id__in")
 
+        qs = qs.filter(monitor_object_id=monitor_object_id).distinct()
         policy_ids = qs.values_list("id", flat=True)
 
         # 获取经过过滤器处理的数据
         queryset = self.filter_queryset(self.get_queryset())
         queryset = queryset.filter(policy_id__in=list(policy_ids)).distinct()
-
-        if request.GET.get("monitor_objects"):
-            monitor_objects = request.GET.get("monitor_objects").split(",")
-            monitor_objects = [int(i) for i in monitor_objects]
-            policy_ids = MonitorPolicy.objects.filter(monitor_object_id__in=monitor_objects).values_list("id", flat=True)
-            queryset = queryset.filter(policy_id__in=list(policy_ids)).distinct()
 
         if request.GET.get("type") == "count":
             # 执行序列化
@@ -75,10 +70,10 @@ class MonitorAlertVieSet(
         results = serializer.data
 
         # 获取当前页中所有的 policy_id 和 monitor_instance_id
-        policy_ids = [alert["policy_id"] for alert in results if alert["policy_id"]]
+        _policy_ids = [alert["policy_id"] for alert in results if alert["policy_id"]]
 
         # 查询所有相关的策略和实例
-        policies = MonitorPolicy.objects.filter(id__in=policy_ids)
+        policies = MonitorPolicy.objects.filter(id__in=_policy_ids)
 
         # 将策略和实例数据映射到字典中
         policy_dict = {policy.id: policy for policy in policies}

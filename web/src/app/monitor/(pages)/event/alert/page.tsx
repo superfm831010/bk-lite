@@ -1,10 +1,9 @@
 'use client';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   Input,
   Button,
-  Checkbox,
-  Space,
+  Select,
   Tag,
   message,
   Tabs,
@@ -30,6 +29,7 @@ import {
   TabItem,
   TimeSelectorDefaultValue,
   TimeValuesProps,
+  TreeItem,
 } from '@/app/monitor/types';
 import { MetricItem, ObjectItem } from '@/app/monitor/types/monitor';
 import { AlertOutlined } from '@ant-design/icons';
@@ -40,9 +40,8 @@ import TimeSelector from '@/components/time-selector';
 import Permission from '@/components/permission';
 import StackedBarChart from '@/app/monitor/components/charts/stackedBarChart';
 import AlertDetail from './alertDetail';
-import Collapse from '@/components/collapse';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
-import { useAlarmTabs } from '@/app/monitor/hooks/event';
+import { useAlarmTabs, useStateList } from '@/app/monitor/hooks/event';
 import dayjs, { Dayjs } from 'dayjs';
 import { useCommon } from '@/app/monitor/context/common';
 import alertStyle from './index.module.scss';
@@ -52,6 +51,10 @@ import {
   useStateMap,
 } from '@/app/monitor/constants/monitor';
 import useMonitorApi from '@/app/monitor/api/index';
+import TreeSelector from '@/app/monitor/components/treeSelector';
+import { cloneDeep } from 'lodash';
+const { Search } = Input;
+const { Option } = Select;
 
 const Alert: React.FC = () => {
   const { isLoading } = useApiClient();
@@ -64,6 +67,8 @@ const Alert: React.FC = () => {
   const { t } = useTranslation();
   const STATE_MAP = useStateMap();
   const LEVEL_LIST = useLevelList();
+  const stateList = useStateList();
+  const tabs: TabItem[] = useAlarmTabs();
   const { convertToLocalizedTime } = useLocalizedTime();
   const commonContext = useCommon();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -92,18 +97,17 @@ const Alert: React.FC = () => {
   const [filters, setFilters] = useState<FiltersConfig>({
     level: [],
     state: [],
-    notify: [],
-    monitor_objects: [],
   });
   const [activeTab, setActiveTab] = useState<string>('activeAlarms');
   const [chartData, setChartData] = useState<Record<string, any>[]>([]);
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [objects, setObjects] = useState<ObjectItem[]>([]);
-  const [groupObjects, setGroupObjects] = useState<ObjectItem[]>([]);
+  const [treeData, setTreeData] = useState<TreeItem[]>([]);
   const [metrics, setMetrics] = useState<MetricItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
+  const [objectId, setObjectId] = useState<React.Key>('');
 
-  const tabs: TabItem[] = useAlarmTabs();
   const columns: ColumnItem[] = [
     {
       title: t('monitor.events.level'),
@@ -234,14 +238,25 @@ const Alert: React.FC = () => {
     },
   ];
 
+  const isActiveAlarm = useMemo(() => {
+    return activeTab === 'activeAlarms';
+  }, [activeTab]);
+
+  const activeStateList = useMemo(() => {
+    const filterArr = isActiveAlarm ? ['new'] : ['recovered', 'closed'];
+    return stateList.filter((item) => filterArr.includes(item.value));
+  }, [stateList, isActiveAlarm]);
+
   useEffect(() => {
     if (!frequence) {
       clearTimer();
       return;
     }
     timerRef.current = setInterval(() => {
-      getAssetInsts('timer');
-      getChartData('timer');
+      if (objectId) {
+        getAssetInsts('timer');
+        getChartData('timer');
+      }
     }, frequence);
     return () => {
       clearTimer();
@@ -249,39 +264,27 @@ const Alert: React.FC = () => {
   }, [
     frequence,
     timeValues,
-    activeTab,
-    filters.level,
-    filters.state,
-    filters.monitor_objects,
+    objectId,
+    searchText,
     pagination.current,
     pagination.pageSize,
   ]);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || !objectId) return;
     getAssetInsts('refresh');
   }, [
     isLoading,
     timeValues,
-    activeTab,
-    filters.level,
-    filters.state,
-    filters.monitor_objects,
+    objectId,
     pagination.current,
     pagination.pageSize,
   ]);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || !objectId) return;
     getChartData('refresh');
-  }, [
-    isLoading,
-    timeValues,
-    filters.state,
-    activeTab,
-    filters.level,
-    filters.monitor_objects,
-  ]);
+  }, [isLoading, timeValues, objectId]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -290,6 +293,14 @@ const Alert: React.FC = () => {
 
   const changeTab = (val: string) => {
     setActiveTab(val);
+    const filtersConfig = {
+      level: [],
+      state: [],
+    };
+    setFilters(filtersConfig);
+    setSearchText('');
+    getAssetInsts('refresh', { tab: val, filtersConfig, text: 'clear' });
+    getChartData('refresh', { tab: val, filtersConfig });
   };
 
   const getInitData = () => {
@@ -308,22 +319,31 @@ const Alert: React.FC = () => {
     const data: ObjectItem[] = await getMonitorObject({
       add_policy_count: true,
     });
+    setObjects(data);
+    const _treeData = getTreeData(deepClone(data));
+    const defaulltId = (_treeData[0]?.children || [])[0]?.key;
+    setDefaultSelectObj(defaulltId);
+    setTreeData(_treeData);
+  };
+
+  const getTreeData = (data: ObjectItem[]): TreeItem[] => {
     const groupedData = data.reduce((acc, item) => {
       if (!acc[item.type]) {
         acc[item.type] = {
-          label: item.display_type,
-          title: item.type,
-          options: [],
+          title: item.display_type || '--',
+          key: item.type,
+          children: [],
         };
       }
-      acc[item.type].options.push({
-        label: item.display_name,
-        value: item.id,
+      acc[item.type].children.push({
+        title: item.display_name || '--',
+        label: item.name || '--',
+        key: item.id,
+        children: [],
       });
       return acc;
-    }, {} as Record<string, any>);
-    setGroupObjects(Object.values(groupedData));
-    setObjects(data);
+    }, {} as Record<string, TreeItem>);
+    return Object.values(groupedData);
   };
 
   const alertCloseConfirm = async (id: string | number) => {
@@ -344,17 +364,22 @@ const Alert: React.FC = () => {
     timerRef.current = null;
   };
 
-  const getParams = () => {
+  const getParams = (tab: string, filtersMap: FiltersConfig) => {
     const recentTimeRange = getRecentTimeRange(timeValues);
+    const isActive = tab === 'activeAlarms';
     const params = {
-      status_in: filters.state,
-      level_in: filters.level.join(','),
-      monitor_objects: filters.monitor_objects.join(','),
-      content: searchText,
+      status_in: isActive
+        ? 'new'
+        : filtersMap.state.join(',') || 'recovered,closed',
+      level_in: filtersMap.level.join(','),
+      monitor_object_id: objectId,
+      content: searchText || '',
       page: pagination.current,
       page_size: pagination.pageSize,
-      created_at_after: dayjs(recentTimeRange[0]).toISOString(),
-      created_at_before: dayjs(recentTimeRange[1]).toISOString(),
+      created_at_after: isActive ? '' : dayjs(recentTimeRange[0]).toISOString(),
+      created_at_before: isActive
+        ? ''
+        : dayjs(recentTimeRange[1]).toISOString(),
     };
     return params;
   };
@@ -370,35 +395,20 @@ const Alert: React.FC = () => {
     setPagination(pagination);
   };
 
-  const getAssetInsts = async (type: string, text?: string) => {
-    const params: any = getParams();
-    if (text) {
-      params.content = '';
+  const getAssetInsts = async (
+    type: string,
+    extra?: {
+      text?: string;
+      tab?: string;
+      filtersConfig?: FiltersConfig;
     }
-    if (activeTab === 'activeAlarms') {
-      params.created_at_before = '';
-      params.created_at_after = '';
-      if (params.status_in.length && !params.status_in.includes('new')) {
-        setTableData([]);
-        setPagination((pre) => ({
-          ...pre,
-          total: 0,
-        }));
-        return;
-      }
-      params.status_in = 'new';
-    } else {
-      if (params.status_in.length === 1 && params.status_in[0] === 'new') {
-        setTableData([]);
-        setPagination((pre) => ({
-          ...pre,
-          total: 0,
-        }));
-        return;
-      }
-      params.status_in =
-        params.status_in.filter((item: any) => item !== 'new').join(',') ||
-        'recovered,closed';
+  ) => {
+    const params: any = getParams(
+      extra?.tab || activeTab,
+      extra?.filtersConfig || filters
+    );
+    if (extra?.text === 'clear') {
+      params.content = '';
     }
     try {
       setTableLoading(type !== 'timer');
@@ -413,36 +423,22 @@ const Alert: React.FC = () => {
     }
   };
 
-  const getChartData = async (type: string) => {
-    const params = getParams();
+  const getChartData = async (
+    type: string,
+    extra?: {
+      tab?: string;
+      filtersConfig?: FiltersConfig;
+    }
+  ) => {
+    const params = getParams(
+      extra?.tab || activeTab,
+      extra?.filtersConfig || filters
+    );
     const chartParams = deepClone(params);
     delete chartParams.page;
     delete chartParams.page_size;
     chartParams.content = '';
     chartParams.type = 'count';
-    if (activeTab === 'activeAlarms') {
-      chartParams.created_at_before = '';
-      chartParams.created_at_after = '';
-      if (
-        chartParams.status_in.length &&
-        !chartParams.status_in.includes('new')
-      ) {
-        setChartData([]);
-        return;
-      }
-      chartParams.status_in = 'new';
-    } else {
-      if (
-        chartParams.status_in.length === 1 &&
-        chartParams.status_in[0] === 'new'
-      ) {
-        setChartData([]);
-        return;
-      }
-      chartParams.status_in =
-        chartParams.status_in.filter((item: any) => item !== 'new').join(',') ||
-        'recovered,closed';
-    }
     try {
       setChartLoading(type !== 'timer');
       const data = await getMonitorAlert(chartParams);
@@ -555,21 +551,20 @@ const Alert: React.FC = () => {
     checkedValues: string[],
     field: keyof FiltersConfig
   ) => {
-    setFilters((pre) => {
-      pre[field] = checkedValues;
-      return {
-        ...pre,
-      };
-    });
+    const filtersConfig = cloneDeep(filters);
+    filtersConfig[field] = checkedValues;
+    setFilters(filtersConfig);
+    getAssetInsts('refresh', { filtersConfig });
+    getChartData('refresh', { filtersConfig });
   };
 
-  const enterText = () => {
-    getAssetInsts('refresh');
+  const handleSearch = (text: string) => {
+    setSearchText(text);
+    getAssetInsts('refresh', { text: text || 'clear' });
   };
 
-  const clearText = () => {
-    setSearchText('');
-    getAssetInsts('refresh', 'clear');
+  const handleObjectChange = async (id: string) => {
+    setObjectId(id);
   };
 
   return (
@@ -577,106 +572,70 @@ const Alert: React.FC = () => {
       <Spin spinning={pageLoading} className="w-full">
         <div className={alertStyle.alert}>
           <div className={alertStyle.filters}>
-            <h3 className="font-[800] mb-[15px] text-[15px]">
-              {t('monitor.events.filterItems')}
-            </h3>
-            <div className="mb-[15px]">
-              <Collapse title={t('monitor.events.level')}>
-                <Checkbox.Group
-                  className="ml-[20px]"
-                  value={filters.level}
-                  onChange={(checkeds) => onFilterChange(checkeds, 'level')}
-                >
-                  <Space direction="vertical">
-                    <Checkbox value="critical">
-                      <div className={alertStyle.level}>
-                        {t('monitor.events.critical')}
-                      </div>
-                    </Checkbox>
-                    <Checkbox value="error">
-                      <div
-                        className={alertStyle.level}
-                        style={{
-                          borderLeft: `4px solid ${LEVEL_MAP.error}`,
-                        }}
-                      >
-                        {t('monitor.events.error')}
-                      </div>
-                    </Checkbox>
-                    <Checkbox value="warning">
-                      <div
-                        className={alertStyle.level}
-                        style={{
-                          borderLeft: `4px solid ${LEVEL_MAP.warning}`,
-                        }}
-                      >
-                        {t('monitor.events.warning')}
-                      </div>
-                    </Checkbox>
-                  </Space>
-                </Checkbox.Group>
-              </Collapse>
-            </div>
-            <div className="mb-[15px]">
-              <Collapse title={t('monitor.events.state')}>
-                <Checkbox.Group
-                  value={filters.state}
-                  className="ml-[20px]"
-                  onChange={(checkeds) => onFilterChange(checkeds, 'state')}
-                >
-                  <Space direction="vertical">
-                    <Checkbox value="new">{t('monitor.events.new')}</Checkbox>
-                    <Checkbox value="recovered">
-                      {t('monitor.events.recovery')}
-                    </Checkbox>
-                    <Checkbox value="closed">
-                      {t('monitor.events.closed')}
-                    </Checkbox>
-                  </Space>
-                </Checkbox.Group>
-              </Collapse>
-            </div>
-            <div>
-              <Collapse title={t('monitor.events.assetType')}>
-                <Checkbox.Group
-                  className="ml-[20px]"
-                  value={filters.monitor_objects}
-                  onChange={(checkeds) =>
-                    onFilterChange(checkeds, 'monitor_objects')
-                  }
-                >
-                  <Space direction="vertical">
-                    {groupObjects.map((item, index) => {
-                      return (
-                        <Collapse
-                          key={index}
-                          title={item.label || '--'}
-                          className={alertStyle.assetType}
-                        >
-                          {(item.options || []).map(
-                            (optionItem, optionIndex) => (
-                              <Checkbox
-                                key={optionIndex}
-                                value={optionItem.value}
-                              >
-                                <span
-                                  className="inline-block w-[110px] hide-text align-middle"
-                                  title={optionItem.label}
-                                >
-                                  {optionItem.label}
-                                </span>
-                              </Checkbox>
-                            )
-                          )}
-                        </Collapse>
-                      );
-                    })}
-                  </Space>
-                </Checkbox.Group>
-              </Collapse>
-            </div>
+            <TreeSelector
+              data={treeData}
+              defaultSelectedKey={defaultSelectObj as string}
+              onNodeSelect={handleObjectChange}
+            />
           </div>
-          <div>
+          <div className={alertStyle.alarmList}>
+            <Tabs activeKey={activeTab} items={tabs} onChange={changeTab} />
+            <div className={alertStyle.searchCondition}>
+              <div className="mb-[10px]">
+                {t('monitor.search.searchCriteria')}
+              </div>
+              <div className={alertStyle.condition}>
+                <ul className="flex">
+                  <li className="mr-[8px]">
+                    <span className="mr-[8px] text-[12px] text-[var(--color-text-3)]">
+                      {t('monitor.events.level')}
+                    </span>
+                    <Select
+                      style={{ width: 200 }}
+                      dropdownStyle={{ width: 130 }}
+                      allowClear
+                      mode="tags"
+                      maxTagCount="responsive"
+                      value={filters.level}
+                      onChange={(val) => onFilterChange(val, 'level')}
+                    >
+                      {LEVEL_LIST.map((item) => (
+                        <Option key={item.value} value={item.value}>
+                          <Tag
+                            icon={<AlertOutlined />}
+                            color={LEVEL_MAP[item.value as string] as string}
+                          >
+                            {LEVEL_LIST.find((tex) => tex.value === item.value)
+                              ?.label || '--'}
+                          </Tag>
+                        </Option>
+                      ))}
+                    </Select>
+                  </li>
+                  <li>
+                    <span className="mr-[8px] text-[12px] text-[var(--color-text-3)]">
+                      {t('monitor.events.state')}
+                    </span>
+                    <Select
+                      style={{ width: 200 }}
+                      allowClear
+                      mode="tags"
+                      maxTagCount="responsive"
+                      value={filters.state}
+                      onChange={(val) => onFilterChange(val, 'state')}
+                      options={activeStateList}
+                    ></Select>
+                  </li>
+                </ul>
+                <TimeSelector
+                  defaultValue={timeDefaultValue}
+                  onlyRefresh={isActiveAlarm}
+                  onChange={onTimeChange}
+                  onFrequenceChange={onFrequenceChange}
+                  onRefresh={onRefresh}
+                />
+              </div>
+            </div>
             <Spin spinning={chartLoading}>
               <div className={alertStyle.chartWrapper}>
                 <div className="flex items-center justify-between mb-[2px]">
@@ -700,13 +659,6 @@ const Alert: React.FC = () => {
                       </div>
                     </Tooltip>
                   </div>
-                  <TimeSelector
-                    defaultValue={timeDefaultValue}
-                    onlyRefresh={activeTab === 'activeAlarms'}
-                    onChange={onTimeChange}
-                    onFrequenceChange={onFrequenceChange}
-                    onRefresh={onRefresh}
-                  />
                 </div>
                 <div className={alertStyle.chart}>
                   <StackedBarChart data={chartData} colors={LEVEL_MAP as any} />
@@ -714,19 +666,18 @@ const Alert: React.FC = () => {
               </div>
             </Spin>
             <div className={alertStyle.table}>
-              <Tabs activeKey={activeTab} items={tabs} onChange={changeTab} />
-              <div className="flex justify-between mb-[10px]">
-                <Input
-                  allowClear
-                  className="w-[350px]"
-                  placeholder={t('common.searchPlaceHolder')}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  onPressEnter={enterText}
-                  onClear={clearText}
-                />
-              </div>
+              <Search
+                allowClear
+                className="w-[240px] mb-[10px]"
+                placeholder={t('common.searchPlaceHolder')}
+                value={searchText}
+                enterButton
+                onChange={(e) => setSearchText(e.target.value)}
+                onSearch={handleSearch}
+              />
               <CustomTable
-                scroll={{ y: 'calc(100vh - 540px)', x: 'calc(100vw - 320px)' }}
+                className="w-full"
+                scroll={{ y: 'calc(100vh - 630px)', x: 'calc(100vw - 320px)' }}
                 columns={columns}
                 dataSource={tableData}
                 pagination={pagination}

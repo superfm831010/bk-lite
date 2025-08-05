@@ -29,8 +29,12 @@ class GraphUtils(ChunkHelper):
     @classmethod
     def update_graph(cls, graph_obj, old_doc_list):
         new_doc_list = graph_obj.doc_list[:]
-        add_doc_list = [i for i in new_doc_list if i not in old_doc_list]
-        delete_doc_list = [i for i in old_doc_list if i not in new_doc_list]
+        if graph_obj.status == "failed":
+            add_doc_list = new_doc_list[:]
+            delete_doc_list = old_doc_list[:]
+        else:
+            add_doc_list = [i for i in new_doc_list if i not in old_doc_list]
+            delete_doc_list = [i for i in old_doc_list if i not in new_doc_list]
         delete_docs = cls.get_documents(delete_doc_list, graph_obj.knowledge_base.knowledge_index_name())
         graph_map_list = dict(
             GraphChunkMap.objects.filter(knowledge_graph_id=graph_obj.id).values_list("chunk_id", "graph_id")
@@ -38,7 +42,10 @@ class GraphUtils(ChunkHelper):
         delete_chunk = [i["metadata"]["chunk_id"] for i in delete_docs]
         graph_list = [graph_id for chunk_id, graph_id in graph_map_list.items() if chunk_id in delete_chunk]
         if graph_list:
-            cls.delete_graph_chunk(graph_list)
+            try:
+                cls.delete_graph_chunk(graph_list)
+            except Exception as e:
+                return {"result": False, "message": str(e)}
             GraphChunkMap.objects.filter(knowledge_graph_id=graph_obj.id, chunk_id__in=delete_chunk).delete()
         return cls.create_graph(graph_obj, add_doc_list)
 
@@ -157,5 +164,5 @@ class GraphUtils(ChunkHelper):
         }
         res = cls.post_chat_server(kwargs, url)
         if not res or res["status"] != "success":
-            raise Exception("Failed to rebuild graph community")
+            return {"result": False}
         return {"result": True}

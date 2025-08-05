@@ -633,8 +633,8 @@ class AlertProcessor:
         format_alert_list = []
         update_alert_list = []
 
-        try:
-            for correlation_rule in correlation_rules:
+        for correlation_rule in correlation_rules:
+            try:
                 # 获取该关联规则的聚合规则
                 aggregation_rules = correlation_rule.aggregation_rules.filter(is_active=True)
                 if not aggregation_rules.exists():
@@ -661,8 +661,10 @@ class AlertProcessor:
                     logger.info(
                         f"关联规则 {correlation_rule.name} 产生告警: {len(window_alerts)} 个新告警, {len(window_updates)} 个更新")
 
-        except Exception as e:
-            logger.error(f"批量处理关联规则失败: {window_type} - {str(e)}")
+            except Exception as e:
+                logger.error(f"批量处理关联规则失败: {window_type} - {str(e)}")
+            finally:
+                CorrelationRules.objects.filter(id=correlation_rule.id).update(exec_time=timezone.now())
 
         return format_alert_list, update_alert_list
 
@@ -694,10 +696,12 @@ class AlertProcessor:
             # 获取聚合规则配置，用于检查会话关闭条件
             aggregation_rules = correlation_rule.aggregation_rules.filter(is_active=True)
 
+            aggregation_key = self.rule_manager.get_aggregation_key(correlation_rule.rule_id_str)
+
             events['alert_source'] = events['source__name']
             # 生成实例指纹
             events['instance_fingerprint'] = events.apply(
-                lambda row: generate_instance_fingerprint(row.to_dict()),
+                lambda row: generate_instance_fingerprint(row.to_dict(), aggregation_key),
                 axis=1
             )
             event_fingerprints = events.to_dict('records')
@@ -737,7 +741,7 @@ class AlertProcessor:
 
         Args:
             session: 会话窗口对象
-            events: 匹配会话的事件列表
+            event: 匹配会话的事件列表
             aggregation_rules: 聚合规则列表
 
         Returns:
