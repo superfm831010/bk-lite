@@ -55,7 +55,7 @@ java_version=$("$java_home/bin/java" -version 2>&1 | awk -F '"' '/version/ {prin
 xms=$(echo "$cmdline" | grep -oP '(?<=-Xms)[^ ]*')
 xmx=$(echo "$cmdline" | grep -oP '(?<=-Xmx)[^ ]*')
 output=$(jcmd "$pid" GC.heap_info 2>/dev/null)
-capacity_kb=$(echo "$output" | grep 'Metaspace' | awk '{print $5}')
+capacity_kb=$(echo "$output" | grep 'Metaspace' | awk '{print $5}' | sed 's/,$//')
 reserved_kb=$(echo "$output" | grep 'Metaspace' | awk '{print $9}')
 
 # 拼接实例名
