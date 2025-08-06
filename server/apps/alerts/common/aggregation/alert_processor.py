@@ -696,10 +696,12 @@ class AlertProcessor:
             # 获取聚合规则配置，用于检查会话关闭条件
             aggregation_rules = correlation_rule.aggregation_rules.filter(is_active=True)
 
+            aggregation_key = self.rule_manager.get_aggregation_key(correlation_rule.rule_id_str)
+
             events['alert_source'] = events['source__name']
             # 生成实例指纹
             events['instance_fingerprint'] = events.apply(
-                lambda row: generate_instance_fingerprint(row.to_dict()),
+                lambda row: generate_instance_fingerprint(row.to_dict(), aggregation_key),
                 axis=1
             )
             event_fingerprints = events.to_dict('records')

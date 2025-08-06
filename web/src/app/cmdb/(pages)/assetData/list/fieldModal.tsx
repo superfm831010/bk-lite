@@ -27,7 +27,7 @@ import {
   UserItem,
 } from '@/app/cmdb/types/assetManage';
 import { deepClone } from '@/app/cmdb/utils/common';
-import useApiClient from '@/utils/request';
+import { useInstanceApi } from '@/app/cmdb/api';
 import dayjs from 'dayjs';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
@@ -45,13 +45,6 @@ interface FieldConfig {
   title: string;
   model_id: string;
   list: Array<any>;
-}
-
-interface RequestParams {
-  model_id?: string;
-  instance_info?: object;
-  inst_ids?: number[];
-  update_data?: object;
 }
 
 export interface FieldModalRef {
@@ -77,7 +70,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     >([]);
     const [form] = Form.useForm();
     const { t } = useTranslation();
-    const { get, post } = useApiClient();
+    const instanceApi = useInstanceApi();
 
     useEffect(() => {
       if (groupVisible) {
@@ -89,7 +82,8 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
 
     useEffect(() => {
       if (groupVisible && modelId === 'host') {
-        get('/cmdb/api/instance/list_proxys/', {})
+        instanceApi
+          .getInstanceProxys()
           .then((data: any[]) => {
             setProxyOptions(data || []);
           })
@@ -351,32 +345,19 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
         const msg: string = t(
           type === 'add' ? 'successfullyAdded' : 'successfullyModified'
         );
-        const url: string =
-          type === 'add'
-            ? `/cmdb/api/instance/`
-            : `/cmdb/api/instance/batch_update/`;
-        let requestParams: RequestParams = {
-          model_id: modelId,
-          instance_info: formData,
-        };
-        if (type !== 'add') {
-          if (isBatchEdit) {
-            for (const key in formData) {
-              if (
-                !formData[key] &&
-                formData[key] !== 0 &&
-                formData[key] !== false
-              ) {
-                delete formData[key];
-              }
-            }
-          }
-          requestParams = {
+        let result: any;
+        if (type === 'add') {
+          result = await instanceApi.createInstance({
+            model_id: modelId,
+            instance_info: formData,
+          });
+        } else {
+          result = await instanceApi.batchUpdateInstances({
             inst_ids: type === 'edit' ? [instanceData._id] : selectedRows,
             update_data: formData,
-          };
+          });
         }
-        const { _id: instId } = await post(url, requestParams);
+        const instId = result?._id;
         message.success(msg);
         onSuccess(confirmType ? instId : '');
         handleCancel();

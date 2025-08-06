@@ -40,13 +40,15 @@ def general_embed_by_document_list(document_list, is_show=False, username="", do
         docs = [i["page_content"] for i in remote_docs][:10]
         return docs
     knowledge_base_id = document_list[0].knowledge_base_id
+    knowledge_ids = [doc.id for doc in document_list]
     task_obj = KnowledgeTask.objects.create(
         created_by=username,
         domain=domain,
         knowledge_base_id=knowledge_base_id,
         task_name=document_list[0].name,
-        knowledge_ids=[doc.id for doc in document_list],
+        knowledge_ids=knowledge_ids,
         train_progress=0,
+        total_count=len(knowledge_ids),
     )
     train_progress = round(float(1 / len(task_obj.knowledge_ids)) * 100, 2)
     for index, document in tqdm(enumerate(document_list)):
@@ -56,6 +58,7 @@ def general_embed_by_document_list(document_list, is_show=False, username="", do
             logger.exception(e)
         task_progress = task_obj.train_progress + train_progress
         task_obj.train_progress = round(task_progress, 2)
+        task_obj.completed_count += 1
         if index < len(document_list) - 1:
             task_obj.name = document_list[index + 1].name
         task_obj.save()
@@ -69,7 +72,7 @@ def invoke_document_to_es(document_id=0, document=None):
     if not document:
         logger.error(f"document {document_id} not found")
         return
-    document.train_status = DocumentStatus.TRAINING
+    document.train_status = DocumentStatus.CHUNKING
     document.chunk_size = 0
     document.save()
     logger.info(f"document {document.name} progress: {document.train_progress}")
@@ -347,7 +350,7 @@ def update_graph(instance_id, old_doc_list):
     else:
         instance.status = "completed"
         instance.save()
-        logger.info("Graph updated completed: {}".format(instance.name))
+        logger.info("Graph updated completed: {}".format(instance.id))
 
 
 @shared_task
@@ -388,7 +391,7 @@ def _initialize_qa_task(file_data, knowledge_base_id, username, domain):
 
     # 创建问答对对象
     for qa_name in file_data.keys():
-        qa_pairs = create_qa_pairs_task(knowledge_base_id, qa_name)
+        qa_pairs = create_qa_pairs_task(knowledge_base_id, qa_name, username, domain)
         if qa_pairs.id not in qa_pairs_id_list:
             qa_pairs_list.append(qa_pairs)
             qa_pairs_id_list.append(qa_pairs.id)
@@ -495,12 +498,10 @@ def _send_qa_request_with_retry(params, url, headers, index):
     return True
 
 
-def create_qa_pairs_task(knowledge_base_id, qa_name):
+def create_qa_pairs_task(knowledge_base_id, qa_name, username, domain):
     # 创建或获取问答对对象
     qa_pairs, created = QAPairs.objects.get_or_create(
-        name=qa_name,
-        knowledge_base_id=knowledge_base_id,
-        document_id=0,
+        name=qa_name, knowledge_base_id=knowledge_base_id, document_id=0, created_by=username, domain=domain
     )
     logger.info(f"问答对对象{'创建' if created else '获取'}成功: {qa_pairs.name}")
     return qa_pairs

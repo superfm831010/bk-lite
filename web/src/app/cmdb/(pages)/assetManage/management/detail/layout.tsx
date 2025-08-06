@@ -14,12 +14,17 @@ import useApiClient from '@/utils/request';
 import { ClassificationItem } from '@/app/cmdb/types/assetManage';
 import { useTranslation } from '@/utils/i18n';
 import PermissionWrapper from '@/components/permission';
+import { useClassificationApi, useModelApi } from '@/app/cmdb/api';
 
 const AboutLayout = ({ children }: { children: React.ReactNode }) => {
-  const { get, del, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
   const { t } = useTranslation();
   const { confirm } = Modal;
   const router = useRouter();
+
+  const { getClassificationList } = useClassificationApi();
+  const { deleteModel } = useModelApi();
+
   const searchParams = useSearchParams();
   const objIcon: string = searchParams.get('icn') || '';
   const modelName: string = searchParams.get('model_name') || '';
@@ -36,11 +41,11 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (isLoading) return;
     getGroups();
-  }, [isLoading, get]);
+  }, [isLoading]);
 
   const getGroups = async () => {
     try {
-      const data = await get('/cmdb/api/classification/');
+      const data = await getClassificationList();
       setGroupList(data);
     } catch (error) {
       console.log(error);
@@ -73,7 +78,7 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await del(`/cmdb/api/model/${row.model_id}/`);
+            await deleteModel(row.model_id);
             message.success(t('successfullyDeleted'));
             router.push(`/cmdb/assetManage`);
           } finally {

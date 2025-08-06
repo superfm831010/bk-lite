@@ -274,15 +274,15 @@ def create_default_rule(llm_model, ocr_model, embed_model, rerank_model):
             description="Guest组数据权限规则",
             group_name=guest_group.name,
             rules={
-                "skill": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
-                "tools": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
+                "skill": [{"id": 0, "name": "All", "permission": ["View"]}],
+                "tools": [{"id": 0, "name": "All", "permission": ["View"]}],
                 "provider": {
                     "llm_model": [{"id": llm_model["id"], "name": llm_model["name"], "permission": ["View"]}],
                     "ocr_model": [{"id": i["id"], "name": i["name"], "permission": ["View"]} for i in ocr_model],
                     "embed_model": [{"id": i["id"], "name": i["name"], "permission": ["View"]} for i in embed_model],
                     "rerank_model": [{"id": rerank_model["id"], "name": rerank_model["name"], "permission": ["View"]}],
                 },
-                "knowledge": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
+                "knowledge": [{"id": 0, "name": "All", "permission": ["View"]}],
             },
         ),
     )
@@ -342,7 +342,9 @@ def get_user_rules_by_module(group_id, username, domain, app, module):
     guest_group = Group.objects.filter(name="OpsPilotGuest").first()
     user_obj = User.objects.filter(username=username, domain=domain).first()
     admin_teams = [int(group_id)]
-    if guest_group:
+    has_guest_group = False
+    if guest_group and guest_group.id in user_obj.group_list:
+        has_guest_group = True
         admin_teams.append(guest_group.id)
 
     if not user_obj:
@@ -352,8 +354,10 @@ def get_user_rules_by_module(group_id, username, domain, app, module):
     if set(user_obj.role_list).intersection(admin_list):
         # 需要获取模块结构来构建完整的返回数据
         return {"result": True, "data": all_permission, "team": admin_teams}
-
-    base_filter = Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
+    if has_guest_group:
+        base_filter = Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
+    else:
+        base_filter = Q(group_rule__group_id=group_id)
     module_filter = Q(group_rule__rules__has_key=module)
 
     rules = UserRule.objects.filter(username=username, domain=domain, group_rule__app=app).filter(
@@ -394,13 +398,18 @@ def get_user_rules_by_app(group_id, username, domain, app, module, child_module=
     guest_group = Group.objects.filter(name="OpsPilotGuest").first()
     user_obj = User.objects.filter(username=username, domain=domain).first()
     admin_teams = [int(group_id)]
-    if guest_group:
+    has_guest_group = False
+    if guest_group and guest_group.id in user_obj.group_list:
+        has_guest_group = True
         admin_teams.append(guest_group.id)
     if not user_obj:
         return {"instance": [], "team": []}
     if set(user_obj.role_list).intersection(admin_list):
         return {"instance": [], "team": admin_teams}
-    base_filter = Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
+    if has_guest_group:
+        base_filter = Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
+    else:
+        base_filter = Q(group_rule__group_id=group_id)
     # 添加模块过滤条件
     module_filter = Q(group_rule__rules__has_key=module)
 

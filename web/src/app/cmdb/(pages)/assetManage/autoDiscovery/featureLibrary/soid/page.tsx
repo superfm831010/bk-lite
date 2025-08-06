@@ -3,12 +3,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './index.module.scss';
 import OperateOid from './components/operateOid';
-import useApiClient from '@/utils/request';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
 import { NETWORK_DEVICE_OPTIONS } from '@/app/cmdb/constants/professCollection';
 import { Button, Input, Select, Modal, message, Space } from 'antd';
 import { useTranslation } from '@/utils/i18n';
+import { useOidApi } from '@/app/cmdb/api';
 
 const { Option } = Select;
 
@@ -24,7 +24,9 @@ interface ListItem {
 
 const OidLibrary: React.FC = () => {
   const { t } = useTranslation();
-  const { get, del } = useApiClient();
+
+  const { getOidList, deleteOid } = useOidApi();
+
   const listCount = useRef<number>(0);
   const deviceTypeList = NETWORK_DEVICE_OPTIONS;
   const [deviceType, setDeviceType] = useState<string[]>([]);
@@ -70,7 +72,7 @@ const OidLibrary: React.FC = () => {
       centered: true,
       onOk: async () => {
         try {
-          await del(`/cmdb/api/oid/${row.id}/`);
+          await deleteOid(row.id);
           message.success(t('successfullyDeleted'));
           if (pagination.current > 1 && listCount.current === 1) {
             setPagination((prev) => ({ ...prev, current: prev.current - 1 }));
@@ -102,7 +104,7 @@ const OidLibrary: React.FC = () => {
         brand: filterType === 'brand' ? searchVal : '',
         device_type: deviceTypeVal?.[0] || '',
       };
-      const data = await get('/cmdb/api/oid/', { params: queryParams });
+      const data = await getOidList(queryParams);
       setDataList(data.items || []);
       listCount.current = data.items?.length || 0;
       setPagination((prev) => ({
@@ -187,7 +189,7 @@ const OidLibrary: React.FC = () => {
         render: (type: string) => getDeviceType(type),
       },
       {
-        title: t('common.action'),
+        title: t('common.actions'),
         key: 'operation',
         width: 140,
         render: (text: any, record: ListItem) => (

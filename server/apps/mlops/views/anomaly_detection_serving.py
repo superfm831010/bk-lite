@@ -1,5 +1,5 @@
 
-from apps.core.utils.viewset_utils import AuthViewSet
+from config.drf.viewsets import ModelViewSet
 from apps.core.decorators.api_permission import HasPermission
 from apps.mlops.algorithm.anomaly_detection.random_forest_detector import RandomForestAnomalyDetector
 from apps.mlops.filters.anomaly_detection_serving import AnomalyDetectionServingFilter
@@ -13,7 +13,7 @@ from django.http import Http404
 import pandas as pd
 
 
-class AnomalyDetectionServingViewSet(AuthViewSet):
+class AnomalyDetectionServingViewSet(ModelViewSet):
     queryset = AnomalyDetectionServing.objects.all()
     serializer_class = AnomalyDetectionServingSerializer
     filterset_class = AnomalyDetectionServingFilter
@@ -24,7 +24,7 @@ class AnomalyDetectionServingViewSet(AuthViewSet):
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @HasPermission("model_release-Add")
+    @HasPermission("model_release-Add,train_tasks-View")
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 

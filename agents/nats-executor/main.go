@@ -46,7 +46,7 @@ func main() {
 
 	}
 
-	log.Printf("Connecting to NATS server at %s", cfg.NATSUrls)
+	//log.Printf("Connecting to NATS server at %s", cfg.NATSUrls)
 	opts := []nats.Option{
 		nats.Name("nats-executor"),
 		nats.Compression(true),

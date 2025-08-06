@@ -55,10 +55,10 @@ const EntityList = <T,>({
     if (itemTypeSingle === 'skill') {
       return {
         options: [
-          { key: 2, title: t('skill.form.qaType') },
-          { key: 1, title: t('skill.form.toolsType') },
-          { key: 3, title: t('skill.form.planType') },
-          { key: 4, title: t('skill.form.complexType') }
+          { key: 2, title: t('skill.form.qaTag') },
+          { key: 1, title: t('skill.form.toolsTag') },
+          { key: 3, title: t('skill.form.planTag') },
+          { key: 4, title: t('skill.form.complexTag') }
         ],
         searchField: 'skill_type'
       };
@@ -139,7 +139,7 @@ const EntityList = <T,>({
         setLoadingMore(false);
       }
     }
-  }, [get, queryParams, currentPage, pageSize, searchTerm, selectedTypes, hasMore, searchField]);
+  }, [currentPage, pageSize, searchTerm, selectedTypes, hasMore, searchField]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -223,6 +223,7 @@ const EntityList = <T,>({
   };
 
   const handleMenuClick = (action: string, item: T) => {
+    console.log('Menu action:', action, 'for item:', item);
     if (action === 'edit') {
       setEditingItem(item);
       setIsModalVisible(true);

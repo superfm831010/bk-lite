@@ -51,7 +51,13 @@
       "uploadHint": "Support single upload, only JSON files are allowed",
       "noFileSelected": "Please select a file to upload",
       "importSuccess": "Import QA pairs successfully",
-      "importFailed": "Failed to import QA pairs"
+      "importFailed": "Failed to import QA pairs",
+      "status": {
+        "pending": "Pending",
+        "generating": "Generating",
+        "failed": "Failed",
+        "completed": "Completed"
+      }
     },
     "knowledgeGraph": {
       "title": "Knowledge Graph",
@@ -248,16 +254,20 @@
       "guide": "Guide",
       "guideTip": "An initialization message sent at the start of each conversation. Supports standard Markdown syntax and additional tags. [Quick Key]: Users can click to send this question directly.",
       "type": "Skill Type",
-      "qaType": "RAG Agent",
+      "qaType": "RAG",
+      "qaTag": "RAG",
       "qaTypeDesc": "Combines retrieval and generation technologies to retrieve relevant information from external knowledge bases and generate accurate Q&A content, suitable for dynamic knowledge Q&A in open domains.",
       "qaTypeScene": "Enterprise Knowledge Base Query: Quickly answer common questions from customers or employees.\nProfessional Q&A: Provide Q&A and advice based on a specific professional field.",
       "toolsType": "ReAct Agent",
+      "toolsTag": "ReAct",
       "toolsTypeDesc": "Combines reasoning and action, solving tasks through logical deduction and tool invocation, suitable for scenarios requiring real-time interaction and multi-step operations.",
       "toolsTypeScene": "Data Analysis: Invoke computational tools for real-time statistics or analysis.\nAutomated Office: Handle tasks like scheduling and email classification.\nQ&A Enhancement: Answer multi-layered questions by combining computational or search tools.",
       "planType": "Plan Execute Agent",
+      "planTag": "Plan Execute",
       "planTypeDesc": "Decomposes tasks into multiple executable steps, completing complex tasks step by step, suitable for situations requiring hierarchical planning.",
       "planTypeScene": "Project Management  : Decompose tasks and track the execution of each phase.\nProduct Development: Develop a research and development plan and coordinate execution across multiple departments.\nDaily Planning: Design travel routes and budget arrangements.",
       "complexType": "LATS Agent",
+      "complexTag": "LATS", 
       "complexTypeDesc": "Simulates multi-step decision paths through tree search algorithms, suitable for high-complexity, high-uncertainty decision scenarios.",
       "complexTypeScene": "Investment Analysis: Predict various market changes and optimize investment strategies.\nStrategic Planning: Develop long-term development plans and anticipate risks.",
       "explanation": "Explanation",

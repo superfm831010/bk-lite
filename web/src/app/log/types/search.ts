@@ -43,7 +43,11 @@ export interface AggregatedResult {
 }
 
 export interface LogTerminalProps {
-  searchParams?: () => SearchParams;
   className?: string;
+  query: string;
   fetchData?: (loading: boolean) => void;
+}
+
+export interface LogTerminalRef {
+  startLogStream: () => void;
 }

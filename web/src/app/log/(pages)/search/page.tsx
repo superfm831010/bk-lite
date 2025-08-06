@@ -16,7 +16,7 @@ import { ChartData, Pagination, TableDataItem } from '@/app/log/types';
 import useApiClient from '@/utils/request';
 import useSearchApi from '@/app/log/api/search';
 import useIntegrationApi from '@/app/log/api/integration';
-import { SearchParams } from '@/app/log/types/search';
+import { SearchParams, LogTerminalRef } from '@/app/log/types/search';
 import { aggregateLogs, escapeArrayToJson } from '@/app/log/utils/common';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import MarkdownRenderer from '@/components/markdown';
@@ -32,6 +32,7 @@ const SearchView: React.FC = () => {
   const { getHits, getLogs } = useSearchApi();
   const { convertToLocalizedTime } = useLocalizedTime();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const terminalRef = useRef<LogTerminalRef | null>(null);
   const timeSelectorRef = useRef<TimeSelectorRef>(null);
   const [frequence, setFrequence] = useState<number>(0);
   const [searchText, setSearchText] = useState<string>('');
@@ -64,7 +65,7 @@ const SearchView: React.FC = () => {
 
   const scrollHeight = useMemo(() => {
     // 根据expand状态和屏幕高度动态计算scroll高度
-    const fixedHeight = expand ? 510 : 430;
+    const fixedHeight = expand ? 480 : 400;
     return Math.max(200, windowHeight - fixedHeight);
   }, [windowHeight, expand]);
 
@@ -156,6 +157,11 @@ const SearchView: React.FC = () => {
 
   const onTabChange = async (val: string) => {
     setActiveMenu(val);
+    setChartData([]);
+    setTableData([]);
+    if (val === 'list') {
+      onRefresh();
+    }
   };
 
   const initData = async () => {
@@ -279,8 +285,8 @@ const SearchView: React.FC = () => {
       text = searchText ? `${groupsText} | ${searchText}` : groupsText;
     }
     const params: SearchParams = {
-      start_time: new Date(times[0]).toISOString(),
-      end_time: new Date(times[1]).toISOString(),
+      start_time: times[0] ? new Date(times[0]).toISOString() : '',
+      end_time: times[1] ? new Date(times[1]).toISOString() : '',
       field: '_stream',
       fields_limit: 5,
       query: text || '*',
@@ -296,6 +302,14 @@ const SearchView: React.FC = () => {
 
   const onRefresh = () => {
     getLogData('refresh');
+  };
+
+  const handleSearch = () => {
+    if (isList) {
+      onRefresh();
+      return;
+    }
+    terminalRef?.current?.startLogStream();
   };
 
   const addToQuery = (row: TableDataItem, type: string) => {
@@ -333,15 +347,6 @@ const SearchView: React.FC = () => {
 
   return (
     <div className={`${searchStyle.search} w-full`}>
-      <div className="flex justify-end">
-        <TimeSelector
-          ref={timeSelectorRef}
-          defaultValue={timeDefaultValue}
-          onChange={onRefresh}
-          onFrequenceChange={onFrequenceChange}
-          onRefresh={onRefresh}
-        />
-      </div>
       <Spin spinning={pageLoading}>
         <Card bordered={false} className={searchStyle.searchCondition}>
           <b className="flex mb-[10px]">{t('log.search.searchCriteria')}</b>
@@ -376,80 +381,97 @@ const SearchView: React.FC = () => {
                 />
               }
               onChange={(e) => setSearchText(e.target.value)}
-              onPressEnter={onRefresh}
+              onPressEnter={handleSearch}
             />
             <Button
               type="primary"
               icon={<SearchOutlined />}
-              onClick={onRefresh}
+              onClick={handleSearch}
             >
-              {t('common.search')}
+              {t('log.search.search')}
             </Button>
           </div>
         </Card>
-        <Card bordered={false}>
-          <Collapse
-            title={t('log.search.histogram')}
-            icon={
-              <div>
-                <span className="mr-2">
-                  <span className="text-[var(--color-text-3)]">
-                    {t('log.search.total')}：
-                  </span>
-                  <span>{pagination.total}</span>
-                </span>
-                <span className="mr-2">
-                  <span className="text-[var(--color-text-3)]">
-                    {t('log.search.queryTime')}：
-                  </span>
-                  <span>{convertToLocalizedTime(String(queryTime))}</span>
-                </span>
-                <span className="mr-2">
-                  <span className="text-[var(--color-text-3)]">
-                    {t('log.search.timeConsumption')}：
-                  </span>
-                  <span>{`${Number(queryEndTime) - Number(queryTime)}ms`}</span>
-                </span>
-              </div>
-            }
-            onToggle={(val) => setExpand(val)}
-          >
-            <CustomBarChart
-              className={searchStyle.chart}
-              data={chartData}
-              onXRangeChange={onXRangeChange}
+        <div className="my-[10px] flex items-center justify-between">
+          <Segmented
+            value={activeMenu}
+            options={[
+              { value: 'list', label: t('log.search.list') },
+              { value: 'overview', label: t('log.search.terminal') },
+            ]}
+            onChange={onTabChange}
+          />
+          <div className={isList ? '' : 'hidden'}>
+            <TimeSelector
+              ref={timeSelectorRef}
+              defaultValue={timeDefaultValue}
+              onChange={onRefresh}
+              onFrequenceChange={onFrequenceChange}
+              onRefresh={onRefresh}
             />
-          </Collapse>
-        </Card>
-        <Segmented
-          className="my-[10px]"
-          value={activeMenu}
-          options={[
-            { value: 'list', label: t('log.search.list') },
-            { value: 'overview', label: t('log.search.terminal') },
-          ]}
-          onChange={onTabChange}
-        />
+          </div>
+        </div>
         {isList ? (
-          <Card
-            bordered={false}
-            style={{ minHeight: scrollHeight + 74 + 'px', overflowY: 'hidden' }}
-          >
-            <SearchTable
-              dataSource={tableData}
-              loading={tableLoading}
-              scroll={{ y: scrollHeight }}
-              addToQuery={addToQuery}
-              onLoadMore={loadMore}
-            />
-          </Card>
+          <>
+            <Card bordered={false} className="mb-[10px]">
+              <Collapse
+                title={t('log.search.histogram')}
+                icon={
+                  <div>
+                    <span className="mr-2">
+                      <span className="text-[var(--color-text-3)]">
+                        {t('log.search.total')}：
+                      </span>
+                      <span>{pagination.total}</span>
+                    </span>
+                    <span className="mr-2">
+                      <span className="text-[var(--color-text-3)]">
+                        {t('log.search.queryTime')}：
+                      </span>
+                      <span>{convertToLocalizedTime(String(queryTime))}</span>
+                    </span>
+                    <span className="mr-2">
+                      <span className="text-[var(--color-text-3)]">
+                        {t('log.search.timeConsumption')}：
+                      </span>
+                      <span>{`${
+                        Number(queryEndTime) - Number(queryTime)
+                      }ms`}</span>
+                    </span>
+                  </div>
+                }
+                isOpen={expand}
+                onToggle={(val) => setExpand(val)}
+              >
+                <CustomBarChart
+                  className={searchStyle.chart}
+                  data={chartData}
+                  onXRangeChange={onXRangeChange}
+                />
+              </Collapse>
+            </Card>
+            <Card
+              bordered={false}
+              style={{
+                minHeight: scrollHeight + 74 + 'px',
+                overflowY: 'hidden',
+              }}
+            >
+              <SearchTable
+                dataSource={tableData}
+                loading={tableLoading}
+                scroll={{ y: scrollHeight }}
+                addToQuery={addToQuery}
+                onLoadMore={loadMore}
+              />
+            </Card>
+          </>
         ) : (
           <Spin spinning={terminalLoading}>
             <LogTerminal
-              className={
-                expand ? 'h-[calc(100vh-434px)]' : 'h-[calc(100vh-354px)]'
-              }
-              searchParams={getParams}
+              ref={terminalRef}
+              className="h-[calc(100vh-244px)]"
+              query={getParams()?.query || '*'}
               fetchData={(val) => setTerminalLoading(val)}
             />
           </Spin>
