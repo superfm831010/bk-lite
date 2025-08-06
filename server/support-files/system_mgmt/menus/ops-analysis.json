@@ -14,14 +14,24 @@
       "name": "Operations Analysis",
       "children": [
         {
-          "id": "analysis_view",
-          "name": "View",
-          "operation": [
+        "id": "data_source",
+        "name": "Data Source",
+        "operation": [
             "View",
             "Add",
             "Edit",
             "Delete"
-          ]
+        ]
+    },
+    {
+        "id": "namespace",
+        "name": "NameSpace",
+        "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+        ]
         }
       ]
     }
@@ -36,7 +46,8 @@
       "name": "normal",
       "role_name": "node_normal",
       "menus": [
-        "analysis_view-View"
+        "data_source-View",
+        "namespace-View"
       ]
     }
   ]
