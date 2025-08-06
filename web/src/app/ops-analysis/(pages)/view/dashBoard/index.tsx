@@ -209,7 +209,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
   };
 
   return (
-    <div className="h-full flex-1 p-4 pb-0 overflow-auto flex flex-col ">
+    <div className="h-full flex-1 p-4 pb-0 overflow-auto flex flex-col bg-[var(--color-bg-1)]">
       <div className="w-full mb-2 flex items-center justify-between rounded-lg shadow-sm bg-[var(--color-bg-1)] p-3 border border-[var(--color-border-2)]">
         {selectedDashboard && (
           <div className="p-1 pt-0">

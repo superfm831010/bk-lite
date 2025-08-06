@@ -160,7 +160,7 @@ const Datasource: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col w-full h-full">
+    <div className="flex flex-col w-full h-full bg-[var(--color-bg-1)]">
       <Card
         style={{
           borderRadius: 0,

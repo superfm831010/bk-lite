@@ -97,6 +97,7 @@
     "operationFailed": "Operation failed"
 },
   "topology": {
+    "edgeView": "Edge View",
     "edgeConfig": "Edge Configuration",
     "lineType": "Line Type",
     "lineName": "Line Name",

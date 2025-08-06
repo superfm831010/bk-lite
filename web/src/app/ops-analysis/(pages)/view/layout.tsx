@@ -46,7 +46,7 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
 
   return (
     <div
-      className="flex w-full h-[calc(100vh-90px)] relative bg-[var(--color-bg-1)] rounded-lg"
+      className="flex w-full h-[calc(100vh-90px)] relative rounded-lg"
       style={{ minWidth: collapsed ? 0 : 280 }}
     >
       <div
@@ -60,7 +60,7 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
           flexShrink: 0,
         }}
       >
-        <div className="w-full h-full overflow-hidden">
+        <div className="w-full h-full overflow-hidden bg-[var(--color-bg-1)]">
           <Sidebar
             ref={sidebarRef}
             onSelect={(type, itemInfo) => {
