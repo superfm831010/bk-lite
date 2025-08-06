@@ -5,6 +5,7 @@
     "type": "Type",
     "status": "Status",
     "creator": "Creator",
+    "owner": "Owner",
     "createdAt": "Create at",
     "min": "Min",
     "max": "Max"
@@ -55,6 +56,7 @@
     "train": "Train",
     "traintask": "Train task",
     "trainStartTitle": "Confirmation to start training?",
+    "trainStartSucess": "Startup training successful",
     "trainStartContent": "Training once started will not stop.",
     "searchText": "Search for task name",
     "description": "Create a training task to train each model, and when training is complete, the final model can be viewed in the model library.",

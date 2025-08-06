@@ -120,7 +120,7 @@ def invoke_one_document(document, is_show=False):
         knowledge_docs.extend(remote_docs)
     except Exception as e:
         logger.exception(e)
-    return res["status"] == "success", knowledge_docs
+    return res.get("status") == "success", knowledge_docs
 
 
 def format_file_invoke_kwargs(document):
@@ -527,3 +527,13 @@ def set_import_kwargs(knowledge_base):
     }
 
     return kwargs
+
+
+@shared_task
+def create_qa_pairs_by_custom(qa_pairs_id, content_list):
+    qa_pairs = QAPairs.objects.get(id=qa_pairs_id)
+    es_index = qa_pairs.knowledge_base.knowledge_index_name()
+    embed_config = qa_pairs.knowledge_base.embed_model.decrypted_embed_config
+    embed_model_name = qa_pairs.knowledge_base.embed_model.name
+    chunk_obj = {}
+    ChunkHelper.create_qa_pairs(content_list, chunk_obj, es_index, embed_config, embed_model_name, qa_pairs_id)

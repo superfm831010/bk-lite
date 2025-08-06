@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Transfer, Tree } from 'antd';
+import { Transfer, Tree, Spin } from 'antd';
 import { DeleteOutlined, SettingOutlined } from '@ant-design/icons';
 import type { DataNode as TreeDataNode } from 'antd/lib/tree';
 import PermissionModal from './permissionModal';
@@ -11,7 +11,8 @@ interface TreeTransferProps {
   onChange: (newKeys: number[]) => void;
   onChangeRule?: (newKey: number, newRules: number[]) => void;
   mode?: 'group' | 'role';
-  disabled?: boolean; // 新增 disabled 字段
+  disabled?: boolean;
+  loading?: boolean;
 }
 
 // 增加事件处理函数接口
@@ -137,7 +138,6 @@ const transformRightTreeGroup = (
         acc.push(...transformedChildren);
       }
     } else {
-      // 处理叶子节点
       if (selectedKeys.includes(node.key as number)) {
         acc.push({
           ...node,
@@ -210,7 +210,8 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({
   onChange, 
   onChangeRule, 
   mode = 'role',
-  disabled = false 
+  disabled = false,
+  loading = false
 }) => {
   const [isPermissionModalVisible, setIsPermissionModalVisible] = useState<boolean>(false);
   const [currentNode, setCurrentNode] = useState<TreeDataNode | null>(null);
@@ -275,56 +276,58 @@ const RoleTransfer: React.FC<TreeTransferProps> = ({
 
   return (
     <>
-      <Transfer
-        oneWay
-        dataSource={transferDataSource}
-        targetKeys={selectedKeys}
-        className="tree-transfer"
-        render={(item) => item.title}
-        showSelectAll={false}
-        disabled={disabled}
-        onChange={(nextTargetKeys) => {
-          if (!disabled) {
-            onChange(nextTargetKeys as number[]);
-          }
-        }}
-      >
-        {({ direction }) => {
-          if (direction === 'left') {
-            return (
-              <div className="p-1 max-h-[250px] overflow-auto">
-                <Tree
-                  blockNode
-                  checkable
-                  selectable={false}
-                  expandedKeys={leftExpandedKeys}
-                  checkedKeys={selectedKeys}
-                  treeData={treeData}
-                  disabled={disabled}
-                  onCheck={(checkedKeys, info) => {
-                    if (!disabled) {
-                      const newKeys = info.checkedNodes.map((node: any) => node.key);
-                      onChange(newKeys);
-                    }
-                  }}
-                />
-              </div>
-            );
-          } else if (direction === 'right') {
-            return (
-              <div className="w-full p-1 max-h-[250px] overflow-auto">
-                <Tree
-                  blockNode
-                  selectable={false}
-                  expandedKeys={rightExpandedKeys}
-                  treeData={rightTransformedData}
-                  disabled={disabled}
-                />
-              </div>
-            );
-          }
-        }}
-      </Transfer>
+      <Spin spinning={loading}>
+        <Transfer
+          oneWay
+          dataSource={transferDataSource}
+          targetKeys={selectedKeys}
+          className="tree-transfer"
+          render={(item) => item.title}
+          showSelectAll={false}
+          disabled={disabled || loading}
+          onChange={(nextTargetKeys) => {
+            if (!disabled && !loading) {
+              onChange(nextTargetKeys as number[]);
+            }
+          }}
+        >
+          {({ direction }) => {
+            if (direction === 'left') {
+              return (
+                <div className="p-1 max-h-[250px] overflow-auto">
+                  <Tree
+                    blockNode
+                    checkable
+                    selectable={false}
+                    expandedKeys={leftExpandedKeys}
+                    checkedKeys={selectedKeys}
+                    treeData={treeData}
+                    disabled={disabled || loading}
+                    onCheck={(checkedKeys, info) => {
+                      if (!disabled && !loading) {
+                        const newKeys = info.checkedNodes.map((node: any) => node.key);
+                        onChange(newKeys);
+                      }
+                    }}
+                  />
+                </div>
+              );
+            } else if (direction === 'right') {
+              return (
+                <div className="w-full p-1 max-h-[250px] overflow-auto">
+                  <Tree
+                    blockNode
+                    selectable={false}
+                    expandedKeys={rightExpandedKeys}
+                    treeData={rightTransformedData}
+                    disabled={disabled || loading}
+                  />
+                </div>
+              );
+            }
+          }}
+        </Transfer>
+      </Spin>
       {currentNode && (
         <PermissionModal
           visible={isPermissionModalVisible}

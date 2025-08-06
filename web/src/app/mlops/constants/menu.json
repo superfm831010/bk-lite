@@ -4,7 +4,7 @@
       "title": "数据集",
       "icon": "Gc_103_face-Data",
       "url": "/mlops/manage",
-      "name": "anomaly_detection_datasets",
+      "name": "Datasets",
       "children": [
         {
           "title": "异常检测",
@@ -15,14 +15,12 @@
         {
           "title": "数据集详情",
           "url": "/mlops/manage/detail",
-          "name": "Detail",
-          "isNotMenuItem": true
+          "name": "anomaly_detection_datasets_detail"
         },
         {
           "title": "数据标注",
           "url": "/mlops/manage/annotation",
-          "name": "anotaition",
-          "isNotMenuItem": true
+          "name": "anomaly_detection_datasets_detail"
         }
       ]
     },
@@ -30,14 +28,13 @@
       "title": "训练任务",
       "icon": "renwu",
       "url": "/mlops/task",
-      "name": "train_tasks",
+      "name": "Train Tasks",
       "children": [
         {
           "title": "任务列表",
           "url": "/mlops/task/list",
           "icon": "guanli",
-          "name": "train_tasks",
-          "isNotMenuItem": false
+          "name": "train_tasks"
         }
       ]
     },
@@ -45,14 +42,13 @@
       "title": "能力发布",
       "icon": "fabu",
       "url": "/mlops/model-release",
-      "name": "train_tasks",
+      "name": "Model Release",
       "children": [
         {
-          "title": "异常检测",
+          "title": "发布列表",
           "url": "/mlops/model-release/list",
           "icon": "guanli",
-          "name": "train_tasks",
-          "isNotMenuItem": false
+          "name": "model_release"
         }
       ]
     }
@@ -73,14 +69,12 @@
         {
           "Title": "DatasetDetail",
           "url": "/mlops/manage/detail",
-          "name": "Detail",
-          "isNotMenuItem": true
+          "name": "anomaly_detection_datasets_detail"
         },
         {
           "title": "ModalRelease",
           "url": "/mlops/manage/annotation",
-          "name": "anotaition",
-          "isNotMenuItem": true
+          "name": "anomaly_detection_datasets_tag"
         }
       ]
     },
@@ -88,13 +82,12 @@
       "title": "TrainTask",
       "icon": "xunlianrenwu",
       "url": "/mlops/task",
-      "name": "train_tasks",
+      "name": "Train Tasks",
       "children": [
         {
           "title": "TaskList",
           "url": "/mlops/task/list",
-          "name": "train_test",
-          "isNotMenuItem": false
+          "name": "train_test"
         }
       ]
     },
@@ -102,14 +95,13 @@
       "title": "ModalRelease",
       "icon": "fabu1",
       "url": "/mlops/model-release",
-      "name": "train_tasks",
+      "name": "Model Release",
       "children": [
         {
-          "title": "发布列表",
+          "title": "Publication list",
           "url": "/mlops/model-release/list",
           "icon": "guanli",
-          "name": "train_tasks",
-          "isNotMenuItem": false
+          "name": "model_release"
         }
       ]
     }
