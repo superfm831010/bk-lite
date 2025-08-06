@@ -2,8 +2,8 @@ from django.db import models
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
 
-class PlayGroundFile(MaintainerInfo, TimeInfo):
-    serving = models.IntegerField(
+class PlaygroundAnomalyDetectionExample(MaintainerInfo, TimeInfo):
+    capability = models.IntegerField(
         verbose_name="能力演示ID"
     )
     name = models.CharField(max_length=255, verbose_name="文件名称")

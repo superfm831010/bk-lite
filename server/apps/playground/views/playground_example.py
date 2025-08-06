@@ -1,17 +1,17 @@
 from config.drf.viewsets import ModelViewSet
-from apps.playground.models.playground_example import PlayGroundFile
-from apps.playground.filters.playground_example import PlayGroundExampleFilter
-from apps.playground.serializers.playground_example import PlayGroundFileSerializer
+from apps.playground.models.playground_example import PlaygroundAnomalyDetectionExample
+from apps.playground.filters.playground_example import PlaygroundAnomalyDetectionExampleFilter
+from apps.playground.serializers.playground_example import PlaygroundAnomalyDetectionExampleSerializer
 from apps.core.decorators.api_permission import HasPermission
 
-class PlayGroundFileViewSet(ModelViewSet):
+class PlayGroundAnomalyDetectionExampleViewSet(ModelViewSet):
     """
-    PlayGroundFileViewSet 视图集
-    关键业务逻辑：serving 嵌套对象
+    PlaygroundAnomalyDetectionExample 视图集
+    只支持异常检测样本文件的增删改查
     """
-    queryset = PlayGroundFile.objects.all()
-    serializer_class = PlayGroundFileSerializer
-    filterset_class = PlayGroundExampleFilter
+    queryset = PlaygroundAnomalyDetectionExample.objects.all()
+    serializer_class = PlaygroundAnomalyDetectionExampleSerializer
+    filterset_class = PlaygroundAnomalyDetectionExampleFilter
     search_fields = ['name']
     ordering_fields = ['id','name','is_active']
     ordering = ['id']
