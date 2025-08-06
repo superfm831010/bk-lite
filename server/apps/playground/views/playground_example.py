@@ -17,10 +17,6 @@ class PlayGroundFileViewSet(ModelViewSet):
     ordering = ['id']
     permission_key = 'playground.playground_example'
 
-    def get_queryset(self):
-        # 可根据需求自定义查询集
-        queryset = super().get_queryset()
-
     @HasPermission('example-View')
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)

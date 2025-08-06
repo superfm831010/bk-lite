@@ -6,9 +6,9 @@ class PlayGroundExampleFilter(filters.FilterSet):
     PlayGroundFile过滤器 支持capability字段过滤，name模糊查询
     """
     name = filters.CharFilter(lookup_expr='icontains', label='文件名称模糊查询')
-    serving = filters.CharFilter(field_name='serving_id',label='能力类型')
+    serving = filters.CharFilter(field_name='serving',label='能力类型')
     is_active = filters.BooleanFilter(label='是否启用')
 
     class Meta:
         model = PlayGroundFile
-        fields = ['name', 'serving_id']
+        fields = ['name', 'serving']

@@ -1,13 +1,9 @@
 from django.db import models
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
-from apps.mlops.models.anomaly_detection_serving import AnomalyDetectionServing
 
 class PlayGroundFile(MaintainerInfo, TimeInfo):
-    serving = models.ForeignKey(
-        AnomalyDetectionServing,
-        on_delete=models.CASCADE,
-        related_name="files",
+    serving = models.IntegerField(
         verbose_name="能力演示ID"
     )
     name = models.CharField(max_length=255, verbose_name="文件名称")
