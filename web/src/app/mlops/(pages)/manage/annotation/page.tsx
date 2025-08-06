@@ -62,7 +62,7 @@ const AnnotationPage = () => {
         align: 'center',
         render: (_, record) => {
           const time = new Date(record.timestamp * 1000).toISOString();
-          return <p>{convertToLocalizedTime(time.toString(), 'YYYY-MM-DD HH:mm:ss')}</p>;
+          return <p className="h-full place-content-center">{convertToLocalizedTime(time.toString(), 'YYYY-MM-DD HH:mm:ss')}</p>;
         },
       },
       {
@@ -73,7 +73,7 @@ const AnnotationPage = () => {
         width: 30,
         render: (_, record) => {
           const value = Number(record.value).toFixed(2);
-          return <p>{value}</p>
+          return <p className="h-full place-content-center">{value}</p>
         },
       },
       {
@@ -92,7 +92,7 @@ const AnnotationPage = () => {
         width: 30,
         render: (_, record) => {
           return (
-            <PermissionWrapper requiredPermissions={['Delete']}>
+            <PermissionWrapper requiredPermissions={['File Edit']}>
               <Button color="danger" variant="link" onClick={() => handleDelete(record)}>
                 {t('common.delete')}
               </Button>
@@ -504,7 +504,7 @@ const AnnotationPage = () => {
                     />
                     <div className="absolute bottom-0 right-0 flex justify-end gap-2 mb-4">
                       <Button className="mr-4" onClick={handleCancel}>{t('common.cancel')}</Button>
-                      <PermissionWrapper requiredPermissions={['Edit']}>
+                      <PermissionWrapper requiredPermissions={['File Edit']}>
                         <Button type="primary" loading={loadingState.saveLoading} onClick={handleSava}>{t('common.save')}</Button>
                       </PermissionWrapper>
                     </div>

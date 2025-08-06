@@ -1,6 +1,7 @@
 import json
 
 from django.http import JsonResponse
+from django.utils.translation import gettext as _
 from django_filters import filters
 from django_filters.rest_framework import FilterSet
 from rest_framework.decorators import action
@@ -105,3 +106,30 @@ class QAPairsViewSet(MaintainerViewSet):
             for i in res.get("documents", [])
         ]
         return JsonResponse({"result": True, "data": return_data})
+
+    @action(methods=["POST"], detail=False)
+    def update_qa_pairs(self, request):
+        params = request.data
+        qa_paris = QAPairs.objects.get(id=params["qa_pairs_id"])
+        index_name = qa_paris.knowledge_base.knowledge_index_name()
+        chunk_id = params["id"]
+        question = params["question"]
+        answer = params["answer"]
+        result = ChunkHelper.update_qa_pairs(index_name, chunk_id, question, answer)
+        if not result:
+            return JsonResponse({"result": False, "message": _("Failed to update QA pair.")})
+        return JsonResponse({"result": True})
+
+    @action(methods=["POST"], detail=False)
+    def create_one_qa_pairs(self, request):
+        params = request.data
+        qa_paris = QAPairs.objects.get(id=params["qa_pairs_id"])
+        index_name = qa_paris.knowledge_base.knowledge_index_name()
+        question = params["question"]
+        answer = params["answer"]
+        embed_config = qa_paris.knowledge_base.embed_model.decrypted_embed_config
+        embed_model_name = qa_paris.knowledge_base.embed_model.name
+        result = ChunkHelper.create_one_qa_pairs(
+            embed_config, embed_model_name, index_name, params["qa_pairs_id"], question, answer
+        )
+        return JsonResponse(result)

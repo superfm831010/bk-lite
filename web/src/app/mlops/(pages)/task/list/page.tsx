@@ -11,12 +11,12 @@ import PageLayout from '@/components/page-layout';
 import TopSection from '@/components/top-section';
 import PermissionWrapper from '@/components/permission';
 import TrainTaskModal from './traintaskModal';
+import TrainTaskDrawer from './traintaskDrawer';
 import { useTranslation } from '@/utils/i18n';
 import { ModalRef, ColumnItem, Option } from '@/app/mlops/types';
 import type { TreeDataNode } from 'antd';
 import { TrainJob } from '@/app/mlops/types/task';
 import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
-import { JointContent } from 'antd/es/message/interface';
 import { DataSet } from '@/app/mlops/types/manage';
 const { Search } = Input;
 
@@ -41,6 +41,8 @@ const TrainTask = () => {
   const [tableData, setTableData] = useState<TrainJob[]>([]);
   const [datasetOptions, setDatasetOptions] = useState<Option[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [selectedTrain, setSelectTrain] = useState<number | null>(null);
+  const [drawerOpen, setDrawOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -120,7 +122,7 @@ const TrainTask = () => {
       align: 'center',
       render: (_: unknown, record: TrainJob) => (
         <>
-          <PermissionWrapper requiredPermissions={['Edit']}>
+          <PermissionWrapper requiredPermissions={['Train']}>
             <Popconfirm
               title={t('traintask.trainStartTitle')}
               description={t('traintask.trainStartContent')}
@@ -135,6 +137,15 @@ const TrainTask = () => {
                 {t('traintask.train')}
               </Button>
             </Popconfirm>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['View']}>
+            <Button
+              type="link"
+              className="mr-[10px]"
+              onClick={() => openDrawer(record)}
+            >
+              {t('common.detail')}
+            </Button>
           </PermissionWrapper>
           <PermissionWrapper requiredPermissions={['Edit']}>
             <Button
@@ -251,6 +262,11 @@ const TrainTask = () => {
     }
   }, [getAnomalyTaskList]);
 
+  const openDrawer = (record: any) => {
+    setSelectTrain(record?.id);
+    setDrawOpen(true);
+  };
+
   const handleAdd = () => {
     if (modalRef.current) {
       modalRef.current.showModal({
@@ -264,7 +280,7 @@ const TrainTask = () => {
   const handleEdit = (record: TrainJob) => {
     if (modalRef.current) {
       modalRef.current.showModal({
-        type: 'edit',
+        type: 'update',
         title: 'edittask',
         form: record
       })
@@ -274,9 +290,10 @@ const TrainTask = () => {
   const onTrainStart = async (record: TrainJob) => {
     try {
       await startAnomalyTrainTask(record.id);
+      message.success(`traintask.trainStartSucess`);
     } catch (e) {
       console.log(e);
-      message.error(e as JointContent)
+      message.error(t(`common.error`));
     }
   };
 
@@ -347,6 +364,7 @@ const TrainTask = () => {
         }
       />
       <TrainTaskModal ref={modalRef} onSuccess={() => onRefresh()} activeTag={selectedKeys} datasetOptions={datasetOptions} />
+      <TrainTaskDrawer open={drawerOpen} onCancel={() => setDrawOpen(false)} selectId={selectedTrain} />
     </>
   );
 };

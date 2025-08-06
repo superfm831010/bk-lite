@@ -120,7 +120,7 @@ def invoke_one_document(document, is_show=False):
         knowledge_docs.extend(remote_docs)
     except Exception as e:
         logger.exception(e)
-    return res["status"] == "success", knowledge_docs
+    return res.get("status") == "success", knowledge_docs
 
 
 def format_file_invoke_kwargs(document):
@@ -391,7 +391,7 @@ def _initialize_qa_task(file_data, knowledge_base_id, username, domain):
 
     # 创建问答对对象
     for qa_name in file_data.keys():
-        qa_pairs = create_qa_pairs_task(knowledge_base_id, qa_name)
+        qa_pairs = create_qa_pairs_task(knowledge_base_id, qa_name, username, domain)
         if qa_pairs.id not in qa_pairs_id_list:
             qa_pairs_list.append(qa_pairs)
             qa_pairs_id_list.append(qa_pairs.id)
@@ -498,12 +498,10 @@ def _send_qa_request_with_retry(params, url, headers, index):
     return True
 
 
-def create_qa_pairs_task(knowledge_base_id, qa_name):
+def create_qa_pairs_task(knowledge_base_id, qa_name, username, domain):
     # 创建或获取问答对对象
     qa_pairs, created = QAPairs.objects.get_or_create(
-        name=qa_name,
-        knowledge_base_id=knowledge_base_id,
-        document_id=0,
+        name=qa_name, knowledge_base_id=knowledge_base_id, document_id=0, created_by=username, domain=domain
     )
     logger.info(f"问答对对象{'创建' if created else '获取'}成功: {qa_pairs.name}")
     return qa_pairs
@@ -529,3 +527,13 @@ def set_import_kwargs(knowledge_base):
     }
 
     return kwargs
+
+
+@shared_task
+def create_qa_pairs_by_custom(qa_pairs_id, content_list):
+    qa_pairs = QAPairs.objects.get(id=qa_pairs_id)
+    es_index = qa_pairs.knowledge_base.knowledge_index_name()
+    embed_config = qa_pairs.knowledge_base.embed_model.decrypted_embed_config
+    embed_model_name = qa_pairs.knowledge_base.embed_model.name
+    chunk_obj = {}
+    ChunkHelper.create_qa_pairs(content_list, chunk_obj, es_index, embed_config, embed_model_name, qa_pairs_id)

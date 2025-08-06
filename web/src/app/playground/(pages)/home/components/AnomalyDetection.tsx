@@ -1,36 +1,81 @@
 
-import { Button, Collapse, Upload, message, Select, Spin } from "antd";
-import type { CollapseProps, UploadProps } from 'antd';
+import { Button, Upload, message, Select, Spin } from "antd";
+import type { UploadProps } from 'antd';
 import { handleFileRead, formatProbability } from "@/app/playground/utils/common";
 import { useCallback, useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/utils/i18n";
 import LineChart from "@/app/playground/components/charts/lineChart";
 import CustomTable from "@/components/custom-table";
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import usePlayroundApi from "@/app/playground/api";
 import cssStyle from './index.module.scss'
-import { ColumnItem } from "@/types";
+import { ColumnItem, Option } from "@/types";
 // const { Search } = Input;
 
 const AnomalyDetection = () => {
   const { t } = useTranslation();
+  const searchParams = useSearchParams();
   const { convertToLocalizedTime } = useLocalizedTime();
-  const { anomalyDetectionReason } = usePlayroundApi();
+  const {
+    anomalyDetectionReason,
+    getServingsDetail,
+    getSampleFileOfServing,
+    getSampleFileDetail
+  } = usePlayroundApi();
   const [currentFileId, setCurrentFileId] = useState<string | null>(null);
   const [fileData, setFileData] = useState<any>(null);
   const [selectId, setSelectId] = useState<number | null>(null);
-  const [activeKey, setActiveKey] = useState<string[]>(['request']);
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [infoText, setInfoText] = useState<any>({
-    bannerTitle: '',
-    bannerInfo: "",
-    applicationScenario: []
-  });
+  const [servingData, setServingData] = useState<any>(null);
+  const [sampleOptions, setSampleOptions] = useState<Option[]>([]);
+  const [chartData, setChartData] = useState<any[]>([
+    {
+      "value": 27.43789942218143,
+      "timestamp": 1704038400
+    },
+    {
+      "value": 26.033612999373652,
+      "timestamp": 1704038460
+    },
+    {
+      "value": 36.30777324191053,
+      "timestamp": 1704038520
+    },
+    {
+      "value": 33.70226097527219,
+      "timestamp": 1704038580
+    }
+  ]);
   const [chartLoading, setChartLoading] = useState<boolean>(false);
   const [timeline, setTimeline] = useState<any>({
     startIndex: 0,
     endIndex: 0,
   });
+
+  const infoText = {
+    applicationScenario: [
+      {
+        title: '资源状态监控',
+        content: '通过持续采集CPU、内存、磁盘等关键指标时序数据，构建动态基线模型，可精准识别资源使用率异常波动、内存泄漏等潜在风险。',
+        img: `bg-[url(/app/anomaly_detection_1.png)]`
+      },
+      {
+        title: '网络流量分析',
+        content: '基于流量时序特征建模，检测DDoS攻击、端口扫描等异常流量模式，支持实时阻断与安全告警',
+        img: `bg-[url(/app/anomaly_detection_2.png)]`
+      },
+      {
+        title: '数据库性能诊断',
+        content: '分析SQL执行耗时、事务日志等时序数据，定位慢查询、死锁等性能瓶颈问题。',
+        img: `bg-[url(/app/anomaly_detection_3.png)]`
+      },
+      {
+        title: '容器健康管理',
+        content: '监控容器化环境中Pod的资源使用、重启频率等时序指标，实现服务异常的早期预警。',
+        img: `bg-[url(/app/anomaly_detection_4.png)]`
+      },
+    ]
+  };
 
   const columns: ColumnItem[] = useMemo(() => [
     {
@@ -68,95 +113,13 @@ const AnomalyDetection = () => {
     }
   ], [convertToLocalizedTime]);
 
-  const anomalyData = useMemo(() =>
-    chartData.filter((item) => item.label === 1),
-  [chartData]);
-
-  const RequestContent = useMemo(() => {
-    const params = {
-      // serving_id: 1,
-      model_name: "RandomForest_1",
-      model_version: "latest",
-      algorithm: "RandomForest",
-      // data: [
-      //   {
-      //     "timestamp": "2026-03-01",
-      //     "value": 0.498,
-      //     "label": 0
-      //   },
-      //   "..."
-      // ],
-      anomaly_threshold: 0.5,
-    };
-
-    return (
-      <div className="h-[491px]">
-        <div className="ml-4">
-          <div className="text-[var(--color-text-1)] text-base">Params</div>
-          <div className="text-[var(--color-text-2)]">
-            <pre>
-              {JSON.stringify(params, null, 2)}
-            </pre>
-          </div>
-        </div>
-      </div>
-    )
-  }, []);
-
-  const ResponseContent = useMemo(() => {
-    return (
-      <div className="h-[491px] overflow-auto">
-        <div>
-          <div className="text-[var(--color-text-2)]">
-            {/* <pre>
-              {JSON.stringify(response, null, 2)}
-            </pre> */}
-            <CustomTable
-              rowKey='timestamp'
-              columns={columns}
-              sticky={{ offsetHeader: 0 }}
-              dataSource={anomalyData}
-            />
-          </div>
-        </div>
-      </div>
-    )
-  }, [columns, anomalyData]);
-
-  const panelStyle: React.CSSProperties = {
-    borderRadius: 0,
-    padding: 0,
-  }
-
-  const items: CollapseProps['items'] = [
-    { key: 'request', label: 'Request', children: RequestContent, style: panelStyle },
-    { key: 'response', label: 'Response', children: ResponseContent, style: panelStyle }
-  ];
+  const anomalyData = useMemo(() => {
+    return chartData.filter((item) => item.label === 1)
+  }, [chartData]);
 
   useEffect(() => {
-    setInfoText({
-      bannerTitle: '异常检测',
-      bannerInfo: "基于机器学习的智能异常检测服务，能够自动识别时序数据中的异常模式和突变点。支持CSV文件上传，提供实时数据分析和可视化结果，帮助用户快速发现数据中的异常情况。广泛应用于系统监控、质量检测、金融风控、工业设备监控等场景。",
-      applicationScenario: [
-        {
-          title: '系统监控',
-          content: '实时监控服务器性能指标、网络流量、应用响应时间等关键指标，及时发现系统异常，确保业务连续性。支持CPU使用率、内存占用、磁盘I/O等多维度监控。'
-        },
-        {
-          title: '工业设备监控',
-          content: '对生产线设备的温度、压力、振动等传感器数据进行实时监控，提前预警设备故障风险。通过异常检测算法识别设备性能衰减趋势，实现预测性维护。'
-        },
-        {
-          title: '网络安全',
-          content: '分析网络流量模式，识别DDoS攻击、恶意入侵等安全威胁。通过监控网络连接行为、数据传输模式等，及时发现异常访问，保障网络安全。'
-        },
-        {
-          title: '质量检测',
-          content: '应用于制造业产品质量控制，检测生产过程中的异常波动。通过分析产品尺寸、重量、成分等关键指标，快速识别不合格产品，提高产品质量。'
-        },
-      ]
-    })
-  }, [])
+    getConfigData();
+  }, [searchParams]);
 
   useEffect(() => {
     if (chartData.length) {
@@ -171,8 +134,24 @@ const AnomalyDetection = () => {
     }
   }, [chartData.length]);
 
+  const getConfigData = async () => {
+    const id = searchParams.get('id') || '';
+    try {
+      const data = await getServingsDetail(id);
+      const sampleList = await getSampleFileOfServing(id);
+      const options = sampleList.filter((item: any) => item?.is_active).map((item: any) => ({
+        label: item?.name,
+        value: item?.id,
+      }));
+      setSampleOptions(options);
+      setServingData(data);
+      handleSubmit(data);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   const onSelectChange = async (value: number) => {
-    setActiveKey(['request']);
     if (!value) {
       setSelectId(null);
       setChartData([]);
@@ -181,13 +160,13 @@ const AnomalyDetection = () => {
     setChartLoading(true);
     try {
       setSelectId(value);
-      // const data = await getAnomalyTrainDataInfo(value as number, true, true);
+      const data = await getSampleFileDetail(value as number);
       // const _data = data?.train_data.map((item: any) => ({
       //   timestamp: item.timestamp,
       //   value: item.value,
       //   label: 0
       // }));
-      // setChartData(_data);
+      setChartData(data?.train_data);
       setFileData(null);
     } catch (e) {
       console.log(e);
@@ -220,7 +199,6 @@ const AnomalyDetection = () => {
       setFileData(null);
     } finally {
       setChartLoading(false);
-      setActiveKey(['request']);
     }
   }, [currentFileId]);
 
@@ -240,27 +218,19 @@ const AnomalyDetection = () => {
     accept: '.csv'
   };
 
-  const onKeyChange = (keys: string[]) => {
-    const [key] = activeKey;
-    if (keys.length === 0) {
-      setActiveKey(key === 'request' ? ['response'] : ['request']);
-    } else {
-      setActiveKey(keys);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!selectId && !fileData) { return message.error(t(`playground-common.uploadMsg`)) };
+  const handleSubmit = useCallback(async (serving = servingData) => {
+    console.log(selectId, fileData);
+    if (!chartData) { return message.error(t(`playground-common.uploadMsg`)) };
     if (chartLoading) return;
     setChartLoading(true);
     try {
       const params = {
-        serving_id: 1,
-        model_name: "RandomForest_1",
-        model_version: "latest",
+        serving_id: serving.id,
+        model_name: `RandomForest_${serving.id}`,
         algorithm: "RandomForest",
+        model_version: serving.model_version,
+        anomaly_threshold: serving.anomaly_threshold,
         data: chartData,
-        anomaly_threshold: 0.5
       };
       const data = await anomalyDetectionReason(params);
       const labelData = data.predictions?.map((item: any) => {
@@ -271,63 +241,71 @@ const AnomalyDetection = () => {
           anomaly_probability: item.anomaly_probability
         }
       });
-      setActiveKey(['response']);
       setChartData(labelData);
     } catch (e) {
-      console.log(e)
+      console.log(e);
+      message.error(t(`common.error`));
     } finally {
       setChartLoading(false);
     }
-  };
+  }, []);
+
+  const renderBanner = useMemo(() => {
+    const name = searchParams.get('name') || '异常检测';
+    const description = searchParams.get('description');
+    return (
+      <>
+        <div className="banner-title text-5xl font-bold pt-5">
+          {name}
+        </div>
+        <div className="banner-info mt-8 max-w-[500px] text-[var(--color-text-3)]">
+          {description || '基于机器学习的智能异常检测服务，能够自动识别时序数据中的异常模式和突变点。支持CSV文件上传，提供实时数据分析和可视化结果，帮助用户快速发现数据中的异常情况。广泛应用于系统监控、质量检测、金融风控、工业设备监控等场景。'}
+        </div>
+      </>
+    )
+  }, [searchParams]);
 
   const renderElement = () => {
     return infoText.applicationScenario.map((item: any) => (
       <div key={item.title} className="content overflow-auto pb-[20px] border-b mt-4">
-        <div className="float-right w-[250px] h-[160px] bg-slate-400"></div>
+        <div className={`float-right w-[250px] h-[160px] ${item.img} bg-cover`}></div>
         <div className="content-info mr-[300px]">
-          <div className="content-title text-xl font-bold">{item.title}</div>
-          <div className="content-intro mt-3">{item.content}</div>
+          <div className="content-title text-lg font-bold">{item.title}</div>
+          <div className="content-intro mt-3 text-sm text-[var(--color-text-3)]">{item.content}</div>
         </div>
       </div>
     ))
   };
 
   return (
-    <div className="relative pb-8">
-      <div className="banner-content w-[90%] h-[380px] pr-[400px] mx-auto">
-        <div className="banner-title text-5xl pt-5">
-          {infoText.bannerTitle}
-        </div>
-        <div className="banner-info mt-8">
-          {infoText.bannerInfo}
-        </div>
+    <div className="relative">
+      <div className="banner-content w-full h-[460px] pr-[400px] pl-[200px] pt-[80px] bg-[url(/app/pg_banner_1.png)] bg-cover">
+        {renderBanner}
         {/* <div className="banner-btn-list mt-[80px]">
             <Button type="primary" className="mr-3">立即使用</Button>
             <Button type="default">技术文档</Button>
           </div> */}
       </div>
-      <div className="model-experience mt-[80px] bg-[var(--color-bg-4)] py-4">
+      <div className="model-experience bg-[#F8FCFF] py-4">
         <div className="header text-3xl text-center">{t(`playground-common.functionExper`)}</div>
         <div className="content flex flex-col">
-          <div className="file-input w-[70%] mx-auto">
+          <div className="file-input w-[90%] mx-auto">
             <div className={`link-search mt-8 flex justify-center `}>
-              <div className="flex w-[80%] justify-start items-start">
-                <Select className={`w-[70%] ${cssStyle.customSelect}`} size="large" allowClear options={[
-                  { label: 'test1', value: 5 },
-                  { label: 'test2', value: 6 },
-                ]} placeholder={t(`playground-common.selectSampleMsg`)} onChange={onSelectChange} />
-                <span className="mx-4 text-xl pt-1">{t(`playground-common.or`)}</span>
+              <div className="flex w-full justify-center items-center">
+                <span className="align-middle text-sm mr-4">使用系统样本文件: </span>
+                <Select className={`w-[70%] max-w-[500px] text-sm ${cssStyle.customSelect}`} size="large" allowClear options={sampleOptions} placeholder={t(`playground-common.selectSampleMsg`)} onChange={onSelectChange} />
+                <span className="mx-4 text-base pt-1">{t(`playground-common.or`)}</span>
                 <Upload {...props}>
-                  <Button size="large" className="rounded-none">{t(`playground-common.localUpload`)}</Button>
+                  <Button size="large" className="rounded-none text-sm">{t(`playground-common.localUpload`)}</Button>
                 </Upload>
-                <Button size="large" className="rounded-none ml-4" type="primary" onClick={handleSubmit}>{t(`playground-common.clickTest`)}</Button>
+                <Button size="large" className="rounded-none ml-4 text-sm" type="primary" onClick={handleSubmit}>{t(`playground-common.clickTest`)}</Button>
               </div>
             </div>
           </div>
-          <div className="content w-[1180px] mx-auto h-[654px] mt-6">
+          <div className="content w-[1180px] mx-auto h-[604px] mt-6">
             <div className="flex h-full overflow-auto">
               <Spin spinning={chartLoading} wrapperClassName="w-[70%] h-full" className="h-full">
-                <div className="iframe w-full bg-[var(--color-bg-4)]" style={{ height: 604 }}>
+                <div className="iframe w-full bg-[var(--color-bg-4)] border" style={{ height: 604 }}>
                   <LineChart
                     data={chartData}
                     timeline={timeline}
@@ -335,20 +313,35 @@ const AnomalyDetection = () => {
                   />
                 </div>
               </Spin>
-              <div className="params w-[30%]">
-                <Collapse
-                  accordion
-                  items={items}
-                  bordered={false}
-                  activeKey={activeKey}
-                  onChange={onKeyChange}
-                ></Collapse>
+              <div className="params w-[30%] bg-[var(--color-bg-4)]">
+                <header className="pl-2">
+                  <span className="inline-block h-[60px] text-[var(--color-text-2)] content-center ml-10 text-sm">检测结果</span>
+                  <span
+                    className={`
+                      inline-block h-[60px] text-[var(--color-text-2)] 
+                      content-center ml-10 text-sm 
+                      hover:text-[var(--color-text-active)] cursor-pointer`
+                    }
+                  >请求参数</span>
+                  {/* <a href="#" className="text-base text-[var(--color-text-1)]">请求参数</a> */}
+                </header>
+                <div className="border-r [&_.ant-table]:!h-[543px]">
+                  <CustomTable
+                    virtual
+                    className="h-[543px]"
+                    scroll={{ y: 543 }}
+                    rowKey='timestamp'
+                    columns={columns}
+                    sticky={{ offsetHeader: 0 }}
+                    dataSource={anomalyData}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div className="usage-scenarios mt-[80px]">
+      <div className="usage-scenarios pt-[80px] bg-[#F8FCFF]">
         <div className="header text-center text-3xl">
           {t(`playground-common.useScenario`)}
         </div>

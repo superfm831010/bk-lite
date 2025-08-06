@@ -1,6 +1,10 @@
 [[inputs.redis]]
     servers = ["tcp://{{ host }}:{{ port }}"]
+
+    {% if username %}
     username = "{{ username }}"
+    {% endif %}
+
     password = "{{ password }}"
     interval = "{{ interval }}s"
     [inputs.redis.tags]
