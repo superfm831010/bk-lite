@@ -109,7 +109,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
         page,
         page_size: pageSize
       });
-      
+
       const processedItems = result.items.map((item: any) => ({
         key: item.id.toString(),
         title: item.name,
@@ -207,7 +207,8 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     formValuesRef.current = newValues;
   }, []);
 
-  useEffect(() => {
+  // Use a more stable approach to trigger validation
+  const validateAndNotify = useCallback(() => {
     const timer = setTimeout(() => {
       const isValid = !!(
         formValuesRef.current.llmModel && 
@@ -220,10 +221,15 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
         ...formValuesRef.current,
         selectedDocuments
       });
-    }, 100);
+    }, 0);
     
     return () => clearTimeout(timer);
-  }, [selectedDocuments, formValuesRef.current.llmModel, formValuesRef.current.qaCount]);
+  }, [selectedDocuments]);
+
+  useEffect(() => {
+    const cleanup = validateAndNotify();
+    return cleanup;
+  }, [validateAndNotify]);
 
   const handleTabChange = useCallback((tabKey: string) => {
     setActiveDocumentTab(tabKey);
@@ -238,10 +244,12 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     }
   }, [pageSize]);
 
+  // Memoize paginated documents to prevent unnecessary re-renders
   const paginatedDocuments = useMemo(() => {
     return documentData[activeDocumentTab] || [];
   }, [documentData, activeDocumentTab]);
 
+  // Memoize columns to prevent Table re-renders
   const columns = useMemo(() => [{
     title: t('knowledge.documents.name'),
     dataIndex: 'title',
