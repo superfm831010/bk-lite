@@ -124,22 +124,21 @@ class PolicyViewSet(viewsets.ModelViewSet):
             raise BaseAppException('Invalid schedule type')
 
     def update_or_create_task(self, policy_id, schedule):
-        pass
-        # task_name = f'log_policy_task_{policy_id}'
-        #
-        # # 删除旧的定时任务
-        # PeriodicTask.objects.filter(name=task_name).delete()
-        #
-        # # 解析 schedule，并创建相应的调度
-        # format_crontab = self.format_crontab(schedule)
-        # # 创建新的 PeriodicTask
-        # PeriodicTask.objects.create(
-        #     name=task_name,
-        #     task='apps.log.tasks.execute_policy_task',
-        #     args=json.dumps([policy_id]),
-        #     crontab=format_crontab,
-        #     enabled=True
-        # )
+        task_name = f'log_policy_task_{policy_id}'
+
+        # 删除旧的定时任务
+        PeriodicTask.objects.filter(name=task_name).delete()
+
+        # 解析 schedule，并创建相应的调度
+        format_crontab = self.format_crontab(schedule)
+        # 创建新的 PeriodicTask
+        PeriodicTask.objects.create(
+            name=task_name,
+            task='apps.log.tasks.policy.scan_log_policy_task',
+            args=json.dumps([policy_id]),
+            crontab=format_crontab,
+            enabled=True
+        )
 
     @swagger_auto_schema(
         operation_id="policy_enable",
