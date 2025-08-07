@@ -39,7 +39,7 @@ def get_cmdb_module_data(module, child_module, page, page_size, group_id):
                 "id": instance["inst_name"]
             })
     elif module == PERMISSION_MODEL:
-        models = ModelManage.search_model(classification_ids=[child_module], group=int(group_id))
+        models = ModelManage.search_model(classification_ids=[child_module], group_list=[int(group_id)])
         count = len(models)
         queryset = [{"id": model["model_id"], "name": model["model_name"]} for model in models]
 
