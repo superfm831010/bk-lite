@@ -8,7 +8,6 @@ import { useCommon } from '@/app/cmdb/context/common';
 import {
   AttrFieldType,
   UserItem,
-  Organization,
   InstDetail,
 } from '@/app/cmdb/types/assetManage';
 
@@ -18,8 +17,6 @@ const BaseInfo = () => {
 
   const searchParams = useSearchParams();
   const commonContext = useCommon();
-  const authList = useRef(commonContext?.authOrganizations || []);
-  const organizationList: Organization[] = authList.current;
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
   const [propertyList, setPropertyList] = useState<AttrFieldType[]>([]);
@@ -65,7 +62,6 @@ const BaseInfo = () => {
         instDetail={instDetail}
         propertyList={propertyList}
         userList={userList}
-        organizationList={organizationList}
         onsuccessEdit={onsuccessEdit}
       />
     </Spin>

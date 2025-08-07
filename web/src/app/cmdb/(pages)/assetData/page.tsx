@@ -9,14 +9,13 @@ import {
   message,
   Spin,
   Dropdown,
-  Cascader,
   TablePaginationConfig,
-  CascaderProps,
   Tree,
   Input,
   Empty,
 } from 'antd';
 import CustomTable from '@/components/custom-table';
+import GroupTreeSelector from '@/components/group-tree-select';
 import SearchFilter from './list/searchFilter';
 import ImportInst from './list/importInst';
 import SelectInstance from './detail/relationships/selectInstance';
@@ -32,7 +31,6 @@ import {
   ModelItem,
   ColumnItem,
   UserItem,
-  Organization,
   AttrFieldType,
   RelationInstanceRef,
   AssoTypeItem,
@@ -100,8 +98,6 @@ const AssetDataContent = () => {
   const { data: session } = useSession();
   const token = session?.user?.token || authContext?.token || null;
   const tokenRef = useRef(token);
-  const authList = useRef(commonContext?.authOrganizations || []);
-  const organizationList: Organization[] = authList.current;
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
   const fieldRef = useRef<FieldRef>(null);
@@ -123,7 +119,7 @@ const AssetDataContent = () => {
   const [assoTypes, setAssoTypes] = useState<AssoTypeItem[]>([]);
   const [queryList, setQueryList] = useState<unknown>(null);
   const [tableData, setTableData] = useState<any[]>([]);
-  const [organization, setOrganization] = useState<string[]>([]);
+  const [organization, setOrganization] = useState<number[]>([]);
   const [selectedTreeKeys, setSelectedTreeKeys] = useState<string[]>([]);
   const [expandedTreeKeys, setExpandedTreeKeys] = useState<string[]>([]);
   const [proxyOptions, setProxyOptions] = useState<
@@ -470,9 +466,7 @@ const AssetDataContent = () => {
     );
   };
 
-  const selectOrganization: CascaderProps<Organization>['onChange'] = (
-    value
-  ) => {
+  const selectOrganization = (value: number[]) => {
     setOrganization(value);
   };
 
@@ -614,7 +608,6 @@ const AssetDataContent = () => {
       const attrList = getAssetColumns({
         attrList: propertyList,
         userList,
-        groupList: organizationList,
         t,
       });
       const tableColumns = [
@@ -750,9 +743,11 @@ const AssetDataContent = () => {
         <div className={assetDataStyle.assetList}>
           <div className="flex justify-between mb-4">
             <Space>
-              <Cascader
+              <GroupTreeSelector
+                style={{
+                  width: '200px',
+                }}
                 placeholder={t('common.selectTip')}
-                options={organizationList}
                 value={organization}
                 onChange={selectOrganization}
               />
@@ -763,7 +758,6 @@ const AssetDataContent = () => {
                 attrList={propertyList.filter(
                   (item) => item.attr_type !== 'organization'
                 )}
-                organizationList={organizationList}
                 onSearch={handleSearch}
               />
             </Space>
@@ -824,7 +818,6 @@ const AssetDataContent = () => {
           <FieldModal
             ref={fieldRef}
             userList={userList}
-            organizationList={organizationList}
             onSuccess={updateFieldList}
           />
           <ImportInst ref={importRef} onSuccess={updateFieldList} />
@@ -833,7 +826,6 @@ const AssetDataContent = () => {
             userList={userList}
             models={originModels}
             assoTypes={assoTypes}
-            organizationList={organizationList}
             needFetchAssoInstIds
           />
         </div>

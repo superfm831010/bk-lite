@@ -21,7 +21,7 @@ import {
 
 const RecordDetail = forwardRef<FieldModalRef, RecordDetailProps>(
   (
-    { userList, propertyList, modelList, groupList, enumList, connectTypeList },
+    { userList, propertyList, modelList, enumList, connectTypeList },
     ref
   ) => {
     const { t } = useTranslation();
@@ -101,7 +101,6 @@ const RecordDetail = forwardRef<FieldModalRef, RecordDetailProps>(
       return getFieldItem({
         fieldItem: field,
         userList,
-        groupList,
         isEdit: false,
         value: tex[field.attr_id],
       });

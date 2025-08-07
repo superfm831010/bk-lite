@@ -10,6 +10,7 @@ import React, {
 import { Input, Button, Form, message, Select } from 'antd';
 import Image from 'next/image';
 import OperateModal from '@/components/operate-modal';
+import GroupTreeSelector from '@/components/group-tree-select';
 import SelectIcon from './selectIcon';
 import { getIconUrl } from '@/app/cmdb/utils/common';
 import type { FormInstance } from 'antd';
@@ -18,10 +19,11 @@ import { deepClone } from '@/app/cmdb/utils/common';
 const { Option } = Select;
 import { useTranslation } from '@/utils/i18n';
 import { useModelApi } from '@/app/cmdb/api';
+import { useUserInfoContext } from '@/context/userInfo';
 
 interface ModelModalProps {
   onSuccess: (info?: unknown) => void;
-  groupList: Array<any>;
+  modelGroupList: Array<any>;
 }
 
 export interface ModelModalRef {
@@ -29,8 +31,9 @@ export interface ModelModalRef {
 }
 
 const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
-  ({ onSuccess, groupList }, ref) => {
+  ({ onSuccess, modelGroupList }, ref) => {
     const { createModel, updateModel } = useModelApi();
+    const { selectedGroup } = useUserInfoContext();
     const { t } = useTranslation();
     const formRef = useRef<FormInstance>(null);
     const selectIconRef = useRef<any>(null);
@@ -46,7 +49,18 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
     useEffect(() => {
       if (modelVisible) {
         formRef.current?.resetFields();
-        formRef.current?.setFieldsValue(modelInfo);
+
+        const formData = { ...modelInfo };
+        if (formData.group) {
+          formData.group = Array.isArray(formData.group)
+            ? formData.group
+            : [formData.group];
+        }
+        formRef.current?.setFieldsValue(formData);
+
+        if (type === 'add' && selectedGroup && !formData.group) {
+          formRef.current?.setFieldValue('group', selectedGroup.id);
+        }
       }
     }, [modelVisible, modelInfo]);
 
@@ -80,6 +94,7 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
             classification_id: params.classification_id,
             model_name: params.model_name,
             icn: params.icn,
+            group: Array.isArray(params.group) ? params.group : [params.group],
           };
         }
 
@@ -176,7 +191,7 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
             wrapperCol={{ span: 20 }}
           >
             <Form.Item<ModelItem>
-              label={t('common.group')}
+              label={t('Model.modelGroup')}
               name="classification_id"
               rules={[{ required: true, message: t('required') }]}
             >
@@ -184,7 +199,7 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
                 disabled={type === 'edit'}
                 placeholder={t('common.selectTip')}
               >
-                {groupList.map((item) => {
+                {modelGroupList.map((item) => {
                   return (
                     <Option
                       value={item.classification_id}
@@ -195,6 +210,16 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
                   );
                 })}
               </Select>
+            </Form.Item>
+            <Form.Item<ModelItem>
+              label={t('common.group')}
+              name="group"
+              rules={[{ required: true, message: t('required') }]}
+            >
+              <GroupTreeSelector
+                multiple={false}
+                placeholder={t('common.selectTip')}
+              />
             </Form.Item>
             <Form.Item<ModelItem>
               label={t('id')}
