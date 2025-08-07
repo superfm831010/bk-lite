@@ -11,7 +11,7 @@ import { ATTR_TYPE_LIST } from '@/app/cmdb/constants/asset';
 import { useTranslation } from '@/utils/i18n';
 import PermissionWrapper from '@/components/permission';
 import { useModelApi } from '@/app/cmdb/api';
-import { useModelDetail } from '../layout';
+import { useModelDetail } from '../context';
 
 const Attributes: React.FC = () => {
   const { confirm } = Modal;
@@ -151,8 +151,10 @@ const Attributes: React.FC = () => {
 
   const showDeleteConfirm = (row = { attr_id: '' }) => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {

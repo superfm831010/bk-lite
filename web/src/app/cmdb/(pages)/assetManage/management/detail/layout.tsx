@@ -1,12 +1,6 @@
 'use client';
 
-import React, {
-  useRef,
-  useState,
-  useEffect,
-  createContext,
-  useContext,
-} from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Card, Modal, message } from 'antd';
 import WithSideMenuLayout from '@/components/sub-layout';
 import { useRouter } from 'next/navigation';
@@ -21,14 +15,7 @@ import { ClassificationItem } from '@/app/cmdb/types/assetManage';
 import { useTranslation } from '@/utils/i18n';
 import PermissionWrapper from '@/components/permission';
 import { useClassificationApi, useModelApi } from '@/app/cmdb/api';
-
-// 创建 Context
-const ModelDetailContext = createContext<any>(null);
-
-// 导出 hook 供子组件使用
-export const useModelDetail = () => {
-  return useContext(ModelDetailContext);
-};
+import { ModelDetailContext } from './context';
 
 const AboutLayout = ({ children }: { children: React.ReactNode }) => {
   const { isLoading } = useApiClient();
@@ -90,8 +77,10 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
 
   const showDeleteConfirm = (row = { model_id: '' }) => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
