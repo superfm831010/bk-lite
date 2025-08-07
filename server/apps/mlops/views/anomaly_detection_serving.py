@@ -40,7 +40,7 @@ class AnomalyDetectionServingViewSet(ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
-    @HasPermission("model_release-Add")
+    @HasPermission("model_release-View")
     @action(detail=False, methods=['post'], url_path='predict')
     def predict(self, request, pk=None):
         """

@@ -19,6 +19,7 @@ const useIntegrationApi = () => {
   const getCollectTypes = async (
     params: {
       collector?: React.Key | null;
+      collect_type_id?: React.Key | null;
       name?: string;
       page?: number;
       page_size?: number;
@@ -27,6 +28,14 @@ const useIntegrationApi = () => {
     return await get('/log/collect_types/', {
       params,
     });
+  };
+
+  const getCollectTypesById = async (
+    params: {
+      collect_type_id?: React.Key | null;
+    } = {}
+  ) => {
+    return await get(`/log/collect_types/${params.collect_type_id}`);
   };
 
   const batchCreateInstances = async (data: NodeConfigParam) => {
@@ -143,6 +152,7 @@ const useIntegrationApi = () => {
     updateLogStreams,
     deleteLogStream,
     updateDefaultLogStreams,
+    getCollectTypesById,
   };
 };
 
