@@ -35,6 +35,7 @@
       "title": "问答对",
       "name": "名称",
       "qaCount": "问答对数量",
+      "type": "类型",
       "subTitle": "基于现有文档生成问答对作为知识来源。",
       "llmModel": "LLM模型",
       "targetDocuments": "目标文档",
@@ -48,16 +49,27 @@
       "answer": "回答",
       "noData": "暂无数据",
       "dragOrClick": "点击或拖拽文件到此区域上传",
-      "uploadHint": "支持单个上传，仅允许JSON文件",
+      "uploadHint": "支持单个上传, 允许JSON, CSV文件",
       "noFileSelected": "请先选择一个文件上传",
       "importSuccess": "导入问答对成功",
       "importFailed": "导入问答对失败",
+      "uploadInProgress": "文件上传中，请等待完成",
       "status": {
         "pending": "准备中",
         "generating": "生成中",
         "failed": "失败",
         "completed": "完成"
-      }
+      },
+      "addMethod": "来源",
+      "generate": "分块生成",
+      "generateDesc": "选择源文件，根据源文件的分块进行快速对的再次生成。",
+      "import": "本地导入",
+      "importDesc": "以json、csv格式的文件，进行问答对的导出生成。",
+      "custom": "手动创建",
+      "customDesc": "直接在界面进行问题和答案的新增。",
+      "confirmAndAddNext": "确认并新增下一个",
+      "customName": "问答集名称",
+      "customTitle": "问答"
     },
     "knowledgeGraph": {
       "title": "知识图谱",

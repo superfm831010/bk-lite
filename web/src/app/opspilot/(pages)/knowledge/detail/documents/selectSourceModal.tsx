@@ -3,47 +3,42 @@ import { Radio, Button } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import styles from './index.module.scss';
 import { useTranslation } from '@/utils/i18n';
+import { SelectOption } from '@/app/opspilot/constants/knowledge';
 
-interface SelectSourceModalProps {
-  defaultSelected: string;
+interface SelectModalProps {
+  defaultSelected?: string;
   visible: boolean;
   onCancel: () => void;
   onConfirm: (selectedType: string) => void;
+  title: string;
+  options: SelectOption[];
 }
 
-const SelectSourceModal: React.FC<SelectSourceModalProps> = ({ defaultSelected, visible, onCancel, onConfirm }) => {
+const SelectModal: React.FC<SelectModalProps> = ({ 
+  defaultSelected = '', 
+  visible, 
+  onCancel, 
+  onConfirm, 
+  title,
+  options 
+}) => {
   const [selectedType, setSelectedType] = useState<string>(defaultSelected);
   const { t } = useTranslation();
 
   useEffect(() => {
-    setSelectedType(defaultSelected);
-  }, [defaultSelected]);
-
-  const radioOptions = [
-    {
-      value: 'file',
-      title: t('knowledge.localFile'),
-      subTitle: t('knowledge.fileSubTitle'),
-    },
-    {
-      value: 'web_page',
-      title: t('knowledge.webLink'),
-      subTitle: t('knowledge.linkSubTitle'),
-    },
-    {
-      value: 'manual',
-      title: t('knowledge.cusText'),
-      subTitle: t('knowledge.cusTextSubTitle'),
-    },
-  ];
+    if (visible) {
+      const initialSelected = defaultSelected || (options.length > 0 ? options[0].value : '');
+      setSelectedType(initialSelected);
+    }
+  }, [visible, defaultSelected, options]);
 
   const handleConfirm = () => {
-    onConfirm(selectedType);
+    onConfirm(selectedType);  
   };
 
   return (
     <OperateModal
-      title={`${t('common.select')}${t('knowledge.source')}`}
+      title={title}
       visible={visible}
       onCancel={onCancel}
       footer={[
@@ -56,15 +51,15 @@ const SelectSourceModal: React.FC<SelectSourceModalProps> = ({ defaultSelected, 
       ]}
     >
       <Radio.Group onChange={e => setSelectedType(e.target.value)} value={selectedType}>
-        {radioOptions.map(option => (
+        {options.map(option => (
           <Radio
             key={option.value}
             value={option.value}
             className={`${styles['radioItem']} ${selectedType === option.value ? styles['radioItemSelected'] : ''}`}
           >
             <div>
-              <h3 className="text-sm">{option.title}</h3>
-              <p className="mt-2 text-xs text-[var(--color-text-4)]">{option.subTitle}</p>
+              <h3 className="text-sm">{t(option.title)}</h3>
+              <p className="mt-2 text-xs text-[var(--color-text-4)]">{t(option.subTitle)}</p>
             </div>
           </Radio>
         ))}
@@ -73,4 +68,4 @@ const SelectSourceModal: React.FC<SelectSourceModalProps> = ({ defaultSelected, 
   );
 };
 
-export default SelectSourceModal;
+export default SelectModal;

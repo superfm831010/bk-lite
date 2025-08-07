@@ -110,7 +110,7 @@ const usePlayroundApi = () => {
   // 创建样本文件
   const createSampleFile = async (params: {
     name: string;
-    serving: number;
+    capability: number;
     train_data: LabelData[],
     is_active: boolean;
   }) => {

@@ -1,7 +1,8 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import OperateModal from './operateModal';
 import CustomTable from '@/components/custom-table';
-// import PermissionWrapper from '@/components/permission';
 import { Button, Input, Card, message, Modal } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { DatasourceItem } from '@/app/ops-analysis/types/dataSource';
@@ -81,10 +82,11 @@ const Datasource: React.FC = () => {
 
   const handleDelete = (row: DatasourceItem) => {
     Modal.confirm({
-      title: t('common.confirmDelete'),
-      content: `${t('common.confirmDeleteMsg')} "${row.name}"?`,
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
       okText: t('common.confirm'),
       cancelText: t('common.cancel'),
+      centered: true,
       onOk: async () => {
         try {
           await deleteDataSource(row.id);
@@ -143,7 +145,6 @@ const Datasource: React.FC = () => {
       width: 100,
       render: (_: any, row: DatasourceItem) => (
         <div className="space-x-4">
-          {/* <PermissionWrapper requiredPermissions={['Edit']}> */}
           <Button
             type="link"
             size="small"
@@ -151,19 +152,16 @@ const Datasource: React.FC = () => {
           >
             {t('common.edit')}
           </Button>
-          {/* </PermissionWrapper> */}
-          {/* <PermissionWrapper requiredPermissions={['Delete']}> */}
           <Button type="link" size="small" onClick={() => handleDelete(row)}>
             {t('common.delete')}
           </Button>
-          {/* </PermissionWrapper> */}
         </div>
       ),
     },
   ];
 
   return (
-    <div className="flex flex-col w-full h-full">
+    <div className="flex flex-col w-full h-full bg-[var(--color-bg-1)]">
       <Card
         style={{
           borderRadius: 0,
@@ -189,7 +187,7 @@ const Datasource: React.FC = () => {
             <Input
               allowClear
               value={searchValue}
-              placeholder={t('common.searchPlaceHolder')}
+              placeholder={t('common.search')}
               style={{ width: 250 }}
               onChange={(e) => setSearchValue(e.target.value)}
               onPressEnter={(e) => handleFilter(e.currentTarget.value)}
@@ -199,11 +197,9 @@ const Datasource: React.FC = () => {
               }}
             />
           </div>
-          {/* <PermissionWrapper requiredPermissions={['Add']}> */}
           <Button type="primary" onClick={() => handleEdit('add')}>
             {t('common.addNew')}
           </Button>
-          {/* </PermissionWrapper> */}
         </div>
         <CustomTable
           size="middle"
@@ -213,7 +209,7 @@ const Datasource: React.FC = () => {
           dataSource={filteredList}
           pagination={pagination}
           onChange={handleTableChange}
-          scroll={{ y: 'calc(100vh - 360px)' }}
+          scroll={{ y: 'calc(100vh - 410px)' }}
         />
         <OperateModal
           open={modalVisible}

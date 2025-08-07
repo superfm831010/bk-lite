@@ -1,10 +1,6 @@
 import { WidgetDefinition } from '@/app/ops-analysis/types/dashBoard';
 import OsPie from '../widgets/osPie';
 import TrendLine from '../widgets/trendLine';
-import {
-  OsPieConfig,
-  TrendLineConfig,
-} from './compConfigs';
 
 export const widgetRegistry: Record<string, WidgetDefinition> = {
   trendLine: {
@@ -15,12 +11,10 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
       icon: 'zhexiantu',
       category: '告警',
       defaultConfig: {
-        barColor: '#52c41a',
-        filterType: 'selector',
+        barColor: '#52c41a'
       },
     },
     component: TrendLine,
-    configComponent: TrendLineConfig,
   },
   osPie: {
     meta: {
@@ -30,12 +24,10 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
       icon: 'tubiao2',
       category: '监控',
       defaultConfig: {
-        lineColor: '#1890ff',
-        filterType: 'selector',
+        lineColor: '#1890ff'
       },
     },
     component: OsPie,
-    configComponent: OsPieConfig,
   }
 };
 
