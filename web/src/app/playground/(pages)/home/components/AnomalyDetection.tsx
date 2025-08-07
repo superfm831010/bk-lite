@@ -302,9 +302,9 @@ const AnomalyDetection = () => {
               </div>
             </div>
           </div>
-          <div className="content w-[1180px] mx-auto h-[604px] mt-6">
+          <div className="content w-[90%] mx-auto h-[604px] mt-6">
             <div className="flex h-full overflow-auto">
-              <Spin spinning={chartLoading} wrapperClassName="w-[70%] h-full" className="h-full">
+              <Spin spinning={chartLoading} wrapperClassName="w-[70%] flex-1 h-full" className="h-full">
                 <div className="iframe w-full bg-[var(--color-bg-4)] border" style={{ height: 604 }}>
                   <LineChart
                     data={chartData}
@@ -313,7 +313,7 @@ const AnomalyDetection = () => {
                   />
                 </div>
               </Spin>
-              <div className="params w-[30%] bg-[var(--color-bg-4)]">
+              <div className="params w-[30%] max-w-[360px] bg-[var(--color-bg-4)]">
                 <header className="pl-2">
                   <span className="inline-block h-[60px] text-[var(--color-text-2)] content-center ml-10 text-sm">检测结果</span>
                   <span

@@ -23,6 +23,7 @@
     "addCapabilitySuccess": "添加能力演示成功",
     "updateCategory": "更新类别信息",
     "updateCapability": "更新能力演示信息",
+    "updateCapabilitySuccess": "更新能力演示成功",
     "delCapability": "删除能力演示",
     "delCapabilityText": "确认删除此能力演示吗？",
     "addSampleFile": "添加样本文件",

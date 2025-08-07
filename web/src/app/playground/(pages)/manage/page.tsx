@@ -33,7 +33,7 @@ const PlaygroundManage = () => {
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
   const {
-    // getCategoryList,
+    getCategoryList,
     getCapabilityList,
     // deleteCategory,
     deleteCapability,
@@ -208,10 +208,17 @@ const PlaygroundManage = () => {
   //   return treeData;
   // };
 
+  const findIDByName = (name: string, categoryList: any[]) => {
+    const item = categoryList.find((item: any) => item.name === name);
+    console.log(item);
+    return item?.id;
+  }
+
   const getAllTreeData = async () => {
     setTreeLoading(true);
     try {
       const capabilityData = await getCapabilityList();
+      const categoryData = await getCategoryList();
       const nodes = [
         {
           key: 'model_experience',
@@ -228,8 +235,8 @@ const PlaygroundManage = () => {
               key: 'anomaly_detection',
               name: 'anomaly_detection',
               selectable: false,
-              title: renderTitle({ name: t(`manage.anomalyDetection`), categoryID: 4 }),
-              children: renderCapabilityNode(4, capabilityData)
+              title: renderTitle({ name: t(`manage.anomalyDetection`), categoryID: findIDByName('异常检测', categoryData) }),
+              children: renderCapabilityNode(findIDByName('异常检测', categoryData), capabilityData)
             }
           ]
         },
@@ -472,6 +479,7 @@ const PlaygroundManage = () => {
         <Search className='w-[240px] mr-4' placeholder={t(`common.search`)} enterButton onSearch={onSearch} />
         <Button
           type='primary'
+          disabled={selectCapability.length === 0}
           icon={<PlusOutlined />}
           onClick={() => openSampleModal({ type: 'add', title: 'add', form: { capability: selectCapability } })}>
           {t(`common.add`)}

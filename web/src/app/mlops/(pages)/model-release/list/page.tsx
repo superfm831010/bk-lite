@@ -166,7 +166,7 @@ const ModelRelease = () => {
       await updateAnomalyServings(id, { status })
     } catch (e) {
       console.log(e);
-      message.error(t(``))
+      // message.error(t(``));
     } finally {
       getModelServings();
     }
