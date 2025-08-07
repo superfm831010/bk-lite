@@ -26,6 +26,8 @@ class Policy(TimeInfo, MaintainerInfo):
     notice_type_id = models.IntegerField(default=0, verbose_name="通知方式ID")
     notice_users = models.JSONField(default=list, verbose_name="通知人")
 
+    enable = models.BooleanField(default=True, verbose_name="是否启用")
+
     class Meta:
         verbose_name = "告警策略"
         verbose_name_plural = "告警策略"

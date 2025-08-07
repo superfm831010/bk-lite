@@ -67,6 +67,7 @@ class PolicyViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         # 补充创建人
         request.data['created_by'] = request.user.username
+        request.data['updated_by'] = request.user.username
         response = super().create(request, *args, **kwargs)
         policy_id = response.data['id']
         schedule = request.data.get('schedule')
@@ -164,16 +165,6 @@ class PolicyViewSet(viewsets.ModelViewSet):
             return WebUtils.response_success({"enabled": enabled})
         except PeriodicTask.DoesNotExist:
             return WebUtils.response_error("策略对应的定时任务不存在")
-
-    @swagger_auto_schema(
-        operation_id="policy_test",
-        operation_description="测试策略配置",
-    )
-    @action(methods=['post'], detail=True, url_path='test')
-    def test(self, request, pk=None):
-        policy = self.get_object()
-        # TODO: 实现策略测试逻辑
-        return WebUtils.response_success({"message": "策略测试功能待实现"})
 
 
 class AlertViewSet(viewsets.ModelViewSet):

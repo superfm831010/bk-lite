@@ -10,6 +10,7 @@ from apps.log.views.collect_config import (
     CollectInstanceViewSet,
     CollectConfigViewSet
 )
+from apps.log.views.system_mgmt import SystemMgmtView
 
 router = routers.DefaultRouter()
 
@@ -25,5 +26,6 @@ router.register(r'policy', PolicyViewSet, basename='policy')
 router.register(r'alert', AlertViewSet, basename='alert')
 router.register(r'event', EventViewSet, basename='event')
 router.register(r'event_raw_data', EventRawDataViewSet, basename='event_raw_data')
+router.register(r"system_mgmt", SystemMgmtView, basename="log_system_mgmt")
 
 urlpatterns = router.urls
