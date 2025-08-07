@@ -24,7 +24,6 @@ const { Panel } = Collapse;
 const InfoList: React.FC<AssetDataFieldProps> = ({
   propertyList,
   userList,
-  organizationList,
   instDetail,
   onsuccessEdit,
 }) => {
@@ -47,7 +46,7 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
     if (attrList.length) {
       initData(attrList);
     }
-  }, [propertyList, instDetail, userList, organizationList, attrList]);
+  }, [propertyList, instDetail, userList, attrList]);
 
   const updateInst = async (config: {
     id: string;
@@ -114,7 +113,6 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
                     {getFieldItem({
                       fieldItem: item,
                       userList,
-                      groupList: organizationList,
                       isEdit: true,
                     })}
                   </>
@@ -124,7 +122,6 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
                   {getFieldItem({
                     fieldItem: item,
                     userList,
-                    groupList: organizationList,
                     isEdit: false,
                     value: item.value,
                   })}
@@ -228,7 +225,6 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
     const copyVal: string = getFieldItem({
       fieldItem: item,
       userList,
-      groupList: organizationList,
       isEdit: false,
       value,
     });

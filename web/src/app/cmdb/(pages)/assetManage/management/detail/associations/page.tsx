@@ -14,15 +14,14 @@ import {
   GroupItem,
 } from '@/app/cmdb/types/assetManage';
 import { useModelApi, useClassificationApi } from '@/app/cmdb/api';
-import { useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
 import { deepClone } from '@/app/cmdb/utils/common';
-import { useCommon } from '@/app/cmdb/context/common';
 import PermissionWrapper from '@/components/permission';
+import { useModelDetail } from '../context';
 
 const { confirm } = Modal;
 
-const Associations = () => {
+const Associations: React.FC = () => {
   const {
     getModelList,
     deleteModelAssociation,
@@ -30,18 +29,11 @@ const Associations = () => {
     getModelAssociationTypes,
   } = useModelApi();
   const { getClassificationList } = useClassificationApi();
-  const searchParams = useSearchParams();
-  const modelId = searchParams.get('model_id');
-  const permissionParam = searchParams.get('permission');
-  const modelPermission = permissionParam
-    ? decodeURIComponent(permissionParam).split(',')
-    : [];
+
+  const modelDetail = useModelDetail();
+  const modelId = modelDetail?.model_id;
+  const modelPermission = modelDetail?.permission || [];
   const { t } = useTranslation();
-  const commonContext = useCommon();
-  const permissionGroupsInfo = useRef(
-    commonContext?.permissionGroupsInfo || null
-  );
-  const isAdmin = permissionGroupsInfo.current?.is_all;
   const assoRef = useRef<any>(null);
   const [searchText, setSearchText] = useState<string>('');
   const [pagination, setPagination] = useState<any>({
@@ -130,7 +122,6 @@ const Associations = () => {
           >
             <Button
               type="link"
-              disabled={!isAdmin && record.is_pre}
               onClick={() => showDeleteConfirm(record.model_asst_id)}
             >
               {t('common.delete')}
@@ -142,8 +133,10 @@ const Associations = () => {
   ];
 
   useEffect(() => {
-    getInitData();
-  }, [pagination?.current, pagination?.pageSize]);
+    if (modelId) {
+      getInitData();
+    }
+  }, [pagination?.current, pagination?.pageSize, modelId]);
 
   const showAssoModal = (type: string, row = { subTitle: '' }) => {
     const title = t(
@@ -165,8 +158,10 @@ const Associations = () => {
 
   const showDeleteConfirm = (id: string) => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {

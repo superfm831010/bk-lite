@@ -1,4 +1,4 @@
-from apps.rpc.base import RpcClient, AppClient
+from apps.rpc.base import AppClient, RpcClient
 
 
 class SystemMgmt(object):
@@ -113,7 +113,7 @@ class SystemMgmt(object):
         :param channel_id: 1 通道id
         :param title: 邮件主题  企微传空字符串即可
         :param content: 正文
-        :param receivers: ["abc@canway.net"] 企微传用户的ID列表
+        :param receivers: [1,2,3,4] 用户的ID列表
         """
         return_data = self.client.run(
             "send_msg_with_channel", channel_id=channel_id, title=title, content=content, receivers=receivers
@@ -186,3 +186,6 @@ class SystemMgmt(object):
 
     def get_pilot_permission_by_token(self, token, bot_id, group_list):
         return self.client.run("get_pilot_permission_by_token", token, bot_id, group_list)
+
+    def delete_rules(self, group_ids, instance_id, app, module, child_module=""):
+        return self.client.run("delete_rules", group_ids, instance_id, app, module, child_module)

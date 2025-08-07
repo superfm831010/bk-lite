@@ -5,6 +5,7 @@
     "type": "类型",
     "status": "状态",
     "creator": "创建人",
+    "owner":"所有者",
     "createdAt": "创建时间",
     "min": "最小值",
     "max": "最大值"
@@ -55,6 +56,7 @@
     "train": "训练",
     "traintask": "训练任务",
     "trainStartTitle": "确认开始训练？",
+    "trainStartSucess": "启动训练成功",
     "trainStartContent": "训练一旦开始将不会停止。",
     "searchText": "搜索任务名称",
     "description": "创建训练任务，对各个模型进行训练，训练完成后，可在模型库查看最终的模型。",

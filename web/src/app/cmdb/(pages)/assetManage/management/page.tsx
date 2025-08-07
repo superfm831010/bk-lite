@@ -71,8 +71,10 @@ const AssetManage = () => {
 
   const showDeleteConfirm = (row: GroupItem) => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
@@ -124,16 +126,12 @@ const AssetManage = () => {
   };
 
   const linkToDetail = (model: ModelItem) => {
-    const permissionStr = Array.isArray(model.permission)
-      ? model.permission.join(',')
-      : model.permission || '';
     const params = new URLSearchParams({
       model_id: model.model_id,
       model_name: model.model_name,
       icn: model.icn,
       classification_id: model.classification_id,
       is_pre: model.is_pre,
-      permission: permissionStr,
     }).toString();
     router.push(`/cmdb/assetManage/management/detail/attributes?${params}`);
   };
@@ -354,7 +352,7 @@ const AssetManage = () => {
       <GroupModal ref={groupRef} onSuccess={updateGroupList} />
       <ModelModal
         ref={modelRef}
-        groupList={groupList}
+        modelGroupList={groupList}
         onSuccess={updateModelList}
       />
     </div>

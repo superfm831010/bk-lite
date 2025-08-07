@@ -11,6 +11,8 @@ export interface WidgetConfig {
   filterType?: FilterType;
   timeRange?: [Dayjs, Dayjs];
   instanceList?: string[];
+  params?: { [key: string]: any };
+  dataSourceParams?: any[]; // 数据源参数配置
 }
 
 export interface LayoutItem {
@@ -41,7 +43,6 @@ export interface ComponentSelectorProps {
 export interface BaseWidgetProps {
   config?: any;
   globalTimeRange?: any;
-  globalInstances?: string[];
   refreshKey?: number; 
   onDataChange?: (data: any) => void;
 }

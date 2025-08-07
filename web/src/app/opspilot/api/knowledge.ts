@@ -252,6 +252,15 @@ export const useKnowledgeApi = () => {
     return del(`/opspilot/knowledge_mgmt/qa_pairs/${qaPairId}/`);
   };
 
+  const createOneQAPair = async (payload: {
+    knowledge_id: number;
+    qa_pairs_id: number;
+    question: string;
+    answer: string;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/create_one_qa_pairs/', payload);
+  };
+
   /**
    * Creates QA pairs from selected documents.
    */
@@ -266,6 +275,36 @@ export const useKnowledgeApi = () => {
     }>;
   }): Promise<any> => {
     return post('/opspilot/knowledge_mgmt/qa_pairs/create_qa_pairs/', payload);
+  };
+
+  const updateQAPair = async (payload: {
+    qa_pairs_id: number;
+    id: string;
+    question: string;
+    answer: string;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/update_qa_pairs/', payload);
+  };
+
+  const deleteOneQAPair = async (payload: {
+    qa_pairs_id: number;
+    id: string;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/delete_one_qa_pairs/', payload);
+  };
+
+  /**
+   * Creates custom QA pairs manually.
+   */
+  const createCustomQAPairs = async (payload: {
+    knowledge_base_id: number;
+    name: string;
+    qa_pairs: Array<{
+      question: string;
+      answer: string;
+    }>;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/create_qa_pairs_by_custom/', payload);
   };
 
   /**
@@ -411,7 +450,11 @@ export const useKnowledgeApi = () => {
     fetchMyTasks,
     fetchQAPairs,
     deleteQAPair,
+    createOneQAPair,
+    updateQAPair,
+    deleteOneQAPair,
     createQAPairs,
+    createCustomQAPairs,
     fetchQAPairDetails,
     fetchChunkQAPairs,
     fetchKnowledgeGraphDetails,
