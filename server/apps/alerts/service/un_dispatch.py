@@ -42,6 +42,15 @@ class UnDispatchService:
         title = param_format.format_title()
         content = param_format.format_content()
         for channel in notify_channel:
-            result.append([notify_people, channel, title, content])
+            result.append(
+                {"username_list": notify_people,
+                 "channel_type": channel["channel_type"],
+                 "channel_id": channel["id"],
+                 "title": title,
+                 "content": content,
+                 "object_id": "",
+                 "notify_action_object": ""
+                 }
+            )
 
         return result

@@ -11,7 +11,7 @@
     "url": "URL",
     "active": "online now",
     "inactive": "not yet on line",
-    "onlineStatus": "status"
+    "onlineStatus": "enable"
   },
   "manage": {
     "delCapability": "Deltee Capability",
@@ -19,6 +19,12 @@
     "manageTitle": "Portal Management",
     "description": "All categories and all capability demonstration menus in the management portal.",
     "delCategory": "Are you sure you want to delete this category?",
-    "parentCategory": "Parent category"
+    "parentCategory": "Parent category",
+    "servingsSelect": "Model selection",
+    "servingsMsg": "Select a model",
+    "createAt": "Create at",
+    "createdBy": "Created by",
+    "sampleStatus": "Start/Stop",
+    "isActive": "Enable"
   }
 }

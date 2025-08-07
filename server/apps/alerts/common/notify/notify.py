@@ -12,10 +12,10 @@ class Notify:
     This class should be extended by specific notification handlers.
     """
 
-    def __init__(self, username_list, channel, title, content):
+    def __init__(self, username_list, channel_id, title, content):
         self.title = title
         self.content = content
-        self.channel = channel
+        self.channel_id = channel_id
         self.user_list = self.get_user_list(username_list)
 
     @staticmethod
@@ -33,64 +33,17 @@ class Notify:
                 result.append(user_info)
         return result
 
-    def get_channel_id(self):
-        result = SystemMgmtUtils.search_channel_list(channel_type=self.channel)
-        if result:
-            return result[0]["id"]
-
-        return
-
     def get_user_emails(self):
         emails = [user["email"] for user in self.user_list]
         return emails
 
-    def email(self):
-        """
-        Notify via email.
-        This method should be implemented by subclasses.
-        """
-        channel_id = self.get_channel_id()
-        if not channel_id:
-            logger.warning(f"Channel {self.channel} does not exist.")
-            return
+    def notify(self):
 
         send_result = SystemMgmtUtils.send_msg_with_channel(
-            channel_id=channel_id,
-            title=self.title,
-            content=self.content,
-            receivers=self.get_user_emails()
-        )
-        logger.info(f"Email notification sent: {send_result}")
-        return send_result
-
-    def enterprise_wechat(self):
-        """
-        Notify via enterprise WeChat.
-        This method should be implemented by subclasses.
-        """
-        channel_id = self.get_channel_id()
-        if not channel_id:
-            logger.warning(f"Channel {self.channel} does not exist.")
-            return
-
-        send_result = SystemMgmtUtils.send_msg_with_channel(
-            channel_id=channel_id,
+            channel_id=self.channel_id,
             title=self.title,
             content=self.content,
             receivers=[user["id"] for user in self.user_list]
         )
         logger.info(f"Enterprise WeChat notification sent: {send_result}")
         return send_result
-
-    def notify(self):
-        """
-        Notify the alert.
-        This method should be implemented by subclasses.
-        """
-
-        notify = getattr(self, self.channel, None)
-        if notify and callable(notify):
-            return notify()
-        else:
-            logger.error(f"Notification method {self.channel} is not implemented or invalid.")
-            raise NotImplementedError(f"Notification method {self.channel} is not implemented.")

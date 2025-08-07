@@ -10,7 +10,6 @@ const OpenPlatform = () => {
   const searchParams = useSearchParams();
   // const router = useRouter();
   const activeComponent = searchParams.get('page');
-
   const componentMap: Record<string, any> = useMemo(() => ({
     'home': HomePage,
     'anomaly-detection': lazy(() => import(`./components/AnomalyDetection`))
@@ -18,7 +17,6 @@ const OpenPlatform = () => {
 
   // 动态获取组件
   const DynamicComponent = useMemo(() => {
-    console.log(activeComponent);
     const componentKey = activeComponent || 'anomaly-detection';
     return componentMap[componentKey] || HomePage;
   }, [activeComponent]);

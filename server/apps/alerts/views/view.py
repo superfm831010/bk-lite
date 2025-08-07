@@ -257,7 +257,7 @@ class IncidentModelViewSet(ModelViewSet):
 
 class SystemSettingModelViewSet(ModelViewSet):
     """
-    事故视图集
+    系统设置视图集
     no_dispatch_alert_notice: 未分派告警通知
     """
     queryset = SystemSetting.objects.all()
@@ -445,6 +445,28 @@ class SystemSettingModelViewSet(ModelViewSet):
             # 简化处理：如果大于60分钟且不能整除，按每小时执行
             logger.warning(f"复杂时间间隔{minutes}分钟，简化为每小时执行")
             return "0 * * * *"
+
+    @action(methods=['get'], detail=False, url_path='get_channel_list')
+    def get_channel_list(self, request):
+        """
+        获取告警通知通道列表: 存在配置
+        """
+
+        result = []
+
+        from apps.system_mgmt.models.channel import Channel
+
+        channel_list = Channel.objects.all()
+        for channel in channel_list:
+            result.append(
+                {
+                    "id": channel.id,
+                    "name": f"{channel.name}【{channel.get_channel_type_display()}】",
+                    "channel_type": channel.channel_type,
+                }
+            )
+
+        return WebUtils.response_success(result)
 
 
 class SystemLogModelViewSet(ModelViewSet):
