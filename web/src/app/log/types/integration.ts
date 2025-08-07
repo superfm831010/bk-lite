@@ -59,7 +59,7 @@ export interface GroupInfo {
   id?: React.Key;
   rule?: GroupRule;
   name?: string;
- [key: string]: any;
+  [key: string]: any;
 }
 
 export interface GroupRule {
@@ -68,6 +68,7 @@ export interface GroupRule {
 }
 
 export interface FilterItem {
+  func?: string | null;
   field: string | null;
   op: string | null;
   value: string;
