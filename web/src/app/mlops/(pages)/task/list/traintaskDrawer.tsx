@@ -13,7 +13,7 @@ const TrainTaskDrawer = ({ open, onCancel, selectId }:
   return (
     <Drawer
       width={800}
-      title={t('traintask.history')}
+      title={t('traintask.trainDetail')}
       open={open}
       onClose={onCancel}
       footer={

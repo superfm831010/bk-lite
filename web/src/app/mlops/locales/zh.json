@@ -55,6 +55,7 @@
   "traintask": {
     "train": "训练",
     "traintask": "训练任务",
+    "trainDetail": "训练详情",
     "trainStartTitle": "确认开始训练？",
     "trainStartSucess": "启动训练成功",
     "trainStartContent": "训练一旦开始将不会停止。",

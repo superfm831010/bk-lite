@@ -18,6 +18,7 @@ import {
   // Tag
 } from 'antd';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import PermissionWrapper from '@/components/permission';
 import { PlusOutlined, MoreOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
@@ -99,7 +100,9 @@ const PlaygroundManage = () => {
       dataIndex: 'status',
       key: 'status',
       render: (_, record) => {
-        return <Switch checked={record.is_active} onChange={(value: boolean) => handleSampleActiveChange(record?.id, value)} />
+        return <PermissionWrapper requiredPermissions={['Edit']}>
+          <Switch checked={record.is_active} onChange={(value: boolean) => handleSampleActiveChange(record?.id, value)} />
+        </PermissionWrapper>
       }
     },
     {
@@ -110,16 +113,18 @@ const PlaygroundManage = () => {
         return (
           <>
             {/* <Button type='link' className='mr-2' onClick={() => openCategoryModal({ type: 'updateCapability', title: 'update', form: record })}>修改配置</Button> */}
-            <Popconfirm
-              title={t(`manage.delCapability`)}
-              description={t(`manage.delCapabilityText`)}
-              okText={t('common.confirm')}
-              cancelText={t('common.cancel')}
-              okButtonProps={{ loading: confirmLoading }}
-              onConfirm={() => handleDelSampleFile(record.id)}
-            >
-              <Button type='link' danger>{t(`common.delete`)}</Button>
-            </Popconfirm>
+            <PermissionWrapper requiredPermissions={['Delete']}>
+              <Popconfirm
+                title={t(`manage.delCapability`)}
+                description={t(`manage.delCapabilityText`)}
+                okText={t('common.confirm')}
+                cancelText={t('common.cancel')}
+                okButtonProps={{ loading: confirmLoading }}
+                onConfirm={() => handleDelSampleFile(record.id)}
+              >
+                <Button type='link' danger>{t(`common.delete`)}</Button>
+              </Popconfirm>
+            </PermissionWrapper>
           </>
         )
       }
@@ -144,11 +149,11 @@ const PlaygroundManage = () => {
   const CapabilityMenuItems = [
     {
       key: 'update',
-      label: t(`common.update`)
+      label: <PermissionWrapper requiredPermissions={['Capability Edit']}>{t(`common.update`)}</PermissionWrapper>
     },
     {
       key: 'delete',
-      label: t(`common.delete`),
+      label: <PermissionWrapper requiredPermissions={['Capability Delete']}>{t(`common.delete`)}</PermissionWrapper>,
     }
   ];
 
@@ -332,7 +337,7 @@ const PlaygroundManage = () => {
                   [
                     {
                       key: 'add',
-                      label: t(`common.add`),
+                      label: <PermissionWrapper requiredPermissions={['Capability Add']}>{t(`common.add`)}</PermissionWrapper>,
                     }
                   ]
                 }
@@ -477,13 +482,15 @@ const PlaygroundManage = () => {
     <>
       <div className='flex justify-end mb-4'>
         <Search className='w-[240px] mr-4' placeholder={t(`common.search`)} enterButton onSearch={onSearch} />
-        <Button
-          type='primary'
-          disabled={selectCapability.length === 0}
-          icon={<PlusOutlined />}
-          onClick={() => openSampleModal({ type: 'add', title: 'add', form: { capability: selectCapability } })}>
-          {t(`common.add`)}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button
+            type='primary'
+            disabled={selectCapability.length === 0}
+            icon={<PlusOutlined />}
+            onClick={() => openSampleModal({ type: 'add', title: 'add', form: { capability: selectCapability } })}>
+            {t(`common.add`)}
+          </Button>
+        </PermissionWrapper>
       </div>
       <CustomTable
         rowKey='id'

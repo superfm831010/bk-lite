@@ -55,6 +55,7 @@
   "traintask": {
     "train": "Train",
     "traintask": "Train task",
+    "trainDetail": "Train Detail",
     "trainStartTitle": "Confirmation to start training?",
     "trainStartSucess": "Startup training successful",
     "trainStartContent": "Training once started will not stop.",

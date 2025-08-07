@@ -224,7 +224,7 @@ const TopMenu = () => {
             .map((item: MenuItem) => {
               const isActive = item.url === '/' ? pathname === '/' : pathname?.startsWith(item.url);
 
-              if (isOtherMode && item.name === 'capabilities') {
+              if (isOtherMode && item.name === 'experience') {
 
                 return (
                   <Popover
