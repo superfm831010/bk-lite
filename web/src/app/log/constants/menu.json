@@ -7,6 +7,33 @@
       "name": "search"
     },
     {
+      "title": "事件",
+      "icon": "shujumoxingguanli",
+      "url": "/log/event",
+      "name": "Event",
+      "children": [
+        {
+          "icon": "weiwangguanicon-defuben-",
+          "title": "告警",
+          "url": "/log/event/alert",
+          "name": "alert_list1"
+        },
+        {
+          "icon": "mulu",
+          "title": "策略",
+          "url": "/log/event/strategy",
+          "name": "strategy_list",
+          "children": [
+            {
+              "url": "/log/event/strategy/detail",
+              "name": "strategy_list_detail",
+              "isNotMenuItem": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "title": "集成",
       "icon": "moxing2",
       "url": "/log/integration",
@@ -53,6 +80,33 @@
       "icon": "search-f",
       "url": "/log/search",
       "name": "search"
+    },
+    {
+      "title": "Event",
+      "icon": "shujumoxingguanli",
+      "url": "/log/event",
+      "name": "Event",
+      "children": [
+        {
+          "icon": "weiwangguanicon-defuben-",
+          "title": "Alert",
+          "url": "/log/event/alert",
+          "name": "alert_list1"
+        },
+        {
+          "icon": "mulu",
+          "title": "Strategy",
+          "url": "/log/event/strategy",
+          "name": "strategy_list",
+          "children": [
+            {
+              "url": "/log/event/strategy/detail",
+              "name": "strategy_list_detail",
+              "isNotMenuItem": true
+            }
+          ]
+        }
+      ]
     },
     {
       "title": "Integration",
