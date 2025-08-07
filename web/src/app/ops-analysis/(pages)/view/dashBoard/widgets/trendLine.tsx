@@ -1,66 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import dayjs from 'dayjs';
+import React from 'react';
 import ReactEcharts from 'echarts-for-react';
 import { Spin } from 'antd';
 import { BaseWidgetProps } from '@/app/ops-analysis/types/dashBoard';
-import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
+import { useWidgetData } from '../hooks/useWidgetData';
 
 const TrendLine: React.FC<BaseWidgetProps> = ({
   config,
   globalTimeRange,
   refreshKey,
 }) => {
-  const [chartData, setChartData] = useState<{
-    dates: string[];
-    values: number[];
-  }>({
-    dates: [],
-    values: [],
+  const transformData = (rawData: any) => {
+    if (Array.isArray(rawData) && rawData.length > 0) {
+      const dates = rawData.map((item: any[]) => item[0]);
+      const values = rawData.map((item: any[]) => item[1]);
+      return { dates, values };
+    }
+    return { dates: [], values: [] };
+  };
+
+  const { data: chartData, loading } = useWidgetData({
+    config,
+    globalTimeRange,
+    refreshKey,
+    transformData,
   });
-  const [loading, setLoading] = useState(true);
-  const { getSourceDataByApiId } = useDataSourceApi();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const timeParams = config?.timeRange || globalTimeRange;
-        let startTime, endTime;
-        if (timeParams && typeof timeParams === 'number') {
-          endTime = dayjs().valueOf();
-          startTime = dayjs().subtract(timeParams, 'minute').valueOf();
-        } else if (timeParams && timeParams.start && timeParams.end) {
-          startTime = timeParams.start;
-          endTime = timeParams.end;
-        } else {
-          endTime = timeParams[1];
-          startTime = timeParams[0];
-        }
-        const startTimeStr = dayjs(startTime).format('YYYY-MM-DD HH:mm:ss');
-        const endTimeStr = dayjs(endTime).format('YYYY-MM-DD HH:mm:ss');
-        const data: any = await getSourceDataByApiId(config.dataSource, {
-          group_by: config?.groupBy || 'day',
-          filters: {
-            start_time: startTimeStr,
-            end_time: endTimeStr,
-          },
-        });
-        if (Array.isArray(data) && data.length > 0) {
-          const dates = data.map((item: any[]) => item[0]);
-          const values = data.map((item: any[]) => item[1]);
-          setChartData({ dates, values });
-        } else {
-          setChartData({ dates: [], values: [] });
-        }
-      } catch (error) {
-        console.error('获取趋势数据失败:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [config, globalTimeRange, refreshKey]);
 
   const option: any = {
     color: [config?.lineColor || '#1890ff'],
@@ -102,7 +65,7 @@ const TrendLine: React.FC<BaseWidgetProps> = ({
     },
     xAxis: {
       type: 'category',
-      data: chartData.dates,
+      data: chartData?.dates || [],
       nameRotate: -90,
       axisLabel: {
         margin: 15,
@@ -143,7 +106,7 @@ const TrendLine: React.FC<BaseWidgetProps> = ({
       {
         name: '告警数',
         type: 'line',
-        data: chartData.values,
+        data: chartData?.values || [],
         smooth: true,
         symbol: 'circle',
         symbolSize: 6,
