@@ -17,7 +17,6 @@ import {
 import {
   AttrFieldType,
   ModelItem,
-  Organization,
   UserItem,
   AssoTypeItem,
 } from '@/app/cmdb/types/assetManage';
@@ -29,8 +28,6 @@ const ChangeRecords: React.FC = () => {
   const modelApi = useModelApi();
   const { t } = useTranslation();
   const commonContext = useCommon();
-  const authList = useRef(commonContext?.organizations || []);
-  const organizationList: Organization[] = authList.current;
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
   const detailRef = useRef<detailRef>(null);
@@ -203,7 +200,6 @@ const ChangeRecords: React.FC = () => {
         userList={userList}
         propertyList={attrList}
         modelList={modelList}
-        groupList={organizationList}
         enumList={enumList}
         connectTypeList={assoTypes}
       />

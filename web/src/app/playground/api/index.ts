@@ -2,8 +2,8 @@ import useApiClient from "@/utils/request";
 
 interface LabelData {
   timestamp: string;
-  value: string;
-  label: number;
+  value: number;
+  label?: number;
 }
 
 interface AnomalyDetectionReason {
@@ -27,6 +27,16 @@ const usePlayroundApi = () => {
     return await get(`/playground/category/`);
   };
 
+  // 获取能力发布列表
+  const getServingsList = async () => {
+    return await get(`/mlops/anomaly_detection_servings/`);
+  };
+  
+  // 获取能力发布详情
+  const getServingsDetail = async (id: string) => {
+    return await get(`/mlops/anomaly_detection_servings/${id}/`)
+  };
+
   // 查询单个类别
   const getCategoryDetail = async (id: number) => {
     return await get(`/playground/category/${id}`);
@@ -38,8 +48,23 @@ const usePlayroundApi = () => {
   };
 
   // 查询单个能力演示
-  const getCapabilityDetail = async (id: number) => {
+  const getCapabilityDetail = async (id: string) => {
     return await get(`/playground/capability/${id}`);
+  };
+
+  // 查询所有的样本文件列表
+  const getAllSampleFileList = async () => {
+    return await get(`/playground/example/`);
+  };
+  
+  // 查询指定能力体验下的样本文件
+  const getSampleFileOfServing = async (serving: string) => {
+    return await get(`/playground/example/?serving=${serving}`);
+  };
+
+  // 获取指定样本文件详情
+  const getSampleFileDetail = async (id: number) => {
+    return await get(`/playground/example/${id}`);
   };
 
   // 创建分类
@@ -82,6 +107,23 @@ const usePlayroundApi = () => {
     return await patch(`/playground/capability/${id}/`, params);
   };
 
+  // 创建样本文件
+  const createSampleFile = async (params: {
+    name: string;
+    capability: number;
+    train_data: LabelData[],
+    is_active: boolean;
+  }) => {
+    return await post(`playground/example/`, params)
+  };
+
+  // 编辑样本文件
+  const updateSampleFile = async (id: number, params: {
+    is_active: boolean
+  }) => {
+    return await patch(`/playground/example/${id}`, params)
+  };
+
   // 异常检测推理
   const anomalyDetectionReason = async (params: AnomalyDetectionReason) => {
     return await post(`/mlops/anomaly_detection_servings/predict/`, params);
@@ -97,18 +139,31 @@ const usePlayroundApi = () => {
     return await del(`/playground/capability/${id}`);
   };
 
+  // 删除指定样本文件
+  const deleteSampleFile = async (id: number) => {
+    return await del(`/playground/example/${id}`);
+  };
+
   return {
     getCategoryList,
+    getServingsList,
     getCategoryDetail,
     getCapabilityList,
     getCapabilityDetail,
+    getAllSampleFileList,
+    getSampleFileDetail,
+    getServingsDetail,
+    getSampleFileOfServing,
     createCategory,
     createCapability,
+    createSampleFile,
     updateCategory,
     updateCapability,
+    updateSampleFile,
     anomalyDetectionReason,
     deleteCategory,
-    deleteCapability
+    deleteCapability,
+    deleteSampleFile
   }
 
 };

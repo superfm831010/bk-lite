@@ -7,7 +7,6 @@ import { ArrowRightOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import {
   AttrFieldType,
   UserItem,
-  Organization,
   ModelItem,
 } from '@/app/cmdb/types/assetManage';
 import { Spin, Input, Tabs, Button, Tag, Empty } from 'antd';
@@ -41,8 +40,6 @@ const AssetSearch = () => {
   const { getModelList, getModelAttrList } = useModelApi();
   const { fulltextSearchInstances } = useInstanceApi();
 
-  const authList = useRef(commonContext?.authOrganizations || []);
-  const organizationList: Organization[] = authList.current;
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
   const [propertyList, setPropertyList] = useState<AttrFieldType[]>([]);
@@ -184,7 +181,6 @@ const AssetSearch = () => {
                       getFieldItem({
                         fieldItem,
                         userList,
-                        groupList: organizationList,
                         isEdit: false,
                         value: list.children,
                         hideUserAvatar: true,
@@ -235,7 +231,6 @@ const AssetSearch = () => {
                   getFieldItem({
                     fieldItem,
                     userList,
-                    groupList: organizationList,
                     isEdit: false,
                     value: list.children,
                     hideUserAvatar: true,

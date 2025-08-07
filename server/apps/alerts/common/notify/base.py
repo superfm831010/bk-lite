@@ -37,7 +37,7 @@ class NotifyParamsFormat(object):
             alert = self.alerts[0]
             content += f"告警：{alert.title} \n"
             content += f"告警时间:：{alert.format_created_at} \n"
-            content += f"负责人:：{','.format(self.username_list)} \n"
+            content += f"负责人:：{','.join(self.username_list)} \n"
         else:
             content += "告警信息如下：\n"
             for index, alert in enumerate(self.alerts[:10]):  # 限制内容展示就是10条

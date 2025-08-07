@@ -39,7 +39,6 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
   (
     {
       userList,
-      organizationList,
       models,
       assoTypes,
       needFetchAssoInstIds,
@@ -99,7 +98,6 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
           ...getAssetColumns({
             attrList: intancePropertyList,
             userList,
-            groupList: organizationList,
             t,
           }),
           {
@@ -372,7 +370,6 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
               userList={userList}
               attrList={intancePropertyList}
               proxyOptions={proxyOptions}
-              organizationList={organizationList}
               onSearch={handleSearch}
             />
           </div>

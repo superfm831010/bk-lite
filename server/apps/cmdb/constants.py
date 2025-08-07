@@ -70,6 +70,9 @@ ENUM = "enum"
 USER = "user"
 ORGANIZATION = "organization"
 
+# 模型内置属性：组织
+INIT_MODEL_GROUP = "group"
+
 # 默认的实例名属性
 INST_NAME_INFOS = [
     {

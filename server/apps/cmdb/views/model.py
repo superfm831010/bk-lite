@@ -23,6 +23,7 @@ class ModelViewSet(viewsets.ViewSet):
         if not model_info:
             return WebUtils.response_error("模型不存在", status_code=status.HTTP_404_NOT_FOUND)
 
+        # TODO 如果使用了这个接口 补充上 默认group为default的判断 全部人都可以查看
         model_id = model_info["model_id"]
         classification_id = model_info["classification_id"]
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
@@ -70,10 +71,11 @@ class ModelViewSet(viewsets.ViewSet):
     )
     @HasPermission("model_management-View,asset_list-View,view_list-View")
     def list(self, request):
+        current_team = request.COOKIES.get("current_team")
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
         model_id_list, classification_id_list = CmdbRulesFormatUtil.get_rules_classification_id_list(rules)
         result = ModelManage.search_model(language=request.user.locale, classification_ids=classification_id_list,
-                                          model_list=model_id_list)
+                                          model_list=model_id_list, group=int(current_team))
         for model in result:
             model_id = model['model_id']
             cls_id = model['classification_id']
