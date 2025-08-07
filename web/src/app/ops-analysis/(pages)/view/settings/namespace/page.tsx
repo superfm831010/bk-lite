@@ -38,7 +38,7 @@ const Namespace: React.FC = () => {
       const currentSearchKey =
         searchKeyParam !== undefined ? searchKeyParam : searchKey;
       if (currentSearchKey && currentSearchKey.trim()) {
-        params.search = currentSearchKey.trim();
+        params.name = currentSearchKey.trim();
       }
       const { items, count } = await getNamespaceList(params);
       if (items && Array.isArray(items)) {
@@ -82,10 +82,11 @@ const Namespace: React.FC = () => {
 
   const handleDelete = (row: NamespaceItem) => {
     Modal.confirm({
-      title: t('common.confirmDelete'),
-      content: `${t('common.confirmDeleteMsg')} "${row.name}"?`,
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
       okText: t('common.confirm'),
       cancelText: t('common.cancel'),
+      centered: true,
       onOk: async () => {
         try {
           await deleteNamespace(row.id);
@@ -126,8 +127,8 @@ const Namespace: React.FC = () => {
     },
     {
       title: t('namespace.describe'),
-      dataIndex: 'describe',
-      key: 'describe',
+      dataIndex: 'desc',
+      key: 'desc',
       width: 200,
     },
     {
@@ -207,7 +208,7 @@ const Namespace: React.FC = () => {
           dataSource={filteredList}
           pagination={pagination}
           onChange={handleTableChange}
-          scroll={{ y: 'calc(100vh - 360px)' }}
+          scroll={{ y: 'calc(100vh - 410px)' }}
         />
         <OperateModal
           open={modalVisible}

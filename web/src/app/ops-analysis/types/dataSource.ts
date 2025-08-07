@@ -11,6 +11,7 @@ export interface DatasourceItem {
   desc: string;
   is_active: boolean;
   params: ParamItem[];
+  namespaces?: number[];
 }
 
 export interface OperateModalProps {

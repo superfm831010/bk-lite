@@ -1,5 +1,5 @@
 {
-  "sidebar": {
+  "opsAnalysisSidebar": {
     "title": "目录管理",
     "addDir": "新增目录",
     "addDash": "添加仪表盘",
@@ -14,9 +14,11 @@
     "inputPlaceholder": "请输入名称",
     "nameLabel": "名称",
     "descLabel": "描述",
-    "selectItem": "请选择仪表盘或拓扑"
+    "selectItem": "请选择仪表盘或拓扑",
+    "unsavedChanges": "确认离开当前页面",
+    "unsavedChangesWarning": "离开将导致未保存信息丢"
   },
-"dashboard": {
+  "dashboard": {
     "addComponent": "添加视图",
     "componentConfig": "组件配置",
     "addView": "添加视图",
@@ -62,16 +64,16 @@
     "introMsg": "选择NATS服务作为数据源",
     "paramType": "参数类型",
     "paramTypes": {
-    "string": "字符串",
-    "number": "数字",
-    "date": "日期",
-    "boolean": "布尔",
-    "timeRange": "时间范围"
+      "string": "字符串",
+      "number": "数字",
+      "date": "日期",
+      "boolean": "布尔",
+      "timeRange": "时间范围"
     },
     "filterTypes": {
-    "filter": "筛选",
-    "fixed": "固定",
-    "params": "参数"
+      "filter": "筛选",
+      "fixed": "固定",
+      "params": "参数"
     },
     "filterType": "筛选类型",
     "operation": "操作",
@@ -84,8 +86,8 @@
     "operationFailed": "操作失败",
     "fixedParamRequiredValue": "固定类型的参数必须有默认值",
     "required": "必填"
-},
-"namespace": {
+  },
+  "namespace": {
     "title": "命名空间",
     "name": "名称",
     "account": "账号",
@@ -98,8 +100,8 @@
     "updateNamespaceSuccess": "更新命名空间成功",
     "createNamespaceSuccess": "创建命名空间成功",
     "operationFailed": "操作失败"
-},
-"topology": {
+  },
+  "topology": {
     "edgeView": "连线视图",
     "edgeConfig": "连线配置",
     "lineType": "线条类型",

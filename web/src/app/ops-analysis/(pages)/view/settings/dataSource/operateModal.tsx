@@ -7,11 +7,13 @@ import TimeSelector from '@/components/time-selector';
 import { v4 as uuidv4 } from 'uuid';
 import { PlusCircleOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
+import { useNamespaceApi } from '@/app/ops-analysis/api/namespace';
 import { useTranslation } from '@/utils/i18n';
 import {
   OperateModalProps,
   ParamItem,
 } from '@/app/ops-analysis/types/dataSource';
+import { NamespaceItem } from '@/app/ops-analysis/types/namespace';
 import {
   Drawer,
   Form,
@@ -20,6 +22,8 @@ import {
   Button,
   DatePicker,
   Switch,
+  Checkbox,
+  Spin,
   message,
 } from 'antd';
 
@@ -89,7 +93,10 @@ const OperateModal: React.FC<OperateModalProps> = ({
   const [params, setParams] = React.useState<ParamItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [duplicateNames, setDuplicateNames] = React.useState<string[]>([]);
+  const [namespaceList, setNamespaceList] = React.useState<NamespaceItem[]>([]);
+  const [namespaceLoading, setNamespaceLoading] = React.useState(false);
   const { createDataSource, updateDataSource } = useDataSourceApi();
+  const { getNamespaceList } = useNamespaceApi();
 
   const paramTypeOptions = [
     { label: t('dataSource.paramTypes.string'), value: 'string' },
@@ -114,18 +121,41 @@ const OperateModal: React.FC<OperateModalProps> = ({
     alias_name: '',
   });
 
+  const fetchNamespaces = async () => {
+    try {
+      setNamespaceLoading(true);
+      const data = await getNamespaceList({ page_size: -1 });
+      if (data && Array.isArray(data)) {
+        setNamespaceList(data);
+        if (!currentRow && data.length > 0) {
+          form.setFieldsValue({ namespaces: [data[0].id] });
+        }
+      }
+    } catch (error) {
+      console.error('获取命名空间列表失败:', error);
+    } finally {
+      setNamespaceLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!open) return;
 
     form.resetFields();
     setDuplicateNames([]);
+    fetchNamespaces();
 
     if (!currentRow) {
       setParams([createDefaultParam()]);
       return;
     }
 
-    form.setFieldsValue(currentRow);
+    const formValues = {
+      ...currentRow,
+      namespaces: currentRow.namespaces || [],
+    };
+    form.setFieldsValue(formValues);
+
     const hasValidParams =
       currentRow.params &&
       Array.isArray(currentRow.params) &&
@@ -361,7 +391,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
       width: 200,
       render: (text: any, record: ParamItem) => {
         const type = record.type || 'string';
-        const isFixed = record.filterType === 'fixed';
+        const isFixed = record.name && record.filterType === 'fixed';
         const commonProps = {
           style: {
             width: '100%',
@@ -495,6 +525,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
 
       const submitData = {
         ...values,
+        namespaces: values.namespaces || [],
         params: params
           .filter((param) => param.name && param.name.trim())
           .map((param) => ({
@@ -568,6 +599,31 @@ const OperateModal: React.FC<OperateModalProps> = ({
           rules={[{ required: true, message: t('common.inputMsg') }]}
         >
           <Input placeholder={t('common.inputMsg')} />
+        </Form.Item>
+        <Form.Item
+          name="namespaces"
+          label={t('namespace.title')}
+          rules={[
+            {
+              required: true,
+              type: 'array',
+              min: 1,
+              message: t('common.selectMsg'),
+            },
+          ]}
+        >
+          <Checkbox.Group
+            options={namespaceList.map((ns) => ({
+              label: ns.name,
+              value: ns.id,
+            }))}
+            disabled={namespaceLoading}
+          />
+          {namespaceLoading && (
+            <div style={{ textAlign: 'center', padding: '8px 0' }}>
+              <Spin size="small" />
+            </div>
+          )}
         </Form.Item>
         <Form.Item name="desc" label={t('dataSource.describe')}>
           <Input.TextArea rows={3} placeholder={t('common.inputMsg')} />

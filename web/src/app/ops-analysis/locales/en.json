@@ -1,5 +1,5 @@
 {
-  "sidebar": {
+  "opsAnalysisSidebar": {
     "title": "Directory Management",
     "addDir": "Add Directory",
     "addDash": "Add Dashboard",
@@ -13,7 +13,9 @@
     "inputPlaceholder": "Please enter name",
     "nameLabel": "Name",
     "descLabel": "Description",
-    "selectItem": "Please select a dashboard or topology"
+    "selectItem": "Please select a dashboard or topology",
+    "unsavedChanges": "Are you sure you want to leave?",
+    "unsavedChangesWarning": "You have unsaved changes. If you leave now, your changes will be lost."
   },
   "dashboard": {
     "addComponent": "Add Component",
@@ -64,8 +66,8 @@
       "string": "String",
       "number": "Number",
       "date": "Date",
-    "boolean": "Boolean",
-    "timeRange": "Time Range"
+      "boolean": "Boolean",
+      "timeRange": "Time Range"
     },
     "filterTypes": {
       "filter": "Filter",
@@ -82,7 +84,7 @@
     "createDataSourceSuccess": "Data source created successfully",
     "operationFailed": "Operation failed"
   },
-"namespace": {
+  "namespace": {
     "title": "Namespace",
     "name": "Name",
     "account": "Account",
@@ -95,7 +97,7 @@
     "updateNamespaceSuccess": "Namespace updated successfully",
     "createNamespaceSuccess": "Namespace created successfully",
     "operationFailed": "Operation failed"
-},
+  },
   "topology": {
     "edgeView": "Edge View",
     "edgeConfig": "Edge Configuration",

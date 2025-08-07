@@ -7,7 +7,7 @@ import Topology from './topology/index';
 import { useTranslation } from '@/utils/i18n';
 import { DirectoryType, SidebarRef } from '@/app/ops-analysis/types';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
-import { Button, Empty } from 'antd';
+import { Button, Empty, Modal } from 'antd';
 import { useRouter, usePathname } from 'next/navigation';
 
 interface ViewLayoutProps {
@@ -27,7 +27,13 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
     dashboard: null,
     topology: null,
   });
+  const dashboardRef = useRef<any>(null);
+  const topologyRef = useRef<any>(null);
   const sidebarRef = useRef<SidebarRef>(null);
+  const previousSelectionRef = useRef<{
+    type: DirectoryType;
+    item: any;
+  } | null>(null);
 
   const isInSettings = pathname.includes('/settings');
 
@@ -43,6 +49,72 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
     }
   };
 
+  // 检查是否需要显示未保存更改提示
+  const checkUnsavedChanges = () => {
+    if (selectedType === 'dashboard' && dashboardRef.current) {
+      return dashboardRef.current.hasUnsavedChanges();
+    }
+    if (selectedType === 'topology' && topologyRef.current) {
+      return topologyRef.current.hasUnsavedChanges();
+    }
+    return false;
+  };
+
+  // 处理导航
+  const handleNavigation = (type: DirectoryType, itemInfo: any) => {
+    const isLeavingContentPage =
+      (selectedType === 'dashboard' || selectedType === 'topology') &&
+      (type === 'settings' ||
+        type !== selectedType ||
+        (type === selectedType &&
+          itemInfo?.id !== selectedItem[selectedType]?.id));
+
+    if (isLeavingContentPage && checkUnsavedChanges()) {
+      // 记录当前选中状态
+      previousSelectionRef.current = {
+        type: selectedType,
+        item: selectedItem[selectedType],
+      };
+
+      Modal.confirm({
+        title: t('opsAnalysisSidebar.unsavedChanges'),
+        content: t('opsAnalysisSidebar.unsavedChangesWarning'),
+        okText: t('common.confirm'),
+        cancelText: t('common.cancel'),
+        okType: 'danger',
+        centered: true,
+        onOk: () => {
+          performNavigation(type, itemInfo);
+        },
+        onCancel: () => {
+          if (previousSelectionRef.current && sidebarRef.current) {
+            const { item: prevItem } = previousSelectionRef.current;
+            if (prevItem) {
+              setTimeout(() => {
+                sidebarRef.current?.setSelectedKeys([prevItem.id]);
+              }, 0);
+            }
+          }
+        },
+      });
+    } else {
+      performNavigation(type, itemInfo);
+    }
+  };
+
+  // 执行导航
+  const performNavigation = (type: DirectoryType, itemInfo: any) => {
+    setSelectedType(type);
+    setSelectedItem({
+      dashboard: type === 'dashboard' ? itemInfo : null,
+      topology: type === 'topology' ? itemInfo : null,
+    });
+    if (type === 'settings') {
+      router.push('/ops-analysis/view/settings/dataSource');
+    } else {
+      router.push('/ops-analysis/view');
+    }
+  };
 
   return (
     <div
@@ -63,18 +135,7 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
         <div className="w-full h-full overflow-hidden bg-[var(--color-bg-1)]">
           <Sidebar
             ref={sidebarRef}
-            onSelect={(type, itemInfo) => {
-              setSelectedType(type);
-              setSelectedItem({
-                dashboard: type === 'dashboard' ? itemInfo : null,
-                topology: type === 'topology' ? itemInfo : null,
-              });
-              if (type === 'settings') {
-                router.push('/ops-analysis/view/settings/dataSource');
-              } else {
-                router.push('/ops-analysis/view');
-              }
-            }}
+            onSelect={handleNavigation}
             onDataUpdate={handleSidebarDataUpdate}
           />
         </div>
@@ -94,13 +155,19 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
         {isInSettings ? (
           children
         ) : selectedType === 'topology' ? (
-          <Topology selectedTopology={selectedItem.topology} />
+          <Topology
+            ref={topologyRef}
+            selectedTopology={selectedItem.topology}
+          />
         ) : selectedType === 'dashboard' ? (
-          <Dashboard selectedDashboard={selectedItem.dashboard} />
+          <Dashboard
+            ref={dashboardRef}
+            selectedDashboard={selectedItem.dashboard}
+          />
         ) : (
           <Empty
             className="w-full mt-[20vh]"
-            description={t('sidebar.selectItem')}
+            description={t('opsAnalysisSidebar.selectItem')}
           />
         )}
       </div>

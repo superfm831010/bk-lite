@@ -36,7 +36,7 @@ const OperateModal: React.FC<NamespaceOperateModalProps> = ({
         account: values.account,
         password: values.password,
         domain: values.domain,
-        describe: values.describe || '',
+        desc: values.desc || '',
       };
 
       if (currentRow) {
@@ -101,7 +101,7 @@ const OperateModal: React.FC<NamespaceOperateModalProps> = ({
           label={t('namespace.account')}
           rules={[{ required: true, message: t('common.inputMsg') }]}
         >
-          <Input placeholder={t('common.inputMsg')} />
+          <Input placeholder={t('common.inputMsg')} autoComplete="off" />
         </Form.Item>
 
         <Form.Item
@@ -109,7 +109,10 @@ const OperateModal: React.FC<NamespaceOperateModalProps> = ({
           label={t('namespace.password')}
           rules={[{ required: true, message: t('common.inputMsg') }]}
         >
-          <Input.Password placeholder={t('common.inputMsg')} />
+          <Input.Password
+            placeholder={t('common.inputMsg')}
+            autoComplete="new-password"
+          />
         </Form.Item>
 
         <Form.Item
@@ -120,7 +123,7 @@ const OperateModal: React.FC<NamespaceOperateModalProps> = ({
           <Input placeholder={t('common.inputMsg')} />
         </Form.Item>
 
-        <Form.Item name="describe" label={t('namespace.describe')}>
+        <Form.Item name="desc" label={t('namespace.describe')}>
           <Input.TextArea placeholder={t('common.inputMsg')} rows={4} />
         </Form.Item>
       </Form>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import dayjs from 'dayjs';
 import ComponentSelector from './components/compSelector';
 import ComponentConfig from './components/baseConfig';
@@ -21,13 +21,18 @@ interface DashboardProps {
   selectedDashboard?: DirItem | null;
 }
 
+export interface DashboardRef {
+  hasUnsavedChanges: () => boolean;
+}
+
 const ResponsiveGridLayout = WidthProvider(GridLayout);
 
-const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
+const Dashboard = forwardRef<DashboardRef, DashboardProps>(({ selectedDashboard }, ref) => {
   const { t } = useTranslation();
   const { getDashboardDetail, saveDashboard } = useDashBoardApi();
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [layout, setLayout] = useState<LayoutItem[]>([]);
+  const [originalLayout, setOriginalLayout] = useState<LayoutItem[]>([]);
   const [configDrawerVisible, setConfigDrawerVisible] = useState(false);
   const [currentConfigItem, setCurrentConfigItem] = useState<any>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -60,11 +65,11 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
     );
   });
 
-  // 加载仪表盘数据
   useEffect(() => {
     const loadDashboardData = async () => {
       if (!selectedDashboard) {
         setLayout([]);
+        setOriginalLayout([]);
         return;
       }
       try {
@@ -74,12 +79,15 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
         );
         if (dashboardData.view_sets && Array.isArray(dashboardData.view_sets)) {
           setLayout(dashboardData.view_sets);
+          setOriginalLayout([...dashboardData.view_sets]); 
         } else {
           setLayout([]);
+          setOriginalLayout([]);
         }
       } catch (error) {
         console.error('加载仪表盘数据失败:', error);
         setLayout([]);
+        setOriginalLayout([]);
       } finally {
         setLoading(false);
       }
@@ -88,6 +96,22 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
   }, [selectedDashboard?.data_id]);
 
   const openAddModal = () => setAddModalVisible(true);
+
+  // 检查是否有未保存的更改
+  const hasUnsavedChanges = () => {
+    if (originalLayout.length === 0 && layout.length === 0) return false;
+    try {
+      return JSON.stringify(layout) !== JSON.stringify(originalLayout);
+    } catch (error) {
+      console.error('检查未保存更改时出错:', error);
+      return false;
+    }
+  };
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    hasUnsavedChanges,
+  }));
 
   const handleTimeChange = (timeData: any) => {
     setGlobalTimeRange(timeData);
@@ -148,6 +172,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
         view_sets: layout,
       };
       await saveDashboard(selectedDashboard.data_id, saveData);
+      setOriginalLayout([...layout]);
       message.success(t('common.saveSuccess'));
     } catch (error) {
       console.error('保存仪表盘失败:', error);
@@ -361,6 +386,8 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedDashboard }) => {
       />
     </div>
   );
-};
+});
+
+Dashboard.displayName = 'Dashboard';
 
 export default Dashboard;

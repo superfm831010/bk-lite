@@ -18,6 +18,7 @@ export interface SidebarProps {
 
 export interface SidebarRef {
   clearSelection: () => void;
+  setSelectedKeys: (keys: React.Key[]) => void;
 }
 
 export interface ApiDirectoryItem {

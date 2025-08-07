@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Button, Drawer, Spin } from 'antd';
 import { useTopologyState } from './hooks/useTopologyState';
 import { useGraphOperations } from './hooks/useGraphOperations';
@@ -16,7 +16,11 @@ interface TopologyProps {
   selectedTopology?: DirItem | null;
 }
 
-const Topology: React.FC<TopologyProps> = ({ selectedTopology }) => {
+export interface TopologyRef {
+  hasUnsavedChanges: () => boolean;
+}
+
+const Topology = forwardRef<TopologyRef, TopologyProps>(({ selectedTopology }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const state = useTopologyState();
@@ -47,6 +51,16 @@ const Topology: React.FC<TopologyProps> = ({ selectedTopology }) => {
   const handleSave = () => {
     handleSaveTopology(selectedTopology);
   };
+
+  // 是否处于编辑模式
+  const hasUnsavedChanges = () => {
+    return state.isEditMode;
+  };
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    hasUnsavedChanges,
+  }));
 
   useEffect(() => {
     if (selectedTopology?.data_id && state.graphInstance) {
@@ -161,6 +175,8 @@ const Topology: React.FC<TopologyProps> = ({ selectedTopology }) => {
       </Drawer>
     </div>
   );
-};
+});
+
+Topology.displayName = 'Topology';
 
 export default Topology;

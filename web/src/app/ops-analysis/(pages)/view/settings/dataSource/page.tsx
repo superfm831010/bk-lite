@@ -82,10 +82,11 @@ const Datasource: React.FC = () => {
 
   const handleDelete = (row: DatasourceItem) => {
     Modal.confirm({
-      title: t('common.confirmDelete'),
-      content: `${t('common.confirmDeleteMsg')} "${row.name}"?`,
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
       okText: t('common.confirm'),
       cancelText: t('common.cancel'),
+      centered: true,
       onOk: async () => {
         try {
           await deleteDataSource(row.id);
@@ -208,7 +209,7 @@ const Datasource: React.FC = () => {
           dataSource={filteredList}
           pagination={pagination}
           onChange={handleTableChange}
-          scroll={{ y: 'calc(100vh - 360px)' }}
+          scroll={{ y: 'calc(100vh - 410px)' }}
         />
         <OperateModal
           open={modalVisible}
