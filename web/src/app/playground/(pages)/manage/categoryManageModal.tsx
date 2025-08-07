@@ -43,6 +43,7 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, title, form }) => {
+      console.log(type);
       setOpen(true);
       setType(type);
       setTitle(title as string);
@@ -68,6 +69,11 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
       });
     };
     await renderServingsOption();
+    // else if (formData && type.trim().startsWith('add')) {
+    //   formRef.current?.setFieldsValue({
+    //     parent: formData?.id
+    //   });
+    // }
   }, [type, formData]);
 
   const handleAdd: Record<string, any> = {
@@ -103,7 +109,7 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
       }
     } catch (e) {
       console.log(e);
-      message.error('获取模型失败');
+      message.error(t(`manage.modelInferFailed`));
     } finally {
       setSelectLoading(false);
       
@@ -113,13 +119,15 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
   const handleSubmit = async () => {
     setConfirm(true);
     try {
-      if (!formData?.categoryID && type === 'addCapability') return message.error('参数错误');
+      if (!formData?.categoryID && type === 'addCapability') return message.error(t(`manage.missID`));
       const data = await formRef.current?.validateFields();
       const params = {
         ...data,
         config: servingConfig,
-        category: formData?.categoryID
+        // category: formData?.categoryID
+        category: 4
       };
+      console.log(params);
       if (type.trim().startsWith('add')) {
         await handleAdd[type](params);
       } else {
