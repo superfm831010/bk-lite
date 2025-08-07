@@ -19,7 +19,6 @@
           "name": "alert_list1"
         },
         {
-          "icon": "mulu",
           "title": "策略",
           "url": "/log/event/strategy",
           "name": "strategy_list",
@@ -94,7 +93,6 @@
           "name": "alert_list1"
         },
         {
-          "icon": "mulu",
           "title": "Strategy",
           "url": "/log/event/strategy",
           "name": "strategy_list",
