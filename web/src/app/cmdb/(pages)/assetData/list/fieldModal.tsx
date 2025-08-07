@@ -13,7 +13,6 @@ import {
   Form,
   message,
   Select,
-  Cascader,
   DatePicker,
   Col,
   Row,
@@ -21,11 +20,9 @@ import {
 } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import { useTranslation } from '@/utils/i18n';
-import {
-  AttrFieldType,
-  Organization,
-  UserItem,
-} from '@/app/cmdb/types/assetManage';
+import GroupTreeSelector from '@/components/group-tree-select';
+import { useUserInfoContext } from '@/context/userInfo';
+import { AttrFieldType, UserItem } from '@/app/cmdb/types/assetManage';
 import { deepClone } from '@/app/cmdb/utils/common';
 import { useInstanceApi } from '@/app/cmdb/api';
 import dayjs from 'dayjs';
@@ -33,7 +30,6 @@ import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
 interface FieldModalProps {
   onSuccess: (instId?: string) => void;
-  organizationList: Organization[];
   userList: UserItem[];
 }
 
@@ -52,7 +48,8 @@ export interface FieldModalRef {
 }
 
 const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
-  ({ onSuccess, userList, organizationList }, ref) => {
+  ({ onSuccess, userList }, ref) => {
+    const { selectedGroup } = useUserInfoContext();
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [subTitle, setSubTitle] = useState<string>('');
@@ -130,15 +127,19 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
         const forms = deepClone(formInfo);
         if (type === 'add') {
           Object.assign(forms, {
-            organization: organizationList[0]?.value
-              ? [organizationList[0]?.value]
-              : '',
+            organization: selectedGroup?.id ? [Number(selectedGroup.id)] : [],
           });
         } else {
           for (const key in forms) {
             const target = attrList.find((item) => item.attr_id === key);
             if (target?.attr_type === 'time' && forms[key]) {
               forms[key] = dayjs(forms[key], 'YYYY-MM-DD HH:mm:ss');
+            } else if (target?.attr_type === 'organization' && forms[key]) {
+              if (Array.isArray(forms[key])) {
+                forms[key] = forms[key]
+                  .map((item: any) => Number(item))
+                  .filter((num: number) => !isNaN(num));
+              }
             }
           }
         }
@@ -279,11 +280,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             );
           case 'organization':
             return (
-              <Cascader
-                showSearch
-                disabled={fieldDisabled}
-                options={organizationList}
-              />
+              <GroupTreeSelector multiple={false} disabled={fieldDisabled} />
             );
           case 'int':
             return (

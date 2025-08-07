@@ -16,6 +16,8 @@ import { useCommon } from '@/app/cmdb/context/common';
 import { FieldModalRef } from '@/app/cmdb/types/assetManage';
 import { useTranslation } from '@/utils/i18n';
 import { ModelItem } from '@/app/cmdb/types/autoDiscovery';
+import GroupTreeSelector from '@/components/group-tree-select';
+
 import {
   CYCLE_OPTIONS,
   NETWORK_DEVICE_OPTIONS,
@@ -40,7 +42,6 @@ import {
   Select,
   Dropdown,
   Drawer,
-  Cascader,
 } from 'antd';
 
 interface TableItem {
@@ -71,7 +72,7 @@ export interface BaseTaskRef {
   selectedData: TableItem[];
   ipRange: string[];
   collectionType: string;
-  organization: string[];
+  organization: number[];
   initCollectionType: (value: any, type: string) => void;
 }
 
@@ -102,8 +103,6 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     const form = Form.useFormInstance();
     const fieldRef = useRef<FieldModalRef>(null);
     const commonContext = useCommon();
-    const authList = useRef(commonContext?.authOrganizations || []);
-    const organizationList = authList.current;
     const users = useRef(commonContext?.userList || []);
     const userList = users.current;
     const [instOptLoading, setOptLoading] = useState(false);
@@ -126,7 +125,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     );
     const [instData, setInstData] = useState<any[]>([]);
     const [instLoading, setInstLoading] = useState(false);
-    const [ipRangeOrg, setIpRangeOrg] = useState<string[]>([]);
+    const [ipRangeOrg, setIpRangeOrg] = useState<number[]>([]);
     const [selectedInstIds, setSelectedInstIds] = useState<number[]>([]);
     const [instPagination, setInstPagination] = useState({
       current: 1,
@@ -521,11 +520,11 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                         },
                       ]}
                     >
-                      <Cascader
+                      <GroupTreeSelector
                         placeholder={t('common.selectTip')}
-                        options={organizationList}
                         value={ipRangeOrg}
                         onChange={(value) => setIpRangeOrg(value)}
+                        multiple={false}
                       />
                     </Form.Item>
                   </>
@@ -659,7 +658,6 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         <FieldModal
           ref={fieldRef}
           userList={userList}
-          organizationList={organizationList}
           onSuccess={() => fetchOptions()}
         />
 

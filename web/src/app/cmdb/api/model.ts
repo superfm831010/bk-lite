@@ -51,6 +51,9 @@ export const useModelApi = () => {
   const getModelAssociationTypes = () =>
     get('/cmdb/api/model/model_association_type/');
 
+  const getModelDetail = (modelId: string) =>
+    get(`/cmdb/api/model/get_model_info/${modelId}/`);
+
   return {
     getModelList,
     createModel,
@@ -64,5 +67,6 @@ export const useModelApi = () => {
     createModelAssociation,
     deleteModelAssociation,
     getModelAssociationTypes,
+    getModelDetail
   };
 };
