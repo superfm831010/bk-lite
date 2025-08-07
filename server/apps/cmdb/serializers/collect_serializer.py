@@ -5,6 +5,7 @@
 from rest_framework import serializers
 from rest_framework.fields import empty
 
+from apps.cmdb.constants import VIEW, OPERATE
 from apps.cmdb.models.collect_model import CollectModels, OidMapping
 from apps.cmdb.utils.base import get_cmdb_rules
 from apps.core.logger import cmdb_logger as logger
@@ -68,6 +69,8 @@ class CollectModelLIstSerializer(serializers.ModelSerializer):
 
     def get_permission(self, obj):
         try:
+            if obj.created_by == self.context["request"].user.username or not self.permission_map:
+                return [VIEW, OPERATE]
             if obj.task_type not in self.permission_map:
                 return []
             permission_data = self.permission_map[obj.task_type]
