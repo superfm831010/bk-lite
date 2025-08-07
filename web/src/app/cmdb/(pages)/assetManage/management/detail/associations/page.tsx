@@ -17,7 +17,7 @@ import { useModelApi, useClassificationApi } from '@/app/cmdb/api';
 import { useTranslation } from '@/utils/i18n';
 import { deepClone } from '@/app/cmdb/utils/common';
 import PermissionWrapper from '@/components/permission';
-import { useModelDetail } from '../layout';
+import { useModelDetail } from '../context';
 
 const { confirm } = Modal;
 
@@ -158,8 +158,10 @@ const Associations: React.FC = () => {
 
   const showDeleteConfirm = (id: string) => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {

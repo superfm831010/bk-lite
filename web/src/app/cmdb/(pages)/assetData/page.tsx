@@ -348,8 +348,10 @@ const AssetDataContent = () => {
 
   const showDeleteConfirm = (row = { _id: '' }) => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
@@ -373,8 +375,10 @@ const AssetDataContent = () => {
 
   const batchDeleteConfirm = () => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
