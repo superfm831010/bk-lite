@@ -1,7 +1,9 @@
 from django.db import models
 
+from apps.core.mixinx import EncryptMixin
 
-class OCRProvider(models.Model):
+
+class OCRProvider(models.Model, EncryptMixin):
     name = models.CharField(max_length=255, verbose_name="名称")
     ocr_config = models.JSONField(
         verbose_name="OCR配置",
@@ -20,3 +22,9 @@ class OCRProvider(models.Model):
         verbose_name = "OCR模型"
         verbose_name_plural = verbose_name
         db_table = "model_provider_mgmt_ocrprovider"
+
+    def save(self, *args, **kwargs):
+        if "api_key" in self.ocr_config:
+            self.decrypt_field("api_key", self.ocr_config)
+            self.encrypt_field("api_key", self.ocr_config)
+        super().save(*args, **kwargs)
