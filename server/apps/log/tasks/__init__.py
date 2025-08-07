@@ -1,0 +1,1 @@
+from apps.log.tasks.policy import scan_log_policy_task
