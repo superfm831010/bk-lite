@@ -207,8 +207,7 @@ const CustomQAForm = forwardRef<any, CustomQAFormProps>(({
           name="name"
           label={t('knowledge.qaPairs.customName')}
           rules={[
-            { required: true, message: t('common.required') },
-            { max: 100, message: `${t('common.maxLength')} 100` }
+            { required: true, message: t('common.required') }
           ]}
         >
           <Input 

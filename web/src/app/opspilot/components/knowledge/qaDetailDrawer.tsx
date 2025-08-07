@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Drawer, Button, Input, Popconfirm, message } from 'antd';
-import { EditOutlined, CheckOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EditOutlined, CheckOutlined, DeleteOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 
 const { TextArea } = Input;
@@ -33,6 +33,8 @@ const QADetailDrawer: React.FC<QADetailDrawerProps> = ({
   const [editingAnswer, setEditingAnswer] = useState(false);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
+  const [originalQuestion, setOriginalQuestion] = useState('');
+  const [originalAnswer, setOriginalAnswer] = useState('');
   const [updateLoading, setUpdateLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -40,6 +42,8 @@ const QADetailDrawer: React.FC<QADetailDrawerProps> = ({
     if (visible && qaPair) {
       setQuestion(qaPair.question);
       setAnswer(qaPair.answer);
+      setOriginalQuestion(qaPair.question);
+      setOriginalAnswer(qaPair.answer);
       setEditingQuestion(false);
       setEditingAnswer(false);
     }
@@ -53,6 +57,16 @@ const QADetailDrawer: React.FC<QADetailDrawerProps> = ({
     setEditingAnswer(!editingAnswer);
   };
 
+  const handleQuestionCancel = () => {
+    setQuestion(originalQuestion);
+    setEditingQuestion(false);
+  };
+
+  const handleAnswerCancel = () => {
+    setAnswer(originalAnswer);
+    setEditingAnswer(false);
+  };
+
   const handleQuestionUpdate = async () => {
     if (!qaPair) return;
     
@@ -63,6 +77,7 @@ const QADetailDrawer: React.FC<QADetailDrawerProps> = ({
         question
       });
       message.success(t('common.updateSuccess'));
+      setOriginalQuestion(question);
       setEditingQuestion(false);
     } catch (error) {
       console.error('Failed to update question:', error);
@@ -82,6 +97,7 @@ const QADetailDrawer: React.FC<QADetailDrawerProps> = ({
         answer
       });
       message.success(t('common.updateSuccess'));
+      setOriginalAnswer(answer);
       setEditingAnswer(false);
     } catch (error) {
       console.error('Failed to update answer:', error);
@@ -111,7 +127,7 @@ const QADetailDrawer: React.FC<QADetailDrawerProps> = ({
 
   return (
     <Drawer
-      title={t('knowledge.qaPairs.detail')}
+      title={t('common.viewDetails')}
       placement="right"
       width={600}
       open={visible}
@@ -144,13 +160,34 @@ const QADetailDrawer: React.FC<QADetailDrawerProps> = ({
             <h3 className="font-medium flex items-center">
               Q:
             </h3>
-            <Button
-              type="text"
-              icon={editingQuestion ? <CheckOutlined /> : <EditOutlined />}
-              onClick={editingQuestion ? handleQuestionUpdate : handleQuestionEditToggle}
-              loading={updateLoading}
-            >
-            </Button>
+            <div className="flex items-center gap-1">
+              {editingQuestion ? (
+                <>
+                  <Button
+                    type="text"
+                    icon={<CheckOutlined />}
+                    onClick={handleQuestionUpdate}
+                    loading={updateLoading}
+                    size="small"
+                    className="text-green-600"
+                  />
+                  <Button
+                    type="text"
+                    icon={<CloseOutlined />}
+                    onClick={handleQuestionCancel}
+                    size="small"
+                    className="text-red-500"
+                  />
+                </>
+              ) : (
+                <Button
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={handleQuestionEditToggle}
+                  size="small"
+                />
+              )}
+            </div>
           </div>
           
           {editingQuestion ? (
@@ -168,18 +205,40 @@ const QADetailDrawer: React.FC<QADetailDrawerProps> = ({
           )}
         </div>
 
+        {/* 答案编辑区域 */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h3 className="font-medium flex items-center">
               A:
             </h3>
-            <Button
-              type="text"
-              icon={editingAnswer ? <CheckOutlined /> : <EditOutlined />}
-              onClick={editingAnswer ? handleAnswerUpdate : handleAnswerEditToggle}
-              loading={updateLoading}
-            >
-            </Button>
+            <div className="flex items-center gap-1">
+              {editingAnswer ? (
+                <>
+                  <Button
+                    type="text"
+                    icon={<CheckOutlined />}
+                    onClick={handleAnswerUpdate}
+                    loading={updateLoading}
+                    size="small"
+                    className="text-green-600"
+                  />
+                  <Button
+                    type="text"
+                    icon={<CloseOutlined />}
+                    onClick={handleAnswerCancel}
+                    size="small"
+                    className="text-red-500"
+                  />
+                </>
+              ) : (
+                <Button
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={handleAnswerEditToggle}
+                  size="small"
+                />
+              )}
+            </div>
           </div>
           
           {editingAnswer ? (

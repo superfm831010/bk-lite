@@ -113,8 +113,7 @@ const QAEditDrawer: React.FC<QAEditDrawerProps> = ({
           name="question"
           label={t('knowledge.qaPairs.question')}
           rules={[
-            { required: true, message: t('common.required') },
-            { max: 500, message: `${t('common.maxLength')} 500` }
+            { required: true, message: t('common.required') }
           ]}
         >
           <TextArea
@@ -127,8 +126,7 @@ const QAEditDrawer: React.FC<QAEditDrawerProps> = ({
           name="answer"
           label={t('knowledge.qaPairs.answer')}
           rules={[
-            { required: true, message: t('common.required') },
-            { max: 2000, message: `${t('common.maxLength')} 2000` }
+            { required: true, message: t('common.required') }
           ]}
         >
           <TextArea
