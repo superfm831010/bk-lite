@@ -14,6 +14,9 @@
     "onlineStatus": "enable"
   },
   "manage": {
+    "modelExperience": "Model Experience",
+    "intelligentExperience": "Intelligent Experience",
+    "anomalyDetection": "Anomaly Detection",
     "delCapability": "Deltee Capability",
     "delCapabilityText": "Are you sure you want to delete this capability demo?",
     "manageTitle": "Portal Management",
@@ -25,6 +28,9 @@
     "createAt": "Create at",
     "createdBy": "Created by",
     "sampleStatus": "Start/Stop",
-    "isActive": "Enable"
+    "isActive": "Enable",
+    "getSampleFileError": "Error retrieving sample file",
+    "missID": "Missing classification ID",
+    "modelInferFailed": "Model inference failed"
   }
 }

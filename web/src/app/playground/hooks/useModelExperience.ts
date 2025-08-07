@@ -18,20 +18,20 @@ const useModelExperience = (shouldLoad: boolean = true) => {
 
     const loadData = async () => {
       try {
-        const servingsList = await get(`/mlops/anomaly_detection_servings/`);
+        const capabilityList = await get(`/playground/capability/`);
 
         if (isCancelled) return;
 
-        if (!servingsList) {
+        if (!capabilityList) {
           throw new Error('fetch menu error');
         }
 
-        const data = servingsList.map((item: any) => {
+        const data = capabilityList.filter((item: any) => item.category?.id === 4).map((item: any) => {
           return {
             id: item.id,
             name: item?.name || 'Unnamed',
             description: item?.description || '',
-            url: `/playground/home?page=anomaly-detection&id=${item?.id}&name=${item?.name}&description=${item.description}`,
+            url: item?.url + `?page=anomaly-detection&id=${item?.id}&name=${item?.name}&description=${item.description}`,
           };
         });
 

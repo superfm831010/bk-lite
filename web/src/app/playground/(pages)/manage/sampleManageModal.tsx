@@ -91,22 +91,23 @@ const SampleManageModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess },
         setConfirmLoading(false);
         return message.error(t('datasets.pleaseUpload'));
       }
-      const [serving_id] = formData?.serving_id;
-
+      const [capability] = formData?.capability;
       const text = await file?.originFileObj.text();
       const data: TrainDataParams[] = handleFileRead(text);
       const train_data = data.map(item => ({ timestamp: item.timestamp, value: item.value }));
       const params = {
         name: file.name,
-        serving: serving_id,
+        capability,
         train_data: train_data,
         is_active: checked,
       };
       await createSampleFile(params);
+      console.log(params);
       setConfirmLoading(false);
       setVisiable(false);
       message.success(t('datasets.uploadSuccess'));
       onSuccess();
+
     } catch (e) {
       console.log(e);
       message.error(t('common.error'))

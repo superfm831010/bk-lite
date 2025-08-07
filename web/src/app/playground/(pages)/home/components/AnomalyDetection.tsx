@@ -19,7 +19,7 @@ const AnomalyDetection = () => {
   const { convertToLocalizedTime } = useLocalizedTime();
   const {
     anomalyDetectionReason,
-    getServingsDetail,
+    getCapabilityDetail,
     getSampleFileOfServing,
     getSampleFileDetail
   } = usePlayroundApi();
@@ -137,15 +137,15 @@ const AnomalyDetection = () => {
   const getConfigData = async () => {
     const id = searchParams.get('id') || '';
     try {
-      const data = await getServingsDetail(id);
+      const data = await getCapabilityDetail(id);
       const sampleList = await getSampleFileOfServing(id);
       const options = sampleList.filter((item: any) => item?.is_active).map((item: any) => ({
         label: item?.name,
         value: item?.id,
       }));
       setSampleOptions(options);
-      setServingData(data);
-      handleSubmit(data);
+      setServingData(data?.config);
+      handleSubmit(data?.config);
     } catch (e) {
       console.log(e);
     }
@@ -219,14 +219,14 @@ const AnomalyDetection = () => {
   };
 
   const handleSubmit = useCallback(async (serving = servingData) => {
-    console.log(selectId, fileData);
+    console.log(selectId, fileData, serving);
     if (!chartData) { return message.error(t(`playground-common.uploadMsg`)) };
     if (chartLoading) return;
     setChartLoading(true);
     try {
       const params = {
-        serving_id: serving.id,
-        model_name: `RandomForest_${serving.id}`,
+        serving_id: serving.serving_id,
+        model_name: `RandomForest_${serving.serving_id}`,
         algorithm: "RandomForest",
         model_version: serving.model_version,
         anomaly_threshold: serving.anomaly_threshold,
@@ -298,7 +298,7 @@ const AnomalyDetection = () => {
                 <Upload {...props}>
                   <Button size="large" className="rounded-none text-sm">{t(`playground-common.localUpload`)}</Button>
                 </Upload>
-                <Button size="large" className="rounded-none ml-4 text-sm" type="primary" onClick={handleSubmit}>{t(`playground-common.clickTest`)}</Button>
+                <Button size="large" className="rounded-none ml-4 text-sm" type="primary" onClick={() => handleSubmit(servingData)}>{t(`playground-common.clickTest`)}</Button>
               </div>
             </div>
           </div>
