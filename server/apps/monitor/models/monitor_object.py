@@ -38,7 +38,7 @@ class MonitorInstance(TimeInfo, MaintainerInfo):
 
 class MonitorInstanceOrganization(TimeInfo, MaintainerInfo):
     monitor_instance = models.ForeignKey(MonitorInstance, on_delete=models.CASCADE, verbose_name='监控对象实例')
-    organization = models.CharField(max_length=100, verbose_name='组织id')
+    organization = models.IntegerField(verbose_name='组织id')
 
     class Meta:
         verbose_name = '监控对象实例组织'

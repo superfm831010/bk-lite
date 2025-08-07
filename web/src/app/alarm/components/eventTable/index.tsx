@@ -62,7 +62,7 @@ const EventTable: React.FC<EventTableProps> = ({
       },
     },
     {
-      title: t('common.time'),
+      title: t('alarmCommon.time'),
       dataIndex: 'start_time',
       key: 'start_time',
       width: 180,
@@ -108,7 +108,7 @@ const EventTable: React.FC<EventTableProps> = ({
       width: 120,
     },
     {
-      title: t('common.action'),
+      title: t('alarmCommon.action'),
       key: 'action',
       fixed: 'right',
       width: 100,
@@ -146,7 +146,21 @@ const EventTable: React.FC<EventTableProps> = ({
         width={600}
         onClose={() => setRawVisible(false)}
       >
-        <pre>{JSON.stringify(rawData, null, 2)}</pre>
+        <pre
+          style={{
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            overflow: 'auto',
+            maxHeight: 'calc(100vh - 120px)',
+            backgroundColor: '#f6f8fa',
+            padding: '16px',
+            borderRadius: '6px',
+            fontSize: '14px',
+            lineHeight: '1.5',
+          }}
+        >
+          {JSON.stringify(rawData, null, 2)}
+        </pre>
       </Drawer>
     </>
   );

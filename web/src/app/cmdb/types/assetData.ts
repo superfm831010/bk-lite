@@ -1,7 +1,6 @@
 import {
   AttrFieldType,
   ModelItem,
-  Organization,
   UserItem,
   AssoTypeItem
 } from '@/app/cmdb/types/assetManage';
@@ -50,7 +49,6 @@ export interface RecordDetailProps {
   userList: Array<any>;
   propertyList: AttrFieldType[];
   modelList: ModelItem[];
-  groupList: Organization[];
   enumList: RecordsEnum;
   connectTypeList: Array<AssoTypeItem>;
 }
@@ -63,14 +61,12 @@ export interface FieldConfig {
 
 export interface AssoListProps {
   userList: UserItem[];
-  organizationList: Organization[];
   modelList: ModelItem[]; 
   assoTypeList: AssoTypeItem[];
 }
 
 export interface SelectInstanceProps {
   userList: UserItem[];
-  organizationList: Organization[];
   models: ModelItem[];
   assoTypes: AssoTypeItem[];
   needFetchAssoInstIds?: boolean;
@@ -98,7 +94,6 @@ export interface FieldModalRef {
 
 export interface SearchFilterProps {
   attrList: AttrFieldType[];
-  organizationList: Organization[];
   proxyOptions: { proxy_id: string; proxy_name: string }[];
   userList: UserItem[];
   showExactSearch?: boolean;

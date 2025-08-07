@@ -1,5 +1,5 @@
 import os
-
+import logging
 from config.components.base import APP_CODE, BASE_DIR, DEBUG
 
 if DEBUG:
@@ -11,9 +11,40 @@ else:
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
+
+class IgnoreSpecificPaths(logging.Filter):
+    def filter(self, record):
+        msg = record.getMessage()
+        try:
+            path = msg.split(" ")[1]
+        except IndexError:
+            return True
+
+        # 前缀匹配
+        exclude_prefixes = [
+            "/node_mgmt/open_api/node",
+        ]
+        # 后缀匹配
+        exclude_suffixes = []
+        # 静态路径
+        exclude_paths = []
+
+        if any(path.startswith(prefix) for prefix in exclude_prefixes):
+            return False
+        if any(path.endswith(suffix) for suffix in exclude_suffixes):
+            return False
+        if path in exclude_paths:
+            return False
+        return True
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+            "ignore_paths": {
+                "()": IgnoreSpecificPaths,
+            },
+        },
     "formatters": {
         "simple": {
             "format": "%(levelname)s [%(asctime)s] [%(name)s] [%(filename)s:%(funcName)s:%(lineno)d] %(message)s",
@@ -31,6 +62,7 @@ LOGGING = {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "simple",
+            "filters": ["ignore_paths"],  # 添加 filter
         },
         "null": {"level": "DEBUG", "class": "logging.NullHandler"},
         "root": {
@@ -55,6 +87,11 @@ LOGGING = {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "verbose",
             "filename": os.path.join(log_dir, "cmdb.log"),
+        },
+        "operation_analysis": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "verbose",
+            "filename": os.path.join(log_dir, "operation_analysis.log"),
         },
         "monitor": {
             "class": "logging.handlers.RotatingFileHandler",
@@ -93,6 +130,7 @@ LOGGING = {
         "django.db.backends": {"handlers": ["db"], "level": "INFO", "propagate": True},
         "app": {"handlers": ["root", "console"], "level": "DEBUG", "propagate": True},
         "cmdb": {"handlers": ["cmdb", "console"], "level": "DEBUG", "propagate": True},
+        "operation_analysis": {"handlers": ["operation_analysis", "console"], "level": "DEBUG", "propagate": True},
         "monitor": {"handlers": ["monitor", "console"], "level": "DEBUG", "propagate": True},
         "node": {"handlers": ["node", "console"], "level": "DEBUG", "propagate": True},
         "ops-console": {"handlers": ["ops-console", "console"], "level": "DEBUG", "propagate": True},

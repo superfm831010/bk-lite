@@ -2,14 +2,8 @@ import React, { useState, useEffect } from 'react';
 import type { CheckboxProps } from 'antd';
 import searchFilterStyle from './searchFilter.module.scss';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
-import {
-  Select,
-  Input,
-  InputNumber,
-  Cascader,
-  Checkbox,
-  DatePicker,
-} from 'antd';
+import GroupTreeSelector from '@/components/group-tree-select';
+import { Select, Input, InputNumber, Checkbox, DatePicker } from 'antd';
 import { UserItem } from '@/app/cmdb/types/assetManage';
 import { useTranslation } from '@/utils/i18n';
 import { SearchFilterProps } from '@/app/cmdb/types/assetData';
@@ -18,7 +12,6 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
   attrList,
   userList,
   proxyOptions,
-  organizationList,
   showExactSearch = true,
   onSearch,
 }) => {
@@ -96,7 +89,7 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
     if (selectedAttr?.attr_id === 'cloud' && proxyOptions.length) {
       return (
         <Select
-          placeholder={t('common.pleaseSelect')}
+          placeholder={t('common.selectTip')}
           allowClear
           showSearch
           className="value"
@@ -191,15 +184,11 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
         );
       case 'organization':
         return (
-          <Cascader
+          <GroupTreeSelector
             allowClear
-            showSearch
-            className="value"
             style={{ width: 200 }}
-            options={organizationList}
             value={searchValue}
             onChange={(e) => onSearchValueChange(e, isExactSearch)}
-            onClear={() => onSearchValueChange([], isExactSearch)}
           />
         );
       case 'time':

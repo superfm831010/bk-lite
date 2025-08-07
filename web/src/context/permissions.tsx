@@ -30,12 +30,17 @@ const getClientIdFromRoute = (): string => {
   const pathname = window.location.pathname;
   const pathSegments = pathname.split('/').filter(Boolean);
   
+  // If it's auth/signin route, return default client_id
+  if (pathSegments.length >0 && pathSegments[0] === 'auth') {
+    return 'ops-console';
+  }
+  
   // Route format: /opspilot/xxx or /client-name/xxx - take the first segment as client_id
   if (pathSegments.length > 0) {
     return pathSegments[0];
   }
   
-  return '';
+  return 'ops-console';
 };
 
 // Map route-based client_id to actual client name

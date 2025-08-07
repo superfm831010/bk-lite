@@ -10,18 +10,20 @@ import React, {
 import { Input, Button, Form, message, Select } from 'antd';
 import Image from 'next/image';
 import OperateModal from '@/components/operate-modal';
+import GroupTreeSelector from '@/components/group-tree-select';
 import SelectIcon from './selectIcon';
 import { getIconUrl } from '@/app/cmdb/utils/common';
 import type { FormInstance } from 'antd';
-import useApiClient from '@/utils/request';
 import { ModelItem, ModelConfig } from '@/app/cmdb/types/assetManage';
 import { deepClone } from '@/app/cmdb/utils/common';
 const { Option } = Select;
 import { useTranslation } from '@/utils/i18n';
+import { useModelApi } from '@/app/cmdb/api';
+import { useUserInfoContext } from '@/context/userInfo';
 
 interface ModelModalProps {
   onSuccess: (info?: unknown) => void;
-  groupList: Array<any>;
+  modelGroupList: Array<any>;
 }
 
 export interface ModelModalRef {
@@ -29,8 +31,9 @@ export interface ModelModalRef {
 }
 
 const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
-  ({ onSuccess, groupList }, ref) => {
-    const { post, put } = useApiClient();
+  ({ onSuccess, modelGroupList }, ref) => {
+    const { createModel, updateModel } = useModelApi();
+    const { selectedGroup } = useUserInfoContext();
     const { t } = useTranslation();
     const formRef = useRef<FormInstance>(null);
     const selectIconRef = useRef<any>(null);
@@ -46,7 +49,18 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
     useEffect(() => {
       if (modelVisible) {
         formRef.current?.resetFields();
-        formRef.current?.setFieldsValue(modelInfo);
+
+        const formData = { ...modelInfo };
+        if (formData.group) {
+          formData.group = Array.isArray(formData.group)
+            ? formData.group
+            : [formData.group];
+        }
+        formRef.current?.setFieldsValue(formData);
+
+        if (type === 'add' && selectedGroup && !formData.group) {
+          formRef.current?.setFieldValue('group', selectedGroup.id);
+        }
       }
     }, [modelVisible, modelInfo]);
 
@@ -73,18 +87,23 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
         const msg: string = t(
           type === 'add' ? 'successfullyAdded' : 'successfullyModified'
         );
-        const url: string =
-          type === 'add' ? '/cmdb/api/model/' : `/cmdb/api/model/${modelInfo.model_id}/`;
+
         let requestParams = deepClone(params);
         if (type !== 'add') {
           requestParams = {
             classification_id: params.classification_id,
             model_name: params.model_name,
             icn: params.icn,
+            group: Array.isArray(params.group) ? params.group : [params.group],
           };
         }
-        const requestType = type === 'add' ? post : put;
-        await requestType(url, requestParams);
+
+        if (type === 'add') {
+          await createModel(requestParams);
+        } else {
+          await updateModel(modelInfo.model_id, requestParams);
+        }
+
         message.success(msg);
         handleCancel();
         onSuccess(params);
@@ -142,9 +161,9 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
                 loading={confirmLoading}
                 onClick={handleSubmit}
               >
-                {t('confirm')}
+                {t('common.confirm')}
               </Button>
-              <Button onClick={handleCancel}>{t('cancel')}</Button>
+              <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
         >
@@ -172,15 +191,15 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
             wrapperCol={{ span: 20 }}
           >
             <Form.Item<ModelItem>
-              label={t('group')}
+              label={t('Model.modelGroup')}
               name="classification_id"
               rules={[{ required: true, message: t('required') }]}
             >
               <Select
                 disabled={type === 'edit'}
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
               >
-                {groupList.map((item) => {
+                {modelGroupList.map((item) => {
                   return (
                     <Option
                       value={item.classification_id}
@@ -193,18 +212,31 @@ const ModelModal = forwardRef<ModelModalRef, ModelModalProps>(
               </Select>
             </Form.Item>
             <Form.Item<ModelItem>
+              label={t('common.group')}
+              name="group"
+              rules={[{ required: true, message: t('required') }]}
+            >
+              <GroupTreeSelector
+                multiple={false}
+                placeholder={t('common.selectTip')}
+              />
+            </Form.Item>
+            <Form.Item<ModelItem>
               label={t('id')}
               name="model_id"
               rules={[{ required: true, message: t('required') }]}
             >
-              <Input disabled={type === 'edit'} placeholder={t('common.pleaseInput')} />
+              <Input
+                disabled={type === 'edit'}
+                placeholder={t('common.inputTip')}
+              />
             </Form.Item>
             <Form.Item<ModelItem>
               label={t('name')}
               name="model_name"
               rules={[{ required: true, message: t('required') }]}
             >
-              <Input placeholder={t('common.pleaseInput')} />
+              <Input placeholder={t('common.inputTip')} />
             </Form.Item>
           </Form>
         </OperateModal>

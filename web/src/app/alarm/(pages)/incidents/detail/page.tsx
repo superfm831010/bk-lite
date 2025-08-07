@@ -206,8 +206,8 @@ const IncidentDetail: React.FC = () => {
 
   const handleUnlink = (keys?: React.Key[]) => {
     Modal.confirm({
-      title: t('common.unlinkAlert'),
-      content: `${t('common.confirm')}${t('common.unlinkAlert')}`,
+      title: t('alarmCommon.unlinkAlert'),
+      content: `${t('common.confirm')}${t('alarmCommon.unlinkAlert')}`,
       okText: t('common.confirm'),
       cancelText: t('common.cancel'),
       centered: true,
@@ -223,7 +223,9 @@ const IncidentDetail: React.FC = () => {
             .map((i) => i.id)
             .filter((id) => !toRemove.includes(id));
           await modifyIncidentDetail(rowDetailId, { alert: remainingIds });
-          message.success(t('common.unlinkAlert') + t('common.success'));
+          message.success(
+            t('alarmCommon.unlinkAlert') + t('alarmCommon.success')
+          );
           if (!isRow) setSelectedRowKeys([]);
           fetchAlarmList();
           fetchTimeline();
@@ -249,7 +251,7 @@ const IncidentDetail: React.FC = () => {
         new Set([...existingIds, ...(selectedKeys as number[])])
       );
       await modifyIncidentDetail(rowDetailId, { alert: newIds });
-      message.success(t('common.linkAlert') + t('common.success'));
+      message.success(t('alarmCommon.linkAlert') + t('alarmCommon.success'));
       setOperateVisible(false);
       fetchAlarmList();
       fetchTimeline();
@@ -279,13 +281,11 @@ const IncidentDetail: React.FC = () => {
         color: 'blue',
         children: (
           <div className="flex px-4 text-sm">
-            <span className="w-[200px]">
+            <span className="w-[160px]">
               {item.created_at ? convertToLocalizedTime(item.created_at) : '--'}
             </span>
-            <span className="w-[140px]">
-              {t(`settings.operationLog.operationOpts.${item.action}`)}
-            </span>
-            <span className="w-[200px]">{item.operator || '--'}</span>
+            <span className="w-[160px]">{item.operator_object || '--'}</span>
+            <span className="w-[120px]">{item.operator || '--'}</span>
             <span className="flex-1">{item.overview || '--'}</span>
           </div>
         ),
@@ -294,9 +294,9 @@ const IncidentDetail: React.FC = () => {
         color: 'blue',
         children: (
           <div className="flex px-4 text-sm font-semibold">
-            <span className="w-[200px]">{t('common.time')}</span>
-            <span className="w-[140px]">{t('common.action')}</span>
-            <span className="w-[200px]">{t('common.operator')}</span>
+            <span className="w-[160px]">{t('alarmCommon.time')}</span>
+            <span className="w-[160px]">{t('alarmCommon.action')}</span>
+            <span className="w-[120px]">{t('alarmCommon.operator')}</span>
             <span className="flex-1">{t('settings.operationLog.summary')}</span>
           </div>
         ),
@@ -556,7 +556,7 @@ const IncidentDetail: React.FC = () => {
                         className="mr-[12px]"
                         onClick={() => handleLink()}
                       >
-                        {t('common.linkAlert')}
+                        {t('alarmCommon.linkAlert')}
                       </Button>
                     </PermissionWrapper>
                     <PermissionWrapper requiredPermissions={['Edit']}>
@@ -566,7 +566,7 @@ const IncidentDetail: React.FC = () => {
                         onClick={() => handleUnlink()}
                         loading={unlinkLoading}
                       >
-                        {t('common.unlinkAlert')}
+                        {t('alarmCommon.unlinkAlert')}
                       </Button>
                     </PermissionWrapper>
                   </div>
@@ -588,7 +588,7 @@ const IncidentDetail: React.FC = () => {
                           onClick={() => handleUnlink([record.id as number])}
                           loading={rowUnlinkKey === record.id}
                         >
-                          {t('common.unlinkAlert')}
+                          {t('alarmCommon.unlinkAlert')}
                         </Button>
                       </PermissionWrapper>
                     )}

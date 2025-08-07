@@ -15,10 +15,10 @@ import OperateModal from '@/components/operate-modal';
 import type { FormInstance } from 'antd';
 import { PlusOutlined, DeleteTwoTone, HolderOutlined } from '@ant-design/icons';
 import { deepClone } from '@/app/cmdb/utils/common';
-import useApiClient from '@/utils/request';
 import { useSearchParams } from 'next/navigation';
 import { AttrFieldType, EnumList } from '@/app/cmdb/types/assetManage';
 import { useTranslation } from '@/utils/i18n';
+import { useModelApi } from '@/app/cmdb/api';
 const { Option } = Select;
 
 interface AttrModalProps {
@@ -80,8 +80,10 @@ const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
     ]);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const formRef = useRef<FormInstance>(null);
-    const { post, put } = useApiClient();
     const searchParams = useSearchParams();
+
+    const { createModelAttr, updateModelAttr } = useModelApi();
+
     const classificationId: string =
       searchParams.get('classification_id') || '';
     const modelId: string = searchParams.get('model_id') || '';
@@ -194,13 +196,14 @@ const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
         const msg: string = t(
           type === 'add' ? 'successfullyAdded' : 'successfullyModified'
         );
-        const url: string =
-          type === 'add'
-            ? `/cmdb/api/model/${params.model_id}/attr/`
-            : `/cmdb/api/model/${params.model_id}/attr_update/`;
         const requestParams = deepClone(params);
-        const requestType = type === 'add' ? post : put;
-        await requestType(url, requestParams);
+
+        if (type === 'add') {
+          await createModelAttr(params.model_id!, requestParams);
+        } else {
+          await updateModelAttr(params.model_id!, requestParams);
+        }
+
         message.success(msg);
         onSuccess();
         handleCancel();
@@ -227,9 +230,9 @@ const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
                 loading={confirmLoading}
                 onClick={handleSubmit}
               >
-                {t('confirm')}
+                {t('common.confirm')}
               </Button>
-              <Button onClick={handleCancel}> {t('cancel')}</Button>
+              <Button onClick={handleCancel}> {t('common.cancel')}</Button>
             </div>
           }
         >
@@ -281,11 +284,22 @@ const AttributesModal = forwardRef<AttrModalRef, AttrModalProps>(
                     name="option"
                     rules={[{ validator: validateEnumList }]}
                   >
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-                      <SortableContext items={enumList.map((_, idx) => idx.toString())} strategy={verticalListSortingStrategy}>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={onDragEnd}
+                    >
+                      <SortableContext
+                        items={enumList.map((_, idx) => idx.toString())}
+                        strategy={verticalListSortingStrategy}
+                      >
                         <ul className="bg-[var(--color-bg-hover)] p-[10px]">
                           {enumList.map((enumItem, index) => (
-                            <SortableItem key={index} id={index.toString()} index={index}>
+                            <SortableItem
+                              key={index}
+                              id={index.toString()}
+                              index={index}
+                            >
                               <HolderOutlined className="mr-[4px]" />
                               <Input
                                 placeholder={t('fieldKey')}

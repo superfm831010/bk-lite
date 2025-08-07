@@ -26,7 +26,6 @@ import DimensionTable from './dimensionTable';
 import { ChartData, ListItem, TableDataItem } from '@/app/mlops/types';
 import { MetricItem, ThresholdField } from '@/app/mlops/types';
 import { LEVEL_MAP } from '@/app/mlops/constants';
-// import useApiClient from '@/utils/request';
 import { isNumber } from 'lodash';
 
 interface LineChartProps {
@@ -39,6 +38,7 @@ interface LineChartProps {
   showDimensionFilter?: boolean;
   showDimensionTable?: boolean;
   allowSelect?: boolean;
+  showBrush?: boolean;
   onXRangeChange?: (arr: [Dayjs, Dayjs]) => void;
   onAnnotationClick?: (value: any) => void;
   onTimeLineChange?: (value: any) => void;
@@ -74,13 +74,13 @@ const LineChart: React.FC<LineChartProps> = ({
     endIndex: 0
   },
   allowSelect = true,
+  showBrush = false,
   showDimensionTable = false,
   onXRangeChange,
   onTimeLineChange = () => { },
   onAnnotationClick = () => { },
 }) => {
   const { formatTime } = useFormatTime();
-  // const { get } = useApiClient();
   const [startX, setStartX] = useState<number | null>(null);
   const [endX, setEndX] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -89,10 +89,6 @@ const LineChart: React.FC<LineChartProps> = ({
   const [details, setDetails] = useState<Record<string, any>>({});
   const [hasDimension, setHasDimension] = useState<boolean>(false);
   const [boxItems, setBoxItems] = useState<TableDataItem[]>([]);
-  // const [timeline, setTimeline] = useState<any>({
-  //   startIndex: 0,
-  //   endIndex: 0
-  // });
   // 获取数据中的最小和最大时间
   const [minTime, maxTime] = useMemo(() => {
     if (!data.length) return [0, 0];
@@ -423,32 +419,34 @@ const LineChart: React.FC<LineChartProps> = ({
                   fill="rgba(0, 0, 255, 0.1)"
                 />
               )}
-              <Brush
-                dataKey="timestamp"
-                height={30}
-                travellerWidth={5}
-                stroke="#8884d8"
-                fill={`var(--color-bg-1)`}
-                startIndex={brushStartIndex}
-                endIndex={brushEndIndex}
-                onChange={indexChange}
-                tickFormatter={(tick) => formatTime(tick, minTime, maxTime)}
-              >
-                <AreaChart data={data}>
-                  {chartKeys.map((key, index) => (
-                    <Area
-                      key={key}
-                      type="monotone"
-                      dataKey={key}
-                      stroke={'#1976d2'}
-                      fill={colors[index]}
-                      fillOpacity={0}
-                      isAnimationActive={false}
-                      dot={renderMinDot}
-                    />
-                  ))}
-                </AreaChart>
-              </Brush>
+              {showBrush && 
+                <Brush
+                  dataKey="timestamp"
+                  height={30}
+                  travellerWidth={5}
+                  stroke="#8884d8"
+                  fill={`var(--color-bg-1)`}
+                  startIndex={brushStartIndex}
+                  endIndex={brushEndIndex}
+                  onChange={indexChange}
+                  tickFormatter={(tick) => formatTime(tick, minTime, maxTime)}
+                >
+                  <AreaChart data={data}>
+                    {chartKeys.map((key, index) => (
+                      <Area
+                        key={key}
+                        type="monotone"
+                        dataKey={key}
+                        stroke={'#1976d2'}
+                        fill={colors[index]}
+                        fillOpacity={0}
+                        isAnimationActive={false}
+                        dot={renderMinDot}
+                      />
+                    ))}
+                  </AreaChart>
+                </Brush>
+              }
             </AreaChart>
           </ResponsiveContainer>
           {formID && (

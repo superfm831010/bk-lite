@@ -12,6 +12,8 @@ def get_cmdb_module_data(module, child_module, page, page_size, group_id):
     """
         获取cmdb模块实例数据
     """
+    page = int(page)
+    page_size = int(page_size)
     if module == PERMISSION_TASK:
         # 计算分页
         start = (page - 1) * page_size
@@ -37,7 +39,7 @@ def get_cmdb_module_data(module, child_module, page, page_size, group_id):
                 "id": instance["inst_name"]
             })
     elif module == PERMISSION_MODEL:
-        models = ModelManage.search_model(classification_ids=[child_module])
+        models = ModelManage.search_model(classification_ids=[child_module], group=int(group_id))
         count = len(models)
         queryset = [{"id": model["model_id"], "name": model["model_name"]} for model in models]
 

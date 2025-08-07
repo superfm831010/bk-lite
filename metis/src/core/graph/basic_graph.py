@@ -1,13 +1,11 @@
-import os
 import uuid
 from abc import ABC, abstractmethod
 
 import tiktoken
 from langchain_core.messages import AIMessageChunk, AIMessage
-from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.constants import START
-
+from sanic.log import logger
 from src.core.entity.basic_llm_request import BasicLLMRequest
 from src.core.entity.basic_llm_response import BasicLLMResponse
 from src.core.env.core_settings import core_settings
@@ -22,7 +20,7 @@ class BasicGraph(ABC):
             return len(tokens)  # 返回 Token 数量
         except KeyError:
             # 如果模型名称不支持，回退到默认的编码方式
-            print(f"模型 {encoding_name} 不支持。默认回退到通用编码器。")
+            logger.warning(f"模型 {encoding_name} 不支持。默认回退到通用编码器。")
             encoding = tiktoken.get_encoding("cl100k_base")  # 通用编码器
             tokens = encoding.encode(text)
             return len(tokens)
@@ -35,7 +33,7 @@ class BasicGraph(ABC):
 
     def print_chunk(self, result):
         for chunk in result:
-            if type(chunk[0]) == AIMessageChunk:
+            if isinstance(chunk[0], AIMessageChunk):
                 print(chunk[0].content, end='', flush=True)
         print('\n')
 
@@ -58,7 +56,7 @@ class BasicGraph(ABC):
     async def invoke(self, graph, request: BasicLLMRequest, stream_mode='values'):
         config = {
             "graph_request": request,
-            "recursion_limit": 10,
+            "recursion_limit": 50,
             "trace_id": str(uuid.uuid4()),
             "configurable": {
                 **request.extra_config,
@@ -100,10 +98,11 @@ class BasicGraph(ABC):
         completion_token = 0
 
         for i in result["messages"]:
-            if type(i) == AIMessage and 'token_usage' in i.response_metadata:
+            if isinstance(i, AIMessage) and 'token_usage' in i.response_metadata:
                 prompt_token += i.response_metadata['token_usage']['prompt_tokens']
                 completion_token += i.response_metadata['token_usage']['completion_tokens']
-        response = BasicLLMResponse(message=result["messages"][-1].content,
+        last_message_content = result["messages"][-1].content if result["messages"] else ""
+        response = BasicLLMResponse(message=last_message_content,
                                     total_tokens=prompt_token + completion_token,
                                     prompt_tokens=prompt_token,
                                     completion_tokens=completion_token)

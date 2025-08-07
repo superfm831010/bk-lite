@@ -252,6 +252,15 @@ export const useKnowledgeApi = () => {
     return del(`/opspilot/knowledge_mgmt/qa_pairs/${qaPairId}/`);
   };
 
+  const createOneQAPair = async (payload: {
+    knowledge_id: number;
+    qa_pairs_id: number;
+    question: string;
+    answer: string;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/create_one_qa_pairs/', payload);
+  };
+
   /**
    * Creates QA pairs from selected documents.
    */
@@ -266,6 +275,36 @@ export const useKnowledgeApi = () => {
     }>;
   }): Promise<any> => {
     return post('/opspilot/knowledge_mgmt/qa_pairs/create_qa_pairs/', payload);
+  };
+
+  const updateQAPair = async (payload: {
+    qa_pairs_id: number;
+    id: string;
+    question: string;
+    answer: string;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/update_qa_pairs/', payload);
+  };
+
+  const deleteOneQAPair = async (payload: {
+    qa_pairs_id: number;
+    id: string;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/delete_one_qa_pairs/', payload);
+  };
+
+  /**
+   * Creates custom QA pairs manually.
+   */
+  const createCustomQAPairs = async (payload: {
+    knowledge_base_id: number;
+    name: string;
+    qa_pairs: Array<{
+      question: string;
+      answer: string;
+    }>;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/create_qa_pairs_by_custom/', payload);
   };
 
   /**
@@ -296,6 +335,7 @@ export const useKnowledgeApi = () => {
     graph_id?: number;
     is_exists: boolean;
     graph?: any;
+    status?: string;
   }> => {
     return get('/opspilot/knowledge_mgmt/knowledge_graph/get_details/', {
       params: {
@@ -367,6 +407,18 @@ export const useKnowledgeApi = () => {
     });
   };
 
+  const getChunkDetail = async (
+    knowledge_id: string,
+    chunk_id: string | null
+  ): Promise<any> => {
+    return get(`/opspilot/knowledge_mgmt/knowledge_document/get_chunk_detail/`, { 
+      params: {
+        knowledge_id,
+        chunk_id,
+      },
+    });
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -398,7 +450,11 @@ export const useKnowledgeApi = () => {
     fetchMyTasks,
     fetchQAPairs,
     deleteQAPair,
+    createOneQAPair,
+    updateQAPair,
+    deleteOneQAPair,
     createQAPairs,
+    createCustomQAPairs,
     fetchQAPairDetails,
     fetchChunkQAPairs,
     fetchKnowledgeGraphDetails,
@@ -407,5 +463,6 @@ export const useKnowledgeApi = () => {
     updateKnowledgeGraph,
     rebuildKnowledgeGraphCommunity,
     importQaJson,
+    getChunkDetail,
   };
 };

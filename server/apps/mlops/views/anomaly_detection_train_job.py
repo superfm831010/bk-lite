@@ -4,7 +4,8 @@ from rest_framework import status
 from django.http import Http404
 import pandas as pd
 
-from apps.core.utils.viewset_utils import AuthViewSet
+from apps.core.decorators.api_permission import HasPermission
+from config.drf.viewsets import ModelViewSet
 from apps.mlops.filters.anomaly_detection_dataset import AnomalyDetectionDatasetFilter
 from apps.mlops.filters.anomaly_detection_train_job import AnomalyDetectionTrainJobFilter
 from apps.mlops.models.anomaly_detection_train_job import AnomalyDetectionTrainJob
@@ -15,15 +16,15 @@ from apps.mlops.algorithm.anomaly_detection.random_forest_detector import Random
 from config.drf.pagination import CustomPageNumberPagination
 
 
-class AnomalyDetectionTrainJobViewSet(AuthViewSet):
+class AnomalyDetectionTrainJobViewSet(ModelViewSet):
    queryset= AnomalyDetectionTrainJob.objects.all()
    serializer_class = AnomalyDetectionTrainJobSerializer
    filterset_class = AnomalyDetectionTrainJobFilter
    pagination_class=CustomPageNumberPagination
    permission_key = "dataset.anomaly_detection_train_job"
 
-      
    @action(detail=True, methods=['post'], url_path='train')
+   @HasPermission("train_tasks-Train")
    def train(self, request, pk=None):
       try:
          train_job = self.get_object()
@@ -43,3 +44,23 @@ class AnomalyDetectionTrainJobViewSet(AuthViewSet):
             {'error': f'训练启动失败: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
          )
+
+   @HasPermission("train_tasks-View")
+   def list(self, request, *args, **kwargs):
+      return super().list(request, *args, **kwargs)
+
+   @HasPermission("train_tasks-Add,anomaly_detection_datasets_detail-File View,anomaly_detection_datasets-View")
+   def create(self, request, *args, **kwargs):
+      return super().create(request, *args, **kwargs)
+
+   @HasPermission("train_tasks-Delete")
+   def destroy(self, request, *args, **kwargs):
+      return super().destroy(request, *args, **kwargs)
+
+   @HasPermission("train_tasks-Edit")
+   def update(self, request, *args, **kwargs):
+      return super().update(request, *args, **kwargs)
+
+   @HasPermission("train_tasks-View")
+   def retrieve(self, request, *args, **kwargs):
+      return super().retrieve(request, *args, **kwargs)

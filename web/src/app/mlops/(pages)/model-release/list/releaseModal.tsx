@@ -2,7 +2,7 @@
 import { ModalRef, Option } from "@/app/mlops/types";
 import { forwardRef, useImperativeHandle, useState, useRef, useEffect } from "react";
 import OperateModal from '@/components/operate-modal';
-import { Form, FormInstance, Select, Button, Input, InputNumber, Switch, message } from "antd";
+import { Form, FormInstance, Select, Button, Input, InputNumber, message } from "antd";
 import { useTranslation } from "@/utils/i18n";
 import useMlopsModelReleaseApi from "@/app/mlops/api/modelRelease";
 const { TextArea } = Input;
@@ -10,9 +10,10 @@ const { TextArea } = Input;
 interface ReleaseModalProps {
   trainjobs: Option[],
   onSuccess: () => void;
+  activeTag: string[];
 }
 
-const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, onSuccess }, ref) => {
+const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, activeTag, onSuccess }, ref) => {
   const { t } = useTranslation();
   const { addAnomalyServings, updateAnomalyServings } = useMlopsModelReleaseApi();
   const formRef = useRef<FormInstance>(null);
@@ -27,7 +28,6 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, onSuc
       setFormData(form);
       setModalOpen(true);
       setConfirmLoading(false);
-      console.log(formData);
     }
   }));
 
@@ -53,20 +53,29 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, onSuc
     }
   };
 
+  const handleAddMap: Record<string, (params: any) => Promise<void>> = {
+    'anomaly': async (params: any) => {
+      await addAnomalyServings(params);
+    },
+  };
+
+  const handleUpdateMap: Record<string, (id: number, params: any) => Promise<void>> = {
+    'anomaly': async (id: number, params: any) => {
+      await updateAnomalyServings(id, params);
+    },
+  };
+
   const handleConfirm = async () => {
     setConfirmLoading(true);
     try {
+      const [tagName] = activeTag;
       const data = await formRef.current?.validateFields();
-      const params = {
-        ...data,
-        status: data.status ? 'active' : 'inactive'
-      };
 
       if (type === 'add') {
-        await addAnomalyServings(params);
+        await handleAddMap[tagName]({ status: 'active', ...data });
         message.success(t(`model-release.publishSuccess`));
       } else {
-        await updateAnomalyServings(formData.id, params);
+        await handleUpdateMap[tagName](formData?.id, data);
         message.success(t(`common.updateSuccess`));
       }
       setModalOpen(false);
@@ -123,18 +132,19 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, onSuc
           >
             <InputNumber className="w-full" placeholder={t(`model-release.inputThreshold`)} />
           </Form.Item>
-          <Form.Item
+          {/* <Form.Item
             name='status'
-            label={t(`common.status`)}
+            label={t(`mlops-common.status`)}
             layout="horizontal"
           >
             <Switch checkedChildren="是" unCheckedChildren="否" />
-          </Form.Item>
+          </Form.Item> */}
           <Form.Item
             name='description'
             label={t(`model-release.modelDescription`)}
+            rules={[{ required: true, message: t('common.inputMsg') }]}
           >
-            <TextArea placeholder={t(`common.inputMsg`)} rows={4} maxLength={6} />
+            <TextArea placeholder={t(`common.inputMsg`)} rows={4} />
           </Form.Item>
         </Form>
       </OperateModal>

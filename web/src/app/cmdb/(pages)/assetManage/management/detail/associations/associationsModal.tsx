@@ -14,7 +14,7 @@ import { getIconUrl } from '@/app/cmdb/utils/common';
 import type { FormInstance } from 'antd';
 import associationsModalStyle from './associationsModal.module.scss';
 import { deepClone } from '@/app/cmdb/utils/common';
-import useApiClient from '@/utils/request';
+import { useModelApi } from '@/app/cmdb/api';
 const { Option } = Select;
 import {
   AssoTypeItem,
@@ -52,7 +52,9 @@ const AssociationsModal = forwardRef<AssoModalRef, AssoModalProps>(
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [assoInfo, setAssoInfo] = useState<any>({});
     const formRef = useRef<FormInstance>(null);
-    const { post } = useApiClient();
+
+    const { createModelAssociation } = useModelApi();
+
     const { t } = useTranslation();
 
     useEffect(() => {
@@ -81,7 +83,7 @@ const AssociationsModal = forwardRef<AssoModalRef, AssoModalProps>(
       try {
         setConfirmLoading(true);
         const requestParams = deepClone(params);
-        await post('/cmdb/api/model/association/', requestParams);
+        await createModelAssociation(requestParams);
         message.success(t('successfullyAdded'));
         onSuccess();
         handleCancel();
@@ -119,9 +121,9 @@ const AssociationsModal = forwardRef<AssoModalRef, AssoModalProps>(
                 disabled={assoType === 'edit'}
                 onClick={handleSubmit}
               >
-                {t('confirm')}
+                {t('common.confirm')}
               </Button>
-              <Button onClick={handleCancel}>{t('cancel')}</Button>
+              <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
         >
@@ -156,6 +158,21 @@ const AssociationsModal = forwardRef<AssoModalRef, AssoModalProps>(
               <Select
                 allowClear
                 showSearch
+                filterOption={(input, option) => {
+                  if (option?.label && typeof option.label === 'string') {
+                    return option.label
+                      .toLowerCase()
+                      .includes(input.toLowerCase());
+                  }
+                  if (option?.options) {
+                    return option.options.some((subOption: any) =>
+                      subOption.label
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    );
+                  }
+                  return false;
+                }}
                 options={groups.map((item) => ({
                   label: item.classification_name,
                   title: item.classification_name,

@@ -1,5 +1,6 @@
 
-from apps.core.utils.viewset_utils import AuthViewSet
+from config.drf.viewsets import ModelViewSet
+from apps.core.decorators.api_permission import HasPermission
 from apps.mlops.algorithm.anomaly_detection.random_forest_detector import RandomForestAnomalyDetector
 from apps.mlops.filters.anomaly_detection_serving import AnomalyDetectionServingFilter
 from apps.mlops.models.anomaly_detection_serving import AnomalyDetectionServing
@@ -12,13 +13,34 @@ from django.http import Http404
 import pandas as pd
 
 
-class AnomalyDetectionServingViewSet(AuthViewSet):
+class AnomalyDetectionServingViewSet(ModelViewSet):
     queryset = AnomalyDetectionServing.objects.all()
     serializer_class = AnomalyDetectionServingSerializer
     filterset_class = AnomalyDetectionServingFilter
     pagination_class = CustomPageNumberPagination
     permission_key = "serving.anomaly_detection_serving"
 
+    @HasPermission("model_release-View")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @HasPermission("model_release-Add,train_tasks-View")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @HasPermission("model_release-Delete")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+    @HasPermission("model_release-Update")
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @HasPermission("model_release-View")
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @HasPermission("model_release-View")
     @action(detail=False, methods=['post'], url_path='predict')
     def predict(self, request, pk=None):
         """

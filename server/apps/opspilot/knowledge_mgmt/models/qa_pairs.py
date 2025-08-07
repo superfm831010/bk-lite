@@ -17,8 +17,11 @@ class QAPairs(MaintainerInfo, TimeInfo):
 
     # 问答对相关字段
     qa_count = models.IntegerField(default=0, verbose_name="问答对数量")
+    generate_count = models.IntegerField(default=0, verbose_name="生成的数据")
     document_id = models.IntegerField(default=0, verbose_name="文档ID")
     document_source = models.CharField(max_length=50, default="file", verbose_name="文档来源")
+    status = models.CharField(max_length=50, default="completed", verbose_name="状态")
+    create_type = models.CharField(max_length=20, default="document")
 
     def delete(self, *args, **kwargs):
         from apps.opspilot.utils.chunk_helper import ChunkHelper

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import useApiClient from '@/utils/request';
 import type { FormInstance } from 'antd';
 import { Drawer, Button, Form, Input, Select, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
+import { useOidApi } from '@/app/cmdb/api';
 
 interface DeviceType {
   key: string;
@@ -48,7 +48,9 @@ const OperateOid: React.FC<OperateOidProps> = ({
   onOk,
 }) => {
   const { t } = useTranslation();
-  const { post, put } = useApiClient();
+
+  const { createOid, updateOid } = useOidApi();
+
   const [loading, setLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState<OidDetail>(INITIAL_FORM_DATA);
   const [currentType, setCurrentType] = useState<string>('add');
@@ -94,9 +96,9 @@ const OperateOid: React.FC<OperateOidProps> = ({
       const params = { ...values };
       try {
         if (currentType === 'add') {
-          await post('/cmdb/api/oid/', params);
+          await createOid(params);
         } else {
-          await put(`/cmdb/api/oid/${formData.id}/`, params);
+          await updateOid(formData.id!, params);
         }
         message.success(
           t(
@@ -127,9 +129,9 @@ const OperateOid: React.FC<OperateOidProps> = ({
             loading={loading}
             onClick={confirm}
           >
-            {t('confirm')}
+            {t('common.confirm')}
           </Button>
-          <Button onClick={cancel}>{t('cancel')}</Button>
+          <Button onClick={cancel}>{t('common.cancel')}</Button>
         </div>
       }
     >
@@ -144,7 +146,7 @@ const OperateOid: React.FC<OperateOidProps> = ({
           label={t('OidLibrary.deviceType')}
           rules={[{ required: true, message: t('required') }]}
         >
-          <Select placeholder={t('common.pleaseSelect')}>
+          <Select placeholder={t('common.selectTip')}>
             {deviceTypeList.map((option) => (
               <Select.Option key={option.key} value={option.key}>
                 {option.label}
@@ -157,21 +159,21 @@ const OperateOid: React.FC<OperateOidProps> = ({
           label="sysObjectID"
           rules={[{ required: true, message: t('required') }]}
         >
-          <Input allowClear placeholder={t('common.pleaseInput')} />
+          <Input allowClear placeholder={t('common.inputTip')} />
         </Form.Item>
         <Form.Item
           name="brand"
           label={t('OidLibrary.brand')}
           rules={[{ required: true, message: t('required') }]}
         >
-          <Input allowClear placeholder={t('common.pleaseInput')} />
+          <Input allowClear placeholder={t('common.inputTip')} />
         </Form.Item>
         <Form.Item
           name="model"
           label={t('OidLibrary.model')}
           rules={[{ required: true, message: t('required') }]}
         >
-          <Input allowClear placeholder={t('common.pleaseInput')} />
+          <Input allowClear placeholder={t('common.inputTip')} />
         </Form.Item>
       </Form>
     </Drawer>

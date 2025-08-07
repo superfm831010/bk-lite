@@ -7,13 +7,13 @@ import { ArrowRightOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import {
   AttrFieldType,
   UserItem,
-  Organization,
   ModelItem,
 } from '@/app/cmdb/types/assetManage';
 import { Spin, Input, Tabs, Button, Tag, Empty } from 'antd';
 import useApiClient from '@/utils/request';
 import { useCommon } from '@/app/cmdb/context/common';
 import { deepClone, getFieldItem } from '@/app/cmdb/utils/common';
+import { useModelApi, useInstanceApi } from '@/app/cmdb/api';
 const { Search } = Input;
 interface AssetListItem {
   model_id: string;
@@ -34,10 +34,12 @@ interface TabJsxItem {
 
 const AssetSearch = () => {
   const { t } = useTranslation();
-  const { get, post, isLoading } = useApiClient();
+  const { isLoading } = useApiClient();
   const commonContext = useCommon();
-  const authList = useRef(commonContext?.authOrganizations || []);
-  const organizationList: Organization[] = authList.current;
+
+  const { getModelList, getModelAttrList } = useModelApi();
+  const { fulltextSearchInstances } = useInstanceApi();
+
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
   const [propertyList, setPropertyList] = useState<AttrFieldType[]>([]);
@@ -76,7 +78,7 @@ const AssetSearch = () => {
   const getInitData = async () => {
     setPageLoading(true);
     try {
-      const data = await get('/cmdb/api/model/');
+      const data = await getModelList();
       setModelList(data);
     } finally {
       setPageLoading(false);
@@ -97,19 +99,16 @@ const AssetSearch = () => {
     setHistoryList(histories);
     setPageLoading(true);
     try {
-      const data: AssetListItem[] = await post(
-        '/cmdb/api/instance/fulltext_search/',
-        {
-          search: searchText,
-        }
-      );
+      const data: AssetListItem[] = await fulltextSearchInstances({
+        search: searchText,
+      });
       const tabItems: TabItem[] = getAssetList(data);
       const defaultTab = tabItems[0]?.key || '';
       if (!defaultTab) {
         setPageLoading(false);
         return;
       }
-      const attrList = await get(`/cmdb/api/model/${defaultTab}/attr_list/`);
+      const attrList = await getModelAttrList(defaultTab);
       setPropertyList(attrList);
       setInstData(tabItems);
       setActiveTab(defaultTab);
@@ -182,7 +181,6 @@ const AssetSearch = () => {
                       getFieldItem({
                         fieldItem,
                         userList,
-                        groupList: organizationList,
                         isEdit: false,
                         value: list.children,
                         hideUserAvatar: true,
@@ -233,7 +231,6 @@ const AssetSearch = () => {
                   getFieldItem({
                     fieldItem,
                     userList,
-                    groupList: organizationList,
                     isEdit: false,
                     value: list.children,
                     hideUserAvatar: true,
@@ -303,7 +300,7 @@ const AssetSearch = () => {
     setActiveTab(key);
     setPageLoading(true);
     try {
-      const attrList = await get(`/cmdb/api/model/${key}/attr_list/`);
+      const attrList = await getModelAttrList(key);
       setPropertyList(attrList);
       setActiveInstItem(-1);
     } finally {
@@ -352,7 +349,7 @@ const AssetSearch = () => {
                   onClick={handleSearch}
                 >
                   <SearchOutlined className="pr-[8px]" />
-                  {t('searchTxt')}
+                  {t('common.search')}
                 </div>
               }
               onChange={handleTextChange}
@@ -397,7 +394,7 @@ const AssetSearch = () => {
                   onClick={handleSearch}
                 >
                   <SearchOutlined className="pr-[8px]" />
-                  {t('searchTxt')}
+                  {t('common.search')}
                 </div>
               }
               onChange={handleTextChange}

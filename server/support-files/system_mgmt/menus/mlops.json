@@ -4,6 +4,12 @@
   "url": "/mlops/manage",
   "description": "AI end-to-end lifecycle management tool, integrating dataset management and model task training functionalities, enhances the flexibility and efficiency of machine learning.",
   "icon": "moxingguanli1",
+  "tags": [
+    "数据集管理",
+    "数据打标",
+    "模型训练",
+    "模型发布"
+  ],
   "menus": [
     {
       "name": "Datasets",
@@ -17,6 +23,17 @@
             "Add",
             "Edit",
             "Delete"
+          ]
+        },
+        {
+          "id": "anomaly_detection_datasets_detail",
+          "display_name": "Anomaly Detection",
+          "name": "anomaly_detection_datasets_detail",
+          "operation": [
+            "File View",
+            "File Delete",
+            "File Upload",
+            "File Edit"
           ]
         }
       ]
@@ -37,6 +54,22 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Model Release",
+      "children": [
+        {
+          "id": "model_release",
+          "display_name": "Model Release",
+          "name": "model_release",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
+        }
+      ]
     }
   ],
   "roles": [
@@ -44,6 +77,11 @@
       "name": "admin",
       "role_name": "mlops_admin",
       "menus": []
+    },
+    {
+      "name": "normal",
+      "role_name": "mlops_normal",
+      "menus": ["anomaly_detection_datasets-View","train_tasks-View","model_release-View"]
     }
   ]
 }

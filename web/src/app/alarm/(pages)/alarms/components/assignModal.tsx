@@ -46,10 +46,10 @@ const AlarmAssignModal: React.FC<AlarmAssignModalProps> = ({
       });
       if (Object.values(data).some((res: any) => !res.result)) {
         message.error(
-          `${t(`alarms.${actionType}`)}${t(`alarms.alert`)}${t('common.partialFailure')}`
+          `${t(`alarms.${actionType}`)}${t(`alarms.alert`)}${t('alarmCommon.partialFailure')}`
         );
       } else {
-        message.success(t(`alarms.${actionType}`) + t('common.success'));
+        message.success(t(`alarms.${actionType}`) + t('alarmCommon.success'));
         onSuccess(selectedIds);
       }
 
@@ -85,7 +85,7 @@ const AlarmAssignModal: React.FC<AlarmAssignModalProps> = ({
           mode="multiple"
           optionFilterProp="label"
           style={{ width: '100%', flex: 1 }}
-          placeholder={t('common.selectMsg')}
+          placeholder={t('common.selectTip')}
           options={options}
           value={selectedIds}
           filterOption={(input, option) =>

@@ -40,13 +40,15 @@ def general_embed_by_document_list(document_list, is_show=False, username="", do
         docs = [i["page_content"] for i in remote_docs][:10]
         return docs
     knowledge_base_id = document_list[0].knowledge_base_id
+    knowledge_ids = [doc.id for doc in document_list]
     task_obj = KnowledgeTask.objects.create(
         created_by=username,
         domain=domain,
         knowledge_base_id=knowledge_base_id,
         task_name=document_list[0].name,
-        knowledge_ids=[doc.id for doc in document_list],
+        knowledge_ids=knowledge_ids,
         train_progress=0,
+        total_count=len(knowledge_ids),
     )
     train_progress = round(float(1 / len(task_obj.knowledge_ids)) * 100, 2)
     for index, document in tqdm(enumerate(document_list)):
@@ -56,6 +58,7 @@ def general_embed_by_document_list(document_list, is_show=False, username="", do
             logger.exception(e)
         task_progress = task_obj.train_progress + train_progress
         task_obj.train_progress = round(task_progress, 2)
+        task_obj.completed_count += 1
         if index < len(document_list) - 1:
             task_obj.name = document_list[index + 1].name
         task_obj.save()
@@ -69,7 +72,7 @@ def invoke_document_to_es(document_id=0, document=None):
     if not document:
         logger.error(f"document {document_id} not found")
         return
-    document.train_status = DocumentStatus.TRAINING
+    document.train_status = DocumentStatus.CHUNKING
     document.chunk_size = 0
     document.save()
     logger.info(f"document {document.name} progress: {document.train_progress}")
@@ -117,7 +120,7 @@ def invoke_one_document(document, is_show=False):
         knowledge_docs.extend(remote_docs)
     except Exception as e:
         logger.exception(e)
-    return res["status"] == "success", knowledge_docs
+    return res.get("status") == "success", knowledge_docs
 
 
 def format_file_invoke_kwargs(document):
@@ -156,14 +159,14 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         if knowledge_document.ocr_model.name == "AzureOCR":
             ocr_config = {
                 "ocr_type": "azure_ocr",
-                "azure_api_key": knowledge_document.ocr_model.ocr_config["api_key"],
+                "azure_api_key": knowledge_document.ocr_model.ocr_config["api_key"] or " ",
                 "azure_endpoint": knowledge_document.ocr_model.ocr_config["base_url"],
             }
         elif knowledge_document.ocr_model.name == "OlmOCR":
             ocr_config = {
                 "ocr_type": "olm_ocr",
                 "olm_base_url": knowledge_document.ocr_model.ocr_config["base_url"],
-                "olm_api_key": knowledge_document.ocr_model.ocr_config["api_key"],
+                "olm_api_key": knowledge_document.ocr_model.ocr_config["api_key"] or " ",
                 "olm_model": knowledge_document.ocr_model.name,
             }
         else:
@@ -174,7 +177,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "knowledge_base_id": knowledge_document.knowledge_index_name(),
         "knowledge_id": str(knowledge_document.id),
         "embed_model_base_url": embed_config.get("base_url", ""),
-        "embed_model_api_key": embed_config.get("api_key", ""),
+        "embed_model_api_key": embed_config.get("api_key", "") or " ",
         "embed_model_name": embed_config.get("model", embed_model_name),
         "chunk_mode": knowledge_document.chunk_type,
         "chunk_size": knowledge_document.general_parse_chunk_size,
@@ -183,7 +186,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "semantic_chunk_model_base_url": [semantic_embed_config.get("base_url", "")]
         if semantic_embed_config.get("base_url", "")
         else [],
-        "semantic_chunk_model_api_key": semantic_embed_config.get("api_key", ""),
+        "semantic_chunk_model_api_key": semantic_embed_config.get("api_key", "") or " ",
         "semantic_chunk_model": semantic_embed_config.get("model", semantic_embed_model_name),
         "preview": "true" if preview else "false",
         "metadata": json.dumps({"enabled": True, "is_doc": "1"}),
@@ -231,6 +234,7 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
         task_name=qa_pairs_list[0].name,
         knowledge_ids=[doc for doc in qa_pairs_id_list],
         train_progress=0,
+        is_qa_task=True,
     )
     train_progress = round(float(1 / len(task_obj.knowledge_ids)) * 100, 2)
 
@@ -241,8 +245,12 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
     openai_api_base = llm_model.decrypted_llm_config["openai_base_url"]
     openai_api_key = llm_model.decrypted_llm_config["openai_api_key"]
     model = llm_model.decrypted_llm_config["model"]
-    try:
-        for qa_pairs_obj in qa_pairs_list:
+    for qa_pairs_obj in qa_pairs_list:
+        # 修改状态为生成中
+        try:
+            qa_pairs_obj.status = "generating"
+            qa_pairs_obj.save()
+            success_count = 0
             content_list = get_qa_content(qa_pairs_obj, es_index)
             for i in content_list:
                 params = {
@@ -256,14 +264,24 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
                 if res.get("status", "fail") != "success":
                     logger.error(f"Failed to create QA pairs for Chunk ID {i['chunk_id']}.")
                     continue
-                ChunkHelper.create_qa_pairs(
-                    res["message"], i, es_index, embed_config, embed_model_name, qa_pairs_obj.id
-                )
-            task_progress = task_obj.train_progress + train_progress
-            task_obj.train_progress = round(task_progress, 2)
-            task_obj.save()
-    except Exception as e:
-        logger.exception(f"Error creating QA pairs: {str(e)}")
+                try:
+                    success_count += ChunkHelper.create_qa_pairs(
+                        res["message"], i, es_index, embed_config, embed_model_name, qa_pairs_obj.id
+                    )
+                except Exception as e:
+                    logger.exception(e)
+        except Exception as e:
+            logger.exception(e)
+            qa_pairs_obj.status = "failed"
+            qa_pairs_obj.save()
+        else:
+            qa_pairs_obj.status = "completed"
+            qa_pairs_obj.generate_count = success_count
+            qa_pairs_obj.save()
+        task_progress = task_obj.train_progress + train_progress
+        task_obj.train_progress = round(task_progress, 2)
+        task_obj.save()
+
     task_obj.delete()
 
 
@@ -293,21 +311,29 @@ def get_qa_content(qa_pairs_obj: QAPairs, es_index):
 @shared_task
 def rebuild_graph_community_by_instance(instance_id):
     graph_obj = KnowledgeGraph.objects.get(id=instance_id)
+    graph_obj.status = "rebuilding"
+    graph_obj.save()
     res = GraphUtils.rebuild_graph_community(graph_obj)
     if not res["result"]:
-        logger.error("Failed to rebuild graph community: {}".format(res["message"]))
+        logger.error("Failed to rebuild graph community")
     logger.info("Graph community rebuild completed for instance ID: {}".format(instance_id))
+    graph_obj.status = "completed"
+    graph_obj.save()
 
 
 @shared_task
 def create_graph(instance_id):
     logger.info("Start creating graph for instance ID: {}".format(instance_id))
     instance = KnowledgeGraph.objects.get(id=instance_id)
+    instance.status = "training"
+    instance.save()
     res = GraphUtils.create_graph(instance)
     if not res["result"]:
         instance.delete()
         logger.error("Failed to create graph: {}".format(res["message"]))
     else:
+        instance.status = "completed"
+        instance.save()
         logger.info("Graph created completed: {}".format(instance.name))
 
 
@@ -315,11 +341,17 @@ def create_graph(instance_id):
 def update_graph(instance_id, old_doc_list):
     logger.info("Start updating graph for instance ID: {}".format(instance_id))
     instance = KnowledgeGraph.objects.get(id=instance_id)
+    instance.status = "training"
+    instance.save()
     res = GraphUtils.update_graph(instance, old_doc_list)
     if not res["result"]:
+        instance.status = "failed"
+        instance.save()
         logger.error("Failed to update graph: {}".format(res["message"]))
     else:
-        logger.info("Graph updated completed: {}".format(instance.name))
+        instance.status = "completed"
+        instance.save()
+        logger.info("Graph updated completed: {}".format(instance.id))
 
 
 @shared_task
@@ -360,7 +392,7 @@ def _initialize_qa_task(file_data, knowledge_base_id, username, domain):
 
     # 创建问答对对象
     for qa_name in file_data.keys():
-        qa_pairs = create_qa_pairs_task(knowledge_base_id, qa_name)
+        qa_pairs = create_qa_pairs_task(knowledge_base_id, qa_name, username, domain)
         if qa_pairs.id not in qa_pairs_id_list:
             qa_pairs_list.append(qa_pairs)
             qa_pairs_id_list.append(qa_pairs.id)
@@ -373,6 +405,7 @@ def _initialize_qa_task(file_data, knowledge_base_id, username, domain):
         task_name=task_name,
         knowledge_ids=qa_pairs_id_list,
         train_progress=0,
+        is_qa_task=True,
     )
 
     return task_obj, qa_pairs_list
@@ -391,6 +424,7 @@ def _process_qa_pairs_batch(qa_pairs_list, file_data, knowledge_base, task_obj):
 
         # 更新问答对数量和任务进度
         qa_pairs.qa_count += success_count
+        qa_pairs.generate_count += success_count
         qa_pairs.save()
         task_progress = task_obj.train_progress + train_progress
         task_obj.train_progress = round(task_progress, 2)
@@ -466,12 +500,15 @@ def _send_qa_request_with_retry(params, url, headers, index):
     return True
 
 
-def create_qa_pairs_task(knowledge_base_id, qa_name):
+def create_qa_pairs_task(knowledge_base_id, qa_name, username, domain):
     # 创建或获取问答对对象
     qa_pairs, created = QAPairs.objects.get_or_create(
         name=qa_name,
         knowledge_base_id=knowledge_base_id,
         document_id=0,
+        created_by=username,
+        domain=domain,
+        create_type="import",
     )
     logger.info(f"问答对对象{'创建' if created else '获取'}成功: {qa_pairs.name}")
     return qa_pairs
@@ -491,9 +528,38 @@ def set_import_kwargs(knowledge_base):
         "chunk_overlap": 128,
         "load_mode": "full",
         "semantic_chunk_model_base_url": [],
-        "semantic_chunk_model_api_key": "",
+        "semantic_chunk_model_api_key": " ",
         "semantic_chunk_model": "",
         "preview": "false",
     }
 
     return kwargs
+
+
+@shared_task
+def create_qa_pairs_by_custom(qa_pairs_id, content_list):
+    qa_pairs = QAPairs.objects.get(id=qa_pairs_id)
+    es_index = qa_pairs.knowledge_base.knowledge_index_name()
+    embed_config = qa_pairs.knowledge_base.embed_model.decrypted_embed_config
+    embed_model_name = qa_pairs.knowledge_base.embed_model.name
+    chunk_obj = {}
+    task_obj = KnowledgeTask.objects.create(
+        created_by=qa_pairs.created_by,
+        domain=qa_pairs.domain,
+        knowledge_base_id=qa_pairs.knowledge_base_id,
+        task_name=qa_pairs.name,
+        knowledge_ids=[qa_pairs.id],
+        train_progress=0,
+        is_qa_task=True,
+    )
+    try:
+        success_count = ChunkHelper.create_qa_pairs(
+            content_list, chunk_obj, es_index, embed_config, embed_model_name, qa_pairs_id
+        )
+        qa_pairs.generate_count = success_count
+        qa_pairs.status = "completed"
+    except Exception as e:
+        logger.exception(e)
+        qa_pairs.status = "failed"
+    task_obj.delete()
+    qa_pairs.save()

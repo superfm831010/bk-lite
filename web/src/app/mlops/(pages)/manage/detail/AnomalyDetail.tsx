@@ -1,11 +1,22 @@
 import { useCallback, useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useTranslation } from "@/utils/i18n";
 import useMlopsManageApi from '@/app/mlops/api/manage';
 import CustomTable from "@/components/custom-table";
+import PermissionWrapper from '@/components/permission';
 import UploadModal from "./uploadModal";
-import { Input, Button, Popconfirm, Tag } from "antd";
-import { useTranslation } from "@/utils/i18n";
-import { TYPE_CONTENT } from "@/app/mlops/constants";
+import OperateModal from "@/components/operate-modal";
+import {
+  Input,
+  Button,
+  Popconfirm,
+  Tag,
+  Breadcrumb,
+  Checkbox,
+  type CheckboxOptionType,
+  message,
+} from "antd";
+import { TYPE_CONTENT, TYPE_COLOR } from "@/app/mlops/constants";
 import { ColumnItem, ModalRef, Pagination, TableData } from '@/app/mlops/types';
 const { Search } = Input;
 
@@ -13,11 +24,14 @@ const AnomalyDetail = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { getAnomalyTrainData, deleteAnomalyTrainData } = useMlopsManageApi();
+  const { getAnomalyTrainData, deleteAnomalyTrainData, labelingData } = useMlopsManageApi();
   const modalRef = useRef<ModalRef>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
+  const [currentData, setCurrentData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [pagination, setPagination] = useState<Pagination>({
     current: 1,
     total: 0,
@@ -54,7 +68,7 @@ const AnomalyDetail = () => {
       render(_, record) {
         const activeTypes = Object.entries(record.type)
           .filter(([, value]) => value === true)
-          .map(([key]) => <Tag key={key}>{t(`datasets.${TYPE_CONTENT[key]}`)}</Tag>);
+          .map(([key]) => <Tag key={key} color={TYPE_COLOR[key]}>{t(`datasets.${TYPE_CONTENT[key]}`)}</Tag>);
         return (
           <>
             {activeTypes.length ? activeTypes : '--'}
@@ -77,26 +91,47 @@ const AnomalyDetail = () => {
           >
             {t('datasets.annotate')}
           </Button>
-          <Popconfirm
-            title={t('datasets.deleteTitle')}
-            description={t('datasets.deleteContent')}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            okButtonProps={{ loading: confirmLoading }}
-            onConfirm={() => onDelete(record)}
-          >
-            <Button type="link">
-              {t('common.delete')}
+          <PermissionWrapper requiredPermissions={['File Edit']}>
+            <Button
+              type="link"
+              className="mr-[10px]"
+              onClick={() => openModal(record)}
+            >
+              {t('common.edit')}
             </Button>
-          </Popconfirm>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['File Delete']}>
+            <Popconfirm
+              title={t('datasets.deleteTitle')}
+              description={t('datasets.deleteContent')}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              okButtonProps={{ loading: confirmLoading }}
+              onConfirm={() => onDelete(record)}
+            >
+              <Button type="link" danger>
+                {t('common.delete')}
+              </Button>
+            </Popconfirm>
+          </PermissionWrapper>
         </>
       ),
     },
   ], [t]);
 
+  const options: CheckboxOptionType[] = [
+    { label: t(`datasets.train`), value: 'is_train_data' },
+    { label: t(`datasets.validate`), value: 'is_val_data' },
+    { label: t(`datasets.test`), value: 'is_test_data' },
+  ];
+
   useEffect(() => {
     getDataset();
   }, [pagination.current, pagination.pageSize]);
+
+  const onChange = (checkedValues: string[]) => {
+    setSelectedTags(checkedValues);
+  };
 
   const onSearch = (search: string) => {
     getDataset(search);
@@ -140,6 +175,7 @@ const AnomalyDetail = () => {
     const data = {
       dataset_id: folder_id,
       folder: folder_name,
+      activeTap
     };
     modalRef.current?.showModal({ type: 'edit', form: data });
   };
@@ -164,9 +200,57 @@ const AnomalyDetail = () => {
     setPagination(value);
   };
 
+  const handleCancel = () => {
+    setModalOpen(false);
+  };
+
+  const handleSubmit = async () => {
+    setConfirmLoading(true);
+    try {
+      if (activeTap === 'anomaly') {
+        const params = {
+          is_train_data: selectedTags.includes('is_train_data'),
+          is_val_data: selectedTags.includes('is_val_data'),
+          is_test_data: selectedTags.includes('is_test_data')
+        };
+        await labelingData(currentData?.id, params);
+        message.success(t(`common.updateSuccess`));
+        setModalOpen(false);
+        getDataset();
+      }
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
+
+  const openModal = (data: any) => {
+    setCurrentData(data);
+    setModalOpen(true);
+    const { is_train_data, is_val_data, is_test_data } = data.type;
+    const activeTypes = Object.entries({ is_train_data, is_val_data, is_test_data })
+      .filter(([, value]) => value === true)
+      .map(([key]) => key);
+    setSelectedTags(activeTypes);
+  };
+
   return (
     <>
-      <div className="flex justify-end items-center mb-4 gap-2">
+      <div className="flex justify-between items-center mb-4 gap-2">
+        <div>
+          <Breadcrumb
+            separator=">"
+            items={[
+              {
+                title: <a href="/mlops/manage">{t(`datasets.datasets`)}</a>
+              },
+              {
+                title: t(`datasets.datasetsDetail`)
+              }
+            ]}
+          />
+        </div>
         <div className='flex'>
           <Search
             className="w-[240px] mr-1.5"
@@ -175,9 +259,11 @@ const AnomalyDetail = () => {
             onSearch={onSearch}
             style={{ fontSize: 15 }}
           />
-          <Button type="primary" className="rounded-md text-xs shadow" onClick={onUpload}>
-            {t("datasets.upload")}
-          </Button>
+          <PermissionWrapper requiredPermissions={['File Upload']}>
+            <Button type="primary" className="rounded-md text-xs shadow" onClick={onUpload}>
+              {t("datasets.upload")}
+            </Button>
+          </PermissionWrapper>
         </div>
       </div>
       <div className="flex-1 relative">
@@ -195,6 +281,23 @@ const AnomalyDetail = () => {
         </div>
       </div>
       <UploadModal ref={modalRef} onSuccess={() => getDataset()} />
+      <OperateModal
+        open={modalOpen}
+        title={t(`common.edit`)}
+        footer={[
+          <Button key="submit" loading={confirmLoading} type="primary" onClick={handleSubmit}>
+            {t('common.confirm')}
+          </Button>,
+          <Button key="cancel" onClick={handleCancel}>
+            {t('common.cancel')}
+          </Button>,
+        ]}
+      >
+        <div>
+          {t(`datasets.fileType`) + ': '}
+          <Checkbox.Group options={options} value={selectedTags} onChange={onChange} />
+        </div>
+      </OperateModal>
     </>
   )
 };

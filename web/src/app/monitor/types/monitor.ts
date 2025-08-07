@@ -188,8 +188,6 @@ export interface SearchParams {
 export interface FiltersConfig {
   level: string[];
   state: string[];
-  notify: string[];
-  monitor_objects: string[];
 }
 export interface ThresholdField {
   level: string;

@@ -9,7 +9,7 @@ import React, {
 import { Button, message, Upload } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import { useTranslation } from '@/utils/i18n';
-import useApiClient from '@/utils/request';
+import { useInstanceApi } from '@/app/cmdb/api';
 import type { UploadProps } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import axios from 'axios';
@@ -40,7 +40,7 @@ const ImportInst = forwardRef<FieldModalRef, FieldModalProps>(
     const [modelId, setModelId] = useState<string>('');
     const [fileList, setFileList] = useState<any[]>([]);
     const { t } = useTranslation();
-    const { post } = useApiClient();
+    const instanceApi = useInstanceApi();
     const { Dragger } = Upload;
     const authContext = useAuth();
     const { data: session } = useSession();
@@ -106,7 +106,7 @@ const ImportInst = forwardRef<FieldModalRef, FieldModalProps>(
       fmData.append('file', fileList[0].originFileObj);
       try {
         setConfirmLoading(true);
-        await post(`/cmdb/api/instance/${modelId}/inst_import/`, fmData, {
+        await instanceApi.importInstances(modelId, fmData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -138,9 +138,9 @@ const ImportInst = forwardRef<FieldModalRef, FieldModalProps>(
                 loading={confirmLoading}
                 onClick={handleSubmit}
               >
-                {t('confirm')}
+                {t('common.confirm')}
               </Button>
-              <Button onClick={handleCancel}>{t('cancel')}</Button>
+              <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
         >

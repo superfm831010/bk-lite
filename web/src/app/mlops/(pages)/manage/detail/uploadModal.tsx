@@ -4,7 +4,7 @@ import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { exportToCSV } from '@/app/mlops/utils/common';
 import useMlopsManageApi from '@/app/mlops/api/manage';
-import { Upload, Button, message, type UploadFile, type UploadProps } from 'antd';
+import { Upload, Button, message, Checkbox, type UploadFile, type UploadProps } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import { ModalConfig, ModalRef, TableData } from '@/app/mlops/types';
 import { TrainDataParams } from '@/app/mlops/types/manage';
@@ -20,6 +20,10 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
   const [visiable, setVisiable] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [fileList, setFileList] = useState<UploadFile<any>[]>([]);
+  const [checkedType, setCheckedType] = useState<string[]>([]);
+  const [selectTags, setSelectTags] = useState<{
+    [key: string]: boolean
+  }>({});
   const [formData, setFormData] = useState<TableData>();
 
   useImperativeHandle(ref, () => ({
@@ -65,7 +69,18 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
       }, {});
     });
     return data as TrainDataParams[];
-  }
+  };
+
+  const onSelectChange = (value: string[]) => {
+    setCheckedType(value);
+    const object = value.reduce((prev: object, current: string) => {
+      return {
+        ...prev,
+        [current]: true
+      };
+    }, {});
+    setSelectTags(object);
+  };
 
   const handleSubmit = async () => {
     setConfirmLoading(true);
@@ -75,38 +90,38 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
         setConfirmLoading(false);
         return message.error(t('datasets.pleaseUpload'));
       }
-      const text = await file?.originFileObj.text();
-      const data: TrainDataParams[] = handleFileRead(text);
-      const train_data = data.map(item => ({ timestamp: item.timestamp, value: item.value }));
-      const points = data.filter(item => item?.label === 1).map(k => k.index);
-      const params = {
-        dataset: formData?.dataset_id,
-        name: file.name,
-        train_data: train_data,
-        metadata: {
-          anomaly_point: points
-        },
-        is_train_data: true,
-        is_val_data: false,
-        is_test_data: false,
+      if (formData?.activeTap === 'anomaly') {
+        const text = await file?.originFileObj.text();
+        const data: TrainDataParams[] = handleFileRead(text);
+        const train_data = data.map(item => ({ timestamp: item.timestamp, value: item.value }));
+        const points = data.filter(item => item?.label === 1).map(k => k.index);
+        const params = {
+          dataset: formData?.dataset_id,
+          name: file.name,
+          train_data: train_data,
+          metadata: {
+            anomaly_point: points
+          },
+          ...selectTags
+        };
+        await addAnomalyTrainData(params);
+        setConfirmLoading(false);
+        setVisiable(false);
+        message.success(t('datasets.uploadSuccess'));
+        onSuccess();
       }
-      await addAnomalyTrainData(params);
-      setConfirmLoading(false);
-      setVisiable(false);
-      message.success(t('datasets.uploadSuccess'));
-      onSuccess();
     } catch (e) {
-      console.log(e)
+      console.log(e);
     } finally {
       setConfirmLoading(false);
       setFileList([]);
     }
-    // message.error(`${error.message}`);
   };
 
   const handleCancel = () => {
     setVisiable(false);
-    setFileList([])
+    setFileList([]);
+    setCheckedType([]);
   };
 
   const downloadTemplate = async () => {
@@ -157,8 +172,26 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
     } else {
       message.error(t('datasets.downloadError'));
     }
-    console.log('download');
-  }
+  };
+
+  const CheckedType = () => (
+    <div className='text-left flex justify-between items-center'>
+      <div className='flex-1'>
+        <span className='leading-[32px] mr-2'>{t(`mlops-common.type`) + ": "} </span>
+        <Checkbox.Group onChange={onSelectChange} value={checkedType}>
+          <Checkbox value={'is_train_data'}>{t(`datasets.train`)}</Checkbox>
+          <Checkbox value={'is_val_data'}>{t(`datasets.validate`)}</Checkbox>
+          <Checkbox value={'is_test_data'}>{t(`datasets.test`)}</Checkbox>
+        </Checkbox.Group>
+      </div>
+      <Button key="submit" className='mr-2' loading={confirmLoading} type="primary" onClick={handleSubmit}>
+        {t('common.confirm')}
+      </Button>
+      <Button key="cancel" onClick={handleCancel}>
+        {t('common.cancel')}
+      </Button>
+    </div>
+  );
 
   return (
     <OperateModal
@@ -166,12 +199,7 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
       open={visiable}
       onCancel={() => handleCancel()}
       footer={[
-        <Button key="submit" loading={confirmLoading} type="primary" onClick={handleSubmit}>
-          {t('common.confirm')}
-        </Button>,
-        <Button key="cancel" onClick={handleCancel}>
-          {t('common.cancel')}
-        </Button>,
+        <CheckedType key="checked" />,
       ]}
     >
       <Dragger {...props}>

@@ -147,7 +147,7 @@ const HostTask: React.FC<HostTaskFormProps> = ({
                 name="username"
                 rules={[{ required: true }]}
               >
-                <Input placeholder={t('common.pleaseInput')} />
+                <Input placeholder={t('common.inputTip')} />
               </Form.Item>
 
               <Form.Item
@@ -155,7 +155,7 @@ const HostTask: React.FC<HostTaskFormProps> = ({
                 name="password"
                 rules={[{ required: true }]}
               >
-                <Input.Password placeholder={t('common.pleaseInput')} />
+                <Input.Password placeholder={t('common.inputTip')} />
               </Form.Item>
 
               <Form.Item

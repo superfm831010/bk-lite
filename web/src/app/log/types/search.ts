@@ -1,0 +1,53 @@
+import { TableDataItem } from '@/app/log/types';
+import React from 'react';
+
+export interface SearchTableProps {
+  dataSource: TableDataItem[];
+  loading?: boolean;
+  scroll?: {
+    x?: string | number;
+    y?: string | number;
+  };
+  addToQuery: (row: TableDataItem, type: string) => void;
+  onLoadMore?: () => void;
+}
+
+export interface SearchParams {
+  query?: string;
+  start_time?: string;
+  end_time?: string;
+  field?: string;
+  fields_limit?: number;
+  step?: string;
+  limit?: number | null;
+}
+
+export interface LogStream {
+  fields: {
+    _stream: string;
+  };
+  timestamps: string[];
+  values: number[];
+  total: number;
+}
+
+export interface DetailItem {
+  stream: string;
+  value: number;
+}
+
+export interface AggregatedResult {
+  time: React.Key;
+  value: number;
+  detail: DetailItem[];
+}
+
+export interface LogTerminalProps {
+  className?: string;
+  query: string;
+  fetchData?: (loading: boolean) => void;
+}
+
+export interface LogTerminalRef {
+  startLogStream: () => void;
+}

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Select, Button, Switch, Dropdown, Menu, Tag, Checkbox, message, Spin, InputNumber } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { DeleteOutlined, DownOutlined, CheckOutlined, StopOutlined } from '@ant-design/icons';
+import { DeleteOutlined, DownOutlined, CheckOutlined } from '@ant-design/icons';
 import useGroups from '@/app/opspilot/hooks/useGroups';
 import { v4 as uuidv4 } from 'uuid';
 import { useSearchParams } from 'next/navigation';
@@ -30,7 +30,6 @@ const StudioSettingsPage: React.FC = () => {
   const [channels, setChannels] = useState<{ id: number; name: string, enabled: boolean }[]>([]);
   const [selectedSkills, setSelectedSkills] = useState<number[]>([]);
   const [selectedChannels, setSelectedChannels] = useState<number[]>([]);
-  const [originChannels, setOriginChannels] = useState<number[]>([]);
   const [isSkillModalVisible, setIsSkillModalVisible] = useState(false);
   const [isDomainEnabled, setIsDomainEnabled] = useState(false);
   const [isPortMappingEnabled, setIsPortMappingEnabled] = useState(false);
@@ -39,6 +38,7 @@ const StudioSettingsPage: React.FC = () => {
   const [enableSsl, setEnableSsl] = useState(false);
   const [botPermissions, setBotPermissions] = useState<string[]>([]);
   const [online, setOnline] = useState(false);
+  const [botType, setBotType] = useState<number>(1);
   const searchParams = useSearchParams();
   const botId = searchParams ? searchParams.get('id') : null;
   const { fetchInitialData, saveBotConfig, toggleOnlineStatus } = useStudioApi();
@@ -62,6 +62,9 @@ const StudioSettingsPage: React.FC = () => {
         setSkills(skillsData);
         setChannels(channelsData);
 
+        const currentBotType = botData.bot_type || 1;
+        setBotType(currentBotType);
+
         let initialRasaModel = botData.rasa_model;
         if (!initialRasaModel && rasaModelsData.length > 0) {
           initialRasaModel = rasaModelsData[0].id;
@@ -77,8 +80,16 @@ const StudioSettingsPage: React.FC = () => {
 
         setOnline(botData.online);
         setSelectedSkills(botData.llm_skills);
-        setSelectedChannels(botData.channels);
-        setOriginChannels(botData.channels);
+        
+        if (currentBotType === 2) {
+          setSelectedChannels([]);
+        } else {
+          const enabledChannelIds = channelsData
+            .filter((channel: { id: number; name: string; enabled: boolean }) => channel.enabled)
+            .map((channel: { id: number; name: string; enabled: boolean }) => channel.id);
+          setSelectedChannels(enabledChannelIds);
+        }
+        
         setIsDomainEnabled(botData.enable_bot_domain);
         setEnableSsl(botData.enable_ssl);
         setIsPortMappingEnabled(botData.enable_node_port);
@@ -124,7 +135,6 @@ const StudioSettingsPage: React.FC = () => {
       
       if (isPublish) {
         setOnline(true);
-        setOriginChannels(selectedChannels);
       }
     } catch (error) {
       console.error(error);
@@ -196,7 +206,9 @@ const StudioSettingsPage: React.FC = () => {
 
   const allChannelsDisabled = channels.every(channel => !channel.enabled);
 
-  const showCustomChat = channels.filter(channel => originChannels.includes(channel.id)).some(channel => channel.name === 'web') && online;
+  const showCustomChat = channels
+    .filter(channel => channel.enabled && selectedChannels.includes(channel.id))
+    .some(channel => channel.name === 'web') && online;
 
   const handleSendMessage = async (newMessage: CustomChatMessage[], lastUserMessage?: CustomChatMessage): Promise<CustomChatMessage[]> => {
     return new Promise(async (resolve) => {
@@ -306,20 +318,22 @@ const StudioSettingsPage: React.FC = () => {
                     >
                       <TextArea rows={4} />
                     </Form.Item>
-                    <Form.Item
-                      label={t('studio.form.model')}
-                      name="rasa_model"
-                      tooltip={t('studio.form.modelTip')}
-                      rules={[{ required: true, message: `${t('common.inputMsg')}${t('studio.form.model')}` }]}
-                    >
-                      <Select>
-                        {rasaModels.map((model) => (
-                          <Option key={model.id} value={model.id} disabled={!model.enabled}>
-                            {model.name}
-                          </Option>
-                        ))}
-                      </Select>
-                    </Form.Item>
+                    {botType !== 2 && (
+                      <Form.Item
+                        label={t('studio.form.model')}
+                        name="rasa_model"
+                        tooltip={t('studio.form.modelTip')}
+                        rules={[{ required: true, message: `${t('common.inputMsg')}${t('studio.form.model')}` }]}
+                      >
+                        <Select>
+                          {rasaModels.map((model) => (
+                            <Option key={model.id} value={model.id} disabled={!model.enabled}>
+                              {model.name}
+                            </Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                    )}
                     <Form.Item
                       label={t('studio.form.replicaCount')}
                       name="replica_count"
@@ -362,109 +376,163 @@ const StudioSettingsPage: React.FC = () => {
                   </Form.Item>
                 </div>
               </div>
-              <div className="mb-6">
-                <h2 className="font-semibold mb-2 text-base">{t('studio.channel.title')}</h2>
-                <div className="px-4 pt-4 border rounded-md shadow-sm">
-                  <Form.Item className="mb-4">
-                    <div className="grid gap-3 grid-cols-3">
-                      {channels.map((channel) => {
-                        const isSelected = selectedChannels.includes(channel.id);
-                        return (
-                          <div
-                            key={channel.id}
-                            onClick={() => {
-                              if (channel.enabled) {
-                                setSelectedChannels((prev) =>
-                                  isSelected
-                                    ? prev.filter(id => id !== channel.id)
-                                    : [...prev, channel.id]
-                                );
+              {botType === 2 ? (
+                <div className="mb-6">
+                  <h2 className="font-semibold mb-2 text-base">{t('studio.settings.domain')}</h2>
+                  <div className="px-4 pt-4 border rounded-md shadow-sm">
+                    <div className="mb-5">
+                      <div className="flex items-center justify-between">
+                        <span className='text-sm'>{t('studio.settings.domain')}</span>
+                        <Switch size="small" checked={isDomainEnabled} onChange={(checked) => {
+                          setIsDomainEnabled(checked);
+                          if (!checked) {
+                            setBotDomain('');
+                            setEnableSsl(false);
+                          }
+                        }} />
+                      </div>
+                      {isDomainEnabled && (
+                        <>
+                          <Form.Item className='mt-4 mb-0'>
+                            <div className='w-full flex items-center'>
+                              <Input
+                                className='flex-1 mr-3'
+                                placeholder={`${t('common.inputMsg')}${t('studio.settings.domain')}`}
+                                value={botDomain}
+                                onChange={(e) => setBotDomain(e.target.value)}
+                              />
+                              <Checkbox
+                                checked={enableSsl}
+                                onChange={(e) => setEnableSsl(e.target.checked)}
+                              >
+                                {t('studio.settings.enableSsl')}
+                              </Checkbox>
+                            </div>
+                          </Form.Item>
+                        </>
+                      )}
+                    </div>
+                    <div className="border-t border-[var(--color-border-1)] py-4">
+                      <div className="flex items-center justify-between">
+                        <span className='text-sm'>{t('studio.settings.portMapping')}</span>
+                        <Switch size="small" checked={isPortMappingEnabled} onChange={(checked) => {
+                          setIsPortMappingEnabled(checked);
+                          if (!checked) {
+                            setNodePort(5005);
+                          }
+                        }} />
+                      </div>
+                      {isPortMappingEnabled && (
+                        <Form.Item className="mt-4 mb-0">
+                          <Input
+                            placeholder={`${t('common.inputMsg')}${t('studio.settings.portMapping')}`}
+                            value={nodePort}
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              // 端口号的合法范围为 1-65535
+                              if (!Number.isNaN(value) && value > 0 && value <= 65535) {
+                                setNodePort(value);
+                              } else if (e.target.value === '') {
+                                setNodePort('');
                               }
                             }}
-                            className={`relative flex items-center cursor-pointer rounded-md p-4 text-center
-                              ${isSelected ? styles.selectedCommonItem : styles.cardFillColor}
-                              ${channel.enabled ? '' : styles.disabledCommonItem}`
-                            }
-                          >
-                            <Icon type={IconMap[channel.name]} className="text-3xl mr-[5px]" />
-                            {channel.name}
-                            {isSelected && <CheckOutlined className={`${styles.checkedIcon}`} />}
-                            {!channel.enabled && <StopOutlined className={`${styles.disabledIcon}`} />}
-                          </div>
-                        );
-                      })}
+                          />
+                        </Form.Item>
+                      )}
                     </div>
-                    {allChannelsDisabled ? (<div className="mt-3">
-                      {t('studio.settings.noChannelHasBeenOpened')}
-                      <a onClick={handleConfigureChannels} style={{ color: 'var(--color-primary)', cursor: 'pointer' }}>
-                        {t('studio.settings.clickHere')}
-                      </a>
-                      {t('studio.settings.toConfigureChannels')}
-                    </div>) : (<div className='mt-5'>
-                      <div className="mb-5">
-                        <div className="flex items-center justify-between">
-                          <span className='text-sm'>{t('studio.settings.domain')}</span>
-                          <Switch size="small" checked={isDomainEnabled} onChange={(checked) => {
-                            setIsDomainEnabled(checked);
-                            if (!checked) {
-                              setBotDomain('');
-                              setEnableSsl(false);
-                            }
-                          }} />
-                        </div>
-                        {isDomainEnabled && (
-                          <>
-                            <Form.Item className='mt-4 mb-0'>
-                              <div className='w-full flex items-center'>
-                                <Input
-                                  className='flex-1 mr-3'
-                                  placeholder={`${t('common.inputMsg')}${t('studio.settings.domain')}`}
-                                  value={botDomain}
-                                  onChange={(e) => setBotDomain(e.target.value)}
-                                />
-                                <Checkbox
-                                  checked={enableSsl}
-                                  onChange={(e) => setEnableSsl(e.target.checked)}
-                                >
-                                  {t('studio.settings.enableSsl')}
-                                </Checkbox>
-                              </div>
-                            </Form.Item>
-                          </>
-                        )}
-                      </div>
-                      <div className="border-t border-[var(--color-border-1)] py-4">
-                        <div className="flex items-center justify-between">
-                          <span className='text-sm'>{t('studio.settings.portMapping')}</span>
-                          <Switch size="small" checked={isPortMappingEnabled} onChange={(checked) => {
-                            setIsPortMappingEnabled(checked);
-                            if (!checked) {
-                              setNodePort(5005);
-                            }
-                          }} />
-                        </div>
-                        {isPortMappingEnabled && (
-                          <Form.Item className="mt-4 mb-0">
-                            <Input
-                              placeholder={`${t('common.inputMsg')}${t('studio.settings.portMapping')}`}
-                              value={nodePort}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                // 端口号的合法范围为 1-65535
-                                if (!Number.isNaN(value) && value > 0 && value <= 65535) {
-                                  setNodePort(value);
-                                } else if (e.target.value === '') {
-                                  setNodePort('');
-                                }
-                              }}
-                            />
-                          </Form.Item>
-                        )}
-                      </div>
-                    </div>)}
-                  </Form.Item>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="mb-6">
+                  <h2 className="font-semibold mb-2 text-base">{t('studio.channel.title')}</h2>
+                  <div className="px-4 pt-4 border rounded-md shadow-sm">
+                    <Form.Item className="mb-4">
+                      <div className="grid gap-3 grid-cols-3">
+                        {channels.filter(channel => channel.enabled).map((channel) => {
+                          return (
+                            <div
+                              key={channel.id}
+                              className={`relative flex items-center rounded-md p-4 text-center ${styles.selectedCommonItem}`}
+                            >
+                              <Icon type={IconMap[channel.name]} className="text-3xl mr-[5px]" />
+                              {channel.name}
+                              <CheckOutlined className={`${styles.checkedIcon}`} />
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {allChannelsDisabled ? (<div className="mt-3">
+                        {t('studio.settings.noChannelHasBeenOpened')}
+                        <a onClick={handleConfigureChannels} style={{ color: 'var(--color-primary)', cursor: 'pointer' }}>
+                          {t('studio.settings.clickHere')}
+                        </a>
+                        {t('studio.settings.toConfigureChannels')}
+                      </div>) : (<div className='mt-5'>
+                        <div className="mb-5">
+                          <div className="flex items-center justify-between">
+                            <span className='text-sm'>{t('studio.settings.domain')}</span>
+                            <Switch size="small" checked={isDomainEnabled} onChange={(checked) => {
+                              setIsDomainEnabled(checked);
+                              if (!checked) {
+                                setBotDomain('');
+                                setEnableSsl(false);
+                              }
+                            }} />
+                          </div>
+                          {isDomainEnabled && (
+                            <>
+                              <Form.Item className='mt-4 mb-0'>
+                                <div className='w-full flex items-center'>
+                                  <Input
+                                    className='flex-1 mr-3'
+                                    placeholder={`${t('common.inputMsg')}${t('studio.settings.domain')}`}
+                                    value={botDomain}
+                                    onChange={(e) => setBotDomain(e.target.value)}
+                                  />
+                                  <Checkbox
+                                    checked={enableSsl}
+                                    onChange={(e) => setEnableSsl(e.target.checked)}
+                                  >
+                                    {t('studio.settings.enableSsl')}
+                                  </Checkbox>
+                                </div>
+                              </Form.Item>
+                            </>
+                          )}
+                        </div>
+                        <div className="border-t border-[var(--color-border-1)] py-4">
+                          <div className="flex items-center justify-between">
+                            <span className='text-sm'>{t('studio.settings.portMapping')}</span>
+                            <Switch size="small" checked={isPortMappingEnabled} onChange={(checked) => {
+                              setIsPortMappingEnabled(checked);
+                              if (!checked) {
+                                setNodePort(5005);
+                              }
+                            }} />
+                          </div>
+                          {isPortMappingEnabled && (
+                            <Form.Item className="mt-4 mb-0">
+                              <Input
+                                placeholder={`${t('common.inputMsg')}${t('studio.settings.portMapping')}`}
+                                value={nodePort}
+                                onChange={(e) => {
+                                  const value = Number(e.target.value);
+                                  // 端口号的合法范围为 1-65535
+                                  if (!Number.isNaN(value) && value > 0 && value <= 65535) {
+                                    setNodePort(value);
+                                  } else if (e.target.value === '') {
+                                    setNodePort('');
+                                  }
+                                }}
+                              />
+                            </Form.Item>
+                          )}
+                        </div>
+                      </div>)}
+                    </Form.Item>
+                  </div>
+                </div>
+              )}
             </div>
             <OperateModal
               visible={isSkillModalVisible}

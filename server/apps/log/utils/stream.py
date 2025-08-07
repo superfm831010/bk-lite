@@ -11,6 +11,10 @@ class StreamUtils:
             "endswith": lambda f, v: f'.{f} | endswith("{v}")'
         }
 
+        # 如果不存在规则，就全匹配
+        if not rule_json:
+            return '. == .'
+
         mode = rule_json.get("mode", "AND").upper()
         connector = " and " if mode == "AND" else " or "
 

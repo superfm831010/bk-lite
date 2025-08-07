@@ -10,10 +10,11 @@ interface DatasetModalProps {
   user: any;
   options?: any,
   onSuccess: () => void;
+  activeTag: string[];
   [key: string]: any
 }
 
-const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess }, ref) => {
+const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess, activeTag }, ref) => {
   const { t } = useTranslation();
   const { addAnomalyDatasets, updateAnomalyDatasets } = useMlopsManageApi();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -42,19 +43,29 @@ const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess }, ref
         ...formData,
       })
     }
-  }, [formData, isModalOpen])
+  }, [formData, isModalOpen]);
+
+  const handleAddMap: Record<string, (params: any) => Promise<void>> = {
+    'anomaly': async (params: any) => {
+      await addAnomalyDatasets(params);
+    }
+  };
+
+  const handleUpdateMap: Record<string, (id: number, params: any) => Promise<void>> = {
+    'anomaly': async (id: number, params: any) => {
+      await updateAnomalyDatasets(id, params);
+    }
+  };
 
   const handleSubmit = async () => {
     setConfirmLoading(true);
     try {
+      const [tagName] = activeTag;
       const { name, description } = await formRef.current?.validateFields();
       if (type === 'add') {
-        await addAnomalyDatasets({
-          name,
-          description
-        })
+        await handleAddMap[tagName]({ name, description });
       } else if (type === 'edit') {
-        await updateAnomalyDatasets(formData.id, {
+        await handleUpdateMap[tagName](formData.id, {
           name,
           description
         });

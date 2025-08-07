@@ -8,7 +8,7 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import FieldModal from '@/app/cmdb/(pages)/assetData/list/fieldModal';
-import useApiClient from '@/utils/request';
+import { useInstanceApi, useCollectApi, useModelApi } from '@/app/cmdb/api';
 import styles from '../index.module.scss';
 import CustomTable from '@/components/custom-table';
 import IpRangeInput from '@/app/cmdb/components/ipInput';
@@ -16,6 +16,8 @@ import { useCommon } from '@/app/cmdb/context/common';
 import { FieldModalRef } from '@/app/cmdb/types/assetManage';
 import { useTranslation } from '@/utils/i18n';
 import { ModelItem } from '@/app/cmdb/types/autoDiscovery';
+import GroupTreeSelector from '@/components/group-tree-select';
+
 import {
   CYCLE_OPTIONS,
   NETWORK_DEVICE_OPTIONS,
@@ -40,7 +42,6 @@ import {
   Select,
   Dropdown,
   Drawer,
-  Cascader,
 } from 'antd';
 
 interface TableItem {
@@ -71,7 +72,7 @@ export interface BaseTaskRef {
   selectedData: TableItem[];
   ipRange: string[];
   collectionType: string;
-  organization: string[];
+  organization: number[];
   initCollectionType: (value: any, type: string) => void;
 }
 
@@ -96,12 +97,12 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
   ) => {
     const { model_id: modelId } = modelItem;
     const { t } = useTranslation();
-    const { post, get } = useApiClient();
+    const instanceApi = useInstanceApi();
+    const collectApi = useCollectApi();
+    const modelApi = useModelApi();
     const form = Form.useFormInstance();
     const fieldRef = useRef<FieldModalRef>(null);
     const commonContext = useCommon();
-    const authList = useRef(commonContext?.authOrganizations || []);
-    const organizationList = authList.current;
     const users = useRef(commonContext?.userList || []);
     const userList = users.current;
     const [instOptLoading, setOptLoading] = useState(false);
@@ -124,7 +125,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     );
     const [instData, setInstData] = useState<any[]>([]);
     const [instLoading, setInstLoading] = useState(false);
-    const [ipRangeOrg, setIpRangeOrg] = useState<string[]>([]);
+    const [ipRangeOrg, setIpRangeOrg] = useState<number[]>([]);
     const [selectedInstIds, setSelectedInstIds] = useState<number[]>([]);
     const [instPagination, setInstPagination] = useState({
       current: 1,
@@ -136,7 +137,11 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     };
 
     const isHost = nodeId === 'host_manage';
-    const isCommonSelectInstNode = ['databases', 'cloud', 'host_manage'].includes(nodeId as string);
+    const isCommonSelectInstNode = [
+      'databases',
+      'cloud',
+      'host_manage',
+    ].includes(nodeId as string);
 
     const instColumns = [
       {
@@ -153,7 +158,6 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
       },
     ];
 
-
     useEffect(() => {
       if (selectedData.length && instData.length) {
         const selectedInsts = instData.filter((item) =>
@@ -167,7 +171,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     const fetchInstData = async (modelId: string, page = 1, pageSize = 10) => {
       try {
         setInstLoading(true);
-        const res = await post('/cmdb/api/instance/search/', {
+        const res = await instanceApi.searchInstances({
           model_id: modelId,
           page,
           page_size: pageSize,
@@ -215,7 +219,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     const handleDrawerConfirm = () => {
       setInstVisible(false);
       setSelectedData(selectedRows.map((item) => item));
-      form.setFieldValue('assetInst', selectedRows); 
+      form.setFieldValue('assetInst', selectedRows);
     };
 
     const handleDeleteRow = (record: TableItem) => {
@@ -223,7 +227,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         (item: any) => item._id !== record._id
       );
       setSelectedData(newSelectedData);
-      form.setFieldValue('assetInst', newSelectedData); 
+      form.setFieldValue('assetInst', newSelectedData);
     };
 
     const handleBatchDelete = () => {
@@ -234,7 +238,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         (item: any) => !displaySelectedKeys.includes(item._id)
       );
       setSelectedData(newSelectedData);
-      form.setFieldValue('assetInst', newSelectedData); 
+      form.setFieldValue('assetInst', newSelectedData);
       setDisplaySelectedKeys([]);
     };
 
@@ -246,7 +250,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         render: (text: any, record: any) => record.inst_name || '--',
       },
       {
-        title: t('action'),
+        title: t('common.actions'),
         key: 'action',
         width: 120,
         render: (_: any, record: TableItem) => (
@@ -255,7 +259,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             size="small"
             onClick={() => handleDeleteRow(record)}
           >
-            {t('delete')}
+            {t('common.delete')}
           </Button>
         ),
       },
@@ -283,12 +287,10 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
 
     const fetchSelectedInstances = async () => {
       try {
-        const res = await get('/cmdb/api/collect/model_instances/', {
-          params: {
-            task_type: modelItem.task_type
-          }
+        const res = await collectApi.getCollectModelInstances({
+          task_type: modelItem.task_type,
         });
-        return res.map((item: any) => item.id)
+        return res.map((item: any) => item.id);
       } catch (error) {
         console.error('获取已选择实例失败:', error);
       }
@@ -297,7 +299,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     const fetchOptions = async (instIds: number[] = []) => {
       try {
         setOptLoading(true);
-        const data = await post('/cmdb/api/instance/search/', {
+        const data = await instanceApi.searchInstances({
           model_id: modelId,
           page: 1,
           page_size: 10000,
@@ -309,8 +311,8 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             value: item._id,
             origin: item,
             disabled: (instIds.length ? instIds : selectedInstIds)
-              .filter(id => id !== currentInstId)
-              .includes(item._id)
+              .filter((id) => id !== currentInstId)
+              .includes(item._id),
           }))
         );
       } catch (error) {
@@ -323,12 +325,10 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
     const fetchAccessPoints = async () => {
       try {
         setAccessPointLoading(true);
-        const res = await get('/cmdb/api/collect/nodes/', {
-          params: {
-            page: 1,
-            page_size: 10,
-            name: '',
-          },
+        const res = await collectApi.getCollectNodes({
+          page: 1,
+          page_size: 10,
+          name: '',
         });
         setAccessPoints(
           res.nodes?.map((node: any) => ({
@@ -346,7 +346,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
 
     const showFieldModal = async () => {
       try {
-        const attrList = await get(`/cmdb/api/model/${modelId}/attr_list/`);
+        const attrList = await modelApi.getModelAttrList(modelId);
         fieldRef.current?.showModal({
           type: 'add',
           attrList,
@@ -366,7 +366,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         setIpRange(ipRange);
       } else {
         setSelectedData(value || []);
-        form.setFieldValue('assetInst', value || []); 
+        form.setFieldValue('assetInst', value || []);
       }
       setCollectionType(type);
     };
@@ -378,7 +378,8 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
       collectionType,
       ipRange: ipRange,
       organization: ipRangeOrg,
-      initCollectionType: (value: any, type: string) => initCollectionType(value, type),
+      initCollectionType: (value: any, type: string) =>
+        initCollectionType(value, type),
     }));
 
     return (
@@ -393,7 +394,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
               label={t('Collection.taskNameLabel')}
               rules={rules.taskName}
             >
-              <Input placeholder={t('common.pleaseInput')} />
+              <Input placeholder={t('common.inputTip')} />
             </Form.Item>
 
             {/* 扫描周期 */}
@@ -416,7 +417,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                         <TimePicker
                           className="w-40 ml-2"
                           format="HH:mm"
-                          placeholder={t('common.pleaseSelect')}
+                          placeholder={t('common.selectTip')}
                         />
                       </Form.Item>
                     </Radio>
@@ -434,7 +435,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                           <InputNumber
                             className="w-20"
                             min={5}
-                            placeholder={t('common.pleaseInput')}
+                            placeholder={t('common.inputTip')}
                           />
                         </Form.Item>
                         {t('Collection.executeInterval')}
@@ -455,7 +456,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                   <Form.Item name="instId" rules={rules.instId} noStyle>
                     <Select
                       style={{ width: '400px' }}
-                      placeholder={t('common.pleaseSelect')}
+                      placeholder={t('common.selectTip')}
                       options={instOptions}
                       loading={instOptLoading}
                       showSearch
@@ -476,18 +477,21 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             )}
 
             {/* ip选择 */}
-            {nodeId && ['network_topo', 'network', 'databases', 'host_manage'].includes(nodeId) && (
+            {nodeId &&
+              ['network_topo', 'network', 'databases', 'host_manage'].includes(
+                nodeId
+              ) && (
               <>
-                { !isHost && 
-                <Radio.Group
-                  value={collectionType}
-                  className="ml-8 mb-6"
-                  onChange={(e) => setCollectionType(e.target.value)}
-                >
-                  <Radio value="ip">{t('Collection.chooseIp')}</Radio>
-                  <Radio value="asset">{t('Collection.chooseAsset')}</Radio>
-                </Radio.Group>
-                }
+                {!isHost && (
+                  <Radio.Group
+                    value={collectionType}
+                    className="ml-8 mb-6"
+                    onChange={(e) => setCollectionType(e.target.value)}
+                  >
+                    <Radio value="ip">{t('Collection.chooseIp')}</Radio>
+                    <Radio value="asset">{t('Collection.chooseAsset')}</Radio>
+                  </Radio.Group>
+                )}
 
                 {collectionType === 'ip' && !isHost ? (
                   <>
@@ -500,7 +504,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                         {
                           required: true,
                           message:
-                            t('common.inputMsg') + t('Collection.ipRange'),
+                              t('common.inputMsg') + t('Collection.ipRange'),
                         },
                       ]}
                     >
@@ -516,19 +520,19 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                         },
                       ]}
                     >
-                      <Cascader
-                        placeholder={t('common.pleaseSelect')}
-                        options={organizationList}
+                      <GroupTreeSelector
+                        placeholder={t('common.selectTip')}
                         value={ipRangeOrg}
                         onChange={(value) => setIpRangeOrg(value)}
+                        multiple={false}
                       />
                     </Form.Item>
                   </>
                 ) : (
-                  /* 选择资产 */
-                  <Form.Item 
-                    name="assetInst" 
-                    label={instPlaceholder} 
+                /* 选择资产 */
+                  <Form.Item
+                    name="assetInst"
+                    label={instPlaceholder}
                     required
                     rules={rules.assetInst}
                     trigger="onChange"
@@ -541,7 +545,10 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                           </Button>
                         ) : (
                           <Dropdown
-                            menu={{ ...dropdownItems, onClick: handleMenuClick }}
+                            menu={{
+                              ...dropdownItems,
+                              onClick: handleMenuClick,
+                            }}
                           >
                             <Button type="primary">
                               {t('common.select')} <DownOutlined />
@@ -552,7 +559,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                           onClick={handleBatchDelete}
                           disabled={displaySelectedKeys.length === 0}
                         >
-                          {t('batchDelete')}
+                          {t('common.batchDelete')}
                         </Button>
                       </Space>
                       <CustomTable
@@ -575,7 +582,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
               </>
             )}
             {/* 接入点 */}
-            { nodeId !== 'k8s'  && (
+            {nodeId !== 'k8s' && (
               <Form.Item
                 label={t('Collection.accessPoint')}
                 name="accessPointId"
@@ -588,7 +595,7 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
                 ]}
               >
                 <Select
-                  placeholder={t('common.pleaseSelect')}
+                  placeholder={t('common.selectTip')}
                   options={accessPoints}
                   loading={accessPointLoading}
                 />
@@ -651,12 +658,15 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
         <FieldModal
           ref={fieldRef}
           userList={userList}
-          organizationList={organizationList}
           onSuccess={() => fetchOptions()}
         />
 
         <Drawer
-          title={isCommonSelectInstNode ? t('Collection.chooseAsset') : `选择${dropdownItems.items.find((item) => item.key === relateType)?.label || '资产'}`}
+          title={
+            isCommonSelectInstNode
+              ? t('Collection.chooseAsset')
+              : `选择${dropdownItems.items.find((item) => item.key === relateType)?.label || '资产'}`
+          }
           width={620}
           open={instVisible}
           onClose={handleDrawerClose}
@@ -682,7 +692,12 @@ const BaseTaskForm = forwardRef<BaseTaskRef, BaseTaskFormProps>(
             scroll={{ y: 'calc(100vh - 280px)' }}
             pagination={{
               ...instPagination,
-              onChange: (page, pageSize) => fetchInstData(isCommonSelectInstNode ? modelId : relateType, page, pageSize),
+              onChange: (page, pageSize) =>
+                fetchInstData(
+                  isCommonSelectInstNode ? modelId : relateType,
+                  page,
+                  pageSize
+                ),
             }}
             rowSelection={{
               type: 'checkbox',

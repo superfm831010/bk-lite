@@ -11,10 +11,12 @@
     }
 
     .searchCondition {
+        margin: 10px 0;
+
         :global {
-           .ant-input-group-addon {
-            padding: 0;
-           } 
+            .ant-input-group-addon {
+                padding: 0;
+            }
         }
     }
 
@@ -24,6 +26,8 @@
     }
 
     .detail {
+        padding-left: 36px;
+
         :global {
             .ant-popover-title {
                 max-width: 250px;

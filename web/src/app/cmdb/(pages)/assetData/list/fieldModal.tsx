@@ -13,7 +13,6 @@ import {
   Form,
   message,
   Select,
-  Cascader,
   DatePicker,
   Col,
   Row,
@@ -21,19 +20,16 @@ import {
 } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import { useTranslation } from '@/utils/i18n';
-import {
-  AttrFieldType,
-  Organization,
-  UserItem,
-} from '@/app/cmdb/types/assetManage';
+import GroupTreeSelector from '@/components/group-tree-select';
+import { useUserInfoContext } from '@/context/userInfo';
+import { AttrFieldType, UserItem } from '@/app/cmdb/types/assetManage';
 import { deepClone } from '@/app/cmdb/utils/common';
-import useApiClient from '@/utils/request';
+import { useInstanceApi } from '@/app/cmdb/api';
 import dayjs from 'dayjs';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
 interface FieldModalProps {
   onSuccess: (instId?: string) => void;
-  organizationList: Organization[];
   userList: UserItem[];
 }
 
@@ -47,19 +43,13 @@ interface FieldConfig {
   list: Array<any>;
 }
 
-interface RequestParams {
-  model_id?: string;
-  instance_info?: object;
-  inst_ids?: number[];
-  update_data?: object;
-}
-
 export interface FieldModalRef {
   showModal: (info: FieldConfig) => void;
 }
 
 const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
-  ({ onSuccess, userList, organizationList }, ref) => {
+  ({ onSuccess, userList }, ref) => {
+    const { selectedGroup } = useUserInfoContext();
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [subTitle, setSubTitle] = useState<string>('');
@@ -77,7 +67,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     >([]);
     const [form] = Form.useForm();
     const { t } = useTranslation();
-    const { get, post } = useApiClient();
+    const instanceApi = useInstanceApi();
 
     useEffect(() => {
       if (groupVisible) {
@@ -89,7 +79,8 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
 
     useEffect(() => {
       if (groupVisible && modelId === 'host') {
-        get('/cmdb/api/instance/list_proxys/', {})
+        instanceApi
+          .getInstanceProxys()
           .then((data: any[]) => {
             setProxyOptions(data || []);
           })
@@ -136,15 +127,19 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
         const forms = deepClone(formInfo);
         if (type === 'add') {
           Object.assign(forms, {
-            organization: organizationList[0]?.value
-              ? [organizationList[0]?.value]
-              : '',
+            organization: selectedGroup?.id ? [Number(selectedGroup.id)] : [],
           });
         } else {
           for (const key in forms) {
             const target = attrList.find((item) => item.attr_id === key);
             if (target?.attr_type === 'time' && forms[key]) {
               forms[key] = dayjs(forms[key], 'YYYY-MM-DD HH:mm:ss');
+            } else if (target?.attr_type === 'organization' && forms[key]) {
+              if (Array.isArray(forms[key])) {
+                forms[key] = forms[key]
+                  .map((item: any) => Number(item))
+                  .filter((num: number) => !isNaN(num));
+              }
             }
           }
         }
@@ -199,7 +194,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
           return (
             <Select
               disabled={fieldDisabled}
-              placeholder={t('common.pleaseSelect')}
+              placeholder={t('common.selectTip')}
             >
               {proxyOptions.map((opt) => (
                 <Select.Option key={opt.proxy_id} value={opt.proxy_id}>
@@ -215,7 +210,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
               <Select
                 showSearch
                 disabled={fieldDisabled}
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
                 filterOption={(input, opt: any) => {
                   if (typeof opt?.children?.props?.text === 'string') {
                     return opt?.children?.props?.text
@@ -240,7 +235,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
               <Select
                 showSearch
                 disabled={fieldDisabled}
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
                 filterOption={(input, opt: any) => {
                   if (typeof opt?.children === 'string') {
                     return opt?.children
@@ -261,7 +256,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             return (
               <Select
                 disabled={fieldDisabled}
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
               >
                 {[
                   { id: true, name: 'Yes' },
@@ -276,7 +271,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
           case 'time':
             return (
               <DatePicker
-                placeholder={t('common.pleaseSelect')}
+                placeholder={t('common.selectTip')}
                 showTime
                 disabled={fieldDisabled}
                 format="YYYY-MM-DD HH:mm:ss"
@@ -285,24 +280,20 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             );
           case 'organization':
             return (
-              <Cascader
-                showSearch
-                disabled={fieldDisabled}
-                options={organizationList}
-              />
+              <GroupTreeSelector multiple={false} disabled={fieldDisabled} />
             );
           case 'int':
             return (
               <InputNumber
                 disabled={fieldDisabled}
                 style={{ width: '100%' }}
-                placeholder={t('common.pleaseInput')}
+                placeholder={t('common.inputTip')}
               />
             );
           default:
             return (
               <Input
-                placeholder={t('common.pleaseInput')}
+                placeholder={t('common.inputTip')}
                 disabled={fieldDisabled || hostDisabled}
               />
             );
@@ -332,7 +323,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             (enabled) => enabled
           );
           if (!hasEnabledFields) {
-            message.warning(t('common.pleaseInput'));
+            message.warning(t('common.inputTip'));
             return;
           }
         }
@@ -347,36 +338,23 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
           }, {} as any);
         } else {
           formData = params;
-        }   
+        }
         const msg: string = t(
           type === 'add' ? 'successfullyAdded' : 'successfullyModified'
         );
-        const url: string =
-          type === 'add'
-            ? `/cmdb/api/instance/`
-            : `/cmdb/api/instance/batch_update/`;
-        let requestParams: RequestParams = {
-          model_id: modelId,
-          instance_info: formData,
-        };
-        if (type !== 'add') {
-          if (isBatchEdit) {
-            for (const key in formData) {
-              if (
-                !formData[key] &&
-                formData[key] !== 0 &&
-                formData[key] !== false
-              ) {
-                delete formData[key];
-              }
-            }
-          }
-          requestParams = {
+        let result: any;
+        if (type === 'add') {
+          result = await instanceApi.createInstance({
+            model_id: modelId,
+            instance_info: formData,
+          });
+        } else {
+          result = await instanceApi.batchUpdateInstances({
             inst_ids: type === 'edit' ? [instanceData._id] : selectedRows,
             update_data: formData,
-          };
+          });
         }
-        const { _id: instId } = await post(url, requestParams);
+        const instId = result?._id;
         message.success(msg);
         onSuccess(confirmType ? instId : '');
         handleCancel();
@@ -407,7 +385,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
                 loading={confirmLoading}
                 onClick={() => handleSubmit()}
               >
-                {t('confirm')}
+                {t('common.confirm')}
               </Button>
               {type === 'add' && (
                 <Button
@@ -418,13 +396,13 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
                   {t('Model.confirmAndAssociate')}
                 </Button>
               )}
-              <Button onClick={handleCancel}>{t('cancel')}</Button>
+              <Button onClick={handleCancel}>{t('common.cancel')}</Button>
             </div>
           }
         >
           <Form form={form} layout="vertical">
             <div className="font-[600] text-[var(--color-text-2)] text-[18px] pl-[12px] pb-[14px]">
-              {t('group')}
+              {t('common.group')}
             </div>
             <Row gutter={24}>
               {formItems

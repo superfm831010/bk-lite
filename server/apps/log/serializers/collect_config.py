@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.log.models.collect_config import CollectType, CollectInstance, CollectConfig
+from apps.log.models import CollectType, CollectInstance, CollectConfig
 
 
 class CollectTypeSerializer(serializers.ModelSerializer):

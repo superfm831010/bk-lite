@@ -10,7 +10,6 @@ from apps.core.logger import opspilot_logger as logger
 from apps.core.mixinx import EncryptMixin
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.bot_mgmt.views import validate_remaining_token
-from apps.opspilot.enum import SkillTypeChoices
 from apps.opspilot.knowledge_mgmt.models import KnowledgeBase
 from apps.opspilot.model_provider_mgmt.models import LLMModel, LLMSkill
 from apps.opspilot.model_provider_mgmt.models.llm_skill import SkillRequestLog, SkillTools
@@ -27,6 +26,14 @@ from apps.opspilot.utils.sse_chat import stream_chat
 class LLMFilter(FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     is_template = filters.NumberFilter(field_name="is_template", lookup_expr="exact")
+    skill_type = filters.CharFilter(method="filter_skill_type")
+
+    @staticmethod
+    def filter_skill_type(qs, field_name, value):
+        """查询类型"""
+        if not value:
+            return qs
+        return qs.filter(skill_type__in=[int(i.strip()) for i in value.split(",") if i.strip()])
 
 
 class LLMViewSet(AuthViewSet):
@@ -151,15 +158,12 @@ class LLMViewSet(AuthViewSet):
         params = request.data
         params["username"] = request.user.username
         params["user_id"] = request.user.id
-        skill_type = SkillTypeChoices.KNOWLEDGE_TOOL
-        if params.get("tools"):
-            skill_type = SkillTypeChoices.BASIC_TOOL
         try:
             # 获取客户端IP
             skill_obj = LLMSkill.objects.get(id=int(params["skill_id"]))
             if not request.user.is_superuser:
                 current_team = request.COOKIES.get("current_team", "0")
-                has_permission = self.get_has_permission(request.user, skill_obj, current_team)
+                has_permission = self.get_has_permission(request.user, skill_obj, current_team, is_check=True)
                 if not has_permission:
                     return self._create_error_stream_response(_("You do not have permission to update this agent."))
 
@@ -173,7 +177,7 @@ class LLMViewSet(AuthViewSet):
             if not request.user.is_superuser:
                 validate_remaining_token(skill_obj)
                 # 这里可以添加具体的配额检查逻辑
-            params["skill_type"] = skill_type
+            params["skill_type"] = skill_obj.skill_type
             params["tools"] = params.get("tools", [])
             params["group"] = params["group"] if params.get("group") else skill_obj.team[0]
             params["enable_km_route"] = (

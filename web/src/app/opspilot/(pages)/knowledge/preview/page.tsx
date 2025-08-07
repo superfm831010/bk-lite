@@ -8,7 +8,7 @@ const FileViewer = dynamic(() => import("react-file-viewer"), {
   ssr: false,
 });
 import * as docx from "docx-preview";
-import XLSX from "xlsx";
+import * as XLSX from "xlsx";
 
 const PreviewPage: React.FC = () => {
   const searchParams = useSearchParams();

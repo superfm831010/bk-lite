@@ -36,12 +36,13 @@ class RuleManager:
             if self.window_config and self.window_config.rules:
                 # 创建单个引擎
                 self.engine = RuleEngine(window_size=self.window_config.window_size)
-                
+
                 # 加载所有规则
                 for rule in self.window_config.rules:
                     self.engine.add_rule(rule.dict())
-                
-                logger.info(f"初始化 {self.window_config.window_type} 窗口类型引擎，包含 {len(self.window_config.rules)} 条规则")
+
+                logger.info(
+                    f"初始化 {self.window_config.window_type} 窗口类型引擎，包含 {len(self.window_config.rules)} 条规则")
             else:
                 logger.warning("没有可用的窗口配置或规则")
 
@@ -164,7 +165,8 @@ class RuleManager:
             return {}
 
         try:
-            logger.info(f"开始执行 {self.window_config.window_type} 窗口类型的规则，共有 {len(self.window_config.rules)} 条规则")
+            logger.info(
+                f"开始执行 {self.window_config.window_type} 窗口类型的规则，共有 {len(self.window_config.rules)} 条规则")
             results = self.engine.process_events(events_df)
 
             # 转换为RuleExecutionResult格式
@@ -199,7 +201,7 @@ class RuleManager:
 
         active_rules = self.get_active_rules()
         total_rules = len(self.window_config.rules)
-        
+
         return {
             'total_rules': total_rules,
             'active_rules': len(active_rules),
@@ -212,7 +214,7 @@ class RuleManager:
         """获取规则类型统计"""
         if not self.window_config:
             return {}
-            
+
         type_stats = {}
         for rule in self.window_config.rules:
             rule_type = rule.condition.type
@@ -223,7 +225,7 @@ class RuleManager:
         """获取严重级别统计"""
         if not self.window_config:
             return {}
-            
+
         severity_stats = {}
         for rule in self.window_config.rules:
             severity = rule.severity
@@ -255,7 +257,8 @@ class RuleManager:
                 self._init_engine()
                 self._initialized = True
                 total_rules = len(self.window_config.rules) if self.window_config else 0
-                logger.info(f"成功从数据库重新加载 {total_rules} 条规则，窗口类型: {self.window_config.window_type if self.window_config else 'None'}")
+                logger.info(
+                    f"成功从数据库重新加载 {total_rules} 条规则，窗口类型: {self.window_config.window_type if self.window_config else 'None'}")
             else:
                 logger.warning("从数据库加载的规则为空")
 
@@ -276,6 +279,18 @@ class RuleManager:
         else:
             logger.error("规则管理器初始化失败：无法加载规则配置")
 
+    def get_aggregation_key(self, rule_name: str) -> List[str]:
+        """获取聚合键"""
+        if not self.window_config:
+            logger.error("窗口配置未初始化，无法获取聚合键")
+            return []
+
+        for rule in self.window_config.rules:
+            if rule.rule_id == rule_name:
+                return rule.condition.aggregation_key
+        logger.warning(f"未找到规则 {rule_name} 的聚合键")
+        return []
+
 
 # 延迟初始化全局实例
 _rule_manager_instance = None
@@ -284,10 +299,6 @@ _rule_manager_instance = None
 def get_rule_manager(window_size="10min") -> RuleManager:
     """获取规则管理器实例（支持数据库规则）"""
     global _rule_manager_instance
-    if _rule_manager_instance is None:
-        _rule_manager_instance = RuleManager(window_size=window_size)
-        logger.info("规则管理器实例已创建")
-    return _rule_manager_instance
     if _rule_manager_instance is None:
         _rule_manager_instance = RuleManager(window_size=window_size)
         logger.info("规则管理器实例已创建")

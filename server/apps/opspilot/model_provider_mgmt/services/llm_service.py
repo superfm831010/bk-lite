@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from django.conf import settings
+from django.utils.translation import gettext as _
 
 from apps.core.logger import opspilot_logger as logger
 from apps.core.mixinx import EncryptMixin
@@ -103,7 +104,7 @@ class LLMService:
         """
         num = window_size * -1
         processed_history = []
-
+        role_map = {"assistant": "bot"}
         for user_msg in chat_history[num:]:
             message = user_msg.get("message", user_msg.get("text", ""))
             if user_msg["event"] == "user" and isinstance(message, list):
@@ -115,13 +116,13 @@ class LLMService:
                         if image_url:
                             image_list.append(image_url)
                     else:
-                        msg = item["message"]
+                        msg = item.get("text", "") or item.get("message", "")
                 processed_history.append({"event": "user", "message": msg, "image_data": image_list})
             else:
                 txt = user_msg.get("message", user_msg.get("text", ""))
                 if isinstance(txt, list):
                     txt = "\n".join([i.get("message", i.get("text")) for i in txt])
-                processed_history.append({"event": user_msg["event"], "message": txt})
+                processed_history.append({"event": role_map.get(user_msg["event"], user_msg["event"]), "message": txt})
 
         return processed_history
 
@@ -157,7 +158,7 @@ class LLMService:
             extra_config.update({"enable_rag_source": True})
         if kwargs.get("enable_rag_strict_mode"):
             extra_config.update({"enable_rag_strict_mode": kwargs["enable_rag_strict_mode"]})
-        if kwargs["skill_type"] == SkillTypeChoices.BASIC_TOOL:
+        if kwargs["skill_type"] != SkillTypeChoices.KNOWLEDGE_TOOL:
             for tool in kwargs.get("tools", []):
                 for i in tool.get("kwargs", []):
                     if i["type"] == "password":
@@ -202,6 +203,8 @@ class LLMService:
         elif kwargs["skill_type"] == SkillTypeChoices.LATS:
             url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_lats_agent"
         result = ChatServerHelper.post_chat_server(chat_kwargs, url)
+        if not result:
+            return {"message": _("URL request failed")}, doc_map, title_map
         data = result["message"]
 
         # 更新团队令牌使用信息
@@ -336,13 +339,13 @@ class LLMService:
     def set_default_naive_rag_kwargs(knowledge_base, score_threshold_map):
         embed_config = knowledge_base.embed_model.decrypted_embed_config
         embed_model_base_url = embed_config["base_url"]
-        embed_model_api_key = embed_config["api_key"]
+        embed_model_api_key = embed_config["api_key"] or " "
         embed_model_name = embed_config.get("model", knowledge_base.embed_model.name)
         rerank_model_base_url = rerank_model_api_key = rerank_model_name = ""
         if knowledge_base.rerank_model:
             rerank_config = knowledge_base.rerank_model.decrypted_rerank_config_config
             rerank_model_base_url = rerank_config["base_url"]
-            rerank_model_api_key = rerank_config["api_key"]
+            rerank_model_api_key = rerank_config["api_key"] or " "
             rerank_model_name = rerank_config.get("model", knowledge_base.rerank_model.name)
         score_threshold = score_threshold_map.get(knowledge_base.id, 0.7)
         kwargs = {

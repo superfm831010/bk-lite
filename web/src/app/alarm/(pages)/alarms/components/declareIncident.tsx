@@ -63,7 +63,7 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
           operator: values.assignee,
         });
         message.success(
-          t('alarms.createAndLinkIncident') + t('common.success')
+          t('alarms.createAndLinkIncident') + t('alarmCommon.success')
         );
       } else {
         const target = incidentOptions.find(
@@ -77,7 +77,7 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
         await modifyIncidentDetail(String(values.incidentId), {
           alert: alert_ids,
         });
-        message.success(t('alarms.linkIncident') + t('common.success'));
+        message.success(t('alarms.linkIncident') + t('alarmCommon.success'));
         rowData.forEach((r) => {
           r.has_incident = true;
         });
@@ -86,7 +86,7 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
       form.resetFields();
       setVisible(false);
     } catch {
-      message.error(t('common.operateFailed'));
+      message.error(t('alarmCommon.operateFailed'));
     } finally {
       setConfirmLoading(false);
     }
@@ -151,9 +151,9 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
                 label={t('alarms.title')}
                 labelCol={{ span: 4 }}
                 wrapperCol={{ span: 20 }}
-                rules={[{ required: true, message: t('common.inputMsg') }]}
+                rules={[{ required: true, message: t('common.inputTip') }]}
               >
-                <Input placeholder={t('common.inputMsg')} />
+                <Input placeholder={t('common.inputTip')} />
               </Form.Item>
 
               <Form.Item
@@ -161,7 +161,7 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
                 label={t('alarms.level')}
                 labelCol={{ span: 4 }}
                 wrapperCol={{ span: 20 }}
-                rules={[{ required: true, message: t('common.selectMsg') }]}
+                rules={[{ required: true, message: t('common.selectTip') }]}
               >
                 <Radio.Group>
                   {levelListIncident.map((item) => (
@@ -177,15 +177,20 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
                 label={t('alarms.assignee')}
                 labelCol={{ span: 4 }}
                 wrapperCol={{ span: 20 }}
-                rules={[{ required: true, message: t('common.selectMsg') }]}
+                rules={[{ required: true, message: t('common.selectTip') }]}
               >
                 <Select
                   mode="multiple"
                   allowClear
                   showSearch
                   maxTagCount={4}
-                  placeholder={t('common.selectMsg')}
+                  placeholder={t('common.selectTip')}
                   options={assigneeOptions}
+                  filterOption={(input, option) =>
+                    (option?.label as string)
+                      ?.toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
                 />
               </Form.Item>
             </>
@@ -195,12 +200,12 @@ const DeclareModal: React.FC<DeclareModalProps> = ({ rowData, onSuccess }) => {
               label={t('alarms.incident')}
               labelCol={{ span: 4 }}
               wrapperCol={{ span: 20 }}
-              rules={[{ required: true, message: t('common.selectMsg') }]}
+              rules={[{ required: true, message: t('common.selectTip') }]}
             >
               <Select
                 allowClear
                 showSearch
-                placeholder={t('common.selectMsg')}
+                placeholder={t('common.selectTip')}
                 loading={incidentLoading}
                 optionLabelProp="label"
               >

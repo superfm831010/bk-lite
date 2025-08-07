@@ -66,12 +66,17 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         knowledge_base_id = request.GET.get("knowledge_base_id", 0)
         if not knowledge_base_id:
             return JsonResponse({"result": False, "message": _("knowledge_base_id is required")})
-        task_list = (
+        task_list = list(
             KnowledgeTask.objects.filter(created_by=request.user.username, knowledge_base_id=knowledge_base_id)
-            .values("task_name", "train_progress", "is_qa_task")
+            .values("task_name", "train_progress", "is_qa_task", "completed_count", "total_count")
             .order_by("-id")
         )
-        return JsonResponse({"result": True, "data": list(task_list)})
+        for i in task_list:
+            if not i["is_qa_task"]:
+                i["train_progress"] = f"{i['completed_count']}/{i['total_count']}"
+            else:
+                i["train_progress"] = f"{i['train_progress']}%"
+        return JsonResponse({"result": True, "data": task_list})
 
     @action(methods=["POST"], detail=False)
     def testing(self, request):
@@ -148,6 +153,38 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
                     ],
                     "count": res["count"],
                 },
+            }
+        )
+
+    @action(methods=["GET"], detail=False)
+    def get_chunk_detail(self, request):
+        knowledge_id = request.GET.get("knowledge_id")
+        instance = KnowledgeDocument.objects.get(id=knowledge_id)
+        chunk_id = request.GET.get("chunk_id")
+        index_name = instance.knowledge_index_name()
+        res = ChunkHelper.get_document_es_chunk(
+            index_name,
+            1,
+            1,
+            "",
+            metadata_filter={"chunk_id": chunk_id, "is_doc": "1"},
+        )
+        if res["documents"]:
+            return_data = res["documents"][0]
+            return JsonResponse(
+                {
+                    "result": True,
+                    "data": {
+                        "id": return_data["metadata"]["chunk_id"],
+                        "content": return_data["page_content"],
+                        "index_name": index_name,
+                    },
+                }
+            )
+        return JsonResponse(
+            {
+                "result": False,
+                "message": _("Chunk not found"),
             }
         )
 

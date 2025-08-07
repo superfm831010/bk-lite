@@ -12,7 +12,7 @@ export const useAlertDetailTabs = () => {
       key: 'event',
     },
   ];
-}
+};
 
 export const useAlarmTabs = () => {
   const { t } = useTranslation();
@@ -26,4 +26,22 @@ export const useAlarmTabs = () => {
       key: 'historicalAlarms',
     },
   ];
-}
+};
+
+export const useStateList = () => {
+  const { t } = useTranslation();
+  return [
+    {
+      label: t('monitor.events.new'),
+      value: 'new',
+    },
+    {
+      label: t('monitor.events.recovery'),
+      value: 'recovered',
+    },
+    {
+      label: t('monitor.events.closed'),
+      value: 'closed',
+    },
+  ];
+};

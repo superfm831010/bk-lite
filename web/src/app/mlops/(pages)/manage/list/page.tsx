@@ -1,127 +1,64 @@
 "use client";
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { useRouter } from 'next/navigation';
 import useMlopsManageApi from '@/app/mlops/api/manage';
 import {
-  Popconfirm,
   message,
   Button,
-  Input
+  Menu,
+  Modal,
+  Tree
 } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import Icon from '@/components/icon';
-import CustomTable from '@/components/custom-table';
+import type { TreeDataNode } from 'antd';
 import DatasetModal from './dataSetsModal';
-import SubLayout from '@/components/sub-layout';
-// import PermissionWrapper from '@/components/permission';
-import { ColumnItem, ModalRef, Pagination } from '@/app/mlops/types';
+import PageLayout from '@/components/page-layout';
+import TopSection from '@/components/top-section';
+import EntityList from '@/components/entity-list';
+import PermissionWrapper from '@/components/permission';
+import { ModalRef } from '@/app/mlops/types';
 import { DataSet } from '@/app/mlops/types/manage';
-import sideMenuStyle from './index.module.scss';
-const { Search } = Input;
+const { confirm } = Modal;
 
 const DatasetManagePage = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const { deleteAnomalyDatasets, getAnomalyDatasetsList } = useMlopsManageApi();
   const [datasets, setDatasets] = useState<DataSet[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({
-    current: 1,
-    total: 0,
-    pageSize: 20
-  });
   const [loading, setLoading] = useState<boolean>(false);
-  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const modalRef = useRef<ModalRef>(null);
   const activeTab = 'anomaly';
   const datasetTypes = [
     { key: 'anomaly', value: 'anomaly', label: t('datasets.anomaly') },
-    // { key: 'forecast', value: 'forecast', label: t('datasets.forecast') },
-    // { key: 'log', value: 'log', label: t('datasets.log') },
   ];
 
-  const columns: ColumnItem[] = [
+  const treeData: TreeDataNode[] = [
     {
-      title: t(`common.name`),
-      dataIndex: 'name',
-      key: 'name'
-    },
-    {
-      title: t(`common.description`),
-      dataIndex: 'description',
-      key: 'description'
-    },
-    {
-      title: t(`common.creator`),
-      dataIndex: 'creator',
-      key: 'creator'
-    },
-    {
-      title: t(`common.action`),
-      dataIndex: 'action',
-      key: 'action',
-      render: (_, record) => (
-        <>
-          <Button
-            type="link"
-            className="mr-[10px]"
-            onClick={() => navigateToNode(record)}
-          >
-            {t('common.detail')}
-          </Button>
-          <Button
-            type="link"
-            className="mr-[10px]"
-            onClick={() => handleOpenModal('edit', 'editform', record)}
-          >
-            {t('common.edit')}
-          </Button>
-          <Popconfirm
-            title={t('datasets.delDataset')}
-            description={t('datasets.delDatasetInfo')}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            okButtonProps={{ loading: confirmLoading }}
-            onConfirm={() => handleDelete(record)}
-          >
-            <Button type="link" danger>
-              {t('common.delete')}
-            </Button>
-          </Popconfirm>
-        </>
-      )
+      title: t(`datasets.datasets`),
+      key: 'datasets',
+      selectable: false,
+      children: [
+        {
+          title: t(`datasets.anomaly`),
+          key: 'anomaly',
+        },
+      ]
     }
   ];
 
-  const Topsection = useMemo(() => {
-    return (
-      <div className="flex flex-col h-[90px] p-4 overflow-hidden">
-        <h1 className="text-lg w-full truncate mb-1">{t('datasets.datasets')}</h1>
-        <p className="text-sm overflow-hidden w-full min-w-[1000px] mt-[8px]">
-          {t('traintask.description')}
-        </p>
-      </div>
-    )
-  }, [t]);
-
-  const Intro = useMemo(() => {
-    return (
-      <div className="flex h-[58px] flex-row items-center">
-        <Icon
-          type="yunquyu"
-          className="h-16 w-16"
-          style={{ height: '36px', width: '36px' }}
-        ></Icon>
-        <h1 className="ml-2 text-center truncate">{t(`datasets.datasets`)}</h1>
-      </div>
-    )
-  }, [t]);
+  useEffect(() => {
+    setSelectedKeys(['anomaly'])
+  }, []);
 
   useEffect(() => {
     getDataSets();
-  }, [])
+  }, [selectedKeys])
+
 
   const getDataSets = useCallback(async () => {
+    const [activeTab] = selectedKeys;
+    if (!activeTab) return;
     setLoading(true);
     try {
       if (activeTab === 'anomaly') {
@@ -131,16 +68,12 @@ const DatasetManagePage = () => {
             id: item.id,
             name: item.name,
             description: item.description || '--',
-            icon: 'chakanshuji',
+            icon: 'tucengshuju',
             creator: item?.created_by || '--',
             tenant_id: item.tenant_id
           }
         }) || [];
         setDatasets(_data);
-        setPagination(prev => ({
-          ...prev,
-          total: _data.length
-        }));
       } else {
         setDatasets([]);
       }
@@ -149,7 +82,7 @@ const DatasetManagePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [selectedKeys]);
 
   const navigateToNode = (item: any) => {
     router.push(
@@ -157,63 +90,125 @@ const DatasetManagePage = () => {
     );
   };
 
-  const handleDelete = async (data: any) => {
-    setConfirmLoading(true);
-    try {
-      await deleteAnomalyDatasets(data.id);
-      message.success(t('common.successfullyDeleted'));
-    } catch (e) {
-      console.log(e)
-    } finally {
-      getDataSets();
-      setConfirmLoading(false);
-    }
+  const handleDelete = async (id: number) => {
+    confirm({
+      title: t('datasets.delDataset'),
+      content: t('datasets.delDatasetInfo'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      onOk: async () => {
+        try {
+          await deleteAnomalyDatasets(id);
+          message.success(t('common.delSuccess'));
+        } catch (e) {
+          console.log(e);
+          message.error(t(`common.delFailed`));
+        } finally {
+          getDataSets();
+        }
+      }
+    })
   };
 
-  const handleOpenModal = (type: string, title: string, form: any = {}) => {
-    modalRef.current?.showModal({ type, title, form });
+  const handleOpenModal = (object: {
+    type: string,
+    title: string,
+    form: any
+  }) => {
+    modalRef.current?.showModal(object);
   };
 
   const onSearch = () => {
-    getDataSets();
+    // getDataSets();
   };
 
+  const infoText = (item: any) => {
+    return <p className='text-right font-mini text-[var(--color-text-3)]'>{`${t(`mlops-common.owner`)}: ${item.creator}`}</p>;
+  };
+
+  const menuActions = (item: any) => {
+    return (
+      <Menu onClick={(e) => e.domEvent.preventDefault()}>
+        <Menu.Item
+          className="!p-0"
+          onClick={() =>
+            handleOpenModal({ title: 'editform', type: 'edit', form: item })
+          }
+        >
+          <PermissionWrapper
+            requiredPermissions={['Edit']}
+            className="!block"
+          >
+            <Button type="text" className="w-full">
+              {t(`common.edit`)}
+            </Button>
+          </PermissionWrapper>
+        </Menu.Item>
+        {item?.name !== "default" && (
+          <Menu.Item
+            className="!p-0"
+            onClick={() =>
+              handleDelete(item.id)
+            }
+          >
+            <PermissionWrapper
+              requiredPermissions={['Delete']}
+              className="!block"
+            >
+              <Button type="text" className="w-full">
+                {t(`common.delete`)}
+              </Button>
+            </PermissionWrapper>
+          </Menu.Item>
+        )}
+      </Menu>
+    )
+  };
+
+  const topSection = (
+    <TopSection title={t('datasets.datasets')} content={t('traintask.description')} />
+  );
+
+  const leftSection = (
+    <div className='w-full'>
+      <Tree
+        treeData={treeData}
+        showLine
+        selectedKeys={selectedKeys}
+        onSelect={(keys) => setSelectedKeys(keys as string[])}
+        defaultExpandedKeys={['datasets']}
+      />
+    </div>
+  );
+
+  const rightSection = (
+    <div className='overflow-auto h-[calc(100vh-200px)] pb-2'>
+      <EntityList
+        data={datasets}
+        menuActions={menuActions}
+        loading={loading}
+        onCardClick={navigateToNode}
+        openModal={() => handleOpenModal({ type: 'add', title: 'addform', form: {} })}
+        onSearch={onSearch}
+        descSlot={infoText}
+      />
+    </div>
+  );
+
   return (
-    <div className={`w-full`}>
-      <SubLayout
-        topSection={Topsection}
-        intro={Intro}
-        onBackButtonClick={() => router.back()}
-        showBackButton={false}
-      >
-        <div className={`flex justify-end w-full ${sideMenuStyle.segmented}`}>
-          <Search
-            className="w-[240px] mr-1.5"
-            placeholder={t('common.search')}
-            enterButton
-            onSearch={onSearch}
-            style={{ fontSize: 15 }}
-          />
-          <Button type="primary" icon={<PlusOutlined />} className="rounded-md text-xs shadow mr-2" onClick={() => handleOpenModal('add', 'addform', {})}>
-            {t('common.add')}
-          </Button>
-        </div>
-        <CustomTable
-          rowKey="id"
-          className="mt-3"
-          scroll={{ x: '100%', y: 'calc(100vh - 420px)' }}
-          dataSource={datasets}
-          columns={columns}
-          pagination={pagination}
-          loading={loading}
-        />
-      </SubLayout>
+    <>
+      <PageLayout
+        topSection={topSection}
+        leftSection={leftSection}
+        rightSection={rightSection}
+      />
       <DatasetModal
         ref={modalRef}
         options={datasetTypes}
         onSuccess={getDataSets}
+        activeTag={selectedKeys}
       />
-    </div>
+    </>
   );
 };
 

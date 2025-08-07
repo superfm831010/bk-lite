@@ -16,13 +16,14 @@ from apps.core.utils.web_utils import WebUtils
 
 class ModelViewSet(viewsets.ViewSet):
 
-    @HasPermission("model_management-View,asset_list-View,view_list-View")
+    @HasPermission("model_management-View")
     @action(detail=False, methods=["get"], url_path="get_model_info/(?P<model_id>.+?)")
     def get_model_info(self, request, model_id: str):
         model_info = ModelManage.search_model_info(model_id)
         if not model_info:
             return WebUtils.response_error("模型不存在", status_code=status.HTTP_404_NOT_FOUND)
 
+        # TODO 如果使用了这个接口 补充上 默认group为default的判断 全部人都可以查看
         model_id = model_info["model_id"]
         classification_id = model_info["classification_id"]
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
@@ -34,7 +35,7 @@ class ModelViewSet(viewsets.ViewSet):
 
         model_id_list, classification_id_list = CmdbRulesFormatUtil.get_rules_classification_id_list(rules=rules,
                                                                                                      classification_id=classification_id)
-        if classification_id in classification_id_list or model_id in model_id_list:
+        if not rules or classification_id in classification_id_list or model_id in model_id_list:
             model_permission = [OPERATE, VIEW]
         else:
             if not model_id_list and not classification_id_list:
@@ -70,14 +71,15 @@ class ModelViewSet(viewsets.ViewSet):
     )
     @HasPermission("model_management-View,asset_list-View,view_list-View")
     def list(self, request):
+        current_team = request.COOKIES.get("current_team")
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
         model_id_list, classification_id_list = CmdbRulesFormatUtil.get_rules_classification_id_list(rules)
         result = ModelManage.search_model(language=request.user.locale, classification_ids=classification_id_list,
-                                          model_list=model_id_list)
+                                          model_list=model_id_list, group=int(current_team))
         for model in result:
             model_id = model['model_id']
             cls_id = model['classification_id']
-            if cls_id in classification_id_list or model_id in model_id_list:
+            if not rules or cls_id in classification_id_list or model_id in model_id_list:
                 model_permission = [OPERATE, VIEW]
             else:
                 model_permission = []
@@ -166,7 +168,7 @@ class ModelViewSet(viewsets.ViewSet):
             ],
         ),
     )
-    @HasPermission("model_relationships-Add")
+    @HasPermission("model_management-Add Model")
     @action(detail=False, methods=["post"], url_path="association")
     def model_association_create(self, request):
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
@@ -206,7 +208,7 @@ class ModelViewSet(viewsets.ViewSet):
             )
         ],
     )
-    @HasPermission("model_relationships-Delete")
+    @HasPermission("model_management-Delete Model")
     @action(detail=False, methods=["delete"], url_path="association/(?P<model_asst_id>.+?)")
     def model_association_delete(self, request, model_asst_id: str):
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
@@ -244,7 +246,7 @@ class ModelViewSet(viewsets.ViewSet):
             ),
         ],
     )
-    @HasPermission("model_relationships-View,asset_basic_information-View")
+    @HasPermission("model_management-View")
     @action(detail=False, methods=["get"], url_path="(?P<model_id>.+?)/association")
     def model_association_list(self, request, model_id: str):
         model_info = ModelManage.search_model_info(model_id)
@@ -287,7 +289,7 @@ class ModelViewSet(viewsets.ViewSet):
             },
         ),
     )
-    @HasPermission("model_attributes-Add")
+    @HasPermission("model_management-Add Model")
     @action(detail=False, methods=["post"], url_path="(?P<model_id>.+?)/attr")
     def model_attr_create(self, request, model_id):
         model_info = ModelManage.search_model_info(model_id)
@@ -328,7 +330,7 @@ class ModelViewSet(viewsets.ViewSet):
             },
         ),
     )
-    @HasPermission("model_attributes-Edit")
+    @HasPermission("model_management-Edit Model")
     @action(detail=False, methods=["put"], url_path="(?P<model_id>.+?)/attr_update")
     def model_attr_update(self, request, model_id):
         model_info = ModelManage.search_model_info(model_id)
@@ -362,7 +364,7 @@ class ModelViewSet(viewsets.ViewSet):
             ),
         ],
     )
-    @HasPermission("model_attributes-Delete")
+    @HasPermission("model_management-Delete Model")
     @action(
         detail=False,
         methods=["delete"],
@@ -394,7 +396,7 @@ class ModelViewSet(viewsets.ViewSet):
             ),
         ],
     )
-    @HasPermission("model_attributes-View,asset_relationships-View,asset_list-View")
+    @HasPermission("model_management-View")
     @action(detail=False, methods=["get"], url_path="(?P<model_id>.+?)/attr_list")
     def model_attr_list(self, request, model_id: str):
         model_info = ModelManage.search_model_info(model_id)
@@ -414,7 +416,7 @@ class ModelViewSet(viewsets.ViewSet):
         operation_id="model_association_type",
         operation_description="查询模型关联类型",
     )
-    @HasPermission("model_attributes-View,asset_list-View,asset_basic_information-View")
+    @HasPermission("model_management-View")
     @action(detail=False, methods=["get"], url_path="model_association_type")
     def model_association_type(self, request):
         lan = SettingLanguage(request.user.locale)

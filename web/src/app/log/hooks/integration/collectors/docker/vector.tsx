@@ -19,7 +19,12 @@ export const useVectorConfig = () => {
     }) => {
       const configs = {
         auto: {
-          formItems: commonFormItems.getCommonFormItems(),
+          formItems: commonFormItems.getCommonFormItems({
+            hiddenFormItems: {
+              start_pattern: true,
+            },
+            disabledFormItems: {},
+          }),
           initTableItems: {},
           defaultForm: {
             docker_host: 'unix:///var/run/docker.sock',
@@ -41,22 +46,10 @@ export const useVectorConfig = () => {
           },
         },
         edit: {
-          getFormItems: (configForm: TableDataItem) => {
-            const sources =
-              configForm.child?.content?.sources?.[
-                pluginConfig.collect_type + '_' + configForm.rowId
-              ];
-            const transforms =
-              configForm?.child?.content?.transforms?.[
-                `multiline_${configForm.rowId}`
-              ];
+          getFormItems: () => {
             return commonFormItems.getCommonFormItems({
               hiddenFormItems: {
-                include_containers: !sources?.include_containers,
-                exclude_containers: !sources?.exclude_containers,
-                start_pattern:
-                  !transforms?.start_pattern &&
-                  transforms?.start_pattern !== '',
+                start_pattern: true,
               },
               disabledFormItems: {},
             });
@@ -74,23 +67,16 @@ export const useVectorConfig = () => {
               docker_host: sources.docker_host || null,
               include_containers: sources.include_containers || null,
               exclude_containers: sources.exclude_containers || null,
-              start_pattern: multiline.start_pattern || null,
+              start_pattern: multiline.start_pattern || '',
             };
           },
           getParams: (formData: TableDataItem, configForm: TableDataItem) => {
-            const sources = configForm.child.content.sources;
-            const transforms =
-              configForm.child.content.transforms[
-                `multiline_${formData.rowId}`
-              ];
-            const key = pluginConfig.collect_type + '_' + formData.rowId;
-            sources[key].docker_host = formData.docker_host;
-            sources[key].include_containers = formData.include_containers;
-            sources[key].exclude_containers = formData.exclude_containers;
-            if (transforms) {
-              transforms.start_pattern = formData.start_pattern;
-            }
-            return configForm;
+            return {
+              child: {
+                id: configForm.child.id,
+                content_data: formData,
+              },
+            };
           },
         },
         manual: {

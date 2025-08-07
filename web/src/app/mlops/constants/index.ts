@@ -20,6 +20,12 @@ const TYPE_CONTENT: Record<string, any> = {
   is_val_data: 'validate',
 };
 
+const TYPE_COLOR: Record<string, any> = { 
+  is_test_data: 'orange',
+  is_train_data: 'blue',
+  is_val_data: 'green',
+};
+
 const TRAIN_TEXT = { 
   pending: 'notStarted',
   running: 'inProgress',
@@ -88,5 +94,6 @@ export {
   TYPE_CONTENT,
   ALGORITHMS_PARAMS,
   ALGORITHMS_TYPE,
-  type TRAIN_STATUS
+  type TRAIN_STATUS,
+  TYPE_COLOR
 }

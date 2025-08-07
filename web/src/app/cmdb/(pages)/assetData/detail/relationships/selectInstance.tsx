@@ -26,7 +26,7 @@ import {
   RelationInstanceRef,
 } from '@/app/cmdb/types/assetManage';
 import { getAssetColumns } from '@/app/cmdb/utils/common';
-import useApiClient from '@/utils/request';
+import { useInstanceApi, useModelApi } from '@/app/cmdb/api';
 import SearchFilter from '../../list/searchFilter';
 import CustomTable from '@/components/custom-table';
 import { SelectInstanceProps } from '@/app/cmdb/types/assetData';
@@ -39,7 +39,6 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
   (
     {
       userList,
-      organizationList,
       models,
       assoTypes,
       needFetchAssoInstIds,
@@ -48,7 +47,8 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
     ref
   ) => {
     const { t } = useTranslation();
-    const { post, get, del } = useApiClient();
+    const instanceApi = useInstanceApi();
+    const modelApi = useModelApi();
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [title, setTitle] = useState<string>('');
@@ -81,7 +81,8 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
 
     useEffect(() => {
       if (modelId === 'host') {
-        get('/cmdb/api/instance/list_proxys/', {})
+        instanceApi
+          .getInstanceProxys()
           .then((data: any[]) => {
             setProxyOptions(data || []);
           })
@@ -97,11 +98,10 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
           ...getAssetColumns({
             attrList: intancePropertyList,
             userList,
-            groupList: organizationList,
             t,
           }),
           {
-            title: t('action'),
+            title: t('common.actions'),
             dataIndex: 'action',
             key: 'action',
             fixed: 'right',
@@ -145,14 +145,13 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
         setAssoInstIds(list);
         setLoading(true);
         try {
-          const getAssoModelList = get(
-            `/cmdb/api/model/${model_id}/association/`
-          );
+          const getAssoModelList = modelApi.getModelAssociations(model_id);
           Promise.all([
             getAssoModelList,
             needFetchAssoInstIds &&
-              get(
-                `/cmdb/api/instance/association_instance_list/${model_id}/${instId}/`
+              instanceApi.getAssociationInstanceList(
+                model_id,
+                instId.toString()
               ),
           ])
             .then((res) => {
@@ -203,8 +202,8 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
       try {
         const params = getTableParams();
         params.model_id = modelId;
-        const attrList = get(`/cmdb/api/model/${modelId}/attr_list/`);
-        const getInstanseList = post(`/cmdb/api/instance/search/`, params);
+        const attrList = modelApi.getModelAttrList(modelId);
+        const getInstanseList = instanceApi.searchInstances(params);
         Promise.all([attrList, getInstanseList])
           .then((res) => {
             setIntancePropertyList(res[0]);
@@ -249,9 +248,12 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
           src_inst_id: target?.src_model_id === modelId ? +instId : row._id,
           dst_inst_id: target?.dst_model_id === modelId ? +instId : row._id,
         };
-        const res = await post(`/cmdb/api/instance/association/`, params);
+        const res = await instanceApi.createInstanceAssociation(params);
         // 更新关联状态
-        setAssoInstIds([...assoInstIds, { id: row._id, inst_asst_id: res._id }]);
+        setAssoInstIds([
+          ...assoInstIds,
+          { id: row._id, inst_asst_id: res._id },
+        ]);
         message.success(t('successfullyAssociated'));
         onSuccess && onSuccess();
       } finally {
@@ -262,7 +264,7 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
     const cancelRelate = async (id: unknown) => {
       confirm({
         title: t('disassociationTitle'),
-        content: t('deleteContent'),
+        content: t('common.deleteContent'),
         centered: true,
         onOk() {
           return new Promise(async (resolve) => {
@@ -270,9 +272,18 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
               const instAsstId = assoInstIds.find(
                 (item) => item.id === id
               )?.inst_asst_id;
-              await del(`/cmdb/api/instance/association/${instAsstId}/`);
+
+              if (!instAsstId) {
+                message.error(t('common.operationFailed'));
+                resolve(true);
+                return;
+              }
+
+              await instanceApi.deleteInstanceAssociation(
+                instAsstId.toString()
+              );
               // 更新关联状态
-              setAssoInstIds(assoInstIds.filter(item => item.id !== id));
+              setAssoInstIds(assoInstIds.filter((item) => item.id !== id));
               message.success(t('successfullyDisassociated'));
               onSuccess && onSuccess();
             } finally {
@@ -287,7 +298,7 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
       setTableLoading(true);
       const params = getTableParams();
       try {
-        const data = await post(`/cmdb/api/instance/search/`, params);
+        const data = await instanceApi.searchInstances(params);
         setTableData(data.insts);
         pagination.total = data.count;
         setPagination(pagination);
@@ -336,7 +347,7 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
         onCancel={handleCancel}
         footer={
           <div>
-            <Button onClick={handleCancel}>{t('cancel')}</Button>
+            <Button onClick={handleCancel}>{t('common.cancel')}</Button>
           </div>
         }
       >
@@ -359,7 +370,6 @@ const SelectInstance = forwardRef<RelationInstanceRef, SelectInstanceProps>(
               userList={userList}
               attrList={intancePropertyList}
               proxyOptions={proxyOptions}
-              organizationList={organizationList}
               onSearch={handleSearch}
             />
           </div>

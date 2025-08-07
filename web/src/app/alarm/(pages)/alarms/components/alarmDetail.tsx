@@ -160,14 +160,12 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
           color: 'blue',
           children: (
             <div className="flex px-4 text-sm">
-              <span className="w-1/4">
+              <span className="w-[160px]">
                 {item.created_at
                   ? convertToLocalizedTime(item.created_at)
                   : '--'}
               </span>
-              <span className="w-[100px]">
-                {t(`settings.operationLog.operationOpts.${item.action}`)}
-              </span>
+              <span className="w-[160px]">{item.operator_object || '--'}</span>
               <span className="w-[120px]">{item.operator || '--'}</span>
               <EllipsisWithTooltip
                 className="flex-1 whitespace-nowrap overflow-hidden text-ellipsis mr-[6px]"
@@ -180,9 +178,9 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
           color: 'blue',
           children: (
             <div className="flex px-4 text-sm font-semibold">
-              <span className="w-1/4">{t('common.time')}</span>
-              <span className="w-[100px]">{t('common.action')}</span>
-              <span className="w-[120px]">{t('common.operator')}</span>
+              <span className="w-[160px]">{t('alarmCommon.time')}</span>
+              <span className="w-[160px]">{t('alarmCommon.action')}</span>
+              <span className="w-[120px]">{t('alarmCommon.operator')}</span>
               <span className="flex-1">
                 {t('settings.operationLog.summary')}
               </span>
@@ -236,7 +234,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
 
     const copyToClipboard = (text: string) => {
       navigator.clipboard.writeText(text);
-      message.success(t('common.copied'));
+      message.success(t('alarmCommon.copied'));
     };
 
     return (
@@ -248,7 +246,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
           </div>
         }
         open={groupVisible}
-        width={800}
+        width={820}
         onClose={handleCancel}
         footer={
           <div>

@@ -10,7 +10,7 @@ import SQLTask from './components/sqlTask';
 import CloudTask from './components/cloudTask';
 import HostTask from './components/hostTask';
 import TaskDetail from './components/taskDetail';
-import useApiClient from '@/utils/request';
+import { useCollectApi } from '@/app/cmdb/api';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
 import type { TableColumnType } from 'antd';
@@ -42,7 +42,7 @@ type ExtendedColumnItem = ColumnType<CollectTask> & {
 
 const ProfessionalCollection: React.FC = () => {
   const { t } = useTranslation();
-  const { get, del, post } = useApiClient();
+  const collectApi = useCollectApi();
   const ExecStatusMap = React.useMemo(() => createExecStatusMap(t), [t]);
   const execStatusConfig = React.useMemo(() => getExecStatusConfig(t), [t]);
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -79,7 +79,7 @@ const ProfessionalCollection: React.FC = () => {
   const [searchTextUI, setSearchTextUI] = useState('');
   const [paginationUI, setPaginationUI] = useState({
     current: 1,
-    pageSize: 10,
+    pageSize: 20,
     total: 0,
   });
 
@@ -94,25 +94,26 @@ const ProfessionalCollection: React.FC = () => {
     return keys;
   };
 
-  const getParams = () => ({
-    page: stateRef.current.pagination.current,
-    page_size: stateRef.current.pagination.pageSize,
-    model_id:
-      selectedRef.current.node?.tabItems?.[0]?.model_id || selectedRef.current.nodeId,
-    search: stateRef.current.searchText,
-    ...(stateRef.current.currentExecStatus !== undefined && {
-      exec_status: stateRef.current.currentExecStatus,
-    }),
-  });
+  const getParams = (tabId?: string) => {
+    return {
+      page: stateRef.current.pagination.current,
+      page_size: stateRef.current.pagination.pageSize,
+      model_id: tabId || activeTab,
+      name: stateRef.current.searchText,
+      ...(stateRef.current.currentExecStatus !== undefined && {
+        exec_status: stateRef.current.currentExecStatus,
+      }),
+    };
+  };
 
-  const fetchData = async (showLoading = true) => {
+  const fetchData = async (showLoading = true, tabId?: string) => {
     try {
       if (!selectedRef.current.nodeId) return;
       if (showLoading) {
         setTableLoading(true);
       }
-      const params = getParams();
-      const data = await get('/cmdb/api/collect/search/', { params });
+      const params = getParams(tabId);
+      const data = await collectApi.getCollectList(params);
       setTableData(data.items || []);
       tableCountRef.current = data.items.length || 0;
       setPaginationUI((prev) => ({
@@ -125,15 +126,19 @@ const ProfessionalCollection: React.FC = () => {
       if (showLoading) {
         setTableLoading(false);
       }
-      resetTimer();
+      resetTimer(tabId);
     }
   };
 
-  const resetTimer = () => {
+  const resetTimer = (tabId?: string) => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
-    timerRef.current = setTimeout(() => fetchData(false), 10 * 1000);
+    const currentTabId = tabId || activeTab;
+    timerRef.current = setTimeout(
+      () => fetchData(false, currentTabId),
+      10 * 1000
+    );
   };
 
   useEffect(() => {
@@ -148,7 +153,7 @@ const ProfessionalCollection: React.FC = () => {
   const fetchTreeData = async () => {
     try {
       setTreeLoading(true);
-      const data = await get('/cmdb/api/collect/collect_model_tree/');
+      const data = await collectApi.getCollectModelTree();
       const treeData = data.map((node: TreeNode) => {
         getItems(node);
         return node;
@@ -272,11 +277,14 @@ const ProfessionalCollection: React.FC = () => {
 
   const handleDelete = (record: CollectTask) => {
     Modal.confirm({
-      title: t('deleteTitle'),
-      content: t('deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      centered: true,
       onOk: async () => {
         try {
-          await del(`/cmdb/api/collect/${record.id}/`);
+          await collectApi.deleteCollect(record.id.toString());
           message.success(t('successfullyDeleted'));
           const currentPage = stateRef.current.pagination.current;
           if (currentPage > 1 && tableCountRef.current === 1) {
@@ -290,10 +298,7 @@ const ProfessionalCollection: React.FC = () => {
         } catch (error) {
           console.error('Failed to delete task:', error);
         }
-      },
-      okText: t('confirm'),
-      cancelText: t('cancel'),
-      centered: true,
+      }
     });
   };
 
@@ -304,7 +309,7 @@ const ProfessionalCollection: React.FC = () => {
       }
       try {
         setExecutingTaskIds((prev) => [...prev, record.id]);
-        await post(`/cmdb/api/collect/${record.id}/exec_task/`);
+        await collectApi.executeCollect(record.id.toString());
         message.success(t('Collection.executeSuccess'));
         fetchData();
       } catch (error) {
@@ -362,12 +367,13 @@ const ProfessionalCollection: React.FC = () => {
 
   const onSelectFields = async (fields: string[]) => {
     setDisplayFieldKeys(fields);
-    const actionCol = allColumns.find(col => col.key === 'action');
+    const actionCol = allColumns.find((col) => col.key === 'action');
     const ordered = [
       ...allColumns
-        .filter(col => fields.includes(col.key as string))
-        .sort((a, b) =>
-          fields.indexOf(a.key as string) - fields.indexOf(b.key as string)
+        .filter((col) => fields.includes(col.key as string))
+        .sort(
+          (a, b) =>
+            fields.indexOf(a.key as string) - fields.indexOf(b.key as string)
         ),
       ...(actionCol ? [actionCol] : []),
     ] as ExtendedColumnItem[];
@@ -568,9 +574,30 @@ const ProfessionalCollection: React.FC = () => {
   const hasMultipleTabs =
     (selectedRef.current?.node?.tabItems?.length ?? 0) > 1;
 
+  const handleTabChange = (newActiveTab: string) => {
+    setActiveTab(newActiveTab);
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    setSearchTextUI('');
+    stateRef.current.searchText = '';
+    stateRef.current.currentExecStatus = undefined;
+
+    stateRef.current.pagination.current = 1;
+    setPaginationUI((prev) => ({
+      ...prev,
+      current: 1,
+    }));
+
+    fetchData(true, newActiveTab);
+  };
+
   return (
     <div className="flex flex-1 overflow-hidden">
-      <div className="w-56 flex-shrink-0 border-r border-gray-200 pr-4 py-2 overflow-auto">
+      <div className="w-56 flex-shrink-0 border-r border-[var(--color-border-2)] pr-4 py-2 overflow-auto">
         <Spin spinning={treeLoading}>
           <Tree
             blockNode
@@ -578,8 +605,8 @@ const ProfessionalCollection: React.FC = () => {
             fieldNames={{ title: 'name', key: 'id', children: 'children' }}
             expandedKeys={expandedKeys}
             selectedKeys={[selectedRef.current.nodeId]}
-            onSelect={onTreeSelect}
             style={{ minHeight: '100px' }}
+            onSelect={onTreeSelect}
           />
         </Spin>
       </div>
@@ -591,7 +618,7 @@ const ProfessionalCollection: React.FC = () => {
               key: tab.id,
               label: tab.name,
             }))}
-            onChange={setActiveTab}
+            onChange={handleTabChange}
           />
         )}
         <div className="mb-4 flex justify-between items-center flex-shrink-0">
@@ -615,7 +642,7 @@ const ProfessionalCollection: React.FC = () => {
             </Button>
           </PermissionWrapper>
         </div>
-        <div className="bg-white rounded-lg shadow-sm flex-1 overflow-auto">
+        <div className="rounded-lg shadow-sm flex-1 overflow-auto">
           <CustomTable
             loading={tableLoading}
             key={selectedRef.current.nodeId}
@@ -623,7 +650,11 @@ const ProfessionalCollection: React.FC = () => {
             rowKey="id"
             columns={currentColumns}
             dataSource={tableData}
-            scroll={{ y: hasMultipleTabs ? 'calc(100vh - 510px)' :  'calc(100vh - 450px)'}}
+            scroll={{
+              y: hasMultipleTabs
+                ? 'calc(100vh - 510px)'
+                : 'calc(100vh - 450px)',
+            }}
             onSelectFields={onSelectFields}
             onChange={handleTableChange}
             pagination={{
@@ -669,14 +700,12 @@ const ProfessionalCollection: React.FC = () => {
         open={detailVisible}
       >
         {detailVisible && currentTask && (
-          <div className="bg-gray-50">
-            <TaskDetail
-              task={currentTask}
-              modelId={selectedRef.current.nodeId}
-              onClose={() => setDetailVisible(false)}
-              onSuccess={fetchData}
-            />
-          </div>
+          <TaskDetail
+            task={currentTask}
+            modelId={selectedRef.current.nodeId}
+            onClose={() => setDetailVisible(false)}
+            onSuccess={fetchData}
+          />
         )}
       </Drawer>
     </div>

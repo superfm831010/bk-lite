@@ -44,7 +44,7 @@ const IntegrationPage: React.FC = () => {
             {sources.map((src: SourceItem) => (
               <div
                 key={src.id}
-                className="p-4 rounded-xl relative shadow-md hover:shadow-lg transition-shadow cursor-pointer bg-white"
+                className="p-4 rounded-xl relative shadow-md hover:shadow-lg transition-shadow cursor-pointer bg-[var(--color-bg-1)]"
                 onClick={() =>
                   router.push(
                     `/alarm/integration/detail?sourceItemId=${src.id}`

@@ -6,12 +6,12 @@ import {
   IntergrationMonitoredObject,
 } from '@/app/monitor/types/monitor';
 import { TableDataItem } from '@/app/monitor/types';
-import { useElasticSearchExportFormItems } from '../../common/elasticSearchExportFormItems';
+import { useElasticSearchExporterFormItems } from '../../common/elasticSearchExporterFormItems';
 import { cloneDeep } from 'lodash';
 
 export const useElasticSearchExporter = () => {
   const { t } = useTranslation();
-  const elasticSearchExportFormItems = useElasticSearchExportFormItems();
+  const elasticSearchExporterFormItems = useElasticSearchExporterFormItems();
   const pluginConfig = {
     collect_type: 'exporter',
     config_type: ['elasticsearch'],
@@ -51,7 +51,7 @@ export const useElasticSearchExporter = () => {
 
       const formItems = (
         <>
-          {elasticSearchExportFormItems.getCommonFormItems()}
+          {elasticSearchExporterFormItems.getCommonFormItems()}
           <Form.Item label={t('monitor.intergrations.listeningPort')} required>
             <Form.Item
               noStyle
@@ -95,7 +95,7 @@ export const useElasticSearchExporter = () => {
 
       const config = {
         auto: {
-          formItems: elasticSearchExportFormItems.getCommonFormItems(
+          formItems: elasticSearchExporterFormItems.getCommonFormItems(
             {},
             'auto'
           ),

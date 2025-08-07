@@ -3,6 +3,9 @@
   "name": "Log",
   "url": "/log/search",
   "icon": "rizhi2",
+  "tags": [
+    "多日志接入","灵活检索","监控告警","权限管控"
+  ],
   "description": "For centralized collection, storage, and analysis of log data, helping users achieve efficient log monitoring and troubleshooting.",
   "menus": [
     {
@@ -12,6 +15,29 @@
           "id": "search",
           "name": "Search",
           "operation": ["View"]
+        }
+      ]
+    },
+    {
+      "name": "Event",
+      "children": [
+        {
+          "id": "alert_list",
+          "name": "Alert",
+          "operation": [
+            "View",
+            "Operate"
+          ]
+        },
+        {
+          "id": "strategy_list",
+          "name": "Strategy",
+          "operation": [
+            "View",
+            "Add",
+            "Edit",
+            "Delete"
+          ]
         }
       ]
     },

@@ -45,44 +45,56 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
     incident: incidentActionOperate,
   };
 
-  const allTypes: ActionType[] =
-    from === 'alarm'
-      ? ['assign', 'acknowledge', 'reassign', 'close']
-      : ['acknowledge', 'close', 'reopen'];
+  const allTypes: ActionType[] = (() => {
+    if (from === 'alarm') {
+      return ['assign', 'acknowledge', 'reassign', 'close'];
+    }
+    return ['acknowledge', 'close', 'reopen'];
+  })();
 
-  const statusActionMap: Record<string, ActionType[]> =
-    from === 'alarm'
-      ? {
-        unassigned: ['assign'],
-        pending: ['acknowledge'],
-        processing: ['reassign', 'close'],
-        closed: [],
-      }
-      : {
-        pending: ['acknowledge'],
-        processing: ['close'],
-        closed: ['reopen'],
-      };
+  let statusActionMap: Record<string, ActionType[]>;
+  if (from === 'alarm') {
+    statusActionMap = {
+      unassigned: ['assign'],
+      pending: ['acknowledge'],
+      processing: ['reassign', 'close'],
+      closed: [],
+      auto_close: [],
+    };
+  } else {
+    statusActionMap = {
+      pending: ['acknowledge'],
+      processing: ['close'],
+      closed: ['reopen'],
+      auto_close: [],
+    };
+  }
 
-  const validStatusMap: Record<string, string[]> =
-    from === 'alarm'
-      ? {
-        assign: ['unassigned'],
-        acknowledge: ['pending'],
-        reassign: ['processing'],
-        close: ['processing'],
-      }
-      : {
-        acknowledge: ['pending'],
-        close: ['processing'],
-        reopen: ['closed'],
-      };
+  let validStatusMap: Record<string, string[]>;
+  if (from === 'alarm') {
+    validStatusMap = {
+      assign: ['unassigned'],
+      acknowledge: ['pending'],
+      reassign: ['processing'],
+      close: ['processing'],
+      auto_close: ['processing'],
+    };
+  } else {
+    validStatusMap = {
+      acknowledge: ['pending'],
+      close: ['processing'],
+      reopen: ['closed'],
+    };
+  }
 
-  const availableTypes = showAll
-    ? allTypes
-    : rowData[0]?.status
-      ? statusActionMap[rowData[0].status]
-      : [];
+  let availableTypes: ActionType[];
+  if (showAll) {
+    availableTypes = allTypes;
+  } else if (rowData[0]?.status) {
+    availableTypes = statusActionMap?.[rowData[0].status] || [];
+  } else {
+    availableTypes = [];
+  }
 
   const handleOperate = (type: ActionType) => {
     if (!['acknowledge', 'close', 'reopen'].includes(type)) {
@@ -105,10 +117,10 @@ const AlarmAction: React.FC<AlarmActionProps> = ({
           });
           if (Object.values(data).some((res: any) => !res.result)) {
             message.error(
-              `${t(`alarms.${type}`)}${t(`alarms.alert`)}${t('common.partialFailure')}`
+              `${t(`alarms.${type}`)}${t(`alarms.alert`)}${t('alarmCommon.partialFailure')}`
             );
           } else {
-            message.success(t(`alarms.${type}`) + t('common.success'));
+            message.success(t(`alarms.${type}`) + t('alarmCommon.success'));
             onAction();
           }
         } catch (err) {

@@ -14,11 +14,12 @@ interface NodeConfigParam {
 }
 
 const useIntegrationApi = () => {
-  const { get, post, put, del } = useApiClient();
+  const { get, post, put, del, patch } = useApiClient();
 
   const getCollectTypes = async (
     params: {
       collector?: React.Key | null;
+      collect_type_id?: React.Key | null;
       name?: string;
       page?: number;
       page_size?: number;
@@ -27,6 +28,14 @@ const useIntegrationApi = () => {
     return await get('/log/collect_types/', {
       params,
     });
+  };
+
+  const getCollectTypesById = async (
+    params: {
+      collect_type_id?: React.Key | null;
+    } = {}
+  ) => {
+    return await get(`/log/collect_types/${params.collect_type_id}`);
   };
 
   const batchCreateInstances = async (data: NodeConfigParam) => {
@@ -81,8 +90,12 @@ const useIntegrationApi = () => {
   };
 
   const updateInstanceCollectConfig = async (data: {
-    id: React.Key;
-    content: any;
+    instance_id?: React.Key;
+    collect_type_id?: React.Key;
+    child: {
+      id: string;
+      content_data: any;
+    };
   }) => {
     return await post(
       `/log/collect_configs/update_instance_collect_config/`,
@@ -100,11 +113,18 @@ const useIntegrationApi = () => {
     return await put(`/log/streams/${data.id}/`, params);
   };
 
+  const updateDefaultLogStreams = async (data: GroupInfo) => {
+    const params = cloneDeep(data);
+    delete params.id;
+    return await patch(`/log/streams/${data.id}/`, params);
+  };
+
   const getLogStreams = async (
     params: {
       name?: string;
       page?: number;
       page_size?: number;
+      collect_type_id?: React.Key;
     } = {}
   ) => {
     return await get('/log/streams/', {
@@ -131,6 +151,8 @@ const useIntegrationApi = () => {
     createLogStreams,
     updateLogStreams,
     deleteLogStream,
+    updateDefaultLogStreams,
+    getCollectTypesById,
   };
 };
 

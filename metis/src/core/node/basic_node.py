@@ -17,13 +17,18 @@ class BasicNode:
         trace_id = config["configurable"]['trace_id']
         logger.debug(f"[{trace_id}] {message}")
 
-    def get_llm_client(self, request: BasicLLMRequest) -> ChatOpenAI:
+    def get_llm_client(self, request: BasicLLMRequest, disable_stream=False) -> ChatOpenAI:
         llm = ChatOpenAI(model=request.model, base_url=request.openai_api_base,
+                         disable_streaming=disable_stream,
                          api_key=request.openai_api_key, temperature=request.temperature)
+        if llm.extra_body is None:
+            llm.extra_body = {}
+
+        if disable_stream and 'qwen' in request.model.lower():
+            llm.extra_body["enable_thinking"] = False
         return llm
 
     def prompt_message_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
-
         system_message_prompt = f"""
             {config["configurable"]["graph_request"].system_message_prompt}
                 以下规则在任何情况下都必须严格遵守，具有最高优先级，不可违反：
@@ -83,6 +88,7 @@ class BasicNode:
             state["messages"].append(
                 SystemMessage(content=system_message_prompt)
             )
+
         return state
 
     def add_chat_history_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
@@ -103,9 +109,6 @@ class BasicNode:
         return state
 
     async def naive_rag_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
-        # if config["configurable"]['graph_request'].enable_naive_rag is False and config["configurable"]['graph_request'].enable_qa_rag is False:
-        #     return state
-
         naive_rag_request = config["configurable"]["graph_request"].naive_rag_request
         if len(naive_rag_request) == 0:
             return state

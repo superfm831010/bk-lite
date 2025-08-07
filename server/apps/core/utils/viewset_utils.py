@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from rest_framework import viewsets
 from rest_framework.response import Response
 
-from apps.core.utils.permission_utils import get_permission_rules
+from apps.core.utils.permission_utils import delete_instance_rules, get_permission_rules
 
 logger = logging.getLogger(__name__)
 
@@ -91,9 +91,6 @@ class AuthViewSet(MaintainerViewSet):
             user = getattr(request, "user", None)
             if not user:
                 return self.value_error(_("User not found in request"))
-
-            if getattr(user, "is_superuser", False):
-                return self._list(queryset.order_by(self.ORDERING_FIELD))
             current_team = request.COOKIES.get("current_team", "0")
             fields = [i.name for i in queryset.model._meta.fields]
             if "created_by" in fields:
@@ -112,6 +109,8 @@ class AuthViewSet(MaintainerViewSet):
                     query |= Q(id__in=instance_ids)
                 for i in team:
                     query |= Q(team__contains=int(i))
+                if not instance_ids and not team:
+                    return self._list(queryset.filter(id=0))
             queryset = queryset.filter(query)
             return self._list(queryset.order_by(self.ORDERING_FIELD))
 
@@ -157,7 +156,7 @@ class AuthViewSet(MaintainerViewSet):
             return super().retrieve(request, *args, **kwargs)
         if hasattr(self, "permission_key"):
             current_team = request.COOKIES.get("current_team", "0")
-            has_permission = self.get_has_permission(user, instance, current_team)
+            has_permission = self.get_has_permission(user, instance, current_team, is_check=True)
             if not has_permission:
                 return self.value_error(_("User does not have permission to view this instance"))
         serializer = self.get_serializer(instance)
@@ -190,7 +189,8 @@ class AuthViewSet(MaintainerViewSet):
             if getattr(user, "is_superuser", False):
                 return super().update(request, *args, **kwargs)
             if "team" in data:
-                data.pop("team", None)
+                delete_team = [i for i in instance.team if i not in data["team"]]
+                self.delete_rules(instance.id, delete_team)
             current_team = int(request.COOKIES.get("current_team", None))
             if current_team not in instance.team:
                 return self.value_error(_("User does not have permission to update this instance"))
@@ -211,7 +211,16 @@ class AuthViewSet(MaintainerViewSet):
             logger.error(f"Error in update method: {e}")
             raise
 
-    def get_has_permission(self, user, instance, current_team, is_list=False):
+    def delete_rules(self, instance_id, delete_team):
+        if not hasattr(self, "permission_key"):
+            return
+        app_name = self._get_app_name()
+        try:
+            delete_instance_rules(app_name, self.permission_key, instance_id, delete_team)
+        except Exception as e:
+            logger.error(e)
+
+    def get_has_permission(self, user, instance, current_team, is_list=False, is_check=False):
         """获取规则实例ID"""
         user_groups = [int(i["id"]) for i in user.group_list]
         if is_list:
@@ -231,7 +240,9 @@ class AuthViewSet(MaintainerViewSet):
             permission_rules = get_permission_rules(user, current_team, app_name, self.permission_key)
             if int(current_team) in permission_rules["team"]:
                 return True
-            instance_list = [int(i["id"]) for i in permission_rules["instance"] if "Operate" in i["permission"]]
+
+            operate = "View" if is_check else "Operate"
+            instance_list = [int(i["id"]) for i in permission_rules["instance"] if operate in i["permission"]]
             return set(instance_id).issubset(set(instance_list))
         except Exception as e:
             logger.error(f"Error getting rule instances: {e}")

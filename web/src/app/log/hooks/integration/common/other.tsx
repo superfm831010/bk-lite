@@ -52,8 +52,8 @@ const useTermList = (): ListItem[] => {
   const { t } = useTranslation();
   return useMemo(
     () => [
-      { id: 'OR', name: t('log.integration.anyCondition') },
-      { id: 'AND', name: t('log.integration.allConditions') },
+      { id: 'OR', value: 'or', name: t('log.integration.anyCondition') },
+      { id: 'AND', value: 'and', name: t('log.integration.allConditions') },
     ],
     [t]
   );

@@ -11,6 +11,7 @@ import { useCommon } from '@/app/alarm/context/common';
 import { useTranslation } from '@/utils/i18n';
 import { CaretRightOutlined } from '@ant-design/icons';
 import { useSettingApi } from '@/app/alarm/api/settings';
+import { ChannelItem, NotifyOption } from '@/app/alarm/types/settings';
 import {
   Tag,
   Form,
@@ -23,6 +24,7 @@ import {
   Collapse,
   InputNumber,
   message,
+  Spin,
 } from 'antd';
 
 interface OperateModalProps {
@@ -41,19 +43,41 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
   const locale = localStorage.getItem('locale') || 'en';
   const { t } = useTranslation();
   const { levelList, levelMap, userList } = useCommon();
-  const { createAssignment, updateAssignment } = useSettingApi();
+  const { createAssignment, updateAssignment, getChannelList } =
+    useSettingApi();
 
   const personnelOptions = userList.map(({ display_name, username }) => ({
     label: `${display_name} (${username})`,
     value: username,
   }));
 
-  const notifyOptions = [
-    { label: '邮件', value: 'email' },
-    { label: '微信', value: 'wechat' },
-  ];
   const [form] = Form.useForm();
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [notifyOptions, setNotifyOptions] = useState<NotifyOption[]>([]);
+  const [channelLoading, setChannelLoading] = useState(false);
+
+  // 获取通知渠道列表
+  const fetchChannelList = async () => {
+    setChannelLoading(true);
+    try {
+      const data: any = await getChannelList({});
+      const options: NotifyOption[] = data.map((channel: ChannelItem) => ({
+        label: channel.name,
+        value: channel.channel_type,
+      }));
+      setNotifyOptions(options);
+
+      if (!currentRow && options.length > 0) {
+        form.setFieldsValue({
+          notify_channels: [options[0].value],
+        });
+      }
+    } catch (error) {
+      console.error('获取通知渠道失败:', error);
+    } finally {
+      setChannelLoading(false);
+    }
+  };
 
   const handleClose = () => {
     form.resetFields();
@@ -62,6 +86,8 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
 
   useEffect(() => {
     if (open) {
+      fetchChannelList();
+
       if (currentRow) {
         form.setFieldsValue({
           ...currentRow,
@@ -95,13 +121,13 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
         await createAssignment(params);
       }
       message.success(
-        currentRow ? t('common.successOperate') : t('common.addSuccess')
+        currentRow ? t('alarmCommon.successOperate') : t('common.addSuccess')
       );
       form.resetFields();
       onClose();
       onSuccess && onSuccess();
     } catch {
-      message.error(t('common.operateFailed'));
+      message.error(t('alarmCommon.operateFailed'));
     } finally {
       setSubmitLoading(false);
     }
@@ -174,17 +200,17 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
           rules={[
             {
               required: true,
-              message: t('common.inputMsg'),
+              message: t('common.inputTip'),
             },
           ]}
         >
-          <Input placeholder={t('common.inputMsg')} />
+          <Input placeholder={t('common.inputTip')} />
         </Form.Item>
         <Form.Item
           initialValue="all"
           name="match_type"
           label={t('settings.assignStrategy.formMatchingRules')}
-          rules={[{ required: true, message: t('common.inputMsg') }]}
+          rules={[{ required: true, message: t('common.inputTip') }]}
         >
           <Radio.Group className="mt-1">
             <Radio value="all">{t('settings.assignStrategy.ruleAll')}</Radio>
@@ -207,11 +233,11 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
               {
                 validator: (_, value: any[][]) => {
                   if (!Array.isArray(value) || value.length === 0) {
-                    return Promise.reject(new Error(t('common.inputMsg')));
+                    return Promise.reject(new Error(t('common.inputTip')));
                   }
                   for (const orGroup of value) {
                     if (!Array.isArray(orGroup) || orGroup.length === 0) {
-                      return Promise.reject(new Error(t('common.inputMsg')));
+                      return Promise.reject(new Error(t('common.inputTip')));
                     }
                     for (const item of orGroup) {
                       if (
@@ -219,7 +245,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
                         !item.operator ||
                         (!item.value && item.value !== 0)
                       ) {
-                        return Promise.reject(new Error(t('common.inputMsg')));
+                        return Promise.reject(new Error(t('common.inputTip')));
                       }
                     }
                   }
@@ -238,23 +264,32 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
           rules={[
             {
               required: true,
-              message: t('common.selectMsg'),
+              message: t('common.selectTip'),
             },
           ]}
         >
           <Select
             mode="multiple"
             options={personnelOptions}
-            placeholder={`${t('common.selectMsg')}`}
+            placeholder={`${t('common.selectTip')}`}
+            filterOption={(input, option) =>
+              (option?.label as string)
+                ?.toLowerCase()
+                .includes(input.toLowerCase())
+            }
           />
         </Form.Item>
         <Form.Item
           name="notify_channels"
           label={t('settings.assignStrategy.formNotifyMethod')}
-          initialValue={['email']}
-          rules={[{ required: true, message: t('common.selectMsg') }]}
+          rules={[{ required: true, message: t('common.selectTip') }]}
         >
-          <Checkbox.Group options={notifyOptions} />
+          <Checkbox.Group options={notifyOptions} disabled={channelLoading} />
+          {channelLoading && (
+            <div className="flex justify-center h-[32px] ">
+              <Spin spinning={channelLoading}></Spin>
+            </div>
+          )}
         </Form.Item>
         <Collapse
           defaultActiveKey={[]}
@@ -269,7 +304,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
           <Collapse.Panel
             header={
               <div className="flex items-center text-base font-bold">
-                {t('common.advanced')}
+                {t('alarmCommon.advanced')}
               </div>
             }
             key="advanced"
@@ -278,7 +313,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
               name="config"
               initialValue={defaultEffectiveTime}
               label={t('settings.assignStrategy.effectiveTime')}
-              rules={[{ required: true, message: t('common.selectMsg') }]}
+              rules={[{ required: true, message: t('common.selectTip') }]}
             >
               <EffectiveTime open={open} />
             </Form.Item>
@@ -286,7 +321,7 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
               name="notification_scenario"
               label={t('settings.assignStrategy.notificationScenario')}
               initialValue={['assignment']}
-              rules={[{ required: true, message: t('common.selectMsg') }]}
+              rules={[{ required: true, message: t('common.selectTip') }]}
             >
               <Checkbox.Group
                 options={[

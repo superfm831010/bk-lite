@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Breadcrumb, Button, Steps, message, Spin } from 'antd';
 import LocalFileUpload from './localFileUpload';
 import WebLinkForm from './webLinkForm';
 import CustomTextForm from './customTextForm';
+import CustomQAForm from './customQAForm';
 import PreprocessStep from './preprocessStep';
 import ExtractionStep from './extractionStep';
 import QAPairForm from './qaPairForm';
@@ -37,7 +38,8 @@ const KnowledgeModifyPage = () => {
     parseContent,
     updateChunkSettings,
     getDocListConfig,
-    getDocumentConfig
+    getDocumentConfig,
+    createCustomQAPairs
   } = useKnowledgeApi();
 
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -64,18 +66,23 @@ const KnowledgeModifyPage = () => {
   }
 
   const [qaPairData, setQaPairData] = useState<QAPairFormData>({ llmModel: 0, qaCount: 10, selectedDocuments: [] });
+  const [customQAData, setCustomQAData] = useState<{ name: string; qaList: Array<{ id: string; question: string; answer: string }> }>({ 
+    name: '', 
+    qaList: [] 
+  });
   const [pageLoading, setPageLoading] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [isUpdate, setIsUpdate] = useState<boolean>(false);
 
   const formRef = useRef<any>(null);
 
-  const sourceTypeToDisplayText: { [key: string]: string } = {
+  const sourceTypeToDisplayText: Record<string, string> = useMemo(() => ({
     file: t('knowledge.localFile'),
     web_page: t('knowledge.webLink'),
     manual: t('knowledge.cusText'),
-    qa_pairs: t('knowledge.qaPairs.title'),
-  };
+    qa_pairs: `${t('knowledge.qaPairs.title')}(${t('knowledge.qaPairs.generate')})`,
+    qa_custom: `${t('knowledge.qaPairs.title')}(${t('knowledge.qaPairs.custom')})`,
+  }), []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -300,15 +307,45 @@ const KnowledgeModifyPage = () => {
   }, []);
 
   const handleWebLinkDataChange = useCallback((data: { name: string, link: string, deep: number }) => {
-    setWebLinkData(data);
+    setWebLinkData(prev => {
+      // Only update if data has actually changed
+      if (prev.name !== data.name || prev.link !== data.link || prev.deep !== data.deep) {
+        return data;
+      }
+      return prev;
+    });
   }, []);
 
   const handleManualDataChange = useCallback((data: { name: string, content: string }) => {
-    setManualData(data);
+    setManualData(prev => {
+      // Only update if data has actually changed
+      if (prev.name !== data.name || prev.content !== data.content) {
+        return data;
+      }
+      return prev;
+    });
   }, []);
 
   const handleQAPairDataChange = useCallback((data: { llmModel: number, qaCount: number, selectedDocuments: string[] }) => {
-    setQaPairData(data);
+    setQaPairData(prev => {
+      // Only update if data has actually changed
+      const selectedDocsChanged = JSON.stringify(prev.selectedDocuments) !== JSON.stringify(data.selectedDocuments);
+      if (prev.llmModel !== data.llmModel || prev.qaCount !== data.qaCount || selectedDocsChanged) {
+        return data;
+      }
+      return prev;
+    });
+  }, []);
+
+  const handleCustomQADataChange = useCallback((data: { name: string; qaList: Array<{ id: string; question: string; answer: string }> }) => {
+    setCustomQAData(prev => {
+      // Only update if data has actually changed
+      const qaListChanged = JSON.stringify(prev.qaList) !== JSON.stringify(data.qaList);
+      if (prev.name !== data.name || qaListChanged) {
+        return data;
+      }
+      return prev;
+    });
   }, []);
 
   const handleDone = () => {
@@ -362,6 +399,67 @@ const KnowledgeModifyPage = () => {
     }
   };
 
+  const renderCustomQAContent = () => {
+    return (
+      <div className="px-7 py-5">
+        <CustomQAForm 
+          ref={formRef}
+          initialData={customQAData} 
+          onFormChange={handleValidationChange} 
+          onFormDataChange={handleCustomQADataChange} 
+        />
+        <div className="fixed bottom-10 right-10 z-50 flex space-x-2">
+          <Button disabled={loading} onClick={() => router.back()}>
+            {t('common.cancel')}
+          </Button>
+          <Button 
+            type="primary" 
+            onClick={handleCreateCustomQA} 
+            disabled={!isStepValid} 
+            loading={loading}
+          >
+            {t('common.confirm')}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const handleCreateCustomQA = async () => {
+    if (!formRef.current) {
+      message.error('表单未初始化');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const formData = formRef.current.getFieldsValue();
+      
+      if (!formData.name || formData.qaList.length === 0) {
+        message.error(t('knowledge.qaPairs.noData'));
+        return;
+      }
+
+      const payload = {
+        knowledge_base_id: parseInt(id as string),
+        name: formData.name,
+        qa_pairs: formData.qaList.map((item: any) => ({
+          question: item.question,
+          answer: item.answer,
+        })),
+      };
+
+      await createCustomQAPairs(payload);
+      message.success(t('common.saveSuccess'));
+      
+      router.push(`/opspilot/knowledge/detail/documents?id=${id}&name=${name}&desc=${desc}&type=qa_pairs`);
+    } catch {
+      message.error(t('common.saveFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (type === 'qa_pairs') {
     return (
       <div>
@@ -376,6 +474,25 @@ const KnowledgeModifyPage = () => {
           </div>
         ) : (
           renderQAPairContent()
+        )}
+      </div>
+    );
+  }
+
+  if (type === 'qa_custom') {
+    return (
+      <div>
+        <Breadcrumb>
+          <Breadcrumb.Item>{t('knowledge.menu')}</Breadcrumb.Item>
+          <Breadcrumb.Item>{sourceTypeToDisplayText[type]}</Breadcrumb.Item>
+          <Breadcrumb.Item>{t('common.create')}</Breadcrumb.Item>
+        </Breadcrumb>
+        {pageLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <Spin />
+          </div>
+        ) : (
+          renderCustomQAContent()
         )}
       </div>
     );

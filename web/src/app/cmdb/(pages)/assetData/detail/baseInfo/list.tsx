@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import informationList from './list.module.scss';
-import useApiClient from '@/utils/request';
 import { Form, Button, Collapse, Descriptions, message } from 'antd';
 import { deepClone, getFieldItem } from '@/app/cmdb/utils/common';
 import { useSearchParams } from 'next/navigation';
@@ -18,13 +17,13 @@ import {
   CloseOutlined,
   CaretRightOutlined,
 } from '@ant-design/icons';
+import { useInstanceApi } from '@/app/cmdb/api';
 
 const { Panel } = Collapse;
 
 const InfoList: React.FC<AssetDataFieldProps> = ({
   propertyList,
   userList,
-  organizationList,
   instDetail,
   onsuccessEdit,
 }) => {
@@ -32,7 +31,9 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
   const [fieldList, setFieldList] = useState<DescriptionsProps['items']>([]);
   const [attrList, setAttrList] = useState<AttrFieldType[]>([]);
   const { t } = useTranslation();
-  const { patch } = useApiClient();
+
+  const { updateInstance } = useInstanceApi();
+
   const searchParams = useSearchParams();
   const instId: string = searchParams.get('inst_id') || '';
   const builtinAttr = ['auto_collect', 'collect_time', 'collect_task'];
@@ -45,7 +46,7 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
     if (attrList.length) {
       initData(attrList);
     }
-  }, [propertyList, instDetail, userList, organizationList, attrList]);
+  }, [propertyList, instDetail, userList, attrList]);
 
   const updateInst = async (config: {
     id: string;
@@ -56,7 +57,7 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
     const fieldVaule = config.values[fieldKey];
     const params: any = {};
     params[fieldKey] = fieldVaule;
-    await patch(`/cmdb/api/instance/${instId}/`, params);
+    await updateInstance(instId, params);
     message.success(t('successfullyModified'));
     const list = deepClone(attrList);
     const [target, index] = list.reduce(
@@ -112,7 +113,6 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
                     {getFieldItem({
                       fieldItem: item,
                       userList,
-                      groupList: organizationList,
                       isEdit: true,
                     })}
                   </>
@@ -122,7 +122,6 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
                   {getFieldItem({
                     fieldItem: item,
                     userList,
-                    groupList: organizationList,
                     isEdit: false,
                     value: item.value,
                   })}
@@ -226,7 +225,6 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
     const copyVal: string = getFieldItem({
       fieldItem: item,
       userList,
-      groupList: organizationList,
       isEdit: false,
       value,
     });
@@ -245,7 +243,7 @@ const InfoList: React.FC<AssetDataFieldProps> = ({
           <CaretRightOutlined rotate={isActive ? 90 : 0} />
         )}
       >
-        <Panel header={t('group')} key="group">
+        <Panel header={t('common.group')} key="group">
           <Descriptions
             bordered
             items={fieldList?.filter((item) => item.key === 'organization')}

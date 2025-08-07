@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const TARGET_SERVER = process.env.NEXTAPI_URL || 'http://localhost:3000';
+const TARGET_SERVER = process.env.NEXTAPI_URL + '/api/v1' || 'http://localhost:3000';
 
 export async function GET(req: NextRequest) {
   return await handleProxy(req);

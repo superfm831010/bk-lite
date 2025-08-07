@@ -10,6 +10,7 @@ from django.db import transaction
 from apps.alerts.common.notify.base import NotifyParamsFormat
 from apps.alerts.models import Alert, AlertAssignment, OperatorLog
 from apps.alerts.constants import AlertStatus, AlertOperate, LogTargetType, LogAction
+from apps.alerts.service.base import get_default_notify_params
 from apps.core.logger import alert_logger as logger
 
 
@@ -117,7 +118,7 @@ class AlertOperator(object):
 
             # 更新告警状态和处理人
             alert.status = AlertStatus.PENDING
-            alert.operate = AlertOperate.Assign
+            alert.operate = AlertOperate.ASSIGN
             alert.operator = assignee
             alert.updated_at = timezone.now()
             alert.save()
@@ -127,10 +128,14 @@ class AlertOperator(object):
             if assignment_id:
                 self._create_reminder_record(alert, assignment_id)
 
-            from apps.alerts.tasks import sync_notify
-            transaction.on_commit(
-                lambda: sync_notify.delay(*self.format_notify_data(assignee, alert))
-            )
+            notify_param = self.format_notify_data(assignee, alert)
+            if notify_param:
+                from apps.alerts.tasks import sync_notify
+                transaction.on_commit(
+                    lambda: sync_notify.delay(notify_param)
+                )
+            else:
+                logger.warning(f"未找到有效的email通知参数，邮件通知失败！alert_id={alert_id}, assignee={assignee}")
 
             logger.info(
                 f"告警分派成功: alert_id={alert_id}, assignee={assignee}, 状态变更: {AlertStatus.UNASSIGNED} -> {AlertStatus.PENDING}")
@@ -277,10 +282,15 @@ class AlertOperator(object):
 
             logger.info(
                 f"告警转派成功: alert_id={alert_id}, old_assignee={old_assignee}, new_assignee={new_assignee}, 状态变更: {AlertStatus.PROCESSING} -> {AlertStatus.PENDING}")
-            from apps.alerts.tasks import sync_notify
-            transaction.on_commit(
-                lambda: sync_notify.delay(*self.format_notify_data(new_assignee, alert))
-            )
+
+            notify_param = self.format_notify_data(new_assignee, alert)
+            if notify_param:
+                from apps.alerts.tasks import sync_notify
+                transaction.on_commit(
+                    lambda: sync_notify.delay(notify_param)
+                )
+            else:
+                logger.warning(f"未找到有效的email通知参数，邮件通知失败！alert_id={alert_id}, assignee={new_assignee}")
 
             log_data = {
                 "action": LogAction.MODIFY,
@@ -442,13 +452,24 @@ class AlertOperator(object):
         格式化通知数据
         :return: 格式化后的通知数据
         """
+        channel, channel_id = get_default_notify_params()
+        if not channel_id:
+            return {}
         user_list = [i for i in assignee if i != self.user]
         param_format = NotifyParamsFormat(username_list=user_list, alerts=[alert])
         title = param_format.format_title()
         content = param_format.format_content()
-        channel = "email"
         object_id = alert.alert_id
-        return user_list, channel, title, content, object_id
+        result = {
+            "username_list": user_list,
+            "channel_type": channel,
+            "channel_id": channel_id,
+            "title": title,
+            "content": content,
+            "object_id": object_id,
+            "notify_action_object": "alert"
+        }
+        return result
 
     @staticmethod
     def operator_log(log_data: dict):
@@ -504,7 +525,7 @@ class BeatUpdateAlertStatu(object):
                     for alert in all_alerts_to_close:
                         # 再次检查状态，防止在获取锁的过程中状态被其他进程修改
                         if alert.status in AlertStatus.ACTIVATE_STATUS:
-                            alert.status = AlertStatus.CLOSED
+                            alert.status = AlertStatus.AUTO_CLOSE
                             alert.operate = AlertOperate.CLOSE
                             alert.updated_at = current_time
                             alert.save(update_fields=['status', 'operate', 'updated_at'])

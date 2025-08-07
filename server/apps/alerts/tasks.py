@@ -8,7 +8,6 @@ from celery import shared_task
 
 from apps.alerts.common.notify.notify import Notify
 from apps.alerts.models import SystemSetting
-from apps.alerts.service.alter_operator import BeatUpdateAlertStatu
 from apps.alerts.service.notify_service import NotifyResultService
 from apps.alerts.service.un_dispatch import UnDispatchService
 from apps.core.logger import alert_logger as logger
@@ -38,7 +37,6 @@ def event_aggregation_alert():
             return
 
         # 3. 按窗口类型优先级顺序处理（滑动、固定、会话）
-        # window_order = ['session', 'sliding', 'fixed']
         window_order = ['sliding', 'fixed', 'session']
         # window_order = ['session']
         processing_stats = {}
@@ -102,8 +100,15 @@ def beat_close_alert():
     告警关闭兜底机制
     """
     logger.info("== beat close alert task start ==")
-    beat_update = BeatUpdateAlertStatu(times=3)  # 3个窗口内
-    beat_update.beat_close_alert()
+    try:
+        logger.info("开始执行告警自动关闭定时任务")
+        from apps.alerts.common.auto_close import AlertAutoClose
+        auto_closer = AlertAutoClose()
+        auto_closer.main()
+        logger.info("告警自动关闭定时任务执行完成")
+    except Exception as e:
+        logger.error(f"告警自动关闭定时任务执行失败: {str(e)}")
+        raise
     logger.info("== beat close alert task end ==")
 
 
@@ -142,27 +147,41 @@ def cleanup_reminder_tasks():
 
 
 @shared_task
-def sync_notify(username_list, channel, title, content, object_id="", notify_action_object="alert"):
+def sync_notify(params):
     """
     同步通知方法
-    :param username_list: 用户名列表
-    :param channel: 通知渠道
-    :param title: 通知标题
-    :param content: 通知内容
-    :param object_id: 通知对象ID（可选）
-    :param notify_action_object: 通知动作对象，默认为"alert"
+    :param params: 通知参数列表，每个元素是一个字典，包含以下键：
+        : username_list: 用户名列表
+        : channel_id: 通知渠道ID
+        : channel_type: 通知渠道类型
+        : title: 通知标题
+        : content: 通知内容
+        : object_id: 通知对象ID（可选）
+        : notify_action_object: 通知动作对象，默认为"alert"
     """
     send_time = time.time()
-    logger.info(
-        "=== 开始执行通知任务 time={} username_list={}, channel={} ===".format(send_time, username_list, channel))
-    notify = Notify(username_list=username_list, channel=channel, title=title, content=content)
-    result = notify.notify()
-    logger.info("=== 通知任务执行完成 send_time={}===".format(send_time))
-    if object_id:
-        notify_result_obj = NotifyResultService(notify_users=username_list, channel=channel, notify_object=object_id,
-                                                notify_action_object=notify_action_object, notify_result=result)
-        notify_result_obj.save_notify_result()
-    return result
+    result_list = []
+    for param in params:
+        username_list = param["username_list"]
+        channel_id = param["channel_id"]
+        channel_type = param["channel_type"]
+        title = param["title"]
+        content = param["content"]
+        object_id = param.get("object_id", "")
+        notify_action_object = param.get("notify_action_object", "alert")
+        logger.info(
+            "=== 开始执行通知任务 time={} username_list={}, channel={} ===".format(send_time, username_list, channel_type))
+        notify = Notify(username_list=username_list, channel_id=channel_id, title=title, content=content)
+        result = notify.notify()
+        result_list.append(result)
+        logger.info("=== 通知任务执行完成 send_time={}===".format(send_time))
+        if object_id:
+            notify_result_obj = NotifyResultService(notify_users=username_list, channel=channel_type,
+                                                    notify_object=object_id,
+                                                    notify_action_object=notify_action_object, notify_result=result)
+            notify_result_obj.save_notify_result()
+
+    return result_list
 
 
 @shared_task
@@ -193,7 +212,6 @@ def sync_no_dispatch_alert_notice_task():
         return
 
     params = UnDispatchService.notify_un_dispatched_alert_params_format()
-    for notify_people, channel, title, content, alerts in params:
-        sync_notify(username_list=notify_people, channel=channel, title=title, content=content)
+    sync_notify(params=params)
 
     logger.info("== 未分派告警通知任务执行完成 ==")
