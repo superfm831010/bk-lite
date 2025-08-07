@@ -3,7 +3,6 @@ import React, { useState, useRef } from 'react';
 import Icon from '@/components/icon';
 import {
   UserItem,
-  Organization,
   AssoListRef,
 } from '@/app/cmdb/types/assetManage';
 import { Segmented, Button, Spin } from 'antd';
@@ -22,8 +21,6 @@ const Ralationships = () => {
   const commonContext = useCommon();
   const searchParams = useSearchParams();
   const { modelList, assoTypes, loading } = useRelationships();
-  const authList = useRef(commonContext?.authOrganizations || []);
-  const organizationList: Organization[] = authList.current;
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
   const assoListRef = useRef<AssoListRef>(null);
@@ -90,7 +87,6 @@ const Ralationships = () => {
         <AssoList
           ref={assoListRef}
           userList={userList}
-          organizationList={organizationList}
           modelList={modelList}
           assoTypeList={assoTypes}
         />

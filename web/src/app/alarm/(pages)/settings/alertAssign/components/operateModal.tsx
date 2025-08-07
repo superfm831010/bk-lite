@@ -11,6 +11,7 @@ import { useCommon } from '@/app/alarm/context/common';
 import { useTranslation } from '@/utils/i18n';
 import { CaretRightOutlined } from '@ant-design/icons';
 import { useSettingApi } from '@/app/alarm/api/settings';
+import { ChannelItem, NotifyOption } from '@/app/alarm/types/settings';
 import {
   Tag,
   Form,
@@ -23,6 +24,7 @@ import {
   Collapse,
   InputNumber,
   message,
+  Spin,
 } from 'antd';
 
 interface OperateModalProps {
@@ -41,19 +43,41 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
   const locale = localStorage.getItem('locale') || 'en';
   const { t } = useTranslation();
   const { levelList, levelMap, userList } = useCommon();
-  const { createAssignment, updateAssignment } = useSettingApi();
+  const { createAssignment, updateAssignment, getChannelList } =
+    useSettingApi();
 
   const personnelOptions = userList.map(({ display_name, username }) => ({
     label: `${display_name} (${username})`,
     value: username,
   }));
 
-  const notifyOptions = [
-    { label: '邮件', value: 'email' },
-    { label: '微信', value: 'wechat' },
-  ];
   const [form] = Form.useForm();
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [notifyOptions, setNotifyOptions] = useState<NotifyOption[]>([]);
+  const [channelLoading, setChannelLoading] = useState(false);
+
+  // 获取通知渠道列表
+  const fetchChannelList = async () => {
+    setChannelLoading(true);
+    try {
+      const data: any = await getChannelList({});
+      const options: NotifyOption[] = data.map((channel: ChannelItem) => ({
+        label: channel.name,
+        value: channel.channel_type,
+      }));
+      setNotifyOptions(options);
+
+      if (!currentRow && options.length > 0) {
+        form.setFieldsValue({
+          notify_channels: [options[0].value],
+        });
+      }
+    } catch (error) {
+      console.error('获取通知渠道失败:', error);
+    } finally {
+      setChannelLoading(false);
+    }
+  };
 
   const handleClose = () => {
     form.resetFields();
@@ -62,6 +86,8 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
 
   useEffect(() => {
     if (open) {
+      fetchChannelList();
+
       if (currentRow) {
         form.setFieldsValue({
           ...currentRow,
@@ -256,10 +282,14 @@ const OperateModalPage: React.FC<OperateModalProps> = ({
         <Form.Item
           name="notify_channels"
           label={t('settings.assignStrategy.formNotifyMethod')}
-          initialValue={['email']}
           rules={[{ required: true, message: t('common.selectTip') }]}
         >
-          <Checkbox.Group options={notifyOptions} />
+          <Checkbox.Group options={notifyOptions} disabled={channelLoading} />
+          {channelLoading && (
+            <div className="flex justify-center h-[32px] ">
+              <Spin spinning={channelLoading}></Spin>
+            </div>
+          )}
         </Form.Item>
         <Collapse
           defaultActiveKey={[]}
