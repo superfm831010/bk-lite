@@ -61,7 +61,7 @@ func Execute(req ExecuteRequest, instanceId string) ExecuteResponse {
 
 func SubscribeSSHExecutor(nc *nats.Conn, instanceId *string) {
 	subject := fmt.Sprintf("ssh.execute.%s", *instanceId)
-	log.Printf("Subscribing to subject: %s", subject)
+	//log.Printf("Subscribing to subject: %s", subject)
 	nc.Subscribe(subject, func(msg *nats.Msg) {
 		// 解析 request 的标准结构
 		var incoming struct {
@@ -85,7 +85,7 @@ func SubscribeSSHExecutor(nc *nats.Conn, instanceId *string) {
 			return
 		}
 
-		log.Printf("Received SSH command: %s", sshExecuteRequest.Command)
+		//log.Printf("Received SSH command: %s", sshExecuteRequest.Command)
 		responseData := Execute(sshExecuteRequest, *instanceId)
 		log.Printf("Publishing SSH response using msg.Respond")
 
@@ -98,7 +98,7 @@ func SubscribeSSHExecutor(nc *nats.Conn, instanceId *string) {
 
 func SubscribeDownloadToRemote(nc *nats.Conn, instanceId *string) {
 	subject := fmt.Sprintf("download.remote.%s", *instanceId)
-	log.Printf("Subscribing to subject: %s", subject)
+	//log.Printf("Subscribing to subject: %s", subject)
 
 	nc.Subscribe(subject, func(msg *nats.Msg) {
 		var incoming struct {
@@ -123,7 +123,7 @@ func SubscribeDownloadToRemote(nc *nats.Conn, instanceId *string) {
 			return
 		}
 
-		log.Printf("Starting download from bucket %s, file %s to local path %s", downloadRequest.BucketName, downloadRequest.FileKey, downloadRequest.TargetPath)
+		//log.Printf("Starting download from bucket %s, file %s to local path %s", downloadRequest.BucketName, downloadRequest.FileKey, downloadRequest.TargetPath)
 
 		// 下载文件到本地
 		localdownloadRequest := utils.DownloadFileRequest{
@@ -155,7 +155,7 @@ func SubscribeDownloadToRemote(nc *nats.Conn, instanceId *string) {
 			ExecuteTimeout: downloadRequest.ExecuteTimeout,
 		}
 
-		log.Printf("Starting file transfer to remote host: %s@%s:%s", downloadRequest.User, downloadRequest.Host, downloadRequest.TargetPath)
+		//log.Printf("Starting file transfer to remote host: %s@%s:%s", downloadRequest.User, downloadRequest.Host, downloadRequest.TargetPath)
 		responseData := local.Execute(localExecuteRequest, *instanceId)
 
 		responseContent, _ := json.Marshal(responseData)
@@ -167,7 +167,7 @@ func SubscribeDownloadToRemote(nc *nats.Conn, instanceId *string) {
 
 func SubscribeUploadToRemote(nc *nats.Conn, instanceId *string) {
 	subject := fmt.Sprintf("upload.remote.%s", *instanceId)
-	log.Printf("Subscribing to subject: %s", subject)
+	//log.Printf("Subscribing to subject: %s", subject)
 
 	nc.Subscribe(subject, func(msg *nats.Msg) {
 		var incoming struct {
@@ -192,7 +192,7 @@ func SubscribeUploadToRemote(nc *nats.Conn, instanceId *string) {
 			return
 		}
 
-		log.Printf("Starting upload from local path %s to remote host %s@%s:%s", uploadRequest.SourcePath, uploadRequest.User, uploadRequest.Host, uploadRequest.TargetPath)
+		//log.Printf("Starting upload from local path %s to remote host %s@%s:%s", uploadRequest.SourcePath, uploadRequest.User, uploadRequest.Host, uploadRequest.TargetPath)
 
 		// 使用sshpass处理带密码的scp传输
 		scpCommand := fmt.Sprintf("sshpass -p '%s' scp -o StrictHostKeyChecking=no -P %d -r %s %s@%s:%s",

@@ -4,7 +4,7 @@ import React, { useMemo, useEffect, useCallback, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/icon';
 import sideMenuStyle from './index.module.scss';
-import useApiClient from '@/utils/request';
+import { useModelApi } from '@/app/cmdb/api';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeftOutlined } from '@ant-design/icons';
@@ -47,7 +47,9 @@ const SideMenu: React.FC<SideMenuProps> = ({
   onBackButtonClick,
 }) => {
   const ASSET_NAME = 'asset_relationships';
-  const { get } = useApiClient();
+
+  const { getModelAssociations } = useModelApi();
+
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -80,15 +82,18 @@ const SideMenu: React.FC<SideMenuProps> = ({
     fetchAllAssociations(modelId || '');
   }, []);
 
-  const fetchAllAssociations = useCallback(async (modelId: string) => {
-    if (!modelId) return;
-    try {
-      const data = await get(`/cmdb/api/model/${modelId}/association`);
-      setAllAssociations(Array.isArray(data) ? data : []);
-    } catch {
-      setAllAssociations([]);
-    }
-  }, []);
+  const fetchAllAssociations = useCallback(
+    async (modelId: string) => {
+      if (!modelId) return;
+      try {
+        const data = await getModelAssociations(modelId);
+        setAllAssociations(Array.isArray(data) ? data : []);
+      } catch {
+        setAllAssociations([]);
+      }
+    },
+    [getModelAssociations]
+  );
 
   const relationData = useMemo(() => {
     if (!assoInstances?.length) return [];

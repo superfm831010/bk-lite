@@ -8,7 +8,7 @@ import { useTranslation } from '@/utils/i18n';
 import { AssoListProps } from '@/app/cmdb/types/assetData';
 import { useRelationships } from '@/app/cmdb/context/relationships';
 import CustomTable from '@/components/custom-table';
-import useApiClient from '@/utils/request';
+import { useModelApi, useInstanceApi } from '@/app/cmdb/api';
 import assoListStyle from './index.module.scss';
 import SelectInstance from './selectInstance';
 import PermissionWrapper from '@/components/permission';
@@ -32,7 +32,7 @@ import {
 const { confirm } = Modal;
 
 const AssoList = forwardRef<AssoListRef, AssoListProps>(
-  ({ modelList, userList, organizationList, assoTypeList }, ref) => {
+  ({ modelList, userList, assoTypeList }, ref) => {
     const { t } = useTranslation();
     const [activeKey, setActiveKey] = useState<string[]>([]);
     const [allActiveKeys, setAllActiveKeys] = useState<string[]>([]);
@@ -42,7 +42,8 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
     >([]);
     const [pageLoading, setPageLoading] = useState<boolean>(false);
     const searchParams = useSearchParams();
-    const { get, del } = useApiClient();
+    const modelApi = useModelApi();
+    const instanceApi = useInstanceApi();
     const modelId: string = searchParams.get('model_id') || '';
     const instId: string = searchParams.get('inst_id') || '';
     const instanceRef = useRef<RelationInstanceRef>(null);
@@ -109,7 +110,6 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
           const updatedItem = await getModelAttrList(targetItem, {
             assoList: assoInstancesList,
             userData: userList,
-            organizationData: organizationList,
             models: modelList,
             assoTypeList,
           });
@@ -131,7 +131,6 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
           getModelAttrList(item, {
             assoList: assoInstancesList,
             userData: userList,
-            organizationData: organizationList,
             models: modelList,
             assoTypeList,
           })
@@ -191,18 +190,16 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
     };
 
     const getModelAttrList = async (item: any, config: any) => {
-      const responseData = await get(
-        `/cmdb/api/model/${getAttrId(item)}/attr_list/`
-      );
+      const attrId = getAttrId(item as CrentialsAssoDetailItem);
+      const responseData = await modelApi.getModelAttrList(attrId as string);
       const columns = [
         ...getAssetColumns({
           attrList: responseData,
           userList: config.userData,
-          groupList: config.organizationData,
           t,
         }),
         {
-          title: t('common.action'),
+          title: t('common.actions'),
           dataIndex: 'action',
           key: 'action',
           fixed: 'right',
@@ -267,7 +264,7 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
         onOk() {
           return new Promise(async (resolve) => {
             try {
-              await del(`/cmdb/api/instance/association/${id}/`);
+              await instanceApi.deleteInstanceAssociation(id as string);
               message.success(t('successfullyDisassociated'));
               const data = await fetchAssoInstances(modelId, instId);
               processedData(data);
@@ -338,7 +335,6 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
           userList={userList}
           models={modelList}
           assoTypes={assoTypeList}
-          organizationList={organizationList}
           onSuccess={confirmRelate}
         />
       </Spin>

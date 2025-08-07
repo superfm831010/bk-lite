@@ -1,6 +1,6 @@
 from langgraph.constants import END
 from langgraph.graph import StateGraph
-from langgraph.pregel import RetryPolicy
+from langgraph.types import RetryPolicy
 from sanic.log import logger
 
 from src.agent.plan_and_execute_agent.plan_and_execute_agent_node import PlanAndExecuteAgentNode

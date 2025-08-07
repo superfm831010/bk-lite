@@ -4,7 +4,6 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
-import traceback
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -48,7 +47,7 @@ for app_config in apps.get_app_configs():
         if app_name.startswith("apps."):
             urls_module = __import__(f"{app_name}.urls", fromlist=["urlpatterns"])
             url_path = app_name.split("apps.")[-1]
-            urlpatterns.append(path(f"{url_path}/", include(urls_module)))
+            urlpatterns.append(path(f"api/v1/{url_path}/", include(urls_module)))
 
     except ImportError as e:  # noqa
         print(e)

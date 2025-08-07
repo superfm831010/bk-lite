@@ -55,6 +55,9 @@ class GroupViewSet(ViewSetUtils):
     @action(detail=False, methods=["POST"])
     @HasPermission("user_group-Edit Group")
     def update_group(self, request):
+        obj = Group.objects.get(id=request.data.get("group_id"))
+        if obj.name == "Default" and obj.parent_id == 0:
+            return JsonResponse({"result": False, "message": _("Default group cannot be modified.")})
         if not request.user.is_superuser:
             groups = [i["id"] for i in request.user.group_list]
             if request.data.get("group_id") not in groups:
@@ -67,6 +70,9 @@ class GroupViewSet(ViewSetUtils):
     def delete_groups(self, request):
         kwargs = request.data
         group_id = int(kwargs["id"])
+        obj = Group.objects.get(id=group_id)
+        if obj.name == "Default" and obj.parent_id == 0:
+            return JsonResponse({"result": False, "message": _("Default group cannot be deleted.")})
         if not request.user.is_superuser:
             groups = [i["id"] for i in request.user.group_list]
             if group_id not in groups:

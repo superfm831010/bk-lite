@@ -1,8 +1,9 @@
 from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.config import PILOT_RUNTIME
+from apps.opspilot.enum import BotTypeChoice
 from apps.opspilot.models import Bot
-from apps.opspilot.utils.docker_client import DockerClient
-from apps.opspilot.utils.kubernetes_client import KubernetesClient
+from apps.opspilot.utils.rasa_app.docker_client import DockerClient
+from apps.opspilot.utils.rasa_app.kubernetes_client import KubernetesClient
 
 
 class PilotClient(object):
@@ -21,15 +22,21 @@ class PilotClient(object):
     def start_pilot(self, bot: Bot):
         logger.info(f"启动Pilot: {bot.id}")
         try:
-            result = self.client.start_pilot(bot)
+            if bot.bot_type == BotTypeChoice.PILOT:
+                result = self.client.start_pilot(bot)
+            else:
+                result = self.client.start_lobe_chat(bot)
         except Exception as e:
             logger.exception(f"启动Pilot失败: {e}")
             raise Exception("无法连接到Pilot服务，请检查服务是否正常运行。")
         return result
 
-    def stop_pilot(self, bot_id):
+    def stop_pilot(self, bot):
         try:
-            result = self.client.stop_pilot(bot_id)
+            if bot.bot_type == BotTypeChoice.PILOT:
+                result = self.client.stop_pilot(bot.id)
+            else:
+                result = self.client.stop_lobe_chat(bot.id)
         except Exception as e:
             logger.exception(f"停止Pilot失败: {e}")
             raise Exception("无法连接到Pilot服务，请检查服务是否正常运行。")

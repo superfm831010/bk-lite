@@ -53,13 +53,13 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, activ
     }
   };
 
-  const handleAddMap: Record<string, any> = {
+  const handleAddMap: Record<string, (params: any) => Promise<void>> = {
     'anomaly': async (params: any) => {
       await addAnomalyServings(params);
     },
   };
 
-  const handleUpdateMap: Record<string, any> = {
+  const handleUpdateMap: Record<string, (id: number, params: any) => Promise<void>> = {
     'anomaly': async (id: number, params: any) => {
       await updateAnomalyServings(id, params);
     },
@@ -79,7 +79,7 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, activ
         await handleAddMap[tagName](params);
         message.success(t(`model-release.publishSuccess`));
       } else {
-        await handleUpdateMap[tagName](formData.id, params);
+        await handleUpdateMap[tagName](formData?.id, params);
         message.success(t(`common.updateSuccess`));
       }
       setModalOpen(false);
@@ -146,6 +146,7 @@ const ReleaseModal = forwardRef<ModalRef, ReleaseModalProps>(({ trainjobs, activ
           <Form.Item
             name='description'
             label={t(`model-release.modelDescription`)}
+            rules={[{ required: true, message: t('common.inputMsg') }]}
           >
             <TextArea placeholder={t(`common.inputMsg`)} rows={4} maxLength={6} />
           </Form.Item>

@@ -1,2 +1,3 @@
 from .playground_category import PlayGroundCategoryViewSet
 from .playground_capability import PlayGroundCapabilityViewSet
+from .playground_example import PlayGroundAnomalyDetectionExampleViewSet

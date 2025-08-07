@@ -1,31 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import Icon from '@/components/icon';
+import NodeConfPanel from './nodeConfPanel';
 import { Button, Drawer } from 'antd';
 import {
   RightOutlined,
   LeftOutlined,
-  NumberOutlined,
   AppstoreOutlined,
 } from '@ant-design/icons';
-import NodeConfPanel from './nodeConfPanel';
-
-interface SidebarProps {
-  collapsed: boolean;
-  isEditMode?: boolean;
-  setCollapsed: (collapsed: boolean) => void;
-  onAddNode?: (nodeConfig: any) => void;
-}
-
-interface NodeType {
-  id: string;
-  name: string;
-  icon: React.ReactNode;
-  description: string;
-}
-
-interface DropPosition {
-  x: number;
-  y: number;
-}
+import {
+  SidebarProps,
+  NodeType,
+  DropPosition,
+} from '@/app/ops-analysis/types/topology';
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   collapsed, 
@@ -44,7 +30,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'single-value',
       name: '单值',
-      icon: <NumberOutlined className="text-blue-500" />,
+      icon: (
+        <Icon
+          type="danzhitu"
+          className="text-blue-500"
+          style={{ fontSize: '16px' }}
+        />
+      ),
       description: '添加单个数值显示节点',
     },
     {

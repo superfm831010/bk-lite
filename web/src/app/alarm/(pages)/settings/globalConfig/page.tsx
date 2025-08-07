@@ -5,7 +5,12 @@ import PermissionWrapper from '@/components/permission';
 import { useSettingApi } from '@/app/alarm/api/settings';
 import { useCommon } from '@/app/alarm/context/common';
 import { useTranslation } from '@/utils/i18n';
-import { Config, GlobalConfig } from '@/app/alarm/types/settings';
+import {
+  Config,
+  GlobalConfig,
+  ChannelItem,
+  NotifyOption,
+} from '@/app/alarm/types/settings';
 import {
   Card,
   Typography,
@@ -29,19 +34,42 @@ export default function UnallocatedNotificationConfig() {
   const [activationLoading, setActivationLoading] = useState(false);
   const [globalConfigId, setGlobalConfigId] = useState<string | number>('');
   const [updateLoading, setUpdateLoading] = useState(false);
-  const { getGlobalConfig, updateGlobalConfig, toggleGlobalConfig } =
-    useSettingApi();
+  const [notifyOptions, setNotifyOptions] = useState<NotifyOption[]>([]);
+  const [channelLoading, setChannelLoading] = useState(false);
+  const {
+    getGlobalConfig,
+    updateGlobalConfig,
+    toggleGlobalConfig,
+    getChannelList,
+  } = useSettingApi();
   const [config, setConfig] = useState<Config>({
     notify_every: 60,
     notify_people: [],
-    notify_channel: ['email'],
+    notify_channel: [],
   });
 
   const assigneeOptions = userList.map((u) => ({
     label: `${u.display_name} (${u.username})`,
     value: u.username,
   }));
-  
+
+  // 获取通知渠道列表
+  const fetchChannelList = async () => {
+    setChannelLoading(true);
+    try {
+      const data: any = await getChannelList({});
+      const options: NotifyOption[] = data.map((channel: ChannelItem) => ({
+        label: channel.name,
+        value: channel.channel_type,
+      }));
+      setNotifyOptions(options);
+    } catch (error) {
+      console.error('获取通知渠道失败:', error);
+    } finally {
+      setChannelLoading(false);
+    }
+  };
+
   useEffect(() => {
     form.setFieldsValue(config);
   }, [form, config]);
@@ -64,6 +92,9 @@ export default function UnallocatedNotificationConfig() {
         setLoading(false);
       }
     };
+
+    // 获取通知渠道列表
+    fetchChannelList();
     loadGlobalConfig();
   }, []);
 
@@ -222,18 +253,14 @@ export default function UnallocatedNotificationConfig() {
                   ]}
                 >
                   <Checkbox.Group
-                    options={[
-                      {
-                        label: t('settings.globalConfig.email'),
-                        value: 'email',
-                      },
-                      {
-                        label: t('settings.globalConfig.wechat'),
-                        value: 'wechat',
-                      },
-                    ]}
-                    disabled={!editMode}
+                    options={notifyOptions}
+                    disabled={!editMode || channelLoading}
                   />
+                  {channelLoading && (
+                    <div className="flex justify-center h-[32px] mt-2">
+                      <Spin spinning={channelLoading} />
+                    </div>
+                  )}
                 </Form.Item>
 
                 <Form.Item>

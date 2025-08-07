@@ -66,12 +66,17 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         knowledge_base_id = request.GET.get("knowledge_base_id", 0)
         if not knowledge_base_id:
             return JsonResponse({"result": False, "message": _("knowledge_base_id is required")})
-        task_list = (
+        task_list = list(
             KnowledgeTask.objects.filter(created_by=request.user.username, knowledge_base_id=knowledge_base_id)
-            .values("task_name", "train_progress", "is_qa_task")
+            .values("task_name", "train_progress", "is_qa_task", "completed_count", "total_count")
             .order_by("-id")
         )
-        return JsonResponse({"result": True, "data": list(task_list)})
+        for i in task_list:
+            if not i["is_qa_task"]:
+                i["train_progress"] = f"{i['completed_count']}/{i['total_count']}"
+            else:
+                i["train_progress"] = f"{i['train_progress']}%"
+        return JsonResponse({"result": True, "data": task_list})
 
     @action(methods=["POST"], detail=False)
     def testing(self, request):

@@ -1,25 +1,28 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Form, Input, Select, Upload, Radio } from 'antd';
-import { UploadOutlined, AppstoreOutlined } from '@ant-design/icons';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { DatasourceItem } from '@/app/ops-analysis/types/dataSource';
+import { NodeConfPanelProps } from '@/app/ops-analysis/types/topology';
 import { iconList } from '@/app/cmdb/utils/common';
+import { FORM_DEFAULTS } from '../constants/nodeDefaults';
 import SelectIcon, {
   SelectIconRef,
 } from '@/app/cmdb/(pages)/assetManage/management/list/selectIcon';
-
-interface NodeConfPanelProps {
-  nodeType: 'single-value' | 'icon';
-  onFormReady?: (formInstance: any) => void;
-  readonly?: boolean;
-  initialValues?: {
-    name?: string;
-    logoType?: 'default' | 'custom';
-    logoIcon?: string;
-    logoUrl?: string;
-    dataSource?: number;
-  };
-}
+import {
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Upload,
+  Radio,
+  Checkbox,
+  Spin,
+  Button,
+} from 'antd';
+import {
+  UploadOutlined,
+  AppstoreOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
 
 const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   nodeType,
@@ -33,8 +36,14 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [logoType, setLogoType] = useState<'default' | 'custom'>('default');
   const [selectedIcon, setSelectedIcon] = useState<string>('');
+  const [dataFields, setDataFields] = useState<string[]>([]);
+  const [selectedFields, setSelectedFields] = useState<string[]>([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [currentDataSource, setCurrentDataSource] = useState<number | null>(
+    null
+  );
   const selectIconRef = useRef<SelectIconRef>(null);
-  const { getDataSourceList } = useDataSourceApi();
+  const { getDataSourceList, getSourceDataByApiId } = useDataSourceApi();
 
   useEffect(() => {
     const fetchDataSources = async () => {
@@ -57,21 +66,35 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       onFormReady(form);
     }
 
-    // 设置初始值
     if (initialValues) {
       setSelectedIcon(initialValues.logoIcon || 'cc-host');
       setLogoType(initialValues.logoType || 'default');
+      setCurrentDataSource(initialValues.dataSource || null);
+      setSelectedFields(initialValues.selectedFields || []);
+
       if (initialValues.logoUrl) {
         setLogoPreview(initialValues.logoUrl);
       }
 
-      // 设置表单初始值
       form.setFieldsValue({
         name: initialValues.name || '',
         logoType: initialValues.logoType || 'default',
         logoIcon: initialValues.logoIcon || 'cc-host',
         logoUrl: initialValues.logoUrl,
         dataSource: initialValues.dataSource,
+        selectedFields: initialValues.selectedFields || [],
+        fontSize: initialValues.fontSize || FORM_DEFAULTS.SINGLE_VALUE.fontSize,
+        textColor:
+          initialValues.textColor || FORM_DEFAULTS.SINGLE_VALUE.textColor,
+        backgroundColor:
+          initialValues.backgroundColor ||
+          FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
+        borderColor:
+          initialValues.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor,
+        query: initialValues.query || FORM_DEFAULTS.SINGLE_VALUE.query,
+        unit: initialValues.unit || FORM_DEFAULTS.SINGLE_VALUE.unit,
+        threshold:
+          initialValues.threshold || FORM_DEFAULTS.SINGLE_VALUE.threshold,
       });
     } else {
       setSelectedIcon('cc-host');
@@ -124,7 +147,6 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   };
 
   const getIconUrl = (iconKey: string) => {
-    // 根据iconKey在iconList中查找对应的url
     const iconItem = iconList.find((item) => item.key === iconKey);
     return iconItem
       ? `/app/assets/assetModelIcon/${iconItem.url}.svg`
@@ -132,8 +154,36 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   };
 
   const handleDataSourceChange = (dataSourceId: number) => {
-    // TODO: 后续接入接口时处理数据源变化
-    console.log('选择了数据源:', dataSourceId);
+    setCurrentDataSource(dataSourceId);
+  };
+
+  const fetchDataFields = async () => {
+    if (!currentDataSource) {
+      return;
+    }
+    setLoadingData(true);
+    try {
+      const data: any = await getSourceDataByApiId(currentDataSource);
+      if (Array.isArray(data) && data.length > 0) {
+        const firstRow = data[0];
+        if (Array.isArray(firstRow)) {
+          const fields = firstRow.map((_, index) => `字段${index + 1}`);
+          setDataFields(fields);
+        }
+      } else {
+        setDataFields([]);
+      }
+    } catch (error) {
+      console.error('获取数据字段失败:', error);
+      setDataFields([]);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const handleFieldChange = (checkedValues: string[]) => {
+    setSelectedFields(checkedValues);
+    form.setFieldsValue({ selectedFields: checkedValues });
   };
 
   return (
@@ -148,6 +198,8 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
           name: initialValues?.name || '',
           logoUrl: initialValues?.logoUrl,
           dataSource: initialValues?.dataSource,
+          selectedFields: initialValues?.selectedFields || [],
+          fontSize: initialValues?.fontSize || 14,
         }}
       >
         <div className="mb-6">
@@ -238,34 +290,87 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
           )}
         </div>
 
-        <div className="mb-6">
-          <div className="font-bold text-[var(--color-text-1)] mb-4">
-            数据源
-          </div>
-          <Form.Item
-            label="数据源类型"
-            name="dataSource"
-            rules={[{ required: true, message: '请选择数据源' }]}
-          >
-            <Select
-              loading={dataSourcesLoading}
-              options={formatDataSourceOptions(dataSources)}
-              placeholder="请选择数据源"
-              style={{ width: '100%' }}
-              onChange={handleDataSourceChange}
-              disabled={readonly}
-            />
-          </Form.Item>
-        </div>
+        {nodeType === 'single-value' && (
+          <>
+            <div className="mb-6">
+              <div className="font-bold text-[var(--color-text-1)] mb-4">
+                数据源
+              </div>
+              <Form.Item
+                label="数据源类型"
+                name="dataSource"
+                rules={[{ required: true, message: '请选择数据源' }]}
+              >
+                <Select
+                  loading={dataSourcesLoading}
+                  options={formatDataSourceOptions(dataSources)}
+                  placeholder="请选择数据源"
+                  style={{ width: '100%' }}
+                  onChange={handleDataSourceChange}
+                  disabled={readonly}
+                />
+              </Form.Item>
+            </div>
+            <div className="mb-6">
+              <div className="font-bold text-[var(--color-text-1)] mb-4">
+                参数设置
+              </div>
+              <div className="text-center py-4 text-[var(--color-text-2)]">
+                TODO-参数配置
+              </div>
+            </div>
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="font-bold text-[var(--color-text-1)]">
+                  数据设置
+                </div>
+                <Button
+                  type="text"
+                  icon={<ReloadOutlined />}
+                  onClick={fetchDataFields}
+                  loading={loadingData}
+                  disabled={!currentDataSource || readonly}
+                  size="small"
+                  title="刷新数据字段"
+                />
+              </div>
 
-        <div className="mb-6">
-          <div className="font-bold text-[var(--color-text-1)] mb-4">
-            参数设置
-          </div>
-          <div className="text-center py-8 text-[var(--color-text-2)]">
-            TODO-参数配置
-          </div>
-        </div>
+              {dataFields.length > 0 ? (
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="text-sm text-gray-600 mb-3">
+                    选择要显示的数据字段：
+                  </div>
+                  <Form.Item name="selectedFields" noStyle>
+                    <Checkbox.Group
+                      options={dataFields.map((field) => ({
+                        label: field,
+                        value: field,
+                      }))}
+                      value={selectedFields}
+                      onChange={handleFieldChange}
+                      className="flex flex-col space-y-2"
+                    />
+                  </Form.Item>
+                </div>
+              ) : currentDataSource ? (
+                <div className="text-center py-4 text-gray-500">
+                  {loadingData ? (
+                    <div className="flex items-center justify-center">
+                      <Spin size="small" className="mr-2" />
+                      <span>正在获取数据字段...</span>
+                    </div>
+                  ) : (
+                    <span>点击刷新按钮获取数据字段</span>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  请先选择数据源
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         <div className="mb-6">
           <div className="font-bold text-[var(--color-text-1)] mb-4">
@@ -274,23 +379,22 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
           {nodeType === 'single-value' && (
             <>
               <Form.Item label="字体大小" name="fontSize">
-                <Select
-                  defaultValue="14"
+                <InputNumber
+                  defaultValue={FORM_DEFAULTS.SINGLE_VALUE.fontSize}
+                  min={10}
+                  max={48}
+                  step={1}
+                  addonAfter="px"
                   disabled={readonly}
-                  options={[
-                    { label: '12px', value: '12' },
-                    { label: '14px', value: '14' },
-                    { label: '16px', value: '16' },
-                    { label: '18px', value: '18' },
-                    { label: '20px', value: '20' },
-                  ]}
+                  placeholder="请输入字体大小"
+                  style={{ width: '120px' }}
                 />
               </Form.Item>
 
               <Form.Item label="文本颜色" name="textColor">
                 <Input
                   type="color"
-                  defaultValue="#333333"
+                  defaultValue={FORM_DEFAULTS.SINGLE_VALUE.textColor}
                   className="w-20 h-8"
                   disabled={readonly}
                 />
@@ -301,7 +405,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
           <Form.Item label="背景颜色" name="backgroundColor">
             <Input
               type="color"
-              defaultValue="#ffffff"
+              defaultValue={FORM_DEFAULTS.SINGLE_VALUE.backgroundColor}
               className="w-20 h-8"
               disabled={readonly}
             />
@@ -310,7 +414,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
           <Form.Item label="边框颜色" name="borderColor">
             <Input
               type="color"
-              defaultValue="#d9d9d9"
+              defaultValue={FORM_DEFAULTS.SINGLE_VALUE.borderColor}
               className="w-20 h-8"
               disabled={readonly}
             />

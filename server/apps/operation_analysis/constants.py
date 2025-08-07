@@ -32,3 +32,16 @@ class DashboardType:
         (MAP, "地图"),
         (TEXT, "文本")
     ]
+
+
+class TopologyType:
+    """
+    拓扑类型
+    """
+    SINGLE = "single"
+    ICONS = "icons"
+
+    CHOICES = [
+        (SINGLE, "单一节点"),
+        (ICONS, "图标拓扑")
+    ]

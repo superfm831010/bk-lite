@@ -9,19 +9,25 @@ import React, {
 import { Button, Spin } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import { useTranslation } from '@/utils/i18n';
-import useApiClient from '@/utils/request';
+import { useChangeRecordApi } from '@/app/cmdb/api';
 import { deepClone, getFieldItem } from '@/app/cmdb/utils/common';
 import CustomTable from '@/components/custom-table';
 import recordDetailStyle from './recordDetail.module.scss';
-import { RecordDetailProps, FieldModalRef, RecordsEnum } from '@/app/cmdb/types/assetData';
+import {
+  RecordDetailProps,
+  FieldModalRef,
+  RecordsEnum,
+} from '@/app/cmdb/types/assetData';
 
 const RecordDetail = forwardRef<FieldModalRef, RecordDetailProps>(
   (
-    { userList, propertyList, modelList, groupList, enumList, connectTypeList },
+    { userList, propertyList, modelList, enumList, connectTypeList },
     ref
   ) => {
     const { t } = useTranslation();
-    const { get } = useApiClient();
+
+    const { getChangeRecordDetail } = useChangeRecordApi();
+
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
     const [subTitle, setSubTitle] = useState<string>('');
     const [title, setTitle] = useState<string>('');
@@ -77,7 +83,7 @@ const RecordDetail = forwardRef<FieldModalRef, RecordDetailProps>(
         setSubTitle(subTitle);
         setTitle(title);
         setRecordRow(recordRow);
-        getChangeRecordDetail(recordRow.id);
+        fetchChangeRecordDetail(recordRow.id);
         if (recordRow.label === 'instance_association') {
           const form = deepClone(formData);
           form.attrColumns[0] = {
@@ -95,7 +101,6 @@ const RecordDetail = forwardRef<FieldModalRef, RecordDetailProps>(
       return getFieldItem({
         fieldItem: field,
         userList,
-        groupList,
         isEdit: false,
         value: tex[field.attr_id],
       });
@@ -128,10 +133,10 @@ const RecordDetail = forwardRef<FieldModalRef, RecordDetailProps>(
       }
       return label;
     };
-    const getChangeRecordDetail = async (detailId: number) => {
+    const fetchChangeRecordDetail = async (detailId: number) => {
       try {
         setLoading(true);
-        const data = await get(`/cmdb/api/change_record/${detailId}/`);
+        const data = await getChangeRecordDetail(detailId);
         const form = deepClone(formData);
         const {
           before_data: beforeData,

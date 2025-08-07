@@ -27,6 +27,7 @@ class AlertRule:
     severity: str = "medium"
     is_active: bool = True
     alert_sources: List[str] = None
+    aggregation_key: List[str] = None
     # 聚合策略配置详解：
     aggregation_strategy: str = "group_by"
     """
@@ -128,7 +129,9 @@ class RuleEngine:
                 # 新增聚合策略配置
                 aggregation_strategy=rule_config.get('aggregation_strategy', 'group_by'),
                 aggregation_window=rule_config.get('aggregation_window', '0'),
-                max_alerts_per_group=rule_config.get('max_alerts_per_group', 100)
+                max_alerts_per_group=rule_config.get('max_alerts_per_group', 100),
+                aggregation_key=rule_config.get("condition", {}).get("aggregation_key") or ["resource_name",
+                                                                                            "resource_type"]
             )
         except Exception as e:
             logger.error(f"Rule {rule_config.get('name')} add failed: {e}")
@@ -429,12 +432,13 @@ class RuleEngine:
 
         return condition
 
-    def group_events_by_instance(self, events: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+    def group_events_by_instance(self, events: pd.DataFrame, fields: List = []) -> Dict[str, pd.DataFrame]:
         """
         按实例分组事件数据
 
         Args:
             events: 原始事件DataFrame
+            fields: 用于生成实例指纹的字段列表（可选）
 
         Returns:
             按实例指纹分组的事件字典
@@ -452,7 +456,7 @@ class RuleEngine:
 
         # 生成实例指纹
         events['instance_fingerprint'] = events.apply(
-            lambda row: generate_instance_fingerprint(row.to_dict()),
+            lambda row: generate_instance_fingerprint(row.to_dict(), fields),
             axis=1
         )
 
@@ -520,85 +524,92 @@ class RuleEngine:
         alerts = Alert.objects.filter(**query_conditions).values()
         return list(alerts)
 
-    def _process_instance_events(self, instance_events: pd.DataFrame,
-                                 instance_fingerprint: str) -> Dict[str, Dict[str, Any]]:
+    def _process_instance_events(self, events: pd.DataFrame) -> List[Dict[str, Dict[str, Any]]]:
         """
         处理单个实例的事件
 
         Args:
-            instance_events: 单个实例的事件数据
-            instance_fingerprint: 实例指纹
+            events: 单个实例的事件数据
 
         Returns:
             该实例的规则处理结果
         """
-        results = {}
+        result_list = []
 
         for rule_id, rule in self.rules.items():
             if not rule.is_active:
                 continue
 
-            try:
-                # 对单个实例应用规则（这样保证了持续条件等规则的正确性）
-                triggered, event_groups = rule.condition(instance_events)
+            aggregation_key = self.rules[rule_id].aggregation_key if rule_id in self.rules else []
 
-                if triggered:
-                    # 展平事件ID列表
-                    flat_event_ids = [event_id for group in event_groups for event_id in group]
+            # **关键：按实例分组处理**
+            grouped_events = self.group_events_by_instance(events, fields=aggregation_key)
 
-                    # 检查是否需要创建新告警（基于实例指纹）
-                    should_create_new, related_alerts, operation_type = self._check_instance_alert_status(
-                        instance_fingerprint, rule
+            if not grouped_events:
+                logger.info("No events to process after grouping")
+                continue
+
+            # 对每个实例分别应用规则
+            for instance_fingerprint, instance_events in grouped_events.items():
+                logger.debug(f"Processing {len(instance_events)} events for instance: {instance_fingerprint}")
+                results = {}
+
+                try:
+                    # 对单个实例应用规则（这样保证了持续条件等规则的正确性）
+                    triggered, event_groups = rule.condition(instance_events)
+
+                    if triggered:
+                        # 展平事件ID列表
+                        flat_event_ids = [event_id for group in event_groups for event_id in group]
+
+                        # 检查是否需要创建新告警（基于实例指纹）
+                        should_create_new, related_alerts, operation_type = self._check_instance_alert_status(
+                            instance_fingerprint, rule
                         )
 
-                    results[rule_id] = {
-                        'triggered': True,
-                        'event_ids': flat_event_ids,
-                        'instance_fingerprint': instance_fingerprint,
-                        'instance_events': instance_events,
-                        'severity': rule.severity,
-                        'description': rule.description,
-                        'rule': rule,
-                        'should_create_new': should_create_new,
-                        'related_alerts': related_alerts,
-                        'operation_type': operation_type,
-                    }
-                else:
-                    results[rule_id] = {'triggered': False}
+                        results[rule_id] = {
+                            'triggered': True,
+                            'event_ids': flat_event_ids,
+                            'instance_fingerprint': instance_fingerprint,
+                            'instance_events': instance_events,
+                            'severity': rule.severity,
+                            'description': rule.description,
+                            'rule': rule,
+                            'should_create_new': should_create_new,
+                            'related_alerts': related_alerts,
+                            'operation_type': operation_type,
+                        }
+                    else:
+                        results[rule_id] = {'triggered': False}
 
-            except Exception as e:
-                logger.error(f"Rule {rule_id} evaluation failed for instance {instance_fingerprint}: {e}")
-                results[rule_id] = {'triggered': False, 'error': str(e)}
+                except Exception as e:
+                    logger.error(f"Rule {rule_id} evaluation failed for instance {instance_fingerprint}: {e}")
+                    results[rule_id] = {'triggered': False, 'error': str(e)}
 
-        return results
+                finally:
+                    result_list.append(results)
+
+        return result_list
 
     def process_events(self, events: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
         """
         处理事件并返回告警结果（按实例分组处理）
         """
+
+        results = {}
+
         if events.empty:
-            return {}
+            return results
 
         # 确保存在alert_source字段
         events['alert_source'] = events['source__name']
 
-        # **关键：按实例分组处理**
-        grouped_events = self.group_events_by_instance(events)
+        # 按实例分组事件 分别应用规则
+        rule_instance_results = self._process_instance_events(events)
 
-        if not grouped_events:
-            logger.info("No events to process after grouping")
-            return {}
-
-        results = {}
-
-        # 对每个实例分别应用规则
-        for instance_fingerprint, instance_events in grouped_events.items():
-            logger.debug(f"Processing {len(instance_events)} events for instance: {instance_fingerprint}")
-
-            instance_results = self._process_instance_events(instance_events, instance_fingerprint)
-
+        for instance_events in rule_instance_results:
             # 合并结果
-            for rule_name, rule_result in instance_results.items():
+            for rule_name, rule_result in instance_events.items():
                 if rule_name not in results:
                     results[rule_name] = {
                         'triggered': False,
@@ -613,7 +624,7 @@ class RuleEngine:
                 if rule_result['triggered']:
                     results[rule_name]['rule'] = rule_result['rule']
                     results[rule_name]['triggered'] = True
-                    results[rule_name]['instances'][instance_fingerprint] = rule_result
+                    results[rule_name]['instances'][rule_result['instance_fingerprint']] = rule_result
                     results[rule_name]['total_event_ids'].extend(rule_result['event_ids'])
                     results[rule_name]['severity'] = rule_result['severity']
                     results[rule_name]['description'] = rule_result['description']

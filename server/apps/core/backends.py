@@ -125,7 +125,7 @@ class AuthBackend(ModelBackend):
         is_superuser = bool(user_info.get("is_superuser", False))
         if is_superuser:
             return True
-        app_name = request.path.strip("/").split("/", 1)[0]
+        app_name = request.path.split("api/v1/")[-1].split("/", 1)[0]
         app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console"}
         app_name = app_name_map.get(app_name, app_name)
         app_admin = f"{app_name}--admin"

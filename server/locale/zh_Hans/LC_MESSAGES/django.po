@@ -539,3 +539,6 @@ msgid "User does not have permission to delete this instance"
 msgstr "你没有权限删除此实例"
 msgid "User does not have permission to view this instance"
 msgstr "你没有权限查看此实例"
+
+msgid "Integrate operation and maintenance data, analyze potential risks and optimization space from multiple dimensions through dashboards and canvases, provide data support for decision-making, and help improve operation and maintenance quality and business continuity"
+msgstr "整合运维数据，通过仪表盘、画布方式多维度分析挖掘潜在风险与优化空间，为决策提供数据支撑，助力提升运维质量与业务连续性。"

@@ -1,58 +1,3 @@
-export const mockDirs = [
-  {
-    id: '1',
-    name: 'Group 1',
-    type: 'group',
-    children: [
-      {
-        id: '2',
-        name: 'Dashboard 1',
-        type: 'dashboard',
-        description: '示例仪表1的描述长文本',
-      },
-      {
-        id: '3',
-        name: 'Topology 1',
-        type: 'topology',
-        description: '示例拓扑 1 - 展示系统架构和服务间关系',
-      },
-      {
-        id: '6',
-        name: 'Subgroup 1-1',
-        type: 'group',
-        children: [
-          {
-            id: '7',
-            name: 'Dashboard 1-1',
-            type: 'dashboard',
-            description: '示例仪表 1-1',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: '4',
-    name: 'Group 2',
-    type: 'group',
-    children: [
-      {
-        id: '5',
-        name: 'Dashboard 2',
-        type: 'dashboard',
-        description: '示例仪表 2',
-      },
-      {
-        id: '8',
-        name: 'Network Topology',
-        type: 'topology',
-        description: '网络拓扑图 - 显示网络设备和连接关系',
-      },
-    ],
-  },
-];
-
-
 export const mockInterfaces = [
   { value: 'eth0', label: 'eth0 (以太网接口)' },
   { value: 'eth1', label: 'eth1 (以太网接口)' },
@@ -140,7 +85,7 @@ export const mockTopologyNodes = [
     x: 200,
     y: 100,
     type: 'icon',
-    name: '核心路由器',
+    name: '192.168.1.1',
     logo: 'cc-router',
     logoType: 'default',
     config: {
@@ -154,7 +99,7 @@ export const mockTopologyNodes = [
     x: 100,
     y: 250,
     type: 'icon',
-    name: '交换机-01',
+    name: '192.168.1.10',
     logo: 'cc-switch2',
     logoType: 'default',
     config: {
@@ -168,7 +113,7 @@ export const mockTopologyNodes = [
     x: 300,
     y: 250,
     type: 'icon',
-    name: '交换机-02',
+    name: '192.168.1.11',
     logo: 'cc-switch2',
     logoType: 'default',
     config: {
@@ -183,7 +128,7 @@ export const mockTopologyNodes = [
     x: 50,
     y: 400,
     type: 'icon',
-    name: 'Web服务器',
+    name: '192.168.1.100',
     logo: 'cc-host',
     logoType: 'default',
     config: {
@@ -198,7 +143,7 @@ export const mockTopologyNodes = [
     x: 150,
     y: 400,
     type: 'icon',
-    name: '数据库服务器',
+    name: '192.168.1.101',
     logo: 'cc-db',
     logoType: 'default',
     config: {
@@ -213,7 +158,7 @@ export const mockTopologyNodes = [
     x: 250,
     y: 400,
     type: 'icon',
-    name: '应用服务器',
+    name: '192.168.1.102',
     logo: 'cc-hard-server',
     logoType: 'default',
     config: {
@@ -225,10 +170,10 @@ export const mockTopologyNodes = [
   },
   {
     id: 'node-7',
-    x: 350,
+    x: 400,
     y: 400,
     type: 'icon',
-    name: '缓存服务器',
+    name: '192.168.1.103',
     logo: 'cc-redis',
     logoType: 'default',
     config: {
@@ -241,10 +186,10 @@ export const mockTopologyNodes = [
   // 监控节点（单值类型）
   {
     id: 'node-8',
-    x: 450,
+    x: 500,
     y: 150,
     type: 'single-value',
-    name: 'CPU使用率',
+    name: '75.2%',
     dataSource: 'prometheus',
     config: {
       query: 'cpu_usage_percent',
@@ -258,10 +203,10 @@ export const mockTopologyNodes = [
   },
   {
     id: 'node-9',
-    x: 450,
+    x: 500,
     y: 220,
     type: 'single-value',
-    name: '内存使用率',
+    name: '68.5%',
     dataSource: 'prometheus',
     config: {
       query: 'memory_usage_percent',
@@ -275,10 +220,10 @@ export const mockTopologyNodes = [
   },
   {
     id: 'node-10',
-    x: 450,
+    x: 500,
     y: 290,
     type: 'single-value',
-    name: '网络流量',
+    name: '156.8 Mbps',
     dataSource: 'prometheus',
     config: {
       query: 'network_traffic_mbps',
@@ -296,12 +241,12 @@ export const mockTopologyNodes = [
     x: 200,
     y: 550,
     type: 'icon',
-    name: '防火墙',
+    name: '192.168.1.2',
     logo: 'cc-firewall',
     logoType: 'default',
     config: {
       description: '边界防火墙设备',
-      ip: '192.168.1.1',
+      ip: '192.168.1.2',
       model: 'FortiGate 100F'
     }
   },
@@ -310,7 +255,7 @@ export const mockTopologyNodes = [
     x: 80,
     y: 100,
     type: 'icon',
-    name: '负载均衡器',
+    name: '192.168.1.5',
     logo: 'cc-balance',
     logoType: 'default',
     config: {
@@ -325,7 +270,7 @@ export const mockTopologyNodes = [
     x: 450,
     y: 550,
     type: 'icon',
-    name: 'Nginx代理',
+    name: '192.168.1.110',
     logo: 'cc-nginx',
     logoType: 'default',
     config: {
@@ -339,7 +284,7 @@ export const mockTopologyNodes = [
     x: 300,
     y: 550,
     type: 'icon',
-    name: '存储设备',
+    name: '192.168.1.200',
     logo: 'cc-storage',
     logoType: 'default',
     config: {
@@ -350,10 +295,10 @@ export const mockTopologyNodes = [
   },
   {
     id: 'node-15',
-    x: 100,
+    x: 50,
     y: 550,
     type: 'icon',
-    name: 'Docker容器',
+    name: '192.168.1.150',
     logo: 'cc-docker',
     logoType: 'default',
     config: {
@@ -361,7 +306,21 @@ export const mockTopologyNodes = [
       ip: '192.168.1.150',
       version: '20.10.0'
     }
-  }
+  },
+  // 文本节点 - 标签和说明
+  {
+    id: 'node-16',
+    x: -120,
+    y: 300,
+    type: 'text',
+    name: '核心网络区域',
+    config: {
+      description: '核心网络设备区域标识',
+      fontSize: 16,
+      fontWeight: 'bold',
+      textColor: '#1890FF'
+    }
+  },
 ];
 
 // 模拟拓扑边数据
@@ -465,7 +424,7 @@ export const mockTopologyEdges = [
     target: 'node-5',
     sourcePort: 'right',
     targetPort: 'left',
-    lineType: 'data line',
+    lineType: 'line',
     lineName: '数据连接',
     sourceInterface: 'eth1',
     targetInterface: 'eth1',
@@ -480,8 +439,8 @@ export const mockTopologyEdges = [
     target: 'node-7',
     sourcePort: 'right',
     targetPort: 'left',
-    lineType: 'data line',
-    lineName: '缓存连接',
+    lineType: 'line',
+    lineName: '连接',
     sourceInterface: 'eth1',
     targetInterface: 'eth1',
     config: {
@@ -512,8 +471,8 @@ export const mockTopologyEdges = [
     target: 'node-11',
     sourcePort: 'bottom',
     targetPort: 'top',
-    lineType: 'security line',
-    lineName: '安全连接',
+    lineType: 'line',
+    lineName: '',
     sourceInterface: 'eth4',
     targetInterface: 'eth0',
     config: {
@@ -527,8 +486,8 @@ export const mockTopologyEdges = [
     target: 'node-11',
     sourcePort: 'bottom',
     targetPort: 'top',
-    lineType: 'security line',
-    lineName: '安全连接',
+    lineType: 'line',
+    lineName: '',
     sourceInterface: 'eth4',
     targetInterface: 'eth1',
     config: {
@@ -543,8 +502,8 @@ export const mockTopologyEdges = [
     target: 'node-8',
     sourcePort: 'right',
     targetPort: 'left',
-    lineType: 'monitoring line',
-    lineName: '监控连接',
+    lineType: 'line',
+    lineName: '',
     config: {
       type: 'monitoring',
       protocol: 'SNMP'
@@ -556,8 +515,8 @@ export const mockTopologyEdges = [
     target: 'node-9',
     sourcePort: 'right',
     targetPort: 'left',
-    lineType: 'monitoring line',
-    lineName: '监控连接',
+    lineType: 'line',
+    lineName: '',
     config: {
       type: 'monitoring',
       protocol: 'SNMP'
@@ -569,7 +528,7 @@ export const mockTopologyEdges = [
     target: 'node-10',
     sourcePort: 'right',
     targetPort: 'left',
-    lineType: 'monitoring line',
+    lineType: 'line',
     lineName: '监控连接',
     config: {
       type: 'monitoring',
@@ -598,7 +557,7 @@ export const mockTopologyEdges = [
     target: 'node-14',
     sourcePort: 'right',
     targetPort: 'left',
-    lineType: 'data line',
+    lineType: 'line',
     lineName: '数据备份',
     sourceInterface: 'eth2',
     targetInterface: 'eth0',
@@ -613,7 +572,7 @@ export const mockTopologyEdges = [
     target: 'node-15',
     sourcePort: 'left',
     targetPort: 'right',
-    lineType: 'security line',
+    lineType: 'line',
     lineName: '容器安全',
     sourceInterface: 'eth2',
     targetInterface: 'eth0',
@@ -631,35 +590,14 @@ export const mockLineTypes = [
     label: '网络线路',
     color: '#1890FF',
     style: 'solid',
-    description: '物理网络连接'
+    description: '物理网络连接，需要动态请求接口获取连接状态'
   },
   {
-    value: 'data line',
-    label: '数据线路',
+    value: 'line',
+    label: '业务线路',
     color: '#52C41A',
     style: 'solid',
-    description: '应用数据传输'
-  },
-  {
-    value: 'security line',
-    label: '安全线路',
-    color: '#FA8C16',
-    style: 'dashed',
-    description: '安全策略连接'
-  },
-  {
-    value: 'monitoring line',
-    label: '监控线路',
-    color: '#722ED1',
-    style: 'dotted',
-    description: '监控数据采集'
-  },
-  {
-    value: 'backup line',
-    label: '备份线路',
-    color: '#13C2C2',
-    style: 'dashed',
-    description: '数据备份传输'
+    description: '业务逻辑连接，显示线路名称'
   }
 ];
 

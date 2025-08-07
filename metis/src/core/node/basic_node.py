@@ -1,8 +1,5 @@
-import dis
-from gc import enable
 from typing import TypedDict
 
-from graphene import Boolean
 import json_repair
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.runnables import RunnableConfig
@@ -27,7 +24,7 @@ class BasicNode:
         if llm.extra_body is None:
             llm.extra_body = {}
 
-        if disable_stream:
+        if disable_stream and 'qwen' in request.model.lower():
             llm.extra_body["enable_thinking"] = False
         return llm
 

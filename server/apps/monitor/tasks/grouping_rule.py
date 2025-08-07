@@ -152,7 +152,7 @@ class RuleGrouping:
         asso_list = []
         # 获取query
         query = RuleGrouping.get_query(rule.rule)
-        metrics = VictoriaMetricsAPI().query(query)
+        metrics = VictoriaMetricsAPI().query(query, step="10m")
         for metric_info in metrics.get("data", {}).get("result", []):
             instance_id = str(tuple([metric_info["metric"].get(i) for i in obj_metric_map["instance_id_keys"]]))
             if instance_id not in obj_instance_id_set:

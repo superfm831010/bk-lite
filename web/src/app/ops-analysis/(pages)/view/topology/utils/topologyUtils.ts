@@ -1,96 +1,102 @@
-export const getNodeStyle = () => ({
-  width: 120,
-  height: 120,
-  markup: [
-    {
-      tagName: 'image',
-      selector: 'icon',
-    },
-    {
-      tagName: 'rect',
-      selector: 'label-bg',
-    },
-    {
-      tagName: 'text',
-      selector: 'label',
-    },
-  ],
-  attrs: {
-    icon: {
-      x: 30,
-      y: 10,
-      width: 60,
-      height: 60,
-    },
-    label: {
-      fill: '#262626',
-      fontSize: 12,
-      fontWeight: 500,
-      x: 0,
-      y: 30,
-      textAnchor: 'middle',
-      textVerticalAnchor: 'middle',
-    },
-  },
-  ports: {
-    groups: {
-      top: {
-        position: { name: 'absolute', args: { x: 60, y: 5 } }, 
-        attrs: {
-          circle: {
-            magnet: true,
-            stroke: '#1890FF',
-            r: 4,
-            fill: '#FFFFFF',
-            opacity: 0,
-          },
-        },
+import { EdgeCreationData } from '@/app/ops-analysis/types/topology';
+
+export const getNodeStyle = () => {
+  const defaults = NODE_DEFAULTS.ICON_NODE;
+
+  return {
+    width: defaults.width,
+    height: defaults.height,
+    markup: [
+      {
+        tagName: 'image',
+        selector: 'icon',
       },
-      bottom: {
-        position: { name: 'absolute', args: { x: 60, y: 75 } },
-        attrs: {
-          circle: {
-            magnet: true,
-            stroke: '#1890FF',
-            r: 4,
-            fill: '#FFFFFF',
-            opacity: 0,
-          },
-        },
+      {
+        tagName: 'rect',
+        selector: 'label-bg',
       },
-      left: {
-        position: { name: 'absolute', args: { x: 25, y: 40 } }, 
-        attrs: {
-          circle: {
-            magnet: true,
-            stroke: '#1890FF',
-            r: 4,
-            fill: '#FFFFFF',
-            opacity: 0,
-          },
-        },
+      {
+        tagName: 'text',
+        selector: 'label',
       },
-      right: {
-        position: { name: 'absolute', args: { x: 95, y: 40 } }, 
-        attrs: {
-          circle: {
-            magnet: true,
-            stroke: '#1890FF',
-            r: 4,
-            fill: '#FFFFFF',
-            opacity: 0,
-          },
-        },
-      },
-    },
-    items: [
-      { id: 'top', group: 'top' },
-      { id: 'bottom', group: 'bottom' },
-      { id: 'left', group: 'left' },
-      { id: 'right', group: 'right' },
     ],
-  },
-});
+    attrs: {
+      icon: {
+        x: 30,
+        y: 10,
+        width: 60,
+        height: 60,
+      },
+      label: {
+        fill: defaults.textColor,
+        fontSize: defaults.fontSize,
+        fontWeight: defaults.fontWeight,
+        x: 0,
+        y: 30,
+        textAnchor: 'middle',
+        textVerticalAnchor: 'middle',
+      },
+    },
+    ports: {
+      groups: {
+        top: {
+          position: { name: 'absolute', args: { x: defaults.width / 2, y: 5 } },
+          attrs: {
+            circle: {
+              magnet: PORT_DEFAULTS.MAGNET,
+              stroke: PORT_DEFAULTS.STROKE_COLOR,
+              r: PORT_DEFAULTS.RADIUS,
+              fill: PORT_DEFAULTS.FILL_COLOR,
+              opacity: PORT_DEFAULTS.OPACITY.HIDDEN,
+            },
+          },
+        },
+        bottom: {
+          position: { name: 'absolute', args: { x: defaults.width / 2, y: 75 } },
+          attrs: {
+            circle: {
+              magnet: PORT_DEFAULTS.MAGNET,
+              stroke: PORT_DEFAULTS.STROKE_COLOR,
+              r: PORT_DEFAULTS.RADIUS,
+              fill: PORT_DEFAULTS.FILL_COLOR,
+              opacity: PORT_DEFAULTS.OPACITY.HIDDEN,
+            },
+          },
+        },
+        left: {
+          position: { name: 'absolute', args: { x: 25, y: 40 } },
+          attrs: {
+            circle: {
+              magnet: PORT_DEFAULTS.MAGNET,
+              stroke: PORT_DEFAULTS.STROKE_COLOR,
+              r: PORT_DEFAULTS.RADIUS,
+              fill: PORT_DEFAULTS.FILL_COLOR,
+              opacity: PORT_DEFAULTS.OPACITY.HIDDEN,
+            },
+          },
+        },
+        right: {
+          position: { name: 'absolute', args: { x: 95, y: 40 } },
+          attrs: {
+            circle: {
+              magnet: PORT_DEFAULTS.MAGNET,
+              stroke: PORT_DEFAULTS.STROKE_COLOR,
+              r: PORT_DEFAULTS.RADIUS,
+              fill: PORT_DEFAULTS.FILL_COLOR,
+              opacity: PORT_DEFAULTS.OPACITY.HIDDEN,
+            },
+          },
+        },
+      },
+      items: [
+        { id: 'top', group: 'top' },
+        { id: 'bottom', group: 'bottom' },
+        { id: 'left', group: 'left' },
+        { id: 'right', group: 'right' },
+      ],
+    },
+  };
+};
 
 export const getEdgeStyle = (connectionType: 'none' | 'single' | 'double') => {
   const arrowConfig = {
@@ -105,8 +111,8 @@ export const getEdgeStyle = (connectionType: 'none' | 'single' | 'double') => {
   return {
     attrs: {
       line: {
-        stroke: '#a7b5c4',
-        strokeWidth: 2,
+        stroke: COLORS.EDGE.DEFAULT,
+        strokeWidth: SPACING.STROKE_WIDTH.DEFAULT,
         ...arrowConfig[connectionType],
       },
     },
@@ -116,16 +122,16 @@ export const getEdgeStyle = (connectionType: 'none' | 'single' | 'double') => {
         attrs: {
           label: {
             text: '',
-            fill: '#595959',
+            fill: COLORS.TEXT.SECONDARY,
             fontSize: 12,
             textAnchor: 'middle',
             textVerticalAnchor: 'middle',
             background: {
-              fill: 'white',
-              stroke: '#d9d9d9',
-              rx: 4,
-              ry: 4,
-              padding: 4,
+              fill: COLORS.BACKGROUND.WHITE,
+              stroke: COLORS.BORDER.DEFAULT,
+              rx: SPACING.BORDER_RADIUS.SMALL,
+              ry: SPACING.BORDER_RADIUS.SMALL,
+              padding: SPACING.PADDING.SMALL,
             },
           },
         },
@@ -134,14 +140,29 @@ export const getEdgeStyle = (connectionType: 'none' | 'single' | 'double') => {
   };
 };
 
+export const getEdgeStyleWithLabel = (
+  edgeData: EdgeCreationData,
+  connectionType: 'none' | 'single' | 'double' = 'single'
+): any => {
+  const baseStyle = getEdgeStyle(connectionType);
+
+  if (edgeData.lineType === 'line' && edgeData.lineName) {
+    baseStyle.labels[0].attrs.label.text = edgeData.lineName;
+  } else {
+    baseStyle.labels = [];
+  }
+
+  return baseStyle;
+};
+
 export const addEdgeTools = (edge: any) => {
   // 添加顶点编辑工具（默认透明）
   edge.addTools({
     name: 'vertices',
     args: {
       attrs: {
-        fill: '#1890FF',
-        opacity: 0, // 默认透明
+        fill: COLORS.PRIMARY,
+        opacity: PORT_DEFAULTS.OPACITY.HIDDEN, 
       },
       snapRadius: 20,
       addable: true,
@@ -156,11 +177,11 @@ export const addEdgeTools = (edge: any) => {
     args: {
       attrs: {
         d: 'M 0 -6 A 6 6 0 1 0 0 6 A 6 6 0 1 0 0 -6',
-        fill: '#1890FF',
-        stroke: '#ffffff',
-        strokeWidth: 1,
+        fill: COLORS.PRIMARY,
+        stroke: COLORS.BACKGROUND.WHITE,
+        strokeWidth: SPACING.STROKE_WIDTH.THIN,
         cursor: 'move',
-        opacity: 0, // 默认透明
+        opacity: PORT_DEFAULTS.OPACITY.HIDDEN,
       },
     },
   });
@@ -171,11 +192,11 @@ export const addEdgeTools = (edge: any) => {
     args: {
       attrs: {
         d: 'M 0 -6 A 6 6 0 1 0 0 6 A 6 6 0 1 0 0 -6',
-        fill: '#1890FF',
-        stroke: '#ffffff',
-        strokeWidth: 1,
+        fill: COLORS.PRIMARY,
+        stroke: COLORS.BACKGROUND.WHITE,
+        strokeWidth: SPACING.STROKE_WIDTH.THIN,
         cursor: 'move',
-        opacity: 0, // 默认透明
+        opacity: PORT_DEFAULTS.OPACITY.HIDDEN, 
       },
     },
   });
@@ -189,8 +210,8 @@ export const showEdgeTools = (edge: any) => {
     name: 'vertices',
     args: {
       attrs: {
-        fill: '#1890FF',
-        opacity: 1,
+        fill: COLORS.PRIMARY,
+        opacity: PORT_DEFAULTS.OPACITY.VISIBLE,
       },
       snapRadius: 20,
       addable: true,
@@ -205,11 +226,11 @@ export const showEdgeTools = (edge: any) => {
     args: {
       attrs: {
         d: 'M 0 -6 A 6 6 0 1 0 0 6 A 6 6 0 1 0 0 -6',
-        fill: '#1890FF',
-        stroke: '#ffffff',
-        strokeWidth: 1,
+        fill: COLORS.PRIMARY,
+        stroke: COLORS.BACKGROUND.WHITE,
+        strokeWidth: SPACING.STROKE_WIDTH.THIN,
         cursor: 'move',
-        opacity: 1,
+        opacity: PORT_DEFAULTS.OPACITY.VISIBLE,
       },
     },
   });
@@ -220,11 +241,11 @@ export const showEdgeTools = (edge: any) => {
     args: {
       attrs: {
         d: 'M 0 -6 A 6 6 0 1 0 0 6 A 6 6 0 1 0 0 -6',
-        fill: '#1890FF',
-        stroke: '#ffffff',
-        strokeWidth: 1,
+        fill: COLORS.PRIMARY,
+        stroke: COLORS.BACKGROUND.WHITE,
+        strokeWidth: SPACING.STROKE_WIDTH.THIN,
         cursor: 'move',
-        opacity: 1,
+        opacity: PORT_DEFAULTS.OPACITY.VISIBLE,
       },
     },
   });
@@ -248,7 +269,7 @@ export const showPorts = (graph: any, cell: any) => {
     const nodeData = cell.getData();
     if (nodeData?.type !== 'text') {
       ['top', 'bottom', 'left', 'right'].forEach((port) =>
-        cell.setPortProp(port, 'attrs/circle/opacity', 1)
+        cell.setPortProp(port, 'attrs/circle/opacity', PORT_DEFAULTS.OPACITY.VISIBLE)
       );
     }
   } else if (cell.isEdge()) {
@@ -257,10 +278,10 @@ export const showPorts = (graph: any, cell: any) => {
       const targetNode = graph.getCellById(cell.getTargetCellId());
       // 检查节点是否有端口
       if (sourceNode && sourceNode.getData()?.type !== 'text') {
-        sourceNode.setPortProp(port, 'attrs/circle/opacity', 1);
+        sourceNode.setPortProp(port, 'attrs/circle/opacity', PORT_DEFAULTS.OPACITY.VISIBLE);
       }
       if (targetNode && targetNode.getData()?.type !== 'text') {
-        targetNode.setPortProp(port, 'attrs/circle/opacity', 1);
+        targetNode.setPortProp(port, 'attrs/circle/opacity', PORT_DEFAULTS.OPACITY.VISIBLE);
       }
     });
   }
@@ -272,48 +293,72 @@ export const hideAllPorts = (graph: any) => {
     const nodeData = node.getData();
     if (nodeData?.type !== 'text') {
       ['top', 'bottom', 'left', 'right'].forEach((port: string) =>
-        node.setPortProp(port, 'attrs/circle/opacity', 0)
+        node.setPortProp(port, 'attrs/circle/opacity', PORT_DEFAULTS.OPACITY.HIDDEN)
       );
     }
   });
 };
 
 // 添加文本节点样式配置
-export const getTextNodeStyle = () => ({
-  width: 120,
-  height: 40,
-  markup: [
-    {
-      tagName: 'rect',
-      selector: 'body',
+export const getTextNodeStyle = (nodeConfig?: any) => {
+  const defaults = NODE_DEFAULTS.TEXT_NODE;
+
+  const baseStyle = {
+    width: defaults.width,
+    height: defaults.height,
+    markup: [
+      {
+        tagName: 'rect',
+        selector: 'body',
+      },
+      {
+        tagName: 'text',
+        selector: 'label',
+      },
+    ],
+    attrs: {
+      body: {
+        fill: defaults.backgroundColor,
+        stroke: defaults.borderColor,
+        strokeWidth: defaults.strokeWidth,
+      },
+      label: {
+        fill: defaults.textColor,
+        fontSize: defaults.fontSize,
+        fontWeight: defaults.fontWeight,
+        textAnchor: 'middle',
+        textVerticalAnchor: 'middle',
+        refX: '50%',
+        refY: '50%',
+      },
     },
-    {
-      tagName: 'text',
-      selector: 'label',
+    ports: {
+      groups: {},
+      items: [],
     },
-  ],
-  attrs: {
-    body: {
-      fill: 'transparent',
-      stroke: 'transparent',
-      strokeWidth: 1,
+  };
+  if (!nodeConfig) {
+    return baseStyle;
+  }
+
+  const nodeData = {
+    id: nodeConfig.id,
+    x: nodeConfig.x || 100,
+    y: nodeConfig.y || 100,
+    label: nodeConfig.name,
+    data: {
+      type: nodeConfig.type,
+      name: nodeConfig.name,
+      config: nodeConfig.config,
+      isPlaceholder: false,
     },
-    label: {
-      fill: '#262626',
-      fontSize: 14,
-      fontWeight: 400,
-      textAnchor: 'middle',
-      textVerticalAnchor: 'middle',
-      refX: '50%',
-      refY: '50%',
-    },
-  },
-  // 文本节点不需要连接端口
-  ports: {
-    groups: {},
-    items: [],
-  },
-});
+    ...baseStyle,
+  };
+
+  return nodeData;
+};
+
+import { NODE_DEFAULTS, PORT_DEFAULTS, COLORS, SPACING } from '../constants/nodeDefaults';
 
 // 获取logo URL的辅助函数
 export const getLogoUrl = (nodeConfig: any, iconList: any[]) => {
@@ -326,101 +371,111 @@ export const getLogoUrl = (nodeConfig: any, iconList: any[]) => {
   } else if (nodeConfig.logoType === 'custom' && nodeConfig.logo) {
     return nodeConfig.logo;
   }
-  // 默认图标
   return '/app/assets/assetModelIcon/cc-default_默认.svg';
 };
 
 // 单值节点样式配置
-export const getSingleValueNodeStyle = (nodeConfig: any) => ({
-  id: nodeConfig.id,
-  x: nodeConfig.x || 100,
-  y: nodeConfig.y || 100,
-  shape: 'rect',
-  width: 120,
-  height: 40,
-  label: nodeConfig.name,
-  data: {
-    type: nodeConfig.type,
-    name: nodeConfig.name,
-    dataSource: nodeConfig.dataSource,
-    config: nodeConfig.config,
-  },
-  attrs: {
-    body: {
-      fill: '#ffffff',
-      stroke: '#d9d9d9',
-      strokeWidth: 1,
-      rx: 6,
-      ry: 6,
+export const getSingleValueNodeStyle = (nodeConfig: any) => {
+  const config = nodeConfig.config || {};
+  const defaults = NODE_DEFAULTS.SINGLE_VALUE_NODE;
+
+  // 使用配置值或默认值
+  const textColor = config.textColor || defaults.textColor;
+  const backgroundColor = config.backgroundColor || defaults.backgroundColor;
+  const borderColor = config.borderColor || defaults.borderColor;
+  const fontSize = config.fontSize || defaults.fontSize;
+
+  return {
+    id: nodeConfig.id,
+    x: nodeConfig.x || 100,
+    y: nodeConfig.y || 100,
+    shape: 'rect',
+    width: defaults.width,
+    height: defaults.height,
+    label: nodeConfig.name,
+    data: {
+      type: nodeConfig.type,
+      name: nodeConfig.name,
+      dataSource: nodeConfig.dataSource,
+      config: nodeConfig.config,
     },
-    label: {
-      text: nodeConfig.name,
-      fill: '#333333',
-      fontSize: 14,
-      fontFamily: 'Arial, sans-serif',
-      textAnchor: 'middle',
-      textVerticalAnchor: 'middle',
-    },
-  },
-  ports: {
-    groups: {
-      top: {
-        position: { name: 'absolute', args: { x: 60, y: 0 } },
-        attrs: {
-          circle: {
-            magnet: true,
-            stroke: '#1890FF',
-            r: 4,
-            fill: '#FFFFFF',
-            opacity: 0,
-          },
-        },
+    attrs: {
+      body: {
+        fill: backgroundColor,
+        stroke: borderColor,
+        strokeWidth: defaults.strokeWidth,
+        rx: defaults.borderRadius,
+        ry: defaults.borderRadius,
       },
-      bottom: {
-        position: { name: 'absolute', args: { x: 60, y: 40 } },
-        attrs: {
-          circle: {
-            magnet: true,
-            stroke: '#1890FF',
-            r: 4,
-            fill: '#FFFFFF',
-            opacity: 0,
-          },
-        },
-      },
-      left: {
-        position: { name: 'absolute', args: { x: 0, y: 20 } },
-        attrs: {
-          circle: {
-            magnet: true,
-            stroke: '#1890FF',
-            r: 4,
-            fill: '#FFFFFF',
-            opacity: 0,
-          },
-        },
-      },
-      right: {
-        position: { name: 'absolute', args: { x: 120, y: 20 } },
-        attrs: {
-          circle: {
-            magnet: true,
-            stroke: '#1890FF',
-            r: 4,
-            fill: '#FFFFFF',
-            opacity: 0,
-          },
-        },
+      label: {
+        text: nodeConfig.name,
+        fill: textColor,
+        fontSize: fontSize,
+        fontFamily: defaults.fontFamily,
+        textAnchor: 'middle',
+        textVerticalAnchor: 'middle',
       },
     },
-    items: [
-      { id: 'top', group: 'top' },
-      { id: 'bottom', group: 'bottom' },
-      { id: 'left', group: 'left' },
-      { id: 'right', group: 'right' },
-    ],
-  },
-});
+    ports: {
+      groups: {
+        top: {
+          position: { name: 'absolute', args: { x: defaults.width / 2, y: 0 } },
+          attrs: {
+            circle: {
+              magnet: PORT_DEFAULTS.MAGNET,
+              stroke: PORT_DEFAULTS.STROKE_COLOR,
+              r: PORT_DEFAULTS.RADIUS,
+              fill: PORT_DEFAULTS.FILL_COLOR,
+              opacity: PORT_DEFAULTS.OPACITY.HIDDEN,
+            },
+          },
+        },
+        bottom: {
+          position: { name: 'absolute', args: { x: defaults.width / 2, y: defaults.height } },
+          attrs: {
+            circle: {
+              magnet: PORT_DEFAULTS.MAGNET,
+              stroke: PORT_DEFAULTS.STROKE_COLOR,
+              r: PORT_DEFAULTS.RADIUS,
+              fill: PORT_DEFAULTS.FILL_COLOR,
+              opacity: PORT_DEFAULTS.OPACITY.HIDDEN,
+            },
+          },
+        },
+        left: {
+          position: { name: 'absolute', args: { x: 0, y: defaults.height / 2 } },
+          attrs: {
+            circle: {
+              magnet: PORT_DEFAULTS.MAGNET,
+              stroke: PORT_DEFAULTS.STROKE_COLOR,
+              r: PORT_DEFAULTS.RADIUS,
+              fill: PORT_DEFAULTS.FILL_COLOR,
+              opacity: PORT_DEFAULTS.OPACITY.HIDDEN,
+            },
+          },
+        },
+        right: {
+          position: { name: 'absolute', args: { x: defaults.width, y: defaults.height / 2 } },
+          attrs: {
+            circle: {
+              magnet: PORT_DEFAULTS.MAGNET,
+              stroke: PORT_DEFAULTS.STROKE_COLOR,
+              r: PORT_DEFAULTS.RADIUS,
+              fill: PORT_DEFAULTS.FILL_COLOR,
+              opacity: PORT_DEFAULTS.OPACITY.HIDDEN,
+            },
+          },
+        },
+      },
+      items: [
+        { id: 'top', group: 'top' },
+        { id: 'bottom', group: 'bottom' },
+        { id: 'left', group: 'left' },
+        { id: 'right', group: 'right' },
+      ],
+    },
+  };
+};
 
 // 图标节点样式配置
 export const getIconNodeStyle = (nodeConfig: any, logoUrl: string) => {

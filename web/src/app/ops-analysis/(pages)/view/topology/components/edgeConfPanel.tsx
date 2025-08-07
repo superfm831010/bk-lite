@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from '@/utils/i18n';
 import { mockInterfaces } from '../../mockData';
+import { EdgeConfigPanelProps } from '@/app/ops-analysis/types/topology';
 import {
   Drawer,
   Form,
@@ -11,33 +12,6 @@ import {
   Typography,
   Radio,
 } from 'antd';
-
-interface InterfaceConfig {
-  type: 'existing' | 'custom';
-  value: string;
-}
-
-interface EdgeConfigPanelProps {
-  visible: boolean;
-  readonly?: boolean;
-  edgeData: {
-    id: string;
-    lineType: string;
-    lineName?: string;
-    sourceNode: {
-      id: string;
-      name: string;
-    };
-    targetNode: {
-      id: string;
-      name: string;
-    };
-    sourceInterface?: InterfaceConfig;
-    targetInterface?: InterfaceConfig;
-  } | null;
-  onClose: () => void;
-  onConfirm?: (values: any) => void;
-}
 
 const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
   visible,

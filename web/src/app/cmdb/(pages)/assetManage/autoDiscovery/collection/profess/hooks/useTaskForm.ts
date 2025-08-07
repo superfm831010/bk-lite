@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Form, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import useApiClient from '@/utils/request';
+import { useCollectApi } from '@/app/cmdb/api';
 import { CYCLE_OPTIONS } from '@/app/cmdb/constants/professCollection';
 import dayjs from 'dayjs';
 
@@ -21,7 +21,7 @@ export const useTaskForm = ({
   formatValues,
 }: UseTaskFormProps) => {
   const { t } = useTranslation();
-  const { get, post, put } = useApiClient();
+  const collectApi = useCollectApi();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -47,7 +47,7 @@ export const useTaskForm = ({
   const fetchTaskDetail = async (id: number) => {
     try {
       setLoading(true);
-      const data = await get(`/cmdb/api/collect/${id}/`);
+      const data = await collectApi.getCollectDetail(id.toString());
       const cycleType = data.cycle_value_type || CYCLE_OPTIONS.ONCE;
       const cycleValue = data.cycle_value;
       form.setFieldsValue({
@@ -76,10 +76,10 @@ export const useTaskForm = ({
       setSubmitLoading(true);
       const params = formatValues(values);
       if (editId) {
-        await put(`/cmdb/api/collect/${editId}/`, params);
+        await collectApi.updateCollect(editId.toString(), params);
         message.success(t('successfullyModified'));
       } else {
-        await post('/cmdb/api/collect/', params);
+        await collectApi.createCollect(params);
         message.success(t('successfullyAdded'));
       }
 

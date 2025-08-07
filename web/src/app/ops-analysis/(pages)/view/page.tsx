@@ -1,19 +1,37 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Sidebar from './components/sidebar';
 import Dashboard from './dashBoard/index';
 import Topology from './topology/index';
 import Datasource from './dataSource/index';
-import { DirectoryType } from '@/app/ops-analysis/types';
+import { DirectoryType, SidebarRef } from '@/app/ops-analysis/types';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { Button, Empty } from 'antd';
 
 const ViewPage: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const [selectedType, setSelectedType] = useState<DirectoryType>('group');
-  const [selectedDashboard, setSelectedDashboard] = useState<any>(null);
-  const [selectedTopology, setSelectedTopology] = useState<any>(null);
+  const [selectedType, setSelectedType] = useState<DirectoryType>('directory');
+  const [selectedItem, setSelectedItem] = useState<{
+    dashboard: any;
+    topology: any;
+  }>({
+    dashboard: null,
+    topology: null,
+  });
+  const sidebarRef = useRef<SidebarRef>(null);
+
+  const handleSidebarDataUpdate = (updatedItem: any) => {
+    if (
+      selectedItem.dashboard &&
+      updatedItem.id === selectedItem.dashboard.id
+    ) {
+      setSelectedItem((prev) => ({ ...prev, dashboard: updatedItem }));
+    }
+    if (selectedItem.topology && updatedItem.id === selectedItem.topology.id) {
+      setSelectedItem((prev) => ({ ...prev, topology: updatedItem }));
+    }
+  };
 
   return (
     <div
@@ -33,19 +51,15 @@ const ViewPage: React.FC = () => {
       >
         <div className="w-full h-full overflow-hidden">
           <Sidebar
+            ref={sidebarRef}
             onSelect={(type, itemInfo) => {
               setSelectedType(type);
-              if (type === 'dashboard' && itemInfo) {
-                setSelectedDashboard(itemInfo);
-                setSelectedTopology(null);
-              } else if (type === 'topology' && itemInfo) {
-                setSelectedTopology(itemInfo);
-                setSelectedDashboard(null);
-              } else {
-                setSelectedDashboard(null);
-                setSelectedTopology(null);
-              }
+              setSelectedItem({
+                dashboard: type === 'dashboard' ? itemInfo : null,
+                topology: type === 'topology' ? itemInfo : null,
+              });
             }}
+            onDataUpdate={handleSidebarDataUpdate}
           />
         </div>
         <Button
@@ -62,9 +76,9 @@ const ViewPage: React.FC = () => {
       </div>
       <div className="h-full flex-1 flex" style={{ minWidth: 0 }}>
         {selectedType === 'topology' ? (
-          <Topology selectedTopology={selectedTopology} />
+          <Topology selectedTopology={selectedItem.topology} />
         ) : selectedType === 'dashboard' ? (
-          <Dashboard selectedDashboard={selectedDashboard} />
+          <Dashboard selectedDashboard={selectedItem.dashboard} />
         ) : selectedType === 'datasource' ? (
           <Datasource />
         ) : (

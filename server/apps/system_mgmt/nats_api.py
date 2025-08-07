@@ -31,10 +31,7 @@ from apps.system_mgmt.utils.channel_utils import send_by_bot, send_email, send_w
 from apps.system_mgmt.utils.group_utils import GroupUtils
 
 
-@nats_client.register
-def verify_token(token):
-    if not token:
-        return {"result": False, "message": "Token is missing"}
+def _verify_token(token):
     token = token.split("Basic ")[-1]
     secret_key = os.getenv("SECRET_KEY")
     algorithm = os.getenv("JWT_ALGORITHM", "HS256")
@@ -46,10 +43,52 @@ def verify_token(token):
         login_expired_time = int(login_expired_time_set.value) * 3600
 
     if time_now - login_expired_time > user_info["login_time"]:
-        return {"result": False, "message": "Token is invalid"}
+        raise Exception("Token is invalid")
     user = User.objects.filter(id=user_info["user_id"]).first()
     if not user:
-        return {"result": False, "message": "User not found"}
+        raise Exception("User not found")
+    return user
+
+
+@nats_client.register
+def get_pilot_permission_by_token(token, bot_id, group_list):
+    try:
+        user = _verify_token(token)
+    except Exception:
+        return {"result": False}
+    role_list = Role.objects.filter(id__in=user.role_list)
+    role_names = {f"{role.app}--{role.name}" if role.app else role.name for role in role_list}
+    if {"admin", "system-manager--admin", "opspilot--admin"}.intersection(role_names):
+        return {"result": True, "data": {"username": user.username}}
+    real_groups = set(group_list).intersection(user.group_list)
+    if not real_groups:
+        return {"result": False}
+    rules = UserRule.objects.filter(
+        username=user.username,
+        domain=user.domain,
+        group_rule__app="opspilot",
+        group_rule__group_id__in=list(real_groups),
+    )
+    if not rules:
+        return {"result": True, "data": {"username": user.username}}
+    for i in rules:
+        rule_obj = i.group_rule.rules.get("bot")
+        if rule_obj is None:
+            return {"result": True, "data": {"username": user.username}}
+        bot_ids = [u["id"] for u in rule_obj]
+        if bot_id in bot_ids or -1 in bot_ids or 0 in bot_ids:
+            return {"result": True, "data": {"username": user.username}}
+    return {"result": False}
+
+
+@nats_client.register
+def verify_token(token):
+    if not token:
+        return {"result": False, "message": "Token is missing"}
+    try:
+        user = _verify_token(token)
+    except Exception as e:
+        return {"result": False, "message": str(e)}
     role_list = Role.objects.filter(id__in=user.role_list)
     role_names = [f"{role.app}--{role.name}" if role.app else role.name for role in role_list]
     is_superuser = "admin" in role_names or "system-manager--admin" in role_names
@@ -235,15 +274,15 @@ def create_default_rule(llm_model, ocr_model, embed_model, rerank_model):
             description="Guest组数据权限规则",
             group_name=guest_group.name,
             rules={
-                "skill": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
-                "tools": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
+                "skill": [{"id": 0, "name": "All", "permission": ["View"]}],
+                "tools": [{"id": 0, "name": "All", "permission": ["View"]}],
                 "provider": {
                     "llm_model": [{"id": llm_model["id"], "name": llm_model["name"], "permission": ["View"]}],
                     "ocr_model": [{"id": i["id"], "name": i["name"], "permission": ["View"]} for i in ocr_model],
                     "embed_model": [{"id": i["id"], "name": i["name"], "permission": ["View"]} for i in embed_model],
                     "rerank_model": [{"id": rerank_model["id"], "name": rerank_model["name"], "permission": ["View"]}],
                 },
-                "knowledge": [{"id": -1, "name": "All", "permission": ["View", "Operate"]}],
+                "knowledge": [{"id": 0, "name": "All", "permission": ["View"]}],
             },
         ),
     )
@@ -294,19 +333,83 @@ def get_user_rules(group_id, username):
 
 
 @nats_client.register
+def get_user_rules_by_module(group_id, username, domain, app, module):
+    """
+    获取用户在指定模块下的所有权限规则，按子模块分组返回
+    """
+    # 构建基础查询条件
+    admin_list = list(Role.objects.filter(name="admin").filter(Q(app="") | Q(app=app)).values_list("id", flat=True))
+    guest_group = Group.objects.filter(name="OpsPilotGuest").first()
+    user_obj = User.objects.filter(username=username, domain=domain).first()
+    admin_teams = [int(group_id)]
+    has_guest_group = False
+    if guest_group and guest_group.id in user_obj.group_list:
+        has_guest_group = True
+        admin_teams.append(guest_group.id)
+
+    if not user_obj:
+        return {"result": False, "message": "User not found"}
+    all_permission = {"all": {"instance": [], "team": admin_teams}}
+    # 如果是管理员，返回所有权限
+    if set(user_obj.role_list).intersection(admin_list):
+        # 需要获取模块结构来构建完整的返回数据
+        return {"result": True, "data": all_permission, "team": admin_teams}
+    if has_guest_group:
+        base_filter = Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
+    else:
+        base_filter = Q(group_rule__group_id=group_id)
+    module_filter = Q(group_rule__rules__has_key=module)
+
+    rules = UserRule.objects.filter(username=username, domain=domain, group_rule__app=app).filter(
+        base_filter & module_filter
+    )
+    if not rules:
+        return {"result": True, "data": all_permission, "team": admin_teams}
+    result = {}
+    group_list = {i.group_rule.group_id for i in rules}
+    all_permission_team = [i for i in admin_teams if i not in group_list]
+    for rule in rules:
+        # 获取模块数据
+        module_data = rule.group_rule.rules.get(module, {})
+
+        # 遍历模块下的所有分类和子模块
+        for category, sub_modules in module_data.items():
+            if isinstance(sub_modules, dict):
+                for sub_module_id, rule_data in sub_modules.items():
+                    if sub_module_id not in result:
+                        result[sub_module_id] = {"instance": [], "team": all_permission_team}
+
+                    # 处理规则数据
+                    has_all_permission, instance_data = process_rule_data(rule_data)
+
+                    if has_all_permission:
+                        if rule.group_rule.group_id not in result[sub_module_id]["team"]:
+                            result[sub_module_id]["team"].append(rule.group_rule.group_id)
+                    else:
+                        result[sub_module_id]["instance"].extend(instance_data)
+
+    return {"result": True, "data": result, "team": admin_teams}
+
+
+@nats_client.register
 def get_user_rules_by_app(group_id, username, domain, app, module, child_module=""):
     # 构建基础查询条件
     admin_list = list(Role.objects.filter(name="admin").filter(Q(app="") | Q(app=app)).values_list("id", flat=True))
     guest_group = Group.objects.filter(name="OpsPilotGuest").first()
     user_obj = User.objects.filter(username=username, domain=domain).first()
     admin_teams = [int(group_id)]
-    if guest_group:
+    has_guest_group = False
+    if guest_group and guest_group.id in user_obj.group_list:
+        has_guest_group = True
         admin_teams.append(guest_group.id)
     if not user_obj:
         return {"instance": [], "team": []}
     if set(user_obj.role_list).intersection(admin_list):
         return {"instance": [], "team": admin_teams}
-    base_filter = Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
+    if has_guest_group:
+        base_filter = Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
+    else:
+        base_filter = Q(group_rule__group_id=group_id)
     # 添加模块过滤条件
     module_filter = Q(group_rule__rules__has_key=module)
 
