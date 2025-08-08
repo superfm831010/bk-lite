@@ -28,3 +28,13 @@ def format_group_params(group_id: str):
     :return: 格式化后的参数
     """
     return [{'id': int(group_id)}]
+
+
+def get_default_group_id():
+    """
+    获取默认组织ID
+    :return: 默认组织ID
+    """
+    from apps.system_mgmt.models.user import Group
+    default_group = Group.objects.get(name="Default")
+    return [default_group.id]
