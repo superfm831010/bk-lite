@@ -140,8 +140,8 @@ const AnomalyDetail = () => {
   const getDataset = useCallback(async (search: string = '') => {
     setLoading(true);
     try {
-      console.log(search);
       const { count, items } = await getAnomalyTrainData({
+        name: search,
         dataset: folder_id as string,
         page: pagination.current,
         page_size: pagination.pageSize

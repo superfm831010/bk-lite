@@ -25,7 +25,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import usePlayroundApi from '@/app/playground/api';
 import CategoryManageModal from './categoryManageModal';
 import SampleManageModal from './sampleManageModal';
-import { ModalRef, TableData } from '@/app/playground/types';
+import { ModalRef, Pagination, TableData } from '@/app/playground/types';
 const { Search } = Input;
 const { confirm } = Modal;
 
@@ -47,6 +47,11 @@ const PlaygroundManage = () => {
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [selectCapability, setSelectCapability] = useState<number[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({
+    current: 1,
+    total: 0,
+    pageSize: 20
+  })
   const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
   const columns: ColumnItem[] = [
     {
@@ -58,6 +63,7 @@ const PlaygroundManage = () => {
       title: t(`manage.createAt`),
       dataIndex: 'created_at',
       key: 'created_at',
+      width: 180,
       render: (_, record) => {
         return (<p>{convertToLocalizedTime(record.created_at, 'YYYY-MM-DD HH:mm:ss')}</p>)
       }
@@ -66,6 +72,7 @@ const PlaygroundManage = () => {
       title: t(`manage.createdBy`),
       dataIndex: 'created_by',
       key: 'created_by',
+      width: 150,
       render: (_, { created_by }) => {
         return created_by ? (
           <div className="flex h-full items-center" title={created_by}>
@@ -91,6 +98,7 @@ const PlaygroundManage = () => {
       title: t(`manage.sampleStatus`),
       dataIndex: 'status',
       key: 'status',
+      width: 150,
       render: (_, record) => {
         return <PermissionWrapper requiredPermissions={['Edit']}>
           <Switch checked={record.is_active} onChange={(value: boolean) => handleSampleActiveChange(record?.id, value)} />
@@ -101,6 +109,7 @@ const PlaygroundManage = () => {
       title: t(`common.action`),
       dataIndex: 'action',
       key: 'action',
+      width: 100,
       render: (_, record) => {
         return (
           <>
@@ -134,11 +143,15 @@ const PlaygroundManage = () => {
   ];
 
   const pageData = useMemo(() => {
-    return tableData.filter((item: any) => {
+    const items = tableData.filter((item: any) => {
       const [capability] = selectCapability
       return item?.capability === capability;
-    })
-  }, [tableData, selectCapability]);
+    });
+
+    setPagination((prev) => ({ ...prev, total: items.length }));
+    return items.slice((pagination.current - 1) * pagination.pageSize, pagination.pageSize);;
+
+  }, [tableData, selectCapability, pagination.current, pagination.pageSize]);
 
   useEffect(() => {
     getAllTreeData();
@@ -198,11 +211,11 @@ const PlaygroundManage = () => {
     }
   };
 
-  const getAllSampleFile = async () => {
+  const getAllSampleFile = async (name = '') => {
     setTableLoading(true);
     try {
-      const data = await getAllSampleFileList();
-      const items = data?.map((item: any) => ({
+      const { items } = await getAllSampleFileList({ name, page: pagination.current, page_size: pagination.pageSize });
+      const data = items?.map((item: any) => ({
         id: item?.id,
         name: item?.name,
         created_at: item?.created_at,
@@ -210,7 +223,8 @@ const PlaygroundManage = () => {
         is_active: item?.is_active,
         capability: item?.capability
       }));
-      setTableData(items)
+      setTableData(data);
+      
     } catch (e) {
       console.log(e);
       message.error(t(`manage.getSampleFileError`));
@@ -339,6 +353,10 @@ const PlaygroundManage = () => {
     }
   };
 
+  const handleChange = (value: any) => {
+    setPagination(value);
+  };
+
   const topSection = (
     <TopSection title={t(`manage.manageTitle`)} content={t(`manage.description`)} />
   );
@@ -364,7 +382,7 @@ const PlaygroundManage = () => {
   );
 
   const onSearch = (search: string) => {
-    console.log(search);
+    getAllSampleFile(search);
   };
 
   const handleDelCapability = async (id: number) => {
@@ -415,9 +433,12 @@ const PlaygroundManage = () => {
       </div>
       <CustomTable
         rowKey='id'
+        scroll={{ y: 'calc(100vh - 420px)' }}
         columns={columns}
         loading={tableLoading}
         dataSource={pageData}
+        pagination={pagination}
+        onChange={handleChange}
       />
     </>
   );
