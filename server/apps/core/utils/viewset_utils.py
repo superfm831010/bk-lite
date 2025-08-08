@@ -214,6 +214,8 @@ class AuthViewSet(MaintainerViewSet):
     def delete_rules(self, instance_id, delete_team):
         if not hasattr(self, "permission_key"):
             return
+        if not delete_team:
+            return
         app_name = self._get_app_name()
         try:
             delete_instance_rules(app_name, self.permission_key, instance_id, delete_team)
