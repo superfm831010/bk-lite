@@ -687,9 +687,12 @@ def delete_rules(group_ids, instance_id, app, module, child_module):
 
             # 删除指定 ID 的权限项
             original_length = len(target_list)
-            rules_data[module][child_module if child_module else module] = [
-                item for item in target_list if str(item.get("id")) != str(instance_id)
-            ]
+            if child_module:
+                rules_data[module][child_module] = [
+                    item for item in target_list if str(item.get("id")) != str(instance_id)
+                ]
+            else:
+                rules_data[module] = [item for item in target_list if str(item.get("id")) != str(instance_id)]
 
             # 如果有删除操作，更新数据库
             new_length = len(rules_data[module][child_module] if child_module else rules_data[module])
