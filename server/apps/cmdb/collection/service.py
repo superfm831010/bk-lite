@@ -1600,7 +1600,7 @@ class MiddlewareCollectMetrics(CollectBase):
                 "name": "name",
             },
             "keepalived": {
-                "inst_name": self.get_inst_name,
+                "inst_name":  lambda data: f"{data['ip_addr']}-{self.model_id}-{data['virtual_router_id']}",
                 "ip_addr": "ip_addr",
                 "bk_obj_id": "bk_obj_id",
                 "version": "version",
@@ -1611,7 +1611,19 @@ class MiddlewareCollectMetrics(CollectBase):
                 "install_path": "install_path",
                 "config_file": "config_file",
             },
-
+            "tongweb": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "bin_path": "bin_path",
+                "log_path": "log_path",
+                "java_version": "java_version",
+                "xms": "xms",
+                "xmx": "xmx",
+                "metaspace_size": "metaspace_size",
+                "max_metaspace_size": "max_metaspace_size",
+            },
         }
 
         return mapping
@@ -2029,6 +2041,15 @@ class DBCollectCollectMetrics(CollectBase):
                 "max_conn": "max_conn",
                 "cache_memory_mb": "cache_memory_mb",
                 "log_path": "log_path",
+            },
+            "dameng": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "user": "user",
+                "version": "version",
+                "bin_path": "bin_path",
+                "bk_obj_id": "bk_obj_id",
             }
         }
         return mapping

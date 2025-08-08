@@ -12,13 +12,14 @@ from apps.cmdb.constants import (
     SUBORDINATE_MODEL, INIT_MODEL_GROUP,
 )
 from apps.cmdb.graph.neo4j import Neo4jClient
+from apps.cmdb.utils.base import get_default_group_id
 from apps.core.logger import cmdb_logger as logger
 
 
 class ModelMigrate:
     def __init__(self):
         self.model_config = self.get_model_config()
-        self.default_group_id = self.get_default_group_id()
+        self.default_group_id = get_default_group_id()
 
     def get_model_config(self):
         # 读取 Excel 文件
@@ -61,18 +62,12 @@ class ModelMigrate:
             )
         return result
 
-    @staticmethod
-    def get_default_group_id():
-        from apps.system_mgmt.models.user import Group
-        default_group = Group.objects.get(name="Default")
-        return default_group.id
-
     def model_add_organization(self, model):
         """
         给模型添加组织数据
         """
         _key = INIT_MODEL_GROUP
-        model[_key] = self.default_group_id
+        model[_key] = [self.default_group_id]
 
     def migrate_models(self):
         """初始化模型"""
@@ -173,6 +168,9 @@ class ModelMigrate:
             models_without_group = []
             for model in all_models:
                 if INIT_MODEL_GROUP not in model or not model[INIT_MODEL_GROUP]:
+                    models_without_group.append(model["_id"])
+                elif INIT_MODEL_GROUP in model and isinstance(model[INIT_MODEL_GROUP], int):
+                    # 如果组织字段是单个整数，转换为列表
                     models_without_group.append(model["_id"])
 
             # 批量更新缺少组织字段的模型

@@ -5,7 +5,6 @@ import { forwardRef, useImperativeHandle, useState, useRef, useCallback, useEffe
 import { Button, Form, FormInstance, Input, message, Switch, Select } from 'antd';
 import { ModalRef } from "@/app/playground/types";
 import { Option } from "@/types";
-// import { CONTENT_MAP } from "@/app/playground/constants";
 const { TextArea } = Input;
 
 interface ModalProps {
@@ -38,7 +37,6 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
   const [type, setType] = useState<string>('');
   const [formData, setFormData] = useState<ModalProps | null>(null);
   const [servingConfig, setServingConfig] = useState<any>(null);
-  // const CategoryType = ['addCategory', 'updateCategory'];
   const CapabilityType = ['addCapability', 'updateCapability'];
 
   useImperativeHandle(ref, () => ({
@@ -69,11 +67,6 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
       });
     };
     await renderServingsOption();
-    // else if (formData && type.trim().startsWith('add')) {
-    //   formRef.current?.setFieldsValue({
-    //     parent: formData?.id
-    //   });
-    // }
   }, [type, formData]);
 
   const handleAdd: Record<string, any> = {
@@ -124,10 +117,8 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
       const params = {
         ...data,
         config: servingConfig,
-        // category: formData?.categoryID
-        category: 4
+        category: formData?.categoryID
       };
-      console.log(params);
       if (type.trim().startsWith('add')) {
         await handleAdd[type](params);
       } else {
