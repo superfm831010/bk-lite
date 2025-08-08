@@ -1,0 +1,9 @@
+CATEGORY_INIT_DATA = [
+    {
+        "name": "异常检测初始化测试2",
+        "description": "异常检测",
+        "parent": None,
+        "created_by": "admin",
+        "updated_by": "admin"
+    }
+]
