@@ -452,6 +452,16 @@ class KeepalivedNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     plugin_name = "weblogic_info"
 
 
+class TongWebNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "tongweb"
+    plugin_name = "tongweb_info"
+
+
+class DaMengNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "dameng"
+    plugin_name = "dameng_info"
+
+
 class NodeParamsFactory:
     """
     工厂类，根据 instance 的 model_id 返回对应的 NodeParams 实例

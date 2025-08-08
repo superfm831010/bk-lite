@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  docs-site:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    container_name: docs-site
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+
+  # 开发模式服务（可选）
+  docs-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3000"
+    container_name: docs-site-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    profiles:
+      - dev

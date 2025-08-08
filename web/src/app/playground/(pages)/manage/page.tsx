@@ -18,6 +18,7 @@ import {
   // Tag
 } from 'antd';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
+import PermissionWrapper from '@/components/permission';
 import { PlusOutlined, MoreOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
@@ -35,7 +36,6 @@ const PlaygroundManage = () => {
   const {
     getCategoryList,
     getCapabilityList,
-    // deleteCategory,
     deleteCapability,
     getAllSampleFileList,
     updateSampleFile,
@@ -46,7 +46,6 @@ const PlaygroundManage = () => {
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [treeLoading, setTreeLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
-  // const [searchValue, setSearchValue] = useState<string>('');
   const [selectCapability, setSelectCapability] = useState<number[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
@@ -56,11 +55,6 @@ const PlaygroundManage = () => {
       dataIndex: 'name',
       key: 'name'
     },
-    // {
-    //   title: t(`common.description`),
-    //   dataIndex: 'description',
-    //   key: 'description'
-    // },
     {
       title: t(`manage.createAt`),
       dataIndex: 'created_at',
@@ -99,7 +93,9 @@ const PlaygroundManage = () => {
       dataIndex: 'status',
       key: 'status',
       render: (_, record) => {
-        return <Switch checked={record.is_active} onChange={(value: boolean) => handleSampleActiveChange(record?.id, value)} />
+        return <PermissionWrapper requiredPermissions={['Edit']}>
+          <Switch checked={record.is_active} onChange={(value: boolean) => handleSampleActiveChange(record?.id, value)} />
+        </PermissionWrapper>
       }
     },
     {
@@ -109,46 +105,32 @@ const PlaygroundManage = () => {
       render: (_, record) => {
         return (
           <>
-            {/* <Button type='link' className='mr-2' onClick={() => openCategoryModal({ type: 'updateCapability', title: 'update', form: record })}>修改配置</Button> */}
-            <Popconfirm
-              title={t(`manage.delCapability`)}
-              description={t(`manage.delCapabilityText`)}
-              okText={t('common.confirm')}
-              cancelText={t('common.cancel')}
-              okButtonProps={{ loading: confirmLoading }}
-              onConfirm={() => handleDelSampleFile(record.id)}
-            >
-              <Button type='link' danger>{t(`common.delete`)}</Button>
-            </Popconfirm>
+            <PermissionWrapper requiredPermissions={['Delete']}>
+              <Popconfirm
+                title={t(`manage.delCapability`)}
+                description={t(`manage.delCapabilityText`)}
+                okText={t('common.confirm')}
+                cancelText={t('common.cancel')}
+                okButtonProps={{ loading: confirmLoading }}
+                onConfirm={() => handleDelSampleFile(record.id)}
+              >
+                <Button type='link' danger>{t(`common.delete`)}</Button>
+              </Popconfirm>
+            </PermissionWrapper>
           </>
         )
       }
     }
   ];
 
-  // const CategoryMenuItems = [
-  //   {
-  //     key: 'add',
-  //     label: t(`common.add`),
-  //   },
-  //   {
-  //     key: 'update',
-  //     label: t(`common.update`)
-  //   },
-  //   {
-  //     key: 'delete',
-  //     label: t(`common.delete`),
-  //   }
-  // ];
-
   const CapabilityMenuItems = [
     {
       key: 'update',
-      label: t(`common.update`)
+      label: <PermissionWrapper requiredPermissions={['Capability Edit']}>{t(`common.update`)}</PermissionWrapper>
     },
     {
       key: 'delete',
-      label: t(`common.delete`),
+      label: <PermissionWrapper requiredPermissions={['Capability Delete']}>{t(`common.delete`)}</PermissionWrapper>,
     }
   ];
 
@@ -178,39 +160,8 @@ const PlaygroundManage = () => {
     }));
   };
 
-  // const renderNode = (categoryData: any[], capabilityData: any[]) => {
-  //   const filterData = categoryData.filter(item => item.level === 0);
-  //   const treeData = filterData.map((item: any) => {
-  //     const node: any = {
-  //       key: `${item.id}_category`,
-  //       name: item?.name,
-  //       title: renderTitle({ ...item, mode: 'capability' }), // 二层菜单
-  //       selectable: false,
-  //       children: renderCapabilityNode(item?.id, capabilityData),
-  //     };
-  //     return node;
-  //   });
-
-  //   treeData.sort((a, b) => {
-  //     const aHasChildren = a.children.length > 0;
-  //     const bHasChildren = b.children.length > 0;
-
-  //     // 1. 有子节点的排在前面
-  //     if (aHasChildren && !bHasChildren) return -1;
-  //     if (!aHasChildren && bHasChildren) return 1;
-
-  //     // 2. 如果都有子节点或都没有子节点，按名称排序
-  //     return a.name.localeCompare(b.name, 'zh-CN', {
-  //       numeric: true,
-  //       sensitivity: 'base'
-  //     });
-  //   });
-  //   return treeData;
-  // };
-
   const findIDByName = (name: string, categoryList: any[]) => {
     const item = categoryList.find((item: any) => item.name === name);
-    console.log(item);
     return item?.id;
   }
 
@@ -225,11 +176,6 @@ const PlaygroundManage = () => {
           name: 'model_experience',
           selectable: false,
           title: t(`manage.modelExperience`),
-          // title: renderTitle({
-          //   name: '模型体验',
-          //   // mode: 'category'
-          // }), // 一层菜单操作
-          // children: renderNode(categoryData, capabilityData)
           children: [
             {
               key: 'anomaly_detection',
@@ -244,10 +190,6 @@ const PlaygroundManage = () => {
           key: 'agent_experience',
           name: 'agent_experience',
           selectable: false,
-          // title: renderTitle({
-          //   name: '智能体体验',
-          //   // mode: 'category'
-          // })
           title: t(`manage.intelligentExperience`)
         }
       ];;
@@ -332,7 +274,7 @@ const PlaygroundManage = () => {
                   [
                     {
                       key: 'add',
-                      label: t(`common.add`),
+                      label: <PermissionWrapper requiredPermissions={['Capability Add']}>{t(`common.add`)}</PermissionWrapper>,
                     }
                   ]
                 }
@@ -477,13 +419,15 @@ const PlaygroundManage = () => {
     <>
       <div className='flex justify-end mb-4'>
         <Search className='w-[240px] mr-4' placeholder={t(`common.search`)} enterButton onSearch={onSearch} />
-        <Button
-          type='primary'
-          disabled={selectCapability.length === 0}
-          icon={<PlusOutlined />}
-          onClick={() => openSampleModal({ type: 'add', title: 'add', form: { capability: selectCapability } })}>
-          {t(`common.add`)}
-        </Button>
+        <PermissionWrapper requiredPermissions={['Add']}>
+          <Button
+            type='primary'
+            disabled={selectCapability.length === 0}
+            icon={<PlusOutlined />}
+            onClick={() => openSampleModal({ type: 'add', title: 'add', form: { capability: selectCapability } })}>
+            {t(`common.add`)}
+          </Button>
+        </PermissionWrapper>
       </div>
       <CustomTable
         rowKey='id'
