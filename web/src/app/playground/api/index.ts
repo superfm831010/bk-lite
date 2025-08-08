@@ -58,8 +58,8 @@ const usePlayroundApi = () => {
   };
   
   // 查询指定能力体验下的样本文件
-  const getSampleFileOfServing = async (serving: string) => {
-    return await get(`/playground/example/?serving=${serving}`);
+  const getSampleFileOfServing = async (capability: string) => {
+    return await get(`/playground/example/?capability=${capability}`);
   };
 
   // 获取指定样本文件详情
