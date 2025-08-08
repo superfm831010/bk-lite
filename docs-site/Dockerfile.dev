@@ -1,5 +1,5 @@
-# 开发环境 Dockerfile for docs-site
-FROM node:18-alpine AS development
+# 开发环境 Dockerfile
+FROM node:18-alpine
 
 # 设置工作目录
 WORKDIR /app
@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # 暴露端口
-EXPOSE 8000
+EXPOSE 3000
 
 # 启动开发服务器
-CMD ["pnpm", "dev"]
+CMD ["pnpm", "start", "--host", "0.0.0.0"]

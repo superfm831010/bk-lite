@@ -1,8 +1,5 @@
-# 多阶段构建 Dockerfile for docs-site
-# 基于 dumi 的文档站点
-
-# 第一阶段：构建阶段
-FROM node:18-alpine AS builder
+# 多阶段构建 Dockerfile for Docusaurus
+FROM node:18-alpine AS base
 
 # 设置工作目录
 WORKDIR /app
@@ -13,23 +10,26 @@ RUN npm install -g pnpm
 # 复制 package.json 和 pnpm-lock.yaml
 COPY package.json pnpm-lock.yaml ./
 
-# 安装依赖
+# 依赖安装阶段
+FROM base AS deps
 RUN pnpm install --frozen-lockfile
 
-# 复制源代码
+# 构建阶段
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # 构建应用
-RUN pnpm run build
+RUN pnpm build
 
-# 第二阶段：生产阶段
-FROM nginx:alpine
+# 生产运行阶段
+FROM nginx:alpine AS runner
 
 # 复制构建产物到 nginx 静态文件目录
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/build /usr/share/nginx/html
 
-# 复制 nginx 配置文件（可选）
-COPY nginx.conf /etc/nginx/nginx.conf
+# 复制自定义 nginx 配置
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # 暴露端口
 EXPOSE 80
