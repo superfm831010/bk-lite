@@ -179,7 +179,7 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
   };
 
   const canClickSettings = () => {
-    return status === 'completed' || status === 'failed';
+    return status === 'completed' || status === 'failed' || !graphExists;
   };
 
   const canRebuildCommunity = () => {

@@ -198,7 +198,8 @@
       "description": "描述",
       "descriptionMaxLength": "描述不能超过500个字符",
       "selectIcon": "选择图标",
-      "searchIcon": "搜索图标"
+      "searchIcon": "搜索图标",
+      "builtinAppClickTip": "非内置的应用不可点击"
     },
     "security": {
       "settings": "安全设置",
