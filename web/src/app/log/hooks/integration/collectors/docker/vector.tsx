@@ -28,10 +28,18 @@ export const useVectorConfig = () => {
           initTableItems: {},
           defaultForm: {
             docker_host: 'unix:///var/run/docker.sock',
+            multiline: {
+              enabled: true,
+              mode: 'continue_through',
+              start_pattern: '^(ERROR|WARN|INFO|DEBUG|TRACE|FATAL)s[',
+              timeout_ms: 3000,
+              condition_pattern: '^(s+|Traceback|Files+)',
+            },
           },
           columns: [],
           getParams: (row: IntegrationLogInstance, config: TableDataItem) => {
             const dataSource = cloneDeep(config.dataSource || []);
+            delete row.multiline.enabled;
             return {
               collector: pluginConfig.collector,
               collect_type: pluginConfig.collect_type,
@@ -59,18 +67,18 @@ export const useVectorConfig = () => {
               formData?.child?.content?.sources?.[
                 pluginConfig.collect_type + '_' + formData.rowId
               ] || {};
-            const multiline =
-              formData?.child?.content?.transforms?.[
-                'multiline_' + formData.rowId
-              ] || {};
+            const multiline = sources.multiline || {};
             return {
               docker_host: sources.docker_host || null,
               include_containers: sources.include_containers || null,
               exclude_containers: sources.exclude_containers || null,
-              start_pattern: multiline.start_pattern || '',
+              multiline: Object.assign(multiline, {
+                enabled: !!multiline.mode,
+              }),
             };
           },
           getParams: (formData: TableDataItem, configForm: TableDataItem) => {
+            delete formData.multiline.enabled;
             return {
               child: {
                 id: configForm.child.id,
