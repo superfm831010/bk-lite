@@ -1,4 +1,4 @@
-export type DirectoryType = 'directory' | 'dashboard' | 'topology' | 'datasource';
+export type DirectoryType = 'directory' | 'dashboard' | 'topology' | 'settings';
 export type CreateDirectoryType = 'directory' | 'dashboard' | 'topology';
 export type ModalAction = 'addRoot' | 'addChild' | 'edit';
 
@@ -18,6 +18,7 @@ export interface SidebarProps {
 
 export interface SidebarRef {
   clearSelection: () => void;
+  setSelectedKeys: (keys: React.Key[]) => void;
 }
 
 export interface ApiDirectoryItem {

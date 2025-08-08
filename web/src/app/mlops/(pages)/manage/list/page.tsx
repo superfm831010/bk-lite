@@ -123,7 +123,7 @@ const DatasetManagePage = () => {
   };
 
   const infoText = (item: any) => {
-    return <p className='text-right'>{`${t(`mlops-common.owner`)}: ${item.creator}`}</p>;
+    return <p className='text-right font-mini text-[var(--color-text-3)]'>{`${t(`mlops-common.owner`)}: ${item.creator}`}</p>;
   };
 
   const menuActions = (item: any) => {

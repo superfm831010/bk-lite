@@ -277,8 +277,11 @@ const ProfessionalCollection: React.FC = () => {
 
   const handleDelete = (record: CollectTask) => {
     Modal.confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      centered: true,
       onOk: async () => {
         try {
           await collectApi.deleteCollect(record.id.toString());
@@ -295,10 +298,7 @@ const ProfessionalCollection: React.FC = () => {
         } catch (error) {
           console.error('Failed to delete task:', error);
         }
-      },
-      okText: t('common.confirm'),
-      cancelText: t('common.cancel'),
-      centered: true,
+      }
     });
   };
 

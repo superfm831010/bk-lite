@@ -85,3 +85,15 @@ export interface GlobalConfig {
   is_activate: boolean;
   is_build: boolean;
 }
+
+
+export interface ChannelItem {
+  id: number;
+  name: string;
+  channel_type: string;
+}
+
+export interface NotifyOption {
+  label: string;
+  value: string;
+}

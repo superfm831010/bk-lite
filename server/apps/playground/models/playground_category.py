@@ -4,7 +4,7 @@ from django.db import models
 from mptt.models import MPTTModel
 
 class PlayGroundCategory(MaintainerInfo, TimeInfo, MPTTModel):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, verbose_name="类别名称", unique=True)
     description = models.TextField()
     parent = models.ForeignKey(
         "self",

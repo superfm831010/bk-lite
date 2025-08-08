@@ -190,6 +190,20 @@ export const getQAPairColumns = (
     key: 'qa_count',
   },
   {
+    title: t('knowledge.qaPairs.type'),
+    dataIndex: 'create_type',
+    key: 'create_type', 
+    render: (text: string) => {
+      if (text=== 'custom') {
+        return <span>{t('knowledge.qaPairs.custom')}</span>;
+      } else if (text === 'import') {
+        return <span>{t('knowledge.qaPairs.import')}</span>;
+      } else {
+        return <span>{t('knowledge.qaPairs.generate')}</span>;
+      }
+    }
+  },
+  {
     title: t('knowledge.documents.createdAt'),
     dataIndex: 'created_at',
     key: 'created_at',

@@ -139,7 +139,7 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(
 
     return (
       <OperateModal
-        width={400}
+        width={500}
         title={title}
         visible={modalVisible}
         onCancel={handleCancel}
@@ -168,7 +168,6 @@ const UpdateConfig = forwardRef<ModalRef, ModalProps>(
                 name="stream_ids"
               >
                 <Select
-                  style={{ width: '300px' }}
                   showSearch
                   mode="tags"
                   maxTagCount="responsive"

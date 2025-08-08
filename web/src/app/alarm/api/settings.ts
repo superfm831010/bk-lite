@@ -62,6 +62,9 @@ export const useSettingApi = () => {
 
   const getLogList = (params: any) => get('/alerts/api/log/', { params });
 
+  const getChannelList = (params: any) =>
+    get('/alerts/api/settings/get_channel_list/', { params });
+
   return {
     getAssignmentList,
     getAssignment,
@@ -83,6 +86,7 @@ export const useSettingApi = () => {
     getGlobalConfig,
     updateGlobalConfig,
     toggleGlobalConfig,
-    getLogList
+    getLogList,
+    getChannelList
   };
 };

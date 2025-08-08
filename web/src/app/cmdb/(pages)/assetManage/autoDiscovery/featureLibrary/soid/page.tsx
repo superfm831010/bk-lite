@@ -65,8 +65,8 @@ const OidLibrary: React.FC = () => {
 
   const delMap = async (row: ListItem) => {
     Modal.confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
       okText: t('common.confirm'),
       cancelText: t('common.cancel'),
       centered: true,

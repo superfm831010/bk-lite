@@ -32,7 +32,7 @@ import {
 const { confirm } = Modal;
 
 const AssoList = forwardRef<AssoListRef, AssoListProps>(
-  ({ modelList, userList, organizationList, assoTypeList }, ref) => {
+  ({ modelList, userList, assoTypeList }, ref) => {
     const { t } = useTranslation();
     const [activeKey, setActiveKey] = useState<string[]>([]);
     const [allActiveKeys, setAllActiveKeys] = useState<string[]>([]);
@@ -110,7 +110,6 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
           const updatedItem = await getModelAttrList(targetItem, {
             assoList: assoInstancesList,
             userData: userList,
-            organizationData: organizationList,
             models: modelList,
             assoTypeList,
           });
@@ -132,7 +131,6 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
           getModelAttrList(item, {
             assoList: assoInstancesList,
             userData: userList,
-            organizationData: organizationList,
             models: modelList,
             assoTypeList,
           })
@@ -198,7 +196,6 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
         ...getAssetColumns({
           attrList: responseData,
           userList: config.userData,
-          groupList: config.organizationData,
           t,
         }),
         {
@@ -338,7 +335,6 @@ const AssoList = forwardRef<AssoListRef, AssoListProps>(
           userList={userList}
           models={modelList}
           assoTypes={assoTypeList}
-          organizationList={organizationList}
           onSuccess={confirmRelate}
         />
       </Spin>

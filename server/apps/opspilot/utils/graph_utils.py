@@ -130,7 +130,7 @@ class GraphUtils(ChunkHelper):
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/delete_index"
         kwargs = {"group_id": f"graph-{graph_obj.id}"}
         res = cls.post_chat_server(kwargs, url)
-        if not res or res["status"] != "success":
+        if not res or res.get("status", "fail") != "success":
             raise Exception("Failed to Delete graph")
 
     @classmethod
@@ -141,7 +141,7 @@ class GraphUtils(ChunkHelper):
         url = f"{settings.METIS_SERVER_URL}/api/graph_rag/delete_document"
         kwargs = {"uuids": chunk_ids}
         res = cls.post_chat_server(kwargs, url)
-        if not res or res["status"] != "success":
+        if not res or res.get("status", "fail") != "success":
             raise Exception("Failed to Delete graph chunk")
 
     @classmethod
@@ -163,6 +163,6 @@ class GraphUtils(ChunkHelper):
             "rerank_model_api_key": rerank_config["api_key"] or " ",
         }
         res = cls.post_chat_server(kwargs, url)
-        if not res or res["status"] != "success":
+        if not res or res.get("status", "fail") != "success":
             return {"result": False}
         return {"result": True}

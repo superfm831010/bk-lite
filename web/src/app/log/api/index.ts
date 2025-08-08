@@ -4,7 +4,7 @@ const useLogApi = () => {
   const { get } = useApiClient();
 
   const getAllUsers = async () => {
-    return await get(`/log/api/system_mgmt/user_all/`);
+    return await get(`/log/system_mgmt/user_all/`);
   };
 
   return {

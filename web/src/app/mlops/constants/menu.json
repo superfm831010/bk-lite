@@ -40,7 +40,7 @@
     },
     {
       "title": "能力发布",
-      "icon": "fabu",
+      "icon": "nenglifabuguanli",
       "url": "/mlops/model-release",
       "name": "Model Release",
       "children": [
@@ -93,7 +93,7 @@
     },
     {
       "title": "ModalRelease",
-      "icon": "fabu1",
+      "icon": "nenglifabuguanli",
       "url": "/mlops/model-release",
       "name": "Model Release",
       "children": [

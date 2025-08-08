@@ -1,21 +1,5 @@
 {
-  "common": {
-    "select": "Select",
-    "selectMsg": "Please select",
-    "inputMsg": "Please enter",
-    "searchPlaceHolder": "Search...",
-    "confirm": "Confirm",
-    "cancel": "Cancel",
-    "edit": "Edit",
-    "delete": "Delete",
-    "save": "Save",
-    "operateFailed": "Operation failed",
-    "successOperate": "Operation successful",
-    "all": "All",
-    "yes": "Yes",
-    "no": "No"
-  },
-  "sidebar": {
+  "opsAnalysisSidebar": {
     "title": "Directory Management",
     "addDir": "Add Directory",
     "addDash": "Add Dashboard",
@@ -28,9 +12,12 @@
     "deleteConfirm": "Are you sure you want to delete?",
     "inputPlaceholder": "Please enter name",
     "nameLabel": "Name",
-    "descLabel": "Description"
+    "descLabel": "Description",
+    "selectItem": "Please select a dashboard or topology",
+    "unsavedChanges": "Are you sure you want to leave?",
+    "unsavedChangesWarning": "You have unsaved changes. If you leave now, your changes will be lost."
   },
-"dashboard": {
+  "dashboard": {
     "addComponent": "Add Component",
     "componentConfig": "Component Configuration",
     "addView": "Add View",
@@ -60,7 +47,8 @@
     "chartTypeLabel": "Chart Type",
     "lineChart": "Line Chart",
     "barChart": "Bar Chart",
-    "pieChart": "Pie Chart"
+    "pieChart": "Pie Chart",
+    "paramSettings": "Parameter Settings"
   },
   "dataSource": {
     "title": "Data Source",
@@ -72,9 +60,46 @@
     "aliasName": "Alias Name",
     "defaultValue": "Default Value",
     "introTitle": "Data Source",
-    "introMsg": "Choose NATS service as the data source"
-},
-"topology": {
+    "introMsg": "Choose NATS service as the data source",
+    "paramType": "Parameter Type",
+    "paramTypes": {
+      "string": "String",
+      "number": "Number",
+      "date": "Date",
+      "boolean": "Boolean",
+      "timeRange": "Time Range"
+    },
+    "filterTypes": {
+      "filter": "Filter",
+      "fixed": "Fixed",
+      "params": "Params"
+    },
+    "filterType": "Filter Type",
+    "operation": "Operation",
+    "addParam": "Add Parameter",
+    "duplicateParamNames": "Duplicate parameter names: ",
+    "paramNameNotAllowDuplicate": "Parameter names cannot be duplicated",
+    "paramNameCannotBeEmpty": "Parameter name cannot be empty",
+    "updateDataSourceSuccess": "Data source updated successfully",
+    "createDataSourceSuccess": "Data source created successfully",
+    "operationFailed": "Operation failed"
+  },
+  "namespace": {
+    "title": "Namespace",
+    "name": "Name",
+    "account": "Account",
+    "password": "Password",
+    "domain": "Domain",
+    "describe": "Description",
+    "createdTime": "Created Time",
+    "introTitle": "Namespace",
+    "introMsg": "Define NATS for different namespaces, and specify the corresponding namespace data when setting up the data source.",
+    "updateNamespaceSuccess": "Namespace updated successfully",
+    "createNamespaceSuccess": "Namespace created successfully",
+    "operationFailed": "Operation failed"
+  },
+  "topology": {
+    "edgeView": "Edge View",
     "edgeConfig": "Edge Configuration",
     "lineType": "Line Type",
     "lineName": "Line Name",

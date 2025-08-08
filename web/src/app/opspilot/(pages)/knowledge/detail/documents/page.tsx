@@ -9,7 +9,7 @@ import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import type { PaginationProps } from 'antd';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
-import SelectSourceModal from './selectSourceModal';
+import SelectModal from './selectSourceModal';
 import { TableData, QAPairData } from '@/app/opspilot/types/knowledge'
 import styles from '@/app/opspilot/styles/common.module.scss'
 import ActionButtons from '@/app/opspilot/components/knowledge/actionButtons';
@@ -18,6 +18,7 @@ import KnowledgeGraphPage from '@/app/opspilot/components/knowledge/knowledgeGra
 import OperateModal from '@/components/operate-modal';
 import { getDocumentColumns, getQAPairColumns } from '@/app/opspilot/components/knowledge/tableColumns';
 import { useDocuments } from '@/app/opspilot/context/documentsContext';
+import { SOURCE_FILE_OPTIONS, QA_PAIR_OPTIONS } from '@/app/opspilot/constants/knowledge';
 
 const { confirm } = Modal;
 const { TabPane } = Tabs;
@@ -35,17 +36,18 @@ const DocumentsPage: React.FC = () => {
   const desc = searchParams ? searchParams.get('desc') : null;
   const type = searchParams ? searchParams.get('type') : null;
 
-  // 使用 Context 管理状态
   const { activeTabKey, setActiveTabKey, mainTabKey, setMainTabKey } = useDocuments();
 
-  // 初始化状态，从URL参数获取初始值
   useEffect(() => {
-    if (type === 'knowledge_graph' || type === 'qa_pairs') {
+    if (type === 'knowledge_graph') {
       setMainTabKey(type);
       setActiveTabKey(type);
     } else if (['file', 'web_page', 'manual'].includes(type || '')) {
       setMainTabKey('source_files');
       setActiveTabKey(type || 'file');
+    } else if (type === 'qa_pairs' || type === 'qa_custom') {
+      setMainTabKey('qa_pairs');
+      setActiveTabKey('qa_pairs');
     } else {
       setMainTabKey('source_files');
       setActiveTabKey('file');
@@ -77,6 +79,7 @@ const DocumentsPage: React.FC = () => {
   const [selectedQAPairKeys, setSelectedQAPairKeys] = useState<React.Key[]>([]);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [isQAPairModalVisible, setIsQAPairModalVisible] = useState(false);
 
   const {
     fetchDocuments,
@@ -381,7 +384,7 @@ const DocumentsPage: React.FC = () => {
   const handleModalConfirm = (selectedType: string) => {
     setIsModalVisible(false);
     router.push(`/opspilot/knowledge/detail/documents/modify?type=${selectedType}&id=${id}&name=${name}&desc=${desc}`);
-  }
+  };
 
   const handleUploadModalConfirm = async () => {
     if (uploadedFiles.length === 0) {
@@ -421,10 +424,8 @@ const DocumentsPage: React.FC = () => {
   const handleFileUpload = (file: any) => {
     const fileId = file.uid || file.name;
     
-    // 标记文件为上传中状态
     setUploadingFiles(prev => new Set([...prev, fileId]));
     
-    // 模拟文件处理完成（在实际项目中，这里可能是文件读取或验证）
     setTimeout(() => {
       setUploadedFiles(prev => [...prev, file]);
       setUploadingFiles(prev => {
@@ -432,7 +433,7 @@ const DocumentsPage: React.FC = () => {
         newSet.delete(fileId);
         return newSet;
       });
-    }, 1000); // 模拟1秒的处理时间
+    }, 1000);
     
     return false;
   };
@@ -445,6 +446,25 @@ const DocumentsPage: React.FC = () => {
       newSet.delete(fileId);
       return newSet;
     });
+  };
+
+  const handleQAPairAddClick = () => {
+    setIsQAPairModalVisible(true);
+  };
+
+  const handleQAPairModalCancel = () => {
+    setIsQAPairModalVisible(false);
+  };
+
+  const handleQAPairModalConfirm = (selectedType: string) => {
+    setIsQAPairModalVisible(false);
+    if (selectedType === 'documents') {
+      router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_pairs&id=${id}&name=${name}&desc=${desc}`);
+    } else if (selectedType === 'import') {
+      handleImportClick();
+    } else if (selectedType === 'custom') {
+      router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_custom&id=${id}&name=${name}&desc=${desc}`);
+    }
   };
 
   const batchOperationMenu = (
@@ -492,37 +512,6 @@ const DocumentsPage: React.FC = () => {
             disabled={!selectedRowKeys.length}
           >
             {t('knowledge.documents.batchSet')}
-          </Button>
-        </PermissionWrapper>
-      </Menu.Item>
-    </Menu>
-  );
-
-  const menuProps = (
-    <Menu className={styles.batchOperationMenu}>
-      <Menu.Item key="create">
-        <PermissionWrapper
-          requiredPermissions={['Add']}
-          instPermissions={knowledgeBasePermissions}>
-          <Button
-            type="text"
-            className="w-full"
-            onClick={() => router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_pairs&id=${id}&name=${name}&desc=${desc}`)}
-          >
-            {t('common.create')}
-          </Button>
-        </PermissionWrapper>
-      </Menu.Item>
-      <Menu.Item key="import">
-        <PermissionWrapper
-          requiredPermissions={['Add']}
-          instPermissions={knowledgeBasePermissions}>
-          <Button
-            type="text"
-            className="w-full"
-            onClick={handleImportClick}
-          >
-            {t('common.import')}
           </Button>
         </PermissionWrapper>
       </Menu.Item>
@@ -618,21 +607,24 @@ const DocumentsPage: React.FC = () => {
               )}
               {activeTabKey === 'qa_pairs' && (
                 <>
-                  <Dropdown overlay={menuProps}>
-                    <Button>
-                      <Space>
-                        {t('common.add')}
-                        <DownOutlined />
-                      </Space>
+                  <PermissionWrapper
+                    requiredPermissions={['Add']}
+                    instPermissions={knowledgeBasePermissions}>
+                    <Button
+                      type='primary'
+                      className='mr-[8px]'
+                      icon={<PlusOutlined />}
+                      onClick={handleQAPairAddClick}
+                    >
+                      {t('common.add')}
                     </Button>
-                  </Dropdown>
+                  </PermissionWrapper>
                   <PermissionWrapper
                     requiredPermissions={['Delete']}
                     instPermissions={knowledgeBasePermissions}>
                     <Button
                       danger
                       icon={<DeleteOutlined />}
-                      className="ml-[8px]"
                       onClick={handleBatchDeleteQAPairs}
                     >
                       {t('common.batchDelete')}{selectedQAPairKeys.length > 0 && ` (${selectedQAPairKeys.length})`}
@@ -679,11 +671,22 @@ const DocumentsPage: React.FC = () => {
         />
       )}
       {mainTabKey === 'source_files' && (
-        <SelectSourceModal
+        <SelectModal
           defaultSelected={activeTabKey}
           visible={isModalVisible}
           onCancel={handleModalCancel}
           onConfirm={handleModalConfirm}
+          title={`${t('common.select')}${t('knowledge.source')}`}
+          options={SOURCE_FILE_OPTIONS}
+        />
+      )}
+      {mainTabKey === 'qa_pairs' && (
+        <SelectModal
+          visible={isQAPairModalVisible}
+          onCancel={handleQAPairModalCancel}
+          onConfirm={handleQAPairModalConfirm}
+          title={`${t('common.select')}${t('knowledge.qaPairs.addMethod')}`}
+          options={QA_PAIR_OPTIONS}
         />
       )}
       <OperateModal
@@ -699,7 +702,7 @@ const DocumentsPage: React.FC = () => {
       >
         <div>
           <Dragger
-            accept="application/json"
+            accept="application/json,.csv"
             beforeUpload={handleFileUpload}
             onRemove={handleRemoveFile}
             fileList={uploadedFiles.map(file => {
