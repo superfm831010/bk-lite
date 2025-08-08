@@ -340,34 +340,19 @@ class MonitorPolicyScan:
         MonitorEventRawData.objects.bulk_create(create_raw_data, batch_size=100)
         return event_objs
 
-    def get_users_email(self, usernames):
-        """获取用户邮箱"""
-        users = SystemMgmtUtils.get_user_all()
-        user_email_map = {user_info["username"]: user_info["email"] for user_info in users if user_info.get("email")}
-
-        return {username: user_email_map.get(username) for username in usernames}
-
-    def send_email(self, event_obj):
-        """发送邮件"""
+    def send_notice(self, event_obj):
+        """ 发送通知 """
         title = f"告警通知：{self.policy.name}"
         content = f"告警内容：{event_obj.content}"
         result = []
-        user_email_map = self.get_users_email(self.policy.notice_users)
-
-        for user, email in user_email_map.items():
-            if not email:
-                result.append({"user": user, "status": "failed", "error": "email not found"})
-                continue
-            else:
-                result.append({"user": user, "status": "success"})
 
         try:
             send_result = SystemMgmtUtils.send_msg_with_channel(
-                self.policy.notice_type_id, title, content, [email for email in user_email_map.values() if email]
+                self.policy.notice_type_id, title, content, self.policy.notice_users
             )
-            logger.info(f"send email success: {send_result}")
+            logger.info(f"send notice success: {send_result}")
         except Exception as e:
-            logger.error(f"send email failed: {e}")
+            logger.error(f"send notice failed: {e}")
 
         return result
 
@@ -381,7 +366,7 @@ class MonitorPolicyScan:
                 # 无数据告警通知为开启，不进行通知
                 if self.policy.no_data_alert <= 0:
                     continue
-            notice_results = self.send_email(event)
+            notice_results = self.send_notice(event)
             event.notice_result = notice_results
         # 批量更新通知结果
         MonitorEvent.objects.bulk_update(event_objs, ["notice_result"], batch_size=200)
