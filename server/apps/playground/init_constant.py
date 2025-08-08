@@ -5,5 +5,8 @@ CATEGORY_INIT_DATA = [
         "parent": None,
         "created_by": "system",
         "updated_by": "system"
+    },
+    {
+        "description": "测试2"
     }
 ]
