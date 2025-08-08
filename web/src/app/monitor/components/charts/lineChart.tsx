@@ -10,7 +10,6 @@ import {
   ResponsiveContainer,
   ReferenceArea,
   ReferenceLine,
-  Label,
 } from 'recharts';
 import CustomTooltip from './customTooltips';
 import {
@@ -78,6 +77,9 @@ const LineChart: React.FC<LineChartProps> = ({
   const [visibleAreas, setVisibleAreas] = useState<string[]>([]);
   const [details, setDetails] = useState<Record<string, any>>({});
   const [hasDimension, setHasDimension] = useState<boolean>(false);
+  const [hoveredThreshold, setHoveredThreshold] =
+    useState<ThresholdField | null>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [boxItems, setBoxItems] = useState<TableDataItem[]>([]);
   // 获取数据中的最小和最大时间
   const times = data.map((d) => d.time);
@@ -195,16 +197,15 @@ const LineChart: React.FC<LineChartProps> = ({
       const time_intervals: TableDataItem[] =
         maxTime === minTime // 折线图只存在一条数据时返回所有事件
           ? _data.results
-          : _data.results?.filter(
-            (item: any) => {
-              const times = timeToSecond(item.created_at);
-              if (times >= minTime && times <= maxTime) {
-                return true;
-              }
-              return false;
+          : _data.results?.filter((item: any) => {
+            const times = timeToSecond(item.created_at);
+            if (times >= minTime && times <= maxTime) {
+              return true;
             }
-          );
-      const intervals = maxTime === minTime ? 120 : Math.ceil((maxTime - minTime) / 60);
+            return false;
+          });
+      const intervals =
+        maxTime === minTime ? 120 : Math.ceil((maxTime - minTime) / 60);
       const lengths = intervals >= 120 ? 24 : Math.ceil(intervals / 5);
       const step = Math.ceil(_data.results?.length / lengths);
       setBoxItems(handleCutArray(cutArray(time_intervals.reverse(), step)));
@@ -278,42 +279,9 @@ const LineChart: React.FC<LineChartProps> = ({
               />
               <YAxis axisLine={false} tickLine={false} tick={renderYAxisTick} />
 
-              {threshold.map((item, index) => {
-                const values = data.map((d: any) => {
-                  const targetKey = Object.keys(d || {}).find((key) =>
-                    key.includes('value')
-                  );
-                  return targetKey
-                    ? isNaN(d[targetKey])
-                      ? 0
-                      : d[targetKey]
-                    : 0;
-                });
-                const yMax = Math.max(...values);
-                const yMin = Math.min(...values);
-                const yMiddle = (yMax + yMin) / 2;
-                return (
-                  <ReferenceLine
-                    key={index}
-                    y={`${item.value}`}
-                    isFront
-                    stroke={`${LEVEL_MAP[item.level]}`}
-                    strokeDasharray="12 3 3 3 3 3"
-                  >
-                    <Label
-                      value={`${item.value}`}
-                      fill={`${LEVEL_MAP[item.level]}`}
-                      position="left"
-                      dx={30}
-                      dy={(item.value || 0) >= yMiddle ? 10 : -10}
-                    ></Label>
-                  </ReferenceLine>
-                );
-              })}
-
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <Tooltip
-                offset={-40}
+                offset={20}
                 content={
                   <CustomTooltip
                     unit={unit}
@@ -333,6 +301,41 @@ const LineChart: React.FC<LineChartProps> = ({
                   hide={!visibleAreas.includes(key)}
                 />
               ))}
+              {/* 阈值线的鼠标触发区域（透明，较粗） */}
+              {threshold.map((item, index) => (
+                <ReferenceLine
+                  key={`trigger-${index}`}
+                  y={`${item.value}`}
+                  isFront={true}
+                  stroke="transparent"
+                  strokeWidth={8}
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={(e) => {
+                    setHoveredThreshold(item);
+                    setMousePosition({ x: e.clientX, y: e.clientY });
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredThreshold(null);
+                  }}
+                  onMouseMove={(e) => {
+                    setMousePosition({ x: e.clientX, y: e.clientY });
+                  }}
+                />
+              ))}
+
+              {/* 阈值线的可视部分（较细） */}
+              {threshold.map((item, index) => (
+                <ReferenceLine
+                  key={`visual-${index}`}
+                  y={`${item.value}`}
+                  isFront={true}
+                  stroke={`${LEVEL_MAP[item.level]}`}
+                  strokeDasharray="12 3 3 3 3 3"
+                  strokeWidth={2}
+                  style={{ pointerEvents: 'none' }}
+                />
+              ))}
+
               {isDragging &&
                 startX !== null &&
                 endX !== null &&
@@ -382,6 +385,27 @@ const LineChart: React.FC<LineChartProps> = ({
           )}
           {showDimensionTable && hasDimension && (
             <DimensionTable data={data} colors={colors} details={details} />
+          )}
+
+          {/* 自定义阈值tooltip */}
+          {hoveredThreshold && (
+            <div
+              style={{
+                position: 'fixed',
+                left: mousePosition.x + 10,
+                top: mousePosition.y - 10,
+                background: 'rgba(0, 0, 0, 0.8)',
+                color: 'white',
+                padding: '8px 12px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                pointerEvents: 'none',
+                zIndex: 1000,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {hoveredThreshold.value}
+            </div>
           )}
         </>
       ) : (
