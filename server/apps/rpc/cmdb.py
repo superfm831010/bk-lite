@@ -2,8 +2,12 @@ from apps.rpc.base import RpcClient
 
 
 class CMDB(object):
-    def __init__(self):
-        self.client = RpcClient()
+    def __init__(self, *args, **kwargs):
+        params = {}
+        server = kwargs.get("server", None)
+        if server:
+            params["server"] = server
+        self.client = RpcClient(**params)
 
     def get_module_data(self, **kwargs):
         """

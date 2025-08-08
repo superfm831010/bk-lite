@@ -3,7 +3,7 @@
 # @Time: 2025/7/18 10:59
 # @Author: windyzhao
 from rest_framework import serializers
-from apps.operation_analysis.models import DataSourceAPIModel, Dashboard, Directory, Topology
+from apps.operation_analysis.models import DataSourceAPIModel, Dashboard, Directory, Topology, NameSpace
 
 
 class BaseFormatTimeSerializer(serializers.ModelSerializer):
@@ -57,3 +57,12 @@ class TopologyModelSerializer(BaseFormatTimeSerializer):
         if 'directory' not in validated_data:
             raise serializers.ValidationError({"directory": ["directory is required for creation."]})
         return super().create(validated_data)
+
+
+class NameSpaceModelSerializer(BaseFormatTimeSerializer):
+    class Meta:
+        model = NameSpace
+        fields = "__all__"
+        extra_kwargs = {
+            "password": {"write_only": True},
+        }
