@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.log.constants import KEYWORD, AGGREGATE, ALERT_STATUS_NEW
-from apps.log.models.policy import Policy, PolicyOrganization, Alert, Event, EventRawData
+from apps.log.models.policy import Policy, Alert, Event, EventRawData
 from apps.log.utils.query_log import VictoriaMetricsAPI
 from apps.monitor.utils.system_mgmt_api import SystemMgmtUtils
 from apps.core.logger import celery_logger as logger
@@ -83,30 +83,14 @@ def format_period(period):
 class LogPolicyScan:
     def __init__(self, policy):
         self.policy = policy
-        self.organization_map = self.get_organization_map()
         self.active_alerts = self.get_active_alerts()
         self.vlogs_api = VictoriaMetricsAPI()
-
-    def get_organization_map(self):
-        """获取策略适用的组织"""
-        if not self.policy.organizations:
-            return {}
-
-        try:
-            org_objs = PolicyOrganization.objects.filter(
-                policy_id=self.policy.id,
-                organization__in=self.policy.organizations
-            )
-            return {obj.organization: obj.organization for obj in org_objs}
-        except Exception as e:
-            logger.error(f"get organization map failed: {e}")
-            return {}
 
     def get_active_alerts(self):
         """获取策略的活动告警"""
         try:
             qs = Alert.objects.filter(policy_id=self.policy.id, status=ALERT_STATUS_NEW)
-            # 如果设置了组织范围，只查询组织范围内的告警
+            # 如果设置了组织范围，只查询组织范围内的告���
             if self.policy.organizations:
                 # 这里假��source_id包含组织信息，实际可能需要根据具���业务逻辑调整
                 pass
@@ -431,11 +415,19 @@ class LogPolicyScan:
         try:
             # 1. 批量查询所有可能存在的活跃告警
             source_ids = [event["source_id"] for event in events]
-            existing_alerts = Alert.objects.filter(
+            existing_alerts_qs = Alert.objects.filter(
                 policy_id=self.policy.id,
                 source_id__in=source_ids,
                 status=ALERT_STATUS_NEW
-            ).in_bulk(field_name='source_id')
+            )
+
+            # 手动构建映射表，因为source_id不是唯一字段
+            # 对于同一个source_id可能有多个告警，我们取最新的一个
+            existing_alerts = {}
+            for alert in existing_alerts_qs:
+                source_id = alert.source_id
+                if source_id not in existing_alerts or alert.created_at > existing_alerts[source_id].created_at:
+                    existing_alerts[source_id] = alert
 
             logger.debug(f"Found {len(existing_alerts)} existing alerts for policy {self.policy.id}")
 
@@ -529,45 +521,22 @@ class LogPolicyScan:
             logger.error(f"create events failed for policy {self.policy.id}: {e}")
             return []
 
-    def get_users_email(self, usernames):
-        """获取用户邮箱"""
-        if not usernames:
-            return {}
-
-        try:
-            users = SystemMgmtUtils.get_user_all()
-            user_email_map = {user_info["username"]: user_info["email"] for user_info in users if user_info.get("email")}
-            return {username: user_email_map.get(username) for username in usernames}
-        except Exception as e:
-            logger.error(f"get users email failed: {e}")
-            return {}
-
-    def send_email(self, event_obj):
-        """发送邮件"""
+    def send_notice(self, event_obj):
+        """发送通知"""
         if not self.policy.notice_users:
             return []
 
         title = f"日志告警通知：{self.policy.name}"
         content = f"告警内容：{event_obj.content}\n时间：{event_obj.event_time}\n来源：{event_obj.source_id}"
         result = []
-        user_email_map = self.get_users_email(self.policy.notice_users)
-
-        for user, email in user_email_map.items():
-            if not email:
-                result.append({"user": user, "status": "failed", "error": "email not found"})
-                continue
-            else:
-                result.append({"user": user, "status": "success"})
 
         try:
-            valid_emails = [email for email in user_email_map.values() if email]
-            if valid_emails:
-                send_result = SystemMgmtUtils.send_msg_with_channel(
-                    self.policy.notice_type_id, title, content, valid_emails
-                )
-                logger.info(f"send email success for policy {self.policy.id}: {send_result}")
+            send_result = SystemMgmtUtils.send_msg_with_channel(
+                self.policy.notice_type_id, title, content, self.policy.notice_users
+            )
+            logger.info(f"send notice success for policy {self.policy.id}: {send_result}")
         except Exception as e:
-            logger.error(f"send email failed for policy {self.policy.id}: {e}")
+            logger.error(f"send notice failed for policy {self.policy.id}: {e}")
             for res in result:
                 if res["status"] == "success":
                     res["status"] = "failed"
@@ -586,7 +555,7 @@ class LogPolicyScan:
                 if event.level == "info":
                     continue
 
-                notice_results = self.send_email(event)
+                notice_results = self.send_notice(event)
                 event.notice_result = notice_results
 
             # 批量更新通知结果
@@ -599,11 +568,6 @@ class LogPolicyScan:
     def run(self):
         """运行策略扫描"""
         try:
-            # 如果设置了组织范围但没有组织，不进行检测
-            if self.policy.organizations and not self.organization_map:
-                logger.warning(f"Policy {self.policy.id} has organizations config but no valid organizations found")
-                return
-
             events = []
 
             # 根据告警类型进行不同的检测
