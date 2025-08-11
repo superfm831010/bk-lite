@@ -43,7 +43,7 @@ class GetNatsData:
         client = self.namespace_map[self.namespace](server=server)
         return client
 
-    def get_data(self):
+    def get_data(self) -> dict:
         """
         获取NATS数据源数据
         :return: 数据内容
@@ -59,9 +59,9 @@ class GetNatsData:
                     raise RuntimeError(f"NamePaces({self.namespace}) Module not found func({self.path})!")
 
                 return_data = fun(**self.params)
-                result[namespace.id] = return_data
+                result[namespace.name] = return_data.get("data", [])
             except Exception as e:
-                result[namespace.name] = {}
+                result[namespace.name] = []
                 import traceback
                 logger.error(
                     "==获取NATS数据源数据失败==: namespace={} error={}".format(namespace.name, traceback.format_exc()))
