@@ -2,16 +2,16 @@
   "zh": [
     {
       "title": "模型体验",
-      "icon": "tiyanzhongtai",
+      "icon": "moxing5",
       "url": "/playground/home",
-      "name": "capabilities",
+      "name": "experience",
       "isNotMenuItem": false
     },
     {
       "title": "样本管理",
-      "icon": "guanli",
+      "icon": "yangbenkuguanli",
       "url": "/playground/manage",
-      "name": "categories",
+      "name": "example",
       "isNotMenuItem": false
     }
   ],
@@ -20,14 +20,14 @@
       "title": "Model Experience",
       "icon": "jiqiren2",
       "url": "/playground/home",
-      "name": "capabilities",
+      "name": "experience",
       "isNotMenuItem": false
     },
     {
       "title": "Sample Management",
       "icon": "jiqiren2",
       "url": "/playground/manage",
-      "name": "categories",
+      "name": "example",
       "isNotMenuItem": false
     }
   ]

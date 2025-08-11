@@ -7,7 +7,7 @@ from apps.cmdb.constants import ASSOCIATION_TYPE, OPERATOR_MODEL, PERMISSION_MOD
 from apps.cmdb.language.service import SettingLanguage
 from apps.cmdb.models import DELETE_INST, UPDATE_INST
 from apps.cmdb.services.model import ModelManage
-from apps.cmdb.utils.base import get_cmdb_rules
+from apps.cmdb.utils.base import get_cmdb_rules, get_default_group_id
 from apps.cmdb.utils.change_record import create_change_record
 from apps.cmdb.utils.permisssion_util import CmdbRulesFormatUtil
 from apps.core.decorators.api_permission import HasPermission
@@ -73,9 +73,15 @@ class ModelViewSet(viewsets.ViewSet):
     def list(self, request):
         current_team = request.COOKIES.get("current_team")
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
+        default_group = get_default_group_id()
+        if default_group:
+            # 补充上查询自己组织的模型
+            default_group.append(int(current_team))
+        else:
+            default_group = [int(current_team)]
         model_id_list, classification_id_list = CmdbRulesFormatUtil.get_rules_classification_id_list(rules)
         result = ModelManage.search_model(language=request.user.locale, classification_ids=classification_id_list,
-                                          model_list=model_id_list, group=int(current_team))
+                                          model_list=model_id_list, group_list=default_group)
         for model in result:
             model_id = model['model_id']
             cls_id = model['classification_id']

@@ -17,14 +17,15 @@ type LabelRender = SelectProps['labelRender'];
 const { RangePicker } = DatePicker;
 
 interface TimeSelectorProps {
-  showTime?: boolean; // RangePicker component property, whether to show hours, minutes, seconds
-  format?: string; // RangePicker component property, format
-  onlyRefresh?: boolean; // Only show refresh button
-  onlyTimeSelect?: boolean; // Only show time combination component
+  showTime?: boolean; //rangePicker组件属性，是否显示时分秒
+  format?: string; //rangePicker组件属性，格式化
+  onlyRefresh?: boolean; // 仅显示刷新按钮
+  onlyTimeSelect?: boolean; // 仅显示时间组合组件
   customFrequencyList?: ListItem[];
   customTimeRangeList?: ListItem[];
-  clearable?: boolean; // Whether the component value can be empty
-  defaultValue?: TimeSelectorDefaultValue; // Default value for time combination component
+  clearable?: boolean; // 组件的值是否能为空
+  className?: string; // 外层容器样式类名
+  defaultValue?: TimeSelectorDefaultValue; // defaultValue为时间组合组件的默认值
   onFrequenceChange?: (frequence: number) => void;
   onRefresh?: () => void;
   onChange?: (range: number[], originValue: number | null) => void;
@@ -37,9 +38,10 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
     onlyRefresh = false,
     onlyTimeSelect = false,
     clearable = false,
+    className,
     defaultValue = {
-      selectValue: 15, // When displaying select component, selectValue should be the corresponding value from customFrequencyList, selectValue is the value of select component.
-      rangePickerVaule: null, // If you want to display as rangePicker component, set selectValue to 0, rangePickerVaule is the value of rangePicker component.
+      selectValue: 15, // 显示select组件时，selectValue填customFrequencyList列表项中对应的value，selectValue为select组件的值。
+      rangePickerVaule: null, // 如果想显示为rangePicker组件，selectValue设置为0，rangePickerVaule为rangePicker组件的值。
     },
     customFrequencyList,
     customTimeRangeList,
@@ -62,9 +64,9 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
     [Dayjs, Dayjs] | null
   >(null);
 
-  // Methods that can be called through ref
+  // 可以通过ref调用组件的以下方法
   useImperativeHandle(ref, () => ({
-    // Get current value of the component
+    // 获取组件当前的值
     getValue: () =>
       selectValueRef.current
         ? getRecentTimeRange()
@@ -180,12 +182,12 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
   };
 
   return (
-    <div className={timeSelectorStyle.timeSelector}>
+    <div className={`${timeSelectorStyle.timeSelector} ${className || ''}`}>
       {!onlyRefresh && (
         <div className={timeSelectorStyle.customSlect} ref={selectRef}>
           <Select
             allowClear={clearable}
-            className={`w-[350px] ${timeSelectorStyle.frequence}`}
+            className={`w-[350px] ${timeSelectorStyle.frequence} ${className || ''}`}
             value={selectValue}
             options={customTimeRangeList || TIME_RANGE_LIST}
             open={dropdownOpen}
@@ -196,7 +198,7 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
             style={{
               zIndex: rangePickerOpen || selectValue == 0 ? 1 : -1,
             }}
-            className={`w-[350px] ${timeSelectorStyle.rangePicker}`}
+            className={`${timeSelectorStyle.rangePicker} ${className || ''}`}
             open={rangePickerOpen}
             showTime={showTime}
             format={format}

@@ -75,7 +75,7 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
           />
           <div className="w-3/4 pl-2">
             <Input.Search
-              placeholder={t('common.searchPlaceHolder')}
+              placeholder={t('common.search')}
               allowClear
               className="mb-4"
               onSearch={(value) => setSearch(value)}

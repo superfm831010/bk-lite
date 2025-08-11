@@ -5,7 +5,7 @@
 
 from django_filters import FilterSet, CharFilter
 
-from apps.operation_analysis.models import DataSourceAPIModel, Dashboard, Directory, Topology
+from apps.operation_analysis.models import DataSourceAPIModel, Dashboard, Directory, Topology, NameSpace
 
 
 class DataSourceAPIModelFilter(FilterSet):
@@ -37,4 +37,12 @@ class TopologyModelFilter(FilterSet):
 
     class Meta:
         model = Topology
+        fields = ["name"]
+
+
+class NameSpaceModelFilter(FilterSet):
+    name = CharFilter(field_name="name", lookup_expr="icontains", label="名称")
+
+    class Meta:
+        model = NameSpace
         fields = ["name"]

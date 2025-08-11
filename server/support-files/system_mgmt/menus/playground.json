@@ -33,7 +33,11 @@
             "View",
             "Add",
             "Edit",
-            "Delete"
+            "Delete",
+            "Capability View",
+            "Capability Add",
+            "Capability Edit",
+            "Capability Delete"
           ]
         }
       ]
@@ -48,7 +52,7 @@
     {
       "name": "normal",
       "role_name": "playground_normal",
-      "menus": ["experience-View", "example-View"]
+      "menus": ["experience-View", "example-View","example-Capability View"]
     }
   ]
 }

@@ -147,6 +147,8 @@ const StrategyOperation = () => {
     if (alert_type === 'aggregate') {
       setTerm(alert_condition.rule?.mode || '');
       setConditions(alert_condition.rule?.conditions || []);
+    } else {
+      setConditions([{ op: null, field: null, value: '', func: null }]);
     }
     form.setFieldsValue(detailData);
     setUnit(schedule?.type || '');

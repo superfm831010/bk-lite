@@ -462,6 +462,7 @@ const AnnotationPage = () => {
                       timeline={timeline}
                       showDimensionTable
                       showDimensionFilter
+                      showBrush
                       onXRangeChange={onXRangeChange}
                       onTimeLineChange={onTimeLineChange}
                       onAnnotationClick={onAnnotationClick}

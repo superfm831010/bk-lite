@@ -1,31 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import ReactEcharts from 'echarts-for-react';
 import { Spin } from 'antd';
 import { BaseWidgetProps } from '@/app/ops-analysis/types/dashBoard';
-import { useDashBoardApi } from '@/app/ops-analysis/api/dashBoard';
+import { useWidgetData } from '../hooks/useWidgetData';
 
-const OsPie: React.FC<BaseWidgetProps> = ({ globalTimeRange }) => {
-  const [chartData, setChartData] = useState<
-    Array<{ value: number; name: string }>
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const { getOsData } = useDashBoardApi();
+const OsPie: React.FC<BaseWidgetProps> = ({
+  config,
+  globalTimeRange,
+  refreshKey,
+}) => {
+  // 数据转换函数：将原始数据转换为饼图需要的格式
+  const transformData = (rawData: any) => {
+    if (rawData && rawData.data && Array.isArray(rawData.data)) {
+      return rawData.data;
+    }
+    return [];
+  };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response: any = await getOsData();
-        setChartData(response.data);
-      } catch (error) {
-        console.error('获取操作系统数据失败:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [globalTimeRange]);
+  const { data: chartData, loading } = useWidgetData({
+    config,
+    globalTimeRange,
+    refreshKey,
+    transformData,
+  });
 
   const option: any = {
     animation: true,
@@ -72,7 +69,10 @@ const OsPie: React.FC<BaseWidgetProps> = ({ globalTimeRange }) => {
           show: true,
           position: 'center',
           formatter: function () {
-            const total = chartData.reduce((sum, item) => sum + item.value, 0);
+            const total = (chartData || []).reduce(
+              (sum: number, item: any) => sum + item.value,
+              0
+            );
             return `{title|总数}\n{value|${total}}`;
           },
           rich: {
@@ -100,7 +100,7 @@ const OsPie: React.FC<BaseWidgetProps> = ({ globalTimeRange }) => {
           borderColor: '#fff',
           borderWidth: 2,
         },
-        data: chartData,
+        data: chartData || [],
       },
     ],
   };

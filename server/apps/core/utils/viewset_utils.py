@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from rest_framework import viewsets
 from rest_framework.response import Response
 
-from apps.core.utils.permission_utils import get_permission_rules
+from apps.core.utils.permission_utils import delete_instance_rules, get_permission_rules
 
 logger = logging.getLogger(__name__)
 
@@ -189,7 +189,8 @@ class AuthViewSet(MaintainerViewSet):
             if getattr(user, "is_superuser", False):
                 return super().update(request, *args, **kwargs)
             if "team" in data:
-                data.pop("team", None)
+                delete_team = [i for i in instance.team if i not in data["team"]]
+                self.delete_rules(instance.id, delete_team)
             current_team = int(request.COOKIES.get("current_team", None))
             if current_team not in instance.team:
                 return self.value_error(_("User does not have permission to update this instance"))
@@ -209,6 +210,17 @@ class AuthViewSet(MaintainerViewSet):
         except Exception as e:
             logger.error(f"Error in update method: {e}")
             raise
+
+    def delete_rules(self, instance_id, delete_team):
+        if not hasattr(self, "permission_key"):
+            return
+        if not delete_team:
+            return
+        app_name = self._get_app_name()
+        try:
+            delete_instance_rules(app_name, self.permission_key, instance_id, delete_team)
+        except Exception as e:
+            logger.error(e)
 
     def get_has_permission(self, user, instance, current_team, is_list=False, is_check=False):
         """获取规则实例ID"""

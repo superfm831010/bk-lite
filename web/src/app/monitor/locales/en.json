@@ -440,6 +440,8 @@
       "dataSourceDes": "Monitor the incoming data to ensure that the system accurately acquires the required data.",
       "dbName": "Database Name",
       "dbNameDes": "The specific name of the database required for access",
+      "dbType": "Database Type",
+      "dbTypeDes": "The database types required for collection",
       "collectorRefs": "Indicator configuration name",
       "collectorRefsDes": "Assign a clear name to the monitoring metric configuration",
       "connectionTime": "Maximum connection duration",
@@ -482,7 +484,10 @@
       "lang": "Base Language",
       "langDes": "The default underlying language setting of the system",
       "libraryPath": "Driver Library Directory",
-      "libraryPathDes": "The path where driver library files are stored"
+      "libraryPathDes": "The path where driver library files are stored",
+      "dbTimeout": "Waiting Time",
+      "dbTimeoutDes": "The maximum waiting time for database connection (in seconds)",
+      "dataTypeDes": "Define the format and rules for storing, processing, and transmitting data in a computer"
     }
   }
 }

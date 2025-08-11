@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { Button, Drawer } from 'antd';
+import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { Button, Drawer, Spin } from 'antd';
 import { useTopologyState } from './hooks/useTopologyState';
 import { useGraphOperations } from './hooks/useGraphOperations';
 import { useTextOperations } from './hooks/useTextOperations';
@@ -16,9 +16,12 @@ interface TopologyProps {
   selectedTopology?: DirItem | null;
 }
 
-const Topology: React.FC<TopologyProps> = ({ selectedTopology }) => {
+export interface TopologyRef {
+  hasUnsavedChanges: () => boolean;
+}
+
+const Topology = forwardRef<TopologyRef, TopologyProps>(({ selectedTopology }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [nodeEditFormInstance, setNodeEditFormInstance] = useState<any>(null);
 
   const state = useTopologyState();
 
@@ -27,9 +30,13 @@ const Topology: React.FC<TopologyProps> = ({ selectedTopology }) => {
     zoomOut,
     handleFit,
     handleDelete,
-    handleSave,
     addNode,
     handleNodeUpdate,
+    handleSaveTopology,
+    handleLoadTopology,
+    nodeEditFormInstance,
+    setNodeEditFormInstance,
+    loading,
   } = useGraphOperations(containerRef, state);
 
   const { handleAddText, finishTextEdit, cancelTextEdit } = useTextOperations(
@@ -40,6 +47,27 @@ const Topology: React.FC<TopologyProps> = ({ selectedTopology }) => {
   const { handleEdgeConfigConfirm, closeEdgeConfig, handleMenuClick } =
     useContextMenuAndModal(containerRef, state);
 
+  // 创建保存函数的包装器
+  const handleSave = () => {
+    handleSaveTopology(selectedTopology);
+  };
+
+  // 是否处于编辑模式
+  const hasUnsavedChanges = () => {
+    return state.isEditMode;
+  };
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    hasUnsavedChanges,
+  }));
+
+  useEffect(() => {
+    if (selectedTopology?.data_id && state.graphInstance) {
+      handleLoadTopology(selectedTopology.data_id);
+    }
+  }, [selectedTopology?.data_id, state.graphInstance]);
+
   const handleSelectMode = () => {
     state.setIsSelectMode(!state.isSelectMode);
     if (state.graphInstance) {
@@ -48,7 +76,7 @@ const Topology: React.FC<TopologyProps> = ({ selectedTopology }) => {
   };
 
   return (
-    <div className="flex-1 p-4 pb-0 overflow-auto flex flex-col">
+    <div className="flex-1 p-4 pb-0 overflow-auto flex flex-col bg-[var(--color-bg-1)]">
       {/* 工具栏 */}
       <TopologyToolbar
         selectedTopology={selectedTopology}
@@ -75,8 +103,12 @@ const Topology: React.FC<TopologyProps> = ({ selectedTopology }) => {
 
         {/* 画布容器 */}
         <div className="flex-1 bg-[var(--color-bg-1)] relative">
+          {loading && (
+            <div className="h-full flex items-center justify-center">
+              <Spin size="large" />
+            </div>
+          )}
           <div ref={containerRef} className="absolute inset-0" tabIndex={-1} />
-
           {/* 文本编辑输入框 */}
           <TextEditInput
             isEditingText={state.isEditingText}
@@ -143,6 +175,8 @@ const Topology: React.FC<TopologyProps> = ({ selectedTopology }) => {
       </Drawer>
     </div>
   );
-};
+});
+
+Topology.displayName = 'Topology';
 
 export default Topology;

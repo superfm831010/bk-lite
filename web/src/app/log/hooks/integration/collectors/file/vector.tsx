@@ -26,10 +26,19 @@ export const useVectorConfig = () => {
         auto: {
           formItems: commonFormItems.getCommonFormItems(),
           initTableItems: {},
-          defaultForm: {},
+          defaultForm: {
+            multiline: {
+              enabled: true,
+              mode: 'continue_through',
+              start_pattern: '^(ERROR|WARN|INFO|DEBUG|TRACE|FATAL)\\s\\[',
+              timeout_ms: 3000,
+              condition_pattern: '^(\\s+|Traceback|File\\s+)',
+            },
+          },
           columns: [],
           getParams: (row: IntegrationLogInstance, config: TableDataItem) => {
             const dataSource = cloneDeep(config.dataSource || []);
+            delete row.multiline.enabled;
             return {
               collector: pluginConfig.collector,
               collect_type: pluginConfig.collect_type,
@@ -46,15 +55,20 @@ export const useVectorConfig = () => {
         edit: {
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
-            const path =
+            const sources =
               formData?.child?.content?.sources?.[
                 pluginConfig.collect_type + '_' + formData.rowId
-              ]?.include?.[0] || null;
+              ];
+            const path = sources?.include?.[0] || null;
             return {
               file_path: path,
+              multiline: Object.assign(sources?.multiline || {}, {
+                enabled: !!sources?.multiline?.mode,
+              }),
             };
           },
           getParams: (formData: TableDataItem, configForm: TableDataItem) => {
+            delete formData.multiline.enabled;
             return {
               child: {
                 id: configForm.child.id,

@@ -22,10 +22,11 @@ const TopMenu = () => {
   const { menus: menuItems } = usePermissions();
   const pathname = usePathname();
   const {
-    modelExpList,
+    renderMenuByName,
     loading: modelExpLoading,
     error: modelExpError,
-    reload } = useModelExperience(pathname?.startsWith('/playground'));
+    reload,
+    isDataReady } = useModelExperience(pathname?.startsWith('/playground'));
   const { clientData, loading } = useClientData();
   const { userId } = useUserInfoContext();
   const [tourOpen, setTourOpen] = useState(false);
@@ -141,7 +142,7 @@ const TopMenu = () => {
         <div>
           <h3 className='text-sm font-bold mb-2'>异常检测</h3>
           <div className='flex flex-wrap justify-between ml-2'>
-            {modelExpList?.map((child: any) => {
+            {isDataReady && renderMenuByName('异常检测')?.map((child: any) => {
               return (
                 <div key={`child_${child?.id}`} className='mr-2 mb-4 w-[150px]'>
                   <Link href={child.url} prefetch={false}>
@@ -163,7 +164,7 @@ const TopMenu = () => {
         <div>{renderMenu()}</div>
       </div>
     );
-  }, [modelExpList, modelExpLoading, modelExpError, reload]);
+  }, [modelExpLoading, modelExpError, isDataReady, renderMenuByName, reload]);
 
   const renderContent = loading ? (
     <div className="flex justify-center items-center h-32">
@@ -223,7 +224,7 @@ const TopMenu = () => {
             .map((item: MenuItem) => {
               const isActive = item.url === '/' ? pathname === '/' : pathname?.startsWith(item.url);
 
-              if (isOtherMode && item.name === 'capabilities') {
+              if (isOtherMode && item.name === 'experience') {
 
                 return (
                   <Popover

@@ -9,27 +9,33 @@ import {
   Button,
   Tree,
   Spin,
+  Dropdown,
+  Menu,
+  Modal,
   message,
   Popconfirm,
   Switch,
 } from 'antd';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import PermissionWrapper from '@/components/permission';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, MoreOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from "@/hooks/useLocalizedTime";
 import { useEffect, useState, useRef, useMemo } from 'react';
 import usePlayroundApi from '@/app/playground/api';
 import CategoryManageModal from './categoryManageModal';
 import SampleManageModal from './sampleManageModal';
-import { ModalRef, TableData } from '@/app/playground/types';
+import { ModalRef, Pagination, TableData } from '@/app/playground/types';
 const { Search } = Input;
+const { confirm } = Modal;
 
 const PlaygroundManage = () => {
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
   const {
-    getServingsList,
+    getCategoryList,
+    getCapabilityList,
+    deleteCapability,
     getAllSampleFileList,
     updateSampleFile,
     deleteSampleFile
@@ -39,9 +45,13 @@ const PlaygroundManage = () => {
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [treeLoading, setTreeLoading] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
-  // const [searchValue, setSearchValue] = useState<string>('');
-  const [selectServing, setSelectServing] = useState<number[]>([]);
+  const [selectCapability, setSelectCapability] = useState<number[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({
+    current: 1,
+    total: 0,
+    pageSize: 20
+  })
   const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
   const columns: ColumnItem[] = [
     {
@@ -53,6 +63,7 @@ const PlaygroundManage = () => {
       title: t(`manage.createAt`),
       dataIndex: 'created_at',
       key: 'created_at',
+      width: 180,
       render: (_, record) => {
         return (<p>{convertToLocalizedTime(record.created_at, 'YYYY-MM-DD HH:mm:ss')}</p>)
       }
@@ -61,6 +72,7 @@ const PlaygroundManage = () => {
       title: t(`manage.createdBy`),
       dataIndex: 'created_by',
       key: 'created_by',
+      width: 150,
       render: (_, { created_by }) => {
         return created_by ? (
           <div className="flex h-full items-center" title={created_by}>
@@ -86,6 +98,7 @@ const PlaygroundManage = () => {
       title: t(`manage.sampleStatus`),
       dataIndex: 'status',
       key: 'status',
+      width: 150,
       render: (_, record) => {
         return <PermissionWrapper requiredPermissions={['Edit']}>
           <Switch checked={record.is_active} onChange={(value: boolean) => handleSampleActiveChange(record?.id, value)} />
@@ -96,6 +109,7 @@ const PlaygroundManage = () => {
       title: t(`common.action`),
       dataIndex: 'action',
       key: 'action',
+      width: 100,
       render: (_, record) => {
         return (
           <>
@@ -117,57 +131,68 @@ const PlaygroundManage = () => {
     }
   ];
 
+  const CapabilityMenuItems = [
+    {
+      key: 'update',
+      label: <PermissionWrapper requiredPermissions={['Capability Edit']}>{t(`common.update`)}</PermissionWrapper>
+    },
+    {
+      key: 'delete',
+      label: <PermissionWrapper requiredPermissions={['Capability Delete']}>{t(`common.delete`)}</PermissionWrapper>,
+    }
+  ];
+
   const pageData = useMemo(() => {
-    return tableData.filter((item: any) => {
-      const [serving_id] = selectServing
-      return item.serving?.toString() === serving_id;
-    })
-  }, [tableData, selectServing]);
+    const items = tableData.filter((item: any) => {
+      const [capability] = selectCapability
+      return item?.capability === capability;
+    });
+
+    setPagination((prev) => ({ ...prev, total: items.length }));
+    return items.slice((pagination.current - 1) * pagination.pageSize, pagination.pageSize);;
+
+  }, [tableData, selectCapability, pagination.current, pagination.pageSize]);
 
   useEffect(() => {
     getAllTreeData();
-    setTableLoading(true);
     getAllSampleFile();
-    setTableLoading(false);
   }, []);
 
-  const renderNode = (servingsList: any[]) => {
-    const filterData = servingsList.filter(item => item.status === 'active');
-    const treeData = filterData.map((item: any) => {
-      const node: any = {
-        key: `${item.id}`,
-        name: item?.name,
-        title: renderTitle(item?.name),
-      };
-      return node;
+  const renderCapabilityNode = (categoryID: number, capabilityData: any[]) => {
+    const filterData = capabilityData.filter(item => {
+      const { id } = item.category;
+      return categoryID === id;
     });
-
-    return treeData;
+    return filterData.map((item: any) => ({
+      key: item?.id,
+      title: renderCapabilityTitle(item),
+      ...item
+    }));
   };
 
-  const renderTitle = (title: string) => {
-    return (<div className='w-full flex justify-between'>
-      <span className='truncate'>{title}</span>
-    </div>)
-  }
+  const findIDByName = (name: string, categoryList: any[]) => {
+    const item = categoryList.find((item: any) => item.name === name);
+    return item?.id;
+  };
 
   const getAllTreeData = async () => {
     setTreeLoading(true);
     try {
-      const data = await getServingsList();
+      const capabilityData = await getCapabilityList();
+      const categoryData = await getCategoryList();
       const nodes = [
         {
           key: 'model_experience',
           name: 'model_experience',
           selectable: false,
-          title: renderTitle('模型体验'),
+          title: t(`manage.modelExperience`),
           children: [
             {
               key: 'anomaly_detection',
               name: 'anomaly_detection',
-              title: renderTitle('异常检测'),
               selectable: false,
-              children: renderNode(data)
+              title: renderTitle({ name: t(`manage.anomalyDetection`), categoryID: findIDByName('异常检测', categoryData) }),
+              children: renderCapabilityNode(findIDByName('异常检测', categoryData), capabilityData)
             }
           ]
         },
@@ -175,7 +200,7 @@ const PlaygroundManage = () => {
           key: 'agent_experience',
           name: 'agent_experience',
           selectable: false,
-          title: renderTitle('智能体体验')
+          title: t(`manage.intelligentExperience`)
         }
       ];
       setFilteredTreeData(nodes);
@@ -186,29 +211,119 @@ const PlaygroundManage = () => {
     }
   };
 
-  const getAllSampleFile = async () => {
+  const getAllSampleFile = async (name = '') => {
     setTableLoading(true);
     try {
-      const data = await getAllSampleFileList();
-      const items = data?.map((item: any) => ({
+      const { items } = await getAllSampleFileList({ name, page: pagination.current, page_size: pagination.pageSize });
+      const data = items?.map((item: any) => ({
         id: item?.id,
         name: item?.name,
         created_at: item?.created_at,
         created_by: item?.created_by,
         is_active: item?.is_active,
-        serving: item?.serving
+        capability: item?.capability
       }));
-      setTableData(items)
+      setTableData(data);
+      
     } catch (e) {
       console.log(e);
-      message.error('获取样本文件错误');
+      message.error(t(`manage.getSampleFileError`));
     } finally {
       setTableLoading(false);
     }
   };
 
+  const renderCapabilityTitle = (data: any) => {
+    return (
+      <div className='w-full flex justify-between'>
+        <span className='truncate'>{data?.name || '--'}</span>
+        <span>
+          <Dropdown
+            overlay={
+              <Menu
+                onClick={(e) => e.domEvent.preventDefault()}
+
+              >
+                {CapabilityMenuItems?.map((item: any) => (
+                  <Menu.Item
+                    key={item.key}
+                    className='!p-0'
+                    onClick={() => {
+                      if (item.key !== 'delete') {
+                        openCategoryModal({ type: `${item.key}Capability`, title: `${item.key}Capability`, form: data })
+                      } else {
+                        handleDelCapability(data?.id)
+                      }
+                    }}
+                  >
+                    <PermissionWrapper requiredPermissions={['Capability Edit']} className='!block'>
+                      <Button type='text' className='w-full'>{t(`common.${item.key}`)}</Button>
+                    </PermissionWrapper>
+                  </Menu.Item>
+                ))}
+              </Menu>
+            }
+            trigger={['click']}
+          >
+            <MoreOutlined
+              className="cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            />
+          </Dropdown>
+        </span>
+      </div>
+    );
+  };
+
+  const renderTitle = (data: any) => {
+    return (
+      <div className='w-full flex justify-between'>
+        <span className='truncate'>{data?.name || '--'}</span>
+        <span>
+          <Dropdown
+            overlay={
+              <Menu
+                onClick={(e) => e.domEvent.preventDefault()}
+              >
+                <Menu.Item
+                  className='!p-0'
+                  onClick={() => {
+                    openCategoryModal({ type: `addCapability`, title: `addCapability`, form: { categoryID: data?.categoryID } })
+                  }}>
+                  <PermissionWrapper requiredPermissions={['Capability Add']} className='!block'>
+                    <Button type='text' className='w-full'>{t(`common.add`)}</Button>
+                  </PermissionWrapper>
+                </Menu.Item>
+              </Menu>
+            }
+            trigger={['click']}
+          >
+            <MoreOutlined
+              className="cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            />
+          </Dropdown>
+        </span>
+      </div>
+    )
+  };
+
   const renderTreeNode = () => {
     return filteredTreeData
+  };
+
+  const openCategoryModal = (data: {
+    type: string;
+    title: string;
+    form: any
+  }) => {
+    categoryModalRef.current?.showModal(data)
   };
 
   const openSampleModal = (data: {
@@ -217,10 +332,10 @@ const PlaygroundManage = () => {
     form: any
   }) => {
     sampleModalRef.current?.showModal(data);
-  }
+  };
 
-  const onSelect = (keys: any) => {
-    setSelectServing(keys);
+  const onSelect = (keys: any[]) => {
+    if (keys.length) setSelectCapability(keys);
   };
 
   const handleSampleActiveChange = async (id: number, checked: boolean) => {
@@ -238,6 +353,10 @@ const PlaygroundManage = () => {
     }
   };
 
+  const handleChange = (value: any) => {
+    setPagination(value);
+  };
+
   const topSection = (
     <TopSection title={t(`manage.manageTitle`)} content={t(`manage.description`)} />
   );
@@ -246,7 +365,6 @@ const PlaygroundManage = () => {
     <div className={`w-full h-full flex flex-col`}>
       <Spin spinning={treeLoading}>
         <div className='min-h-[370px] overflow-auto'>
-
           <Tree
             className="w-full flex-1"
             showLine
@@ -254,7 +372,7 @@ const PlaygroundManage = () => {
             expandAction={false}
             defaultExpandAll
             autoExpandParent
-            selectedKeys={selectServing}
+            selectedKeys={selectCapability}
             treeData={renderTreeNode()}
             onSelect={onSelect}
           />
@@ -264,7 +382,26 @@ const PlaygroundManage = () => {
   );
 
   const onSearch = (search: string) => {
-    console.log(search);
+    getAllSampleFile(search);
+  };
+
+  const handleDelCapability = async (id: number) => {
+    confirm({
+      title: t(`manage.delCategory`),
+      okText: t(`common.confirm`),
+      cancelText: t(`common.cancel`),
+      onOk: async () => {
+        setConfirmLoading(true);
+        try {
+          await deleteCapability(id);
+          message.success(t(`common.delSuccess`));
+        } catch (e) {
+          console.log(e);
+        } finally {
+          getAllTreeData();
+        }
+      }
+    });
   };
 
   const handleDelSampleFile = async (id: number) => {
@@ -287,19 +424,21 @@ const PlaygroundManage = () => {
         <PermissionWrapper requiredPermissions={['Add']}>
           <Button
             type='primary'
+            disabled={selectCapability.length === 0}
             icon={<PlusOutlined />}
-            disabled={!selectServing.length}
-            onClick={() => openSampleModal({ type: 'add', title: 'add', form: { serving_id: selectServing } })}>
+            onClick={() => openSampleModal({ type: 'add', title: 'add', form: { capability: selectCapability } })}>
             {t(`common.add`)}
           </Button>
         </PermissionWrapper>
-
       </div>
       <CustomTable
         rowKey='id'
+        scroll={{ y: 'calc(100vh - 420px)' }}
         columns={columns}
         loading={tableLoading}
         dataSource={pageData}
+        pagination={pagination}
+        onChange={handleChange}
       />
     </>
   );

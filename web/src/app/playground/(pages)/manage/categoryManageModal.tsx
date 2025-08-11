@@ -5,7 +5,6 @@ import { forwardRef, useImperativeHandle, useState, useRef, useCallback, useEffe
 import { Button, Form, FormInstance, Input, message, Switch, Select } from 'antd';
 import { ModalRef } from "@/app/playground/types";
 import { Option } from "@/types";
-// import { CONTENT_MAP } from "@/app/playground/constants";
 const { TextArea } = Input;
 
 interface ModalProps {
@@ -34,11 +33,10 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
   const [selectLoading, setSelectLoading] = useState<boolean>(false);
   const [confirm, setConfirm] = useState<boolean>(false);
   const [servingsOptions, setServingsOptions] = useState<Option[]>([]);
+  const [servingConfig, setServingConfig] = useState<any>(null);
   const [title, setTitle] = useState<string>('addCategory');
   const [type, setType] = useState<string>('');
   const [formData, setFormData] = useState<ModalProps | null>(null);
-  const [servingConfig, setServingConfig] = useState<any>(null);
-  // const CategoryType = ['addCategory', 'updateCategory'];
   const CapabilityType = ['addCapability', 'updateCapability'];
 
   useImperativeHandle(ref, () => ({
@@ -103,7 +101,7 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
       }
     } catch (e) {
       console.log(e);
-      message.error('获取模型失败');
+      message.error(t(`manage.modelInferFailed`));
     } finally {
       setSelectLoading(false);
       
@@ -113,7 +111,7 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
   const handleSubmit = async () => {
     setConfirm(true);
     try {
-      if (!formData?.categoryID && type === 'addCapability') return message.error('参数错误');
+      if (!formData?.categoryID && type === 'addCapability') return message.error(t(`manage.missID`));
       const data = await formRef.current?.validateFields();
       const params = {
         ...data,
