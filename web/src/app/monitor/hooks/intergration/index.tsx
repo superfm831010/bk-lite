@@ -49,6 +49,10 @@ import { useDockerContainerConfig } from './objects/containerManagement/dockerCo
 import { useDmConfig } from './objects/database/dm';
 import { useDb2Config } from './objects/database/db2';
 import { useGreenPlumConfig } from './objects/database/greenPlum';
+import { useOpenGaussConfig } from './objects/database/openGauss';
+import { useGBase8aConfig } from './objects/database/gBase8a';
+import { useVastBaseConfig } from './objects/database/vastBase';
+import { useKingBaseConfig } from './objects/database/kingBase';
 
 export const useMonitorConfig = () => {
   const hardwareConfig = useHardwareConfig();
@@ -100,6 +104,10 @@ export const useMonitorConfig = () => {
   const dmConfig = useDmConfig();
   const db2Config = useDb2Config();
   const greenPlumConfig = useGreenPlumConfig();
+  const openGaussConfig = useOpenGaussConfig();
+  const gBase8aConfig = useGBase8aConfig();
+  const vastBaseConfig = useVastBaseConfig();
+  const kingBaseConfig = useKingBaseConfig();
 
   const config: any = useMemo(
     () => ({
@@ -152,6 +160,10 @@ export const useMonitorConfig = () => {
       DM: dmConfig,
       DB2: db2Config,
       GreenPlum: greenPlumConfig,
+      OpenGauss: openGaussConfig,
+      GBase8a: gBase8aConfig,
+      VastBase: vastBaseConfig,
+      KingBase: kingBaseConfig,
     }),
     []
   );
