@@ -38,15 +38,17 @@ const useMlopsManageApi = () => {
 
   // 查询指定数据集下的样本列表
   const getAnomalyTrainData = async ({
+    name = '',
     dataset,
     page = 1,
     page_size = -1
   }: {
+    name?: string;
     dataset?: string | number;
     page?: number;
     page_size?: number;
   }) => {
-    return await get(`/mlops/anomaly_detection_train_data/?dataset=${dataset}&page=${page}&page_size=${page_size}`);
+    return await get(`/mlops/anomaly_detection_train_data/?dataset=${dataset}&name=${name}&page=${page}&page_size=${page_size}`);
   };
 
   // 获取指定异常检测样本的详情
