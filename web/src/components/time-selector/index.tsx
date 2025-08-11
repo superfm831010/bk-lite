@@ -17,14 +17,14 @@ type LabelRender = SelectProps['labelRender'];
 const { RangePicker } = DatePicker;
 
 interface TimeSelectorProps {
-  showTime?: boolean; //rangePicker组件属性，是否显示时分秒
-  format?: string; //rangePicker组件属性，格式化
-  onlyRefresh?: boolean; // 仅显示刷新按钮
-  onlyTimeSelect?: boolean; // 仅显示时间组合组件
+  showTime?: boolean; // RangePicker component property, whether to show hours, minutes, seconds
+  format?: string; // RangePicker component property, format
+  onlyRefresh?: boolean; // Only show refresh button
+  onlyTimeSelect?: boolean; // Only show time combination component
   customFrequencyList?: ListItem[];
   customTimeRangeList?: ListItem[];
-  clearable?: boolean; // 组件的值是否能为空
-  defaultValue?: TimeSelectorDefaultValue; // defaultValue为时间组合组件的默认值
+  clearable?: boolean; // Whether the component value can be empty
+  defaultValue?: TimeSelectorDefaultValue; // Default value for time combination component
   onFrequenceChange?: (frequence: number) => void;
   onRefresh?: () => void;
   onChange?: (range: number[], originValue: number | null) => void;
@@ -38,8 +38,8 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
     onlyTimeSelect = false,
     clearable = false,
     defaultValue = {
-      selectValue: 15, // 显示select组件时，selectValue填customFrequencyList列表项中对应的value，selectValue为select组件的值。
-      rangePickerVaule: null, // 如果想显示为rangePicker组件，selectValue设置为0，rangePickerVaule为rangePicker组件的值。
+      selectValue: 15, // When displaying select component, selectValue should be the corresponding value from customFrequencyList, selectValue is the value of select component.
+      rangePickerVaule: null, // If you want to display as rangePicker component, set selectValue to 0, rangePickerVaule is the value of rangePicker component.
     },
     customFrequencyList,
     customTimeRangeList,
@@ -62,9 +62,9 @@ const TimeSelector = forwardRef((props: TimeSelectorProps, ref) => {
     [Dayjs, Dayjs] | null
   >(null);
 
-  // 可以通过ref调用组件的以下方法
+  // Methods that can be called through ref
   useImperativeHandle(ref, () => ({
-    // 获取组件当前的值
+    // Get current value of the component
     getValue: () =>
       selectValueRef.current
         ? getRecentTimeRange()

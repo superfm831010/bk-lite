@@ -15,6 +15,12 @@ interface SigninClientProps {
   signinErrors: Record<string | "default", string>;
 }
 
+interface WeChatSettings {
+  available: boolean;
+  message: string;
+  redirectUri?: string;
+}
+
 type AuthStep = 'login' | 'reset-password' | 'otp-verification';
 
 interface LoginResponse {
@@ -26,13 +32,6 @@ interface LoginResponse {
   id?: string;
   locale?: string;
   redirect_url?: string;
-}
-
-interface WeChatSettings {
-  enabled: boolean;
-  app_id?: string;
-  app_secret?: string;
-  redirect_uri?: string;
 }
 
 export default function SigninClient({ searchParams: { callbackUrl, error }, signinErrors }: SigninClientProps) {
@@ -47,17 +46,40 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
   const [authStep, setAuthStep] = useState<AuthStep>('login');
   const [loginData, setLoginData] = useState<LoginResponse>({});
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
-  const [wechatSettings, setWechatSettings] = useState<WeChatSettings | null>(null);
-  const [loadingWechatSettings, setLoadingWechatSettings] = useState(true);
+  const [wechatAvailable, setWechatAvailable] = useState<boolean | null>(null);
+  const [wechatCheckLoading, setWechatCheckLoading] = useState(false);
 
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     setIsWechatBrowser(userAgent.includes('micromessenger') || userAgent.includes('wechat'));
     
-    // Fetch WeChat settings and domain list
-    fetchWechatSettings();
     fetchDomainList();
+    checkWechatAvailability();
   }, []);
+
+  const checkWechatAvailability = async () => {
+    try {
+      setWechatCheckLoading(true);
+      const response = await fetch('/api/auth/wechat/config', {
+        method: "GET",
+        headers: { 
+          "Content-Type": "application/json" 
+        },
+      });
+      
+      const data: WeChatSettings = await response.json();
+      setWechatAvailable(data.available);
+      
+      if (!data.available) {
+        console.log("WeChat login not available:", data.message);
+      }
+    } catch (error) {
+      console.error("Failed to check WeChat availability:", error);
+      setWechatAvailable(false);
+    } finally {
+      setWechatCheckLoading(false);
+    }
+  };
 
   const fetchDomainList = async () => {
     try {
@@ -73,7 +95,6 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
       
       if (response.ok && responseData.result && Array.isArray(responseData.data)) {
         setDomainList(responseData.data);
-        // Set default domain if available
         if (responseData.data.length > 0) {
           setDomain(responseData.data[0]);
         }
@@ -86,34 +107,6 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
       setDomainList([]);
     } finally {
       setLoadingDomains(false);
-    }
-  };
-
-  const fetchWechatSettings = async () => {
-    try {
-      setLoadingWechatSettings(true);
-      const response = await fetch('/api/proxy/core/api/get_wechat_settings/', {
-        method: "GET",
-        headers: { 
-          "Content-Type": "application/json" 
-        },
-      });
-      
-      const responseData = await response.json();
-      
-      if (response.ok && responseData.result) {
-        setWechatSettings({
-          enabled: true,
-          ...responseData.data
-        });
-      } else {
-        setWechatSettings({ enabled: false });
-      }
-    } catch (error) {
-      console.error("Failed to fetch WeChat settings:", error);
-      setWechatSettings({ enabled: false });
-    } finally {
-      setLoadingWechatSettings(false);
     }
   };
 
@@ -174,7 +167,6 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
         return;
       }
       
-      // Complete authentication first, then handle redirect_url
       await completeAuthentication(userData);
       
     } catch (error) {
@@ -278,12 +270,16 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
 
   const handleWechatSignIn = async () => {
     console.log("Starting WeChat login process...");
-    console.log("Callback URL:", callbackUrl || "/");
+    setIsLoading(true);
     
-    signIn("wechat", { 
-      callbackUrl: callbackUrl || "/",
-      redirect: true
-    });
+    try {
+      const wechatLoginUrl = `/api/auth/wechat/start?callbackUrl=${encodeURIComponent(callbackUrl || "/")}`;
+      window.location.href = wechatLoginUrl;
+    } catch (error) {
+      console.error("Error initiating WeChat login:", error);
+      setFormError("Failed to initiate WeChat login");
+      setIsLoading(false);
+    }
   };
 
   const renderLoginForm = () => (
@@ -329,7 +325,6 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
             )
           }
         />
-        {/* Error state indicator */}
         {!loadingDomains && domainList.length === 0 && (
           <p className="text-sm text-amber-600 flex items-center mt-1">
             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -404,7 +399,7 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
   );
 
   const renderWechatLoginSection = () => {
-    if (loadingWechatSettings) {
+    if (wechatCheckLoading) {
       return (
         <div className="mt-6">
           <div className="relative">
@@ -412,18 +407,14 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+              <span className="px-2 bg-gray-50 text-gray-500">Checking WeChat login...</span>
             </div>
-          </div>
-          
-          <div className="mt-6">
-            <div className="w-full h-12 bg-gray-200 rounded-lg animate-pulse"></div>
           </div>
         </div>
       );
     }
 
-    if (!wechatSettings?.enabled) {
+    if (wechatAvailable === false) {
       return null;
     }
 
@@ -441,9 +432,22 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
         <div className="mt-6">
           <button
             onClick={handleWechatSignIn}
-            className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            disabled={isLoading}
+            className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign in with WeChat
+            {isLoading ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Starting WeChat Login...
+              </span>
+            ) : (
+              <span className="flex items-center">
+                Sign in with WeChat
+              </span>
+            )}
           </button>
         </div>
         
