@@ -2,12 +2,8 @@ from apps.rpc.base import RpcClient
 
 
 class Monitor(object):
-    def __init__(self, *args, **kwargs):
-        params = {}
-        server = kwargs.get("server", None)
-        if server:
-            params["server"] = server
-        self.client = RpcClient(**params)
+    def __init__(self):
+        self.client = RpcClient()
 
     def get_module_data(self, **kwargs):
         """

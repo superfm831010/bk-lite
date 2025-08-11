@@ -26,13 +26,15 @@ const useMlopsTaskApi = () => {
 
   // 获取异常检测训练任务列表
   const getAnomalyTaskList = async ({
+    name = '',
     page = 1,
     page_size = -1
   }: {
+    name?: string,
     page?: number,
     page_size?: number
   }) => {
-    return await get(`/mlops/anomaly_detection_train_jobs/?page=${page}&page_size=${page_size}`);
+    return await get(`/mlops/anomaly_detection_train_jobs/?name=${name}&page=${page}&page_size=${page_size}`);
   };
 
   // 查询指定的异常检测任务
