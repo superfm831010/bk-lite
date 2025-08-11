@@ -1,12 +1,725 @@
 {
   "plugin": "VastBase-Exporter",
-  "plugin_desc": "VastBase-Exporter is used to collect and export metrics from VastBase databases, including connection counts, query performance, cache usage, and error rates, to help monitor the health and performance of VastBase instances.",
+  "plugin_desc": "The VastBaseG100-Exporter collects VastBase G100 database performance metrics including system resources, connection statistics, and query performance.",
   "name": "VastBase",
   "icon": "vastbase",
   "type": "Database",
-  "description": "",
-  "default_metric": "any({instance_type='vastbase'}) by (instance_id)",
-  "instance_id_keys": ["instance_id"],
-  "supplementary_indicators": [],
-  "metrics": []
+  "metrics": [
+    {
+      "metric_group": "Base",
+      "name": "up",
+      "query": "up_gauge{__$labels__,instance_type=\"vastbase\"}",
+      "display_name": "Plugin running status",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Enum",
+      "unit": "[{\"id\":1,\"name\":\"Normal\",\"color\":\"#52c41a\"},{\"id\":0,\"name\":\"Abnormal\",\"color\":\"#ff4d4f\"}]",
+      "dimensions": [],
+      "description": "Indicates whether the Vastbase G100 exporter is operating normally. A value of 1 means the exporter is running and able to collect metrics, while 0 indicates it is down or unable to function, serving as a fundamental health check for the monitoring plugin."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_database_used_disk_bytes",
+      "query": "vastbaseG100_exporter_database_used_disk_bytes_gauge{__$labels__}/1024/1024",
+      "display_name": "Disk space used by the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the total number of bytes of disk space occupied by the Vastbase G100 database, including all data files, system catalogs, transaction logs, and temporary files. It reflects the actual storage consumption of the database and helps monitor disk usage growth trends."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_slow_query",
+      "query": "vastbaseG100_exporter_slow_query_gauge{__$labels__}",
+      "display_name": "Number of slow queries",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Counts the number of queries in the Vastbase G100 database that exceed the predefined slow query threshold (e.g., execution time longer than a specified duration). It helps identify inefficient queries that may affect database performance and require optimization."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_wait_count",
+      "query": "vastbaseG100_exporter_wait_count_gauge{__$labels__}",
+      "display_name": "Number of waits",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Records the total number of waits that occur in the Vastbase G100 database, including waits for locks, I/O operations, or resource contention. This metric reflects the frequency of performance bottlenecks caused by waiting events, providing insights into system concurrency issues."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_memory_info",
+      "query": "vastbaseG100_exporter_memory_info_gauge{__$labels__}/1024/1024",
+      "display_name": "Memory usage",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "memorytype", "description": "Memory type"}
+      ],
+      "description": "Provides detailed information about the memory usage of the Vastbase G100 database system, including total memory allocated, memory used by different components (such as buffers, processes, and shared memory), and free memory. It helps assess the overall memory consumption and allocation efficiency."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_buffers_clean",
+      "query": "vastbaseG100_exporter_buffers_clean_gauge{__$labels__}",
+      "display_name": "Number of buffers written by background writer",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Indicates the number of data buffers that have been cleaned and written to disk by the background writer process in Vastbase G100. The background writer proactively flushes dirty buffers to disk to maintain buffer pool efficiency, and this metric reflects the activity of this process."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_buffers_checkpoint",
+      "query": "vastbaseG100_exporter_buffers_checkpoint_gauge{__$labels__}",
+      "display_name": "Number of buffers written during checkpoint",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Represents the number of data buffers written to disk during checkpoint operations in Vastbase G100. Checkpoints ensure data consistency by flushing modified buffers to disk, and this metric reflects the volume of data persisted during each checkpoint."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_buffers_backend",
+      "query": "vastbaseG100_exporter_buffers_backend_gauge{__$labels__}",
+      "display_name": "Number of buffers written directly by backend",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Counts the number of data buffers directly written to disk by backend processes (e.g., query execution processes) in Vastbase G100, bypassing the background writer. This typically occurs when a backend needs to free up buffers immediately, reflecting direct I/O activity from user queries."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_checkpoint_write_percent",
+      "query": "vastbaseG100_exporter_checkpoint_write_percent_gauge{__$labels__}",
+      "display_name": "Write rate during checkpoint",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [],
+      "description": "Measures the percentage of total buffer writes that occur during checkpoint operations in Vastbase G100, relative to all buffer writes (including those from background writers and backends). It indicates the proportion of I/O load attributed to checkpoints."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_buffers_hit_percent",
+      "query": "vastbaseG100_exporter_buffers_hit_percent_gauge{__$labels__}",
+      "display_name": "Cache hit rate",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the percentage of data requests that are satisfied by the buffer cache in Vastbase G100, without needing to read from disk. A higher percentage indicates efficient buffer usage, reducing disk I/O and improving performance."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_xact_trans_percent",
+      "query": "vastbaseG100_exporter_xact_trans_percent_gauge{__$labels__}",
+      "display_name": "Transaction commit rate",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Refers to the percentage of transactions that are successfully committed in Vastbase G100, calculated as (number of committed transactions / total transactions) × 100%. It reflects the stability of transaction execution and the reliability of business operations."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_xact_commit",
+      "query": "vastbaseG100_exporter_xact_commit_gauge{__$labels__}",
+      "display_name": "Number of committed transactions",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Counts the total number of transactions that have been successfully committed in Vastbase G100. Committed transactions indicate completed and persisted business operations, making this metric a key indicator of transaction throughput."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_xact_rollback",
+      "query": "vastbaseG100_exporter_xact_rollback_gauge{__$labels__}",
+      "display_name": "Number of rolled back transactions",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Records the total number of transactions that have been rolled back in Vastbase G100, either due to errors, user intervention, or concurrency conflicts. A high number may indicate issues with data integrity or application logic."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_blks_read",
+      "query": "vastbaseG100_exporter_blks_read_gauge{__$labels__}",
+      "display_name": "Number of block reads",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Indicates the total number of data blocks read from disk by the Vastbase G100 database. These blocks are fetched when the required data is not found in the buffer cache, reflecting the disk read activity and potential I/O bottlenecks."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_blks_hit",
+      "query": "vastbaseG100_exporter_blks_hit_gauge{__$labels__}",
+      "display_name": "Number of block hits",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Counts the total number of data blocks retrieved from the buffer cache in Vastbase G100, without accessing the disk. This metric, combined with blks_read, helps calculate the buffer hit ratio and assess cache efficiency."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_tup_returned",
+      "query": "vastbaseG100_exporter_tup_returned_gauge{__$labels__}",
+      "display_name": "Number of rows returned by queries",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the total number of rows returned to the client by queries executed in Vastbase G100. It reflects the volume of data retrieved by user queries and is related to query complexity and result set size."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_tup_fetched",
+      "query": "vastbaseG100_exporter_tup_returned_gauge{__$labels__}",
+      "display_name": "Number of rows fetched by queries",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Counts the number of rows fetched by queries in Vastbase G100, which may include rows processed internally (e.g., during joins or filters) in addition to those returned to the client. It provides insights into query execution details."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_tup_inserted",
+      "query": "vastbaseG100_exporter_tup_inserted_gauge{__$labels__}",
+      "display_name": "Number of inserted rows",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Records the total number of rows inserted into tables in Vastbase G100. This metric reflects the write activity related to data insertion and is useful for monitoring data growth in the database."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_tup_updated",
+      "query": "vastbaseG100_exporter_tup_updated_gauge{__$labels__}",
+      "display_name": "Number of updated rows",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Indicates the total number of rows updated in tables in Vastbase G100. It reflects the frequency of data modification operations and can be used to assess the level of write activity on the database."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_tup_deleted",
+      "query": "vastbaseG100_exporter_tup_deleted_gauge{__$labels__}",
+      "display_name": "Number of deleted rows",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Counts the total number of rows deleted from tables in Vastbase G100. This metric reflects the data removal activity and is relevant for monitoring data lifecycle management and storage usage changes."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_conflicts",
+      "query": "vastbaseG100_exporter_conflicts_gauge{__$labels__}",
+      "display_name": "Number of canceled queries",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the total number of queries or transactions that were canceled or aborted due to conflicts in Vastbase G100, such as lock conflicts, snapshot conflicts, or tablespace deletion conflicts. It indicates concurrency issues or improper operation timing."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_temp_files",
+      "query": "vastbaseG100_exporter_temp_files_gauge{__$labels__}",
+      "display_name": "Number of temporary files",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Counts the number of temporary files created by the Vastbase G100 database to handle large queries, sorting, or intermediate results. A sudden increase may indicate inefficient query plans requiring excessive temporary storage."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_temp_bytes",
+      "query": "vastbaseG100_exporter_temp_bytes_gauge{__$labels__}/1024/1024",
+      "display_name": "Size of temporary files in bytes",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Measures the total size in bytes of all temporary files created by Vastbase G100. It reflects the storage consumption of temporary data, which can impact disk space and I/O performance if excessively large."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_deadlocks",
+      "query": "vastbaseG100_exporter_deadlocks_gauge{__$labels__}",
+      "display_name": "Number of deadlocks",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Records the total number of deadlocks that have occurred in Vastbase G100, where two or more transactions mutually wait for resources held by each other, forcing the database to terminate one or more transactions. A high count indicates serious concurrency issues."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_blk_read_time",
+      "query": "vastbaseG100_exporter_blk_read_time_gauge{__$labels__}/1000",
+      "display_name": "Time taken to read data file blocks",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "s",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Measures the total time in milliseconds spent reading data blocks from disk in Vastbase G100. It reflects the efficiency of disk read operations; longer times may indicate slow storage or I/O subsystem issues."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_blk_write_time",
+      "query": "vastbaseG100_exporter_blk_write_time_gauge{__$labels__}/1000",
+      "display_name": "Time taken to write data file blocks",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "s",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Indicates the total time in milliseconds spent writing data blocks to disk in Vastbase G100. It reflects the efficiency of disk write operations, with prolonged times suggesting potential storage or I/O bottlenecks."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_backend_connections",
+      "query": "vastbaseG100_exporter_backend_connections_gauge{__$labels__}",
+      "display_name": "Number of backend connections",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Counts the number of active backend connections to the Vastbase G100 database, including connections from applications, users, or system processes. It helps monitor connection usage and identify potential connection leaks."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_process_used_memory_percent",
+      "query": "vastbaseG100_exporter_process_used_memory_percent_gauge{__$labels__}",
+      "display_name": "Maximum memory usage percentage of processes",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [],
+      "description": "Represents the percentage of memory used by individual database processes in Vastbase G100 relative to the total available memory. It helps identify memory-intensive processes that may cause resource contention."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_dynamic_used_memory_percent",
+      "query": "vastbaseG100_exporter_dynamic_used_memory_percent_gauge{__$labels__}",
+      "display_name": "Maximum dynamic memory usage percentage",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [],
+      "description": "Measures the percentage of dynamically allocated memory (e.g., for queries, sorting, or temporary data) used by Vastbase G100 relative to the configured dynamic memory limit. It reflects the efficiency of dynamic memory usage."
+    },
+    {
+      "metric_group": "Performance",
+      "name": "vastbaseG100_exporter_shared_used_memory_percent",
+      "query": "vastbaseG100_exporter_shared_used_memory_percent_gauge{__$labels__}",
+      "display_name": "Maximum shared memory usage percentage",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [],
+      "description": "Indicates the percentage of shared memory (e.g., buffer cache, shared catalogs) used by Vastbase G100 relative to the total shared memory allocation. It helps assess the utilization of shared resources critical for database performance."
+    },
+    {
+      "metric_group": "Lock",
+      "name": "vastbaseG100_exporter_granted_locks",
+      "query": "vastbaseG100_exporter_granted_locks_counter{__$labels__}",
+      "display_name": "Number of granted locks",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the total number of locks that have been granted to transactions or sessions in the database. It reflects the current lock allocation status and can assist in analyzing lock contention issues."
+    },
+    {
+      "metric_group": "Lock",
+      "name": "vastbaseG100_exporter_db_locks",
+      "query": "vastbaseG100_exporter_db_locks_gauge{__$labels__}",
+      "display_name": "Number of locks of different types in the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "mode", "description": "Lock mode"}
+      ],
+      "description": "Shows the number of locks categorized by different types (such as shared locks, exclusive locks, etc.) in the database. It provides detailed insights into the distribution of lock types for better lock management."
+    },
+    {
+      "metric_group": "Xact",
+      "name": "vastbaseG100_exporter_long_xact",
+      "query": "vastbaseG100_exporter_long_xact_gauge{__$labels__}",
+      "display_name": "Number of long transactions with execution time exceeding 300 seconds",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Counts the number of long-running transactions whose execution time exceeds a specified threshold (e.g., 300 seconds). It helps identify transactions that may affect database performance due to prolonged execution."
+    },
+    {
+      "metric_group": "Xact",
+      "name": "vastbaseG100_exporter_long_xact_duration",
+      "query": "vastbaseG100_exporter_long_xact_duration_gauge{__$labels__}",
+      "display_name": "Maximum time taken by transactions for query execution",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "s",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Records the maximum duration of transactions that have executed queries in the database. It provides information on the longest time a transaction has taken to complete, aiding in performance analysis."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "vastbaseG100_exporter_connections",
+      "query": "vastbaseG100_exporter_connections_gauge{__$labels__}",
+      "display_name": "Current number of database sessions",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Represents the current number of sessions or connections to the database. It shows how many clients are currently connected to the database server."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "vastbaseG100_exporter_setting_max_connections",
+      "query": "vastbaseG100_exporter_setting_max_connections_gauge{__$labels__}",
+      "display_name": "Maximum number of sessions allowed by the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Indicates the maximum number of sessions or connections allowed by the database configuration. It is a parameter set in the database to control the maximum concurrent connections."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "vastbaseG100_exporter_connection_used_percent",
+      "query": "vastbaseG100_exporter_connection_used_percent_gauge{__$labels__}",
+      "display_name": "Usage rate of current sessions",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [],
+      "description": "Calculated as the ratio of the current number of sessions to the maximum allowed sessions, expressed as a percentage. It reflects the utilization rate of the database's connection capacity."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "vastbaseG100_exporter_active_connections",
+      "query": "vastbaseG100_exporter_active_connections_gauge{__$labels__}",
+      "display_name": "Current number of active sessions",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Counts the number of currently active sessions in the database, i.e., sessions that are executing transactions or queries."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "vastbaseG100_exporter_block_connections",
+      "query": "vastbaseG100_exporter_block_connections_gauge{__$labels__}",
+      "display_name": "Number of blocked sessions",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Represents the number of sessions that are blocked by other transactions or locks and cannot proceed with their operations."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "vastbaseG100_exporter_idle_connections",
+      "query": "vastbaseG100_exporter_idle_connections_gauge{__$labels__}",
+      "display_name": "Number of idle sessions",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Shows the number of idle sessions in the database, i.e., sessions that are connected but not currently executing any transactions or queries."
+    },
+    {
+      "metric_group": "Index",
+      "name": "vastbaseG100_exporter_index_ipages",
+      "query": "vastbaseG100_exporter_index_ipages_gauge{__$labels__}",
+      "display_name": "Number of index pages",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "iname", "description": "Index name"},
+        {"name": "schemaname", "description": "Schema name"},
+        {"name": "tablename", "description": "Table name"}
+      ],
+      "description": "Indicates the number of pages occupied by indexes in the database. An index page is a unit of storage used to store index data."
+    },
+    {
+      "metric_group": "Index",
+      "name": "vastbaseG100_exporter_index_iotta",
+      "query": "vastbaseG100_exporter_index_iotta_gauge{__$labels__}",
+      "display_name": "Expected number of index pages",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "iname", "description": "Index name"},
+        {"name": "schemaname", "description": "Schema name"},
+        {"name": "tablename", "description": "Table name"}
+      ],
+      "description": "Represents the expected number of pages that an index should occupy based on its data volume and structure. It is a theoretical value for comparison with the actual number of pages."
+    },
+    {
+      "metric_group": "Index",
+      "name": "vastbaseG100_exporter_index_ibloat",
+      "query": "vastbaseG100_exporter_index_ibloat_gauge{__$labels__}",
+      "display_name": "Index bloat ratio",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "iname", "description": "Index name"},
+        {"name": "schemaname", "description": "Schema name"},
+        {"name": "tablename", "description": "Table name"}
+      ],
+      "description": "Calculated as the ratio of the actual number of index pages to the expected number of pages, indicating the degree of index bloat. A higher value means more severe index inefficiency."
+    },
+    {
+      "metric_group": "Index",
+      "name": "vastbaseG100_exporter_index_wastedpages",
+      "query": "vastbaseG100_exporter_index_wastedpages_gauge{__$labels__}",
+      "display_name": "Number of wasted index pages",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "iname", "description": "Index name"},
+        {"name": "schemaname", "description": "Schema name"},
+        {"name": "tablename", "description": "Table name"}
+      ],
+      "description": "The number of index pages that are wasted due to bloat, i.e., the difference between the actual number of pages and the expected number of pages."
+    },
+    {
+      "metric_group": "Index",
+      "name": "vastbaseG100_exporter_index_wastedibytes",
+      "query": "vastbaseG100_exporter_index_wastedibytes_gauge{__$labels__}/1024/1024",
+      "display_name": "Wasted index space in bytes",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "iname", "description": "Index name"},
+        {"name": "schemaname", "description": "Schema name"},
+        {"name": "tablename", "description": "Table name"}
+      ],
+      "description": "The number of bytes wasted in index pages due to bloat, calculated based on the number of wasted pages and the size of each page."
+    },
+    {
+      "metric_group": "Index",
+      "name": "vastbaseG100_exporter_index_totalwastedbytes",
+      "query": "vastbaseG100_exporter_index_totalwastedbytes_gauge{__$labels__}/1024/1024",
+      "display_name": "Total wasted index space in bytes",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "iname", "description": "Index name"},
+        {"name": "schemaname", "description": "Schema name"},
+        {"name": "tablename", "description": "Table name"}
+      ],
+      "description": "The total number of bytes wasted across all indexes in the database due to bloat. It is the sum of wasted bytes for each individual index."
+    },
+    {
+      "metric_group": "Table",
+      "name": "vastbaseG100_exporter_table_tups",
+      "query": "vastbaseG100_exporter_table_tups_gauge{__$labels__}",
+      "display_name": "Number of table rows",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "iname", "description": "Index name"},
+        {"name": "schemaname", "description": "Schema name"},
+        {"name": "tablename", "description": "Table name"}
+      ],
+      "description": "Represents the number of rows in a table. It reflects the amount of data stored in the table."
+    },
+    {
+      "metric_group": "Table",
+      "name": "vastbaseG100_exporter_table_pages",
+      "query": "vastbaseG100_exporter_table_pages_gauge{__$labels__}",
+      "display_name": "Number of table pages",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "iname", "description": "Index name"},
+        {"name": "schemaname", "description": "Schema name"},
+        {"name": "tablename", "description": "Table name"}
+      ],
+      "description": "Indicates the number of pages occupied by a table in the database. A table page is a unit of storage for table data."
+    },
+    {
+      "metric_group": "Table",
+      "name": "vastbaseG100_exporter_table_otta",
+      "query": "vastbaseG100_exporter_table_otta_gauge{__$labels__}",
+      "display_name": "Expected number of table pages",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "iname", "description": "Index name"},
+        {"name": "schemaname", "description": "Schema name"},
+        {"name": "tablename", "description": "Table name"}
+      ],
+      "description": "The expected number of pages that a table should occupy based on its number of rows and data structure. It is a theoretical value for evaluating table bloat."
+    },
+    {
+      "metric_group": "Table",
+      "name": "vastbaseG100_exporter_table_tbloat",
+      "query": "vastbaseG100_exporter_table_tbloat_gauge{__$labels__}",
+      "display_name": "Table bloat ratio",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "iname", "description": "Index name"},
+        {"name": "schemaname", "description": "Schema name"},
+        {"name": "tablename", "description": "Table name"}
+      ],
+      "description": "The ratio of the actual number of table pages to the expected number of pages, indicating the degree of table bloat. A higher ratio suggests more wasted storage space."
+    },
+    {
+      "metric_group": "Table",
+      "name": "vastbaseG100_exporter_table_wastedbytes",
+      "query": "vastbaseG100_exporter_table_wastedbytes_gauge{__$labels__}/1024/1024",
+      "display_name": "Wasted table space size",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "iname", "description": "Index name"},
+        {"name": "schemaname", "description": "Schema name"},
+        {"name": "tablename", "description": "Table name"}
+      ],
+      "description": "The number of bytes wasted in a table due to bloat, calculated by the difference between actual and expected pages multiplied by the page size."
+    },
+    {
+      "metric_group": "TableSpace",
+      "name": "vastbaseG100_exporter_table_size_bytes",
+      "query": "vastbaseG100_exporter_table_size_bytes_gauge{__$labels__}/1024/1024",
+      "display_name": "Size of database tables",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "table_name", "description": "Table name"},
+        {"name": "table_schema", "description": "Table schema"}
+      ],
+      "description": "Represents the total size of a table in the database, measured in bytes. It includes all data, indexes, and related metadata stored within the table, reflecting the overall storage consumption of the table."
+    },
+    {
+      "metric_group": "TableSpace",
+      "name": "vastbaseG100_exporter_tablespace_total_used_mb",
+      "query": "vastbaseG100_exporter_tablespace_total_used_mb_gauge{__$labels__}",
+      "display_name": "Used space size of tables",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "decmbytes",
+      "dimensions": [
+        {"name": "pg_tablespace_location", "description": "Tablespace location"},
+        {"name": "spcname", "description": "Tablespace name"}
+      ],
+      "description": "Indicates the total amount of space used by a tablespace in the database, measured in megabytes (MB). It reflects the storage utilization of the tablespace, including all tables, indexes, and other objects within it."
+    },
+    {
+      "metric_group": "WAL",
+      "name": "vastbaseG100_exporter_wal_write_buffer",
+      "query": "vastbaseG100_exporter_wal_write_buffer_gauge{__$labels__}",
+      "display_name": "Number of WAL write buffers",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Counts the number of buffers used for writing Write-Ahead Log (WAL) data in the database. These buffers temporarily store WAL records before they are written to disk, reflecting the efficiency of WAL data handling."
+    },
+    {
+      "metric_group": "WAL",
+      "name": "vastbaseG100_exporter_wal_write_block",
+      "query": "vastbaseG100_exporter_wal_write_block_gauge{__$labels__}",
+      "display_name": "Number of WAL blocks written",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Represents the number of blocks written to the WAL files in the database. Each block contains a portion of WAL records, and this metric reflects the volume of transaction log data persisted to disk."
+    }
+  ]
 }

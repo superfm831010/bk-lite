@@ -1,12 +1,389 @@
 {
   "plugin": "GBase8a-Exporter",
-  "plugin_desc": "GBase8a-Exporter is used to collect and export metrics from GBase8a databases, including connection counts, query performance, cache usage, and error rates, to help monitor the health and performance of GBase8a instances.",
+  "plugin_desc": "The GBase8a-Exporter collects GBase 8a database performance metrics including cache statistics and system resources.",
   "name": "GBase8a",
   "icon": "gbase8a",
   "type": "Database",
-  "description": "",
-  "default_metric": "any({instance_type='gbase8a'}) by (instance_id)",
-  "instance_id_keys": ["instance_id"],
-  "supplementary_indicators": [],
-  "metrics": []
+  "metrics": [
+    {
+      "metric_group": "Base",
+      "name": "up",
+      "query": "up_gauge{__$labels__,instance_type=\"gbase8a\"}",
+      "display_name": "Plugin running status",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Enum",
+      "unit": "[{\"id\":1,\"name\":\"Normal\",\"color\":\"#52c41a\"},{\"id\":0,\"name\":\"Abnormal\",\"color\":\"#ff4d4f\"}]",
+      "dimensions": [],
+      "description": "Indicates whether the Gbase8a-exporter is operating normally. A value of 1 means the exporter is running and able to collect metrics, while 0 indicates it is down or unable to function, serving as a fundamental health check for the monitoring plugin."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_total_dc",
+      "query": "gbase8a_exporter_total_dc_gauge{__$labels__}",
+      "display_name": "Total number of DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The total number of Data Containers (DCs) in the GBase 8a database system. Data Containers are units used for storing data, and this metric reflects the overall quantity of such storage units."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_unlocked_dc",
+      "query": "gbase8a_exporter_unlocked_dc_gauge{__$labels__}",
+      "display_name": "Total number of unlocked DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The total number of Data Containers (DCs) that are not locked in the GBase 8a database. Unlocked DCs can be accessed, modified, or moved freely without restrictions from locks."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_total_dc_size",
+      "query": "gbase8a_exporter_total_dc_size_gauge{__$labels__}/1024/1024",
+      "display_name": "Total memory occupied by DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The total memory size occupied by all Data Containers (DCs) in the GBase 8a database. It represents the cumulative memory usage of all DCs in the system."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_unlocked_dc_size",
+      "query": "gbase8a_exporter_unlocked_dc_size_gauge{__$labels__}/1024/1024",
+      "display_name": "Memory occupied by unlocked DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The total memory size occupied by all unlocked Data Containers (DCs) in the GBase 8a database. This reflects the memory consumption of DCs that are available for immediate operation."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_hot_total_dc",
+      "query": "gbase8a_exporter_hot_total_dc_gauge{__$labels__}",
+      "display_name": "Number of hot data DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The number of Data Containers (DCs) that store hot data in the GBase 8a database. Hot data refers to data that is frequently accessed or updated, and is usually kept in faster storage for quick retrieval."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_hot_unlocked_dc",
+      "query": "gbase8a_exporter_hot_unlocked_dc_gauge{__$labels__}",
+      "display_name": "Number of unlocked hot data DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The number of unlocked Data Containers (DCs) that store hot data in the GBase 8a database. These DCs hold frequently used data and are not restricted by locks, allowing for efficient access."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_hot_total_dc_size",
+      "query": "gbase8a_exporter_hot_total_dc_size_gauge{__$labels__}/1024/1024",
+      "display_name": "Total memory occupied by hot data DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The total memory size occupied by all Data Containers (DCs) that store hot data in the GBase 8a database. It indicates the memory resources allocated to frequently accessed data."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_hot_unlocked_dc_size",
+      "query": "gbase8a_exporter_hot_unlocked_dc_size_gauge{__$labels__}/1024/1024",
+      "display_name": "Memory occupied by unlocked hot data DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The total memory size occupied by all unlocked Data Containers (DCs) that store hot data in the GBase 8a database. This metric shows the memory usage of accessible hot data DCs."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_cold_total_dc",
+      "query": "gbase8a_exporter_cold_total_dc_gauge{__$labels__}",
+      "display_name": "Number of cold data DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The number of Data Containers (DCs) that store cold data in the GBase 8a database. Cold data is infrequently accessed data, often stored in slower storage to save costs."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_cold_unlocked_dc",
+      "query": "gbase8a_exporter_cold_unlocked_dc_gauge{__$labels__}",
+      "display_name": "Number of unlocked cold data DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The number of unlocked Data Containers (DCs) that store cold data in the GBase 8a database. These DCs hold rarely used data and are not locked, enabling occasional access when needed."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_cold_total_dc_size",
+      "query": "gbase8a_exporter_cold_total_dc_size_gauge{__$labels__}/1024/1024",
+      "display_name": "Total memory occupied by cold data DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The total memory size occupied by all Data Containers (DCs) that store cold data in the GBase 8a database. It represents the memory usage of infrequently accessed data storage."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_cold_unlocked_dc_size",
+      "query": "gbase8a_exporter_cold_unlocked_dc_size_gauge{__$labels__}/1024/1024",
+      "display_name": "Memory occupied by unlocked cold data DCs",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The total memory size occupied by all unlocked Data Containers (DCs) that store cold data in the GBase 8a database. This reflects the memory consumption of accessible cold data DCs."
+    },
+    {
+      "metric_group": "Cache",
+      "name": "gbase8a_exporter_dc_hit_rate",
+      "query": "gbase8a_exporter_dc_hit_rate_gauge{__$labels__}",
+      "display_name": "DC hit rate",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The ratio of successful accesses to Data Containers (DCs) in the GBase 8a database compared to the total number of access attempts. A higher hit rate indicates more efficient data retrieval from DCs."
+    },
+    {
+      "metric_group": "Heap",
+      "name": "gbase8a_exporter_heap_size",
+      "query": "gbase8a_exporter_heap_size_gauge{__$labels__}/1024/1024",
+      "display_name": "Total heap size",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"},
+        {"name": "heap_type", "description": "Heap type"}
+      ],
+      "description": "The total size of the heap memory in the GBase 8a database system. The heap is a region of memory used for dynamic memory allocation during program execution."
+    },
+    {
+      "metric_group": "Heap",
+      "name": "gbase8a_exporter_used_in_heap",
+      "query": "gbase8a_exporter_used_in_heap_gauge{__$labels__}/1024/1024",
+      "display_name": "In-use heap size",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"},
+        {"name": "heap_type", "description": "Heap type"}
+      ],
+      "description": "The size of the heap memory that is currently in use within the GBase 8a database. It shows how much of the total heap is being utilized for active operations."
+    },
+    {
+      "metric_group": "Heap",
+      "name": "gbase8a_exporter_used_in_system",
+      "query": "gbase8a_exporter_used_in_system_gauge{__$labels__}/1024/1024",
+      "display_name": "Additional heap size allocated from the OS",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"},
+        {"name": "heap_type", "description": "Heap type"}
+      ],
+      "description": "The size of additional heap memory allocated from the operating system by the GBase 8a database. This is extra memory beyond the initial heap allocation to meet increased demand."
+    },
+    {
+      "metric_group": "Heap",
+      "name": "gbase8a_exporter_max_used_block",
+      "query": "gbase8a_exporter_max_used_block_gauge{__$labels__}/1024/1024",
+      "display_name": "Size of the largest block in the current heap",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"},
+        {"name": "heap_type", "description": "Heap type"}
+      ],
+      "description": "The size of the largest block of memory that is currently in use within the heap of the GBase 8a database. It indicates the biggest contiguous memory chunk being utilized."
+    },
+    {
+      "metric_group": "Heap",
+      "name": "gbase8a_exporter_max_free_block",
+      "query": "gbase8a_exporter_max_free_block_gauge{__$labels__}/1024/1024",
+      "display_name": "Size of the largest free block in the current heap",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"},
+        {"name": "heap_type", "description": "Heap type"}
+      ],
+      "description": "The size of the largest block of free (unused) memory within the heap of the GBase 8a database. A larger free block suggests more available contiguous memory for future allocations."
+    },
+    {
+      "metric_group": "Heap",
+      "name": "gbase8a_exporter_used_blocks",
+      "query": "gbase8a_exporter_used_blocks_gauge{__$labels__}",
+      "display_name": "Number of used blocks in the heap",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "host", "description": "Host name"},
+        {"name": "heap_type", "description": "Heap type"}
+      ],
+      "description": "The number of memory blocks that are currently in use within the heap of the GBase 8a database. It reflects the fragmentation and utilization pattern of the heap."
+    },
+    {
+      "metric_group": "Session",
+      "name": "gbase8a_exporter_session_current_mem",
+      "query": "gbase8a_exporter_session_current_mem_gauge{__$labels__}/1024/1024",
+      "display_name": "Total memory currently used by sessions",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The total amount of memory currently being used by all sessions in the GBase 8a database. Sessions include user connections and their associated operations."
+    },
+    {
+      "metric_group": "Session",
+      "name": "gbase8a_exporter_session_temp_space",
+      "query": "gbase8a_exporter_session_temp_space_gauge{__$labels__}/1024/1024",
+      "display_name": "Total temporary space used by sessions",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The total amount of temporary storage space used by all sessions in the GBase 8a database. Temporary space is used for operations like sorting, joining, or temporary table storage."
+    },
+    {
+      "metric_group": "Session",
+      "name": "gbase8a_exporter_sessions",
+      "query": "gbase8a_exporter_sessions_gauge{__$labels__}",
+      "display_name": "Current number of session connections",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The current number of active session connections in the GBase 8a database. This includes all user and system sessions that are currently connected."
+    },
+    {
+      "metric_group": "Session",
+      "name": "gbase8a_exporter_running_threads",
+      "query": "gbase8a_exporter_running_threads_gauge{__$labels__}",
+      "display_name": "Current number of running threads",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "The number of threads that are currently running in the GBase 8a database system. Threads handle various tasks such as query execution, I/O operations, and background processes."
+    },
+    {
+      "metric_group": "Memory",
+      "name": "gbase8a_exporter_memory_upper_limit",
+      "query": "gbase8a_exporter_memory_upper_limit_gauge{__$labels__}/1024/1024",
+      "display_name": "Maximum memory limit",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The maximum amount of memory that the GBase 8a database system is allowed to use. It is a configured limit to prevent excessive memory consumption."
+    },
+    {
+      "metric_group": "Memory",
+      "name": "gbase8a_exporter_phsical_memory_usage",
+      "query": "gbase8a_exporter_phsical_memory_usage_gauge{__$labels__}",
+      "display_name": "Physical memory usage rate",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The percentage of physical memory that is currently being used by the GBase 8a database system relative to the total available physical memory."
+    },
+    {
+      "metric_group": "Memory",
+      "name": "gbase8a_exporter_memory_current_used",
+      "query": "gbase8a_exporter_memory_current_used_gauge{__$labels__}/1024/1024",
+      "display_name": "Current memory usage",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The amount of memory that is currently being used by the GBase 8a database system. This includes all memory allocated for various operations and data storage."
+    },
+    {
+      "metric_group": "Memory",
+      "name": "gbase8a_exporter_memory_peak_used",
+      "query": "gbase8a_exporter_memory_peak_used_gauge{__$labels__}/1024/1024",
+      "display_name": "Peak memory usage",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"}
+      ],
+      "description": "The highest amount of memory that has been used by the GBase 8a database system at any point in time. It indicates the maximum memory consumption recorded."
+    },
+    {
+      "metric_group": "Files",
+      "name": "gbase8a_exporter_file_disk_used_size",
+      "query": "gbase8a_exporter_file_disk_used_size_gauge{__$labels__}/1024/1024",
+      "display_name": "Disk space used by database files",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "host", "description": "Host name"},
+        {"name": "dir_type", "description": "Directory type"}
+      ],
+      "description": "The total disk space used by all database files of the GBase 8a database on the storage system. This includes data files, log files, and configuration files."
+    }
+  ]
 }
