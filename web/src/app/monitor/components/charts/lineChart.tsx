@@ -69,7 +69,7 @@ const LineChart: React.FC<LineChartProps> = ({
   onXRangeChange,
 }) => {
   const { formatTime } = useFormatTime();
-  const { get } = useApiClient();
+  const { get, isLoading } = useApiClient();
   const [startX, setStartX] = useState<number | null>(null);
   const [endX, setEndX] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -89,7 +89,7 @@ const LineChart: React.FC<LineChartProps> = ({
   useEffect(() => {
     const chartKeys = getChartAreaKeys(data);
     const chartDetails = getDetails(data);
-    if (data.length) getEvent();
+    if (data.length && formID && !isLoading) getEvent();
     setHasDimension(
       !Object.values(chartDetails || {}).every((item) => !item.length)
     );
@@ -103,10 +103,6 @@ const LineChart: React.FC<LineChartProps> = ({
       ];
     });
   }, [data]);
-
-  useEffect(() => {
-    getEvent();
-  }, [formID]);
 
   useEffect(() => {
     if (!allowSelect) return;

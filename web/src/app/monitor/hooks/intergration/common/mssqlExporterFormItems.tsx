@@ -44,7 +44,7 @@ const useMssqlExporterFormItems = () => {
               {t('monitor.intergrations.passwordDes')}
             </span>
           </Form.Item>
-          <Form.Item label={t('common.type')} required>
+          <Form.Item label={t('monitor.intergrations.dbType')} required>
             <Form.Item
               noStyle
               name={`${mode === 'auto' ? 'ENV_' : ''}SQL_EXPORTER_DB_TYPE`}
@@ -58,7 +58,7 @@ const useMssqlExporterFormItems = () => {
               <Input className="w-[300px] mr-[10px]" />
             </Form.Item>
             <span className="text-[12px] text-[var(--color-text-3)]">
-              {t('common.type')}
+              {t('monitor.intergrations.dbTypeDes')}
             </span>
           </Form.Item>
         </>
@@ -66,4 +66,5 @@ const useMssqlExporterFormItems = () => {
     },
   };
 };
+
 export { useMssqlExporterFormItems };
