@@ -162,7 +162,6 @@ const ModelRelease = () => {
     setLoading(true);
     try {
       const status = value ? 'active' : 'inactive';
-      console.log(status);
       await updateAnomalyServings(id, { status })
     } catch (e) {
       console.log(e);

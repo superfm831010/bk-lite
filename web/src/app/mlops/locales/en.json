@@ -25,6 +25,7 @@
     "delDataset": "Deleting a dataset",
     "delDatasetInfo": "Confirm deletion of dataset?",
     "anomaly": "Single Indicator Anomaly Detection",
+    "rasa": "Rasa Model",
     "forecast": "Time Series Forecasting",
     "log": "Log",
     "uploadSuccess": "Upload Successful",

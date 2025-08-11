@@ -1,7 +1,7 @@
 import useApiClient from "@/utils/request";
 
 interface LabelData {
-  timestamp: string;
+  timestamp: number | string;
   value: number;
   label?: number;
 }

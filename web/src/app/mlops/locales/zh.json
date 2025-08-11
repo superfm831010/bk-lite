@@ -25,6 +25,7 @@
     "delDataset": "删除数据集",
     "delDatasetInfo": "确认删除数据集吗？",
     "anomaly": "单指标异常检测",
+    "rasa": "Rasa模型",
     "forecast": "时间序列预测",
     "log": "日志",
     "uploadSuccess": "上传成功",
