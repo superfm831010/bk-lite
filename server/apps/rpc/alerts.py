@@ -2,17 +2,16 @@
 # @File: alerts.py
 # @Time: 2025/7/22 18:29
 # @Author: windyzhao
+from apps.operation_analysis.rpc import OperationAnalysisRpc
 
-from apps.rpc.base import RpcClient
 
-
-class Alert(object):
+class AlertOperationAna(object):
     def __init__(self, *args, **kwargs):
         params = {}
         server = kwargs.get("server", None)
         if server:
             params["server"] = server
-        self.client = RpcClient(**params)
+        self.client = OperationAnalysisRpc(**params)
 
     def get_alert_trend_data(self, *args, **kwargs):
         """
