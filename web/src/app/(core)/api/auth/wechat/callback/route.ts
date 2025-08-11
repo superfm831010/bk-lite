@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// WeChat login callback route - directly complete NextAuth authentication
+// WeChat login callback route - process callback and store in NextAuth JWT
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
+  
+  console.log("[WeChat Callback] Received callback with code:", code ? "Present" : "Missing");
+  console.log("[WeChat Callback] Request URL:", request.url);
+  console.log("[WeChat Callback] Origin:", new URL(request.url).origin);
   
   if (!code) {
     console.error("[WeChat Callback] No authorization code received");
@@ -18,6 +22,7 @@ export async function GET(request: NextRequest) {
       try {
         const stateData = JSON.parse(decodeURIComponent(state));
         callbackUrl = stateData.callbackUrl || '/';
+        console.log("[WeChat Callback] Parsed callbackUrl from state:", callbackUrl);
       } catch (e) {
         console.warn("[WeChat Callback] Failed to parse state parameter:", e);
       }
@@ -42,6 +47,7 @@ export async function GET(request: NextRequest) {
     }
     
     const wechatConfig = configData.data;
+    console.log("[WeChat Callback] WeChat config loaded successfully");
     
     // Get access_token
     const tokenUrl = new URL("https://api.weixin.qq.com/sns/oauth2/access_token");
@@ -59,6 +65,8 @@ export async function GET(request: NextRequest) {
       console.error("[WeChat Callback] Token request failed:", tokenData);
       return NextResponse.redirect(new URL('/auth/signin?error=wechat_token_error', request.url));
     }
+
+    console.log("[WeChat Callback] Access token received successfully");
 
     // Get user information
     const userinfoUrl = new URL("https://api.weixin.qq.com/sns/userinfo");
@@ -95,6 +103,7 @@ export async function GET(request: NextRequest) {
     });
 
     const registerData = await registerResponse.json();
+    console.log("[WeChat Callback] Register API response status:", registerResponse.status);
     console.log("[WeChat Callback] Register API response:", registerData);
 
     if (!registerResponse.ok || !registerData.result) {
@@ -103,8 +112,9 @@ export async function GET(request: NextRequest) {
     }
 
     const userData = registerData.data;
+    console.log("[WeChat Callback] User registration successful, user ID:", userData.id);
     
-    // Build user data for NextAuth
+    // Build user data including WeChat information for NextAuth
     const userDataForAuth = {
       id: userData.id.toString(),
       username: userData.username,
@@ -113,91 +123,50 @@ export async function GET(request: NextRequest) {
       temporary_pwd: false,
       enable_otp: false,
       qrcode: false,
-      provider: 'wechat',
-      wechatOpenId: profile.openid,
-      wechatUnionId: profile.unionid,
+      provider: 'wechat',  // 重要：标记为微信登录
+      wechatOpenId: profile.openid,     // 存储微信 OpenID
+      wechatUnionId: profile.unionid,   // 存储微信 UnionID
+      wechatNickname: profile.nickname, // 存储微信昵称
+      wechatHeadImg: profile.headimgurl, // 存储微信头像
     };
 
-    // Directly create NextAuth session - through internal API call
-    const authUrl = new URL('/api/auth/callback/credentials', request.url);
-    const formData = new URLSearchParams();
-    formData.append('username', userDataForAuth.username || '');
-    formData.append('password', ''); // WeChat login does not require password
-    formData.append('skipValidation', 'true');
-    formData.append('userData', JSON.stringify(userDataForAuth));
-    formData.append('callbackUrl', callbackUrl);
-    formData.append('redirect', 'false');
-
-    const authResponse = await fetch(authUrl.toString(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Cookie': request.headers.get('cookie') || '',
-      },
-      body: formData.toString(),
+    console.log("[WeChat Callback] Prepared user data for NextAuth:", {
+      provider: userDataForAuth.provider,
+      wechatOpenId: userDataForAuth.wechatOpenId ? "Set" : "Not set",
+      wechatUnionId: userDataForAuth.wechatUnionId ? "Set" : "Not set",
     });
 
-    console.log("[WeChat Callback] Auth response status:", authResponse.status);
-
-    if (authResponse.ok) {
-      // Get authentication response cookies
-      const setCookieHeaders = authResponse.headers.getSetCookie();
+    // Save auth token to cookie for immediate access
+    if (userData.token) {
+      const response = NextResponse.redirect(new URL(`/auth/signin?wechat_success=true`, request.url));
       
-      // Create redirect response
-      const redirectResponse = NextResponse.redirect(new URL(callbackUrl, request.url));
-      
-      // Forward NextAuth cookies to client
-      setCookieHeaders.forEach(cookie => {
-        const [nameValue, ...attributes] = cookie.split(';');
-        const [name, value] = nameValue.split('=');
-        
-        redirectResponse.cookies.set({
-          name: name.trim(),
-          value: value || '',
-          ...parseCookieAttributes(attributes)
-        });
+      // Set user data in cookie for client-side NextAuth authentication
+      response.cookies.set('wechat_user_data', JSON.stringify(userDataForAuth), {
+        httpOnly: false, // Allow client-side access
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 300, // 5 minutes
+        path: '/'
       });
       
-      console.log("[WeChat Callback] Authentication successful, redirecting to:", callbackUrl);
-      return redirectResponse;
+      response.cookies.set('wechat_callback_url', callbackUrl, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production', 
+        sameSite: 'lax',
+        maxAge: 300, // 5 minutes
+        path: '/'
+      });
+      
+      console.log("[WeChat Callback] Redirecting to signin page with user data in cookie");
+      return response;
     } else {
-      console.error("[WeChat Callback] Authentication failed");
-      return NextResponse.redirect(new URL('/auth/signin?error=wechat_auth_failed', request.url));
+      console.error("[WeChat Callback] No token received from registration");
+      return NextResponse.redirect(new URL('/auth/signin?error=wechat_token_missing', request.url));
     }
     
   } catch (error) {
     console.error("[WeChat Callback] Error processing callback:", error);
+    console.error("[WeChat Callback] Error stack:", error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.redirect(new URL('/auth/signin?error=wechat_callback_error', request.url));
   }
-}
-
-// Helper function: parse Cookie attributes
-function parseCookieAttributes(attributes: string[]) {
-  const result: any = {};
-  
-  attributes.forEach(attr => {
-    const [key, value] = attr.trim().split('=');
-    switch (key.toLowerCase()) {
-      case 'httponly':
-        result.httpOnly = true;
-        break;
-      case 'secure':
-        result.secure = true;
-        break;
-      case 'samesite':
-        result.sameSite = value || 'lax';
-        break;
-      case 'path':
-        result.path = value;
-        break;
-      case 'max-age':
-        result.maxAge = parseInt(value);
-        break;
-      case 'expires':
-        result.expires = new Date(value);
-        break;
-    }
-  });
-  
-  return result;
 }

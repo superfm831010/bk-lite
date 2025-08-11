@@ -55,6 +55,9 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
     
     fetchDomainList();
     checkWechatAvailability();
+    
+    // Handle WeChat login success
+    handleWechatLoginSuccess();
   }, []);
 
   const checkWechatAvailability = async () => {
@@ -107,6 +110,111 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
       setDomainList([]);
     } finally {
       setLoadingDomains(false);
+    }
+  };
+
+  const handleWechatLoginSuccess = async () => {
+    // Check for WeChat success parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const wechatSuccess = urlParams.get('wechat_success');
+    
+    if (wechatSuccess === 'true') {
+      console.log("[WeChat Login] Processing WeChat login success");
+      setIsLoading(true);
+      
+      try {
+        // Read user data from cookie (set by callback route)
+        const wechatUserDataCookie = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('wechat_user_data='));
+        
+        const wechatCallbackUrlCookie = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('wechat_callback_url='));
+        
+        if (!wechatUserDataCookie) {
+          console.error("[WeChat Login] No WeChat user data found in cookie");
+          setFormError("WeChat login data not found");
+          setIsLoading(false);
+          return;
+        }
+        
+        const userData = JSON.parse(decodeURIComponent(wechatUserDataCookie.split('=')[1]));
+        const targetCallbackUrl = wechatCallbackUrlCookie ? 
+          decodeURIComponent(wechatCallbackUrlCookie.split('=')[1]) : 
+          callbackUrl || "/";
+        
+        console.log("[WeChat Login] Parsed user data from cookie:", {
+          provider: userData.provider,
+          wechatOpenId: userData.wechatOpenId ? "Set" : "Not set",
+          wechatUnionId: userData.wechatUnionId ? "Set" : "Not set",
+        });
+        
+        // Save auth token to local storage/cookie
+        if (userData.token) {
+          saveAuthToken({
+            id: userData.id,
+            username: userData.username || '',
+            token: userData.token,
+            locale: userData.locale,
+            temporary_pwd: userData.temporary_pwd,
+            enable_otp: userData.enable_otp,
+            qrcode: userData.qrcode,
+            provider: userData.provider,
+            wechatOpenId: userData.wechatOpenId,
+            wechatUnionId: userData.wechatUnionId,
+          });
+        }
+
+        // Complete NextAuth authentication using credentials provider
+        // This will store all WeChat information in the JWT token
+        const result = await signIn("credentials", {
+          redirect: false,
+          username: userData.username,
+          password: '', // WeChat login doesn't require password
+          skipValidation: 'true', // Skip normal password validation
+          userData: JSON.stringify(userData), // Pass complete user data including WeChat info
+          callbackUrl: targetCallbackUrl,
+        });
+        
+        console.log("[WeChat Login] NextAuth signIn result:", result);
+        
+        if (result?.error) {
+          console.error("[WeChat Login] NextAuth signIn error:", result.error);
+          setFormError("WeChat login authentication failed");
+          setIsLoading(false);
+        } else if (result?.ok) {
+          console.log("[WeChat Login] Authentication successful, redirecting to:", targetCallbackUrl);
+          
+          // Clean up cookies
+          document.cookie = 'wechat_user_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          document.cookie = 'wechat_callback_url=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          
+          // Clean up URL parameters
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('wechat_success');
+          window.history.replaceState({}, '', newUrl.toString());
+          
+          // Redirect to target page
+          window.location.href = targetCallbackUrl;
+        } else {
+          console.error("[WeChat Login] Unknown signIn result:", result);
+          setFormError("WeChat login failed");
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("[WeChat Login] Error processing WeChat login success:", error);
+        setFormError("Failed to process WeChat login");
+        setIsLoading(false);
+        
+        // Clean up cookies and URL on error
+        document.cookie = 'wechat_user_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'wechat_callback_url=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('wechat_success');
+        window.history.replaceState({}, '', newUrl.toString());
+      }
     }
   };
 
@@ -273,8 +381,11 @@ export default function SigninClient({ searchParams: { callbackUrl, error }, sig
     setIsLoading(true);
     
     try {
+      // Redirect to custom WeChat login start route
       const wechatLoginUrl = `/api/auth/wechat/start?callbackUrl=${encodeURIComponent(callbackUrl || "/")}`;
+      console.log("[WeChat Login] Redirecting to:", wechatLoginUrl);
       window.location.href = wechatLoginUrl;
+      
     } catch (error) {
       console.error("Error initiating WeChat login:", error);
       setFormError("Failed to initiate WeChat login");

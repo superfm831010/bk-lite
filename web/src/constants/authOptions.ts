@@ -23,7 +23,7 @@ export async function getAuthOptions(): Promise<AuthOptions> {
           // If skipValidation is true, use the provided userData directly
           if (credentials.skipValidation === 'true' && credentials.userData) {
             const userData = JSON.parse(credentials.userData);
-            console.log("Parsed userData:", userData);
+            console.log("[Credentials] Using provided userData:", userData);
             
             if (!userData.id && !userData.username) {
               console.error("Invalid userData: missing id and username");
@@ -85,7 +85,6 @@ export async function getAuthOptions(): Promise<AuthOptions> {
     }),
   ];
   
-  // Do not fetch WeChat config on startup, maintain basic configuration
   return {
     providers,
     pages: {
@@ -99,6 +98,7 @@ export async function getAuthOptions(): Promise<AuthOptions> {
     callbacks: {
       async jwt({ token, user, account }) {
         if (user) {
+          // Store all user information in JWT token
           token.id = user.id;
           token.username = user.username || user.name || '';
           token.locale = user.locale || 'en';
@@ -106,14 +106,25 @@ export async function getAuthOptions(): Promise<AuthOptions> {
           token.temporary_pwd = user.temporary_pwd;
           token.enable_otp = user.enable_otp;
           token.qrcode = user.qrcode;
-          token.provider = account?.provider;
-          token.wechatOpenId = user.wechatOpenId;
-          token.wechatUnionId = user.wechatUnionId;
-          token.wechatWorkId = user.wechatWorkId;
+          token.provider = user.provider || account?.provider;
+          
+          // Store WeChat-specific information if available
+          if (user.wechatOpenId || user.wechatUnionId || user.provider === 'wechat') {
+            token.wechatOpenId = user.wechatOpenId;
+            token.wechatUnionId = user.wechatUnionId;
+            token.wechatWorkId = user.wechatWorkId;
+            
+            console.log("[JWT Callback] WeChat user data stored in JWT:", {
+              provider: token.provider,
+              wechatOpenId: token.wechatOpenId ? "Set" : "Not set",
+              wechatUnionId: token.wechatUnionId ? "Set" : "Not set",
+            });
+          }
         }
         return token;
       },
       async session({ session, token }) {
+        // Pass all JWT data to session
         session.user = {
           id: token.id || '',
           username: token.username,
