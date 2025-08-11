@@ -1,0 +1,164 @@
+{
+  "object": "VastBase",
+  "plugin": "VastBase-Exporter",
+  "templates": [
+    {
+      "name": "数据库服务不可用",
+      "alert_name": "Vastbase ${metric_instance_id} 服务宕机",
+      "description": "监控数据库实例存活状态，up=0 表示服务不可用，需立即检查进程或网络。",
+      "metric_name": "up",
+      "algorithm": "last_over_time",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 1,
+          "method": "!="
+        }
+      ]
+    },
+    {
+      "name": "缓冲区命中率过低",
+      "alert_name": "Vastbase ${metric_instance_id} 缓存效率下降",
+      "description": "监控缓冲区命中率，低命中率增加磁盘 I/O 压力。",
+      "metric_name": "vastbaseG100_exporter_buffers_hit_percent",
+      "algorithm": "min",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 80,
+          "method": "<="
+        },
+        {
+          "level": "error",
+          "value": 85,
+          "method": "<="
+        },
+        {
+          "level": "warning",
+          "value": 90,
+          "method": "<="
+        }
+      ]
+    },
+    {
+      "name": "事务提交率异常",
+      "alert_name": "Vastbase ${metric_instance_id} 事务提交率降低",
+      "description": "检测事务提交比例，非正常降低可能表明系统问题。",
+      "metric_name": "vastbaseG100_exporter_xact_trans_percent",
+      "algorithm": "min",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 70,
+          "method": "<="
+        },
+        {
+          "level": "error",
+          "value": 80,
+          "method": "<="
+        },
+        {
+          "level": "warning",
+          "value": 90,
+          "method": "<="
+        }
+      ]
+    },
+    {
+      "name": "临时文件写入量过大",
+      "alert_name": "Vastbase ${metric_instance_id} 临时文件超限",
+      "description": "检测临时文件大小，过大可能因排序或哈希操作溢出。",
+      "metric_name": "vastbaseG100_exporter_temp_bytes",
+      "algorithm": "last_over_time",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 10240,
+          "method": ">="
+        },
+        {
+          "level": "error",
+          "value": 5120,
+          "method": ">="
+        },
+        {
+          "level": "warning",
+          "value": 1024,
+          "method": ">="
+        }
+      ]
+    },
+    {
+      "name": "数据库连接数接近上限",
+      "alert_name": "Vastbase ${metric_instance_id} 连接数即将耗尽",
+      "description": "监控连接池使用率，需调整 max_connections。",
+      "metric_name": "vastbaseG100_exporter_connection_used_percent",
+      "algorithm": "last_over_time",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 90,
+          "method": ">="
+        },
+        {
+          "level": "error",
+          "value": 80,
+          "method": ">="
+        },
+        {
+          "level": "warning",
+          "value": 70,
+          "method": ">="
+        }
+      ]
+    },
+    {
+      "name": "长事务执行时间超限",
+      "alert_name": "Vastbase ${metric_instance_id} 事务执行超时",
+      "description": "检测长事务持续时间，可能锁表或阻塞其他事务。",
+      "metric_name": "vastbaseG100_exporter_long_xact_duration",
+      "algorithm": "max",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 1800,
+          "method": ">="
+        },
+        {
+          "level": "error",
+          "value": 600,
+          "method": ">="
+        },
+        {
+          "level": "warning",
+          "value": 300,
+          "method": ">="
+        }
+      ]
+    },
+    {
+      "name": "内存使用率过高",
+      "alert_name": "Vastbase ${metric_instance_id} 内存超限",
+      "description": "检测进程内存占比，过高可能触发 OOM。",
+      "metric_name": "vastbaseG100_exporter_process_used_memory_percent",
+      "algorithm": "max",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 90,
+          "method": ">="
+        },
+        {
+          "level": "error",
+          "value": 80,
+          "method": ">="
+        },
+        {
+          "level": "warning",
+          "value": 70,
+          "method": ">="
+        }
+      ]
+    }
+  ]
+}
