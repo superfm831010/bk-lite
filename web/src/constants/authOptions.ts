@@ -1,36 +1,8 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import { AuthOptions } from "next-auth";
-import WeChatProvider from "../lib/wechatProvider";
 
-async function getWeChatConfig() {
-  try {
-    const response = await fetch(`${process.env.NEXTAPI_URL}/api/v1/core/api/get_wechat_settings/`, {
-      method: "GET",
-      headers: { 
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
-      },
-      cache: "no-store"
-    });
-    
-    const responseData = await response.json();
-    
-    if (!response.ok || !responseData.result) {
-      console.error("Failed to get WeChat settings:", responseData);
-      return null;
-    }
-    console.log("WeChat settings fetched successfully:", responseData.data);
-    return responseData.data;
-  } catch (error) {
-    console.error("Error fetching WeChat settings:", error);
-    return null;
-  }
-}
-
+// Basic authentication configuration - does not fetch WeChat config on startup
 export async function getAuthOptions(): Promise<AuthOptions> {
-  const wechatConfig = await getWeChatConfig();
-  
   const providers = [
     CredentialsProvider({
       name: "Credentials",
@@ -49,12 +21,10 @@ export async function getAuthOptions(): Promise<AuthOptions> {
 
         try {
           // If skipValidation is true, use the provided userData directly
-          // This is used when the login validation has already been done in SigninClient
           if (credentials.skipValidation === 'true' && credentials.userData) {
             const userData = JSON.parse(credentials.userData);
             console.log("Parsed userData:", userData);
             
-            // Ensure required fields are present
             if (!userData.id && !userData.username) {
               console.error("Invalid userData: missing id and username");
               return null;
@@ -75,7 +45,7 @@ export async function getAuthOptions(): Promise<AuthOptions> {
             };
           }
 
-          // Otherwise, perform normal login validation (for direct NextAuth usage)
+          // Otherwise, perform normal login validation
           const response = await fetch(`${process.env.NEXTAPI_URL}/api/v1/core/api/login/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -115,20 +85,7 @@ export async function getAuthOptions(): Promise<AuthOptions> {
     }),
   ];
   
-  console.log("Credentials wechatConfig", wechatConfig);
-  if (wechatConfig && wechatConfig.app_id && wechatConfig.app_secret) {
-    providers.push(
-      WeChatProvider({
-        clientId: wechatConfig.app_id,
-        clientSecret: wechatConfig.app_secret,
-        redirectUri: `${wechatConfig.redirect_uri}/api/auth/callback/wechat`,
-      }) as unknown as any
-    );
-    console.log("WeChat provider added successfully");
-  } else {
-    console.log("WeChat configuration is incomplete or unavailable. Skipping WeChat provider.");
-  }
-
+  // Do not fetch WeChat config on startup, maintain basic configuration
   return {
     providers,
     pages: {
@@ -176,7 +133,7 @@ export async function getAuthOptions(): Promise<AuthOptions> {
   };
 }
 
-// For backward compatibility, keep a default authOptions, but only include basic CredentialsProvider
+// Default configuration for backward compatibility
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
@@ -195,7 +152,6 @@ export const authOptions: AuthOptions = {
         }
 
         try {
-          // If skipValidation is true, use the provided userData directly
           if (credentials.skipValidation === 'true' && credentials.userData) {
             const userData = JSON.parse(credentials.userData);
             
@@ -219,7 +175,6 @@ export const authOptions: AuthOptions = {
             };
           }
 
-          // Otherwise, perform normal login validation
           const response = await fetch(`${process.env.NEXTAPI_URL}/api/v1/core/api/login/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
