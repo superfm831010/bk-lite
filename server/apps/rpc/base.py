@@ -5,16 +5,15 @@ import nats_client
 
 
 class RpcClient(object):
-    def __init__(self, namespace=None, server=""):
+    def __init__(self, namespace=None):
         if namespace is None:
             # Default namespace is set to 'bk_lite' if not provided
             # This can be overridden by the environment variable NATS_NAMESPACE
             namespace = os.getenv("NATS_NAMESPACE", "bk_lite")
         self.namespace = namespace
-        self.server = server
 
     def run(self, method_name, *args, **kwargs):
-        return_data = asyncio.run(nats_client.request(self.namespace, method_name, self.server, *args, **kwargs))
+        return_data = asyncio.run(nats_client.request(self.namespace, method_name, *args, **kwargs))
         return return_data
 
     def request(self, method_name, **kwargs):
