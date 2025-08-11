@@ -1,0 +1,12 @@
+{
+  "plugin": "VastBase-Exporter",
+  "plugin_desc": "VastBase-Exporter is used to collect and export metrics from VastBase databases, including connection counts, query performance, cache usage, and error rates, to help monitor the health and performance of VastBase instances.",
+  "name": "VastBase",
+  "icon": "vastbase",
+  "type": "Database",
+  "description": "",
+  "default_metric": "any({instance_type='vastbase'}) by (instance_id)",
+  "instance_id_keys": ["instance_id"],
+  "supplementary_indicators": [],
+  "metrics": []
+}

@@ -1,7 +1,7 @@
 [
   {
     "id": "exporter_vastbase_linux",
-    "name": "Vastbase-Exporter",
+    "name": "VastBase-Exporter",
     "controller_default_run": false,
     "icon": "",
     "node_operating_system": "linux",
@@ -10,6 +10,6 @@
     "execute_parameters": "--web.listen-address 127.0.0.1:$LISTEN_PORT --collector.file %s",
     "validation_parameters": "",
     "default_template": "",
-    "introduction": "Vastbase Exporter is a monitoring tool that collects and exports Vastbase metrics, providing insights into database performance and health."
+    "introduction": "VastBase Exporter is a monitoring tool that collects and exports VastBase metrics, providing insights into database performance and health."
   }
 ]
