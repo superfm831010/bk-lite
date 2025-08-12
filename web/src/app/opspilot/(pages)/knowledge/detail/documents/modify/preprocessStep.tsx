@@ -189,7 +189,7 @@ const PreprocessStep: React.FC<{
         ))}
       </div>
       <div className="flex justify-between">
-        <div className={`flex-1 pr-4 ${styles.config}`}>
+        <div className={`flex-1 w-0 pr-4 ${styles.config}`}>
           {chunkType !== 'full' && (
             <>
               <h2 className="text-sm font-semibold mb-3">{t('knowledge.documents.chunkParams')}</h2>
@@ -274,7 +274,7 @@ const PreprocessStep: React.FC<{
           </div>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 w-0">
           <div className="flex justify-between">
             <h2 className="text-sm font-semibold mb-3">{t('knowledge.documents.preview')}</h2>
             <Button type="primary" size="small" onClick={handlePreviewClick} loading={loadingPreview}>
