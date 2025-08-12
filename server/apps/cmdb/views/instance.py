@@ -350,15 +350,6 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_info-Delete Associate")
     @action(detail=False, methods=["delete"], url_path="association/(?P<id>.+?)")
     def instance_association_delete(self, request, id: int):
-        # rules = rules = get_cmdb_rules(request=request, permission_key=PERMISSION_INSTANCES)
-        # association = InstanceManage.instance_association_by_asso_id(int(id))
-        # src_model_id = association['edge']['src_model_id']
-        # src_cls_id = ModelManage.search_model_info(src_model_id)["classification_id"]
-        # dst_model_id = association['edge']['dst_model_id']
-        # dst_cls_id = ModelManage.search_model_info(dst_model_id)["classification_id"]
-        # dst_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, dst_model_id, rules, dst_cls_id)
-        # src_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, src_model_id, rules, src_cls_id)
-        # TODO 后续补充权限 得有源实例和目标实例的权限才能操作
         InstanceManage.instance_association_delete(int(id), request.user.username)
         return WebUtils.response_success()
 
@@ -550,7 +541,6 @@ class InstanceViewSet(viewsets.ViewSet):
             request.data,
             format_group_params(request.COOKIES.get("current_team")),
             request.user.roles,
-            rules,
             inst_names,
             request.user.username
         ).read())

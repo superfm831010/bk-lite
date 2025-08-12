@@ -69,7 +69,7 @@ class ModelViewSet(viewsets.ViewSet):
         operation_id="model_list",
         operation_description="查询模型",
     )
-    @HasPermission("model_management-View,asset_list-View,view_list-View")
+    @HasPermission("model_management-View")
     def list(self, request):
         current_team = request.COOKIES.get("current_team")
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
