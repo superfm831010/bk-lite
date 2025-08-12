@@ -1,0 +1,188 @@
+{
+  "object": "OpenGauss",
+  "plugin": "OpenGauss-Exporter",
+  "templates": [
+    {
+      "name": "实例存活状态",
+      "alert_name": "OpenGauss实例 ${metric_instance_id} 服务宕机",
+      "description": "监测OpnGauss服务存活状态，实例宕机将导致查询和写入全部中断。需立即检查错误日志。",
+      "metric_name": "up",
+      "algorithm": "last_over_time",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 1,
+          "method": "!="
+        }
+      ]
+    },
+    {
+      "name": "检查点写入时间过长",
+      "alert_name": "OpenGauss ${metric_instance_id} 检查点写入延迟",
+      "description": "检测检查点写入耗时，延迟过高可能导致事务阻塞，需检查磁盘 I/O 或 WAL 配置。",
+      "metric_name": "opengauss_exporter_checkpoint_write_time",
+      "algorithm": "last_over_time",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 5,
+          "method": ">="
+        },
+        {
+          "level": "error",
+          "value": 3,
+          "method": ">="
+        },
+        {
+          "level": "warning",
+          "value": 1,
+          "method": ">="
+        }
+      ]
+    },
+    {
+      "name": "缓冲区命中率过低",
+      "alert_name": "OpenGauss ${metric_instance_id} 缓存命中率下降",
+      "description": "监控缓冲区命中率，过低表明频繁磁盘读取，需调整 shared_buffers 或优化查询。",
+      "metric_name": "opengauss_exporter_buffers_hit_ratio",
+      "algorithm": "last_over_time",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 80,
+          "method": "<="
+        },
+        {
+          "level": "error",
+          "value": 85,
+          "method": "<="
+        },
+        {
+          "level": "warning",
+          "value": 90,
+          "method": "<="
+        }
+      ]
+    },
+    {
+      "name": "事务回滚率异常",
+      "alert_name": "OpenGauss ${metric_instance_id} 事务回滚率升高",
+      "description": "检测事务回滚比例，突增可能由应用逻辑错误或并发冲突引起，需检查 SQL 和锁争用。",
+      "metric_name": "opengauss_exporter_xact_rollback_ratio",
+      "algorithm": "max",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 20,
+          "method": ">="
+        },
+        {
+          "level": "error",
+          "value": 10,
+          "method": ">="
+        },
+        {
+          "level": "warning",
+          "value": 5,
+          "method": ">="
+        }
+      ]
+    },
+    {
+      "name": "数据库连接数接近上限",
+      "alert_name": "OpenGauss ${metric_instance_id} 连接数即将耗尽",
+      "description": "监控连接池使用率，超过阈值可能导致应用无法访问，需调整 max_connections。",
+      "metric_name": "opengauss_exporter_connection_used_ratio",
+      "algorithm": "max",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 90,
+          "method": ">="
+        },
+        {
+          "level": "error",
+          "value": 80,
+          "method": ">="
+        },
+        {
+          "level": "warning",
+          "value": 70,
+          "method": ">="
+        }
+      ]
+    },
+    {
+      "name": "长事务执行时间超限",
+      "alert_name": "OpenGauss ${metric_instance_id} 事务执行超时",
+      "description": "监控最长事务持续时间，过长事务可能锁表，需检查未提交事务或慢查询。",
+      "metric_name": "opengauss_exporter_max_transaction_time",
+      "algorithm": "max",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 1800,
+          "method": ">="
+        },
+        {
+          "level": "error",
+          "value": 600,
+          "method": ">="
+        },
+        {
+          "level": "warning",
+          "value": 300,
+          "method": ">="
+        }
+      ]
+    },
+    {
+      "name": "数据库采集超时",
+      "alert_name": "OpenGauss ${metric_instance_id} 监控采集异常",
+      "description": "监控 exporter 数据采集耗时，超时可能导致数据缺失，需检查网络或负载。",
+      "metric_name": "scrape_duration_seconds",
+      "algorithm": "max",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 30,
+          "method": ">="
+        },
+        {
+          "level": "error",
+          "value": 15,
+          "method": ">="
+        },
+        {
+          "level": "warning",
+          "value": 5,
+          "method": ">="
+        }
+      ]
+    },
+    {
+      "name": "检查点同步时间过长",
+      "alert_name": "OpenGauss ${metric_instance_id} 检查点同步延迟",
+      "description": "检测检查点同步到磁盘的时间，延迟过高可能影响崩溃恢复，需检查磁盘性能。",
+      "metric_name": "opengauss_exporter_checkpoint_sync_time",
+      "algorithm": "max",
+      "threshold": [
+        {
+          "level": "critical",
+          "value": 2,
+          "method": ">="
+        },
+        {
+          "level": "error",
+          "value": 1,
+          "method": ">="
+        },
+        {
+          "level": "warning",
+          "value": 0.5,
+          "method": ">="
+        }
+      ]
+    }
+  ]
+}

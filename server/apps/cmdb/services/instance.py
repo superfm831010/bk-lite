@@ -461,7 +461,7 @@ class InstanceManage(object):
         return add_results, update_results
 
     @staticmethod
-    def inst_export(model_id: str, ids: list, user_groups: list, roles: list, rules: dict, inst_names: list, created: str = ""):
+    def inst_export(model_id: str, ids: list, user_groups: list, roles: list, inst_names: list, created: str = ""):
         """实例导出"""
         attrs = ModelManage.search_model_attr_v2(model_id)
 

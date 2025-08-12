@@ -1,0 +1,377 @@
+{
+  "plugin": "OpenGauss-Exporter",
+  "plugin_desc": "The OpenGauss-Exporter collects OpenGauss database performance metrics including system resources, connection statistics, and query performance.",
+  "name": "OpenGauss",
+  "icon": "opengauss",
+  "type": "Database",
+  "metrics": [
+    {
+      "metric_group": "Base",
+      "name": "up",
+      "query": "up_gauge{__$labels__,instance_type=\"opengauss\"}",
+      "display_name": "Plugin running status",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Enum",
+      "unit": "[{\"id\":1,\"name\":\"Normal\",\"color\":\"#52c41a\"},{\"id\":0,\"name\":\"Abnormal\",\"color\":\"#ff4d4f\"}]",
+      "dimensions": [],
+      "description": "Indicates whether the OpenGauss exporter is operating normally. A value of 1 means it is running properly, while 0 indicates it has stopped or encountered an error."
+    },
+    {
+      "metric_group": "Memory",
+      "name": "opengauss_exporter_memory_usage",
+      "query": "opengauss_exporter_memory_usage_gauge{__$labels__}",
+      "display_name": "Memory usage",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "decmbytes",
+      "dimensions": [
+        {"name": "memorytype", "description": "Memory type"}
+      ],
+      "description": "Refers to the amount of memory consumed by the OpenGauss exporter during its operation, reflecting the memory resource occupation of the monitoring plugin."
+    },
+    {
+      "metric_group": "Bgwrite",
+      "name": "opengauss_exporter_scheduled_checkpoints",
+      "query": "opengauss_exporter_scheduled_checkpoints_gauge{__$labels__}",
+      "display_name": "Number of periodic checkpoints executed",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Represents the number of checkpoints that are automatically executed by the database according to the pre-set schedule, which is an important indicator of the database's regular data persistence mechanism."
+    },
+    {
+      "metric_group": "Bgwrite",
+      "name": "opengauss_exporter_request_checkpoints",
+      "query": "opengauss_exporter_request_checkpoints_gauge{__$labels__}",
+      "display_name": "Number of requested checkpoints executed",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Denotes the number of checkpoints triggered manually by administrators or by specific system requests, usually for special data protection or maintenance purposes."
+    },
+    {
+      "metric_group": "Bgwrite",
+      "name": "opengauss_exporter_checkpoint_write_time",
+      "query": "opengauss_exporter_checkpoint_write_time_gauge{__$labels__}/1000",
+      "display_name": "Time taken to process checkpoint file writing to disk",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "s",
+      "dimensions": [],
+      "description": "Measures the time elapsed when writing checkpoint-related data from the memory buffer to the disk, which affects the efficiency of data persistence during checkpoints."
+    },
+    {
+      "metric_group": "Bgwrite",
+      "name": "opengauss_exporter_checkpoint_sync_time",
+      "query": "opengauss_exporter_checkpoint_sync_time_gauge{__$labels__}/1000",
+      "display_name": "Time taken to process checkpoint file synchronization to disk",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "s",
+      "dimensions": [],
+      "description": "Indicates the time taken to synchronize checkpoint data from the memory to the disk to ensure that the data is permanently stored, related to data consistency and reliability."
+    },
+    {
+      "metric_group": "Bgwrite",
+      "name": "opengauss_exporter_buffers_checkpoint",
+      "query": "opengauss_exporter_buffers_checkpoint_gauge{__$labels__}",
+      "display_name": "Number of write buffers during checkpoint",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Counts the number of data buffers that are written to the disk during the checkpoint process, reflecting the amount of data processed in a single checkpoint."
+    },
+    {
+      "metric_group": "Bgwrite",
+      "name": "opengauss_exporter_buffers_clean",
+      "query": "opengauss_exporter_buffers_clean_gauge{__$labels__}",
+      "display_name": "Number of write buffers by backend write process",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Refers to the number of data buffers that are cleaned up and written to the disk by the background writer process, which helps maintain the efficiency of the memory buffer."
+    },
+    {
+      "metric_group": "Bgwrite",
+      "name": "opengauss_exporter_buffers_backend",
+      "query": "opengauss_exporter_buffers_backend_gauge{__$labels__}",
+      "display_name": "Number of backend direct write buffers",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Represents the number of data buffers directly written to the disk by the backend processes (such as query execution processes) without going through the background writer."
+    },
+    {
+      "metric_group": "Bgwrite",
+      "name": "opengauss_exporter_buffers_backend_fsync",
+      "query": "opengauss_exporter_buffers_backend_fsync_gauge{__$labels__}",
+      "display_name": "Number of times backend must perform its own fsync",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Records the number of times backend processes have to perform their own fsync operations to ensure that data in the buffers is physically written to the disk."
+    },
+    {
+      "metric_group": "Bgwrite",
+      "name": "opengauss_exporter_buffers_alloc",
+      "query": "opengauss_exporter_buffers_alloc_gauge{__$labels__}",
+      "display_name": "Number of allocated buffers",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Indicates the total number of data buffers allocated by the database system to store data temporarily, reflecting the memory buffer scale."
+    },
+    {
+      "metric_group": "Bgwrite",
+      "name": "opengauss_exporter_buffers_hit_ratio",
+      "query": "opengauss_exporter_buffers_hit_ratio_gauge{__$labels__}",
+      "display_name": "Database buffer cache hit rate",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "The ratio of the number of times data is hit in the buffer to the total number of data requests, which reflects the efficiency of the database buffer cache in reducing disk I/O."
+    },
+    {
+      "metric_group": "Conflict",
+      "name": "opengauss_exporter_conflict_tablespaces",
+      "query": "opengauss_exporter_conflict_tablespaces_gauge{__$labels__}",
+      "display_name": "Number of queries canceled due to tablespace deletion",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the number of queries that were canceled due to conflicts caused by tablespace deletion operations, indicating the impact of tablespace management on query execution."
+    },
+    {
+      "metric_group": "Conflict",
+      "name": "opengauss_exporter_conflict_locks",
+      "query": "opengauss_exporter_conflict_locks_gauge{__$labels__}",
+      "display_name": "Number of queries canceled due to lock timeout",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Denotes the number of queries canceled due to lock timeouts, which occurs when a query cannot obtain the required locks within the specified time, affecting query execution."
+    },
+    {
+      "metric_group": "Conflict",
+      "name": "opengauss_exporter_conflict_snapshots",
+      "query": "opengauss_exporter_conflict_snapshots_gauge{__$labels__}",
+      "display_name": "Number of queries canceled due to old snapshot",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Indicates the number of queries canceled due to conflicts with old snapshots, usually related to transaction isolation levels and data visibility mechanisms."
+    },
+    {
+      "metric_group": "Conflict",
+      "name": "opengauss_exporter_conflict_bufferpins",
+      "query": "opengauss_exporter_conflict_bufferpins_gauge{__$labels__}",
+      "display_name": "Number of queries canceled due to pinned buffers",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Refers to the number of queries canceled due to conflicts with pinned buffers, where buffers are occupied and cannot be accessed, leading to query termination."
+    },
+    {
+      "metric_group": "Conflict",
+      "name": "opengauss_exporter_conflict_deadlock",
+      "query": "opengauss_exporter_conflict_deadlock_gauge{__$labels__}",
+      "display_name": "Number of queries canceled due to deadlock",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the number of queries canceled as a result of deadlock situations, where multiple transactions wait for each other's resources, forcing some queries to be terminated."
+    },
+    {
+      "metric_group": "Transaction",
+      "name": "opengauss_exporter_max_transaction_time",
+      "query": "opengauss_exporter_max_transaction_time_gauge{__$labels__}",
+      "display_name": "Current longest transaction time",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "s",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Measures the duration of the longest currently running transaction in the database, reflecting the maximum time a transaction has been active."
+    },
+    {
+      "metric_group": "Transaction",
+      "name": "opengauss_exporter_xact_commit",
+      "query": "opengauss_exporter_xact_commit_gauge{__$labels__}",
+      "display_name": "Number of committed transactions in the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Counts the total number of transactions that have been successfully committed in the database, indicating the number of completed transactions."
+    },
+    {
+      "metric_group": "Transaction",
+      "name": "opengauss_exporter_xact_rollback",
+      "query": "opengauss_exporter_xact_rollback_gauge{__$labels__}",
+      "display_name": "Number of rolled back transactions in the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Records the total number of transactions that have been rolled back in the database, usually due to errors or user-initiated rollbacks."
+    },
+    {
+      "metric_group": "Transaction",
+      "name": "opengauss_exporter_xact_rollback_ratio",
+      "query": "opengauss_exporter_xact_rollback_ratio_gauge{__$labels__}",
+      "display_name": "Database transaction rollback rate",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "The ratio of rolled-back transactions to the total number of transactions (committed + rolled back), reflecting the transaction rollback rate and system stability."
+    },
+    {
+      "metric_group": "Other",
+      "name": "opengauss_exporter_database_size",
+      "query": "opengauss_exporter_database_size_gauge{__$labels__}/1024/1024",
+      "display_name": "Database disk usage space",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Indicates the total disk space occupied by the database, including all data files, log files, and related metadata."
+    },
+    {
+      "metric_group": "Other",
+      "name": "opengauss_exporter_database_connection_limit",
+      "query": "opengauss_exporter_database_connection_limit_gauge{__$labels__}",
+      "display_name": "Database connection limit",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the maximum number of concurrent connections allowed by the database system, limiting the number of simultaneous user connections."
+    },
+    {
+      "metric_group": "Other",
+      "name": "opengauss_exporter_connections",
+      "query": "opengauss_exporter_connections_gauge{__$labels__}",
+      "display_name": "Number of connections in different states",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "state", "description": "Connection state"}
+      ],
+      "description": "Counts the number of database connections in different states (such as active, idle, waiting), reflecting the current connection distribution."
+    },
+    {
+      "metric_group": "Other",
+      "name": "opengauss_exporter_connection_used_ratio",
+      "query": "opengauss_exporter_connection_used_ratio_gauge{__$labels__}",
+      "display_name": "Connection usage rate",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [],
+      "description": "The ratio of currently used connections to the maximum allowed connections, indicating the utilization of connection resources."
+    },
+    {
+      "metric_group": "Other",
+      "name": "opengauss_exporter_tup_returns",
+      "query": "opengauss_exporter_tup_returns_gauge{__$labels__}",
+      "display_name": "Number of records undergoing full table scan",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Refers to the number of records retrieved through full table scans, reflecting the frequency and scale of full table scan operations."
+    },
+    {
+      "metric_group": "Other",
+      "name": "opengauss_exporter_deadlocks",
+      "query": "opengauss_exporter_deadlocks_gauge{__$labels__}",
+      "display_name": "Deadlock number",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "This metric helps database administrators understand the occurrence frequency of deadlock problems in the database by counting the number of deadlock occurrences, so as to take timely optimization and adjustment measures."
+    },
+    {
+      "metric_group": "Other",
+      "name": "opengauss_exporter_slow_queries",
+      "query": "opengauss_exporter_slow_queries_gauge{__$labels__}",
+      "display_name": "Current number of slow queries",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Indicates the current number of queries that execute slowly (exceeding the predefined slow query threshold), helping identify performance bottlenecks."
+    },
+    {
+      "metric_group": "Other",
+      "name": "opengauss_exporter_locks",
+      "query": "opengauss_exporter_locks_gauge{__$labels__}",
+      "display_name": "Number of locks in the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "mode", "description": "Lock mode"}
+      ],
+      "description": "Counts the total number of locks currently held in the database, reflecting the level of resource competition and concurrency control."
+    },
+    {
+      "metric_group": "selfMonitor",
+      "name": "scrape_duration_seconds",
+      "query": "scrape_duration_seconds_gauge{__$labels__,instance_type=\"opengauss\"}",
+      "display_name": "Duration of the latest capture by the monitoring probe",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "s",
+      "dimensions": [],
+      "description": "Measures the time taken for the monitoring probe to complete the latest data collection, reflecting the efficiency of data scraping."
+    }
+  ]
+}

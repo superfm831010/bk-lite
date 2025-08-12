@@ -1,0 +1,421 @@
+{
+  "plugin": "KingBase-Exporter",
+  "plugin_desc": "The KingBase-Exporter collects KingBase database performance metrics including system resources, connection statistics, and query performance.",
+  "name": "KingBase",
+  "icon": "kingbase",
+  "type": "Database",
+  "metrics": [
+    {
+      "metric_group": "Base",
+      "name": "up",
+      "query": "up_gauge{__$labels__,instance_type=\"kingbase\"}",
+      "display_name": "Plugin running status",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Enum",
+      "unit": "[{\"id\":1,\"name\":\"Normal\",\"color\":\"#52c41a\"},{\"id\":0,\"name\":\"Abnormal\",\"color\":\"#ff4d4f\"}]",
+      "dimensions": [],
+      "description": "Indicates whether the Kingbase-exporter is operating normally. A value of 1 means the exporter is running and able to collect metrics, while 0 indicates it is down or unable to function, serving as a fundamental health check for the monitoring plugin."
+    },
+    {
+      "metric_group": "Base",
+      "name": "kingbase_database_mode",
+      "query": "kingbase_database_mode_gauge{__$labels__}",
+      "display_name": "Current database mode",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Enum",
+      "unit": "[{\"id\":1,\"name\":\"Read-write mode\",\"color\":\"#52c41a\"},{\"id\":2,\"name\":\"Read-only mode\",\"color\":\"#faad14\"},{\"id\":3,\"name\":\"Maintenance mode\",\"color\":\"#ff4d4f\"}]",
+      "dimensions": [
+        {"name": "database_mode", "description": "Database mode"}
+      ],
+      "description": "Indicates the current running mode of the Kingbase database. Different modes correspond to different functional restrictions and running states of the database, helping administrators understand the current working environment of the database for targeted maintenance and operations."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "kingbase_exporter_current_connections",
+      "query": "kingbase_exporter_current_connections_gauge{__$labels__}",
+      "display_name": "Current number of database connections",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Refers to the number of current sessions connected to the Kingbase database. This metric reflects the real-time connection load of the database. Excessively high connection numbers may lead to intensified resource competition and affect database performance; excessively low numbers may indicate insufficient system usage, which can be used to evaluate the concurrent processing pressure of the database."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "kingbase_exporter_max_connections_limit",
+      "query": "kingbase_exporter_max_connections_limit_gauge{__$labels__}",
+      "display_name": "Maximum number of database connections limit",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Represents the maximum number of connections allowed by the Kingbase database. This is an important configuration parameter of the database, used to prevent excessive connections from occupying system resources (such as memory, CPU, etc.) and causing database crashes. Administrators can adjust this value according to system performance to optimize database stability."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "kingbase_exporter_active_connections",
+      "query": "kingbase_exporter_active_connections_gauge{__$labels__}",
+      "display_name": "Number of active database processes",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Refers to the number of currently active database connections, i.e., connections that are executing SQL statements or processing transactions. This metric directly reflects the real-time workload of the database. Excessively high active connection numbers usually mean the database is under high load and may require performance optimization."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "kingbase_exporter_idle_connections",
+      "query": "kingbase_exporter_idle_connections_gauge{__$labels__}",
+      "display_name": "Number of idle database processes",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Indicates the number of currently idle database connections, i.e., sessions where the connection is established but no operations are being performed. Too many idle connections will occupy system resources, and connection timeout parameters should be appropriately set to release idle connections and improve resource utilization."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "kingbase_exporter_idle_in_trans_connections",
+      "query": "kingbase_exporter_idle_in_trans_connections_gauge{__$labels__}",
+      "display_name": "Number of idle transaction processes in the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Refers to the number of connections in the idle-in-transaction state, i.e., connections where a transaction has been started but not committed or rolled back for a long time. Such connections may cause long-term occupation of lock resources and trigger concurrency issues, requiring timely monitoring and handling to avoid long-term transaction stagnation affecting database performance."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "kingbase_exporter_slow_query_number",
+      "query": "kingbase_exporter_slow_query_number_gauge{__$labels__}",
+      "display_name": "Number of slow queries",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the number of slow queries in the database. Slow queries are SQL statements whose execution time exceeds a preset threshold. Too many slow queries will consume a lot of system resources and cause the database to respond slowly. This metric helps administrators identify and optimize inefficient queries to improve database performance."
+    },
+    {
+      "metric_group": "Connection",
+      "name": "kingbase_exporter_db_max_tran_duration",
+      "query": "kingbase_exporter_db_max_tran_duration_gauge{__$labels__}",
+      "display_name": "Longest duration of currently executing transactions in the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "s",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Records the duration of the longest transaction in the database. Overly long transactions may cause problems such as long lock holding time and excessive log growth, affecting the concurrent processing capability and stability of the database. This metric is used to monitor transaction execution efficiency and timely detect abnormally long transactions."
+    },
+    {
+      "metric_group": "Buffer",
+      "name": "kingbase_exporter_buffers_clean",
+      "query": "kingbase_exporter_buffers_clean_gauge{__$labels__}",
+      "display_name": "Number of buffers written by background writer",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Indicates the number of buffers asynchronously cleaned by background processes in the database. Buffers are used to temporarily store frequently accessed data, and cleaning buffers can free up space to cache new data. This metric reflects the working status of the background cleaning mechanism and helps evaluate the management efficiency of memory caches."
+    },
+    {
+      "metric_group": "Buffer",
+      "name": "kingbase_exporter_buffers_checkpoint",
+      "query": "kingbase_exporter_buffers_checkpoint_gauge{__$labels__}",
+      "display_name": "Number of buffers written during checkpoint",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Refers to the number of buffers written to disk during the checkpoint process. A checkpoint is a process where the database persists modified data in memory to disk. This metric reflects the execution intensity of checkpoints, and an excessive number of checkpoint buffers may indicate high system I/O pressure."
+    },
+    {
+      "metric_group": "Buffer",
+      "name": "kingbase_exporter_buffers_backend",
+      "query": "kingbase_exporter_buffers_backend_gauge{__$labels__}",
+      "display_name": "Number of buffers written directly by backend",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Indicates the number of buffers directly written to disk by database backend processes. Backend processes may directly write to buffers and synchronize to disk when processing user requests. This metric reflects the direct impact of user operations on disk I/O and can be used to analyze the relationship between user requests and I/O performance."
+    },
+    {
+      "metric_group": "Conflict",
+      "name": "kingbase_exporter_conflict_tablespaces",
+      "query": "kingbase_exporter_conflict_tablespaces_gauge{__$labels__}",
+      "display_name": "Number of queries canceled due to tablespace deletion",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Records the number of failed database operations due to tablespace conflicts. Tablespace conflicts may occur when multiple operations compete for tablespace resources (such as storage space allocation) simultaneously. This metric helps administrators identify problems in tablespace configuration or resource allocation to ensure the normal use of tablespaces."
+    },
+    {
+      "metric_group": "Conflict",
+      "name": "kingbase_exporter_conflict_locks",
+      "query": "kingbase_exporter_conflict_locks_gauge{__$labels__}",
+      "display_name": "Number of queries canceled due to lock timeout",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Indicates the number of operation waits or failures due to lock conflicts. Lock conflicts usually occur when multiple transactions request locks on the same resource simultaneously and are incompatible. This metric reflects the intensity of lock competition in the database. Excessively high lock conflicts may cause transaction delays and require lock strategy optimization."
+    },
+    {
+      "metric_group": "Conflict",
+      "name": "kingbase_exporter_conflict_snapshots",
+      "query": "kingbase_exporter_conflict_snapshots_gauge{__$labels__}",
+      "display_name": "Number of queries canceled due to old snapshot",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Refers to the number of database operation conflicts caused by snapshot conflicts. Snapshot conflicts may be related to transaction isolation levels and occur when snapshots of multiple transactions are inconsistent and affect each other. This metric is used to monitor the stability of transaction snapshot management and avoid affecting data consistency due to snapshot issues."
+    },
+    {
+      "metric_group": "Conflict",
+      "name": "kingbase_exporter_conflict_bufferpins",
+      "query": "kingbase_exporter_conflict_bufferpins_gauge{__$labels__}",
+      "display_name": "Number of queries canceled due to pinned buffers",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Records the number of operation blocks caused by buffer pin conflicts. Buffer pins are used to protect buffer data being accessed. Conflicts may occur when multiple processes request to lock the same buffer simultaneously. This metric reflects the competition for buffer access and can be used to evaluate the concurrency control efficiency of memory buffers."
+    },
+    {
+      "metric_group": "Conflict",
+      "name": "kingbase_exporter_conflict_deadlock",
+      "query": "kingbase_exporter_conflict_deadlock_gauge{__$labels__}",
+      "display_name": "Number of queries canceled due to deadlock",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the number of transactions terminated due to deadlock conflicts in the database. A deadlock is a state where two or more transactions wait for each other to release resources and fall into an infinite wait. The database will automatically terminate one of the transactions to break the deadlock. This metric helps administrators understand the frequency of deadlocks and optimize transaction logic to reduce deadlocks."
+    },
+    {
+      "metric_group": "Disk",
+      "name": "kingbase_exporter_database_used_disk",
+      "query": "kingbase_exporter_database_used_disk_gauge{__$labels__}/1024/1024",
+      "display_name": "Disk space used by the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "mebibytes",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Refers to the size of disk space currently used by the database. This metric reflects the storage occupation of the database, helping administrators monitor the trend of disk space usage, timely clean up useless data or expand storage space, and avoid database failure due to full disks."
+    },
+    {
+      "metric_group": "Lock",
+      "name": "kingbase_exporter_locks_waiting_all",
+      "query": "kingbase_exporter_locks_waiting_all_gauge{__$labels__}",
+      "display_name": "Number of processes currently waiting for locks",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Represents the total number of all locks in the waiting state. These lock waits may be caused by various resource competitions. This metric comprehensively reflects the overall situation of lock waits in the database. An excessively high value indicates serious resource competition problems in the system, requiring further analysis of specific lock types and causes."
+    },
+    {
+      "metric_group": "Lock",
+      "name": "kingbase_exporter_locks_granted",
+      "query": "kingbase_exporter_locks_granted_gauge{__$labels__}",
+      "display_name": "Number of granted locks",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "locktype", "description": "Lock type"}
+      ],
+      "description": "Refers to the number of granted locks. Granted locks mean that transactions have successfully obtained access rights to resources. This metric reflects the normal allocation of locks in the database. Combined with lock waiting metrics, it can analyze the allocation efficiency of locks and the degree of resource competition."
+    },
+    {
+      "metric_group": "Lock",
+      "name": "kingbase_exporter_locks_waiting",
+      "query": "kingbase_exporter_locks_waiting_gauge{__$labels__}",
+      "display_name": "Number of locks waiting to be granted",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"},
+        {"name": "locktype", "description": "Lock type"}
+      ],
+      "description": "Indicates the number of locks waiting to be acquired. These waiting locks indicate that the corresponding transactions cannot obtain the required resources temporarily and need to wait for other transactions to release locks. This metric directly reflects the real-time state of lock competition and is an important basis for evaluating database concurrency performance."
+    },
+    {
+      "metric_group": "Lock",
+      "name": "kingbase_exporter_opened_cursors",
+      "query": "kingbase_exporter_opened_cursors_gauge{__$labels__}",
+      "display_name": "Number of open cursors",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [],
+      "description": "Refers to the number of currently opened cursors. Cursors are used to process data row by row in query result sets. Too many opened cursors will occupy system memory resources. This metric helps administrators monitor cursor usage and avoid resource waste caused by cursor leaks (not closed in time)."
+    },
+    {
+      "metric_group": "SystemStatus",
+      "name": "kingbase_exporter_buffers_hit_percent",
+      "query": "kingbase_exporter_buffers_hit_percent_gauge{__$labels__}",
+      "display_name": "Buffer cache hit rate",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the buffer hit ratio, i.e., the percentage of data requests that are obtained from memory buffers out of total data requests. A higher hit ratio indicates that the database obtains a larger proportion of data from memory, reducing dependence on disk I/O and achieving better performance; conversely, it indicates high disk I/O pressure, and buffer configuration may need optimization."
+    },
+    {
+      "metric_group": "SystemStatus",
+      "name": "kingbase_exporter_deadlocks",
+      "query": "kingbase_exporter_deadlocks_gauge{__$labels__}",
+      "display_name": "Number of deadlocks",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Records the total number of deadlocks occurring in the database. Deadlocks can cause transactions to fail to execute normally and require automatic database intervention or manual processing. This metric reflects the severity of deadlock problems and is an important reference for optimizing transaction design and concurrency control strategies."
+    },
+    {
+      "metric_group": "SystemStatus",
+      "name": "kingbase_exporter_returned_tuples",
+      "query": "kingbase_exporter_returned_tuples_gauge{__$labels__}",
+      "display_name": "Number of records with full table scan",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Refers to the number of tuples (rows) returned by database queries. This metric reflects the result scale of query operations and can be used to analyze query efficiency and data processing volume. A large number of returned tuples may mean that the query scope is too large, and query conditions need to be optimized to reduce data transmission and processing overhead."
+    },
+    {
+      "metric_group": "SystemStatus",
+      "name": "kingbase_exporter_xact_commit",
+      "query": "kingbase_exporter_xact_commit_gauge{__$labels__}",
+      "display_name": "Number of committed transactions in the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the number of committed transactions. Committed transactions are normally completed transactions. This metric reflects the business processing volume and transaction success rate of the database. Combined with the rolled-back transaction metric, it can evaluate the overall execution quality of transactions."
+    },
+    {
+      "metric_group": "SystemStatus",
+      "name": "kingbase_exporter_xact_rollback",
+      "query": "kingbase_exporter_xact_rollback_gauge{__$labels__}",
+      "display_name": "Number of rolled back transactions in the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Refers to the number of rolled-back transactions. Transaction rollbacks are usually due to errors, conflicts, or active user termination. Too many rollbacks will affect database efficiency and business continuity. This metric helps administrators identify the causes of transaction failures, such as logical errors and resource competition."
+    },
+    {
+      "metric_group": "SystemStatus",
+      "name": "kingbase_exporter_rollback_percent",
+      "query": "kingbase_exporter_rollback_percent_gauge{__$labels__}",
+      "display_name": "Database transaction rollback rate",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the percentage of rolled-back transactions out of total transactions (committed + rolled back). This metric intuitively reflects the transaction failure rate. An excessively high rollback percentage indicates that there are many problems in the database, which need to be investigated in time to improve transaction success rate and system stability."
+    },
+    {
+      "metric_group": "Age",
+      "name": "kingbase_exporter_database_frozen_age",
+      "query": "kingbase_exporter_database_frozen_age_gauge{__$labels__}",
+      "display_name": "Age of the oldest transaction in the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Refers to the age of the oldest unfrozen transaction ID in the database. In Kingbase, transaction IDs have a limited lifecycle, and freezing old transaction IDs is to avoid transaction ID overflow. This metric is used to monitor the effectiveness of the freezing mechanism. Overly old unfrozen IDs may cause database performance problems or storage growth."
+    },
+    {
+      "metric_group": "Age",
+      "name": "kingbase_exporter_database_min_mxid_age",
+      "query": "kingbase_exporter_database_min_mxid_age_gauge{__$labels__}",
+      "display_name": "Age of the smallest mxid in the database",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "datname", "description": "Database name"}
+      ],
+      "description": "Represents the minimum age of multi-transaction IDs (MXID) in the database. MXID is related to concurrent transaction management in the database. This metric reflects the aging degree of MXID. An excessively small age may affect the normal processing of transactions, and its changes need to be monitored to ensure the normal operation of the transaction management mechanism."
+    },
+    {
+      "metric_group": "License",
+      "name": "kingbase_exporter_license_validdays",
+      "query": "kingbase_exporter_license_validdays_gauge{__$labels__}",
+      "display_name": "Remaining validity period of license (days)",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "d",
+      "dimensions": [],
+      "description": "Refers to the remaining valid days of the Kingbase database license. This metric is used to remind administrators to pay attention to the license status in time, avoid database function restrictions or unavailability due to license expiration, and ensure the system is compliant and runs continuously."
+    },
+    {
+      "metric_group": "selfMonitor",
+      "name": "scrape_duration_seconds",
+      "query": "scrape_duration_seconds_gauge{__$labels__,instance_type=\"kingbase\"}",
+      "display_name": "Duration of the latest capture by the monitoring probe",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "s",
+      "dimensions": [],
+      "description": "Represents the time taken by Prometheus (or similar monitoring tools) to collect metric data from the Kingbase exporter. This metric reflects the efficiency of data collection. Excessively long collection time may lead to delayed or incomplete monitoring data, requiring optimization of collection configuration or exporter performance."
+    },
+    {
+      "metric_group": "selfMonitor",
+      "name": "scrape_errors_total",
+      "query": "scrape_errors_total_counter{__$labels__}",
+      "display_name": "Total number of collection errors by the monitoring probe",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "collector", "description": "Collector name"},
+        {"name": "query", "description": "Query name"}
+      ],
+      "description": "Refers to the total number of errors that occurred when collecting metric data from the Kingbase exporter. Errors may include connection failures, timeouts, data parsing errors, etc. This metric is used to monitor the stability of the data collection process. Continuous errors will lead to missing monitoring data, requiring timely investigation of network, exporter, or database issues."
+    }
+  ]
+}
