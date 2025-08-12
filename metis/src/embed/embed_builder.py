@@ -1,3 +1,4 @@
+from flask import request
 from langchain_openai import OpenAIEmbeddings
 from sanic.log import logger
 
@@ -31,9 +32,10 @@ class EmbedBuilder:
         if protocol.startswith('local:'):
             return EmbedBuilder.get_embed_instance(protocol)
         else:
-            embeddings= OpenAIEmbeddings(
-                    model=model_name,
-                    api_key=model_api_key,
-                    base_url=model_base_url,
-                )
+            embeddings = OpenAIEmbeddings(
+                model=model_name,
+                api_key=model_api_key,
+                base_url=model_base_url,
+                request_timeout=60
+            )
             return embeddings
