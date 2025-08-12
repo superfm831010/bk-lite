@@ -5,7 +5,6 @@
 ![logo](./docs/resource/img/logo.png)
 
 ---
-
 ## 📖 简介
 
 Blueking Lite 是一个 **AI First** 的**轻量版**运维产品，具有部署资源要求低、使用成本低、渐进式体验等特点，为运维管理员提供日常运维中的必备工具。
