@@ -60,6 +60,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.sidecar.rule=Host(`${HOST_IP}`) && PathPrefix(`/node_mgmt`) || PathPrefix(`/opspilot/bot_mgmt`)"
+      - "traefik.http.routers.sidecar.rule=Host(`${HOST_IP}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.sidecar.entrypoints=web"
       - "traefik.http.services.sidecar.loadbalancer.server.port=8000"
