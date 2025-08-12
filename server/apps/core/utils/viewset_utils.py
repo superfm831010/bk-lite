@@ -185,12 +185,12 @@ class AuthViewSet(MaintainerViewSet):
             partial = kwargs.pop("partial", False)
             data = request.data
             instance = self.get_object()
-
             if getattr(user, "is_superuser", False):
+                if "team" in data:
+                    delete_team = [i for i in instance.team if i not in data["team"]]
+                    self.delete_rules(instance.id, delete_team)
                 return super().update(request, *args, **kwargs)
-            if "team" in data:
-                delete_team = [i for i in instance.team if i not in data["team"]]
-                self.delete_rules(instance.id, delete_team)
+
             current_team = int(request.COOKIES.get("current_team", None))
             if current_team not in instance.team:
                 return self.value_error(_("User does not have permission to update this instance"))
@@ -198,6 +198,9 @@ class AuthViewSet(MaintainerViewSet):
                 has_permission = self.get_has_permission(user, instance, current_team)
                 if not has_permission:
                     return self.value_error(_("User does not have permission to update this instance"))
+            if "team" in data:
+                delete_team = [i for i in instance.team if i not in data["team"]]
+                self.delete_rules(instance.id, delete_team)
             serializer = self.get_serializer(instance, data=data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
