@@ -524,25 +524,22 @@ class LogPolicyScan:
     def send_notice(self, event_obj):
         """发送通知"""
         if not self.policy.notice_users:
-            return []
+            return False, []
 
         title = f"日志告警通知：{self.policy.name}"
         content = f"告警内容：{event_obj.content}\n时间：{event_obj.event_time}\n来源：{event_obj.source_id}"
-        result = []
 
         try:
-            send_result = SystemMgmtUtils.send_msg_with_channel(
+            result = SystemMgmtUtils.send_msg_with_channel(
                 self.policy.notice_type_id, title, content, self.policy.notice_users
             )
-            logger.info(f"send notice success for policy {self.policy.id}: {send_result}")
+            return True, result
         except Exception as e:
-            logger.error(f"send notice failed for policy {self.policy.id}: {e}")
-            for res in result:
-                if res["status"] == "success":
-                    res["status"] = "failed"
-                    res["error"] = str(e)
+            msg = f"send notice failed for policy {self.policy.id}: {e}"
+            logger.error(msg)
+            result = [{"error": msg}]
+            return False, result
 
-        return result
 
     def notice(self, event_objs):
         """通知"""
@@ -550,17 +547,26 @@ class LogPolicyScan:
             return
 
         try:
+
+            alerts = []
+
             for event in event_objs:
                 # info级别事件不通知
                 if event.level == "info":
                     continue
+                is_notice, notice_result = self.send_notice(event)
+                event.notice_result = notice_result
 
-                notice_results = self.send_notice(event)
-                event.notice_result = notice_results
+                if is_notice:
+                    alerts.append((event.alert_id, is_notice))
 
             # 批量更新通知结果
             Event.objects.bulk_update(event_objs, ["notice_result"], batch_size=200)
             logger.info(f"Completed notification for {len(event_objs)} events")
+
+            # 批量更新告警的通知状态
+            if alerts:
+                Alert.objects.bulk_update([Alert(id=i[0], notice=i[1]) for i in alerts],["notice"], batch_size=200)
 
         except Exception as e:
             logger.error(f"notice failed for policy {self.policy.id}: {e}")
