@@ -198,6 +198,35 @@ class AlertViewSet(viewsets.ModelViewSet):
 
         return WebUtils.response_success({"status": "closed", "operator": operator})
 
+    @swagger_auto_schema(
+        operation_description="获取最新告警事件",
+        operation_id="get_last_event_by_alert",
+        manual_parameters=[
+            openapi.Parameter('alert_id', openapi.IN_QUERY, description="告警ID", type=openapi.TYPE_STRING)
+        ]
+    )
+    @action(methods=['get'], detail=False, url_path='last_event')
+    def get_last_event(self, request):
+        """
+        获取最新的事件
+        """
+        alert_id = request.query_params.get('alert_id')
+        if not alert_id:
+            return WebUtils.response_error("缺少告警ID参数")
+
+        event = Event.objects.filter(alert_id=alert_id).order_by('-event_time').first()
+        if not event:
+            return WebUtils.response_error("未找到相关事件")
+
+        event_raw_data = EventRawData.objects.filter(event_id=event.id).first()
+
+        data = {
+            "event": EventSerializer(event).data,
+            "raw_data": EventRawDataSerializer(event_raw_data).data if event_raw_data else None
+        }
+
+        return WebUtils.response_success(data)
+
 
 class EventViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Event.objects.all()
