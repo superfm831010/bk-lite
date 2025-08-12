@@ -167,55 +167,36 @@ class PolicyViewSet(viewsets.ModelViewSet):
 
 
 class AlertViewSet(viewsets.ModelViewSet):
-    queryset = Alert.objects.all()
+    queryset = Alert.objects.select_related('policy', 'collect_type').order_by('-created_at')
     serializer_class = AlertSerializer
     filterset_class = AlertFilter
     pagination_class = CustomPageNumberPagination
 
-    def get_queryset(self):
-        return Alert.objects.select_related('policy', 'collect_type').order_by('-created_at')
+    @swagger_auto_schema(
+        operation_id="alert_list",
+        operation_description="告警列表查询",
+        manual_parameters=[
+            openapi.Parameter('levels', openapi.IN_QUERY, description="告警级别多选，用逗号分隔，如：critical,warning,info", type=openapi.TYPE_STRING),
+            openapi.Parameter('content', openapi.IN_QUERY, description="告警内容关键字搜索", type=openapi.TYPE_STRING),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_id="alert_acknowledge",
-        operation_description="确认告警",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "operator": openapi.Schema(type=openapi.TYPE_STRING, description="处理人")
-            }
-        )
+        operation_id="alert_closed",
+        operation_description="关闭告警",
     )
-    @action(methods=['post'], detail=True, url_path='acknowledge')
-    def acknowledge(self, request, pk=None):
+    @action(methods=['post'], detail=True, url_path='closed')
+    def closed(self, request, pk=None):
         alert = self.get_object()
-        operator = request.data.get('operator', request.user.username)
+        operator = request.user.username
 
-        alert.status = 'acknowledged'
+        alert.status = 'closed'
         alert.operator = operator
         alert.save()
 
-        return WebUtils.response_success({"status": "acknowledged", "operator": operator})
-
-    @swagger_auto_schema(
-        operation_id="alert_resolve",
-        operation_description="解决告警",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "operator": openapi.Schema(type=openapi.TYPE_STRING, description="处理人")
-            }
-        )
-    )
-    @action(methods=['post'], detail=True, url_path='resolve')
-    def resolve(self, request, pk=None):
-        alert = self.get_object()
-        operator = request.data.get('operator', request.user.username)
-
-        alert.status = 'resolved'
-        alert.operator = operator
-        alert.save()
-
-        return WebUtils.response_success({"status": "resolved", "operator": operator})
+        return WebUtils.response_success({"status": "closed", "operator": operator})
 
 
 class EventViewSet(viewsets.ReadOnlyModelViewSet):

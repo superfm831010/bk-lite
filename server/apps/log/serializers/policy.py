@@ -28,11 +28,19 @@ class PolicySerializer(serializers.ModelSerializer):
 class AlertSerializer(serializers.ModelSerializer):
     policy_name = serializers.CharField(source='policy.name', read_only=True)
     collect_type_name = serializers.CharField(source='collect_type.name', read_only=True)
+    # 告警类型返回
+    alert_type = serializers.CharField(source='policy.alert_type', read_only=True)
+    alert_name = serializers.CharField(source='policy.alert_name', read_only=True)
+
+    # 新增字段
+    organizations = serializers.ListField(source='policy.organizations', read_only=True)
+    notice_users = serializers.ListField(source='policy.notice_users', read_only=True)
+    alert_condition = serializers.DictField(source='policy.alert_condition', read_only=True)
 
     class Meta:
         model = Alert
         fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at')
+        read_only_fields = ('created_at', 'updated_at', 'notice')
 
 
 class EventSerializer(serializers.ModelSerializer):
