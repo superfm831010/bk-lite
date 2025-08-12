@@ -4,6 +4,8 @@ from rest_framework import status
 from django.http import Http404
 import pandas as pd
 
+import mlflow
+from config.components.mlflow import MLFLOW_TRACKER_URL
 from apps.core.decorators.api_permission import HasPermission
 from config.drf.viewsets import ModelViewSet
 from apps.mlops.filters.anomaly_detection_dataset import AnomalyDetectionDatasetFilter
@@ -42,6 +44,89 @@ class AnomalyDetectionTrainJobViewSet(ModelViewSet):
       except Exception as e:
          return Response(
             {'error': f'训练启动失败: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+         )
+
+   @action(detail=True, methods=['get'], url_path='metrics-history')
+   @HasPermission("train_tasks-View")
+   def get_metrics_history(self, request, pk=None):
+      """
+      获取指定训练任务的指标历史数据，用于绘制图表
+      """
+      try:
+         # 获取训练任务
+         train_job = self.get_object()
+
+         # 设置MLflow跟踪URI
+         mlflow.set_tracking_uri(MLFLOW_TRACKER_URL)
+
+         # 构造实验名称（与训练时保持一致）
+         experiment_name = f"{train_job.id}_{train_job.name}"
+
+         # 查找实验
+         experiments = mlflow.search_experiments(filter_string=f"name = '{experiment_name}'")
+         if not experiments:
+            return Response(
+               {'error': '未找到对应的MLflow实验'},
+               status=status.HTTP_404_NOT_FOUND
+            )
+
+         experiment = experiments[0]
+
+         # 查找该实验中的运行
+         runs = mlflow.search_runs(
+            experiment_ids=[experiment.experiment_id],
+            order_by=["start_time DESC"],
+            max_results=1
+         )
+
+         if runs.empty:
+            return Response(
+               {'error': '未找到训练运行记录'},
+               status=status.HTTP_404_NOT_FOUND
+            )
+
+         # 获取最新的运行
+         run_id = runs.iloc[0].run_id
+
+         # 创建MLflow客户端
+         client = mlflow.tracking.MlflowClient()
+
+         # 定义需要获取历史的指标
+         important_metrics = [
+            'val_f1', 'val_recall', 'val_precision',
+            'test_f1', 'test_recall', 'test_precision',
+            'fbeta_2', 'optimization_loss',
+            'balanced_accuracy', 'geometric_mean', 'positive_ratio'
+         ]
+
+         # 获取每个指标的历史数据
+         metrics_history = {}
+         for metric_name in important_metrics:
+            try:
+               # 获取指标历史数据
+               history = client.get_metric_history(run_id, metric_name)
+               metrics_history[metric_name] = [
+                  {
+                     "step": metric.step,
+                     "value": metric.value
+                  }
+                  for metric in history
+               ]
+            except Exception:
+               # 如果获取历史失败，跳过该指标
+               pass
+
+         return Response({
+            'train_job_id': train_job.id,
+            'train_job_name': train_job.name,
+            'run_id': run_id,
+            'metrics_history': metrics_history
+         })
+
+      except Exception as e:
+         return Response(
+            {'error': f'获取指标历史失败: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
          )
 
