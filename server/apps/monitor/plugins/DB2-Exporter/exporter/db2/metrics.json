@@ -8,5 +8,199 @@
   "default_metric": "any({instance_type='db2'}) by (instance_id)",
   "instance_id_keys": ["instance_id"],
   "supplementary_indicators": [],
-  "metrics": []
+  "metrics": [
+    {
+      "metric_group": "Base",
+      "name": "ibm_db2_up",
+      "query": "ibm_db2_up_gauge{__$labels__}",
+      "display_name": "Plugin running status",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Enum",
+      "unit": "[{\"id\":0,\"name\":\"Unavailable\",\"color\":\"#ff4d4f\"},{\"id\":1,\"name\":\"Available\",\"color\":\"#52c41a\"}]",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"}
+      ],
+      "description": "Indicates whether the DB2 database is running, with 1 representing running and 0 representing not running. It is a key indicator for monitoring the basic availability of the database."
+    },
+    {
+      "metric_group": "Application",
+      "name": "ibm_db2_application_active",
+      "query": "ibm_db2_application_active_gauge{__$labels__}",
+      "display_name": "Active applications count",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"}
+      ],
+      "description": "Represents the number of DB2 applications in the active state currently, which can intuitively reflect the real-time running status of applications and help operation and maintenance personnel understand the real-time access load of applications to the database."
+    },
+    {
+      "metric_group": "Application",
+      "name": "ibm_db2_application_executing",
+      "query": "ibm_db2_application_executing_gauge{__$labels__}",
+      "display_name": "Executing applications count",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"}
+      ],
+      "description": "Reflects the number of DB2 applications currently executing. Through this indicator, the execution load of applications can be grasped, providing a reference for evaluating the processing capacity of the database."
+    },
+    {
+      "metric_group": "Bufferpool",
+      "name": "ibm_db2_bufferpool_hit_ratio",
+      "query": "ibm_db2_bufferpool_hit_ratio_gauge{__$labels__}",
+      "display_name": "Buffer pool hit ratio",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [
+        {"name": "bufferpool_name", "description": "Bufferpool name"},
+        {"name": "database_name", "description": "Database name"}
+      ],
+      "description": "Refers to the ratio of bufferpool hit times to total access times, which is an important indicator to measure the usage efficiency of the bufferpool. A higher ratio indicates better bufferpool performance, which can reduce disk access and improve database response speed."
+    },
+    {
+      "metric_group": "Connections",
+      "name": "ibm_db2_connections_top_total",
+      "query": "ibm_db2_connections_top_total_counter{__$labels__}",
+      "display_name": "Maximum connections",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"}
+      ],
+      "description": "Represents the total number of connections to the DB2 database and can be used to monitor connection load. When the number of connections is too large, it may lead to a decline in database performance, and this indicator helps to detect and avoid such problems in a timely manner."
+    },
+    {
+      "metric_group": "Deadlocks",
+      "name": "ibm_db2_deadlock_total",
+      "query": "ibm_db2_deadlock_total_counter{__$labels__}",
+      "display_name": "Deadlocks total",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"}
+      ],
+      "description": "Records the total number of deadlocks occurring in the DB2 database. Deadlocks can seriously affect database performance, and this indicator can timely reflect deadlock problems, facilitating operation and maintenance personnel to take measures to solve them."
+    },
+    {
+      "metric_group": "Locks",
+      "name": "ibm_db2_lock_timeout_total",
+      "query": "ibm_db2_lock_timeout_total_counter{__$labels__}",
+      "display_name": "Lock timeouts total",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"}
+      ],
+      "description": "Counts the total number of lock timeouts. Lock timeouts can affect the normal execution of transactions, and this indicator can reflect the status of lock management, providing a basis for optimizing lock strategies."
+    },
+    {
+      "metric_group": "Locks",
+      "name": "ibm_db2_lock_usage",
+      "query": "ibm_db2_lock_usage_gauge{__$labels__}",
+      "display_name": "Lock usage",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"},
+        {"name": "lock_state", "description": "Lock state"}
+      ],
+      "description": "Used to display the number of locks in different states (such as active, waiting). Too many active locks may affect concurrency performance, and too many waiting locks may cause transaction delays. This indicator helps to grasp the usage of locks."
+    },
+    {
+      "metric_group": "Locks",
+      "name": "ibm_db2_lock_wait_time",
+      "query": "ibm_db2_lock_wait_time_gauge{__$labels__}",
+      "display_name": "Lock wait time",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "ms",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"}
+      ],
+      "description": "Represents the wait time for locks and can reflect the intensity of lock competition. A long wait time indicates serious lock competition, which needs to be optimized to improve database performance."
+    },
+    {
+      "metric_group": "Logs",
+      "name": "ibm_db2_log_operations_total",
+      "query": "ibm_db2_log_operations_total_counter{__$labels__}",
+      "display_name": "Log operations total",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"},
+        {"name": "log_member", "description": "Log member"},
+        {"name": "log_operation_type", "description": "Log operation type"}
+      ],
+      "description": "Total number of log operations performedRecords the total number of read and write operations on DB2 database logs, reflects the operation frequency of logs, and provides a reference for evaluating the load and performance of the log system.."
+    },
+    {
+      "metric_group": "Logs",
+      "name": "ibm_db2_log_usage",
+      "query": "ibm_db2_log_usage_gauge{__$labels__}",
+      "display_name": "Log usage",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"},
+        {"name": "log_member", "description": "Log member"},
+        {"name": "log_usage_type", "description": "Log usage type"}
+      ],
+      "description": "Displays the usage of log space, including available log space and used log space, helping to monitor whether the log space is sufficient and avoiding the impact on database operation due to insufficient log space."
+    },
+    {
+      "metric_group": "Rows",
+      "name": "ibm_db2_row_total",
+      "query": "ibm_db2_row_total_counter{__$labels__}",
+      "display_name": "Row operations total",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"},
+        {"name": "row_state", "description": "Row state"}
+      ],
+      "description": "Counts the number of rows for different operations (such as insert, delete, read, update) in the database, reflects the data change and access frequency, and provides data support for analyzing database business volume."
+    },
+    {
+      "metric_group": "Tablespace",
+      "name": "ibm_db2_tablespace_usage",
+      "query": "ibm_db2_tablespace_usage_gauge{__$labels__}",
+      "display_name": "Tablespace usage",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "short",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"},
+        {"name": "tablespace_name", "description": "Tablespace name"},
+        {"name": "tablespace_type", "description": "Tablespace type"}
+      ],
+      "description": "Used to display the free, total capacity and used space size of different tablespaces (such as SYSCATSPACE, TEMPSPACE1, USERSPACE1), helping to grasp the storage usage of tablespaces and timely expand or clean up the space."
+    },
+    {
+      "metric_group": "Tablespace",
+      "name": "ibm_db2_tablespace_used_percent",
+      "query": "ibm_db2_tablespace_used_percent_gauge{__$labels__}",
+      "display_name": "Tablespace used percentage",
+      "instance_id_keys": ["instance_id"],
+      "data_type": "Number",
+      "unit": "percent",
+      "dimensions": [
+        {"name": "database_name", "description": "Database name"},
+        {"name": "tablespace_name", "description": "Tablespace name"}
+      ],
+      "description": "Represents the usage rate of different tablespaces, which can intuitively reflect the storage tension of tablespaces. Attention should be paid when the usage rate is too high to avoid affecting the normal operation of the database due to insufficient space."
+    }
+
+]
 }
