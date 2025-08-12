@@ -121,13 +121,17 @@ class DataSourceAPIModelViewSet(ModelViewSet):
         namespace_list = instance.namespaces.all()
         namespace, path = instance.rest_api.split("/", 1)
         client = GetNatsData(namespace=namespace, path=path, params=params, namespace_list=namespace_list)
+        result = []
         try:
-            result = client.get_data()
+            data = client.get_data()
         except Exception as e:
             logger.error("获取数据源数据失败: {}".format(e))
-            result = {}
+            data = {}
+        finally:
+            for namespace_id, _data in data.items():
+                result.append({"namespace_id": namespace_id, "data": _data})
 
-        return Response(result.get("data", []))
+        return Response(result)
 
 
 class DirectoryModelViewSet(ModelViewSet):

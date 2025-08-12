@@ -86,7 +86,6 @@ const SampleManageModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess },
         is_active: checked,
       };
       await createSampleFile(params);
-      setConfirmLoading(false);
       setVisiable(false);
       message.success(t('datasets.uploadSuccess'));
       onSuccess();

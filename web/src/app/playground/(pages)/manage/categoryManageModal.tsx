@@ -33,15 +33,14 @@ const CategoryManageModal = forwardRef<ModalRef, any>(({ onSuccess }, ref) => {
   const [selectLoading, setSelectLoading] = useState<boolean>(false);
   const [confirm, setConfirm] = useState<boolean>(false);
   const [servingsOptions, setServingsOptions] = useState<Option[]>([]);
+  const [servingConfig, setServingConfig] = useState<any>(null);
   const [title, setTitle] = useState<string>('addCategory');
   const [type, setType] = useState<string>('');
   const [formData, setFormData] = useState<ModalProps | null>(null);
-  const [servingConfig, setServingConfig] = useState<any>(null);
   const CapabilityType = ['addCapability', 'updateCapability'];
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, title, form }) => {
-      console.log(type);
       setOpen(true);
       setType(type);
       setTitle(title as string);

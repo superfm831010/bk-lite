@@ -308,7 +308,7 @@
     "toolTip": "The tool is used to provide the skill with the ability to obtain external data or perform operations. The specific tool to be called is determined autonomously by the large model.",
     "selecteTool": "Selecte Tool",
     "ragKnowledgeBaseRequired": "When RAG is enabled, a knowledge base must be selected.",
-    "ragToolRequired": "When RAG is enabled, a tool must be selected.",
+    "ragToolRequired": "When Tool is enabled, a tool must be selected.",
     "formValidationFailed": "Form validation failed, please check required fields",
     "settings": {
       "menu": "Setting",

@@ -31,9 +31,9 @@ export const useVectorConfig = () => {
             multiline: {
               enabled: true,
               mode: 'continue_through',
-              start_pattern: '^(ERROR|WARN|INFO|DEBUG|TRACE|FATAL)s[',
+              start_pattern: '^(ERROR|WARN|INFO|DEBUG|TRACE|FATAL)\\s\\[',
               timeout_ms: 3000,
-              condition_pattern: '^(s+|Traceback|Files+)',
+              condition_pattern: '^(\\s+|Traceback|File\\s+)',
             },
           },
           columns: [],

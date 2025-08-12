@@ -118,6 +118,11 @@ LOGGING = {
             "formatter": "verbose",
             "filename": os.path.join(log_dir, "opspilot.log"),
         },
+        "playground": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "verbose",
+            "filename": os.path.join(log_dir, "playground.log"),
+        },
     },
     "loggers": {
         "django": {"handlers": ["null"], "level": "INFO", "propagate": True},
@@ -138,5 +143,6 @@ LOGGING = {
         "opspilot": {"handlers": ["opspilot", "console"], "level": "DEBUG", "propagate": True},
         "alert": {"handlers": ["alert", "console"], "level": "DEBUG", "propagate": True},
         "celery": {"handlers": ["root"], "level": "INFO", "propagate": True},
+        "playground": {"handlers": ["playground", "console"], "level": "DEBUG", "propagate": True},
     },
 }

@@ -20,7 +20,7 @@ const AnomalyDetection = () => {
   const {
     anomalyDetectionReason,
     getCapabilityDetail,
-    getSampleFileOfServing,
+    getSampleFileOfCapability,
     getSampleFileDetail
   } = usePlayroundApi();
   const [currentFileId, setCurrentFileId] = useState<string | null>(null);
@@ -114,7 +114,7 @@ const AnomalyDetection = () => {
   ], [convertToLocalizedTime]);
 
   const anomalyData = useMemo(() => {
-    return chartData.filter((item) => item.label === 1)
+    return chartData?.filter((item) => item.label === 1)
   }, [chartData]);
 
   useEffect(() => {
@@ -132,13 +132,13 @@ const AnomalyDetection = () => {
         setTimeline(newTimeline);
       }
     }
-  }, [chartData.length]);
+  }, [chartData]);
 
   const getConfigData = async () => {
     const id = searchParams.get('id') || '';
     try {
       const data = await getCapabilityDetail(id);
-      const sampleList = await getSampleFileOfServing(id);
+      const sampleList = await getSampleFileOfCapability(id);
       const options = sampleList.filter((item: any) => item?.is_active).map((item: any) => ({
         label: item?.name,
         value: item?.id,
@@ -161,11 +161,6 @@ const AnomalyDetection = () => {
     try {
       setSelectId(value);
       const data = await getSampleFileDetail(value as number);
-      // const _data = data?.train_data.map((item: any) => ({
-      //   timestamp: item.timestamp,
-      //   value: item.value,
-      //   label: 0
-      // }));
       setChartData(data?.train_data);
       setFileData(null);
     } catch (e) {
@@ -248,7 +243,7 @@ const AnomalyDetection = () => {
     } finally {
       setChartLoading(false);
     }
-  }, []);
+  }, [chartData]);
 
   const renderBanner = useMemo(() => {
     const name = searchParams.get('name') || '异常检测';
@@ -302,10 +297,10 @@ const AnomalyDetection = () => {
               </div>
             </div>
           </div>
-          <div className="content w-[90%] mx-auto h-[604px] mt-6">
+          <div className="content w-[80%] mx-auto h-[604px] mt-6">
             <div className="flex h-full overflow-auto">
               <Spin spinning={chartLoading} wrapperClassName="w-[70%] flex-1 h-full" className="h-full">
-                <div className="iframe w-full bg-[var(--color-bg-4)] border" style={{ height: 604 }}>
+                <div className="iframe w-full bg-[var(--color-bg-1)] border p-6" style={{ height: 604 }}>
                   <LineChart
                     data={chartData}
                     timeline={timeline}
@@ -323,13 +318,12 @@ const AnomalyDetection = () => {
                       hover:text-[var(--color-text-active)] cursor-pointer`
                     }
                   >请求参数</span>
-                  {/* <a href="#" className="text-base text-[var(--color-text-1)]">请求参数</a> */}
                 </header>
                 <div className="border-r [&_.ant-table]:!h-[543px]">
                   <CustomTable
                     virtual
                     className="h-[543px]"
-                    scroll={{ y: 543 }}
+                    scroll={{ y: 480 }}
                     rowKey='timestamp'
                     columns={columns}
                     sticky={{ offsetHeader: 0 }}

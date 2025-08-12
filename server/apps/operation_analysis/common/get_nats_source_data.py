@@ -2,9 +2,7 @@
 # @File: get_nats_source_data.py
 # @Time: 2025/7/22 18:24
 # @Author: windyzhao
-from apps.rpc.alerts import Alert
-from apps.rpc.cmdb import CMDB
-from apps.rpc.monitor import Monitor
+from apps.rpc.alerts import AlertOperationAna
 from apps.core.logger import operation_analysis_logger as logger
 
 
@@ -35,7 +33,7 @@ class GetNatsData:
     @staticmethod
     def set_namespace_map():
         # TODO 每个注册的命名空间 必须重写__init__ 补上server参数
-        result = {"alert": Alert, "cmdb": CMDB, "monitor": Monitor}
+        result = {"alert": AlertOperationAna}
         return result
 
     def _get_client(self, server):
@@ -45,7 +43,7 @@ class GetNatsData:
         client = self.namespace_map[self.namespace](server=server)
         return client
 
-    def get_data(self):
+    def get_data(self) -> dict:
         """
         获取NATS数据源数据
         :return: 数据内容
@@ -61,9 +59,9 @@ class GetNatsData:
                     raise RuntimeError(f"NamePaces({self.namespace}) Module not found func({self.path})!")
 
                 return_data = fun(**self.params)
-                result[namespace.id] = return_data
+                result[namespace.name] = return_data.get("data", [])
             except Exception as e:
-                result[namespace.name] = {}
+                result[namespace.name] = []
                 import traceback
                 logger.error(
                     "==获取NATS数据源数据失败==: namespace={} error={}".format(namespace.name, traceback.format_exc()))

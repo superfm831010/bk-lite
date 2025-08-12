@@ -15,7 +15,6 @@ import {
   message,
   Popconfirm,
   Switch,
-  // Tag
 } from 'antd';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import PermissionWrapper from '@/components/permission';
@@ -26,7 +25,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import usePlayroundApi from '@/app/playground/api';
 import CategoryManageModal from './categoryManageModal';
 import SampleManageModal from './sampleManageModal';
-import { ModalRef, TableData } from '@/app/playground/types';
+import { ModalRef, Pagination, TableData } from '@/app/playground/types';
 const { Search } = Input;
 const { confirm } = Modal;
 
@@ -48,6 +47,11 @@ const PlaygroundManage = () => {
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [selectCapability, setSelectCapability] = useState<number[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({
+    current: 1,
+    total: 0,
+    pageSize: 20
+  })
   const [filteredTreeData, setFilteredTreeData] = useState<TreeDataNode[]>([]);
   const columns: ColumnItem[] = [
     {
@@ -59,6 +63,7 @@ const PlaygroundManage = () => {
       title: t(`manage.createAt`),
       dataIndex: 'created_at',
       key: 'created_at',
+      width: 180,
       render: (_, record) => {
         return (<p>{convertToLocalizedTime(record.created_at, 'YYYY-MM-DD HH:mm:ss')}</p>)
       }
@@ -67,6 +72,7 @@ const PlaygroundManage = () => {
       title: t(`manage.createdBy`),
       dataIndex: 'created_by',
       key: 'created_by',
+      width: 150,
       render: (_, { created_by }) => {
         return created_by ? (
           <div className="flex h-full items-center" title={created_by}>
@@ -92,6 +98,7 @@ const PlaygroundManage = () => {
       title: t(`manage.sampleStatus`),
       dataIndex: 'status',
       key: 'status',
+      width: 150,
       render: (_, record) => {
         return <PermissionWrapper requiredPermissions={['Edit']}>
           <Switch checked={record.is_active} onChange={(value: boolean) => handleSampleActiveChange(record?.id, value)} />
@@ -102,6 +109,7 @@ const PlaygroundManage = () => {
       title: t(`common.action`),
       dataIndex: 'action',
       key: 'action',
+      width: 100,
       render: (_, record) => {
         return (
           <>
@@ -135,17 +143,19 @@ const PlaygroundManage = () => {
   ];
 
   const pageData = useMemo(() => {
-    return tableData.filter((item: any) => {
+    const items = tableData.filter((item: any) => {
       const [capability] = selectCapability
       return item?.capability === capability;
-    })
-  }, [tableData, selectCapability]);
+    });
+
+    setPagination((prev) => ({ ...prev, total: items.length }));
+    return items.slice((pagination.current - 1) * pagination.pageSize, pagination.pageSize);;
+
+  }, [tableData, selectCapability, pagination.current, pagination.pageSize]);
 
   useEffect(() => {
     getAllTreeData();
-    setTableLoading(true);
     getAllSampleFile();
-    setTableLoading(false);
   }, []);
 
   const renderCapabilityNode = (categoryID: number, capabilityData: any[]) => {
@@ -163,7 +173,7 @@ const PlaygroundManage = () => {
   const findIDByName = (name: string, categoryList: any[]) => {
     const item = categoryList.find((item: any) => item.name === name);
     return item?.id;
-  }
+  };
 
   const getAllTreeData = async () => {
     setTreeLoading(true);
@@ -192,7 +202,7 @@ const PlaygroundManage = () => {
           selectable: false,
           title: t(`manage.intelligentExperience`)
         }
-      ];;
+      ];
       setFilteredTreeData(nodes);
     } catch (e) {
       console.log(e)
@@ -201,11 +211,11 @@ const PlaygroundManage = () => {
     }
   };
 
-  const getAllSampleFile = async () => {
+  const getAllSampleFile = async (name = '') => {
     setTableLoading(true);
     try {
-      const data = await getAllSampleFileList();
-      const items = data?.map((item: any) => ({
+      const { items } = await getAllSampleFileList({ name, page: pagination.current, page_size: pagination.pageSize });
+      const data = items?.map((item: any) => ({
         id: item?.id,
         name: item?.name,
         created_at: item?.created_at,
@@ -213,7 +223,8 @@ const PlaygroundManage = () => {
         is_active: item?.is_active,
         capability: item?.capability
       }));
-      setTableData(items)
+      setTableData(data);
+      
     } catch (e) {
       console.log(e);
       message.error(t(`manage.getSampleFileError`));
@@ -230,16 +241,27 @@ const PlaygroundManage = () => {
           <Dropdown
             overlay={
               <Menu
-                onClick={({ key, domEvent }) => {
-                  domEvent.stopPropagation();
-                  if (key !== 'delete') {
-                    openCategoryModal({ type: `${key}Capability`, title: `${key}Capability`, form: data })
-                  } else {
-                    handleDelCapability(data?.id)
-                  }
-                }}
-                items={CapabilityMenuItems}
-              />
+                onClick={(e) => e.domEvent.preventDefault()}
+
+              >
+                {CapabilityMenuItems?.map((item: any) => (
+                  <Menu.Item
+                    key={item.key}
+                    className='!p-0'
+                    onClick={() => {
+                      if (item.key !== 'delete') {
+                        openCategoryModal({ type: `${item.key}Capability`, title: `${item.key}Capability`, form: data })
+                      } else {
+                        handleDelCapability(data?.id)
+                      }
+                    }}
+                  >
+                    <PermissionWrapper requiredPermissions={['Capability Edit']} className='!block'>
+                      <Button type='text' className='w-full'>{t(`common.${item.key}`)}</Button>
+                    </PermissionWrapper>
+                  </Menu.Item>
+                ))}
+              </Menu>
             }
             trigger={['click']}
           >
@@ -264,21 +286,18 @@ const PlaygroundManage = () => {
           <Dropdown
             overlay={
               <Menu
-                onClick={({ key, domEvent }) => {
-                  domEvent.stopPropagation();
-                  if (key === 'add') {
-                    openCategoryModal({ type: `${key}Capability`, title: `${key}Capability`, form: { categoryID: data?.categoryID } })
-                  }
-                }}
-                items={
-                  [
-                    {
-                      key: 'add',
-                      label: <PermissionWrapper requiredPermissions={['Capability Add']}>{t(`common.add`)}</PermissionWrapper>,
-                    }
-                  ]
-                }
-              />
+                onClick={(e) => e.domEvent.preventDefault()}
+              >
+                <Menu.Item
+                  className='!p-0'
+                  onClick={() => {
+                    openCategoryModal({ type: `addCapability`, title: `addCapability`, form: { categoryID: data?.categoryID } })
+                  }}>
+                  <PermissionWrapper requiredPermissions={['Capability Add']} className='!block'>
+                    <Button type='text' className='w-full'>{t(`common.add`)}</Button>
+                  </PermissionWrapper>
+                </Menu.Item>
+              </Menu>
             }
             trigger={['click']}
           >
@@ -313,10 +332,9 @@ const PlaygroundManage = () => {
     form: any
   }) => {
     sampleModalRef.current?.showModal(data);
-  }
+  };
 
   const onSelect = (keys: any[]) => {
-
     if (keys.length) setSelectCapability(keys);
   };
 
@@ -333,6 +351,10 @@ const PlaygroundManage = () => {
     } finally {
       getAllSampleFile();
     }
+  };
+
+  const handleChange = (value: any) => {
+    setPagination(value);
   };
 
   const topSection = (
@@ -360,27 +382,8 @@ const PlaygroundManage = () => {
   );
 
   const onSearch = (search: string) => {
-    console.log(search);
+    getAllSampleFile(search);
   };
-
-  // const handleDelCategory = (id: number) => {
-  //   confirm({
-  //     title: t(`manage.delCategory`),
-  //     okText: t(`common.confirm`),
-  //     cancelText: t(`common.cancel`),
-  //     onOk: async () => {
-  //       try {
-  //         await deleteCategory(id);
-  //         message.success(t(`common.delSuccess`));
-  //       } catch (e) {
-  //         console.log(e);
-  //         message.error(t(`common.delFailed`));
-  //       } finally {
-  //         getAllTreeData();
-  //       }
-  //     }
-  //   });
-  // };
 
   const handleDelCapability = async (id: number) => {
     confirm({
@@ -399,7 +402,6 @@ const PlaygroundManage = () => {
         }
       }
     });
-
   };
 
   const handleDelSampleFile = async (id: number) => {
@@ -431,9 +433,12 @@ const PlaygroundManage = () => {
       </div>
       <CustomTable
         rowKey='id'
+        scroll={{ y: 'calc(100vh - 420px)' }}
         columns={columns}
         loading={tableLoading}
         dataSource={pageData}
+        pagination={pagination}
+        onChange={handleChange}
       />
     </>
   );
