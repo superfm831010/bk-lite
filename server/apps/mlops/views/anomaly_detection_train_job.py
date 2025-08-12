@@ -77,7 +77,6 @@ class AnomalyDetectionTrainJobViewSet(ModelViewSet):
          runs = mlflow.search_runs(
             experiment_ids=[experiment.experiment_id],
             order_by=["start_time DESC"],
-            max_results=1
          )
 
          if runs.empty:
@@ -86,42 +85,51 @@ class AnomalyDetectionTrainJobViewSet(ModelViewSet):
                status=status.HTTP_404_NOT_FOUND
             )
 
-         # 获取最新的运行
-         run_id = runs.iloc[0].run_id
-
+         # 获取所有的run_id
+         run_ids = runs["run_id"].tolist()
+         #每次运行信息的耗时和名称
+         run_datas = []
+         for _,row in runs.iterrows():
+            duration = row["end_time"] - row["start_time"]
+            duration_minutes = duration.total_seconds() / 60
+            run_data = {
+               "run_id": row["run_id"],
+               "duration": duration_minutes,
+               "run_name": row["tags.mlflow.runName"]
+            }
+            run_datas.append(run_data)
          # 创建MLflow客户端
          client = mlflow.tracking.MlflowClient()
 
          # 定义需要获取历史的指标
-         important_metrics = [
-            'val_f1', 'val_recall', 'val_precision',
-            'test_f1', 'test_recall', 'test_precision',
-            'fbeta_2', 'optimization_loss',
-            'balanced_accuracy', 'geometric_mean', 'positive_ratio'
-         ]
+         important_metrics = [metric for metric in client.get_run(run_ids[0]).data.metrics.keys() if not str(metric).startswith("system")]
 
-         # 获取每个指标的历史数据
-         metrics_history = {}
-         for metric_name in important_metrics:
-            try:
-               # 获取指标历史数据
-               history = client.get_metric_history(run_id, metric_name)
-               metrics_history[metric_name] = [
-                  {
-                     "step": metric.step,
-                     "value": metric.value
-                  }
-                  for metric in history
-               ]
-            except Exception:
-               # 如果获取历史失败，跳过该指标
-               pass
+         data = []
+         for run_data in run_datas:
+            # 获取每个指标的历史数据
+            metrics_history = {}
+            run_id = run_data["run_id"]
+            for metric_name in important_metrics:
+               try:
+                  # 获取指标历史数据
+                  history = client.get_metric_history(run_id, metric_name)
+                  metrics_history[metric_name] = [
+                     {
+                        "step": metric.step,
+                        "value": metric.value
+                     }
+                     for metric in history
+                  ]
+               except Exception:
+                  # 如果获取历史失败，跳过该指标
+                  pass
+            run_data["metrics_history"] = metrics_history
+            data.append(run_data)
 
          return Response({
             'train_job_id': train_job.id,
             'train_job_name': train_job.name,
-            'run_id': run_id,
-            'metrics_history': metrics_history
+            'data': data
          })
 
       except Exception as e:
