@@ -1,6 +1,4 @@
-from flask import request
 from langchain_openai import OpenAIEmbeddings
-from sanic.log import logger
 
 
 class EmbedBuilder:

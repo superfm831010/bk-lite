@@ -29,12 +29,16 @@ class QAEnhance:
         self.input_prompt += f"""
                 generate {req.size} Q&A Pair
         """
+        if req.extra_prompt:
+            self.input_prompt += f"""
+            Additional instructions:
+                {req.extra_prompt}
+        """
+
         self.req = req
         self.llm = ChatOpenAI(model=req.model, base_url=req.openai_api_base,
                               api_key=req.openai_api_key,
                               temperature="0")
-
-
 
     def generate_qa(self):
         prompt = ChatPromptTemplate.from_messages(
