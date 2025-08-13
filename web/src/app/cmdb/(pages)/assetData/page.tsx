@@ -146,7 +146,7 @@ const AssetDataContent = () => {
           setProxyOptions([]);
         });
     }
-  }, [modelId, getInstanceProxys]);
+  }, [modelId]);
 
   const handleExport = async (keys: string[]) => {
     try {
