@@ -482,7 +482,7 @@ def _send_qa_request_with_retry(params, url, headers, index):
     try:
         res = requests.post(url, headers=headers, data=params, verify=False).json()
         if res.get("status") != "success":
-            raise Exception(f"创建问答对失败: {res['message']}")
+            raise Exception(f"创建问答对失败: {res.get('message', '')}")
     except Exception as e:
         logger.warning(f"第一次请求失败，准备重试。索引: {index}, 错误: {str(e)}")
         # 重试机制：等待5秒后重试
@@ -490,7 +490,7 @@ def _send_qa_request_with_retry(params, url, headers, index):
         try:
             res = requests.post(url, headers=headers, data=params, verify=False).json()
             if res.get("status") != "success":
-                raise Exception(f"重试后仍然失败: {res['message']}")
+                raise Exception(f"重试后仍然失败: {res.get('message', '')}")
             logger.info(f"重试成功，索引: {index}")
         except Exception as retry_e:
             logger.error(f"创建问答对失败，索引: {index}, 错误: {str(retry_e)}")
