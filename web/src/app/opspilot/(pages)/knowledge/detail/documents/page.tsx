@@ -312,7 +312,7 @@ const DocumentsPage: React.FC = () => {
         total: res.count,
       }));
 
-      if (data.some((item: any) => item.train_status === 0)) {
+      if (data.some((item: any) => item.train_status === 0 || item.train_status === 4)) {
         const timer = setTimeout(() => fetchData(text, true), 10000);
         return () => clearTimeout(timer);
       }

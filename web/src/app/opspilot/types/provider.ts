@@ -13,6 +13,9 @@ export interface Model {
     is_build_in?: boolean;
     team?: boolean;
     llm_model_type?: string;
+    model_type?: string;
+    model_type_name?: string;
+    icon?: string;
     llm_config?: ModelConfig;
     embed_config?: ModelConfig;
     rerank_config?: ModelConfig;
