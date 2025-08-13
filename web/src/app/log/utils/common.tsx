@@ -1,4 +1,9 @@
-import { CascaderItem, SubGroupItem, TreeItem } from '@/app/log/types';
+import {
+  CascaderItem,
+  SubGroupItem,
+  TimeValuesProps,
+  TreeItem,
+} from '@/app/log/types';
 import { Group } from '@/types';
 import { DetailItem, LogStream } from '@/app/log/types/search';
 import dayjs from 'dayjs';
@@ -161,4 +166,15 @@ export const findTreeParentKey = (
   };
   loop(treeData, null); // 初始父节点为 null
   return parentKey;
+};
+
+export const getRecentTimeRange = (timeValues: TimeValuesProps) => {
+  if (timeValues.originValue) {
+    const beginTime: number = dayjs()
+      .subtract(timeValues.originValue, 'minute')
+      .valueOf();
+    const lastTime: number = dayjs().valueOf();
+    return [beginTime, lastTime];
+  }
+  return timeValues.timeRange;
 };
