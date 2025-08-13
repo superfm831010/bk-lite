@@ -219,6 +219,9 @@ export const useKingBaseExporter = () => {
               configs[0].ENV_MAX_CONNECTION_LIFETIME =
                 row.ENV_MAX_CONNECTION_LIFETIME + 'm';
             }
+            configs[0].ENV_SQL_EXPORTER_TIMEOUT = String(
+              row.ENV_SQL_EXPORTER_TIMEOUT
+            );
             return {
               configs,
               collect_type: pluginConfig.collect_type,
@@ -227,9 +230,6 @@ export const useKingBaseExporter = () => {
                 delete item.key;
                 return {
                   ...item,
-                  ENV_SQL_EXPORTER_TIMEOUT: String(
-                    item.ENV_SQL_EXPORTER_TIMEOUT
-                  ),
                   ENV_LISTEN_PORT: String(item.ENV_LISTEN_PORT),
                   ENV_SQL_EXPORTER_PORT: String(item.ENV_SQL_EXPORTER_PORT),
                   node_ids: [item.node_ids].flat(),
