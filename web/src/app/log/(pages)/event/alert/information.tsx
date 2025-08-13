@@ -213,6 +213,14 @@ const Information: React.FC<TableDataItem> = ({
   const checkDetail = () => {
     const params = {
       query: formData.alert_condition?.query as string,
+      startTime: String(
+        +new Date(convertToLocalizedTime(formData.start_event_time))
+      ),
+      endTime: String(
+        isClosed
+          ? +new Date(convertToLocalizedTime(formData.end_event_time))
+          : +new Date()
+      ),
     };
     if (isAggregate) {
       params.query = buildVictoriaLogsQuery();

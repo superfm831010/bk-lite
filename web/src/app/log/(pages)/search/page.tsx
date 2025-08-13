@@ -38,6 +38,8 @@ const SearchView: React.FC = () => {
   const timeSelectorRef = useRef<TimeSelectorRef>(null);
   const [frequence, setFrequence] = useState<number>(0);
   const queryText = searchParams.get('query') || '';
+  const startTime = searchParams.get('startTime') || '';
+  const endTime = searchParams.get('endTime') || '';
   const [searchText, setSearchText] = useState<string>(queryText);
   const [tableData, setTableData] = useState<TableDataItem[]>([]);
   const [queryTime, setQueryTime] = useState<Date>(new Date());
@@ -59,8 +61,8 @@ const SearchView: React.FC = () => {
   const [terminalLoading, setTerminalLoading] = useState<boolean>(false);
   const [timeDefaultValue, setTimeDefaultValue] =
     useState<TimeSelectorDefaultValue>({
-      selectValue: 15,
-      rangePickerVaule: null,
+      selectValue: startTime ? 0 : 15,
+      rangePickerVaule: endTime ? [dayjs(+startTime), dayjs(+endTime)] : null,
     });
   const [windowHeight, setWindowHeight] = useState<number>(window.innerHeight);
 
