@@ -228,6 +228,7 @@
       "setPeriod": "Please select the detection period, which is used to measure the duration within which monitoring data is collected.",
       "alertName": "Alert Name",
       "alertNameTitle": "Please fill in the corresponding alarm name for the generated alarm, which can reference aggregated fields as variables, such as (source).",
+      "keyWordAlertNameTitle": "Please fill in the corresponding alarm name for the generated alarm.",
       "alarmLevel": "Alarm Level",
       "configureNotifications": "Configure notifications",
       "notification": "Notification",

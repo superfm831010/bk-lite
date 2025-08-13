@@ -228,6 +228,7 @@
       "setPeriod": "请选择检测周期，用于测量收集监控数据的时间范围。",
       "alertName": "告警名称",
       "alertNameTitle": "请为产生的告警填写对应的告警名称，可以引用聚合字段作为变量，比如(source)。",
+      "keyWordAlertNameTitle": "请为产生的告警填写对应的告警名称。",
       "alarmLevel": "告警级别",
       "configureNotifications": "配置通知",
       "notification": "通知",

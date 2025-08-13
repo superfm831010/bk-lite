@@ -523,25 +523,34 @@ const StrategyOperation = () => {
                             {t('log.event.alertName')}
                           </span>
                         }
+                        shouldUpdate={(prevValues, currentValues) =>
+                          prevValues.alert_type !== currentValues.alert_type
+                        }
                       >
-                        <Form.Item
-                          name="alert_name"
-                          noStyle
-                          rules={[
-                            {
-                              required: true,
-                              message: t('common.required'),
-                            },
-                          ]}
-                        >
-                          <Input
-                            placeholder={t('log.event.alertName')}
-                            className="w-[800px]"
-                          />
-                        </Form.Item>
-                        <div className="text-[var(--color-text-3)] mt-[10px]">
-                          {t('log.event.alertNameTitle')}
-                        </div>
+                        {({ getFieldValue }) => (
+                          <>
+                            <Form.Item
+                              name="alert_name"
+                              noStyle
+                              rules={[
+                                {
+                                  required: true,
+                                  message: t('common.required'),
+                                },
+                              ]}
+                            >
+                              <Input
+                                placeholder={t('log.event.alertName')}
+                                className="w-[800px]"
+                              />
+                            </Form.Item>
+                            <div className="text-[var(--color-text-3)] mt-[10px]">
+                              {getFieldValue('alert_type') === 'aggregate'
+                                ? t('log.event.alertNameTitle')
+                                : t('log.event.keyWordAlertNameTitle')}
+                            </div>
+                          </>
+                        )}
                       </Form.Item>
                       <Form.Item<StrategyFields>
                         name="alert_level"
