@@ -90,9 +90,9 @@ class LogPolicyScan:
         """获取策略的活动告警"""
         try:
             qs = Alert.objects.filter(policy_id=self.policy.id, status=ALERT_STATUS_NEW)
-            # 如果设置了组织范围，只查询组织范围内的告���
+            # 如果设置了组织范围，只查询组织范围内的告警
             if self.policy.organizations:
-                # 这里假��source_id包含组织信息，实际可能需要根据具���业务逻辑调整
+                # 这里假设source_id包含组织信息，实际可能需要根据具体业务逻辑调整
                 pass
             return qs
         except Exception as e:
@@ -128,11 +128,11 @@ class LogPolicyScan:
             if logs:
                 # 关键字告警按策略聚合，所有匹配日志合并到一个告警中
                 source_id = f"policy_{self.policy.id}"
-
+                content = f"{self.policy.alert_name}: 检测到 {len(logs)} 条匹配日志"
                 events.append({
                     "source_id": source_id,
                     "level": self.policy.alert_level,
-                    "content": f"关键字告警: 检测到 {len(logs)} 条匹配日志",
+                    "content": content,
                     "value": len(logs),
                     "raw_data": logs[:10]  # 只保留前10条日志作为原始数据
                 })
@@ -185,21 +185,16 @@ class LogPolicyScan:
 
                 # 检查是否满足告警条件
                 if self._check_rule_conditions(aggregate_data, rule):
+                    # 渲染告警名称模板
+                    rendered_alert_name = self._render_alert_name(result, group_by)
                     # 构建分组标识和source_id
-                    if group_by:
-                        # 有分组字段：按策略+聚合字段值生成source_id
-                        group_key = self._build_group_key(result, group_by)
-                        source_id = f"policy_{self.policy.id}_{group_key}"
-                        content_prefix = f"聚合告警({group_key})"
-                    else:
-                        # 无分组字段：按策略生成source_id
-                        source_id = f"policy_{self.policy.id}"
-                        content_prefix = "聚合告警(全局)"
+                    group_key = self._build_group_key(result, group_by)
+                    source_id = f"policy_{self.policy.id}_{group_key}"
 
                     events.append({
                         "source_id": source_id,
                         "level": self.policy.alert_level,
-                        "content": f"{content_prefix}: 触发条件 {self._format_rule_result(aggregate_data, rule)}",
+                        "content": rendered_alert_name,
                         "value": aggregate_data.get("count", 0),
                         "raw_data": {"aggregate_result": aggregate_data, "rule": rule, "query_result": result}
                     })
@@ -293,6 +288,53 @@ class LogPolicyScan:
 
         return aggregate_data
 
+    def _render_alert_name(self, result, group_by):
+        """渲染告警名称模板
+
+        使用Django模板引擎将告警名称中的${field}占位符替换为实际的分组字段值
+        例如：${host}出现报错 -> server01出现报错
+
+        Args:
+            result: 查询结果，包含分组字段的值
+            group_by: 分组字段列表（聚合告警中必定存在）
+
+        Returns:
+            str: 渲染后的告警名称
+        """
+        if not self.policy.alert_name:
+            return "聚合告警"
+
+        alert_name = self.policy.alert_name
+
+        # 导入Django模板相关模块
+        from django.template import Template, Context
+        from django.template.exceptions import TemplateSyntaxError
+
+        try:
+            # 将${field}格式转换为Django模板格式{{field}}
+            template_content = alert_name.replace('${', '{{').replace('}', '}}')
+
+            # 创建模板和上下文
+            template = Template(template_content)
+            context = Context(result)
+
+            # 渲染模板
+            rendered_name = template.render(context)
+
+            # 确保渲染结果不为空
+            if not rendered_name.strip():
+                logger.warning(f"Rendered alert name is empty for template '{alert_name}', using fallback")
+                return alert_name
+
+            return rendered_name.strip()
+
+        except TemplateSyntaxError as e:
+            logger.warning(f"Template syntax error in alert name '{alert_name}': {e}")
+            return alert_name
+        except Exception as e:
+            logger.warning(f"Failed to render alert name template '{alert_name}': {e}")
+            return alert_name
+
     def _build_group_key(self, result, group_by):
         """根据分组字段构建分组标识"""
         if not group_by:
@@ -381,31 +423,6 @@ class LogPolicyScan:
         except Exception as e:
             logger.error(f"Error comparing values: {actual_value} {op} {expected_value}, error: {e}")
             return False
-
-    def _format_rule_result(self, aggregate_data, rule):
-        """格式化规则结果用于显示"""
-        conditions = rule.get("conditions", [])
-        mode = rule.get("mode", "and")
-
-        condition_results = []
-        for condition in conditions:
-            func = condition.get("func")
-            field = condition.get("field", "_msg")
-            op = condition.get("op")
-            expected_value = condition.get("value")
-
-            if not all([func, op, expected_value is not None]):
-                continue
-
-            key = f"{func}_{field}"
-            if func == "count":
-                actual_value = aggregate_data.get("count", aggregate_data.get(key, 0))
-            else:
-                actual_value = aggregate_data.get(key, 0)
-
-            condition_results.append(f"{func}({field})={actual_value} {op} {expected_value}")
-
-        return f" {mode.upper()} ".join(condition_results)
 
     def create_events(self, events):
         """创建事件 - 优化版本，使用批量操作"""
@@ -524,25 +541,22 @@ class LogPolicyScan:
     def send_notice(self, event_obj):
         """发送通知"""
         if not self.policy.notice_users:
-            return []
+            return False, []
 
         title = f"日志告警通知：{self.policy.name}"
         content = f"告警内容：{event_obj.content}\n时间：{event_obj.event_time}\n来源：{event_obj.source_id}"
-        result = []
 
         try:
-            send_result = SystemMgmtUtils.send_msg_with_channel(
+            result = SystemMgmtUtils.send_msg_with_channel(
                 self.policy.notice_type_id, title, content, self.policy.notice_users
             )
-            logger.info(f"send notice success for policy {self.policy.id}: {send_result}")
+            return True, result
         except Exception as e:
-            logger.error(f"send notice failed for policy {self.policy.id}: {e}")
-            for res in result:
-                if res["status"] == "success":
-                    res["status"] = "failed"
-                    res["error"] = str(e)
+            msg = f"send notice failed for policy {self.policy.id}: {e}"
+            logger.error(msg)
+            result = [{"error": msg}]
+            return False, result
 
-        return result
 
     def notice(self, event_objs):
         """通知"""
@@ -550,17 +564,26 @@ class LogPolicyScan:
             return
 
         try:
+
+            alerts = []
+
             for event in event_objs:
                 # info级别事件不通知
                 if event.level == "info":
                     continue
+                is_notice, notice_result = self.send_notice(event)
+                event.notice_result = notice_result
 
-                notice_results = self.send_notice(event)
-                event.notice_result = notice_results
+                if is_notice:
+                    alerts.append((event.alert_id, is_notice))
 
             # 批量更新通知结果
             Event.objects.bulk_update(event_objs, ["notice_result"], batch_size=200)
             logger.info(f"Completed notification for {len(event_objs)} events")
+
+            # 批量更新告警的通知状态
+            if alerts:
+                Alert.objects.bulk_update([Alert(id=i[0], notice=i[1]) for i in alerts],["notice"], batch_size=200)
 
         except Exception as e:
             logger.error(f"notice failed for policy {self.policy.id}: {e}")

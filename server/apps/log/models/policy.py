@@ -60,7 +60,7 @@ class Alert(TimeInfo):
     end_event_time = models.DateTimeField(blank=True, null=True, verbose_name='结束事件时间')
     operator = models.CharField(blank=True, null=True, max_length=50, verbose_name='告警处理人')
     info_event_count = models.IntegerField(default=0, verbose_name='正常事件计数')
-
+    notice = models.BooleanField(default=False, verbose_name="是否已通知")
     class Meta:
         verbose_name = "告警记录"
         verbose_name_plural = "告警记录"
@@ -87,7 +87,7 @@ class Event(TimeInfo):
 
 class EventRawData(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, verbose_name='事件')
-    data = models.JSONField(default=dict, verbose_name='原始数据')
+    data = models.JSONField(default=list, verbose_name='原始数据')
 
     class Meta:
         verbose_name = "事件原始数据"

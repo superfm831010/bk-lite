@@ -100,3 +100,17 @@ def get_cmdb_module_list():
         {"name": PERMISSION_TASK, "display_name": "Task", "children": task_children}
     ]
     return result
+
+
+@nats_client.register
+def search_instances(params):
+    """
+        根据参数查询实例
+    """
+    model_id = params["model_id"]
+    inst_name = params.get("inst_name", None)
+    _id = params.get("_id", None)
+
+    instances, _ = InstanceManage.search_inst(model_id=model_id, inst_name=inst_name, _id=_id)
+    result = instances[0] if instances else {}
+    return result

@@ -11,6 +11,19 @@ from apps.core.exceptions.base_app_exception import BaseAppException
 
 
 class InstanceManage(object):
+
+    @classmethod
+    def search_inst(cls, model_id: str, inst_name: str = None, _id: int = None):
+        """查询实例"""
+        with Neo4jClient() as ag:
+            params = [{"field": "model_id", "type": "str=", "value": model_id}]
+            if _id:
+                params.append({"field": "id", "type": "id=", "value": int(_id)})
+            if inst_name:
+                params.append({"field": "inst_name", "type": "str=", "value": inst_name})
+            inst_list, count = ag.query_entity(INSTANCE, params)
+        return inst_list, count
+
     @staticmethod
     def get_permission_params(user_groups, roles):
         """获取用户实例权限查询参数，用户用户查询实例"""
@@ -461,7 +474,7 @@ class InstanceManage(object):
         return add_results, update_results
 
     @staticmethod
-    def inst_export(model_id: str, ids: list, user_groups: list, roles: list, rules: dict, inst_names: list, created: str = ""):
+    def inst_export(model_id: str, ids: list, user_groups: list, roles: list, inst_names: list, created: str = ""):
         """实例导出"""
         attrs = ModelManage.search_model_attr_v2(model_id)
 
@@ -485,7 +498,8 @@ class InstanceManage(object):
                 query_params = [{"field": "model_id", "type": "str=", "value": model_id}]
 
                 # 使用Neo4j的权限过滤查询
-                instance_permission_str = ag.format_instance_permission_params(model_instance_permission_params, created)
+                instance_permission_str = ag.format_instance_permission_params(model_instance_permission_params,
+                                                                               created)
 
                 # 如果有组织权限，所有条件都必须在组织权限范围内
                 if permission_params:

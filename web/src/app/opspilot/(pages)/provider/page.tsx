@@ -7,7 +7,7 @@ import ProviderGrid from '@/app/opspilot/components/provider/grid';
 import ConfigModal from '@/app/opspilot/components/provider/configModal';
 import { Model, TabConfig } from '@/app/opspilot/types/provider';
 import styles from '@/app/opspilot/styles/common.module.scss';
-import { MODEL_TYPE_OPTIONS, CONFIG_MAP } from '@/app/opspilot/constants/provider';
+import { CONFIG_MAP } from '@/app/opspilot/constants/provider';
 import { useTranslation } from '@/utils/i18n';
 
 const { Search } = Input;
@@ -130,7 +130,7 @@ const ProviderPage: React.FC = () => {
   const getCategorizedModels = () => {
     const categorizedModels: Record<string, Model[]> = {};
     filteredModels.forEach((model) => {
-      const type = model.llm_model_type || 'Unknown';
+      const type = model.model_type || 'Unknown';
       if (!categorizedModels[type]) {
         categorizedModels[type] = [];
       }
@@ -162,32 +162,22 @@ const ProviderPage: React.FC = () => {
         )}
       </div>
       <Spin spinning={loading}>
-        {activeTab === '1' ? (
-          Object.entries(getCategorizedModels()).map(([type, models]) => (
-            <div key={type} className="mb-4">
-              <h3 className="font-semibold mb-4">{MODEL_TYPE_OPTIONS[type]}</h3>
-              <ProviderGrid
-                models={models}
-                filterType="llm_model"
-                loading={loading}
-                setModels={(updatedModels) => {
-                  setModels(updatedModels);
-                  setFilteredModels(updatedModels);
-                }}
-              />
-            </div>
-          ))
-        ) : (
-          <ProviderGrid
-            models={filteredModels}
-            filterType={tabConfig.find((tab) => tab.key === activeTab)?.type || ''}
-            loading={loading}
-            setModels={(updatedModels) => {
-              setModels(updatedModels);
-              setFilteredModels(updatedModels);
-            }}
-          />
-        )}
+        {Object.entries(getCategorizedModels()).map(([type, modelsList]) => (
+          <div key={type} className="mb-4">
+            <h3 className="font-semibold mb-4">
+              {modelsList[0]?.model_type_name || type}
+            </h3>
+            <ProviderGrid
+              models={modelsList}
+              filterType={tabConfig.find((tab) => tab.key === activeTab)?.type || ''}
+              loading={loading}
+              setModels={(updatedModels) => {
+                setModels(updatedModels);
+                setFilteredModels(updatedModels);
+              }}
+            />
+          </div>
+        ))}
       </Spin>
       <ConfigModal
         visible={isAddModalVisible}

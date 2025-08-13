@@ -69,9 +69,10 @@ class ChunkHelper(ChatServerHelper):
         for i in qa_paris:
             params = dict(kwargs, **{"content": i["question"]})
             params["metadata"] = json.dumps(dict(metadata, **{"qa_question": i["question"], "qa_answer": i["answer"]}))
-            res = requests.post(url, headers=headers, data=params, verify=False).json()
+            response = requests.post(url, headers=headers, data=params, verify=False)
+            res = response.json()
             if res.get("status", "fail") != "success":
-                logger.exception(f"创建问答对失败: {res['message']}")
+                logger.exception(f"创建问答对失败: {res.get('message', '')}")
                 continue
             success_count += 1
         return success_count
@@ -114,7 +115,7 @@ class ChunkHelper(ChatServerHelper):
         params = dict(kwargs, **{"content": question, "metadata": json.dumps(metadata)})
         res = requests.post(url, headers=cls.get_chat_server_header(), data=params, verify=False).json()
         if res.get("status", "fail") != "success":
-            logger.exception(f"创建问答对失败: {res['message']}")
+            logger.exception(f"创建问答对失败: {res.get('message', '')}")
             return {"result": False}
         return {"result": True}
 

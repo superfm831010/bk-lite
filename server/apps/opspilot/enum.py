@@ -21,3 +21,11 @@ class SkillTypeChoices(models.IntegerChoices):
     KNOWLEDGE_TOOL = 2, _("Knowledge Tool")
     PLAN_EXECUTE = 3, _("Plan Execute")
     LATS = 4, _("Lats")
+
+
+class LLMModelChoices(models.TextChoices):
+    CHAT_GPT = "chat-gpt", "OpenAI"
+    ZHIPU = "zhipu", "智谱AI"
+    HUGGING_FACE = "hugging_face", "Hugging Face"
+    DEEP_SEEK = "deep-seek", "DeepSeek"
+    BAICHUAN = "Baichuan", "百川"
