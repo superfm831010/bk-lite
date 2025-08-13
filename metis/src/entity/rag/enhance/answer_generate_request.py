@@ -1,10 +1,10 @@
 from pydantic import BaseModel
 
 
-class QAEnhanceRequest(BaseModel):
+class AnswerGenerateRequest(BaseModel):
+    context: str
     content: str
 
-    size: int
     openai_api_base: str = 'https://api.openai.com'
     openai_api_key: str = ''
     model: str = 'gpt-4o'

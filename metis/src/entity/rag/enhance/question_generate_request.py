@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class QAEnhanceRequest(BaseModel):
+class QuestionGenerateRequest(BaseModel):
     content: str
 
     size: int

@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.enhance.qa_enhance import QAEnhance
+from src.services.rag.qa_enhance_service import QAEnhanceService
 from src.entity.rag.enhance.qa_enhance_request import QAEnhanceRequest
 
 
@@ -16,7 +16,7 @@ def test_qa_enhance():
         openai_api_base=os.getenv("OPENAI_BASE_URL"),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
     )
-    e = QAEnhance(req)
+    e = QAEnhanceService(req)
 
     qa = e.generate_qa()
     logger.info(qa)
