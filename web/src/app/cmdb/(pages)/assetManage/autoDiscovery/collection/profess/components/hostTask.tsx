@@ -145,7 +145,7 @@ const HostTask: React.FC<HostTaskFormProps> = ({
               <Form.Item
                 label={t('user')}
                 name="username"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: t('common.inputTip') }]}
               >
                 <Input placeholder={t('common.inputTip')} />
               </Form.Item>
@@ -153,7 +153,7 @@ const HostTask: React.FC<HostTaskFormProps> = ({
               <Form.Item
                 label={t('password')}
                 name="password"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: t('common.inputTip') }]}
               >
                 <Input.Password placeholder={t('common.inputTip')} />
               </Form.Item>
@@ -161,7 +161,7 @@ const HostTask: React.FC<HostTaskFormProps> = ({
               <Form.Item
                 label={t('Collection.port')}
                 name="port"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: t('common.inputTip') }]}
               >
                 <InputNumber
                   min={1}
