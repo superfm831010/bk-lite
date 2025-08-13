@@ -20,8 +20,12 @@ export interface EdgeCreationData {
 
 export interface NodeConfPanelProps {
   nodeType: 'single-value' | 'icon';
-  onFormReady?: (formInstance: any) => void;
   readonly?: boolean;
+  visible?: boolean;
+  title?: string;
+  onClose?: () => void;
+  onConfirm?: (values: any) => void;
+  onCancel?: () => void;
   initialValues?: {
     name?: string;
     logoType?: 'default' | 'custom';
@@ -36,6 +40,8 @@ export interface NodeConfPanelProps {
     query?: string;
     unit?: string;
     threshold?: number;
+    dataSourceParams?: Record<string, any>;
+    filterParams?: Record<string, any>;
   };
 }
 
@@ -62,7 +68,7 @@ export interface SidebarProps {
   collapsed: boolean;
   isEditMode?: boolean;
   setCollapsed: (collapsed: boolean) => void;
-  onAddNode?: (nodeConfig: any) => void;
+  onShowNodeConfig?: (nodeType: NodeType, dropPosition?: DropPosition) => void;
 }
 
 export interface NodeType {

@@ -86,6 +86,8 @@ export const useTopologyState = () => {
       return {
         name: editingNodeData.name,
         dataSource: editingNodeData.dataSource,
+        dataSourceParams: editingNodeData.dataSourceParams || {}, 
+        selectedFields: editingNodeData.selectedFields || [], 
         fontSize: config.fontSize || FORM_DEFAULTS.SINGLE_VALUE.fontSize,
         textColor: config.textColor || FORM_DEFAULTS.SINGLE_VALUE.textColor,
         backgroundColor: config.backgroundColor || FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
@@ -107,6 +109,10 @@ export const useTopologyState = () => {
         editingNodeData.logoType === 'custom'
           ? editingNodeData.logo
           : undefined,
+      width: editingNodeData.width || editingNodeData.config?.width || FORM_DEFAULTS.ICON_NODE.width,
+      height: editingNodeData.height || editingNodeData.config?.height || FORM_DEFAULTS.ICON_NODE.height,
+      dataSourceParams: editingNodeData.dataSourceParams || {}, 
+      selectedFields: editingNodeData.selectedFields || [],
       backgroundColor: editingNodeData.config?.backgroundColor || FORM_DEFAULTS.ICON_NODE.backgroundColor,
       borderColor: editingNodeData.config?.borderColor || FORM_DEFAULTS.ICON_NODE.borderColor,
     };

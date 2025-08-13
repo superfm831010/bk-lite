@@ -179,6 +179,8 @@ export const FORM_DEFAULTS = {
   },
 
   ICON_NODE: {
+    width: 60,
+    height: 60,
     backgroundColor: NODE_DEFAULTS.ICON_NODE.backgroundColor,
     borderColor: NODE_DEFAULTS.ICON_NODE.borderColor,
     logoType: 'default' as const,

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import Sidebar from './components/sidebar';
+import Sidebar from '../../components/sidebar';
 import Dashboard from './dashBoard/index';
 import Topology from './topology/index';
 import { useTranslation } from '@/utils/i18n';

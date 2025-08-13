@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '@/utils/i18n';
 import { TextEditInputProps } from '@/app/ops-analysis/types/topology';
 
 const TextEditInput: React.FC<TextEditInputProps> = ({
@@ -10,6 +11,8 @@ const TextEditInput: React.FC<TextEditInputProps> = ({
   finishTextEdit,
   cancelTextEdit,
 }) => {
+  const { t } = useTranslation();
+
   if (!isEditingText) return null;
 
   return (
@@ -38,7 +41,7 @@ const TextEditInput: React.FC<TextEditInputProps> = ({
         onFocus={(e) => e.target.select()}
         autoFocus
         className="w-full outline-none text-sm"
-        placeholder="输入文本内容"
+        placeholder={t('common.inputTip')}
       />
     </div>
   );

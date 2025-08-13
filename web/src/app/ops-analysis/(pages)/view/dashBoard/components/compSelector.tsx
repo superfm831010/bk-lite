@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Icon from '@/components/icon';
-import ComponentConfigDrawer from './baseConfig';
+import ComponentConfigDrawer from './viewConfig';
 import { Modal, Menu, List, Input } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { ComponentSelectorProps } from '@/app/ops-analysis/types/dashBoard';
-import { getWidgetsByCategory } from './registry';
+import { getWidgetsByCategory } from '../config/registry';
 
 const ComponentSelector: React.FC<ComponentSelectorProps> = ({
   visible,

@@ -43,7 +43,7 @@ export interface ComponentSelectorProps {
 export interface BaseWidgetProps {
   config?: any;
   globalTimeRange?: any;
-  refreshKey?: number; 
+  refreshKey?: number;
   onDataChange?: (data: any) => void;
 }
 
@@ -60,4 +60,18 @@ export interface WidgetDefinition {
   meta: WidgetMeta;
   component: React.ComponentType<BaseWidgetProps>;
   configComponent?: React.ComponentType<any>;
+}
+
+export interface UseWidgetDataOptions {
+  config?: any;
+  dataSource?: any;
+  globalTimeRange?: any;
+  refreshKey?: number;
+  transformData?: (data: any) => any;
+}
+
+export interface UseWidgetDataReturn {
+  data: any;
+  loading: boolean;
+  refetch: () => void;
 }

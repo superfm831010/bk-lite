@@ -2,7 +2,7 @@ import React from 'react';
 import ReactEcharts from 'echarts-for-react';
 import { Spin } from 'antd';
 import { BaseWidgetProps } from '@/app/ops-analysis/types/dashBoard';
-import { useWidgetData } from '../hooks/useWidgetData';
+import { useWidgetData } from '../../../../hooks/useWidgetData';
 
 const TrendLine: React.FC<BaseWidgetProps> = ({
   config,

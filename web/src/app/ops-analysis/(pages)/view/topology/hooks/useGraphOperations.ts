@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Graph as X6Graph, Edge } from '@antv/x6';
+import { formatTimeRange } from '@/app/ops-analysis/hooks/useWidgetData';
 import { Graph } from '@antv/x6';
 import { Selection } from '@antv/x6-plugin-selection';
 import { message } from 'antd';
-import { COLORS, FORM_DEFAULTS } from '../constants/nodeDefaults';
+import { COLORS } from '../constants/nodeDefaults';
 import { iconList } from '@/app/cmdb/utils/common';
 import { useTopologyApi } from '@/app/ops-analysis/api/topology';
+import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import {
   getEdgeStyle,
   getEdgeStyleWithLabel,
@@ -18,15 +20,19 @@ import {
   getLogoUrl,
   showEdgeTools,
   hideAllEdgeTools,
+  getValueByPath,
+  formatDisplayValue,
+  updateNodeProperties,
+  normalizeNodeConfig,
 } from '../utils/topologyUtils';
 
 export const useGraphOperations = (
   containerRef: React.RefObject<HTMLDivElement>,
   state: any
 ) => {
-  // 内部状态管理
-  const [nodeEditFormInstance, setNodeEditFormInstance] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  const { getSourceDataByApiId } = useDataSourceApi();
 
   const {
     graphInstance,
@@ -141,26 +147,31 @@ export const useGraphOperations = (
   // 加载拓扑数据
   const loadTopologyData = useCallback((data: { nodes: any[], edges: any[] }) => {
     if (!graphInstance) return;
-    // 清空当前图形
     graphInstance.clearCells();
 
-    // 加载节点
     data.nodes.forEach((nodeConfig) => {
+      // 对加载的节点配置进行标准化，确保数据完整性
+      const normalizedConfig = normalizeNodeConfig(nodeConfig);
       let nodeData: any;
 
-      if (nodeConfig.type === 'single-value') {
-        nodeData = getSingleValueNodeStyle(nodeConfig);
-      } else if (nodeConfig.type === 'text') {
-        nodeData = getTextNodeStyle(nodeConfig);
+      if (normalizedConfig.type === 'single-value') {
+        nodeData = getSingleValueNodeStyle(normalizedConfig);
+      } else if (normalizedConfig.type === 'text') {
+        nodeData = getTextNodeStyle(normalizedConfig);
       } else {
-        const logoUrl = getLogoUrl(nodeConfig, iconList);
-        nodeData = getIconNodeStyle(nodeConfig, logoUrl);
+        const logoUrl = getLogoUrl(normalizedConfig, iconList);
+        nodeData = getIconNodeStyle(normalizedConfig, logoUrl);
       }
 
       graphInstance.addNode(nodeData);
+
+      if (normalizedConfig.type === 'single-value' && normalizedConfig.dataSource && normalizedConfig.selectedFields?.length) {
+        setTimeout(() => {
+          updateNodeData(normalizedConfig);
+        }, 100);
+      }
     });
 
-    // 加载边
     data.edges.forEach((edgeConfig) => {
       const edgeData = {
         lineType: edgeConfig.lineType as 'line' | 'network line',
@@ -184,13 +195,66 @@ export const useGraphOperations = (
       graphInstance.addEdge(edge);
     });
 
-    // 自适应画布
     setTimeout(() => {
       graphInstance.centerContent();
     }, 100);
-  }, [graphInstance]);
+  }, [graphInstance, normalizeNodeConfig]);
 
-  // 序列化图形数据，只保存样式相关的config
+
+  // 更新单值数据显示
+  const updateNodeData = useCallback(async (nodeConfig: any) => {
+    if (!nodeConfig || !graphInstance) return;
+
+    const node = graphInstance.getCellById(nodeConfig.id);
+    if (!node) return;
+
+    const nodeData = nodeConfig.data || nodeConfig;
+    if (nodeData.type !== 'single-value' || !nodeData.dataSource || !nodeData.selectedFields?.length) {
+      return;
+    }
+
+    try {
+      let requestParams = {};
+
+      if (nodeData.dataSourceParams && Array.isArray(nodeData.dataSourceParams)) {
+        requestParams = nodeData.dataSourceParams.reduce((acc: any, param: any) => {
+          if (param.value !== undefined) {
+            acc[param.name] = (param.type === 'timeRange')
+              ? formatTimeRange(param.value)
+              : param.value;
+          }
+          return acc;
+        }, {});
+      }
+
+      const data = await getSourceDataByApiId(nodeData.dataSource, requestParams);
+
+      let displayText = nodeData.name;
+
+      if (data) {
+        const selectedField = nodeData.selectedFields[0];
+        if (selectedField) {
+          let value;
+
+          if (Array.isArray(data) && data.length > 0) {
+            value = getValueByPath(data[0], selectedField);
+          } else if (typeof data === 'object') {
+            value = getValueByPath(data, selectedField);
+          }
+
+          if (value !== undefined) {
+            displayText = formatDisplayValue(value);
+          }
+        }
+      }
+
+      node.setAttrByPath('label/text', displayText);
+
+    } catch {
+      node.setAttrByPath('label/text', nodeData.name);
+    }
+  }, [graphInstance, getSourceDataByApiId]);
+
   const serializeTopologyData = useCallback(() => {
     if (!graphInstance) return { nodes: [], edges: [] };
 
@@ -206,23 +270,35 @@ export const useGraphOperations = (
         name: nodeData.name,
       };
 
-      // 根据节点类型保存相应配置，只保存样式相关字段
+      if (nodeData.dataSource) {
+        serializedNode.dataSource = nodeData.dataSource;
+      }
+
+      if (nodeData.dataSourceParams) {
+        serializedNode.dataSourceParams = nodeData.dataSourceParams;
+      }
+
+      if (nodeData.selectedFields) {
+        serializedNode.selectedFields = nodeData.selectedFields;
+      }
+
       if (nodeData.type === 'icon') {
         serializedNode.logo = nodeData.logo;
         serializedNode.logoType = nodeData.logoType;
+        serializedNode.width = nodeData.width || nodeData.config?.width;
+        serializedNode.height = nodeData.height || nodeData.config?.height;
         if (nodeData.config) {
-          // 只保存样式相关的配置
           serializedNode.config = {
             backgroundColor: nodeData.config.backgroundColor,
             borderColor: nodeData.config.borderColor,
             textColor: nodeData.config.textColor,
             fontSize: nodeData.config.fontSize,
+            width: nodeData.config.width,
+            height: nodeData.config.height,
           };
         }
       } else if (nodeData.type === 'single-value') {
-        serializedNode.dataSource = nodeData.dataSource;
         if (nodeData.config) {
-          // 只保存样式相关的配置
           serializedNode.config = {
             textColor: nodeData.config.textColor,
             fontSize: nodeData.config.fontSize,
@@ -232,7 +308,6 @@ export const useGraphOperations = (
         }
       } else if (nodeData.type === 'text') {
         if (nodeData.config) {
-          // 只保存样式相关的配置
           serializedNode.config = {
             fontSize: nodeData.config.fontSize,
             fontWeight: nodeData.config.fontWeight,
@@ -261,7 +336,6 @@ export const useGraphOperations = (
         targetInterface: edgeData?.targetInterface,
         config: edgeData?.config
           ? {
-            // 只保存样式相关的配置
             strokeColor: edgeData.config.strokeColor,
             strokeWidth: edgeData.config.strokeWidth,
           }
@@ -272,10 +346,8 @@ export const useGraphOperations = (
     return { nodes, edges };
   }, [graphInstance]);
 
-  // API相关操作
   const { saveTopology, getTopologyDetail } = useTopologyApi();
 
-  // 保存拓扑图
   const handleSaveTopology = useCallback(async (selectedTopology: any) => {
     if (!selectedTopology?.data_id) {
       message.error('请先选择要保存的拓扑图');
@@ -294,7 +366,6 @@ export const useGraphOperations = (
       };
       await saveTopology(selectedTopology.data_id, saveData);
 
-      // 调用原有的保存逻辑（退出编辑模式等）
       handleSave();
 
       message.success('拓扑图保存成功');
@@ -305,26 +376,24 @@ export const useGraphOperations = (
     }
   }, [serializeTopologyData, saveTopology]);
 
-  // 加载拓扑图数据
   const handleLoadTopology = useCallback(async (topologyId: string | number) => {
-    // 如果 graphInstance 为 null，说明组件还没有完全初始化，直接返回
     if (!graphInstance) {
       return;
     }
 
     setLoading(true);
     try {
-      const data = await getTopologyDetail(topologyId);
-      const viewSets = data.view_sets || {};
+      const topologyData = await getTopologyDetail(topologyId);
+
+      const viewSets = topologyData.view_sets || {};
       loadTopologyData(viewSets);
     } catch (error) {
       console.error('加载拓扑图失败:', error);
     } finally {
       setLoading(false);
     }
-  }, [graphInstance, loadTopologyData, getTopologyDetail, setLoading]);
+  }, [graphInstance]);
 
-  // 绑定图形事件
   const bindGraphEvents = (graph: X6Graph) => {
     const hideCtx = () => setContextMenuVisible(false);
     document.addEventListener('click', hideCtx);
@@ -342,10 +411,15 @@ export const useGraphOperations = (
       }
       const nodeData = node.getData();
       if (nodeData?.type !== 'text') {
+        const iconWidth = nodeData.config?.width;
+        const iconHeight = nodeData.config?.height;
+
         setEditingNodeData({
           ...nodeData,
           id: node.id,
           label: node.prop('label'),
+          width: iconWidth,
+          height: iconHeight,
         });
         setNodeEditVisible(true);
       }
@@ -382,7 +456,6 @@ export const useGraphOperations = (
       }
     });
 
-    // 边连接事件
     graph.on('edge:connected', ({ edge }: any) => {
       if (!edge || !isEditModeRef.current) return;
       edge.setAttrs(getEdgeStyle('single').attrs);
@@ -393,7 +466,6 @@ export const useGraphOperations = (
       });
     });
 
-    // 连接开始/结束时的端口显示
     graph.on('edge:connecting', () => {
       if (isEditModeRef.current) {
         graph.getNodes().forEach((node: any) => {
@@ -411,11 +483,18 @@ export const useGraphOperations = (
       }, 100);
     });
 
-    // 选择变化事件
     graph.on('selection:changed', ({ selected }) => {
       if (!isEditModeRef.current) return;
 
       setSelectedCells(selected.map((cell) => cell.id));
+
+      graph.getNodes().forEach((node: any) => {
+        const nodeData = node.getData();
+        if (nodeData?.type !== 'text') {
+          node.setAttrByPath('body/stroke', nodeData.config?.borderColor || '#ddd');
+          node.setAttrByPath('body/strokeWidth', 1);
+        }
+      });
 
       graph.getEdges().forEach((edge: any) => {
         edge.setAttrs({
@@ -428,12 +507,18 @@ export const useGraphOperations = (
       });
 
       selected.forEach((cell) => {
-        if (cell.isEdge()) {
+        if (cell.isNode()) {
+          const nodeData = cell.getData();
+          if (nodeData?.type !== 'text') {
+            cell.setAttrByPath('body/stroke', '#1890ff');
+            cell.setAttrByPath('body/strokeWidth', 1);
+          }
+        } else if (cell.isEdge()) {
           cell.setAttrs({
             line: {
               ...cell.getAttrs().line,
               stroke: COLORS.EDGE.SELECTED,
-              strokeWidth: 2,
+              strokeWidth: 1,
             },
           });
           addEdgeTools(cell);
@@ -453,7 +538,6 @@ export const useGraphOperations = (
       }
     });
 
-    // 双击事件
     graph.on('edge:dblclick', ({ edge }) => {
       addEdgeTools(edge);
     });
@@ -472,19 +556,25 @@ export const useGraphOperations = (
       }
     });
 
-    // 空白点击事件
     graph.on('blank:click', () => {
       hideAllPorts(graph);
       hideAllEdgeTools(graph);
       setContextMenuVisible(false);
 
-      // 清除所有边的高亮效果
+      graph.getNodes().forEach((node: any) => {
+        const nodeData = node.getData();
+        if (nodeData?.type !== 'text') {
+          node.setAttrByPath('body/stroke', nodeData.config?.borderColor || '#ddd');
+          node.setAttrByPath('body/strokeWidth', 1);
+        }
+      });
+
       graph.getEdges().forEach((edge: any) => {
         edge.setAttrs({
           line: {
             ...edge.getAttrs().line,
             stroke: COLORS.EDGE.DEFAULT,
-            strokeWidth: 2,
+            strokeWidth: 1,
           },
         });
       });
@@ -497,11 +587,18 @@ export const useGraphOperations = (
       }, 0);
     });
 
-    // 鼠标进入/离开事件
     graph.on('node:mouseenter', ({ node }) => {
       hideAllPorts(graph);
       hideAllEdgeTools(graph);
-      showPorts(graph, node);
+      const nodeData = node.getData();
+      if (nodeData?.type !== 'text') {
+        showPorts(graph, node);
+        const isSelected = selectedCells.includes(node.id);
+        if (!isSelected) {
+          node.setAttrByPath('body/stroke', '#1890ff');
+          node.setAttrByPath('body/strokeWidth', 1);
+        }
+      }
     });
 
     graph.on('edge:mouseenter', ({ edge }) => {
@@ -511,9 +608,18 @@ export const useGraphOperations = (
       showEdgeTools(edge);
     });
 
-    graph.on('node:mouseleave', () => {
+    graph.on('node:mouseleave', ({ node }) => {
       hideAllPorts(graph);
       hideAllEdgeTools(graph);
+      const nodeData = node.getData();
+      if (nodeData?.type !== 'text') {
+        // 只有在未选中状态才恢复默认边框
+        const isSelected = selectedCells.includes(node.id);
+        if (!isSelected) {
+          node.setAttrByPath('body/stroke', nodeData.config?.borderColor || '#ddd');
+          node.setAttrByPath('body/strokeWidth', 1);
+        }
+      }
     });
 
     graph.on('edge:mouseleave', () => {
@@ -521,7 +627,6 @@ export const useGraphOperations = (
       hideAllEdgeTools(graph);
     });
 
-    // 初始化端口透明度
     graph.getNodes().forEach((node) => {
       const nodeData = node.getData();
       if (nodeData?.type !== 'text') {
@@ -532,7 +637,6 @@ export const useGraphOperations = (
     });
   };
 
-  // 打开边配置
   const openEdgeConfig = (edge: Edge, sourceNode: any, targetNode: any) => {
     const edgeData = edge.getData();
     const sourceNodeData = sourceNode.getData?.() || {};
@@ -557,7 +661,6 @@ export const useGraphOperations = (
     setEdgeConfigVisible(true);
   };
 
-  // 图形操作方法
   const zoomIn = useCallback(() => {
     if (graphInstance) {
       const next = scale + 0.1;
@@ -629,24 +732,44 @@ export const useGraphOperations = (
   }, [graphInstance, isEditingText, setIsEditMode]);
 
   // 添加节点到画布
-  const addNode = useCallback((nodeConfig: any) => {
+  const addNode = useCallback((nodeType: string, formValues: any, position: { x: number; y: number }) => {
     if (!graphInstance) {
       return;
     }
 
+    // 创建基础节点配置
+    const baseConfig = {
+      id: `node_${Date.now()}`,
+      type: nodeType,
+      x: position.x,
+      y: position.y,
+      ...formValues,
+    };
+
+    // 标准化节点配置
+    const normalizedConfig = normalizeNodeConfig(baseConfig);
+
     let nodeData: any;
 
-    if (nodeConfig.type === 'single-value') {
-      nodeData = getSingleValueNodeStyle(nodeConfig);
+    if (normalizedConfig.type === 'single-value') {
+      nodeData = getSingleValueNodeStyle(normalizedConfig);
+    } else if (normalizedConfig.type === 'text') {
+      nodeData = getTextNodeStyle(normalizedConfig);
     } else {
-      const logoUrl = getLogoUrl(nodeConfig, iconList);
-      nodeData = getIconNodeStyle(nodeConfig, logoUrl);
+      const logoUrl = getLogoUrl(normalizedConfig, iconList);
+      nodeData = getIconNodeStyle(normalizedConfig, logoUrl);
     }
 
     graphInstance.addNode(nodeData);
-  }, [graphInstance]);
 
-  // 更新节点
+    // 如果是单值节点且有数据源，更新数据显示
+    if (normalizedConfig.type === 'single-value' && normalizedConfig.dataSource && normalizedConfig.selectedFields?.length) {
+      setTimeout(() => {
+        updateNodeData(normalizedConfig);
+      }, 500);
+    }
+  }, [graphInstance, normalizeNodeConfig, updateNodeData]);
+
   const updateNode = useCallback((nodeConfig: any) => {
     if (!graphInstance) {
       return;
@@ -657,101 +780,31 @@ export const useGraphOperations = (
       return;
     }
 
-    // 更新节点标签
-    node.setLabel(nodeConfig.name);
-
-    if (nodeConfig.type === 'single-value') {
-      // 单值节点 - 只更新文本相关属性
-      node.setData({
-        type: nodeConfig.type,
-        name: nodeConfig.name,
-        dataSource: nodeConfig.dataSource,
-        config: nodeConfig.config,
-      });
-
-      // 更新单值节点的文本样式
-      node.setAttrByPath('label/text', nodeConfig.name);
-      if (nodeConfig.config?.textColor) {
-        node.setAttrByPath('label/fill', nodeConfig.config.textColor);
-      }
-      if (nodeConfig.config?.fontSize) {
-        node.setAttrByPath('label/fontSize', nodeConfig.config.fontSize);
-      }
-      if (nodeConfig.config?.backgroundColor) {
-        node.setAttrByPath('body/fill', nodeConfig.config.backgroundColor);
-      }
-      if (nodeConfig.config?.borderColor) {
-        node.setAttrByPath('body/stroke', nodeConfig.config.borderColor);
-      }
-    } else {
-      // 图标节点 - 更新logo和其他属性
-      const logoUrl = getLogoUrl(nodeConfig, iconList);
-
-      node.setData({
-        type: nodeConfig.type,
-        name: nodeConfig.name,
-        logo: nodeConfig.logo,
-        logoType: nodeConfig.logoType,
-        config: nodeConfig.config,
-      });
-
-      // 更新节点图标
-      node.setAttrByPath('icon/xlink:href', logoUrl);
-    }
-
+    updateNodeProperties(node, nodeConfig, iconList);
   }, [graphInstance]);
 
-  // 处理节点更新（编辑模式）
-  const handleNodeUpdate = useCallback(async (nodeEditFormInstance: any) => {
-    if (!nodeEditFormInstance) {
+  const handleNodeUpdate = useCallback(async (values: any) => {
+    if (!values) {
       return;
     }
 
     try {
-      const values = await nodeEditFormInstance.validateFields();
-
-      let updatedConfig: any;
-
-      if (state.editingNodeData.type === 'single-value') {
-        updatedConfig = {
-          id: state.editingNodeData.id,
-          type: state.editingNodeData.type,
-          name: values.name,
-          dataSource: values.dataSource,
-          config: {
-            query: values.query || FORM_DEFAULTS.SINGLE_VALUE.query,
-            unit: values.unit || FORM_DEFAULTS.SINGLE_VALUE.unit,
-            threshold: values.threshold || FORM_DEFAULTS.SINGLE_VALUE.threshold,
-            textColor: values.textColor || FORM_DEFAULTS.SINGLE_VALUE.textColor,
-            fontSize: values.fontSize || FORM_DEFAULTS.SINGLE_VALUE.fontSize,
-            backgroundColor: values.backgroundColor || FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
-            borderColor: values.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor,
-          },
-        };
-      } else {
-        // 图标节点 - 保持原有逻辑
-        updatedConfig = {
-          id: state.editingNodeData.id,
-          type: state.editingNodeData.type,
-          name: values.name,
-          logo: values.logoType === 'default' ? values.logoIcon : values.logoUrl,
-          logoType: values.logoType,
-          dataSource: values.dataSource,
-          config: {
-            backgroundColor: values.backgroundColor || FORM_DEFAULTS.ICON_NODE.backgroundColor,
-            borderColor: values.borderColor || FORM_DEFAULTS.ICON_NODE.borderColor,
-          },
-        };
-      }
+      const updatedConfig = normalizeNodeConfig(values, state.editingNodeData);
 
       updateNode(updatedConfig);
+
+      if (updatedConfig.type === 'single-value' && updatedConfig.dataSource && updatedConfig.selectedFields?.length) {
+        setTimeout(() => {
+          updateNodeData(updatedConfig);
+        }, 500);
+      }
 
       state.setNodeEditVisible(false);
       state.setEditingNodeData(null);
     } catch (error) {
-      console.error('表单验证失败:', error);
+      console.error('节点更新失败:', error);
     }
-  }, [updateNode, state]);
+  }, [normalizeNodeConfig, updateNode, updateNodeData, state]);
 
   return {
     zoomIn,
@@ -761,14 +814,10 @@ export const useGraphOperations = (
     handleSelectMode,
     handleSave,
     addNode,
-    updateNode,
     handleNodeUpdate,
-    loadTopologyData,
     serializeTopologyData,
     handleSaveTopology,
     handleLoadTopology,
-    nodeEditFormInstance,
-    setNodeEditFormInstance,
     loading,
     setLoading
   };
