@@ -17,7 +17,6 @@ import Icon from '@/components/icon';
 import {
   deepClone,
   getRandomColor,
-  getEnumValueUnit,
   getRecentTimeRange,
 } from '@/app/monitor/utils/common';
 import {
@@ -31,7 +30,7 @@ import {
   TimeValuesProps,
   TreeItem,
 } from '@/app/monitor/types';
-import { MetricItem, ObjectItem } from '@/app/monitor/types/monitor';
+import { ObjectItem } from '@/app/monitor/types/monitor';
 import { AlertOutlined } from '@ant-design/icons';
 import { FiltersConfig } from '@/app/monitor/types/monitor';
 import CustomTable from '@/components/custom-table';
@@ -58,12 +57,8 @@ const { Option } = Select;
 
 const Alert: React.FC = () => {
   const { isLoading } = useApiClient();
-  const {
-    getMonitorAlert,
-    getMonitorMetrics,
-    getMonitorObject,
-    patchMonitorAlert,
-  } = useMonitorApi();
+  const { getMonitorAlert, getMonitorObject, patchMonitorAlert } =
+    useMonitorApi();
   const { t } = useTranslation();
   const STATE_MAP = useStateMap();
   const LEVEL_LIST = useLevelList();
@@ -103,7 +98,6 @@ const Alert: React.FC = () => {
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [treeData, setTreeData] = useState<TreeItem[]>([]);
-  const [metrics, setMetrics] = useState<MetricItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [objectId, setObjectId] = useState<React.Key>('');
@@ -288,7 +282,7 @@ const Alert: React.FC = () => {
 
   useEffect(() => {
     if (isLoading) return;
-    getInitData();
+    getObjects();
   }, [isLoading]);
 
   const changeTab = (val: string) => {
@@ -303,27 +297,20 @@ const Alert: React.FC = () => {
     getChartData('refresh', { tab: val, filtersConfig });
   };
 
-  const getInitData = () => {
-    setPageLoading(true);
-    Promise.all([getMetrics(), getObjects()]).finally(() => {
-      setPageLoading(false);
-    });
-  };
-
-  const getMetrics = async () => {
-    const data = await getMonitorMetrics();
-    setMetrics(data);
-  };
-
   const getObjects = async () => {
-    const data: ObjectItem[] = await getMonitorObject({
-      add_policy_count: true,
-    });
-    setObjects(data);
-    const _treeData = getTreeData(deepClone(data));
-    const defaulltId = (_treeData[0]?.children || [])[0]?.key;
-    setDefaultSelectObj(defaulltId);
-    setTreeData(_treeData);
+    setPageLoading(true);
+    try {
+      const data: ObjectItem[] = await getMonitorObject({
+        add_policy_count: true,
+      });
+      setObjects(data);
+      const _treeData = getTreeData(deepClone(data));
+      const defaulltId = (_treeData[0]?.children || [])[0]?.key;
+      setDefaultSelectObj(defaulltId);
+      setTreeData(_treeData);
+    } finally {
+      setPageLoading(false);
+    }
   };
 
   const getTreeData = (data: ObjectItem[]): TreeItem[] => {
@@ -462,18 +449,12 @@ const Alert: React.FC = () => {
   };
 
   const openAlertDetail = (row: TableDataItem) => {
-    const metricInfo =
-      metrics.find(
-        (item) => item.id === row.policy?.query_condition?.metric_id
-      ) || {};
     detailRef.current?.showModal({
       title: t('monitor.events.alertDetail'),
       type: 'add',
       form: {
         ...row,
-        metric: metricInfo,
         alertTitle: showObjName(row),
-        alertValue: getEnumValueUnit(metricInfo as MetricItem, row.value),
       },
     });
   };
@@ -691,8 +672,8 @@ const Alert: React.FC = () => {
       </Spin>
       <AlertDetail
         ref={detailRef}
+        objectId={objectId}
         objects={objects}
-        metrics={metrics}
         userList={userList}
         onSuccess={() => getAssetInsts('refresh')}
       />

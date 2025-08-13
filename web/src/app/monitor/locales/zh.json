@@ -445,6 +445,8 @@
       "dataSourceDes": "监控数据的来源，用于确保系统准确获取所需数据。",
       "dbName": "数据库名称",
       "dbNameDes": "访问所需数据库的具体名字",
+      "dbType": "数据库类型",
+      "dbTypeDes": "采集中所需要的数据库类型",
       "collectorRefs": "指标配置名称",
       "collectorRefsDes": "为监控指标配置设定一个明确的名称",
       "connectionTime": "最长连接时长",
@@ -482,7 +484,10 @@
       "lang": "基本语言",
       "langDes": "系统默认的底层语言设置",
       "libraryPath": "驱动程序的lib日录",
-      "libraryPathDes": "存放驱动程序库文件的路径‌"
+      "libraryPathDes": "存放驱动程序库文件的路径‌",
+      "dbTimeout": "等待时长",
+      "dbTimeoutDes": "数据库连接的最长等待时间(单位为秒)",
+      "dataTypeDes": "定义数据在计算机中存储、处理及传输时的格式与规则"
     }
   }
 }

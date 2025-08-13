@@ -234,6 +234,7 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
         task_name=qa_pairs_list[0].name,
         knowledge_ids=[doc for doc in qa_pairs_id_list],
         train_progress=0,
+        is_qa_task=True,
     )
     train_progress = round(float(1 / len(task_obj.knowledge_ids)) * 100, 2)
 
@@ -404,6 +405,7 @@ def _initialize_qa_task(file_data, knowledge_base_id, username, domain):
         task_name=task_name,
         knowledge_ids=qa_pairs_id_list,
         train_progress=0,
+        is_qa_task=True,
     )
 
     return task_obj, qa_pairs_list
@@ -480,7 +482,7 @@ def _send_qa_request_with_retry(params, url, headers, index):
     try:
         res = requests.post(url, headers=headers, data=params, verify=False).json()
         if res.get("status") != "success":
-            raise Exception(f"创建问答对失败: {res['message']}")
+            raise Exception(f"创建问答对失败: {res.get('message', '')}")
     except Exception as e:
         logger.warning(f"第一次请求失败，准备重试。索引: {index}, 错误: {str(e)}")
         # 重试机制：等待5秒后重试
@@ -488,7 +490,7 @@ def _send_qa_request_with_retry(params, url, headers, index):
         try:
             res = requests.post(url, headers=headers, data=params, verify=False).json()
             if res.get("status") != "success":
-                raise Exception(f"重试后仍然失败: {res['message']}")
+                raise Exception(f"重试后仍然失败: {res.get('message', '')}")
             logger.info(f"重试成功，索引: {index}")
         except Exception as retry_e:
             logger.error(f"创建问答对失败，索引: {index}, 错误: {str(retry_e)}")
@@ -501,7 +503,12 @@ def _send_qa_request_with_retry(params, url, headers, index):
 def create_qa_pairs_task(knowledge_base_id, qa_name, username, domain):
     # 创建或获取问答对对象
     qa_pairs, created = QAPairs.objects.get_or_create(
-        name=qa_name, knowledge_base_id=knowledge_base_id, document_id=0, created_by=username, domain=domain
+        name=qa_name,
+        knowledge_base_id=knowledge_base_id,
+        document_id=0,
+        created_by=username,
+        domain=domain,
+        create_type="import",
     )
     logger.info(f"问答对对象{'创建' if created else '获取'}成功: {qa_pairs.name}")
     return qa_pairs
@@ -536,4 +543,23 @@ def create_qa_pairs_by_custom(qa_pairs_id, content_list):
     embed_config = qa_pairs.knowledge_base.embed_model.decrypted_embed_config
     embed_model_name = qa_pairs.knowledge_base.embed_model.name
     chunk_obj = {}
-    ChunkHelper.create_qa_pairs(content_list, chunk_obj, es_index, embed_config, embed_model_name, qa_pairs_id)
+    task_obj = KnowledgeTask.objects.create(
+        created_by=qa_pairs.created_by,
+        domain=qa_pairs.domain,
+        knowledge_base_id=qa_pairs.knowledge_base_id,
+        task_name=qa_pairs.name,
+        knowledge_ids=[qa_pairs.id],
+        train_progress=0,
+        is_qa_task=True,
+    )
+    try:
+        success_count = ChunkHelper.create_qa_pairs(
+            content_list, chunk_obj, es_index, embed_config, embed_model_name, qa_pairs_id
+        )
+        qa_pairs.generate_count = success_count
+        qa_pairs.status = "completed"
+    except Exception as e:
+        logger.exception(e)
+        qa_pairs.status = "failed"
+    task_obj.delete()
+    qa_pairs.save()

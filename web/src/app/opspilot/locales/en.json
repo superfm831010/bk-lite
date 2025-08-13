@@ -35,6 +35,7 @@
       "title": "QA Pairs",
       "name": "Name",
       "qaCount": "QA Count",
+      "type": "Type",
       "subTitle": "Generate QA pairs based on existing documents as a knowledge source.",
       "llmModel": "LLM Model",
       "targetDocuments": "Target Documents",
@@ -48,7 +49,7 @@
       "answer": "Answer",
       "noData": "No data available",
       "dragOrClick": "Click or drag file to this area to upload",
-      "uploadHint": "Support single upload, only JSON files are allowed",
+      "uploadHint": "Support single upload, JSON and CSV files are allowed",
       "noFileSelected": "Please select a file to upload",
       "importSuccess": "Import QA pairs successfully",
       "importFailed": "Failed to import QA pairs",
@@ -57,7 +58,17 @@
         "generating": "Generating",
         "failed": "Failed",
         "completed": "Completed"
-      }
+      },
+      "addMethod": "Source",
+      "generate": "Generate In Chunks",
+      "generateDesc": "Select source files to quickly generate Q&A pairs based on the chunks of the source files.",
+      "import": "Local import",
+      "importDesc": "Export Q&A pairs in JSON or CSV format for generation.",
+      "custom": "Create Manually",
+      "customDesc": "Directly add questions and answers in the interface.",
+      "confirmAndAddNext": "Confirm & Add Next",
+      "customName": "QA Set Name",
+      "customTitle": "Q&A"
     },
     "knowledgeGraph": {
       "title": "Knowledge Graph",
@@ -265,7 +276,7 @@
       "planType": "Plan Execute Agent",
       "planTag": "Plan Execute",
       "planTypeDesc": "Decomposes tasks into multiple executable steps, completing complex tasks step by step, suitable for situations requiring hierarchical planning.",
-      "planTypeScene": "Project Management  : Decompose tasks and track the execution of each phase.\nProduct Development: Develop a research and development plan and coordinate execution across multiple departments.\nDaily Planning: Design travel routes and budget arrangements.",
+      "planTypeScene": "Project Management: Decompose tasks and track the execution of each phase.\nProduct Development: Develop a research and development plan and coordinate execution across multiple departments.\nDaily Planning: Design travel routes and budget arrangements.",
       "complexType": "LATS Agent",
       "complexTag": "LATS", 
       "complexTypeDesc": "Simulates multi-step decision paths through tree search algorithms, suitable for high-complexity, high-uncertainty decision scenarios.",
@@ -297,7 +308,7 @@
     "toolTip": "The tool is used to provide the skill with the ability to obtain external data or perform operations. The specific tool to be called is determined autonomously by the large model.",
     "selecteTool": "Selecte Tool",
     "ragKnowledgeBaseRequired": "When RAG is enabled, a knowledge base must be selected.",
-    "ragToolRequired": "When RAG is enabled, a tool must be selected.",
+    "ragToolRequired": "When Tool is enabled, a tool must be selected.",
     "formValidationFailed": "Form validation failed, please check required fields",
     "settings": {
       "menu": "Setting",

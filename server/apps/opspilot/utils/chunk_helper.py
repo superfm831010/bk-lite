@@ -48,18 +48,31 @@ class ChunkHelper(ChatServerHelper):
         except Exception as e:
             logger.exception(e)
 
+    @staticmethod
+    def delete_one_qa_pairs(index_name, chunk_id):
+        url = f"{settings.METIS_SERVER_URL}/api/rag/delete_doc"
+        kwargs = {"index_name": index_name, "metadata_filter": {"chunk_id": str(chunk_id)}}
+        try:
+            ChatServerHelper.post_chat_server(kwargs, url)
+        except Exception as e:
+            logger.exception(e)
+            return {"result": False}
+        return {"result": True}
+
     @classmethod
     def create_qa_pairs(cls, qa_paris, chunk_obj, index_name, embed_config, embed_model_name, qa_pairs_id):
         success_count = 0
         cls.delete_es_content(index_name, qa_pairs_id)
         url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
         kwargs, metadata = cls.set_qa_pairs_params(embed_config, embed_model_name, index_name, qa_pairs_id, chunk_obj)
+        headers = cls.get_chat_server_header()
         for i in qa_paris:
             params = dict(kwargs, **{"content": i["question"]})
             params["metadata"] = json.dumps(dict(metadata, **{"qa_question": i["question"], "qa_answer": i["answer"]}))
-            res = requests.post(url, headers=cls.get_chat_server_header(), data=params, verify=False).json()
-            if res["status"] != "success":
-                logger.exception(f"创建问答对失败: {res['message']}")
+            response = requests.post(url, headers=headers, data=params, verify=False)
+            res = response.json()
+            if res.get("status", "fail") != "success":
+                logger.exception(f"创建问答对失败: {res.get('message', '')}")
                 continue
             success_count += 1
         return success_count
@@ -92,14 +105,17 @@ class ChunkHelper(ChatServerHelper):
         return kwargs, metadata
 
     @classmethod
-    def create_one_qa_pairs(cls, embed_config, embed_model_name, index_name, qa_pairs_id, question, answer):
+    def create_one_qa_pairs(
+        cls, embed_config, embed_model_name, index_name, qa_pairs_id, knowledge_id, question, answer
+    ):
         url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
-        kwargs, metadata = cls.set_qa_pairs_params(embed_config, embed_model_name, index_name, qa_pairs_id)
+        chunk_obj = {"knowledge_id": knowledge_id}
+        kwargs, metadata = cls.set_qa_pairs_params(embed_config, embed_model_name, index_name, qa_pairs_id, chunk_obj)
         metadata.update({"qa_question": question, "qa_answer": answer})
         params = dict(kwargs, **{"content": question, "metadata": json.dumps(metadata)})
         res = requests.post(url, headers=cls.get_chat_server_header(), data=params, verify=False).json()
-        if res["status"] != "success":
-            logger.exception(f"创建问答对失败: {res['message']}")
+        if res.get("status", "fail") != "success":
+            logger.exception(f"创建问答对失败: {res.get('message', '')}")
             return {"result": False}
         return {"result": True}
 

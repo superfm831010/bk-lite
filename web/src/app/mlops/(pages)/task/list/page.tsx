@@ -202,13 +202,13 @@ const TrainTask = () => {
     getTasks();
   }, [pagination.current, pagination.pageSize, selectedKeys]);
 
-  const getTasks = async () => {
+  const getTasks = async (name = '') => {
     const [activeTab] = selectedKeys;
     if (!activeTab) return;
     setLoading(true);
     try {
       if (activeTab === 'anomaly') {
-        const { items, count } = await fetchTaskList(pagination.current, pagination.pageSize);
+        const { items, count } = await fetchTaskList(name, pagination.current, pagination.pageSize);
         const _data =
           items?.map((item: any) => ({
             id: item.id,
@@ -251,8 +251,9 @@ const TrainTask = () => {
     }
   };
 
-  const fetchTaskList = useCallback(async (page: number = 1, pageSize: number = 10) => {
+  const fetchTaskList = useCallback(async (name: string = '', page: number = 1, pageSize: number = 10) => {
     const { count, items } = await getAnomalyTaskList({
+      name,
       page,
       page_size: pageSize
     });
@@ -290,10 +291,12 @@ const TrainTask = () => {
   const onTrainStart = async (record: TrainJob) => {
     try {
       await startAnomalyTrainTask(record.id);
-      message.success(`traintask.trainStartSucess`);
+      message.success(t(`traintask.trainStartSucess`));
     } catch (e) {
       console.log(e);
       message.error(t(`common.error`));
+    } finally {
+      getTasks();
     }
   };
 
@@ -302,8 +305,8 @@ const TrainTask = () => {
     setPagination(value);
   };
 
-  const onSearch = () => {
-    getTasks();
+  const onSearch = (value: string) => {
+    getTasks(value);
   };
 
   const onDelete = async (record: TrainJob) => {

@@ -19,8 +19,8 @@ const AnomalyDetection = () => {
   const { convertToLocalizedTime } = useLocalizedTime();
   const {
     anomalyDetectionReason,
-    getServingsDetail,
-    getSampleFileOfServing,
+    getCapabilityDetail,
+    getSampleFileOfCapability,
     getSampleFileDetail
   } = usePlayroundApi();
   const [currentFileId, setCurrentFileId] = useState<string | null>(null);
@@ -114,7 +114,7 @@ const AnomalyDetection = () => {
   ], [convertToLocalizedTime]);
 
   const anomalyData = useMemo(() => {
-    return chartData.filter((item) => item.label === 1)
+    return chartData?.filter((item) => item.label === 1)
   }, [chartData]);
 
   useEffect(() => {
@@ -132,20 +132,20 @@ const AnomalyDetection = () => {
         setTimeline(newTimeline);
       }
     }
-  }, [chartData.length]);
+  }, [chartData]);
 
   const getConfigData = async () => {
     const id = searchParams.get('id') || '';
     try {
-      const data = await getServingsDetail(id);
-      const sampleList = await getSampleFileOfServing(id);
+      const data = await getCapabilityDetail(id);
+      const sampleList = await getSampleFileOfCapability(id);
       const options = sampleList.filter((item: any) => item?.is_active).map((item: any) => ({
         label: item?.name,
         value: item?.id,
       }));
       setSampleOptions(options);
-      setServingData(data);
-      handleSubmit(data);
+      setServingData(data?.config);
+      handleSubmit(data?.config);
     } catch (e) {
       console.log(e);
     }
@@ -161,11 +161,6 @@ const AnomalyDetection = () => {
     try {
       setSelectId(value);
       const data = await getSampleFileDetail(value as number);
-      // const _data = data?.train_data.map((item: any) => ({
-      //   timestamp: item.timestamp,
-      //   value: item.value,
-      //   label: 0
-      // }));
       setChartData(data?.train_data);
       setFileData(null);
     } catch (e) {
@@ -219,14 +214,14 @@ const AnomalyDetection = () => {
   };
 
   const handleSubmit = useCallback(async (serving = servingData) => {
-    console.log(selectId, fileData);
+    console.log(selectId, fileData, serving);
     if (!chartData) { return message.error(t(`playground-common.uploadMsg`)) };
     if (chartLoading) return;
     setChartLoading(true);
     try {
       const params = {
-        serving_id: serving.id,
-        model_name: `RandomForest_${serving.id}`,
+        serving_id: serving.serving_id,
+        model_name: `RandomForest_${serving.serving_id}`,
         algorithm: "RandomForest",
         model_version: serving.model_version,
         anomaly_threshold: serving.anomaly_threshold,
@@ -248,7 +243,7 @@ const AnomalyDetection = () => {
     } finally {
       setChartLoading(false);
     }
-  }, []);
+  }, [chartData]);
 
   const renderBanner = useMemo(() => {
     const name = searchParams.get('name') || '异常检测';
@@ -298,14 +293,14 @@ const AnomalyDetection = () => {
                 <Upload {...props}>
                   <Button size="large" className="rounded-none text-sm">{t(`playground-common.localUpload`)}</Button>
                 </Upload>
-                <Button size="large" className="rounded-none ml-4 text-sm" type="primary" onClick={handleSubmit}>{t(`playground-common.clickTest`)}</Button>
+                <Button size="large" className="rounded-none ml-4 text-sm" type="primary" onClick={() => handleSubmit(servingData)}>{t(`playground-common.clickTest`)}</Button>
               </div>
             </div>
           </div>
-          <div className="content w-[1180px] mx-auto h-[604px] mt-6">
+          <div className="content w-[80%] mx-auto h-[604px] mt-6">
             <div className="flex h-full overflow-auto">
-              <Spin spinning={chartLoading} wrapperClassName="w-[70%] h-full" className="h-full">
-                <div className="iframe w-full bg-[var(--color-bg-4)] border" style={{ height: 604 }}>
+              <Spin spinning={chartLoading} wrapperClassName="w-[70%] flex-1 h-full" className="h-full">
+                <div className="iframe w-full bg-[var(--color-bg-1)] border p-6" style={{ height: 604 }}>
                   <LineChart
                     data={chartData}
                     timeline={timeline}
@@ -313,7 +308,7 @@ const AnomalyDetection = () => {
                   />
                 </div>
               </Spin>
-              <div className="params w-[30%] bg-[var(--color-bg-4)]">
+              <div className="params w-[30%] max-w-[360px] bg-[var(--color-bg-4)]">
                 <header className="pl-2">
                   <span className="inline-block h-[60px] text-[var(--color-text-2)] content-center ml-10 text-sm">检测结果</span>
                   <span
@@ -323,13 +318,12 @@ const AnomalyDetection = () => {
                       hover:text-[var(--color-text-active)] cursor-pointer`
                     }
                   >请求参数</span>
-                  {/* <a href="#" className="text-base text-[var(--color-text-1)]">请求参数</a> */}
                 </header>
                 <div className="border-r [&_.ant-table]:!h-[543px]">
                   <CustomTable
                     virtual
                     className="h-[543px]"
-                    scroll={{ y: 543 }}
+                    scroll={{ y: 480 }}
                     rowKey='timestamp'
                     columns={columns}
                     sticky={{ offsetHeader: 0 }}

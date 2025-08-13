@@ -1,10 +1,10 @@
+from apps.opspilot.enum import LLMModelChoices
 from apps.opspilot.model_provider_mgmt.models import LLMSkill
 from apps.opspilot.model_provider_mgmt.services.skill_init_json import SKILL_LIST
 from apps.opspilot.models import (
     EmbedModelChoices,
     EmbedProvider,
     LLMModel,
-    LLMModelChoices,
     OCRProvider,
     RerankModelChoices,
     RerankProvider,

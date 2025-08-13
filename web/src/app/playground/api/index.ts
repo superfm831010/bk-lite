@@ -53,13 +53,21 @@ const usePlayroundApi = () => {
   };
 
   // 查询所有的样本文件列表
-  const getAllSampleFileList = async () => {
-    return await get(`/playground/example/`);
+  const getAllSampleFileList = async ({
+    name = '',
+    page = 1,
+    page_size = -1,
+  }: {
+    name?: string,
+    page?: number,
+    page_size?: number
+  }) => {
+    return await get(`/playground/example/?name=${name}&page=${page}&page_size=${page_size}`);
   };
   
   // 查询指定能力体验下的样本文件
-  const getSampleFileOfServing = async (serving: string) => {
-    return await get(`/playground/example/?serving=${serving}`);
+  const getSampleFileOfCapability = async (capability: string) => {
+    return await get(`/playground/example/?capability=${capability}`);
   };
 
   // 获取指定样本文件详情
@@ -110,7 +118,7 @@ const usePlayroundApi = () => {
   // 创建样本文件
   const createSampleFile = async (params: {
     name: string;
-    serving: number;
+    capability: number;
     train_data: LabelData[],
     is_active: boolean;
   }) => {
@@ -153,7 +161,7 @@ const usePlayroundApi = () => {
     getAllSampleFileList,
     getSampleFileDetail,
     getServingsDetail,
-    getSampleFileOfServing,
+    getSampleFileOfCapability,
     createCategory,
     createCapability,
     createSampleFile,

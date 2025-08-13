@@ -7,12 +7,12 @@ from rest_framework.response import Response
 
 from apps.operation_analysis.common.get_nats_source_data import GetNatsData
 from apps.operation_analysis.filters import DataSourceAPIModelFilter, DashboardModelFilter, DirectoryModelFilter, \
-    TopologyModelFilter
+    TopologyModelFilter, NameSpaceModelFilter
 from apps.operation_analysis.serializers import DataSourceAPIModelSerializer, DashboardModelSerializer, \
-    DirectoryModelSerializer, TopologyModelSerializer
+    DirectoryModelSerializer, TopologyModelSerializer, NameSpaceModelSerializer
 from config.drf.pagination import CustomPageNumberPagination
 from config.drf.viewsets import ModelViewSet
-from apps.operation_analysis.models import DataSourceAPIModel, Dashboard, Directory, Topology
+from apps.operation_analysis.models import DataSourceAPIModel, Dashboard, Directory, Topology, NameSpace
 from apps.core.logger import operation_analysis_logger as logger
 
 
@@ -91,6 +91,18 @@ class TreeNodeBuilder:
         return nodes
 
 
+class NameSpaceModelViewSet(ModelViewSet):
+    """
+    命名空间
+    """
+    queryset = NameSpace.objects.all()
+    serializer_class = NameSpaceModelSerializer
+    ordering_fields = ["id"]
+    ordering = ["id"]
+    filterset_class = NameSpaceModelFilter
+    pagination_class = CustomPageNumberPagination
+
+
 class DataSourceAPIModelViewSet(ModelViewSet):
     """
     数据源
@@ -106,15 +118,20 @@ class DataSourceAPIModelViewSet(ModelViewSet):
     def get_source_data(self, request, *args, **kwargs):
         instance = self.get_object()
         params = request.data
+        namespace_list = instance.namespaces.all()
         namespace, path = instance.rest_api.split("/", 1)
-        client = GetNatsData(namespace=namespace, path=path, params=params)
+        client = GetNatsData(namespace=namespace, path=path, params=params, namespace_list=namespace_list)
+        result = []
         try:
-            result = client.get_data()
+            data = client.get_data()
         except Exception as e:
             logger.error("获取数据源数据失败: {}".format(e))
-            result = {}
+            data = {}
+        finally:
+            for namespace_id, _data in data.items():
+                result.append({"namespace_id": namespace_id, "data": _data})
 
-        return Response(result.get("data", []))
+        return Response(result)
 
 
 class DirectoryModelViewSet(ModelViewSet):

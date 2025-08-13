@@ -6,14 +6,13 @@ from rest_framework.decorators import action
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.filters.monitor_metrics import MetricGroupFilter, MetricFilter
 from apps.monitor.language.service import SettingLanguage
-from apps.monitor.models import MonitorObject
 from apps.monitor.serializers.monitor_metrics import MetricGroupSerializer, MetricSerializer
 from apps.monitor.models.monitor_metrics import MetricGroup, Metric
 from config.drf.pagination import CustomPageNumberPagination
 
 
 class MetricGroupVieSet(viewsets.ModelViewSet):
-    queryset = MetricGroup.objects.all().order_by("sort_order")
+    queryset = MetricGroup.objects.select_related('monitor_object').all().order_by("sort_order")
     serializer_class = MetricGroupSerializer
     filterset_class = MetricGroupFilter
     pagination_class = CustomPageNumberPagination
@@ -27,17 +26,34 @@ class MetricGroupVieSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         results = serializer.data
         lan = SettingLanguage(request.user.locale)
-        monitor_object_name = None
+
+        # 创建queryset字典缓存，避免重复查询
+        queryset_dict = {obj.id: obj for obj in queryset}
+
+        # 批量获取所有监控对象名称对应的语言配置
+        monitor_object_names = set()
         for result in results:
-            if monitor_object_name is None:
-                monitor_object = MonitorObject.objects.filter(id=result["monitor_object"]).first()
-                if monitor_object:
-                    monitor_object_name = monitor_object.name
-            if monitor_object_name:
-                metric_group_map = lan.get_val("MONITOR_OBJECT_METRIC_GROUP", monitor_object_name)
-                if not metric_group_map:
-                    metric_group_map = {}
-                result["display_name"] = metric_group_map.get(result["name"]) or result["name"]
+            if result.get("monitor_object"):
+                metric_group = queryset_dict.get(result["id"])
+                if metric_group and metric_group.monitor_object:
+                    monitor_object_names.add(metric_group.monitor_object.name)
+
+        # 批量获取语言配置映射
+        metric_group_maps = {}
+        for monitor_object_name in monitor_object_names:
+            metric_group_map = lan.get_val("MONITOR_OBJECT_METRIC_GROUP", monitor_object_name)
+            if metric_group_map:
+                metric_group_maps[monitor_object_name] = metric_group_map
+
+        # 应用语言配置
+        for result in results:
+            if result.get("monitor_object"):
+                metric_group = queryset_dict.get(result["id"])
+                if metric_group and metric_group.monitor_object:
+                    monitor_object_name = metric_group.monitor_object.name
+                    metric_group_map = metric_group_maps.get(monitor_object_name, {})
+                    result["display_name"] = metric_group_map.get(result["name"]) or result["name"]
+
         return WebUtils.response_success(results)
 
     @swagger_auto_schema(
@@ -103,7 +119,7 @@ class MetricGroupVieSet(viewsets.ModelViewSet):
 
 
 class MetricVieSet(viewsets.ModelViewSet):
-    queryset = Metric.objects.all().order_by("sort_order")
+    queryset = Metric.objects.select_related('monitor_object').all().order_by("sort_order")
     serializer_class = MetricSerializer
     filterset_class = MetricFilter
     pagination_class = CustomPageNumberPagination
@@ -117,18 +133,35 @@ class MetricVieSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         results = serializer.data
         lan = SettingLanguage(request.user.locale)
-        monitor_object_name = None
+
+        # 批量获取所有监控对象名称对应的语言配置
+        monitor_object_names = set()
+        queryset_dict = {obj.id: obj for obj in queryset}
+
         for result in results:
-            if monitor_object_name is None:
-                monitor_object = MonitorObject.objects.filter(id=result["monitor_object"]).first()
-                if monitor_object:
-                    monitor_object_name = monitor_object.name
-            if monitor_object_name:
-                metric_map = lan.get_val("MONITOR_OBJECT_METRIC", monitor_object_name)
-                if not metric_map:
-                    metric_map = {}
-                result["display_name"] = metric_map.get(result["name"], {}).get("name") or result["display_name"]
-                result["display_description"] = metric_map.get(result["name"], {}).get("desc") or result["description"]
+            if result.get("monitor_object"):
+                metric = queryset_dict.get(result["id"])
+                if metric and metric.monitor_object:
+                    monitor_object_names.add(metric.monitor_object.name)
+
+        # 批量获取语言配置映射
+        metric_maps = {}
+        for monitor_object_name in monitor_object_names:
+            metric_map = lan.get_val("MONITOR_OBJECT_METRIC", monitor_object_name)
+            if metric_map:
+                metric_maps[monitor_object_name] = metric_map
+
+        # 应用语言配置
+        for result in results:
+            if result.get("monitor_object"):
+                metric = queryset_dict.get(result["id"])
+                if metric and metric.monitor_object:
+                    monitor_object_name = metric.monitor_object.name
+                    metric_map = metric_maps.get(monitor_object_name, {})
+                    metric_config = metric_map.get(result["name"], {})
+                    result["display_name"] = metric_config.get("name") or result["display_name"]
+                    result["display_description"] = metric_config.get("desc") or result["description"]
+
         return WebUtils.response_success(results)
 
     @swagger_auto_schema(

@@ -27,7 +27,7 @@ from apps.system_mgmt.models import (
 )
 from apps.system_mgmt.models.system_settings import SystemSettings
 from apps.system_mgmt.services.role_manage import RoleManage
-from apps.system_mgmt.utils.channel_utils import send_by_bot, send_email, send_wechat
+from apps.system_mgmt.utils.channel_utils import send_by_bot, send_email
 from apps.system_mgmt.utils.group_utils import GroupUtils
 
 
@@ -309,11 +309,13 @@ def send_msg_with_channel(channel_id, title, content, receivers):
     channel_obj = Channel.objects.filter(id=channel_id).first()
     if not channel_obj:
         return {"result": False, "message": "Channel not found"}
+    user_list = User.objects.filter(id__in=receivers)
     if channel_obj.channel_type == ChannelChoices.EMAIL:
-        return send_email(channel_obj, title, content, receivers)
+        return send_email(channel_obj, title, content, user_list)
     elif channel_obj.channel_type == ChannelChoices.ENTERPRISE_WECHAT_BOT:
         return send_by_bot(channel_obj, content)
-    return send_wechat(channel_obj, content, receivers)
+    return {"result": False, "message": "Unsupported channel type"}
+    # return send_wechat(channel_obj, content, user_list)
 
 
 @nats_client.register
@@ -654,3 +656,53 @@ def get_login_module_domain_list():
     )
     login_module_list.insert(0, "domain.com")
     return {"result": True, "data": login_module_list}
+
+
+@nats_client.register
+def delete_rules(group_ids, instance_id, app, module, child_module):
+    """
+    删除权限规则中指定实例的权限配置
+    """
+    try:
+        # 查询对应的 GroupDataRule
+        rules_queryset = GroupDataRule.objects.filter(group_id__in=group_ids, app=app)
+
+        updated_count = 0
+        for rule_obj in rules_queryset:
+            rules_data = rule_obj.rules
+
+            # 如果没有对应的模块，跳过
+            if module not in rules_data:
+                continue
+
+            # 获取目标数据结构
+            if child_module:
+                # 二级模块，如 provider.llm_model
+                if child_module not in rules_data[module]:
+                    continue
+                target_list = rules_data[module][child_module]
+            else:
+                # 一级模块，如 skill、bot
+                target_list = rules_data[module]
+
+            # 删除指定 ID 的权限项
+            original_length = len(target_list)
+            if child_module:
+                rules_data[module][child_module] = [
+                    item for item in target_list if str(item.get("id")) != str(instance_id)
+                ]
+            else:
+                rules_data[module] = [item for item in target_list if str(item.get("id")) != str(instance_id)]
+
+            # 如果有删除操作，更新数据库
+            new_length = len(rules_data[module][child_module] if child_module else rules_data[module])
+            if new_length < original_length:
+                rule_obj.rules = rules_data
+                rule_obj.save()
+                updated_count += 1
+
+        return {"result": True, "message": f"Successfully deleted rules from {updated_count} group data rules"}
+
+    except Exception as e:
+        logger.exception(f"Error deleting rules: {e}")
+        return {"result": False, "message": str(e)}

@@ -19,7 +19,6 @@ const { TextArea } = Input;
 
 const SkillSettingsPage: React.FC = () => {
   const [form] = Form.useForm();
-  const [isDeepSeek, setIsDeepSeek] = useState(false);
   const { groups, loading: groupsLoading } = useGroups();
   const { t } = useTranslation();
   const { fetchSkillDetail, fetchKnowledgeBases, fetchLlmModels, saveSkillDetail } = useSkillApi();
@@ -67,8 +66,6 @@ const SkillSettingsPage: React.FC = () => {
           show_think: data.show_think,
         });
         setGuideValue(data.guide || initialGuide);
-        const selected = llmModels.find(model => model.id === data.llm_model);
-        setIsDeepSeek(selected?.llm_model_type === 'deep-seek');
         setChatHistoryEnabled(data.enable_conversation_history);
         setRagEnabled(data.enable_rag);
         setRagStrictMode(data.enable_rag_strict_mode);
@@ -301,7 +298,6 @@ const SkillSettingsPage: React.FC = () => {
                       <Select
                         onChange={(value: number) => {
                           const selected = llmModels.find(model => model.id === value);
-                          setIsDeepSeek(selected?.llm_model_type === 'deep-seek');
                           form.setFieldsValue({ show_think: selected && selected.llm_model_type === 'deep-seek' ? false : true });
                         }}
                       >
@@ -310,14 +306,12 @@ const SkillSettingsPage: React.FC = () => {
                         ))}
                       </Select>
                     </Form.Item>
-                    {isDeepSeek && (
-                      <Form.Item
-                        label={t('skill.form.showThought')}
-                        name="show_think"
-                        valuePropName="checked">
-                        <Switch size="small" />
-                      </Form.Item>
-                    )}
+                    <Form.Item
+                      label={t('skill.form.showThought')}
+                      name="show_think"
+                      valuePropName="checked">
+                      <Switch size="small" />
+                    </Form.Item>
                     <Form.Item
                       label={t('skill.form.temperature')}
                       name="temperature"
