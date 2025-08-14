@@ -26,20 +26,13 @@ naive_rag_api_router = Blueprint("naive_rag_api_router", url_prefix="/rag")
 @auth.login_required
 @validate(json=DocumentRetrieverRequest)
 def naive_rag_test(request, body: DocumentRetrieverRequest):
-    """
-    测试RAG
-    :param request:
-    :param body:
-    :return:
-    """
-    start_time = time.time()
-    request_id = str(uuid.uuid4())[:8]
-    logger.info(f"[{request_id}] RAG测试请求开始, 参数: {body.dict()}")
     rag = ElasticSearchRag()
     documents = rag.search(body)
-    logger.info(
-        f"[{request_id}] RAG测试请求成功, 耗时: {time.time() - start_time:.2f}秒, 返回文档数: {len(documents)}")
-    return json({"status": "success", "message": "", "documents": [doc.dict() for doc in documents]})
+    return json({
+        "status": "success",
+        "message": "",
+        "documents": [doc.model_dump() for doc in documents]
+    })
 
 
 @naive_rag_api_router.post("/count_index_document")
@@ -66,7 +59,7 @@ async def custom_content_ingest(request):
 
     content = request.form.get('content')
     content_preview = content[:100] + \
-        '...' if len(content) > 100 else content
+                      '...' if len(content) > 100 else content
     chunk_mode = request.form.get('chunk_mode')
     is_preview = request.form.get('preview', 'false').lower() == 'true'
     metadata = js.loads(request.form.get('metadata', '{}'))

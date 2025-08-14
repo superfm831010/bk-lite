@@ -57,11 +57,15 @@ else
     log "INFO" "未检测到 --opspilot 参数，禁用 OpsPilot 功能"
 fi
 
+INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,alert,log,mlops,operation_analysis"
+
 if [[ $OPSPILOT_ENABLED == "true" ]]; then
-    export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,opspilot"
+    export INSTALL_APPS="${INSTALL_APPS},ops_pilot"
+    log "INFO" "启用 OpsPilot 功能，安装应用列表: ${INSTALL_APPS}"
+    # 使用 compose/ops_pilot.yaml 文件
     export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/ops_pilot.yaml config --no-interpolate"
 else
-    export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt"
+    log "INFO" "禁用 OpsPilot 功能，安装应用列表: ${INSTALL_APPS}"
     export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml config --no-interpolate"
 fi
 
@@ -220,6 +224,8 @@ DOCKER_IMAGE_MINIO=minio/minio:RELEASE.2024-05-01T01-11-10Z-cpuv1
 DOCKER_IMAGE_RABBITMQ=rabbitmq:management
 DOCKER_IMAGE_ELASTICSEARCH=bklite/elasticsearch
 DOCKER_IMAGE_METIS=bklite/metis
+DOCKER_IMAGE_VICTORIALOGS=victoriametrics/victoria-logs:v1.25.0
+DOCKER_IMAGE_MLFLOW=bklite/mlflow
 
 # 采集器镜像
 # TODO: 不同OS/架构支持
@@ -332,6 +338,9 @@ TRAEFIK_ENABLE_DASHBOARD=${TRAEFIK_ENABLE_DASHBOARD}
 DEFAULT_REQUEST_TIMEOUT=${DEFAULT_REQUEST_TIMEOUT}
 DIST_ARCH=${DIST_ARCH}
 DOCKER_NETWORK=${DOCKER_NETWORK}
+DOCKER_IMAGE_VICTORIALOGS=${DOCKER_IMAGE_VICTORIALOGS}
+DOCKER_IMAGE_MLFLOW=${DOCKER_IMAGE_MLFLOW}
+
 INSTALL_APPS="${INSTALL_APPS}"
 EOF
 
@@ -341,7 +350,7 @@ $COMPOSE_CMD > docker-compose.yaml
 
 # 按照特定顺序启动服务
 log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j)..."
-${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics neo4j
+${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics neo4j victoria-logs mlflow
 
 # 创建 JetStream - 使用正确的网络名称
 log "INFO" "创建JetStream..."

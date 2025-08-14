@@ -22,6 +22,7 @@ class EmbedProvider(models.Model, EncryptMixin):
     enabled = models.BooleanField(default=True, verbose_name="是否启用")
     team = models.JSONField(default=list)
     is_build_in = models.BooleanField(default=False, verbose_name="是否内置")
+    model_type = models.ForeignKey("ModelType", on_delete=models.SET_NULL, verbose_name="模型类型", blank=True, null=True)
 
     def __str__(self):
         return self.name

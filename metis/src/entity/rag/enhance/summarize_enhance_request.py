@@ -1,10 +1,11 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
 class SummarizeEnhanceRequest(BaseModel):
     content: str
+    model: str = 'local:textrank'
+    algorithm_args: Optional[dict] = {}
 
-    openai_api_base: str = 'https://api.openai.com'
-    openai_api_key: str = ''
-    model: str = 'gpt-4o'
 

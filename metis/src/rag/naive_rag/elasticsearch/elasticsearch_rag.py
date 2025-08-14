@@ -312,9 +312,9 @@ class ElasticSearchRag(BaseRag):
                 return search_result  # Return original if response processing fails
 
     def search(self, req: DocumentRetrieverRequest) -> List[Document]:
-        # 执行搜索
         search_result = []
-        if req.enable_naive_rag is True:
+
+        if req.enable_naive_rag:
             naive_rag_request = copy.deepcopy(req)
             naive_rag_request.metadata_filter['qa_answer__missing'] = True
             documents_retriever = ElasticsearchRetriever.from_es_params(
@@ -326,10 +326,18 @@ class ElasticSearchRag(BaseRag):
                 username="elastic",
                 password=core_settings.elasticsearch_password,
             )
-            rs = documents_retriever.invoke(req.search_query)
-            rs = self._process_search_result(rs)
-            search_result.extend(rs)
-        if req.enable_qa_rag is True:
+            naive_rag_rs = documents_retriever.invoke(req.search_query)
+            naive_rag_rs = self._process_search_result(naive_rag_rs)
+
+            if req.enable_rerank:
+                naive_rag_rs = self._rerank_results(req, naive_rag_rs)
+                naive_rag_rs = [doc for doc in naive_rag_rs if doc.metadata.get(
+                    '_score', doc.metadata.get('relevance_score', 0)) >= (req.threshold / 10)]
+                naive_rag_rs = self.process_recall_stage(req, naive_rag_rs)
+
+            search_result.extend(naive_rag_rs)
+
+        if req.enable_qa_rag:
             qa_rag_request = copy.deepcopy(req)
             qa_rag_request.metadata_filter['qa_answer__exists'] = True
             documents_retriever = ElasticsearchRetriever.from_es_params(
@@ -341,17 +349,14 @@ class ElasticSearchRag(BaseRag):
                 username="elastic",
                 password=core_settings.elasticsearch_password,
             )
-            rs = documents_retriever.invoke(req.search_query)
-            rs = self._process_search_result(rs)
-            search_result.extend(rs)
+            qa_rs = documents_retriever.invoke(req.search_query)
+            qa_rs = self._process_search_result(qa_rs)
 
-        # 重排序处理
-        search_result = self._rerank_results(req, search_result)
-        search_result = [doc for doc in search_result if doc.metadata.get(
-            # Consider relevance_score for threshold
-            '_score', doc.metadata.get('relevance_score', 0)) >= (req.threshold / 10)]
-
-        search_result = self.process_recall_stage(req, search_result)
+            if req.enable_rerank:
+                qa_rs = self._rerank_results(req, qa_rs)
+                qa_rs = [doc for doc in qa_rs if doc.metadata.get(
+                    '_score', doc.metadata.get('relevance_score', 0)) >= (req.threshold / 10)]
+            search_result.extend(qa_rs)
 
         return search_result
 

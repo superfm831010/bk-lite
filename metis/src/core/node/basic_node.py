@@ -170,32 +170,18 @@ class BasicNode:
 
         rag_result = []
 
+
         for rag_search_request in naive_rag_request:
             if len(selected_knowledge_ids) != 0 and rag_search_request.index_name not in selected_knowledge_ids:
                 logger.info(
                     f"智能知识路由判断:[{rag_search_request.index_name}]不适合当前问题,跳过检索")
+                continue
+
             elasticsearch_rag = ElasticSearchRag()
+            naive_rag_search_result = elasticsearch_rag.search(rag_search_request)
+            rag_result.extend(naive_rag_search_result)
 
-            if rag_search_request.enable_naive_rag is True:
-                naive_rag_request = copy.deepcopy(rag_search_request)
-                naive_rag_request.metadata_filter['qa_answer__missing'] = True
-                naive_rag_search_result = elasticsearch_rag.search(
-                    naive_rag_request)
-                logger.info(
-                    f"NaiveRAG模式检索知识库: {rag_search_request.index_name}, 结果数量: {len(naive_rag_search_result)}")
-                rag_result.extend(naive_rag_search_result)
-
-            if rag_search_request.enable_qa_rag is True:
-                qa_rag_request = copy.deepcopy(rag_search_request)
-                qa_rag_request.metadata_filter['qa_answer__exists'] = True
-                qa_elasticsearch_rag = ElasticSearchRag()
-                qa_rag_search_result = qa_elasticsearch_rag.search(
-                    qa_rag_request)
-                logger.info(
-                    f"QA-RAG模式检索知识库: {rag_search_request.index_name}, 结果数量: {len(qa_rag_search_result)}")
-                rag_result.extend(qa_rag_search_result)
-
-            if rag_search_request.enable_graph_rag is True:
+            if rag_search_request.enable_graph_rag:
                 graphiti = GraphitiRAG()
                 rag_search_request.graph_rag_request.search_query = rag_search_request.search_query
                 graph_result = await graphiti.search(
