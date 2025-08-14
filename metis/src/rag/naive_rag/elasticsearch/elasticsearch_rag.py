@@ -33,16 +33,6 @@ class ElasticSearchRag(BaseRag):
         )
 
     def update_metadata(self, req: DocumentMetadataUpdateRequest):
-        """
-        根据过滤条件更新文档的元数据
-
-        Args:
-            req: 包含索引名称、元数据过滤条件和新元数据的请求对象
-
-        Returns:
-            更新的文档数量
-        """
-        # 构建过滤条件
         metadata_filter = ElasticsearchQueryBuilder.build_metadata_filter(req.metadata_filter)
 
         # 构建查询
@@ -110,11 +100,9 @@ class ElasticSearchRag(BaseRag):
         self.es.indices.delete(index=req.index_name)
 
     def list_index_document(self, req: DocumentListRequest):
-        # Build filter query for specific metadata
         metadata_filter = ElasticsearchQueryBuilder.build_metadata_filter(
             req.metadata_filter)
 
-        # Calculate offset from page and size
         offset = (req.page - 1) * req.size if req.page > 0 else 0
 
         # Build the query
@@ -131,15 +119,13 @@ class ElasticSearchRag(BaseRag):
 
         # Add match_phrase query if req.query is not empty
         if req.query:
-            if not query["query"]["bool"].get("must"):
-                query["query"]["bool"]["must"] = []
-                query["query"]["bool"]["must"].append({
-                    "match_phrase": {
-                        "text": req.query
-                    }
-                })
+            query["query"]["bool"]["must"] = []
+            query["query"]["bool"]["must"].append({
+                "match_phrase": {
+                    "text": req.query
+                }
+            })
 
-        # Execute the search query
         response = self.es.search(index=req.index_name, body=query)
 
         # Process and return the results

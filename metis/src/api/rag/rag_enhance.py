@@ -17,7 +17,7 @@ rag_enhance_api_router = Blueprint("rag_enhance_api_router", url_prefix="/rag")
 @validate(json=SummarizeEnhanceRequest)
 async def summarize_enhance(request, body: SummarizeEnhanceRequest):
     result = SummarizeManager.summarize(body)
-    return CommonResponse.success(result)
+    return json({"status": "success", "message": result})
 
 
 @rag_enhance_api_router.post("/qa_pair_generate")
