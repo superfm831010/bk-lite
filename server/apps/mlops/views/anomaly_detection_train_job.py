@@ -5,7 +5,6 @@ from django.http import Http404
 import pandas as pd
 
 import mlflow
-from sqlalchemy import false
 
 from config.components.mlflow import MLFLOW_TRACKER_URL
 from apps.core.decorators.api_permission import HasPermission
