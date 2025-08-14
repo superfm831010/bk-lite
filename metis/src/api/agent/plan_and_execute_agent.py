@@ -56,8 +56,16 @@ async def invoke_plan_and_execute_agent_sse(request, body: PlanAndExecuteAgentRe
     AgentService.set_naive_rag_search_query(body)
     logger.debug(f"执行优雅的PlanAndExecuteAgentGraph，用户的问题：[{body.user_message}]")
 
+    # 生成聊天ID
+    import uuid
+    chat_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
+
+    async def sse_stream(response):
+        async for data in stream_plan_execute_response(workflow, body, chat_id):
+            await response.write(data)
+
     return ResponseStream(
-        lambda res: stream_plan_execute_response(workflow, body, res),
+        sse_stream,
         content_type="text/event-stream; charset=utf-8",
         headers={
             "Cache-Control": "no-cache", 
