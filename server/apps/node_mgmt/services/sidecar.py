@@ -4,7 +4,7 @@ from string import Template
 from django.core.cache import cache
 from django.http import JsonResponse, HttpResponse
 from apps.core.utils.crypto.aes_crypto import AESCryptor
-from apps.node_mgmt.constants import CACHE_TIMEOUT
+from apps.node_mgmt.constants import CACHE_TIMEOUT, DEFAULT_UPDATE_INTERVAL
 from apps.node_mgmt.default_config.default_config import create_default_config
 from apps.node_mgmt.models.cloud_region import SidecarEnv
 from apps.node_mgmt.models.sidecar import Node, Collector, CollectorConfiguration, NodeOrganization
@@ -150,7 +150,7 @@ class Sidecar:
 
         # 构造响应数据
         response_data = dict(
-            configuration={"update_interval": 5, "send_status": True},  # 配置信息, 5s更新一次
+            configuration={"update_interval": DEFAULT_UPDATE_INTERVAL, "send_status": True},  # 配置信息, DEFAULT_UPDATE_INTERVAL s更新一次
             configuration_override=True,  # 是否覆盖配置
             actions=[],  # 采集器状态
             assignments=[],  # 采集器配置
