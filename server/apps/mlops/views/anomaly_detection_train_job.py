@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.http import Http404
 import pandas as pd
+import numpy as np
 
 import mlflow
 
@@ -52,16 +53,16 @@ class AnomalyDetectionTrainJobViewSet(ModelViewSet):
    @HasPermission("train_tasks-View")
    def get_run_data_list(self, request, pk=None):
       try:
-         #获取训练任务
+         # 获取训练任务
          train_job = self.get_object()
 
-         #设置mlflow跟踪
+         # 设置mlflow跟踪
          mlflow.set_tracking_uri(MLFLOW_TRACKER_URL)
 
-         #构造实验名称（与训练时保持一致）
+         # 构造实验名称（与训练时保持一致）
          experiment_name = f"{train_job.id}_{train_job.name}"
 
-         #查找实验
+         # 查找实验
          experiments = mlflow.search_experiments(filter_string=f"name = '{experiment_name}'")
          if not experiments:
             return Response(
@@ -71,7 +72,7 @@ class AnomalyDetectionTrainJobViewSet(ModelViewSet):
 
          experiment = experiments[0]
 
-         #查找该实验中的运行
+         # 查找该实验中的运行
          runs = mlflow.search_runs(
             experiment_ids=[experiment.experiment_id],
             order_by=["start_time DESC"],
@@ -82,18 +83,49 @@ class AnomalyDetectionTrainJobViewSet(ModelViewSet):
                {'error': '未找到训练运行记录'},
                status=status.HTTP_404_NOT_FOUND
             )
-            # 每次运行信息的耗时和名称
+
+         # 每次运行信息的耗时和名称
          run_datas = []
          for _, row in runs.iterrows():
-            duration = row["end_time"] - row["start_time"]
-            duration_minutes = duration.total_seconds() / 60
+            # 处理时间计算，避免产生NaN或Infinity
+            try:
+               start_time = row["start_time"]
+               end_time = row["end_time"]
+
+               # 检查时间是否有效
+               if pd.isna(start_time) or pd.isna(end_time):
+                  duration_minutes = 0
+               else:
+                  duration = end_time - start_time
+                  # 检查duration是否为有效值
+                  if pd.isna(duration):
+                     duration_minutes = 0
+                  else:
+                     duration_seconds = duration.total_seconds()
+                     # 检查是否为有效数值
+                     if np.isfinite(duration_seconds):
+                        duration_minutes = duration_seconds / 60
+                     else:
+                        duration_minutes = 0
+
+               # 获取run_name，处理可能的缺失值
+               run_name = row.get("tags.mlflow.runName", "")
+               if pd.isna(run_name):
+                  run_name = ""
+
+            except Exception:
+               # 如果计算出错，使用默认值
+               duration_minutes = 0
+               run_name = ""
+
             run_data = {
-               "run_id": row["run_id"],
-               "create_time": row["start_time"],
-               "duration": duration_minutes,
-               "run_name": row["tags.mlflow.runName"]
+               "run_id": str(row["run_id"]),  # 确保是字符串
+               "create_time": row["start_time"].isoformat() if not pd.isna(row["start_time"]) else None,
+               "duration": float(duration_minutes) if np.isfinite(duration_minutes) else 0,
+               "run_name": str(run_name)
             }
             run_datas.append(run_data)
+
          return Response(
             {
                'train_job_name': train_job.name,
