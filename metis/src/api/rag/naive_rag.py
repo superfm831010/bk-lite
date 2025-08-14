@@ -39,11 +39,8 @@ def naive_rag_test(request, body: DocumentRetrieverRequest):
 @auth.login_required
 @validate(json=DocumentCountRequest)
 async def count_index_document(request, body: DocumentCountRequest):
-    request_id = str(uuid.uuid4())[:8]
-    logger.info(f"[{request_id}] 计数索引文档请求, 索引: {body.index_name}")
     rag = ElasticSearchRag()
     count = rag.count_index_document(body)
-    logger.info(f"[{request_id}] 计数索引文档请求成功, 文档数: {count}")
     return json({"status": "success", "message": "", "count": count})
 
 
