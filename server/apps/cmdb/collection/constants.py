@@ -112,6 +112,7 @@ NETWORK_INTERFACES_RELATIONS = "network_topo_info_gauge"
 
 PROTOCOL_METRIC_MAP = {
     "mysql": ["mysql_info_gauge"],
+    "oracle": ["oracle_info_gauge"],
 }
 
 # aliyun
@@ -129,6 +130,8 @@ DB_COLLECT_METRIC_MAP = {
     "mongodb": ["mongodb_info_gauge"],
     "postgresql": ["postgresql_info_gauge"],
     "dameng": ["dameng_info_gauge"],
+    "db2": ["db2_info_gauge"],
+    "tidb": ["tidb_info_gauge"],
 }
 
 MIDDLEWARE_METRIC_MAP = {
