@@ -42,6 +42,21 @@ const useMlopsTaskApi = () => {
     return await get(`/mlops/anomaly_detection_train_jobs/${id}`)
   };
 
+  // 获取训练状态数据
+  const getTrainTaskState = async (id: number) => {
+    return await get(`/mlops/anomaly_detection_train_jobs/${id}/runs_data_list/`)
+  };
+  
+  // 获取状态指标
+  const getTrainTaskMetrics = async (id: string) => {
+    return await get(`/mlops/anomaly_detection_train_jobs/runs_metrics_list/${id}`)
+  };
+
+  // 获取具体指标信息
+  const getTrainTaskMetricsDetail = async (id: string, metrics_name: string) => {
+    return await get(`/mlops/anomaly_detection_train_jobs/runs_metrics_history/${id}/${metrics_name}`);
+  };
+
   // 新建异常检测训练任务
   const addAnomalyTrainTask = async (params: TrainTaskParams) => {
     return await post(`/mlops/anomaly_detection_train_jobs/`, params)
@@ -65,11 +80,13 @@ const useMlopsTaskApi = () => {
   return {
     getAnomalyTaskList,
     getOneAnomalyTask,
+    getTrainTaskState,
+    getTrainTaskMetrics,
+    getTrainTaskMetricsDetail,
     addAnomalyTrainTask,
     startAnomalyTrainTask,
     updateAnomalyTrainTask,
     deleteAnomalyTrainTask,
-
   }
 
 };
