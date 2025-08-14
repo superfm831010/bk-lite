@@ -5,6 +5,8 @@ from django.http import Http404
 import pandas as pd
 
 import mlflow
+from sqlalchemy import false
+
 from config.components.mlflow import MLFLOW_TRACKER_URL
 from apps.core.decorators.api_permission import HasPermission
 from config.drf.viewsets import ModelViewSet
@@ -47,23 +49,20 @@ class AnomalyDetectionTrainJobViewSet(ModelViewSet):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
          )
 
-   @action(detail=True, methods=['get'], url_path='metrics-history')
+   @action(detail=True, methods=['get'], url_path='runs_data_list')
    @HasPermission("train_tasks-View")
-   def get_metrics_history(self, request, pk=None):
-      """
-      获取指定训练任务的指标历史数据，用于绘制图表
-      """
+   def get_run_data_list(self, request, pk=None):
       try:
-         # 获取训练任务
+         #获取训练任务
          train_job = self.get_object()
 
-         # 设置MLflow跟踪URI
+         #设置mlflow跟踪
          mlflow.set_tracking_uri(MLFLOW_TRACKER_URL)
 
-         # 构造实验名称（与训练时保持一致）
+         #构造实验名称（与训练时保持一致）
          experiment_name = f"{train_job.id}_{train_job.name}"
 
-         # 查找实验
+         #查找实验
          experiments = mlflow.search_experiments(filter_string=f"name = '{experiment_name}'")
          if not experiments:
             return Response(
@@ -73,7 +72,7 @@ class AnomalyDetectionTrainJobViewSet(ModelViewSet):
 
          experiment = experiments[0]
 
-         # 查找该实验中的运行
+         #查找该实验中的运行
          runs = mlflow.search_runs(
             experiment_ids=[experiment.experiment_id],
             order_by=["start_time DESC"],
@@ -84,59 +83,81 @@ class AnomalyDetectionTrainJobViewSet(ModelViewSet):
                {'error': '未找到训练运行记录'},
                status=status.HTTP_404_NOT_FOUND
             )
-
-         # 获取所有的run_id
-         run_ids = runs["run_id"].tolist()
-         #每次运行信息的耗时和名称
+            # 每次运行信息的耗时和名称
          run_datas = []
-         for _,row in runs.iterrows():
+         for _, row in runs.iterrows():
             duration = row["end_time"] - row["start_time"]
             duration_minutes = duration.total_seconds() / 60
             run_data = {
                "run_id": row["run_id"],
+               "create_time": row["start_time"],
                "duration": duration_minutes,
                "run_name": row["tags.mlflow.runName"]
             }
             run_datas.append(run_data)
+         return Response(
+            {
+               'train_job_name': train_job.name,
+               'data': run_datas
+            }
+         )
+      except Exception as e:
+         return Response(
+            {'error': f'获取运行历史失败: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+         )
+
+   @action(detail=False, methods=['get'], url_path='runs_metrics_list/(?P<run_id>.+?)')
+   @HasPermission("train_tasks-View")
+   def get_runs_metrics_list(self, request, run_id: str):
+      try:
+         # 设置MLflow跟踪URI
+         mlflow.set_tracking_uri(MLFLOW_TRACKER_URL)
+
          # 创建MLflow客户端
          client = mlflow.tracking.MlflowClient()
 
          # 定义需要获取历史的指标
-         important_metrics = [metric for metric in client.get_run(run_ids[0]).data.metrics.keys() if not str(metric).startswith("system")]
-
-         data = []
-         for run_data in run_datas:
-            # 获取每个指标的历史数据
-            metrics_history = {}
-            run_id = run_data["run_id"]
-            for metric_name in important_metrics:
-               try:
-                  # 获取指标历史数据
-                  history = client.get_metric_history(run_id, metric_name)
-                  metrics_history[metric_name] = [
-                     {
-                        "step": metric.step,
-                        "value": metric.value
-                     }
-                     for metric in history
-                  ]
-               except Exception:
-                  # 如果获取历史失败，跳过该指标
-                  pass
-            run_data["metrics_history"] = metrics_history
-            data.append(run_data)
+         important_metrics = [metric for metric in client.get_run(run_id).data.metrics.keys()
+                              if not str(metric).startswith("system")]
 
          return Response({
-            'train_job_id': train_job.id,
-            'train_job_name': train_job.name,
-            'data': data
+            'metrics': important_metrics
          })
 
       except Exception as e:
          return Response(
-            {'error': f'获取指标历史失败: {str(e)}'},
+            {'error': f'获取指标列表失败: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
          )
+
+   @action(detail=False, methods=['get'], url_path='runs_metrics_history/(?P<run_id>.+?)/(?P<metric_name>.+?)')
+   def get_metric_data(self, request, run_id: str, metric_name: str):
+      #跟踪Mlflow的uri
+      mlflow.set_tracking_uri(MLFLOW_TRACKER_URL)
+
+      #创建客户端
+      client = mlflow.tracking.MlflowClient()
+
+      #获取指标历史数据
+      history = client.get_metric_history(run_id, metric_name)
+
+      #创建data字典
+      metric_history = [
+         {
+            "step": metric.step,
+            "value": metric.value
+         }
+         for metric in history
+      ]
+
+      return Response(
+         {
+            "metric_name": metric_name,
+            "metric_history": metric_history
+         }
+      )
+
 
    @HasPermission("train_tasks-View")
    def list(self, request, *args, **kwargs):
