@@ -1,13 +1,21 @@
-import uuid
-from collections import defaultdict
 from typing import List
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+from .base_chunk import BaseChunk
 
 
-class FixedSizeChunk:
+class FixedSizeChunk(BaseChunk):
+    """固定大小分块器，不设置重叠"""
+    
     def __init__(self, chunk_size: int = 500):
+        """
+        初始化固定大小分块器
+        
+        Args:
+            chunk_size: 每个块的固定大小
+        """
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=0,
@@ -15,21 +23,6 @@ class FixedSizeChunk:
             is_separator_regex=False,
         )
 
-    def chunk(self, docs: List[Document]) -> List[Document]:
-        # 1. 分割文档
-        split_docs = self.text_splitter.split_documents(docs)
-
-        # 2. 按照 segment_number 分组
-        grouped_docs = defaultdict(list)
-        for doc in split_docs:
-            segment_number = int(doc.metadata.get('segment_number', 0))
-            grouped_docs[segment_number].append(doc)
-
-        # 3. 为每个组内的文档添加 chunk_number
-        result_docs = []
-        for segment_number, segment_docs in grouped_docs.items():
-            for chunk_number, doc in enumerate(segment_docs):
-                doc.metadata['chunk_number'] = str(chunk_number)
-                doc.metadata['chunk_id'] = str(uuid.uuid4())
-                result_docs.append(doc)
-        return split_docs
+    def _split_documents(self, docs: List[Document]) -> List[Document]:
+        """使用固定大小分割器分割文档"""
+        return self.text_splitter.split_documents(docs)
