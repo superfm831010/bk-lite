@@ -8,7 +8,7 @@ export const useKnowledgeApi = () => {
    * Fetches embedding models.
    */
   const fetchEmbeddingModels = async (): Promise<any[]> => {
-    return get('/opspilot/model_provider_mgmt/embed_provider/');
+    return get('/opspilot/model_provider_mgmt/embed_provider/', { params: { enabled: 1 } });
   };
 
   /**
@@ -118,6 +118,10 @@ export const useKnowledgeApi = () => {
     return get(`/opspilot/knowledge_mgmt/knowledge_document/${documentId}/get_document_detail/`);
   };
 
+  const getInstanceDetail = async (documentId: number): Promise<any> => {
+    return get(`/opspilot/knowledge_mgmt/knowledge_document/${documentId}/get_instance_detail/`);
+  };
+
   /**
    * Fetches document details with pagination and search.
    */
@@ -140,7 +144,7 @@ export const useKnowledgeApi = () => {
    * Fetches semantic models.
    */
   const fetchSemanticModels = async (): Promise<any[]> => {
-    return get('/opspilot/model_provider_mgmt/rerank_provider/');
+    return get('/opspilot/model_provider_mgmt/rerank_provider/', { params: { enabled: 1 } });
   };
 
   /**
@@ -308,6 +312,24 @@ export const useKnowledgeApi = () => {
   };
 
   /**
+   * Creates QA pairs from selected chunks.
+   */
+  const createQAPairsByChunk = async (payload: {
+    name: string;
+    knowledge_base_id: number;
+    document_id: number;
+    document_source: string;
+    qa_count: number;
+    llm_model_id: number;
+    chunk_list: Array<{
+      content: string;
+      id: string;
+    }>;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/create_qa_pairs_by_chunk/', payload);
+  };
+
+  /**
    * Fetches QA pairs chunk details for a specific QA pair.
    */
   const fetchQAPairDetails = async (params: {
@@ -419,6 +441,17 @@ export const useKnowledgeApi = () => {
     });
   };
 
+  /**
+   * Deletes chunks from knowledge documents.
+   */
+  const deleteChunks = async (payload: {
+    knowledge_base_id: number;
+    ids: string[];
+    delete_all: boolean;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/knowledge_document/delete_chunks/', payload);
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -434,6 +467,7 @@ export const useKnowledgeApi = () => {
     createFileKnowledge,
     createManualKnowledge,
     getDocumentDetail,
+    getInstanceDetail,
     fetchDocumentDetails,
     fetchSemanticModels,
     fetchOcrModels,
@@ -455,6 +489,7 @@ export const useKnowledgeApi = () => {
     deleteOneQAPair,
     createQAPairs,
     createCustomQAPairs,
+    createQAPairsByChunk,
     fetchQAPairDetails,
     fetchChunkQAPairs,
     fetchKnowledgeGraphDetails,
@@ -464,5 +499,6 @@ export const useKnowledgeApi = () => {
     rebuildKnowledgeGraphCommunity,
     importQaJson,
     getChunkDetail,
+    deleteChunks,
   };
 };
