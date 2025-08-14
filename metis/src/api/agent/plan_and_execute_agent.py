@@ -58,10 +58,11 @@ async def invoke_plan_and_execute_agent_sse(request, body: PlanAndExecuteAgentRe
 
     return ResponseStream(
         lambda res: stream_plan_execute_response(workflow, body, res),
-        content_type="text/event-stream",
+        content_type="text/event-stream; charset=utf-8",
         headers={
             "Cache-Control": "no-cache", 
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"  # 禁用 Nginx 缓冲，确保实时流式传输
+            "X-Accel-Buffering": "no",  # 禁用 Nginx 缓冲，确保实时流式传输
+            "Content-Encoding": "identity"  # 确保不压缩内容
         }
     )

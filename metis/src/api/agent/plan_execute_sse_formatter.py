@@ -78,6 +78,11 @@ class PlanExecuteSSEFormatter:
             
         return response
     
+    def _format_sse_data(self, response: Dict[str, Any]) -> str:
+        """格式化 SSE 数据，确保中文字符正确编码"""
+        json_str = json.dumps(response, ensure_ascii=False, separators=(',', ':'))
+        return f"data: {json_str}\n\n"
+    
     def format_initialization(self) -> str:
         """格式化初始化阶段"""
         self.current_status.phase = ExecutionPhase.INITIALIZING
@@ -87,7 +92,7 @@ class PlanExecuteSSEFormatter:
             delta_content=content,
             metadata={"status_message": "初始化中"}
         )
-        return f"data: {json.dumps(response, ensure_ascii=False)}\n\n"
+        return self._format_sse_data(response)
     
     def format_planning_start(self) -> str:
         """格式化开始规划阶段"""
@@ -99,7 +104,7 @@ class PlanExecuteSSEFormatter:
             delta_content=content,
             metadata={"status_message": "规划中"}
         )
-        return f"data: {json.dumps(response, ensure_ascii=False)}\n\n"
+        return self._format_sse_data(response)
     
     def format_plan_generated(self, plan_steps: List[str]) -> str:
         """格式化生成的计划"""
@@ -123,7 +128,7 @@ class PlanExecuteSSEFormatter:
                 "plan_steps": plan_steps
             }
         )
-        return f"data: {json.dumps(response, ensure_ascii=False)}\n\n"
+        return self._format_sse_data(response)
     
     def format_step_start(self, step_index: int, task_description: str) -> str:
         """格式化步骤开始"""
@@ -141,7 +146,7 @@ class PlanExecuteSSEFormatter:
                 "current_task": task_description
             }
         )
-        return f"data: {json.dumps(response, ensure_ascii=False)}\n\n"
+        return self._format_sse_data(response)
     
     def format_tool_call_start(self, tool_name: str, tool_description: str = None) -> str:
         """格式化工具调用开始"""
@@ -161,7 +166,7 @@ class PlanExecuteSSEFormatter:
                 "tool_name": tool_name
             }
         )
-        return f"data: {json.dumps(response, ensure_ascii=False)}\n\n"
+        return self._format_sse_data(response)
     
     def format_tool_result(self, tool_name: str, result_summary: str) -> str:
         """格式化工具执行结果"""
@@ -182,7 +187,7 @@ class PlanExecuteSSEFormatter:
                 "tool_result_summary": result_summary[:500]
             }
         )
-        return f"data: {json.dumps(response, ensure_ascii=False)}\n\n"
+        return self._format_sse_data(response)
     
     def format_step_completed(self, step_index: int, step_result: str) -> str:
         """格式化步骤完成"""
@@ -197,7 +202,7 @@ class PlanExecuteSSEFormatter:
                 "completed_steps": len(self.completed_steps)
             }
         )
-        return f"data: {json.dumps(response, ensure_ascii=False)}\n\n"
+        return self._format_sse_data(response)
     
     def format_replanning(self, reason: str) -> str:
         """格式化重新规划"""
@@ -212,7 +217,7 @@ class PlanExecuteSSEFormatter:
                 "replan_reason": reason
             }
         )
-        return f"data: {json.dumps(response, ensure_ascii=False)}\n\n"
+        return self._format_sse_data(response)
     
     def format_final_answer_start(self) -> str:
         """格式化开始生成最终答案"""
@@ -224,7 +229,7 @@ class PlanExecuteSSEFormatter:
             delta_content=content,
             metadata={"status_message": "生成最终答案中"}
         )
-        return f"data: {json.dumps(response, ensure_ascii=False)}\n\n"
+        return self._format_sse_data(response)
     
     def format_final_content(self, content: str) -> str:
         """格式化最终内容"""
@@ -232,7 +237,7 @@ class PlanExecuteSSEFormatter:
             delta_content=content,
             metadata={"status_message": "输出最终答案"}
         )
-        return f"data: {json.dumps(response, ensure_ascii=False)}\n\n"
+        return self._format_sse_data(response)
     
     def format_completion(self) -> str:
         """格式化完成"""
@@ -260,7 +265,7 @@ class PlanExecuteSSEFormatter:
                 "total_completed_steps": len(self.completed_steps)
             }
         )
-        return f"data: {json.dumps(response, ensure_ascii=False)}\n\n"
+        return self._format_sse_data(response)
     
     def _get_tool_display_name(self, tool_name: str) -> str:
         """获取工具的友好显示名称"""
