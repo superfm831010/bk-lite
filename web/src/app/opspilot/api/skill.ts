@@ -64,7 +64,7 @@ export const useSkillApi = () => {
    * Fetches all LLM models.
    */
   const fetchLlmModels = async (): Promise<any[]> => {
-    return get('/opspilot/model_provider_mgmt/llm_model/');
+    return get('/opspilot/model_provider_mgmt/llm_model/', { params: { enabled: 1 } });
   };
 
   /**

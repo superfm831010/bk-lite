@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Segmented, message, Input, Spin, Button } from 'antd';
 import { useProviderApi } from '@/app/opspilot/api/provider';
 import ProviderGrid from '@/app/opspilot/components/provider/grid';
@@ -28,20 +28,35 @@ const ProviderPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [modalLoading, setModalLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('1');
+  
+  const currentRequestId = useRef<string | null>(null);
 
   const fetchModelsData = async (type: string) => {
+    const requestId = `${type}-${Date.now()}-${Math.random()}`;
+    currentRequestId.current = requestId;
+    
     setLoading(true);
     try {
       const data = await fetchModels(type);
+      
+      if (currentRequestId.current !== requestId) {
+        return;
+      }
+      
       const mappedData = Array.isArray(data)
         ? data.map((model) => ({ ...model, id: Number(model.id) }))
         : [];
       setModels(mappedData);
       setFilteredModels(mappedData);
     } catch {
-      message.error(t('common.fetchFailed'));
+      if (currentRequestId.current === requestId) {
+        message.error(t('common.fetchFailed'));
+      }
     } finally {
-      setLoading(false);
+      // 只有当前请求才更新loading状态
+      if (currentRequestId.current === requestId) {
+        setLoading(false);
+      }
     }
   };
 
@@ -50,9 +65,11 @@ const ProviderPage: React.FC = () => {
   }, []);
 
   const handleSegmentedChange = (key: string) => {
+    // 清空当前数据
     setModels([]);
     setFilteredModels([]);
     setActiveTab(key);
+    
     const tab = tabConfig.find((t) => t.key === key);
     if (tab) {
       fetchModelsData(tab.type);
