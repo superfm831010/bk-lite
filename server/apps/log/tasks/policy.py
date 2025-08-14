@@ -117,9 +117,18 @@ class LogPolicyScan:
                 logger.warning(f"policy {self.policy.id} has empty query for keyword alert")
                 return events
 
+            # 添加采集类型过滤条件
+            collect_type_filter = f'collect_type:"{self.policy.collect_type.name}"'
+            if query == "*":
+                # 如果是通配符查询，直接使用采集类型过滤
+                final_query = collect_type_filter
+            else:
+                # 组合原查询条件和采集类型过滤
+                final_query = f"({query}) AND {collect_type_filter}"
+
             # 查询日志
             logs = self.vlogs_api.query(
-                query=query,
+                query=final_query,
                 start=start_timestamp,
                 end=end_timestamp,
                 limit=alert_condition.get("limit", 1000)
@@ -211,6 +220,15 @@ class LogPolicyScan:
         if not conditions:
             raise BaseAppException("rule conditions cannot be empty")
 
+        # 添加采集类型过滤条件
+        collect_type_filter = f'collect_type:"{self.policy.collect_type.name}"'
+        if base_query == "*":
+            # 如果是通配符查询，直接使用采集类型过滤
+            filtered_query = collect_type_filter
+        else:
+            # 组合原查询条件和采集类型过滤
+            filtered_query = f"({base_query}) AND {collect_type_filter}"
+
         # 收集需要计算的聚合函数
         stats_functions = []
 
@@ -255,10 +273,10 @@ class LogPolicyScan:
         if group_by:
             # 有分组的情况：query | stats by (field1, field2) func1() as alias1, func2() as alias2
             by_fields = ", ".join(group_by)
-            query = f"{base_query} | stats by ({by_fields}) {stats_clause}"
+            query = f"{filtered_query} | stats by ({by_fields}) {stats_clause}"
         else:
             # 无分组的情况：query | stats func1() as alias1, func2() as alias2
-            query = f"{base_query} | stats {stats_clause}"
+            query = f"{filtered_query} | stats {stats_clause}"
 
         logger.debug(f"Built aggregation query: {query}")
         return query
@@ -320,12 +338,12 @@ class LogPolicyScan:
 
             # 渲染模板
             rendered_name = template.render(context)
-
+            
             # 确保渲染结果不为空
             if not rendered_name.strip():
                 logger.warning(f"Rendered alert name is empty for template '{alert_name}', using fallback")
                 return alert_name
-
+                
             return rendered_name.strip()
 
         except TemplateSyntaxError as e:
