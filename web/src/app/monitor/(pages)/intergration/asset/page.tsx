@@ -253,7 +253,7 @@ const Asset = () => {
     return [
       ...getBaseInstanceColumn({
         objects,
-        row,
+        row: row as ObjectItem,
         t,
       }),
       ...columnItems,
