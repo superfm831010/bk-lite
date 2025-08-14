@@ -239,7 +239,7 @@ const Intergration = () => {
             onPressEnter={onTxtPressEnter}
             onClear={onTxtClear}
           />
-          <div>
+          <div className="hidden">
             <Button
               className="mx-[8px]"
               type="primary"
@@ -266,13 +266,14 @@ const Intergration = () => {
                 className="w-full sm:w-1/4 p-2 min-w-[400px]"
                 onClick={() => onAppClick(app)}
               >
-                <div
+                {/* <div
                   className={`bg-[var(--color-bg-1)] shadow-sm hover:shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-4 relative cursor-pointer group ${
                     selectedApp?.id === app.id
                       ? 'border-2 border-blue-300'
                       : 'border'
                   }`}
-                >
+                > */}
+                <div className="bg-[var(--color-bg-1)] shadow-sm hover:shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-4 relative cursor-pointer group border">
                   <div className="flex items-center space-x-4 my-2">
                     <Icon
                       type={getIconByObjectName(
