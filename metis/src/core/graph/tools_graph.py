@@ -33,20 +33,8 @@ class ToolsGraph(BasicGraph):
         return _gen()
 
     async def _cleanup_playwright_if_needed(self, request):
-        """
-        检查 tools 列表是否包含 playwright 工具，若有则清理资源
-        """
-        # 兼容 node/tools_node 的 tools 列表
-        tools = []
         if hasattr(request, 'tools_servers'):
             for server in getattr(request, 'tools_servers', []):
-                # 只要有 playwright 字样就触发清理
-                if 'playwright' in getattr(server, 'url', ''):
-                    await cleanup_playwright()
-                    return
-        # 兜底：如果 tools 字段有 playwright 工具名
-        if hasattr(request, 'tools'):
-            for tool in getattr(request, 'tools', []):
-                if hasattr(tool, 'name') and 'playwright' in tool.name:
+                if 'local:playwright_tools' in getattr(server, 'url', ''):
                     await cleanup_playwright()
                     return

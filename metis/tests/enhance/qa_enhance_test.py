@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.services.rag.qa_enhance_service import QAEnhanceService
+from src.services.qa_enhance_service import QAEnhanceService
 from src.entity.rag.enhance.qa_enhance_request import QAEnhanceRequest
 
 

@@ -1,0 +1,78 @@
+以下是参考资料,每份参考资料都由标题和内容组成,以XML格式提供:
+
+示例:
+    <knowledge>
+        <ref_id>1</ref_id>
+        <title>知识标题</title>
+        <knowledge_id>1</knowledge_id>
+        <chunk_number>1</chunk_number>
+        <segment_number>2</segment_number>
+        <segment_id>4</segment_id>
+        <content>知识内容</content>
+    </knowledge>
+
+字段说明:
+    ref_id: 是第几份参考资料，从1开始
+    title: 参考资料的标题
+    content: 参考资料的内容
+    knowledge_id: 知识id
+    chunk_number: 分块序号
+    chunk_id: 分块ID号
+    segment_number: 分段序号
+    segment_id: 分块ID
+
+参考资料:
+{% if rag_results %}
+{% for rag_result in rag_results %}
+<knowledge>
+    <ref_id>{{ loop.index }}</ref_id>
+    <title>{{ rag_result.title }}</title>
+    <knowledge_id>{{ rag_result.knowledge_id }}</knowledge_id>
+    <chunk_number>{{ rag_result.chunk_number }}</chunk_number>
+    <chunk_id>{{ rag_result.chunk_id }}</chunk_id>
+    <segment_number>{{ rag_result.segment_number }}</segment_number>
+    <segment_id>{{ rag_result.segment_id }}</segment_id>
+    <content>{{ rag_result.content }}</content>
+</knowledge>
+{% endfor %}
+{% else %}
+没有找到相关可参考的背景资料
+{% endif %}
+
+{% if enable_rag_source %}
+在回复中,请使用以下格式返回参考资料的引用:
+    [[1]](ref_id:1|segment_id:1|chunk_id:abc|chunk_number:1|knowledge_id:1|segment_number:1)
+    [[2]]](ref_id:2|segment_id:2|chunk_id:def|chunk_number:2|knowledge_id:0|segment_number:12)
+
+引用格式说明:
+- 使用数字作为引用标识，简洁明了
+- 使用竖线 | 分隔各个参数
+- 保持参数顺序一致: ref_id|segment_id|chunk_id|chunk_number|knowledge_id|segment_number
+
+在回答内容中的适当位置插入引用链接，格式示例:
+    bklite 是一个AI First的知识管理平台[[1]](ref_id:1|segment_id:1|chunk_id:abc|chunk_number:1|knowledge_id:1|segment_number:1)，致力于帮助用户更高效地获取和管理知识。
+    它的协议是MIT[[2]](ref_id:1|segment_id:1|chunk_id:abc|chunk_number:1|knowledge_id:1|segment_number:1)[[2]](ref_id:2|segment_id:2|chunk_id:def|chunk_number:2|knowledge_id:0|segment_number:12)协议
+
+注意事项:
+- 每个引用链接都要包含完整的参数信息
+- 引用文本使用简洁的数字标识，如"1"、"2"等
+- 在句子中合适的位置插入引用，不要影响阅读体验
+
+在回复的最后，请添加一个"参考资料"部分,格式如下:
+
+参考资料: 
+    - [1] 知识标题1
+    - [2] 知识标题2
+    - [3] 知识标题3
+
+其中数字与正文中的引用标识保持一致，标题为对应参考资料的title字段内容。
+{% endif %}
+
+{% if enable_rag_strict_mode %}
+严格按照参考资料的内容进行回答,不允许添加任何额外的内容，不允许捏造任何事实。
+只允许使用参考资料中的内容进行回答，当参考资料中没有相关内容时，请返回"没有相关内容"。
+{% endif %}
+
+特别说明: 
+    1.背景知识中存在图谱知识的时候，允许基于图谱知识和背景知识，进行基于事实的回答。回答的时候要自然,不要让用户感受到图谱知识的存在。
+    2.回复要自然流畅

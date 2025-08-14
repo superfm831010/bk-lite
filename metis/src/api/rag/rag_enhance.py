@@ -3,7 +3,7 @@ from sanic_ext import validate
 
 from src.core.sanic_plus.auth.api_auth import auth
 from src.entity.rag.enhance.answer_generate_request import AnswerGenerateRequest
-from src.services.rag.qa_enhance_service import QAEnhanceService
+from src.services.qa_enhance_service import QAEnhanceService
 from src.entity.rag.enhance.qa_enhance_request import QAEnhanceRequest
 from src.entity.rag.enhance.question_generate_request import QuestionGenerateRequest
 from src.entity.rag.enhance.summarize_enhance_request import SummarizeEnhanceRequest
