@@ -23,7 +23,6 @@ const LazyChart: React.FC<LazyChartProps> = ({ metricName, runId, getMetricsDeta
   const loadingRef = useRef(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const enterTimeRef = useRef<number | null>(null);
-  const hasLoadedRef = useRef(false);
 
   // Intersection Observer 实现懒加载
   useEffect(() => {
@@ -34,8 +33,8 @@ const LazyChart: React.FC<LazyChartProps> = ({ metricName, runId, getMetricsDeta
             // 记录进入视口的时间
             enterTimeRef.current = Date.now();
             
-            // 如果已经加载过数据，不再重复加载
-            if (hasLoadedRef.current || loadingRef.current) {
+            // 如果正在加载中，不重复发起请求
+            if (loadingRef.current) {
               return;
             }
 
@@ -50,11 +49,11 @@ const LazyChart: React.FC<LazyChartProps> = ({ metricName, runId, getMetricsDeta
               const now = Date.now();
               const stayTime = enterTimeRef.current ? now - enterTimeRef.current : 0;
               
-              // 只有停留时间超过800ms才加载数据
-              if (stayTime >= 600 && !hasLoadedRef.current) {
+              // 只有停留时间超过600ms才加载数据
+              if (stayTime >= 600) {
                 loadChartData();
               }
-            }, 800);
+            }, 600);
           } else {
             // 离开视口时清除定时器
             if (timeoutRef.current) {
@@ -87,7 +86,7 @@ const LazyChart: React.FC<LazyChartProps> = ({ metricName, runId, getMetricsDeta
   }, []);
 
   const loadChartData = async () => {
-    if (loadingRef.current || hasLoadedRef.current) return;
+    if (loadingRef.current) return;
 
     setLoading(true);
     loadingRef.current = true;
@@ -95,7 +94,6 @@ const LazyChart: React.FC<LazyChartProps> = ({ metricName, runId, getMetricsDeta
       const detailInfo = await getMetricsDetail(runId, metricName);
       const { metric_history } = detailInfo;
       setData(metric_history);
-      hasLoadedRef.current = true; // 标记已加载
     } catch (error) {
       console.error(`加载指标 ${metricName} 数据失败:`, error);
       setData([]);
