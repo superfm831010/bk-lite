@@ -1,15 +1,13 @@
 import React from 'react';
 import ReactEcharts from 'echarts-for-react';
-import { Spin } from 'antd';
-import { BaseWidgetProps } from '@/app/ops-analysis/types/dashBoard';
-import { useWidgetData } from '../../../../hooks/useWidgetData';
 
-const OsPie: React.FC<BaseWidgetProps> = ({
-  config,
-  globalTimeRange,
-  refreshKey,
-}) => {
-  // 数据转换函数：将原始数据转换为饼图需要的格式
+interface OsPieProps {
+  rawData: any;
+  loading?: boolean;
+  config?: any;
+}
+
+const OsPie: React.FC<OsPieProps> = ({ rawData }) => {
   const transformData = (rawData: any) => {
     if (rawData && rawData.data && Array.isArray(rawData.data)) {
       return rawData.data;
@@ -17,13 +15,7 @@ const OsPie: React.FC<BaseWidgetProps> = ({
     return [];
   };
 
-  const { data: chartData, loading } = useWidgetData({
-    config,
-    globalTimeRange,
-    refreshKey,
-    transformData,
-  });
-
+  const chartData = transformData(rawData);
   const option: any = {
     animation: true,
     calculable: true,
@@ -108,16 +100,10 @@ const OsPie: React.FC<BaseWidgetProps> = ({
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1">
-        {loading ? (
-          <div className="h-full flex items-center justify-center">
-            <Spin spinning={loading}></Spin>
-          </div>
-        ) : (
-          <ReactEcharts
-            option={option}
-            style={{ height: '100%', width: '100%' }}
-          />
-        )}
+        <ReactEcharts
+          option={option}
+          style={{ height: '100%', width: '100%' }}
+        />
       </div>
     </div>
   );

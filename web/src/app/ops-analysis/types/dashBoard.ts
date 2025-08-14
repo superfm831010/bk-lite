@@ -27,7 +27,7 @@ export interface LayoutItem {
   config?: WidgetConfig;
 }
 
-export interface ComponentConfigProps {
+export interface ViewConfigProps {
   open: boolean;
   item?: LayoutItem;
   onConfirm?: (values: any) => void;
@@ -45,6 +45,7 @@ export interface BaseWidgetProps {
   globalTimeRange?: any;
   refreshKey?: number;
   onDataChange?: (data: any) => void;
+  onReady?: (hasData?: boolean) => void;
 }
 
 export interface WidgetMeta {
@@ -60,18 +61,4 @@ export interface WidgetDefinition {
   meta: WidgetMeta;
   component: React.ComponentType<BaseWidgetProps>;
   configComponent?: React.ComponentType<any>;
-}
-
-export interface UseWidgetDataOptions {
-  config?: any;
-  dataSource?: any;
-  globalTimeRange?: any;
-  refreshKey?: number;
-  transformData?: (data: any) => any;
-}
-
-export interface UseWidgetDataReturn {
-  data: any;
-  loading: boolean;
-  refetch: () => void;
 }

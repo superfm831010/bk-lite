@@ -4,7 +4,7 @@ import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'rea
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
 import ComponentSelector from './components/compSelector';
-import ComponentConfig from './components/viewConfig';
+import ViewConfig from './components/viewConfig';
 import TimeSelector from '@/components/time-selector';
 // @ts-expect-error missing type declarations for react-grid-layout
 import GridLayout, { WidthProvider } from 'react-grid-layout';
@@ -13,8 +13,9 @@ import { useTranslation } from '@/utils/i18n';
 import { LayoutItem } from '@/app/ops-analysis/types/dashBoard';
 import { DirItem } from '@/app/ops-analysis/types';
 import { SaveOutlined, PlusOutlined, MoreOutlined } from '@ant-design/icons';
-import { getWidgetComponent, getWidgetMeta } from './config/registry';
+import { getWidgetMeta } from './config/registry';
 import { useDashBoardApi } from '@/app/ops-analysis/api/dashBoard';
+import WidgetWrapper from './components/widgetWrapper';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -323,7 +324,6 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
                 draggableCancel=".no-drag"
               >
                 {layout.map((item) => {
-                  const WidgetComponent = getWidgetComponent(item.widget);
                   const menu = (
                     <Menu>
                       <Menu.Item key="edit" onClick={() => handleEdit(item.i)}>
@@ -361,8 +361,9 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
                         </Dropdown>
                       </div>
                       <div className="widget-body flex-1 h-full rounded-b overflow-hidden">
-                        <WidgetComponent
+                        <WidgetWrapper
                           key={item.i}
+                          widgetType={item.widget}
                           config={item.config}
                           globalTimeRange={globalTimeRange}
                           refreshKey={refreshKey}
@@ -381,7 +382,7 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
           onAdd={handleAddComponent}
           onCancel={() => setAddModalVisible(false)}
         />
-        <ComponentConfig
+        <ViewConfig
           open={configDrawerVisible}
           item={currentConfigItem}
           onConfirm={handleConfigConfirm}

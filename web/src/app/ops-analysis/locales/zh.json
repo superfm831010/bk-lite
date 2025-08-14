@@ -20,7 +20,7 @@
   },
   "dashboard": {
     "addComponent": "添加视图",
-    "componentConfig": "组件配置",
+    "viewConfig": "组件配置",
     "addView": "添加视图",
     "title": "选择组件",
     "dataSource": "数据源",

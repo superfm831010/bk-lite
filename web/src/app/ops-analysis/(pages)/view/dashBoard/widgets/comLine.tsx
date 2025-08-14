@@ -1,14 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactEcharts from 'echarts-for-react';
 import { Spin } from 'antd';
-import { BaseWidgetProps } from '@/app/ops-analysis/types/dashBoard';
-import { useWidgetData } from '../../../../hooks/useWidgetData';
 
-const TrendLine: React.FC<BaseWidgetProps> = ({
+interface TrendLineProps {
+  rawData: any;
+  loading?: boolean;
+  config?: any;
+  onReady?: (ready: boolean) => void;
+}
+
+const TrendLine: React.FC<TrendLineProps> = ({
+  rawData,
+  loading = false,
   config,
-  globalTimeRange,
-  refreshKey,
+  onReady,
 }) => {
+  const [isDataReady, setIsDataReady] = useState(false);
+
   const transformData = (rawData: any) => {
     if (Array.isArray(rawData) && rawData.length > 0) {
       const dates = rawData.map((item: any[]) => item[0]);
@@ -18,12 +26,25 @@ const TrendLine: React.FC<BaseWidgetProps> = ({
     return { dates: [], values: [] };
   };
 
-  const { data: chartData, loading } = useWidgetData({
-    config,
-    globalTimeRange,
-    refreshKey,
-    transformData,
-  });
+  const chartData = transformData(rawData);
+
+  useEffect(() => {
+    if (
+      chartData &&
+      (chartData.dates.length > 0 || chartData.values.length > 0) &&
+      !loading
+    ) {
+      setIsDataReady(true);
+      if (onReady) {
+        onReady(true);
+      }
+    } else {
+      setIsDataReady(false);
+      if (onReady) {
+        onReady(false);
+      }
+    }
+  }, [chartData, loading, onReady]);
 
   const option: any = {
     color: [config?.lineColor || '#1890ff'],
@@ -45,6 +66,7 @@ const TrendLine: React.FC<BaseWidgetProps> = ({
       },
       formatter: function (params: any) {
         const param = params[0];
+        if (!param) return '';
         return `
           <div style="padding: 4px 8px;">
             <div style="margin-bottom: 4px; font-weight: bold;">${param.axisValueLabel}</div>
@@ -120,19 +142,24 @@ const TrendLine: React.FC<BaseWidgetProps> = ({
     ],
   };
 
+  if (loading || !isDataReady) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <Spin size="small" />
+        <div className="text-xs text-gray-500 mt-2">
+          {loading ? '数据加载中...' : '暂无数据'}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1">
-        {loading ? (
-          <div className="h-full flex items-center justify-center">
-            <Spin spinning={loading}></Spin>
-          </div>
-        ) : (
-          <ReactEcharts
-            option={option}
-            style={{ height: '100%', width: '100%' }}
-          />
-        )}
+        <ReactEcharts
+          option={option}
+          style={{ height: '100%', width: '100%' }}
+        />
       </div>
     </div>
   );

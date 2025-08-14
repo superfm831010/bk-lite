@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { message } from 'antd';
 import type { Edge } from '@antv/x6';
-import { getEdgeStyle, addEdgeTools } from '../utils/topologyUtils';
+import { getEdgeStyle, addEdgeTools, createEdgeLabel } from '../utils/topologyUtils';
 
 /**
  * 上下文菜单和模态框操作的自定义Hook
@@ -40,27 +40,7 @@ export const useContextMenuAndModal = (
             }
           } else if (values.lineType === 'line') {
             if (values.lineName && values.lineName.trim()) {
-              edge.setLabels([
-                {
-                  attrs: {
-                    text: {
-                      text: values.lineName,
-                      fill: '#333',
-                      fontSize: 12,
-                      textAnchor: 'middle',
-                      textVerticalAnchor: 'middle',
-                    },
-                    rect: {
-                      fill: 'white',
-                      stroke: '#d9d9d9',
-                      strokeWidth: 1,
-                      rx: 4,
-                      ry: 4,
-                    },
-                  },
-                  position: 0.5,
-                },
-              ]);
+              edge.setLabels([createEdgeLabel(values.lineName)]);
             } else {
               const labels = edge.getLabels();
               if (labels && labels.length > 0) {

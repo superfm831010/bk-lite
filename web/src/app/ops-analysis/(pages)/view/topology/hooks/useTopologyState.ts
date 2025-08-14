@@ -36,6 +36,8 @@ export const useTopologyState = () => {
   const [nodeEditVisible, setNodeEditVisible] = useState(false);
   const [editingNodeData, setEditingNodeData] = useState<any>(null);
 
+  const [viewConfigVisible, setViewConfigVisible] = useState(false);
+
   // Refs
   const isDrawingRef = useRef(false);
   const drawingEdgeRef = useRef<Edge | null>(null);
@@ -91,10 +93,7 @@ export const useTopologyState = () => {
         fontSize: config.fontSize || FORM_DEFAULTS.SINGLE_VALUE.fontSize,
         textColor: config.textColor || FORM_DEFAULTS.SINGLE_VALUE.textColor,
         backgroundColor: config.backgroundColor || FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
-        borderColor: config.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor,
-        query: config.query || FORM_DEFAULTS.SINGLE_VALUE.query,
-        unit: config.unit || FORM_DEFAULTS.SINGLE_VALUE.unit,
-        threshold: config.threshold || FORM_DEFAULTS.SINGLE_VALUE.threshold,
+        borderColor: config.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor
       };
     }
 
@@ -175,6 +174,10 @@ export const useTopologyState = () => {
     setEditingNodeData,
     getEditNodeInitialValues,
     handleNodeEditClose,
+
+    // viewConfig
+    viewConfigVisible,
+    setViewConfigVisible,
 
     // Refs
     isDrawingRef,

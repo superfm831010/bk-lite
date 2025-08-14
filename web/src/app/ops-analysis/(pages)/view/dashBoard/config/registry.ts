@@ -1,6 +1,5 @@
+import React from 'react';
 import { WidgetDefinition } from '@/app/ops-analysis/types/dashBoard';
-import OsPie from '../widgets/osPie';
-import TrendLine from '../widgets/trendLine';
 
 export const widgetRegistry: Record<string, WidgetDefinition> = {
   trendLine: {
@@ -14,7 +13,7 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
         barColor: '#52c41a'
       },
     },
-    component: TrendLine,
+    component: React.Fragment as any, 
   },
   osPie: {
     meta: {
@@ -27,13 +26,8 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
         lineColor: '#1890ff'
       },
     },
-    component: OsPie,
+    component: React.Fragment as any,
   }
-};
-
-export const getWidgetComponent = (widgetType: string) => {
-  const definition = widgetRegistry[widgetType];
-  return definition?.component || null;
 };
 
 export const getWidgetConfig = (widgetType: string) => {

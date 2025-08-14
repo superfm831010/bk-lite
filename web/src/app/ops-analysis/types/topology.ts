@@ -19,7 +19,7 @@ export interface EdgeCreationData {
 }
 
 export interface NodeConfPanelProps {
-  nodeType: 'single-value' | 'icon';
+  nodeType: 'single-value' | 'icon' | 'chart';
   readonly?: boolean;
   visible?: boolean;
   title?: string;
@@ -42,6 +42,8 @@ export interface NodeConfPanelProps {
     threshold?: number;
     dataSourceParams?: Record<string, any>;
     filterParams?: Record<string, any>;
+    chartWidget?: string;
+    chartConfig?: any;
   };
 }
 
@@ -69,6 +71,7 @@ export interface SidebarProps {
   isEditMode?: boolean;
   setCollapsed: (collapsed: boolean) => void;
   onShowNodeConfig?: (nodeType: NodeType, dropPosition?: DropPosition) => void;
+  onAddChartNode?: (widget: string, config?: any, dropPosition?: DropPosition) => void;
 }
 
 export interface NodeType {

@@ -18,7 +18,7 @@ import EdgeConfigPanel from './components/edgeConfPanel';
 import Sidebar from './components/nodeSidebar';
 import TextEditInput from './components/textEditInput';
 import NodeConfPanel from './components/nodeConfPanel';
-
+import ViewConfig from '../dashBoard/components/viewConfig';
 interface TopologyProps {
   selectedTopology?: DirItem | null;
 }
@@ -45,6 +45,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       handleDelete,
       addNode,
       handleNodeUpdate,
+      handleAddChartNode,
       handleSaveTopology,
       handleLoadTopology,
       loading,
@@ -58,7 +59,6 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
     const { handleEdgeConfigConfirm, closeEdgeConfig, handleMenuClick } =
       useContextMenuAndModal(containerRef, state);
 
-    // 处理显示节点配置
     const handleShowNodeConfig = (
       nodeType: NodeType,
       position?: DropPosition
@@ -68,7 +68,6 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       setAddNodeVisible(true);
     };
 
-    // 处理新增节点确认
     const handleAddNodeConfirm = async (values: any) => {
       if (!selectedNodeType || !dropPosition) return;
 
@@ -78,30 +77,25 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       setDropPosition(null);
     };
 
-    // 处理新增节点取消
     const handleAddNodeCancel = () => {
       setAddNodeVisible(false);
       setSelectedNodeType(null);
       setDropPosition(null);
     };
 
-    // 处理节点编辑确认（包装器）
     const handleNodeEditConfirm = async (values: any) => {
       await handleNodeUpdate(values);
       state.handleNodeEditClose();
     };
 
-    // 创建保存函数的包装器
     const handleSave = () => {
       handleSaveTopology(selectedTopology);
     };
 
-    // 是否处于编辑模式
     const hasUnsavedChanges = () => {
       return state.isEditMode;
     };
 
-    // 暴露方法给父组件
     useImperativeHandle(ref, () => ({
       hasUnsavedChanges,
     }));
@@ -142,6 +136,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
             collapsed={state.collapsed}
             setCollapsed={state.setCollapsed}
             onShowNodeConfig={handleShowNodeConfig}
+            onAddChartNode={handleAddChartNode}
             isEditMode={state.isEditMode}
           />
 
@@ -157,7 +152,6 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
               className="absolute inset-0"
               tabIndex={-1}
             />
-            {/* 文本编辑输入框 */}
             <TextEditInput
               isEditingText={state.isEditingText}
               editPosition={state.editPosition}
@@ -170,7 +164,6 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           </div>
         </div>
 
-        {/* 右键菜单 */}
         <ContextMenu
           visible={state.contextMenuVisible}
           position={state.contextMenuPosition}
@@ -178,7 +171,6 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           isEditMode={state.isEditMode}
         />
 
-        {/* 边配置面板 */}
         <EdgeConfigPanel
           visible={state.edgeConfigVisible}
           readonly={!state.isEditMode}
@@ -187,7 +179,6 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           onConfirm={handleEdgeConfigConfirm}
         />
 
-        {/* 节点配置面板 - 统一处理编辑和新增 */}
         <NodeConfPanel
           visible={state.nodeEditVisible || addNodeVisible}
           title={state.isEditMode ? '编辑节点' : '查看节点'}
@@ -209,6 +200,33 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           onCancel={
             addNodeVisible ? handleAddNodeCancel : state.handleNodeEditClose
           }
+        />
+
+        <ViewConfig
+          open={state.viewConfigVisible}
+          onClose={() => state.setViewConfigVisible(false)}
+          item={state.editingNodeData}
+          onConfirm={(values) => {
+            if (state.editingNodeData && state.graphInstance) {
+              const node = state.graphInstance.getCellById(
+                state.editingNodeData.id
+              );
+              if (node) {
+                const updatedData = {
+                  ...state.editingNodeData,
+                  dataSource: values.dataSource,
+                  dataSourceParams: values.dataSourceParams,
+                  name: values.name || state.editingNodeData.name,
+                };
+                node.setData(updatedData);
+
+                if (values.name) {
+                  node.setAttrByPath('label/text', values.name);
+                }
+              }
+            }
+            state.setViewConfigVisible(false);
+          }}
         />
       </div>
     );

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Icon from '@/components/icon';
-import ComponentConfigDrawer from './viewConfig';
+import ViewConfig from './viewConfig';
 import { Modal, Menu, List, Input } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { ComponentSelectorProps } from '@/app/ops-analysis/types/dashBoard';
@@ -28,7 +28,7 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
 
   const handleConfig = (item: any) => {
     const layoutItem = {
-      i: 'temp',
+      i: '',
       x: 0,
       y: 0,
       w: 4,
@@ -106,7 +106,7 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
           </div>
         </div>
       </Modal>
-      <ComponentConfigDrawer
+      <ViewConfig
         open={drawerVisible}
         item={pendingItem}
         onConfirm={handleDrawerConfirm}

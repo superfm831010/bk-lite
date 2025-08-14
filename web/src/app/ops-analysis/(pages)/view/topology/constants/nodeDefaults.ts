@@ -136,9 +136,6 @@ export const NODE_DEFAULTS = {
     fontFamily: TYPOGRAPHY.FONT_FAMILY.DEFAULT,
     borderRadius: SPACING.BORDER_RADIUS.DEFAULT,
     strokeWidth: SPACING.STROKE_WIDTH.THIN,
-    threshold: 80,
-    unit: '',
-    query: '',
   },
 
   // 文本节点默认配置
@@ -150,6 +147,19 @@ export const NODE_DEFAULTS = {
     textColor: COLORS.TEXT.PRIMARY,
     fontSize: TYPOGRAPHY.FONT_SIZE.TEXT_NODE,
     fontWeight: TYPOGRAPHY.FONT_WEIGHT.NORMAL,
+    strokeWidth: SPACING.STROKE_WIDTH.THIN,
+  },
+
+  // 图表节点默认配置
+  CHART_NODE: {
+    width: 300,
+    height: 200,
+    backgroundColor: COLORS.BACKGROUND.WHITE,
+    borderColor: COLORS.BORDER.DEFAULT,
+    textColor: COLORS.TEXT.PRIMARY,
+    fontSize: TYPOGRAPHY.FONT_SIZE.ICON_LABEL,
+    fontWeight: TYPOGRAPHY.FONT_WEIGHT.MEDIUM,
+    borderRadius: SPACING.BORDER_RADIUS.DEFAULT,
     strokeWidth: SPACING.STROKE_WIDTH.THIN,
   },
 } as const;
@@ -173,9 +183,6 @@ export const FORM_DEFAULTS = {
     textColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.textColor,
     backgroundColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.backgroundColor,
     borderColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.borderColor,
-    threshold: NODE_DEFAULTS.SINGLE_VALUE_NODE.threshold,
-    unit: NODE_DEFAULTS.SINGLE_VALUE_NODE.unit,
-    query: NODE_DEFAULTS.SINGLE_VALUE_NODE.query,
   },
 
   ICON_NODE: {

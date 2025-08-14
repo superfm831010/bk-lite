@@ -1,8 +1,4 @@
-import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
-import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
-import { UseWidgetDataOptions, UseWidgetDataReturn } from '@/app/ops-analysis/types/dashBoard';
-
 
 export const formatTimeRange = (timeParams: any): string[] => {
   let startTime, endTime;
@@ -31,52 +27,38 @@ export const formatTimeRange = (timeParams: any): string[] => {
   return [startTimeStr, endTimeStr];
 };
 
-export const useWidgetData = ({
+// 抽取的普通函数，可以在任何地方调用
+export const fetchWidgetData = async ({
   config,
   globalTimeRange,
-  refreshKey,
-  transformData,
-}: UseWidgetDataOptions): UseWidgetDataReturn => {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const { getSourceDataByApiId } = useDataSourceApi();
+  getSourceDataByApiId,
+}: {
+  config: any;
+  globalTimeRange?: any;
+  getSourceDataByApiId: (dataSource: any, params: any) => Promise<any>;
+}) => {
+  if (!config?.dataSource) {
+    return null;
+  }
 
-  const fetchData = async () => {
-    if (!config?.dataSource) {
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      const userParams: any = {}
-      config.dataSourceParams?.forEach((param: any) => {
-        userParams[param.name] = param.value;
-      })
-      const requestParams = processDataSourceParams({
-        sourceParams: config.dataSourceParams,
-        userParams,
-        globalTimeRange
-      });
-      const rawData = await getSourceDataByApiId(config.dataSource, requestParams);
-      const processedData = transformData ? transformData(rawData) : rawData;
-      setData(processedData);
-    } catch (err: any) {
-      console.error('获取数据失败:', err);
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }; useEffect(() => {
-    if (config?.dataSource) {
-      fetchData();
-    }
-  }, [config, globalTimeRange, refreshKey]);
+  try {
+    const userParams: any = {};
+    config.dataSourceParams?.forEach((param: any) => {
+      userParams[param.name] = param.value;
+    });
 
-  return {
-    data,
-    loading,
-    refetch: fetchData,
-  };
+    const requestParams = processDataSourceParams({
+      sourceParams: config.dataSourceParams,
+      userParams,
+      globalTimeRange
+    });
+
+    const rawData = await getSourceDataByApiId(config.dataSource, requestParams);
+    return rawData;
+  } catch (err: any) {
+    console.error('获取数据失败:', err);
+    return null;
+  }
 };
 
 export const processDataSourceParams = ({

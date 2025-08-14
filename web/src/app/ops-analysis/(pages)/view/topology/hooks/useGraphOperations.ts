@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Graph as X6Graph, Edge } from '@antv/x6';
-import { formatTimeRange } from '@/app/ops-analysis/hooks/useWidgetData';
+import ChartNode from '../components/chartNode';
+import { formatTimeRange, fetchWidgetData } from '@/app/ops-analysis/utils/widgetDataTransform';
 import { Graph } from '@antv/x6';
 import { Selection } from '@antv/x6-plugin-selection';
+import { register } from '@antv/x6-react-shape';
 import { message } from 'antd';
 import { COLORS } from '../constants/nodeDefaults';
 import { iconList } from '@/app/cmdb/utils/common';
@@ -16,6 +18,7 @@ import {
   hideAllPorts,
   getSingleValueNodeStyle,
   getIconNodeStyle,
+  getChartNodeStyle,
   getTextNodeStyle,
   getLogoUrl,
   showEdgeTools,
@@ -23,7 +26,6 @@ import {
   getValueByPath,
   formatDisplayValue,
   updateNodeProperties,
-  normalizeNodeConfig,
 } from '../utils/topologyUtils';
 
 export const useGraphOperations = (
@@ -31,6 +33,15 @@ export const useGraphOperations = (
   state: any
 ) => {
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    register({
+      shape: 'react-shape',
+      width: 300,
+      height: 200,
+      component: ChartNode,
+    });
+  }, []);
 
   const { getSourceDataByApiId } = useDataSourceApi();
 
@@ -143,62 +154,6 @@ export const useGraphOperations = (
       graph.dispose();
     };
   }, []);
-
-  // 加载拓扑数据
-  const loadTopologyData = useCallback((data: { nodes: any[], edges: any[] }) => {
-    if (!graphInstance) return;
-    graphInstance.clearCells();
-
-    data.nodes.forEach((nodeConfig) => {
-      // 对加载的节点配置进行标准化，确保数据完整性
-      const normalizedConfig = normalizeNodeConfig(nodeConfig);
-      let nodeData: any;
-
-      if (normalizedConfig.type === 'single-value') {
-        nodeData = getSingleValueNodeStyle(normalizedConfig);
-      } else if (normalizedConfig.type === 'text') {
-        nodeData = getTextNodeStyle(normalizedConfig);
-      } else {
-        const logoUrl = getLogoUrl(normalizedConfig, iconList);
-        nodeData = getIconNodeStyle(normalizedConfig, logoUrl);
-      }
-
-      graphInstance.addNode(nodeData);
-
-      if (normalizedConfig.type === 'single-value' && normalizedConfig.dataSource && normalizedConfig.selectedFields?.length) {
-        setTimeout(() => {
-          updateNodeData(normalizedConfig);
-        }, 100);
-      }
-    });
-
-    data.edges.forEach((edgeConfig) => {
-      const edgeData = {
-        lineType: edgeConfig.lineType as 'line' | 'network line',
-        lineName: edgeConfig.lineName,
-        sourceInterface: edgeConfig.sourceInterface,
-        targetInterface: edgeConfig.targetInterface,
-        config: edgeConfig.config,
-      };
-
-      const edge = graphInstance.createEdge({
-        id: edgeConfig.id,
-        source: edgeConfig.source,
-        target: edgeConfig.target,
-        sourcePort: edgeConfig.sourcePort,
-        targetPort: edgeConfig.targetPort,
-        shape: 'edge',
-        ...getEdgeStyleWithLabel(edgeData, 'single'),
-        data: edgeData,
-      });
-
-      graphInstance.addEdge(edge);
-    });
-
-    setTimeout(() => {
-      graphInstance.centerContent();
-    }, 100);
-  }, [graphInstance, normalizeNodeConfig]);
 
 
   // 更新单值数据显示
@@ -314,6 +269,18 @@ export const useGraphOperations = (
             textColor: nodeData.config.textColor,
           };
         }
+      } else if (nodeData.type === 'chart') {
+        serializedNode.widget = nodeData.widget;
+        if (nodeData.chartConfig) {
+          serializedNode.chartConfig = nodeData.chartConfig;
+        }
+        if (nodeData.config) {
+          serializedNode.config = {
+            width: nodeData.config.width,
+            height: nodeData.config.height,
+            ...nodeData.config,
+          };
+        }
       }
 
       return serializedNode;
@@ -410,7 +377,17 @@ export const useGraphOperations = (
         return;
       }
       const nodeData = node.getData();
-      if (nodeData?.type !== 'text') {
+      if (nodeData?.type === 'chart') {
+        const chartNodeData = {
+          ...nodeData,
+          id: node.id,
+          label: node.prop('label'),
+        };
+        setEditingNodeData(chartNodeData);
+        if (state.setViewConfigVisible) {
+          state.setViewConfigVisible(true);
+        }
+      } else if (nodeData?.type !== 'text') {
         const iconWidth = nodeData.config?.width;
         const iconHeight = nodeData.config?.height;
 
@@ -734,11 +711,11 @@ export const useGraphOperations = (
   // 添加节点到画布
   const addNode = useCallback((nodeType: string, formValues: any, position: { x: number; y: number }) => {
     if (!graphInstance) {
-      return;
+      return null;
     }
 
     // 创建基础节点配置
-    const baseConfig = {
+    const nodeConfig = {
       id: `node_${Date.now()}`,
       type: nodeType,
       x: position.x,
@@ -746,29 +723,30 @@ export const useGraphOperations = (
       ...formValues,
     };
 
-    // 标准化节点配置
-    const normalizedConfig = normalizeNodeConfig(baseConfig);
-
     let nodeData: any;
 
-    if (normalizedConfig.type === 'single-value') {
-      nodeData = getSingleValueNodeStyle(normalizedConfig);
-    } else if (normalizedConfig.type === 'text') {
-      nodeData = getTextNodeStyle(normalizedConfig);
+    if (nodeConfig.type === 'single-value') {
+      nodeData = getSingleValueNodeStyle(nodeConfig);
+    } else if (nodeConfig.type === 'text') {
+      nodeData = getTextNodeStyle(nodeConfig);
+    } else if (nodeConfig.type === 'chart') {
+      nodeData = getChartNodeStyle(nodeConfig);
     } else {
-      const logoUrl = getLogoUrl(normalizedConfig, iconList);
-      nodeData = getIconNodeStyle(normalizedConfig, logoUrl);
+      const logoUrl = getLogoUrl(nodeConfig, iconList);
+      nodeData = getIconNodeStyle(nodeConfig, logoUrl);
     }
 
     graphInstance.addNode(nodeData);
 
     // 如果是单值节点且有数据源，更新数据显示
-    if (normalizedConfig.type === 'single-value' && normalizedConfig.dataSource && normalizedConfig.selectedFields?.length) {
+    if (nodeConfig.type === 'single-value' && nodeConfig.dataSource && nodeConfig.selectedFields?.length) {
       setTimeout(() => {
-        updateNodeData(normalizedConfig);
+        updateNodeData(nodeConfig);
       }, 500);
     }
-  }, [graphInstance, normalizeNodeConfig, updateNodeData]);
+
+    return nodeConfig.id;
+  }, [graphInstance, updateNodeData]);
 
   const updateNode = useCallback((nodeConfig: any) => {
     if (!graphInstance) {
@@ -789,8 +767,22 @@ export const useGraphOperations = (
     }
 
     try {
-      const updatedConfig = normalizeNodeConfig(values, state.editingNodeData);
-
+      const updatedConfig = {
+        ...state.editingNodeData,
+        name: values.name,
+        dataSource: values.dataSource,
+        dataSourceParams: values.dataSourceParams,
+        selectedFields: values.selectedFields,
+        config: {
+          ...state.editingNodeData.config,
+          textColor: values.textColor,
+          fontSize: values.fontSize,
+          backgroundColor: values.backgroundColor,
+          borderColor: values.borderColor,
+          width: values.width,
+          height: values.height,
+        },
+      };
       updateNode(updatedConfig);
 
       if (updatedConfig.type === 'single-value' && updatedConfig.dataSource && updatedConfig.selectedFields?.length) {
@@ -804,7 +796,158 @@ export const useGraphOperations = (
     } catch (error) {
       console.error('节点更新失败:', error);
     }
-  }, [normalizeNodeConfig, updateNode, updateNodeData, state]);
+  }, [updateNode, updateNodeData, state]);
+
+  // 加载图表节点数据
+  const loadChartNodeData = useCallback(async (nodeId: string, chartConfig: any) => {
+    if (!graphInstance || !chartConfig.dataSource) {
+      return;
+    }
+
+    const node = graphInstance.getCellById(nodeId);
+    if (!node) {
+      return;
+    }
+
+    try {
+      const chartData = await fetchWidgetData({
+        config: chartConfig,
+        globalTimeRange: undefined,
+        getSourceDataByApiId,
+      });
+
+      if (chartData) {
+        const currentNodeData = node.getData();
+        const updatedData = {
+          ...currentNodeData,
+          isLoading: false,
+          rawData: chartData,
+          hasError: false,
+        };
+        node.setData(updatedData);
+      }
+    } catch (error) {
+      console.error('图表数据加载失败:', error);
+      const currentNodeData = node.getData();
+      const updatedData = {
+        ...currentNodeData,
+        isLoading: false,
+        hasError: true,
+      };
+      node.setData(updatedData);
+    }
+  }, [graphInstance, getSourceDataByApiId]);
+
+  const handleAddChartNode = useCallback(async (
+    widget: string,
+    config?: any,
+    position?: { x: number; y: number }
+  ) => {
+    if (!graphInstance) {
+      return null;
+    }
+
+    const defaultPosition = position || { x: 300, y: 200 };
+
+    const chartNodeConfig: any = {
+      widget: widget,
+      name: config?.name || '图表节点',
+      chartConfig: config,
+      type: 'chart',
+      dataSource: config?.dataSource,
+      dataSourceParams: config?.dataSourceParams || [],
+      isLoading: !!config?.dataSource,
+      rawData: null,
+      hasError: false,
+    };
+
+    const nodeId = addNode('chart', chartNodeConfig, defaultPosition);
+
+    if (config?.dataSource && nodeId) {
+      setTimeout(() => {
+        loadChartNodeData(nodeId, chartNodeConfig);
+      }, 100);
+    }
+
+    return nodeId;
+  }, [graphInstance, addNode, loadChartNodeData]);
+
+  const loadTopologyData = useCallback((data: { nodes: any[], edges: any[] }) => {
+    if (!graphInstance) return;
+    graphInstance.clearCells();
+
+    const chartNodesToLoad: Array<{ nodeId: string; config: any }> = [];
+
+    data.nodes.forEach((nodeConfig) => {
+      let nodeData: any;
+
+      if (nodeConfig.type === 'single-value') {
+        nodeData = getSingleValueNodeStyle(nodeConfig);
+      } else if (nodeConfig.type === 'text') {
+        nodeData = getTextNodeStyle(nodeConfig);
+      } else if (nodeConfig.type === 'chart') {
+        const chartConfig = {
+          ...nodeConfig,
+          widget: nodeConfig.widget,
+          isLoading: !!nodeConfig.dataSource,
+          rawData: null,
+          hasError: false,
+        };
+        nodeData = getChartNodeStyle(chartConfig);
+
+        if (nodeConfig.dataSource) {
+          chartNodesToLoad.push({
+            nodeId: nodeConfig.id,
+            config: chartConfig,
+          });
+        }
+      } else {
+        const logoUrl = getLogoUrl(nodeConfig, iconList);
+        nodeData = getIconNodeStyle(nodeConfig, logoUrl);
+      }
+
+      graphInstance.addNode(nodeData);
+
+      if (nodeConfig.type === 'single-value' && nodeConfig.dataSource && nodeConfig.selectedFields?.length) {
+        setTimeout(() => {
+          updateNodeData(nodeConfig);
+        }, 100);
+      }
+    });
+
+    data.edges.forEach((edgeConfig) => {
+      const edgeData = {
+        lineType: edgeConfig.lineType as 'line' | 'network line',
+        lineName: edgeConfig.lineName,
+        sourceInterface: edgeConfig.sourceInterface,
+        targetInterface: edgeConfig.targetInterface,
+        config: edgeConfig.config,
+      };
+
+      const edge = graphInstance.createEdge({
+        id: edgeConfig.id,
+        source: edgeConfig.source,
+        target: edgeConfig.target,
+        sourcePort: edgeConfig.sourcePort,
+        targetPort: edgeConfig.targetPort,
+        shape: 'edge',
+        ...getEdgeStyleWithLabel(edgeData, 'single'),
+        data: edgeData,
+      });
+
+      graphInstance.addEdge(edge);
+    });
+
+    chartNodesToLoad.forEach(({ nodeId, config }) => {
+      setTimeout(() => {
+        loadChartNodeData(nodeId, config);
+      }, 200);
+    });
+
+    setTimeout(() => {
+      graphInstance.centerContent();
+    }, 100);
+  }, [graphInstance, updateNodeData, loadChartNodeData]);
 
   return {
     zoomIn,
@@ -815,6 +958,7 @@ export const useGraphOperations = (
     handleSave,
     addNode,
     handleNodeUpdate,
+    handleAddChartNode,
     serializeTopologyData,
     handleSaveTopology,
     handleLoadTopology,

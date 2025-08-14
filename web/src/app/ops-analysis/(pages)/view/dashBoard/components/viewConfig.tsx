@@ -1,14 +1,14 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import { ComponentConfigProps } from '@/app/ops-analysis/types/dashBoard';
+import { ViewConfigProps } from '@/app/ops-analysis/types/dashBoard';
 import { useDataSourceManager } from '@/app/ops-analysis/hooks/useDataSource';
 import { Drawer, Button, Form, Input, Radio } from 'antd';
 import DataSourceParamsConfig from '@/app/ops-analysis/components/paramsConfig';
 import DataSourceSelect from '@/app/ops-analysis/components/dataSourceSelect';
 
-const ComponentConfig: React.FC<ComponentConfigProps> = ({
+const ViewConfig: React.FC<ViewConfigProps> = ({
   open,
-  item,
+  item: widgetItem,
   onConfirm,
   onClose,
 }) => {
@@ -31,7 +31,6 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
       name: '',
       chartType: 'line',
     };
-
     if (widget === 'trendLine') {
       const trendDataSource = dataSources.find(
         (ds) => ds.rest_api === 'alert/get_alert_trend_data'
@@ -48,14 +47,14 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
     form.setFieldsValue(formValues);
   };
 
-  const initializeEditItemForm = (item: any): void => {
+  const initializeEditItemForm = (widgetItem: any): void => {
     const formValues: any = {
-      name: item.title,
-      ...(item.config || {}),
+      name: widgetItem.title,
+      ...(widgetItem.config || {}),
     };
 
     const targetDataSource = findDataSource(
-      item.widget || '',
+      widgetItem.widget || '',
       formValues.dataSource
     );
 
@@ -67,9 +66,9 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
       if (targetDataSource.params?.length) {
         setDefaultParamValues(targetDataSource.params, formValues.params);
 
-        if (item.config?.dataSourceParams?.length) {
+        if (widgetItem.config?.dataSourceParams?.length) {
           restoreUserParamValues(
-            item.config.dataSourceParams,
+            widgetItem.config.dataSourceParams,
             formValues.params
           );
         }
@@ -83,10 +82,10 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
 
   const initializeFormValues = (): void => {
     if (dataSources.length === 0) return;
-    if (!item) {
-      initializeNewItemForm('');
+    if (!widgetItem?.i) {
+      initializeNewItemForm(widgetItem?.widget || '');
     } else {
-      initializeEditItemForm(item);
+      initializeEditItemForm(widgetItem);
     }
   };
 
@@ -101,7 +100,7 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
     } else if (!open) {
       resetForm();
     }
-  }, [open, item, form, dataSources]);
+  }, [open, widgetItem, form, dataSources]);
 
   const handleConfirm = async () => {
     try {
@@ -123,7 +122,7 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
 
   return (
     <Drawer
-      title={t('dashboard.componentConfig')}
+      title={t('dashboard.viewConfig')}
       placement="right"
       width={600}
       open={open}
@@ -165,7 +164,6 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
           >
             <DataSourceSelect
               placeholder={t('common.selectTip')}
-              disabled={item?.widget === 'trendLine'}
               dataSources={dataSources}
               loading={dataSourcesLoading}
               onDataSourceChange={setSelectedDataSource}
@@ -196,7 +194,9 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
             initialValue="line"
           >
             <Radio.Group
-              disabled={['trendLine', 'osPie'].includes(item?.widget || '')}
+              disabled={['trendLine', 'osPie'].includes(
+                widgetItem?.widget || ''
+              )}
             >
               <Radio.Button value="line">
                 {t('dashboard.lineChart')}
@@ -211,4 +211,4 @@ const ComponentConfig: React.FC<ComponentConfigProps> = ({
   );
 };
 
-export default ComponentConfig;
+export default ViewConfig;

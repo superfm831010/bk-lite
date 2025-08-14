@@ -19,7 +19,7 @@
   },
   "dashboard": {
     "addComponent": "Add Component",
-    "componentConfig": "Component Configuration",
+    "viewConfig": "Component Configuration",
     "addView": "Add View",
     "title": "Select Component",
     "dataSource": "Data Source",

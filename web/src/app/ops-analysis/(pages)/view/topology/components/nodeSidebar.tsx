@@ -1,19 +1,29 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Icon from '@/components/icon';
+import ComponentSelector from '../../dashBoard/components/compSelector';
+import { SidebarProps, NodeType } from '@/app/ops-analysis/types/topology';
 import { Button } from 'antd';
 import {
   RightOutlined,
   LeftOutlined,
   AppstoreOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons';
-import { SidebarProps, NodeType } from '@/app/ops-analysis/types/topology';
 
 const Sidebar: React.FC<SidebarProps> = ({
   collapsed,
   isEditMode = false,
   setCollapsed,
   onShowNodeConfig,
+  onAddChartNode,
 }) => {
+  const [componentSelectorVisible, setComponentSelectorVisible] =
+    useState(false);
+  const [chartDropPosition, setChartDropPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
   const nodeTypes: NodeType[] = [
     {
       id: 'single-value',
@@ -33,14 +43,24 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: <AppstoreOutlined className="text-green-500" />,
       description: '添加图标类型节点',
     },
+    {
+      id: 'chart',
+      name: '图表',
+      icon: <BarChartOutlined className="text-purple-500" />,
+      description: '添加图表类型节点',
+    },
   ];
 
   const handleNodeTypeClick = (nodeType: NodeType) => {
     if (!isEditMode) {
       return;
     }
-    const position = { x: 300, y: 200 };
-    if (onShowNodeConfig) {
+
+    if (nodeType.id === 'chart') {
+      setChartDropPosition({ x: 300, y: 200 });
+      setComponentSelectorVisible(true);
+    } else if (onShowNodeConfig) {
+      const position = { x: 300, y: 200 };
       onShowNodeConfig(nodeType, position);
     }
   };
@@ -136,7 +156,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                 position = { x, y };
               }
 
-              if (onShowNodeConfig) {
+              if (nodeType.id === 'chart') {
+                setChartDropPosition(position);
+                setComponentSelectorVisible(true);
+              } else if (onShowNodeConfig) {
                 onShowNodeConfig(nodeType, position);
               }
             }
@@ -160,60 +183,81 @@ const Sidebar: React.FC<SidebarProps> = ({
     };
   }, [nodeTypes, onShowNodeConfig]);
 
-  return (
-    <div
-      className={`h-full border-r border-[var(--color-border-1)] bg-[var(--color-fill-1)] transition-[width] duration-300 flex-shrink-0 relative ${
-        collapsed ? 'w-0' : 'w-48'
-      }`}
-    >
-      <Button
-        type="text"
-        icon={collapsed ? <RightOutlined /> : <LeftOutlined />}
-        onClick={handleToggleCollapsed}
-        className="absolute top-5 bg-[var(--color-bg-1)] rounded-full shadow-sm border border-[var(--color-border-1)] hover:border-blue-300 !p-0"
-        style={{
-          width: '24px',
-          height: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 0,
-          zIndex: 10,
-          right: collapsed ? '-24px' : '-12px',
-          borderRadius: collapsed ? '0 50% 50% 0' : '50%',
-        }}
-      />
+  const handleChartComponentAdd = (widget: string, config?: any) => {
+    if (onAddChartNode && chartDropPosition) {
+      onAddChartNode(widget, config, chartDropPosition);
+    }
+    setComponentSelectorVisible(false);
+    setChartDropPosition(null);
+  };
 
-      {!collapsed && (
-        <div className="h-full p-4 opacity-100 transition-opacity duration-300">
-          <div className="h-full overflow-auto">
-            <div className="space-y-3">
-              {nodeTypes.map((nodeType) => (
-                <div
-                  key={nodeType.id}
-                  className={`px-2 py-1.5 rounded-lg transition-all duration-200 bg-[var(--color-bg-1)] ${
-                    isEditMode
-                      ? 'cursor-grab active:cursor-grabbing'
-                      : 'cursor-not-allowed'
-                  }`}
-                  draggable={isEditMode}
-                  onClick={() => handleNodeTypeClick(nodeType)}
-                  onDragStart={(e) => handleDragStart(e, nodeType)}
-                  onDragEnd={handleDragEnd}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div>{nodeType.icon}</div>
-                    <div className="flex-1 text-[var(--color-text-2)]">
-                      {nodeType.name}
+  const handleChartComponentCancel = () => {
+    setComponentSelectorVisible(false);
+    setChartDropPosition(null);
+  };
+
+  return (
+    <>
+      <div
+        className={`h-full border-r border-[var(--color-border-1)] bg-[var(--color-fill-1)] transition-[width] duration-300 flex-shrink-0 relative ${
+          collapsed ? 'w-0' : 'w-48'
+        }`}
+      >
+        <Button
+          type="text"
+          icon={collapsed ? <RightOutlined /> : <LeftOutlined />}
+          onClick={handleToggleCollapsed}
+          className="absolute top-5 bg-[var(--color-bg-1)] rounded-full shadow-sm border border-[var(--color-border-1)] hover:border-blue-300 !p-0"
+          style={{
+            width: '24px',
+            height: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            zIndex: 10,
+            right: collapsed ? '-24px' : '-12px',
+            borderRadius: collapsed ? '0 50% 50% 0' : '50%',
+          }}
+        />
+
+        {!collapsed && (
+          <div className="h-full p-4 opacity-100 transition-opacity duration-300">
+            <div className="h-full overflow-auto">
+              <div className="space-y-3">
+                {nodeTypes.map((nodeType) => (
+                  <div
+                    key={nodeType.id}
+                    className={`px-2 py-1.5 rounded-lg transition-all duration-200 bg-[var(--color-bg-1)] ${
+                      isEditMode
+                        ? 'cursor-grab active:cursor-grabbing'
+                        : 'cursor-not-allowed'
+                    }`}
+                    draggable={isEditMode}
+                    onClick={() => handleNodeTypeClick(nodeType)}
+                    onDragStart={(e) => handleDragStart(e, nodeType)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div>{nodeType.icon}</div>
+                      <div className="flex-1 text-[var(--color-text-2)]">
+                        {nodeType.name}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+
+      <ComponentSelector
+        visible={componentSelectorVisible}
+        onAdd={handleChartComponentAdd}
+        onCancel={handleChartComponentCancel}
+      />
+    </>
   );
 };
 

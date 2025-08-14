@@ -4,7 +4,7 @@ import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { NodeConfPanelProps } from '@/app/ops-analysis/types/topology';
 import { iconList } from '@/app/cmdb/utils/common';
 import { FORM_DEFAULTS } from '../constants/nodeDefaults';
-import { processDataSourceParams } from '@/app/ops-analysis/hooks/useWidgetData';
+import { processDataSourceParams } from '@/app/ops-analysis/utils/widgetDataTransform';
 import DataSourceParamsConfig from '@/app/ops-analysis/components/paramsConfig';
 import DataSourceSelect from '@/app/ops-analysis/components/dataSourceSelect';
 import SelectIcon, {
@@ -72,9 +72,6 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       textColor: FORM_DEFAULTS.SINGLE_VALUE.textColor,
       backgroundColor: FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
       borderColor: FORM_DEFAULTS.SINGLE_VALUE.borderColor,
-      query: FORM_DEFAULTS.SINGLE_VALUE.query,
-      unit: FORM_DEFAULTS.SINGLE_VALUE.unit,
-      threshold: FORM_DEFAULTS.SINGLE_VALUE.threshold,
       selectedFields: [],
     };
 
@@ -105,9 +102,6 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         textColor: values.textColor,
         backgroundColor: values.backgroundColor,
         borderColor: values.borderColor,
-        query: values.query,
-        unit: values.unit,
-        threshold: values.threshold,
       };
 
       setSelectedIcon(values.logoIcon || 'cc-host');
@@ -332,7 +326,6 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   const handleConfirm = async () => {
     try {
       const values = await form.validateFields();
-
       // 处理数据源参数转换
       if (values.params && selectedDataSource?.params) {
         values.dataSourceParams = processFormParamsForSubmit(
