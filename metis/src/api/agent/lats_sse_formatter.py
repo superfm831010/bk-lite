@@ -45,14 +45,14 @@ class LatsSSEFormatter:
         self.stats = SearchStats()
         self._message_sequence = 0  # 添加消息序列号，确保顺序
 
-    def _create_sse_response(self, content: str = None, finish_reason: str = None, 
-                            metadata: Dict[str, Any] = None) -> str:
+    def _create_sse_response(self, content: str = None, finish_reason: str = None,
+                             metadata: Dict[str, Any] = None) -> str:
         """创建 SSE 响应数据"""
         self._message_sequence += 1
-        
+
         response = {
             "id": self.chat_id,
-            "object": "chat.completion.chunk", 
+            "object": "chat.completion.chunk",
             "created": self.created_time,
             "model": self.model,
             "choices": [{
@@ -71,7 +71,8 @@ class LatsSSEFormatter:
                 "sequence": self._message_sequence  # 添加序列号
             }
 
-        json_str = json.dumps(response, ensure_ascii=False, separators=(',', ':'))
+        json_str = json.dumps(
+            response, ensure_ascii=False, separators=(',', ':'))
         return f"data: {json_str}\n\n"
 
     def format_initialization(self) -> str:
@@ -92,12 +93,22 @@ class LatsSSEFormatter:
 
     def format_thinking_process(self, thought: str) -> str:
         """格式化思考过程"""
-        content = f"\n🤔 **思考过程：**\n\n{thought}\n"
+        # 清理思考内容，避免过长
+        cleaned_thought = thought.strip()
+        if len(cleaned_thought) > 800:
+            cleaned_thought = cleaned_thought[:800] + "..."
+
+        content = f"\n💭 **思考过程：**\n\n{cleaned_thought}\n"
         return self._create_sse_response(content, metadata={"phase": "thinking"})
 
     def format_reflection(self, reflection: str, score: float = None) -> str:
         """格式化反思过程"""
-        content = f"\n🔍 **反思评估：**\n\n{reflection}\n"
+        # 清理反思内容
+        cleaned_reflection = reflection.strip()
+        if len(cleaned_reflection) > 600:
+            cleaned_reflection = cleaned_reflection[:600] + "..."
+
+        content = f"\n🔍 **质量评估：**\n\n{cleaned_reflection}\n"
         if score is not None:
             emoji = "🌟" if score >= 8 else "⭐" if score >= 6 else "💡"
             content += f"\n📊 **评分：** {score}/10 {emoji}\n"
@@ -107,22 +118,22 @@ class LatsSSEFormatter:
         """格式化初始评估"""
         self.stats.best_score = score
         emoji = "🌟" if score >= 8 else "⭐" if score >= 6 else "💡"
-        
+
         content = f"\n📊 **初始评估完成** {emoji}\n\n"
         content += f"📈 评分：**{score}/10**\n"
         content += f"🚀 开始树搜索优化..."
-        
+
         return self._create_sse_response(content, metadata={"phase": "evaluating", "score": score})
 
     def format_search_iteration(self, iteration: int) -> str:
         """格式化搜索迭代"""
         self.stats.iteration = iteration
-        
+
         content = f"\n\n---\n\n🌳 **搜索迭代 #{iteration}**\n\n"
         content += f"🔍 探索新的解决方案路径..."
-        
+
         return self._create_sse_response(content, metadata={
-            "phase": "searching", 
+            "phase": "searching",
             "iteration": iteration
         })
 
@@ -132,19 +143,21 @@ class LatsSSEFormatter:
             return ""
 
         best_score = max(e.get("score", 0) for e in evaluations)
-        solutions_count = sum(1 for e in evaluations if e.get("found_solution", False))
-        
+        solutions_count = sum(
+            1 for e in evaluations if e.get("found_solution", False))
+
         self.stats.best_score = max(self.stats.best_score, best_score)
         self.stats.solutions_found = solutions_count
 
         content = f"\n📊 **评估 {len(evaluations)} 个候选方案**\n\n"
         content += f"🏆 最高评分：**{best_score}/10**\n"
-        
+
         if solutions_count > 0:
             content += f"✅ 找到 **{solutions_count}** 个解决方案\n"
-        
+
         # 只显示前3个最佳候选
-        top_candidates = sorted(evaluations, key=lambda x: x.get("score", 0), reverse=True)[:3]
+        top_candidates = sorted(
+            evaluations, key=lambda x: x.get("score", 0), reverse=True)[:3]
         content += f"\n🔝 **优秀候选：**\n"
         for i, candidate in enumerate(top_candidates, 1):
             score = candidate.get("score", 0)
@@ -163,7 +176,7 @@ class LatsSSEFormatter:
         content += f"🌟 最终评分：**{score}/10**\n"
         content += f"🔄 搜索迭代：{self.stats.iteration} 轮\n\n"
         content += f"🎯 **生成最终答案...**"
-        
+
         return self._create_sse_response(content, metadata={
             "phase": "solution_found",
             "final_score": score
@@ -184,13 +197,13 @@ class LatsSSEFormatter:
         """格式化完成"""
         execution_time = datetime.now() - self.start_time
         time_str = f"{int(execution_time.total_seconds())}秒"
-        
+
         content = f"\n\n---\n\n🎊 **LATS 搜索完成！**\n\n"
         content += f"📊 **搜索统计：**\n"
         content += f"   • 迭代轮次：{self.stats.iteration}\n"
         content += f"   • 最佳评分：{self.stats.best_score}/10\n"
         content += f"   • 执行时间：{time_str}\n"
-        
+
         return self._create_sse_response(content, finish_reason="stop", metadata={
             "phase": "completed",
             "stats": {
@@ -209,7 +222,7 @@ class LatsSSEFormatter:
         """获取工具友好显示名称"""
         tool_names = {
             "naive_rag_search": "知识库搜索",
-            "web_search": "网络搜索", 
+            "web_search": "网络搜索",
             "search_tool": "搜索工具",
             "analysis_tool": "分析工具"
         }
@@ -227,37 +240,16 @@ class LatsSSEFormatter:
 
     def format_candidates_evaluation_results(self, evaluations: List[Dict[str, Any]]) -> str:
         return self.format_candidates_evaluation(evaluations)
-    def format_initial_evaluation(self, score: float) -> str:
-        """格式化初始评估"""
-        self.stats.best_score = score
-        emoji = "🌟" if score >= 8 else "⭐" if score >= 6 else "💡"
-        
-        content = f"\n📊 **初始评估完成** {emoji}\n\n"
-        content += f"📈 评分：**{score}/10**\n"
-        content += f"🚀 开始树搜索优化..."
-        
-        return self._create_sse_response(content, metadata={"phase": "evaluating", "score": score})
-
-    def format_initial_evaluation(self, score: float) -> str:
-        """格式化初始评估"""
-        self.stats.best_score = score
-        emoji = "🌟" if score >= 8 else "⭐" if score >= 6 else "�"
-        
-        content = f"\n📊 **初始评估完成** {emoji}\n\n"
-        content += f"� 评分：**{score}/10**\n"
-        content += f"🚀 开始树搜索优化..."
-        
-        return self._create_sse_response(content, metadata={"phase": "evaluating", "score": score})
 
     def format_search_iteration(self, iteration: int) -> str:
         """格式化搜索迭代"""
         self.stats.iteration = iteration
-        
+
         content = f"\n\n---\n\n🌳 **搜索迭代 #{iteration}**\n\n"
-        content += f" 探索新的解决方案路径..."
-        
+        content += f"🔍 探索新的解决方案路径..."
+
         return self._create_sse_response(content, metadata={
-            "phase": "searching", 
+            "phase": "searching",
             "iteration": iteration
         })
 
@@ -267,19 +259,21 @@ class LatsSSEFormatter:
             return ""
 
         best_score = max(e.get("score", 0) for e in evaluations)
-        solutions_count = sum(1 for e in evaluations if e.get("found_solution", False))
-        
+        solutions_count = sum(
+            1 for e in evaluations if e.get("found_solution", False))
+
         self.stats.best_score = max(self.stats.best_score, best_score)
         self.stats.solutions_found = solutions_count
 
-        content = f"\n� **评估 {len(evaluations)} 个候选方案**\n\n"
+        content = f"\n📊 **评估 {len(evaluations)} 个候选方案**\n\n"
         content += f"🏆 最高评分：**{best_score}/10**\n"
-        
+
         if solutions_count > 0:
             content += f"✅ 找到 **{solutions_count}** 个解决方案\n"
-        
+
         # 只显示前3个最佳候选
-        top_candidates = sorted(evaluations, key=lambda x: x.get("score", 0), reverse=True)[:3]
+        top_candidates = sorted(
+            evaluations, key=lambda x: x.get("score", 0), reverse=True)[:3]
         content += f"\n🔝 **优秀候选：**\n"
         for i, candidate in enumerate(top_candidates, 1):
             score = candidate.get("score", 0)
@@ -298,7 +292,7 @@ class LatsSSEFormatter:
         content += f"🌟 最终评分：**{score}/10**\n"
         content += f"🔄 搜索迭代：{self.stats.iteration} 轮\n\n"
         content += f"🎯 **生成最终答案...**"
-        
+
         return self._create_sse_response(content, metadata={
             "phase": "solution_found",
             "final_score": score
@@ -317,13 +311,13 @@ class LatsSSEFormatter:
         """格式化完成"""
         execution_time = datetime.now() - self.start_time
         time_str = f"{int(execution_time.total_seconds())}秒"
-        
+
         content = f"\n\n---\n\n🎊 **LATS 搜索完成！**\n\n"
         content += f"📊 **搜索统计：**\n"
         content += f"   • 迭代轮次：{self.stats.iteration}\n"
         content += f"   • 最佳评分：{self.stats.best_score}/10\n"
         content += f"   • 执行时间：{time_str}\n"
-        
+
         return self._create_sse_response(content, finish_reason="stop", metadata={
             "phase": "completed",
             "stats": {
@@ -342,7 +336,7 @@ class LatsSSEFormatter:
         """获取工具友好显示名称"""
         tool_names = {
             "naive_rag_search": "知识库搜索",
-            "web_search": "网络搜索", 
+            "web_search": "网络搜索",
             "search_tool": "搜索工具",
             "analysis_tool": "分析工具"
         }

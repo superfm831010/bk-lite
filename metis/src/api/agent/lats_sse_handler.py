@@ -82,7 +82,10 @@ class LatsSSEHandler:
 
             # 处理评估结果
             if self._is_evaluation_results(chunk):
-                await self.handle_evaluation_results(res, chunk['evaluation_results'])
+                if 'evaluation_results' in chunk:
+                    await self.handle_evaluation_results(res, chunk['evaluation_results'])
+                elif 'initial_evaluation' in chunk:
+                    await self.handle_initial_evaluation(res, chunk['initial_evaluation'])
                 return
 
             # 处理节点转换
@@ -116,13 +119,29 @@ class LatsSSEHandler:
             if reflection_content:
                 await self.send_sse(res, self.formatter.format_reflection(str(reflection_content), score))
 
+        # 检查是否是Reflection对象的字典表示
+        elif 'reflections' in chunk and 'score' in chunk:
+            reflection_content = chunk.get('reflections', '')
+            score = chunk.get('score')
+            found_solution = chunk.get('found_solution', False)
+
+            if reflection_content:
+                await self.send_sse(res, self.formatter.format_thinking_process(
+                    f"**方案分析**\n\n{reflection_content}"
+                ))
+
+                status = "✅ 找到解决方案！" if found_solution else "📝 继续优化中"
+                await self.send_sse(res, self.formatter.format_reflection(
+                    f"{reflection_content}\n\n{status}", score
+                ))
+
     def _is_final_state(self, chunk) -> bool:
         """检查是否为最终状态"""
         return isinstance(chunk, dict) and 'messages' in chunk and 'root' in chunk
 
     def _is_evaluation_results(self, chunk) -> bool:
         """检查是否为评估结果"""
-        return isinstance(chunk, dict) and 'evaluation_results' in chunk
+        return isinstance(chunk, dict) and ('evaluation_results' in chunk or 'initial_evaluation' in chunk)
 
     def _is_node_transition(self, chunk) -> bool:
         """检查是否为节点转换"""
@@ -145,6 +164,17 @@ class LatsSSEHandler:
         if not (root_node and messages):
             return
 
+        # 展示初始评估的思考过程（如果还没展示过）
+        if hasattr(root_node, 'reflection') and root_node.reflection and not self.is_final_answer_started:
+            reflection = root_node.reflection
+            if hasattr(reflection, 'reflections') and reflection.reflections:
+                await self.send_sse(res, self.formatter.format_thinking_process(
+                    f"初始方案评估思考：\n{reflection.reflections}"
+                ))
+                await self.send_sse(res, self.formatter.format_reflection(
+                    reflection.reflections, reflection.score
+                ))
+
         # 检查是否找到解决方案
         if hasattr(root_node, 'is_solved') and root_node.is_solved:
             # 获取最佳评分
@@ -166,10 +196,60 @@ class LatsSSEHandler:
                 content = f"\n\n🎯 **LATS 解决方案**\n\n{final_message.content}\n\n"
                 await self.send_sse(res, self.formatter.format_content(content))
 
+    async def handle_initial_evaluation(self, res, evaluation: Dict[str, Any]) -> None:
+        """处理初始评估结果"""
+        reflection_content = evaluation.get('reflections', '')
+        score = evaluation.get('score', 0)
+
+        logger.info(f"[LATS SSE] 展示初始评估思考过程，评分: {score}/10")
+
+        # 先展示评估进行中的提示
+        await self.send_sse(res, self.formatter.format_content(
+            "\n🧠 **正在深度分析初始方案...**\n\n"
+        ))
+
+        if reflection_content:
+            await self.send_sse(res, self.formatter.format_thinking_process(
+                f"**初始方案深度分析**\n\n{reflection_content}"
+            ))
+            await self.send_sse(res, self.formatter.format_reflection(
+                reflection_content, score
+            ))
+
+        # 展示初始评估结果
+        await self.send_sse(res, self.formatter.format_initial_evaluation(score))
+
     async def handle_evaluation_results(self, res, evaluations: List[Dict[str, Any]]) -> None:
         """处理评估结果"""
         if evaluations:
             logger.info(f"[LATS SSE] 展示 {len(evaluations)} 个候选方案评估结果")
+
+            # 首先展示评估过程提示
+            await self.send_sse(res, self.formatter.format_content(
+                f"\n⚖️ **开始评估 {len(evaluations)} 个候选方案...**\n\n"
+            ))
+
+            # 展示每个候选方案的详细思考过程（只展示前3个最好的）
+            sorted_evaluations = sorted(
+                evaluations, key=lambda x: x.get('score', 0), reverse=True)
+            top_evaluations = sorted_evaluations[:3]  # 只展示前3个
+
+            for i, evaluation in enumerate(top_evaluations):
+                reflection_content = evaluation.get('reflections', '')
+                score = evaluation.get('score', 0)
+
+                if reflection_content:
+                    await self.send_sse(res, self.formatter.format_thinking_process(
+                        f"**候选方案 #{evaluation.get('index', i+1)} 分析**\n\n{reflection_content}"
+                    ))
+
+                    # 简化的评分展示
+                    emoji = "🌟" if score >= 8 else "⭐" if score >= 6 else "💡"
+                    await self.send_sse(res, self.formatter.format_content(
+                        f"\n📊 评分：**{score}/10** {emoji}\n\n"
+                    ))
+
+            # 最后展示评估总结
             await self.send_sse(res, self.formatter.format_candidates_evaluation(evaluations))
 
     async def handle_node_transition(self, res, chunk, iteration_count: int) -> None:
@@ -189,8 +269,16 @@ class LatsSSEHandler:
         elif node_name == "should_continue":
             await self.send_sse(res, self.formatter.format_content("\n⚖️ **判断是否需要继续搜索...**\n\n"))
         else:
-            # 输出其他节点的处理信息
-            await self.send_sse(res, self.formatter.format_content(f"\n🔄 **执行 {node_name} 节点...**\n\n"))
+            # 输出其他节点的处理信息，增强思考感
+            node_descriptions = {
+                "generate_candidates": "🌱 **生成多个候选解决方案...**",
+                "evaluate_candidates": "📊 **评估候选方案质量...**",
+                "select_best": "🎯 **选择最佳候选方案...**",
+                "backtrack": "🔄 **回溯寻找更好路径...**",
+            }
+            description = node_descriptions.get(
+                node_name, f"🔄 **执行 {node_name} 节点...**")
+            await self.send_sse(res, self.formatter.format_content(f"\n{description}\n\n"))
 
     async def handle_message_stream(self, res, chunk) -> None:
         """处理消息流"""
@@ -210,6 +298,11 @@ class LatsSSEHandler:
             if hasattr(message, 'content') and message.content:
                 tool_content = message.content
                 if tool_content and len(tool_content) > 10:  # 避免输出过短的无意义内容
+                    # 先展示分析提示
+                    await self.send_sse(res, self.formatter.format_thinking_process(
+                        "**分析搜索结果，整合信息中...**"
+                    ))
+                    # 然后展示工具结果
                     await self.send_sse(res, self.formatter.format_content(f"\n\n🔧 **工具执行结果：**\n\n{tool_content}\n\n"))
             elif hasattr(message, 'name'):
                 tool_name = getattr(message, 'name', 'unknown_tool')

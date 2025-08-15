@@ -158,3 +158,4 @@ class LatsAgentState(TypedDict):
     graph_request: LatsAgentRequest
     root: Node
     evaluation_results: Optional[list]  # 用于传递评价表信息
+    initial_evaluation: Optional[dict]  # 用于传递初始评估信息

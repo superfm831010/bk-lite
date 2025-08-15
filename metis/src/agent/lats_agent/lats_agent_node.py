@@ -344,6 +344,13 @@ class LatsAgentNode(ToolsNodes):
 
         logger.info(f"📊 初始响应评估 | 评分: {reflection.score}/10")
 
+        # 将初始评估结果添加到状态中，用于流式输出
+        state['initial_evaluation'] = {
+            'score': reflection.score,
+            'reflections': reflection.reflections,
+            'found_solution': reflection.found_solution
+        }
+
         # 添加到消息列表
         if output_messages:
             state["messages"].append(output_messages[-1])
