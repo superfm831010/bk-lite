@@ -1,4 +1,5 @@
 import json
+import os
 import time
 
 import requests
@@ -107,12 +108,14 @@ def invoke_one_document(document, is_show=False):
     res = {"status": "fail"}
     try:
         headers = ChatServerHelper.get_chat_server_header()
+        # SSL验证配置 - 从环境变量读取
+        ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
         if source_type == "file":
             files = source_data.pop("file")
-            res = requests.post(source_remote, headers=headers, data=form_data, files=files, verify=False).json()
+            res = requests.post(source_remote, headers=headers, data=form_data, files=files, verify=ssl_verify).json()
         else:
             form_data.update(source_data)
-            res = requests.post(source_remote, headers=headers, data=form_data, verify=False).json()
+            res = requests.post(source_remote, headers=headers, data=form_data, verify=ssl_verify).json()
         remote_docs = res.get("documents", [])
         document.chunk_size = res.get("chunks_size", 0)
         if not document.chunk_size:
@@ -479,8 +482,10 @@ def _create_single_qa_item(qa_item, index, kwargs, metadata, url, headers):
 
 def _send_qa_request_with_retry(params, url, headers, index):
     """发送问答对创建请求，带重试机制"""
+    # SSL验证配置 - 从环境变量读取
+    ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
     try:
-        res = requests.post(url, headers=headers, data=params, verify=False).json()
+        res = requests.post(url, headers=headers, data=params, verify=ssl_verify).json()
         if res.get("status") != "success":
             raise Exception(f"创建问答对失败: {res.get('message', '')}")
     except Exception as e:
@@ -488,7 +493,7 @@ def _send_qa_request_with_retry(params, url, headers, index):
         # 重试机制：等待5秒后重试
         time.sleep(5)
         try:
-            res = requests.post(url, headers=headers, data=params, verify=False).json()
+            res = requests.post(url, headers=headers, data=params, verify=ssl_verify).json()
             if res.get("status") != "success":
                 raise Exception(f"重试后仍然失败: {res.get('message', '')}")
             logger.info(f"重试成功，索引: {index}")

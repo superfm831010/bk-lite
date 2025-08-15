@@ -37,7 +37,7 @@ async def stream_response(workflow, body, res):
 
     # 初始响应
     init_chunk = create_response_obj()
-    await res.write(f"data: {json_util.dumps(init_chunk)}\n\n")
+    await res.write(f"data: {json_util.dumps(init_chunk, ensure_ascii=False)}\n\n".encode('utf-8'))
 
     result = await workflow.stream(body)
 
@@ -58,8 +58,9 @@ async def stream_response(workflow, body, res):
 
             # 使用辅助函数创建响应对象
             response_sse_obj = create_response_obj(delta_content=delta_content)
-            json_content = json_util.dumps(response_sse_obj)
-            await res.write(f"data: {json_content}\n\n")
+            json_content = json_util.dumps(
+                response_sse_obj, ensure_ascii=False)
+            await res.write(f"data: {json_content}\n\n".encode('utf-8'))
         else:
             try:
                 prompt_token += workflow.count_tokens(chunk[0].content)
@@ -68,5 +69,5 @@ async def stream_response(workflow, body, res):
 
     # 最终响应
     final_chunk = create_response_obj(finish_reason="stop")
-    await res.write(f"data: {json_util.dumps(final_chunk)}\n\n")
-    await res.write("data: [DONE]\n\n")
+    await res.write(f"data: {json_util.dumps(final_chunk, ensure_ascii=False)}\n\n".encode('utf-8'))
+    await res.write("data: [DONE]\n\n".encode('utf-8'))
