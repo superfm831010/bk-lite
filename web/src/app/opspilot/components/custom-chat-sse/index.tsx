@@ -204,7 +204,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
         })();
       }
     }
-  }, [loading, token, handleSendMessage, t, messages]);
+  }, [loading, token, messages]);
 
   // Handle reference link click
   const handleReferenceClick = useCallback(async (event: React.MouseEvent<HTMLDivElement>) => {
