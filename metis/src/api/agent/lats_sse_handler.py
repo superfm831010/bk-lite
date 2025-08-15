@@ -59,16 +59,20 @@ async def stream_lats_response(
                     logger.info(
                         f"[LATS SSE] 搜索完成，找到解决方案: {root_node.is_solved}")
 
-                    # 如果有最终消息且搜索已解决，这就是最终答案
-                    if messages and root_node.is_solved:
+                    # 获取最后一条消息作为最终答案（无论是否完全解决）
+                    if messages:
                         final_message = messages[-1]
                         if hasattr(final_message, 'content') and final_message.content:
                             lats_state['is_final_answer'] = True
-                            content = f"\n\n🎯 **LATS 最终解决方案**\n\n{final_message.content}\n\n"
+                            if root_node.is_solved:
+                                content = f"\n\n🎯 **LATS 最终解决方案**\n\n{final_message.content}\n\n"
+                            else:
+                                content = f"\n\n💡 **LATS 最佳候选答案**\n\n{final_message.content}\n\n"
+
                             if content not in sent_contents:
                                 await res.write(_create_sse_data(chat_id, created, model, content).encode('utf-8'))
                                 sent_contents.add(content)
-                                logger.info(f"[LATS SSE] 发送最终解决方案")
+                                logger.info(f"[LATS SSE] 发送最终答案")
                 continue
 
             # 检查是否是节点流转信息
@@ -90,7 +94,7 @@ async def stream_lats_response(
                     await asyncio.sleep(0.3)
                 continue
 
-            # 处理消息流 - 只基于节点类型决定是否输出
+            # 处理消息流 - 捕获 AI 生成的答案内容
             if isinstance(chunk, (tuple, list)) and len(chunk) > 0:
                 message = chunk[0]
 
@@ -98,14 +102,40 @@ async def stream_lats_response(
                 if message is None:
                     continue
 
-                # 基于当前节点类型和状态提取消息内容
-                content = _extract_message_content_by_node_state(
-                    message, lats_state, iteration_counter)
+                # 检查是否是 AI 消息，可能包含答案内容
+                message_type = type(message).__name__
+                if "AIMessage" in message_type and hasattr(message, 'content'):
+                    content = message.content.strip()
+                    if content and len(content) > 50:
+                        # 基于节点状态判断是否应该显示这个内容
+                        current_node = lats_state.get('current_node')
 
-                if content and content not in sent_contents:
-                    await res.write(_create_sse_data(chat_id, created, model, content).encode('utf-8'))
-                    sent_contents.add(content)
-                    await asyncio.sleep(0.2)
+                        # 如果是在最后阶段（expand 节点）生成的长内容，很可能是解决方案
+                        if current_node == "expand" and len(content) > 100:
+                            display_content = f"\n\n💡 **候选解决方案**\n\n{content}\n\n"
+                            if display_content not in sent_contents:
+                                await res.write(_create_sse_data(chat_id, created, model, display_content).encode('utf-8'))
+                                sent_contents.add(display_content)
+                                logger.info(f"[LATS SSE] 发送候选解决方案")
+
+                        # 如果是在初始阶段生成的内容
+                        elif current_node == "generate_initial_response" and len(content) > 80:
+                            display_content = f"\n\n🌱 **初始解决方案**\n\n{content}\n\n"
+                            if display_content not in sent_contents:
+                                await res.write(_create_sse_data(chat_id, created, model, display_content).encode('utf-8'))
+                                sent_contents.add(display_content)
+                                logger.info(f"[LATS SSE] 发送初始解决方案")
+
+                # 为了兼容性，也处理其他类型的消息
+                else:
+                    content = _extract_message_content_by_node_state(
+                        message, lats_state, iteration_counter)
+
+                    if content and content not in sent_contents:
+                        await res.write(_create_sse_data(chat_id, created, model, content).encode('utf-8'))
+                        sent_contents.add(content)
+
+                await asyncio.sleep(0.1)
 
         # 发送优雅的完成消息
         completion_content = "\n\n---\n\n✨ **LATS 搜索完成！**\n\n🎉 已完成深度搜索和多候选方案评估\n\n💫 希望我的回答对您有帮助"
