@@ -141,10 +141,7 @@ class ElasticSearchRag(BaseRag):
                         f"时间字段排序，添加兼容性处理: 缺失值放在{'最后' if sort_order == 'asc' else '最前'}")
 
                 query["sort"] = [sort_config]
-                logger.debug(f"添加排序: {req.sort_field} {sort_order}")
             else:
-                logger.warning(
-                    f"排序字段 {req.sort_field} 在索引 {req.index_name} 中不存在，跳过排序")
                 # 可以选择使用一个默认的排序字段，比如 _score
                 query["sort"] = [{"_score": {"order": "desc"}}]
 
