@@ -61,12 +61,12 @@ class LatsAgentNode(ToolsNodes):
         async def reflection_chain_async(inputs):
             llm = self.get_llm_client(
                 config["configurable"]["graph_request"], disable_stream=True)
-            
+
             # 使用模板加载器获取反思评估系统消息
             system_message = TemplateLoader.render_template(
                 "prompts/lats_agent/reflection_evaluation"
             )
-            
+
             prompt = ChatPromptTemplate.from_messages([
                 ("system", system_message),
                 ("user", "{input}"),
@@ -133,7 +133,7 @@ class LatsAgentNode(ToolsNodes):
         system_message = TemplateLoader.render_template(
             "prompts/lats_agent/candidate_generation"
         )
-        
+
         prompt_template = ChatPromptTemplate.from_messages(
             [
                 ("system", system_message),
@@ -350,6 +350,20 @@ class LatsAgentNode(ToolsNodes):
             new_candidates, state, config
         )
 
+        # 将评价结果添加到状态中供SSE展示
+        evaluation_data = []
+        for i, reflection in enumerate(reflections):
+            evaluation_data.append({
+                'index': i + 1,
+                'score': reflection.score,
+                'found_solution': reflection.found_solution,
+                'reflections': reflection.reflections,
+                'message_content': output_messages[i][-1].content if output_messages[i] else ""
+            })
+
+        state['evaluation_results'] = evaluation_data
+        logger.debug(f"已将{len(evaluation_data)}个评价结果添加到状态中")
+
         # 统计已在_process_candidates方法中完成，这里不再重复输出
 
         # 扩展搜索树，添加子节点
@@ -391,12 +405,12 @@ class LatsAgentNode(ToolsNodes):
             logger.debug("更新状态消息，添加最佳解决方案")
 
             llm = self.get_llm_client(config["configurable"]["graph_request"])
-            
+
             # 使用模板加载器获取智能助手系统消息
             system_message = TemplateLoader.render_template(
                 "prompts/lats_agent/intelligent_assistant"
             )
-            
+
             prompt_template = ChatPromptTemplate.from_messages(
                 [
                     ("system", system_message),
@@ -406,7 +420,7 @@ class LatsAgentNode(ToolsNodes):
                 ]
             )
             chain = prompt_template | llm
-            
+
             # 使用模板加载器生成最终答案合成问题
             question = TemplateLoader.render_template(
                 "prompts/lats_agent/final_answer_synthesis",
@@ -415,7 +429,7 @@ class LatsAgentNode(ToolsNodes):
                     "solution_content": final_solution.content
                 }
             )
-            
+
             msg = chain.invoke({
                 "input": question
             })

@@ -249,9 +249,59 @@ class LatsSSEFormatter:
         )
         return self._format_sse_data(response)
 
+    def format_detailed_evaluation_table(self, evaluations: List[Dict[str, Any]]) -> str:
+        """格式化详细评价表格"""
+        if not evaluations:
+            return ""
+
+        content = "\n📊 **候选方案详细评价表**\n\n"
+        content += "```\n"
+        content += f"{'序号':^4} | {'评分':^6} | {'解决方案':^8} | {'方案概要':^30} | {'反思评价'}\n"
+        content += "-" * 100 + "\n"
+
+        for eval_data in evaluations:
+            idx = eval_data.get('index', 0)
+            score = eval_data.get('score', 0)
+            found_solution = eval_data.get('found_solution', False)
+            reflection = eval_data.get('reflections', '无评价')
+            message_content = eval_data.get('message_content', '')
+
+            # 截断内容以适应表格显示
+            reflection_short = reflection[:35] + \
+                "..." if len(reflection) > 35 else reflection
+            content_short = message_content[:25] + \
+                "..." if len(message_content) > 25 else message_content
+            solution_icon = "✅" if found_solution else "❌"
+
+            content += f"{idx:^4} | {score:^6}/10 | {solution_icon:^8} | {content_short:^30} | {reflection_short}\n"
+
+        content += "```\n"
+
+        # 添加统计信息
+        best_score = max(e.get('score', 0) for e in evaluations)
+        solutions_count = sum(
+            1 for e in evaluations if e.get('found_solution', False))
+        avg_score = sum(e.get('score', 0)
+                        for e in evaluations) / len(evaluations)
+
+        content += f"\n📈 **评价统计摘要**\n"
+        content += f"🏆 最高评分：**{best_score}/10**\n"
+        content += f"📊 平均评分：**{avg_score:.1f}/10**\n"
+        content += f"✅ 解决方案数量：**{solutions_count}** 个\n"
+        content += f"📝 候选方案总数：**{len(evaluations)}** 个\n"
+
+        # 显示最佳候选方案的详细信息
+        if evaluations:
+            best_candidate = max(evaluations, key=lambda x: x.get('score', 0))
+            content += f"\n🌟 **最佳候选方案详情**\n"
+            content += f"评分：{best_candidate.get('score', 0)}/10\n"
+            content += f"评价：{best_candidate.get('reflections', '无评价')[:100]}...\n"
+
+        return content
+
     def format_candidates_evaluation_results(self, evaluations: List[Dict[str, Any]]) -> str:
-        """格式化候选方案评估结果"""
-        best_score = max(eval_data["score"]
+        """格式化候选方案评估结果（简化版本）"""
+        best_score = max(eval_data.get("score", 0)
                          for eval_data in evaluations) if evaluations else 0
         solutions_count = sum(
             1 for eval_data in evaluations if eval_data.get("found_solution", False))
@@ -265,12 +315,12 @@ class LatsSSEFormatter:
 
         # 显示前3个最好的候选
         sorted_evals = sorted(
-            evaluations, key=lambda x: x["score"], reverse=True)[:3]
+            evaluations, key=lambda x: x.get("score", 0), reverse=True)[:3]
         content += f"\n🔝 **前3名候选方案：**\n"
         for i, eval_data in enumerate(sorted_evals, 1):
             status_icon = "🎯" if eval_data.get(
                 "found_solution", False) else "💡"
-            content += f"   {status_icon} **#{i}**: {eval_data['score']}/10\n"
+            content += f"   {status_icon} **#{i}**: {eval_data.get('score', 0)}/10\n"
 
         response = self._create_base_response(
             delta_content=content,
