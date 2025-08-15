@@ -109,12 +109,14 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
       setLoading(true);
       try {
         const responseData = await getEventRaw(form.id);
-        const rawList = (responseData?.raw_data?.data || []).map(
-          (item: TableDataItem, index: number) => ({
-            ...item,
-            id: index,
-          })
-        );
+        const isAggregate = form.alert_type === 'aggregate';
+        const data = responseData?.raw_data?.data;
+        const aggregateData = data?.query_result ? [data?.query_result] : [];
+        const result = !isAggregate ? data || [] : aggregateData;
+        const rawList = result.map((item: TableDataItem, index: number) => ({
+          ...item,
+          id: index,
+        }));
         setRawData(rawList);
       } finally {
         setLoading(false);
