@@ -196,8 +196,14 @@ class LatsSSEFormatter:
 
     def format_content(self, content: str) -> str:
         """格式化内容输出"""
-        # 清理内容，确保不包含控制字符
+        # 保护原始内容，只做基本清理
+        if not content:
+            return ""
+
+        # 移除可能的控制字符，但保持内容完整
         cleaned_content = content.replace('\x00', '').strip()
+
+        # 不截断内容，保持完整性
         return self._create_sse_response(cleaned_content)
 
     def format_completion(self) -> str:

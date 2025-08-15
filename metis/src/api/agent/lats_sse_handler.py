@@ -3,9 +3,8 @@ LATS Agent SSE 处理器 - 优化版本
 
 提供简洁、高效的 LATS 搜索流式响应处理
 重点优化用户体验，减少冗余代码，提高可维护性
-防止消息错乱，确保流式输出的顺序性和稳定性
+简化处理逻辑，移除不必要的锁机制
 """
-import asyncio
 import json
 from typing import Dict, Any, List
 from datetime import datetime
@@ -21,54 +20,21 @@ class LatsSSEHandler:
         self.chat_id = chat_id
         self.model = model
         self.formatter = LatsSSEFormatter(chat_id, model)
-        self.sent_messages = set()  # 防重复
         self.is_final_answer_started = False
-        self._output_lock = asyncio.Lock()  # 添加输出锁，防止并发错乱
+        # 移除输出锁和消息去重机制，简化处理逻辑
 
     async def send_sse(self, res, message: str) -> None:
-        """发送 SSE 消息（线程安全，智能去重）"""
+        """发送 SSE 消息（简化版本）"""
         if not message:
             return
 
-        async with self._output_lock:  # 确保消息按顺序发送
-            # 改进的去重逻辑：提取消息的关键特征而不是完整内容
-            message_key = self._get_message_key(message)
-
-            if message_key not in self.sent_messages:
-                try:
-                    await res.write(message.encode('utf-8'))
-                    self.sent_messages.add(message_key)
-                    # 提取消息内容的前50个字符用于日志
-                    content_preview = message[:50].replace('\n', ' ').strip()
-                    logger.info(f"[LATS SSE] 发送消息: {content_preview}...")
-                except Exception as e:
-                    logger.error(f"[LATS SSE] 发送消息失败: {e}")
-            else:
-                logger.debug(f"[LATS SSE] 跳过重复消息: {message[:30]}...")
-
-    def _get_message_key(self, message: str) -> str:
-        """获取消息的唯一标识符，用于去重"""
         try:
-            # 解析JSON获取metadata中的sequence或其他唯一标识
-            if "data: " in message:
-                json_part = message.replace("data: ", "").strip()
-                data = json.loads(json_part)
-
-                # 使用sequence作为唯一标识
-                if "metis_metadata" in data and "sequence" in data["metis_metadata"]:
-                    return f"seq_{data['metis_metadata']['sequence']}"
-
-                # 使用内容hash作为备选
-                content = data.get("choices", [{}])[0].get(
-                    "delta", {}).get("content", "")
-                if content:
-                    return f"content_{hash(content[:100])}"
-
-            # 使用完整消息的hash作为最后手段
-            return f"full_{hash(message)}"
-        except Exception:
-            # 如果解析失败，使用消息hash
-            return f"fallback_{hash(message)}"
+            await res.write(message.encode('utf-8'))
+            # 提取消息内容的前50个字符用于日志
+            content_preview = message[:50].replace('\n', ' ').strip()
+            logger.info(f"[LATS SSE] 发送消息: {content_preview}...")
+        except Exception as e:
+            logger.error(f"[LATS SSE] 发送消息失败: {e}")
 
     async def handle_search_flow(self, res, workflow, body) -> None:
         """处理搜索流程"""
@@ -334,21 +300,23 @@ class LatsSSEHandler:
         message_type = type(message).__name__
         logger.debug(f"[LATS SSE] 处理消息类型: {message_type}")
 
-        # 处理 AI 消息块
+        # 处理 AI 消息块 - 直接输出，不添加额外格式化
         if message_type == "AIMessageChunk" and hasattr(message, 'content') and message.content:
+            # 直接输出原始内容，保持完整性
             await self.send_sse(res, self.formatter.format_content(message.content))
 
-        # 处理工具消息 - 展示工具调用的思考过程
+        # 处理完整的AI消息 - 也直接输出
+        elif message_type == "AIMessage" and hasattr(message, 'content') and message.content:
+            # 对于完整消息，确保内容完整输出
+            await self.send_sse(res, self.formatter.format_content(message.content))
+
+        # 处理工具消息 - 简化处理，避免干扰主要内容
         elif "Tool" in message_type and "Message" in message_type:
             if hasattr(message, 'content') and message.content:
                 tool_content = message.content
-                if tool_content and len(tool_content) > 10:  # 避免输出过短的无意义内容
-                    # 先展示分析提示
-                    await self.send_sse(res, self.formatter.format_thinking_process(
-                        "**分析搜索结果，整合信息中...**"
-                    ))
-                    # 然后展示工具结果
-                    await self.send_sse(res, self.formatter.format_content(f"\n\n🔧 **工具执行结果：**\n\n{tool_content}\n\n"))
+                if tool_content and len(tool_content) > 20:  # 提高阈值，避免输出过多无关内容
+                    # 简化工具结果展示
+                    await self.send_sse(res, self.formatter.format_content(f"\n\n🔧 **工具结果：**\n{tool_content}\n\n"))
             elif hasattr(message, 'name'):
                 tool_name = getattr(message, 'name', 'unknown_tool')
                 await self.send_sse(res, self.formatter.format_tool_execution(tool_name))
@@ -371,9 +339,8 @@ class LatsSSEHandler:
             json_str = json.dumps(
                 end_response, ensure_ascii=False, separators=(',', ':'))
 
-            async with self._output_lock:  # 确保结束信号按顺序发送
-                await res.write(f"data: {json_str}\n\n".encode('utf-8'))
-                await res.write("data: [DONE]\n\n".encode('utf-8'))
+            await res.write(f"data: {json_str}\n\n".encode('utf-8'))
+            await res.write("data: [DONE]\n\n".encode('utf-8'))
 
         except Exception as e:
             logger.error(f"[LATS SSE] 发送完成消息失败: {e}")
