@@ -81,8 +81,12 @@ def get_alert_trend_data(*args, **kwargs) -> Dict[str, Any]:
     # 构建查询条件
     query_conditions = Q(created_at__gte=aware_start, created_at__lt=aware_end)
 
+    alert_model_fields = Alert.model_fields()
     # 应用过滤条件
     for key, value in kwargs.items():
+        if key not in alert_model_fields:
+            logger.warning(f"Invalid field '{key}' in filter conditions.")
+            continue
         query_conditions &= Q(**{key: value})
 
     # 查询并按时间分组统计
