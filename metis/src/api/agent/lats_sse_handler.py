@@ -300,15 +300,24 @@ class LatsSSEHandler:
         message_type = type(message).__name__
         logger.debug(f"[LATS SSE] 处理消息类型: {message_type}")
 
-        # 处理 AI 消息块 - 直接输出，不添加额外格式化
+        # 处理 AI 消息块 - 检查是否包含JSON格式的reflection
         if message_type == "AIMessageChunk" and hasattr(message, 'content') and message.content:
-            # 直接输出原始内容，保持完整性
-            await self.send_sse(res, self.formatter.format_content(message.content))
+            content = message.content
+            # 检查是否包含reflection JSON
+            if self._contains_reflection_json(content):
+                await self._handle_reflection_content(res, content)
+            else:
+                # 直接输出原始内容，保持完整性
+                await self.send_sse(res, self.formatter.format_content(content))
 
-        # 处理完整的AI消息 - 也直接输出
+        # 处理完整的AI消息 - 也检查reflection
         elif message_type == "AIMessage" and hasattr(message, 'content') and message.content:
-            # 对于完整消息，确保内容完整输出
-            await self.send_sse(res, self.formatter.format_content(message.content))
+            content = message.content
+            if self._contains_reflection_json(content):
+                await self._handle_reflection_content(res, content)
+            else:
+                # 对于完整消息，确保内容完整输出
+                await self.send_sse(res, self.formatter.format_content(content))
 
         # 处理工具消息 - 简化处理，避免干扰主要内容
         elif "Tool" in message_type and "Message" in message_type:
@@ -320,6 +329,79 @@ class LatsSSEHandler:
             elif hasattr(message, 'name'):
                 tool_name = getattr(message, 'name', 'unknown_tool')
                 await self.send_sse(res, self.formatter.format_tool_execution(tool_name))
+
+    def _contains_reflection_json(self, content: str) -> bool:
+        """检查内容是否包含reflection JSON"""
+        try:
+            # 检查是否包含reflection的关键字段
+            return ('"reflections"' in content and
+                    '"score"' in content and
+                    '"found_solution"' in content and
+                    content.strip().startswith('{') and
+                    content.strip().endswith('}'))
+        except:
+            return False
+
+    async def _handle_reflection_content(self, res, content: str) -> None:
+        """处理包含reflection的内容"""
+        try:
+            # 分离正常内容和reflection JSON
+            parts = content.split('{', 1)
+            if len(parts) == 2:
+                normal_content = parts[0].strip()
+                json_part = '{' + parts[1]
+
+                # 先输出正常内容
+                if normal_content:
+                    await self.send_sse(res, self.formatter.format_content(normal_content))
+
+                # 解析和格式化reflection
+                try:
+                    reflection_data = json.loads(json_part)
+                    await self._format_and_send_reflection(res, reflection_data)
+                except json.JSONDecodeError:
+                    # 如果解析失败，输出原始内容
+                    await self.send_sse(res, self.formatter.format_content(content))
+            else:
+                # 没有分离成功，输出原始内容
+                await self.send_sse(res, self.formatter.format_content(content))
+        except Exception as e:
+            logger.error(f"[LATS SSE] 处理reflection内容失败: {e}")
+            # 出错时输出原始内容
+            await self.send_sse(res, self.formatter.format_content(content))
+
+    async def _format_and_send_reflection(self, res, reflection_data: dict) -> None:
+        """格式化并发送reflection数据"""
+        reflections = reflection_data.get('reflections', '')
+        score = reflection_data.get('score', 0)
+        found_solution = reflection_data.get('found_solution', False)
+
+        # 展示开始分割线
+        await self.send_sse(res, self.formatter.format_thinking_separator("AI 深度分析"))
+
+        # 展示思考过程
+        if reflections:
+            await self.send_sse(res, self.formatter.format_thinking_process(
+                f"**分析过程**\n\n{reflections}"
+            ))
+
+        # 展示评估结果
+        await self.send_sse(res, self.formatter.format_reflection(
+            reflections, score
+        ))
+
+        # 如果找到解决方案，展示庆祝
+        if found_solution and score >= 9:
+            await self.send_sse(res, self.formatter.format_content(
+                "\n🎉 **完美解决方案！** 无需进一步优化\n"
+            ))
+        elif found_solution:
+            await self.send_sse(res, self.formatter.format_content(
+                "\n✅ **解决方案已找到！**\n"
+            ))
+
+        # 结束分割线
+        await self.send_sse(res, self.formatter.format_end_separator())
 
     async def send_completion(self, res) -> None:
         """发送完成消息"""
