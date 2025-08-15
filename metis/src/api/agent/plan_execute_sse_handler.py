@@ -29,7 +29,7 @@ async def stream_plan_execute_response(
         logger.info(f"[Plan Execute SSE] 开始流式处理，chat_id: {chat_id}")
 
         # 发送优雅的开始消息
-        start_content = "🎯 **正在分析您的请求...**\n\n🔍 让我仔细理解您的需求\n\n📋 准备制定详细的执行计划"
+        start_content = "🎯 **正在分析您的请求...**\n\n🔍 让我仔细理解您的需求\n\n📋 准备制定详细的执行计划\n\n"
         yield _create_sse_data(chat_id, created, model, start_content)
         sent_contents.add(start_content)
         await asyncio.sleep(0.2)
@@ -187,7 +187,7 @@ def _format_ai_message(content: str, step_counter: int = 0) -> str:
                 for i, step in enumerate(steps):
                     formatted_steps.append(f"   **{i+1}.** {step}")
                 steps_text = "\n".join(formatted_steps)
-                return f"\n📋 **执行计划已制定**\n\n🎯 **总共 {len(steps)} 个步骤：**\n\n{steps_text}\n\n🚀 **开始执行任务**\n"
+                return f"\n\n📋 **执行计划已制定**\n\n🎯 **总共 {len(steps)} 个步骤：**\n\n{steps_text}\n\n🚀 **开始执行任务**\n\n"
 
         # 尝试解析action格式
         elif content.startswith('{"action"'):
