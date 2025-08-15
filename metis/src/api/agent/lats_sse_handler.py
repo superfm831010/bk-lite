@@ -204,8 +204,21 @@ class LatsSSEHandler:
         if messages:
             final_message = messages[-1]
             if hasattr(final_message, 'content') and final_message.content:
-                content = f"\n\n🎯 **LATS 解决方案**\n\n{final_message.content}\n\n"
-                await self.send_sse(res, self.formatter.format_content(content))
+                # 记录日志，帮助调试
+                logger.info(
+                    f"[LATS SSE] 准备输出最终答案，内容长度: {len(final_message.content)}")
+
+                # 格式化最终答案，确保清晰展示
+                content = final_message.content
+                if content.strip():  # 确保内容不为空
+                    formatted_content = f"\n\n📋 **基于搜索结果的完整解答**\n\n{content}\n\n"
+                    await self.send_sse(res, self.formatter.format_content(formatted_content))
+                else:
+                    logger.warning(f"[LATS SSE] 最终消息内容为空")
+            else:
+                logger.warning(f"[LATS SSE] 最终消息没有content属性")
+        else:
+            logger.warning(f"[LATS SSE] 没有找到最终消息")
 
     async def handle_initial_evaluation(self, res, evaluation: Dict[str, Any]) -> None:
         """处理初始评估结果"""
@@ -274,7 +287,12 @@ class LatsSSEHandler:
         elif node_name == "expand":
             await self.send_sse(res, self.formatter.format_search_iteration(iteration_count + 1))
         elif node_name == "tools":
-            await self.send_sse(res, self.formatter.format_tool_execution("search_tool"))
+            # 优化工具执行提示，显示具体工具名称
+            tool_name = "知识库搜索"  # 默认工具名称
+            if isinstance(node_data, dict) and 'name' in node_data:
+                tool_name = self.formatter._get_tool_display_name(
+                    node_data['name'])
+            await self.send_sse(res, self.formatter.format_tool_execution(tool_name))
         elif node_name == "reflect":
             await self.send_sse(res, self.formatter.format_content("\n🔍 **评估当前解决方案质量...**\n\n"))
         elif node_name == "should_continue":
@@ -319,16 +337,14 @@ class LatsSSEHandler:
                 # 对于完整消息，确保内容完整输出
                 await self.send_sse(res, self.formatter.format_content(content))
 
-        # 处理工具消息 - 简化处理，避免干扰主要内容
+        # 处理工具消息 - 只显示工具执行状态，不显示敏感的工具结果内容
         elif "Tool" in message_type and "Message" in message_type:
-            if hasattr(message, 'content') and message.content:
-                tool_content = message.content
-                if tool_content and len(tool_content) > 20:  # 提高阈值，避免输出过多无关内容
-                    # 简化工具结果展示
-                    await self.send_sse(res, self.formatter.format_content(f"\n\n🔧 **工具结果：**\n{tool_content}\n\n"))
-            elif hasattr(message, 'name'):
+            if hasattr(message, 'name'):
                 tool_name = getattr(message, 'name', 'unknown_tool')
                 await self.send_sse(res, self.formatter.format_tool_execution(tool_name))
+            elif hasattr(message, 'content') and message.content:
+                # 工具结果已获取，但不显示具体内容（避免泄露敏感信息）
+                await self.send_sse(res, self.formatter.format_content("\n✅ **工具执行完成，正在分析结果...**\n"))
 
     def _contains_reflection_json(self, content: str) -> bool:
         """检查内容是否包含reflection JSON"""
@@ -379,7 +395,7 @@ class LatsSSEHandler:
         # 展示思考过程
         if reflections:
             await self.send_sse(res, self.formatter.format_thinking_process(
-                f"**AI 分析过程**\n\n{reflections}"
+                f"\n\n**AI 分析过程**\n\n{reflections}"
             ))
 
         # 展示评估结果
