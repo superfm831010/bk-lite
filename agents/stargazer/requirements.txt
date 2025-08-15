@@ -493,6 +493,8 @@ pydantic-core==2.33.1
     # via pydantic
 pymysql==1.1.1
     # via -r ./requirements/requirements-extra.txt
+oracledb==3.3.0
+    # via -r ./requirements/requirements-extra.txt
 pyopenssl==25.0.0
     # via python-glanceclient
 pyparsing==3.2.3

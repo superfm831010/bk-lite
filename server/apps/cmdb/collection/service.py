@@ -1074,6 +1074,18 @@ class ProtocolCollectMetrics(CollectBase):
                 "wait_timeout": "wait_timeout",
                 "inst_name": self.set_mysql_inst_name
             },
+            "oracle": {
+                "version": "version",
+                "max_mem": "max_mem",
+                "max_conn": "max_conn",
+                "db_name": "db_name",
+                "database_role": "database_role",
+                "sid": "sid",
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "service_name": "service_name",
+                "inst_name": lambda data: f"{data['ip_addr']}-oracle",
+            },
 
         }
 
@@ -2075,6 +2087,33 @@ class DBCollectCollectMetrics(CollectBase):
                 "version": "version",
                 "bin_path": "bin_path",
                 "bk_obj_id": "bk_obj_id",
+            },
+            "db2": {
+                "inst_name": lambda data: f"{data['ip_addr']}-db2",
+                "version": "version",
+                "db_patch": "db_patch",
+                "db_name": "db_name",
+                "db_instance_name": "db_instance_name",
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "db_character_set": "db_character_set",
+                "ha_mode": "ha_mode",
+                "replication_managerole": "replication_managerole",
+                "replication_role": "replication_role",
+                "data_protect_mode": "data_protect_mode",
+            },
+            "tidb": {
+                "inst_name": self.get_inst_name,
+                "bk_obj_id": "bk_obj_id",
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "dm_install_path": "dm_install_path",
+                "dm_conf_path": "dm_conf_path",
+                "dm_log_file": "dm_log_file",
+                "dm_home_bash": "dm_home_bash",
+                "dm_db_max_sessions": "dm_db_max_sessions",
+                "dm_redo_log": "dm_redo_log",
             }
         }
         return mapping
