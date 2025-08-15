@@ -43,6 +43,6 @@ async def invoke_lats_agent_sse(request, body: LatsAgentRequest):
     return ResponseStream(
         lambda res: stream_lats_response(
             workflow, body, chat_id, body.model, res),
-        content_type="text/event-stream",
+        content_type="text/event-stream; charset=utf-8",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
     )

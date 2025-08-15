@@ -32,7 +32,7 @@ async def stream_lats_response(
 
         # 发送优雅的开始消息
         start_content = "🔍 **正在启动 LATS 智能搜索...**\n\n🧠 初始化语言辅助树搜索引擎\n\n💡 准备生成多个候选解决方案并进行深度搜索"
-        await res.write(_create_sse_data(chat_id, created, model, start_content))
+        await res.write(_create_sse_data(chat_id, created, model, start_content).encode('utf-8'))
         sent_contents.add(start_content)
         await asyncio.sleep(0.3)
 
@@ -61,7 +61,7 @@ async def stream_lats_response(
 
                 if content and content not in sent_contents:
                     # 使用标准的OpenAI SSE格式
-                    await res.write(_create_sse_data(chat_id, created, model, content))
+                    await res.write(_create_sse_data(chat_id, created, model, content).encode('utf-8'))
                     sent_contents.add(content)
                     logger.info(f"[LATS SSE] 发送内容: {content[:50]}...")
 
@@ -76,7 +76,7 @@ async def stream_lats_response(
 
         # 发送优雅的完成消息
         completion_content = "\n\n---\n\n✨ **LATS 搜索完成！**\n\n🎉 已完成深度搜索和多候选方案评估\n\n💫 希望我的回答对您有帮助"
-        await res.write(_create_sse_data(chat_id, created, model, completion_content))
+        await res.write(_create_sse_data(chat_id, created, model, completion_content).encode('utf-8'))
 
         # 发送结束标志
         end_response = {
@@ -93,8 +93,8 @@ async def stream_lats_response(
 
         json_str = json.dumps(
             end_response, ensure_ascii=False, separators=(',', ':'))
-        await res.write(f"data: {json_str}\n\n")
-        await res.write("data: [DONE]\n\n")
+        await res.write(f"data: {json_str}\n\n".encode('utf-8'))
+        await res.write("data: [DONE]\n\n".encode('utf-8'))
 
         logger.info(f"[LATS SSE] 流式处理完成，chat_id: {chat_id}")
 
@@ -102,7 +102,7 @@ async def stream_lats_response(
         logger.error(f"[LATS SSE] 处理过程中出错: {str(e)}", exc_info=True)
         # 发送优雅的错误消息
         error_content = f"\n\n---\n\n❌ **LATS 搜索过程中遇到问题**\n\n🔧 **错误详情：**\n{str(e)}\n\n💡 **建议：**\n请稍后重试，或联系技术支持获取帮助"
-        await res.write(_create_sse_data(chat_id, created, model, error_content, finish_reason="stop"))
+        await res.write(_create_sse_data(chat_id, created, model, error_content, finish_reason="stop").encode('utf-8'))
 
 
 def _create_sse_data(chat_id: str, created: int, model: str, content: str, finish_reason: str = None) -> str:
