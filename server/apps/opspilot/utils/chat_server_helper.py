@@ -34,8 +34,10 @@ class ChatServerHelper(object):
     @classmethod
     def post_chat_server(cls, params, url, stream=False):
         headers = cls.get_chat_server_header()
+        # SSL验证配置 - 从环境变量读取
+        ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
         try:
-            response = requests.post(url, headers=headers, json=params, stream=stream, verify=False)
+            response = requests.post(url, headers=headers, json=params, stream=stream, verify=ssl_verify)
         except Exception as e:
             logger.error(f"调用接口失败:  {url} ")
             logger.exception(e)
