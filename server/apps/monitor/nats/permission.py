@@ -29,8 +29,6 @@ def get_monitor_module_data(module, child_module, page, page_size, group_id):
     return {"count": total_count,"items": list(data_list)}
 
 
-
-
 @nats_client.register
 def get_monitor_module_list():
     """

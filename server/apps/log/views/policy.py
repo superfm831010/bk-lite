@@ -25,15 +25,27 @@ class PolicyViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         collect_type_id = request.query_params.get('collect_type', None)
 
-        # permission = get_permission_rules(
-        #     request.user,
-        #     request.COOKIES.get("current_team"),
-        #     "log",
-        #     f"{POLICY_MODULE}.{collect_type_id}",
-        # )
-        # qs = permission_filter(Policy, permission, team_key="organizations__in", id_key="id__in")
+        # 获取权限规则
+        permission = get_permission_rules(
+            request.user,
+            request.COOKIES.get("current_team"),
+            "log",
+            f"{POLICY_MODULE}.{collect_type_id}",
+        )
 
-        qs = Policy.objects.filter(collect_type_id=collect_type_id)
+        # 应用权限过滤
+        base_qs = permission_filter(
+            Policy,
+            permission,
+            team_key="policyorganization__organization__in",
+            id_key="id__in"
+        )
+
+        # 基于collect_type和当前团队过滤
+        qs = base_qs.filter(
+            collect_type_id=collect_type_id,
+            policyorganization__organization=request.COOKIES.get("current_team")
+        )
 
         queryset = self.filter_queryset(qs)
         queryset = queryset.distinct().select_related('collect_type')
@@ -53,14 +65,14 @@ class PolicyViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(page_data, many=True)
         results = serializer.data
 
-        # # 如果有权限规则，则添加到数据中
-        # inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
-        #
-        # for instance_info in results:
-        #     if instance_info['id'] in inst_permission_map:
-        #         instance_info['permission'] = inst_permission_map[instance_info['id']]
-        #     else:
-        #         instance_info['permission'] = DEFAULT_PERMISSION
+        # 添加权限信息到每个策略实例
+        policy_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
+
+        for policy_info in results:
+            if policy_info['id'] in policy_permission_map:
+                policy_info['permission'] = policy_permission_map[policy_info['id']]
+            else:
+                policy_info['permission'] = DEFAULT_PERMISSION
 
         return WebUtils.response_success(dict(count=queryset.count(), items=results))
 
@@ -178,10 +190,57 @@ class AlertViewSet(viewsets.ModelViewSet):
         manual_parameters=[
             openapi.Parameter('levels', openapi.IN_QUERY, description="告警级别多选，用逗号分隔，如：critical,warning,info", type=openapi.TYPE_STRING),
             openapi.Parameter('content', openapi.IN_QUERY, description="告警内容关键字搜索", type=openapi.TYPE_STRING),
+            openapi.Parameter('collect_type', openapi.IN_QUERY, description="采集类型ID", type=openapi.TYPE_INTEGER, required=True),
         ],
     )
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        collect_type_id = request.query_params.get('collect_type', None)
+        if not collect_type_id:
+            return WebUtils.response_error("collect_type is required")
+
+        # 获取policy模块的权限规则
+        permission = get_permission_rules(
+            request.user,
+            request.COOKIES.get("current_team"),
+            "log",
+            f"{POLICY_MODULE}.{collect_type_id}",
+        )
+
+        # 先过滤出有权限的Policy
+        policy_qs = permission_filter(
+            Policy,
+            permission,
+            team_key="policyorganization__organization__in",
+            id_key="id__in"
+        )
+        policy_qs = policy_qs.filter(
+            collect_type_id=collect_type_id,
+            policyorganization__organization=request.COOKIES.get("current_team")
+        ).distinct()
+
+        # 获取有权限的policy_ids
+        policy_ids = list(policy_qs.values_list("id", flat=True))
+
+        # 基于policy权限过滤告警
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.filter(policy_id__in=policy_ids).distinct()
+
+        # 分页处理
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+        results = serializer.data
+
+        # 添加权限信息到每个告警
+        policy_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
+
+        for alert_info in results:
+            policy_id = alert_info.get("policy")
+            if policy_id in policy_permission_map:
+                alert_info["permission"] = policy_permission_map[policy_id]
+            else:
+                alert_info["permission"] = DEFAULT_PERMISSION
+
+        return self.get_paginated_response(results)
 
     @swagger_auto_schema(
         operation_id="alert_closed",
