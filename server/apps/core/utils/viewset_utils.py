@@ -56,7 +56,46 @@ class MaintainerViewSet(viewsets.ModelViewSet):
         return super().perform_update(serializer)
 
 
-class AuthViewSet(MaintainerViewSet):
+class GenericViewSetFun(object):
+    def _get_app_name(self):
+        """获取当前序列化器所属的应用名称"""
+        module_path = self.__class__.__module__
+        if "apps." in module_path:
+            parts = module_path.split(".")
+            if len(parts) >= 2 and parts[0] == "apps":
+                return parts[1]
+        return None
+
+    def get_has_permission(self, user, instance, current_team, is_list=False, is_check=False):
+        """获取规则实例ID"""
+        user_groups = [int(i["id"]) for i in user.group_list]
+        if is_list:
+            instance_id = list(instance.values_list("id", flat=True))
+            for i in instance:
+                if hasattr(i, "team"):
+                    # 判断两个集合是否有交集
+                    if not set(i.team).intersection(set(user_groups)):
+                        return False
+        else:
+            if hasattr(instance, "team"):
+                if not set(instance.team).intersection(set(user_groups)):
+                    return False
+            instance_id = [instance.id]
+        try:
+            app_name = self._get_app_name()
+            permission_rules = get_permission_rules(user, current_team, app_name, self.permission_key)
+            if int(current_team) in permission_rules["team"]:
+                return True
+
+            operate = "View" if is_check else "Operate"
+            instance_list = [int(i["id"]) for i in permission_rules["instance"] if operate in i["permission"]]
+            return set(instance_id).issubset(set(instance_list))
+        except Exception as e:
+            logger.error(f"Error getting rule instances: {e}")
+            return False
+
+
+class AuthViewSet(MaintainerViewSet, GenericViewSetFun):
     SUPERUSER_RULE_ID = ["0", "-1"]
     ORDERING_FIELD = "-id"
 
@@ -225,34 +264,6 @@ class AuthViewSet(MaintainerViewSet):
         except Exception as e:
             logger.error(e)
 
-    def get_has_permission(self, user, instance, current_team, is_list=False, is_check=False):
-        """获取规则实例ID"""
-        user_groups = [int(i["id"]) for i in user.group_list]
-        if is_list:
-            instance_id = list(instance.values_list("id", flat=True))
-            for i in instance:
-                if hasattr(i, "team"):
-                    # 判断两个集合是否有交集
-                    if not set(i.team).intersection(set(user_groups)):
-                        return False
-        else:
-            if hasattr(instance, "team"):
-                if not set(instance.team).intersection(set(user_groups)):
-                    return False
-            instance_id = [instance.id]
-        try:
-            app_name = self._get_app_name()
-            permission_rules = get_permission_rules(user, current_team, app_name, self.permission_key)
-            if int(current_team) in permission_rules["team"]:
-                return True
-
-            operate = "View" if is_check else "Operate"
-            instance_list = [int(i["id"]) for i in permission_rules["instance"] if operate in i["permission"]]
-            return set(instance_id).issubset(set(instance_list))
-        except Exception as e:
-            logger.error(f"Error getting rule instances: {e}")
-            return False
-
     def _validate_name(self, name, group_list, team, exclude_id=None):
         """验证名称在团队中的唯一性"""
         try:
@@ -288,12 +299,3 @@ class AuthViewSet(MaintainerViewSet):
         except Exception as e:
             logger.error(f"Error in _validate_name: {e}")
             return ""
-
-    def _get_app_name(self):
-        """获取当前序列化器所属的应用名称"""
-        module_path = self.__class__.__module__
-        if "apps." in module_path:
-            parts = module_path.split(".")
-            if len(parts) >= 2 and parts[0] == "apps":
-                return parts[1]
-        return None

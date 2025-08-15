@@ -124,12 +124,10 @@ class DataSourceAPIModelViewSet(ModelViewSet):
         result = []
         try:
             data = client.get_data()
-        except Exception as e:
-            logger.error("获取数据源数据失败: {}".format(e))
-            data = {}
-        finally:
             for namespace_id, _data in data.items():
                 result.append({"namespace_id": namespace_id, "data": _data})
+        except Exception as e:
+            logger.error("获取数据源数据失败: {}".format(e))
 
         return Response(result)
 
@@ -144,6 +142,11 @@ class DirectoryModelViewSet(ModelViewSet):
     ordering = ["id"]
     filterset_class = DirectoryModelFilter
     pagination_class = CustomPageNumberPagination
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        Directory.objects.create(**data)
+        return Response(data)
 
     @action(detail=False, methods=["get"], url_path="tree")
     def tree(self, request, *args, **kwargs):

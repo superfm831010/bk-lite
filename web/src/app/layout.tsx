@@ -107,7 +107,7 @@ export default function RootLayout({
 }>) {
   useEffect(() => {
     message.config({
-      maxCount: 1,
+      maxCount: 2,
     });
   }, []);
 
