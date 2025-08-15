@@ -98,7 +98,7 @@ class LatsSSEFormatter:
         if len(cleaned_thought) > 800:
             cleaned_thought = cleaned_thought[:800] + "..."
 
-        content = f"\n🧠 **思考分析**\n\n{cleaned_thought}\n"
+        content = f"\n� **{cleaned_thought}**\n"
         return self._create_sse_response(content, metadata={"phase": "thinking"})
 
     def format_reflection(self, reflection: str, score: float = None) -> str:
@@ -108,24 +108,12 @@ class LatsSSEFormatter:
         if len(cleaned_reflection) > 600:
             cleaned_reflection = cleaned_reflection[:600] + "..."
 
-        content = f"\n� **质量评估**\n\n{cleaned_reflection}\n"
+        content = f"\n📝 **质量评估**\n\n{cleaned_reflection}\n"
         if score is not None:
             emoji = "🌟" if score >= 9 else "⭐" if score >= 8 else "✨" if score >= 6 else "💡"
             status_emoji = "🎯" if score >= 9 else "👍" if score >= 7 else "📈"
             content += f"\n{status_emoji} **评分：{score}/10** {emoji}\n"
         return self._create_sse_response(content, metadata={"phase": "reflecting", "score": score})
-
-    def format_thinking_separator(self, title: str = "AI 深度分析") -> str:
-        """格式化思考过程分割线"""
-        separator = "✨" + "─" * 20 + "✨"
-        content = f"\n\n{separator}\n🤖 **{title}**\n{separator}\n"
-        return self._create_sse_response(content, metadata={"phase": "separator"})
-
-    def format_end_separator(self) -> str:
-        """格式化结束分割线"""
-        separator = "🎊" + "─" * 20 + "🎊"
-        content = f"\n{separator}\n\n"
-        return self._create_sse_response(content, metadata={"phase": "end_separator"})
 
     def format_initial_evaluation(self, score: float) -> str:
         """格式化初始评估"""

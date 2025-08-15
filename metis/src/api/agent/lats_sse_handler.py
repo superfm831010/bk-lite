@@ -376,13 +376,10 @@ class LatsSSEHandler:
         score = reflection_data.get('score', 0)
         found_solution = reflection_data.get('found_solution', False)
 
-        # 展示开始分割线
-        await self.send_sse(res, self.formatter.format_thinking_separator("AI 深度分析"))
-
         # 展示思考过程
         if reflections:
             await self.send_sse(res, self.formatter.format_thinking_process(
-                f"**分析过程**\n\n{reflections}"
+                f"**AI 分析过程**\n\n{reflections}"
             ))
 
         # 展示评估结果
@@ -390,18 +387,16 @@ class LatsSSEHandler:
             reflections, score
         ))
 
-        # 如果找到解决方案，展示庆祝
+        # 如果找到解决方案，展示状态
         if found_solution and score >= 9:
             await self.send_sse(res, self.formatter.format_content(
                 "\n🎉 **完美解决方案！** 无需进一步优化\n"
             ))
+
         elif found_solution:
             await self.send_sse(res, self.formatter.format_content(
                 "\n✅ **解决方案已找到！**\n"
             ))
-
-        # 结束分割线
-        await self.send_sse(res, self.formatter.format_end_separator())
 
     async def send_completion(self, res) -> None:
         """发送完成消息"""
