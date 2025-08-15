@@ -47,22 +47,29 @@ async def stream_lats_response(
         stream_iter = await workflow.stream(body)
 
         async for chunk in stream_iter:
+            # 添加详细的chunk类型日志以便调试
+            chunk_type = type(chunk).__name__
+            logger.info(f"[LATS SSE] 收到chunk类型: {chunk_type}")
+            
             # 检查是否是最终完整状态（表示搜索结束）
             if isinstance(chunk, dict) and 'messages' in chunk and 'root' in chunk:
                 # 这是 LATS 搜索的最终状态
                 root_node = chunk.get('root')
                 messages = chunk.get('messages', [])
+                
+                logger.info(f"[LATS SSE] 最终状态 - 消息数量: {len(messages)}")
 
                 if root_node and hasattr(root_node, 'is_solved'):
                     lats_state['search_completed'] = True
                     lats_state['solution_found'] = root_node.is_solved
-                    logger.info(
-                        f"[LATS SSE] 搜索完成，找到解决方案: {root_node.is_solved}")
+                    logger.info(f"[LATS SSE] 搜索完成，找到解决方案: {root_node.is_solved}")
 
                     # 获取最后一条消息作为最终答案（无论是否完全解决）
                     if messages:
                         final_message = messages[-1]
+                        logger.info(f"[LATS SSE] 最终消息类型: {type(final_message).__name__}")
                         if hasattr(final_message, 'content') and final_message.content:
+                            logger.info(f"[LATS SSE] 最终消息内容长度: {len(final_message.content)}")
                             lats_state['is_final_answer'] = True
                             if root_node.is_solved:
                                 content = f"\n\n🎯 **LATS 最终解决方案**\n\n{final_message.content}\n\n"
@@ -72,7 +79,13 @@ async def stream_lats_response(
                             if content not in sent_contents:
                                 await res.write(_create_sse_data(chat_id, created, model, content).encode('utf-8'))
                                 sent_contents.add(content)
-                                logger.info(f"[LATS SSE] 发送最终答案")
+                                logger.info(f"[LATS SSE] 成功发送最终答案")
+                            else:
+                                logger.info(f"[LATS SSE] 最终答案已发送过，跳过")
+                        else:
+                            logger.warning(f"[LATS SSE] 最终消息没有内容")
+                    else:
+                        logger.warning(f"[LATS SSE] 没有找到任何消息")
                 continue
 
             # 检查是否是节点流转信息
@@ -83,8 +96,7 @@ async def stream_lats_response(
                 logger.info(f"[LATS SSE] 节点转换: {node_name}")
 
                 # 根据节点类型发送对应的状态消息
-                node_message = _get_node_status_message(
-                    node_name, iteration_counter)
+                node_message = _get_node_status_message(node_name, iteration_counter)
                 if node_message and node_message not in sent_contents:
                     await res.write(_create_sse_data(chat_id, created, model, node_message).encode('utf-8'))
                     sent_contents.add(node_message)
@@ -94,7 +106,7 @@ async def stream_lats_response(
                     await asyncio.sleep(0.3)
                 continue
 
-            # 处理消息流 - 捕获 AI 生成的答案内容
+            # 处理消息流 - 更宽松地捕获所有可能的答案内容
             if isinstance(chunk, (tuple, list)) and len(chunk) > 0:
                 message = chunk[0]
 
@@ -102,38 +114,31 @@ async def stream_lats_response(
                 if message is None:
                     continue
 
-                # 检查是否是 AI 消息，可能包含答案内容
+                # 检查是否是 AI 消息，记录详细信息
                 message_type = type(message).__name__
+                logger.info(f"[LATS SSE] 处理消息类型: {message_type}")
+                
                 if "AIMessage" in message_type and hasattr(message, 'content'):
                     content = message.content.strip()
-                    if content and len(content) > 50:
-                        # 基于节点状态判断是否应该显示这个内容
+                    logger.info(f"[LATS SSE] AI消息内容长度: {len(content)}")
+                    
+                    # 对所有足够长的AI消息都进行显示，不过分限制
+                    if content and len(content) > 30:  # 降低阈值
                         current_node = lats_state.get('current_node')
+                        logger.info(f"[LATS SSE] 当前节点: {current_node}, 内容预览: {content[:100]}...")
 
-                        # 如果是在最后阶段（expand 节点）生成的长内容，很可能是解决方案
-                        if current_node == "expand" and len(content) > 100:
-                            display_content = f"\n\n💡 **候选解决方案**\n\n{content}\n\n"
-                            if display_content not in sent_contents:
-                                await res.write(_create_sse_data(chat_id, created, model, display_content).encode('utf-8'))
-                                sent_contents.add(display_content)
-                                logger.info(f"[LATS SSE] 发送候选解决方案")
-
-                        # 如果是在初始阶段生成的内容
-                        elif current_node == "generate_initial_response" and len(content) > 80:
-                            display_content = f"\n\n🌱 **初始解决方案**\n\n{content}\n\n"
-                            if display_content not in sent_contents:
-                                await res.write(_create_sse_data(chat_id, created, model, display_content).encode('utf-8'))
-                                sent_contents.add(display_content)
-                                logger.info(f"[LATS SSE] 发送初始解决方案")
-
-                # 为了兼容性，也处理其他类型的消息
-                else:
-                    content = _extract_message_content_by_node_state(
-                        message, lats_state, iteration_counter)
-
-                    if content and content not in sent_contents:
-                        await res.write(_create_sse_data(chat_id, created, model, content).encode('utf-8'))
-                        sent_contents.add(content)
+                        # 根据节点类型和内容长度决定如何显示
+                        if len(content) > 100:
+                            display_content = f"\n\n� **搜索结果**\n\n{content}\n\n"
+                        elif len(content) > 50:
+                            display_content = f"\n\n💭 **思考过程**\n\n{content}\n\n"
+                        else:
+                            display_content = f"\n\n📝 **分析片段**\n\n{content}\n\n"
+                            
+                        if display_content not in sent_contents:
+                            await res.write(_create_sse_data(chat_id, created, model, display_content).encode('utf-8'))
+                            sent_contents.add(display_content)
+                            logger.info(f"[LATS SSE] 发送AI消息内容")
 
                 await asyncio.sleep(0.1)
 
