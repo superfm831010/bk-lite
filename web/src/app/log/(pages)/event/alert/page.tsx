@@ -37,7 +37,7 @@ import StackedBarChart from '@/app/log/components/charts/stackedBarChart';
 import AlertDetail from './alertDetail';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { useAlarmTabs } from '@/app/log/hooks/event';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import { useCommon } from '@/app/log/context/common';
 import alertStyle from './index.module.scss';
 import { LEVEL_MAP } from '@/app/log/constants';
@@ -51,7 +51,7 @@ const { Option } = Select;
 
 const Alert: React.FC = () => {
   const { isLoading } = useApiClient();
-  const { getLogAlert, patchLogAlert } = useLogEventApi();
+  const { getLogAlert, patchLogAlert, getLogAlertStats } = useLogEventApi();
   const { getCollectTypes } = useLogIntegrationApi();
   const { t } = useTranslation();
   const STATE_MAP = useStateMap();
@@ -390,12 +390,20 @@ const Alert: React.FC = () => {
     chartParams.content = '';
     try {
       setChartLoading(type !== 'timer');
-      const data = await getLogAlert(chartParams);
-      setChartData(
-        processDataForStackedBarChart(
-          (data || []).filter((item: TableDataItem) => !!item.level)
-        ) as any
-      );
+      const data = await getLogAlertStats(chartParams);
+      const chartList = (data.time_series || []).map((item: TableDataItem) => {
+        const levels = {
+          critical: 0,
+          warning: 0,
+          error: 0,
+        };
+        return {
+          ...Object.assign(levels, item.levels),
+          time: convertToLocalizedTime(item.time_start),
+        };
+      });
+      setChartData(chartList);
+      console.log(data);
     } finally {
       setChartLoading(false);
     }
@@ -423,68 +431,6 @@ const Alert: React.FC = () => {
       timeRange: val,
       originValue,
     });
-  };
-
-  const processDataForStackedBarChart = (
-    data: TableDataItem,
-    desiredSegments = 12
-  ) => {
-    if (!data?.length) return [];
-    // 1. 找到最早时间和最晚时间
-    const timestamps = data.map((item: TableDataItem) =>
-      dayjs(item.created_at)
-    );
-    const minTime = timestamps.reduce(
-      (min: Dayjs, curr: Dayjs) => (curr.isBefore(min) ? curr : min),
-      timestamps[0]
-    ); // 最早时间
-    const maxTime = timestamps.reduce(
-      (max: Dayjs, curr: Dayjs) => (curr.isAfter(max) ? curr : max),
-      timestamps[0]
-    ); // 最晚时间
-    // 2. 计算时间跨度（以分钟为单位）
-    const totalMinutes = maxTime.diff(minTime, 'minute');
-    // 3. 动态计算时间区间（每段的分钟数）
-    const intervalMinutes = Math.max(
-      Math.ceil(totalMinutes / desiredSegments),
-      1
-    ); // 确保 intervalMinutes 至少为 1
-    // 4. 按动态时间区间划分数据
-    const groupedData = data.reduce(
-      (acc: TableDataItem, curr: TableDataItem) => {
-        // 根据 created_at 时间戳，计算所属时间区间
-        const timestamp = dayjs(curr.created_at).startOf('minute'); // 转为分钟级别时间戳
-        const roundedTime = convertToLocalizedTime(
-          minTime.add(
-            Math.floor(timestamp.diff(minTime, 'minute') / intervalMinutes) *
-              intervalMinutes,
-            'minute'
-          )
-        );
-        if (!acc[roundedTime]) {
-          acc[roundedTime] = {
-            time: roundedTime,
-            critical: 0,
-            error: 0,
-            warning: 0,
-          };
-        }
-        // 根据 level 统计数量
-        if (curr.level === 'critical') {
-          acc[roundedTime].critical += 1;
-        } else if (curr.level === 'error') {
-          acc[roundedTime].error += 1;
-        } else if (curr.level === 'warning') {
-          acc[roundedTime].warning += 1;
-        }
-        return acc;
-      },
-      {}
-    );
-    // 5. 将分组后的对象转为数组
-    return Object.values(groupedData).sort(
-      (a: any, b: any) => dayjs(b.time).valueOf() - dayjs(a.time).valueOf()
-    );
   };
 
   const onFilterChange = (
