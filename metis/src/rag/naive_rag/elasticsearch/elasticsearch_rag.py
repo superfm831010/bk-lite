@@ -119,24 +119,34 @@ class ElasticSearchRag(BaseRag):
             "_source": {"excludes": ["vector"]}  # Exclude the vector field
         }
 
-        # Add sorting with backward compatibility
+        # Add sorting with backward compatibility and field existence check
         if req.sort_field and req.sort_order:
             # 验证排序方式
             sort_order = req.sort_order.lower()
             if sort_order not in ['asc', 'desc']:
                 sort_order = 'desc'  # 默认降序
 
-            # 添加向后兼容性：处理旧文档可能没有时间字段的情况
-            sort_config = {req.sort_field: {"order": sort_order}}
+            # 检查字段是否存在于索引映射中
+            field_exists = self._check_field_exists_in_mapping(
+                req.index_name, req.sort_field)
 
-            # 如果是时间字段排序，添加缺失值处理
-            if 'created_time' in req.sort_field or 'updated_time' in req.sort_field:
-                sort_config[req.sort_field]["missing"] = "_last" if sort_order == 'asc' else "_first"
-                logger.debug(
-                    f"时间字段排序，添加兼容性处理: 缺失值放在{'最后' if sort_order == 'asc' else '最前'}")
+            if field_exists:
+                # 字段存在，可以安全排序
+                sort_config = {req.sort_field: {"order": sort_order}}
 
-            query["sort"] = [sort_config]
-            logger.debug(f"添加排序: {req.sort_field} {sort_order}")
+                # 如果是时间字段排序，添加缺失值处理
+                if 'created_time' in req.sort_field or 'updated_time' in req.sort_field:
+                    sort_config[req.sort_field]["missing"] = "_last" if sort_order == 'asc' else "_first"
+                    logger.debug(
+                        f"时间字段排序，添加兼容性处理: 缺失值放在{'最后' if sort_order == 'asc' else '最前'}")
+
+                query["sort"] = [sort_config]
+                logger.debug(f"添加排序: {req.sort_field} {sort_order}")
+            else:
+                logger.warning(
+                    f"排序字段 {req.sort_field} 在索引 {req.index_name} 中不存在，跳过排序")
+                # 可以选择使用一个默认的排序字段，比如 _score
+                query["sort"] = [{"_score": {"order": "desc"}}]
 
         # Add match_phrase query if req.query is not empty
         if req.query:
@@ -309,3 +319,54 @@ class ElasticSearchRag(BaseRag):
             doc = Document(page_content=source['text'], metadata=hit)
             docs_result.append(doc)
         return docs_result
+
+    def _check_field_exists_in_mapping(self, index_name: str, field_path: str) -> bool:
+        """
+        检查字段是否存在于索引映射中
+
+        Args:
+            index_name: 索引名称
+            field_path: 字段路径，例如 'metadata.created_time'
+
+        Returns:
+            bool: 字段是否存在
+        """
+        try:
+            # 获取索引映射
+            mapping_response = self.es.indices.get_mapping(index=index_name)
+
+            if index_name not in mapping_response:
+                logger.warning(f"索引 {index_name} 不存在")
+                return False
+
+            mappings = mapping_response[index_name]['mappings']
+
+            # 检查字段路径是否存在
+            field_parts = field_path.split('.')
+            current_mapping = mappings.get('properties', {})
+
+            for part in field_parts:
+                if part in current_mapping:
+                    if 'properties' in current_mapping[part]:
+                        # 这是一个对象字段，继续向下查找
+                        current_mapping = current_mapping[part]['properties']
+                    else:
+                        # 这是最终字段
+                        if part == field_parts[-1]:
+                            logger.debug(
+                                f"字段 {field_path} 在索引 {index_name} 中存在")
+                            return True
+                        else:
+                            # 路径中断，字段不存在
+                            logger.debug(
+                                f"字段路径 {field_path} 在索引 {index_name} 中不完整")
+                            return False
+                else:
+                    logger.debug(f"字段 {field_path} 在索引 {index_name} 中不存在")
+                    return False
+
+            return True
+
+        except Exception as e:
+            logger.error(f"检查字段映射时出错: {str(e)}")
+            return False
