@@ -39,6 +39,7 @@ class ChunkHelper(ChatServerHelper):
                 "openai_api_base": openai_api_base,
                 "openai_api_key": openai_api_key,
                 "model": model,
+                "extra_prompt": "do occaecat",
             }
             res = ChatServerHelper.post_chat_server(params, cls.generate_url)
             if res.get("status", "fail") != "success":
