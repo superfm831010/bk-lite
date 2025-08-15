@@ -35,9 +35,13 @@ class LatsSSEHandler:
                 try:
                     await res.write(message.encode('utf-8'))
                     self.sent_messages.add(message)
-                    logger.debug(f"[LATS SSE] 发送消息: {message[:50]}...")
+                    # 提取消息内容的前50个字符用于日志
+                    content_preview = message[:50].replace('\n', ' ').strip()
+                    logger.info(f"[LATS SSE] 发送消息: {content_preview}...")
                 except Exception as e:
                     logger.error(f"[LATS SSE] 发送消息失败: {e}")
+            else:
+                logger.debug(f"[LATS SSE] 跳过重复消息: {message[:30]}...")
 
     async def handle_search_flow(self, res, workflow, body) -> None:
         """处理搜索流程"""
@@ -89,9 +93,28 @@ class LatsSSEHandler:
             # 处理消息流
             if self._is_message_stream(chunk):
                 await self.handle_message_stream(res, chunk)
+                return
+
+            # 处理其他可能的数据类型
+            if isinstance(chunk, dict):
+                await self.handle_dict_chunk(res, chunk)
 
         except Exception as e:
             logger.error(f"[LATS SSE] 处理chunk出错: {e}")
+
+    async def handle_dict_chunk(self, res, chunk: dict) -> None:
+        """处理字典类型的数据块"""
+        # 检查是否包含思考或反思内容
+        if 'thought' in chunk or 'thinking' in chunk:
+            thought_content = chunk.get('thought') or chunk.get('thinking', '')
+            if thought_content:
+                await self.send_sse(res, self.formatter.format_thinking_process(str(thought_content)))
+
+        elif 'reflection' in chunk:
+            reflection_content = chunk.get('reflection', '')
+            score = chunk.get('score')
+            if reflection_content:
+                await self.send_sse(res, self.formatter.format_reflection(str(reflection_content), score))
 
     def _is_final_state(self, chunk) -> bool:
         """检查是否为最终状态"""
@@ -152,14 +175,22 @@ class LatsSSEHandler:
     async def handle_node_transition(self, res, chunk, iteration_count: int) -> None:
         """处理节点转换"""
         node_name = next(iter(chunk.keys()))
+        node_data = chunk[node_name]
 
         if node_name == "generate_initial_response":
-            # 已在初始化时发送，无需重复
-            pass
+            # 输出初始响应生成的思考过程
+            await self.send_sse(res, self.formatter.format_content("\n🤔 **分析问题，生成初始回答...**\n\n"))
         elif node_name == "expand":
             await self.send_sse(res, self.formatter.format_search_iteration(iteration_count + 1))
         elif node_name == "tools":
             await self.send_sse(res, self.formatter.format_tool_execution("search_tool"))
+        elif node_name == "reflect":
+            await self.send_sse(res, self.formatter.format_content("\n🔍 **评估当前解决方案质量...**\n\n"))
+        elif node_name == "should_continue":
+            await self.send_sse(res, self.formatter.format_content("\n⚖️ **判断是否需要继续搜索...**\n\n"))
+        else:
+            # 输出其他节点的处理信息
+            await self.send_sse(res, self.formatter.format_content(f"\n🔄 **执行 {node_name} 节点...**\n\n"))
 
     async def handle_message_stream(self, res, chunk) -> None:
         """处理消息流"""
@@ -168,34 +199,21 @@ class LatsSSEHandler:
             return
 
         message_type = type(message).__name__
+        logger.debug(f"[LATS SSE] 处理消息类型: {message_type}")
 
         # 处理 AI 消息块
         if message_type == "AIMessageChunk" and hasattr(message, 'content') and message.content:
-            # 清理内容，防止乱码
-            clean_content = self._clean_content(message.content)
-            if clean_content:
-                await self.send_sse(res, self.formatter.format_content(clean_content))
-                logger.debug(
-                    f"[LATS SSE] 转发 AIMessageChunk: {clean_content[:50]}...")
+            await self.send_sse(res, self.formatter.format_content(message.content))
 
-        # 处理工具消息（简化处理）
+        # 处理工具消息 - 展示工具调用的思考过程
         elif "Tool" in message_type and "Message" in message_type:
-            # 工具执行完成的反馈可以简化或省略
-            pass
-
-    def _clean_content(self, content: str) -> str:
-        """清理内容，防止乱码和控制字符"""
-        if not content:
-            return ""
-
-        # 移除控制字符和空字符
-        cleaned = content.replace('\x00', '').replace('\r', '').strip()
-
-        # 确保不是空内容
-        if not cleaned or cleaned.isspace():
-            return ""
-
-        return cleaned
+            if hasattr(message, 'content') and message.content:
+                tool_content = message.content
+                if tool_content and len(tool_content) > 10:  # 避免输出过短的无意义内容
+                    await self.send_sse(res, self.formatter.format_content(f"\n\n🔧 **工具执行结果：**\n\n{tool_content}\n\n"))
+            elif hasattr(message, 'name'):
+                tool_name = getattr(message, 'name', 'unknown_tool')
+                await self.send_sse(res, self.formatter.format_tool_execution(tool_name))
 
     async def send_completion(self, res) -> None:
         """发送完成消息"""

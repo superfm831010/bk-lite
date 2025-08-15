@@ -81,14 +81,27 @@ class LatsSSEFormatter:
 
     def format_initial_generation(self) -> str:
         """格式化初始生成"""
-        content = "\n\n---\n\n🌱 **生成初始解决方案**\n\n🎯 构建第一个候选回答"
+        content = "\n\n---\n\n🌱 **生成初始解决方案**\n\n🎯 构建第一个候选回答\n\n"
         return self._create_sse_response(content, metadata={"phase": "generating"})
 
     def format_tool_execution(self, tool_name: str) -> str:
         """格式化工具执行"""
         tool_display = self._get_tool_display_name(tool_name)
-        content = f"\n🔧 调用 **{tool_display}**..."
+        content = f"\n🔧 **调用 {tool_display}**\n\n💡 正在搜索相关信息..."
         return self._create_sse_response(content, metadata={"phase": "tool_calling", "tool": tool_name})
+
+    def format_thinking_process(self, thought: str) -> str:
+        """格式化思考过程"""
+        content = f"\n🤔 **思考过程：**\n\n{thought}\n"
+        return self._create_sse_response(content, metadata={"phase": "thinking"})
+
+    def format_reflection(self, reflection: str, score: float = None) -> str:
+        """格式化反思过程"""
+        content = f"\n🔍 **反思评估：**\n\n{reflection}\n"
+        if score is not None:
+            emoji = "🌟" if score >= 8 else "⭐" if score >= 6 else "💡"
+            content += f"\n📊 **评分：** {score}/10 {emoji}\n"
+        return self._create_sse_response(content, metadata={"phase": "reflecting", "score": score})
 
     def format_initial_evaluation(self, score: float) -> str:
         """格式化初始评估"""
