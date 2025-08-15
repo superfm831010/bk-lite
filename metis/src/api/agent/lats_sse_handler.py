@@ -102,28 +102,40 @@ async def stream_lats_response(
                 content = ""
 
                 # 处理不同类型的消息
-                if hasattr(message, 'content') and message.content:
-                    content = message.content.strip()
-                    logger.info(f"[LATS SSE] 消息内容长度: {len(content)}")
+                if hasattr(message, 'content') and message.content is not None:
+                    # 对于流式消息，不要 strip，保持原始内容
+                    if "Chunk" in type(message).__name__:
+                        content = message.content  # 保持原始内容，包括空格
+                    else:
+                        content = message.content.strip()  # 只对完整消息进行 strip
+                    logger.info(
+                        f"[LATS SSE] 消息内容长度: {len(content)}, 原始内容: {repr(content)}")
 
                 # 处理 AI 消息（包括 AIMessage 和 AIChunkMessage）
-                if "AI" in message_type and "Message" in message_type and content:
-                    # 根据内容长度决定显示方式
-                    if len(content) > 10:  # 降低阈值，确保输出
-                        if len(content) > 200:
-                            display_content = f"\n\n📝 **详细分析**\n\n{content}\n\n"
-                        elif len(content) > 100:
-                            display_content = f"\n\n💭 **思考过程**\n\n{content}\n\n"
-                        else:
-                            display_content = f"\n\n🔍 **分析片段**\n\n{content}\n\n"
+                if "AI" in message_type and "Message" in message_type:
+                    # 对于 AIMessageChunk，直接流式转发
+                    if "Chunk" in message_type:
+                        # 流式消息直接转发，保持实时性，即使是空字符串也要发送
+                        await res.write(_create_sse_data(chat_id, created, model, content).encode('utf-8'))
+                        logger.info(
+                            f"[LATS SSE] 转发AIChunkMessage: {repr(content)}")
+                    elif content:  # 完整消息需要有实际内容
+                        # 完整 AI 消息，根据内容长度决定显示方式
+                        if len(content) > 5:  # 进一步降低阈值
+                            if len(content) > 200:
+                                display_content = f"\n\n📝 **详细分析**\n\n{content}\n\n"
+                            elif len(content) > 100:
+                                display_content = f"\n\n💭 **思考过程**\n\n{content}\n\n"
+                            else:
+                                display_content = f"\n\n🔍 **分析片段**\n\n{content}\n\n"
 
-                        # 避免重复发送相同内容
-                        content_hash = hash(content)
-                        if content_hash not in sent_contents:
-                            await res.write(_create_sse_data(chat_id, created, model, display_content).encode('utf-8'))
-                            sent_contents.add(content_hash)
-                            logger.info(
-                                f"[LATS SSE] 发送AI消息内容，类型: {message_type}")
+                            # 避免重复发送相同内容
+                            content_hash = hash(content)
+                            if content_hash not in sent_contents:
+                                await res.write(_create_sse_data(chat_id, created, model, display_content).encode('utf-8'))
+                                sent_contents.add(content_hash)
+                                logger.info(
+                                    f"[LATS SSE] 发送AI消息内容，类型: {message_type}")
 
                 # 处理工具消息
                 elif "Tool" in message_type and "Message" in message_type:
