@@ -90,10 +90,6 @@ class LogPolicyScan:
         """获取策略的活动告警"""
         try:
             qs = Alert.objects.filter(policy_id=self.policy.id, status=ALERT_STATUS_NEW)
-            # 如果设置了组织范围，只查询组织范围内的告警
-            if self.policy.organizations:
-                # 这里假设source_id包含组织信息，实际可能需要根据具体业务逻辑调整
-                pass
             return qs
         except Exception as e:
             logger.error(f"get active alerts failed: {e}")
