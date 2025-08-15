@@ -187,8 +187,8 @@ export const getQAPairColumns = (
   },
   {
     title: t('knowledge.qaPairs.qaCount'),
-    dataIndex: 'qa_count',
-    key: 'qa_count',
+    dataIndex: 'generate_count',
+    key: 'generate_count',
   },
   {
     title: t('knowledge.qaPairs.type'),
