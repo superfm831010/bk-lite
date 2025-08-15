@@ -254,6 +254,22 @@ class LatsAgentNode(ToolsNodes):
 
         return state
 
+    async def generate_final_answer(self, state: LatsAgentState, config: RunnableConfig) -> dict:
+        """生成最终答案节点"""
+        logger.info("📝 生成最终总结答案")
+
+        root = state["root"]
+
+        # 生成最终答案
+        final_answer = await self._generate_final_answer(root, config)
+
+        # 将最终答案添加到消息列表
+        state["messages"].append(final_answer)
+
+        logger.info("✅ 最终答案生成完成")
+
+        return state
+
     async def _generate_final_answer(self, solution_node: Node, config: RunnableConfig) -> BaseMessage:
         """生成最终答案"""
         llm = self.get_llm_client(config["configurable"]["graph_request"])
@@ -271,7 +287,6 @@ class LatsAgentNode(ToolsNodes):
         question = TemplateLoader.render_template(
             "prompts/lats_agent/final_answer_synthesis",
             {
-                "user_message": config['configurable']['graph_request'].user_message,
                 "solution_content": final_solution.content
             }
         )
@@ -284,12 +299,12 @@ class LatsAgentNode(ToolsNodes):
         root = state["root"]
 
         if root.is_solved:
-            logger.info("✅ 找到解决方案，结束搜索")
-            return END
+            logger.info("✅ 找到解决方案，生成最终答案")
+            return "generate_final_answer"
 
         if root.height > self.MAX_TREE_HEIGHT:
-            logger.info(f"🛑 达到最大搜索深度 ({self.MAX_TREE_HEIGHT})，结束搜索")
-            return END
+            logger.info(f"🛑 达到最大搜索深度 ({self.MAX_TREE_HEIGHT})，生成最终答案")
+            return "generate_final_answer"
 
         return "expand"
 

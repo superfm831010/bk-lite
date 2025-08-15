@@ -36,17 +36,22 @@ class LatsAgentGraph(ToolsGraph):
         graph_builder.add_node("generate_initial_response",
                                node_builder.generate_initial_response)
         graph_builder.add_node("expand", node_builder.expand)
+        graph_builder.add_node("generate_final_answer",
+                               node_builder.generate_final_answer)
 
         # 构建执行流程
         graph_builder.add_edge(last_edge, 'generate_initial_response')
 
-        # 添加条件边 - 简化的控制流程
+        # 添加条件边 - 优化的控制流程
         for node_name in ["generate_initial_response", "expand"]:
             graph_builder.add_conditional_edges(
                 node_name,
                 node_builder.should_continue,
-                ["expand", END]
+                ["expand", "generate_final_answer"]
             )
+
+        # 最终答案生成后结束
+        graph_builder.add_edge("generate_final_answer", END)
 
         # 编译并返回图
         compiled_graph = graph_builder.compile()
