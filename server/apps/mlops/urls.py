@@ -6,6 +6,8 @@ from apps.mlops.views.anomaly_detection_dataset import AnomalyDetectionDatasetVi
 from apps.mlops.views.anomaly_detection_train_data import AnomalyDetectionTrainDataViewSet
 from apps.mlops.views.rasa_dataset import RasaDatasetViewSet
 from apps.mlops.views.rase_intent import RasaIntentViewSet
+from apps.mlops.views.rasa_response import RasaResponseViewSet
+from apps.mlops.views.rasa_rule import RasaRuleViewSet
 
 router = routers.DefaultRouter()
 
@@ -15,5 +17,7 @@ router.register(r'anomaly_detection_train_jobs', AnomalyDetectionTrainJobViewSet
 router.register(r'anomaly_detection_servings', AnomalyDetectionServingViewSet, basename='anomaly_detection_servings')
 router.register(r'rasa_datasets', RasaDatasetViewSet, basename='rasa_datasets')
 router.register(r'rasa_intent', RasaIntentViewSet, basename='rasa_intent')
+router.register(r'rasa_response', RasaResponseViewSet, basename='rasa_response')
+router.register(r'rasa_rule', RasaRuleViewSet, basename='rasa_rule')
 
 urlpatterns = router.urls
