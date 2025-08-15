@@ -66,15 +66,23 @@ class LatsSSEHandler:
     async def process_chunk(self, res, chunk, iteration_count: int) -> None:
         """处理数据块"""
         try:
-            logger.debug(f"[LATS SSE] 处理chunk: {type(chunk).__name__}")
+            chunk_type = type(chunk).__name__
+            logger.debug(f"[LATS SSE] 处理chunk: {chunk_type}")
+
+            # 如果是字典类型，记录其键
+            if isinstance(chunk, dict):
+                keys = list(chunk.keys())
+                logger.debug(f"[LATS SSE] 字典chunk键: {keys}")
 
             # 处理最终状态
             if self._is_final_state(chunk):
+                logger.info(f"[LATS SSE] 检测到最终状态")
                 await self.handle_final_state(res, chunk)
                 return
 
             # 处理评估结果
             if self._is_evaluation_results(chunk):
+                logger.info(f"[LATS SSE] 检测到评估结果")
                 if 'evaluation_results' in chunk:
                     await self.handle_evaluation_results(res, chunk['evaluation_results'])
                 elif 'initial_evaluation' in chunk:
@@ -83,6 +91,7 @@ class LatsSSEHandler:
 
             # 处理节点转换
             if self._is_node_transition(chunk):
+                logger.debug(f"[LATS SSE] 检测到节点转换")
                 await self.handle_node_transition(res, chunk, iteration_count)
 
                 # 特殊处理：如果是generate_initial_response节点完成，检查是否有evaluation数据
@@ -96,15 +105,19 @@ class LatsSSEHandler:
 
             # 处理消息流
             if self._is_message_stream(chunk):
+                logger.debug(f"[LATS SSE] 检测到消息流，长度: {len(chunk)}")
                 await self.handle_message_stream(res, chunk)
                 return
 
             # 处理其他可能的数据类型
             if isinstance(chunk, dict):
+                logger.debug(f"[LATS SSE] 处理字典类型数据块")
                 await self.handle_dict_chunk(res, chunk)
+            else:
+                logger.warning(f"[LATS SSE] 未处理的chunk类型: {chunk_type}")
 
         except Exception as e:
-            logger.error(f"[LATS SSE] 处理chunk出错: {e}")
+            logger.error(f"[LATS SSE] 处理chunk出错: {e}", exc_info=True)
 
     async def handle_dict_chunk(self, res, chunk: dict) -> None:
         """处理字典类型的数据块"""
@@ -162,12 +175,18 @@ class LatsSSEHandler:
         root_node = chunk.get('root')
         messages = chunk.get('messages', [])
 
+        logger.info(
+            f"[LATS SSE] 处理最终状态 - root_node存在: {root_node is not None}, messages数量: {len(messages)}")
+
         if not (root_node and messages):
+            logger.warning(f"[LATS SSE] 最终状态缺少必要数据")
             return
 
         # 强制展示初始评估的思考过程（确保一定会显示）
         if hasattr(root_node, 'reflection') and root_node.reflection:
             reflection = root_node.reflection
+            logger.info(
+                f"[LATS SSE] 找到reflection，评分: {getattr(reflection, 'score', 'N/A')}")
 
             # 先展示思考过程分析提示
             await self.send_sse(res, self.formatter.format_content(
@@ -193,20 +212,26 @@ class LatsSSEHandler:
             if hasattr(root_node, 'reflection') and root_node.reflection:
                 best_score = root_node.reflection.score
 
+            logger.info(f"[LATS SSE] 找到解决方案，评分: {best_score}")
             await self.send_sse(res, self.formatter.format_solution_found(best_score))
 
         # 开始最终答案
         if not self.is_final_answer_started:
+            logger.info(f"[LATS SSE] 开始输出最终答案")
             await self.send_sse(res, self.formatter.format_final_answer_start())
             self.is_final_answer_started = True
 
         # 输出最终内容
         if messages:
             final_message = messages[-1]
+            logger.info(f"[LATS SSE] 最终消息类型: {type(final_message).__name__}")
+
             if hasattr(final_message, 'content') and final_message.content:
                 # 记录日志，帮助调试
                 logger.info(
                     f"[LATS SSE] 准备输出最终答案，内容长度: {len(final_message.content)}")
+                logger.debug(
+                    f"[LATS SSE] 最终答案内容预览: {final_message.content[:200]}...")
 
                 # 格式化最终答案，确保清晰展示
                 content = final_message.content
@@ -216,7 +241,7 @@ class LatsSSEHandler:
                 else:
                     logger.warning(f"[LATS SSE] 最终消息内容为空")
             else:
-                logger.warning(f"[LATS SSE] 最终消息没有content属性")
+                logger.warning(f"[LATS SSE] 最终消息没有content属性或content为空")
         else:
             logger.warning(f"[LATS SSE] 没有找到最终消息")
 
@@ -321,30 +346,53 @@ class LatsSSEHandler:
         # 处理 AI 消息块 - 检查是否包含JSON格式的reflection
         if message_type == "AIMessageChunk" and hasattr(message, 'content') and message.content:
             content = message.content
+            logger.debug(
+                f"[LATS SSE] 处理AIMessageChunk，内容长度: {len(content)}, 预览: {content[:100]}")
+
             # 检查是否包含reflection JSON
             if self._contains_reflection_json(content):
                 await self._handle_reflection_content(res, content)
             else:
                 # 直接输出原始内容，保持完整性
+                logger.debug(f"[LATS SSE] 输出AI消息块内容: {content[:50]}...")
                 await self.send_sse(res, self.formatter.format_content(content))
 
         # 处理完整的AI消息 - 也检查reflection
         elif message_type == "AIMessage" and hasattr(message, 'content') and message.content:
             content = message.content
+            logger.info(f"[LATS SSE] 处理完整AI消息，内容长度: {len(content)}")
+            logger.debug(f"[LATS SSE] AI消息内容预览: {content[:200]}...")
+
             if self._contains_reflection_json(content):
                 await self._handle_reflection_content(res, content)
             else:
                 # 对于完整消息，确保内容完整输出
+                logger.info(f"[LATS SSE] 输出完整AI消息内容")
                 await self.send_sse(res, self.formatter.format_content(content))
 
         # 处理工具消息 - 只显示工具执行状态，不显示敏感的工具结果内容
         elif "Tool" in message_type and "Message" in message_type:
+            logger.debug(f"[LATS SSE] 处理工具消息: {message_type}")
+
             if hasattr(message, 'name'):
                 tool_name = getattr(message, 'name', 'unknown_tool')
+                logger.info(f"[LATS SSE] 工具执行: {tool_name}")
                 await self.send_sse(res, self.formatter.format_tool_execution(tool_name))
             elif hasattr(message, 'content') and message.content:
                 # 工具结果已获取，但不显示具体内容（避免泄露敏感信息）
+                content_length = len(message.content) if message.content else 0
+                logger.info(f"[LATS SSE] 工具返回结果，长度: {content_length}")
                 await self.send_sse(res, self.formatter.format_content("\n✅ **工具执行完成，正在分析结果...**\n"))
+
+        # 处理其他未知消息类型
+        else:
+            logger.warning(
+                f"[LATS SSE] 未处理的消息类型: {message_type}, 是否有content: {hasattr(message, 'content')}")
+            if hasattr(message, 'content') and message.content:
+                logger.debug(
+                    f"[LATS SSE] 未知消息内容预览: {str(message.content)[:100]}...")
+                # 对于未知类型，也尝试输出内容
+                await self.send_sse(res, self.formatter.format_content(str(message.content)))
 
     def _contains_reflection_json(self, content: str) -> bool:
         """检查内容是否包含reflection JSON"""
