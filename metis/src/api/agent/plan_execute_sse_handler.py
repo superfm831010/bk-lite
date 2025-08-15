@@ -40,12 +40,19 @@ async def stream_plan_execute_response(
         async for chunk in stream_iter:
             logger.debug(f"[Plan Execute SSE] 收到 chunk: {type(chunk)}")
 
-            if not chunk:
+            # 增强的空值检查
+            if not chunk or chunk is None:
+                logger.debug(f"[Plan Execute SSE] 跳过空的或None的chunk")
                 continue
 
             # chunk 是一个 tuple，包含消息对象
             if isinstance(chunk, (tuple, list)) and len(chunk) > 0:
                 message = chunk[0]
+
+                # 检查消息是否为None
+                if message is None:
+                    logger.debug(f"[Plan Execute SSE] 跳过None消息")
+                    continue
 
                 # 提取消息内容
                 content = _extract_message_content(message, step_counter)
@@ -123,6 +130,11 @@ def _extract_message_content(message: Any, step_counter: int = 0) -> str:
     content = ""
 
     try:
+        # 首先检查消息是否为None
+        if message is None:
+            logger.debug(f"[Plan Execute SSE] 消息为None，跳过处理")
+            return ""
+
         message_type = type(message).__name__
         logger.debug(f"[Plan Execute SSE] 处理消息类型: {message_type}")
 
