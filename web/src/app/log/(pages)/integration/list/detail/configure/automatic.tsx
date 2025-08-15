@@ -144,12 +144,13 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = () => {
 
   return (
     <div className="px-[10px]">
-      <Form form={form} name="basic" layout="vertical">
+      <Form form={form} name="basic" layout="vertical" className="w-[600px]">
         <b className="text-[14px] flex mb-[10px] ml-[-10px]">
           {t('log.integration.configuration')}
         </b>
         {formItems}
         <Form.Item
+          className="w-[calc(100vw-306px)] min-w-[600px]"
           label={t('log.integration.MonitoredObject')}
           name="nodes"
           rules={[
@@ -176,7 +177,7 @@ const AutomaticConfiguration: React.FC<IntegrationAccessProps> = () => {
           ]}
         >
           <CustomTable
-            scroll={{ y: 'calc(100vh - 490px)', x: 'calc(100vw - 320px)' }}
+            scroll={{ y: 'calc(100vh - 490px)', x: 'max-content' }}
             dataSource={dataSource}
             columns={columns}
             rowKey="instance_id"

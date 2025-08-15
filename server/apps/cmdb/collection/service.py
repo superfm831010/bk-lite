@@ -273,7 +273,7 @@ class CollectK8sMetrics:
         return labels
 
     def format_workload_metrics(self):
-        """格式化workload，简化关联关系处理"""
+        """格式化workload，优化关联关系处理和数据完整性"""
         # 用于存储ReplicaSet的所有者信息
         replicaset_owner_dict = {}
         # 分别存储ReplicaSet和其他workload的指标
@@ -357,21 +357,46 @@ class CollectK8sMetrics:
             key = (rs_info["namespace"], rs_info["replicaset"])
             owner = replicaset_owner_dict.get(key)
 
-            if owner and owner["owner_kind"] in WORKLOAD_TYPE_DICT.values():
-                replicas = replicas_map.get(inst_name_key, {}).get(rs_info[inst_name_key], 0)
+            replicas = replicas_map.get(inst_name_key, {}).get(rs_info[inst_name_key], 0)
 
+            if owner and owner["owner_kind"] in WORKLOAD_TYPE_DICT.values():
+                # 有有效所有者的ReplicaSet
                 inst_name = f"{rs_info[inst_name_key]}({self.cluster_name}/{owner['owner_name']})"
                 workload_type = owner["owner_kind"]
                 name = owner["owner_name"]
-
-                # 只添加有效的所有者关联
+                
                 result.append({
                     "inst_name": inst_name,
                     "name": name,
                     "labels": annotations_map.get(inst_name_key, {}).get(rs_info[inst_name_key], ""),
                     "workload_type": workload_type,
                     "k8s_namespace": namespace,
-                    "replicaset_name": rs_info["replicaset"],  # 保存ReplicaSet名称用于Pod关联
+                    "replicaset_name": rs_info["replicaset"],
+                    "self_ns": namespace,
+                    "self_cluster": self.cluster_name,
+                    "replicas": int(replicas),
+                    "assos": [{
+                        "model_id": "k8s_namespace",
+                        "inst_name": f"{rs_info['namespace']}({self.cluster_name})",
+                        "asst_id": "belong",
+                        "model_asst_id": WORKLOAD_NAMESPACE_RELATION
+                    }]
+                })
+            else:
+                # 没有有效所有者的ReplicaSet，作为独立workload处理
+                logger.warning(f"ReplicaSet {rs_info['replicaset']} 在命名空间 {rs_info['namespace']} 中没有有效的所有者信息，将作为独立workload处理")
+                
+                inst_name = f"{rs_info[inst_name_key]}({self.cluster_name}/{rs_info['namespace']})"
+                workload_type = "replicaset"  # 明确标记为replicaset类型
+                name = rs_info["replicaset"]
+                
+                result.append({
+                    "inst_name": inst_name,
+                    "name": name,
+                    "labels": annotations_map.get(inst_name_key, {}).get(rs_info[inst_name_key], ""),
+                    "workload_type": workload_type,
+                    "k8s_namespace": namespace,
+                    "replicaset_name": rs_info["replicaset"],
                     "self_ns": namespace,
                     "self_cluster": self.cluster_name,
                     "replicas": int(replicas),
@@ -1600,7 +1625,7 @@ class MiddlewareCollectMetrics(CollectBase):
                 "name": "name",
             },
             "keepalived": {
-                "inst_name": self.get_inst_name,
+                "inst_name":  lambda data: f"{data['ip_addr']}-{self.model_id}-{data['virtual_router_id']}",
                 "ip_addr": "ip_addr",
                 "bk_obj_id": "bk_obj_id",
                 "version": "version",
@@ -1611,7 +1636,19 @@ class MiddlewareCollectMetrics(CollectBase):
                 "install_path": "install_path",
                 "config_file": "config_file",
             },
-
+            "tongweb": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "bin_path": "bin_path",
+                "log_path": "log_path",
+                "java_version": "java_version",
+                "xms": "xms",
+                "xmx": "xmx",
+                "metaspace_size": "metaspace_size",
+                "max_metaspace_size": "max_metaspace_size",
+            },
         }
 
         return mapping
@@ -2029,6 +2066,15 @@ class DBCollectCollectMetrics(CollectBase):
                 "max_conn": "max_conn",
                 "cache_memory_mb": "cache_memory_mb",
                 "log_path": "log_path",
+            },
+            "dameng": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "user": "user",
+                "version": "version",
+                "bin_path": "bin_path",
+                "bk_obj_id": "bk_obj_id",
             }
         }
         return mapping

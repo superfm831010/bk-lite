@@ -1,4 +1,9 @@
-import { CascaderItem, SubGroupItem } from '@/app/log/types';
+import {
+  CascaderItem,
+  SubGroupItem,
+  TimeValuesProps,
+  TreeItem,
+} from '@/app/log/types';
 import { Group } from '@/types';
 import { DetailItem, LogStream } from '@/app/log/types/search';
 import dayjs from 'dayjs';
@@ -125,4 +130,51 @@ export const aggregateLogs = (logs: LogStream[]) => {
 // 数组转义
 export const escapeArrayToJson = (arr: React.Key[]) => {
   return JSON.stringify(arr).replace(/"/g, '\\"');
+};
+
+// 树形组件根据id查其title
+export const findLabelById = (data: any[], key: string): string | null => {
+  for (const node of data) {
+    if (node.key === key) {
+      return node.label;
+    }
+    if (node.children) {
+      const result = findLabelById(node.children, key);
+      if (result) {
+        return result;
+      }
+    }
+  }
+  return null;
+};
+
+export const findTreeParentKey = (
+  treeData: TreeItem[],
+  targetKey: React.Key
+): React.Key | null => {
+  let parentKey: React.Key | null = null;
+  const loop = (nodes: TreeItem[], parent: React.Key | null) => {
+    for (const node of nodes) {
+      if (node.key === targetKey) {
+        parentKey = parent;
+        return;
+      }
+      if (node.children) {
+        loop(node.children, node.key); // 递归遍历子节点
+      }
+    }
+  };
+  loop(treeData, null); // 初始父节点为 null
+  return parentKey;
+};
+
+export const getRecentTimeRange = (timeValues: TimeValuesProps) => {
+  if (timeValues.originValue) {
+    const beginTime: number = dayjs()
+      .subtract(timeValues.originValue, 'minute')
+      .valueOf();
+    const lastTime: number = dayjs().valueOf();
+    return [beginTime, lastTime];
+  }
+  return timeValues.timeRange;
 };

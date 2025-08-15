@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import { mockInterfaces } from '../../mockData';
+import { EdgeConfigPanelProps } from '@/app/ops-analysis/types/topology';
 import {
   Drawer,
   Form,
@@ -12,33 +12,6 @@ import {
   Radio,
 } from 'antd';
 
-interface InterfaceConfig {
-  type: 'existing' | 'custom';
-  value: string;
-}
-
-interface EdgeConfigPanelProps {
-  visible: boolean;
-  readonly?: boolean;
-  edgeData: {
-    id: string;
-    lineType: string;
-    lineName?: string;
-    sourceNode: {
-      id: string;
-      name: string;
-    };
-    targetNode: {
-      id: string;
-      name: string;
-    };
-    sourceInterface?: InterfaceConfig;
-    targetInterface?: InterfaceConfig;
-  } | null;
-  onClose: () => void;
-  onConfirm?: (values: any) => void;
-}
-
 const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
   visible,
   readonly = false,
@@ -48,6 +21,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
 }) => {
   const [form] = Form.useForm();
   const { t } = useTranslation();
+  const interfacesList: any = [];
 
   useEffect(() => {
     if (edgeData) {
@@ -157,12 +131,12 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
                 return interfaceType === 'existing' ? (
                   <Form.Item
                     name={interfaceValueField}
-                    rules={[{ required: true, message: t('common.selectMsg') }]}
+                    rules={[{ required: true, message: t('common.selectTip') }]}
                     style={{ marginBottom: '10px' }}
                   >
                     <Select
-                      placeholder={t('common.selectMsg')}
-                      options={mockInterfaces}
+                      placeholder={t('common.selectTip')}
+                      options={interfacesList}
                       disabled={readonly}
                     />
                   </Form.Item>
@@ -274,10 +248,10 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
           <Form.Item
             label={t('topology.lineType')}
             name="lineType"
-            rules={[{ required: true, message: t('common.selectMsg') }]}
+            rules={[{ required: true, message: t('common.selectTip') }]}
           >
             <Select
-              placeholder={t('common.selectMsg')}
+              placeholder={t('common.selectTip')}
               onChange={handleLineTypeChange}
               disabled={readonly}
             >

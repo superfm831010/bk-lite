@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Button, Empty, message, Modal } from 'antd';
-import { SettingOutlined, ReloadOutlined, BuildOutlined } from '@ant-design/icons';
+import { SettingOutlined, ReloadOutlined, BuildOutlined, FrownOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
@@ -98,16 +98,15 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
       setGraphExists(response.is_exists || false);
       setStatus(response.status || '');
       
-      const transformedData = transformApiDataToGraphData(response.graph);
-      
-      if (transformedData.nodes.length === 0) {
-        setHasGraph(false);
-        setGraphData(null);
-        return;
-      }
-      
+      const transformedData: GraphData = transformApiDataToGraphData(response.graph);
       setGraphData(transformedData);
-      setHasGraph(true);
+      
+      // 只有status为completed时才展示图谱，其他状态显示状态文本
+      if (response.status === 'completed') {
+        setHasGraph(true);
+      } else {
+        setHasGraph(false);
+      }
       
     } catch (error: any) {
       console.error('Failed to load knowledge graph:', error);
@@ -180,7 +179,7 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
   };
 
   const canClickSettings = () => {
-    return status === 'completed' || status === 'failed';
+    return status === 'completed' || status === 'failed' || !graphExists;
   };
 
   const canRebuildCommunity = () => {
@@ -280,13 +279,11 @@ const KnowledgeGraphPage: React.FC<KnowledgeGraphPageProps> = ({ knowledgeBaseId
                 {(status === 'training' || status === 'rebuilding' || status === 'pending') && (
                   <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                 )}
+                {status === 'failed' && (
+                  <FrownOutlined />
+                )}
                 {getStatusText(status)}
               </div>
-              {status === 'failed' && (
-                <div className="text-gray-500 text-xs">
-                  {t('knowledge.knowledgeGraph.noGraphData')}
-                </div>
-              )}
             </div>
           ) : (
             <Empty

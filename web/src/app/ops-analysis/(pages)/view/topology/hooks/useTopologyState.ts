@@ -1,20 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import type { Graph, Edge } from '@antv/x6';
-
-interface InterfaceConfig {
-  type: 'existing' | 'custom';
-  value: string;
-}
-
-export interface EdgeData {
-  id: string;
-  lineType: string;
-  lineName?: string;
-  sourceNode: { id: string; name: string };
-  targetNode: { id: string; name: string };
-  sourceInterface?: InterfaceConfig;
-  targetInterface?: InterfaceConfig;
-}
+import { FORM_DEFAULTS } from '../constants/nodeDefaults';
+import { EdgeData } from '@/app/ops-analysis/types/topology';
 
 export const useTopologyState = () => {
   // 图形相关状态
@@ -95,9 +82,17 @@ export const useTopologyState = () => {
     if (!editingNodeData) return {};
 
     if (editingNodeData.type === 'single-value') {
+      const config = editingNodeData.config || {};
       return {
         name: editingNodeData.name,
         dataSource: editingNodeData.dataSource,
+        fontSize: config.fontSize || FORM_DEFAULTS.SINGLE_VALUE.fontSize,
+        textColor: config.textColor || FORM_DEFAULTS.SINGLE_VALUE.textColor,
+        backgroundColor: config.backgroundColor || FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
+        borderColor: config.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor,
+        query: config.query || FORM_DEFAULTS.SINGLE_VALUE.query,
+        unit: config.unit || FORM_DEFAULTS.SINGLE_VALUE.unit,
+        threshold: config.threshold || FORM_DEFAULTS.SINGLE_VALUE.threshold,
       };
     }
 
@@ -112,6 +107,8 @@ export const useTopologyState = () => {
         editingNodeData.logoType === 'custom'
           ? editingNodeData.logo
           : undefined,
+      backgroundColor: editingNodeData.config?.backgroundColor || FORM_DEFAULTS.ICON_NODE.backgroundColor,
+      borderColor: editingNodeData.config?.borderColor || FORM_DEFAULTS.ICON_NODE.borderColor,
     };
   }, [editingNodeData]);
 

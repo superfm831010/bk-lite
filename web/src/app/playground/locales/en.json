@@ -11,14 +11,33 @@
     "url": "URL",
     "active": "online now",
     "inactive": "not yet on line",
-    "onlineStatus": "status"
+    "onlineStatus": "enable"
   },
   "manage": {
+    "modelExperience": "Model Experience",
+    "intelligentExperience": "Intelligent Experience",
+    "anomalyDetection": "Anomaly Detection",
+    "addCategory": "Add Category",
+    "addCapability": "Add capability",
+    "addCategorySuccess": "Add Category Success",
+    "addCapabilitySuccess": "Add Capability Success",
+    "updateCategory": "Update Category",
+    "updateCapability": "Update Capability",
+    "updateCapabilitySuccess": "Update Capability Success",
     "delCapability": "Deltee Capability",
     "delCapabilityText": "Are you sure you want to delete this capability demo?",
     "manageTitle": "Portal Management",
     "description": "All categories and all capability demonstration menus in the management portal.",
     "delCategory": "Are you sure you want to delete this category?",
-    "parentCategory": "Parent category"
+    "parentCategory": "Parent category",
+    "servingsSelect": "Model selection",
+    "servingsMsg": "Select a model",
+    "createAt": "Create at",
+    "createdBy": "Created by",
+    "sampleStatus": "Start/Stop",
+    "isActive": "Enable",
+    "getSampleFileError": "Error retrieving sample file",
+    "missID": "Missing classification ID",
+    "modelInferFailed": "Model inference failed"
   }
 }

@@ -164,3 +164,35 @@ export interface ConfigProps {
   configData: ConfigDataProps;
   setConfigData: React.Dispatch<React.SetStateAction<ConfigDataProps>>;
 }
+
+// QA对生成弹窗相关类型定义
+export interface GenerateQAPairModalProps {
+  onSuccess?: () => void;
+}
+
+export interface ModalConfig {
+  documentId: string;
+  selectedChunkIds: string[];
+  selectedChunks?: ChunkItem[];
+}
+
+export interface ModalRef {
+  showModal: (config: ModalConfig) => void;
+}
+
+export interface DocumentInfo {
+  knowledge_id: number;
+  name: string;
+  knowledge_base_id: number;
+  knowledge_source_type: string;
+}
+
+export interface FormData {
+  llmModel: number;
+  qaCount: number;
+}
+
+export interface ChunkItem {
+  id: string;
+  content: string;
+}

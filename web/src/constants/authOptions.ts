@@ -4,7 +4,7 @@ import WeChatProvider from "../lib/wechatProvider";
 
 async function getWeChatConfig() {
   try {
-    const response = await fetch(`${process.env.NEXTAPI_URL}/core/api/get_wechat_settings/`, {
+    const response = await fetch(`${process.env.NEXTAPI_URL}/api/v1/core/api/get_wechat_settings/`, {
       method: "GET",
       headers: { 
         "Content-Type": "application/json",
@@ -76,7 +76,7 @@ export async function getAuthOptions(): Promise<AuthOptions> {
           }
 
           // Otherwise, perform normal login validation (for direct NextAuth usage)
-          const response = await fetch(`${process.env.NEXTAPI_URL}/core/api/login/`, {
+          const response = await fetch(`${process.env.NEXTAPI_URL}/api/v1/core/api/login/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -220,7 +220,7 @@ export const authOptions: AuthOptions = {
           }
 
           // Otherwise, perform normal login validation
-          const response = await fetch(`${process.env.NEXTAPI_URL}/core/api/login/`, {
+          const response = await fetch(`${process.env.NEXTAPI_URL}/api/v1/core/api/login/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

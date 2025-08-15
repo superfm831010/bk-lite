@@ -9,14 +9,17 @@ from apps.cmdb.constants import (
     CREATE_MODEL_CHECK_ATTR,
     MODEL,
     MODEL_ASSOCIATION,
-    SUBORDINATE_MODEL,
+    SUBORDINATE_MODEL, INIT_MODEL_GROUP,
 )
 from apps.cmdb.graph.neo4j import Neo4jClient
+from apps.cmdb.utils.base import get_default_group_id
+from apps.core.logger import cmdb_logger as logger
 
 
 class ModelMigrate:
     def __init__(self):
         self.model_config = self.get_model_config()
+        self.default_group_id = get_default_group_id()
 
     def get_model_config(self):
         # 读取 Excel 文件
@@ -59,11 +62,19 @@ class ModelMigrate:
             )
         return result
 
+    def model_add_organization(self, model):
+        """
+        给模型添加组织数据
+        """
+        _key = INIT_MODEL_GROUP
+        model[_key] = [self.default_group_id]
+
     def migrate_models(self):
         """初始化模型"""
         models = []
         for model in self.model_config.get("models", []):
             model.update(is_pre=True)
+            self.model_add_organization(model)
             attrs = []
             attr_key = f"attr-{model['model_id']}"
             if attr_key in self.model_config:
@@ -129,8 +140,16 @@ class ModelMigrate:
         classification_resp = self.migrate_classifications()
         # 创建模型
         model_resp, classification_asso_resp = self.migrate_models()
+
         # 创建模型关联
         association_resp = self.migrate_associations()
+
+        try:
+            # 检查并补充旧模型的组织字段
+            self.check_and_update_old_models_group()
+        except Exception as err:  # noqa
+            import traceback
+            logger.error(f"Error updating old models group: {traceback.format_exc()}")
 
         return dict(
             classification=classification_resp,
@@ -138,3 +157,26 @@ class ModelMigrate:
             classification_assos=classification_asso_resp,
             association=association_resp,
         )
+
+    def check_and_update_old_models_group(self):
+        """检查并补充旧模型的组织字段"""
+        with Neo4jClient() as ag:
+            # 查询所有模型
+            all_models, _ = ag.query_entity(MODEL, [])
+
+            # 筛选出没有组织字段的模型
+            models_without_group = []
+            for model in all_models:
+                if INIT_MODEL_GROUP not in model or not model[INIT_MODEL_GROUP]:
+                    models_without_group.append(model["_id"])
+                elif INIT_MODEL_GROUP in model and isinstance(model[INIT_MODEL_GROUP], int):
+                    # 如果组织字段是单个整数，转换为列表
+                    models_without_group.append(model["_id"])
+
+            # 批量更新缺少组织字段的模型
+            if models_without_group:
+                ag.batch_update_node_properties(
+                    label=MODEL,
+                    node_ids=models_without_group,
+                    properties={INIT_MODEL_GROUP: self.default_group_id}
+                )

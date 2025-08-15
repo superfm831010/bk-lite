@@ -1,6 +1,6 @@
-# bk-lite Kubernetes 指标采集器
+# bk-lite Kubernetes 采集器
 
-这是一个用于采集 Kubernetes 集群节点和容器性能指标的采集器，支持将指标数据发送到 bk-lite 监控平台。
+这是一个用于采集 Kubernetes 集群节点和容器性能指标的采集器，支持将指标和日志数据发送到 bk-lite 监控平台。
 
 ## 功能特性
 
@@ -9,6 +9,7 @@
 - **Kubernetes 状态指标**: 通过 kube-state-metrics 收集集群状态信息
 - **高性能数据传输**: 使用 Telegraf 和 VictoriaMetrics Agent 进行数据处理和传输
 - **NATS 消息队列**: 支持通过 NATS 进行可靠的数据传输
+- **日志采集**: 使用 Vector 采集和处理容器日志
 
 ## 组件说明
 
@@ -19,6 +20,7 @@
 | kube-state-metrics | Deployment | 采集 Kubernetes 集群状态指标 |
 | telegraf-deployment | Deployment | 作为指标接收和转发服务 |
 | vmagent | Deployment | Prometheus 指标抓取和远程写入 |
+| vector-daemonset | DaemonSet | 采集和处理容器日志 |
 
 ## 前置要求
 
@@ -72,7 +74,8 @@ kubectl create -n bk-lite-collector secret generic bk-lite-monitor-config-secret
 ### 步骤 3: 部署采集器
 
 ```bash
-kubectl apply -f bk-lite-collector.yaml
+kubectl apply -f bk-lite-metric-collector.yaml
+kubectl apply -f bk-lite-log-collector.yaml
 ```
 
 ### 步骤 4: 验证部署

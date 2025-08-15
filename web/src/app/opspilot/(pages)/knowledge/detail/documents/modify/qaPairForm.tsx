@@ -60,7 +60,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
   
   const formValuesRef = useRef({
     llmModel: 0,
-    qaCount: 10
+    qaCount: 1
   });
   const onFormChangeRef = useRef(onFormChange);
   const onFormDataChangeRef = useRef(onFormDataChange);
@@ -88,7 +88,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       if (!initialData?.llmModel && models.length > 0) {
         const defaultValues = {
           llmModel: models[0].id,
-          qaCount: 10
+          qaCount: 1
         };
         form.setFieldsValue(defaultValues);
         formValuesRef.current = defaultValues;
@@ -109,7 +109,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
         page,
         page_size: pageSize
       });
-      
+
       const processedItems = result.items.map((item: any) => ({
         key: item.id.toString(),
         title: item.name,
@@ -146,7 +146,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     if (initialData) {
       const values = {
         llmModel: initialData.llmModel || 0,
-        qaCount: initialData.qaCount || 10
+        qaCount: initialData.qaCount || 1
       };
       form.setFieldsValue(values);
       formValuesRef.current = values;
@@ -202,12 +202,13 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
   const handleFormValuesChange = useCallback((_: any, allValues: any) => {
     const newValues = {
       llmModel: allValues.llmModel || 0,
-      qaCount: allValues.qaCount || 10
+      qaCount: allValues.qaCount || 1
     };
     formValuesRef.current = newValues;
   }, []);
 
-  useEffect(() => {
+  // Use a more stable approach to trigger validation
+  const validateAndNotify = useCallback(() => {
     const timer = setTimeout(() => {
       const isValid = !!(
         formValuesRef.current.llmModel && 
@@ -220,10 +221,15 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
         ...formValuesRef.current,
         selectedDocuments
       });
-    }, 100);
+    }, 0);
     
     return () => clearTimeout(timer);
-  }, [selectedDocuments, formValuesRef.current.llmModel, formValuesRef.current.qaCount]);
+  }, [selectedDocuments]);
+
+  useEffect(() => {
+    const cleanup = validateAndNotify();
+    return cleanup;
+  }, [validateAndNotify]);
 
   const handleTabChange = useCallback((tabKey: string) => {
     setActiveDocumentTab(tabKey);
@@ -238,10 +244,12 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     }
   }, [pageSize]);
 
+  // Memoize paginated documents to prevent unnecessary re-renders
   const paginatedDocuments = useMemo(() => {
     return documentData[activeDocumentTab] || [];
   }, [documentData, activeDocumentTab]);
 
+  // Memoize columns to prevent Table re-renders
   const columns = useMemo(() => [{
     title: t('knowledge.documents.name'),
     dataIndex: 'title',
@@ -301,7 +309,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       <Form
         form={form}
         layout="vertical"
-        initialValues={{ qaCount: 10, ...initialData }}
+        initialValues={{ qaCount: 1, ...initialData }}
         onValuesChange={handleFormValuesChange}
       >
         <Form.Item
@@ -312,7 +320,10 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
           <Select
             placeholder={t('common.select')}
             loading={loading}
-            size="large"
+            showSearch
+            filterOption={(input, option) =>
+              typeof option?.children === 'string' && (option.children as string).toLowerCase().includes(input.toLowerCase())
+            }
           >
             {llmModels.map(model => (
               <Select.Option key={model.id} value={model.id}>
@@ -331,7 +342,6 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
             min={1}
             max={1000}
             className="w-full"
-            size="large"
           />
         </Form.Item>
 

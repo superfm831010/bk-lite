@@ -35,9 +35,6 @@ class MonitorObjectVieSet(viewsets.ModelViewSet):
             result["display_type"] = lan.get_val("MONITOR_OBJECT_TYPE", result["type"]) or result["type"]
             result["display_name"] = lan.get_val("MONITOR_OBJECT", result["name"]) or result["name"]
 
-        orgs = {i["id"] for i in request.user.group_list if i["name"] == "OpsPilotGuest"}
-        orgs.add(request.COOKIES.get("current_team"))
-
         if request.GET.get("add_instance_count") in ["true", "True"]:
 
             inst_res = get_permissions_rules(
@@ -49,7 +46,7 @@ class MonitorObjectVieSet(viewsets.ModelViewSet):
 
             instance_permissions, cur_team = inst_res.get("data", {}), inst_res.get("team", [])
 
-            inst_objs = MonitorInstance.objects.all().prefetch_related("monitorinstanceorganization_set")
+            inst_objs = MonitorInstance.objects.filter(is_deleted=False).prefetch_related("monitorinstanceorganization_set")
             inst_map = {}
             for inst_obj in inst_objs:
                 monitor_object_id = inst_obj.monitor_object_id

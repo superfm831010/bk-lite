@@ -45,6 +45,13 @@ services:
       - METIS_SERVER_URL=http://metis:18083
       - PILOT_RUNTIME=docker
       - INSTALL_APPS=${INSTALL_APPS}
+      - VICTORIALOGS_HOST=http://victoria-logs:9428
+      - MLFLOW_TRACKER_URL=http://mlflow:15000
+      - MLFLOW_ENABLE_SYSTEM_METRICS_LOGGING=true
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - AWS_DEFAULT_REGION=us-east-1
     healthcheck:
       test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", "http://127.0.0.1:8000/"]
       interval: 10s
@@ -58,8 +65,9 @@ services:
       - prod
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ../pkgs:/apps/pkgs
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.sidecar.rule=Host(`${HOST_IP}`) && PathPrefix(`/node_mgmt`) || PathPrefix(`/opspilot/bot_mgmt`)"
+      - "traefik.http.routers.sidecar.rule=Host(`${HOST_IP}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.sidecar.entrypoints=web"
       - "traefik.http.services.sidecar.loadbalancer.server.port=8000"

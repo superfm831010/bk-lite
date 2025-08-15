@@ -1,5 +1,7 @@
 import React from 'react';
 import { Menu, Dropdown } from 'antd';
+import { useTranslation } from '@/utils/i18n';
+import type { ContextMenuProps } from '@/app/ops-analysis/types/topology';
 import {
   VerticalAlignTopOutlined,
   UpOutlined,
@@ -8,14 +10,7 @@ import {
   ArrowRightOutlined,
   SwapOutlined,
 } from '@ant-design/icons';
-import { useTranslation } from '@/utils/i18n';
 
-interface ContextMenuProps {
-  visible: boolean;
-  position: { x: number; y: number };
-  isEditMode?: boolean;
-  onMenuClick: (e: { key: string }) => void;
-}
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
   visible,

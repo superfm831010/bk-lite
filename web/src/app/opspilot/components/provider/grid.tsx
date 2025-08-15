@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Spin, message, Dropdown, Menu, Modal, Empty } from 'antd';
+import Image from 'next/image';
 import Icon from '@/components/icon';
 import { useTranslation } from '@/utils/i18n';
 import styles from './index.module.scss';
@@ -24,24 +25,9 @@ const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading
   const [modalLoading, setModalLoading] = useState<boolean>(false);
   const [selectedModel, setSelectedModel] = useState<Model | null>(null);
 
-  const llmIconMap: Record<string, string> = {
-    'deep-seek': 'deepseek',
-    'chat-gpt': 'chatgpticon',
-    'hugging_face': 'huggingface',
-    'default': 'chatgpticon'
-  };
-
-  const iconMap: Record<string, string> = {
-    embed_provider: 'Embeddings',
-    rerank_provider: 'jigoushuzhongxinpaixu',
-    ocr_provider: 'ocr',
-  };
-
-  const getModelIcon = (model: Model) => {
-    if (filterType === 'llm_model') {
-      return llmIconMap[model.llm_model_type || 'default'];
-    }
-    return iconMap[filterType] || 'chatgpticon';
+  const getModelIconPath = (model: Model) => {
+    const iconName = model.icon || 'Default';
+    return `/app/models/${iconName}.svg`;
   };
 
   const handleMenuClick = (action: string, model: Model) => {
@@ -149,7 +135,13 @@ const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading
               <div className={`rounded-lg shadow p-4 relative ${styles.gridContainer}`} key={model.id}>
                 <div className="flex justify-between items-start">
                   <div style={{flex: '0 0 auto'}}>
-                    <Icon type={getModelIcon(model)} className="text-5xl"/>
+                    <Image
+                      src={getModelIconPath(model)}
+                      alt={model.name}
+                      width={45}
+                      height={45}
+                      className="object-contain"
+                    />
                   </div>
                   <div className={`flex-1 ml-2 ${styles.nameContainer}`}>
                     <h3 className={`text-sm font-semibold break-words mb-1 ${styles.name}`}>{model.name}</h3>

@@ -6,10 +6,11 @@ import { PlusOutlined, DeleteOutlined, TrademarkOutlined, SyncOutlined, DownOutl
 import { useAuth } from '@/context/auth';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
+import { usePolling } from '@/hooks/usePolling';
 import type { PaginationProps } from 'antd';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
-import SelectSourceModal from './selectSourceModal';
+import SelectModal from './selectSourceModal';
 import { TableData, QAPairData } from '@/app/opspilot/types/knowledge'
 import styles from '@/app/opspilot/styles/common.module.scss'
 import ActionButtons from '@/app/opspilot/components/knowledge/actionButtons';
@@ -18,6 +19,7 @@ import KnowledgeGraphPage from '@/app/opspilot/components/knowledge/knowledgeGra
 import OperateModal from '@/components/operate-modal';
 import { getDocumentColumns, getQAPairColumns } from '@/app/opspilot/components/knowledge/tableColumns';
 import { useDocuments } from '@/app/opspilot/context/documentsContext';
+import { SOURCE_FILE_OPTIONS, QA_PAIR_OPTIONS } from '@/app/opspilot/constants/knowledge';
 
 const { confirm } = Modal;
 const { TabPane } = Tabs;
@@ -35,17 +37,18 @@ const DocumentsPage: React.FC = () => {
   const desc = searchParams ? searchParams.get('desc') : null;
   const type = searchParams ? searchParams.get('type') : null;
 
-  // 使用 Context 管理状态
   const { activeTabKey, setActiveTabKey, mainTabKey, setMainTabKey } = useDocuments();
 
-  // 初始化状态，从URL参数获取初始值
   useEffect(() => {
-    if (type === 'knowledge_graph' || type === 'qa_pairs') {
+    if (type === 'knowledge_graph') {
       setMainTabKey(type);
       setActiveTabKey(type);
     } else if (['file', 'web_page', 'manual'].includes(type || '')) {
       setMainTabKey('source_files');
       setActiveTabKey(type || 'file');
+    } else if (type === 'qa_pairs' || type === 'qa_custom') {
+      setMainTabKey('qa_pairs');
+      setActiveTabKey('qa_pairs');
     } else {
       setMainTabKey('source_files');
       setActiveTabKey('file');
@@ -65,6 +68,7 @@ const DocumentsPage: React.FC = () => {
   const [isTrainLoading, setIsTrainLoading] = useState(false);
   const [singleTrainLoading, setSingleTrainLoading] = useState<{ [key: string]: boolean }>({});
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
 
   const [qaPairData, setQaPairData] = useState<QAPairData[]>([]);
   const [qaPairPagination, setQaPairPagination] = useState<PaginationProps>({
@@ -76,6 +80,7 @@ const DocumentsPage: React.FC = () => {
   const [selectedQAPairKeys, setSelectedQAPairKeys] = useState<React.Key[]>([]);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [isQAPairModalVisible, setIsQAPairModalVisible] = useState(false);
 
   const {
     fetchDocuments,
@@ -150,6 +155,41 @@ const DocumentsPage: React.FC = () => {
         }
       },
     });
+  };
+
+  const handleExportQAPair = async (qaPairId: number) => {
+    try {
+      const response = await fetch(`/api/proxy/opspilot/knowledge_mgmt/qa_pairs/export_qa_pairs/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authContext?.token}`,
+        },
+        body: JSON.stringify({
+          qa_pairs_id: qaPairId
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to export QA pair');
+      }
+      
+      const blob = await response.blob();
+      const fileName = `qa_pair_${qaPairId}.json`;
+      const fileUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(fileUrl);
+      message.success(t('common.successfullyExported'));
+    } catch (error) {
+      console.error('Error exporting QA pair:', error);
+      message.error(t('common.exportFailed'));
+    }
   };
 
   // Batch delete QA pairs
@@ -307,11 +347,6 @@ const DocumentsPage: React.FC = () => {
         ...prev,
         total: res.count,
       }));
-
-      if (data.some((item: any) => item.train_status === 0)) {
-        const timer = setTimeout(() => fetchData(text, true), 10000);
-        return () => clearTimeout(timer);
-      }
     } catch {
       message.error(t('common.fetchFailed'));
     } finally {
@@ -320,6 +355,14 @@ const DocumentsPage: React.FC = () => {
       }
     }
   }, [pagination.current, pagination.pageSize, searchText, activeTabKey]);
+
+  // 使用usePolling Hook处理训练状态轮询
+  const shouldPoll = tableData.some((item: any) => item.train_status === 0 || item.train_status === 4);
+  usePolling(
+    () => fetchData(searchText, true),
+    10000, // 10秒轮询间隔
+    shouldPoll && mainTabKey === 'source_files' // 只有在source_files标签页且有训练中任务时才轮询
+  );
 
   useEffect(() => {
     if (mainTabKey === 'source_files') {
@@ -380,11 +423,16 @@ const DocumentsPage: React.FC = () => {
   const handleModalConfirm = (selectedType: string) => {
     setIsModalVisible(false);
     router.push(`/opspilot/knowledge/detail/documents/modify?type=${selectedType}&id=${id}&name=${name}&desc=${desc}`);
-  }
+  };
 
   const handleUploadModalConfirm = async () => {
     if (uploadedFiles.length === 0) {
       message.error(t('knowledge.qaPairs.noFileSelected'));
+      return;
+    }
+
+    if (uploadingFiles.size > 0) {
+      message.warning(t('knowledge.qaPairs.uploadInProgress'));
       return;
     }
 
@@ -402,17 +450,68 @@ const DocumentsPage: React.FC = () => {
       setConfirmLoading(false);
       setUploadModalVisible(false);
       setUploadedFiles([]);
+      setUploadingFiles(new Set());
     }
   };
 
   const handleImportClick = () => {
     setUploadModalVisible(true);
     setUploadedFiles([]);
+    setUploadingFiles(new Set());
   };
 
   const handleFileUpload = (file: any) => {
-    setUploadedFiles(prev => [...prev, file]);
+    const fileId = file.uid || file.name;
+    
+    setUploadingFiles(prev => new Set([...prev, fileId]));
+    
+    setTimeout(() => {
+      setUploadedFiles(prev => [...prev, file]);
+      setUploadingFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fileId);
+        return newSet;
+      });
+    }, 1000);
+    
     return false;
+  };
+
+  const handleRemoveFile = (file: any) => {
+    const fileId = file.uid || file.name;
+    setUploadedFiles(prev => prev.filter(f => f.uid !== fileId));
+    setUploadingFiles(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(fileId);
+      return newSet;
+    });
+  };
+
+  const handleQAPairAddClick = () => {
+    setIsQAPairModalVisible(true);
+  };
+
+  const handleQAPairModalCancel = () => {
+    setIsQAPairModalVisible(false);
+  };
+
+  const handleQAPairModalConfirm = (selectedType: string) => {
+    setIsQAPairModalVisible(false);
+    if (selectedType === 'documents') {
+      router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_pairs&id=${id}&name=${name}&desc=${desc}`);
+    } else if (selectedType === 'import') {
+      handleImportClick();
+    } else if (selectedType === 'custom') {
+      router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_custom&id=${id}&name=${name}&desc=${desc}`);
+    }
+  };
+
+  const handleRefresh = () => {
+    if (mainTabKey === 'qa_pairs') {
+      fetchQAPairData(searchText);
+    } else if (mainTabKey === 'source_files') {
+      fetchData(searchText);
+    }
   };
 
   const batchOperationMenu = (
@@ -466,37 +565,6 @@ const DocumentsPage: React.FC = () => {
     </Menu>
   );
 
-  const menuProps = (
-    <Menu className={styles.batchOperationMenu}>
-      <Menu.Item key="create">
-        <PermissionWrapper
-          requiredPermissions={['Add']}
-          instPermissions={knowledgeBasePermissions}>
-          <Button
-            type="text"
-            className="w-full"
-            onClick={() => router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_pairs&id=${id}&name=${name}&desc=${desc}`)}
-          >
-            {t('common.create')}
-          </Button>
-        </PermissionWrapper>
-      </Menu.Item>
-      <Menu.Item key="import">
-        <PermissionWrapper
-          requiredPermissions={['Add']}
-          instPermissions={knowledgeBasePermissions}>
-          <Button
-            type="text"
-            className="w-full"
-            onClick={handleImportClick}
-          >
-            {t('common.import')}
-          </Button>
-        </PermissionWrapper>
-      </Menu.Item>
-    </Menu>
-  );
-
   const columns = getDocumentColumns(
     t,
     activeTabKey,
@@ -521,6 +589,7 @@ const DocumentsPage: React.FC = () => {
     getRandomColor,
     knowledgeBasePermissions,
     handleDeleteSingleQAPair,
+    handleExportQAPair,
     router,
     id,
     name,
@@ -558,7 +627,7 @@ const DocumentsPage: React.FC = () => {
                 className="w-60 mr-[8px]"
               />
               <Tooltip className='mr-[8px]' title={t('common.refresh')}>
-                <Button icon={<SyncOutlined />} onClick={() => fetchData()} />
+                <Button icon={<SyncOutlined />} onClick={handleRefresh} />
               </Tooltip>
               {activeTabKey !== 'qa_pairs' && (
                 <>
@@ -586,21 +655,24 @@ const DocumentsPage: React.FC = () => {
               )}
               {activeTabKey === 'qa_pairs' && (
                 <>
-                  <Dropdown overlay={menuProps}>
-                    <Button>
-                      <Space>
-                        {t('common.add')}
-                        <DownOutlined />
-                      </Space>
+                  <PermissionWrapper
+                    requiredPermissions={['Add']}
+                    instPermissions={knowledgeBasePermissions}>
+                    <Button
+                      type='primary'
+                      className='mr-[8px]'
+                      icon={<PlusOutlined />}
+                      onClick={handleQAPairAddClick}
+                    >
+                      {t('common.add')}
                     </Button>
-                  </Dropdown>
+                  </PermissionWrapper>
                   <PermissionWrapper
                     requiredPermissions={['Delete']}
                     instPermissions={knowledgeBasePermissions}>
                     <Button
                       danger
                       icon={<DeleteOutlined />}
-                      className="ml-[8px]"
                       onClick={handleBatchDeleteQAPairs}
                     >
                       {t('common.batchDelete')}{selectedQAPairKeys.length > 0 && ` (${selectedQAPairKeys.length})`}
@@ -647,11 +719,22 @@ const DocumentsPage: React.FC = () => {
         />
       )}
       {mainTabKey === 'source_files' && (
-        <SelectSourceModal
+        <SelectModal
           defaultSelected={activeTabKey}
           visible={isModalVisible}
           onCancel={handleModalCancel}
           onConfirm={handleModalConfirm}
+          title={`${t('common.select')}${t('knowledge.source')}`}
+          options={SOURCE_FILE_OPTIONS}
+        />
+      )}
+      {mainTabKey === 'qa_pairs' && (
+        <SelectModal
+          visible={isQAPairModalVisible}
+          onCancel={handleQAPairModalCancel}
+          onConfirm={handleQAPairModalConfirm}
+          title={`${t('common.select')}${t('knowledge.qaPairs.addMethod')}`}
+          options={QA_PAIR_OPTIONS}
         />
       )}
       <OperateModal
@@ -661,17 +744,31 @@ const DocumentsPage: React.FC = () => {
         confirmLoading={confirmLoading}
         onOk={handleUploadModalConfirm}
         onCancel={() => setUploadModalVisible(false)}
+        okButtonProps={{
+          disabled: uploadingFiles.size > 0 || uploadedFiles.length === 0
+        }}
       >
         <div>
           <Dragger
-            accept="application/json"
+            accept="application/json,.csv"
             beforeUpload={handleFileUpload}
+            onRemove={handleRemoveFile}
+            fileList={uploadedFiles.map(file => {
+              const fileId = file.uid || file.name;
+              const isUploading = uploadingFiles.has(fileId);
+              return {
+                uid: fileId,
+                name: file.name,
+                status: isUploading ? 'uploading' : 'done',
+                percent: isUploading ? 50 : 100,
+              };
+            })}
           >
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
             </p>
             <p className="ant-upload-text">{t('knowledge.qaPairs.dragOrClick')}</p>
-            <p className="ant-upload-hint">{t('knowledge.qaPairs.uploadHint')}</p>
+            <p className="ant-upload-hint text-xs">{t('knowledge.qaPairs.uploadHint')}</p>
           </Dragger>
         </div>
       </OperateModal>

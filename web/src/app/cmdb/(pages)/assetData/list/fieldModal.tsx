@@ -13,7 +13,6 @@ import {
   Form,
   message,
   Select,
-  Cascader,
   DatePicker,
   Col,
   Row,
@@ -21,19 +20,16 @@ import {
 } from 'antd';
 import OperateModal from '@/components/operate-modal';
 import { useTranslation } from '@/utils/i18n';
-import {
-  AttrFieldType,
-  Organization,
-  UserItem,
-} from '@/app/cmdb/types/assetManage';
+import GroupTreeSelector from '@/components/group-tree-select';
+import { useUserInfoContext } from '@/context/userInfo';
+import { AttrFieldType, UserItem } from '@/app/cmdb/types/assetManage';
 import { deepClone } from '@/app/cmdb/utils/common';
-import useApiClient from '@/utils/request';
+import { useInstanceApi } from '@/app/cmdb/api';
 import dayjs from 'dayjs';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 
 interface FieldModalProps {
   onSuccess: (instId?: string) => void;
-  organizationList: Organization[];
   userList: UserItem[];
 }
 
@@ -47,19 +43,13 @@ interface FieldConfig {
   list: Array<any>;
 }
 
-interface RequestParams {
-  model_id?: string;
-  instance_info?: object;
-  inst_ids?: number[];
-  update_data?: object;
-}
-
 export interface FieldModalRef {
   showModal: (info: FieldConfig) => void;
 }
 
 const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
-  ({ onSuccess, userList, organizationList }, ref) => {
+  ({ onSuccess, userList }, ref) => {
+    const { selectedGroup } = useUserInfoContext();
     const [groupVisible, setGroupVisible] = useState<boolean>(false);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [subTitle, setSubTitle] = useState<string>('');
@@ -77,7 +67,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
     >([]);
     const [form] = Form.useForm();
     const { t } = useTranslation();
-    const { get, post } = useApiClient();
+    const instanceApi = useInstanceApi();
 
     useEffect(() => {
       if (groupVisible) {
@@ -89,7 +79,8 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
 
     useEffect(() => {
       if (groupVisible && modelId === 'host') {
-        get('/cmdb/api/instance/list_proxys/', {})
+        instanceApi
+          .getInstanceProxys()
           .then((data: any[]) => {
             setProxyOptions(data || []);
           })
@@ -136,15 +127,19 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
         const forms = deepClone(formInfo);
         if (type === 'add') {
           Object.assign(forms, {
-            organization: organizationList[0]?.value
-              ? [organizationList[0]?.value]
-              : '',
+            organization: selectedGroup?.id ? [Number(selectedGroup.id)] : [],
           });
         } else {
           for (const key in forms) {
             const target = attrList.find((item) => item.attr_id === key);
             if (target?.attr_type === 'time' && forms[key]) {
               forms[key] = dayjs(forms[key], 'YYYY-MM-DD HH:mm:ss');
+            } else if (target?.attr_type === 'organization' && forms[key]) {
+              if (Array.isArray(forms[key])) {
+                forms[key] = forms[key]
+                  .map((item: any) => Number(item))
+                  .filter((num: number) => !isNaN(num));
+              }
             }
           }
         }
@@ -285,11 +280,7 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
             );
           case 'organization':
             return (
-              <Cascader
-                showSearch
-                disabled={fieldDisabled}
-                options={organizationList}
-              />
+              <GroupTreeSelector multiple={false} disabled={fieldDisabled} />
             );
           case 'int':
             return (
@@ -351,32 +342,19 @@ const FieldMoadal = forwardRef<FieldModalRef, FieldModalProps>(
         const msg: string = t(
           type === 'add' ? 'successfullyAdded' : 'successfullyModified'
         );
-        const url: string =
-          type === 'add'
-            ? `/cmdb/api/instance/`
-            : `/cmdb/api/instance/batch_update/`;
-        let requestParams: RequestParams = {
-          model_id: modelId,
-          instance_info: formData,
-        };
-        if (type !== 'add') {
-          if (isBatchEdit) {
-            for (const key in formData) {
-              if (
-                !formData[key] &&
-                formData[key] !== 0 &&
-                formData[key] !== false
-              ) {
-                delete formData[key];
-              }
-            }
-          }
-          requestParams = {
+        let result: any;
+        if (type === 'add') {
+          result = await instanceApi.createInstance({
+            model_id: modelId,
+            instance_info: formData,
+          });
+        } else {
+          result = await instanceApi.batchUpdateInstances({
             inst_ids: type === 'edit' ? [instanceData._id] : selectedRows,
             update_data: formData,
-          };
+          });
         }
-        const { _id: instId } = await post(url, requestParams);
+        const instId = result?._id;
         message.success(msg);
         onSuccess(confirmType ? instId : '');
         handleCancel();

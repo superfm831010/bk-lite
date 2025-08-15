@@ -11,12 +11,12 @@ import PageLayout from '@/components/page-layout';
 import TopSection from '@/components/top-section';
 import PermissionWrapper from '@/components/permission';
 import TrainTaskModal from './traintaskModal';
+import TrainTaskDrawer from './traintaskDrawer';
 import { useTranslation } from '@/utils/i18n';
 import { ModalRef, ColumnItem, Option } from '@/app/mlops/types';
 import type { TreeDataNode } from 'antd';
 import { TrainJob } from '@/app/mlops/types/task';
 import { TRAIN_STATUS_MAP, TRAIN_TEXT } from '@/app/mlops/constants';
-import { JointContent } from 'antd/es/message/interface';
 import { DataSet } from '@/app/mlops/types/manage';
 const { Search } = Input;
 
@@ -41,6 +41,8 @@ const TrainTask = () => {
   const [tableData, setTableData] = useState<TrainJob[]>([]);
   const [datasetOptions, setDatasetOptions] = useState<Option[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [selectedTrain, setSelectTrain] = useState<number | null>(null);
+  const [drawerOpen, setDrawOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -120,7 +122,7 @@ const TrainTask = () => {
       align: 'center',
       render: (_: unknown, record: TrainJob) => (
         <>
-          <PermissionWrapper requiredPermissions={['Edit']}>
+          <PermissionWrapper requiredPermissions={['Train']}>
             <Popconfirm
               title={t('traintask.trainStartTitle')}
               description={t('traintask.trainStartContent')}
@@ -135,6 +137,15 @@ const TrainTask = () => {
                 {t('traintask.train')}
               </Button>
             </Popconfirm>
+          </PermissionWrapper>
+          <PermissionWrapper requiredPermissions={['View']}>
+            <Button
+              type="link"
+              className="mr-[10px]"
+              onClick={() => openDrawer(record)}
+            >
+              {t('common.detail')}
+            </Button>
           </PermissionWrapper>
           <PermissionWrapper requiredPermissions={['Edit']}>
             <Button
@@ -191,13 +202,13 @@ const TrainTask = () => {
     getTasks();
   }, [pagination.current, pagination.pageSize, selectedKeys]);
 
-  const getTasks = async () => {
+  const getTasks = async (name = '') => {
     const [activeTab] = selectedKeys;
     if (!activeTab) return;
     setLoading(true);
     try {
       if (activeTab === 'anomaly') {
-        const { items, count } = await fetchTaskList(pagination.current, pagination.pageSize);
+        const { items, count } = await fetchTaskList(name, pagination.current, pagination.pageSize);
         const _data =
           items?.map((item: any) => ({
             id: item.id,
@@ -240,8 +251,9 @@ const TrainTask = () => {
     }
   };
 
-  const fetchTaskList = useCallback(async (page: number = 1, pageSize: number = 10) => {
+  const fetchTaskList = useCallback(async (name: string = '', page: number = 1, pageSize: number = 10) => {
     const { count, items } = await getAnomalyTaskList({
+      name,
       page,
       page_size: pageSize
     });
@@ -250,6 +262,11 @@ const TrainTask = () => {
       count
     }
   }, [getAnomalyTaskList]);
+
+  const openDrawer = (record: any) => {
+    setSelectTrain(record?.id);
+    setDrawOpen(true);
+  };
 
   const handleAdd = () => {
     if (modalRef.current) {
@@ -264,7 +281,7 @@ const TrainTask = () => {
   const handleEdit = (record: TrainJob) => {
     if (modalRef.current) {
       modalRef.current.showModal({
-        type: 'edit',
+        type: 'update',
         title: 'edittask',
         form: record
       })
@@ -274,9 +291,12 @@ const TrainTask = () => {
   const onTrainStart = async (record: TrainJob) => {
     try {
       await startAnomalyTrainTask(record.id);
+      message.success(t(`traintask.trainStartSucess`));
     } catch (e) {
       console.log(e);
-      message.error(e as JointContent)
+      message.error(t(`common.error`));
+    } finally {
+      getTasks();
     }
   };
 
@@ -285,8 +305,8 @@ const TrainTask = () => {
     setPagination(value);
   };
 
-  const onSearch = () => {
-    getTasks();
+  const onSearch = (value: string) => {
+    getTasks(value);
   };
 
   const onDelete = async (record: TrainJob) => {
@@ -347,6 +367,7 @@ const TrainTask = () => {
         }
       />
       <TrainTaskModal ref={modalRef} onSuccess={() => onRefresh()} activeTag={selectedKeys} datasetOptions={datasetOptions} />
+      <TrainTaskDrawer open={drawerOpen} onCancel={() => setDrawOpen(false)} selectId={selectedTrain} />
     </>
   );
 };

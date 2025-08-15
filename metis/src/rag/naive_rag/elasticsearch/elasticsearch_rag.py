@@ -3,7 +3,6 @@ import os
 from typing import List
 
 import elasticsearch
-import requests
 from langchain_core.documents import Document
 from langchain_elasticsearch import ElasticsearchRetriever
 from langchain_elasticsearch import ElasticsearchStore
@@ -20,38 +19,22 @@ from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequ
 from src.entity.rag.base.index_delete_request import IndexDeleteRequest
 from src.rag.base_rag import BaseRag
 from src.rag.naive_rag.elasticsearch.elasticsearch_query_builder import ElasticsearchQueryBuilder
+from src.rag.naive_rag.recall_strategies.recall_strategy_factory import RecallStrategyFactory
 from src.rerank.rerank_manager import ReRankManager
 
 
 class ElasticSearchRag(BaseRag):
+    """Elasticsearch RAG 实现类"""
+
     def __init__(self):
-        self.es = elasticsearch.Elasticsearch(hosts=[core_settings.elasticsearch_url],
-                                              basic_auth=("elastic", core_settings.elasticsearch_password))
+        self.es = elasticsearch.Elasticsearch(
+            hosts=[core_settings.elasticsearch_url],
+            basic_auth=("elastic", core_settings.elasticsearch_password)
+        )
 
     def update_metadata(self, req: DocumentMetadataUpdateRequest):
-        """
-        根据过滤条件更新文档的元数据
-
-        Args:
-            req: 包含索引名称、元数据过滤条件和新元数据的请求对象
-
-        Returns:
-            更新的文档数量
-        """
-        # 构建过滤条件
-        metadata_filter = []
-        for key, value in req.metadata_filter.items():
-            # 检查值是否为逗号分隔的字符串
-            if isinstance(value, str) and ',' in value:
-                # 按逗号分割并去除空白
-                values = [v.strip() for v in value.split(',')]
-                metadata_filter.append(
-                    {"terms": {f"metadata.{key}.keyword": values}}
-                )
-            else:
-                metadata_filter.append(
-                    {"term": {f"metadata.{key}.keyword": value}}
-                )
+        metadata_filter = ElasticsearchQueryBuilder.build_metadata_filter(
+            req.metadata_filter)
 
         # 构建查询
         query = {
@@ -81,49 +64,47 @@ class ElasticSearchRag(BaseRag):
         )
         self.es.indices.refresh(index=req.index_name)
 
-    def count_index_document(self, req: DocumentCountRequest):
-        if not req.metadata_filter:
-            # Count all documents in the index
+    def count_index_document(self, req: DocumentCountRequest) -> int:
+        """
+        统计索引中符合条件的文档数量
+
+        Args:
+            req: 文档计数请求对象
+
+        Returns:
+            符合条件的文档数量
+        """
+        # 如果没有任何过滤条件，直接返回索引总数
+        if not req.metadata_filter and not req.query:
+            logger.debug(f"Counting all documents in index: {req.index_name}")
             count = self.es.count(index=req.index_name)
             return count['count']
 
-        # Build filter query for specific metadata
-        metadata_filter = []
-        for key, value in req.metadata_filter.items():
-            metadata_filter.append(
-                {"term": {f"metadata.{key}.keyword": value}})
+        # 构建查询条件
+        query_body = {"query": {"bool": {}}}
 
-        # Build the query with metadata filter
-        query = {
-            "query": {
-                "bool": {
-                    "filter": metadata_filter
-                }
-            }
-        }
+        # 添加元数据过滤条件
+        if req.metadata_filter:
+            metadata_filter = ElasticsearchQueryBuilder.build_metadata_filter(
+                req.metadata_filter)
+            query_body["query"]["bool"]["filter"] = metadata_filter
 
-        # Add match_phrase query if req.query is not empty
+        # 添加文本匹配条件
         if req.query:
-            if not query["query"]["bool"].get("must"):
-                query["query"]["bool"]["must"] = []
-                query["query"]["bool"]["must"].append({
-                    "match_phrase": {
-                        "text": req.query
-                    }
-                })
+            query_body["query"]["bool"]["must"] = [{
+                "match_phrase": {"text": req.query}
+            }]
 
-        count = self.es.count(index=req.index_name, body=query)
+        count = self.es.count(index=req.index_name, body=query_body)
         return count['count']
 
     def delete_index(self, req: IndexDeleteRequest):
         self.es.indices.delete(index=req.index_name)
 
     def list_index_document(self, req: DocumentListRequest):
-        # Build filter query for specific metadata
         metadata_filter = ElasticsearchQueryBuilder.build_metadata_filter(
             req.metadata_filter)
 
-        # Calculate offset from page and size
         offset = (req.page - 1) * req.size if req.page > 0 else 0
 
         # Build the query
@@ -138,17 +119,44 @@ class ElasticSearchRag(BaseRag):
             "_source": {"excludes": ["vector"]}  # Exclude the vector field
         }
 
+        # Add sorting with backward compatibility and field existence check
+        if req.sort_field and req.sort_order:
+            # 验证排序方式
+            sort_order = req.sort_order.lower()
+            if sort_order not in ['asc', 'desc']:
+                sort_order = 'desc'  # 默认降序
+
+            # 检查字段是否存在于索引映射中
+            field_exists = self._check_field_exists_in_mapping(
+                req.index_name, req.sort_field)
+
+            if field_exists:
+                # 字段存在，可以安全排序
+                sort_config = {req.sort_field: {"order": sort_order}}
+
+                # 如果是时间字段排序，添加缺失值处理
+                if 'created_time' in req.sort_field or 'updated_time' in req.sort_field:
+                    sort_config[req.sort_field]["missing"] = "_last" if sort_order == 'asc' else "_first"
+                    logger.debug(
+                        f"时间字段排序，添加兼容性处理: 缺失值放在{'最后' if sort_order == 'asc' else '最前'}")
+
+                query["sort"] = [sort_config]
+                logger.debug(f"添加排序: {req.sort_field} {sort_order}")
+            else:
+                logger.warning(
+                    f"排序字段 {req.sort_field} 在索引 {req.index_name} 中不存在，跳过排序")
+                # 可以选择使用一个默认的排序字段，比如 _score
+                query["sort"] = [{"_score": {"order": "desc"}}]
+
         # Add match_phrase query if req.query is not empty
         if req.query:
-            if not query["query"]["bool"].get("must"):
-                query["query"]["bool"]["must"] = []
-                query["query"]["bool"]["must"].append({
-                    "match_phrase": {
-                        "text": req.query
-                    }
-                })
+            query["query"]["bool"]["must"] = []
+            query["query"]["bool"]["must"].append({
+                "match_phrase": {
+                    "text": req.query
+                }
+            })
 
-        # Execute the search query
         response = self.es.search(index=req.index_name, body=query)
 
         # Process and return the results
@@ -162,19 +170,8 @@ class ElasticSearchRag(BaseRag):
         return documents
 
     def delete_document(self, req: DocumentDeleteRequest):
-        metadata_filter = []
-        for key, value in req.metadata_filter.items():
-            # Check if the value is a comma-separated string
-            if isinstance(value, str) and ',' in value:
-                # Split the value by comma and strip whitespace
-                values = [v.strip() for v in value.split(',')]
-                metadata_filter.append(
-                    {"terms": {f"metadata.{key}.keyword": values}}
-                )
-            else:
-                metadata_filter.append(
-                    {"term": {f"metadata.{key}.keyword": value}}
-                )
+        metadata_filter = ElasticsearchQueryBuilder.build_metadata_filter(
+            req.metadata_filter)
 
         query = {
             "query": {
@@ -206,273 +203,170 @@ class ElasticSearchRag(BaseRag):
         db.client.indices.refresh(index=req.index_name)
 
     def _process_search_result(self, docs: List[Document]) -> List[Document]:
+        """处理搜索结果，移除向量字段并添加QA答案"""
         for doc in docs:
             if 'vector' in doc.metadata.get('_source', {}):
                 del doc.metadata['_source']['vector']
-            if 'qa_answer' in doc.metadata.get('_source', {})['metadata']:
+            if 'qa_answer' in doc.metadata.get('_source', {}).get('metadata', {}):
                 doc.page_content += f"\n{doc.metadata['_source']['metadata']['qa_answer']}"
         return docs
 
     def _rerank_results(self, req: DocumentRetrieverRequest, search_result: List[Document]) -> List[Document]:
-        """
-        对搜索结果进行重排序处理
-        """
-        if not req.enable_rerank or not search_result:
+        """重排序处理"""
+        if not search_result:
             return search_result
 
-        if req.rerank_model_base_url.startswith('local:'):
-            logger.info(f"使用本地ReRank模型进行重排序: {req.rerank_model_base_url}")
-            local_rerank_result = ReRankManager.rerank(req.rerank_model_base_url,
-                                                       req.search_query, search_result)
-            # 对local_rerank_result进行排序并获取topk
-            top_k_search_result = []
-            # Ensure rerank_ids and rerank_scores are available and have the same length
-            if 'rerank_ids' in local_rerank_result and 'rerank_scores' in local_rerank_result and \
-                    len(local_rerank_result['rerank_ids']) == len(local_rerank_result['rerank_scores']):
+        # 准备重排序参数
+        rerank_kwargs = {
+            'rerank_model_base_url': req.rerank_model_base_url,
+            'rerank_model_name': req.rerank_model_name,
+            'rerank_model_api_key': req.rerank_model_api_key,
+            'search_query': req.search_query,
+            'search_result': search_result,
+            'rerank_top_k': req.rerank_top_k,
+        }
 
-                top_rerank_ids = local_rerank_result['rerank_ids'][:req.rerank_top_k]
+        # 只有当阈值存在且大于0时才传递阈值参数
+        if hasattr(req, 'threshold') and req.threshold is not None and req.threshold > 0:
+            rerank_kwargs['threshold'] = req.threshold
 
-                for i in top_rerank_ids:
-                    if 0 <= i < len(search_result):  # Check index bounds
-                        doc = search_result[i]
-                        # Ensure relevance_score can be set
-                        if hasattr(doc, 'metadata'):
-                            # Check if i is a valid index for rerank_scores
-                            if 0 <= i < len(local_rerank_result['rerank_scores']):
-                                doc.metadata['relevance_score'] = local_rerank_result['rerank_scores'][i]
-                            else:
-                                # Handle case where rerank_scores might not align, or set a default
-                                # Or some other default/error indicator
-                                doc.metadata['relevance_score'] = 0.0
-                        top_k_search_result.append(doc)
-                    else:
-                        logger.warning(
-                            f"Invalid index {i} from rerank_ids, skipping.")
+        return ReRankManager.rerank_documents(**rerank_kwargs)
 
-            else:
-                logger.warning(
-                    "ReRank result format error or mismatch, skipping reranking.")
-                return search_result  # Or handle error appropriately
+    def _create_retriever(self, req: DocumentRetrieverRequest) -> ElasticsearchRetriever:
+        """创建Elasticsearch检索器"""
+        return ElasticsearchRetriever.from_es_params(
+            index_name=req.index_name,
+            body_func=lambda x: ElasticsearchQueryBuilder.build_query(req),
+            content_field="text",
+            url=core_settings.elasticsearch_url,
+            username="elastic",
+            password=core_settings.elasticsearch_password,
+        )
 
-            return top_k_search_result
+    def _execute_rag_search(self, req: DocumentRetrieverRequest, rag_type: str) -> List[Document]:
+        """执行RAG搜索的通用方法"""
+        rag_request = copy.deepcopy(req)
 
-        else:
-            logger.info(f"使用远程ReRank模型进行重排序: {req.rerank_model_base_url}")
-            headers = {
-                "accept": "application/json", "Content-Type": "application/json",
-                "Authorization": f"Bearer {req.rerank_model_api_key}"
-            }
+        # 根据RAG类型设置不同的过滤条件
+        if rag_type == 'naive':
+            rag_request.metadata_filter['qa_answer__missing'] = True
+        elif rag_type == 'qa':
+            rag_request.metadata_filter['qa_answer__exists'] = True
 
-            rerank_content = [doc.page_content for doc in search_result]
-
-            data = {
-                "model": req.rerank_model_name,
-                "query": req.search_query,
-                "documents": rerank_content,
-            }
-            try:
-                response = requests.post(
-                    req.rerank_model_base_url, headers=headers, json=data, timeout=10)  # Added timeout
-                response.raise_for_status()  # Raise an exception for HTTP errors
-                rerank_api_result = response.json()
-
-                if 'results' not in rerank_api_result:
-                    logger.error(f"远程ReRank API响应格式错误: {rerank_api_result}")
-                    return search_result  # Return original if reranking fails
-
-                rerank_result_items = rerank_api_result['results']
-
-                # 对rerank_result_items进行排序并获取topk
-                # Ensure each item has 'relevance_score'
-                valid_rerank_items = [
-                    item for item in rerank_result_items if 'relevance_score' in item and 'index' in item]
-
-                sorted_rerank_items = sorted(
-                    valid_rerank_items, key=lambda x: x['relevance_score'], reverse=True)
-
-                top_k_search_result = []
-                for item in sorted_rerank_items[:req.rerank_top_k]:
-                    original_index = item['index']
-                    if 0 <= original_index < len(search_result):
-                        doc = search_result[original_index]
-                        if hasattr(doc, 'metadata'):
-                            doc.metadata['relevance_score'] = item['relevance_score']
-                        top_k_search_result.append(doc)
-                    else:
-                        logger.warning(
-                            f"Invalid original_index {original_index} from rerank API, skipping.")
-
-                return top_k_search_result
-
-            except requests.exceptions.RequestException as e:
-                logger.error(f"远程ReRank API请求失败: {e}")
-                return search_result  # Return original if API call fails
-            except (KeyError, TypeError) as e:
-                logger.error(f"处理远程ReRank API响应时出错: {e}")
-                return search_result  # Return original if response processing fails
-
-    def search(self, req: DocumentRetrieverRequest) -> List[Document]:
         # 执行搜索
-        search_result = []
-        if req.enable_naive_rag is True:
-            naive_rag_request = copy.deepcopy(req)
-            naive_rag_request.metadata_filter['qa_answer__missing'] = True
-            documents_retriever = ElasticsearchRetriever.from_es_params(
-                index_name=req.index_name,
-                body_func=lambda x: ElasticsearchQueryBuilder.build_query(
-                    naive_rag_request),
-                content_field="text",
-                url=core_settings.elasticsearch_url,
-                username="elastic",
-                password=core_settings.elasticsearch_password,
-            )
-            rs = documents_retriever.invoke(req.search_query)
-            rs = self._process_search_result(rs)
-            search_result.extend(rs)
-        if req.enable_qa_rag is True:
-            qa_rag_request = copy.deepcopy(req)
-            qa_rag_request.metadata_filter['qa_answer__exists'] = True
-            documents_retriever = ElasticsearchRetriever.from_es_params(
-                index_name=req.index_name,
-                body_func=lambda x: ElasticsearchQueryBuilder.build_query(
-                    qa_rag_request),
-                content_field="text",
-                url=core_settings.elasticsearch_url,
-                username="elastic",
-                password=core_settings.elasticsearch_password,
-            )
-            rs = documents_retriever.invoke(req.search_query)
-            rs = self._process_search_result(rs)
-            search_result.extend(rs)
+        documents_retriever = self._create_retriever(rag_request)
+        search_results = documents_retriever.invoke(req.search_query)
+        search_results = self._process_search_result(search_results)
 
         # 重排序处理
-        search_result = self._rerank_results(req, search_result)
-        search_result = [doc for doc in search_result if doc.metadata.get(
-            # Consider relevance_score for threshold
-            '_score', doc.metadata.get('relevance_score', 0)) >= (req.threshold / 10)]
+        if req.enable_rerank:
+            search_results = self._rerank_results(req, search_results)
+            # 只有naive RAG需要召回阶段处理
+            if rag_type == 'naive':
+                search_results = self.process_recall_stage(req, search_results)
 
-        search_result = self.process_recall_stage(req, search_result)
+        return search_results
+
+    def search(self, req: DocumentRetrieverRequest) -> List[Document]:
+        """
+        搜索符合条件的文档
+
+        Args:
+            req: 检索请求对象
+
+        Returns:
+            检索到的文档列表
+        """
+        search_result = []
+
+        if req.enable_naive_rag:
+            naive_results = self._execute_rag_search(req, 'naive')
+            search_result.extend(naive_results)
+
+        if req.enable_qa_rag:
+            qa_results = self._execute_rag_search(req, 'qa')
+            search_result.extend(qa_results)
 
         return search_result
 
-    def process_recall_stage(self, req, search_result):
-        if req.rag_recall_mode == 'chunk':
-            return search_result
+    def process_recall_stage(self, req: DocumentRetrieverRequest, search_result: List[Document]) -> List[Document]:
+        """
+        处理检索阶段，根据不同的召回模式处理搜索结果
 
-        if req.rag_recall_mode == 'segment':
-            # 1. 根据chunk的segment_id进行去重
-            segments_id_set = set()
-            for doc in search_result:
-                segment_id = doc.metadata['_source']['metadata']['segment_id']
-                segments_id_set.add(segment_id)
+        Args:
+            req: 检索请求对象
+            search_result: 初始搜索结果
 
-            # 2. 去ElasticSearch中查找所有的segment_id内容，装载到字典中
-            segment_id_dict = {}
-            metadata_filter = [
-                {
-                    "terms": {
-                        "metadata.segment_id.keyword": list(segments_id_set)
-                    }
-                }
-            ]
+        Returns:
+            处理后的搜索结果
+        """
+        recall_mode = getattr(req, 'rag_recall_mode', 'chunk')
 
-            query = {
-                "query": {
-                    "bool": {
-                        "filter": metadata_filter
-                    }
-                },
-                "from": 0,
-                "size": 10000,
-                "_source": {"excludes": ["vector"]}  # Exclude the vector field
-            }
-            response = self.es.search(index=req.index_name, body=query)
-            for hit in response['hits']['hits']:
-                source = hit['_source']
-                metadata = source.get('metadata', {})
-                segment_id = metadata.get('segment_id')
-                if segment_id not in segment_id_dict:
-                    segment_id_dict[segment_id] = []
-                segment_id_dict[segment_id].append(hit)  # 存储整个hit对象而不只是source
+        try:
+            strategy = RecallStrategyFactory.get_strategy(recall_mode)
+            return strategy.process_recall(req, search_result, self.es)
+        except ValueError as e:
+            logger.warning(str(e))
+            # 如果策略不存在，回退到默认的chunk模式
+            default_strategy = RecallStrategyFactory.get_strategy('chunk')
+            return default_strategy.process_recall(req, search_result, self.es)
 
-            # 3. 根据segment_id_dict的chunk_number，保留与原始搜索结果相同格式
-            search_result = []
-
-            # 按照segment_id分组处理
-            for segment_id, hits in segment_id_dict.items():
-                # 按chunk_number排序
-                sorted_hits = sorted(hits, key=lambda x: int(
-                    x['_source'].get('metadata', {}).get('chunk_number', 0)))
-
-                # 将这个segment的所有chunk添加到结果中
-                search_result.extend(sorted_hits)
-
-        if req.rag_recall_mode == 'origin':
-            # 1. 从搜索结果中提取所有相关的 knowledge_id
-            knowledge_id_set = set()
-            for doc in search_result:
-                knowledge_id = doc.metadata['_source']['metadata'].get(
-                    'knowledge_id')
-                if knowledge_id:
-                    knowledge_id_set.add(knowledge_id)
-
-            if not knowledge_id_set:
-                logger.warning("没有找到有效的 knowledge_id，返回原始搜索结果")
-                return search_result
-
-            # 2. 查询 Elasticsearch 获取所有包含这些 knowledge_id 的文档
-            metadata_filter = [
-                {
-                    "terms": {
-                        "metadata.knowledge_id.keyword": list(knowledge_id_set)
-                    }
-                }
-            ]
-
-            query = {
-                "query": {
-                    "bool": {
-                        "filter": metadata_filter
-                    }
-                },
-                "from": 0,
-                "size": 10000,
-                "_source": {"excludes": ["vector"]}
-            }
-
-            response = self.es.search(index=req.index_name, body=query)
-
-            # 3. 按 knowledge_id 组织文档
-            knowledge_docs = {}
-            for hit in response['hits']['hits']:
-                source = hit['_source']
-                metadata = source.get('metadata', {})
-                knowledge_id = metadata.get('knowledge_id')
-
-                if not knowledge_id:
-                    continue
-
-                if knowledge_id not in knowledge_docs:
-                    knowledge_docs[knowledge_id] = []
-
-                knowledge_docs[knowledge_id].append(hit)  # 保存整个hit对象
-
-            # 4. 返回所有匹配的文档，保持与原始搜索结果相同格式
-            search_result = []
-            for knowledge_id, hits in knowledge_docs.items():
-                # 按segment_number排序
-                sorted_hits = sorted(hits, key=lambda x: int(
-                    x['_source'].get('metadata', {}).get('segment_number', 0)))
-
-                # 将这个knowledge的所有文档添加到结果中
-                search_result.extend(sorted_hits)
-
-            logger.info(f"Origin 模式重组完成，共恢复 {len(search_result)} 份文档片段")
-
-        # 5. 将ElasticSearch格式转换为Document格式
+    def _convert_hits_to_documents(self, hits: List[dict]) -> List[Document]:
+        """将 Elasticsearch hits 转换为 Document 对象"""
         docs_result = []
-        for hit in search_result:
+        for hit in hits:
+            source = hit['_source']
             doc = Document(page_content=source['text'], metadata=hit)
             docs_result.append(doc)
-
         return docs_result
+
+    def _check_field_exists_in_mapping(self, index_name: str, field_path: str) -> bool:
+        """
+        检查字段是否存在于索引映射中
+
+        Args:
+            index_name: 索引名称
+            field_path: 字段路径，例如 'metadata.created_time'
+
+        Returns:
+            bool: 字段是否存在
+        """
+        try:
+            # 获取索引映射
+            mapping_response = self.es.indices.get_mapping(index=index_name)
+
+            if index_name not in mapping_response:
+                logger.warning(f"索引 {index_name} 不存在")
+                return False
+
+            mappings = mapping_response[index_name]['mappings']
+
+            # 检查字段路径是否存在
+            field_parts = field_path.split('.')
+            current_mapping = mappings.get('properties', {})
+
+            for part in field_parts:
+                if part in current_mapping:
+                    if 'properties' in current_mapping[part]:
+                        # 这是一个对象字段，继续向下查找
+                        current_mapping = current_mapping[part]['properties']
+                    else:
+                        # 这是最终字段
+                        if part == field_parts[-1]:
+                            logger.debug(
+                                f"字段 {field_path} 在索引 {index_name} 中存在")
+                            return True
+                        else:
+                            # 路径中断，字段不存在
+                            logger.debug(
+                                f"字段路径 {field_path} 在索引 {index_name} 中不完整")
+                            return False
+                else:
+                    logger.debug(f"字段 {field_path} 在索引 {index_name} 中不存在")
+                    return False
+
+            return True
+
+        except Exception as e:
+            logger.error(f"检查字段映射时出错: {str(e)}")
+            return False

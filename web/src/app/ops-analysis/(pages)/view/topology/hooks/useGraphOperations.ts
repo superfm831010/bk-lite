@@ -1,25 +1,33 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import type { Graph as X6Graph, Edge } from '@antv/x6';
 import { Graph } from '@antv/x6';
 import { Selection } from '@antv/x6-plugin-selection';
-import type { Graph as X6Graph, Edge } from '@antv/x6';
+import { message } from 'antd';
+import { COLORS, FORM_DEFAULTS } from '../constants/nodeDefaults';
+import { iconList } from '@/app/cmdb/utils/common';
+import { useTopologyApi } from '@/app/ops-analysis/api/topology';
 import {
   getEdgeStyle,
+  getEdgeStyleWithLabel,
   addEdgeTools,
   showPorts,
   hideAllPorts,
   getSingleValueNodeStyle,
   getIconNodeStyle,
+  getTextNodeStyle,
   getLogoUrl,
   showEdgeTools,
   hideAllEdgeTools,
 } from '../utils/topologyUtils';
-import { iconList } from '@/app/cmdb/utils/common';
-import { mockTopologyNodes, mockTopologyEdges } from '../../mockData';
 
 export const useGraphOperations = (
   containerRef: React.RefObject<HTMLDivElement>,
   state: any
 ) => {
+  // 内部状态管理
+  const [nodeEditFormInstance, setNodeEditFormInstance] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
   const {
     graphInstance,
     setGraphInstance,
@@ -124,51 +132,197 @@ export const useGraphOperations = (
     setGraphInstance(graph);
     bindGraphEvents(graph);
 
-    initializeMockData(graph);
 
     return () => {
       graph.dispose();
     };
   }, []);
 
-  // 初始化mock数据
-  const initializeMockData = (graph: X6Graph) => {
-    // 添加mock节点
-    mockTopologyNodes.forEach((nodeConfig) => {
+  // 加载拓扑数据
+  const loadTopologyData = useCallback((data: { nodes: any[], edges: any[] }) => {
+    if (!graphInstance) return;
+    // 清空当前图形
+    graphInstance.clearCells();
+
+    // 加载节点
+    data.nodes.forEach((nodeConfig) => {
       let nodeData: any;
 
       if (nodeConfig.type === 'single-value') {
         nodeData = getSingleValueNodeStyle(nodeConfig);
+      } else if (nodeConfig.type === 'text') {
+        nodeData = getTextNodeStyle(nodeConfig);
       } else {
         const logoUrl = getLogoUrl(nodeConfig, iconList);
         nodeData = getIconNodeStyle(nodeConfig, logoUrl);
       }
 
-      graph.addNode(nodeData);
+      graphInstance.addNode(nodeData);
     });
 
-    // 添加mock边
-    mockTopologyEdges.forEach((edgeConfig) => {
-      const edge = graph.createEdge({
+    // 加载边
+    data.edges.forEach((edgeConfig) => {
+      const edgeData = {
+        lineType: edgeConfig.lineType as 'line' | 'network line',
+        lineName: edgeConfig.lineName,
+        sourceInterface: edgeConfig.sourceInterface,
+        targetInterface: edgeConfig.targetInterface,
+        config: edgeConfig.config,
+      };
+
+      const edge = graphInstance.createEdge({
         id: edgeConfig.id,
         source: edgeConfig.source,
         target: edgeConfig.target,
         sourcePort: edgeConfig.sourcePort,
         targetPort: edgeConfig.targetPort,
         shape: 'edge',
-        ...getEdgeStyle('single'),
-        data: {
-          lineType: edgeConfig.lineType,
-          lineName: edgeConfig.lineName,
-          sourceInterface: edgeConfig.sourceInterface,
-          targetInterface: edgeConfig.targetInterface,
-          config: edgeConfig.config,
-        },
+        ...getEdgeStyleWithLabel(edgeData, 'single'),
+        data: edgeData,
       });
 
-      graph.addEdge(edge);
+      graphInstance.addEdge(edge);
     });
-  };
+
+    // 自适应画布
+    setTimeout(() => {
+      graphInstance.centerContent();
+    }, 100);
+  }, [graphInstance]);
+
+  // 序列化图形数据，只保存样式相关的config
+  const serializeTopologyData = useCallback(() => {
+    if (!graphInstance) return { nodes: [], edges: [] };
+
+    const nodes = graphInstance.getNodes().map((node: any) => {
+      const nodeData = node.getData();
+      const position = node.getPosition();
+
+      const serializedNode: any = {
+        id: node.id,
+        x: position.x,
+        y: position.y,
+        type: nodeData.type,
+        name: nodeData.name,
+      };
+
+      // 根据节点类型保存相应配置，只保存样式相关字段
+      if (nodeData.type === 'icon') {
+        serializedNode.logo = nodeData.logo;
+        serializedNode.logoType = nodeData.logoType;
+        if (nodeData.config) {
+          // 只保存样式相关的配置
+          serializedNode.config = {
+            backgroundColor: nodeData.config.backgroundColor,
+            borderColor: nodeData.config.borderColor,
+            textColor: nodeData.config.textColor,
+            fontSize: nodeData.config.fontSize,
+          };
+        }
+      } else if (nodeData.type === 'single-value') {
+        serializedNode.dataSource = nodeData.dataSource;
+        if (nodeData.config) {
+          // 只保存样式相关的配置
+          serializedNode.config = {
+            textColor: nodeData.config.textColor,
+            fontSize: nodeData.config.fontSize,
+            backgroundColor: nodeData.config.backgroundColor,
+            borderColor: nodeData.config.borderColor,
+          };
+        }
+      } else if (nodeData.type === 'text') {
+        if (nodeData.config) {
+          // 只保存样式相关的配置
+          serializedNode.config = {
+            fontSize: nodeData.config.fontSize,
+            fontWeight: nodeData.config.fontWeight,
+            textColor: nodeData.config.textColor,
+          };
+        }
+      }
+
+      return serializedNode;
+    });
+
+    const edges = graphInstance.getEdges().map((edge: any) => {
+      const edgeData = edge.getData();
+      const sourcePort = edge.getSourcePortId();
+      const targetPort = edge.getTargetPortId();
+
+      return {
+        id: edge.id,
+        source: edge.getSourceCellId(),
+        target: edge.getTargetCellId(),
+        sourcePort,
+        targetPort,
+        lineType: edgeData?.lineType || 'network line',
+        lineName: edgeData?.lineName || '',
+        sourceInterface: edgeData?.sourceInterface,
+        targetInterface: edgeData?.targetInterface,
+        config: edgeData?.config
+          ? {
+            // 只保存样式相关的配置
+            strokeColor: edgeData.config.strokeColor,
+            strokeWidth: edgeData.config.strokeWidth,
+          }
+          : undefined,
+      };
+    });
+
+    return { nodes, edges };
+  }, [graphInstance]);
+
+  // API相关操作
+  const { saveTopology, getTopologyDetail } = useTopologyApi();
+
+  // 保存拓扑图
+  const handleSaveTopology = useCallback(async (selectedTopology: any) => {
+    if (!selectedTopology?.data_id) {
+      message.error('请先选择要保存的拓扑图');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const topologyData = serializeTopologyData();
+      const saveData = {
+        name: selectedTopology.name,
+        view_sets: {
+          nodes: topologyData.nodes,
+          edges: topologyData.edges,
+        },
+      };
+      await saveTopology(selectedTopology.data_id, saveData);
+
+      // 调用原有的保存逻辑（退出编辑模式等）
+      handleSave();
+
+      message.success('拓扑图保存成功');
+    } catch (error) {
+      console.error('保存拓扑图失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [serializeTopologyData, saveTopology]);
+
+  // 加载拓扑图数据
+  const handleLoadTopology = useCallback(async (topologyId: string | number) => {
+    // 如果 graphInstance 为 null，说明组件还没有完全初始化，直接返回
+    if (!graphInstance) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await getTopologyDetail(topologyId);
+      const viewSets = data.view_sets || {};
+      loadTopologyData(viewSets);
+    } catch (error) {
+      console.error('加载拓扑图失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [graphInstance, loadTopologyData, getTopologyDetail, setLoading]);
 
   // 绑定图形事件
   const bindGraphEvents = (graph: X6Graph) => {
@@ -267,7 +421,7 @@ export const useGraphOperations = (
         edge.setAttrs({
           line: {
             ...edge.getAttrs().line,
-            stroke: edge.getAttrs().line?.stroke || '#a7b5c4',
+            stroke: edge.getAttrs().line?.stroke || COLORS.EDGE.DEFAULT,
             strokeWidth: edge.getAttrs().line?.strokeWidth || 1,
           },
         });
@@ -278,7 +432,7 @@ export const useGraphOperations = (
           cell.setAttrs({
             line: {
               ...cell.getAttrs().line,
-              stroke: '#1890FF',
+              stroke: COLORS.EDGE.SELECTED,
               strokeWidth: 2,
             },
           });
@@ -323,13 +477,13 @@ export const useGraphOperations = (
       hideAllPorts(graph);
       hideAllEdgeTools(graph);
       setContextMenuVisible(false);
-      
+
       // 清除所有边的高亮效果
       graph.getEdges().forEach((edge: any) => {
         edge.setAttrs({
           line: {
             ...edge.getAttrs().line,
-            stroke: '#a7b5c4',
+            stroke: COLORS.EDGE.DEFAULT,
             strokeWidth: 2,
           },
         });
@@ -337,7 +491,7 @@ export const useGraphOperations = (
 
       graph.cleanSelection();
       setSelectedCells([]);
-      
+
       setTimeout(() => {
         finishTextEditRef.current?.();
       }, 0);
@@ -453,7 +607,7 @@ export const useGraphOperations = (
         edge.setAttrs({
           line: {
             ...edge.getAttrs().line,
-            stroke: '#a7b5c4',
+            stroke: COLORS.EDGE.DEFAULT,
             strokeWidth: 1,
           },
         });
@@ -556,15 +710,39 @@ export const useGraphOperations = (
     try {
       const values = await nodeEditFormInstance.validateFields();
 
-      const updatedConfig = {
-        id: state.editingNodeData.id,
-        type: state.editingNodeData.type,
-        name: values.name,
-        logo: values.logoType === 'default' ? values.logoIcon : values.logoUrl,
-        logoType: values.logoType,
-        dataSource: values.dataSource,
-        config: values,
-      };
+      let updatedConfig: any;
+
+      if (state.editingNodeData.type === 'single-value') {
+        updatedConfig = {
+          id: state.editingNodeData.id,
+          type: state.editingNodeData.type,
+          name: values.name,
+          dataSource: values.dataSource,
+          config: {
+            query: values.query || FORM_DEFAULTS.SINGLE_VALUE.query,
+            unit: values.unit || FORM_DEFAULTS.SINGLE_VALUE.unit,
+            threshold: values.threshold || FORM_DEFAULTS.SINGLE_VALUE.threshold,
+            textColor: values.textColor || FORM_DEFAULTS.SINGLE_VALUE.textColor,
+            fontSize: values.fontSize || FORM_DEFAULTS.SINGLE_VALUE.fontSize,
+            backgroundColor: values.backgroundColor || FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
+            borderColor: values.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor,
+          },
+        };
+      } else {
+        // 图标节点 - 保持原有逻辑
+        updatedConfig = {
+          id: state.editingNodeData.id,
+          type: state.editingNodeData.type,
+          name: values.name,
+          logo: values.logoType === 'default' ? values.logoIcon : values.logoUrl,
+          logoType: values.logoType,
+          dataSource: values.dataSource,
+          config: {
+            backgroundColor: values.backgroundColor || FORM_DEFAULTS.ICON_NODE.backgroundColor,
+            borderColor: values.borderColor || FORM_DEFAULTS.ICON_NODE.borderColor,
+          },
+        };
+      }
 
       updateNode(updatedConfig);
 
@@ -584,6 +762,14 @@ export const useGraphOperations = (
     handleSave,
     addNode,
     updateNode,
-    handleNodeUpdate
+    handleNodeUpdate,
+    loadTopologyData,
+    serializeTopologyData,
+    handleSaveTopology,
+    handleLoadTopology,
+    nodeEditFormInstance,
+    setNodeEditFormInstance,
+    loading,
+    setLoading
   };
 };

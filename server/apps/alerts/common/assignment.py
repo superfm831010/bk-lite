@@ -523,5 +523,4 @@ def not_assignment_alert_notify(alert_ids):
     alert_instances = list(Alert.objects.filter(alert_id__in=alert_ids, status=AlertStatus.UNASSIGNED))
     from apps.alerts.tasks import sync_notify
     params = UnDispatchService.notify_un_dispatched_alert_params_format(alerts=alert_instances)
-    for notify_people, channel, title, content, alerts in params:
-        sync_notify.delay(notify_people, channel, title, content)
+    sync_notify.delay(params)

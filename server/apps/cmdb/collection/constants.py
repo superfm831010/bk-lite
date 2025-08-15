@@ -128,6 +128,7 @@ DB_COLLECT_METRIC_MAP = {
     "redis": ["redis_info_gauge"],
     "mongodb": ["mongodb_info_gauge"],
     "postgresql": ["postgresql_info_gauge"],
+    "dameng": ["dameng_info_gauge"],
 }
 
 MIDDLEWARE_METRIC_MAP = {
@@ -141,6 +142,7 @@ MIDDLEWARE_METRIC_MAP = {
     "activemq": ["activemq_info_gauge"],
     "weblogic": ["weblogic_info_gauge"],
     "keepalived": ["keepalived_info_gauge"],
+    "tongweb": ["tongweb_info_gauge"],
 }
 
 # Tencent cloud

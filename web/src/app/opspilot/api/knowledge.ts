@@ -8,7 +8,7 @@ export const useKnowledgeApi = () => {
    * Fetches embedding models.
    */
   const fetchEmbeddingModels = async (): Promise<any[]> => {
-    return get('/opspilot/model_provider_mgmt/embed_provider/');
+    return get('/opspilot/model_provider_mgmt/embed_provider/', { params: { enabled: 1 } });
   };
 
   /**
@@ -118,6 +118,10 @@ export const useKnowledgeApi = () => {
     return get(`/opspilot/knowledge_mgmt/knowledge_document/${documentId}/get_document_detail/`);
   };
 
+  const getInstanceDetail = async (documentId: number): Promise<any> => {
+    return get(`/opspilot/knowledge_mgmt/knowledge_document/${documentId}/get_instance_detail/`);
+  };
+
   /**
    * Fetches document details with pagination and search.
    */
@@ -140,7 +144,7 @@ export const useKnowledgeApi = () => {
    * Fetches semantic models.
    */
   const fetchSemanticModels = async (): Promise<any[]> => {
-    return get('/opspilot/model_provider_mgmt/rerank_provider/');
+    return get('/opspilot/model_provider_mgmt/rerank_provider/', { params: { enabled: 1 } });
   };
 
   /**
@@ -239,6 +243,13 @@ export const useKnowledgeApi = () => {
   };
 
   /**
+   * Fetches QA pairs task status for a specific document.
+   */
+  const fetchQAPairsTaskStatus = async (params: { document_id: string }): Promise<any[]> => {
+    return get('/opspilot/knowledge_mgmt/qa_pairs/get_qa_pairs_task_status/', { params });
+  };
+
+  /**
    * Fetches QA pairs for the knowledge base.
    */
   const fetchQAPairs = async (params: any): Promise<any> => {
@@ -250,6 +261,15 @@ export const useKnowledgeApi = () => {
    */
   const deleteQAPair = async (qaPairId: number): Promise<void> => {
     return del(`/opspilot/knowledge_mgmt/qa_pairs/${qaPairId}/`);
+  };
+
+  const createOneQAPair = async (payload: {
+    knowledge_id: number;
+    qa_pairs_id: number;
+    question: string;
+    answer: string;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/create_one_qa_pairs/', payload);
   };
 
   /**
@@ -266,6 +286,54 @@ export const useKnowledgeApi = () => {
     }>;
   }): Promise<any> => {
     return post('/opspilot/knowledge_mgmt/qa_pairs/create_qa_pairs/', payload);
+  };
+
+  const updateQAPair = async (payload: {
+    qa_pairs_id: number;
+    id: string;
+    question: string;
+    answer: string;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/update_qa_pairs/', payload);
+  };
+
+  const deleteOneQAPair = async (payload: {
+    qa_pairs_id: number;
+    id: string;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/delete_one_qa_pairs/', payload);
+  };
+
+  /**
+   * Creates custom QA pairs manually.
+   */
+  const createCustomQAPairs = async (payload: {
+    knowledge_base_id: number;
+    name: string;
+    qa_pairs: Array<{
+      question: string;
+      answer: string;
+    }>;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/create_qa_pairs_by_custom/', payload);
+  };
+
+  /**
+   * Creates QA pairs from selected chunks.
+   */
+  const createQAPairsByChunk = async (payload: {
+    name: string;
+    knowledge_base_id: number;
+    document_id: number;
+    document_source: string;
+    qa_count: number;
+    llm_model_id: number;
+    chunk_list: Array<{
+      content: string;
+      id: string;
+    }>;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/create_qa_pairs_by_chunk/', payload);
   };
 
   /**
@@ -380,6 +448,17 @@ export const useKnowledgeApi = () => {
     });
   };
 
+  /**
+   * Deletes chunks from knowledge documents.
+   */
+  const deleteChunks = async (payload: {
+    knowledge_base_id: number;
+    ids: string[];
+    delete_all: boolean;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/knowledge_document/delete_chunks/', payload);
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -395,6 +474,7 @@ export const useKnowledgeApi = () => {
     createFileKnowledge,
     createManualKnowledge,
     getDocumentDetail,
+    getInstanceDetail,
     fetchDocumentDetails,
     fetchSemanticModels,
     fetchOcrModels,
@@ -409,9 +489,15 @@ export const useKnowledgeApi = () => {
     getDocListConfig,
     getDocumentConfig,
     fetchMyTasks,
+    fetchQAPairsTaskStatus,
     fetchQAPairs,
     deleteQAPair,
+    createOneQAPair,
+    updateQAPair,
+    deleteOneQAPair,
     createQAPairs,
+    createCustomQAPairs,
+    createQAPairsByChunk,
     fetchQAPairDetails,
     fetchChunkQAPairs,
     fetchKnowledgeGraphDetails,
@@ -421,5 +507,6 @@ export const useKnowledgeApi = () => {
     rebuildKnowledgeGraphCommunity,
     importQaJson,
     getChunkDetail,
+    deleteChunks,
   };
 };

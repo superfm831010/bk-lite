@@ -33,7 +33,7 @@ class NodeMgmtView(ViewSet):
         orgs = {i["id"] for i in request.user.group_list if i["name"] == "OpsPilotGuest"}
         orgs.add(request.COOKIES.get("current_team"))
 
-        organization_ids = [] if request.user.is_superuser else orgs
+        organization_ids = [] if request.user.is_superuser else list(orgs)
         data = NodeMgmt().node_list(dict(
             cloud_region_id=request.data.get("cloud_region_id", 1),
             organization_ids=organization_ids,

@@ -1,5 +1,6 @@
 import time
 import uuid
+from datetime import datetime
 from typing import Optional
 
 from sanic.log import logger
@@ -41,6 +42,15 @@ class RagService:
         logger.debug(
             f"存储文档到ES, 知识库ID: {knowledge_base_id}, 模型名称: {embed_model_name}, 分块数: {len(chunked_docs)}")
 
+        # 自动添加创建时间
+        created_time = datetime.now().isoformat()
+        logger.debug(f"为文档添加创建时间: {created_time}")
+
+        for doc in chunked_docs:
+            # 添加创建时间到每个文档的元数据中
+            doc.metadata['created_time'] = created_time
+
+        # 应用额外的元数据
         if metadata:
             logger.debug(f"应用额外元数据: {metadata}")
             for doc in chunked_docs:
@@ -76,11 +86,13 @@ class RagService:
             分块后的文档列表
         """
         mode = "预览" if is_preview else "正式处理"
-        logger.debug(f"{content_type}分块 [{mode}], 模式: {chunk_mode}, 文档数: {len(docs)}")
+        logger.debug(
+            f"{content_type}分块 [{mode}], 模式: {chunk_mode}, 文档数: {len(docs)}")
 
         chunker = RagService.get_chunker(chunk_mode, request)
         chunked_docs = chunker.chunk(docs)
-        logger.debug(f"{content_type}分块完成, 输入文档: {len(docs)}, 输出分块: {len(chunked_docs)}")
+        logger.debug(
+            f"{content_type}分块完成, 输入文档: {len(docs)}, 输出分块: {len(chunked_docs)}")
         return chunked_docs
 
     @classmethod
@@ -98,7 +110,8 @@ class RagService:
             处理后的文档列表
         """
         mode = "预览" if is_preview else "正式处理"
-        logger.debug(f"准备文档元数据 [{mode}], 标题: {title}, 知识ID: {knowledge_id}, 文档数: {len(docs)}")
+        logger.debug(
+            f"准备文档元数据 [{mode}], 标题: {title}, 知识ID: {knowledge_id}, 文档数: {len(docs)}")
         if is_preview:
             return cls.process_documents(docs, title)
         else:
@@ -123,7 +136,8 @@ class RagService:
         """
         处理文档，添加元数据
         """
-        logger.debug(f"处理文档元数据，标题: {knowledge_title}, ID: {knowledge_id}, 文档数量: {len(docs)}")
+        logger.debug(
+            f"处理文档元数据，标题: {knowledge_title}, ID: {knowledge_id}, 文档数量: {len(docs)}")
         for index, doc in enumerate(docs):
             doc.metadata['knowledge_title'] = knowledge_title
             if knowledge_id:
@@ -157,7 +171,8 @@ class RagService:
             semantic_chunk_model = request.form.get('semantic_chunk_model')
             semantic_chunk_model_base_url = request.form.get(
                 'semantic_chunk_model_base_url')
-            logger.debug(f"使用语义分块，模型: {semantic_chunk_model}, URL: {semantic_chunk_model_base_url}")
+            logger.debug(
+                f"使用语义分块，模型: {semantic_chunk_model}, URL: {semantic_chunk_model_base_url}")
             semantic_chunk_model_api_key = request.form.get(
                 'semantic_chunk_model_api_key')
             embeddings = EmbedBuilder.get_embed(protocol=semantic_chunk_model_base_url, model_name=semantic_chunk_model,
@@ -217,7 +232,8 @@ class RagService:
 
         if ocr_type == 'olm_ocr':
             logger.debug(f"初始化OLM-OCR服务，模型: {olm_model}")
-            ocr = OlmOcr(base_url=olm_base_url, api_key=olm_api_key, model=olm_model)
+            ocr = OlmOcr(base_url=olm_base_url,
+                         api_key=olm_api_key, model=olm_model)
 
         if ocr_type == 'azure_ocr':
             logger.debug(f"初始化Azure-OCR服务，endpoint: {azure_base_url}")

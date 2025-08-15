@@ -52,11 +52,45 @@ const useTermList = (): ListItem[] => {
   const { t } = useTranslation();
   return useMemo(
     () => [
-      { id: 'OR', name: t('log.integration.anyCondition') },
-      { id: 'AND', name: t('log.integration.allConditions') },
+      { id: 'OR', value: 'or', name: t('log.integration.anyCondition') },
+      { id: 'AND', value: 'and', name: t('log.integration.allConditions') },
     ],
     [t]
   );
 };
 
-export { useAssetMenuItems, useConditionList, useTermList };
+const useConditionModeList = (): ListItem[] => {
+  const { t } = useTranslation();
+  return useMemo(
+    () => [
+      {
+        value: 'continue_past',
+        title: 'continue_past',
+        label: t('log.integration.continuePast'),
+      },
+      {
+        value: 'continue_through',
+        title: 'continue_through',
+        label: t('log.integration.continueThrough'),
+      },
+      {
+        value: 'halt_before',
+        title: 'halt_before',
+        label: t('log.integration.haltBefore'),
+      },
+      {
+        value: 'halt_with',
+        title: 'halt_with',
+        label: t('log.integration.haltWith'),
+      },
+    ],
+    [t]
+  );
+};
+
+export {
+  useAssetMenuItems,
+  useConditionList,
+  useTermList,
+  useConditionModeList,
+};

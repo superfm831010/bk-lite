@@ -3,10 +3,12 @@ import os
 
 from enum import Enum
 
+
 class BaseEnum(str, Enum):
     """
     枚举基类
     """
+
     def __new__(cls, value, chinese):
         obj = str.__new__(cls, value)
         obj._value_ = value
@@ -70,6 +72,9 @@ ENUM = "enum"
 USER = "user"
 ORGANIZATION = "organization"
 
+# 模型内置属性：组织
+INIT_MODEL_GROUP = "group"
+
 # 默认的实例名属性
 INST_NAME_INFOS = [
     {
@@ -116,7 +121,7 @@ CREATE_MODEL_CHECK_ATTR = dict(
 UPDATE_MODEL_CHECK_ATTR_MAP = dict(
     is_only={"model_name": "模型名称"},
     is_required={"model_name": "模型名称"},
-    editable={"model_name": "模型名称", "classification_id": "模型分类ID", "icn": "图标"},
+    editable={"model_name": "模型名称", "classification_id": "模型分类ID", "icn": "图标", "group": "组织"},
 )
 
 # 需要进行类型转换的数据类型

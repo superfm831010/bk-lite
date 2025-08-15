@@ -3,10 +3,12 @@ from sanic import Blueprint, json
 from sanic_ext import validate
 from src.agent.lats_agent.lats_agent_graph import LatsAgentGraph
 from src.api.agent.utils import stream_response
+from src.api.agent.lats_sse_handler import stream_lats_response
 from src.core.sanic_plus.auth.api_auth import auth
 from src.entity.agent.lats_agent.lats_agent_request import LatsAgentRequest
 from src.services.agent_service import AgentService
 from sanic.response import ResponseStream
+import uuid
 
 lats_agent_router = Blueprint(
     "lats_agent_router", url_prefix="/agent")
@@ -34,10 +36,13 @@ async def invoke_lats_agent(request, body: LatsAgentRequest):
 async def invoke_lats_agent_sse(request, body: LatsAgentRequest):
     workflow = LatsAgentGraph()
     AgentService.set_naive_rag_search_query(body)
-    logger.debug(f"执行LatsAgentGraph,用户的问题:[{body.user_message}]")
+    chat_id = str(uuid.uuid4())
+    logger.debug(
+        f"执行LatsAgentGraph SSE,用户的问题:[{body.user_message}], chat_id: {chat_id}")
 
     return ResponseStream(
-        lambda res: stream_response(workflow, body, res),
-        content_type="text/event-stream",
+        lambda res: stream_lats_response(
+            workflow, body, chat_id, body.model, res),
+        content_type="text/event-stream; charset=utf-8",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
     )

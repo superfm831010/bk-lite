@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import styles from './index.module.scss';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import useApiClient from '@/utils/request';
 import CustomTable from '@/components/custom-table';
 import Introduction from '@/app/cmdb/components/introduction';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
@@ -12,6 +11,7 @@ import { Input, Select, DatePicker, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useCommon } from '@/app/cmdb/context/common';
 import { UserItem } from '@/app/cmdb/types/assetManage';
+import { useChangeRecordApi } from '@/app/cmdb/api';
 
 interface ListItem {
   id: string;
@@ -31,8 +31,10 @@ interface Filters {
 
 const OperationLog: React.FC = () => {
   const { t } = useTranslation();
-  const { get } = useApiClient();
   const commonContext = useCommon();
+
+  const { getChangeRecords } = useChangeRecordApi();
+
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
   const [tableLoading, setTableLoading] = useState<boolean>(false);
@@ -114,9 +116,7 @@ const OperationLog: React.FC = () => {
           'YYYY-MM-DD HH:mm:ss'
         ),
       };
-      const data = await get('/cmdb/api/change_record', {
-        params: queryParams,
-      });
+      const data = await getChangeRecords(queryParams);
       setDataList(data.items || []);
       setPagination((prev) => ({
         ...prev,

@@ -9,14 +9,13 @@ import {
   message,
   Spin,
   Dropdown,
-  Cascader,
   TablePaginationConfig,
-  CascaderProps,
   Tree,
   Input,
   Empty,
 } from 'antd';
 import CustomTable from '@/components/custom-table';
+import GroupTreeSelector from '@/components/group-tree-select';
 import SearchFilter from './list/searchFilter';
 import ImportInst from './list/importInst';
 import SelectInstance from './detail/relationships/selectInstance';
@@ -25,7 +24,6 @@ import { useSearchParams } from 'next/navigation';
 import assetDataStyle from './index.module.scss';
 import FieldModal from './list/fieldModal';
 import { useTranslation } from '@/utils/i18n';
-import useApiClient from '@/utils/request';
 const { confirm } = Modal;
 import { deepClone, getAssetColumns } from '@/app/cmdb/utils/common';
 import {
@@ -33,7 +31,6 @@ import {
   ModelItem,
   ColumnItem,
   UserItem,
-  Organization,
   AttrFieldType,
   RelationInstanceRef,
   AssoTypeItem,
@@ -46,6 +43,11 @@ import { useRouter } from 'next/navigation';
 import PermissionWrapper from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { useSession } from 'next-auth/react';
+import {
+  useModelApi,
+  useClassificationApi,
+  useInstanceApi,
+} from '@/app/cmdb/api';
 
 interface ModelTabs {
   key: string;
@@ -74,7 +76,18 @@ interface FieldConfig {
 
 const AssetDataContent = () => {
   const { t } = useTranslation();
-  const { get, del, post, isLoading } = useApiClient();
+  const { getModelList, getModelAssociationTypes, getModelAttrList } =
+    useModelApi();
+  const { getClassificationList } = useClassificationApi();
+  const {
+    getInstanceProxys,
+    searchInstances,
+    getModelInstanceCount,
+    getInstanceShowFieldDetail,
+    setInstanceShowFieldSettings,
+    deleteInstance,
+    batchDeleteInstances,
+  } = useInstanceApi();
   const router = useRouter();
   const searchParams = useSearchParams();
   const assetModelId: string = searchParams.get('modelId') || '';
@@ -85,8 +98,6 @@ const AssetDataContent = () => {
   const { data: session } = useSession();
   const token = session?.user?.token || authContext?.token || null;
   const tokenRef = useRef(token);
-  const authList = useRef(commonContext?.authOrganizations || []);
-  const organizationList: Organization[] = authList.current;
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
   const fieldRef = useRef<FieldRef>(null);
@@ -108,7 +119,7 @@ const AssetDataContent = () => {
   const [assoTypes, setAssoTypes] = useState<AssoTypeItem[]>([]);
   const [queryList, setQueryList] = useState<unknown>(null);
   const [tableData, setTableData] = useState<any[]>([]);
-  const [organization, setOrganization] = useState<string[]>([]);
+  const [organization, setOrganization] = useState<number[]>([]);
   const [selectedTreeKeys, setSelectedTreeKeys] = useState<string[]>([]);
   const [expandedTreeKeys, setExpandedTreeKeys] = useState<string[]>([]);
   const [proxyOptions, setProxyOptions] = useState<
@@ -127,7 +138,7 @@ const AssetDataContent = () => {
 
   useEffect(() => {
     if (modelId === 'host') {
-      get('/cmdb/api/instance/list_proxys/', {})
+      getInstanceProxys()
         .then((data: any[]) => {
           setProxyOptions(data || []);
         })
@@ -185,9 +196,8 @@ const AssetDataContent = () => {
   ];
 
   useEffect(() => {
-    if (isLoading) return;
     getModelGroup();
-  }, [get, isLoading]);
+  }, []);
 
   useEffect(() => {
     if (modelId) {
@@ -206,7 +216,7 @@ const AssetDataContent = () => {
     setTableLoading(true);
     const params = getTableParams();
     try {
-      const data = await post(`/cmdb/api/instance/search/`, params);
+      const data = await searchInstances(params);
       setTableData(data.insts);
       pagination.total = data.count;
       setPagination(pagination);
@@ -221,10 +231,10 @@ const AssetDataContent = () => {
     try {
       setLoading(true);
       const [modeldata, groupData, assoType, instCount] = await Promise.all([
-        get('/cmdb/api/model/'),
-        get('/cmdb/api/classification/'),
-        get('/cmdb/api/model/model_association_type/'),
-        get('/cmdb/api/instance/model_inst_count/'),
+        getModelList(),
+        getClassificationList(),
+        getModelAssociationTypes(),
+        getModelInstanceCount(),
       ]);
       setModelInstCount(instCount);
       const groups = deepClone(groupData).map((item: GroupItem) => ({
@@ -288,12 +298,12 @@ const AssetDataContent = () => {
 
   const getInitData = (id: string, overrideQueryList?: unknown) => {
     const tableParmas = getTableParams(overrideQueryList);
-    const getAttrList = get(`/cmdb/api/model/${id}/attr_list/`);
-    const getInstList = post('/cmdb/api/instance/search/', {
+    const getAttrList = getModelAttrList(id);
+    const getInstList = searchInstances({
       ...tableParmas,
       model_id: id,
     });
-    const getDisplayFields = get(`/cmdb/api/instance/${id}/show_field/detail/`);
+    const getDisplayFields = getInstanceShowFieldDetail(id);
     setLoading(true);
     try {
       Promise.all([getAttrList, getInstList, getDisplayFields])
@@ -328,7 +338,7 @@ const AssetDataContent = () => {
   const onSelectFields = async (fields: string[]) => {
     setLoading(true);
     try {
-      await post(`/cmdb/api/instance/${modelId}/show_field/settings/`, fields);
+      await setInstanceShowFieldSettings(modelId, fields);
       message.success(t('successfulSetted'));
       getInitData(modelId);
     } finally {
@@ -338,13 +348,15 @@ const AssetDataContent = () => {
 
   const showDeleteConfirm = (row = { _id: '' }) => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await del(`/cmdb/api/instance/${row._id}/`);
+            await deleteInstance(row._id);
             message.success(t('successfullyDeleted'));
             if (pagination?.current) {
               pagination.current > 1 &&
@@ -363,14 +375,16 @@ const AssetDataContent = () => {
 
   const batchDeleteConfirm = () => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
           try {
             const list = selectedRowKeys;
-            await post('/cmdb/api/instance/batch_delete/', list);
+            await batchDeleteInstances(list);
             message.success(t('successfullyDeleted'));
             if (pagination?.current) {
               pagination.current > 1 &&
@@ -412,7 +426,7 @@ const AssetDataContent = () => {
   const updateFieldList = async (id?: string) => {
     await fetchData();
     try {
-      const instCount = await get('/cmdb/api/instance/model_inst_count/');
+      const instCount = await getModelInstanceCount();
       setModelInstCount(instCount);
     } catch {
       console.error('Failed to fetch model instance count');
@@ -456,9 +470,7 @@ const AssetDataContent = () => {
     );
   };
 
-  const selectOrganization: CascaderProps<Organization>['onChange'] = (
-    value
-  ) => {
+  const selectOrganization = (value: number[]) => {
     setOrganization(value);
   };
 
@@ -600,13 +612,12 @@ const AssetDataContent = () => {
       const attrList = getAssetColumns({
         attrList: propertyList,
         userList,
-        groupList: organizationList,
         t,
       });
       const tableColumns = [
         ...attrList,
         {
-          title: t('common.action'),
+          title: t('common.actions'),
           key: 'action',
           dataIndex: 'action',
           width: 230,
@@ -660,10 +671,11 @@ const AssetDataContent = () => {
       const actionCol = tableColumns.find((col) => col.key === 'action');
       const ordered = [
         ...tableColumns
-          .filter(col => displayFieldKeys.includes(col.key as string))
-          .sort((a, b) =>
-            displayFieldKeys.indexOf(a.key as string) -
-            displayFieldKeys.indexOf(b.key as string)
+          .filter((col) => displayFieldKeys.includes(col.key as string))
+          .sort(
+            (a, b) =>
+              displayFieldKeys.indexOf(a.key as string) -
+              displayFieldKeys.indexOf(b.key as string)
           ),
         ...(actionCol ? [actionCol] : []),
       ];
@@ -735,9 +747,11 @@ const AssetDataContent = () => {
         <div className={assetDataStyle.assetList}>
           <div className="flex justify-between mb-4">
             <Space>
-              <Cascader
+              <GroupTreeSelector
+                style={{
+                  width: '200px',
+                }}
                 placeholder={t('common.selectTip')}
-                options={organizationList}
                 value={organization}
                 onChange={selectOrganization}
               />
@@ -748,7 +762,6 @@ const AssetDataContent = () => {
                 attrList={propertyList.filter(
                   (item) => item.attr_type !== 'organization'
                 )}
-                organizationList={organizationList}
                 onSearch={handleSearch}
               />
             </Space>
@@ -809,7 +822,6 @@ const AssetDataContent = () => {
           <FieldModal
             ref={fieldRef}
             userList={userList}
-            organizationList={organizationList}
             onSuccess={updateFieldList}
           />
           <ImportInst ref={importRef} onSuccess={updateFieldList} />
@@ -818,7 +830,6 @@ const AssetDataContent = () => {
             userList={userList}
             models={originModels}
             assoTypes={assoTypes}
-            organizationList={organizationList}
             needFetchAssoInstIds
           />
         </div>

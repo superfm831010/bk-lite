@@ -8,34 +8,32 @@ import AssociationsModal from './associationsModal';
 import { Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { CONSTRAINT_List } from '@/app/cmdb/constants/asset';
-import useApiClient from '@/utils/request';
 import {
   ModelItem,
   AssoTypeItem,
   GroupItem,
 } from '@/app/cmdb/types/assetManage';
-import { useSearchParams } from 'next/navigation';
+import { useModelApi, useClassificationApi } from '@/app/cmdb/api';
 import { useTranslation } from '@/utils/i18n';
 import { deepClone } from '@/app/cmdb/utils/common';
-import { useCommon } from '@/app/cmdb/context/common';
 import PermissionWrapper from '@/components/permission';
+import { useModelDetail } from '../context';
 
 const { confirm } = Modal;
 
-const Associations = () => {
-  const { get, del } = useApiClient();
-  const searchParams = useSearchParams();
-  const modelId = searchParams.get('model_id');
-  const permissionParam = searchParams.get('permission');
-  const modelPermission = permissionParam
-    ? decodeURIComponent(permissionParam).split(',')
-    : [];
+const Associations: React.FC = () => {
+  const {
+    getModelList,
+    deleteModelAssociation,
+    getModelAssociations,
+    getModelAssociationTypes,
+  } = useModelApi();
+  const { getClassificationList } = useClassificationApi();
+
+  const modelDetail = useModelDetail();
+  const modelId = modelDetail?.model_id;
+  const modelPermission = modelDetail?.permission || [];
   const { t } = useTranslation();
-  const commonContext = useCommon();
-  const permissionGroupsInfo = useRef(
-    commonContext?.permissionGroupsInfo || null
-  );
-  const isAdmin = permissionGroupsInfo.current?.is_all;
   const assoRef = useRef<any>(null);
   const [searchText, setSearchText] = useState<string>('');
   const [pagination, setPagination] = useState<any>({
@@ -114,7 +112,7 @@ const Associations = () => {
       },
     },
     {
-      title: t('common.action'),
+      title: t('common.actions'),
       key: 'action',
       render: (_, record) => (
         <>
@@ -124,7 +122,6 @@ const Associations = () => {
           >
             <Button
               type="link"
-              disabled={!isAdmin && record.is_pre}
               onClick={() => showDeleteConfirm(record.model_asst_id)}
             >
               {t('common.delete')}
@@ -136,8 +133,10 @@ const Associations = () => {
   ];
 
   useEffect(() => {
-    getInitData();
-  }, [pagination?.current, pagination?.pageSize]);
+    if (modelId) {
+      getInitData();
+    }
+  }, [pagination?.current, pagination?.pageSize, modelId]);
 
   const showAssoModal = (type: string, row = { subTitle: '' }) => {
     const title = t(
@@ -159,13 +158,15 @@ const Associations = () => {
 
   const showDeleteConfirm = (id: string) => {
     confirm({
-      title: t('common.deleteTitle'),
-      content: t('common.deleteContent'),
+      title: t('common.delConfirm'),
+      content: t('common.delConfirmCxt'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       centered: true,
       onOk() {
         return new Promise(async (resolve) => {
           try {
-            await del(`/cmdb/api/model/association/${id}/`);
+            await deleteModelAssociation(id);
             message.success(t('successfullyDeleted'));
             if (pagination.current > 1 && tableData.length === 1) {
               pagination.current--;
@@ -202,7 +203,7 @@ const Associations = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const data = await get(`/cmdb/api/model/${modelId}/association/`);
+      const data = await getModelAssociations(modelId!);
       setTableData(data);
     } finally {
       setLoading(false);
@@ -214,12 +215,17 @@ const Associations = () => {
   };
 
   const getInitData = () => {
-    const getAssoTypeList = get('/cmdb/api/model/model_association_type/');
-    const getModelList = get('/cmdb/api/model/');
-    const fetchAssoData = get(`/cmdb/api/model/${modelId}/association/`);
-    const getCroupList = get('/cmdb/api/classification/');
+    const getAssoTypeList = getModelAssociationTypes();
+    const getModelListData = getModelList();
+    const fetchAssoData = getModelAssociations(modelId!);
+    const getCroupList = getClassificationList();
     setLoading(true);
-    Promise.all([getModelList, getAssoTypeList, fetchAssoData, getCroupList])
+    Promise.all([
+      getModelListData,
+      getAssoTypeList,
+      fetchAssoData,
+      getCroupList,
+    ])
       .then((res) => {
         const modeldata: ModelItem[] = res[0];
         const assoTypeData: AssoTypeItem[] = res[1];

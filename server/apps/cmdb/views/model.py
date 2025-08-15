@@ -7,7 +7,7 @@ from apps.cmdb.constants import ASSOCIATION_TYPE, OPERATOR_MODEL, PERMISSION_MOD
 from apps.cmdb.language.service import SettingLanguage
 from apps.cmdb.models import DELETE_INST, UPDATE_INST
 from apps.cmdb.services.model import ModelManage
-from apps.cmdb.utils.base import get_cmdb_rules
+from apps.cmdb.utils.base import get_cmdb_rules, get_default_group_id
 from apps.cmdb.utils.change_record import create_change_record
 from apps.cmdb.utils.permisssion_util import CmdbRulesFormatUtil
 from apps.core.decorators.api_permission import HasPermission
@@ -23,6 +23,7 @@ class ModelViewSet(viewsets.ViewSet):
         if not model_info:
             return WebUtils.response_error("模型不存在", status_code=status.HTTP_404_NOT_FOUND)
 
+        # TODO 如果使用了这个接口 补充上 默认group为default的判断 全部人都可以查看
         model_id = model_info["model_id"]
         classification_id = model_info["classification_id"]
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
@@ -34,7 +35,7 @@ class ModelViewSet(viewsets.ViewSet):
 
         model_id_list, classification_id_list = CmdbRulesFormatUtil.get_rules_classification_id_list(rules=rules,
                                                                                                      classification_id=classification_id)
-        if classification_id in classification_id_list or model_id in model_id_list:
+        if not rules or classification_id in classification_id_list or model_id in model_id_list:
             model_permission = [OPERATE, VIEW]
         else:
             if not model_id_list and not classification_id_list:
@@ -68,16 +69,23 @@ class ModelViewSet(viewsets.ViewSet):
         operation_id="model_list",
         operation_description="查询模型",
     )
-    @HasPermission("model_management-View,asset_list-View,view_list-View")
+    @HasPermission("model_management-View")
     def list(self, request):
+        current_team = request.COOKIES.get("current_team")
         rules = get_cmdb_rules(request=request, permission_key=PERMISSION_MODEL)
+        default_group = get_default_group_id()
+        if default_group:
+            # 补充上查询自己组织的模型
+            default_group.append(int(current_team))
+        else:
+            default_group = [int(current_team)]
         model_id_list, classification_id_list = CmdbRulesFormatUtil.get_rules_classification_id_list(rules)
         result = ModelManage.search_model(language=request.user.locale, classification_ids=classification_id_list,
-                                          model_list=model_id_list)
+                                          model_list=model_id_list, group_list=default_group)
         for model in result:
             model_id = model['model_id']
             cls_id = model['classification_id']
-            if cls_id in classification_id_list or model_id in model_id_list:
+            if not rules or cls_id in classification_id_list or model_id in model_id_list:
                 model_permission = [OPERATE, VIEW]
             else:
                 model_permission = []

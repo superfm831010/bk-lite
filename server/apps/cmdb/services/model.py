@@ -77,7 +77,7 @@ class ModelManage(object):
 
     @staticmethod
     def search_model(language: str = "en", order_type: str = "ASC", order: str = "id",
-                     classification_ids: list = [], model_list: list = []):
+                     classification_ids: list = [], model_list: list = [], group_list: list = []):
         """
         查询模型
         Args:
@@ -86,6 +86,7 @@ class ModelManage(object):
             order: 排序字段，默认order_id
             classification_ids: 分类ID列表，可选，用于过滤特定分类下的模型
             model_list: 模型ID列表，可选，用于过滤特定模型
+            group: 组织ID，可选，用于过滤特定组织下的模型
         """
         query_conditions = []
 
@@ -102,6 +103,10 @@ class ModelManage(object):
                     or_conditions.append({"field": "model_id", "type": "str=", "value": model_id})
 
             query_conditions = or_conditions
+
+        # 如果有group_id，添加组织过滤条件
+        if group_list:
+            query_conditions.append({"field": "group", "type": "list[]", "value": group_list})
 
         with Neo4jClient() as ag:
             # 如果有过滤条件，使用OR查询，否则查询所有

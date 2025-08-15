@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Any, Dict, Optional
 
 import requests
@@ -122,10 +123,12 @@ class ChunkHelper(ChatServerHelper):
             cls.delete_es_content(index_name, qa_pairs_id)
         kwargs, metadata = cls.set_qa_pairs_params(embed_config, embed_model_name, index_name, qa_pairs_id, chunk_obj)
         headers = cls.get_chat_server_header()
+        # SSL验证配置 - 从环境变量读取
+        ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
         for i in qa_paris:
             params = dict(kwargs, **{"content": i["question"]})
             params["metadata"] = json.dumps(dict(metadata, **{"qa_question": i["question"], "qa_answer": i["answer"]}))
-            response = requests.post(cls.create_url, headers=headers, data=params, verify=False)
+            response = requests.post(cls.create_url, headers=headers, data=params, verify=ssl_verify)
             res = response.json()
             if res.get("status", "fail") != "success":
                 logger.exception(f"创建问答对失败: {res.get('message', '')}")
@@ -191,7 +194,9 @@ class ChunkHelper(ChatServerHelper):
         kwargs, metadata = cls.set_qa_pairs_params(embed_config, embed_model_name, index_name, qa_pairs_id, chunk_obj)
         metadata.update({"qa_question": question, "qa_answer": answer})
         params = dict(kwargs, **{"content": question, "metadata": json.dumps(metadata)})
-        res = requests.post(cls.create_url, headers=cls.get_chat_server_header(), data=params, verify=False).json()
+        # SSL验证配置 - 从环境变量读取
+        ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
+        res = requests.post(cls.create_url, headers=cls.get_chat_server_header(), data=params, verify=ssl_verify).json()
         if res.get("status", "fail") != "success":
             logger.exception(f"创建问答对失败: {res.get('message', '')}")
             return {"result": False}

@@ -6,7 +6,7 @@ from rest_framework import status
 from django.http import Http404
 
 from apps.core.decorators.api_permission import HasPermission
-from apps.core.utils.viewset_utils import AuthViewSet, MaintainerViewSet
+from config.drf.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser
 
 from apps.mlops.filters.anomaly_detection_train_data import AnomalyDetectionTrainDataFilter
@@ -16,7 +16,7 @@ from config.drf.pagination import CustomPageNumberPagination
 import pandas as pd
 
 
-class AnomalyDetectionTrainDataViewSet(AuthViewSet):
+class AnomalyDetectionTrainDataViewSet(ModelViewSet):
     """异常检测训练数据视图集"""
     
     queryset = AnomalyDetectionTrainData.objects.all()
@@ -37,7 +37,7 @@ class AnomalyDetectionTrainDataViewSet(AuthViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
-    @HasPermission("anomaly_detection_datasets_detail-File Edit,anomaly_detection_datasets_tag-File Tag")
+    @HasPermission("anomaly_detection_datasets_detail-File Edit")
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 

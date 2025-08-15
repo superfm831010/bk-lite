@@ -12,7 +12,7 @@ class BaseNodeParams(metaclass=ABCMeta):
     PLUGIN_MAP = {}  # 插件名称映射
     plugin_name = None
     _registry = {}  # 自动收集支持的 model_id 对应的子类
-    BASE_INTERVAL_MAP = {"vmware_vc": 300, "network": 300, "network_topo": 300, "mysql_info": 300,
+    BASE_INTERVAL_MAP = {"vmware_vc": 60, "network": 300, "network_topo": 300, "mysql_info": 300,
                          "aliyun_account": 300, "qcloud": 300, }  # 默认的采集间隔时间
 
     def __init_subclass__(cls, **kwargs):
@@ -195,7 +195,14 @@ class VmwareNodeParams(BaseNodeParams):
         super().__init__(*args, **kwargs)
         # 当 instance.model_id 为 "network" 时，PLUGIN_MAP 配置为 "snmp_facts"
         self.PLUGIN_MAP.update({self.model_id: self.plugin_name})
-        self.host_field = "hostname"
+        self.host_field = "ip_addr"
+
+    def get_host_ip_addr(self, host):
+        if isinstance(host, dict):
+            ip_addr = host.get(self.host_field, "")
+        else:
+            ip_addr = host
+        return "hostname", ip_addr
 
     def set_credential(self, *args, **kwargs):
         """
@@ -450,6 +457,16 @@ class WeblogicNodeParams(SSHNodeParamsMixin, BaseNodeParams):
 class KeepalivedNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "weblogic"
     plugin_name = "weblogic_info"
+
+
+class TongWebNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "tongweb"
+    plugin_name = "tongweb_info"
+
+
+class DaMengNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "dameng"
+    plugin_name = "dameng_info"
 
 
 class NodeParamsFactory:

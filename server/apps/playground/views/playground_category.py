@@ -1,9 +1,9 @@
-from apps.core.utils.viewset_utils import AuthViewSet
+from config.drf.viewsets import ModelViewSet
 from apps.playground.models.playground_category import PlayGroundCategory
 from apps.playground.serializers.playground_category import PlayGroundCategorySerializer
 from apps.playground.filters.playground_category import PlayGroundCategoryFilter
 
-class PlayGroundCategoryViewSet(AuthViewSet):
+class PlayGroundCategoryViewSet(ModelViewSet):
     """
     PlayGroundCategory 的视图集，支持增删改查和过滤。
     关键业务逻辑：支持树形结构展示和过滤。

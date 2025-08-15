@@ -10,6 +10,7 @@ import React, {
 import { Form } from 'antd';
 import type { DataNode } from 'antd/lib/tree';
 import { useTranslation } from '@/utils/i18n';
+import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { Input, Button, Modal, Dropdown, Menu, Tree, Empty, Spin } from 'antd';
 import { useDirectoryApi } from '@/app/ops-analysis/api/index';
 import {
@@ -50,6 +51,9 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
       () => ({
         clearSelection: () => {
           setSelectedKeys([]);
+        },
+        setSelectedKeys: (keys: React.Key[]) => {
+          setSelectedKeys(keys);
         },
       }),
       []
@@ -207,14 +211,14 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
                   setNewItemType('dashboard');
                   showModal(
                     'addChild',
-                    t('sidebar.addDash'),
+                    t('opsAnalysisSidebar.addDash'),
                     '',
                     item,
                     'dashboard'
                   );
                 }}
               >
-                {t('sidebar.addDash')}
+                {t('opsAnalysisSidebar.addDash')}
               </Menu.Item>
               <Menu.Item
                 key="addTopology"
@@ -222,14 +226,14 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
                   setNewItemType('topology');
                   showModal(
                     'addChild',
-                    t('sidebar.addTopo'),
+                    t('opsAnalysisSidebar.addTopo'),
                     '',
                     item,
                     'topology'
                   );
                 }}
               >
-                {t('sidebar.addTopo')}
+                {t('opsAnalysisSidebar.addTopo')}
               </Menu.Item>
             </>
           )}
@@ -240,14 +244,14 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
                 setNewItemType('directory');
                 showModal(
                   'addChild',
-                  t('sidebar.addGroup'),
+                  t('opsAnalysisSidebar.addGroup'),
                   '',
                   item,
                   'directory'
                 );
               }}
             >
-              {t('sidebar.addGroup')}
+              {t('opsAnalysisSidebar.addGroup')}
             </Menu.Item>
           )}
 
@@ -257,10 +261,10 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
               showModal(
                 'edit',
                 item.type === 'directory'
-                  ? t('sidebar.editGroup')
+                  ? t('opsAnalysisSidebar.editGroup')
                   : item.type === 'dashboard'
-                    ? t('sidebar.editDash')
-                    : t('sidebar.editTopo'),
+                    ? t('opsAnalysisSidebar.editDash')
+                    : t('opsAnalysisSidebar.editTopo'),
                 item.name,
                 item,
                 item.type
@@ -290,14 +294,15 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
         data: { type: item.type },
         selectable: item.type !== 'directory',
         title: (
-          <span className="flex justify-between items-center">
+          <span className="flex justify-between items-center w-full py-1">
             <span
-              className={`flex items-center ${item.type === 'directory' ? 'cursor-default' : 'cursor-pointer'}`}
+              className={`flex items-center min-w-0 flex-1 ${item.type === 'directory' ? 'cursor-default' : 'cursor-pointer'}`}
             >
               {getDirectoryIcon(item.type)}
-              <span className={item.type === 'directory' ? 'font-medium' : ''}>
-                {item.name}
-              </span>
+              <EllipsisWithTooltip
+                className="max-w-[126px] whitespace-nowrap overflow-hidden text-ellipsis"
+                text={item.name || '--'}
+              />
             </span>
             <Dropdown
               overlay={menuFor(item, parentId)}
@@ -309,6 +314,8 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
                 type="text"
                 icon={<MoreOutlined />}
                 onClick={(e) => e.stopPropagation()}
+                className="flex-shrink-0"
+                size="small"
               />
             </Dropdown>
           </span>
@@ -393,10 +400,12 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
 
     return (
       <div className="p-4 h-full flex flex-col">
-        <h3 className="text-base font-semibold mb-4">{t('sidebar.title')}</h3>
+        <h3 className="text-base font-semibold mb-4">
+          {t('opsAnalysisSidebar.title')}
+        </h3>
         <div className="flex items-center mb-4">
           <Input.Search
-            placeholder={t('common.searchPlaceHolder')}
+            placeholder={t('common.search')}
             allowClear
             className="flex-1"
             onSearch={handleSearch}
@@ -405,7 +414,7 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
             type="primary"
             icon={<PlusOutlined />}
             className="ml-2"
-            onClick={() => showModal('addRoot', t('sidebar.addDir'))}
+            onClick={() => showModal('addRoot', t('opsAnalysisSidebar.addDir'))}
           />
         </div>
 
@@ -430,6 +439,7 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
                   }
                 }}
                 className="bg-transparent"
+                style={{ overflow: 'hidden' }}
               />
             ) : (
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -444,7 +454,7 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
               // 清空tree选中状态
               setSelectedKeys([]);
               // 调用父组件的onSelect
-              onSelect && onSelect('datasource');
+              onSelect && onSelect('settings');
             }}
           >
             设置
@@ -464,13 +474,13 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
           <Form form={form} className="mt-5" labelCol={{ span: 3 }}>
             <Form.Item
               name="name"
-              label={t('sidebar.nameLabel')}
+              label={t('opsAnalysisSidebar.nameLabel')}
               rules={[{ required: true, message: t('common.inputMsg') }]}
             >
-              <Input placeholder={t('sidebar.inputPlaceholder')} />
+              <Input placeholder={t('opsAnalysisSidebar.inputPlaceholder')} />
             </Form.Item>
             {(newItemType !== 'directory' || modalAction === 'edit') && (
-              <Form.Item name="desc" label={t('sidebar.descLabel')}>
+              <Form.Item name="desc" label={t('opsAnalysisSidebar.descLabel')}>
                 <Input.TextArea
                   autoSize={{ minRows: 3 }}
                   placeholder={t('common.inputMsg')}

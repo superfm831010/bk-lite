@@ -26,7 +26,6 @@ import { ModalRef, Option } from '@/app/mlops/types';
 import { TrainJob, TrainTaskModalProps, AlgorithmParam } from '@/app/mlops/types/task';
 import RangeInput from '@/app/mlops/components/range-input';
 import { ALGORITHMS_PARAMS } from '@/app/mlops/constants';
-import { JointContent } from 'antd/es/message/interface';
 
 interface ModalState {
   isOpen: boolean;
@@ -201,7 +200,7 @@ const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptio
       onSuccess();
     } catch (e) {
       console.log(e);
-      message.error(e as JointContent);
+      message.error(t(`common.${modalState.type}Failed`));
     } finally {
       setLoadingState((prev) => ({ ...prev, confirm: false }));
     }
