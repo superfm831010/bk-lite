@@ -8,7 +8,6 @@ class Policy(TimeInfo, MaintainerInfo):
 
     # 基本信息
     name = models.CharField(max_length=255, verbose_name="策略名称")
-    organizations = models.JSONField(default=list, verbose_name='所属组织')
     collect_type = models.ForeignKey(CollectType, on_delete=models.CASCADE, verbose_name="采集方式")
     last_run_time = models.DateTimeField(blank=True, null=True, verbose_name="最后一次执行时间")
 
