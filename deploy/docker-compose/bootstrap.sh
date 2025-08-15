@@ -351,8 +351,8 @@ log "INFO" "生成合成的 docker-compose.yaml 文件..."
 $COMPOSE_CMD > docker-compose.yaml
 
 # 按照特定顺序启动服务
-log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j)..."
-${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics neo4j victoria-logs mlflow
+log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j, VictoriaLogs, MLflow, NATS Executor)..."
+${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics neo4j victoria-logs mlflow nats-executor
 
 # 创建 JetStream - 使用正确的网络名称
 log "INFO" "创建JetStream..."
