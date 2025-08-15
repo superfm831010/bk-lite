@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from src import summarize
 from src.agent.plan_and_execute_agent.plan_and_execute_agent_state import PlanAndExecuteAgentState
 from src.core.node.tools_node import ToolsNodes
+from src.core.sanic_plus.utils.template_loader import TemplateLoader
 
 
 class Plan(BaseModel):
@@ -84,10 +85,17 @@ class PlanAndExecuteAgentNode(ToolsNodes):
                 for i, step in enumerate(state["past_steps"])
             ])
 
-        task_formatted = f"""For the following plan:
-    {plan_str}\n\n{past_steps_info}\n\nYou are tasked with executing step {current_step_index + 1}/{total_steps}, {task}.
-    
-如果这是最后一个步骤，请确保提供完整的最终答案。"""
+        # 使用模板加载器生成任务格式化内容
+        task_formatted = TemplateLoader.render_template(
+            "prompts/plan_and_execute_agent/execute_step_task",
+            {
+                "plan_str": plan_str,
+                "past_steps_info": past_steps_info,
+                "current_step_index": current_step_index + 1,
+                "total_steps": total_steps,
+                "task": task
+            }
+        )
 
         self.log(
             config, f"执行计划步骤 {current_step_index + 1}/{total_steps}: {task}")
@@ -184,28 +192,21 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         Returns:
             聊天提示模板
         """
-        base_instructions = f"""
-        为了实现以下目标，制定一个简单的分步计划。以下是你可以使用的工具：{self.tools}
-        
-        此计划应涉及单独的任务，如果正确执行将产生正确的答案。不要添加任何多余的步骤。
-        最后一步的结果应该是最终答案。确保每一步都有所有需要的信息 - 不要跳过步骤。
-        """
+        # 使用模板加载器获取基础指令
+        base_instructions = TemplateLoader.render_template(
+            "prompts/plan_and_execute_agent/base_planning_instruction",
+            {"tools": self.tools}
+        )
 
         if for_replanning:
+            # 使用模板加载器获取重新规划指令
+            replanning_content = TemplateLoader.render_template(
+                "prompts/plan_and_execute_agent/replanning_instruction",
+                {"base_instructions": base_instructions}
+            )
+            
             template = [
-                SystemMessage(content=base_instructions + """
-                你的原始计划是：
-                {original_plan}
-                
-                你已经完成了以下步骤：
-                {completed_steps}
-                
-                请相应地更新你的计划。如果不需要更多步骤，你可以直接向用户返回最终结果。
-                否则，填写计划。只添加仍然需要完成的步骤。
-                不要在计划中包含已完成的步骤。
-                
-                重要提醒：在提供最终响应时，请确保从执行结果中提取实际的数值或内容，而不是变量名。
-                """),
+                SystemMessage(content=replanning_content),
                 MessagesPlaceholder(variable_name="messages"),
             ]
         else:
@@ -255,23 +256,18 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         # 人类消息的内容根据是否完成所有步骤有所不同
         message_content = ""
         if all_steps_completed:
-            message_content = f"""所有计划步骤已完成，请根据以下执行结果综合给出最终答案。
-
-目标任务: {user_message}
-
-详细执行步骤和结果:
-{past_steps_formatted}
-
-重要说明：
-- 请仔细查看每个步骤的执行结果
-- 如果执行结果包含了具体的数值、字符串或信息，请提取实际内容
-- 不要将变量名当作最终结果
-- 请基于实际的执行输出给出准确的最终答案
-
-请直接提供最终的答案，无需创建新的计划。
-"""
+            message_content = TemplateLoader.render_template(
+                "prompts/plan_and_execute_agent/final_answer_generation",
+                {
+                    "user_message": user_message,
+                    "past_steps_formatted": past_steps_formatted
+                }
+            )
         else:
-            message_content = f"请基于已完成的步骤重新评估计划，目标是：{user_message}"
+            message_content = TemplateLoader.render_template(
+                "prompts/plan_and_execute_agent/replan_evaluation",
+                {"user_message": user_message}
+            )
 
         # 人类消息
         human_message = HumanMessage(content=message_content)

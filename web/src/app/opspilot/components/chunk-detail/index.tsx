@@ -51,7 +51,6 @@ const ChunkDetail: React.FC<ChunkDetailProps> = ({
   }, [chunkId, indexName]);
 
   useEffect(() => {
-    console.log('Effect triggered', { chunkId, indexName, activeTab, visible });
     if (visible && activeTab === 'qapairs' && chunkId && indexName) {
       fetchQAPairData();
     }

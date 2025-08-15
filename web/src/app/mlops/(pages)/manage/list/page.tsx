@@ -23,12 +23,11 @@ const { confirm } = Modal;
 const DatasetManagePage = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { deleteAnomalyDatasets, getAnomalyDatasetsList } = useMlopsManageApi();
+  const { deleteAnomalyDatasets, deleteRasaDatasets, getAnomalyDatasetsList, getRasaDatasetsList } = useMlopsManageApi();
   const [datasets, setDatasets] = useState<DataSet[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const modalRef = useRef<ModalRef>(null);
-  const activeTab = 'anomaly';
   const datasetTypes = [
     { key: 'anomaly', value: 'anomaly', label: t('datasets.anomaly') },
   ];
@@ -43,8 +42,12 @@ const DatasetManagePage = () => {
           title: t(`datasets.anomaly`),
           key: 'anomaly',
         },
+        {
+          title: t(`datasets.rasa`),
+          key: 'rasa',
+        }
       ]
-    }
+    },
   ];
 
   useEffect(() => {
@@ -53,7 +56,17 @@ const DatasetManagePage = () => {
 
   useEffect(() => {
     getDataSets();
-  }, [selectedKeys])
+  }, [selectedKeys]);
+
+  const handleAddMap: Record<string, any> = {
+    'anomaly': getAnomalyDatasetsList,
+    'rasa': getRasaDatasetsList
+  };
+
+  const handleDelMap: Record<string, any> = {
+    'anomaly': deleteAnomalyDatasets,
+    'rasa': deleteRasaDatasets
+  };
 
 
   const getDataSets = useCallback(async () => {
@@ -61,22 +74,17 @@ const DatasetManagePage = () => {
     if (!activeTab) return;
     setLoading(true);
     try {
-      if (activeTab === 'anomaly') {
-        const data = await getAnomalyDatasetsList({ page: 1, page_size: -1 });
-        const _data: DataSet[] = data?.map((item: any) => {
-          return {
-            id: item.id,
-            name: item.name,
-            description: item.description || '--',
-            icon: 'tucengshuju',
-            creator: item?.created_by || '--',
-            tenant_id: item.tenant_id
-          }
-        }) || [];
-        setDatasets(_data);
-      } else {
-        setDatasets([]);
-      }
+      const data = await handleAddMap[activeTab]({ page: 1, page_size: -1 });
+      const _data: DataSet[] = data?.map((item: any) => {
+        return {
+          id: item.id,
+          name: item.name,
+          description: item.description || '--',
+          icon: 'tucengshuju',
+          creator: item?.created_by || '--',
+        }
+      }) || [];
+      setDatasets(_data);
     } catch (e) {
       console.log(e);
     } finally {
@@ -85,6 +93,7 @@ const DatasetManagePage = () => {
   }, [selectedKeys]);
 
   const navigateToNode = (item: any) => {
+    const [activeTab] = selectedKeys;
     router.push(
       `/mlops/manage/detail?folder_id=${item?.id}&folder_name=${item.name}&description=${item.description}&activeTap=${activeTab}`
     );
@@ -98,7 +107,8 @@ const DatasetManagePage = () => {
       cancelText: t('common.cancel'),
       onOk: async () => {
         try {
-          await deleteAnomalyDatasets(id);
+          const [activeTab] = selectedKeys;
+          await handleDelMap[activeTab](id);
           message.success(t('common.delSuccess'));
         } catch (e) {
           console.log(e);

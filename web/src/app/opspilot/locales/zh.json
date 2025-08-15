@@ -54,6 +54,17 @@
       "importSuccess": "导入问答对成功",
       "importFailed": "导入问答对失败",
       "uploadInProgress": "文件上传中，请等待完成",
+      "generateTitle": "生成问答对",
+      "selectLlmModel": "请选择LLM模型",
+      "selectedInfo": "选中信息",
+      "selectedChunks": "选中分块",
+      "chunks": "个分块",
+      "pairs": "对",
+      "qaCountRange": "问答对数量必须在1-1000之间",
+      "enterQaCount": "请输入问答对数量",
+      "startGenerate": "开始生成",
+      "generateSuccess": "问答对生成成功",
+      "generateFailed": "问答对生成失败",
       "status": {
         "pending": "准备中",
         "generating": "生成中",
@@ -235,7 +246,21 @@
       "semanticDescription": "保留完整语义单元（如章节、段落、函数模块），适合需逻辑关联的长文本处理，但对文档结构或算法依赖性较高。",
       "noneFormats": "短文本（邮件、摘要）、小型文件（单页 PPT、简单表格、短文 TXT）。",
       "noneMethod": "直接处理全文内容，不进行任何分割。",
-      "noneDescription": "将整个文保留内容的全局关联性，适合需要整体理解的场景（如摘要生成、全文检索）。但对计算资源要求较高，长文本处理效率低。"
+      "noneDescription": "将整个文保留内容的全局关联性，适合需要整体理解的场景（如摘要生成、全文检索）。但对计算资源要求较高，长文本处理效率低。",
+      "result": {
+        "generateQA": "生成问答对",
+        "batchGenerateQA": "批量生成Q&A",
+        "deleteOptions": "删除选项",
+        "deleteChunkOnly": "仅删除分块",
+        "deleteWithQA": "同时删除关联的问答对",
+        "deleteChunkOnlyDesc": "只删除选中的文档分块，保留关联的问答对",
+        "deleteWithQADesc": "删除选中的文档分块及其关联的所有问答对",
+        "selectDeleteMethod": "请选择删除方式：",
+        "deleteSuccess": "删除成功",
+        "deleteFailed": "删除失败"
+      },
+      "originalChunk": "原始分块",
+      "noChunkData": "无分块数据"
     },
     "testing": {
       "title": "测试",
