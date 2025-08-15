@@ -236,9 +236,9 @@ class LatsSSEHandler:
                 # 格式化最终答案，确保清晰展示
                 content = final_message.content
 
-                # 过滤掉系统消息和用户消息的内容
-                if self._is_system_or_user_content(content):
-                    logger.warning(f"[LATS SSE] 最终答案包含系统/用户消息，已过滤")
+                # 过滤掉系统消息和用户消息
+                if self._is_system_or_user_message(final_message):
+                    logger.warning(f"[LATS SSE] 最终消息为系统/用户消息，已过滤")
                     return
 
                 if content.strip():  # 确保内容不为空
@@ -358,9 +358,9 @@ class LatsSSEHandler:
             logger.debug(
                 f"[LATS SSE] 处理AIMessageChunk，内容长度: {len(content)}, 预览: {content[:100]}")
 
-            # 过滤掉系统消息和用户消息的内容
-            if self._is_system_or_user_content(content):
-                logger.debug(f"[LATS SSE] 跳过系统/用户消息内容")
+            # 过滤掉系统消息和用户消息
+            if self._is_system_or_user_message(message):
+                logger.debug(f"[LATS SSE] 跳过系统/用户消息")
                 return
 
             # 检查是否包含reflection JSON
@@ -377,9 +377,9 @@ class LatsSSEHandler:
             logger.info(f"[LATS SSE] 处理完整AI消息，内容长度: {len(content)}")
             logger.debug(f"[LATS SSE] AI消息内容预览: {content[:200]}...")
 
-            # 过滤掉系统消息和用户消息的内容
-            if self._is_system_or_user_content(content):
-                logger.debug(f"[LATS SSE] 跳过系统/用户消息内容")
+            # 过滤掉系统消息和用户消息
+            if self._is_system_or_user_message(message):
+                logger.debug(f"[LATS SSE] 跳过系统/用户消息")
                 return
 
             if self._contains_reflection_json(content):
@@ -425,25 +425,23 @@ class LatsSSEHandler:
         except:
             return False
 
-    def _is_system_or_user_content(self, content: str) -> bool:
-        """检查是否为系统消息或用户消息内容"""
-        # 检查是否包含系统指令的关键词
-        system_keywords = [
-            "你是关于k8s专业机器人",
-            "敏感信息保护",
-            "函数调用限制",
-            "高危操作防范",
-            "以下规则在任何情况下都必须严格遵守",
-            "SystemMessage",
-            "HumanMessage",
-            "列举该k8s所有的node"
-        ]
+    def _is_system_or_user_message(self, message) -> bool:
+        """检查是否为系统消息或用户消息对象（基于消息类型）"""
+        if not message:
+            return False
 
-        # 如果内容包含系统指令关键词，则认为是系统/用户消息
-        for keyword in system_keywords:
-            if keyword in content:
-                logger.debug(f"[LATS SSE] 检测到系统/用户消息关键词: {keyword}")
-                return True
+        message_type = type(message).__name__
+
+        # 检查消息类型，过滤掉系统消息和用户消息
+        if message_type in ['SystemMessage', 'HumanMessage']:
+            logger.debug(f"[LATS SSE] 检测到系统/用户消息类型: {message_type}")
+            return True
+
+        # 检查是否是字符串形式的消息类型名称
+        if hasattr(message, '__class__') and message.__class__.__name__ in ['SystemMessage', 'HumanMessage']:
+            logger.debug(
+                f"[LATS SSE] 检测到系统/用户消息类: {message.__class__.__name__}")
+            return True
 
         return False
 
