@@ -235,9 +235,17 @@ class LatsSSEHandler:
 
                 # 格式化最终答案，确保清晰展示
                 content = final_message.content
+
+                # 过滤掉系统消息和用户消息的内容
+                if self._is_system_or_user_content(content):
+                    logger.warning(f"[LATS SSE] 最终答案包含系统/用户消息，已过滤")
+                    return
+
                 if content.strip():  # 确保内容不为空
-                    formatted_content = f"\n\n📋 **基于搜索结果的完整解答**\n\n{content}\n\n"
-                    await self.send_sse(res, self.formatter.format_content(formatted_content))
+                    # 使用优化的格式化方法
+                    formatted_content = self._format_ai_content(content)
+                    final_output = f"\n\n✨ **最终解答**\n\n{formatted_content}\n\n"
+                    await self.send_sse(res, self.formatter.format_content(final_output))
                 else:
                     logger.warning(f"[LATS SSE] 最终消息内容为空")
             else:
@@ -329,6 +337,7 @@ class LatsSSEHandler:
                 "evaluate_candidates": "📊 **评估候选方案质量...**",
                 "select_best": "🎯 **选择最佳候选方案...**",
                 "backtrack": "🔄 **回溯寻找更好路径...**",
+                "generate_final_answer": "✨ **正在生成最终解答...**",
             }
             description = node_descriptions.get(
                 node_name, f"🔄 **执行 {node_name} 节点...**")
@@ -349,6 +358,11 @@ class LatsSSEHandler:
             logger.debug(
                 f"[LATS SSE] 处理AIMessageChunk，内容长度: {len(content)}, 预览: {content[:100]}")
 
+            # 过滤掉系统消息和用户消息的内容
+            if self._is_system_or_user_content(content):
+                logger.debug(f"[LATS SSE] 跳过系统/用户消息内容")
+                return
+
             # 检查是否包含reflection JSON
             if self._contains_reflection_json(content):
                 await self._handle_reflection_content(res, content)
@@ -363,14 +377,19 @@ class LatsSSEHandler:
             logger.info(f"[LATS SSE] 处理完整AI消息，内容长度: {len(content)}")
             logger.debug(f"[LATS SSE] AI消息内容预览: {content[:200]}...")
 
+            # 过滤掉系统消息和用户消息的内容
+            if self._is_system_or_user_content(content):
+                logger.debug(f"[LATS SSE] 跳过系统/用户消息内容")
+                return
+
             if self._contains_reflection_json(content):
                 await self._handle_reflection_content(res, content)
             else:
-                # 对于完整消息，确保内容完整输出
+                # 对于完整消息，确保内容完整输出，并优化格式
                 logger.info(f"[LATS SSE] 输出完整AI消息内容")
-                await self.send_sse(res, self.formatter.format_content(content))
-
-        # 处理工具消息 - 只显示工具执行状态，不显示敏感的工具结果内容
+                formatted_content = self._format_ai_content(content)
+                # 处理工具消息 - 只显示工具执行状态，不显示敏感的工具结果内容
+                await self.send_sse(res, self.formatter.format_content(formatted_content))
         elif "Tool" in message_type and "Message" in message_type:
             logger.debug(f"[LATS SSE] 处理工具消息: {message_type}")
 
@@ -405,6 +424,48 @@ class LatsSSEHandler:
                     content.strip().endswith('}'))
         except:
             return False
+
+    def _is_system_or_user_content(self, content: str) -> bool:
+        """检查是否为系统消息或用户消息内容"""
+        # 检查是否包含系统指令的关键词
+        system_keywords = [
+            "你是关于k8s专业机器人",
+            "敏感信息保护",
+            "函数调用限制",
+            "高危操作防范",
+            "以下规则在任何情况下都必须严格遵守",
+            "SystemMessage",
+            "HumanMessage",
+            "列举该k8s所有的node"
+        ]
+
+        # 如果内容包含系统指令关键词，则认为是系统/用户消息
+        for keyword in system_keywords:
+            if keyword in content:
+                logger.debug(f"[LATS SSE] 检测到系统/用户消息关键词: {keyword}")
+                return True
+
+        return False
+
+    def _format_ai_content(self, content: str) -> str:
+        """格式化AI内容，提升可读性"""
+        # 移除多余的空行
+        lines = content.split('\n')
+        formatted_lines = []
+
+        for line in lines:
+            stripped_line = line.strip()
+            if stripped_line:  # 只保留非空行
+                formatted_lines.append(stripped_line)
+
+        # 重新组织内容，添加适当的换行和格式
+        formatted_content = '\n\n'.join(formatted_lines)
+
+        # 如果内容不是以标题开头，添加一个标题
+        if not formatted_content.startswith('#') and not formatted_content.startswith('**'):
+            formatted_content = f"📋 **基于搜索结果的分析**\n\n{formatted_content}"
+
+        return formatted_content
 
     async def _handle_reflection_content(self, res, content: str) -> None:
         """处理包含reflection的内容"""

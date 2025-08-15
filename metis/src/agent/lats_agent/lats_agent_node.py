@@ -284,9 +284,14 @@ class LatsAgentNode(ToolsNodes):
 
         final_solution = solution_node.get_trajectory(
             include_reflections=False)[-1]
+
+        # 安全地提取用户核心问题，过滤敏感系统指令
+        user_question = config['configurable']['graph_request'].user_message
+
         question = TemplateLoader.render_template(
             "prompts/lats_agent/final_answer_synthesis",
             {
+                "user_question": user_question,
                 "solution_content": final_solution.content
             }
         )
