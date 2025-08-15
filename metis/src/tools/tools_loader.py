@@ -4,6 +4,7 @@ from pathlib import Path
 from src.core.entity.tools_server import ToolsServer
 import copy
 from sanic.log import logger
+from src.core.sanic_plus.utils.template_loader import TemplateLoader
 
 
 class ToolsLoader:
@@ -179,10 +180,13 @@ class ToolsLoader:
         if hasattr(tool_server, 'extra_param_prompt') and tool_server.extra_param_prompt:
             param_descriptions = [f"{key}:{value}" for key,
                                   value in tool_server.extra_param_prompt.items()]
-            final_prompt = f"""以下是函数的动态参数生成要求，param json 参数说明:\n{', '.join(param_descriptions)}
-                    请根据以上要求生成函数的动态参数, param为json字典字符串
-                """
-            func.description += final_prompt
+            
+            # 使用模板加载器生成动态参数提示
+            final_prompt = TemplateLoader.render_template(
+                "prompts/tools/dynamic_param_generation",
+                {"param_descriptions": ', '.join(param_descriptions)}
+            )
+            func.description += f"\n{final_prompt}"
 
     @staticmethod
     def _discover_specific_tool(tool_category):

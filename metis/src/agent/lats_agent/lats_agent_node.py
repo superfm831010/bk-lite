@@ -14,6 +14,7 @@ from sanic.log import logger
 
 from src.agent.lats_agent.lats_agent_state import LatsAgentState, Node, Reflection
 from src.core.node.tools_node import ToolsNodes
+from src.core.sanic_plus.utils.template_loader import TemplateLoader
 
 
 class LatsAgentNode(ToolsNodes):
@@ -60,8 +61,14 @@ class LatsAgentNode(ToolsNodes):
         async def reflection_chain_async(inputs):
             llm = self.get_llm_client(
                 config["configurable"]["graph_request"], disable_stream=True)
+            
+            # 使用模板加载器获取反思评估系统消息
+            system_message = TemplateLoader.render_template(
+                "prompts/lats_agent/reflection_evaluation"
+            )
+            
             prompt = ChatPromptTemplate.from_messages([
-                ("system", "对AI助手的回答进行反思和评分。评估回答的充分性、准确性和解决问题的能力。"),
+                ("system", system_message),
                 ("user", "{input}"),
                 MessagesPlaceholder(variable_name="candidate"),
             ])
@@ -122,12 +129,14 @@ class LatsAgentNode(ToolsNodes):
 
             return candidates
 
+        # 使用模板加载器获取候选生成系统消息
+        system_message = TemplateLoader.render_template(
+            "prompts/lats_agent/candidate_generation"
+        )
+        
         prompt_template = ChatPromptTemplate.from_messages(
             [
-                (
-                    "system",
-                    "You are an AI assistant.",
-                ),
+                ("system", system_message),
                 ("user", "{input}"),
                 MessagesPlaceholder(variable_name="messages", optional=True),
             ]
@@ -382,21 +391,31 @@ class LatsAgentNode(ToolsNodes):
             logger.debug("更新状态消息，添加最佳解决方案")
 
             llm = self.get_llm_client(config["configurable"]["graph_request"])
+            
+            # 使用模板加载器获取智能助手系统消息
+            system_message = TemplateLoader.render_template(
+                "prompts/lats_agent/intelligent_assistant"
+            )
+            
             prompt_template = ChatPromptTemplate.from_messages(
                 [
-                    (
-                        "system",
-                        "您是一个智能AI助手，请尽可能准确、全面地回答用户问题。",
-                    ),
+                    ("system", system_message),
                     ("user", "{input}"),  # 用户输入
                     MessagesPlaceholder(variable_name="messages",
                                         optional=True),  # 可选的上下文消息
                 ]
             )
             chain = prompt_template | llm
-            question = f"用户的问题是:{config['configurable']['graph_request'].user_message}"
-            question += f"经过Lats Agent分析后，找到的解决方案是:{final_solution.content}"
-            question += "请结合用户的问题和解决方案，回复用户的问题,准确，全面，简洁，不要捏造事实。"
+            
+            # 使用模板加载器生成最终答案合成问题
+            question = TemplateLoader.render_template(
+                "prompts/lats_agent/final_answer_synthesis",
+                {
+                    "user_message": config['configurable']['graph_request'].user_message,
+                    "solution_content": final_solution.content
+                }
+            )
+            
             msg = chain.invoke({
                 "input": question
             })
@@ -442,7 +461,7 @@ class LatsAgentNode(ToolsNodes):
             count += self._count_nodes(child)
         return count
 
-    def should_continue(self, state: LatsAgentState) -> TypedDict:
+    def should_continue(self, state: LatsAgentState) -> str:
         """决定是否继续执行图中的下一步
 
         Args:
@@ -485,13 +504,15 @@ class LatsAgentNode(ToolsNodes):
         # 获取配置的LLM客户端
         llm = self.get_llm_client(config["configurable"]["graph_request"])
 
+        # 使用模板加载器获取智能助手系统消息
+        system_message = TemplateLoader.render_template(
+            "prompts/lats_agent/intelligent_assistant"
+        )
+
         # 创建提示模板
         prompt_template = ChatPromptTemplate.from_messages(
             [
-                (
-                    "system",
-                    "您是一个智能AI助手，请尽可能准确、全面地回答用户问题。",
-                ),
+                ("system", system_message),
                 ("user", "{input}"),  # 用户输入
                 MessagesPlaceholder(variable_name="messages",
                                     optional=True),  # 可选的上下文消息

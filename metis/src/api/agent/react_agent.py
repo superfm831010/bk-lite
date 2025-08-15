@@ -40,6 +40,6 @@ async def invoke_react_agent_sse(request, body: ReActAgentRequest):
 
     return ResponseStream(
         lambda res: stream_response(workflow, body, res),
-        content_type="text/event-stream",
+        content_type="text/event-stream; charset=utf-8",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
     )

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tag, Button } from 'antd';
+import { Tag, Button, Space } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { TableData, QAPairData } from '@/app/opspilot/types/knowledge';
 import PermissionWrapper from '@/components/permission';
@@ -35,7 +35,7 @@ export const getDocumentColumns = (
         style={{ color: '#155aef' }}
         onClick={(e) => {
           e.preventDefault();
-          router.push(`/opspilot/knowledge/detail/documents/result?id=${id}&name=${name}&desc=${desc}&knowledgeId=${record.id}`);
+          router.push(`/opspilot/knowledge/detail/documents/result?id=${id}&name=${name}&desc=${desc}&documentId=${record.id}`);
         }}
       >
         {text}
@@ -162,6 +162,7 @@ export const getQAPairColumns = (
   getRandomColor: () => string,
   knowledgeBasePermissions: string[],
   onDeleteSingle: (id: number) => void,
+  onExport: (id: number) => void,
   router: RouterType,
   id: string | null,
   name: string | null,
@@ -177,7 +178,7 @@ export const getQAPairColumns = (
         style={{ color: '#155aef' }}
         onClick={(e) => {
           e.preventDefault();
-          router.push(`/opspilot/knowledge/detail/documents/qapair/result?id=${id}&name=${name}&desc=${desc}&qaPairId=${record.id}`);
+          router.push(`/opspilot/knowledge/detail/documents/qapair/result?id=${id}&name=${name}&desc=${desc}&qaPairId=${record.id}&documentId=${record.document_id}`);
         }}
       >
         {text}
@@ -186,8 +187,8 @@ export const getQAPairColumns = (
   },
   {
     title: t('knowledge.qaPairs.qaCount'),
-    dataIndex: 'qa_count',
-    key: 'qa_count',
+    dataIndex: 'generate_count',
+    key: 'generate_count',
   },
   {
     title: t('knowledge.qaPairs.type'),
@@ -247,17 +248,30 @@ export const getQAPairColumns = (
     title: t('knowledge.documents.actions'),
     key: 'action',
     render: (_: any, record: QAPairData) => (
-      <PermissionWrapper
-        requiredPermissions={['Delete']}
-        instPermissions={knowledgeBasePermissions}>
-        <Button
-          type="link"
-          size="small"
-          onClick={() => onDeleteSingle(record.id)}
-        >
-          {t('common.delete')}
-        </Button>
-      </PermissionWrapper>
+      <Space>
+        <PermissionWrapper
+          requiredPermissions={['Delete']}
+          instPermissions={knowledgeBasePermissions}>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => onExport(record.id)}
+          >
+            {t('common.export')}
+          </Button>
+        </PermissionWrapper>
+        <PermissionWrapper
+          requiredPermissions={['Delete']}
+          instPermissions={knowledgeBasePermissions}>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => onDeleteSingle(record.id)}
+          >
+            {t('common.delete')}
+          </Button>
+        </PermissionWrapper>
+      </Space>
     ),
   }
 ];

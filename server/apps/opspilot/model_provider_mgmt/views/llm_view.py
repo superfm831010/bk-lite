@@ -124,13 +124,17 @@ class LLMViewSet(AuthViewSet):
         用于在流式模式下返回错误信息
         """
         import json
-
+        
         def error_generator():
             error_data = {"result": False, "message": error_message, "error": True}
             yield f"data: {json.dumps(error_data, ensure_ascii=False)}\n\n"
             yield "data: [DONE]\n\n"
 
-        response = StreamingHttpResponse(error_generator(), content_type="text/event-stream")
+        # 使用异步兼容的生成器包装器
+        from apps.opspilot.utils.sse_chat import _create_async_compatible_generator
+        async_generator = _create_async_compatible_generator(error_generator())
+        
+        response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
         response["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response["X-Accel-Buffering"] = "no"  # Nginx
         # response["Pragma"] = "no-cache"

@@ -53,6 +53,19 @@
       "noFileSelected": "Please select a file to upload",
       "importSuccess": "Import QA pairs successfully",
       "importFailed": "Failed to import QA pairs",
+      "uploadInProgress": "File upload in progress, please wait",
+      "generateTitle": "Generate QA Pairs",
+      "selectLlmModel": "Please select LLM model",
+      "selectedInfo": "Selected Information",
+      "selectedChunks": "Selected Chunks",
+      "chunks": "chunks",
+      "pairs": "pairs",
+      "qaCountRange": "QA count must be between 1-1000",
+      "enterQaCount": "Please enter QA count",
+
+      "startGenerate": "Start Generate",
+      "generateSuccess": "QA pairs generated successfully",
+      "generateFailed": "Failed to generate QA pairs",
       "status": {
         "pending": "Pending",
         "generating": "Generating",
@@ -231,7 +244,21 @@
       "semanticDescription": "Retains complete semantic units (e.g., chapters, paragraphs, function modules), suitable for long text processing requiring logical associations, but highly dependent on document structure or algorithms.",
       "noneFormats": "Short texts (emails, summaries), small files (single-page PPT, simple tables, short TXT).",
       "noneMethod": "Process the entire text without any splitting.",
-      "noneDescription": "Retains the global association of the entire document, suitable for scenarios requiring overall understanding (e.g., summary generation, full-text retrieval). However, it requires high computational resources and has low efficiency in processing long texts."
+      "noneDescription": "Retains the global association of the entire document, suitable for scenarios requiring overall understanding (e.g., summary generation, full-text retrieval). However, it requires high computational resources and has low efficiency in processing long texts.",
+      "result": {
+        "generateQA": "Generate Q&A Pairs",
+        "batchGenerateQA": "Batch Generate Q&A",
+        "deleteOptions": "Delete Options",
+        "deleteChunkOnly": "Delete Chunk Only",
+        "deleteWithQA": "Delete with Associated QA Pairs",
+        "deleteChunkOnlyDesc": "Only delete the selected document chunks, keep associated QA pairs",
+        "deleteWithQADesc": "Delete the selected document chunks and all associated QA pairs",
+        "selectDeleteMethod": "Please select deletion method:",
+        "deleteSuccess": "Deletion successful",
+        "deleteFailed": "Deletion failed"
+      },
+      "originalChunk": "Original Chunk",
+      "noChunkData": "No Chunk Data"
     },
     "testing": {
       "title": "Testing",

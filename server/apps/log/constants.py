@@ -7,10 +7,17 @@ VICTORIALOGS_PWD = os.getenv("VICTORIALOGS_PWD")
 
 # 策略相关常量
 POLICY_MODULE = "policy"
+# 数据流相关常量
+STREAM_MODULE = "stream"
 DEFAULT_PERMISSION = ['View', 'Operate']
 
 # 告警状态
 ALERT_STATUS_NEW = "new"
+ALERT_STATUS_CLOSED = "closed"
+ALERT_STATUS_CHOICES = [
+    (ALERT_STATUS_NEW, "活跃"),
+    (ALERT_STATUS_CLOSED, "关闭"),
+]
 
 # 告警类型
 KEYWORD = "keyword"

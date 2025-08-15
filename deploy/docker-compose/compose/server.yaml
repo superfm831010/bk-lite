@@ -65,7 +65,7 @@ services:
       - prod
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ../pkgs:/app/pkgs
+      - ../pkgs:/apps/pkgs
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sidecar.rule=Host(`${HOST_IP}`) && PathPrefix(`/api/v1`)"
