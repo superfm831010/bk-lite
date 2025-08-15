@@ -240,7 +240,7 @@ if [[ "$CPU_ARCH" == "x86_64" ]]; then
    [ -d pkgs ] && rm -rvf pkgs
    mkdir -p pkgs/controller
    mkdir -p pkgs/collector
-   docker run --rm -v $PWD/pkgs:/pkgs --entrypoint=/bin/bash $DOCKER_IMAGE_FUSION_COLLECTOR -c "cp -av bin/* /pkgs/collector/;cd /opt; zip -r /pkgs/controller/fusion-collectors.zip fusion-collectors"
+   docker run --rm -v $PWD/pkgs:/pkgs --entrypoint=/bin/bash $DOCKER_IMAGE_FUSION_COLLECTOR -c "cp -av bin/* /pkgs/collector/;cd /opt; cp fusion-collectors/misc/* fusion-collectors/;zip -r /pkgs/controller/fusion-collectors.zip fusion-collectors"
 elif [[ "$CPU_ARCH" == "aarch64" ]]; then
    log "WARNING" "当前CPU架构为arm64，暂时无内置采集器"
 else
