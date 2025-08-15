@@ -141,6 +141,7 @@ export const getDocumentColumns = (
   {
     title: t('knowledge.documents.actions'),
     key: 'action',
+    width: 170,
     render: (_: any, record: TableData) => (
       <ActionButtons
         record={record}
