@@ -81,7 +81,7 @@ def get_alert_trend_data(*args, **kwargs) -> Dict[str, Any]:
     # 构建查询条件
     query_conditions = Q(created_at__gte=aware_start, created_at__lt=aware_end)
 
-    alert_model_fields = [field.name for field in Alert._meta.get_fields() if not field.is_relation]
+    alert_model_fields = Alert.model_fields()
     # 应用过滤条件
     for key, value in kwargs.items():
         if key not in alert_model_fields:
