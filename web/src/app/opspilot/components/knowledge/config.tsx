@@ -77,6 +77,10 @@ const ConfigComponent: React.FC<ConfigProps> = ({ configData, setConfigData }) =
           disabled
           loading={loadingModels}
           value={configData.selectedEmbedModel}
+          showSearch
+          filterOption={(input, option) =>
+            typeof option?.children === 'string' && (option.children as string).toLowerCase().includes(input.toLowerCase())
+          }
           onChange={(value) => setConfigData(prevData => ({ ...prevData, selectedEmbedModel: value }))}
         >
           {modelOptions.map((model) => (
@@ -267,6 +271,10 @@ const ConfigComponent: React.FC<ConfigProps> = ({ configData, setConfigData }) =
                     placeholder={`${t('common.selectMsg')}${t('knowledge.rerankModel')}`}
                     loading={loadingModels}
                     value={configData.selectedRerankModel}
+                    showSearch
+                    filterOption={(input, option) =>
+                      typeof option?.children === 'string' && (option.children as string).toLowerCase().includes(input.toLowerCase())
+                    }
                     onChange={(value) => setConfigData(prevData => ({ ...prevData, selectedRerankModel: value }))}
                   >
                     {rerankModelOptions.map((model) => (

@@ -9,7 +9,7 @@
     &::before {
         content: '';
         position: absolute;
-        bottom: -7px;
+        bottom: -6px;
         right: 0;
         width: 0;
         height: 0;
@@ -20,8 +20,8 @@
     }
     svg {
         position: absolute;
-        bottom: -5px;
-        right: 0;
+        bottom: -3px;
+        right: 2px;
         fill: #ffffff !important;
     }
 }

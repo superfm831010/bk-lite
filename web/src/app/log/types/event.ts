@@ -77,3 +77,20 @@ export interface ConditionFilterProps {
   fields: string[];
   onChange?: (data: FilterItem[]) => void;
 }
+
+export interface FiltersConfig {
+  level: string[];
+  state: string[];
+}
+
+export interface LogAlertParams {
+  id?: React.Key;
+  status?: string;
+  level?: string;
+  collect_type?: string;
+  policy_name?: string;
+  page?: number;
+  page_size?: number;
+  start_event_time?: string;
+  end_event_time?: string;
+}

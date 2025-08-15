@@ -1,12 +1,13 @@
-import uuid
 from typing import List
 
 from langchain_core.documents import Document
 
+from .base_chunk import BaseChunk
 
-class FullChunk:
-    def chunk(self, docs: List[Document]) -> List[Document]:
-        for doc in docs:
-            doc.metadata['chunk_number'] = str(0)
-            doc.metadata['chunk_id'] = str(uuid.uuid4())
+
+class FullChunk(BaseChunk):
+    """全文分块器，不对文档进行分割，只添加元数据"""
+    
+    def _split_documents(self, docs: List[Document]) -> List[Document]:
+        """不进行分割，直接返回原文档"""
         return docs

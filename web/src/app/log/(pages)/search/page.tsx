@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import TimeSelector from '@/components/time-selector';
 import { ListItem, TimeSelectorDefaultValue, TimeSelectorRef } from '@/types';
+import { useSearchParams } from 'next/navigation';
 import { SearchOutlined, BulbFilled } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import { Card, Input, Button, Select, Segmented, Spin } from 'antd';
@@ -27,6 +28,7 @@ const PAGE_LIMIT = 100;
 
 const SearchView: React.FC = () => {
   const { t } = useTranslation();
+  const searchParams = useSearchParams();
   const { isLoading } = useApiClient();
   const { getLogStreams } = useIntegrationApi();
   const { getHits, getLogs } = useSearchApi();
@@ -35,7 +37,10 @@ const SearchView: React.FC = () => {
   const terminalRef = useRef<LogTerminalRef | null>(null);
   const timeSelectorRef = useRef<TimeSelectorRef>(null);
   const [frequence, setFrequence] = useState<number>(0);
-  const [searchText, setSearchText] = useState<string>('');
+  const queryText = searchParams.get('query') || '';
+  const startTime = searchParams.get('startTime') || '';
+  const endTime = searchParams.get('endTime') || '';
+  const [searchText, setSearchText] = useState<string>(queryText);
   const [tableData, setTableData] = useState<TableDataItem[]>([]);
   const [queryTime, setQueryTime] = useState<Date>(new Date());
   const [queryEndTime, setQueryEndTime] = useState<Date>(new Date());
@@ -56,8 +61,8 @@ const SearchView: React.FC = () => {
   const [terminalLoading, setTerminalLoading] = useState<boolean>(false);
   const [timeDefaultValue, setTimeDefaultValue] =
     useState<TimeSelectorDefaultValue>({
-      selectValue: 15,
-      rangePickerVaule: null,
+      selectValue: startTime ? 0 : 15,
+      rangePickerVaule: endTime ? [dayjs(+startTime), dayjs(+endTime)] : null,
     });
   const [windowHeight, setWindowHeight] = useState<number>(window.innerHeight);
 

@@ -82,12 +82,6 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     );
 
     useEffect(() => {
-      if (formData?.id) {
-        getTableData();
-      }
-    }, [pagination.current, pagination.pageSize]);
-
-    useEffect(() => {
       // 当分页加载完成后，重置 isFetchingRef 标志位
       if (!tableLoading) {
         isFetchingRef.current = false;
@@ -149,10 +143,11 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
       return params;
     };
 
-    const getTableData = async () => {
+    const getTableData = async (customPage?: number) => {
       setTableLoading(true);
+      const currentPage = customPage || pagination.current;
       const params = {
-        page: pagination.current,
+        page: currentPage,
         page_size: pagination.pageSize,
       };
       try {
@@ -218,10 +213,12 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const loadMore = () => {
       if (pagination.current * pagination.pageSize < pagination.total) {
         isFetchingRef.current = true; // 设置标志位，表示正在加载
+        const nextPage = pagination.current + 1;
         setPagination((prev) => ({
           ...prev,
-          current: prev.current + 1,
+          current: nextPage,
         }));
+        getTableData(nextPage);
       }
     };
 

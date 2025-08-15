@@ -13,10 +13,9 @@
       "name": "Event",
       "children": [
         {
-          "icon": "weiwangguanicon-defuben-",
           "title": "告警",
           "url": "/log/event/alert",
-          "name": "alert_list1"
+          "name": "alert_list"
         },
         {
           "title": "策略",
@@ -87,10 +86,9 @@
       "name": "Event",
       "children": [
         {
-          "icon": "weiwangguanicon-defuben-",
           "title": "Alert",
           "url": "/log/event/alert",
-          "name": "alert_list1"
+          "name": "alert_list"
         },
         {
           "title": "Strategy",

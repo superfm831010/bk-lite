@@ -6,6 +6,7 @@ import { PlusOutlined, DeleteOutlined, TrademarkOutlined, SyncOutlined, DownOutl
 import { useAuth } from '@/context/auth';
 import { useTranslation } from '@/utils/i18n';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
+import { usePolling } from '@/hooks/usePolling';
 import type { PaginationProps } from 'antd';
 import CustomTable from '@/components/custom-table';
 import PermissionWrapper from '@/components/permission';
@@ -154,6 +155,41 @@ const DocumentsPage: React.FC = () => {
         }
       },
     });
+  };
+
+  const handleExportQAPair = async (qaPairId: number) => {
+    try {
+      const response = await fetch(`/api/proxy/opspilot/knowledge_mgmt/qa_pairs/export_qa_pairs/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authContext?.token}`,
+        },
+        body: JSON.stringify({
+          qa_pairs_id: qaPairId
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to export QA pair');
+      }
+      
+      const blob = await response.blob();
+      const fileName = `qa_pair_${qaPairId}.json`;
+      const fileUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(fileUrl);
+      message.success(t('common.successfullyExported'));
+    } catch (error) {
+      console.error('Error exporting QA pair:', error);
+      message.error(t('common.exportFailed'));
+    }
   };
 
   // Batch delete QA pairs
@@ -311,11 +347,6 @@ const DocumentsPage: React.FC = () => {
         ...prev,
         total: res.count,
       }));
-
-      if (data.some((item: any) => item.train_status === 0)) {
-        const timer = setTimeout(() => fetchData(text, true), 10000);
-        return () => clearTimeout(timer);
-      }
     } catch {
       message.error(t('common.fetchFailed'));
     } finally {
@@ -324,6 +355,14 @@ const DocumentsPage: React.FC = () => {
       }
     }
   }, [pagination.current, pagination.pageSize, searchText, activeTabKey]);
+
+  // 使用usePolling Hook处理训练状态轮询
+  const shouldPoll = tableData.some((item: any) => item.train_status === 0 || item.train_status === 4);
+  usePolling(
+    () => fetchData(searchText, true),
+    10000, // 10秒轮询间隔
+    shouldPoll && mainTabKey === 'source_files' // 只有在source_files标签页且有训练中任务时才轮询
+  );
 
   useEffect(() => {
     if (mainTabKey === 'source_files') {
@@ -467,6 +506,14 @@ const DocumentsPage: React.FC = () => {
     }
   };
 
+  const handleRefresh = () => {
+    if (mainTabKey === 'qa_pairs') {
+      fetchQAPairData(searchText);
+    } else if (mainTabKey === 'source_files') {
+      fetchData(searchText);
+    }
+  };
+
   const batchOperationMenu = (
     <Menu className={styles.batchOperationMenu}>
       <Menu.Item key="batchTrain">
@@ -542,6 +589,7 @@ const DocumentsPage: React.FC = () => {
     getRandomColor,
     knowledgeBasePermissions,
     handleDeleteSingleQAPair,
+    handleExportQAPair,
     router,
     id,
     name,
@@ -579,7 +627,7 @@ const DocumentsPage: React.FC = () => {
                 className="w-60 mr-[8px]"
               />
               <Tooltip className='mr-[8px]' title={t('common.refresh')}>
-                <Button icon={<SyncOutlined />} onClick={() => fetchData()} />
+                <Button icon={<SyncOutlined />} onClick={handleRefresh} />
               </Tooltip>
               {activeTabKey !== 'qa_pairs' && (
                 <>

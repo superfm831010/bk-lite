@@ -395,6 +395,7 @@ const PlaygroundManage = () => {
         try {
           await deleteCapability(id);
           message.success(t(`common.delSuccess`));
+          setSelectCapability([]);
         } catch (e) {
           console.log(e);
         } finally {

@@ -16,7 +16,7 @@ interface DatasetModalProps {
 
 const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess, activeTag }, ref) => {
   const { t } = useTranslation();
-  const { addAnomalyDatasets, updateAnomalyDatasets } = useMlopsManageApi();
+  const { addAnomalyDatasets, updateAnomalyDatasets, addRasaDatasets, updateRasaDatasets } = useMlopsManageApi();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [type, setType] = useState<string>('edit');
   const [title, setTitle] = useState<string>('editform');
@@ -48,12 +48,18 @@ const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess, activ
   const handleAddMap: Record<string, (params: any) => Promise<void>> = {
     'anomaly': async (params: any) => {
       await addAnomalyDatasets(params);
+    },
+    'rasa': async (params: any) => {
+      await addRasaDatasets(params);
     }
   };
 
   const handleUpdateMap: Record<string, (id: number, params: any) => Promise<void>> = {
     'anomaly': async (id: number, params: any) => {
       await updateAnomalyDatasets(id, params);
+    },
+    'rasa': async (id: number, params: any) => {
+      await updateRasaDatasets(id, params);
     }
   };
 

@@ -30,7 +30,7 @@ COLLECTOR_INSTALL_DIR = {
 
 # 设置权限并运行命令
 RUN_COMMAND = {
-    LINUX_OS: "sudo mv /tmp/fusion-collectors /opt/fusion-collectors && sudo chmod -R +x /opt/fusion-collectors/* && cd /opt/fusion-collectors && sudo bash ./install.sh {server_url}/api/v1/node_mgmt/open_api/node {server_token} {cloud} {group} {node_name} {node_id}",
+    LINUX_OS: "sudo rm -rf /opt/fusion-collectors && sudo mv /tmp/fusion-collectors /opt/fusion-collectors && sudo chmod -R +x /opt/fusion-collectors/* && cd /opt/fusion-collectors && sudo bash ./install.sh {server_url}/api/v1/node_mgmt/open_api/node {server_token} {cloud} {group} {node_name} {node_id}",
     WINDOWS_OS: "powershell -command \"Set-ExecutionPolicy Unrestricted -Force; & '{}\\install.ps1' -ServerUrl {} -ServerToken {} -Cloud {} -Group {} -NodeName {} -NodeId {}\"",
 }
 
@@ -47,3 +47,6 @@ CONTROLLER_DIR_DELETE_COMMAND = {
 }
 
 CACHE_TIMEOUT = 60 * 5  # 5分钟
+
+# 控制器默认更新时间
+DEFAULT_UPDATE_INTERVAL = 30    # 30秒
