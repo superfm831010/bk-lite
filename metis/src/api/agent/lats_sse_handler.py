@@ -1,8 +1,9 @@
 """
-LATS Agent SSE 处理器 - 简化优化版本
+LATS Agent SSE 处理器 - 优化版本
 
 提供简洁、高效的 LATS 搜索流式响应处理
 重点优化用户体验，减少冗余代码，提高可维护性
+防止消息错乱，确保流式输出的顺序性和稳定性
 """
 import asyncio
 import json
@@ -22,12 +23,21 @@ class LatsSSEHandler:
         self.formatter = LatsSSEFormatter(chat_id, model)
         self.sent_messages = set()  # 防重复
         self.is_final_answer_started = False
+        self._output_lock = asyncio.Lock()  # 添加输出锁，防止并发错乱
 
     async def send_sse(self, res, message: str) -> None:
-        """发送 SSE 消息（去重）"""
-        if message and message not in self.sent_messages:
-            await res.write(message.encode('utf-8'))
-            self.sent_messages.add(message)
+        """发送 SSE 消息（线程安全，去重）"""
+        if not message:
+            return
+
+        async with self._output_lock:  # 确保消息按顺序发送
+            if message not in self.sent_messages:
+                try:
+                    await res.write(message.encode('utf-8'))
+                    self.sent_messages.add(message)
+                    logger.debug(f"[LATS SSE] 发送消息: {message[:50]}...")
+                except Exception as e:
+                    logger.error(f"[LATS SSE] 发送消息失败: {e}")
 
     async def handle_search_flow(self, res, workflow, body) -> None:
         """处理搜索流程"""
@@ -58,26 +68,30 @@ class LatsSSEHandler:
 
     async def process_chunk(self, res, chunk, iteration_count: int) -> None:
         """处理数据块"""
-        logger.debug(f"[LATS SSE] 处理chunk: {type(chunk).__name__}")
+        try:
+            logger.debug(f"[LATS SSE] 处理chunk: {type(chunk).__name__}")
 
-        # 处理最终状态
-        if self._is_final_state(chunk):
-            await self.handle_final_state(res, chunk)
-            return
+            # 处理最终状态
+            if self._is_final_state(chunk):
+                await self.handle_final_state(res, chunk)
+                return
 
-        # 处理评估结果
-        if self._is_evaluation_results(chunk):
-            await self.handle_evaluation_results(res, chunk['evaluation_results'])
-            return
+            # 处理评估结果
+            if self._is_evaluation_results(chunk):
+                await self.handle_evaluation_results(res, chunk['evaluation_results'])
+                return
 
-        # 处理节点转换
-        if self._is_node_transition(chunk):
-            await self.handle_node_transition(res, chunk, iteration_count)
-            return
+            # 处理节点转换
+            if self._is_node_transition(chunk):
+                await self.handle_node_transition(res, chunk, iteration_count)
+                return
 
-        # 处理消息流
-        if self._is_message_stream(chunk):
-            await self.handle_message_stream(res, chunk)
+            # 处理消息流
+            if self._is_message_stream(chunk):
+                await self.handle_message_stream(res, chunk)
+
+        except Exception as e:
+            logger.error(f"[LATS SSE] 处理chunk出错: {e}")
 
     def _is_final_state(self, chunk) -> bool:
         """检查是否为最终状态"""
@@ -157,33 +171,56 @@ class LatsSSEHandler:
 
         # 处理 AI 消息块
         if message_type == "AIMessageChunk" and hasattr(message, 'content') and message.content:
-            await self.send_sse(res, self.formatter.format_content(message.content))
-            logger.debug(
-                f"[LATS SSE] 转发 AIMessageChunk: {message.content[:50]}...")
+            # 清理内容，防止乱码
+            clean_content = self._clean_content(message.content)
+            if clean_content:
+                await self.send_sse(res, self.formatter.format_content(clean_content))
+                logger.debug(
+                    f"[LATS SSE] 转发 AIMessageChunk: {clean_content[:50]}...")
 
         # 处理工具消息（简化处理）
         elif "Tool" in message_type and "Message" in message_type:
             # 工具执行完成的反馈可以简化或省略
             pass
 
+    def _clean_content(self, content: str) -> str:
+        """清理内容，防止乱码和控制字符"""
+        if not content:
+            return ""
+
+        # 移除控制字符和空字符
+        cleaned = content.replace('\x00', '').replace('\r', '').strip()
+
+        # 确保不是空内容
+        if not cleaned or cleaned.isspace():
+            return ""
+
+        return cleaned
+
     async def send_completion(self, res) -> None:
         """发送完成消息"""
-        # 发送完成统计
-        await self.send_sse(res, self.formatter.format_completion())
+        try:
+            # 发送完成统计
+            await self.send_sse(res, self.formatter.format_completion())
 
-        # 发送结束信号
-        end_response = {
-            "id": self.chat_id,
-            "object": "chat.completion.chunk",
-            "created": int(datetime.now().timestamp()),
-            "model": self.model,
-            "choices": [{"delta": {}, "index": 0, "finish_reason": "stop"}]
-        }
+            # 发送结束信号
+            end_response = {
+                "id": self.chat_id,
+                "object": "chat.completion.chunk",
+                "created": int(datetime.now().timestamp()),
+                "model": self.model,
+                "choices": [{"delta": {}, "index": 0, "finish_reason": "stop"}]
+            }
 
-        json_str = json.dumps(
-            end_response, ensure_ascii=False, separators=(',', ':'))
-        await res.write(f"data: {json_str}\n\n".encode('utf-8'))
-        await res.write("data: [DONE]\n\n".encode('utf-8'))
+            json_str = json.dumps(
+                end_response, ensure_ascii=False, separators=(',', ':'))
+
+            async with self._output_lock:  # 确保结束信号按顺序发送
+                await res.write(f"data: {json_str}\n\n".encode('utf-8'))
+                await res.write("data: [DONE]\n\n".encode('utf-8'))
+
+        except Exception as e:
+            logger.error(f"[LATS SSE] 发送完成消息失败: {e}")
 
 
 async def stream_lats_response(workflow, body: Dict[str, Any], chat_id: str, model: str, res) -> None:
@@ -191,6 +228,7 @@ async def stream_lats_response(workflow, body: Dict[str, Any], chat_id: str, mod
     优化的 LATS Agent 流式响应处理函数
 
     简化逻辑，提升性能，优化用户体验
+    防止消息错乱，确保输出顺序
     """
     handler = LatsSSEHandler(chat_id, model)
     await handler.handle_search_flow(res, workflow, body)
