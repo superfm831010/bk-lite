@@ -35,6 +35,7 @@ class Command(BaseCommand):
                         name=i["name"],
                         model_type_id=model_type_map.get(i["model_type"], None),
                         is_build_in=True,
+                        enabled=False,
                         team=[group_id],
                         llm_config={
                             "openai_api_key": "your_openai_api_key",
@@ -63,6 +64,7 @@ class Command(BaseCommand):
                         name=i["name"],
                         model_type_id=model_type_map.get(i["model_type"], None),
                         is_build_in=True,
+                        enabled=False,
                         team=[group_id],
                         embed_config={
                             "base_url": i["base_url"],
@@ -88,6 +90,7 @@ class Command(BaseCommand):
                     RerankProvider(
                         name=i["name"],
                         model_type_id=model_type_map.get(i["model_type"], None),
+                        enabled=False,
                         is_build_in=True,
                         team=[group_id],
                         rerank_config={

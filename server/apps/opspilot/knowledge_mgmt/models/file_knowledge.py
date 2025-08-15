@@ -38,3 +38,8 @@ class FileKnowledge(models.Model):
     def delete(self, using=None, keep_parents=False):
         self.file.delete(False)
         return super().delete(using, keep_parents)
+
+    def to_dic(self):
+        return {
+            "name": self.knowledge_document.name,
+        }
