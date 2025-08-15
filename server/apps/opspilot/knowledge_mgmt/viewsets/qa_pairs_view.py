@@ -227,16 +227,16 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
     @action(methods=["GET"], detail=False)
     def get_qa_pairs_task_status(self, request):
         document_id = request.GET.get("document_id")
-        task_name = request.GET.get("name")
-        qa_pairs_obj = QAPairs.objects.get(
+        qa_pairs_obj = QAPairs.objects.filter(
             document_id=document_id,
-            name=task_name,
-        )
+        ).first()
+        if not qa_pairs_obj:
+            return JsonResponse({"result": True, "data": []})
         task_list = KnowledgeTask.objects.filter(
-            is_qa_task=True, task_name=task_name, knowledge_ids_contains=int(qa_pairs_obj.id)
+            is_qa_task=True, task_name=qa_pairs_obj.name, knowledge_ids__contains=int(qa_pairs_obj.id)
         )
         if not task_list:
-            return JsonResponse({"result": True, "data": {"status": "completed"}})
+            return JsonResponse({"result": True, "data": []})
         return JsonResponse(
             {
                 "result": True,

@@ -79,6 +79,8 @@ class ChunkHelper(ChatServerHelper):
             "metadata_filter": metadata_filter,
             "size": page_size,
             "query": search_text,
+            "sort_field": "created_time",
+            "sort_order": "asc",
         }
         res = cls.post_chat_server(query, cls.list_url)
         if not res:
