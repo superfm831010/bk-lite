@@ -187,7 +187,7 @@ export const getEdgeStyleWithLabel = (
 ): any => {
   const baseStyle = getEdgeStyle(connectionType);
 
-  if (edgeData.lineType === 'line' && edgeData.lineName) {
+  if (edgeData.lineType === 'common_line' && edgeData.lineName) {
     (baseStyle as any).labels = [createEdgeLabel(edgeData.lineName)];
   } else {
     (baseStyle as any).labels = [];
@@ -396,6 +396,8 @@ export const getSingleValueNodeStyle = (nodeConfig: any) => {
 
   const baseAttrs = createBaseAttrs(styleConfig);
 
+  // 判断是否需要显示loading状态
+  const hasDataSource = nodeConfig.dataSource && nodeConfig.selectedFields?.length > 0;
   return {
     id: nodeConfig.id,
     x: nodeConfig.x || 100,
@@ -410,6 +412,7 @@ export const getSingleValueNodeStyle = (nodeConfig: any) => {
       dataSource: nodeConfig.dataSource,
       dataSourceParams: nodeConfig.dataSourceParams || {},
       selectedFields: nodeConfig.selectedFields || [], 
+      isLoading: hasDataSource,
       config: {
         ...styleConfig,
         ...config, 
@@ -490,10 +493,8 @@ const updateNodeSizeAndPorts = (node: any, iconWidth: number, iconHeight: number
 
 // 通用节点更新函数
 export const updateNodeProperties = (node: any, nodeConfig: any, iconList: any[]) => {
-  // 更新节点标签
   node.setLabel(nodeConfig.name);
-
-  // 更新节点数据
+  console.log('更新图标节点属性，logoUrl:', nodeConfig, node);
   node.setData({
     type: nodeConfig.type,
     name: nodeConfig.name,
@@ -527,15 +528,13 @@ export const updateNodeProperties = (node: any, nodeConfig: any, iconList: any[]
   } else {
     // 更新图标节点属性
     const logoUrl = getLogoUrl(nodeConfig, iconList);
+    node.setAttrByPath('icon/xlink:href', logoUrl);
 
     if (nodeConfig.width && nodeConfig.height) {
       updateNodeSizeAndPorts(node, nodeConfig.width, nodeConfig.height);
+      node.setAttrByPath('icon/xlink:href', logoUrl);
     }
 
-    // 更新图标URL
-    node.setAttrByPath('icon/xlink:href', logoUrl);
-
-    // 更新背景色和边框色
     if (nodeConfig.config?.backgroundColor) {
       node.setAttrByPath('body/fill', nodeConfig.config.backgroundColor);
     }
@@ -646,7 +645,7 @@ export const getChartNodeStyle = (nodeConfig: any) => {
       type: nodeConfig.type || 'chart',
       name: nodeConfig.name,
       widget: nodeConfig.widget,
-      chartConfig: nodeConfig.chartConfig || {},
+      valueConfig: nodeConfig.valueConfig || {},
       dataSource: nodeConfig.dataSource,
       dataSourceParams: nodeConfig.dataSourceParams || [],
       selectedFields: nodeConfig.selectedFields || [],

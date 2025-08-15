@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactEcharts from 'echarts-for-react';
+import { Spin, Empty } from 'antd';
 
 interface OsPieProps {
   rawData: any;
   loading?: boolean;
   config?: any;
+  onReady?: (ready: boolean) => void;
 }
 
-const OsPie: React.FC<OsPieProps> = ({ rawData }) => {
+const OsPie: React.FC<OsPieProps> = ({ rawData, loading = false, onReady }) => {
+  const [isDataReady, setIsDataReady] = useState(false);
+
   const transformData = (rawData: any) => {
     if (rawData && rawData.data && Array.isArray(rawData.data)) {
       return rawData.data;
@@ -16,6 +20,16 @@ const OsPie: React.FC<OsPieProps> = ({ rawData }) => {
   };
 
   const chartData = transformData(rawData);
+
+  useEffect(() => {
+    if (!loading) {
+      const hasData = chartData && chartData.length > 0;
+      setIsDataReady(hasData);
+      if (onReady) {
+        onReady(hasData);
+      }
+    }
+  }, [chartData, loading, onReady]);
   const option: any = {
     animation: true,
     calculable: true,
@@ -96,6 +110,22 @@ const OsPie: React.FC<OsPieProps> = ({ rawData }) => {
       },
     ],
   };
+
+  if (loading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <Spin size="small" />
+      </div>
+    );
+  }
+
+  if (!isDataReady || !chartData || chartData.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col">

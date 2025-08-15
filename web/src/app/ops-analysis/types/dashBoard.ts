@@ -1,9 +1,19 @@
 import { Dayjs } from 'dayjs';
-
+import { TopologyNodeData } from './topology';
 export type FilterType = 'selector' | 'fixed';
 
+export interface DataSourceParam {
+  name: string;
+  type: string;
+  value: any;
+  alias_name: string;
+  filterType: 'params' | 'fixed' | 'filter';
+}
+
 export interface WidgetConfig {
-  dataSource?: string;
+  name?: string;
+  chartType?: string;
+  dataSource?: string | number;
   lineColor?: string;
   barColor?: string;
   pageSize?: number;
@@ -12,7 +22,7 @@ export interface WidgetConfig {
   timeRange?: [Dayjs, Dayjs];
   instanceList?: string[];
   params?: { [key: string]: any };
-  dataSourceParams?: any[]; // 数据源参数配置
+  dataSourceParams?: any[];
 }
 
 export interface LayoutItem {
@@ -27,9 +37,11 @@ export interface LayoutItem {
   config?: WidgetConfig;
 }
 
+export type ViewConfigItem = LayoutItem | TopologyNodeData;
+
 export interface ViewConfigProps {
   open: boolean;
-  item?: LayoutItem;
+  item?: ViewConfigItem;
   onConfirm?: (values: any) => void;
   onClose?: () => void;
 }

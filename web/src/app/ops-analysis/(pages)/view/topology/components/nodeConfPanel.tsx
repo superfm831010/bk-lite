@@ -62,18 +62,21 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
 
   // 初始化新增模式
   const initializeNewNode = useCallback(() => {
-    const defaultValues = {
-      name: '',
+    const defaultValues: any = {
       logoType: 'default',
       logoIcon: 'cc-host',
-      width: nodeType === 'icon' ? FORM_DEFAULTS.ICON_NODE.width : undefined,
-      height: nodeType === 'icon' ? FORM_DEFAULTS.ICON_NODE.height : undefined,
       fontSize: FORM_DEFAULTS.SINGLE_VALUE.fontSize,
       textColor: FORM_DEFAULTS.SINGLE_VALUE.textColor,
       backgroundColor: FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
       borderColor: FORM_DEFAULTS.SINGLE_VALUE.borderColor,
       selectedFields: [],
     };
+
+    if (nodeType === 'icon') {
+      defaultValues.name = '';
+      defaultValues.width = FORM_DEFAULTS.ICON_NODE.width;
+      defaultValues.height = FORM_DEFAULTS.ICON_NODE.height;
+    }
 
     setSelectedIcon('cc-host');
     setLogoType('default');
@@ -84,7 +87,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     setSelectedFields([]);
 
     form.setFieldsValue(defaultValues);
-  }, [form, setSelectedDataSource]);
+  }, [form, setSelectedDataSource, nodeType]);
 
   // 初始化编辑模式
   const initializeEditNode = useCallback(
@@ -375,21 +378,21 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     >
       <div>
         <Form form={form} labelCol={{ span: 4 }} layout="horizontal">
-          <div className="mb-6">
-            <div className="font-bold text-[var(--color-text-1)] mb-4">
-              基础设置
-            </div>
-            <Form.Item
-              label="名称"
-              name="name"
-              rules={[{ required: true, message: '请输入节点名称' }]}
-            >
-              <Input placeholder="请输入节点名称" disabled={readonly} />
-            </Form.Item>
-
-            {/* 图标类型显示Logo配置 */}
+          <div>
+            {/* 图标类型显示名称和Logo配置 */}
             {nodeType === 'icon' && (
               <>
+                <div className="font-bold text-[var(--color-text-1)] mb-4">
+                  基础设置
+                </div>
+                <Form.Item
+                  label="名称"
+                  name="name"
+                  rules={[{ required: true, message: '请输入节点名称' }]}
+                >
+                  <Input placeholder="请输入节点名称" disabled={readonly} />
+                </Form.Item>
+
                 <Form.Item
                   label="Logo类型"
                   name="logoType"
@@ -458,32 +461,6 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
                       </Upload>
                     </div>
                   )}
-                </Form.Item>
-
-                <Form.Item label="图标宽度" name="width">
-                  <InputNumber
-                    defaultValue={FORM_DEFAULTS.ICON_NODE.width}
-                    min={20}
-                    max={300}
-                    step={1}
-                    addonAfter="px"
-                    disabled={readonly}
-                    placeholder="请输入图标宽度"
-                    style={{ width: '120px' }}
-                  />
-                </Form.Item>
-
-                <Form.Item label="图标高度" name="height">
-                  <InputNumber
-                    defaultValue={FORM_DEFAULTS.ICON_NODE.height}
-                    min={20}
-                    max={300}
-                    step={1}
-                    addonAfter="px"
-                    disabled={readonly}
-                    placeholder="请输入图标高度"
-                    style={{ width: '120px' }}
-                  />
                 </Form.Item>
               </>
             )}
@@ -618,11 +595,11 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
           )}
 
           <div className="mb-6">
+            <div className="font-bold text-[var(--color-text-1)] mb-4">
+              节点样式
+            </div>
             {nodeType === 'single-value' && (
               <>
-                <div className="font-bold text-[var(--color-text-1)] mb-4">
-                  节点样式
-                </div>
                 <Form.Item label="字体大小" name="fontSize">
                   <InputNumber
                     defaultValue={FORM_DEFAULTS.SINGLE_VALUE.fontSize}
@@ -659,6 +636,35 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
                     defaultValue={FORM_DEFAULTS.SINGLE_VALUE.borderColor}
                     className="w-20 h-8"
                     disabled={readonly}
+                  />
+                </Form.Item>
+              </>
+            )}
+            {nodeType === 'icon' && (
+              <>
+                <Form.Item label="图标宽度" name="width">
+                  <InputNumber
+                    defaultValue={FORM_DEFAULTS.ICON_NODE.width}
+                    min={20}
+                    max={300}
+                    step={1}
+                    addonAfter="px"
+                    disabled={readonly}
+                    placeholder="请输入图标宽度"
+                    style={{ width: '120px' }}
+                  />
+                </Form.Item>
+
+                <Form.Item label="图标高度" name="height">
+                  <InputNumber
+                    defaultValue={FORM_DEFAULTS.ICON_NODE.height}
+                    min={20}
+                    max={300}
+                    step={1}
+                    addonAfter="px"
+                    disabled={readonly}
+                    placeholder="请输入图标高度"
+                    style={{ width: '120px' }}
                   />
                 </Form.Item>
               </>

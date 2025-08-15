@@ -6,10 +6,13 @@ import { Graph } from '@antv/x6';
 import { Selection } from '@antv/x6-plugin-selection';
 import { register } from '@antv/x6-react-shape';
 import { message } from 'antd';
-import { COLORS } from '../constants/nodeDefaults';
+import { COLORS, NODE_DEFAULTS } from '../constants/nodeDefaults';
 import { iconList } from '@/app/cmdb/utils/common';
 import { useTopologyApi } from '@/app/ops-analysis/api/topology';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
+import { TopologyNodeData } from '@/app/ops-analysis/types/topology';
+import { DataSourceParam } from '@/app/ops-analysis/types/dashBoard';
+import { DirItem } from '@/app/ops-analysis/types';
 import {
   getEdgeStyle,
   getEdgeStyleWithLabel,
@@ -37,8 +40,8 @@ export const useGraphOperations = (
   useEffect(() => {
     register({
       shape: 'react-shape',
-      width: 300,
-      height: 200,
+      width: NODE_DEFAULTS.CHART_NODE.width,
+      height: NODE_DEFAULTS.CHART_NODE.height,
       component: ChartNode,
     });
   }, []);
@@ -72,7 +75,6 @@ export const useGraphOperations = (
     setEditingNodeData,
   } = state;
 
-  // 初始化图形
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -157,7 +159,7 @@ export const useGraphOperations = (
 
 
   // 更新单值数据显示
-  const updateNodeData = useCallback(async (nodeConfig: any) => {
+  const updateSingleNodeData = useCallback(async (nodeConfig: TopologyNodeData) => {
     if (!nodeConfig || !graphInstance) return;
 
     const node = graphInstance.getCellById(nodeConfig.id);
@@ -172,7 +174,7 @@ export const useGraphOperations = (
       let requestParams = {};
 
       if (nodeData.dataSourceParams && Array.isArray(nodeData.dataSourceParams)) {
-        requestParams = nodeData.dataSourceParams.reduce((acc: any, param: any) => {
+        requestParams = nodeData.dataSourceParams.reduce((acc: any, param: DataSourceParam) => {
           if (param.value !== undefined) {
             acc[param.name] = (param.type === 'timeRange')
               ? formatTimeRange(param.value)
@@ -205,8 +207,23 @@ export const useGraphOperations = (
 
       node.setAttrByPath('label/text', displayText);
 
+      // 更新节点数据，移除loading状态
+      const currentData = node.getData();
+      node.setData({
+        ...currentData,
+        isLoading: false,
+        lastUpdated: Date.now()
+      });
+
     } catch {
-      node.setAttrByPath('label/text', nodeData.name);
+      node.setAttrByPath('label/text', nodeData.name || '数据获取失败');
+
+      const currentData = node.getData();
+      node.setData({
+        ...currentData,
+        isLoading: false,
+        error: true
+      });
     }
   }, [graphInstance, getSourceDataByApiId]);
 
@@ -217,7 +234,7 @@ export const useGraphOperations = (
       const nodeData = node.getData();
       const position = node.getPosition();
 
-      const serializedNode: any = {
+      const serializedNode: TopologyNodeData = {
         id: node.id,
         x: position.x,
         y: position.y,
@@ -271,8 +288,8 @@ export const useGraphOperations = (
         }
       } else if (nodeData.type === 'chart') {
         serializedNode.widget = nodeData.widget;
-        if (nodeData.chartConfig) {
-          serializedNode.chartConfig = nodeData.chartConfig;
+        if (nodeData.valueConfig) {
+          serializedNode.valueConfig = nodeData.valueConfig;
         }
         if (nodeData.config) {
           serializedNode.config = {
@@ -297,7 +314,7 @@ export const useGraphOperations = (
         target: edge.getTargetCellId(),
         sourcePort,
         targetPort,
-        lineType: edgeData?.lineType || 'network line',
+        lineType: edgeData?.lineType || 'common_line',
         lineName: edgeData?.lineName || '',
         sourceInterface: edgeData?.sourceInterface,
         targetInterface: edgeData?.targetInterface,
@@ -315,7 +332,7 @@ export const useGraphOperations = (
 
   const { saveTopology, getTopologyDetail } = useTopologyApi();
 
-  const handleSaveTopology = useCallback(async (selectedTopology: any) => {
+  const handleSaveTopology = useCallback(async (selectedTopology: DirItem) => {
     if (!selectedTopology?.data_id) {
       message.error('请先选择要保存的拓扑图');
       return;
@@ -416,7 +433,7 @@ export const useGraphOperations = (
 
         setCurrentEdgeData({
           id: edge.id,
-          lineType: edgeData.lineType || 'network line',
+          lineType: edgeData.lineType || 'common_line',
           lineName: edgeData.lineName || '',
           sourceNode: {
             id: sourceNode.id,
@@ -438,7 +455,7 @@ export const useGraphOperations = (
       edge.setAttrs(getEdgeStyle('single').attrs);
       addEdgeTools(edge);
       edge.setData({
-        lineType: 'network line',
+        lineType: 'common_line',
         lineName: '',
       });
     });
@@ -455,9 +472,7 @@ export const useGraphOperations = (
     });
 
     graph.on('edge:connected edge:disconnected', () => {
-      setTimeout(() => {
-        hideAllPorts(graph);
-      }, 100);
+      hideAllPorts(graph);
     });
 
     graph.on('selection:changed', ({ selected }) => {
@@ -621,7 +636,7 @@ export const useGraphOperations = (
 
     const currentEdgeData = {
       id: edge.id,
-      lineType: edgeData?.lineType || 'network line',
+      lineType: edgeData?.lineType || 'common_line',
       lineName: edgeData?.lineName || '',
       sourceNode: {
         id: sourceNode.id,
@@ -715,7 +730,7 @@ export const useGraphOperations = (
     }
 
     // 创建基础节点配置
-    const nodeConfig = {
+    const nodeConfig: TopologyNodeData = {
       id: `node_${Date.now()}`,
       type: nodeType,
       x: position.x,
@@ -736,59 +751,79 @@ export const useGraphOperations = (
       nodeData = getIconNodeStyle(nodeConfig, logoUrl);
     }
 
-    graphInstance.addNode(nodeData);
+    const addedNode = graphInstance.addNode(nodeData);
 
-    // 如果是单值节点且有数据源，更新数据显示
+    // 如果是单值节点且有数据源，启动loading动画并更新数据显示
     if (nodeConfig.type === 'single-value' && nodeConfig.dataSource && nodeConfig.selectedFields?.length) {
-      setTimeout(() => {
-        updateNodeData(nodeConfig);
-      }, 500);
+      startLoadingAnimation(addedNode);
+
+      updateSingleNodeData({ ...nodeConfig, id: addedNode.id });
     }
 
     return nodeConfig.id;
-  }, [graphInstance, updateNodeData]);
+  }, [graphInstance, updateSingleNodeData]);
 
-  const updateNode = useCallback((nodeConfig: any) => {
-    if (!graphInstance) {
-      return;
-    }
+  const startLoadingAnimation = useCallback((node: any) => {
+    const loadingStates = ['○ ○ ○', '● ○ ○', '○ ● ○', '○ ○ ●', '○ ○ ○'];
+    let currentIndex = 0;
 
-    const node = graphInstance.getCellById(nodeConfig.id);
-    if (!node) {
-      return;
-    }
+    const updateLoading = () => {
+      const nodeData = node.getData();
+      if (!nodeData?.isLoading) {
+        return;
+      }
 
-    updateNodeProperties(node, nodeConfig, iconList);
-  }, [graphInstance]);
+      node.setAttrByPath('label/text', loadingStates[currentIndex]);
+      currentIndex = (currentIndex + 1) % loadingStates.length;
+
+      setTimeout(updateLoading, 300);
+    };
+
+    setTimeout(updateLoading, 300);
+  }, []);
 
   const handleNodeUpdate = useCallback(async (values: any) => {
+
     if (!values) {
       return;
     }
 
     try {
       const updatedConfig = {
-        ...state.editingNodeData,
-        name: values.name,
-        dataSource: values.dataSource,
-        dataSourceParams: values.dataSourceParams,
-        selectedFields: values.selectedFields,
+        id: state.editingNodeData.id,
+        type: state.editingNodeData.type,
+        name: values.name || state.editingNodeData.name,
+        logo: values.logo || values.logoIcon || state.editingNodeData.logo,
+        logoType: values.logoType || state.editingNodeData.logoType,
+        logoIcon: values.logoIcon || state.editingNodeData.logoIcon,
+        logoUrl: values.logoUrl || state.editingNodeData.logoUrl,
+        dataSource: values.dataSource || state.editingNodeData.dataSource,
+        dataSourceParams: values.dataSourceParams || state.editingNodeData.dataSourceParams,
+        selectedFields: values.selectedFields || state.editingNodeData.selectedFields,
+        width: values.width || state.editingNodeData.width,
+        height: values.height || state.editingNodeData.height,
         config: {
-          ...state.editingNodeData.config,
-          textColor: values.textColor,
-          fontSize: values.fontSize,
-          backgroundColor: values.backgroundColor,
-          borderColor: values.borderColor,
-          width: values.width,
-          height: values.height,
+          textColor: values.textColor || state.editingNodeData.config?.textColor,
+          fontSize: values.fontSize || state.editingNodeData.config?.fontSize,
+          backgroundColor: values.backgroundColor || state.editingNodeData.config?.backgroundColor,
+          borderColor: values.borderColor || state.editingNodeData.config?.borderColor,
+          width: values.width || state.editingNodeData.config?.width,
+          height: values.height || state.editingNodeData.config?.height,
         },
       };
-      updateNode(updatedConfig);
+
+      if (!graphInstance) {
+        return;
+      }
+
+      const node = graphInstance.getCellById(updatedConfig.id);
+      if (!node) {
+        return;
+      }
+      updateNodeProperties(node, updatedConfig, iconList);
 
       if (updatedConfig.type === 'single-value' && updatedConfig.dataSource && updatedConfig.selectedFields?.length) {
-        setTimeout(() => {
-          updateNodeData(updatedConfig);
-        }, 500);
+        updateSingleNodeData(updatedConfig);
       }
 
       state.setNodeEditVisible(false);
@@ -796,11 +831,11 @@ export const useGraphOperations = (
     } catch (error) {
       console.error('节点更新失败:', error);
     }
-  }, [updateNode, updateNodeData, state]);
+  }, [graphInstance, updateSingleNodeData, state]);
 
   // 加载图表节点数据
-  const loadChartNodeData = useCallback(async (nodeId: string, chartConfig: any) => {
-    if (!graphInstance || !chartConfig.dataSource) {
+  const loadChartNodeData = useCallback(async (nodeId: string, valueConfig: any) => {
+    if (!graphInstance || !valueConfig.dataSource) {
       return;
     }
 
@@ -811,7 +846,7 @@ export const useGraphOperations = (
 
     try {
       const chartData = await fetchWidgetData({
-        config: chartConfig,
+        config: valueConfig,
         globalTimeRange: undefined,
         getSourceDataByApiId,
       });
@@ -826,8 +861,7 @@ export const useGraphOperations = (
         };
         node.setData(updatedData);
       }
-    } catch (error) {
-      console.error('图表数据加载失败:', error);
+    } catch {
       const currentNodeData = node.getData();
       const updatedData = {
         ...currentNodeData,
@@ -837,6 +871,40 @@ export const useGraphOperations = (
       node.setData(updatedData);
     }
   }, [graphInstance, getSourceDataByApiId]);
+
+  const handleViewConfigConfirm = useCallback((values: any) => {
+    if (state.editingNodeData && graphInstance) {
+      const node = graphInstance.getCellById(
+        state.editingNodeData.id
+      );
+      if (node) {
+        const updatedData = {
+          ...state.editingNodeData,
+          dataSource: values.dataSource,
+          dataSourceParams: values.dataSourceParams,
+          name: values.name || state.editingNodeData.name,
+          valueConfig: {
+            ...state.editingNodeData.valueConfig,
+            dataSource: values.dataSource,
+            dataSourceParams: values.dataSourceParams,
+            name: values.name || state.editingNodeData.name,
+          },
+          isLoading: !!values.dataSource,
+          hasError: false,
+        };
+        node.setData(updatedData);
+
+        if (values.name) {
+          node.setAttrByPath('label/text', values.name);
+        }
+
+        if (state.editingNodeData.type === 'chart' && values.dataSource) {
+          loadChartNodeData(state.editingNodeData.id, updatedData.valueConfig);
+        }
+      }
+    }
+    state.setViewConfigVisible(false);
+  }, [graphInstance, state, loadChartNodeData]);
 
   const handleAddChartNode = useCallback(async (
     widget: string,
@@ -852,7 +920,7 @@ export const useGraphOperations = (
     const chartNodeConfig: any = {
       widget: widget,
       name: config?.name || '图表节点',
-      chartConfig: config,
+      valueConfig: config,
       type: 'chart',
       dataSource: config?.dataSource,
       dataSourceParams: config?.dataSourceParams || [],
@@ -864,9 +932,7 @@ export const useGraphOperations = (
     const nodeId = addNode('chart', chartNodeConfig, defaultPosition);
 
     if (config?.dataSource && nodeId) {
-      setTimeout(() => {
-        loadChartNodeData(nodeId, chartNodeConfig);
-      }, 100);
+      loadChartNodeData(nodeId, chartNodeConfig);
     }
 
     return nodeId;
@@ -886,19 +952,19 @@ export const useGraphOperations = (
       } else if (nodeConfig.type === 'text') {
         nodeData = getTextNodeStyle(nodeConfig);
       } else if (nodeConfig.type === 'chart') {
-        const chartConfig = {
+        const valueConfig = {
           ...nodeConfig,
           widget: nodeConfig.widget,
           isLoading: !!nodeConfig.dataSource,
           rawData: null,
           hasError: false,
         };
-        nodeData = getChartNodeStyle(chartConfig);
+        nodeData = getChartNodeStyle(valueConfig);
 
         if (nodeConfig.dataSource) {
           chartNodesToLoad.push({
             nodeId: nodeConfig.id,
-            config: chartConfig,
+            config: valueConfig,
           });
         }
       } else {
@@ -909,15 +975,17 @@ export const useGraphOperations = (
       graphInstance.addNode(nodeData);
 
       if (nodeConfig.type === 'single-value' && nodeConfig.dataSource && nodeConfig.selectedFields?.length) {
-        setTimeout(() => {
-          updateNodeData(nodeConfig);
-        }, 100);
+        const addedNode = graphInstance.getCellById(nodeConfig.id);
+        if (addedNode) {
+          startLoadingAnimation(addedNode);
+          updateSingleNodeData(nodeConfig);
+        }
       }
     });
 
     data.edges.forEach((edgeConfig) => {
-      const edgeData = {
-        lineType: edgeConfig.lineType as 'line' | 'network line',
+      const edgeData: any = {
+        lineType: edgeConfig.lineType as 'common_line' | 'network_line',
         lineName: edgeConfig.lineName,
         sourceInterface: edgeConfig.sourceInterface,
         targetInterface: edgeConfig.targetInterface,
@@ -939,15 +1007,13 @@ export const useGraphOperations = (
     });
 
     chartNodesToLoad.forEach(({ nodeId, config }) => {
-      setTimeout(() => {
-        loadChartNodeData(nodeId, config);
-      }, 200);
+      loadChartNodeData(nodeId, config);
     });
 
     setTimeout(() => {
       graphInstance.centerContent();
     }, 100);
-  }, [graphInstance, updateNodeData, loadChartNodeData]);
+  }, [graphInstance, updateSingleNodeData, loadChartNodeData]);
 
   return {
     zoomIn,
@@ -958,6 +1024,7 @@ export const useGraphOperations = (
     handleSave,
     addNode,
     handleNodeUpdate,
+    handleViewConfigConfirm,
     handleAddChartNode,
     serializeTopologyData,
     handleSaveTopology,

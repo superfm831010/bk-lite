@@ -321,7 +321,7 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
                 rowHeight={100}
                 margin={[12, 12]}
                 containerPadding={[12, 12]}
-                draggableCancel=".no-drag"
+                draggableCancel=".no-drag, .widget-body"
               >
                 {layout.map((item) => {
                   const menu = (

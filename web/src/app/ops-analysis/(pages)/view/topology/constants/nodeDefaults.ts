@@ -152,8 +152,8 @@ export const NODE_DEFAULTS = {
 
   // 图表节点默认配置
   CHART_NODE: {
-    width: 300,
-    height: 200,
+    width: 400,
+    height: 220,
     backgroundColor: COLORS.BACKGROUND.WHITE,
     borderColor: COLORS.BORDER.DEFAULT,
     textColor: COLORS.TEXT.PRIMARY,

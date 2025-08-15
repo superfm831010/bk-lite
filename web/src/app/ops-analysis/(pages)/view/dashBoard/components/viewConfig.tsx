@@ -1,6 +1,10 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import { ViewConfigProps } from '@/app/ops-analysis/types/dashBoard';
+import {
+  ViewConfigProps,
+  LayoutItem,
+} from '@/app/ops-analysis/types/dashBoard';
+import { TopologyNodeData } from '@/app/ops-analysis/types/topology';
 import { useDataSourceManager } from '@/app/ops-analysis/hooks/useDataSource';
 import { Drawer, Button, Form, Input, Radio } from 'antd';
 import DataSourceParamsConfig from '@/app/ops-analysis/components/paramsConfig';
@@ -14,7 +18,6 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
 }) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
-
   const {
     dataSources,
     dataSourcesLoading,
@@ -25,6 +28,44 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
     restoreUserParamValues,
     processFormParamsForSubmit,
   } = useDataSourceManager();
+
+  const isTopologyFormat = (item: any): item is TopologyNodeData => {
+    return item && 'type' in item && item.type === 'chart';
+  };
+
+  const isDashboardFormat = (item: any): item is LayoutItem => {
+    return item && 'i' in item && 'widget' in item;
+  };
+
+  const extractItemConfig = (item: any) => {
+    if (isTopologyFormat(item)) {
+      return {
+        name: item.name,
+        widget: item.widget,
+        dataSource: item.dataSource || item.valueConfig?.dataSource,
+        chartType: item.valueConfig?.chartType || 'line',
+        dataSourceParams:
+          item.dataSourceParams || item.valueConfig?.dataSourceParams || [],
+        ...item.valueConfig,
+      };
+    } else if (isDashboardFormat(item)) {
+      return {
+        name: item.config?.name || item.title,
+        widget: item.widget,
+        dataSource: item.config?.dataSource,
+        chartType: item.config?.chartType || 'line',
+        dataSourceParams: item.config?.dataSourceParams || [],
+        ...item.config,
+      };
+    }
+    return {
+      name: '',
+      widget: '',
+      dataSource: undefined,
+      chartType: 'line',
+      dataSourceParams: [],
+    };
+  };
 
   const initializeNewItemForm = (widget: string): void => {
     const formValues: any = {
@@ -48,14 +89,18 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
   };
 
   const initializeEditItemForm = (widgetItem: any): void => {
+    const itemConfig = extractItemConfig(widgetItem);
+
     const formValues: any = {
-      name: widgetItem.title,
-      ...(widgetItem.config || {}),
+      ...itemConfig,
+      name: itemConfig.name || '',
+      chartType: itemConfig.chartType || 'line',
+      dataSource: itemConfig.dataSource,
     };
 
     const targetDataSource = findDataSource(
-      widgetItem.widget || '',
-      formValues.dataSource
+      itemConfig.widget || '',
+      itemConfig.dataSource
     );
 
     if (targetDataSource) {
@@ -66,9 +111,9 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
       if (targetDataSource.params?.length) {
         setDefaultParamValues(targetDataSource.params, formValues.params);
 
-        if (widgetItem.config?.dataSourceParams?.length) {
+        if (itemConfig.dataSourceParams?.length) {
           restoreUserParamValues(
-            widgetItem.config.dataSourceParams,
+            itemConfig.dataSourceParams,
             formValues.params
           );
         }
@@ -82,8 +127,15 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
 
   const initializeFormValues = (): void => {
     if (dataSources.length === 0) return;
-    if (!widgetItem?.i) {
-      initializeNewItemForm(widgetItem?.widget || '');
+
+    const isNewItem =
+      !widgetItem ||
+      (isDashboardFormat(widgetItem) && !widgetItem.title) ||
+      (isTopologyFormat(widgetItem) && !widgetItem.name);
+
+    if (isNewItem) {
+      const widget = widgetItem?.widget || '';
+      initializeNewItemForm(widget);
     } else {
       initializeEditItemForm(widgetItem);
     }
@@ -152,7 +204,6 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
           </Form.Item>
         </div>
 
-        {/* 数据源部分 */}
         <div className="mb-6">
           <div className="font-bold text-[var(--color-text-1)] mb-4">
             {t('dashboard.dataSource')}
@@ -175,14 +226,12 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
           <div className="font-bold text-[var(--color-text-1)] mb-4">
             {t('dashboard.paramSettings')}
           </div>
-          {/* 动态参数配置 */}
           <DataSourceParamsConfig
             selectedDataSource={selectedDataSource}
             includeFilterTypes={['params', 'fixed']}
           />
         </div>
 
-        {/* 图表类型部分 */}
         <div className="mb-6">
           <div className="font-bold text-[var(--color-text-1)] mb-4">
             {t('dashboard.chartType')}

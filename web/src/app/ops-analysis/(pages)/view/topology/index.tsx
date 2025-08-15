@@ -45,6 +45,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       handleDelete,
       addNode,
       handleNodeUpdate,
+      handleViewConfigConfirm,
       handleAddChartNode,
       handleSaveTopology,
       handleLoadTopology,
@@ -89,7 +90,9 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
     };
 
     const handleSave = () => {
-      handleSaveTopology(selectedTopology);
+      if (selectedTopology) {
+        handleSaveTopology(selectedTopology);
+      }
     };
 
     const hasUnsavedChanges = () => {
@@ -206,27 +209,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           open={state.viewConfigVisible}
           onClose={() => state.setViewConfigVisible(false)}
           item={state.editingNodeData}
-          onConfirm={(values) => {
-            if (state.editingNodeData && state.graphInstance) {
-              const node = state.graphInstance.getCellById(
-                state.editingNodeData.id
-              );
-              if (node) {
-                const updatedData = {
-                  ...state.editingNodeData,
-                  dataSource: values.dataSource,
-                  dataSourceParams: values.dataSourceParams,
-                  name: values.name || state.editingNodeData.name,
-                };
-                node.setData(updatedData);
-
-                if (values.name) {
-                  node.setAttrByPath('label/text', values.name);
-                }
-              }
-            }
-            state.setViewConfigVisible(false);
-          }}
+          onConfirm={handleViewConfigConfirm}
         />
       </div>
     );

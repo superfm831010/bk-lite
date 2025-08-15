@@ -1,7 +1,10 @@
 import { DirItem } from './index';
+import { DataSourceParam } from './dashBoard';
+
+
 export interface EdgeData {
   id?: string;
-  lineType: 'line' | 'network line';
+  lineType: 'common_line' | 'network_line';
   lineName?: string;
   config?: any;
   sourceNode: { id: string; name: string };
@@ -11,7 +14,7 @@ export interface EdgeData {
 }
 
 export interface EdgeCreationData {
-  lineType: 'line' | 'network line';
+  lineType: 'common_line' | 'network_line';
   lineName?: string;
   sourceInterface?: string;
   targetInterface?: string;
@@ -37,13 +40,10 @@ export interface NodeConfPanelProps {
     textColor?: string;
     backgroundColor?: string;
     borderColor?: string;
-    query?: string;
-    unit?: string;
-    threshold?: number;
-    dataSourceParams?: Record<string, any>;
+    dataSourceParams?: DataSourceParam[];
     filterParams?: Record<string, any>;
     chartWidget?: string;
-    chartConfig?: any;
+    valueConfig?: any;
   };
 }
 
@@ -108,4 +108,39 @@ export interface ToolbarProps {
   onDelete: () => void;
   onSelectMode: () => void;
   onAddText: () => void;
+}
+
+export interface TopologyNodeData {
+  type: string;
+  name: string;
+  widget?: string;
+  dataSource?: number;
+  dataSourceParams?: DataSourceParam[];
+  valueConfig?: {
+    name?: string;
+    dataSource?: number;
+    chartType?: string;
+    dataSourceParams?: DataSourceParam[];
+    [key: string]: any;
+  };
+  config?: {
+    width?: number;
+    height?: number;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+
+export interface TopologyEdgeData {
+  id: string;
+  source: string;
+  target: string;
+  sourcePort: string;
+  targetPort: string;
+  lineType: 'common_line' | 'network_line';
+  lineName: string;
+  sourceInterface?: string;
+  targetInterface?: string;
+  config?: any;
 }

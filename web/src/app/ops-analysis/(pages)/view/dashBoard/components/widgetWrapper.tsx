@@ -63,9 +63,7 @@ const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
     );
   }
 
-  // 根据 widgetType 获取对应的组件
   const Component = widgetType ? componentMap[widgetType] : null;
-  
   if (!Component) {
     return (
       <div className="h-full flex items-center justify-center">

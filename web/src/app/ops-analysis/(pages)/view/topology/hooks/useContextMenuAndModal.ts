@@ -31,14 +31,14 @@ export const useContextMenuAndModal = (
         if (edge) {
           edge.setData({ ...edge.getData(), ...values });
 
-          if (values.lineType === 'network line') {
+          if (values.lineType === 'network_line') {
             const labels = edge.getLabels();
             if (labels && labels.length > 0) {
               for (let i = labels.length - 1; i >= 0; i--) {
                 edge.removeLabelAt(i);
               }
             }
-          } else if (values.lineType === 'line') {
+          } else if (values.lineType === 'common_line') {
             if (values.lineName && values.lineName.trim()) {
               edge.setLabels([createEdgeLabel(values.lineName)]);
             } else {
@@ -275,14 +275,14 @@ export const useContextMenuAndModal = (
               source: { cell: contextMenuNodeId, port: sourcePort },
               target: { cell: targetCell.id, port: targetPort },
               ...getEdgeStyle(connectionType),
-              data: { connectionType, lineType: 'network line' },
+              data: { connectionType, lineType: 'common_line' },
             });
             addEdgeTools(finalEdge);
 
             // 打开配置面板
             const edgeData = {
               id: finalEdge.id,
-              lineType: 'network line',
+              lineType: 'common_line',
               lineName: '',
               sourceNode: {
                 id: sourceNode.id,

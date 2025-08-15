@@ -26,7 +26,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
   useEffect(() => {
     if (edgeData) {
       const initialValues = {
-        lineType: edgeData.lineType || 'network line',
+        lineType: edgeData.lineType || 'common_line',
         lineName: edgeData.lineName || '',
         sourceInterfaceType: edgeData.sourceInterface?.type || 'existing',
         sourceInterfaceValue: edgeData.sourceInterface?.value || '',
@@ -57,7 +57,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
 
   // 线条类型变化
   const handleLineTypeChange = (lineType: string) => {
-    if (lineType === 'network line') {
+    if (lineType === 'network_line') {
       form.setFieldValue('lineName', '');
     }
   };
@@ -170,7 +170,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
     >
       {({ getFieldValue }) => {
         const lineType = getFieldValue('lineType');
-        return lineType === 'line' ? (
+        return lineType === 'common_line' ? (
           <Form.Item
             label={t('topology.lineName')}
             name="lineName"
@@ -193,7 +193,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
     >
       {({ getFieldValue }) => {
         const lineType = getFieldValue('lineType');
-        return lineType === 'network line' && edgeData ? (
+        return lineType === 'network_line' && edgeData ? (
           <div style={{ marginTop: '24px' }}>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               {renderInterfaceConfig('source', edgeData.sourceNode.name)}
@@ -236,7 +236,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
           layout="vertical"
           onFinish={handleFinish}
           initialValues={{
-            lineType: edgeData?.lineType || 'network line',
+            lineType: edgeData?.lineType || 'common_line',
             lineName: edgeData?.lineName || '',
             sourceInterfaceType: edgeData?.sourceInterface?.type || 'existing',
             sourceInterfaceValue: edgeData?.sourceInterface?.value || '',
@@ -255,10 +255,12 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
               onChange={handleLineTypeChange}
               disabled={readonly}
             >
-              <Select.Option value="network line">
+              <Select.Option value="common_line">
+                {t('topology.commonLine')}
+              </Select.Option>
+              <Select.Option value="network_line">
                 {t('topology.networkLine')}
               </Select.Option>
-              <Select.Option value="line">{t('topology.line')}</Select.Option>
             </Select>
           </Form.Item>
 

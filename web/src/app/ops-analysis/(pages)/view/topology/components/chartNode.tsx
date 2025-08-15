@@ -1,6 +1,7 @@
 import React from 'react';
 import { Spin } from 'antd';
 import type { Node } from '@antv/x6';
+import { NODE_DEFAULTS } from '../constants/nodeDefaults';
 import ComLine from '../../dashBoard/widgets/comLine';
 import ComPie from '../../dashBoard/widgets/comPie';
 
@@ -15,19 +16,20 @@ interface ChartNodeProps {
 
 const ChartNode: React.FC<ChartNodeProps> = ({ node }) => {
   const nodeData = node.getData();
-  const { widget, chartConfig, config, isLoading, rawData, hasError } =
+  const { widget, valueConfig, config, isLoading, rawData, hasError, name } =
     nodeData;
 
-  const width = config?.width || 300;
-  const height = config?.height || 200;
+  const width = config?.width || NODE_DEFAULTS.CHART_NODE.width;
+  const height = config?.height || NODE_DEFAULTS.CHART_NODE.height;
+  const componentName = name || widget || '未知组件';
 
   const widgetProps = {
     rawData: rawData || null,
     loading: isLoading || false,
     config: {
-      lineColor: chartConfig?.lineColor || '#1890ff',
-      barColor: chartConfig?.barColor || '#1890ff',
-      ...chartConfig,
+      lineColor: valueConfig?.lineColor || '#1890ff',
+      barColor: valueConfig?.barColor || '#1890ff',
+      ...valueConfig,
     },
   };
 
@@ -43,16 +45,28 @@ const ChartNode: React.FC<ChartNodeProps> = ({ node }) => {
         border: '1px solid #d9d9d9',
         borderRadius: '6px',
         backgroundColor: '#fff',
-        padding: '8px',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
+      {componentName && (
+        <div
+          style={{
+            padding: '8px 12px',
+            fontSize: '14px',
+            color: 'var(--color-text-1)',
+          }}
+        >
+          {componentName}
+        </div>
+      )}
+
       <div
         style={{
           flex: 1,
           minHeight: 0,
           position: 'relative',
+          padding: '8px',
         }}
       >
         {shouldShowLoading ? (
