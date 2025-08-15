@@ -1,161 +1,177 @@
 """
-LATS Agent SSE 处理器 - 优化版本
+LATS Agent SSE 处理器 - 简化优化版本
 
-提供简洁、高效的 LATS 搜索流式响应处理，
-支持详细的评价表展示和优雅的用户体验
+提供简洁、高效的 LATS 搜索流式响应处理
+重点优化用户体验，减少冗余代码，提高可维护性
 """
 import asyncio
 import json
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from datetime import datetime
 
 from sanic.log import logger
-from src.api.agent.lats_sse_formatter import LatsSSEFormatter, SearchPhase
-from src.api.agent.sse_config import DEFAULT_SSE_CONFIG
+from src.api.agent.lats_sse_formatter import LatsSSEFormatter
 
 
 class LatsSSEHandler:
-    """LATS SSE 处理器，负责管理搜索过程的流式输出"""
+    """LATS SSE 处理器 - 优化版本"""
 
     def __init__(self, chat_id: str, model: str):
         self.chat_id = chat_id
         self.model = model
-        self.formatter = LatsSSEFormatter(chat_id, model, DEFAULT_SSE_CONFIG)
-        self.sent_contents = set()  # 去重
-        self.iteration_counter = 0
+        self.formatter = LatsSSEFormatter(chat_id, model)
+        self.sent_messages = set()  # 防重复
+        self.is_final_answer_started = False
 
-    async def send_message(self, res, content: str) -> None:
-        """发送SSE消息并去重"""
-        if content and content not in self.sent_contents:
-            await res.write(content.encode('utf-8'))
-            self.sent_contents.add(content)
-            await asyncio.sleep(0.1)  # 避免消息发送过快
+    async def send_sse(self, res, message: str) -> None:
+        """发送 SSE 消息（去重）"""
+        if message and message not in self.sent_messages:
+            await res.write(message.encode('utf-8'))
+            self.sent_messages.add(message)
 
-    async def handle_initial_generation(self, res) -> None:
-        """处理初始化和初始生成阶段"""
-        await self.send_message(res, self.formatter.format_initialization())
-        await self.send_message(res, self.formatter.format_initial_generation_start())
+    async def handle_search_flow(self, res, workflow, body) -> None:
+        """处理搜索流程"""
+        try:
+            logger.info(f"[LATS SSE] 开始处理搜索流程，chat_id: {self.chat_id}")
 
-    async def handle_evaluation_results(self, res, evaluations: List[Dict[str, Any]]) -> None:
-        """处理并展示评价结果表格"""
-        if not evaluations:
-            return
+            # 发送初始化消息
+            await self.send_sse(res, self.formatter.format_initialization())
+            await self.send_sse(res, self.formatter.format_initial_generation())
 
-        logger.info(f"[LATS SSE] 展示{len(evaluations)}个候选方案的评价结果")
+            # 处理搜索流
+            iteration_count = 0
+            async for chunk in await workflow.stream(body):
+                await self.process_chunk(res, chunk, iteration_count)
 
-        # 显示评价表开始
-        await self.send_message(res, self.formatter.format_candidates_evaluation_start(len(evaluations)))
+                # 检查是否是新的迭代
+                if self._is_new_iteration(chunk):
+                    iteration_count += 1
 
-        # 显示详细的评价表格
-        detailed_table = self.formatter.format_detailed_evaluation_table(
-            evaluations)
-        await self.send_message(res, self.formatter.format_final_content(detailed_table))
+            # 发送完成消息
+            await self.send_completion(res)
 
-        # 显示评价结果汇总
-        await self.send_message(res, self.formatter.format_candidates_evaluation_results(evaluations))
+            logger.info(f"[LATS SSE] 搜索流程处理完成，chat_id: {self.chat_id}")
 
-    async def handle_final_state(self, res, root_node, messages: List) -> None:
-        """处理最终状态"""
-        if not (root_node and hasattr(root_node, 'is_solved')):
-            return
+        except Exception as e:
+            logger.error(f"[LATS SSE] 处理出错: {str(e)}", exc_info=True)
+            await self.send_sse(res, self.formatter.format_error(str(e)))
 
-        logger.info(f"[LATS SSE] 搜索完成，找到解决方案: {root_node.is_solved}")
-
-        if messages:
-            final_message = messages[-1]
-            if hasattr(final_message, 'content') and final_message.content:
-                # 根据是否解决问题选择不同的展示方式
-                if root_node.is_solved:
-                    tree_stats = {
-                        'nodes_explored': getattr(root_node, 'height', 0),
-                        'tree_height': getattr(root_node, 'height', 0)
-                    }
-
-                    # 获取最佳评分
-                    best_score = getattr(root_node, 'reflection', None)
-                    score = best_score.score if best_score else 10
-
-                    await self.send_message(res,
-                                            self.formatter.format_solution_found(score, final_message.content, tree_stats))
-
-                    await self.send_message(res, self.formatter.format_final_answer_start())
-
-                    content = f"\n\n🎯 **LATS 最终解决方案**\n\n{final_message.content}\n\n"
-                else:
-                    content = f"\n\n💡 **LATS 最佳候选答案**\n\n{final_message.content}\n\n"
-
-                await self.send_message(res, self.formatter.format_final_content(content))
-
-    async def handle_node_transition(self, res, node_name: str) -> None:
-        """处理节点流转"""
-        if node_name == "generate_initial_response":
-            await self.send_message(res, self.formatter.format_initial_generation_start())
-        elif node_name == "expand":
-            self.iteration_counter += 1
-            await self.send_message(res,
-                                    self.formatter.format_tree_search_iteration_start(self.iteration_counter, 0, 0))
-        elif node_name == "tools":
-            await self.send_message(res,
-                                    self.formatter.format_tool_call_start("search_tool", "获取相关信息"))
-
-    async def handle_tool_message(self, res, message_type: str) -> None:
-        """处理工具消息"""
-        if "Tool" in message_type and "Message" in message_type:
-            await self.send_message(res,
-                                    self.formatter.format_tool_result("search_tool", "工具执行完成，已获取相关信息"))
-
-    async def process_chunk(self, res, chunk) -> None:
-        """处理单个数据块"""
-        logger.debug(f"[LATS SSE] 处理chunk类型: {type(chunk).__name__}")
+    async def process_chunk(self, res, chunk, iteration_count: int) -> None:
+        """处理数据块"""
+        logger.debug(f"[LATS SSE] 处理chunk: {type(chunk).__name__}")
 
         # 处理最终状态
-        if isinstance(chunk, dict) and 'messages' in chunk and 'root' in chunk:
-            await self.handle_final_state(res, chunk.get('root'), chunk.get('messages', []))
+        if self._is_final_state(chunk):
+            await self.handle_final_state(res, chunk)
             return
 
-        # 处理评价结果状态
-        if isinstance(chunk, dict) and 'evaluation_results' in chunk:
-            evaluation_results = chunk.get('evaluation_results', [])
-            if evaluation_results:
-                await self.handle_evaluation_results(res, evaluation_results)
+        # 处理评估结果
+        if self._is_evaluation_results(chunk):
+            await self.handle_evaluation_results(res, chunk['evaluation_results'])
             return
 
-        # 处理节点流转
-        if isinstance(chunk, dict) and len(chunk) == 1:
-            node_name = next(iter(chunk.keys()))
-            await self.handle_node_transition(res, node_name)
+        # 处理节点转换
+        if self._is_node_transition(chunk):
+            await self.handle_node_transition(res, chunk, iteration_count)
             return
 
         # 处理消息流
-        if isinstance(chunk, (tuple, list)) and len(chunk) > 0:
-            message = chunk[0]
-            if message is None:
-                return
+        if self._is_message_stream(chunk):
+            await self.handle_message_stream(res, chunk)
 
-            message_type = type(message).__name__
+    def _is_final_state(self, chunk) -> bool:
+        """检查是否为最终状态"""
+        return isinstance(chunk, dict) and 'messages' in chunk and 'root' in chunk
 
-            # 直接转发 AI 消息块
-            if message_type == "AIMessageChunk" and hasattr(message, 'content'):
-                content = self.formatter.format_final_content(message.content)
-                await self.send_message(res, content)
-                logger.debug(
-                    f"[LATS SSE] 转发AIMessageChunk: {repr(message.content)}")
+    def _is_evaluation_results(self, chunk) -> bool:
+        """检查是否为评估结果"""
+        return isinstance(chunk, dict) and 'evaluation_results' in chunk
 
-            # 处理工具消息
-            await self.handle_tool_message(res, message_type)
+    def _is_node_transition(self, chunk) -> bool:
+        """检查是否为节点转换"""
+        return isinstance(chunk, dict) and len(chunk) == 1
 
-    async def send_completion_and_end(self, res) -> None:
-        """发送完成消息和结束标志"""
-        final_stats = {
-            'iterations': self.iteration_counter,
-            'nodes_explored': self.iteration_counter * 5,  # 估算
-            'tree_height': min(self.iteration_counter + 1, 5),
-            'best_score': 8.5  # 估算
-        }
+    def _is_message_stream(self, chunk) -> bool:
+        """检查是否为消息流"""
+        return isinstance(chunk, (tuple, list)) and len(chunk) > 0
 
-        await self.send_message(res, self.formatter.format_completion(final_stats))
+    def _is_new_iteration(self, chunk) -> bool:
+        """检查是否为新迭代"""
+        return (isinstance(chunk, dict) and 'expand' in chunk) or \
+               (self._is_node_transition(chunk) and 'expand' in chunk)
 
-        # 发送结束标志
+    async def handle_final_state(self, res, chunk) -> None:
+        """处理最终状态"""
+        root_node = chunk.get('root')
+        messages = chunk.get('messages', [])
+
+        if not (root_node and messages):
+            return
+
+        # 检查是否找到解决方案
+        if hasattr(root_node, 'is_solved') and root_node.is_solved:
+            # 获取最佳评分
+            best_score = 10  # 默认高分
+            if hasattr(root_node, 'reflection') and root_node.reflection:
+                best_score = root_node.reflection.score
+
+            await self.send_sse(res, self.formatter.format_solution_found(best_score))
+
+        # 开始最终答案
+        if not self.is_final_answer_started:
+            await self.send_sse(res, self.formatter.format_final_answer_start())
+            self.is_final_answer_started = True
+
+        # 输出最终内容
+        if messages:
+            final_message = messages[-1]
+            if hasattr(final_message, 'content') and final_message.content:
+                content = f"\n\n🎯 **LATS 解决方案**\n\n{final_message.content}\n\n"
+                await self.send_sse(res, self.formatter.format_content(content))
+
+    async def handle_evaluation_results(self, res, evaluations: List[Dict[str, Any]]) -> None:
+        """处理评估结果"""
+        if evaluations:
+            logger.info(f"[LATS SSE] 展示 {len(evaluations)} 个候选方案评估结果")
+            await self.send_sse(res, self.formatter.format_candidates_evaluation(evaluations))
+
+    async def handle_node_transition(self, res, chunk, iteration_count: int) -> None:
+        """处理节点转换"""
+        node_name = next(iter(chunk.keys()))
+
+        if node_name == "generate_initial_response":
+            # 已在初始化时发送，无需重复
+            pass
+        elif node_name == "expand":
+            await self.send_sse(res, self.formatter.format_search_iteration(iteration_count + 1))
+        elif node_name == "tools":
+            await self.send_sse(res, self.formatter.format_tool_execution("search_tool"))
+
+    async def handle_message_stream(self, res, chunk) -> None:
+        """处理消息流"""
+        message = chunk[0] if chunk else None
+        if not message:
+            return
+
+        message_type = type(message).__name__
+
+        # 处理 AI 消息块
+        if message_type == "AIMessageChunk" and hasattr(message, 'content') and message.content:
+            await self.send_sse(res, self.formatter.format_content(message.content))
+            logger.debug(
+                f"[LATS SSE] 转发 AIMessageChunk: {message.content[:50]}...")
+
+        # 处理工具消息（简化处理）
+        elif "Tool" in message_type and "Message" in message_type:
+            # 工具执行完成的反馈可以简化或省略
+            pass
+
+    async def send_completion(self, res) -> None:
+        """发送完成消息"""
+        # 发送完成统计
+        await self.send_sse(res, self.formatter.format_completion())
+
+        # 发送结束信号
         end_response = {
             "id": self.chat_id,
             "object": "chat.completion.chunk",
@@ -169,46 +185,12 @@ class LatsSSEHandler:
         await res.write(f"data: {json_str}\n\n".encode('utf-8'))
         await res.write("data: [DONE]\n\n".encode('utf-8'))
 
-    async def handle_error(self, res, error_msg: str) -> None:
-        """处理错误情况"""
-        error_content = f"\n\n---\n\n❌ **LATS 搜索遇到问题**\n\n"
-        error_content += f"🔧 **错误信息：** {error_msg}\n\n"
-        error_content += f"💡 **建议：** 请稍后重试或联系技术支持"
-
-        content = self.formatter.format_final_content(error_content)
-        await self.send_message(res, content)
-
 
 async def stream_lats_response(workflow, body: Dict[str, Any], chat_id: str, model: str, res) -> None:
     """
-    简化的 LATS Agent 流式响应处理函数
+    优化的 LATS Agent 流式响应处理函数
 
-    Args:
-        workflow: LATS 工作流实例
-        body: 请求体
-        chat_id: 聊天ID
-        model: 模型名称
-        res: 响应流对象
+    简化逻辑，提升性能，优化用户体验
     """
     handler = LatsSSEHandler(chat_id, model)
-
-    try:
-        logger.info(f"[LATS SSE] 开始流式处理，chat_id: {chat_id}")
-
-        # 初始化
-        await handler.handle_initial_generation(res)
-
-        # 获取并处理流式迭代器
-        stream_iter = await workflow.stream(body)
-
-        async for chunk in stream_iter:
-            await handler.process_chunk(res, chunk)
-
-        # 发送完成消息
-        await handler.send_completion_and_end(res)
-
-        logger.info(f"[LATS SSE] 流式处理完成，chat_id: {chat_id}")
-
-    except Exception as e:
-        logger.error(f"[LATS SSE] 处理过程中出错: {str(e)}", exc_info=True)
-        await handler.handle_error(res, str(e))
+    await handler.handle_search_flow(res, workflow, body)
