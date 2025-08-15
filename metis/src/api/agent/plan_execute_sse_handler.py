@@ -198,7 +198,7 @@ def _format_ai_message(content: str, step_counter: int = 0) -> str:
                 formatted_steps = []
                 for i, step in enumerate(steps):
                     formatted_steps.append(f"   **{i+1}.** {step}")
-                steps_text = "\n".join(formatted_steps)
+                steps_text = "\n\n".join(formatted_steps)
                 return f"\n\n📋 **执行计划已制定**\n\n🎯 **总共 {len(steps)} 个步骤：**\n\n{steps_text}\n\n🚀 **开始执行任务**\n\n"
 
         # 尝试解析action格式
