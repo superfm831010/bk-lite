@@ -121,7 +121,14 @@ class LatsSSEFormatter:
 
         content = f"\n📊 **初始评估完成** {emoji}\n\n"
         content += f"📈 评分：**{score}/10**\n"
-        content += f"🚀 开始树搜索优化..."
+
+        # 根据评分决定下一步行动
+        if score >= 9:
+            content += f"🎉 **高质量方案！无需进一步搜索**"
+        elif score >= 7:
+            content += f"✨ **良好方案，考虑优化空间**"
+        else:
+            content += f"🚀 **开始树搜索优化...**"
 
         return self._create_sse_response(content, metadata={"phase": "evaluating", "score": score})
 

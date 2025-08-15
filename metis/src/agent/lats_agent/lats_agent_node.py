@@ -345,6 +345,7 @@ class LatsAgentNode(ToolsNodes):
         logger.info(f"📊 初始响应评估 | 评分: {reflection.score}/10")
 
         # 将初始评估结果添加到状态中，用于流式输出
+        # 这个数据会作为独立的chunk被流式传输
         state['initial_evaluation'] = {
             'score': reflection.score,
             'reflections': reflection.reflections,

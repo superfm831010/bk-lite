@@ -26,15 +26,18 @@ class LatsSSEHandler:
         self._output_lock = asyncio.Lock()  # 添加输出锁，防止并发错乱
 
     async def send_sse(self, res, message: str) -> None:
-        """发送 SSE 消息（线程安全，去重）"""
+        """发送 SSE 消息（线程安全，智能去重）"""
         if not message:
             return
 
         async with self._output_lock:  # 确保消息按顺序发送
-            if message not in self.sent_messages:
+            # 改进的去重逻辑：提取消息的关键特征而不是完整内容
+            message_key = self._get_message_key(message)
+
+            if message_key not in self.sent_messages:
                 try:
                     await res.write(message.encode('utf-8'))
-                    self.sent_messages.add(message)
+                    self.sent_messages.add(message_key)
                     # 提取消息内容的前50个字符用于日志
                     content_preview = message[:50].replace('\n', ' ').strip()
                     logger.info(f"[LATS SSE] 发送消息: {content_preview}...")
@@ -42,6 +45,30 @@ class LatsSSEHandler:
                     logger.error(f"[LATS SSE] 发送消息失败: {e}")
             else:
                 logger.debug(f"[LATS SSE] 跳过重复消息: {message[:30]}...")
+
+    def _get_message_key(self, message: str) -> str:
+        """获取消息的唯一标识符，用于去重"""
+        try:
+            # 解析JSON获取metadata中的sequence或其他唯一标识
+            if "data: " in message:
+                json_part = message.replace("data: ", "").strip()
+                data = json.loads(json_part)
+
+                # 使用sequence作为唯一标识
+                if "metis_metadata" in data and "sequence" in data["metis_metadata"]:
+                    return f"seq_{data['metis_metadata']['sequence']}"
+
+                # 使用内容hash作为备选
+                content = data.get("choices", [{}])[0].get(
+                    "delta", {}).get("content", "")
+                if content:
+                    return f"content_{hash(content[:100])}"
+
+            # 使用完整消息的hash作为最后手段
+            return f"full_{hash(message)}"
+        except Exception:
+            # 如果解析失败，使用消息hash
+            return f"fallback_{hash(message)}"
 
     async def handle_search_flow(self, res, workflow, body) -> None:
         """处理搜索流程"""
@@ -91,6 +118,14 @@ class LatsSSEHandler:
             # 处理节点转换
             if self._is_node_transition(chunk):
                 await self.handle_node_transition(res, chunk, iteration_count)
+
+                # 特殊处理：如果是generate_initial_response节点完成，检查是否有evaluation数据
+                node_name = next(iter(chunk.keys()))
+                if node_name == "generate_initial_response" and isinstance(chunk[node_name], dict):
+                    node_data = chunk[node_name]
+                    # 检查是否包含initial_evaluation
+                    if 'initial_evaluation' in node_data:
+                        await self.handle_initial_evaluation(res, node_data['initial_evaluation'])
                 return
 
             # 处理消息流
@@ -164,16 +199,26 @@ class LatsSSEHandler:
         if not (root_node and messages):
             return
 
-        # 展示初始评估的思考过程（如果还没展示过）
-        if hasattr(root_node, 'reflection') and root_node.reflection and not self.is_final_answer_started:
+        # 强制展示初始评估的思考过程（确保一定会显示）
+        if hasattr(root_node, 'reflection') and root_node.reflection:
             reflection = root_node.reflection
+
+            # 先展示思考过程分析提示
+            await self.send_sse(res, self.formatter.format_content(
+                "\n🧠 **Agent 深度分析过程**\n\n"
+            ))
+
+            # 展示详细的思考过程
             if hasattr(reflection, 'reflections') and reflection.reflections:
                 await self.send_sse(res, self.formatter.format_thinking_process(
-                    f"初始方案评估思考：\n{reflection.reflections}"
+                    f"**问题分析与方案评估**\n\n{reflection.reflections}"
                 ))
                 await self.send_sse(res, self.formatter.format_reflection(
                     reflection.reflections, reflection.score
                 ))
+
+            # 展示评估结果
+            await self.send_sse(res, self.formatter.format_initial_evaluation(reflection.score))
 
         # 检查是否找到解决方案
         if hasattr(root_node, 'is_solved') and root_node.is_solved:
