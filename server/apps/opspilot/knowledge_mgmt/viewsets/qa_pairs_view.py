@@ -1,16 +1,22 @@
 import json
 import os
 
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils.translation import gettext as _
 from django_filters import filters
 from django_filters.rest_framework import FilterSet
 from rest_framework.decorators import action
 
-from apps.core.utils.viewset_utils import MaintainerViewSet
+from apps.core.utils.viewset_utils import GenericViewSetFun, MaintainerViewSet
 from apps.opspilot.knowledge_mgmt.models import QAPairs
+from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.serializers.qa_pairs_serializers import QAPairsSerializer
-from apps.opspilot.tasks import create_qa_pairs, create_qa_pairs_by_custom, create_qa_pairs_by_json
+from apps.opspilot.tasks import (
+    create_qa_pairs,
+    create_qa_pairs_by_chunk,
+    create_qa_pairs_by_custom,
+    create_qa_pairs_by_json,
+)
 from apps.opspilot.utils.chunk_helper import ChunkHelper
 
 
@@ -19,7 +25,7 @@ class QAPairsFilter(FilterSet):
     knowledge_base_id = filters.NumberFilter(field_name="knowledge_base_id", lookup_expr="exact")
 
 
-class QAPairsViewSet(MaintainerViewSet):
+class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
     queryset = QAPairs.objects.all()
     serializer_class = QAPairsSerializer
     filterset_class = QAPairsFilter
@@ -105,7 +111,12 @@ class QAPairsViewSet(MaintainerViewSet):
 
         res = client.get_document_es_chunk(index_name, page, page_size, search_text, metadata_filter)
         return_data = [
-            {"question": i["page_content"], "answer": i["metadata"]["qa_answer"], "id": i["metadata"]["chunk_id"]}
+            {
+                "question": i["page_content"],
+                "answer": i["metadata"]["qa_answer"],
+                "id": i["metadata"]["chunk_id"],
+                "base_chunk_id": i["metadata"].get("base_chunk_id", ""),
+            }
             for i in res.get("documents", [])
         ]
         return JsonResponse({"result": True, "data": {"items": return_data, "count": res["count"]}})
@@ -126,7 +137,12 @@ class QAPairsViewSet(MaintainerViewSet):
         if res.get("status", "fail") != "success":
             return JsonResponse({"result": False, "message": res.get("message", "Failed to retrieve data.")})
         return_data = [
-            {"question": i["page_content"], "answer": i["metadata"]["qa_answer"], "id": i["metadata"]["chunk_id"]}
+            {
+                "question": i["page_content"],
+                "answer": i["metadata"]["qa_answer"],
+                "id": i["metadata"]["chunk_id"],
+                "base_chunk_id": i["metadata"].get("base_chunk_id", ""),
+            }
             for i in res.get("documents", [])
         ]
         return JsonResponse({"result": True, "data": return_data})
@@ -164,9 +180,11 @@ class QAPairsViewSet(MaintainerViewSet):
         qa_paris = QAPairs.objects.get(id=params["qa_pairs_id"])
         index_name = qa_paris.knowledge_base.knowledge_index_name()
         chunk_id = params["id"]
-        result = ChunkHelper.delete_one_qa_pairs(index_name, chunk_id)
+        result = ChunkHelper.delete_chunk(index_name, chunk_id)
         if not result:
             return JsonResponse({"result": False, "message": _("Failed to delete QA pair.")})
+        if params["base_chunk_id"]:
+            ChunkHelper.update_document_qa_pairs_count(index_name, -1, params["base_chunk_id"])
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
@@ -185,3 +203,76 @@ class QAPairsViewSet(MaintainerViewSet):
         )
         create_qa_pairs_by_custom.delay(qa_pairs.id, params["qa_pairs"])
         return JsonResponse({"result": True})
+
+    @action(methods=["POST"], detail=False)
+    def create_qa_pairs_by_chunk(self, request):
+        params = request.data
+        qa_pairs, _ = QAPairs.objects.get_or_create(
+            name=params["name"],
+            knowledge_base_id=params["knowledge_base_id"],
+            document_id=params["document_id"],
+            document_source=params["document_source"],
+            defaults={
+                "created_by": request.user.username,
+                "domain": request.user.domain,
+                "description": params.get("description", ""),
+                "qa_count": params["qa_count"],
+                "llm_model_id": params["llm_model_id"],
+                "status": "pending",
+            },
+        )
+        create_qa_pairs_by_chunk.delay(qa_pairs.id, params["chunk_list"], params["llm_model_id"], params["qa_count"])
+        return JsonResponse({"result": True, "data": {"qa_pairs_id": qa_pairs.id}})
+
+    @action(methods=["GET"], detail=False)
+    def get_qa_pairs_task_status(self, request):
+        document_id = request.GET.get("document_id")
+        task_name = request.GET.get("name")
+        qa_pairs_obj = QAPairs.objects.get(
+            document_id=document_id,
+            name=task_name,
+        )
+        task_list = KnowledgeTask.objects.filter(
+            is_qa_task=True, task_name=task_name, knowledge_ids_contains=int(qa_pairs_obj.id)
+        )
+        if not task_list:
+            return JsonResponse({"result": True, "data": {"status": "completed"}})
+        return JsonResponse(
+            {
+                "result": True,
+                "data": [
+                    {"status": "generating", "process": f"{task_obj.completed_count}/{task_obj.total_count}"}
+                    for task_obj in task_list
+                ],
+            }
+        )
+
+    @action(methods=["POST"], detail=False)
+    def export_qa_pairs(self, request):
+        instance_id = request.data.get("qa_pairs_id")
+        instance = QAPairs.objects.get(id=instance_id)
+        if not request.user.is_superuser:
+            current_team = request.COOKIES.get("current_team", "0")
+            has_permission = self.get_has_permission(request.user, instance.knowledge_base, current_team)
+            if not has_permission:
+                return JsonResponse(
+                    {"result": False, "message": _("You do not have permission to update this instance")}
+                )
+        res = ChunkHelper.get_document_es_chunk(
+            instance.knowledge_base.knowledge_index_name(),
+            1,
+            10000,
+            metadata_filter={"qa_pairs_id": str(instance_id)},
+            get_count=False,
+        )
+        export_data = [
+            {"instruction": i["page_content"], "output": i["metadata"]["qa_answer"]} for i in res.get("documents", [])
+        ]
+        export_file_name = instance.name
+        if not export_file_name.endswith(".json"):
+            export_file_name = f"{export_file_name}.json"
+
+        # 创建 JSON 文件响应
+        response = HttpResponse(json.dumps(export_data, ensure_ascii=False, indent=2), content_type="application/json")
+        response["Content-Disposition"] = f'attachment; filename="{export_file_name}"'
+        return response

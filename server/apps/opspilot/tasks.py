@@ -189,7 +189,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "semantic_chunk_model_api_key": semantic_embed_config.get("api_key", "") or " ",
         "semantic_chunk_model": semantic_embed_config.get("model", semantic_embed_model_name),
         "preview": "true" if preview else "false",
-        "metadata": json.dumps({"enabled": True, "is_doc": "1"}),
+        "metadata": json.dumps({"enabled": True, "is_doc": "1", "qa_count": 0}),
     }
     kwargs.update(ocr_config)
     return kwargs
@@ -238,38 +238,30 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
     )
     train_progress = round(float(1 / len(task_obj.knowledge_ids)) * 100, 2)
 
-    url = f"{settings.METIS_SERVER_URL}/api/rag/qa_pair_generate"
     es_index = knowledge_base.knowledge_index_name()
     embed_config = knowledge_base.embed_model.decrypted_embed_config
     embed_model_name = knowledge_base.embed_model.name
     openai_api_base = llm_model.decrypted_llm_config["openai_base_url"]
     openai_api_key = llm_model.decrypted_llm_config["openai_api_key"]
     model = llm_model.decrypted_llm_config["model"]
+    client = ChunkHelper()
     for qa_pairs_obj in qa_pairs_list:
         # 修改状态为生成中
         try:
             qa_pairs_obj.status = "generating"
             qa_pairs_obj.save()
-            success_count = 0
             content_list = get_qa_content(qa_pairs_obj, es_index)
-            for i in content_list:
-                params = {
-                    "size": qa_count,
-                    "content": i["content"],
-                    "openai_api_base": openai_api_base,
-                    "openai_api_key": openai_api_key,
-                    "model": model,
-                }
-                res = ChatServerHelper.post_chat_server(params, url)
-                if res.get("status", "fail") != "success":
-                    logger.error(f"Failed to create QA pairs for Chunk ID {i['chunk_id']}.")
-                    continue
-                try:
-                    success_count += ChunkHelper.create_qa_pairs(
-                        res["message"], i, es_index, embed_config, embed_model_name, qa_pairs_obj.id
-                    )
-                except Exception as e:
-                    logger.exception(e)
+            success_count = client.create_qa_pairs_by_content(
+                content_list,
+                embed_config,
+                embed_model_name,
+                es_index,
+                model,
+                openai_api_base,
+                openai_api_key,
+                qa_count,
+                qa_pairs_obj,
+            )
         except Exception as e:
             logger.exception(e)
             qa_pairs_obj.status = "failed"
@@ -563,3 +555,53 @@ def create_qa_pairs_by_custom(qa_pairs_id, content_list):
         qa_pairs.status = "failed"
     task_obj.delete()
     qa_pairs.save()
+
+
+@shared_task
+def create_qa_pairs_by_chunk(qa_pairs_id, chunk_list, llm_model_id, qa_count):
+    qa_pairs_obj = QAPairs.objects.get(id=qa_pairs_id)
+    qa_pairs_obj.status = "generating"
+    qa_pairs_obj.save()
+    content_list = [
+        {
+            "chunk_id": i["id"],
+            "content": i["content"],
+            "knowledge_id": qa_pairs_obj.document_id,
+        }
+        for i in chunk_list
+    ]
+    llm_model = LLMModel.objects.filter(id=llm_model_id).first()
+    es_index = qa_pairs_obj.knowledge_base.knowledge_index_name()
+    embed_config = qa_pairs_obj.knowledge_base.embed_model.decrypted_embed_config
+    embed_model_name = qa_pairs_obj.knowledge_base.embed_model.name
+    openai_api_base = llm_model.decrypted_llm_config["openai_base_url"]
+    openai_api_key = llm_model.decrypted_llm_config["openai_api_key"]
+    model = llm_model.decrypted_llm_config["model"]
+    client = ChunkHelper()
+    task_obj = KnowledgeTask.objects.create(
+        created_by=qa_pairs_obj.created_by,
+        domain=qa_pairs_obj.domain,
+        knowledge_base_id=qa_pairs_obj.knowledge_base_id,
+        task_name=qa_pairs_obj.name,
+        knowledge_ids=[qa_pairs_obj.id],
+        train_progress=0,
+        is_qa_task=True,
+        total_count=len(content_list),
+    )
+    success_count = client.create_qa_pairs_by_content(
+        content_list,
+        embed_config,
+        embed_model_name,
+        es_index,
+        model,
+        openai_api_base,
+        openai_api_key,
+        qa_count,
+        qa_pairs_obj,
+        is_delete=False,
+        task_obj=task_obj,
+    )
+    qa_pairs_obj.generate_count += success_count
+    qa_pairs_obj.status = "completed"
+    qa_pairs_obj.save()
+    task_obj.delete()
