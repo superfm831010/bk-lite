@@ -91,7 +91,6 @@ class LatsSSEHandler:
 
             # 处理节点转换
             if self._is_node_transition(chunk):
-                logger.debug(f"[LATS SSE] 检测到节点转换")
                 await self.handle_node_transition(res, chunk, iteration_count)
 
                 # 特殊处理：如果是generate_initial_response节点完成，检查是否有evaluation数据
@@ -105,13 +104,11 @@ class LatsSSEHandler:
 
             # 处理消息流
             if self._is_message_stream(chunk):
-                logger.debug(f"[LATS SSE] 检测到消息流，长度: {len(chunk)}")
                 await self.handle_message_stream(res, chunk)
                 return
 
             # 处理其他可能的数据类型
             if isinstance(chunk, dict):
-                logger.debug(f"[LATS SSE] 处理字典类型数据块")
                 await self.handle_dict_chunk(res, chunk)
             else:
                 logger.warning(f"[LATS SSE] 未处理的chunk类型: {chunk_type}")
@@ -230,8 +227,6 @@ class LatsSSEHandler:
                 # 记录日志，帮助调试
                 logger.info(
                     f"[LATS SSE] 准备输出最终答案，内容长度: {len(final_message.content)}")
-                logger.debug(
-                    f"[LATS SSE] 最终答案内容预览: {final_message.content[:200]}...")
 
                 # 格式化最终答案，确保清晰展示
                 content = final_message.content
@@ -352,16 +347,16 @@ class LatsSSEHandler:
         message_type = type(message).__name__
         logger.debug(f"[LATS SSE] 处理消息类型: {message_type}")
 
+        # 首先检查是否为系统消息或用户消息，如果是则直接过滤掉
+        if self._is_system_or_user_message(message):
+            logger.debug(f"[LATS SSE] 跳过系统/用户消息: {message_type}")
+            return
+
         # 处理 AI 消息块 - 检查是否包含JSON格式的reflection
         if message_type == "AIMessageChunk" and hasattr(message, 'content') and message.content:
             content = message.content
             logger.debug(
                 f"[LATS SSE] 处理AIMessageChunk，内容长度: {len(content)}, 预览: {content[:100]}")
-
-            # 过滤掉系统消息和用户消息
-            if self._is_system_or_user_message(message):
-                logger.debug(f"[LATS SSE] 跳过系统/用户消息")
-                return
 
             # 检查是否包含reflection JSON
             if self._contains_reflection_json(content):
@@ -376,11 +371,6 @@ class LatsSSEHandler:
             content = message.content
             logger.info(f"[LATS SSE] 处理完整AI消息，内容长度: {len(content)}")
             logger.debug(f"[LATS SSE] AI消息内容预览: {content[:200]}...")
-
-            # 过滤掉系统消息和用户消息
-            if self._is_system_or_user_message(message):
-                logger.debug(f"[LATS SSE] 跳过系统/用户消息")
-                return
 
             if self._contains_reflection_json(content):
                 await self._handle_reflection_content(res, content)
