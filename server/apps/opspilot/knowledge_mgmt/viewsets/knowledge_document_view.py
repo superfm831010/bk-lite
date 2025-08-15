@@ -148,7 +148,12 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
                 "result": True,
                 "data": {
                     "items": [
-                        {"id": i["metadata"]["chunk_id"], "content": i["page_content"], "index_name": index_name}
+                        {
+                            "id": i["metadata"]["chunk_id"],
+                            "qa_count": i["metadata"].get("qa_count", 0),
+                            "content": i["page_content"],
+                            "index_name": index_name,
+                        }
                         for i in res["documents"]
                     ],
                     "count": res["count"],
@@ -188,6 +193,20 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             }
         )
 
+    @action(methods=["POST"], detail=False)
+    def delete_chunks(self, request):
+        params = request.data
+        index_name = f"knowledge_base_{params['knowledge_base_id']}"
+        chunk_ids = params["ids"]
+        for chunk_id in chunk_ids:
+            result = ChunkHelper.delete_chunk(index_name, chunk_id)
+            if not result:
+                return JsonResponse({"result": False, "message": _("Failed to delete QA pair.")})
+        if params.get("delete_all", False):
+            for chunk_id in chunk_ids:
+                ChunkHelper.delete_chunk(index_name, chunk_id, True)
+        return JsonResponse({"result": True})
+
     @action(methods=["POST"], detail=True)
     def enable_chunk(self, request, *args, **kwargs):
         instance: KnowledgeDocument = self.get_object()
@@ -202,7 +221,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             logger.exception(e)
             return JsonResponse({"result": False, "message": _("update failed")})
 
-    @action(methods=["POST"], detail=True)
+    @action(methods=["POST"], detail=False)
     def delete_chunk(self, request, *args, **kwargs):
         instance: KnowledgeDocument = self.get_object()
         chunk_id = request.data.get("chunk_id", "")
@@ -244,6 +263,21 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         doc = knowledge_model_map[obj.knowledge_source_type].objects.filter(knowledge_document_id=obj.id).first()
         result.update(doc.to_dict())
         return JsonResponse({"result": True, "data": result})
+
+    @action(methods=["GET"], detail=True)
+    def get_instance_detail(self, request, *args, **kwargs):
+        instance = self.get_object()
+        return JsonResponse(
+            {
+                "result": True,
+                "data": {
+                    "knowledge_id": instance.id,
+                    "name": instance.name,
+                    "knowledge_base_id": instance.knowledge_base_id,
+                    "knowledge_source_type": instance.knowledge_source_type,
+                },
+            }
+        )
 
     @action(methods=["POST"], detail=True)
     def update_document_base_info(self, request, *args, **kwargs):

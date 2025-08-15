@@ -243,5 +243,20 @@
     "name": "OpenBMB",
     "display_name": "OpenBMB",
     "icon": ""
+  },
+   {
+    "name": "chat-gpt",
+    "display_name": "OpenAI",
+    "icon": "GPT"
+  },
+   {
+    "name": "hugging_face",
+    "display_name": "Hugging Face",
+    "icon": ""
+  },
+  {
+    "name": "langserve",
+    "display_name": "LangServe",
+    "icon": ""
   }
 ]

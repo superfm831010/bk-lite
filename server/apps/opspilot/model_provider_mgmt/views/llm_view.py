@@ -200,11 +200,24 @@ class LLMViewSet(AuthViewSet):
             return self._create_error_stream_response(str(e))
 
 
+class ObjFilter(FilterSet):
+    name = filters.CharFilter(field_name="name", lookup_expr="icontains")
+    enabled = filters.CharFilter(method="filter_enabled")
+
+    @staticmethod
+    def filter_enabled(qs, field_name, value):
+        """查询类型"""
+        if not value:
+            return qs
+        enabled = value == "1"
+        return qs.filter(enabled=enabled)
+
+
 class LLMModelViewSet(AuthViewSet):
     serializer_class = LLMModelSerializer
     queryset = LLMModel.objects.all()
-    search_fields = ["name"]
     permission_key = "provider.llm_model"
+    filterset_class = ObjFilter
 
     @action(methods=["POST"], detail=False)
     def search_by_groups(self, request):
