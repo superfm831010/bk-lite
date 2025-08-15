@@ -403,7 +403,6 @@ const Alert: React.FC = () => {
         };
       });
       setChartData(chartList);
-      console.log(data);
     } finally {
       setChartLoading(false);
     }
