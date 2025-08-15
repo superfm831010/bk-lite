@@ -443,13 +443,18 @@ class AlertViewSet(viewsets.ModelViewSet):
         current_time = min_time
         time_intervals = []
 
-        while current_time < max_time:
-            interval_end = min(current_time + step_delta, max_time)
+        # 修复：确保包含最后一个时间点的数据
+        while current_time <= max_time:
+            interval_end = min(current_time + step_delta, max_time + timedelta(microseconds=1))
             time_intervals.append({
                 'start': current_time,
                 'end': interval_end
             })
-            current_time = interval_end
+            current_time += step_delta
+
+            # 如果下一个区间的开始时间已经超过最大时间，则停止
+            if current_time > max_time:
+                break
 
         # 关键优化：一次性获取所有数据，然后在Python中分组
         # 只执行一次数据库查询
