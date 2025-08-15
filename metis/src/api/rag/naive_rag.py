@@ -75,6 +75,7 @@ async def custom_content_ingest(request):
         })
 
     # 执行文档存储
+    logger.debug(f"开始存储{len(chunked_docs)}个文档分块，将自动添加created_time字段以支持时间排序")
     RagService.store_documents_to_es(
         chunked_docs=chunked_docs,
         knowledge_base_id=request.form.get('knowledge_base_id'),
@@ -84,6 +85,7 @@ async def custom_content_ingest(request):
         metadata=metadata
     )
     return json({"status": "success", "message": "", "chunks_size": len(chunked_docs)})
+
 
 @naive_rag_api_router.post("/website_ingest")
 @auth.login_required
@@ -117,6 +119,7 @@ async def website_ingest(request):
         })
 
     # 执行文档存储
+    logger.debug(f"开始存储网站内容{len(chunked_docs)}个文档分块，将自动添加created_time字段")
     RagService.store_documents_to_es(
         chunked_docs=chunked_docs,
         knowledge_base_id=request.form.get('knowledge_base_id'),
@@ -176,6 +179,7 @@ async def file_ingest(request):
             })
 
         # 执行文档存储
+        logger.debug(f"开始存储文件内容{len(chunked_docs)}个文档分块，将自动添加created_time字段")
         RagService.store_documents_to_es(
             chunked_docs=chunked_docs,
             knowledge_base_id=request.form.get('knowledge_base_id'),
@@ -211,6 +215,12 @@ async def delete_doc(request, body: DocumentDeleteRequest):
 @validate(json=DocumentListRequest)
 async def list_rag_document(request, body: DocumentListRequest):
     rag = ElasticSearchRag()
+
+    # 记录排序字段，用于向后兼容性检查
+    logger.debug(f"查询文档列表，排序字段: {body.sort_field}, 排序方式: {body.sort_order}")
+    if 'created_time' in body.sort_field:
+        logger.debug("使用时间字段排序，已启用向后兼容性处理")
+
     documents = rag.list_index_document(body)
     return json({"status": "success", "message": "", "documents": [doc.dict() for doc in documents]})
 

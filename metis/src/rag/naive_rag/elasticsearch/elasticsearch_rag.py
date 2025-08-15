@@ -119,16 +119,23 @@ class ElasticSearchRag(BaseRag):
             "_source": {"excludes": ["vector"]}  # Exclude the vector field
         }
 
-        # Add sorting
+        # Add sorting with backward compatibility
         if req.sort_field and req.sort_order:
             # 验证排序方式
             sort_order = req.sort_order.lower()
             if sort_order not in ['asc', 'desc']:
                 sort_order = 'desc'  # 默认降序
 
-            query["sort"] = [
-                {req.sort_field: {"order": sort_order}}
-            ]
+            # 添加向后兼容性：处理旧文档可能没有时间字段的情况
+            sort_config = {req.sort_field: {"order": sort_order}}
+
+            # 如果是时间字段排序，添加缺失值处理
+            if 'created_time' in req.sort_field or 'updated_time' in req.sort_field:
+                sort_config[req.sort_field]["missing"] = "_last" if sort_order == 'asc' else "_first"
+                logger.debug(
+                    f"时间字段排序，添加兼容性处理: 缺失值放在{'最后' if sort_order == 'asc' else '最前'}")
+
+            query["sort"] = [sort_config]
             logger.debug(f"添加排序: {req.sort_field} {sort_order}")
 
         # Add match_phrase query if req.query is not empty

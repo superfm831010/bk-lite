@@ -1,22 +1,7 @@
 """
 LATS Agent SSE 处理器
 
-基于节点类型的智能过滤和格式化实现，避免内部信息泄露
-
-设计理念：
-1. 优先使用节点类型（node type）作为格式化输出依据
-2. 每个节点类型都有专门的格式化函数，确保输出的一致性
-3. 通过节点类型而非内容匹配来决定输出格式，更加可靠
-4. 支持扩展新的节点类型，只需添加对应的格式化函数
-
-节点类型说明：
-- generate_initial_response: 生成初始响应
-- expand: 扩展搜索树
-- tools: 工具调用
-- reflect: 反思评估  
-- select: 方案选择
-- agent: 智能代理处理
-- supervisor: 监督协调
+基于节点类型的智能过滤实现，避免内部信息泄露
 """
 import asyncio
 import json
@@ -156,24 +141,20 @@ def _create_sse_data(chat_id: str, created: int, model: str, content: str, finis
 
 
 def _get_node_status_message(node_name: str, iteration_counter: int) -> str:
-    """根据节点类型获取状态消息，优先基于节点类型进行输出"""
+    """根据节点类型获取状态消息"""
     node_messages = {
         "generate_initial_response": "\n🌱 **生成初始解决方案...**\n\n🎯 分析问题并构建第一个候选回答",
         "expand": f"\n\n---\n\n🌳 **搜索迭代 #{iteration_counter + 1}**\n\n🔍 正在探索搜索树的新分支，生成候选解决方案",
         "tools": "\n🔧 **调用专业工具...**\n\n⚙️ 执行必要的工具操作获取信息",
-        "reflect": "\n🤔 **反思与评估...**\n\n📈 分析当前方案的质量和有效性",
-        "select": "\n🎯 **选择最佳方案...**\n\n⭐ 从多个候选方案中选择最优解",
-        "agent": "\n🤖 **智能代理处理...**\n\n🧠 执行高级推理和决策",
-        "supervisor": "\n👨‍💼 **监督节点...**\n\n📊 协调和监督整个搜索过程",
     }
 
-    return node_messages.get(node_name, f"\n🔄 **执行节点: {node_name}**\n\n⚡ 正在处理...")
+    return node_messages.get(node_name, "")
 
 
 def _extract_message_content_by_node(message: Any, current_node_type: str, iteration_counter: int = 0) -> str:
     """
-    基于当前节点类型从消息对象中提取和格式化内容
-    优先使用节点类型作为格式化输出依据
+    基于当前节点类型从消息对象中提取内容
+    这种方式比字符串匹配更可靠
     """
     try:
         # 首先检查消息是否为None
@@ -193,110 +174,57 @@ def _extract_message_content_by_node(message: Any, current_node_type: str, itera
         if not raw_content:
             return ""
 
-        # 过滤内部信息，无论在哪个节点都不应该泄露
-        if _contains_internal_keywords(raw_content):
-            logger.debug(f"[LATS SSE] 过滤内部信息: {raw_content[:50]}...")
-            return ""
+        # 基于节点类型进行过滤和格式化
+        if current_node_type == "generate_initial_response":
+            return _format_initial_response_message(message_type, raw_content)
+        elif current_node_type == "expand":
+            return _format_expand_message(message_type, raw_content)
+        elif current_node_type == "tools" or "ToolMessage" in message_type:
+            return _format_tool_message(raw_content)
+        else:
+            # 对于其他节点类型，只显示AI消息的最终内容
+            if "AIMessage" in message_type and len(raw_content) > 50:
+                # 检查是否是最终答案类型的内容
+                if _is_final_answer_content(raw_content):
+                    return f"\n\n📝 **答案内容**\n\n{raw_content}\n\n"
 
-        # 基于节点类型进行格式化输出，这是主要的格式化逻辑
-        formatter = _get_node_formatter(current_node_type)
-        if formatter:
-            logger.debug(f"[LATS SSE] 使用节点专用格式化器: {current_node_type}")
-            return formatter(message_type, raw_content)
-
-        # 对于未知节点类型，使用默认格式化
-        logger.debug(f"[LATS SSE] 使用默认格式化器处理未知节点: {current_node_type}")
-        return _format_default_message(message_type, raw_content)
+        return ""
 
     except Exception as e:
         logger.error(f"[LATS SSE] 提取消息内容失败: {str(e)}")
         return ""
 
 
-def _get_node_formatter(node_type: str):
-    """根据节点类型获取对应的格式化函数"""
-    formatters = {
-        "generate_initial_response": _format_initial_response_message,
-        "expand": _format_expand_message,
-        "tools": _format_tool_message_by_node,
-        "reflect": _format_reflect_message,
-        "select": _format_select_message,
-    }
-    return formatters.get(node_type)
-
-
 def _format_initial_response_message(message_type: str, content: str) -> str:
-    """格式化初始响应节点的消息"""
+    """格式化初始响应阶段的消息"""
     if "ToolMessage" in message_type:
-        return "\n🔧 **初始信息收集完成**\n\n📊 已获取到基础信息，正在生成初始解决方案...\n\n"
+        return "\n🔧 **工具执行完成**\n\n📊 已获取到相关信息，正在分析整理...\n\n"
     elif "AIMessage" in message_type:
-        # 初始响应阶段的AI消息通常是第一个候选答案
-        if _is_final_answer_content(content):
-            return f"\n💡 **初始解决方案**\n\n{content}\n\n"
-        elif len(content) > 30:
-            return f"\n💡 **初始分析**\n\n{content}\n\n"
+        # 初始响应阶段的AI消息，检查是否是有意义的回答
+        if len(content) > 100 and not _contains_internal_keywords(content):
+            return f"\n💡 **初始方案生成**\n\n正在构建第一个解决方案...\n\n"
     return ""
 
 
 def _format_expand_message(message_type: str, content: str) -> str:
-    """格式化扩展搜索节点的消息"""
+    """格式化扩展搜索阶段的消息"""
     if "ToolMessage" in message_type:
-        return "\n🔧 **扩展搜索工具调用完成**\n\n📋 获取到新的信息，继续候选方案评估...\n\n"
+        return "\n🔧 **工具调用完成**\n\n📋 获取到新的信息，继续候选方案评估...\n\n"
     elif "AIMessage" in message_type:
-        # 扩展阶段的消息按优先级处理
+        # 扩展阶段可能产生候选方案或评估结果
         if _is_evaluation_result(content):
-            return "\n📊 **方案评估**\n\n🤔 正在分析多个解决方案的质量和可行性...\n\n"
-        elif _is_final_answer_content(content):
-            return f"\n\n🎯 **优化解决方案**\n\n{content}\n\n"
-        elif len(content) > 50:
-            return f"\n\n💡 **候选方案**\n\n{content}\n\n"
+            return "\n📊 **候选方案评估中**\n\n🤔 分析多个解决方案的质量和可行性...\n\n"
+        elif len(content) > 100 and not _contains_internal_keywords(content):
+            return "\n🧬 **生成候选方案**\n\n💡 正在创建新的解决方案候选...\n\n"
     return ""
 
 
-def _format_tool_message_by_node(message_type: str, content: str) -> str:
-    """基于节点的工具消息格式化"""
-    if "ToolMessage" in message_type:
-        if len(content) > 500:
-            return "\n🔧 **工具执行完成**\n\n📊 已获取到详细信息，正在整理分析...\n\n"
-        else:
-            return "\n🔧 **工具执行完成**\n\n📋 已获取相关信息\n\n"
-    elif "AIMessage" in message_type:
-        # 工具节点的AI消息通常是对工具结果的处理
-        if _is_final_answer_content(content):
-            return f"\n\n🔧 **工具处理结果**\n\n{content}\n\n"
-    return ""
-
-
-def _format_reflect_message(message_type: str, content: str) -> str:
-    """格式化反思节点的消息"""
-    if "AIMessage" in message_type:
-        if _is_evaluation_result(content):
-            return "\n🤔 **方案反思与评估**\n\n📈 正在评估当前解决方案的质量...\n\n"
-        elif len(content) > 30:
-            return f"\n🤔 **反思分析**\n\n{content}\n\n"
-    return ""
-
-
-def _format_select_message(message_type: str, content: str) -> str:
-    """格式化选择节点的消息"""
-    if "AIMessage" in message_type:
-        if _is_final_answer_content(content):
-            return f"\n\n🎯 **最终选择**\n\n{content}\n\n"
-        elif len(content) > 30:
-            return f"\n🎯 **方案选择**\n\n{content}\n\n"
-    return ""
-
-
-def _format_default_message(message_type: str, content: str) -> str:
-    """格式化未知节点类型的消息"""
-    if "AIMessage" in message_type:
-        if _is_final_answer_content(content):
-            return f"\n\n📝 **答案内容**\n\n{content}\n\n"
-        elif len(content) > 50:
-            return f"\n\n� **回答**\n\n{content}\n\n"
-    elif "ToolMessage" in message_type:
-        return "\n🔧 **工具执行完成**\n\n📋 已获取信息\n\n"
-    return ""
+def _format_tool_message(content: str) -> str:
+    """格式化工具消息"""
+    if len(content) > 500:
+        return "\n🔧 **工具执行完成**\n\n📊 已获取到详细信息，正在整理分析...\n\n⚡ 继续执行下一步"
+    else:
+        return "\n🔧 **工具执行完成**\n\n📋 已获取相关信息\n\n"
 
 
 def _is_final_answer_content(content: str) -> bool:
@@ -308,22 +236,10 @@ def _is_final_answer_content(content: str) -> bool:
     # 检查是否包含完整的回答结构
     answer_indicators = [
         "根据", "基于", "答案是", "解决方案", "总结", "建议",
-        "因此", "所以", "综上", "最终", "结论", "介绍", "是",
-        "包括", "具有", "特点", "功能", "用于", "支持", "提供",
-        "参考资料", "如下", "以下", "主要", "可以", "能够",
-        "数据库", "系统", "产品", "技术", "应用", "企业"
+        "因此", "所以", "综上", "最终", "结论"
     ]
 
-    # 如果内容包含回答指示词且长度合适，认为是最终答案
-    has_indicators = any(
-        indicator in content for indicator in answer_indicators)
-
-    # 或者，如果内容较长且不包含内部关键词，也可能是最终答案
-    is_substantial_content = len(
-        content) > 50 and not _contains_internal_keywords(content)
-
-    # 较宽松的判断：有指示词且不太短，或者是较长的实质内容
-    return (has_indicators and len(content) > 15) or is_substantial_content
+    return any(indicator in content for indicator in answer_indicators) and len(content) > 50
 
 
 def _is_evaluation_result(content: str) -> bool:
