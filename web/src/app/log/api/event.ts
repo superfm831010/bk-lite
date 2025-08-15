@@ -72,6 +72,12 @@ const useLogEventApi = () => {
     });
   };
 
+  const getLogAlertStats = async (params: LogAlertParams = {}) => {
+    return await get(`/log/alert/stats/`, {
+      params,
+    });
+  };
+
   return {
     createPolicy,
     getPolicy,
@@ -80,6 +86,7 @@ const useLogEventApi = () => {
     updatePolicy,
     deletePolicy,
     getLogAlert,
+    getLogAlertStats,
     patchLogAlert,
     geEventList,
     getEventRaw,

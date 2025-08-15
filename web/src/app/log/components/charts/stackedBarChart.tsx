@@ -49,9 +49,10 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
   const defaultColors = ['#F43B2C', '#D97007', '#FFAD42', '#4CAF50', '#2196F3'];
   // 获取数据中的最大值和最小值
   const allValues = data.flatMap((item) =>
-    keys.filter((key) => key !== 'time').map((key) => item[key])
+    keys
+      .filter((key) => key !== 'time')
+      .reduce((pre, cur) => (pre += item[cur]), 0)
   );
-  const minValue = Math.min(...allValues);
   const maxValue = Math.max(...allValues);
 
   return data?.length ? (
@@ -69,7 +70,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
         />
         <YAxis
           tick={{ fill: 'var(--color-text-3)', fontSize: 12 }}
-          ticks={[minValue, maxValue]} // 只展示最小值和最大值
+          ticks={[0, maxValue]} // 只展示最小值和最大值
           axisLine={false}
         />
         <Tooltip content={<CustomTooltip />} />
@@ -79,7 +80,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
             key={key}
             dataKey={key}
             stackId="a"
-            maxBarSize={120}
+            maxBarSize={80}
             fill={colors?.[key] || defaultColors[index % defaultColors.length]} // 使用自定义颜色或默认颜色
           />
         ))}
