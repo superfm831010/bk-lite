@@ -51,7 +51,7 @@ collect-static:
 	python manage.py collectstatic --noinput
 
 dev:
-	python ./manage.py runserver 0.0.0.0:8001
+	uvicorn asgi:application --host 0.0.0.0 --port 8001 --reload --workers 1
 
 run:
 	gunicorn -w 4 -b 0.0.0.0:8001 asgi:application -k uvicorn.workers.UvicornWorker

@@ -36,6 +36,6 @@ async def invoke_chatbot_workflow_sse(request, body: ChatBotWorkflowRequest):
 
     return ResponseStream(
         lambda res: stream_response(workflow, body, res),
-        content_type="text/event-stream",
+        content_type="text/event-stream; charset=utf-8",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
     )

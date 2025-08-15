@@ -243,6 +243,13 @@ export const useKnowledgeApi = () => {
   };
 
   /**
+   * Fetches QA pairs task status for a specific document.
+   */
+  const fetchQAPairsTaskStatus = async (params: { document_id: string }): Promise<any[]> => {
+    return get('/opspilot/knowledge_mgmt/qa_pairs/get_qa_pairs_task_status/', { params });
+  };
+
+  /**
    * Fetches QA pairs for the knowledge base.
    */
   const fetchQAPairs = async (params: any): Promise<any> => {
@@ -482,6 +489,7 @@ export const useKnowledgeApi = () => {
     getDocListConfig,
     getDocumentConfig,
     fetchMyTasks,
+    fetchQAPairsTaskStatus,
     fetchQAPairs,
     deleteQAPair,
     createOneQAPair,

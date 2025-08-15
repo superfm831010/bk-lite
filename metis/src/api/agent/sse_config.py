@@ -10,53 +10,56 @@ from typing import Dict, List
 @dataclass
 class SSEDisplayConfig:
     """SSE 显示配置"""
-    
+
     # 是否显示详细的工具执行信息
     show_tool_details: bool = True
-    
+
     # 是否显示步骤进度
     show_progress: bool = True
-    
+
     # 是否显示执行时间
     show_timing: bool = True
-    
+
     # 工具结果摘要的最大长度
     tool_result_max_length: int = 200
-    
+
     # 是否启用表情符号
     enable_emojis: bool = True
-    
+
     # 自定义阶段显示文本
     phase_texts: Dict[str, str] = None
-    
+
     # 工具名称映射
     tool_display_names: Dict[str, str] = None
-    
+
     def __post_init__(self):
         """初始化后处理"""
         if self.phase_texts is None:
             self.phase_texts = {
-                "initializing": "🤔 正在分析您的问题并制定执行计划...",
-                "planning": "📋 制定执行计划中...",
-                "executing": "⚡ 执行步骤",
-                "tool_calling": "🔧 正在使用工具",
-                "replanning": "🔄 需要调整计划",
-                "finalizing": "🎯 正在整理最终答案...",
-                "completed": "✨ 任务完成！"
+                "initializing": "🎯 正在深入分析您的问题...",
+                "planning": "📋 制定详细执行策略...",
+                "executing": "⚡ 执行任务步骤",
+                "tool_calling": "🔧 调用专业工具",
+                "replanning": "🔄 智能调整策略",
+                "finalizing": "✨ 精心整理最终答案...",
+                "completed": "🎉 任务圆满完成！"
             }
-        
+
         if self.tool_display_names is None:
             self.tool_display_names = {
-                "naive_rag_search": "知识库搜索",
-                "web_search": "网络搜索", 
-                "playwright_tools": "网页操作",
-                "python_repl": "Python 执行",
-                "file_reader": "文件读取",
-                "calculator": "计算器",
-                "code_executor": "代码执行器",
-                "document_processor": "文档处理",
-                "image_analyzer": "图像分析",
-                "data_analyzer": "数据分析"
+                "naive_rag_search": "🔍 智能知识库搜索",
+                "web_search": "🌐 网络信息搜索",
+                "playwright_tools": "🎭 网页自动化操作",
+                "python_repl": "🐍 Python 代码执行",
+                "file_reader": "📄 文件内容读取",
+                "calculator": "🔢 数学计算器",
+                "code_executor": "💻 代码执行引擎",
+                "document_processor": "📊 文档智能处理",
+                "image_analyzer": "🖼️ 图像深度分析",
+                "data_analyzer": "📈 数据专业分析",
+                "search_tool": "🔍 搜索工具",
+                "analysis_tool": "📊 分析工具",
+                "processing_tool": "⚙️ 处理工具"
             }
 
 
