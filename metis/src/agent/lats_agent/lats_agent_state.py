@@ -93,7 +93,8 @@ class Node:
         # Encourages exploitation of high-value trajectories
         average_reward = self.value / self.visits
         # Encourages exploration of less-visited trajectories
-        exploration_term = math.sqrt(math.log(self.parent.visits) / self.visits)
+        exploration_term = math.sqrt(
+            math.log(self.parent.visits) / self.visits)
         return average_reward + exploration_weight * exploration_term
 
     def backpropagate(self, reward: float):
@@ -101,7 +102,8 @@ class Node:
         node = self
         while node:
             node.visits += 1
-            node.value = (node.value * (node.visits - 1) + reward) / node.visits
+            node.value = (node.value * (node.visits - 1) +
+                          reward) / node.visits
             node = node.parent
 
     def get_messages(self, include_reflections: bool = True):
@@ -115,7 +117,8 @@ class Node:
         node = self
         while node:
             messages.extend(
-                node.get_messages(include_reflections=include_reflections)[::-1]
+                node.get_messages(
+                    include_reflections=include_reflections)[::-1]
             )
             node = node.parent
         # Reverse the final back-tracked trajectory to return in the correct order
@@ -138,7 +141,8 @@ class Node:
         best_node = max(
             all_nodes,
             # We filter out all non-terminal, non-solution trajectories
-            key=lambda node: int(node.is_terminal and node.is_solved) * node.value,
+            key=lambda node: int(
+                node.is_terminal and node.is_solved) * node.value,
         )
         return best_node
 
@@ -153,3 +157,5 @@ class LatsAgentState(TypedDict):
     messages: Annotated[list, add_messages]
     graph_request: LatsAgentRequest
     root: Node
+    evaluation_results: Optional[list]  # 用于传递评价表信息
+    initial_evaluation: Optional[dict]  # 用于传递初始评估信息

@@ -141,6 +141,7 @@ export const getDocumentColumns = (
   {
     title: t('knowledge.documents.actions'),
     key: 'action',
+    width: 170,
     render: (_: any, record: TableData) => (
       <ActionButtons
         record={record}
@@ -162,11 +163,12 @@ export const getQAPairColumns = (
   getRandomColor: () => string,
   knowledgeBasePermissions: string[],
   onDeleteSingle: (id: number) => void,
-  onExport: (id: number) => void,
+  onExport: (id: number, name: string) => void,
   router: RouterType,
   id: string | null,
   name: string | null,
-  desc: string | null
+  desc: string | null,
+  exportLoadingMap: { [key: number]: boolean }
 ): TableColumnsType<QAPairData> => [
   {
     title: t('knowledge.qaPairs.name'),
@@ -255,7 +257,8 @@ export const getQAPairColumns = (
           <Button
             type="link"
             size="small"
-            onClick={() => onExport(record.id)}
+            loading={exportLoadingMap[record.id]}
+            onClick={() => onExport(record.id, record.name)}
           >
             {t('common.export')}
           </Button>

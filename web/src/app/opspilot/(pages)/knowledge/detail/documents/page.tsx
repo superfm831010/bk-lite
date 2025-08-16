@@ -81,6 +81,7 @@ const DocumentsPage: React.FC = () => {
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [isQAPairModalVisible, setIsQAPairModalVisible] = useState(false);
+  const [exportLoadingMap, setExportLoadingMap] = useState<{ [key: number]: boolean }>({});
 
   const {
     fetchDocuments,
@@ -157,7 +158,8 @@ const DocumentsPage: React.FC = () => {
     });
   };
 
-  const handleExportQAPair = async (qaPairId: number) => {
+  const handleExportQAPair = async (qaPairId: number, qaPairName: string) => {
+    setExportLoadingMap(prev => ({ ...prev, [qaPairId]: true }));
     try {
       const response = await fetch(`/api/proxy/opspilot/knowledge_mgmt/qa_pairs/export_qa_pairs/`, {
         method: 'POST',
@@ -176,7 +178,8 @@ const DocumentsPage: React.FC = () => {
       }
       
       const blob = await response.blob();
-      const fileName = `qa_pair_${qaPairId}.json`;
+      const baseName = qaPairName.replace(/\.[^/.]+$/, '');
+      const fileName = `${baseName}.json`;
       const fileUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = fileUrl;
@@ -189,6 +192,8 @@ const DocumentsPage: React.FC = () => {
     } catch (error) {
       console.error('Error exporting QA pair:', error);
       message.error(t('common.exportFailed'));
+    } finally {
+      setExportLoadingMap(prev => ({ ...prev, [qaPairId]: false }));
     }
   };
 
@@ -593,7 +598,8 @@ const DocumentsPage: React.FC = () => {
     router,
     id,
     name,
-    desc
+    desc,
+    exportLoadingMap
   );
 
   return (

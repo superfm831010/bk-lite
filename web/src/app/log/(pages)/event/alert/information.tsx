@@ -43,7 +43,7 @@ const Information: React.FC<TableDataItem> = ({
   const isClosed = useMemo(() => formData.status === 'closed', [formData]);
 
   const activeColumns = useMemo(() => {
-    const columns: ColumnItem[] = [
+    let columns: ColumnItem[] = [
       {
         title: 'timestrap',
         dataIndex: '_time',
@@ -63,29 +63,17 @@ const Information: React.FC<TableDataItem> = ({
         render: (val) => <>{val || '--'}</>,
       },
     ];
-    if (isAggregate) {
-      const group_by = formData.alert_condition?.group_by || [];
-      const conditions = formData.alert_condition?.rule?.conditions || [];
-      const fields = [
-        ...new Set(
-          [
-            ...group_by,
-            conditions.map((item: FilterItem) => item.field),
-          ].filter(
-            (tex) => !['message', 'timestamp', '_msg', '_time'].includes(tex)
-          )
-        ),
-      ];
-      const fieldColumns = fields.map((item) => ({
-        title: item,
-        dataIndex: item,
-        key: item,
-        width: 120,
-      }));
-      columns.splice(1, 0, ...fieldColumns);
+    if (isAggregate && rawData.length) {
+      columns = Object.keys(rawData[0])
+        .filter((item) => item !== 'id')
+        .map((item) => ({
+          title: item,
+          dataIndex: item,
+          key: item,
+        }));
     }
     return columns;
-  }, [formData, isAggregate]);
+  }, [formData, isAggregate, rawData]);
 
   const buildVictoriaLogsQuery = () => {
     try {

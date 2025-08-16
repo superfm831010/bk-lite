@@ -1,65 +1,55 @@
-"""
-LATS Agent SSE 格式化器
 
-负责将 LATS Agent 的搜索过程格式化为优雅的 SSE 输出，
-提供类似 Claude 的用户体验，展示树搜索的探索过程
+"""
+LATS Agent SSE 格式化器 - 简化优化版本
+
+提供简洁、优雅的 LATS 搜索流式响应格式化
+重点关注用户体验，减少冗余信息，突出关键内容
 """
 import json
 from datetime import datetime
-from typing import Dict, Any, Optional, List, Union
-from dataclasses import dataclass
+from typing import Dict, Any, List
 from enum import Enum
+from dataclasses import dataclass
 
 from sanic.log import logger
-from src.api.agent.sse_config import SSEDisplayConfig, DEFAULT_SSE_CONFIG
 
 
 class SearchPhase(Enum):
     """搜索阶段枚举"""
-    INITIALIZING = "initializing"              # 初始化
-    GENERATING_INITIAL = "generating_initial"  # 生成初始回答
-    EVALUATING_INITIAL = "evaluating_initial"  # 评估初始回答
-    TREE_SEARCHING = "tree_searching"          # 树搜索中
-    GENERATING_CANDIDATES = "generating_candidates"  # 生成候选方案
-    TOOL_CALLING = "tool_calling"              # 工具调用
-    EVALUATING_CANDIDATES = "evaluating_candidates"  # 评估候选方案
-    SOLUTION_FOUND = "solution_found"          # 找到解决方案
-    FINALIZING = "finalizing"                  # 最终化
-    COMPLETED = "completed"                    # 已完成
+    INITIALIZING = "initializing"
+    GENERATING = "generating"
+    EVALUATING = "evaluating"
+    SEARCHING = "searching"
+    TOOL_CALLING = "tool_calling"
+    SOLUTION_FOUND = "solution_found"
+    COMPLETED = "completed"
 
 
 @dataclass
-class SearchStatus:
-    """搜索状态"""
-    phase: SearchPhase
-    iteration: int = 0          # 当前迭代轮次
-    tree_height: int = 0        # 搜索树高度
-    nodes_explored: int = 0     # 已探索节点数
-    candidates_generated: int = 0  # 已生成候选数
-    best_score: float = 0.0     # 当前最佳评分
-    solution_found: bool = False  # 是否找到解决方案
-    current_task: str = ""      # 当前任务描述
-    tool_name: str = ""         # 当前使用工具
+class SearchStats:
+    """搜索统计信息"""
+    iteration: int = 0
+    nodes_explored: int = 0
+    best_score: float = 0.0
+    solutions_found: int = 0
 
 
 class LatsSSEFormatter:
-    """LATS Agent SSE 格式化器"""
+    """LATS Agent SSE 格式化器 - 优化版本"""
 
-    def __init__(self, chat_id: str, model: str, config: SSEDisplayConfig = None):
+    def __init__(self, chat_id: str, model: str):
         self.chat_id = chat_id
         self.model = model
-        self.config = config or DEFAULT_SSE_CONFIG
         self.created_time = int(datetime.now().timestamp())
-        self.current_status = SearchStatus(SearchPhase.INITIALIZING)
         self.start_time = datetime.now()
-        self.iteration_count = 0
-        self.explored_nodes = 0
-        self.solutions_found = []
+        self.stats = SearchStats()
+        self._message_sequence = 0  # 添加消息序列号，确保顺序
 
-    def _create_base_response(self, delta_content: str = None,
-                              finish_reason: str = None,
-                              metadata: Dict[str, Any] = None) -> Dict[str, Any]:
-        """创建基础响应对象"""
+    def _create_sse_response(self, content: str = None, finish_reason: str = None,
+                             metadata: Dict[str, Any] = None) -> str:
+        """创建 SSE 响应数据"""
+        self._message_sequence += 1
+
         response = {
             "id": self.chat_id,
             "object": "chat.completion.chunk",
@@ -69,325 +59,312 @@ class LatsSSEFormatter:
                 "delta": {"role": "assistant"},
                 "index": 0,
                 "finish_reason": finish_reason
-            }],
-            # 添加自定义元数据用于前端渲染
-            "metis_metadata": {
-                "search_phase": self.current_status.phase.value,
-                "iteration": self.current_status.iteration,
-                "tree_height": self.current_status.tree_height,
-                "nodes_explored": self.current_status.nodes_explored,
-                "best_score": self.current_status.best_score,
-                "solution_found": self.current_status.solution_found,
-                **(metadata or {})
-            }
+            }]
         }
 
-        if delta_content is not None:
-            response["choices"][0]["delta"]["content"] = delta_content
+        if content:
+            response["choices"][0]["delta"]["content"] = content
 
-        return response
+        if metadata:
+            response["metis_metadata"] = {
+                **metadata,
+                "sequence": self._message_sequence  # 添加序列号
+            }
 
-    def _format_sse_data(self, response: Dict[str, Any]) -> str:
-        """格式化 SSE 数据，确保中文字符正确编码"""
         json_str = json.dumps(
             response, ensure_ascii=False, separators=(',', ':'))
         return f"data: {json_str}\n\n"
 
     def format_initialization(self) -> str:
-        """格式化初始化阶段"""
-        self.current_status.phase = SearchPhase.INITIALIZING
-        content = "🔍 **正在启动 LATS 智能搜索...**\n\n🧠 初始化语言辅助树搜索引擎\n\n💡 准备生成多个候选解决方案"
+        """格式化初始化"""
+        content = "🔍 **启动 LATS 智能搜索**\n\n💡 分析问题并生成多个候选解决方案"
+        return self._create_sse_response(content, metadata={"phase": "initializing"})
 
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={"status_message": "初始化搜索引擎"}
-        )
-        return self._format_sse_data(response)
+    def format_initial_generation(self) -> str:
+        """格式化初始生成"""
+        content = "\n\n---\n\n🌱 **生成初始解决方案**\n\n🎯 构建第一个候选回答\n\n"
+        return self._create_sse_response(content, metadata={"phase": "generating"})
 
-    def format_initial_generation_start(self) -> str:
-        """格式化开始生成初始回答"""
-        self.current_status.phase = SearchPhase.GENERATING_INITIAL
-        content = "\n\n---\n\n🌱 **生成初始解决方案...**\n\n🎯 分析问题并构建第一个候选回答"
+    def format_tool_execution(self, tool_name: str) -> str:
+        """格式化工具执行"""
+        tool_display = self._get_tool_display_name(tool_name)
+        content = f"\n🔧 **调用 {tool_display}**\n\n💡 正在搜索相关信息..."
+        return self._create_sse_response(content, metadata={"phase": "tool_calling", "tool": tool_name})
 
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={"status_message": "生成初始回答"}
-        )
-        return self._format_sse_data(response)
+    def format_thinking_process(self, thought: str) -> str:
+        """格式化思考过程"""
+        # 清理思考内容，避免过长
+        cleaned_thought = thought.strip()
+        if len(cleaned_thought) > 800:
+            cleaned_thought = cleaned_thought[:800] + "..."
 
-    def format_tool_call_start(self, tool_name: str, tool_description: str = None) -> str:
-        """格式化工具调用开始"""
-        self.current_status.phase = SearchPhase.TOOL_CALLING
-        self.current_status.tool_name = tool_name
+        content = f"\n� **{cleaned_thought}**\n"
+        return self._create_sse_response(content, metadata={"phase": "thinking"})
 
-        # 美化工具名称显示
-        tool_display_name = self._get_tool_display_name(tool_name)
-        desc = f" - {tool_description}" if tool_description else ""
+    def format_reflection(self, reflection: str, score: float = None) -> str:
+        """格式化反思过程"""
+        # 清理反思内容
+        cleaned_reflection = reflection.strip()
+        if len(cleaned_reflection) > 600:
+            cleaned_reflection = cleaned_reflection[:600] + "..."
 
-        content = f"\n🔧 正在调用 **{tool_display_name}**{desc}...\n"
+        content = f"\n📝 **质量评估**\n\n{cleaned_reflection}\n"
+        if score is not None:
+            emoji = "🌟" if score >= 9 else "⭐" if score >= 8 else "✨" if score >= 6 else "💡"
+            status_emoji = "🎯" if score >= 9 else "👍" if score >= 7 else "📈"
+            content += f"\n{status_emoji} **评分：{score}/10** {emoji}\n"
+        return self._create_sse_response(content, metadata={"phase": "reflecting", "score": score})
 
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={
-                "status_message": f"调用工具：{tool_display_name}",
-                "tool_name": tool_name
-            }
-        )
-        return self._format_sse_data(response)
+    def format_initial_evaluation(self, score: float) -> str:
+        """格式化初始评估"""
+        self.stats.best_score = score
+        emoji = "🌟" if score >= 8 else "⭐" if score >= 6 else "💡"
 
-    def format_tool_result(self, tool_name: str, result_summary: str) -> str:
-        """格式化工具执行结果"""
-        tool_display_name = self._get_tool_display_name(tool_name)
+        content = f"\n📊 **初始评估完成** {emoji}\n\n"
+        content += f"📈 评分：**{score}/10**\n"
 
-        content = f"✅ **{tool_display_name}** 执行完成\n"
-
-        # 如果结果过长，只显示摘要
-        if len(result_summary) > 200:
-            content += f"📊 获得结果摘要：{result_summary[:200]}...\n"
-        else:
-            content += f"📊 结果：{result_summary}\n"
-
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={
-                "status_message": f"工具执行完成：{tool_display_name}",
-                "tool_result_summary": result_summary[:500]
-            }
-        )
-        return self._format_sse_data(response)
-
-    def format_initial_evaluation(self, score: float, reflection: str, solution_preview: str = None) -> str:
-        """格式化初始回答评估"""
-        self.current_status.phase = SearchPhase.EVALUATING_INITIAL
-        self.current_status.best_score = score
-
-        # 根据评分显示不同的状态指示
+        # 根据评分决定下一步行动
         if score >= 9:
-            score_emoji = "🌟"
-            score_desc = "优秀"
+            content += f"🎉 **高质量方案！无需进一步搜索**"
         elif score >= 7:
-            score_emoji = "⭐"
-            score_desc = "良好"
-        elif score >= 5:
-            score_emoji = "⚡"
-            score_desc = "一般"
+            content += f"✨ **良好方案，考虑优化空间**"
         else:
-            score_emoji = "🔍"
-            score_desc = "需改进"
+            content += f"🚀 **开始树搜索优化...**"
 
-        content = f"\n📊 **初始方案评估完成**\n\n{score_emoji} 评分：**{score}/10** ({score_desc})\n"
+        return self._create_sse_response(content, metadata={"phase": "evaluating", "score": score})
 
-        # 添加评估摘要
-        if reflection:
-            reflection_summary = reflection[:100] + \
-                "..." if len(reflection) > 100 else reflection
-            content += f"💭 评估：{reflection_summary}\n"
-
-        # 如果有解决方案预览，显示片段
-        if solution_preview:
-            preview = solution_preview[:150] + \
-                "..." if len(solution_preview) > 150 else solution_preview
-            content += f"\n💡 方案预览：{preview}\n"
-
-        content += f"\n🚀 开始树搜索优化..."
-
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={
-                "status_message": f"初始评估完成 (评分: {score}/10)",
-                "initial_score": score
-            }
-        )
-        return self._format_sse_data(response)
-
-    def format_tree_search_iteration_start(self, iteration: int, tree_height: int, nodes_explored: int) -> str:
-        """格式化开始新的搜索迭代"""
-        self.current_status.phase = SearchPhase.TREE_SEARCHING
-        self.current_status.iteration = iteration
-        self.current_status.tree_height = tree_height
-        self.current_status.nodes_explored = nodes_explored
-        self.iteration_count = iteration
+    def format_search_iteration(self, iteration: int) -> str:
+        """格式化搜索迭代"""
+        self.stats.iteration = iteration
 
         content = f"\n\n---\n\n🌳 **搜索迭代 #{iteration}**\n\n"
-        content += f"📏 树高度：{tree_height} | 🔍 已探索：{nodes_explored} 个节点\n"
-        content += f"⚡ 选择最佳路径进行扩展..."
+        content += f"🔍 探索新的解决方案路径..."
 
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={
-                "status_message": f"搜索迭代 #{iteration}",
-                "iteration": iteration,
-                "tree_height": tree_height
-            }
-        )
-        return self._format_sse_data(response)
+        return self._create_sse_response(content, metadata={
+            "phase": "searching",
+            "iteration": iteration
+        })
 
-    def format_candidates_generation_start(self, candidate_count: int = 5) -> str:
-        """格式化开始生成候选方案"""
-        self.current_status.phase = SearchPhase.GENERATING_CANDIDATES
+    def format_candidates_evaluation(self, evaluations: List[Dict[str, Any]]) -> str:
+        """格式化候选方案评估（简化版）"""
+        if not evaluations:
+            return ""
 
-        content = f"\n🧬 **生成 {candidate_count} 个候选解决方案...**\n\n💭 基于当前最佳路径探索新可能性"
-
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={
-                "status_message": f"生成 {candidate_count} 个候选方案",
-                "candidate_count": candidate_count
-            }
-        )
-        return self._format_sse_data(response)
-
-    def format_candidates_evaluation_start(self, candidate_count: int) -> str:
-        """格式化开始评估候选方案"""
-        self.current_status.phase = SearchPhase.EVALUATING_CANDIDATES
-
-        content = f"\n📊 **评估 {candidate_count} 个候选方案...**\n\n🤔 分析每个方案的质量和可行性"
-
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={"status_message": f"评估 {candidate_count} 个候选方案"}
-        )
-        return self._format_sse_data(response)
-
-    def format_candidates_evaluation_results(self, evaluations: List[Dict[str, Any]]) -> str:
-        """格式化候选方案评估结果"""
-        best_score = max(eval_data["score"]
-                         for eval_data in evaluations) if evaluations else 0
+        best_score = max(e.get("score", 0) for e in evaluations)
         solutions_count = sum(
-            1 for eval_data in evaluations if eval_data.get("found_solution", False))
+            1 for e in evaluations if e.get("found_solution", False))
 
-        self.current_status.best_score = max(
-            self.current_status.best_score, best_score)
+        self.stats.best_score = max(self.stats.best_score, best_score)
+        self.stats.solutions_found = solutions_count
 
-        content = f"\n📈 **评估结果汇总**\n\n"
+        content = f"\n📊 **评估 {len(evaluations)} 个候选方案**\n\n"
         content += f"🏆 最高评分：**{best_score}/10**\n"
-        content += f"✅ 找到解决方案：**{solutions_count}** 个\n"
 
-        # 显示前3个最好的候选
-        sorted_evals = sorted(
-            evaluations, key=lambda x: x["score"], reverse=True)[:3]
-        content += f"\n🔝 **前3名候选方案：**\n"
-        for i, eval_data in enumerate(sorted_evals, 1):
-            status_icon = "🎯" if eval_data.get(
-                "found_solution", False) else "💡"
-            content += f"   {status_icon} **#{i}**: {eval_data['score']}/10\n"
+        if solutions_count > 0:
+            content += f"✅ 找到 **{solutions_count}** 个解决方案\n"
 
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={
-                "status_message": f"评估完成 (最佳: {best_score}/10)",
-                "best_score": best_score,
-                "solutions_found": solutions_count
-            }
-        )
-        return self._format_sse_data(response)
+        # 只显示前3个最佳候选
+        top_candidates = sorted(
+            evaluations, key=lambda x: x.get("score", 0), reverse=True)[:3]
+        content += f"\n🔝 **优秀候选：**\n"
+        for i, candidate in enumerate(top_candidates, 1):
+            score = candidate.get("score", 0)
+            status = "🎯" if candidate.get("found_solution", False) else "💡"
+            content += f"   {status} #{i}: {score}/10\n"
 
-    def format_solution_found(self, score: float, solution_preview: str, tree_stats: Dict[str, Any]) -> str:
+        return self._create_sse_response(content, metadata={
+            "phase": "evaluating",
+            "best_score": best_score,
+            "solutions_found": solutions_count
+        })
+
+    def format_solution_found(self, score: float) -> str:
         """格式化找到解决方案"""
-        self.current_status.phase = SearchPhase.SOLUTION_FOUND
-        self.current_status.solution_found = True
-        self.current_status.best_score = score
-
-        content = f"\n\n🎉 **找到高质量解决方案！**\n\n"
+        content = f"\n🎉 **找到高质量解决方案！**\n\n"
         content += f"🌟 最终评分：**{score}/10**\n"
-        content += f"🌳 搜索统计：{tree_stats.get('nodes_explored', 0)} 个节点，{tree_stats.get('tree_height', 0)} 层深度\n"
-        content += f"🔄 搜索迭代：{self.iteration_count} 轮\n\n"
-        content += f"🎯 **正在生成最终答案...**"
+        content += f"🔄 搜索迭代：{self.stats.iteration} 轮\n\n"
+        content += f"🎯 **生成最终答案...**"
 
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={
-                "status_message": f"找到解决方案 (评分: {score}/10)",
-                "final_score": score,
-                "tree_stats": tree_stats
-            }
-        )
-        return self._format_sse_data(response)
-
-    def format_no_solution_continue(self, best_score: float, iteration: int) -> str:
-        """格式化未找到解决方案继续搜索"""
-        content = f"\n🔄 **搜索迭代 #{iteration} 完成**\n\n"
-        content += f"📊 当前最佳评分：**{best_score}/10**\n"
-        content += f"🔍 继续探索更优解决方案..."
-
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={
-                "status_message": f"继续搜索 (当前最佳: {best_score}/10)",
-                "current_best": best_score
-            }
-        )
-        return self._format_sse_data(response)
+        return self._create_sse_response(content, metadata={
+            "phase": "solution_found",
+            "final_score": score
+        })
 
     def format_final_answer_start(self) -> str:
         """格式化开始生成最终答案"""
-        self.current_status.phase = SearchPhase.FINALIZING
+        content = "\n\n---\n\n✨ **整理最终答案**\n\n📝 基于搜索结果生成完整回答"
+        return self._create_sse_response(content, metadata={"phase": "finalizing"})
 
-        content = "\n\n---\n\n✨ **整理最终答案...**\n\n📝 基于搜索结果生成完整回答"
+    def format_content(self, content: str) -> str:
+        """格式化内容输出"""
+        # 保护原始内容，只做基本清理
+        if not content:
+            return ""
 
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={"status_message": "生成最终答案中"}
-        )
-        return self._format_sse_data(response)
+        # 移除可能的控制字符，但保持内容完整
+        cleaned_content = content.replace('\x00', '').strip()
 
-    def format_final_content(self, content: str) -> str:
-        """格式化最终内容"""
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={"status_message": "输出最终答案"}
-        )
-        return self._format_sse_data(response)
+        # 不截断内容，保持完整性
+        return self._create_sse_response(cleaned_content)
 
-    def format_completion(self, final_stats: Dict[str, Any] = None) -> str:
+    def format_completion(self) -> str:
         """格式化完成"""
-        self.current_status.phase = SearchPhase.COMPLETED
+        execution_time = datetime.now() - self.start_time
+        time_str = f"{int(execution_time.total_seconds())}秒"
 
-        emoji_prefix = "🎊 " if self.config.enable_emojis else ""
-        chart_emoji = "📊 " if self.config.enable_emojis else ""
-        clock_emoji = "⏱️ " if self.config.enable_emojis else ""
-        tree_emoji = "🌳 " if self.config.enable_emojis else ""
+        content = f"\n\n---\n\n🎊 **LATS 搜索完成！**\n\n"
+        content += f"📊 **搜索统计：**\n"
+        content += f"   • 迭代轮次：{self.stats.iteration}\n"
+        content += f"   • 最佳评分：{self.stats.best_score}/10\n"
+        content += f"   • 执行时间：{time_str}\n"
 
-        summary_content = f"\n\n---\n\n{emoji_prefix}**LATS 搜索完成！**\n"
-
-        if final_stats:
-            summary_content += f"{tree_emoji}搜索统计：\n"
-            summary_content += f"   • 迭代轮次：{final_stats.get('iterations', self.iteration_count)}\n"
-            summary_content += f"   • 探索节点：{final_stats.get('nodes_explored', self.current_status.nodes_explored)}\n"
-            summary_content += f"   • 树高度：{final_stats.get('tree_height', self.current_status.tree_height)}\n"
-            summary_content += f"   • 最佳评分：{final_stats.get('best_score', self.current_status.best_score)}/10\n"
-
-        if self.config.show_timing:
-            execution_time = datetime.now() - self.start_time
-            minutes, seconds = divmod(execution_time.total_seconds(), 60)
-            time_str = f"{int(minutes)}分{int(seconds)}秒" if minutes > 0 else f"{int(seconds)}秒"
-            summary_content += f"{clock_emoji}执行时间：{time_str}\n"
-
-        response = self._create_base_response(
-            delta_content=summary_content,
-            finish_reason="stop",
-            metadata={
-                "status_message": "搜索完成",
-                "final_stats": final_stats or {}
+        return self._create_sse_response(content, finish_reason="stop", metadata={
+            "phase": "completed",
+            "stats": {
+                "iterations": self.stats.iteration,
+                "best_score": self.stats.best_score,
+                "execution_time": time_str
             }
-        )
-        return self._format_sse_data(response)
+        })
 
-    def format_search_depth_limit(self, max_depth: int) -> str:
-        """格式化搜索深度达到限制"""
-        content = f"\n\n🛑 **搜索深度达到限制**\n\n"
-        content += f"📏 已探索到最大深度：{max_depth} 层\n"
-        content += f"💡 返回当前最佳解决方案"
-
-        response = self._create_base_response(
-            delta_content=content,
-            metadata={
-                "status_message": f"达到最大搜索深度 ({max_depth})",
-                "max_depth_reached": True
-            }
-        )
-        return self._format_sse_data(response)
+    def format_error(self, error_msg: str) -> str:
+        """格式化错误"""
+        content = f"\n❌ **搜索遇到问题**\n\n🔧 {error_msg}\n\n💡 请稍后重试"
+        return self._create_sse_response(content, finish_reason="error")
 
     def _get_tool_display_name(self, tool_name: str) -> str:
-        """获取工具的友好显示名称"""
-        return self.config.tool_display_names.get(tool_name, tool_name)
+        """获取工具友好显示名称"""
+        tool_names = {
+            "naive_rag_search": "知识库搜索",
+            "web_search": "网络搜索",
+            "search_tool": "搜索工具",
+            "analysis_tool": "分析工具"
+        }
+        return tool_names.get(tool_name, tool_name)
+
+    # 保持向后兼容的方法
+    def format_initial_generation_start(self) -> str:
+        return self.format_initial_generation()
+
+    def format_final_content(self, content: str) -> str:
+        return self.format_content(content)
+
+    def format_tool_call_start(self, tool_name: str, description: str = None) -> str:
+        return self.format_tool_execution(tool_name)
+
+    def format_candidates_evaluation_results(self, evaluations: List[Dict[str, Any]]) -> str:
+        return self.format_candidates_evaluation(evaluations)
+
+    def format_search_iteration(self, iteration: int) -> str:
+        """格式化搜索迭代"""
+        self.stats.iteration = iteration
+
+        content = f"\n\n---\n\n🌳 **搜索迭代 #{iteration}**\n\n"
+        content += f"🔍 探索新的解决方案路径..."
+
+        return self._create_sse_response(content, metadata={
+            "phase": "searching",
+            "iteration": iteration
+        })
+
+    def format_candidates_evaluation(self, evaluations: List[Dict[str, Any]]) -> str:
+        """格式化候选方案评估（简化版）"""
+        if not evaluations:
+            return ""
+
+        best_score = max(e.get("score", 0) for e in evaluations)
+        solutions_count = sum(
+            1 for e in evaluations if e.get("found_solution", False))
+
+        self.stats.best_score = max(self.stats.best_score, best_score)
+        self.stats.solutions_found = solutions_count
+
+        content = f"\n📊 **评估 {len(evaluations)} 个候选方案**\n\n"
+        content += f"🏆 最高评分：**{best_score}/10**\n"
+
+        if solutions_count > 0:
+            content += f"✅ 找到 **{solutions_count}** 个解决方案\n"
+
+        # 只显示前3个最佳候选
+        top_candidates = sorted(
+            evaluations, key=lambda x: x.get("score", 0), reverse=True)[:3]
+        content += f"\n🔝 **优秀候选：**\n"
+        for i, candidate in enumerate(top_candidates, 1):
+            score = candidate.get("score", 0)
+            status = "🎯" if candidate.get("found_solution", False) else "💡"
+            content += f"   {status} #{i}: {score}/10\n"
+
+        return self._create_sse_response(content, metadata={
+            "phase": "evaluating",
+            "best_score": best_score,
+            "solutions_found": solutions_count
+        })
+
+    def format_solution_found(self, score: float) -> str:
+        """格式化找到解决方案"""
+        content = f"\n\n🎉 **找到高质量解决方案！**\n\n"
+        content += f"🌟 最终评分：**{score}/10**\n"
+        content += f"🔄 搜索迭代：{self.stats.iteration} 轮\n\n"
+        content += f"🎯 **生成最终答案...**"
+
+        return self._create_sse_response(content, metadata={
+            "phase": "solution_found",
+            "final_score": score
+        })
+
+    def format_final_answer_start(self) -> str:
+        """格式化开始生成最终答案"""
+        content = "\n\n---\n\n✨ **整理最终答案**\n\n📝 基于搜索结果生成完整回答"
+        return self._create_sse_response(content, metadata={"phase": "finalizing"})
+
+    def format_content(self, content: str) -> str:
+        """格式化内容输出"""
+        return self._create_sse_response(content)
+
+    def format_completion(self) -> str:
+        """格式化完成"""
+        execution_time = datetime.now() - self.start_time
+        time_str = f"{int(execution_time.total_seconds())}秒"
+
+        content = f"\n\n---\n\n🎊 **LATS 搜索完成！**\n\n"
+        content += f"📊 **搜索统计：**\n"
+        content += f"   • 迭代轮次：{self.stats.iteration}\n"
+        content += f"   • 最佳评分：{self.stats.best_score}/10\n"
+        content += f"   • 执行时间：{time_str}\n"
+
+        return self._create_sse_response(content, finish_reason="stop", metadata={
+            "phase": "completed",
+            "stats": {
+                "iterations": self.stats.iteration,
+                "best_score": self.stats.best_score,
+                "execution_time": time_str
+            }
+        })
+
+    def format_error(self, error_msg: str) -> str:
+        """格式化错误"""
+        content = f"\n\n❌ **搜索遇到问题**\n\n🔧 {error_msg}\n\n💡 请稍后重试"
+        return self._create_sse_response(content, finish_reason="error")
+
+    def _get_tool_display_name(self, tool_name: str) -> str:
+        """获取工具友好显示名称"""
+        tool_names = {
+            "naive_rag_search": "知识库搜索",
+            "web_search": "网络搜索",
+            "search_tool": "搜索工具",
+            "analysis_tool": "分析工具"
+        }
+        return tool_names.get(tool_name, tool_name)
+
+    # 保持向后兼容的方法
+    def format_initial_generation_start(self) -> str:
+        return self.format_initial_generation()
+
+    def format_final_content(self, content: str) -> str:
+        return self.format_content(content)
+
+    def format_tool_call_start(self, tool_name: str, description: str = None) -> str:
+        return self.format_tool_execution(tool_name)
+
+    def format_candidates_evaluation_results(self, evaluations: List[Dict[str, Any]]) -> str:
+        return self.format_candidates_evaluation(evaluations)
