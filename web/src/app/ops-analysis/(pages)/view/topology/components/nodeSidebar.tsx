@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Icon from '@/components/icon';
-import ComponentSelector from '../../dashBoard/components/compSelector';
+import ComponentSelector from '../../dashBoard/components/viewSelector';
 import { SidebarProps, NodeType } from '@/app/ops-analysis/types/topology';
 import { Button } from 'antd';
 import {

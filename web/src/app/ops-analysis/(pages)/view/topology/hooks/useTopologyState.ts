@@ -102,11 +102,11 @@ export const useTopologyState = () => {
       logoType: editingNodeData.logoType || 'default',
       logoIcon:
         editingNodeData.logoType === 'default'
-          ? editingNodeData.logo
+          ? editingNodeData.logoIcon
           : 'cc-host',
       logoUrl:
         editingNodeData.logoType === 'custom'
-          ? editingNodeData.logo
+          ? editingNodeData.logoUrl
           : undefined,
       width: editingNodeData.width || editingNodeData.config?.width || FORM_DEFAULTS.ICON_NODE.width,
       height: editingNodeData.height || editingNodeData.config?.height || FORM_DEFAULTS.ICON_NODE.height,
@@ -122,6 +122,51 @@ export const useTopologyState = () => {
     setNodeEditVisible(false);
     setEditingNodeData(null);
   }, []);
+
+  // 重置所有状态
+  const resetAllStates = useCallback(() => {
+    // 重置编辑相关状态
+    setIsEditMode(false);
+    isEditModeRef.current = false;
+    setIsSelectMode(true);
+
+    // 重置选择状态
+    setSelectedCells([]);
+
+    // 重置右键菜单状态
+    setContextMenuVisible(false);
+    setContextMenuNodeId('');
+    setContextMenuPosition({ x: 0, y: 0 });
+
+    // 重置文本编辑状态
+    setIsEditingText(false);
+    setEditingNodeId(null);
+    setTempTextInput('');
+    setEditPosition({ x: 0, y: 0 });
+    setInputWidth(120);
+    setOriginalText('');
+
+    // 重置边配置状态
+    setEdgeConfigVisible(false);
+    setCurrentEdgeData(null);
+
+    // 重置节点编辑状态
+    setNodeEditVisible(false);
+    setEditingNodeData(null);
+    setViewConfigVisible(false);
+
+    // 重置绘制状态
+    isDrawingRef.current = false;
+    drawingEdgeRef.current = null;
+    finishTextEditRef.current = null;
+    startTextEditRef.current = null;
+
+    // 清理图形选择状态
+    if (graphInstance) {
+      graphInstance.disablePlugins(['selection']);
+      graphInstance.cleanSelection();
+    }
+  }, [graphInstance]);
 
   return {
     // 图形相关
@@ -178,6 +223,9 @@ export const useTopologyState = () => {
     // viewConfig
     viewConfigVisible,
     setViewConfigVisible,
+
+    // 重置状态
+    resetAllStates,
 
     // Refs
     isDrawingRef,

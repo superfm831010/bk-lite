@@ -4,10 +4,12 @@ import type { Node } from '@antv/x6';
 import { NODE_DEFAULTS } from '../constants/nodeDefaults';
 import ComLine from '../../dashBoard/widgets/comLine';
 import ComPie from '../../dashBoard/widgets/comPie';
+import ComBar from '../../dashBoard/widgets/comBar';
 
 const componentMap: Record<string, React.ComponentType<any>> = {
   trendLine: ComLine,
   osPie: ComPie,
+  errorBar: ComBar,
 };
 
 interface ChartNodeProps {
@@ -42,9 +44,9 @@ const ChartNode: React.FC<ChartNodeProps> = ({ node }) => {
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        border: '1px solid #d9d9d9',
+        border: '1px solid var(--color-border-2)',
         borderRadius: '6px',
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--color-bg-1)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -52,7 +54,7 @@ const ChartNode: React.FC<ChartNodeProps> = ({ node }) => {
       {componentName && (
         <div
           style={{
-            padding: '8px 12px',
+            padding: '12px',
             fontSize: '14px',
             color: 'var(--color-text-1)',
           }}
@@ -77,7 +79,16 @@ const ChartNode: React.FC<ChartNodeProps> = ({ node }) => {
             </div>
           </div>
         ) : Component ? (
-          <div className="h-full w-full">
+          <div
+            className="h-full w-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+            }}
+          >
             <Component {...widgetProps} />
           </div>
         ) : (

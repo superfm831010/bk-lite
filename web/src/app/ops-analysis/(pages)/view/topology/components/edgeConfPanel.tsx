@@ -171,11 +171,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
       {({ getFieldValue }) => {
         const lineType = getFieldValue('lineType');
         return lineType === 'common_line' ? (
-          <Form.Item
-            label={t('topology.lineName')}
-            name="lineName"
-            rules={[{ required: true, message: t('common.inputMsg') }]}
-          >
+          <Form.Item label={t('topology.lineName')} name="lineName">
             <Input placeholder={t('common.inputMsg')} disabled={readonly} />
           </Form.Item>
         ) : null;

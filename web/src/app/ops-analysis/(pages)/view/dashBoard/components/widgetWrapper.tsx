@@ -5,10 +5,12 @@ import { fetchWidgetData } from '../../../../utils/widgetDataTransform';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import ComPie from '../widgets/comPie';
 import ComLine from '../widgets/comLine';
+import ComBar from '../widgets/comBar';
 
 const componentMap: Record<string, React.ComponentType<any>> = {
   trendLine: ComLine,
   osPie: ComPie,
+  errorBar: ComBar,
 };
 
 interface WidgetWrapperProps extends BaseWidgetProps {

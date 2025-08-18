@@ -1,7 +1,7 @@
 import { EdgeCreationData } from '@/app/ops-analysis/types/topology';
 import { NODE_DEFAULTS, PORT_DEFAULTS, COLORS, SPACING } from '../constants/nodeDefaults';
 
-const CONTENT_PENDING = 5;
+const CONTENT_PENDING = 2;
 const PORT_RADIUS = PORT_DEFAULTS.RADIUS;
 
 // 通用工具函数
@@ -92,10 +92,11 @@ const createBaseAttrs = (config: {
 
 export const getNodeStyle = () => {
   const defaults = NODE_DEFAULTS.ICON_NODE;
+  const layout = calculateNodeLayout(defaults.width, defaults.height);
 
   return {
-    width: defaults.width,
-    height: defaults.height,
+    width: layout.nodeWidth,
+    height: layout.nodeHeight,
     markup: [
       {
         tagName: 'rect',
@@ -116,31 +117,33 @@ export const getNodeStyle = () => {
     ],
     attrs: {
       body: {
-        width: defaults.width,
-        height: defaults.height,
-        fill: 'transparent',
-        stroke: '#ddd', 
+        x: layout.body.x,
+        y: layout.body.y,
+        width: layout.body.width,
+        height: layout.body.height,
+        fill: '#ffffff',
+        stroke: '#ddd',
         strokeWidth: 1,
         rx: 4,
         ry: 4,
       },
       icon: {
-        x: 30,
-        y: 10,
-        width: 60,
-        height: 60,
+        x: layout.icon.x,
+        y: layout.icon.y,
+        width: layout.icon.width,
+        height: layout.icon.height,
       },
       label: {
         fill: defaults.textColor,
-        fontSize: defaults.fontSize,
+        fontSize: 14,
         fontWeight: defaults.fontWeight,
-        x: 0,
-        y: 30,
+        x: layout.label.x,
+        y: layout.label.y,
         textAnchor: 'middle',
         textVerticalAnchor: 'middle',
       },
     },
-    ports: createPortConfig(defaults.width, defaults.height, PORT_DEFAULTS.FILL_COLOR),
+    ports: createAdvancedPortConfig(layout),
   };
 };
 
@@ -366,14 +369,14 @@ export const getTextNodeStyle = (nodeConfig?: any) => {
 
 // 获取logo URL的辅助函数
 export const getLogoUrl = (nodeConfig: any, iconList: any[]) => {
-  if (nodeConfig.logoType === 'default' && nodeConfig.logo) {
-    const iconItem = iconList.find((item) => item.key === nodeConfig.logo);
+  if (nodeConfig.logoType === 'default' && nodeConfig.logoIcon) {
+    const iconItem = iconList.find((item) => item.key === nodeConfig.logoIcon);
     if (iconItem) {
       return `/app/assets/assetModelIcon/${iconItem.url}.svg`;
     }
-    return `/app/assets/assetModelIcon/${nodeConfig.logo}.svg`;
-  } else if (nodeConfig.logoType === 'custom' && nodeConfig.logo) {
-    return nodeConfig.logo;
+    return `/app/assets/assetModelIcon/${nodeConfig.logoIcon}.svg`;
+  } else if (nodeConfig.logoType === 'custom' && nodeConfig.logoUrl) {
+    return nodeConfig.logoUrl;
   }
   return '/app/assets/assetModelIcon/cc-default_默认.svg';
 };
@@ -411,11 +414,11 @@ export const getSingleValueNodeStyle = (nodeConfig: any) => {
       name: nodeConfig.name,
       dataSource: nodeConfig.dataSource,
       dataSourceParams: nodeConfig.dataSourceParams || {},
-      selectedFields: nodeConfig.selectedFields || [], 
+      selectedFields: nodeConfig.selectedFields || [],
       isLoading: hasDataSource,
       config: {
         ...styleConfig,
-        ...config, 
+        ...config,
       },
     },
     attrs: {
@@ -452,7 +455,7 @@ export const calculateNodeLayout = (iconWidth: number, iconHeight: number) => {
     },
     label: {
       x: CONTENT_PENDING,
-      y: iconHeight / 2 + CONTENT_PENDING * 4,
+      y: iconHeight / 2 + 26,
     },
     ports: {
       top: { x: iconWidth / 2 + PORT_RADIUS / 2, y: 0 },
@@ -494,12 +497,18 @@ const updateNodeSizeAndPorts = (node: any, iconWidth: number, iconHeight: number
 // 通用节点更新函数
 export const updateNodeProperties = (node: any, nodeConfig: any, iconList: any[]) => {
   node.setLabel(nodeConfig.name);
-  console.log('更新图标节点属性，logoUrl:', nodeConfig, node);
   node.setData({
     type: nodeConfig.type,
     name: nodeConfig.name,
-    logo: nodeConfig.logo,
     logoType: nodeConfig.logoType,
+    logoIcon:
+      nodeConfig.logoType === 'default'
+        ? nodeConfig.logoIcon
+        : 'cc-host',
+    logoUrl:
+      nodeConfig.logoType === 'custom'
+        ? nodeConfig.logoUrl
+        : undefined,
     dataSource: nodeConfig.dataSource,
     dataSourceParams: nodeConfig.dataSourceParams,
     selectedFields: nodeConfig.selectedFields || [],
@@ -535,11 +544,18 @@ export const updateNodeProperties = (node: any, nodeConfig: any, iconList: any[]
       node.setAttrByPath('icon/xlink:href', logoUrl);
     }
 
-    if (nodeConfig.config?.backgroundColor) {
-      node.setAttrByPath('body/fill', nodeConfig.config.backgroundColor);
+    const defaults = NODE_DEFAULTS.ICON_NODE;
+    const backgroundColor = nodeConfig.config?.backgroundColor || defaults.backgroundColor;
+    const borderColor = nodeConfig.config?.borderColor || defaults.borderColor;
+
+    node.setAttrByPath('body/fill', backgroundColor);
+    node.setAttrByPath('body/stroke', borderColor);
+
+    if (nodeConfig.config?.textColor) {
+      node.setAttrByPath('label/fill', nodeConfig.config.textColor);
     }
-    if (nodeConfig.config?.borderColor) {
-      node.setAttrByPath('body/stroke', nodeConfig.config.borderColor);
+    if (nodeConfig.config?.fontSize) {
+      node.setAttrByPath('label/fontSize', nodeConfig.config.fontSize);
     }
   }
 };
@@ -553,13 +569,6 @@ export const getIconNodeStyle = (nodeConfig: any, logoUrl: string) => {
   const iconWidth = nodeConfig.width || config.width || defaults.width;
   const iconHeight = nodeConfig.height || config.height || defaults.height;
   const layout = calculateNodeLayout(iconWidth, iconHeight);
-
-  const backgroundColor = nodeConfig.backgroundColor || config.backgroundColor || defaults.backgroundColor;
-  const borderColor = nodeConfig.borderColor || config.borderColor || defaults.borderColor;
-  const textColor = nodeConfig.textColor || config.textColor || defaults.textColor;
-  const fontSize = nodeConfig.fontSize || config.fontSize || defaults.fontSize;
-
-  const logo = nodeConfig.logoType === "default" ? nodeConfig.logoIcon : (nodeConfig.logoUrl || nodeConfig.logo);
   const logoType = nodeConfig.logoType || 'default';
 
   return {
@@ -573,18 +582,21 @@ export const getIconNodeStyle = (nodeConfig: any, logoUrl: string) => {
     data: {
       type: nodeConfig.type || 'icon',
       name: nodeConfig.name,
-      logo: logo,
       logoType: logoType,
+      logoIcon:
+        logoType === 'default'
+          ? nodeConfig.logoIcon
+          : 'cc-host',
+      logoUrl:
+        logoType === 'custom'
+          ? nodeConfig.logoUrl
+          : undefined,
       dataSourceParams: nodeConfig.dataSourceParams || {},
       selectedFields: nodeConfig.selectedFields || [],
       config: {
-        backgroundColor,
-        borderColor,
-        textColor,
-        fontSize,
         width: iconWidth,
         height: iconHeight,
-        ...config, 
+        ...config,
       },
     },
     // 覆盖图标的 URL 和位置
@@ -596,8 +608,8 @@ export const getIconNodeStyle = (nodeConfig: any, logoUrl: string) => {
         y: layout.body.y,
         width: layout.body.width,
         height: layout.body.height,
-        fill: nodeConfig.config?.backgroundColor || 'transparent',
-        stroke: nodeConfig.config?.borderColor || '#ddd',
+        fill: '#ffffff',
+        stroke: '#ddd',
       },
       icon: {
         ...baseNodeStyle.attrs.icon,
@@ -611,8 +623,8 @@ export const getIconNodeStyle = (nodeConfig: any, logoUrl: string) => {
         ...baseNodeStyle.attrs.label,
         x: layout.label.x,
         y: layout.label.y,
-        fill: nodeConfig.config?.textColor || baseNodeStyle.attrs.label.fill,
-        fontSize: nodeConfig.config?.fontSize || baseNodeStyle.attrs.label.fontSize,
+        fill: '#666666',
+        fontSize: 14,
       },
     },
     ports: createAdvancedPortConfig(layout),
@@ -640,7 +652,6 @@ export const getChartNodeStyle = (nodeConfig: any) => {
     width: styleConfig.width,
     height: styleConfig.height,
     shape: 'react-shape',
-    component: 'ChartNode',
     data: {
       type: nodeConfig.type || 'chart',
       name: nodeConfig.name,

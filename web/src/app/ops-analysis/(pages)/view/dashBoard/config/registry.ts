@@ -1,4 +1,3 @@
-import React from 'react';
 import { WidgetDefinition } from '@/app/ops-analysis/types/dashBoard';
 
 export const widgetRegistry: Record<string, WidgetDefinition> = {
@@ -12,8 +11,19 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
       defaultConfig: {
         barColor: '#52c41a'
       },
-    },
-    component: React.Fragment as any, 
+    }
+  },
+  errorBar: {
+    meta: {
+      id: 'errorBar',
+      name: '失败登录次数',
+      description: '主机的维度计算用户登录失败次数',
+      icon: 'tubiao2',
+      category: '告警',
+      defaultConfig: {
+        barColor: '#ff4d4f'
+      },
+    }
   },
   osPie: {
     meta: {
@@ -25,14 +35,8 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
       defaultConfig: {
         lineColor: '#1890ff'
       },
-    },
-    component: React.Fragment as any,
+    }
   }
-};
-
-export const getWidgetConfig = (widgetType: string) => {
-  const definition = widgetRegistry[widgetType];
-  return definition?.configComponent || null;
 };
 
 export const getWidgetMeta = (widgetType: string) => {

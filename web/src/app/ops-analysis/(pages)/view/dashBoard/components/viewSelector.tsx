@@ -87,7 +87,7 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
               dataSource={items}
               renderItem={(item) => (
                 <List.Item
-                  className="cursor-pointer hover:bg-blue-50 flex items-center gap-3 justify-between"
+                  className="cursor-pointer hover:bg-blue-50 flex items-center gap-3 justify-between p-3 border-b border-gray-100 last:border-b-0"
                   onClick={() => handleConfig(item)}
                 >
                   <div className="flex flex-col gap-1 leading-relaxed">

@@ -4,14 +4,14 @@ import ChartLegend from '../components/chartLegend';
 import { Spin, Empty } from 'antd';
 import { randomColorForLegend } from '@/app/ops-analysis/utils/randomColorForChart';
 
-interface TrendLineProps {
+interface BarChartProps {
   rawData: any;
   loading?: boolean;
   config?: any;
   onReady?: (ready: boolean) => void;
 }
 
-const TrendLine: React.FC<TrendLineProps> = ({
+const BarChart: React.FC<BarChartProps> = ({
   rawData,
   loading = false,
   onReady,
@@ -22,29 +22,41 @@ const TrendLine: React.FC<TrendLineProps> = ({
 
   const transformData = (rawData: any) => {
     if (!rawData) {
-      return { dates: [], values: [] };
+      return { categories: [], values: [] };
     }
 
     if (Array.isArray(rawData) && rawData.length === 0) {
-      return { dates: [], values: [] };
+      return { categories: [], values: [] };
     }
 
     if (Array.isArray(rawData) && rawData.length > 0) {
+      // 检查是否是新的对象格式 [{name: "xxx", count: 20}, ...]
       if (
+        rawData[0] &&
+        typeof rawData[0] === 'object' &&
+        'name' in rawData[0] &&
+        'count' in rawData[0]
+      ) {
+        const categories = rawData.map((item: any) => item.name);
+        const values = rawData.map((item: any) => item.count);
+        return { categories, values };
+      }
+      // 检查是否是多维数据（多个系列）
+      else if (
         rawData[0] &&
         typeof rawData[0] === 'object' &&
         rawData[0].namespace_id &&
         rawData[0].data
       ) {
-        const allDatesSet = new Set<string>();
+        const allCategoriesSet = new Set<string>();
         rawData.forEach((namespace: any) => {
           if (namespace.data && Array.isArray(namespace.data)) {
             namespace.data.forEach((item: any[]) => {
-              allDatesSet.add(item[0]);
+              allCategoriesSet.add(item[0]);
             });
           }
         });
-        const dates = Array.from(allDatesSet).sort();
+        const categories = Array.from(allCategoriesSet).sort();
 
         const series = rawData.map((namespace: any) => {
           const dataMap: { [key: string]: number } = {};
@@ -54,7 +66,7 @@ const TrendLine: React.FC<TrendLineProps> = ({
             });
           }
 
-          const values = dates.map((date) => dataMap[date] || 0);
+          const values = categories.map((category) => dataMap[category] || 0);
 
           return {
             name: namespace.namespace_id,
@@ -62,21 +74,22 @@ const TrendLine: React.FC<TrendLineProps> = ({
           };
         });
 
-        return { dates, series };
+        return { categories, series };
       } else {
-        const dates = rawData.map((item: any[]) => item[0]);
+        // 原有的二维数组格式 [[key, value], ...]
+        const categories = rawData.map((item: any[]) => item[0]);
         const values = rawData.map((item: any[]) => item[1]);
-        return { dates, values };
+        return { categories, values };
       }
     }
-    return { dates: [], values: [] };
+    return { categories: [], values: [] };
   };
 
   const chartData = transformData(rawData);
 
   useEffect(() => {
     if (!loading) {
-      const hasData = chartData && chartData.dates.length > 0;
+      const hasData = chartData && chartData.categories.length > 0;
       setIsDataReady(hasData);
       if (onReady) {
         onReady(hasData);
@@ -89,14 +102,12 @@ const TrendLine: React.FC<TrendLineProps> = ({
     animation: false,
     calculable: true,
     title: { show: false },
-    legend: {
-      show: false,
-    },
+    legend: { show: false },
     toolbox: { show: false },
     tooltip: {
       trigger: 'axis',
       axisPointer: {
-        type: 'cross',
+        type: 'shadow',
       },
       enterable: true,
       confine: true,
@@ -112,7 +123,7 @@ const TrendLine: React.FC<TrendLineProps> = ({
         params.forEach((param: any) => {
           content += `
             <div style="display: flex; align-items: center; margin-bottom: 2px;">
-              <span style="display: inline-block; width: 10px; height: 10px; background-color: ${param.color}; border-radius: 50%; margin-right: 6px;"></span>
+              <span style="display: inline-block; width: 10px; height: 10px; background-color: ${param.color}; border-radius: 2px; margin-right: 6px;"></span>
               <span>${param.seriesName}: ${param.value}</span>
             </div>`;
         });
@@ -122,15 +133,15 @@ const TrendLine: React.FC<TrendLineProps> = ({
       },
     },
     grid: {
-      top: 14,
+      top: 30,
       left: 10,
-      right: 20,
-      bottom: 10,
+      right: 30,
+      bottom: 25,
       containLabel: true,
     },
     xAxis: {
       type: 'category',
-      data: chartData?.dates || [],
+      data: chartData?.categories || [],
       nameRotate: -90,
       axisLabel: {
         margin: 15,
@@ -139,10 +150,26 @@ const TrendLine: React.FC<TrendLineProps> = ({
           fontSize: 11,
         },
         rotate: 0,
+        interval: 'auto',
+        formatter: function (value: string) {
+          if (value && value.length > 10) {
+            return value.substring(0, 10) + '...';
+          }
+          return value;
+        },
       },
       axisLine: {
         lineStyle: {
           color: '#e8e8e8',
+        },
+      },
+      axisTick: {
+        show: false,
+      },
+      splitLine: {
+        show: false,
+        lineStyle: {
+          color: '#f0f0f0',
         },
       },
     },
@@ -150,6 +177,9 @@ const TrendLine: React.FC<TrendLineProps> = ({
       type: 'value',
       minInterval: 1,
       axisTick: {
+        show: false,
+      },
+      axisLine: {
         show: false,
       },
       axisLabel: {
@@ -167,7 +197,7 @@ const TrendLine: React.FC<TrendLineProps> = ({
         show: true,
         lineStyle: {
           color: '#f0f0f0',
-          type: 'dashed',
+          type: 'solid',
         },
       },
     },
@@ -177,12 +207,11 @@ const TrendLine: React.FC<TrendLineProps> = ({
   if (chartData && chartData.series) {
     option.series = chartData.series.map((item: any) => ({
       name: item.name,
-      type: 'line',
+      type: 'bar',
       data: item.data,
-      smooth: true,
-      symbol: 'none',
-      lineStyle: {
-        width: 1,
+      barMaxWidth: 40,
+      itemStyle: {
+        borderRadius: [2, 2, 0, 0],
       },
       emphasis: {
         focus: 'series',
@@ -191,13 +220,12 @@ const TrendLine: React.FC<TrendLineProps> = ({
   } else {
     option.series = [
       {
-        name: '告警数',
-        type: 'line',
+        name: '数量',
+        type: 'bar',
         data: chartData && chartData.values ? chartData.values : [],
-        smooth: true,
-        symbol: 'none',
-        lineStyle: {
-          width: 1,
+        barMaxWidth: 40,
+        itemStyle: {
+          borderRadius: [2, 2, 0, 0],
         },
         emphasis: {
           focus: 'series',
@@ -214,7 +242,7 @@ const TrendLine: React.FC<TrendLineProps> = ({
     );
   }
 
-  if (!isDataReady || !chartData || chartData.dates.length === 0) {
+  if (!isDataReady || !chartData || chartData.categories.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center">
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -233,6 +261,7 @@ const TrendLine: React.FC<TrendLineProps> = ({
         />
       </div>
 
+      {/* 图例区域 - 仅在多系列数据时显示 */}
       {chartData?.series && chartData.series.length > 0 && (
         <div className="w-32 ml-2 flex-shrink-0 h-full">
           <ChartLegend
@@ -246,4 +275,4 @@ const TrendLine: React.FC<TrendLineProps> = ({
   );
 };
 
-export default TrendLine;
+export default BarChart;

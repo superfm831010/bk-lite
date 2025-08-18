@@ -81,6 +81,8 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
         setSelectedDataSource(trendDataSource);
       }
       formValues.chartType = 'line';
+    } else if (widget === 'errorBar') {
+      formValues.chartType = 'bar';
     } else if (widget === 'osPie') {
       formValues.chartType = 'pie';
     }
@@ -243,7 +245,7 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
             initialValue="line"
           >
             <Radio.Group
-              disabled={['trendLine', 'osPie'].includes(
+              disabled={['trendLine', 'osPie', 'errorBar'].includes(
                 widgetItem?.widget || ''
               )}
             >

@@ -71,6 +71,5 @@ export interface WidgetMeta {
 
 export interface WidgetDefinition {
   meta: WidgetMeta;
-  component: React.ComponentType<BaseWidgetProps>;
   configComponent?: React.ComponentType<any>;
 }

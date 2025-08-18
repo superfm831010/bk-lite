@@ -4,12 +4,13 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useState,
+  useCallback,
 } from 'react';
 import { Spin } from 'antd';
 import { useTopologyState } from './hooks/useTopologyState';
 import { useGraphOperations } from './hooks/useGraphOperations';
 import { useTextOperations } from './hooks/useTextOperations';
-import { useContextMenuAndModal } from './hooks/useContextMenuAndModal';
+import { useContextMenuAndModal } from './hooks/useGraphInteractions';
 import { DirItem } from '@/app/ops-analysis/types';
 import { NodeType, DropPosition } from '@/app/ops-analysis/types/topology';
 import TopologyToolbar from './components/toolbar';
@@ -30,6 +31,7 @@ export interface TopologyRef {
 const Topology = forwardRef<TopologyRef, TopologyProps>(
   ({ selectedTopology }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const canvasContainerRef = useRef<HTMLDivElement>(null);
     const [addNodeVisible, setAddNodeVisible] = useState(false);
     const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(
       null
@@ -49,6 +51,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       handleAddChartNode,
       handleSaveTopology,
       handleLoadTopology,
+      resizeCanvas,
       loading,
     } = useGraphOperations(containerRef, state);
 
@@ -60,6 +63,44 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
     const { handleEdgeConfigConfirm, closeEdgeConfig, handleMenuClick } =
       useContextMenuAndModal(containerRef, state);
 
+    // 监听画布容器大小变化，自动调整画布大小
+    const handleCanvasResize = useCallback(() => {
+      if (resizeCanvas && canvasContainerRef.current) {
+        // 稍微延迟以确保DOM已经更新
+        setTimeout(() => {
+          if (canvasContainerRef.current) {
+            const rect = canvasContainerRef.current.getBoundingClientRect();
+            resizeCanvas(rect.width, rect.height);
+          }
+        }, 100);
+      }
+    }, [resizeCanvas]);
+
+    // 使用 ResizeObserver 监听容器大小变化
+    useEffect(() => {
+      if (!canvasContainerRef.current) return;
+
+      const resizeObserver = new ResizeObserver(() => {
+        // 防抖处理
+        clearTimeout((window as any).topologyResizeTimeout);
+        (window as any).topologyResizeTimeout = setTimeout(() => {
+          handleCanvasResize();
+        }, 150);
+      });
+
+      resizeObserver.observe(canvasContainerRef.current);
+
+      return () => {
+        resizeObserver.disconnect();
+        clearTimeout((window as any).topologyResizeTimeout);
+      };
+    }, [handleCanvasResize]);
+
+    // 监听侧边栏收起展开，重新调整画布大小
+    useEffect(() => {
+      handleCanvasResize();
+    }, [state.collapsed, handleCanvasResize]);
+
     const handleShowNodeConfig = (
       nodeType: NodeType,
       position?: DropPosition
@@ -69,24 +110,43 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       setAddNodeVisible(true);
     };
 
-    const handleAddNodeConfirm = async (values: any) => {
-      if (!selectedNodeType || !dropPosition) return;
-
-      addNode(selectedNodeType.id, values, dropPosition);
-      setAddNodeVisible(false);
-      setSelectedNodeType(null);
-      setDropPosition(null);
+    const handleNodeEditClose = () => {
+      if (addNodeVisible) {
+        setAddNodeVisible(false);
+        setSelectedNodeType(null);
+        setDropPosition(null);
+      } else {
+        state.setNodeEditVisible(false);
+        state.setEditingNodeData(null);
+      }
     };
 
-    const handleAddNodeCancel = () => {
-      setAddNodeVisible(false);
-      setSelectedNodeType(null);
-      setDropPosition(null);
+    const handleNodeConfirm = async (values: any) => {
+      if (addNodeVisible) {
+        if (!selectedNodeType || !dropPosition) return;
+        addNode(selectedNodeType.id, values, dropPosition);
+      } else {
+        await handleNodeUpdate(values);
+      }
+      handleNodeEditClose();
     };
 
-    const handleNodeEditConfirm = async (values: any) => {
-      await handleNodeUpdate(values);
-      state.handleNodeEditClose();
+    const getNodeInitialValues = () => {
+      return addNodeVisible ? undefined : state.getEditNodeInitialValues();
+    };
+
+    const getNodeType = () => {
+      return addNodeVisible
+        ? (selectedNodeType?.id as 'single-value' | 'icon')
+        : (state.editingNodeData?.type as 'single-value' | 'icon');
+    };
+
+    const getNodeTitle = () => {
+      return state.isEditMode ? '编辑节点' : '查看节点';
+    };
+
+    const getNodeReadonly = () => {
+      return addNodeVisible ? false : !state.isEditMode;
     };
 
     const handleSave = () => {
@@ -108,6 +168,10 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
         handleLoadTopology(selectedTopology.data_id);
       }
     }, [selectedTopology?.data_id, state.graphInstance]);
+
+    useEffect(() => {
+      state.resetAllStates();
+    }, [selectedTopology?.data_id]);
 
     const handleSelectMode = () => {
       state.setIsSelectMode(!state.isSelectMode);
@@ -144,9 +208,18 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           />
 
           {/* 画布容器 */}
-          <div className="flex-1 bg-[var(--color-bg-1)] relative">
+          <div
+            ref={canvasContainerRef}
+            className="flex-1 bg-[var(--color-bg-1)] relative"
+          >
             {loading && (
-              <div className="h-full flex items-center justify-center">
+              <div
+                className="absolute inset-0 flex items-center justify-center backdrop-blur-sm z-10"
+                style={{
+                  backgroundColor: 'var(--color-bg-1)',
+                  opacity: 0.8,
+                }}
+              >
                 <Spin size="large" />
               </div>
             )}
@@ -184,31 +257,19 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
 
         <NodeConfPanel
           visible={state.nodeEditVisible || addNodeVisible}
-          title={state.isEditMode ? '编辑节点' : '查看节点'}
-          nodeType={
-            addNodeVisible
-              ? (selectedNodeType?.id as 'single-value' | 'icon')
-              : (state.editingNodeData?.type as 'single-value' | 'icon')
-          }
-          readonly={addNodeVisible ? false : !state.isEditMode}
-          initialValues={
-            addNodeVisible ? undefined : state.getEditNodeInitialValues()
-          }
-          onClose={
-            addNodeVisible ? handleAddNodeCancel : state.handleNodeEditClose
-          }
-          onConfirm={
-            addNodeVisible ? handleAddNodeConfirm : handleNodeEditConfirm
-          }
-          onCancel={
-            addNodeVisible ? handleAddNodeCancel : state.handleNodeEditClose
-          }
+          title={getNodeTitle()}
+          nodeType={getNodeType()}
+          readonly={getNodeReadonly()}
+          initialValues={getNodeInitialValues()}
+          onClose={handleNodeEditClose}
+          onConfirm={handleNodeConfirm}
+          onCancel={handleNodeEditClose}
         />
 
         <ViewConfig
           open={state.viewConfigVisible}
-          onClose={() => state.setViewConfigVisible(false)}
           item={state.editingNodeData}
+          onClose={() => state.setViewConfigVisible(false)}
           onConfirm={handleViewConfigConfirm}
         />
       </div>

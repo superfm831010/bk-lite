@@ -65,6 +65,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     const defaultValues: any = {
       logoType: 'default',
       logoIcon: 'cc-host',
+      logoUrl: '',
       fontSize: FORM_DEFAULTS.SINGLE_VALUE.fontSize,
       textColor: FORM_DEFAULTS.SINGLE_VALUE.textColor,
       backgroundColor: FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
@@ -95,8 +96,8 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       const formValues: any = {
         name: values.name,
         logoType: values.logoType,
-        logoIcon: values.logoIcon,
-        logoUrl: values.logoUrl,
+        logoIcon: values.logoType === 'default' ? values.logoIcon : undefined,
+        logoUrl: values.logoType === 'custom' ? values.logoUrl : undefined,
         width: values.width,
         height: values.height,
         dataSource: values.dataSource,

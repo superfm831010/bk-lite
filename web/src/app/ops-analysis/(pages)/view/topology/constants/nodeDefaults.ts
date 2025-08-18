@@ -1,8 +1,8 @@
 // 节点尺寸配置
 export const NODE_DIMENSIONS = {
   ICON_NODE: {
-    WIDTH: 120,
-    HEIGHT: 120,
+    WIDTH: 110,
+    HEIGHT: 110,
   },
   SINGLE_VALUE_NODE: {
     WIDTH: 120,
@@ -40,7 +40,7 @@ export const COLORS = {
 
   // 边框颜色
   BORDER: {
-    DEFAULT: '#d9d9d9',
+    DEFAULT: '#e0ddddff',
     LIGHT: '#f0f0f0',
     DARK: '#434343',
     PRIMARY: '#1890FF',
@@ -186,11 +186,12 @@ export const FORM_DEFAULTS = {
   },
 
   ICON_NODE: {
-    width: 60,
-    height: 60,
+    width: 90,
+    height: 90,
     backgroundColor: NODE_DEFAULTS.ICON_NODE.backgroundColor,
     borderColor: NODE_DEFAULTS.ICON_NODE.borderColor,
     logoType: 'default' as const,
     logoIcon: 'cc-host',
+    logoUrl: ''
   },
 } as const;

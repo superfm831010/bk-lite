@@ -3,7 +3,7 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
-import ComponentSelector from './components/compSelector';
+import ComponentSelector from './components/viewSelector';
 import ViewConfig from './components/viewConfig';
 import TimeSelector from '@/components/time-selector';
 // @ts-expect-error missing type declarations for react-grid-layout
@@ -100,6 +100,16 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
         }
       };
       loadDashboardData();
+    }, [selectedDashboard?.data_id]);
+
+    // 监听 selectedDashboard 的变化，重置状态
+    useEffect(() => {
+      setAddModalVisible(false);
+      setConfigDrawerVisible(false);
+      setCurrentConfigItem(null);
+      setSaving(false);
+      setGlobalTimeRange(getInitialTimeRange());
+      setRefreshKey(0);
     }, [selectedDashboard?.data_id]);
 
     const openAddModal = () => setAddModalVisible(true);
