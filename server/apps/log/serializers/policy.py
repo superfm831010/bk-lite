@@ -4,7 +4,7 @@ from apps.log.models.policy import Policy, Alert, Event, EventRawData
 
 class PolicySerializer(serializers.ModelSerializer):
     organizations = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = Policy
         fields = '__all__'

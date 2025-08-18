@@ -106,20 +106,24 @@ class PolicyViewSet(viewsets.ModelViewSet):
         request.data['updated_by'] = request.user.username
 
         # 提取organizations数据，不传给serializer
-        organizations = request.data.pop('organizations', [])
+        # 注意：只有当请求中明确包含organizations时才进行更新
+        organizations = None
+        if 'organizations' in request.data:
+            organizations = request.data.pop('organizations', [])
 
         response = super().update(request, *args, **kwargs)
         policy_id = kwargs['pk']
 
-        # 更新组织关联
-        from apps.log.models.policy import PolicyOrganization
-        # 清除旧的组织关联
-        PolicyOrganization.objects.filter(policy_id=policy_id).delete()
-        # 添加新的组织关联
-        PolicyOrganization.objects.bulk_create(
-            [PolicyOrganization(policy_id=policy_id, organization=org_id) for org_id in organizations],
-            ignore_conflicts=True
-        )
+        # 只有当明确传递了organizations参数时才更新组织关联
+        if organizations is not None:
+            from apps.log.models.policy import PolicyOrganization
+            # 清除旧的组织关联
+            PolicyOrganization.objects.filter(policy_id=policy_id).delete()
+            # 添加新的组织关联
+            PolicyOrganization.objects.bulk_create(
+                [PolicyOrganization(policy_id=policy_id, organization=org_id) for org_id in organizations],
+                ignore_conflicts=True
+            )
 
         schedule = request.data.get('schedule')
         if schedule:
@@ -131,12 +135,15 @@ class PolicyViewSet(viewsets.ModelViewSet):
         request.data['updated_by'] = request.user.username
 
         # 提取organizations数据，不传给serializer
-        organizations = request.data.pop('organizations', None)
+        # 注意：只有当请求中明确包含organizations时才进行更新
+        organizations = None
+        if 'organizations' in request.data:
+            organizations = request.data.pop('organizations')
 
         response = super().partial_update(request, *args, **kwargs)
         policy_id = kwargs['pk']
 
-        # 如果提供了organizations，则更新组织关联
+        # 只有当明确传递了organizations参数时才更新组织关联
         if organizations is not None:
             from apps.log.models.policy import PolicyOrganization
             # 清除旧的组织关联
@@ -451,7 +458,7 @@ class AlertViewSet(viewsets.ModelViewSet):
                 'end': interval_end
             })
             current_time += step_delta
-
+            
             # 如果下一个区间的开始时间已经超过最大时间，则停止
             if current_time > max_time:
                 break
