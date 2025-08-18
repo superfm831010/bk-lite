@@ -54,31 +54,31 @@ class StreamViewSet(ModelViewSet):
             "log",
             STREAM_MODULE,
         )
-
+        
         # 应用权限过滤
         base_queryset = permission_filter(
-            Stream,
-            permission,
-            team_key="streamorganization__organization__in",
+            Stream, 
+            permission, 
+            team_key="streamorganization__organization__in", 
             id_key="id__in"
         )
-
+        
         queryset = self.filter_queryset(base_queryset)
         queryset = queryset.filter(streamorganization__organization=request.COOKIES.get("current_team")).distinct("id")
         page = self.paginate_queryset(queryset)
         serializer = self.get_serializer(page, many=True)
         data = serializer.data
-
+        
         # 添加组织信息
         org_map = {}
         asso_objs = StreamOrganization.objects.filter(
             stream_id__in=[item["id"] for item in data]).values_list("stream_id", "organization")
         for stream_id, organization in asso_objs:
             org_map.setdefault(stream_id, []).append(organization)
-
+        
         # 添加权限信息
         stream_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
-
+        
         for item in data:
             item["organizations"] = org_map.get(item["id"], [])
             # 为每个stream添加权限信息
@@ -86,7 +86,7 @@ class StreamViewSet(ModelViewSet):
                 item["permission"] = stream_permission_map[item["id"]]
             else:
                 item["permission"] = DEFAULT_PERMISSION
-
+                
         return self.get_paginated_response(data)
 
     @swagger_auto_schema(
