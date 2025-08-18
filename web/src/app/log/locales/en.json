@@ -202,7 +202,8 @@
       "continuePast": "Stop when encountering lines that don't match the condition, but capture one additional line. For example, when logs end with a backslash \\, it will merge both the line with \\ and the next line. Suitable for cases where you know you need to read one more line after the end marker.",
       "continueThrough": "Continue merging all lines that match the condition until encountering a non-matching line. For example, in Java error stack traces, all lines starting with spaces will be merged into the previous log. Suitable for scenarios with clear 'subordinate line' characteristics.",
       "haltBefore": "Keep merging until encountering a line that matches the condition (but not including that line). For example, stop when seeing a new log timestamp, ensuring the timestamp belongs to the next log. Suitable when new logs have clear starting markers.",
-      "haltWith": "Merge up to and including the first line that matches the condition. For example, when logs end with a semicolon ;, it will include the line with the semicolon to indicate the end. Suitable for cases with clear end markers."
+      "haltWith": "Merge up to and including the first line that matches the condition. For example, when logs end with a semicolon ;, it will include the line with the semicolon to indicate the end. Suitable for cases with clear end markers.",
+      "k8sNote": "K8S only supports active reporting, and is not supported to be accessed here for the time being."
     },
     "event": {
       "executionTime": "Execution Time",
