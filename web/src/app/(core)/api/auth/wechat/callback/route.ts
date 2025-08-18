@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     if (tokenData.errcode) {
       console.error("[WeChat Callback] Token request failed:", tokenData);
-      return NextResponse.redirect(new URL('/auth/signin?error=wechat_token_error', request.url));
+      return NextResponse.redirect(new URL(`${wechatConfig.redirect_uri}/auth/signin?error=wechat_token_error`, request.url));
     }
 
     console.log("[WeChat Callback] Access token received successfully");
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
 
     if (!registerResponse.ok || !registerData.result) {
       console.error("[WeChat Callback] Register API failed:", registerData);
-      return NextResponse.redirect(new URL('/auth/signin?error=wechat_register_failed', request.url));
+      return NextResponse.redirect(new URL(`${wechatConfig.redirect_uri}/auth/signin?error=wechat_register_failed`, request.url));
     }
 
     const userData = registerData.data;
@@ -138,7 +138,8 @@ export async function GET(request: NextRequest) {
 
     // Save auth token to cookie for immediate access
     if (userData.token) {
-      const response = NextResponse.redirect(new URL(`/auth/signin?wechat_success=true`, request.url));
+      console.log("[WeChat Callback] User token received, setting cookies and redirecting", userData);
+      const response = NextResponse.redirect(new URL(`${wechatConfig.redirect_uri}/auth/signin?wechat_success=true`, request.url));
       
       // Set user data in cookie for client-side NextAuth authentication
       response.cookies.set('wechat_user_data', JSON.stringify(userDataForAuth), {
