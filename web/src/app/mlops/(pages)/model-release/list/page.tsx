@@ -39,6 +39,10 @@ const ModelRelease = () => {
         {
           title: t(`datasets.anomaly`),
           key: 'anomaly',
+        },
+        {
+          title: t(`datasets.rasa`),
+          key: 'rasa'
         }
       ]
     }

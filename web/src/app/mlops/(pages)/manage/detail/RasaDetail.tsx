@@ -1,4 +1,4 @@
-import { Button, message, Popconfirm, Tabs } from "antd";
+import { Button, message, Popconfirm, Tabs, Breadcrumb, Input } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import CustomTable from "@/components/custom-table";
 import RasaModal from "./rasaModel";
@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ColumnItem } from "@/types";
 import { ModalRef, TableData } from "@/app/mlops/types";
 import useMlopsManageApi from "@/app/mlops/api/manage";
+const { Search } = Input;
 
 const RasaDetail = () => {
   const { t } = useTranslation();
@@ -20,11 +21,29 @@ const RasaDetail = () => {
     getRasaResponseFileList,
     deleteRasaResponseFile,
     getRasaRuleFileList,
-    deleteRasaRuleFile
+    deleteRasaRuleFile,
+    getRasaStoryFileList,
+    deleteRasaStoryFile,
+    getRasaEntityList,
+    deleteRasaEntityFile
   } = useMlopsManageApi();
   const [selectKey, setSelectKey] = useState<string>('intent');
   const [loading, setLoading] = useState<boolean>(false);
   const [tableData, setTableData] = useState<TableData[]>([]);
+
+  const btnsElements = (record: any) => (<>
+    <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
+    <Popconfirm
+      title={t(`common.delConfirm`)} 
+      description={t(`common.delConfirmCxt`)}
+      okText={t('common.confirm')}
+      cancelText={t('common.cancel')}
+      onConfirm={() => handleDel(record.id)}
+    >
+      <Button type="link" danger>{t(`common.delete`)}</Button>
+    </Popconfirm>
+  </>);
+
   const columnsMap: Record<string, ColumnItem[]> = {
     'intent': [
       {
@@ -41,20 +60,8 @@ const RasaDetail = () => {
         title: t(`common.action`),
         dataIndex: 'action',
         key: 'action',
-        width: 150,
-        render: (_, record) => (
-          <>
-            <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
-            <Popconfirm
-              title={t(`datasets.delIntent`)} okText={t('common.confirm')}
-              cancelText={t('common.cancel')}
-              // okButtonProps={{ loading: confirmLoading }}
-              onConfirm={() => handleDel(record.id)}
-            >
-              <Button type="link" danger>{t(`common.delete`)}</Button>
-            </Popconfirm>
-          </>
-        )
+        width: 180,
+        render: (_, record) => btnsElements(record)
       }
     ],
     'story': [
@@ -65,25 +72,20 @@ const RasaDetail = () => {
       },
       {
         title: t(`datasets.intentNum`),
-        dataIndex: 'intent_number',
-        key: 'intent_number'
+        dataIndex: 'intent_count',
+        key: 'intent_count'
       },
       {
         title: t(`datasets.responseNum`),
-        dataIndex: 'response_number',
-        key: 'response_number'
+        dataIndex: 'response_count',
+        key: 'response_count'
       },
       {
         title: t(`common.action`),
         dataIndex: 'action',
         key: 'action',
-        width: 150,
-        render: () => (
-          <>
-            <Button type="link">{t(`common.edit`)}</Button>
-            <Button type="link" danger>{t(`common.delete`)}</Button>
-          </>
-        )
+        width: 180,
+        render: (_, record) => btnsElements(record)
       }
     ],
     'response': [
@@ -101,20 +103,8 @@ const RasaDetail = () => {
         title: t(`common.action`),
         dataIndex: 'action',
         key: 'action',
-        width: 150,
-        render: (_, record) => (
-          <>
-            <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
-            <Popconfirm
-              title={t(`datasets.delIntent`)} okText={t('common.confirm')}
-              cancelText={t('common.cancel')}
-              // okButtonProps={{ loading: confirmLoading }}
-              onConfirm={() => handleDel(record.id)}
-            >
-              <Button type="link" danger>{t(`common.delete`)}</Button>
-            </Popconfirm>
-          </>
-        )
+        width: 180,
+        render: (_, record) => btnsElements(record)
       }
     ],
     'rule': [
@@ -137,20 +127,34 @@ const RasaDetail = () => {
         title: t(`common.action`),
         dataIndex: 'action',
         key: 'action',
-        width: 120,
+        width: 180,
+        render: (_, record) => btnsElements(record)
+      }
+    ],
+    'entity': [
+      {
+        title: t(`datasets.entityName`),
+        key: 'name',
+        dataIndex: 'name'
+      },
+      {
+        title: t(`common.type`),
+        key: 'entity_type',
+        dataIndex: 'entity_type'
+      },
+      {
+        title: t(`datasets.exampleNum`),
+        key: 'example_count',
+        dataIndex: 'example_count',
         render: (_, record) => (
-          <>
-            <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
-            <Popconfirm
-              title={t(`datasets.delIntent`)} okText={t('common.confirm')}
-              cancelText={t('common.cancel')}
-              // okButtonProps={{ loading: confirmLoading }}
-              onConfirm={() => handleDel(record.id)}
-            >
-              <Button type="link" danger>{t(`common.delete`)}</Button>
-            </Popconfirm>
-          </>
+          <p className="truncate w-full">{record.example_count || '--'}</p>
         )
+      },
+      {
+        title: t(`common.action`),
+        key: 'action',
+        dataIndex: 'action',
+        render: (_ ,record) => btnsElements(record)
       }
     ]
   };
@@ -159,14 +163,16 @@ const RasaDetail = () => {
     'intent': getRasaIntentFileList,
     'response': getRasaResponseFileList,
     'rule': getRasaRuleFileList,
-    'story': () => { }
+    'story': getRasaStoryFileList,
+    'entity': getRasaEntityList
   };
 
   const delFileMap: Record<string, any> = {
     'intent': deleteRasaIntentFile,
     'response': deleteRasaResponseFile,
     'rule': deleteRasaRuleFile,
-    'story': () => { }
+    'story': deleteRasaStoryFile,
+    'entity': deleteRasaEntityFile
   };
 
   const {
@@ -203,6 +209,11 @@ const RasaDetail = () => {
         label: t(`datasets.story`),
         children: renderTable('story'),
       },
+      {
+        key: 'entity',
+        label: t(`datasets.entity`),
+        children: renderTable('entity')
+      }
     ]
   };
 
@@ -213,20 +224,20 @@ const RasaDetail = () => {
   }, [selectKey])
 
   const renderTable = (key: string) => {
-
     return (
       <CustomTable rowKey="id" loading={loading} columns={columnsMap[key]} dataSource={tableData} />
     )
   };
 
-  const getTableData = async () => {
+  const getTableData = async (search: string = '') => {
     setLoading(true);
     try {
-      const data = await getFileMap[selectKey]({ page: 1, page_size: -1 });
+      const data = await getFileMap[selectKey]({ name: search, dataset: folder_id });
       setTableData(data);
     } catch (e) {
       console.log(e);
       message.error(t(`common.fetchFailed`));
+      setTableData([]);
     } finally {
       setLoading(false);
     }
@@ -235,6 +246,10 @@ const RasaDetail = () => {
   const onChange = (key: string) => {
     setSelectKey(key);
   };
+
+  const onSearch = (value: string) => {
+    getTableData(value);
+  }
 
   const handleAdd = () => {
     modalRef.current?.showModal({ type: 'add', title: `add${selectKey}`, form: { dataset: folder_id } })
@@ -259,14 +274,34 @@ const RasaDetail = () => {
   return (
     <>
       <div className="w-full h-full relative">
-        <div className="absolute right-0 top-0 z-10">
+        <div className="absolute right-0 top-8 z-10">
+          <Search
+            className="w-[240px] mr-1.5"
+            placeholder={t('common.search')}
+            enterButton
+            onSearch={onSearch}
+            style={{ fontSize: 15 }}
+          />
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             {t(`common.add`)}
           </Button>
         </div>
+        <div>
+          <Breadcrumb
+            separator=">"
+            items={[
+              {
+                title: <a href="/mlops/manage">{t(`datasets.datasets`)}</a>
+              },
+              {
+                title: t(`datasets.datasetsDetail`)
+              }
+            ]}
+          />
+        </div>
         <Tabs defaultActiveKey="1" items={items()} onChange={onChange} />
       </div>
-      <RasaModal ref={modalRef} selectKey={selectKey} onSuccess={() => getTableData()} />
+      <RasaModal ref={modalRef} selectKey={selectKey} folder_id={folder_id as string} onSuccess={() => getTableData()} />
     </>
   )
 };
