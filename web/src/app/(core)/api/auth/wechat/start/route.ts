@@ -30,8 +30,7 @@ export async function GET(request: NextRequest) {
     const state = encodeURIComponent(JSON.stringify({ callbackUrl }));
     
     // Use current request origin instead of backend configured redirect_uri
-    const currentOrigin = new URL(request.url).origin;
-    const redirectUri = `${currentOrigin}/api/auth/wechat/callback`;
+    const redirectUri = `${wechatConfig.redirect_uri}/api/auth/wechat/callback`;
     
     const wechatAuthUrl = new URL('https://open.weixin.qq.com/connect/qrconnect');
     wechatAuthUrl.searchParams.set('appid', wechatConfig.app_id);
@@ -40,7 +39,6 @@ export async function GET(request: NextRequest) {
     wechatAuthUrl.searchParams.set('scope', 'snsapi_login');
     wechatAuthUrl.searchParams.set('state', state);
     
-    console.log("[WeChat Login] Current origin:", currentOrigin);
     console.log("[WeChat Login] Redirect URI:", redirectUri);
     console.log("[WeChat Login] Redirecting to:", wechatAuthUrl.toString());
     
