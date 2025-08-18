@@ -14,7 +14,8 @@ def monitor_objects():
     """查询监控对象列表"""
     queryset = MonitorObject.objects.all().order_by('id')
     serializer = MonitorObjectSerializer(queryset, many=True)
-    return serializer.data
+    result = {"result": True, "data": serializer.data, "message": ""}
+    return result
 
 
 @nats_client.register
@@ -23,7 +24,7 @@ def monitor_metrics(monitor_obj_id: str):
     try:
         monitor_obj = MonitorObject.objects.get(id=monitor_obj_id)
     except MonitorObject.DoesNotExist:
-        return {"error": "监控对象不存在"}
+        return {"result": False, "data": [], "message": "监控对象不存在"}
 
     # 查询监控对象关联的指标
     metrics = Metric.objects.filter(
@@ -31,7 +32,7 @@ def monitor_metrics(monitor_obj_id: str):
     ).order_by('metric_group__sort_order', 'sort_order')
 
     serializer = MetricSerializer(metrics, many=True)
-    return serializer.data
+    return {"result": True, "data": serializer.data, "message": ""}
 
 
 @nats_client.register
@@ -46,14 +47,14 @@ def monitor_object_instances(monitor_obj_id: str, permission_data: dict):
     try:
         monitor_obj = MonitorObject.objects.get(id=monitor_obj_id)
     except MonitorObject.DoesNotExist:
-        return {"error": "监控对象不存在"}
+        return {"result": False, "data": [], "message": "监控对象不存在"}
 
     # 获取用户在当前组织下的实例权限
     user = permission_data.get('user')
     current_team = permission_data.get('team')
-    
+
     if not user or not current_team:
-        return {"error": "缺少用户或组织信息"}
+        return {"result": False, "data": [], "message": "缺少用户或组织信息"}
 
     permission = get_permission_rules(
         user,
@@ -64,9 +65,9 @@ def monitor_object_instances(monitor_obj_id: str, permission_data: dict):
 
     # 使用权限过滤器获取有权限的实例
     qs = permission_filter(
-        MonitorInstance, 
-        permission, 
-        team_key="monitorinstanceorganization__organization__in", 
+        MonitorInstance,
+        permission,
+        team_key="monitorinstanceorganization__organization__in",
         id_key="id__in"
     )
 
@@ -90,17 +91,19 @@ def monitor_object_instances(monitor_obj_id: str, permission_data: dict):
             'monitor_object_name': instance.monitor_object.name,
             'interval': instance.interval,
             'is_active': instance.is_active,
-            'created_time': instance.created_time.isoformat() if hasattr(instance, 'created_time') and instance.created_time else None,
-            'updated_time': instance.updated_time.isoformat() if hasattr(instance, 'updated_time') and instance.updated_time else None,
+            'created_time': instance.created_time.isoformat() if hasattr(instance,
+                                                                         'created_time') and instance.created_time else None,
+            'updated_time': instance.updated_time.isoformat() if hasattr(instance,
+                                                                         'updated_time') and instance.updated_time else None,
         }
-        
+
         # 添加权限信息
         if instance.id in inst_permission_map:
             instance_data["permission"] = inst_permission_map[instance.id]
-        
+
         filtered_instances.append(instance_data)
 
-    return filtered_instances
+    return {"result": True, "data": filtered_instances, "message": ""}
 
 
 @nats_client.register
@@ -123,7 +126,7 @@ def query_monitor_data_by_metric(query_data: dict, permission_data: dict):
     required_fields = ['monitor_obj_id', 'metric', 'start', 'end']
     for field in required_fields:
         if field not in query_data:
-            return {"error": f"缺少必要参数: {field}"}
+            return {"result": False, "data": [], "message": f"缺少必要参数: {field}"}
 
     monitor_obj_id = query_data['monitor_obj_id']
     metric_name = query_data['metric']
@@ -135,9 +138,9 @@ def query_monitor_data_by_metric(query_data: dict, permission_data: dict):
     # 获取用户权限
     user = permission_data.get('user')
     current_team = permission_data.get('team')
-    
+
     if not user or not current_team:
-        return {"error": "缺少用户或组织信息"}
+        return {"result": False, "data": [], "message": "缺少用户或组织信息"}
 
     try:
         monitor_obj = MonitorObject.objects.get(id=monitor_obj_id)
@@ -146,7 +149,7 @@ def query_monitor_data_by_metric(query_data: dict, permission_data: dict):
             name=metric_name
         )
     except (MonitorObject.DoesNotExist, Metric.DoesNotExist):
-        return {"error": "监控对象或指标不存在"}
+        return {"result": False, "data": [], "message": "监控对象或指标不存在"}
 
     # 获取用户在当前组织下的实例权限
     permission = get_permission_rules(
@@ -159,18 +162,18 @@ def query_monitor_data_by_metric(query_data: dict, permission_data: dict):
     # 构建查询语句
     query = metric.query
     if not query:
-        return {"error": "指标查询语句为空"}
+        return {"result": False, "data": [], "message": "指标查询语句为空"}
 
     # 如果指定了实例ID，需要进行权限验证和过滤
     if instance_ids:
         # 使用权限过滤器验证实例权限
         authorized_qs = permission_filter(
-            MonitorInstance, 
-            permission, 
-            team_key="monitorinstanceorganization__organization__in", 
+            MonitorInstance,
+            permission,
+            team_key="monitorinstanceorganization__organization__in",
             id_key="id__in"
         )
-        
+
         # 获取有权限的实例ID
         authorized_instances = list(
             authorized_qs.filter(
@@ -181,7 +184,7 @@ def query_monitor_data_by_metric(query_data: dict, permission_data: dict):
         )
 
         if not authorized_instances:
-            return {"error": "没有权限访问指定的实例"}
+            return {"result": False, "data": [], "message": "没有权限访问指定的实例"}
 
         # 在查询中添加实例过滤条件
         instance_filter = '|'.join(authorized_instances)
@@ -195,12 +198,12 @@ def query_monitor_data_by_metric(query_data: dict, permission_data: dict):
         if 'data' in result and 'result' in result['data']:
             # 获取所有有权限的实例ID
             authorized_qs = permission_filter(
-                MonitorInstance, 
-                permission, 
-                team_key="monitorinstanceorganization__organization__in", 
+                MonitorInstance,
+                permission,
+                team_key="monitorinstanceorganization__organization__in",
                 id_key="id__in"
             )
-            
+
             authorized_instance_ids = set(
                 authorized_qs.filter(
                     monitor_object=monitor_obj,
@@ -222,19 +225,19 @@ def query_monitor_data_by_metric(query_data: dict, permission_data: dict):
 
             result['data']['result'] = filtered_result
 
-        return result
+        return {"result": True, "data": result, "message": ""}
 
     except Exception as e:
-        return {"error": f"查询指标数据失败: {str(e)}"}
+        return {"result": False, "data": [], "message": f"查询指标数据失败: {str(e)}"}
 
 
 @nats_client.register
 def mm_query_range(query: str, start, end, step="5m"):
     resp = VictoriaMetricsAPI().query_range(query, start, end, step)
-    return resp
+    return {"result": True, "data": resp, "message": ""}
 
 
 @nats_client.register
 def mm_query(query: str, step="5m"):
     resp = VictoriaMetricsAPI().query(query, step)
-    return resp
+    return {"result": True, "data": resp, "message": ""}
