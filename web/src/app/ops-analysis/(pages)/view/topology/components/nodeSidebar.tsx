@@ -1,30 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Icon from '@/components/icon';
-import NodeConfPanel from './nodeConfPanel';
-import { Button, Drawer } from 'antd';
+import ComponentSelector from '../../dashBoard/components/viewSelector';
+import { SidebarProps, NodeType } from '@/app/ops-analysis/types/topology';
+import { Button } from 'antd';
 import {
   RightOutlined,
   LeftOutlined,
   AppstoreOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons';
-import {
-  SidebarProps,
-  NodeType,
-  DropPosition,
-} from '@/app/ops-analysis/types/topology';
 
-const Sidebar: React.FC<SidebarProps> = ({ 
-  collapsed, 
+const Sidebar: React.FC<SidebarProps> = ({
+  collapsed,
   isEditMode = false,
-  setCollapsed, 
-  onAddNode, 
+  setCollapsed,
+  onShowNodeConfig,
+  onAddChartNode,
 }) => {
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(
-    null
-  );
-  const [formInstance, setFormInstance] = useState<any>(null);
-  const [dropPosition, setDropPosition] = useState<DropPosition | null>(null);
+  const [componentSelectorVisible, setComponentSelectorVisible] =
+    useState(false);
+  const [chartDropPosition, setChartDropPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const nodeTypes: NodeType[] = [
     {
@@ -45,15 +43,26 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: <AppstoreOutlined className="text-green-500" />,
       description: '添加图标类型节点',
     },
+    {
+      id: 'chart',
+      name: '图表',
+      icon: <BarChartOutlined className="text-purple-500" />,
+      description: '添加图表类型节点',
+    },
   ];
 
   const handleNodeTypeClick = (nodeType: NodeType) => {
     if (!isEditMode) {
-      return; 
+      return;
     }
-    setDropPosition({ x: 300, y: 200 });
-    setSelectedNodeType(nodeType);
-    setDrawerVisible(true);
+
+    if (nodeType.id === 'chart') {
+      setChartDropPosition({ x: 300, y: 200 });
+      setComponentSelectorVisible(true);
+    } else if (onShowNodeConfig) {
+      const position = { x: 300, y: 200 };
+      onShowNodeConfig(nodeType, position);
+    }
   };
 
   const handleDragStart = (e: React.DragEvent, nodeType: NodeType) => {
@@ -61,17 +70,19 @@ const Sidebar: React.FC<SidebarProps> = ({
       e.preventDefault();
       return;
     }
-    
-    setSelectedNodeType(nodeType);
-    e.dataTransfer.setData('application/json', JSON.stringify({
-      type: 'node',
-      nodeTypeId: nodeType.id,
-      nodeTypeName: nodeType.name,
-      nodeTypeDescription: nodeType.description
-    }));
-    
+
+    e.dataTransfer.setData(
+      'application/json',
+      JSON.stringify({
+        type: 'node',
+        nodeTypeId: nodeType.id,
+        nodeTypeName: nodeType.name,
+        nodeTypeDescription: nodeType.description,
+      })
+    );
+
     e.dataTransfer.effectAllowed = 'copy';
-    
+
     // 改进拖拽时的视觉反馈，避免影响原始元素
     if (e.dataTransfer.setDragImage) {
       const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
@@ -82,10 +93,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       dragImage.style.left = '-1000px';
       dragImage.style.width = '150px';
       dragImage.style.pointerEvents = 'none';
-      
+
       document.body.appendChild(dragImage);
       e.dataTransfer.setDragImage(dragImage, 75, 20);
-      
+
       setTimeout(() => {
         if (document.body.contains(dragImage)) {
           document.body.removeChild(dragImage);
@@ -96,47 +107,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleDragEnd = (e: React.DragEvent) => {
     e.preventDefault();
-  };
-
-  const handleDrawerClose = () => {
-    setDrawerVisible(false);
-    setSelectedNodeType(null);
-    setFormInstance(null);
-    setDropPosition(null);
-  };
-
-  const handleConfirm = async () => {
-    if (!formInstance) {
-      return;
-    }
-    try {
-      const values = await formInstance.validateFields();
-      
-      const nodeConfig = {
-        id: `node_${Date.now()}`,
-        type: selectedNodeType?.id,
-        name: values.name,
-        logo: values.logoType === 'default' ? values.logoIcon : values.logoUrl,
-        logoType: values.logoType,
-        dataSource: values.dataSource,
-        config: values,
-        // 使用拖拽落下的位置，或者默认位置
-        x: dropPosition?.x || Math.random() * 200 + 200,
-        y: dropPosition?.y || Math.random() * 150 + 150,
-      };
-
-      if (onAddNode) {
-        onAddNode(nodeConfig);
-      }
-
-      handleDrawerClose();
-    } catch (error) {
-      console.error('表单验证失败:', error);
-    }
-  };
-
-  const handleCancel = () => {
-    handleDrawerClose();
   };
 
   const handleToggleCollapsed = () => {
@@ -155,36 +125,42 @@ const Sidebar: React.FC<SidebarProps> = ({
   useEffect(() => {
     const handleGlobalDrop = (e: DragEvent) => {
       e.preventDefault();
-      
+
       try {
         const data = e.dataTransfer?.getData('application/json');
         if (data) {
           const dropData = JSON.parse(data);
-          
+
           if (dropData.type === 'node' && dropData.nodeTypeId) {
-            const nodeType = nodeTypes.find(nt => nt.id === dropData.nodeTypeId);
-            
+            const nodeType = nodeTypes.find(
+              (nt) => nt.id === dropData.nodeTypeId
+            );
+
             if (nodeType) {
-              const canvasElement = document.querySelector('.x6-graph-svg') || 
-                                   document.querySelector('.x6-graph') ||
-                                   document.querySelector('.x6-graph-scroller');
-              
+              const canvasElement =
+                document.querySelector('.x6-graph-svg') ||
+                document.querySelector('.x6-graph') ||
+                document.querySelector('.x6-graph-scroller');
+
+              let position = { x: 300, y: 200 };
+
               if (canvasElement) {
                 const rect = canvasElement.getBoundingClientRect();
                 let x = e.clientX - rect.left;
                 let y = e.clientY - rect.top;
-                
+
                 // 节点应该相对于其中心位置放置
                 x = Math.max(0, x - 60);
-                y = Math.max(0, y - 40); 
-                
-                setDropPosition({ x, y });
-                setSelectedNodeType(nodeType);
-                setDrawerVisible(true);
-              } else {
-                setDropPosition({ x: 300, y: 200 });
-                setSelectedNodeType(nodeType);
-                setDrawerVisible(true);
+                y = Math.max(0, y - 40);
+
+                position = { x, y };
+              }
+
+              if (nodeType.id === 'chart') {
+                setChartDropPosition(position);
+                setComponentSelectorVisible(true);
+              } else if (onShowNodeConfig) {
+                onShowNodeConfig(nodeType, position);
               }
             }
           }
@@ -205,7 +181,20 @@ const Sidebar: React.FC<SidebarProps> = ({
       document.removeEventListener('drop', handleGlobalDrop);
       document.removeEventListener('dragover', handleGlobalDragOver);
     };
-  }, [nodeTypes]);
+  }, [nodeTypes, onShowNodeConfig]);
+
+  const handleChartComponentAdd = (widget: string, config?: any) => {
+    if (onAddChartNode && chartDropPosition) {
+      onAddChartNode(widget, config, chartDropPosition);
+    }
+    setComponentSelectorVisible(false);
+    setChartDropPosition(null);
+  };
+
+  const handleChartComponentCancel = () => {
+    setComponentSelectorVisible(false);
+    setChartDropPosition(null);
+  };
 
   return (
     <>
@@ -263,35 +252,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* 节点配置面板 */}
-      <Drawer
-        title={
-          selectedNodeType ? `${selectedNodeType.name}节点` : '节点配置'
-        }
-        placement="right"
-        width={600}
-        open={drawerVisible}
-        onClose={handleDrawerClose}
-        footer={
-          <div className="flex justify-end space-x-2">
-            <Button type="primary" onClick={handleConfirm}>
-              确认
-            </Button>
-            <Button onClick={handleCancel}>
-              取消
-            </Button>
-          </div>
-        }
-      >
-        {selectedNodeType ? (
-          <NodeConfPanel
-            nodeType={selectedNodeType.id as 'single-value' | 'icon'}
-            onFormReady={setFormInstance}
-          />
-        ) : (
-          <div>请选择节点类型</div>
-        )}
-      </Drawer>
+      <ComponentSelector
+        visible={componentSelectorVisible}
+        onAdd={handleChartComponentAdd}
+        onCancel={handleChartComponentCancel}
+      />
     </>
   );
 };

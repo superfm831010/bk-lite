@@ -69,13 +69,15 @@ const TopologyToolbar: React.FC<ToolbarProps> = ({
 
         {isEditMode && (
           <>
-            <Tooltip title={t('topology.addText')}>
-              <Button
-                type="text"
-                icon={<FontSizeOutlined style={{ fontSize: 16 }} />}
-                onClick={onAddText}
-              />
-            </Tooltip>
+            {false && (
+              <Tooltip title={t('topology.addText')}>
+                <Button
+                  type="text"
+                  icon={<FontSizeOutlined style={{ fontSize: 16 }} />}
+                  onClick={onAddText}
+                />
+              </Tooltip>
+            )}
             <Tooltip title={t('topology.selectMode')}>
               <Button
                 type="text"
