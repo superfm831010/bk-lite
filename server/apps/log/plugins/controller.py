@@ -95,7 +95,9 @@ class Controller:
             env_config = {k[4:]: v for k, v in config_info.items() if k.startswith("ENV_")}
             for template in templates:
                 is_child = True if template["config_type"] == "child" else False
-                collector_name = "Vector" if is_child else config_info["collector"]
+                # 采集器名称
+                # collector_name = "Vector" if is_child else config_info["collector"]
+                collector_name = config_info["collector"]
                 config_id = str(uuid.uuid4().hex)
                 # 生成配置
                 stream_rules = self.inst_streams_map.get(config_info["instance_id"])

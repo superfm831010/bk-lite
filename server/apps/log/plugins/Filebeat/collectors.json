@@ -1,0 +1,19 @@
+[
+  {
+    "id": "Filebeat_linux",
+    "name": "Filebeat",
+    "controller_default_run": false,
+    "icon": "",
+    "node_operating_system": "linux",
+    "service_type": "exec",
+    "executable_path": "/opt/fusion-collectors/bin/filebeat",
+    "execute_parameters": "--config %s",
+    "validation_parameters": "",
+    "default_template": "",
+    "introduction": "",
+    "enabled_default_config": true,
+    "default_config": {
+      "nats": "# ================================== Outputs ===================================\noutput.http:\n  # Vector HTTP 接收地址（默认本地）\n  hosts: [\"localhost:8080\"]\n  path: \"/logs\"\n  method: POST\n  timeout: 30s\n\n  # 默认认证（与Vector默认配置匹配）\n  username: \"${node.ip}\"\n  password: \"${node.ip}-${node.cloud_region}\"\n\n  # 性能优化配置\n  worker: 1\n  max_retries: 3\n  batch.events: 50\n  batch.timeout: 1s\n\n# ============================== Filebeat inputs ===============================\nfilebeat.inputs:\n\n"
+    }
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "name": "kubernetes",
+  "collector": "Vector",
+  "icon": "kubernetes",
+  "description": "Collects logs from Kubernetes containers",
+  "default_query": "collect_type: kubernetes | last 1 by (_time) partition by (instance_id)",
+  "attrs": ["container_image", "container_name", "pod_name", "node_name", "pod_namespace", "file", "_msg", "source_type", "stream", "timestamp"]
+}
