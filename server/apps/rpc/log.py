@@ -1,4 +1,4 @@
-from apps.rpc.base import RpcClient
+from apps.rpc.base import RpcClient, BaseOperationAnaRpc
 
 
 class Log(object):
@@ -23,6 +23,9 @@ class Log(object):
         """
         return_data = self.client.run("get_log_module_list", **kwargs)
         return return_data
+
+
+class LogOperationAnaRpc(BaseOperationAnaRpc):
 
     def search(self, query, start_time, end_time, limit=10):
         """

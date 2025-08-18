@@ -1,4 +1,4 @@
-from apps.rpc.base import RpcClient
+from apps.rpc.base import RpcClient, BaseOperationAnaRpc
 
 
 class Monitor(object):
@@ -24,6 +24,9 @@ class Monitor(object):
         return_data = self.client.run("get_monitor_module_list", **kwargs)
         return return_data
 
+
+class MonitorOperationAnaRpc(BaseOperationAnaRpc):
+
     def monitor_objects(self):
         """查询监控对象列表"""
         return self.client.run("monitor_objects")
@@ -33,7 +36,6 @@ class Monitor(object):
         return self.client.run("monitor_metrics", monitor_obj_id=monitor_obj_id)
 
     def monitor_object_instances(self, monitor_obj_id: str, permission_data: dict):
-
         """查询监控对象实例列表
             monitor_obj_id: 监控对象ID
             permission_data: {
