@@ -25,6 +25,7 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
     const [visible, setVisible] = useState<boolean>(false);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
+    const [llmModelsLoading, setLlmModelsLoading] = useState<boolean>(false);
     const [llmModels, setLlmModels] = useState<any[]>([]);
     const [documentId, setDocumentId] = useState<string>('');
     const [selectedChunkIds, setSelectedChunkIds] = useState<string[]>([]);
@@ -73,7 +74,7 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
 
     // 获取LLM模型列表
     const fetchLlmModels = async () => {
-      setLoading(true);
+      setLlmModelsLoading(true);
       try {
         const models = await fetchLlmModelsApi();
         setLlmModels(models);
@@ -90,7 +91,7 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
       } catch {
         message.error(t('common.fetchFailed'));
       } finally {
-        setLoading(false);
+        setLlmModelsLoading(false);
       }
     };
 
@@ -225,7 +226,7 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
               >
                 <Select
                   placeholder={t('knowledge.qaPairs.selectLlmModel')}
-                  loading={loading}
+                  loading={llmModelsLoading}
                   size="large"
                   showSearch
                   optionFilterProp="label"

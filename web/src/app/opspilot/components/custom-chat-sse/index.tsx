@@ -144,10 +144,67 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
     if (target.classList.contains('guide-clickable-item')) {
       const content = target.getAttribute('data-content');
       if (content && !loading && token) {
-        handleSend(content);
+        console.log('Clicking guide item with content:', content);
+        
+        setLoading(true);
+        
+        // Create user message
+        const newUserMessage: CustomChatMessage = {
+          id: uuidv4(),
+          content, // Ensure using the clicked content
+          role: 'user',
+          createAt: new Date().toISOString(),
+          updateAt: new Date().toISOString(),
+        };
+
+        console.log('Created user message:', newUserMessage);
+
+        // Create bot loading message
+        const botLoadingMessage: CustomChatMessage = {
+          id: uuidv4(),
+          content: '',
+          role: 'bot',
+          createAt: new Date().toISOString(),
+          updateAt: new Date().toISOString(),
+        };
+
+        // Get current message state first, then immediately update UI
+        const currentMessages = messages;
+        const updatedMessages = [...currentMessages, newUserMessage, botLoadingMessage];
+        updateMessages(updatedMessages);
+        currentBotMessageRef.current = botLoadingMessage;
+
+        // Execute sending logic asynchronously
+        (async () => {
+          try {
+            if (handleSendMessage) {
+              const result = await handleSendMessage(content, currentMessages);
+              
+              if (result === null) {
+                updateMessages(currentMessages);
+                setLoading(false);
+                return;
+              }
+              
+              const { url, payload } = result;
+              await handleSSEStream(url, payload, botLoadingMessage);
+            }
+          } catch (error: any) {
+            console.error(`${t('chat.sendFailed')}:`, error);
+            
+            updateMessages(prevMessages => 
+              prevMessages.map(msgItem => 
+                msgItem.id === botLoadingMessage.id 
+                  ? { ...msgItem, content: t('chat.connectionError') }
+                  : msgItem
+              )
+            );
+            setLoading(false);
+          }
+        })();
       }
     }
-  }, [loading, token]);
+  }, [loading, token, messages]);
 
   // Handle reference link click
   const handleReferenceClick = useCallback(async (event: React.MouseEvent<HTMLDivElement>) => {
@@ -196,7 +253,12 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
   };
 
   const handleClearMessages = () => {
+    // Stop any ongoing SSE connections
+    stopSSEConnection();
+    // Clear message array
     updateMessages([]);
+    // Reset current bot message reference
+    currentBotMessageRef.current = null;
   };
 
   const stopSSEConnection = useCallback(() => {
@@ -368,18 +430,21 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
         updateAt: new Date().toISOString(),
       };
 
-      const updatedMessages = [...messages, newUserMessage, botLoadingMessage];
+      // Get messages currently displayed in the dialog as history
+      const currentDisplayedMessages = messages;
+      const updatedMessages = [...currentDisplayedMessages, newUserMessage, botLoadingMessage];
       updateMessages(updatedMessages);
       currentBotMessageRef.current = botLoadingMessage;
 
       try {
         if (handleSendMessage) {
-          const result = await handleSendMessage(msg, messages); // 传递当前消息数组
+          // Pass messages currently displayed in the dialog as history
+          const result = await handleSendMessage(msg, currentDisplayedMessages);
           
           // If handleSendMessage returns null, form validation failed, prevent sending
           if (result === null) {
             // Remove added messages
-            updateMessages(messages);
+            updateMessages(currentDisplayedMessages);
             setLoading(false);
             return;
           }
@@ -468,7 +533,8 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
   const renderContent = (msg: CustomChatMessage) => {
     const { content, knowledgeBase } = msg;
     // Parse reference links and make them clickable
-    const parsedContent = parseReferenceLinks(content || '...');
+    // If content is empty or just a default placeholder, show loading state
+    const parsedContent = parseReferenceLinks(content || '');
     
     return (
       <>
@@ -609,10 +675,10 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
                 key={msg.id}
                 className={styles.bubbleWrapper}
                 placement={msg.role === 'user' ? 'end' : 'start'}
-                loading={msg.content === '' && loading}
+                loading={msg.content === '' && loading && currentBotMessageRef.current?.id === msg.id}
                 content={renderContent(msg)}
                 avatar={{ icon: <Icon type={msg.role === 'user' ? 'yonghu' : 'jiqiren3'} className={styles.avatar} /> }}
-                footer={msg.content === '' ? null : (
+                footer={msg.content === '' && loading && currentBotMessageRef.current?.id === msg.id ? null : (
                   <MessageActions
                     message={msg}
                     onCopy={handleCopyMessage}

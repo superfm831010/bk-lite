@@ -56,6 +56,12 @@ const DocsResultPage: React.FC = () => {
   const knowledgeBaseId = searchParams ? searchParams.get('id') : null;
   const { fetchDocumentDetails, deleteChunks } = useKnowledgeApi();
 
+  const tagColors = ['lime', 'green', 'blue', 'geekblue', 'purple'];
+  
+  const getRandomColor = () => {
+    return tagColors[Math.floor(Math.random() * tagColors.length)];
+  };
+
   const fetchData = async (page: number, pageSize: number, searchValue?: string) => {
     if (id) {
       setLoading(true);
@@ -141,14 +147,12 @@ const DocsResultPage: React.FC = () => {
     }
   };
 
-  // 批量生成问答对
   const handleBatchGenerateQA = () => {
     if (!id || selectedItems.length === 0) {
       message.warning('请先选择要生成问答对的分块');
       return;
     }
 
-    // 获取选中的分块数据
     const selectedChunks = paragraphsState
       .filter(paragraph => selectedItems.includes(paragraph.id))
       .map(paragraph => ({
@@ -163,7 +167,6 @@ const DocsResultPage: React.FC = () => {
     });
   };
 
-  // 单个生成问答对
   const handleGenerateQA = (paragraph: Paragraph, event: React.MouseEvent) => {
     event.stopPropagation();
     
@@ -302,10 +305,10 @@ const DocsResultPage: React.FC = () => {
                         {paragraph.content || '--'}
                       </p>
                       <div className="absolute bottom-0 right-0 flex gap-1">
-                        <Tag color="volcano" className="font-mini">
+                        <Tag color={getRandomColor()} className="font-mini">
                           {paragraph.content ? `${paragraph.content.length} chars` : '0 chars'}
                         </Tag>
-                        <Tag color="purple" className="font-mini">
+                        <Tag color={getRandomColor()} className="font-mini">
                           {paragraph.qa_count || 0} Q&A
                         </Tag>
                       </div>

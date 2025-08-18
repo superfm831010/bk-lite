@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Any, Dict, Optional
 
 import requests
@@ -9,6 +10,59 @@ from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 
 class ChunkHelper(ChatServerHelper):
+    list_url = f"{settings.METIS_SERVER_URL}/api/rag/list_rag_document"
+    generate_url = f"{settings.METIS_SERVER_URL}/api/rag/qa_pair_generate"
+    del_url = f"{settings.METIS_SERVER_URL}/api/rag/delete_doc"
+    create_url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
+    update_url = f"{settings.METIS_SERVER_URL}/api/rag/update_rag_document_metadata"
+
+    @classmethod
+    def create_qa_pairs_by_content(
+        cls,
+        content_list,
+        embed_config,
+        embed_model_name,
+        es_index,
+        model,
+        openai_api_base,
+        openai_api_key,
+        qa_count,
+        qa_pairs_obj,
+        is_delete=True,
+        task_obj=None,
+    ):
+        success_count = 0
+        for i in content_list:
+            params = {
+                "size": qa_count,
+                "content": i["content"],
+                "openai_api_base": openai_api_base,
+                "openai_api_key": openai_api_key,
+                "model": model,
+                "extra_prompt": "do occaecat",
+            }
+            res = ChatServerHelper.post_chat_server(params, cls.generate_url)
+            if res.get("status", "fail") != "success":
+                logger.error(f"Failed to create QA pairs for Chunk ID {i['chunk_id']}.")
+                if task_obj:
+                    task_obj.completed_count += 1
+                    task_obj.save()
+                continue
+            try:
+                chunk_success_count = cls.create_qa_pairs(
+                    res["message"], i, es_index, embed_config, embed_model_name, qa_pairs_obj.id, is_delete
+                )
+                success_count += chunk_success_count
+                res = cls.update_document_qa_pairs_count(es_index, chunk_success_count, i["chunk_id"])
+                if not res:
+                    logger.error(f"Failed to update document QA pairs count for chunk_id ID: {i['chunk_id']}")
+            except Exception as e:
+                logger.exception(e)
+            if task_obj:
+                task_obj.completed_count += 1
+                task_obj.save()
+        return success_count
+
     @classmethod
     def get_document_es_chunk(
         cls,
@@ -21,15 +75,16 @@ class ChunkHelper(ChatServerHelper):
     ) -> Dict[str, Any]:
         if not metadata_filter:
             metadata_filter = {}
-        url = f"{settings.METIS_SERVER_URL}/api/rag/list_rag_document"
         query = {
             "index_name": index_name,
             "page": page,
             "metadata_filter": metadata_filter,
             "size": page_size,
             "query": search_text,
+            "sort_field": "created_time",
+            "sort_order": "asc",
         }
-        res = cls.post_chat_server(query, url)
+        res = cls.post_chat_server(query, cls.list_url)
         if not res:
             return {"count": 0, "documents": []}
         count_res = {"count": 0}
@@ -39,43 +94,71 @@ class ChunkHelper(ChatServerHelper):
         res["count"] = count_res.get("count", 0)
         return res
 
-    @staticmethod
-    def delete_es_content(index_name, qa_pairs_id):
-        url = f"{settings.METIS_SERVER_URL}/api/rag/delete_doc"
+    @classmethod
+    def delete_es_content(cls, index_name, qa_pairs_id):
         kwargs = {"index_name": index_name, "metadata_filter": {"qa_pairs_id": str(qa_pairs_id)}}
         try:
-            ChatServerHelper.post_chat_server(kwargs, url)
+            ChatServerHelper.post_chat_server(kwargs, cls.del_url)
         except Exception as e:
             logger.exception(e)
 
-    @staticmethod
-    def delete_one_qa_pairs(index_name, chunk_id):
-        url = f"{settings.METIS_SERVER_URL}/api/rag/delete_doc"
-        kwargs = {"index_name": index_name, "metadata_filter": {"chunk_id": str(chunk_id)}}
+    @classmethod
+    def delete_chunk(cls, index_name, chunk_id, is_base=False):
+        if is_base:
+            kwargs = {"index_name": index_name, "metadata_filter": {"base_chunk_id": str(chunk_id)}}
+        else:
+            kwargs = {"index_name": index_name, "metadata_filter": {"chunk_id": str(chunk_id)}}
         try:
-            ChatServerHelper.post_chat_server(kwargs, url)
+            ChatServerHelper.post_chat_server(kwargs, cls.del_url)
         except Exception as e:
             logger.exception(e)
             return {"result": False}
         return {"result": True}
 
     @classmethod
-    def create_qa_pairs(cls, qa_paris, chunk_obj, index_name, embed_config, embed_model_name, qa_pairs_id):
+    def create_qa_pairs(
+        cls, qa_paris, chunk_obj, index_name, embed_config, embed_model_name, qa_pairs_id, is_delete=True
+    ):
         success_count = 0
-        cls.delete_es_content(index_name, qa_pairs_id)
-        url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
+        if is_delete:
+            cls.delete_es_content(index_name, qa_pairs_id)
         kwargs, metadata = cls.set_qa_pairs_params(embed_config, embed_model_name, index_name, qa_pairs_id, chunk_obj)
         headers = cls.get_chat_server_header()
+        # SSL验证配置 - 从环境变量读取
+        ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
         for i in qa_paris:
             params = dict(kwargs, **{"content": i["question"]})
             params["metadata"] = json.dumps(dict(metadata, **{"qa_question": i["question"], "qa_answer": i["answer"]}))
-            response = requests.post(url, headers=headers, data=params, verify=False)
+            response = requests.post(cls.create_url, headers=headers, data=params, verify=ssl_verify)
             res = response.json()
             if res.get("status", "fail") != "success":
                 logger.exception(f"创建问答对失败: {res.get('message', '')}")
                 continue
             success_count += 1
         return success_count
+
+    @classmethod
+    def update_document_qa_pairs_count(cls, es_index, qa_count, chunk_id):
+        if not qa_count:
+            return {}
+        current_count = cls.get_chunk_qa_count(es_index, chunk_id)
+        qa_count += current_count
+        kwargs = {
+            "index_name": es_index,
+            "metadata_filter": {"chunk_id": str(chunk_id), "is_doc": "1"},
+            "metadata": {"qa_count": qa_count},
+        }
+        res = ChatServerHelper.post_chat_server(kwargs, cls.update_url)
+        return res
+
+    @classmethod
+    def get_chunk_qa_count(cls, es_index, chunk_id):
+        obj = cls.get_document_es_chunk(
+            es_index, metadata_filter={"chunk_id": str(chunk_id), "is_doc": "1"}, get_count=False
+        )
+        if obj.get("document", []):
+            return obj["document"][0].get("metadata", {}).get("qa_count", 0)
+        return 0
 
     @classmethod
     def set_qa_pairs_params(cls, embed_config, embed_model_name, index_name, qa_pairs_id, chunk_obj=None):
@@ -108,24 +191,24 @@ class ChunkHelper(ChatServerHelper):
     def create_one_qa_pairs(
         cls, embed_config, embed_model_name, index_name, qa_pairs_id, knowledge_id, question, answer
     ):
-        url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
         chunk_obj = {"knowledge_id": knowledge_id}
         kwargs, metadata = cls.set_qa_pairs_params(embed_config, embed_model_name, index_name, qa_pairs_id, chunk_obj)
         metadata.update({"qa_question": question, "qa_answer": answer})
         params = dict(kwargs, **{"content": question, "metadata": json.dumps(metadata)})
-        res = requests.post(url, headers=cls.get_chat_server_header(), data=params, verify=False).json()
+        # SSL验证配置 - 从环境变量读取
+        ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
+        res = requests.post(cls.create_url, headers=cls.get_chat_server_header(), data=params, verify=ssl_verify).json()
         if res.get("status", "fail") != "success":
             logger.exception(f"创建问答对失败: {res.get('message', '')}")
             return {"result": False}
         return {"result": True}
 
-    @staticmethod
-    def update_qa_pairs(index_name, chunk_id, question, answer):
-        url = f"{settings.METIS_SERVER_URL}/api/rag/update_rag_document_metadata"
+    @classmethod
+    def update_qa_pairs(cls, index_name, chunk_id, question, answer):
         kwargs = {
             "index_name": index_name,
             "metadata_filter": {"chunk_id": str(chunk_id)},
             "metadata": {"qa_question": question, "qa_answer": answer},
         }
-        res = ChatServerHelper.post_chat_server(kwargs, url)
+        res = ChatServerHelper.post_chat_server(kwargs, cls.update_url)
         return res

@@ -3,10 +3,16 @@ from apps.log.models.policy import Policy, Alert, Event, EventRawData
 
 
 class PolicySerializer(serializers.ModelSerializer):
+    organizations = serializers.SerializerMethodField()
+    
     class Meta:
         model = Policy
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at', 'last_run_time')
+
+    def get_organizations(self, obj):
+        """通过外键关系获取组织列表"""
+        return list(obj.policyorganization_set.values_list('organization', flat=True))
 
     def validate_name(self, value):
         """验证策略名称唯一性"""
@@ -32,10 +38,14 @@ class AlertSerializer(serializers.ModelSerializer):
     alert_type = serializers.CharField(source='policy.alert_type', read_only=True)
     alert_name = serializers.CharField(source='policy.alert_name', read_only=True)
 
-    # 新增字段
-    organizations = serializers.ListField(source='policy.organizations', read_only=True)
+    # 新增字段 - 改为使用SerializerMethodField
+    organizations = serializers.SerializerMethodField()
     notice_users = serializers.ListField(source='policy.notice_users', read_only=True)
     alert_condition = serializers.DictField(source='policy.alert_condition', read_only=True)
+
+    def get_organizations(self, obj):
+        """通过外键关系获取策略的组织列表"""
+        return list(obj.policy.policyorganization_set.values_list('organization', flat=True))
 
     class Meta:
         model = Alert

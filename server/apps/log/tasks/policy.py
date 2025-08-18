@@ -90,10 +90,6 @@ class LogPolicyScan:
         """获取策略的活动告警"""
         try:
             qs = Alert.objects.filter(policy_id=self.policy.id, status=ALERT_STATUS_NEW)
-            # 如果设置了组织范围，只查询组织范围内的告警
-            if self.policy.organizations:
-                # 这里假设source_id包含组织信息，实际可能需要根据具体业务逻辑调整
-                pass
             return qs
         except Exception as e:
             logger.error(f"get active alerts failed: {e}")
@@ -296,11 +292,31 @@ class LogPolicyScan:
             # 根据别名格式提取数据
             if func == "count":
                 alias = f"count_{field.replace('.', '_')}"
-                aggregate_data[f"{func}_{field}"] = result.get(alias, result.get("total_count", 0))
+                raw_value = result.get(alias, result.get("total_count", 0))
+                # count函数结果转换为整数
+                try:
+                    numeric_value = int(float(str(raw_value))) if raw_value not in [None, ""] else 0
+                except (ValueError, TypeError):
+                    logger.warning(f"Failed to convert count value '{raw_value}' to integer, using 0")
+                    numeric_value = 0
+
+                aggregate_data[f"{func}_{field}"] = numeric_value
                 # 兼容原有逻辑，设置通用的count值
                 if "count" not in aggregate_data:
-                    aggregate_data["count"] = aggregate_data[f"{func}_{field}"]
+                    aggregate_data["count"] = numeric_value
+            elif func in ["sum", "avg", "max", "min"]:
+                alias = f"{func}_{field.replace('.', '_')}"
+                raw_value = result.get(alias, 0)
+                # 数值聚合函数结果转换为浮点数
+                try:
+                    numeric_value = float(str(raw_value)) if raw_value not in [None, ""] else 0.0
+                except (ValueError, TypeError):
+                    logger.warning(f"Failed to convert {func} value '{raw_value}' to float, using 0.0")
+                    numeric_value = 0.0
+
+                aggregate_data[f"{func}_{field}"] = numeric_value
             else:
+                # 其他函数保持原值
                 alias = f"{func}_{field.replace('.', '_')}"
                 aggregate_data[f"{func}_{field}"] = result.get(alias, 0)
 
@@ -361,7 +377,21 @@ class LogPolicyScan:
         group_values = []
         for field in group_by:
             field_value = result.get(field, "unknown")
-            group_values.append(f"{field}={field_value}")
+
+            # 处理各种数据类型，确保转换为字符串
+            if isinstance(field_value, list):
+                # 如果是列表，转换为逗号分隔的字符串
+                formatted_value = ",".join(str(item) for item in field_value)
+            elif isinstance(field_value, dict):
+                # 如果是字典，转换为键值对字符串
+                formatted_value = str(field_value)
+            elif field_value is None:
+                formatted_value = "null"
+            else:
+                # 其他类型直接转换为字符串
+                formatted_value = str(field_value)
+
+            group_values.append(f"{field}={formatted_value}")
 
         return ", ".join(group_values)
 
@@ -412,7 +442,45 @@ class LogPolicyScan:
     def _compare_values(self, actual_value, op, expected_value):
         """比较值"""
         try:
-            # 确保数值类型匹配
+            # 数值比较优化：尝试转换为数值类型进行比较
+            if op in [">", "<", "=", "!=", ">=", "<="]:
+                try:
+                    # 尝试将两个值都转换为数值类型
+                    if isinstance(actual_value, str) and actual_value.replace('.', '').replace('-', '').isdigit():
+                        actual_numeric = float(actual_value)
+                    elif isinstance(actual_value, (int, float)):
+                        actual_numeric = float(actual_value)
+                    else:
+                        actual_numeric = None
+
+                    if isinstance(expected_value, str) and expected_value.replace('.', '').replace('-', '').isdigit():
+                        expected_numeric = float(expected_value)
+                    elif isinstance(expected_value, (int, float)):
+                        expected_numeric = float(expected_value)
+                    else:
+                        expected_numeric = None
+
+                    # 如果两个值都能转换为数值，则进行数值比较
+                    if actual_numeric is not None and expected_numeric is not None:
+                        if op == ">":
+                            return actual_numeric > expected_numeric
+                        elif op == "<":
+                            return actual_numeric < expected_numeric
+                        elif op == "=":
+                            return abs(actual_numeric - expected_numeric) < 1e-10  # 浮点数相等比较
+                        elif op == "!=":
+                            return abs(actual_numeric - expected_numeric) >= 1e-10
+                        elif op == ">=":
+                            return actual_numeric >= expected_numeric
+                        elif op == "<=":
+                            return actual_numeric <= expected_numeric
+
+                except (ValueError, TypeError) as e:
+                    logger.debug(f"Failed to convert values to numeric for comparison: {actual_value} {op} {expected_value}, error: {e}")
+                    # 如果数值转换失败，继续使用原始值比较
+                    pass
+
+            # 原有逻辑：直接比较（用于字符串和其他类型）
             if isinstance(expected_value, (int, float)) and isinstance(actual_value, (int, float)):
                 if op == ">":
                     return actual_value > expected_value
@@ -422,6 +490,10 @@ class LogPolicyScan:
                     return actual_value == expected_value
                 elif op == "!=":
                     return actual_value != expected_value
+                elif op == ">=":
+                    return actual_value >= expected_value
+                elif op == "<=":
+                    return actual_value <= expected_value
 
             # 字符串和列表操作
             if op == "in":

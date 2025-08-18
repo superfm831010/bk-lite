@@ -114,7 +114,8 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         except Exception as e:
             step_result = f"执行步骤时发生异常: {e}"
             self.log(config, f"{step_result}, 触发replan")
-            ai_response = None
+            # 创建错误消息而不是设置为None
+            ai_response = AIMessage(content=f"执行步骤时发生异常: {str(e)}")
 
         is_last_step = len(plan) == 1
         response = None
@@ -131,10 +132,13 @@ class PlanAndExecuteAgentNode(ToolsNodes):
         replan_needed = False
         if is_last_step and not response:
             replan_needed = True
-        if ai_response is None:
+        if "执行步骤时发生异常" in step_result:
             replan_needed = True
 
-        messages.append(ai_response)
+        # 只有当ai_response不为None时才添加到消息中
+        if ai_response is not None:
+            messages.append(ai_response)
+
         result = {
             "messages": messages,
             "past_steps": new_past_steps,
@@ -166,17 +170,17 @@ class PlanAndExecuteAgentNode(ToolsNodes):
             # 检查最后一个执行结果是否包含可能的最终答案
             last_step_result = state["past_steps"][-1][1]
 
-            # 如果最后一步的结果看起来像是最终答案，就直接使用它作为响应
+            # 如果最后一步的结果看起来像是最终答案，就进行重新规划来整理最终答案
             if "最终结果" in last_step_result or "最终答案" in last_step_result or "任务完成" in last_step_result:
-                self.log(config, f"检测到最后一步似乎已完成任务，提取结果作为最终响应")
-                return {
-                    "response": last_step_result,
-                    "messages": [
-                        AIMessage(content=f"任务已完成，最终结果：{last_step_result}")
-                    ]
-                }
+                self.log(config, f"检测到最后一步似乎已完成任务，需要整理最终结果")
+                return "replan"
 
             self.log(config, f"计划执行完毕，进行最终结果整理")
+            return "replan"
+
+        # 如果需要重新规划
+        if state.get("replan_needed"):
+            self.log(config, f"检测到需要重新规划标志")
             return "replan"
 
         # 否则继续执行下一步
@@ -204,7 +208,7 @@ class PlanAndExecuteAgentNode(ToolsNodes):
                 "prompts/plan_and_execute_agent/replanning_instruction",
                 {"base_instructions": base_instructions}
             )
-            
+
             template = [
                 SystemMessage(content=replanning_content),
                 MessagesPlaceholder(variable_name="messages"),

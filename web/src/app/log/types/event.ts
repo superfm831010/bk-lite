@@ -89,6 +89,7 @@ export interface LogAlertParams {
   level?: string;
   collect_type?: string;
   policy_name?: string;
+  step?: string;
   page?: number;
   page_size?: number;
   start_event_time?: string;

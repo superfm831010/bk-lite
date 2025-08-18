@@ -20,7 +20,7 @@ plan_and_execute_agent_router = Blueprint(
 async def invoke_plan_and_execute_agent(request, body: PlanAndExecuteAgentRequest):
     """
     Plan and Execute Agent 同步执行接口
-    
+
     返回格式化后的执行结果，包含执行摘要和清晰的最终答案
     """
     graph = PlanAndExecuteAgentGraph()
@@ -31,7 +31,7 @@ async def invoke_plan_and_execute_agent(request, body: PlanAndExecuteAgentReques
 
     # 使用格式化器美化响应
     formatted_response = PlanExecuteResponseFormatter.format_response(result)
-    
+
     logger.info(
         f"执行PlanAndExecuteAgentGraph成功，用户的问题：[{body.user_message}]，"
         f"执行步骤：{formatted_response.get('execution_summary', {}).get('completed_steps', 0)}步"
@@ -45,7 +45,7 @@ async def invoke_plan_and_execute_agent(request, body: PlanAndExecuteAgentReques
 async def invoke_plan_and_execute_agent_sse(request, body: PlanAndExecuteAgentRequest):
     """
     优雅的 Plan and Execute Agent SSE 接口
-    
+
     提供类似 Claude 的执行体验，包括：
     - 清晰的阶段划分（规划、执行、完成）
     - 优雅的进度显示
@@ -62,13 +62,13 @@ async def invoke_plan_and_execute_agent_sse(request, body: PlanAndExecuteAgentRe
 
     async def sse_stream(response):
         async for data in stream_plan_execute_response(workflow, body, chat_id):
-            await response.write(data)
+            await response.write(data.encode('utf-8'))
 
     return ResponseStream(
         sse_stream,
         content_type="text/event-stream; charset=utf-8",
         headers={
-            "Cache-Control": "no-cache", 
+            "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",  # 禁用 Nginx 缓冲，确保实时流式传输
             "Content-Encoding": "identity"  # 确保不压缩内容
