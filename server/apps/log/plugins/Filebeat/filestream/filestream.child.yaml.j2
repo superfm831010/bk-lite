@@ -1,0 +1,73 @@
+{% for input in inputs %}
+- type: filestream
+  id: {{ input.id | default(instance_id + '_' + input.name) }}
+  enabled: {{ input.enabled | default(true) | lower }}
+
+  # 文件路径配置（filestream必需）
+  paths:
+    {% for path in input.paths %}
+    - {{ path }}
+    {% endfor %}
+
+  {% if input.multiline_pattern %}
+  # 多行日志处理
+  parsers:
+    - multiline:
+        type: pattern
+        pattern: '{{ input.multiline_pattern }}'
+        negate: {{ input.multiline_negate | default(true) | lower }}
+        match: after
+        timeout: {{ input.multiline_timeout | default('5s') }}
+        max_lines: {{ input.multiline_max_lines | default(500) }}
+  {% endif %}
+
+  {% if input.fields %}
+  # 自定义字段标识
+  fields:
+    {% for key, value in input.fields.items() %}
+    {{ key }}: {{ value }}
+    {% endfor %}
+  fields_under_root: {{ input.fields_under_root | default(false) | lower }}
+  {% endif %}
+
+  {% if input.exclude_lines %}
+  # 排除匹配的日志行
+  exclude_lines: {{ input.exclude_lines | to_json }}
+  {% endif %}
+
+  {% if input.include_lines %}
+  # 仅包含匹配的日志行
+  include_lines: {{ input.include_lines | to_json }}
+  {% endif %}
+
+  {% if input.exclude_files %}
+  # 排除文件模式
+  prospector.scanner.exclude_files: {{ input.exclude_files | to_json }}
+  {% endif %}
+
+  {% if input.ignore_older %}
+  # 忽略过旧文件
+  ignore_older: {{ input.ignore_older }}
+  {% endif %}
+
+  {% if input.scan_frequency %}
+  # 文件扫描频率
+  prospector.scanner.check_interval: {{ input.scan_frequency }}
+  {% endif %}
+
+  {% if input.harvester_buffer_size %}
+  # 采集器缓冲区大小
+  harvester_buffer_size: {{ input.harvester_buffer_size }}
+  {% endif %}
+
+  {% if input.max_bytes %}
+  # 单行最大字节数
+  max_bytes: {{ input.max_bytes }}
+  {% endif %}
+
+  {% if input.encoding %}
+  # 文件编码
+  encoding: {{ input.encoding }}
+  {% endif %}
+
+{% endfor %}
