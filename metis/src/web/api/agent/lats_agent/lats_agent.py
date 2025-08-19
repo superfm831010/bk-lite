@@ -17,7 +17,7 @@ from src.web.entity.agent.lats_agent.lats_agent_request import LatsAgentRequest
 from src.web.services.agent_service import AgentService
 
 
-lats_agent_router = Blueprint("lats_agent_router", url_prefix="/llm")
+lats_agent_router = Blueprint("lats_agent_router", url_prefix="/agent")
 
 
 @lats_agent_router.post("/invoke_lats_agent")
