@@ -3,9 +3,9 @@ from typing import List
 
 import pytest
 
-from src.agent.lats_agent.lats_agent_graph import LatsAgentGraph
-from src.core.entity.tools_server import ToolsServer
-from src.entity.agent.lats_agent.lats_agent_request import LatsAgentRequest
+from src.core.agent.lats_agent.lats_agent_graph import LatsAgentGraph
+from src.core.llm.entity import ToolsServer
+from src.web.entity.agent.lats_agent.lats_agent_request import LatsAgentRequest
 
 
 @pytest.mark.asyncio

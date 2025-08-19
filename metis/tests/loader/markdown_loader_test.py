@@ -2,7 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.loader.markdown_loader import MarkdownLoader
+from src.core.loader import MarkdownLoader
 
 
 def test_markdown_loader():

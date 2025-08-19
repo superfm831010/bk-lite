@@ -2,8 +2,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.loader.image_loader import ImageLoader
-from src.ocr.pp_ocr import PPOcr
+from src.core.loader.image_loader import ImageLoader
+from src.core.ocr.pp_ocr import PPOcr
 
 
 def test_image_loader():

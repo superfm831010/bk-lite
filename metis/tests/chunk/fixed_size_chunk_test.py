@@ -1,10 +1,9 @@
-from dotenv import load_dotenv
 import logging
 
 logger = logging.getLogger(__name__)
 
-from src.chunk.fixed_size_chunk import FixedSizeChunk
-from src.loader.text_loader import TextLoader
+from src.core.chunk.fixed_size_chunk import FixedSizeChunk
+from src.core.loader import TextLoader
 
 
 def test_fixed_size_chunk():

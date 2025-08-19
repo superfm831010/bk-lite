@@ -1,0 +1,29 @@
+from langgraph.constants import END
+from langgraph.graph import StateGraph
+
+from src.core.llm.graph.tools_graph import ToolsGraph
+from src.web.entity.agent.react_agent.react_agent_request import ReActAgentRequest
+from src.core.agent.react_agent.react_agent_node import ReActAgentNode
+from src.core.agent.react_agent.react_agent_state import ReActAgentState
+from langgraph.types import RetryPolicy
+
+
+class ReActAgentGraph(ToolsGraph):
+
+    async def compile_graph(self, request: ReActAgentRequest):
+        node_builder = ReActAgentNode()
+
+        await node_builder.setup(request)
+
+        graph_builder = StateGraph(ReActAgentState)
+
+        last_edge = self.prepare_graph(graph_builder, node_builder)
+
+        graph_builder.add_node(
+            "llm", node_builder.agent_node, retry=RetryPolicy(max_attempts=5))
+
+        graph_builder.add_edge(last_edge, "llm")
+        graph_builder.add_edge("llm", END)
+
+        graph = graph_builder.compile()
+        return graph

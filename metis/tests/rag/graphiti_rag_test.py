@@ -1,20 +1,15 @@
 
 import os
 
-from src.chunk.full_chunk import FullChunk
-from tqdm import tqdm
 import pytest
-from src.chunk.fixed_size_chunk import FixedSizeChunk
-from src.chunk.recursive_chunk import RecursiveChunk
-from src.entity.rag.base.index_delete_request import IndexDeleteRequest
-from src.entity.rag.graphiti.document_delete_request import DocumentDeleteRequest
-from src.entity.rag.graphiti.document_list_request import DocumentListRequest
-from src.entity.rag.graphiti.document_ingest_request import GraphitiRagDocumentIngestRequest
-from src.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest
-from src.loader.text_loader import TextLoader
-from src.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
-from langchain_core.documents import Document
-import glob
+from src.core.chunk.recursive_chunk import RecursiveChunk
+from src.web.entity.rag.base.index_delete_request import IndexDeleteRequest
+from src.web.entity.rag.graphiti.document_delete_request import DocumentDeleteRequest
+from src.web.entity.rag.graphiti.document_list_request import DocumentListRequest
+from src.web.entity.rag.graphiti.document_ingest_request import GraphitiRagDocumentIngestRequest
+from src.web.entity.rag.graphiti.document_retriever_request import DocumentRetrieverRequest
+from src.core.loader import TextLoader
+from src.core.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
 
 
 @pytest.mark.asyncio

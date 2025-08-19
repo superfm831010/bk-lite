@@ -2,8 +2,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.loader.doc_loader import DocLoader
-from src.ocr.pp_ocr import PPOcr
+from src.core.loader import DocLoader
+from src.core.ocr.pp_ocr import PPOcr
 
 ocr = PPOcr()
 

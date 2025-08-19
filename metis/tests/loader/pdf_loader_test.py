@@ -2,8 +2,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.loader.pdf_loader import PDFLoader
-from src.ocr.pp_ocr import PPOcr
+from src.core.loader import PDFLoader
+from src.core.ocr.pp_ocr import PPOcr
 
 
 def test_load_pdf():
