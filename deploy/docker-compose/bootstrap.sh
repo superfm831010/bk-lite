@@ -60,7 +60,7 @@ fi
 INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,alert,log,mlops,operation_analysis"
 
 if [[ $OPSPILOT_ENABLED == "true" ]]; then
-    export INSTALL_APPS="${INSTALL_APPS},ops_pilot"
+    export INSTALL_APPS="${INSTALL_APPS},opspilot"
     log "INFO" "启用 OpsPilot 功能，安装应用列表: ${INSTALL_APPS}"
     # 使用 compose/ops_pilot.yaml 文件
     export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/ops_pilot.yaml config --no-interpolate"
@@ -68,7 +68,6 @@ else
     log "INFO" "禁用 OpsPilot 功能，安装应用列表: ${INSTALL_APPS}"
     export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml config --no-interpolate"
 fi
-
 
 # Function to validate environment variables
 validate_env_var() {
@@ -349,6 +348,14 @@ EOF
 # 生成合成的docker-compose.yaml文件
 log "INFO" "生成合成的 docker-compose.yaml 文件..."
 $COMPOSE_CMD > docker-compose.yaml
+
+log "INFO" "拉取最新的镜像..."
+${DOCKER_COMPOSE_CMD} pull
+
+if [ "$OPSPILOT_ENABLED" = "true" ]; then
+    log "INFO" "启动opspilot基础组件..."
+    ${DOCKER_COMPOSE_CMD} up -d --profile opspilot
+fi
 
 # 按照特定顺序启动服务
 log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j, VictoriaLogs, MLflow, NATS Executor)..."
