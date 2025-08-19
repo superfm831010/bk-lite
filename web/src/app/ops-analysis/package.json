@@ -9,6 +9,7 @@
   "dependencies": {
     "@antv/x6": "^2.18.1",
     "@antv/x6-plugin-selection": "^2.2.2",
+    "@antv/x6-react-shape": "^2.2.3",
     "echarts-for-react": "^3.0.2",
     "react-grid-layout": "^1.5.2"
   }

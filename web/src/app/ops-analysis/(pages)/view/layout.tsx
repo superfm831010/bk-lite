@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import Sidebar from './components/sidebar';
+import Sidebar from '../../components/sidebar';
 import Dashboard from './dashBoard/index';
 import Topology from './topology/index';
 import { useTranslation } from '@/utils/i18n';
@@ -9,6 +9,7 @@ import { DirectoryType, SidebarRef } from '@/app/ops-analysis/types';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { Button, Empty, Modal } from 'antd';
 import { useRouter, usePathname } from 'next/navigation';
+import { DirItem } from '@/app/ops-analysis/types';
 
 interface ViewLayoutProps {
   children: React.ReactNode;
@@ -21,8 +22,8 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedType, setSelectedType] = useState<DirectoryType>('directory');
   const [selectedItem, setSelectedItem] = useState<{
-    dashboard: any;
-    topology: any;
+    dashboard: DirItem | null;
+    topology: DirItem | null;
   }>({
     dashboard: null,
     topology: null,
@@ -37,7 +38,7 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
 
   const isInSettings = pathname.includes('/settings');
 
-  const handleSidebarDataUpdate = (updatedItem: any) => {
+  const handleSidebarDataUpdate = (updatedItem: DirItem) => {
     if (
       selectedItem.dashboard &&
       updatedItem.id === selectedItem.dashboard.id
@@ -61,7 +62,7 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
   };
 
   // 处理导航
-  const handleNavigation = (type: DirectoryType, itemInfo: any) => {
+  const handleNavigation = (type: DirectoryType, itemInfo?: DirItem) => {
     const isLeavingContentPage =
       (selectedType === 'dashboard' || selectedType === 'topology') &&
       (type === 'settings' ||
@@ -103,11 +104,11 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
   };
 
   // 执行导航
-  const performNavigation = (type: DirectoryType, itemInfo: any) => {
+  const performNavigation = (type: DirectoryType, itemInfo?: DirItem) => {
     setSelectedType(type);
     setSelectedItem({
-      dashboard: type === 'dashboard' ? itemInfo : null,
-      topology: type === 'topology' ? itemInfo : null,
+      dashboard: type === 'dashboard' ? itemInfo || null : null,
+      topology: type === 'topology' ? itemInfo || null : null,
     });
     if (type === 'settings') {
       router.push('/ops-analysis/view/settings/dataSource');

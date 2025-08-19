@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Icon from '@/components/icon';
-import ComponentConfigDrawer from './baseConfig';
+import ViewConfig from './viewConfig';
 import { Modal, Menu, List, Input } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { ComponentSelectorProps } from '@/app/ops-analysis/types/dashBoard';
-import { getWidgetsByCategory } from './registry';
+import { getWidgetsByCategory } from '../config/registry';
 
 const ComponentSelector: React.FC<ComponentSelectorProps> = ({
   visible,
@@ -28,7 +28,7 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
 
   const handleConfig = (item: any) => {
     const layoutItem = {
-      i: 'temp',
+      i: '',
       x: 0,
       y: 0,
       w: 4,
@@ -87,7 +87,7 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
               dataSource={items}
               renderItem={(item) => (
                 <List.Item
-                  className="cursor-pointer hover:bg-blue-50 flex items-center gap-3 justify-between"
+                  className="cursor-pointer hover:bg-blue-50 flex items-center gap-3 justify-between p-3 border-b border-gray-100 last:border-b-0"
                   onClick={() => handleConfig(item)}
                 >
                   <div className="flex flex-col gap-1 leading-relaxed">
@@ -106,7 +106,7 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
           </div>
         </div>
       </Modal>
-      <ComponentConfigDrawer
+      <ViewConfig
         open={drawerVisible}
         item={pendingItem}
         onConfirm={handleDrawerConfirm}

@@ -1,7 +1,49 @@
+/**
+ * useGraphInteractions Hook 
+ * 
+ * 拓扑图交互功能管理 Hook，专注于处理用户交互操作和模态框管理
+ * 
+ * 主要功能：
+ * 1. 右键菜单处理 - 处理节点右键菜单的点击事件和不同模式下的菜单操作
+ * 2. 连线配置管理 - 管理连线的配置确认、类型设置和标签编辑
+ * 3. 节点层级操作 - 处理节点的置顶、上移、下移等层级调整功能
+ * 4. 手动连线绘制 - 支持用户手动绘制连线，包括拖拽连线和端口自动识别
+ * 5. 视图模式交互 - 处理查看模式下的告警查看、监控详情等操作
+ * 6. 键盘交互支持 - 支持 ESC 键取消连线绘制等键盘操作
+ * 
+ * 交互模式：
+ * - 编辑模式：支持连线绘制、节点层级调整、连线配置等编辑功能
+ * - 查看模式：支持告警查看、监控详情等只读操作
+ * 
+ * 连线功能：
+ * - 三种连线类型：无箭头、单向箭头、双向箭头
+ * - 智能端口识别：自动计算最近端口或精确端口匹配
+ * - 实时预览：连线绘制过程中提供实时视觉反馈
+ * - 键盘取消：支持 ESC 键中断连线绘制
+ * 
+ * 层级管理：
+ * - 置顶操作：将节点移动到最顶层
+ * - 上移下移：逐层调整节点显示优先级
+ * - 智能提示：显示当前层级状态和操作结果
+ * 
+ * @param containerRef - 图形容器的 React ref，用于焦点管理和事件监听
+ * @param state - 拓扑状态管理对象，包含图形实例和各种状态变量
+ * @returns 交互操作相关的方法集合，包括菜单处理、连线配置等功能
+ */
+
 import { useCallback } from 'react';
 import { message } from 'antd';
-import type { Edge } from '@antv/x6';
-import { getEdgeStyle, addEdgeTools } from '../utils/topologyUtils';
+import { v4 as uuidv4 } from 'uuid';
+import type { Edge, Node, Cell } from '@antv/x6';
+import { getEdgeStyle, addEdgeTools, createEdgeLabel } from '../utils/topologyUtils';
+import {
+  TopologyState,
+  MenuClickEvent,
+  UseContextMenuAndModalReturn,
+  Point,
+  PortPositions,
+  EdgeData
+} from '@/app/ops-analysis/types/topology';
 
 /**
  * 上下文菜单和模态框操作的自定义Hook
@@ -9,8 +51,8 @@ import { getEdgeStyle, addEdgeTools } from '../utils/topologyUtils';
  */
 export const useContextMenuAndModal = (
   containerRef: React.RefObject<HTMLDivElement>,
-  state: any
-) => {
+  state: TopologyState
+): UseContextMenuAndModalReturn => {
   const {
     graphInstance,
     contextMenuNodeId,
@@ -25,42 +67,22 @@ export const useContextMenuAndModal = (
 
   // 统一处理连线配置确认
   const handleEdgeConfigConfirm = useCallback(
-    (values: { lineType: string; lineName?: string }) => {
-      if (currentEdgeData && graphInstance) {
+    (values: { lineType: 'common_line' | 'network_line'; lineName?: string }) => {
+      if (currentEdgeData?.id && graphInstance) {
         const edge = graphInstance.getCellById(currentEdgeData.id) as Edge;
         if (edge) {
           edge.setData({ ...edge.getData(), ...values });
 
-          if (values.lineType === 'network line') {
+          if (values.lineType === 'network_line') {
             const labels = edge.getLabels();
             if (labels && labels.length > 0) {
               for (let i = labels.length - 1; i >= 0; i--) {
                 edge.removeLabelAt(i);
               }
             }
-          } else if (values.lineType === 'line') {
+          } else if (values.lineType === 'common_line') {
             if (values.lineName && values.lineName.trim()) {
-              edge.setLabels([
-                {
-                  attrs: {
-                    text: {
-                      text: values.lineName,
-                      fill: '#333',
-                      fontSize: 12,
-                      textAnchor: 'middle',
-                      textVerticalAnchor: 'middle',
-                    },
-                    rect: {
-                      fill: 'white',
-                      stroke: '#d9d9d9',
-                      strokeWidth: 1,
-                      rx: 4,
-                      ry: 4,
-                    },
-                  },
-                  position: 0.5,
-                },
-              ]);
+              edge.setLabels([createEdgeLabel(values.lineName)]);
             } else {
               const labels = edge.getLabels();
               if (labels && labels.length > 0) {
@@ -71,7 +93,11 @@ export const useContextMenuAndModal = (
             }
           }
 
-          setCurrentEdgeData({ ...currentEdgeData, ...values });
+          setCurrentEdgeData({
+            ...currentEdgeData,
+            lineType: values.lineType,
+            lineName: values.lineName
+          });
         }
       }
     },
@@ -109,7 +135,9 @@ export const useContextMenuAndModal = (
    * @returns 是否处理了层级操作
    */
   const handleNodeLayerOperation = useCallback(
-    (key: string, targetNode: any) => {
+    (key: string, targetNode: Cell) => {
+      if (!graphInstance) return false;
+
       if (key === 'bringToFront') {
         targetNode.toFront();
         message.success('节点已置顶');
@@ -117,7 +145,7 @@ export const useContextMenuAndModal = (
       } else if (key === 'bringForward') {
         const currentZIndex = targetNode.getZIndex() || 0;
         const maxZIndex = Math.max(
-          ...graphInstance.getCells().map((cell: any) => cell.getZIndex() || 0)
+          ...graphInstance.getCells().map((cell: Cell) => cell.getZIndex() || 0)
         );
 
         if (currentZIndex < maxZIndex) {
@@ -130,7 +158,7 @@ export const useContextMenuAndModal = (
       } else if (key === 'sendBackward') {
         const currentZIndex = targetNode.getZIndex() || 0;
         const minZIndex = Math.min(
-          ...graphInstance.getCells().map((cell: any) => cell.getZIndex() || 0)
+          ...graphInstance.getCells().map((cell: Cell) => cell.getZIndex() || 0)
         );
 
         if (currentZIndex > minZIndex && currentZIndex > 0) {
@@ -153,10 +181,13 @@ export const useContextMenuAndModal = (
    */
   const handleConnectionDrawing = useCallback(
     (connectionType: 'none' | 'single' | 'double') => {
+      if (!graphInstance || !contextMenuNodeId) return;
+
       const sourceNode = graphInstance.getCellById(contextMenuNodeId);
       if (!sourceNode) return;
 
-      const getCurrentMousePosition = (e: MouseEvent) => {
+      const getCurrentMousePosition = (e: MouseEvent): Point => {
+        if (!graphInstance) throw new Error('Graph instance is null');
         return graphInstance.clientToLocal(e.clientX, e.clientY);
       };
 
@@ -202,7 +233,7 @@ export const useContextMenuAndModal = (
       };
 
       const onMouseUp = (e: MouseEvent) => {
-        if (!tempEdge || !isDrawingRef.current || !graphInstance) {
+        if (!tempEdge || !isDrawingRef.current || !graphInstance || !contextMenuNodeId) {
           return;
         }
 
@@ -214,11 +245,11 @@ export const useContextMenuAndModal = (
         const localPoint = getCurrentMousePosition(e);
 
         // 查找目标节点和端口的逻辑
-        let targetCell: any = null;
+        let targetCell: Node | null = null;
         let targetPort: string | null = null;
 
-        graphInstance.getNodes().forEach((node: any) => {
-          if (node.id === contextMenuNodeId) return;
+        for (const node of graphInstance.getNodes()) {
+          if (node.id === contextMenuNodeId) continue;
 
           const bbox = node.getBBox();
 
@@ -237,7 +268,7 @@ export const useContextMenuAndModal = (
             const iconHeight = 60;
 
             const ports = ['top', 'bottom', 'left', 'right'];
-            const portPositions = {
+            const portPositions: PortPositions = {
               top: { x: iconX + iconWidth / 2, y: iconY },
               bottom: { x: iconX + iconWidth / 2, y: iconY + iconHeight },
               left: { x: iconX, y: iconY + iconHeight / 2 },
@@ -248,7 +279,7 @@ export const useContextMenuAndModal = (
             let nearestPort = 'top';
 
             ports.forEach((port) => {
-              const portPos = portPositions[port as keyof typeof portPositions];
+              const portPos = portPositions[port as keyof PortPositions];
               const distance = Math.sqrt(
                 Math.pow(localPoint.x - portPos.x, 2) +
                 Math.pow(localPoint.y - portPos.y, 2)
@@ -268,8 +299,9 @@ export const useContextMenuAndModal = (
             if (!targetPort) {
               targetPort = nearestPort;
             }
+            break; 
           }
-        });
+        }
 
         if (tempEdge) {
           tempEdge.remove();
@@ -277,7 +309,7 @@ export const useContextMenuAndModal = (
 
         if (targetCell && targetCell.id !== contextMenuNodeId && targetPort) {
           const sourceNode = graphInstance.getCellById(contextMenuNodeId);
-          if (sourceNode) {
+          if (sourceNode && targetCell) {
             const sourceBbox = sourceNode.getBBox();
             const targetBbox = targetCell.getBBox();
 
@@ -292,25 +324,35 @@ export const useContextMenuAndModal = (
             }
 
             const finalEdge = graphInstance.addEdge({
+              id: `edge_${uuidv4()}`,
               source: { cell: contextMenuNodeId, port: sourcePort },
               target: { cell: targetCell.id, port: targetPort },
               ...getEdgeStyle(connectionType),
-              data: { connectionType, lineType: 'network line' },
+              data: { connectionType, lineType: 'common_line' },
             });
             addEdgeTools(finalEdge);
 
+            // 获取节点名称的辅助函数
+            const getNodeName = (node: Cell): string => {
+              const nodeData = (node as any).getData?.();
+              if (nodeData?.name) return nodeData.name;
+              const attrs = (node as any).getAttrs?.();
+              if (attrs?.label?.text) return attrs.label.text;
+              return node.id;
+            };
+
             // 打开配置面板
-            const edgeData = {
+            const edgeData: EdgeData = {
               id: finalEdge.id,
-              lineType: 'network line',
+              lineType: 'common_line' as const,
               lineName: '',
               sourceNode: {
                 id: sourceNode.id,
-                name: sourceNode.getLabel?.() || sourceNode.label || sourceNode.id,
+                name: getNodeName(sourceNode),
               },
               targetNode: {
                 id: targetCell.id,
-                name: targetCell.getLabel?.() || targetCell.label || targetCell.id,
+                name: getNodeName(targetCell),
               },
             };
             setCurrentEdgeData(edgeData);
@@ -347,10 +389,10 @@ export const useContextMenuAndModal = (
    * 根据不同模式和操作类型分发到对应的处理函数
    */
   const handleMenuClick = useCallback(
-    ({ key }: { key: string }) => {
+    ({ key }: MenuClickEvent) => {
       setContextMenuVisible(false);
 
-      if (!graphInstance) return;
+      if (!graphInstance || !contextMenuNodeId) return;
 
       // 视图模式下的菜单处理
       if (!isEditMode) {

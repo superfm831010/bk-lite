@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 
-// API for checking WeChat configuration availability
+// Get WeChat configuration dynamically
 export async function GET() {
   try {
-    // Get WeChat configuration
-    const response = await fetch(`${process.env.NEXTAPI_URL}/api/v1/core/api/get_wechat_settings/`, {
+    // Fetch WeChat configuration from backend
+    const configResponse = await fetch(`${process.env.NEXTAPI_URL}/api/v1/core/api/get_wechat_settings/`, {
       method: "GET",
       headers: { 
         "Content-Type": "application/json",
@@ -14,38 +14,38 @@ export async function GET() {
       cache: "no-store"
     });
     
-    const responseData = await response.json();
+    const configData = await configResponse.json();
     
-    if (!response.ok || !responseData.result) {
-      console.log("WeChat settings not available:", responseData);
-      return NextResponse.json({
-        available: false,
-        message: "WeChat login is not configured"
-      });
+    if (!configResponse.ok || !configData.result) {
+      console.error("Failed to get WeChat settings:", configData);
+      return NextResponse.json(
+        { 
+          result: false, 
+          message: "WeChat configuration not available",
+          data: { enabled: false }
+        },
+        { status: 200 }
+      );
     }
     
-    const wechatConfig = responseData.data;
-    
-    // Check if required configuration exists
-    if (!wechatConfig.app_id || !wechatConfig.app_secret) {
-      return NextResponse.json({
-        available: false,
-        message: "WeChat configuration is incomplete"
-      });
-    }
-    
-    // Return configuration availability status without sensitive information
+    // Return configuration with enabled flag
     return NextResponse.json({
-      available: true,
-      redirectUri: wechatConfig.redirect_uri,
-      message: "WeChat login is available"
+      result: true,
+      data: {
+        enabled: true,
+        ...configData.data
+      }
     });
     
   } catch (error) {
-    console.error("Error checking WeChat configuration:", error);
-    return NextResponse.json({
-      available: false,
-      message: "Unable to check WeChat configuration"
-    }, { status: 500 });
+    console.error("Error fetching WeChat configuration:", error);
+    return NextResponse.json(
+      { 
+        result: false, 
+        message: "Failed to fetch WeChat configuration",
+        data: { enabled: false }
+      },
+      { status: 500 }
+    );
   }
 }
