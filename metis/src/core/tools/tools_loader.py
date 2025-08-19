@@ -50,7 +50,7 @@ class ToolsLoader:
                 }
         """
         tools_map = {}
-        tools_dir = Path(__file__).parent
+        tools_dir = Path('./src/core/tools')
 
         # 扫描所有相关文件
         pattern_files = list(tools_dir.glob("*_tools*.py"))
