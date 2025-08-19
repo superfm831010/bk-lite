@@ -7,6 +7,7 @@ from django_filters import filters
 from django_filters.rest_framework import FilterSet
 from rest_framework.decorators import action
 
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import GenericViewSetFun, MaintainerViewSet
 from apps.opspilot.knowledge_mgmt.models import QAPairs
 from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
@@ -32,6 +33,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
     ordering = ("-id",)
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Add")
     def create_qa_pairs(self, request):
         params = request.data
         document_list = params.get("document_list", [])
@@ -60,6 +62,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Add")
     def import_qa_json(self, request):
         files = request.FILES.getlist("file")
         if not files:
@@ -100,6 +103,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         return file_data
 
     @action(methods=["GET"], detail=True)
+    @HasPermission("knowledge_document-View")
     def get_details(self, request, *args, **kwargs):
         instance: QAPairs = self.get_object()
         client = ChunkHelper()
@@ -122,6 +126,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         return JsonResponse({"result": True, "data": {"items": return_data, "count": res["count"]}})
 
     @action(methods=["GET"], detail=False)
+    @HasPermission("knowledge_document-View")
     def get_chunk_qa_pairs(self, request):
         """
         Get chunk QA pairs
@@ -148,6 +153,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         return JsonResponse({"result": True, "data": return_data})
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Set")
     def update_qa_pairs(self, request):
         params = request.data
         qa_paris = QAPairs.objects.get(id=params["qa_pairs_id"])
@@ -161,6 +167,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Add")
     def create_one_qa_pairs(self, request):
         params = request.data
         qa_paris = QAPairs.objects.get(id=params["qa_pairs_id"])
@@ -175,6 +182,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         return JsonResponse(result)
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Delete")
     def delete_one_qa_pairs(self, request):
         params = request.data
         qa_paris = QAPairs.objects.get(id=params["qa_pairs_id"])
@@ -188,6 +196,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Add")
     def create_qa_pairs_by_custom(self, request):
         params = request.data
         qa_pairs = QAPairs.objects.create(
@@ -205,6 +214,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Add")
     def create_qa_pairs_by_chunk(self, request):
         params = request.data
         qa_pairs, _ = QAPairs.objects.get_or_create(
@@ -225,6 +235,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         return JsonResponse({"result": True, "data": {"qa_pairs_id": qa_pairs.id}})
 
     @action(methods=["GET"], detail=False)
+    @HasPermission("knowledge_document-View")
     def get_qa_pairs_task_status(self, request):
         document_id = request.GET.get("document_id")
         qa_pairs_obj = QAPairs.objects.filter(
@@ -248,6 +259,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         )
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Add")
     def export_qa_pairs(self, request):
         instance_id = request.data.get("qa_pairs_id")
         instance = QAPairs.objects.get(id=instance_id)
