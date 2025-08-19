@@ -116,6 +116,20 @@ class ChunkHelper(ChatServerHelper):
         return {"result": True}
 
     @classmethod
+    def delete_chunk_relation(cls, index_name, chunk_id):
+        kwargs = {
+            "index_name": index_name,
+            "metadata_filter": {"base_chunk_id": str(chunk_id)},
+            "metadata": {"base_chunk_id": ""},
+        }
+        try:
+            ChatServerHelper.post_chat_server(kwargs, cls.update_url)
+        except Exception as e:
+            logger.exception(e)
+            return {"result": False}
+        return {"result": True}
+
+    @classmethod
     def create_qa_pairs(
         cls, qa_paris, chunk_obj, index_name, embed_config, embed_model_name, qa_pairs_id, is_delete=True
     ):
