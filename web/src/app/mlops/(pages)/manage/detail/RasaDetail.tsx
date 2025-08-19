@@ -25,7 +25,7 @@ const RasaDetail = () => {
     getRasaStoryFileList,
     deleteRasaStoryFile,
     getRasaEntityList,
-    deleteRasaEntityFile
+    deleteRasaEntityFile,
   } = useMlopsManageApi();
   const [selectKey, setSelectKey] = useState<string>('intent');
   const [loading, setLoading] = useState<boolean>(false);

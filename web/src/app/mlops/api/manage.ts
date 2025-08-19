@@ -117,6 +117,11 @@ const useMlopsManageApi = () => {
     return await get(`/mlops/rasa_entity/?dataset=${dataset}&name=${name}&page=${page}&page_size=${page_size}`);
   };
 
+  // 获取Rasa 实体数
+  const getRasaEntityCount = async () => {
+    return await get(`/mlops/rasa_entity/count`)
+  };
+
   // 获取指定异常检测数据集详情
   const getOneAnomalyDataset = async (id: number) => {
     return await get(`/mlops/anomaly_detection_datasets/${id}/`);
@@ -341,6 +346,7 @@ const useMlopsManageApi = () => {
     getRasaRuleFileList,
     getRasaStoryFileList,
     getRasaEntityList,
+    getRasaEntityCount,
     addAnomalyDatasets,
     addRasaDatasets,
     addRasaIntentFile,

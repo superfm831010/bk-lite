@@ -1,10 +1,12 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Input, Button, Select, message, FormInstance } from "antd";
 import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
 import { cloneDeep } from 'lodash';
 import { Option } from "@/types";
 import { useTranslation } from "@/utils/i18n";
-import useMlopsManageApi from "../../api/manage";
+import useMlopsManageApi from "@/app/mlops/api/manage";
+import EntitySelectModal from "./entitySelectModal";
+import { ModalRef } from "../../types";
 
 interface SampleItem {
   type: 'intent' | 'response';
@@ -24,24 +26,53 @@ const styles = {
 
 const useRasaIntentForm = (
   {
+    // folder_id,
     formData,
-    visiable
+    visiable,
+    onTextSelection
   }: {
+    folder_id: number;
     selectKey: string;
     formData?: any;
     visiable?: boolean;
+    onTextSelection?: (data: any) => void;
   }
 ) => {
+  // const modalRef = useRef<ModalRef>(null);
   const [sampleList, setSampleList] = useState<(string | null)[]>([]);
+  const selectedTextRef = useRef<any>(null);
 
   // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
     if (visiable && formData) {
-      setSampleList(formData?.example || [null]);
+      setSampleList(formData?.example_count ? formData?.example : [null]);
     } else if (visiable) {
       setSampleList([null]);
     }
   }, [formData, visiable]);
+
+  // 添加选择检测函数
+  const handleTextSelection = useCallback((index: number, event: React.SyntheticEvent) => {
+    const input = event.target as HTMLInputElement;
+
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+
+    if (start !== null && end !== null && start !== end) {
+      const text = input.value.substring(start, end);
+      if (text.trim()) {
+        const textInfo = {
+          text: text.trim(),
+          start,
+          end,
+          inputIndex: index
+        };
+        selectedTextRef.current = textInfo;
+        onTextSelection?.(textInfo)
+        // modalRef.current?.showModal({ type: '' });
+      }
+    }
+  }, [onTextSelection]);
 
   const addSampleList = () => {
     const keys = cloneDeep(sampleList);
@@ -64,40 +95,62 @@ const useRasaIntentForm = (
     setSampleList(keys);
   };
 
+  const handleEntitySelect = useCallback((entityName: string) => {
+    const currentSelectedText = selectedTextRef.current;
+    if (currentSelectedText) {
+      const { text, start, end, inputIndex } = currentSelectedText;
+      const currentValue = sampleList[inputIndex] as string;
+
+      const newValue =
+        currentValue.substring(0, start) +
+        `[${text}](${entityName})` +
+        currentValue.substring(end);
+      const keys = cloneDeep(sampleList);
+      keys[inputIndex] = newValue;
+      setSampleList(keys);
+      selectedTextRef.current = null;
+    }
+  }, [sampleList]);
+
   const renderElement = useMemo(() => (
-    <ul>
-      {sampleList.map((item, index) => (
-        <li
-          className={`flex ${index + 1 !== sampleList?.length && styles.listItemSpacing}`}
-          key={index}
-        >
-          <Input
-            className={styles.inputWidth}
-            value={item as string}
-            onChange={(e) => {
-              onSampleListChange(e, index);
-            }}
-          />
-          <Button
-            icon={<PlusOutlined />}
-            className={styles.buttonMargin}
-            onClick={addSampleList}
-          />
-          {!!index && (
-            <Button
-              icon={<MinusOutlined />}
-              className={styles.buttonMargin}
-              onClick={() => deleteSampleList(index)}
+    <>
+      <ul>
+        {sampleList.map((item, index) => (
+          <li
+            className={`flex ${index + 1 !== sampleList?.length && styles.listItemSpacing}`}
+            key={index}
+          >
+            <Input
+              className={styles.inputWidth}
+              value={item as string}
+              onChange={(e) => {
+                onSampleListChange(e, index);
+              }}
+              onSelect={(e) => handleTextSelection(index, e)}
             />
-          )}
-        </li>
-      ))}
-    </ul>
-  ), [sampleList]);
+            <Button
+              icon={<PlusOutlined />}
+              className={styles.buttonMargin}
+              onClick={addSampleList}
+            />
+            {!!index && (
+              <Button
+                icon={<MinusOutlined />}
+                className={styles.buttonMargin}
+                onClick={() => deleteSampleList(index)}
+              />
+            )}
+          </li>
+        ))}
+      </ul>
+      {/* <EntitySelectModal ref={modalRef} dataset={folder_id} onSuccess={handleEntitySelect} /> */}
+    </>
+  ), [sampleList, handleTextSelection]);
 
   return {
     sampleList,
     renderElement,
+    handleEntitySelect
   }
 };
 
@@ -114,7 +167,7 @@ const useRasaResponseForm = ({
   // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
     if (visiable && formData) {
-      setSampleList(formData?.example || [null]);
+      setSampleList(formData?.example_count ? formData?.example : [null]);
     } else if (visiable) {
       setSampleList([null]);
     }
@@ -180,7 +233,7 @@ const useRasaResponseForm = ({
 
   return {
     sampleList,
-    renderElement
+    renderElement,
   }
 };
 
@@ -469,7 +522,7 @@ const useRasaStoryForm = ({
 };
 
 const useRasaEntityForm = ({
-  selectKey,
+  // selectKey,
   formData,
   visiable,
   entityType,
@@ -480,7 +533,6 @@ const useRasaEntityForm = ({
   entityType?: string;
 }) => {
   const [sampleList, setSampleList] = useState<(string | null)[]>([]);
-  console.log(selectKey);
   // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
     if (visiable && formData) {
@@ -690,6 +742,7 @@ const useRasaApiMethods = () => {
     'rule': addRasaRuleFile,
     'story': addRasaStoryFile,
     'entity': addRasaEntityFile,
+    'slot': () => { }
   };
 
   const handleUpdateMap: Record<string, any> = {
@@ -697,7 +750,8 @@ const useRasaApiMethods = () => {
     'response': updateRasaResponseFile,
     'rule': updateRasaRuleFile,
     'story': updateRasaStoryFile,
-    'entity': updateRasaEntityFile
+    'entity': updateRasaEntityFile,
+    'slot': () => { }
   };
 
   return { handleAddMap, handleUpdateMap };
@@ -775,6 +829,7 @@ const useRasaFormManager = ({
   onSuccess: () => void;
 }) => {
   const { t } = useTranslation();
+  const modalRef = useRef<ModalRef>(null);
   const [visiable, setVisiable] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [type, setType] = useState<string>('add');
@@ -784,17 +839,41 @@ const useRasaFormManager = ({
   const [title, setTitle] = useState<string>('addintent');
   const [formData, setFormData] = useState<any>(null);
 
+  // 新增：管理实体选择相关状态
+  const [selectedTextForEntity, setSelectedTextForEntity] = useState<any>(null);
+
   const { handleAddMap, handleUpdateMap } = useRasaApiMethods();
   const { validateSampleList, prepareFormParams } = useRasaFormData();
   const { handleKeyDown, handleNameChange } = useInputValidation();
 
+  // 文字选择回调函数
+  const handleTextSelection = useCallback((textData: any) => {
+    setSelectedTextForEntity(textData);
+    modalRef.current?.showModal({ type: '' });
+  }, []);
+
   // 始终调用所有的 hooks，但只使用需要的
-  const intentForm = useRasaIntentForm({ selectKey, formData, visiable });
+  const intentForm = useRasaIntentForm({
+    folder_id: Number(folder_id),
+    selectKey,
+    formData,
+    visiable,
+    onTextSelection: selectKey === 'intent' ? handleTextSelection : undefined
+  });
   const responseForm = useRasaResponseForm({ selectKey, formData, visiable });
   const ruleForm = useRasaRuleForm({ folder_id: Number(folder_id), selectKey, formData, visiable });
   const storyForm = useRasaStoryForm({ folder_id: Number(folder_id), selectKey, formData, visiable });
   const entityForm = useRasaEntityForm({ selectKey, formData, visiable, entityType });
   const slotForm = useRasaSlotForm({ selectKey, formData, visiable });
+
+  // 处理从Modal传来的实体选择
+  const handleEntitySelectFromModal = useCallback((entityName: string) => {
+    if (selectKey === 'intent' && intentForm.handleEntitySelect) {
+      intentForm.handleEntitySelect(entityName);
+    }
+    // 清除选择状态
+    setSelectedTextForEntity(null);
+  }, [selectKey, intentForm]);
 
   const getCurrentForm = () => {
     switch (selectKey) {
@@ -829,7 +908,7 @@ const useRasaFormManager = ({
     try {
       const data = await formRef.current?.validateFields();
       const params = prepareFormParams(type, selectKey, data, currentForm.sampleList, formData, entityType);
-
+      console.log(params);
       if (type === 'add') {
         await handleAddMap[selectKey](params);
         message.success(t(`common.addSuccess`));
@@ -865,6 +944,21 @@ const useRasaFormManager = ({
     setSlotPrediction(value)
   };
 
+  // 创建Modal元素，只在需要时渲染
+  const modalElement = useMemo(() => {
+    // 只有当selectKey是intent时才渲染EntitySelectModal
+    if (selectKey === 'intent') {
+      return (
+        <EntitySelectModal 
+          ref={modalRef} 
+          dataset={Number(folder_id)} 
+          onSuccess={handleEntitySelectFromModal}
+        />
+      );
+    }
+    return null;
+  }, [selectKey, folder_id, handleEntitySelectFromModal, selectedTextForEntity]);
+
   return {
     visiable,
     confirmLoading,
@@ -884,7 +978,8 @@ const useRasaFormManager = ({
     handleNameChange: (e: React.ChangeEvent<HTMLInputElement>) => handleNameChange(formRef, e),
     validateSampleList: () => validateSampleList(currentForm.sampleList),
     renderElement: currentForm.renderElement,
-    sampleList: currentForm.sampleList
+    sampleList: currentForm.sampleList,
+    modalElement
   };
 };
 
