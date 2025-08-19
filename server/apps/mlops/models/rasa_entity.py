@@ -39,12 +39,6 @@ class RasaEntity(MaintainerInfo, TimeInfo):
         help_text="实体的具体取值列表"
     )
 
-    # 样例数量统计
-    example_count = models.IntegerField(
-        default=0,
-        verbose_name="样例数量"
-    )
-
     # 可选：描述字段
     description = models.TextField(blank=True, null=True, verbose_name="描述")
 
@@ -54,13 +48,3 @@ class RasaEntity(MaintainerInfo, TimeInfo):
 
     def __str__(self):
         return f'{self.name}-{self.dataset.name}'
-
-    def save(self, *args, **kwargs):
-        """
-        保存时自动计算样例数量
-        """
-        if isinstance(self.example, list):
-            self.example_count = len(self.example)
-        else:
-            self.example_count = 0
-        super().save(*args, **kwargs)
