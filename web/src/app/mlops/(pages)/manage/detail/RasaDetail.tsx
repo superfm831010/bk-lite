@@ -1,7 +1,7 @@
 import { Button, message, Popconfirm, Tabs, Breadcrumb, Input } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import CustomTable from "@/components/custom-table";
-import RasaModal from "./rasaModel";
+import RasaModal from "./rasaModal";
 import type { TabsProps } from 'antd';
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/utils/i18n";
@@ -156,6 +156,24 @@ const RasaDetail = () => {
         dataIndex: 'action',
         render: (_ ,record) => btnsElements(record)
       }
+    ],
+    slot: [
+      {
+        title: '槽名称',
+        key: 'slot_name',
+        dataIndex: 'slot_name'
+      },
+      {
+        title: t(`common.type`),
+        key: 'slot_type',
+        dataIndex: 'slot_type'
+      },
+      {
+        title: t(`common.action`),
+        key: 'action',
+        dataIndex: 'action',
+        render: (_ ,record) => btnsElements(record)
+      }
     ]
   };
 
@@ -164,7 +182,8 @@ const RasaDetail = () => {
     'response': getRasaResponseFileList,
     'rule': getRasaRuleFileList,
     'story': getRasaStoryFileList,
-    'entity': getRasaEntityList
+    'entity': getRasaEntityList,
+    'slot': () => {}
   };
 
   const delFileMap: Record<string, any> = {
@@ -172,7 +191,8 @@ const RasaDetail = () => {
     'response': deleteRasaResponseFile,
     'rule': deleteRasaRuleFile,
     'story': deleteRasaStoryFile,
-    'entity': deleteRasaEntityFile
+    'entity': deleteRasaEntityFile,
+    'slot': () => {}
   };
 
   const {
@@ -213,6 +233,11 @@ const RasaDetail = () => {
         key: 'entity',
         label: t(`datasets.entity`),
         children: renderTable('entity')
+      },
+      {
+        key: 'slot',
+        label: t(`datasets.slot`),
+        children: renderTable('slot')
       }
     ]
   };
