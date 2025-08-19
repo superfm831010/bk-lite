@@ -67,7 +67,7 @@ class ModelMigrate:
         给模型添加组织数据
         """
         _key = INIT_MODEL_GROUP
-        model[_key] = [self.default_group_id]
+        model[_key] = self.default_group_id
 
     def migrate_models(self):
         """初始化模型"""
