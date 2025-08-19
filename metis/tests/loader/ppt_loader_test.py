@@ -2,7 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.loader.ppt_loader import PPTLoader
+from src.core.loader.ppt_loader import PPTLoader
 
 
 def test_ppt_loader():

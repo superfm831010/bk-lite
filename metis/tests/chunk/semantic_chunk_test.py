@@ -1,12 +1,6 @@
-import os
-
-from dotenv import load_dotenv
-from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings
-
-from src.chunk.semantic_chunk import SemanticChunk
-from src.embed.embed_builder import EmbedBuilder
-from src.loader.text_loader import TextLoader
+from src.core.chunk.semantic_chunk import SemanticChunk
+from src.core.embed import EmbedBuilder
+from src.core.loader import TextLoader
 
 
 def test_semantic_chunk():

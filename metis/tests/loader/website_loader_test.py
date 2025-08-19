@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.loader.website_loader import WebSiteLoader
+from src.core.loader import WebSiteLoader
 
 
 def test_website_loader():

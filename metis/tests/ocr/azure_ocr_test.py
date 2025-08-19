@@ -1,10 +1,9 @@
 import os
-from dotenv import load_dotenv
 import logging
 
 logger = logging.getLogger(__name__)
 
-from src.ocr.azure_ocr import AzureOCR
+from src.core.ocr import AzureOCR
 
 
 def test_azure_ocr():

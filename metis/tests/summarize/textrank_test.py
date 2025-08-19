@@ -1,5 +1,5 @@
-from src.summarize.textrank.textrank_keyword import TextRankKeyword
-from src.summarize.textrank.textrank_sentence import TextRankSentence
+from src.core.summarize.textrank.textrank_keyword import TextRankKeyword
+from src.core.summarize.textrank.textrank_sentence import TextRankSentence
 
 
 def test_textrank():

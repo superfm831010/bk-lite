@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.tools.jenkins_tools import list_jenkins_jobs
+from src.core.tools.jenkins_tools import list_jenkins_jobs
 
 
 def test_list_jenkins_job():

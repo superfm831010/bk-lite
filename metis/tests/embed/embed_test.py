@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.embed.embed_builder import EmbedBuilder
+from src.core.embed import EmbedBuilder
 
 
 def test_fast_embed():

@@ -7,8 +7,8 @@ tools_loader.py 的单元测试
 - enable_extra_prompt 配置功能
 """
 
-from src.core.entity.tools_server import ToolsServer
-from src.tools.tools_loader import ToolsLoader
+from src.core.llm.entity import ToolsServer
+from src.core.tools import ToolsLoader
 import pytest
 from pathlib import Path
 import sys

@@ -1,9 +1,9 @@
-from src.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
-from src.entity.rag.base.index_delete_request import IndexDeleteRequest
-from src.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
-from src.entity.rag.base.document_metadata_update_request import DocumentMetadataUpdateRequest
-from src.entity.rag.base.document_ingest_request import DocumentIngestRequest
-from src.entity.rag.base.document_delete_request import DocumentDeleteRequest
+from src.core.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
+from src.web.entity.rag.base.index_delete_request import IndexDeleteRequest
+from src.web.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
+from src.web.entity.rag.base.document_metadata_update_request import DocumentMetadataUpdateRequest
+from src.web.entity.rag.base.document_ingest_request import DocumentIngestRequest
+from src.web.entity.rag.base.document_delete_request import DocumentDeleteRequest
 import os
 import uuid
 

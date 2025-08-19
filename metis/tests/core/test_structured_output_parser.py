@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import Mock, AsyncMock
 from pydantic import BaseModel, Field
 
-from src.core.node.structured_output_parser import (
+from src.core.llm.node.structured_output_parser import (
     ModelType,
     ModelDetector,
     PromptBuilder,

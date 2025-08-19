@@ -1,11 +1,10 @@
 import os
 
-from dotenv import load_dotenv
 import logging
 
 logger = logging.getLogger(__name__)
 
-from src.ocr.olm_ocr import OlmOcr
+from src.core.ocr.olm_ocr import OlmOcr
 
 
 def test_olm_ocr():
