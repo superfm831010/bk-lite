@@ -72,14 +72,12 @@ filebeat.inputs:
               event.Put("log_level", evt.parsed_message["log.level"] || "info");
               event.Put("logger", evt.parsed_message["log.logger"] || "filebeat");
               
-              // 简化消息
-              event.Put("message", "Filebeat: " + (m.filebeat ? m.filebeat.events.done : 0) + 
-                       "完成 " + Math.round((m.beat ? m.beat.memstats.memory_alloc : 0) / 1024 / 1024) + "MB");
+              event.Put("message", "mem:" + Math.round((m.beat ? m.beat.memstats.memory_alloc : 0) / 1024 / 1024) + 
+                       "M send:" + (m.filebeat ? m.filebeat.events.done : 0));
             }
             return event;
           }
 
-    # 3. 清理临时字段
     - drop_fields:
         fields: ["parsed_message"]
         ignore_missing: true
