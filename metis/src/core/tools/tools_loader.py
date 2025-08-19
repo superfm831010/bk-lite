@@ -96,7 +96,7 @@ class ToolsLoader:
     @staticmethod
     def _extract_tools_from_module(tools_file, enable_extra_prompt):
         """从模块中提取工具函数"""
-        module_name = f"src.tools.{tools_file.stem}"
+        module_name = f"src.core.tools.{tools_file.stem}"
 
         try:
             module = importlib.import_module(module_name)
