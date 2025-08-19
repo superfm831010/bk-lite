@@ -1,10 +1,8 @@
 # ================================== General ===================================
-# Filebeat基础配置
-name: "filebeat-${node.ip}"
+name: "filebeat-${node.ip}-${node.cloud_region}"
 tags: ["bk-lite", "logstash"]
 
 # ================================== Logging ===================================
-# Filebeat自身日志配置
 logging.level: info
 logging.to_files: true
 logging.files:
@@ -13,50 +11,75 @@ logging.files:
   keepfiles: 7
   permissions: 0600
 
-# ================================= Processors =================================
-# 数据处理器：在Filebeat端完成日志处理
-processors:
-  # 添加主机元数据
-  - add_host_metadata:
-      when.not.contains.tags: forwarded
-      netinfo.enabled: false
-      cache.ttl: 5m
-  # 添加基础标识字段
-  - add_fields:
-      target: ""
-      fields:
-        node_ip: "${node.ip}"
-        cloud_region: "${node.cloud_region}"
-        collect: "filebeat"
-        processed_at: "@timestamp"
-
 # ================================== Outputs ===================================
 output.logstash:
-  # Vector Logstash 接收地址
   hosts: ["localhost:15044"]
-
-  # 负载均衡配置
-  loadbalance: true
-
-  # 性能优化配置
   worker: 1
   bulk_max_size: 2048
   timeout: 30s
-
-  # 重试配置
   max_retries: 3
-  backoff.init: 1s
-  backoff.max: 60s
 
-# ============================== Filebeat inputs ===============================
+# ================================== Inputs ===================================
 filebeat.inputs:
 - type: filestream
-  id: default-logs
+  id: filebeat-self-logs
   enabled: true
   paths:
-    - /opt/fusion-collectors/log/*.log
-    - /opt/fusion-collectors/log/app/*.log
+    - /opt/fusion-collectors/log/filebeat/filebeat-*.ndjson
+
   fields:
-    log_type: "application"
-    component: "default"
+    log_type: "filebeat"
+    component: "self"
+    node_ip: "${node.ip}"
+    cloud_region: "${node.cloud_region}"
   fields_under_root: false
+
+  close_inactive: 1m
+  close_removed: true
+  clean_removed: true
+  prospector.scanner.check_interval: 10s
+
+  processors:
+    - decode_json_fields:
+        fields: ["message"]
+        target: "parsed_message"
+        add_error_key: true
+
+    - script:
+        lang: javascript
+        source: >
+          function process(event) {
+            var evt = event.Get();
+            if (evt.parsed_message && evt.parsed_message.monitoring) {
+              var m = evt.parsed_message.monitoring.metrics;
+              
+              // 核心指标提取
+              if (m.filebeat) {
+                event.Put("events_active", m.filebeat.events.active || 0);
+                event.Put("events_done", m.filebeat.events.done || 0);
+                event.Put("harvester_running", m.filebeat.harvester.running || 0);
+              }
+              
+              if (m.beat) {
+                event.Put("memory_mb", Math.round((m.beat.memstats.memory_alloc || 0) / 1024 / 1024));
+                event.Put("uptime_s", Math.round((m.beat.info.uptime.ms || 0) / 1000));
+              }
+              
+              if (m.libbeat && m.libbeat.output) {
+                event.Put("output_acked", m.libbeat.output.events.acked || 0);
+              }
+              
+              event.Put("log_level", evt.parsed_message["log.level"] || "info");
+              event.Put("logger", evt.parsed_message["log.logger"] || "filebeat");
+              
+              // 简化消息
+              event.Put("message", "Filebeat: " + (m.filebeat ? m.filebeat.events.done : 0) + 
+                       "完成 " + Math.round((m.beat ? m.beat.memstats.memory_alloc : 0) / 1024 / 1024) + "MB");
+            }
+            return event;
+          }
+
+    # 3. 清理临时字段
+    - drop_fields:
+        fields: ["parsed_message"]
+        ignore_missing: true
