@@ -1,0 +1,62 @@
+# ================================== General ===================================
+# Filebeat基础配置
+name: "filebeat-${node.ip}"
+tags: ["bk-lite", "logstash"]
+
+# ================================== Logging ===================================
+# Filebeat自身日志配置
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /opt/fusion-collectors/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0600
+
+# ================================= Processors =================================
+# 数据处理器：在Filebeat端完成日志处理
+processors:
+  # 添加主机元数据
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+      netinfo.enabled: false
+      cache.ttl: 5m
+  # 添加基础标识字段
+  - add_fields:
+      target: ""
+      fields:
+        node_ip: "${node.ip}"
+        cloud_region: "${node.cloud_region}"
+        collect: "filebeat"
+        processed_at: "@timestamp"
+
+# ================================== Outputs ===================================
+output.logstash:
+  # Vector Logstash 接收地址
+  hosts: ["localhost:15044"]
+
+  # 负载均衡配置
+  loadbalance: true
+
+  # 性能优化配置
+  worker: 1
+  bulk_max_size: 2048
+  timeout: 30s
+
+  # 重试配置
+  max_retries: 3
+  backoff.init: 1s
+  backoff.max: 60s
+
+# ============================== Filebeat inputs ===============================
+filebeat.inputs:
+- type: filestream
+  id: default-logs
+  enabled: true
+  paths:
+    - /opt/fusion-collectors/log/*.log
+    - /opt/fusion-collectors/log/app/*.log
+  fields:
+    log_type: "application"
+    component: "default"
+  fields_under_root: false
