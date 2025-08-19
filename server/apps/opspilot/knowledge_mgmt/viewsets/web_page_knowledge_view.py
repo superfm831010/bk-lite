@@ -3,6 +3,7 @@ from django.utils.translation import gettext as _
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
+from apps.core.decorators.api_permission import HasPermission
 from apps.opspilot.knowledge_mgmt.serializers import WebPageKnowledgeSerializer
 from apps.opspilot.knowledge_mgmt.utils import KnowledgeDocumentUtils
 from apps.opspilot.models import WebPageKnowledge
@@ -15,6 +16,7 @@ class WebPageKnowledgeViewSet(viewsets.ModelViewSet):
     search_fields = ("name",)
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Add")
     def create_web_page_knowledge(self, request):
         kwargs = request.data
         if not kwargs.get("url").strip():

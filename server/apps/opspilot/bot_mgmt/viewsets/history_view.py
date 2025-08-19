@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
+from apps.core.decorators.api_permission import HasPermission
 from apps.opspilot.bot_mgmt.serializers.history_serializer import HistorySerializer
 from apps.opspilot.bot_mgmt.utils import set_time_range
 from apps.opspilot.enum import ChannelChoices
@@ -20,6 +21,7 @@ class HistoryViewSet(viewsets.ModelViewSet):
     queryset = BotConversationHistory.objects.all()
 
     @action(methods=["GET"], detail=False)
+    @HasPermission("bot_conversation_log-View")
     def search_log(self, request):
         bot_id, channel_type, end_time, page, page_size, search, start_time = self.set_log_params(request)
 
@@ -95,6 +97,7 @@ class HistoryViewSet(viewsets.ModelViewSet):
         return bot_id, channel_type, end_time, page, page_size, search, start_time
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("bot_conversation_log-View")
     def get_log_detail(self, request):
         ids = request.data.get("ids")
         page_size = int(request.data.get("page_size", 10))
@@ -126,6 +129,7 @@ class HistoryViewSet(viewsets.ModelViewSet):
         return JsonResponse({"result": True, "data": return_data})
 
     @action(methods=["GET"], detail=False)
+    @HasPermission("bot_conversation_log-View")
     def get_tag_detail(self, request):
         tag_obj = ConversationTag.objects.get(id=request.GET.get("tag_id"))
         return JsonResponse(
@@ -140,6 +144,7 @@ class HistoryViewSet(viewsets.ModelViewSet):
         )
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("bot_conversation_log-Mark")
     def set_tag(self, request):
         kwargs = request.data
         params = {
@@ -161,6 +166,7 @@ class HistoryViewSet(viewsets.ModelViewSet):
         return JsonResponse({"result": True, "data": {"tag_id": tag_obj.id}})
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("bot_conversation_log-Mark")
     def remove_tag(self, request):
         tag_obj = ConversationTag.objects.get(id=request.data.get("tag_id"))
         doc_obj = KnowledgeDocument.objects.filter(id=tag_obj.knowledge_document_id).first()

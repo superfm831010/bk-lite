@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.core.decorators.api_permission import HasRole
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.knowledge_mgmt.models import QAPairs
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
@@ -21,7 +21,7 @@ class KnowledgeBaseViewSet(AuthViewSet):
     search_fields = ("name",)
     permission_key = "knowledge"
 
-    @HasRole()
+    @HasPermission("knowledge_list-Add")
     def create(self, request, *args, **kwargs):
         params = request.data
         if not params.get("team"):
@@ -46,7 +46,7 @@ class KnowledgeBaseViewSet(AuthViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    @HasRole()
+    @HasPermission("knowledge_list-Edit")
     def update(self, request, *args, **kwargs):
         instance: KnowledgeBase = self.get_object()
         params = request.data
@@ -59,7 +59,7 @@ class KnowledgeBaseViewSet(AuthViewSet):
         return super().update(request, *args, **kwargs)
 
     @action(methods=["POST"], detail=True)
-    @HasRole()
+    @HasPermission("knowledge_setting-Edit")
     def update_settings(self, request, *args, **kwargs):
         instance: KnowledgeBase = self.get_object()
         if not request.user.is_superuser:
@@ -98,7 +98,7 @@ class KnowledgeBaseViewSet(AuthViewSet):
         instance.save()
         return JsonResponse({"result": True})
 
-    @HasRole()
+    @HasPermission("knowledge_list-Delete")
     def destroy(self, request, *args, **kwargs):
         if KnowledgeDocument.objects.filter(knowledge_base_id=kwargs["pk"]).exists():
             return JsonResponse(
@@ -111,7 +111,6 @@ class KnowledgeBaseViewSet(AuthViewSet):
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=["GET"])
-    @HasRole()
     def get_teams(self, request):
         groups = request.user.group_list
         return JsonResponse({"result": True, "data": groups})

@@ -4,7 +4,7 @@ from django_filters.rest_framework import FilterSet
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from apps.core.decorators.api_permission import HasRole
+from apps.core.decorators.api_permission import HasPermission
 from apps.opspilot.models import QuotaRule
 from apps.opspilot.quota_rule_mgmt.quota_utils import get_quota_client
 from apps.opspilot.quota_rule_mgmt.serializers import QuotaRuleSerializer
@@ -22,23 +22,24 @@ class QuotaRuleViewSet(viewsets.ModelViewSet):
     filterset_class = ObjFilter
 
     # @HasRole("admin")
+    @HasPermission("mange_quota-View")
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @HasRole("admin")
+    @HasPermission("mange_quota-Add")
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
-    @HasRole("admin")
+    @HasPermission("mange_quota-Edit")
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
-    @HasRole("admin")
+    @HasPermission("mange_quota-Delete")
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
-    @HasRole("admin")
     @action(detail=False, methods=["GET"])
+    @HasPermission("mange_quota-Add,mange_quota-Edit")
     def get_group_user(self, request, *args, **kwargs):
         teams = request.user.group_list
         current_team = request.COOKIES.get("current_team")
@@ -49,6 +50,7 @@ class QuotaRuleViewSet(viewsets.ModelViewSet):
         return JsonResponse(return_data)
 
     @action(detail=False, methods=["GET"])
+    @HasPermission("my_quota-View")
     def my_quota(self, request):
         client = get_quota_client(request)
         all_file_size, used_file_size, is_file_uniform = client.get_file_quota()
