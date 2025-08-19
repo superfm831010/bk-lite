@@ -1,4 +1,4 @@
-from src.rerank.bce_rerank import BCEReRank
+from src.core.rerank import BCEReRank
 import logging
 
 logger = logging.getLogger(__name__)

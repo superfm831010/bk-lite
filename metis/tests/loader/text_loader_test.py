@@ -1,4 +1,4 @@
-from src.loader.text_loader import TextLoader
+from src.core.loader import TextLoader
 import logging
 
 logger = logging.getLogger(__name__)

@@ -3,9 +3,9 @@ from typing import List
 
 import pytest
 
-from src.agent.plan_and_execute_agent.plan_and_execute_agent_graph import PlanAndExecuteAgentGraph
-from src.core.entity.tools_server import ToolsServer
-from src.entity.agent.plan_and_execute_agent.plan_and_execute_agent_request import PlanAndExecuteAgentRequest
+from src.core.agent.plan_and_execute_agent.plan_and_execute_agent_graph import PlanAndExecuteAgentGraph
+from src.core.llm.entity import ToolsServer
+from src.web.entity.agent.plan_and_execute_agent.plan_and_execute_agent_request import PlanAndExecuteAgentRequest
 import logging
 
 logger = logging.getLogger(__name__)

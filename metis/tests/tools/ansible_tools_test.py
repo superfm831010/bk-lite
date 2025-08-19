@@ -1,6 +1,3 @@
-from src.tools.ansible_tools_plus import ansible_adhoc
-import os
-
 import logging
 
 logger = logging.getLogger(__name__)

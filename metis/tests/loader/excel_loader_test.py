@@ -1,4 +1,4 @@
-from src.loader.excel_loader import ExcelLoader
+from src.core.loader import ExcelLoader
 import logging
 
 logger = logging.getLogger(__name__)

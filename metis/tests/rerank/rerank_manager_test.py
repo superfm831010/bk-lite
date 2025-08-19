@@ -3,7 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from src.rerank.rerank_manager import ReRankManager
+from src.core.rerank import ReRankManager
 
 
 def test_rerank():

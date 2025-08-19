@@ -1,6 +1,6 @@
-from src.entity.agent.react_agent.react_agent_request import ReActAgentRequest
-from src.core.entity.tools_server import ToolsServer
-from src.agent.react_agent.react_agent_graph import ReActAgentGraph
+from src.web.entity.agent import ReActAgentRequest
+from src.core.llm.entity import ToolsServer
+from src.core.agent.react_agent.react_agent_graph import ReActAgentGraph
 import os
 from typing import List
 
