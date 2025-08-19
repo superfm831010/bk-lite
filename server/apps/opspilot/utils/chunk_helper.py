@@ -32,6 +32,8 @@ class ChunkHelper(ChatServerHelper):
         task_obj=None,
     ):
         success_count = 0
+        if is_delete:
+            cls.delete_es_content(es_index, qa_pairs_obj.id)
         for i in content_list:
             params = {
                 "size": qa_count,
@@ -50,7 +52,7 @@ class ChunkHelper(ChatServerHelper):
                 continue
             try:
                 chunk_success_count = cls.create_qa_pairs(
-                    res["message"], i, es_index, embed_config, embed_model_name, qa_pairs_obj.id, is_delete
+                    res["message"], i, es_index, embed_config, embed_model_name, qa_pairs_obj.id
                 )
                 success_count += chunk_success_count
                 res = cls.update_document_qa_pairs_count(es_index, chunk_success_count, i["chunk_id"])
@@ -130,12 +132,9 @@ class ChunkHelper(ChatServerHelper):
         return {"result": True}
 
     @classmethod
-    def create_qa_pairs(
-        cls, qa_paris, chunk_obj, index_name, embed_config, embed_model_name, qa_pairs_id, is_delete=True
-    ):
+    def create_qa_pairs(cls, qa_paris, chunk_obj, index_name, embed_config, embed_model_name, qa_pairs_id):
         success_count = 0
-        if is_delete:
-            cls.delete_es_content(index_name, qa_pairs_id)
+
         kwargs, metadata = cls.set_qa_pairs_params(embed_config, embed_model_name, index_name, qa_pairs_id, chunk_obj)
         headers = cls.get_chat_server_header()
         # SSL验证配置 - 从环境变量读取
@@ -167,12 +166,14 @@ class ChunkHelper(ChatServerHelper):
 
     @classmethod
     def get_chunk_qa_count(cls, es_index, chunk_id):
-        obj = cls.get_document_es_chunk(
-            es_index, metadata_filter={"chunk_id": str(chunk_id), "is_doc": "1"}, get_count=False
-        )
-        if obj.get("document", []):
-            return obj["document"][0].get("metadata", {}).get("qa_count", 0)
-        return 0
+        count_url = f"{settings.METIS_SERVER_URL}/api/rag/count_index_document"
+        query = {
+            "index_name": es_index,
+            "metadata_filter": {"base_chunk_id": str(chunk_id), "is_doc": "0"},
+            "query": "",
+        }
+        count_res = ChatServerHelper.post_chat_server(query, count_url)
+        return count_res.get("count", 0)
 
     @classmethod
     def set_qa_pairs_params(cls, embed_config, embed_model_name, index_name, qa_pairs_id, chunk_obj=None):
