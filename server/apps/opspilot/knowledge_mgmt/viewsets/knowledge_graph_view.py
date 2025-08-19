@@ -4,6 +4,7 @@ from django_filters import filters
 from django_filters.rest_framework import FilterSet
 from rest_framework.decorators import action
 
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import MaintainerViewSet
 from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph
 from apps.opspilot.knowledge_mgmt.serializers.knowledge_graph_serializers import KnowledgeGraphSerializer
@@ -23,6 +24,7 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
     ordering = ("-id",)
 
     @action(methods=["GET"], detail=False)
+    @HasPermission("knowledge_document-View")
     def get_details(self, request):
         knowledge_base_id = request.query_params.get("knowledge_base_id")
         obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base_id).first()
@@ -39,6 +41,7 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
         return JsonResponse({"result": True, "data": return_data})
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Delete")
     def delete_graph(self, request):
         instance = KnowledgeGraph.objects.get(knowledge_base_id=request.data.get("knowledge_base_id"))
         if instance.status == "training":
@@ -51,6 +54,7 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Train, knowledge_document-Set")
     def rebuild_graph_community(self, request):
         knowledge_base_id = request.data.get("knowledge_base_id")
         graph_obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base_id).first()

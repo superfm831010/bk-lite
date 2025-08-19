@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
+from apps.core.decorators.api_permission import HasPermission
 from apps.opspilot.knowledge_mgmt.serializers import ManualKnowledgeSerializer
 from apps.opspilot.knowledge_mgmt.utils import KnowledgeDocumentUtils
 from apps.opspilot.models import ManualKnowledge
@@ -14,6 +15,7 @@ class ManualKnowledgeViewSet(viewsets.ModelViewSet):
     search_fields = ("name",)
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Add")
     def create_manual_knowledge(self, request):
         kwargs = request.data
         kwargs["knowledge_source_type"] = "manual"
