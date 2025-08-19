@@ -52,17 +52,10 @@
   {% if multiline %}
   parsers:
     - multiline:
-        type: {{ multiline.type | default('pattern') }}
-        {% if multiline.type == 'pattern' or not multiline.type %}
+        type: pattern
         pattern: '{{ multiline.pattern }}'
         negate: {{ multiline.negate | default(false) | lower }}
         match: {{ multiline.match | default('after') }}
-        {% elif multiline.type == 'count' %}
-        count_lines: {{ multiline.count_lines | default(3) }}
-        {% elif multiline.type == 'while_pattern' %}
-        pattern: '{{ multiline.pattern }}'
-        negate: {{ multiline.negate | default(false) | lower }}
-        {% endif %}
         timeout: {{ multiline.timeout | default('5s') }}
         max_lines: {{ multiline.max_lines | default(500) }}
   {% endif %}
