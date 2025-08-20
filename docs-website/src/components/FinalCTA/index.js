@@ -33,12 +33,6 @@ export default function FinalCTA() {
               >
                 📖 查看源码
               </Link>
-              <Link
-                className={clsx(styles.ctaButton, styles.ctaTertiary)}
-                to="/contact"
-              >
-                💬 联系专家
-              </Link>
             </div>
             <div className={styles.ctaFeatures}>
               <div className={styles.feature}>
@@ -52,41 +46,6 @@ export default function FinalCTA() {
               <div className={styles.feature}>
                 <span className={styles.featureIcon}>🛡️</span>
                 <span>企业级安全保障</span>
-              </div>
-            </div>
-          </div>
-          <div className={styles.ctaVisual}>
-            <div className={styles.visualCard}>
-              <div className={styles.visualHeader}>
-                <div className={styles.dots}>
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-                <span className={styles.visualTitle}>BKLite Dashboard</span>
-              </div>
-              <div className={styles.visualContent}>
-                <div className={styles.visualMetric}>
-                  <span className={styles.metricLabel}>系统健康度</span>
-                  <div className={styles.metricBar}>
-                    <div className={clsx(styles.metricFill, styles.success)}></div>
-                  </div>
-                  <span className={styles.metricValue}>98.5%</span>
-                </div>
-                <div className={styles.visualMetric}>
-                  <span className={styles.metricLabel}>AI 检测精度</span>
-                  <div className={styles.metricBar}>
-                    <div className={clsx(styles.metricFill, styles.excellent)}></div>
-                  </div>
-                  <span className={styles.metricValue}>99.2%</span>
-                </div>
-                <div className={styles.visualMetric}>
-                  <span className={styles.metricLabel}>响应时间</span>
-                  <div className={styles.metricBar}>
-                    <div className={clsx(styles.metricFill, styles.good)}></div>
-                  </div>
-                  <span className={styles.metricValue}>&lt; 100ms</span>
-                </div>
               </div>
             </div>
           </div>
