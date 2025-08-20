@@ -99,16 +99,6 @@ const config = {
             label: 'GitHub',
             position: 'right',
           },
-          {
-            to: '/pricing',
-            label: '价格',
-            position: 'right',
-          },
-          {
-            to: '/contact',
-            label: '联系我们',
-            position: 'right',
-          },
         ],
       },
       footer: {
