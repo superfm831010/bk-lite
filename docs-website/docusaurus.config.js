@@ -84,7 +84,7 @@ const config = {
         title: 'BKLite',
         logo: {
           alt: 'BKLite Logo',
-          src: 'img/logo.svg',
+          src: 'img/logo-site.png',
         },
         items: [
           {
@@ -97,16 +97,6 @@ const config = {
           {
             href: 'https://github.com/TencentBlueKing/bk-lite',
             label: 'GitHub',
-            position: 'right',
-          },
-          {
-            to: '/pricing',
-            label: '价格',
-            position: 'right',
-          },
-          {
-            to: '/contact',
-            label: '联系我们',
             position: 'right',
           },
         ],

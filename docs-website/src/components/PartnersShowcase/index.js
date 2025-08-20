@@ -5,34 +5,64 @@ import styles from './styles.module.css';
 
 const Partners = [
   {
-    name: '腾讯云',
-    logo: '☁️',
-    description: '云计算服务提供商',
+    name: '企业名字1',
+    logo: '🐧',
+    description: '科技巨头',
   },
   {
-    name: '微信',
-    logo: '💬',
-    description: '社交平台集成',
+    name: '企业名字2',
+    logo: '🛒',
+    description: '电商云计算',
   },
   {
-    name: '企业微信',
-    logo: '🏢',
-    description: '企业通讯解决方案',
+    name: '企业名字3',
+    logo: '🔍',
+    description: 'AI搜索',
   },
   {
-    name: '钉钉',
-    logo: '📌',
-    description: '办公协作平台',
+    name: '企业名字4',
+    logo: '📱',
+    description: '移动互联网',
   },
   {
-    name: '飞书',
-    logo: '🚀',
-    description: '团队协作工具',
+    name: '企业名字5',
+    logo: '🍔',
+    description: '生活服务',
   },
   {
-    name: 'Kubernetes',
-    logo: '⚓',
-    description: '容器编排平台',
+    name: '企业名字6',
+    logo: '�',
+    description: '出行服务',
+  },
+  {
+    name: '企业名字7',
+    logo: '📦',
+    description: '电商物流',
+  },
+  {
+    name: '企业名字8',
+    logo: '�',
+    description: '智能硬件',
+  },
+  {
+    name: '企业名字9',
+    logo: '�',
+    description: '通信技术',
+  },
+  {
+    name: '企业名字10',
+    logo: '🏦',
+    description: '金融服务',
+  },
+  {
+    name: '企业名11',
+    logo: '💳',
+    description: '银行业务',
+  },
+  {
+    name: '企业名字12',
+    logo: '📶',
+    description: '运营商',
   },
 ];
 
@@ -65,10 +95,7 @@ function PartnerCard({ name, logo, description }) {
       <div className={styles.partnerLogo}>
         <span className={styles.logoEmoji}>{logo}</span>
       </div>
-      <div className={styles.partnerInfo}>
-        <h4 className={styles.partnerName}>{name}</h4>
-        <p className={styles.partnerDescription}>{description}</p>
-      </div>
+      <div className={styles.partnerName}>{name}</div>
     </div>
   );
 }
@@ -92,10 +119,10 @@ export default function PartnersShowcase() {
     <section className={styles.partnersSection}>
       <div className="container">
         {/* Statistics Section */}
-        <div className={styles.statsSection}>
+        {/* <div className={styles.statsSection}>
           <div className="text--center margin-bottom--xl">
             <Heading as="h2" className={styles.sectionTitle}>
-              📊 值得信赖的选择
+              值得信赖的选择
             </Heading>
             <p className={styles.sectionSubtitle}>
               全球众多知名企业选择BKLite构建AI驱动的数字化平台
@@ -106,24 +133,24 @@ export default function PartnersShowcase() {
               <StatCard key={idx} {...props} />
             ))}
           </div>
-        </div>
+        </div> */}
 
-        {/* Partners Section */}
-        <div className={styles.partnersGrid}>
+        {/* Partners Logo Wall */}
+        {/* <div className={styles.partnersLogoWall}>
           <div className="text--center margin-bottom--xl">
             <Heading as="h3" className={styles.partnersTitle}>
-              🤝 生态合作伙伴
+              生态合作伙伴
             </Heading>
             <p className={styles.partnersSubtitle}>
-              与行业领先平台深度集成，构建开放生态
+              与行业领先企业深度合作，共建数字化生态
             </p>
           </div>
-          <div className={styles.partnersList}>
+          <div className={styles.logoGrid}>
             {Partners.map((props, idx) => (
               <PartnerCard key={idx} {...props} />
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );

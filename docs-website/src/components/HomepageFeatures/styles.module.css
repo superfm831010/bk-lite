@@ -1,168 +1,269 @@
 /**
- * Microsoft Fluent Design inspired feature cards
- * 2025 AI Website aesthetic
+ * Apple-Inspired Feature Cards
+ * Clean, elegant and sophisticated design
  */
 
 .features {
   padding: 6rem 0;
-  background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+  background: 
+    linear-gradient(180deg, 
+      #dbeafe 0%,
+      #ffffff 30%,
+      #f8fafc 70%,
+      #f1f5f9 100%
+    );
+  position: relative;
+  overflow: hidden;
+}
+
+.features::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(180deg, 
+    rgba(241, 245, 249, 0) 0%,
+    rgba(241, 245, 249, 0.5) 50%,
+    rgba(226, 232, 240, 1) 100%
+  );
+  pointer-events: none;
+}
+
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 4rem;
+  position: relative;
+  z-index: 2;
 }
 
 .sectionTitle {
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, #0078d4, #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #1d1d1f;
+  letter-spacing: -0.025em;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  position: relative;
+}
+
+.sectionTitle::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-radius: 2px;
 }
 
 .sectionSubtitle {
-  font-size: 1.25rem;
-  color: #4a5568;
-  margin-bottom: 3rem;
-  line-height: 1.6;
+  font-size: 1.125rem;
+  color: #64748b;
+  margin-bottom: 0;
+  line-height: 1.5;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  font-weight: 400;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+/* Apple 风格的现代网格布局 */
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  margin-top: 4rem;
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.featureItem {
+  display: flex;
+  height: 100%;
 }
 
 .featureCard {
-  background: rgba(255, 255, 255, 0.9);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 120, 212, 0.1);
-  border-radius: 16px;
-  padding: 2.5rem 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100%;
   position: relative;
   overflow: hidden;
-}
-
-.featureCard::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(135deg, #0078d4, #8b5cf6, #06b6d4);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 240px;
 }
 
 .featureCard:hover {
   transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  border-color: rgba(0, 120, 212, 0.2);
-}
-
-.featureCard:hover::before {
-  opacity: 1;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .featureIcon {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   margin: 0 auto 1.5rem auto;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #0078d4, #8b5cf6);
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: pulse 3s infinite;
-  box-shadow: 0 8px 24px rgba(0, 120, 212, 0.3);
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  flex-shrink: 0;
+}
+
+.featureCard:hover .featureIcon {
+  transform: scale(1.05);
+  background: #e8e8ed;
 }
 
 .iconEmoji {
   font-size: 2rem;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  filter: grayscale(0.2);
+}
+
+.featureContent {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .featureTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.375rem;
+  font-weight: 700;
   margin-bottom: 1rem;
-  color: #2d3748;
-  background: linear-gradient(135deg, #2d3748, #4a5568);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #1d1d1f;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
 }
 
 .featureDescription {
-  color: #4a5568;
-  line-height: 1.7;
+  color: #64748b;
+  line-height: 1.5;
   font-size: 1rem;
+  font-weight: 400;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
 }
 
-/* Staggered animation for cards */
-.featureCard:nth-child(1) {
-  animation: fadeInUp 0.8s ease-out 0.1s both;
-}
-
-.featureCard:nth-child(2) {
-  animation: fadeInUp 0.8s ease-out 0.2s both;
-}
-
-.featureCard:nth-child(3) {
-  animation: fadeInUp 0.8s ease-out 0.3s both;
-}
-
-.featureCard:nth-child(4) {
-  animation: fadeInUp 0.8s ease-out 0.4s both;
-}
-
-.featureCard:nth-child(5) {
-  animation: fadeInUp 0.8s ease-out 0.5s both;
-}
-
-.featureCard:nth-child(6) {
-  animation: fadeInUp 0.8s ease-out 0.6s both;
-}
-
-/* Dark mode adjustments */
+/* Apple 风格的暗色模式 */
 [data-theme='dark'] .features {
-  background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: #1d1d1f;
 }
 
 [data-theme='dark'] .featureCard {
-  background: rgba(45, 45, 45, 0.9);
-  border-color: rgba(64, 224, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 [data-theme='dark'] .featureCard:hover {
-  border-color: rgba(64, 224, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme='dark'] .featureIcon {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme='dark'] .featureCard:hover .featureIcon {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 [data-theme='dark'] .featureTitle {
-  color: #e2e8f0;
-  background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #f5f5f7;
 }
 
 [data-theme='dark'] .featureDescription {
-  color: #a0aec0;
+  color: #86868b;
 }
 
 [data-theme='dark'] .sectionTitle {
-  background: linear-gradient(135deg, #40e0ff, #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #f5f5f7;
 }
 
 [data-theme='dark'] .sectionSubtitle {
-  color: #a0aec0;
+  color: #86868b;
 }
 
-/* Responsive design */
+/* Apple 风格的响应式设计 */
 @media screen and (max-width: 996px) {
   .features {
     padding: 4rem 0;
+  }
+  
+  .featuresGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    max-width: 800px;
+  }
+  
+  .sectionTitle {
+    font-size: 2.5rem;
+  }
+  
+  .sectionSubtitle {
+    font-size: 1.125rem;
+  }
+  
+  .featureCard {
+    padding: 1.75rem 1.25rem;
+  }
+  
+  .featureIcon {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .iconEmoji {
+    font-size: 1.375rem;
+  }
+  
+  .featureTitle {
+    font-size: 1.25rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .features {
+    padding: 3rem 0;
+  }
+  
+  .featuresGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
   
   .sectionTitle {
@@ -170,52 +271,69 @@
   }
   
   .sectionSubtitle {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
   
   .featureCard {
-    margin-bottom: 1.5rem;
-  }
-}
-
-@media screen and (max-width: 768px) {
-  .sectionTitle {
-    font-size: 1.75rem;
-  }
-  
-  .featureCard {
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
   }
   
   .featureIcon {
-    width: 60px;
-    height: 60px;
+    width: 48px;
+    height: 48px;
   }
   
   .iconEmoji {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+  }
+  
+  .featureTitle {
+    font-size: 1.25rem;
+  }
+  
+  .featureDescription {
+    font-size: 0.9rem;
   }
 }
 
-/* Animation keyframes */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* 渐变效果样式 */
+.gradient-1 {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 8px 24px rgba(0, 120, 212, 0.3);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 12px 32px rgba(0, 120, 212, 0.4);
-  }
+.gradient-2 {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.gradient-3 {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.gradient-4 {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.gradient-5 {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.gradient-6 {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+.featureGlow {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 22px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: -1;
+  filter: blur(10px);
+}
+
+.featureCard:hover .featureGlow {
+  opacity: 0.3;
 }
