@@ -26,6 +26,8 @@ const RasaDetail = () => {
     deleteRasaStoryFile,
     getRasaEntityList,
     deleteRasaEntityFile,
+    getRasaSlotList,
+    deleteRasaSlotFile
   } = useMlopsManageApi();
   const [selectKey, setSelectKey] = useState<string>('intent');
   const [loading, setLoading] = useState<boolean>(false);
@@ -34,7 +36,7 @@ const RasaDetail = () => {
   const btnsElements = (record: any) => (<>
     <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
     <Popconfirm
-      title={t(`common.delConfirm`)} 
+      title={t(`common.delConfirm`)}
       description={t(`common.delConfirmCxt`)}
       okText={t('common.confirm')}
       cancelText={t('common.cancel')}
@@ -154,14 +156,14 @@ const RasaDetail = () => {
         title: t(`common.action`),
         key: 'action',
         dataIndex: 'action',
-        render: (_ ,record) => btnsElements(record)
+        render: (_, record) => btnsElements(record)
       }
     ],
     slot: [
       {
         title: '槽名称',
-        key: 'slot_name',
-        dataIndex: 'slot_name'
+        key: 'name',
+        dataIndex: 'name'
       },
       {
         title: t(`common.type`),
@@ -172,7 +174,7 @@ const RasaDetail = () => {
         title: t(`common.action`),
         key: 'action',
         dataIndex: 'action',
-        render: (_ ,record) => btnsElements(record)
+        render: (_, record) => btnsElements(record)
       }
     ]
   };
@@ -183,7 +185,7 @@ const RasaDetail = () => {
     'rule': getRasaRuleFileList,
     'story': getRasaStoryFileList,
     'entity': getRasaEntityList,
-    'slot': () => {}
+    'slot': getRasaSlotList
   };
 
   const delFileMap: Record<string, any> = {
@@ -192,7 +194,7 @@ const RasaDetail = () => {
     'rule': deleteRasaRuleFile,
     'story': deleteRasaStoryFile,
     'entity': deleteRasaEntityFile,
-    'slot': () => {}
+    'slot': deleteRasaSlotFile
   };
 
   const {

@@ -6,7 +6,7 @@ import { Option } from "@/types";
 import { useTranslation } from "@/utils/i18n";
 import useMlopsManageApi from "@/app/mlops/api/manage";
 import EntitySelectModal from "./entitySelectModal";
-import { ModalRef } from "../../types";
+import { ModalRef } from "@/app/mlops/types";
 
 interface SampleItem {
   type: 'intent' | 'response';
@@ -622,7 +622,7 @@ const useRasaSlotForm = ({
   // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
     if (visiable && formData) {
-      setSampleList(formData?.example || [null]);
+      setSampleList(formData?.values || [null]);
     } else if (visiable) {
       setSampleList([null]);
     }
@@ -733,7 +733,9 @@ const useRasaApiMethods = () => {
     addRasaStoryFile,
     updateRasaStoryFile,
     addRasaEntityFile,
-    updateRasaEntityFile
+    updateRasaEntityFile,
+    addRasaSlotFile,
+    updateRasaSlotFile
   } = useMlopsManageApi();
 
   const handleAddMap: Record<string, any> = {
@@ -742,7 +744,7 @@ const useRasaApiMethods = () => {
     'rule': addRasaRuleFile,
     'story': addRasaStoryFile,
     'entity': addRasaEntityFile,
-    'slot': () => { }
+    'slot': addRasaSlotFile
   };
 
   const handleUpdateMap: Record<string, any> = {
@@ -751,7 +753,7 @@ const useRasaApiMethods = () => {
     'rule': updateRasaRuleFile,
     'story': updateRasaStoryFile,
     'entity': updateRasaEntityFile,
-    'slot': () => { }
+    'slot': updateRasaSlotFile
   };
 
   return { handleAddMap, handleUpdateMap };
@@ -774,7 +776,8 @@ const useRasaFormData = () => {
     data: any,
     sampleList: any[],
     formData: any,
-    entityType?: string
+    entityType?: string,
+    slotType?: string,
   ) => {
     let params = {};
 
@@ -787,6 +790,11 @@ const useRasaFormData = () => {
             [item?.type]: item.select
           }))
         };
+      } else if (selectKey === 'slot') {
+        params = {
+          ...data,
+          values: slotType === 'categorical' ? sampleList : []
+        }
       } else {
         params = {
           ...data,
@@ -802,7 +810,13 @@ const useRasaFormData = () => {
             [item?.type]: item.select
           }))
         };
-      } else {
+      } else if (selectKey === 'slot') {
+        params = {
+          ...data,
+          values: slotType === 'categorical' ? sampleList : []
+        }
+      }
+      else {
         params = {
           ...data,
           example: (selectKey !== 'entity' || entityType === 'Lookup') ? sampleList : []
@@ -907,7 +921,7 @@ const useRasaFormManager = ({
     setConfirmLoading(true);
     try {
       const data = await formRef.current?.validateFields();
-      const params = prepareFormParams(type, selectKey, data, currentForm.sampleList, formData, entityType);
+      const params = prepareFormParams(type, selectKey, data, currentForm.sampleList, formData, entityType, slotType);
       console.log(params);
       if (type === 'add') {
         await handleAddMap[selectKey](params);
@@ -949,9 +963,9 @@ const useRasaFormManager = ({
     // 只有当selectKey是intent时才渲染EntitySelectModal
     if (selectKey === 'intent') {
       return (
-        <EntitySelectModal 
-          ref={modalRef} 
-          dataset={Number(folder_id)} 
+        <EntitySelectModal
+          ref={modalRef}
+          dataset={Number(folder_id)}
           onSuccess={handleEntitySelectFromModal}
         />
       );

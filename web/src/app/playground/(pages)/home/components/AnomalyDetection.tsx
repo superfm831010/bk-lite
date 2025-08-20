@@ -56,11 +56,11 @@ const AnomalyDetection = () => {
       "value": 33.70226097527219,
       "timestamp": 1704038580
     }
-  ]); // 存储所有数据
-  const [visibleRange, setVisibleRange] = useState<number[]>([0, 100]); // 实际应用的可见范围
-  const [maxRenderCount] = useState(2000); // 最大渲染数据量
-  const [isLargeDataset, setIsLargeDataset] = useState(false); // 是否为大数据集
-  const [isRangeChanging, setIsRangeChanging] = useState(false); // 是否正在拖动范围
+  ]); 
+  const [visibleRange, setVisibleRange] = useState<number[]>([0, 100]); 
+  const [maxRenderCount] = useState(2000);
+  const [isLargeDataset, setIsLargeDataset] = useState(false);
+  const [isRangeChanging, setIsRangeChanging] = useState(false);
 
   //  使用 ref 来存储临时范围，避免频繁的状态更新
   const tempVisibleRangeRef = useRef<number[]>([0, 100]);

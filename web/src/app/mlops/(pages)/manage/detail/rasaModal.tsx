@@ -53,6 +53,10 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
 
       if (formData?.entity_type) {
         formRef.current?.setFieldValue('entity_type', formData?.entity_type);
+        onEntityTypeChange(formData?.entity_type);
+      } else if (formData?.slot_type) {
+        formRef.current?.setFieldValue('slot_type', formData?.slot_type);
+        formRef.current?.setFieldValue('is_apply', formData?.is_apply);
       }
     }
   }, [formData, visiable]);
@@ -135,7 +139,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
                       value: 'categorical'
                     },
                     {
-                      label: 'float(记录数值类型)',
+                      label: 'float(记录数值类型，浮点型)',
                       value: 'float'
                     },
                     {
@@ -145,11 +149,15 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
                     {
                       label: 'bool(布尔值，是或者否)',
                       value: 'bool'
+                    },
+                    {
+                      label: 'int(记录数值类型，整数型)',
+                      value: 'int'
                     }
                   ]} onChange={onSlotTypeChange} />
                 </Form.Item>
                 <Form.Item
-                  name={'slotPrediction'}
+                  name={'is_apply'}
                   label={'是否应用对话预测'}
                   rules={[
                     { required: true, message: t(`common.selectMsg`) }
@@ -157,9 +165,9 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
                 >
                   <Switch onChange={onSlotPredictionChange} />
                 </Form.Item>
-                {slotType === 'list' && (
+                {slotType === 'categorical' && (
                   <Form.Item
-                    label={'样例'}
+                    label={'类别'}
                     rules={[{ required: true, validator: validateSampleList }]}
                   >
                     {renderElement}
