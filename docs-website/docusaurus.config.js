@@ -84,7 +84,7 @@ const config = {
         title: 'BKLite',
         logo: {
           alt: 'BKLite Logo',
-          src: 'img/logo.svg',
+          src: 'img/logo-site.png',
         },
         items: [
           {
