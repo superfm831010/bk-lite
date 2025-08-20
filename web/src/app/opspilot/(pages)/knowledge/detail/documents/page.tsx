@@ -274,10 +274,11 @@ const DocumentsPage: React.FC = () => {
   };
 
   const handleDelete = (keys: React.Key[]) => {
-    confirm({
+    Modal.confirm({
       title: t('common.delConfirm'),
-      content: t('common.delConfirmCxt'),
+      content: t('knowledge.documents.deleteConfirmContent'),
       centered: true,
+      width: 520,
       onOk: async () => {
         try {
           await batchDeleteDocuments(keys, id);
@@ -291,14 +292,60 @@ const DocumentsPage: React.FC = () => {
     });
   };
 
-  const handleTrain = async (keys: React.Key[]) => {
+  const handleTrain = (keys: React.Key[]) => {
+    Modal.confirm({
+      title: t('knowledge.documents.trainConfirmTitle'),
+      content: (
+        <div className="space-y-3">
+          <p>{t('knowledge.documents.trainConfirmContent')}</p>
+          <div className="bg-orange-50 p-3 rounded border border-orange-200">
+            <p className="text-orange-800 text-sm mb-2 font-medium">
+              {t('knowledge.documents.trainWarning')}
+            </p>
+            <p className="text-gray-700 text-sm">
+              {t('knowledge.documents.trainOptions')}
+            </p>
+          </div>
+        </div>
+      ),
+      centered: true,
+      width: 520,
+      okText: t('knowledge.documents.keepQaPairs'),
+      cancelText: t('common.cancel'),
+      footer: (_, { CancelBtn }) => (
+        <div className="flex justify-end gap-2">
+          <CancelBtn />
+          <Button 
+            type="default" 
+            onClick={() => {
+              Modal.destroyAll();
+              handleConfirmTrain(keys, true);
+            }}
+          >
+            {t('knowledge.documents.deleteQaPairs')}
+          </Button>
+          <Button 
+            type="primary" 
+            onClick={() => {
+              Modal.destroyAll();
+              handleConfirmTrain(keys, false);
+            }}
+          >
+            {t('knowledge.documents.keepQaPairs')}
+          </Button>
+        </div>
+      ),
+    });
+  };
+
+  const handleConfirmTrain = async (keys: React.Key[], deleteQaPairs: boolean) => {
     if (keys.length === 1) {
       setSingleTrainLoading((prev) => ({ ...prev, [keys[0].toString()]: true }));
     } else {
       setIsTrainLoading(true);
     }
     try {
-      await batchTrainDocuments(keys);
+      await batchTrainDocuments(keys, deleteQaPairs);
       message.success(t('common.training'));
       fetchData();
     } catch {
@@ -516,6 +563,37 @@ const DocumentsPage: React.FC = () => {
       fetchQAPairData(searchText);
     } else if (mainTabKey === 'source_files') {
       fetchData(searchText);
+    }
+  };
+
+  const handleDownloadTemplate = async (fileType: 'json' | 'csv') => {
+    try {
+      const response = await fetch(`/api/proxy/opspilot/knowledge_mgmt/qa_pairs/download_import_template/?file_type=${fileType}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authContext?.token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to download template');
+      }
+      
+      const blob = await response.blob();
+      const fileName = `qa_pairs_template.${fileType}`;
+      const fileUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(fileUrl);
+      message.success(t('common.successfullyExported'));
+    } catch (error) {
+      console.error('Error downloading template:', error);
+      message.error(t('common.exportFailed'));
     }
   };
 
@@ -776,6 +854,30 @@ const DocumentsPage: React.FC = () => {
             <p className="ant-upload-text">{t('knowledge.qaPairs.dragOrClick')}</p>
             <p className="ant-upload-hint text-xs">{t('knowledge.qaPairs.uploadHint')}</p>
           </Dragger>
+          
+          <div className="pt-4">
+            <div className="flex items-center text-xs">
+              <span className="text-gray-600">{t('knowledge.qaPairs.downloadTemplate')}：</span>
+              <div className="flex gap-2">
+                <Button 
+                  type="link" 
+                  size="small"
+                  className='text-xs'
+                  onClick={() => handleDownloadTemplate('json')}
+                >
+                  JSON {t('knowledge.qaPairs.template')}
+                </Button>
+                <Button 
+                  type="link" 
+                  size="small"
+                  className='text-xs'
+                  onClick={() => handleDownloadTemplate('csv')}
+                >
+                  CSV {t('knowledge.qaPairs.template')}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </OperateModal>
     </div>
