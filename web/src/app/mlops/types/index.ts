@@ -39,6 +39,7 @@ export interface MenuItem {
   url: string;
   icon: string;
   title: string;
+  params?: string;
   operation: string[];
   tour?: TourItem;
   isNotMenuItem?: boolean;

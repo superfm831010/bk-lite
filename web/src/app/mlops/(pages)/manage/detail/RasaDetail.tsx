@@ -1,8 +1,8 @@
-import { Button, message, Popconfirm, Tabs, Breadcrumb, Input } from "antd";
+import { Button, message, Popconfirm, Breadcrumb, Input } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import CustomTable from "@/components/custom-table";
 import RasaModal from "./rasaModal";
-import type { TabsProps } from 'antd';
+// import type { TabsProps } from 'antd';
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/utils/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -29,7 +29,7 @@ const RasaDetail = () => {
     getRasaSlotList,
     deleteRasaSlotFile
   } = useMlopsManageApi();
-  const [selectKey, setSelectKey] = useState<string>('intent');
+  // const [selectKey, setSelectKey] = useState<string>('intent');
   const [loading, setLoading] = useState<boolean>(false);
   const [tableData, setTableData] = useState<TableData[]>([]);
 
@@ -199,6 +199,7 @@ const RasaDetail = () => {
 
   const {
     folder_id,
+    menu,
     // folder_name,
     // description,
     // activeTap
@@ -206,60 +207,61 @@ const RasaDetail = () => {
     folder_id: searchParams.get('folder_id'),
     folder_name: searchParams.get('folder_name') || '',
     description: searchParams.get('description') || '',
-    activeTap: searchParams.get('activeTap') || ''
+    activeTap: searchParams.get('activeTap') || '',
+    menu: searchParams.get('menu') || 'intent',
   }), [searchParams]);
 
-  const items: () => TabsProps['items'] = () => {
-    return [
-      {
-        key: 'intent',
-        label: t(`datasets.intent`),
-        children: renderTable('intent'),
-      },
-      {
-        key: 'response',
-        label: t(`datasets.response`),
-        children: renderTable('response'),
-      },
-      {
-        key: 'rule',
-        label: t(`datasets.rule`),
-        children: renderTable('rule')
-      },
-      {
-        key: 'story',
-        label: t(`datasets.story`),
-        children: renderTable('story'),
-      },
-      {
-        key: 'entity',
-        label: t(`datasets.entity`),
-        children: renderTable('entity')
-      },
-      {
-        key: 'slot',
-        label: t(`datasets.slot`),
-        children: renderTable('slot')
-      }
-    ]
-  };
+  // const items: () => TabsProps['items'] = () => {
+  //   return [
+  //     {
+  //       key: 'intent',
+  //       label: t(`datasets.intent`),
+  //       children: renderTable('intent'),
+  //     },
+  //     {
+  //       key: 'response',
+  //       label: t(`datasets.response`),
+  //       children: renderTable('response'),
+  //     },
+  //     {
+  //       key: 'rule',
+  //       label: t(`datasets.rule`),
+  //       children: renderTable('rule')
+  //     },
+  //     {
+  //       key: 'story',
+  //       label: t(`datasets.story`),
+  //       children: renderTable('story'),
+  //     },
+  //     {
+  //       key: 'entity',
+  //       label: t(`datasets.entity`),
+  //       children: renderTable('entity')
+  //     },
+  //     {
+  //       key: 'slot',
+  //       label: t(`datasets.slot`),
+  //       children: renderTable('slot')
+  //     }
+  //   ]
+  // };
 
   useEffect(() => {
-    if (selectKey) {
+    if (menu) {
       getTableData();
     }
-  }, [selectKey])
+  }, [menu])
 
-  const renderTable = (key: string) => {
-    return (
-      <CustomTable rowKey="id" loading={loading} columns={columnsMap[key]} dataSource={tableData} />
-    )
-  };
+  // const renderTable = (key: string) => {
+  //   return (
+  //     <CustomTable rowKey="id" loading={loading} columns={columnsMap[key]} dataSource={tableData} />
+  //   )
+  // };
 
   const getTableData = async (search: string = '') => {
     setLoading(true);
     try {
-      const data = await getFileMap[selectKey]({ name: search, dataset: folder_id });
+      const data = await getFileMap[menu]({ name: search, dataset: folder_id });
       setTableData(data);
     } catch (e) {
       console.log(e);
@@ -270,25 +272,25 @@ const RasaDetail = () => {
     }
   };
 
-  const onChange = (key: string) => {
-    setSelectKey(key);
-  };
+  // const onChange = (key: string) => {
+  //   setSelectKey(key);
+  // };
 
   const onSearch = (value: string) => {
     getTableData(value);
   }
 
   const handleAdd = () => {
-    modalRef.current?.showModal({ type: 'add', title: `add${selectKey}`, form: { dataset: folder_id } })
+    modalRef.current?.showModal({ type: 'add', title: `add${menu}`, form: { dataset: folder_id } })
   };
 
   const handleEdit = (record: any) => {
-    modalRef.current?.showModal({ type: 'edit', title: `edit${selectKey}`, form: { ...record } })
+    modalRef.current?.showModal({ type: 'edit', title: `edit${menu}`, form: { ...record } })
   };
 
   const handleDel = async (id: number) => {
     try {
-      await delFileMap[selectKey](id);
+      await delFileMap[menu](id);
       message.success(t(`common.delSuccess`));
     } catch (e) {
       console.log(e);
@@ -326,9 +328,10 @@ const RasaDetail = () => {
             ]}
           />
         </div>
-        <Tabs defaultActiveKey="1" items={items()} onChange={onChange} />
+        <CustomTable rowKey="id" loading={loading} columns={columnsMap[menu]} dataSource={tableData} />
+        {/* <Tabs defaultActiveKey="1" items={items()} onChange={onChange} /> */}
       </div>
-      <RasaModal ref={modalRef} selectKey={selectKey} folder_id={folder_id as string} onSuccess={() => getTableData()} />
+      <RasaModal ref={modalRef} selectKey={menu} folder_id={folder_id as string} onSuccess={() => getTableData()} />
     </>
   )
 };
