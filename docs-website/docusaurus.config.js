@@ -12,7 +12,7 @@ import {themes as prismThemes} from 'prism-react-renderer';
 const config = {
   title: 'BKLite',
   tagline: '轻量级蓝鲸平台 - 让AI驱动您的业务流程',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/logo-site.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
