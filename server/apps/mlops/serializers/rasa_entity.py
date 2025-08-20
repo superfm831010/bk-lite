@@ -1,15 +1,15 @@
 from apps.core.utils.serializers import AuthSerializer
-from apps.mlops.models.rasa_intent import RasaIntent
+from apps.mlops.models.rasa_entity import RasaEntity
 from rest_framework import serializers
 
-class RasaIntentSerializer(AuthSerializer):
-    permission_key = "dataset.rasa_intent"
+class RasaEntitySerializer(AuthSerializer):
+    permission_key = "dataset.rasa_entity"
 
     # 使用 SerializerMethodField 来动态计算 example_count
-    example_count = serializers.SerializerMethodField(read_only=True,help_text="意图示例数量")
+    example_count = serializers.SerializerMethodField(read_only=True, help_text="实体示例数量")
 
     class Meta:
-        model = RasaIntent
+        model = RasaEntity
         fields = "__all__"
         extra_kwargs = {
             'name': {'required': False},

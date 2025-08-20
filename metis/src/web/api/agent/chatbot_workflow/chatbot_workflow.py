@@ -9,7 +9,7 @@ from sanic.response import ResponseStream
 from src.core.sanic_plus.auth.api_auth import auth
 
 chatbot_workflow_api_router = Blueprint(
-    "chatbot_workflow_api_router", url_prefix="/llm")
+    "chatbot_workflow_api_router", url_prefix="/agent")
 
 
 @chatbot_workflow_api_router.post("/invoke_chatbot_workflow")

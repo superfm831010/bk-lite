@@ -1,0 +1,384 @@
+/**
+ * Final CTA component styles
+ * Microsoft Fluent Design + Modern 2025 aesthetic
+ */
+
+.finalCTA {
+  padding: 8rem 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.finalCTA::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="stars" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.3)"/><circle cx="75" cy="25" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="25" cy="75" r="1" fill="rgba(255,255,255,0.4)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.3)"/><circle cx="50" cy="50" r="0.5" fill="rgba(255,255,255,0.5)"/></pattern></defs><rect width="100%" height="100%" fill="url(%23stars)"/></svg>');
+  animation: float 40s ease-in-out infinite;
+}
+
+.ctaContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.ctaContent {
+  padding: 2rem 0;
+}
+
+.ctaIcon {
+  width: 100px;
+  height: 100px;
+  margin: 0 0 2rem 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 3s infinite;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.iconEmoji {
+  font-size: 3rem;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.ctaTitle {
+  font-size: 2.75rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #ffffff, #f0f8ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ctaDescription {
+  font-size: 1.2rem;
+  line-height: 1.7;
+  margin-bottom: 3rem;
+  opacity: 0.95;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.ctaButton {
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.ctaPrimary {
+  background: linear-gradient(135deg, #ffffff, #f0f8ff);
+  color: #667eea;
+  box-shadow: 0 8px 32px rgba(255, 255, 255, 0.2);
+}
+
+.ctaPrimary:hover {
+  background: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(255, 255, 255, 0.3);
+  color: #667eea;
+}
+
+.ctaSecondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.ctaSecondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  color: white;
+}
+
+.ctaTertiary {
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.ctaTertiary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-3px);
+  color: white;
+}
+
+.ctaFeatures {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.featureIcon {
+  font-size: 1.2rem;
+}
+
+/* Visual Dashboard */
+.ctaVisual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.visualCard {
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 400px;
+  animation: float 6s ease-in-out infinite;
+}
+
+.visualHeader {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: white;
+}
+
+.dots {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.dots span:nth-child(1) {
+  background: #ff5f57;
+}
+
+.dots span:nth-child(2) {
+  background: #ffbd2e;
+}
+
+.dots span:nth-child(3) {
+  background: #28ca42;
+}
+
+.visualTitle {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.visualContent {
+  padding: 2rem 1.5rem;
+  background: white;
+  color: #2d3748;
+}
+
+.visualMetric {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.visualMetric:last-child {
+  margin-bottom: 0;
+}
+
+.metricLabel {
+  font-size: 0.85rem;
+  color: #4a5568;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.metricBar {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.metricFill {
+  height: 100%;
+  border-radius: 4px;
+  position: relative;
+  animation: fillAnimation 2s ease-out 0.5s both;
+}
+
+.success {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  width: 98.5%;
+}
+
+.excellent {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+  width: 99.2%;
+}
+
+.good {
+  background: linear-gradient(135deg, #ed8936, #dd6b20);
+  width: 85%;
+}
+
+.metricValue {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2d3748;
+  min-width: 60px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Responsive design */
+@media screen and (max-width: 996px) {
+  .finalCTA {
+    padding: 6rem 0;
+  }
+  
+  .ctaContainer {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    text-align: center;
+  }
+  
+  .ctaTitle {
+    font-size: 2.25rem;
+  }
+  
+  .ctaDescription {
+    font-size: 1.1rem;
+  }
+  
+  .ctaButtons {
+    justify-content: center;
+  }
+  
+  .ctaFeatures {
+    justify-content: center;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .finalCTA {
+    padding: 4rem 0;
+  }
+  
+  .ctaTitle {
+    font-size: 2rem;
+  }
+  
+  .ctaButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .ctaButton {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
+  
+  .ctaFeatures {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .ctaIcon {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .iconEmoji {
+    font-size: 2.5rem;
+  }
+}
+
+/* Animation keyframes */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(1deg);
+  }
+}
+
+@keyframes fillAnimation {
+  from {
+    width: 0;
+  }
+  to {
+    width: var(--target-width, 100%);
+  }
+}
+
+.success {
+  --target-width: 98.5%;
+}
+
+.excellent {
+  --target-width: 99.2%;
+}
+
+.good {
+  --target-width: 85%;
+}

@@ -1,0 +1,428 @@
+/**
+ * Pricing page styles
+ * Microsoft Fluent Design + Modern 2025 aesthetic
+ */
+
+.pricingPage {
+  min-height: 100vh;
+}
+
+.pricingHeader {
+  padding: 6rem 0 4rem 0;
+  background: linear-gradient(135deg, #0078d4 0%, #8b5cf6 50%, #06b6d4 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.pricingHeader::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="pricing-pattern" width="50" height="50" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="2" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100%" height="100%" fill="url(%23pricing-pattern)"/></svg>');
+  opacity: 0.3;
+}
+
+.headerContent {
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.pageTitle {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #ffffff, #e0f7ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pageSubtitle {
+  font-size: 1.25rem;
+  opacity: 0.95;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.pricingSection {
+  padding: 6rem 0;
+  background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+}
+
+.pricingCol {
+  margin-bottom: 2rem;
+}
+
+.pricingCard {
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 120, 212, 0.1);
+  border-radius: 20px;
+  padding: 2.5rem;
+  height: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.pricingCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.community::before {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+}
+
+.professional::before {
+  background: linear-gradient(135deg, #0078d4, #8b5cf6);
+}
+
+.enterprise::before {
+  background: linear-gradient(135deg, #805ad5, #d53f8c);
+}
+
+.pricingCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 120, 212, 0.2);
+}
+
+.pricingCard:hover::before {
+  opacity: 1;
+}
+
+.popular {
+  border-color: rgba(0, 120, 212, 0.3);
+  box-shadow: 0 12px 40px rgba(0, 120, 212, 0.2);
+  transform: scale(1.05);
+}
+
+.popular::before {
+  opacity: 1;
+}
+
+.popularBadge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #0078d4, #8b5cf6);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0, 120, 212, 0.3);
+}
+
+.pricingHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.planName {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+.priceContainer {
+  margin-bottom: 1rem;
+}
+
+.price {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  background: linear-gradient(135deg, #2d3748, #4a5568);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.period {
+  font-size: 1rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.planDescription {
+  font-size: 1rem;
+  color: #4a5568;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.pricingFeatures {
+  margin-bottom: 2.5rem;
+}
+
+.featuresList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.feature:last-child {
+  margin-bottom: 0;
+}
+
+.featureIcon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.featureText {
+  font-size: 1rem;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+.pricingAction {
+  text-align: center;
+}
+
+.pricingButton {
+  display: inline-block;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+
+.buttoncommunity {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+  box-shadow: 0 4px 16px rgba(72, 187, 120, 0.3);
+}
+
+.buttoncommunity:hover {
+  background: linear-gradient(135deg, #38a169, #2f855a);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(72, 187, 120, 0.4);
+  color: white;
+}
+
+.buttonprofessional {
+  background: linear-gradient(135deg, #0078d4, #8b5cf6);
+  color: white;
+  box-shadow: 0 4px 16px rgba(0, 120, 212, 0.3);
+}
+
+.buttonprofessional:hover {
+  background: linear-gradient(135deg, #106ebe, #7c3aed);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 120, 212, 0.4);
+  color: white;
+}
+
+.buttonenterprise {
+  background: linear-gradient(135deg, #805ad5, #d53f8c);
+  color: white;
+  box-shadow: 0 4px 16px rgba(128, 90, 213, 0.3);
+}
+
+.buttonenterprise:hover {
+  background: linear-gradient(135deg, #6b46c1, #be185d);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(128, 90, 213, 0.4);
+  color: white;
+}
+
+/* FAQ Section */
+.faqSection {
+  padding: 6rem 0;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.faqTitle {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 3rem;
+  background: linear-gradient(135deg, #0078d4, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.faqGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.faqItem {
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 120, 212, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.faqItem:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 120, 212, 0.2);
+}
+
+.faqQuestion {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+.faqAnswer {
+  font-size: 1rem;
+  color: #4a5568;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .pricingSection {
+  background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+}
+
+[data-theme='dark'] .faqSection {
+  background: linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 100%);
+}
+
+[data-theme='dark'] .pricingCard {
+  background: rgba(45, 45, 45, 0.9);
+  border-color: rgba(64, 224, 255, 0.1);
+}
+
+[data-theme='dark'] .pricingCard:hover {
+  border-color: rgba(64, 224, 255, 0.2);
+}
+
+[data-theme='dark'] .planName {
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .price {
+  color: #e2e8f0;
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme='dark'] .period {
+  color: #a0aec0;
+}
+
+[data-theme='dark'] .planDescription {
+  color: #a0aec0;
+}
+
+[data-theme='dark'] .featureText {
+  color: #a0aec0;
+}
+
+[data-theme='dark'] .faqItem {
+  background: rgba(45, 45, 45, 0.8);
+  border-color: rgba(64, 224, 255, 0.1);
+}
+
+[data-theme='dark'] .faqItem:hover {
+  border-color: rgba(64, 224, 255, 0.2);
+}
+
+[data-theme='dark'] .faqQuestion {
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .faqAnswer {
+  color: #a0aec0;
+}
+
+[data-theme='dark'] .faqTitle {
+  background: linear-gradient(135deg, #40e0ff, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Responsive design */
+@media screen and (max-width: 996px) {
+  .pricingHeader {
+    padding: 4rem 0 3rem 0;
+  }
+  
+  .pageTitle {
+    font-size: 2.5rem;
+  }
+  
+  .pricingSection {
+    padding: 4rem 0;
+  }
+  
+  .faqSection {
+    padding: 4rem 0;
+  }
+  
+  .popular {
+    transform: none;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .pageTitle {
+    font-size: 2rem;
+  }
+  
+  .pageSubtitle {
+    font-size: 1.1rem;
+  }
+  
+  .pricingCard {
+    padding: 2rem 1.5rem;
+  }
+  
+  .price {
+    font-size: 2rem;
+  }
+  
+  .faqGrid {
+    grid-template-columns: 1fr;
+  }
+}

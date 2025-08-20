@@ -10,7 +10,7 @@ from src.web.services.agent_service import AgentService
 from sanic.response import ResponseStream
 
 plan_and_execute_agent_router = Blueprint(
-    "plan_and_execute_agent_router", url_prefix="/llm")
+    "plan_and_execute_agent_router", url_prefix="/agent")
 
 
 @plan_and_execute_agent_router.post("/invoke_plan_and_execute_agent")

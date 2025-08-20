@@ -9,7 +9,7 @@ from graphiti_core import Graphiti
 from graphiti_core.nodes import EpisodeType
 from graphiti_core.llm_client import OpenAIClient, LLMConfig
 
-from src.core.sanic_plus.env import core_settings
+from src.core.sanic_plus.env.core_settings import core_settings
 from src.web.entity.rag.graphiti.document_delete_request import DocumentDeleteRequest
 from src.web.entity.rag.graphiti.index_delete_request import IndexDeleteRequest
 from src.web.entity.rag.graphiti.document_ingest_request import GraphitiRagDocumentIngestRequest

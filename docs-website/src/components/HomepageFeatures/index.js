@@ -4,46 +4,80 @@ import styles from './styles.module.css';
 
 const FeatureList = [
   {
-    title: 'Easy to Use',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    title: '🤖 AI 智能化',
+    icon: '🧠',
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        集成先进的AI技术，智能分析业务流程，自动优化运维策略，
+        让人工智能成为您的数字化转型助手。
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    title: '⚡ 轻量级架构',
+    icon: '🚀',
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        采用云原生架构设计，资源占用少，部署简单，
+        让中小企业也能轻松享受蓝鲸平台的强大能力。
       </>
     ),
   },
   {
-    title: 'Powered by React',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    title: '🔧 可视化编排',
+    icon: '🎯',
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        拖拽式工作流设计，无需编程基础，业务人员也能快速构建
+        自动化流程，提升工作效率。
+      </>
+    ),
+  },
+  {
+    title: '🔗 开放生态',
+    icon: '🌐',
+    description: (
+      <>
+        提供丰富的API接口和插件机制，轻松集成第三方系统，
+        构建开放的企业级应用生态。
+      </>
+    ),
+  },
+  {
+    title: '📊 实时监控',
+    icon: '📈',
+    description: (
+      <>
+        全方位的系统监控和业务指标分析，智能告警机制，
+        让运维管理更加精准高效。
+      </>
+    ),
+  },
+  {
+    title: '🛡️ 安全可靠',
+    icon: '🔒',
+    description: (
+      <>
+        企业级安全架构，多层防护体系，数据加密传输，
+        保障您的业务数据安全无忧。
       </>
     ),
   },
 ];
 
-function Feature({Svg, title, description}) {
+function Feature({icon, title, description}) {
   return (
     <div className={clsx('col col--4')}>
-      <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
-      </div>
-      <div className="text--center padding-horiz--md">
-        <Heading as="h3">{title}</Heading>
-        <p>{description}</p>
+      <div className={styles.featureCard}>
+        <div className={styles.featureIcon}>
+          <span className={styles.iconEmoji}>{icon}</span>
+        </div>
+        <div className="text--center padding-horiz--md">
+          <Heading as="h3" className={styles.featureTitle}>
+            {title}
+          </Heading>
+          <p className={styles.featureDescription}>{description}</p>
+        </div>
       </div>
     </div>
   );
@@ -53,6 +87,14 @@ export default function HomepageFeatures() {
   return (
     <section className={styles.features}>
       <div className="container">
+        <div className="text--center margin-bottom--xl">
+          <Heading as="h2" className={styles.sectionTitle}>
+            🌟 为什么选择 BKLite？
+          </Heading>
+          <p className={styles.sectionSubtitle}>
+            融合AI技术的下一代轻量级蓝鲸平台，让企业数字化转型更简单
+          </p>
+        </div>
         <div className="row">
           {FeatureList.map((props, idx) => (
             <Feature key={idx} {...props} />

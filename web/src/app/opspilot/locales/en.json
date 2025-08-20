@@ -62,7 +62,6 @@
       "pairs": "pairs",
       "qaCountRange": "QA count must be between 1-1000",
       "enterQaCount": "Please enter QA count",
-
       "startGenerate": "Start Generate",
       "generateSuccess": "QA pairs generated successfully",
       "generateFailed": "Failed to generate QA pairs",
@@ -81,7 +80,9 @@
       "customDesc": "Directly add questions and answers in the interface.",
       "confirmAndAddNext": "Confirm & Add Next",
       "customName": "QA Set Name",
-      "customTitle": "Q&A"
+      "customTitle": "Q&A",
+      "downloadTemplate": "Download Import Template",
+      "template": "Template"
     },
     "knowledgeGraph": {
       "title": "Knowledge Graph",
@@ -130,8 +131,10 @@
     "testingSuccess": "Testing completed successfully!",
     "testingFailed": "Failed to complete testing.",
     "applyFailed": "Failed to apply configuration.",
-    "embeddingModelTip": "After switching the embedding model, it is necessary to retrain the knowledge base documents. Please check the training status in the knowledge base details.",
     "embeddingModel": "Embedding Model",
+    "embeddingModelTip": "After switching the Embed model, knowledge base documents need to be retrained. Please confirm whether to keep the QA pairs associated with the source document chunks:",
+    "embeddingModelWarning": "Important Notice",
+    "embeddingModelOptions": "If you delete QA pairs, all QA pairs associated with the source document chunks will be deleted; if you keep QA pairs, the association with chunks will be severed, but the QA pairs will still be saved.",
     "retrievalSetting": "Retrieval Setting",
     "weight": "Weight",
     "pattern": "pattern",
@@ -170,7 +173,7 @@
       "deep": "Deep",
       "deepTip": "When retrieving website content, depth determines the hierarchical level of links to be crawled, specifying how many levels of links can be followed from the starting page.",
       "syncEnabled": "Scheduled Sync",
-      "syncEnabledTip": "After enabling automatic sync, the system will regularly pull the latest content from the website according to the scheduled time and perform training",
+      "syncEnabledTip": "After enabling automatic sync, the system will regularly pull the latest content from the website according to the scheduled time and perform training. When website chunks are updated, Q&A pairs generated based on old chunks will be deleted.",
       "syncTime": "Sync Time",
       "everyday": "Every day",
       "notSync": "Not Sync",
@@ -258,7 +261,14 @@
         "deleteFailed": "Deletion failed"
       },
       "originalChunk": "Original Chunk",
-      "noChunkData": "No Chunk Data"
+      "noChunkData": "No Chunk Data",
+      "deleteConfirmContent": "After deleting the source document, chunks will be deleted, and all QA pairs associated with the source document chunks will be deleted.",
+      "keepQaPairs": "Keep QA Pairs",
+      "deleteQaPairs": "Delete QA Pairs",
+      "trainConfirmTitle": "Training Confirmation",
+      "trainConfirmContent": "After retraining, the chunk IDs will change. Please confirm whether to keep the QA pairs associated with the source document chunks:",
+      "trainWarning": "Important Notice",
+      "trainOptions": "If you delete QA pairs, all QA pairs associated with the source document chunks will be deleted; if you keep QA pairs, the association with chunks will be severed, but the QA pairs will still be saved."
     },
     "testing": {
       "title": "Testing",

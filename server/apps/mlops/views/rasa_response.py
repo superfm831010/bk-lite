@@ -7,7 +7,7 @@ from apps.mlops.filters.rasa_response import RasaResponseFilter
 from apps.mlops.serializers.rasa_response import RasaResponseSerializer
 
 class RasaResponseViewSet(ModelViewSet):
-    filter_class = RasaResponseFilter
+    filterset_class = RasaResponseFilter
     ordering = ('-id',)
     pagination_class = CustomPageNumberPagination
     permission_key = 'dataset.rasa_response'

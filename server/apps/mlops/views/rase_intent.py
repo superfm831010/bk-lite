@@ -8,7 +8,7 @@ from apps.mlops.filters.rase_intent import RasaIntentFilter
 class RasaIntentViewSet(ModelViewSet):
     queryset = RasaIntent.objects.all()
     serializer_class = RasaIntentSerializer
-    filter_class = RasaIntentFilter
+    filterset_class = RasaIntentFilter
     pagination_class = CustomPageNumberPagination
     permission_key = 'dataset.rasa_intent'
     ordering = ('-id',)
