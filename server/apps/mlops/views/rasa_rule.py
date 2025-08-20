@@ -7,7 +7,7 @@ from apps.mlops.filters.rasa_rule import RasaRuleFilter
 from apps.mlops.serializers.rasa_rule import RasaRuleSerializer
 
 class RasaRuleViewSet(ModelViewSet):
-    filter_class = RasaRuleFilter
+    filterset_class = RasaRuleFilter
     ordering = ('-id',)
     pagination_class = CustomPageNumberPagination
     permission_key = 'dataset.rasa_rule'
