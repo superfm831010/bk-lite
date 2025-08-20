@@ -101,7 +101,6 @@ class CollectInstanceViewSet(ViewSet):
                             "instance_name": openapi.Schema(type=openapi.TYPE_STRING, description="实例类型"),
                             "group_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_INTEGER), description="组织id列表"),
                             "node_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_INTEGER), description="节点id列表"),
-                            "stream_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_STRING), description="数据流ID列表"),
                             "...": openapi.Schema(type=openapi.TYPE_OBJECT, description="其他信息"),
                         }
                     )
