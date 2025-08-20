@@ -11,3 +11,4 @@ class MonitorConfig(AppConfig):
 
         post_migrate.connect(create_periodic_task)
         import apps.monitor.nats.permission  # noqa
+        import apps.monitor.nats.monitor  # noqa

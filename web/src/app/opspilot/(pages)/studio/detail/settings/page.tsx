@@ -327,7 +327,7 @@ const StudioSettingsPage: React.FC = () => {
                       >
                         <Select>
                           {rasaModels.map((model) => (
-                            <Option key={model.id} value={model.id} disabled={!model.enabled}>
+                            <Option key={model.id} value={model.id}>
                               {model.name}
                             </Option>
                           ))}

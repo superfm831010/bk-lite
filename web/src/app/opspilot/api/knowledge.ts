@@ -172,7 +172,17 @@ export const useKnowledgeApi = () => {
   /**
    * Fetches knowledge base details by ID.
    */
-  const fetchKnowledgeBaseDetails = async (id: number): Promise<{ name: string; introduction: string; permissions: string[] }> => {
+  const fetchKnowledgeBaseDetails = async (id: number): Promise<{ 
+    name: string; 
+    introduction: string; 
+    permissions: string[];
+    file_count?: number;
+    web_page_count?: number;
+    manual_count?: number;
+    qa_count?: number;
+    graph_count?: number;
+    document_count?: number;
+  }> => {
     return get(`/opspilot/knowledge_mgmt/knowledge_base/${id}/`);
   };
 

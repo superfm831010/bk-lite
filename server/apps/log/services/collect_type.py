@@ -5,8 +5,7 @@ import yaml
 from django.db import transaction
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.log.models import CollectInstance, CollectInstanceOrganization, CollectConfig, CollectType, \
-    StreamCollectInstance
+from apps.log.models import CollectInstance, CollectInstanceOrganization, CollectConfig, CollectType
 from apps.log.plugins.controller import Controller
 from apps.rpc.node_mgmt import NodeMgmt
 
@@ -64,14 +63,11 @@ class CollectTypeService:
             for instance in data["instances"]
         }
 
-        creates, assos, streams_assos = [], [], []
+        creates, assos = [], []
         for instance_id, instance_info in instance_map.items():
             group_ids = instance_info.pop("group_ids")
-            streams = instance_info.pop("stream_ids", [])
             for group_id in group_ids:
                 assos.append((instance_id, group_id))
-            for stream in streams:
-                streams_assos.append((instance_id, stream))
             creates.append(CollectInstance(**instance_info))
 
         CollectInstance.objects.bulk_create(creates, batch_size=200)
@@ -80,11 +76,6 @@ class CollectTypeService:
             CollectInstanceOrganization.objects.bulk_create(
                 [CollectInstanceOrganization(collect_instance_id=asso[0], organization=asso[1]) for asso in assos],
                 batch_size=200
-            )
-        if streams_assos:
-            StreamCollectInstance.objects.bulk_create(
-                [StreamCollectInstance(stream_id=stream_asso[1], collect_instance_id=stream_asso[0]) for stream_asso in streams_assos],
-                batch_size=200, ignore_conflicts=True
             )
 
         # 实例配置
@@ -138,19 +129,12 @@ class CollectTypeService:
             NodeMgmt().update_child_config_content(child_info["id"], content, child_env)
 
     @staticmethod
-    def update_instance_config_v2(child_info, base_info, instance_id, collect_type_id, stream_ids):
+    def update_instance_config_v2(child_info, base_info, instance_id, collect_type_id):
         """ 更新对象实例配置 """
         child_env = None
         collect_type_obj = CollectType.objects.filter(id=collect_type_id).first()
         if not collect_type_obj:
             raise BaseAppException("collect_type does not exist")
-
-        StreamCollectInstance.objects.filter(collect_instance_id=instance_id).delete()
-        if stream_ids:
-            StreamCollectInstance.objects.bulk_create(
-                [StreamCollectInstance(stream_id=stream_id, collect_instance_id=instance_id) for stream_id in stream_ids],
-                ignore_conflicts=True
-            )
 
         col_obj = Controller(
             {
@@ -228,20 +212,12 @@ class CollectTypeService:
         nodes = NodeMgmt().node_list(dict(page_size=-1))
         node_map = {node["id"]: node["name"] for node in nodes["nodes"]}
 
-        assos = StreamCollectInstance.objects.filter(collect_instance_id__in=instance_ids)
-        stream_map = {}
-        for asso in assos:
-            if asso.collect_instance_id not in stream_map:
-                stream_map[asso.collect_instance_id] = set()
-            stream_map[asso.collect_instance_id].add(asso.stream_id)
-
         items = []
         for info in data_list:
             info.update(
                 organization=org_map.get(info["id"]),
                 config_id=conf_map.get(info["id"]),
                 node_name=node_map.get(info["node_id"], ""),
-                stream_ids=list(stream_map.get(info["id"], [])),
             )
             items.append(info)
 
