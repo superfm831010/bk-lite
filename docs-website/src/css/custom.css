@@ -1,30 +1,206 @@
 /**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
+ * Microsoft Fluent Design System inspired CSS for BKLite
+ * 2025 AI Website aesthetic with modern gradients and animations
  */
 
-/* You can override the default Infima variables here. */
+/* Import Microsoft's Segoe UI font family */
+@import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&display=swap');
+
+/* Microsoft Fluent Design Color Palette */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  /* Primary Brand Colors - Microsoft Blue with AI touch */
+  --ifm-color-primary: #0078d4;
+  --ifm-color-primary-dark: #106ebe;
+  --ifm-color-primary-darker: #005a9e;
+  --ifm-color-primary-darkest: #004578;
+  --ifm-color-primary-light: #40e0ff;
+  --ifm-color-primary-lighter: #64b5f6;
+  --ifm-color-primary-lightest: #bbdefb;
+  
+  /* AI-themed accent colors */
+  --bk-color-ai-purple: #8b5cf6;
+  --bk-color-ai-cyan: #06b6d4;
+  --bk-color-ai-emerald: #10b981;
+  --bk-color-ai-orange: #f59e0b;
+  
+  /* Modern neutral colors */
+  --bk-color-gray-50: #fafafa;
+  --bk-color-gray-100: #f5f5f5;
+  --bk-color-gray-200: #eeeeee;
+  --bk-color-gray-300: #e0e0e0;
+  --bk-color-gray-600: #757575;
+  --bk-color-gray-800: #424242;
+  --bk-color-gray-900: #212121;
+  
+  /* Typography */
+  --ifm-font-family-base: 'Segoe UI', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ifm-font-size-base: 16px;
+  --ifm-line-height-base: 1.6;
+  
+  /* Spacing and layout */
+  --ifm-spacing-horizontal: 2rem;
+  --ifm-global-radius: 12px;
+  
+  /* Shadows - Microsoft Fluent inspired */
+  --bk-shadow-small: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --bk-shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --bk-shadow-large: 0 8px 24px rgba(0, 0, 0, 0.2);
+  
+  /* Glassmorphism effects */
+  --bk-glass-bg: rgba(255, 255, 255, 0.1);
+  --bk-glass-border: rgba(255, 255, 255, 0.2);
+  
+  /* Code highlighting */
   --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --docusaurus-highlighted-code-line-bg: rgba(0, 120, 212, 0.1);
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
+/* Dark mode colors */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-color-primary: #40e0ff;
+  --ifm-color-primary-dark: #00c7ff;
+  --ifm-color-primary-darker: #00a8e6;
+  --ifm-color-primary-darkest: #0078d4;
+  --ifm-color-primary-light: #64e7ff;
+  --ifm-color-primary-lighter: #87efff;
+  --ifm-color-primary-lightest: #b3f5ff;
+  
+  --bk-glass-bg: rgba(0, 0, 0, 0.2);
+  --bk-glass-border: rgba(255, 255, 255, 0.1);
+  
+  --docusaurus-highlighted-code-line-bg: rgba(64, 224, 255, 0.1);
+}
+
+/* Global styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--ifm-font-family-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Modern button styles */
+.button {
+  border-radius: var(--ifm-global-radius);
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--bk-shadow-small);
+  border: none;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--bk-shadow-medium);
+}
+
+.button--primary {
+  background: linear-gradient(135deg, var(--ifm-color-primary), var(--bk-color-ai-purple));
+  color: white;
+}
+
+.button--secondary {
+  background: var(--bk-glass-bg);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--bk-glass-border);
+  color: var(--ifm-color-primary);
+}
+
+/* AI-themed gradient backgrounds */
+.ai-gradient-1 {
+  background: linear-gradient(135deg, var(--ifm-color-primary), var(--bk-color-ai-purple));
+}
+
+.ai-gradient-2 {
+  background: linear-gradient(135deg, var(--bk-color-ai-cyan), var(--bk-color-ai-emerald));
+}
+
+.ai-gradient-3 {
+  background: linear-gradient(135deg, var(--bk-color-ai-purple), var(--bk-color-ai-orange));
+}
+
+/* Glassmorphism card effect */
+.glass-card {
+  background: var(--bk-glass-bg);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--bk-glass-border);
+  border-radius: var(--ifm-global-radius);
+  box-shadow: var(--bk-shadow-medium);
+}
+
+/* Modern animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Navbar modern styling */
+.navbar {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: var(--bk-glass-bg);
+  border-bottom: 1px solid var(--bk-glass-border);
+  box-shadow: var(--bk-shadow-small);
+}
+
+.navbar__brand {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+/* Footer modern styling */
+.footer {
+  background: linear-gradient(135deg, var(--bk-color-gray-900), var(--bk-color-gray-800));
+  color: white;
+}
+
+/* Responsive design improvements */
+@media screen and (max-width: 996px) {
+  :root {
+    --ifm-spacing-horizontal: 1rem;
+  }
 }

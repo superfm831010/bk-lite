@@ -9,7 +9,7 @@ from sanic.log import logger
 
 from src.core.embed.embed_builder import EmbedBuilder
 from src.core.rerank.rerank_manager import ReRankManager
-from src.core.sanic_plus.env import core_settings
+from src.core.sanic_plus.env.core_settings import core_settings
 from src.web.entity.rag.base.document_count_request import DocumentCountRequest
 from src.web.entity.rag.base.document_delete_request import DocumentDeleteRequest
 from src.web.entity.rag.base.document_ingest_request import DocumentIngestRequest

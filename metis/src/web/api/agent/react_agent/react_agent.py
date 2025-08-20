@@ -9,7 +9,7 @@ from src.web.services.agent_service import AgentService
 from sanic.response import ResponseStream
 
 react_agent_api_router = Blueprint(
-    "react_agent_api_router", url_prefix="/llm")
+    "react_agent_api_router", url_prefix="/agent")
 
 
 @react_agent_api_router.post("/invoke_react_agent")

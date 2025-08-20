@@ -83,6 +83,15 @@ const DocumentsPage: React.FC = () => {
   const [isQAPairModalVisible, setIsQAPairModalVisible] = useState(false);
   const [exportLoadingMap, setExportLoadingMap] = useState<{ [key: number]: boolean }>({});
 
+  const [knowledgeBaseCounts, setKnowledgeBaseCounts] = useState({
+    file_count: 0,
+    web_page_count: 0,
+    manual_count: 0,
+    qa_count: 0,
+    graph_count: 0,
+    document_count: 0,
+  });
+
   const {
     fetchDocuments,
     batchDeleteDocuments,
@@ -105,6 +114,14 @@ const DocumentsPage: React.FC = () => {
     try {
       const details = await fetchKnowledgeBaseDetailsApi(Number(id));
       setKnowledgeBasePermissions(details.permissions || []);
+      setKnowledgeBaseCounts({
+        file_count: details.file_count || 0,
+        web_page_count: details.web_page_count || 0,
+        manual_count: details.manual_count || 0,
+        qa_count: details.qa_count || 0,
+        graph_count: details.graph_count || 0,
+        document_count: details.document_count || 0,
+      });
     } catch (error) {
       console.error('Failed to fetch knowledge base details:', error);
       setKnowledgeBasePermissions([]);
@@ -115,7 +132,6 @@ const DocumentsPage: React.FC = () => {
     fetchKnowledgeBaseDetails();
   }, []);
 
-  // Fetch QA pair data
   const fetchQAPairData = useCallback(async (text = '') => {
     setQaPairLoading(true);
     const { current, pageSize } = qaPairPagination;
@@ -197,7 +213,6 @@ const DocumentsPage: React.FC = () => {
     }
   };
 
-  // Batch delete QA pairs
   const handleBatchDeleteQAPairs = async () => {
     if (selectedQAPairKeys.length === 0) {
       message.warning('Please select QA pairs to delete');
@@ -210,7 +225,6 @@ const DocumentsPage: React.FC = () => {
       centered: true,
       onOk: async () => {
         try {
-          // Call individual delete API for each item during batch deletion
           await Promise.all(selectedQAPairKeys.map(key => deleteQAPair(Number(key))));
           fetchQAPairData();
           setSelectedQAPairKeys([]);
@@ -223,7 +237,6 @@ const DocumentsPage: React.FC = () => {
     });
   };
 
-  // Handle QA pair pagination
   const handleQAPairTableChange = (page: number, pageSize?: number) => {
     setQaPairPagination((prev) => ({
       ...prev,
@@ -232,7 +245,6 @@ const DocumentsPage: React.FC = () => {
     }));
   };
 
-  // QA pair row selection
   const qaPairRowSelection = {
     selectedRowKeys: selectedQAPairKeys,
     onChange: (newSelectedRowKeys: React.Key[]) => {
@@ -274,10 +286,11 @@ const DocumentsPage: React.FC = () => {
   };
 
   const handleDelete = (keys: React.Key[]) => {
-    confirm({
+    Modal.confirm({
       title: t('common.delConfirm'),
-      content: t('common.delConfirmCxt'),
+      content: t('knowledge.documents.deleteConfirmContent'),
       centered: true,
+      width: 520,
       onOk: async () => {
         try {
           await batchDeleteDocuments(keys, id);
@@ -291,14 +304,60 @@ const DocumentsPage: React.FC = () => {
     });
   };
 
-  const handleTrain = async (keys: React.Key[]) => {
+  const handleTrain = (keys: React.Key[]) => {
+    Modal.confirm({
+      title: t('knowledge.documents.trainConfirmTitle'),
+      content: (
+        <div className="space-y-3">
+          <p>{t('knowledge.documents.trainConfirmContent')}</p>
+          <div className="bg-orange-50 p-3 rounded border border-orange-200">
+            <p className="text-orange-800 text-sm mb-2 font-medium">
+              {t('knowledge.documents.trainWarning')}
+            </p>
+            <p className="text-gray-700 text-sm">
+              {t('knowledge.documents.trainOptions')}
+            </p>
+          </div>
+        </div>
+      ),
+      centered: true,
+      width: 520,
+      okText: t('knowledge.documents.keepQaPairs'),
+      cancelText: t('common.cancel'),
+      footer: (_, { CancelBtn }) => (
+        <div className="flex justify-end gap-2">
+          <CancelBtn />
+          <Button 
+            type="default" 
+            onClick={() => {
+              Modal.destroyAll();
+              handleConfirmTrain(keys, true);
+            }}
+          >
+            {t('knowledge.documents.deleteQaPairs')}
+          </Button>
+          <Button 
+            type="primary" 
+            onClick={() => {
+              Modal.destroyAll();
+              handleConfirmTrain(keys, false);
+            }}
+          >
+            {t('knowledge.documents.keepQaPairs')}
+          </Button>
+        </div>
+      ),
+    });
+  };
+
+  const handleConfirmTrain = async (keys: React.Key[], deleteQaPairs: boolean) => {
     if (keys.length === 1) {
       setSingleTrainLoading((prev) => ({ ...prev, [keys[0].toString()]: true }));
     } else {
       setIsTrainLoading(true);
     }
     try {
-      await batchTrainDocuments(keys);
+      await batchTrainDocuments(keys, deleteQaPairs);
       message.success(t('common.training'));
       fetchData();
     } catch {
@@ -361,12 +420,11 @@ const DocumentsPage: React.FC = () => {
     }
   }, [pagination.current, pagination.pageSize, searchText, activeTabKey]);
 
-  // 使用usePolling Hook处理训练状态轮询
   const shouldPoll = tableData.some((item: any) => item.train_status === 0 || item.train_status === 4);
   usePolling(
     () => fetchData(searchText, true),
-    10000, // 10秒轮询间隔
-    shouldPoll && mainTabKey === 'source_files' // 只有在source_files标签页且有训练中任务时才轮询
+    10000,
+    shouldPoll && mainTabKey === 'source_files'
   );
 
   useEffect(() => {
@@ -519,6 +577,37 @@ const DocumentsPage: React.FC = () => {
     }
   };
 
+  const handleDownloadTemplate = async (fileType: 'json' | 'csv') => {
+    try {
+      const response = await fetch(`/api/proxy/opspilot/knowledge_mgmt/qa_pairs/download_import_template/?file_type=${fileType}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authContext?.token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to download template');
+      }
+      
+      const blob = await response.blob();
+      const fileName = `qa_pairs_template.${fileType}`;
+      const fileUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(fileUrl);
+      message.success(t('common.successfullyExported'));
+    } catch (error) {
+      console.error('Error downloading template:', error);
+      message.error(t('common.exportFailed'));
+    }
+  };
+
   const batchOperationMenu = (
     <Menu className={styles.batchOperationMenu}>
       <Menu.Item key="batchTrain">
@@ -605,9 +694,9 @@ const DocumentsPage: React.FC = () => {
   return (
     <div style={{ marginTop: '-10px' }}>
       <Tabs activeKey={mainTabKey} onChange={handleMainTabChange}>
-        <TabPane tab={t('knowledge.sourceFiles')} key='source_files' />
-        <TabPane tab={t('knowledge.qaPairs.title')} key='qa_pairs' />
-        <TabPane tab={t('knowledge.knowledgeGraph.title')} key='knowledge_graph' />
+        <TabPane tab={`${t('knowledge.sourceFiles')} (${knowledgeBaseCounts.document_count})`} key='source_files' />
+        <TabPane tab={`${t('knowledge.qaPairs.title')} (${knowledgeBaseCounts.qa_count})`} key='qa_pairs' />
+        <TabPane tab={`${t('knowledge.knowledgeGraph.title')} (${knowledgeBaseCounts.graph_count})`} key='knowledge_graph' />
       </Tabs>
       <div className='nav-box flex justify-between mb-[20px]'>
         <div className='left-side'>
@@ -616,9 +705,9 @@ const DocumentsPage: React.FC = () => {
               value={activeTabKey}
               onChange={handleSourceFileTypeChange}
             >
-              <Radio.Button value="file">{t('knowledge.localFile')}</Radio.Button>
-              <Radio.Button value="web_page">{t('knowledge.webLink')}</Radio.Button>
-              <Radio.Button value="manual">{t('knowledge.cusText')}</Radio.Button>
+              <Radio.Button value="file">{t('knowledge.localFile')} ({knowledgeBaseCounts.file_count})</Radio.Button>
+              <Radio.Button value="web_page">{t('knowledge.webLink')} ({knowledgeBaseCounts.web_page_count})</Radio.Button>
+              <Radio.Button value="manual">{t('knowledge.cusText')} ({knowledgeBaseCounts.manual_count})</Radio.Button>
             </Radio.Group>
           )}
         </div>
@@ -776,6 +865,30 @@ const DocumentsPage: React.FC = () => {
             <p className="ant-upload-text">{t('knowledge.qaPairs.dragOrClick')}</p>
             <p className="ant-upload-hint text-xs">{t('knowledge.qaPairs.uploadHint')}</p>
           </Dragger>
+          
+          <div className="pt-4">
+            <div className="flex items-center text-xs">
+              <span className="text-gray-600">{t('knowledge.qaPairs.downloadTemplate')}：</span>
+              <div className="flex gap-2">
+                <Button 
+                  type="link" 
+                  size="small"
+                  className='text-xs'
+                  onClick={() => handleDownloadTemplate('json')}
+                >
+                  JSON {t('knowledge.qaPairs.template')}
+                </Button>
+                <Button 
+                  type="link" 
+                  size="small"
+                  className='text-xs'
+                  onClick={() => handleDownloadTemplate('csv')}
+                >
+                  CSV {t('knowledge.qaPairs.template')}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </OperateModal>
     </div>

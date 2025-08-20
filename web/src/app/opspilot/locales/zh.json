@@ -80,7 +80,9 @@
       "customDesc": "直接在界面进行问题和答案的新增。",
       "confirmAndAddNext": "确认并新增下一个",
       "customName": "问答集名称",
-      "customTitle": "问答"
+      "customTitle": "问答",
+      "downloadTemplate": "下载导入模板",
+      "template": "模板"
     },
     "knowledgeGraph": {
       "title": "知识图谱",
@@ -129,8 +131,10 @@
     "testingSuccess": "测试成功完成！",
     "testingFailed": "测试失败。",
     "applyFailed": "应用配置失败。",
-    "embeddingModelTip": "在切换Embed模型后，需要重新训练知识库文档。请在知识库详情中查看训练状态。",
     "embeddingModel": "Embed模型",
+    "embeddingModelTip": "在切换Embed模型后，需要重新训练知识库文档。请确定是否保留与源文档分块关联的问答对：",
+    "embeddingModelWarning": "重要提示",
+    "embeddingModelOptions": "如果删除问答对，则与源文档分块关联的问答对均被删除；如果保留问答对，则会切断与分块的关联，但是问答对仍保存。",
     "retrievalSetting": "检索设置",
     "weight": "权重",
     "pattern": "模式",
@@ -172,7 +176,7 @@
       "deep": "深度",
       "deepTip": "在获取网站内容时，深度决定了抓取链接的层级深度，即从起始页面出发，最多可以跳转多少层链接。",
       "syncEnabled": "定时同步",
-      "syncEnabledTip": "开启自动同步后，将按照定时时间定时从网站拉取最新内容，并且进行训练",
+      "syncEnabledTip": "开启自动同步后，将按照定时时间定时从网站拉取最新内容，并且进行训练。网站分块更新后，依据旧分块生成的问答对，将会被删除。",
       "syncTime": "同步时间",
       "everyday": "每天",
       "notSync": "未定时同步",
@@ -260,7 +264,14 @@
         "deleteFailed": "删除失败"
       },
       "originalChunk": "原始分块",
-      "noChunkData": "无分块数据"
+      "noChunkData": "无分块数据",
+      "deleteConfirmContent": "源文档删除后，分块将会被删除，则与源文档分块关联的问答对均被删除。",
+      "keepQaPairs": "保留问答对",
+      "deleteQaPairs": "删除问答对",
+      "trainConfirmTitle": "训练确认",
+      "trainConfirmContent": "重新训练后，分块的id将会改变。请确定是否保留与源文档分块关联的问答对：",
+      "trainWarning": "重要提示",
+      "trainOptions": "如果删除问答对，则与源文档分块关联的问答对均被删除；如果保留问答对，则会切断与分块的关联，但是问答对仍保存。"
     },
     "testing": {
       "title": "测试",

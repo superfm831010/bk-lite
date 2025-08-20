@@ -18,8 +18,6 @@ services:
       - minio:/data
     networks:
       - prod
-    profiles:
-      - opspilot
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/ready"]
   
@@ -33,8 +31,6 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASSWORD}
     ports:
       - "5672:5672"
-    profiles:
-      - opspilot
     networks:
       - prod
     healthcheck:
@@ -54,8 +50,6 @@ services:
       ES_JAVA_OPTS: -Xms2g -Xmx2g
     networks:
       - prod
-    profiles:
-      - opspilot
     healthcheck:
       test: ["CMD", "curl", "-f", "-u", "${ELASTIC_PASSWORD}:", "http://127.0.0.1:9200/_cluster/health"]
   
@@ -71,8 +65,6 @@ services:
       TRANSFORMERS_OFFLINE: true
       HF_DATASETS_OFFLINE: true
       ADMIN_PASSWORD: password
-    profiles:
-      - opspilot
     networks:
       - prod
     depends_on:
