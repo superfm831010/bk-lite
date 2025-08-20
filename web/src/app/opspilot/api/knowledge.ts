@@ -67,9 +67,10 @@ export const useKnowledgeApi = () => {
   /**
    * Trains multiple documents.
    */
-  const batchTrainDocuments = async (docIds: React.Key[]): Promise<void> => {
+  const batchTrainDocuments = async (docIds: React.Key[], deleteQaPairs: boolean = true): Promise<void> => {
     return post('/opspilot/knowledge_mgmt/knowledge_document/batch_train/', {
       knowledge_document_ids: docIds,
+      delete_qa_pairs: deleteQaPairs,
     });
   };
 
