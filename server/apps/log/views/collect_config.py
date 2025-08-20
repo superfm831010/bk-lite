@@ -1,4 +1,5 @@
 import toml
+import yaml
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
@@ -223,7 +224,10 @@ class CollectConfigViewSet(ViewSet):
                 configs = NodeMgmt().get_configs_by_ids([config_obj.id])
             config = configs[0]
 
-            config["content"] = toml.loads(config[content_key])
+            if config_obj.file_type == "yaml":
+                config["content"] = yaml.safe_load(config[content_key])
+            else:
+                config["content"] = toml.loads(config[content_key])
 
             if config_obj.is_child:
                 result["child"] = config
