@@ -56,7 +56,7 @@
         pattern: '{{ multiline.pattern }}'
         negate: {{ multiline.negate | default(false) | lower }}
         match: {{ multiline.match | default('after') }}
-        timeout: {{ multiline.timeout | default('5s') }}
+        timeout: {{ multiline.timeout | default(5) }}s
         max_lines: {{ multiline.max_lines | default(500) }}
   {% endif %}
 
