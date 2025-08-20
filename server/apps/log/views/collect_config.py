@@ -17,6 +17,29 @@ class CollectTypeViewSet(ModelViewSet):
     serializer_class = CollectTypeSerializer
     filterset_class = CollectTypeFilter
 
+    @swagger_auto_schema(
+        operation_description="获取所有采集类型的属性",
+        operation_id="get_all_attrs",
+    )
+    @action(methods=['get'], detail=False, url_path='all_attrs')
+    def get_all_attrs(self, request):
+        """
+        获取所有采集类型的属性，并进行去重
+        """
+        # 获取所有采集类型的属性列表
+        collect_types = CollectType.objects.all()
+
+        # 收集所有属性并去重
+        all_attrs = set()
+        for collect_type in collect_types:
+            if collect_type.attrs and isinstance(collect_type.attrs, list):
+                all_attrs.update(collect_type.attrs)
+
+        # 转换为排序的列表，保证返回结果的一致性
+        unique_attrs = sorted(list(all_attrs))
+
+        return WebUtils.response_success(unique_attrs)
+
 
 class CollectInstanceViewSet(ViewSet):
 
