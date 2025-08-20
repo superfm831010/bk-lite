@@ -173,7 +173,7 @@
       "deep": "Deep",
       "deepTip": "When retrieving website content, depth determines the hierarchical level of links to be crawled, specifying how many levels of links can be followed from the starting page.",
       "syncEnabled": "Scheduled Sync",
-      "syncEnabledTip": "After enabling automatic sync, the system will regularly pull the latest content from the website according to the scheduled time and perform training",
+      "syncEnabledTip": "After enabling automatic sync, the system will regularly pull the latest content from the website according to the scheduled time and perform training. When website chunks are updated, Q&A pairs generated based on old chunks will be deleted.",
       "syncTime": "Sync Time",
       "everyday": "Every day",
       "notSync": "Not Sync",
