@@ -16,23 +16,30 @@ class RasaSlot(MaintainerInfo, TimeInfo):
     )
 
     SLOT_TYPE = [
-        ('Text', '记录普通文本'),
-        ('Categorical', '记录分类类别，枚举'),
-        ('Float', '记录数值'),
-        ('Bool', '记录布尔值'),
-        ('List', '记录数值列表'),
+        ('text', '记录普通文本'),
+        ('categorical', '记录分类类别，枚举'),
+        ('float', '记录数值'),
+        ('bool', '记录布尔值'),
+        ('list', '记录数值列表'),
+        ('int', '记录整数')
     ]
 
-    solt_type = models.CharField(
+    slot_type = models.CharField(
         max_length=20,
         choices=SLOT_TYPE,
         verbose_name="槽位类型",
-        default='Text'
+        default='text'
     )
 
     is_apply = models.BooleanField(
         default=False,
         verbose_name="是否应用"
+    )
+
+    values = models.JSONField(
+        verbose_name="槽位值",
+        default=list,
+        help_text='type为category时选择填充此项'
     )
 
     class Meta:

@@ -10,4 +10,5 @@ class RasaSlotSerializer(AuthSerializer):
         extra_kwargs = {
             'name': {'required': False},
             'dataset': {'required': False},
+            'values': {'required': False},
         }
