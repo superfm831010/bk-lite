@@ -24,6 +24,10 @@ class Monitor(object):
         return_data = self.client.run("get_monitor_module_list", **kwargs)
         return return_data
 
+    def monitor_objects(self):
+        """查询监控对象列表"""
+        return self.client.run("monitor_objects")
+
 
 class MonitorOperationAnaRpc(BaseOperationAnaRpc):
 
