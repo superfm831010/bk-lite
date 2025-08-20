@@ -58,7 +58,6 @@ class CollectTypeService:
                 "collect_type_id": data["collect_type_id"],
                 "node_id": instance["node_ids"][0],
                 "group_ids": instance["group_ids"],
-                "stream_ids": instance.get("stream_ids", []),
             }
             for instance in data["instances"]
         }
