@@ -6,6 +6,7 @@ from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.log.constants import KEYWORD, AGGREGATE, ALERT_STATUS_NEW
 from apps.log.models.policy import Policy, Alert, Event, EventRawData
 from apps.log.utils.query_log import VictoriaMetricsAPI
+from apps.log.utils.log_group import LogGroupQueryBuilder
 from apps.monitor.utils.system_mgmt_api import SystemMgmtUtils
 from apps.core.logger import celery_logger as logger
 
@@ -113,14 +114,8 @@ class LogPolicyScan:
                 logger.warning(f"policy {self.policy.id} has empty query for keyword alert")
                 return events
 
-            # 添加采集类型过滤条件
-            collect_type_filter = f'collect_type:"{self.policy.collect_type.name}"'
-            if query == "*":
-                # 如果是通配符查询，直接使用采集类型过滤
-                final_query = collect_type_filter
-            else:
-                # 组合原查询条件和采集类型过滤
-                final_query = f"({query}) AND {collect_type_filter}"
+            # 应用日志分组规则
+            final_query = self._build_query_with_log_groups(query)
 
             # 查询日志
             logs = self.vlogs_api.query(
@@ -167,8 +162,11 @@ class LogPolicyScan:
                 logger.warning(f"policy {self.policy.id} has no rule conditions for aggregate alert")
                 return events
 
+            # 应用日志分组规则
+            base_query_with_groups = self._build_query_with_log_groups(base_query)
+
             # 构建LogSQL聚合查询语句
-            aggregation_query = self._build_aggregation_query(base_query, group_by, rule)
+            aggregation_query = self._build_aggregation_query(base_query_with_groups, group_by, rule)
             logger.info(f"Executing aggregation query for policy {self.policy.id}: {aggregation_query}")
 
             # 执行聚合查询
@@ -209,21 +207,59 @@ class LogPolicyScan:
 
         return events
 
+    def _build_query_with_log_groups(self, base_query):
+        """构建包含日志分组规则的查询语句
+
+        Args:
+            base_query: 策略的基础查询条件
+
+        Returns:
+            str: 组合了日志分组规则的最终查询语句
+        """
+        try:
+            # 获取策略配置的日志分组
+            log_groups = getattr(self.policy, 'log_groups', [])
+
+            if not log_groups:
+                # 没有配置日志分组，使用原有逻辑（添加采集类型过滤）
+                return self._add_collect_type_filter(base_query)
+
+            # 使用日志分组查询构建器
+            query_with_groups, group_info = LogGroupQueryBuilder.build_query_with_groups(
+                base_query, log_groups
+            )
+
+            # 记录应用的日志分组信息
+            if group_info:
+                logger.info(f"Policy {self.policy.id} applied log groups: {[g['name'] for g in group_info]}")
+
+            # 添加采集类型过滤
+            final_query = self._add_collect_type_filter(query_with_groups)
+
+            return final_query
+
+        except Exception as e:
+            logger.warning(f"Failed to apply log groups for policy {self.policy.id}: {e}")
+            # 发生错误时回退到原有逻辑
+            return self._add_collect_type_filter(base_query)
+
+    def _add_collect_type_filter(self, query):
+        """添加采集类型过滤条件"""
+        collect_type_filter = f'collect_type:"{self.policy.collect_type.name}"'
+
+        if not query or query.strip() == "*":
+            # 如果是通配符查询，直接使用采集类型过滤
+            return collect_type_filter
+        else:
+            # 组合原查询条件和采集类型过滤
+            return f"({query}) AND {collect_type_filter}"
+
     def _build_aggregation_query(self, base_query, group_by, rule):
         """构建LogSQL聚合查询语句"""
         conditions = rule.get("conditions", [])
 
         if not conditions:
             raise BaseAppException("rule conditions cannot be empty")
-
-        # 添加采集类型过滤条件
-        collect_type_filter = f'collect_type:"{self.policy.collect_type.name}"'
-        if base_query == "*":
-            # 如果是通配符查询，直接使用采集类型过滤
-            filtered_query = collect_type_filter
-        else:
-            # 组合原查询条件和采集类型过滤
-            filtered_query = f"({base_query}) AND {collect_type_filter}"
 
         # 收集需要计算的聚合函数
         stats_functions = []
@@ -269,10 +305,10 @@ class LogPolicyScan:
         if group_by:
             # 有分组的情况：query | stats by (field1, field2) func1() as alias1, func2() as alias2
             by_fields = ", ".join(group_by)
-            query = f"{filtered_query} | stats by ({by_fields}) {stats_clause}"
+            query = f"{base_query} | stats by ({by_fields}) {stats_clause}"
         else:
             # 无分组的情况：query | stats func1() as alias1, func2() as alias2
-            query = f"{filtered_query} | stats {stats_clause}"
+            query = f"{base_query} | stats {stats_clause}"
 
         logger.debug(f"Built aggregation query: {query}")
         return query

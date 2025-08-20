@@ -7,8 +7,8 @@ VICTORIALOGS_PWD = os.getenv("VICTORIALOGS_PWD")
 
 # 策略相关常量
 POLICY_MODULE = "policy"
-# 数据流相关常量
-STREAM_MODULE = "stream"
+# 日志分组相关常量
+LOG_GROUP_MODULE = "log_group"
 DEFAULT_PERMISSION = ['View', 'Operate']
 
 # 告警状态

@@ -217,7 +217,6 @@ class CollectConfigViewSet(ViewSet):
             properties={
                 "instance_id": openapi.Schema(type=openapi.TYPE_STRING, description="采集实例ID"),
                 "collect_type_id": openapi.Schema(type=openapi.TYPE_STRING, description="采集类型ID"),
-                "stream_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_STRING), description="数据流ID列表"),
                 "child": openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
@@ -243,6 +242,5 @@ class CollectConfigViewSet(ViewSet):
             request.data.get("base"),
             request.data.get("instance_id"),
             request.data.get("collect_type_id"),
-            request.data.get("stream_ids", [])
         )
         return WebUtils.response_success()
