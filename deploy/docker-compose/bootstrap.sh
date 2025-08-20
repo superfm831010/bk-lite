@@ -352,11 +352,6 @@ $COMPOSE_CMD > docker-compose.yaml
 log "INFO" "拉取最新的镜像..."
 ${DOCKER_COMPOSE_CMD} pull
 
-if [ "$OPSPILOT_ENABLED" = "true" ]; then
-    log "INFO" "启动opspilot基础组件..."
-    ${DOCKER_COMPOSE_CMD} up -d --profile opspilot
-fi
-
 # 按照特定顺序启动服务
 log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j, VictoriaLogs, MLflow, NATS Executor)..."
 ${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics neo4j victoria-logs mlflow nats-executor
