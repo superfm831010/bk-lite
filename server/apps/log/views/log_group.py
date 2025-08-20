@@ -19,7 +19,7 @@ class LogGroupViewSet(ModelViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "id": openapi.Schema(type=openapi.TYPE_STRING, description="日志分组ID"),
+                "id": openapi.Schema(type=openapi.TYPE_STRING, description="日志分组ID（可选，不提供时自动生成UUID）"),
                 "name": openapi.Schema(type=openapi.TYPE_STRING, description="日志分组名称"),
                 "description": openapi.Schema(type=openapi.TYPE_STRING, description="描述"),
                 "rule": openapi.Schema(type=openapi.TYPE_OBJECT, description="分组规则"),
@@ -27,7 +27,7 @@ class LogGroupViewSet(ModelViewSet):
                     type=openapi.TYPE_ARRAY,
                     items=openapi.Schema(type=openapi.TYPE_INTEGER, description="组织ID")),
             },
-            required=["id", "name", "rule", "organizations"]
+            required=["name", "rule", "organizations"]
         )
     )
     def create(self, request, *args, **kwargs):
