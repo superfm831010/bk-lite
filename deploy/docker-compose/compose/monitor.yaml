@@ -22,7 +22,7 @@ services:
     container_name: fusion-collector
     hostname: fusion-collector-default
     environment:
-      SERVER_URL: http://server:8000/node_mgmt/open_api/node
+      SERVER_URL: http://server:8000/api/v1/node_mgmt/open_api/node
       SERVER_API_TOKEN: ${SIDECAR_INIT_TOKEN}
       SIDECAR_ZONE: 1
       SIDECAR_GROUP: 1
