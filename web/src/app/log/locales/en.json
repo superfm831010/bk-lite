@@ -186,7 +186,7 @@
       "allSatisfy": "Satisfy all",
       "allRules": "rules",
       "logGroup": "Log Group",
-      "logGroupTips": "Please divide the received logs into groups, and the viewing permissions for the logs will be isolated according to the log groups.",
+      "logGroupTips": "The effective log grouping scope of this strategy",
       "belongingGroupTips": "Receive instance viewing and operations, and isolate permissions according to their organization.",
       "multiline": "Multi row merge",
       "multilineAllRequired": "The value must be filled in",
