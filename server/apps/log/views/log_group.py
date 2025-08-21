@@ -6,7 +6,7 @@ from apps.core.utils.permission_utils import get_permission_rules, permission_fi
 from apps.log.models.log_group import LogGroup, LogGroupOrganization
 from apps.log.serializers.log_group import LogGroupSerializer
 from apps.log.filters.log_group import LogGroupFilter
-from apps.log.constants import LOG_GROUP_MODULE, DEFAULT_PERMISSION
+from apps.log.constants import LOG_GROUP_MODULE
 
 
 class LogGroupViewSet(ModelViewSet):
@@ -19,7 +19,7 @@ class LogGroupViewSet(ModelViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "id": openapi.Schema(type=openapi.TYPE_STRING, description="日志分组ID"),
+                "id": openapi.Schema(type=openapi.TYPE_STRING, description="日志分组ID（可选，不提供时自动生成UUID）"),
                 "name": openapi.Schema(type=openapi.TYPE_STRING, description="日志分组名称"),
                 "description": openapi.Schema(type=openapi.TYPE_STRING, description="描述"),
                 "rule": openapi.Schema(type=openapi.TYPE_OBJECT, description="分组规则"),
@@ -27,7 +27,7 @@ class LogGroupViewSet(ModelViewSet):
                     type=openapi.TYPE_ARRAY,
                     items=openapi.Schema(type=openapi.TYPE_INTEGER, description="组织ID")),
             },
-            required=["id", "name", "rule", "organizations"]
+            required=["name", "rule", "organizations"]
         )
     )
     def create(self, request, *args, **kwargs):
@@ -48,20 +48,29 @@ class LogGroupViewSet(ModelViewSet):
     def list(self, request, *args, **kwargs):
         # 获取权限规则
         permission = get_permission_rules(
-            user=request.user,
-            module=LOG_GROUP_MODULE,
-            default_permission=DEFAULT_PERMISSION
+            request.user,
+            request.COOKIES.get("current_team"),
+            "log",
+            LOG_GROUP_MODULE,
         )
 
         # 应用权限过滤
         queryset = permission_filter(
-            queryset=self.get_queryset(),
-            permission=permission,
-            organization_field="loggrouporganization__organization"
+            LogGroup,
+            permission,
+            team_key="loggrouporganization__organization__in",
+            id_key="id__in"
         )
 
         # 应用过滤器
         queryset = self.filter_queryset(queryset)
+
+        # 检查是否为全量查询（page_size为-1时不分页）
+        page_size = request.query_params.get('page_size')
+        if page_size == '-1':
+            # 全量查询，直接返回所有数据
+            serializer = self.get_serializer(queryset, many=True)
+            return WebUtils.response_success(serializer.data)
 
         # 分页
         page = self.paginate_queryset(queryset)
