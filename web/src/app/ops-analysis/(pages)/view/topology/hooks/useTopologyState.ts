@@ -36,6 +36,8 @@ export const useTopologyState = () => {
   const [nodeEditVisible, setNodeEditVisible] = useState(false);
   const [editingNodeData, setEditingNodeData] = useState<any>(null);
 
+  const [viewConfigVisible, setViewConfigVisible] = useState(false);
+
   // Refs
   const isDrawingRef = useRef(false);
   const drawingEdgeRef = useRef<Edge | null>(null);
@@ -86,13 +88,12 @@ export const useTopologyState = () => {
       return {
         name: editingNodeData.name,
         dataSource: editingNodeData.dataSource,
+        dataSourceParams: editingNodeData.dataSourceParams || {}, 
+        selectedFields: editingNodeData.selectedFields || [], 
         fontSize: config.fontSize || FORM_DEFAULTS.SINGLE_VALUE.fontSize,
         textColor: config.textColor || FORM_DEFAULTS.SINGLE_VALUE.textColor,
         backgroundColor: config.backgroundColor || FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
-        borderColor: config.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor,
-        query: config.query || FORM_DEFAULTS.SINGLE_VALUE.query,
-        unit: config.unit || FORM_DEFAULTS.SINGLE_VALUE.unit,
-        threshold: config.threshold || FORM_DEFAULTS.SINGLE_VALUE.threshold,
+        borderColor: config.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor
       };
     }
 
@@ -101,12 +102,16 @@ export const useTopologyState = () => {
       logoType: editingNodeData.logoType || 'default',
       logoIcon:
         editingNodeData.logoType === 'default'
-          ? editingNodeData.logo
+          ? editingNodeData.logoIcon
           : 'cc-host',
       logoUrl:
         editingNodeData.logoType === 'custom'
-          ? editingNodeData.logo
+          ? editingNodeData.logoUrl
           : undefined,
+      width: editingNodeData.width || editingNodeData.config?.width || FORM_DEFAULTS.ICON_NODE.width,
+      height: editingNodeData.height || editingNodeData.config?.height || FORM_DEFAULTS.ICON_NODE.height,
+      dataSourceParams: editingNodeData.dataSourceParams || {}, 
+      selectedFields: editingNodeData.selectedFields || [],
       backgroundColor: editingNodeData.config?.backgroundColor || FORM_DEFAULTS.ICON_NODE.backgroundColor,
       borderColor: editingNodeData.config?.borderColor || FORM_DEFAULTS.ICON_NODE.borderColor,
     };
@@ -117,6 +122,51 @@ export const useTopologyState = () => {
     setNodeEditVisible(false);
     setEditingNodeData(null);
   }, []);
+
+  // 重置所有状态
+  const resetAllStates = useCallback(() => {
+    // 重置编辑相关状态
+    setIsEditMode(false);
+    isEditModeRef.current = false;
+    setIsSelectMode(true);
+
+    // 重置选择状态
+    setSelectedCells([]);
+
+    // 重置右键菜单状态
+    setContextMenuVisible(false);
+    setContextMenuNodeId('');
+    setContextMenuPosition({ x: 0, y: 0 });
+
+    // 重置文本编辑状态
+    setIsEditingText(false);
+    setEditingNodeId(null);
+    setTempTextInput('');
+    setEditPosition({ x: 0, y: 0 });
+    setInputWidth(120);
+    setOriginalText('');
+
+    // 重置边配置状态
+    setEdgeConfigVisible(false);
+    setCurrentEdgeData(null);
+
+    // 重置节点编辑状态
+    setNodeEditVisible(false);
+    setEditingNodeData(null);
+    setViewConfigVisible(false);
+
+    // 重置绘制状态
+    isDrawingRef.current = false;
+    drawingEdgeRef.current = null;
+    finishTextEditRef.current = null;
+    startTextEditRef.current = null;
+
+    // 清理图形选择状态
+    if (graphInstance) {
+      graphInstance.disablePlugins(['selection']);
+      graphInstance.cleanSelection();
+    }
+  }, [graphInstance]);
 
   return {
     // 图形相关
@@ -169,6 +219,13 @@ export const useTopologyState = () => {
     setEditingNodeData,
     getEditNodeInitialValues,
     handleNodeEditClose,
+
+    // viewConfig
+    viewConfigVisible,
+    setViewConfigVisible,
+
+    // 重置状态
+    resetAllStates,
 
     // Refs
     isDrawingRef,

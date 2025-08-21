@@ -20,11 +20,3 @@ export interface SidebarRef {
   clearSelection: () => void;
   setSelectedKeys: (keys: React.Key[]) => void;
 }
-
-export interface ApiDirectoryItem {
-  id: string;
-  name: string;
-  data_id: string;
-  type: string;
-  children?: ApiDirectoryItem[];
-}

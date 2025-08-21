@@ -6,14 +6,15 @@ from sanic import json
 from sanic.log import logger
 from sanic.logging.default import LOGGING_CONFIG_DEFAULTS
 import logging
-from src.api import api
-from src.core.env.core_settings import core_settings
+
+from src.core.embed.embed_builder import EmbedBuilder
+from src.core.rerank.rerank_manager import ReRankManager
+from src.web.api import api
+from src.core.sanic_plus.env.core_settings import core_settings
 from src.core.sanic_plus.auth.api_auth import auth
 from src.core.sanic_plus.utils.config import YamlConfig
 from src.core.sanic_plus.utils.crypto import PasswordCrypto
-from src.embed.embed_builder import EmbedBuilder
-from src.ocr.pp_ocr import PPOcr
-from src.rerank.rerank_manager import ReRankManager
+from src.core.ocr.pp_ocr import PPOcr
 
 # 全局变量，延迟初始化
 crypto = None
@@ -86,7 +87,7 @@ def bootstrap() -> Sanic:
         if core_settings.graphiti_enabled():
             logger.info(f"启动知识图谱能力, Neo4j地址{core_settings.neo4j_host}")
 
-            from src.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
+            from src.core.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
             rag = GraphitiRAG()
             await rag.setup_graph()
         else:
@@ -108,7 +109,7 @@ def bootstrap() -> Sanic:
         EmbedBuilder().get_embed('local:huggingface_embedding:maidalun1020/bce-embedding-base_v1')
 
         logger.info("download BCE ReRank Models")
-        ReRankManager.get_rerank_instance(
+        ReRankManager.get_local_rerank_instance(
             'local:bce:maidalun1020/bce-reranker-base_v1')
 
         logger.info("download PaddleOCR")

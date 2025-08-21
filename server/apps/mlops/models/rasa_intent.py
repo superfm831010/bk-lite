@@ -19,11 +19,6 @@ class RasaIntent(MaintainerInfo, TimeInfo):
         default=list
     )
 
-    example_count = models.IntegerField(
-        default=0,
-        verbose_name="意图示例数量"
-    )
-
     class Meta:
         verbose_name = "意图"
         verbose_name_plural = "意图"
@@ -31,12 +26,3 @@ class RasaIntent(MaintainerInfo, TimeInfo):
     def __str__(self):
         return f'{self.name}-{self.dataset.name}'
 
-    def save(self, *args, **kwargs):
-        """
-        保存时自动计算example的个数
-        """
-        if isinstance(self.example, list):
-            self.example_count = len(self.example)
-        else:
-            self.example_count = 0
-        super().save(*args, **kwargs)

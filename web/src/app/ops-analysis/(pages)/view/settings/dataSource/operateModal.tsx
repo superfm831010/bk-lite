@@ -101,8 +101,8 @@ const OperateModal: React.FC<OperateModalProps> = ({
   const paramTypeOptions = [
     { label: t('dataSource.paramTypes.string'), value: 'string' },
     { label: t('dataSource.paramTypes.number'), value: 'number' },
-    { label: t('dataSource.paramTypes.date'), value: 'date' },
     { label: t('dataSource.paramTypes.boolean'), value: 'boolean' },
+    { label: t('dataSource.paramTypes.date'), value: 'date' },
     { label: t('dataSource.paramTypes.timeRange'), value: 'timeRange' },
   ];
 
@@ -124,11 +124,11 @@ const OperateModal: React.FC<OperateModalProps> = ({
   const fetchNamespaces = async () => {
     try {
       setNamespaceLoading(true);
-      const data = await getNamespaceList({ page_size: -1 });
-      if (data && Array.isArray(data)) {
-        setNamespaceList(data);
-        if (!currentRow && data.length > 0) {
-          form.setFieldsValue({ namespaces: [data[0].id] });
+      const { items } = await getNamespaceList({ page: 1, page_size: 10000 });
+      if (items && Array.isArray(items)) {
+        setNamespaceList(items);
+        if (!currentRow && items.length > 0) {
+          form.setFieldsValue({ namespaces: [items[0].id] });
         }
       }
     } catch (error) {

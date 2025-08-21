@@ -1,10 +1,16 @@
 from rest_framework import serializers
 from apps.log.models.policy import Policy, Alert, Event, EventRawData
+from apps.log.utils.log_group import LogGroupQueryBuilder
 
 
 class PolicySerializer(serializers.ModelSerializer):
     organizations = serializers.SerializerMethodField()
-    
+    log_groups = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        help_text="策略监控的日志分组ID列表"
+    )
+
     class Meta:
         model = Policy
         fields = '__all__'
@@ -28,6 +34,14 @@ class PolicySerializer(serializers.ModelSerializer):
             collect_type = self.initial_data.get('collect_type')
             if collect_type and Policy.objects.filter(name=value, collect_type=collect_type).exists():
                 raise serializers.ValidationError("该采集方式下策略名称已存在")
+        return value
+
+    def validate_log_groups(self, value):
+        """验证日志分组的有效性"""
+        if value:
+            is_valid, error_msg, _ = LogGroupQueryBuilder.validate_log_groups(value)
+            if not is_valid:
+                raise serializers.ValidationError(error_msg)
         return value
 
 

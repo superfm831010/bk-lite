@@ -1,5 +1,5 @@
 import nats_client
-from apps.log.models import Stream, CollectType
+from apps.log.models import LogGroup, CollectType
 from apps.log.models.policy import Policy
 
 
@@ -8,9 +8,8 @@ def get_log_module_data(module, child_module, page, page_size, group_id):
     """
         获取log模块数据
     """
-    if module == "stream":
-        queryset = Stream.objects.filter(
-            collect_type_id=child_module,
+    if module == "log_group":
+        queryset = LogGroup.objects.filter(
             streamorganization__organization=group_id
         ).distinct("id")
     elif module == "policy":
@@ -39,9 +38,9 @@ def get_log_module_list():
     collect_type_list = [{"name": obj["id"], "display_name": obj["name"], "children": []} for obj in objs]
     return [
         {
-            "name": "stream",
-            "display_name": "Stream",
-            "children": collect_type_list,
+            "name": "log_group",
+            "display_name": "LogGroup",
+            "children": [],
         },
         {
             "name": "policy",

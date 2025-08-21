@@ -293,17 +293,31 @@ const Alert: React.FC = () => {
       setPageLoading(true);
       const data: ObjectItem[] = await getCollectTypes();
       setObjects(data);
-      const _treeData = data.map((item) => ({
-        label: item.name,
-        title: item.name,
-        key: item.id,
-        children: [],
-      }));
       setDefaultSelectObj(data[0]?.id);
-      setTreeData(_treeData);
+      setTreeData(getTreeData(data));
     } finally {
       setPageLoading(false);
     }
+  };
+
+  const getTreeData = (data: ObjectItem[]): TreeItem[] => {
+    const groupedData = data.reduce((acc, item) => {
+      if (!acc[item.collector]) {
+        acc[item.collector] = {
+          title: item.collector || '--',
+          key: item.collector,
+          children: [],
+        };
+      }
+      acc[item.collector].children.push({
+        title: item.name || '--',
+        label: item.name || '--',
+        key: item.id,
+        children: [],
+      });
+      return acc;
+    }, {} as Record<string, TreeItem>);
+    return Object.values(groupedData);
   };
 
   const alertCloseConfirm = async (id: string | number) => {
@@ -456,13 +470,11 @@ const Alert: React.FC = () => {
     <div className="w-full">
       <Spin spinning={pageLoading} className="w-full">
         <div className={alertStyle.alert}>
-          <div className={alertStyle.filters}>
-            <TreeSelector
-              data={treeData}
-              defaultSelectedKey={defaultSelectObj as string}
-              onNodeSelect={handleObjectChange}
-            />
-          </div>
+          <TreeSelector
+            data={treeData}
+            defaultSelectedKey={defaultSelectObj as string}
+            onNodeSelect={handleObjectChange}
+          />
           <div className={alertStyle.alarmList}>
             <Tabs activeKey={activeTab} items={tabs} onChange={changeTab} />
             <div className={alertStyle.searchCondition}>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Input, Select, Button, Tooltip } from 'antd';
 import { useTranslation } from '@/utils/i18n';
-import { ListItem, TableDataItem } from '@/app/log/types';
+import { TableDataItem } from '@/app/log/types';
 import { IntegrationLogInstance } from '@/app/log/types/integration';
 import GroupTreeSelector from '@/components/group-tree-select';
 import { cloneDeep } from 'lodash';
@@ -11,7 +11,6 @@ const useCommonColumns = () => {
 
   return {
     getCommonColumns: (config: {
-      streamList: ListItem[];
       nodeList: TableDataItem[];
       dataSource: TableDataItem[];
       initTableItems: IntegrationLogInstance;
@@ -30,12 +29,6 @@ const useCommonColumns = () => {
       const handleFilterNodeChange = (val: string, index: number) => {
         const _dataSource = cloneDeep(config.dataSource);
         _dataSource[index].node_ids = val;
-        config.onTableDataChange(_dataSource);
-      };
-
-      const handleStreamsChange = (val: string[], index: number) => {
-        const _dataSource = cloneDeep(config.dataSource);
-        _dataSource[index].stream_ids = val;
         config.onTableDataChange(_dataSource);
       };
 
@@ -149,36 +142,6 @@ const useCommonColumns = () => {
               value={record.group_ids}
               onChange={(val) => handleGroupChange(val, index)}
             />
-          ),
-        },
-        {
-          title: (
-            <Tooltip title={t('log.integration.logGroupTips')}>
-              {
-                <span
-                  className="pb-[2px]"
-                  style={{ borderBottom: '1px dashed var(--color-border-4)' }}
-                >
-                  {t('log.integration.logGroup')}
-                </span>
-              }
-            </Tooltip>
-          ),
-          dataIndex: '"stream_ids"',
-          key: '"stream_ids"',
-          width: 200,
-          render: (_: unknown, record: TableDataItem, index: number) => (
-            <Select
-              showSearch
-              mode="tags"
-              maxTagCount="responsive"
-              value={record.stream_ids}
-              onChange={(val) => handleStreamsChange(val, index)}
-              options={(config.streamList || []).map((item) => ({
-                value: item.id,
-                label: item.name,
-              }))}
-            ></Select>
           ),
         },
         {

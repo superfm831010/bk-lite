@@ -11,6 +11,9 @@ class Policy(TimeInfo, MaintainerInfo):
     collect_type = models.ForeignKey(CollectType, on_delete=models.CASCADE, verbose_name="采集方式")
     last_run_time = models.DateTimeField(blank=True, null=True, verbose_name="最后一次执行时间")
 
+    # 日志分组配置 - 策略作用范围
+    log_groups = models.JSONField(default=list, verbose_name="日志分组范围", help_text="策略监控的日志分组ID列表")
+
     # 告警条件（关键字 & 聚合都可能用到）
     alert_type = models.CharField(max_length=50, verbose_name="告警类型")
     alert_name = models.CharField(max_length=255, verbose_name="告警名称")
