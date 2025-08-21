@@ -4,7 +4,7 @@ import json as json_util
 from langchain_core.messages import AIMessageChunk, ToolMessage, AIMessage
 
 
-async def stream_response(workflow, body, res):
+async def chatbot_workflow_stream_response(workflow, body, res):
     prompt_token = 0
     completion_token = 0
     created_time = int(datetime.now().timestamp())
@@ -46,18 +46,8 @@ async def stream_response(workflow, body, res):
             content = chunk[0].content
             completion_token += workflow.count_tokens(content)
 
-            # 根据消息类型设置不同的内容
-            if isinstance(chunk[0], ToolMessage):
-                tool_info = {
-                    "tool_name": chunk[0].name,
-                    "tool_result": chunk[0].content
-                }
-                delta_content = f"\n[执行工具: {tool_info['tool_name']}]\n"
-            else:  # AIMessageChunk
-                delta_content = content
-
-            # 使用辅助函数创建响应对象
-            response_sse_obj = create_response_obj(delta_content=delta_content)
+            response_sse_obj = create_response_obj(
+                delta_content=content)
             json_content = json_util.dumps(
                 response_sse_obj, ensure_ascii=False)
             await res.write(f"data: {json_content}\n\n".encode('utf-8'))

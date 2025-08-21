@@ -2,8 +2,8 @@ from sanic.log import logger
 from sanic import Blueprint, json
 from sanic_ext import validate
 from src.core.agent.react_agent.react_agent_graph import ReActAgentGraph
-from src.web.api.agent.common.utils import stream_response
 from src.core.sanic_plus.auth.api_auth import auth
+from src.web.api.agent.react_agent.react_agent_sse_handler import react_agent_stream_response
 from src.web.entity.agent.react_agent.react_agent_request import ReActAgentRequest
 from src.web.services.agent_service import AgentService
 from sanic.response import ResponseStream
@@ -37,7 +37,7 @@ async def invoke_react_agent_sse(request, body: ReActAgentRequest):
     logger.debug(f"执行ReActAgentGraph,用户的问题:[{body.user_message}]")
 
     return ResponseStream(
-        lambda res: stream_response(workflow, body, res),
+        lambda res: react_agent_stream_response(workflow, body, res),
         content_type="text/event-stream; charset=utf-8",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
     )
