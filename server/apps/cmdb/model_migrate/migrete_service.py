@@ -85,6 +85,9 @@ class ModelMigrate:
                     attr["option"] = ast.literal_eval(attr["option"])
                 except Exception:
                     pass
+                # 过滤掉关键字段为空的行
+                if not attr["attr_id"]:
+                    continue
             models.append({**model, "attrs": json.dumps(attrs)})
 
         with Neo4jClient() as ag:
