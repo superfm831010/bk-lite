@@ -7,3 +7,4 @@ class LogConfig(AppConfig):
 
     def ready(self):
         import apps.log.nats.permission  # noqa
+        import apps.log.nats.log # noqa
