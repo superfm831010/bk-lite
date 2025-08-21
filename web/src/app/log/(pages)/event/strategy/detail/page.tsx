@@ -42,7 +42,7 @@ const StrategyOperation = () => {
   const { isLoading } = useApiClient();
   const { getSystemChannelList, getPolicy, createPolicy, updatePolicy } =
     useLogEventApi();
-  const { getCollectTypesById } = useLogIntegrationApi();
+  const { getCollectTypesById, getLogStreams } = useLogIntegrationApi();
   const LEVEL_LIST = useLevelList();
   const SCHEDULE_LIST = useScheduleList();
   const ALGORITHM_LIST = useAlgorithmList();
@@ -69,6 +69,7 @@ const StrategyOperation = () => {
   const [formData, setFormData] = useState<StrategyFields>({});
   const [channelList, setChannelList] = useState<ChannelItem[]>([]);
   const [fieldList, setFieldList] = useState<string[]>([]);
+  const [streamList, setStreamList] = useState<ListItem[]>([]);
 
   const isEdit = useMemo(() => type === 'edit', [type]);
 
@@ -78,6 +79,7 @@ const StrategyOperation = () => {
       Promise.all([
         getFields(),
         getChannelList(),
+        getGroups(),
         detailId && getStragyDetail(),
       ]).finally(() => {
         setPageLoading(false);
@@ -133,6 +135,14 @@ const StrategyOperation = () => {
     });
     const fields = data?.attrs || [];
     setFieldList(fields);
+  };
+
+  const getGroups = async () => {
+    const data = await getLogStreams({
+      page_size: -1,
+      page: 1,
+    });
+    setStreamList(data || []);
   };
 
   const dealDetail = (data: StrategyFields) => {
@@ -315,6 +325,29 @@ const StrategyOperation = () => {
                         ]}
                       >
                         <SelectCard data={ALGORITHM_LIST} />
+                      </Form.Item>
+                      <Form.Item<StrategyFields>
+                        rules={[
+                          { required: true, message: t('common.required') },
+                        ]}
+                        label={
+                          <span className="w-[82px]">
+                            {t('log.integration.logGroup')}
+                          </span>
+                        }
+                        tooltip={t('log.integration.logGroupTips')}
+                        name="log_groups"
+                      >
+                        <Select
+                          style={{ width: 800 }}
+                          showSearch
+                          mode="tags"
+                          maxTagCount="responsive"
+                          options={streamList.map((item: ListItem) => ({
+                            value: item.id,
+                            label: item.name,
+                          }))}
+                        ></Select>
                       </Form.Item>
                       <Form.Item<StrategyFields>
                         required

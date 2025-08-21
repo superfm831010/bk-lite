@@ -1,4 +1,4 @@
-import { useVectorConfig } from '../collectors/docker/vector';
+import { useVectorConfig } from '../collectors/vector/docker';
 
 export const useDockerConfig = () => {
   const vector = useVectorConfig();

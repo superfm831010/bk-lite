@@ -14,7 +14,6 @@ import useLogApi from '@/app/log/api/integration';
 import { useTranslation } from '@/utils/i18n';
 import {
   ColumnItem,
-  ListItem,
   ModalRef,
   Organization,
   Pagination,
@@ -38,7 +37,7 @@ type TableRowSelection<T extends object = object> =
 
 const Asset = () => {
   const { isLoading } = useApiClient();
-  const { getInstanceList, deleteLogInstance, getLogStreams } = useLogApi();
+  const { getInstanceList, deleteLogInstance } = useLogApi();
   const { t } = useTranslation();
   const commonContext = useCommon();
   const authList = useRef(commonContext?.authOrganizations || []);
@@ -58,7 +57,6 @@ const Asset = () => {
   const [frequence, setFrequence] = useState<number>(0);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [streamList, setStreamList] = useState<ListItem[]>([]);
 
   const handleAssetMenuClick: MenuProps['onClick'] = (e) => {
     openInstanceModal(
@@ -162,13 +160,13 @@ const Asset = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      getAssetInsts();
+      onRefresh();
     }
   }, [pagination.current, pagination.pageSize]);
 
   useEffect(() => {
     if (!isLoading) {
-      initData();
+      onRefresh();
     }
   }, [isLoading]);
 
@@ -184,21 +182,6 @@ const Asset = () => {
       clearTimer();
     };
   }, [frequence, pagination.current, pagination.pageSize, searchText]);
-
-  const initData = () => {
-    setTableLoading(true);
-    Promise.all([getAssetInsts('init'), getGroups()]).finally(() => {
-      setTableLoading(false);
-    });
-  };
-
-  const getGroups = async () => {
-    const data = await getLogStreams({
-      page_size: 99999999999,
-      page: 1,
-    });
-    setStreamList(data?.items || []);
-  };
 
   const onRefresh = () => {
     getAssetInsts();
@@ -283,7 +266,7 @@ const Asset = () => {
         total: data?.count || 0,
       }));
     } finally {
-      setTableLoading(type === 'init');
+      setTableLoading(false);
     }
   };
 
@@ -360,11 +343,7 @@ const Asset = () => {
         onChange={handleTableChange}
         rowSelection={rowSelection}
       ></CustomTable>
-      <EditConfig
-        ref={configRef}
-        streamList={streamList}
-        onSuccess={() => getAssetInsts()}
-      />
+      <EditConfig ref={configRef} onSuccess={() => getAssetInsts()} />
       <EditInstance
         ref={instanceRef}
         organizationList={organizationList}
