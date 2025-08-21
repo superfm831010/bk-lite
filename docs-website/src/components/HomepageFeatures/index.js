@@ -4,9 +4,40 @@ import styles from './styles.module.css';
 
 const FeatureList = [
   {
+    title: 'OpsPilot',
+    icon: '🚁',
+    gradient: 'gradient-1',
+    badge: 'AI助手',
+    metric: '自动化',
+    highlights: ['智能诊断', '故障修复'],
+    description: (
+      <>
+        AI驱动的运维助手，智能故障诊断、自动化修复建议，
+        提升运维效率，降低人工成本。
+      </>
+    ),
+  },
+  {
+    title: 'ITSM',
+    icon: '🎫',
+    gradient: 'gradient-2',
+    badge: '服务管理',
+    metric: '流程化',
+    highlights: ['工单管理', '变更审批'],
+    description: (
+      <>
+        IT服务管理平台，支持工单管理、变更管理、事件管理，
+        标准化IT服务流程，提升服务质量和效率。
+      </>
+    ),
+  },
+  {
     title: 'CMDB',
     icon: '🏗️',
-    gradient: 'gradient-1',
+    gradient: 'gradient-3',
+    badge: '配置管理',
+    metric: '资产视图',
+    highlights: ['自动发现', '关联分析'],
     description: (
       <>
         配置管理数据库，统一管理IT资源和配置信息，
@@ -15,9 +46,12 @@ const FeatureList = [
     ),
   },
   {
-    title: '监控',
+    title: '监控中心',
     icon: '📊',
-    gradient: 'gradient-2', 
+    gradient: 'gradient-4',
+    badge: '实时监控',
+    metric: '全方位',
+    highlights: ['性能监控', '根因定位'],
     description: (
       <>
         全方位系统监控，支持基础设施、应用性能、业务指标监控，
@@ -26,9 +60,12 @@ const FeatureList = [
     ),
   },
   {
-    title: '日志',
-    icon: '�',
-    gradient: 'gradient-3',
+    title: '日志中心',
+    icon: '📋',
+    gradient: 'gradient-5',
+    badge: '日志管理',
+    metric: '海量存储',
+    highlights: ['集中采集', '智能检索'],
     description: (
       <>
         集中化日志管理平台，支持海量日志采集、存储、检索和分析，
@@ -37,9 +74,12 @@ const FeatureList = [
     ),
   },
   {
-    title: '告警',
-    icon: '�',
-    gradient: 'gradient-4',
+    title: '告警中心',
+    icon: '🚨',
+    gradient: 'gradient-6',
+    badge: '智能告警',
+    metric: '降噪分析',
+    highlights: ['智能降噪', '及时响应'],
     description: (
       <>
         智能告警引擎，支持多维度告警规则配置，
@@ -48,9 +88,26 @@ const FeatureList = [
     ),
   },
   {
+    title: 'Console',
+    icon: '💻',
+    gradient: 'gradient-7',
+    badge: '控制台',
+    metric: '可视化',
+    highlights: ['统一操作', '简化流程'],
+    description: (
+      <>
+        统一控制台界面，提供可视化操作和管理功能，
+        简化复杂操作流程，提升用户体验和工作效率。
+      </>
+    ),
+  },
+  {
     title: '系统管理',
     icon: '⚙️',
-    gradient: 'gradient-5',
+    gradient: 'gradient-8',
+    badge: '系统治理',
+    metric: '安全管控',
+    highlights: ['权限管理', '审计日志'],
     description: (
       <>
         统一系统管理平台，包含用户权限、组织架构、审计日志等功能，
@@ -61,7 +118,10 @@ const FeatureList = [
   {
     title: '运营分析',
     icon: '📈',
-    gradient: 'gradient-6',
+    gradient: 'gradient-9',
+    badge: '数据分析',
+    metric: '业务决策',
+    highlights: ['趋势分析', '运营优化'],
     description: (
       <>
         业务运营数据分析，支持多维度报表和趋势分析，
@@ -72,7 +132,10 @@ const FeatureList = [
   {
     title: '节点管理',
     icon: '🖥️',
-    gradient: 'gradient-1',
+    gradient: 'gradient-10',
+    badge: '集群管理',
+    metric: '生命周期',
+    highlights: ['批量操作', '自动运维'],
     description: (
       <>
         集群节点统一管理，支持节点生命周期管理、
@@ -81,20 +144,12 @@ const FeatureList = [
     ),
   },
   {
-    title: 'OpsPilot',
-    icon: '🚁',
-    gradient: 'gradient-2',
-    description: (
-      <>
-        AI驱动的运维助手，智能故障诊断、自动化修复建议，
-        提升运维效率，降低人工成本。
-      </>
-    ),
-  },
-  {
     title: 'MLOps',
     icon: '🧠',
-    gradient: 'gradient-3',
+    gradient: 'gradient-11',
+    badge: '机器学习',
+    metric: 'AI运维',
+    highlights: ['模型管理', '规模部署'],
     description: (
       <>
         机器学习运维平台，支持模型训练、部署、监控全生命周期管理，
@@ -105,7 +160,10 @@ const FeatureList = [
   {
     title: 'PlayGround',
     icon: '🧪',
-    gradient: 'gradient-4',
+    gradient: 'gradient-12',
+    badge: '实验环境',
+    metric: '沙箱测试',
+    highlights: ['快速验证', '安全实验'],
     description: (
       <>
         在线实验环境，支持快速验证和测试新功能，
@@ -115,19 +173,35 @@ const FeatureList = [
   },
 ];
 
-function Feature({icon, title, description, gradient}) {
+function Feature({title, description, gradient, icon, badge, metric, highlights}) {
   return (
     <div className={styles.featureItem}>
-      <div className={styles.featureCard}>
-        <div className={clsx(styles.featureIcon, styles[gradient])}>
-          <span className={styles.iconEmoji}>{icon}</span>
+      <div className={clsx(styles.featureCard, styles[gradient])}>
+        <div className={styles.cardHeader}>
+          <div className={styles.featureIcon}>
+            <span className={styles.iconEmoji}>{icon}</span>
+          </div>
+          <div className={styles.cardBadge}>{badge}</div>
         </div>
+        
         <div className={styles.featureContent}>
           <Heading as="h3" className={styles.featureTitle}>
             {title}
           </Heading>
           <p className={styles.featureDescription}>{description}</p>
+          
+          <div className={styles.metricHighlight}>
+            <span className={styles.metricValue}>{metric}</span>
+            <div className={styles.highlightTags}>
+              {highlights.map((highlight, idx) => (
+                <span key={idx} className={styles.highlightTag}>
+                  {highlight}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
+        
         <div className={clsx(styles.featureGlow, styles[gradient])}></div>
       </div>
     </div>
@@ -143,7 +217,7 @@ export default function HomepageFeatures() {
             产品模块
           </Heading>
           <p className={styles.sectionSubtitle}>
-            完整的企业级运维解决方案，涵盖从基础设施到业务应用的全栈管理能力
+            灵活可扩展的运维模块体系，支持从基础设施到业务应用的全栈管理
           </p>
         </div>
         <div className={styles.featuresGrid}>

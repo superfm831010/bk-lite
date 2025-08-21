@@ -6,6 +6,7 @@ import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import PlatformShowcase from '@site/src/components/AIShowcase';
 import PartnersShowcase from '@site/src/components/PartnersShowcase';
 import FinalCTA from '@site/src/components/FinalCTA';
+import LiquidNavbar from '@site/src/components/LiquidNavbar';
 
 import Heading from '@theme/Heading';
 import styles from './index.module.css';
@@ -23,9 +24,9 @@ function HomepageHeader() {
       </div>
       <div className={styles.heroContent}>
         <div className={styles.heroAnimation}>
-          <div className={styles.heroTitleAccent}>BKLite</div>
+          <div className={styles.heroTitleAccent}>BlueKing Lite</div>
           <p className={styles.heroSubtitle}>
-            融合AI技术的轻量级蓝鲸平台，让企业数字化转型更简单
+            AI 原生的轻量化蓝鲸平台，重塑智能运维体验
           </p>
           <div className={styles.heroStats}>
             <div className={styles.statCard}>
@@ -40,18 +41,18 @@ function HomepageHeader() {
           </div>
           <div className={styles.buttons}>
             <Link
-              className={clsx(styles.button, styles['button--primary'])}
-              to="/docs/intro">
-              <span className={styles.buttonIcon}>🚀</span>
-              立即开始
-              <span className={styles.buttonArrow}>→</span>
-            </Link>
-            <Link
-              className={clsx(styles.button, styles['button--secondary'])}
-              to="https://github.com/TencentBlueKing/bk-lite">
-              <span className={styles.buttonIcon}>⭐</span>
-              GitHub 源码
-            </Link>
+                className={clsx(styles.button, styles['button--primary'])}
+                to="https://bklite.canway.net/">
+                <span className={styles.buttonIcon}>⚡</span>
+                在线体验
+                <span className={styles.buttonArrow}>→</span>
+              </Link>
+              <Link
+                className={clsx(styles.button, styles['button--secondary'])}
+                to="/docs/tutorial-basics/create-a-document">
+                <span className={styles.buttonIcon}>📖</span>
+                快速入门
+              </Link>
           </div>
         </div>
       </div>
@@ -65,6 +66,7 @@ export default function Home() {
     <Layout
       title={`${siteConfig.title} - 轻量级蓝鲸平台`}
       description="BKLite是下一代轻量级蓝鲸平台，融合AI技术，为企业提供简单高效的数字化转型解决方案">
+      <LiquidNavbar />
       <HomepageHeader />
       <main>
         <HomepageFeatures />

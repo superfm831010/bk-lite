@@ -10,8 +10,8 @@ import {themes as prismThemes} from 'prism-react-renderer';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'BKLite',
-  tagline: '轻量级蓝鲸平台 - 让AI驱动您的业务流程',
+  title: 'BlueKing Lite',
+  tagline: 'AI 原生的轻量化蓝鲸平台，重塑智能运维体验',
   favicon: 'img/logo-site.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -81,19 +81,12 @@ const config = {
       // Replace with your project's social card
       image: 'img/bklite-social-card.jpg',
       navbar: {
-        title: 'BKLite',
+        title: 'BlueKing Lite',
         logo: {
           alt: 'BKLite Logo',
           src: 'img/logo-site.png',
         },
         items: [
-          {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: '文档',
-          },
-          {to: '/blog', label: '博客', position: 'left'},
           {
             href: 'https://github.com/TencentBlueKing/bk-lite',
             label: 'GitHub',
@@ -108,12 +101,12 @@ const config = {
             title: '产品',
             items: [
               {
-                label: '快速开始',
-                to: '/docs/intro',
+                label: '在线体验',
+                href: 'https://bklite.canway.net/',
               },
               {
-                label: '用户指南',
-                to: '/docs/tutorial-basics/create-a-document',
+                label: '快速入门',
+                to: '/docs/intro',
               },
               {
                 label: 'API 文档',
@@ -156,7 +149,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} 腾讯蓝鲸. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} BlueKing Lite.`,
       },
       prism: {
         theme: prismThemes.github,
