@@ -343,6 +343,7 @@ const StrategyOperation = () => {
                           showSearch
                           mode="tags"
                           maxTagCount="responsive"
+                          placeholder={t('log.integration.logGroup')}
                           options={streamList.map((item: ListItem) => ({
                             value: item.id,
                             label: item.name,
