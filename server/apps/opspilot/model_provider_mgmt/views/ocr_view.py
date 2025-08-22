@@ -23,7 +23,7 @@ class ObjFilter(FilterSet):
 class OCRProviderViewSet(AuthViewSet):
     queryset = OCRProvider.objects.all()
     serializer_class = OCRProviderSerializer
-    permission_key = "provider.orc_model"
+    permission_key = "provider.ocr_model"
     filterset_class = ObjFilter
 
     @HasPermission("provide_list-View")

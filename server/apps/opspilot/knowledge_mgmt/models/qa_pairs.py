@@ -14,6 +14,9 @@ class QAPairs(MaintainerInfo, TimeInfo):
     # 外键关系
     knowledge_base = models.ForeignKey("KnowledgeBase", on_delete=models.CASCADE)
     llm_model = models.ForeignKey("LLMModel", on_delete=models.CASCADE, null=True, blank=True)
+    answer_llm_model = models.ForeignKey(
+        "LLMModel", on_delete=models.CASCADE, null=True, blank=True, related_name="answer_llm_model"
+    )
 
     # 问答对相关字段
     qa_count = models.IntegerField(default=0, verbose_name="问答对数量")
@@ -22,6 +25,8 @@ class QAPairs(MaintainerInfo, TimeInfo):
     document_source = models.CharField(max_length=50, default="file", verbose_name="文档来源")
     status = models.CharField(max_length=50, default="completed", verbose_name="状态")
     create_type = models.CharField(max_length=20, default="document")
+    question_prompt = models.TextField(blank=True, null=True, verbose_name="问题提示词", default="")
+    answer_prompt = models.TextField(blank=True, null=True, verbose_name="答案提示词", default="")
 
     def delete(self, *args, **kwargs):
         from apps.opspilot.utils.chunk_helper import ChunkHelper

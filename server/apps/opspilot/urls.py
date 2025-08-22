@@ -17,6 +17,7 @@ from apps.opspilot.model_provider_mgmt.views import (
     EmbedProviderViewSet,
     LLMModelViewSet,
     LLMViewSet,
+    ModelTypeViewSet,
     OCRProviderViewSet,
     RerankProviderViewSet,
     RuleViewSet,
@@ -35,6 +36,7 @@ router.register(r"model_provider_mgmt/rule", RuleViewSet)
 router.register(r"model_provider_mgmt/llm_model", LLMModelViewSet)
 router.register(r"model_provider_mgmt/skill_tools", SkillToolsViewSet)
 router.register(r"model_provider_mgmt/skill_log", SkillRequestLogViewSet)
+router.register(r"model_provider_mgmt/model_type", ModelTypeViewSet)
 
 # bot
 router.register(r"bot_mgmt/bot", BotViewSet)
@@ -55,7 +57,6 @@ router.register(r"knowledge_mgmt/knowledge_graph", KnowledgeGraphViewSet)
 
 # quota
 router.register(r"quota_rule_mgmt/quota_rule", QuotaRuleViewSet)
-
 
 urlpatterns = router.urls
 
