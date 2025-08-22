@@ -178,10 +178,10 @@ const SearchView: React.FC = () => {
 
   const getGroups = async () => {
     const data = await getLogStreams({
-      page_size: 99999999999,
+      page_size: -1,
       page: 1,
     });
-    setGroupList(data?.items || []);
+    setGroupList(data || []);
   };
 
   const getLogData = async (type: string, times?: number[]) => {

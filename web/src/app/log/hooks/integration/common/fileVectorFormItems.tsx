@@ -92,7 +92,11 @@ const useFileVectorFormItems = () => {
                               text={t('log.integration.startPattern')}
                             />
                             <Tooltip
-                              title={t('log.integration.startPatternTips')}
+                              title={
+                                <div style={{ whiteSpace: 'pre-line' }}>
+                                  {t('log.integration.startPatternTips')}
+                                </div>
+                              }
                             >
                               <QuestionCircleOutlined className="text-[var(--ant-color-text-description)] ml-[4px]" />
                             </Tooltip>
@@ -116,7 +120,11 @@ const useFileVectorFormItems = () => {
                               text={t('log.integration.conditionPattern')}
                             />
                             <Tooltip
-                              title={t('log.integration.conditionPatternTips')}
+                              title={
+                                <div style={{ whiteSpace: 'pre-line' }}>
+                                  {t('log.integration.conditionPatternTips')}
+                                </div>
+                              }
                             >
                               <QuestionCircleOutlined className="text-[var(--ant-color-text-description)] ml-[4px]" />
                             </Tooltip>

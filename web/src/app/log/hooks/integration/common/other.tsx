@@ -88,9 +88,21 @@ const useConditionModeList = (): ListItem[] => {
   );
 };
 
+const useDirectionList = (): ListItem[] => {
+  const { t } = useTranslation();
+  return useMemo(
+    () => [
+      { id: 'before', name: t('log.integration.before') },
+      { id: 'after', name: t('log.integration.after') },
+    ],
+    [t]
+  );
+};
+
 export {
   useAssetMenuItems,
   useConditionList,
   useTermList,
   useConditionModeList,
+  useDirectionList,
 };

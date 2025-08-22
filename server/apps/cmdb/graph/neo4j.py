@@ -10,6 +10,7 @@ from apps.cmdb.constants import INSTANCE, ModelConstraintKey
 from apps.cmdb.graph.format_type import FORMAT_TYPE
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.logger import cmdb_logger as logger
+
 load_dotenv()
 
 
@@ -221,11 +222,11 @@ class Neo4jClient:
             result = {}
             try:
                 entity = self._create_entity(label, properties, check_attr_map, exist_items, operator)
-                result.update(data=entity, success=True)
+                result.update(data=entity, success=True, message="")
                 exist_items.append(entity)
             except Exception as e:
                 message = f"article {index + 1} data, {e}"
-                result.update(message=message, success=False)
+                result.update(message=message, success=False, data=properties)
             results.append(result)
         return results
 
@@ -378,6 +379,16 @@ class Neo4jClient:
             return []
         return self.entity_to_list(objs)
 
+    def query_entity_by_inst_names(self, inst_names: list, model_id: str = None):
+        """
+        查询实体列表 通过实例名称
+        """
+        queries = f"AND n.model_id= '{model_id}'" if model_id else ""
+        objs = self.session.run(f"MATCH (n) WHERE n.inst_name IN {inst_names} {queries} RETURN n")
+        if not objs:
+            return []
+        return self.entity_to_list(objs)
+
     def query_edge(
             self,
             label: str,
@@ -451,7 +462,6 @@ class Neo4jClient:
                                        check_attr_map: dict,
                                        check: bool = True):
         """批量更新实体属性"""
-
         if check:
             # 校验必填项
             self.check_required_attr(properties, check_attr_map.get("is_required", {}), is_update=True)
@@ -462,7 +472,7 @@ class Neo4jClient:
                 return []
 
         nodes = self.batch_update_node_properties(label, entity_ids, properties)
-        return self.entity_to_list(nodes)
+        return {"data": self.entity_to_list(nodes), "success": True, "message": ""}
 
     def batch_update_node_properties(self, label: str, node_ids: Union[int, List[int]], properties: dict):
         """批量更新节点属性"""
@@ -711,14 +721,14 @@ class Neo4jClient:
 
         # 如果有模型ID但没有实例名称，则只统计该模型的所有实例
         instance_condition_str = " OR ".join(instance_conditions) if instance_conditions else ""
-        
+
         # 只有在存在具体模型限制时才排除其他模型
         if model_list and instance_conditions:
             instance_condition_str += f" OR (NOT n.model_id IN {model_list})"
 
         # 判断是否为全部权限：没有具体的实例限制条件
         has_full_permission = not instance_conditions and not model_list
-        
+
         # 个人创建的过滤 - 只有在没有全部权限时才添加
         if created and not has_full_permission:
             if instance_condition_str:
@@ -762,7 +772,7 @@ class Neo4jClient:
 
         # 组合最终权限条件
         permission_conditions = []
-        
+
         # 如果有组织权限，所有条件都必须在组织权限范围内
         if base_condition:
             if instance_permission_str:
@@ -774,7 +784,7 @@ class Neo4jClient:
         elif instance_permission_str:
             # 仅实例权限（包含创建人权限）
             permission_conditions.append(f"({instance_permission_str})")
-        
+
         final_permission_condition = " OR ".join(permission_conditions) if permission_conditions else ""
 
         # 组合权限条件和全文检索条件
@@ -811,10 +821,16 @@ class Neo4jClient:
                 node = item_map.get(properties_key)
                 if node:
                     # 节点更新
-                    results = self.batch_update_entity_properties(label=label, entity_ids=[node.get("_id")],
-                                                                  properties=properties,
-                                                                  check_attr_map=check_attr_map)
-                    update_results.append(results[0]) if results else None
+                    try:
+                        results = self.batch_update_entity_properties(label=label, entity_ids=[node.get("_id")],
+                                                                      properties=properties,
+                                                                      check_attr_map=check_attr_map)
+                        results["data"] = results["data"][0]
+                        update_results.append(results)
+                    except Exception as e:
+                        logger.info(f"update entity error: {e}")
+                        update_results.append({"success": False, "data": properties,"message":"update entity error"})
+
                 else:
                     # 暂存统一新增
                     add_nodes.append(properties)

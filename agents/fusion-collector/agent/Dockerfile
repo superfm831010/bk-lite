@@ -39,5 +39,6 @@ ADD ./vector ./bin/vector
 # Suporvisor
 ADD ./service.conf /etc/supervisor/conf.d/service.conf
 
+
 ENTRYPOINT [ "/opt/fusion-collectors/startup.sh" ]
 

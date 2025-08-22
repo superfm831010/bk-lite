@@ -48,6 +48,7 @@ init_opspilot() {
     python manage.py init_bot || true
     python manage.py init_channel || true
     python manage.py init_llm || true
+    python manage.py init_provider_model  || true
 }
 
 init_playground() {

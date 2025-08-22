@@ -10,9 +10,9 @@ import {themes as prismThemes} from 'prism-react-renderer';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'My Site',
-  tagline: 'Dinosaurs are cool',
-  favicon: 'img/favicon.ico',
+  title: 'BlueKing Lite',
+  tagline: 'AI 原生的轻量化蓝鲸平台，重塑智能运维体验',
+  favicon: 'img/logo-site.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -20,15 +20,15 @@ const config = {
   },
 
   // Set the production url of your site here
-  url: 'https://your-docusaurus-site.example.com',
+  url: 'https://bklite.tencent.com',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'docusaurus', // Usually your repo name.
+  organizationName: 'TencentBlueKing', // Usually your GitHub org/user name.
+  projectName: 'bk-lite', // Usually your repo name.
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -37,8 +37,8 @@ const config = {
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: 'zh-Hans',
+    locales: ['zh-Hans', 'en'],
   },
 
   presets: [
@@ -51,7 +51,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+            'https://github.com/TencentBlueKing/bk-lite/tree/main/docs-website/',
         },
         blog: {
           showReadingTime: true,
@@ -62,7 +62,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+            'https://github.com/TencentBlueKing/bk-lite/tree/main/docs-website/',
           // Useful options to enforce blogging best practices
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
@@ -79,23 +79,16 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       // Replace with your project's social card
-      image: 'img/docusaurus-social-card.jpg',
+      image: 'img/bklite-social-card.jpg',
       navbar: {
-        title: 'My Site',
+        title: 'BlueKing Lite',
         logo: {
-          alt: 'My Site Logo',
-          src: 'img/logo.svg',
+          alt: 'BKLite Logo',
+          src: 'img/logo-site.png',
         },
         items: [
           {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Tutorial',
-          },
-          {to: '/blog', label: 'Blog', position: 'left'},
-          {
-            href: 'https://github.com/facebook/docusaurus',
+            href: 'https://github.com/TencentBlueKing/bk-lite',
             label: 'GitHub',
             position: 'right',
           },
@@ -105,46 +98,58 @@ const config = {
         style: 'dark',
         links: [
           {
-            title: 'Docs',
+            title: '产品',
             items: [
               {
-                label: 'Tutorial',
+                label: '在线体验',
+                href: 'https://bklite.canway.net/',
+              },
+              {
+                label: '快速入门',
                 to: '/docs/intro',
               },
-            ],
-          },
-          {
-            title: 'Community',
-            items: [
               {
-                label: 'Stack Overflow',
-                href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-              },
-              {
-                label: 'Discord',
-                href: 'https://discordapp.com/invite/docusaurus',
-              },
-              {
-                label: 'X',
-                href: 'https://x.com/docusaurus',
+                label: 'API 文档',
+                to: '/docs/tutorial-extras/manage-docs-versions',
               },
             ],
           },
           {
-            title: 'More',
+            title: '社区',
             items: [
               {
-                label: 'Blog',
-                to: '/blog',
+                label: '腾讯蓝鲸',
+                href: 'https://bk.tencent.com/',
+              },
+              {
+                label: '开发者论坛',
+                href: 'https://bbs.bk.tencent.com/',
               },
               {
                 label: 'GitHub',
-                href: 'https://github.com/facebook/docusaurus',
+                href: 'https://github.com/TencentBlueKing/bk-lite',
+              },
+            ],
+          },
+          {
+            title: '更多',
+            items: [
+              {
+                label: '博客',
+                to: '/blog',
+              },
+              {
+                label: '企业服务',
+                href: 'https://cloud.tencent.com/',
+              },
+              {
+                label: '开源协议',
+                href: 'https://github.com/TencentBlueKing/bk-lite/blob/main/LICENSE',
               },
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} BlueKing Lite.`,
       },
       prism: {
         theme: prismThemes.github,
