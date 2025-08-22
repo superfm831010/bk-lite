@@ -245,11 +245,6 @@
     "icon": ""
   },
    {
-    "name": "chat-gpt",
-    "display_name": "OpenAI",
-    "icon": "GPT"
-  },
-   {
     "name": "hugging_face",
     "display_name": "Hugging Face",
     "icon": ""
