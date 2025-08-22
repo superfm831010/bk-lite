@@ -3,7 +3,7 @@ from django_filters.rest_framework import FilterSet
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import AuthViewSet
-from apps.opspilot.model_provider_mgmt.serializers.rerank_serializer import RerankProviderSerializer
+from apps.opspilot.model_provider_mgmt.serializers.rerank_serializer import RerankProviderSerializerProvider
 from apps.opspilot.models import RerankProvider
 
 
@@ -22,7 +22,7 @@ class ObjFilter(FilterSet):
 
 class RerankProviderViewSet(AuthViewSet):
     queryset = RerankProvider.objects.all()
-    serializer_class = RerankProviderSerializer
+    serializer_class = RerankProviderSerializerProvider
     permission_key = "provider.rerank_model"
     filterset_class = ObjFilter
 

@@ -258,5 +258,20 @@
     "name": "langserve",
     "display_name": "LangServe",
     "icon": ""
+  },
+  {
+    "name": "llm",
+    "display_name": "LLM",
+    "icon": ""
+  },
+  {
+    "name": "cloud",
+    "display_name": "Cloud",
+    "icon": ""
+  },
+  {
+    "name": "default",
+    "display_name": "默认",
+    "icon": ""
   }
 ]

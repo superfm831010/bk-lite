@@ -3,7 +3,7 @@ from django_filters.rest_framework import FilterSet
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import AuthViewSet
-from apps.opspilot.model_provider_mgmt.serializers.ocr_serializer import OCRProviderSerializer
+from apps.opspilot.model_provider_mgmt.serializers.ocr_serializer import OCRProviderSerializerProvider
 from apps.opspilot.models import OCRProvider
 
 
@@ -22,8 +22,8 @@ class ObjFilter(FilterSet):
 
 class OCRProviderViewSet(AuthViewSet):
     queryset = OCRProvider.objects.all()
-    serializer_class = OCRProviderSerializer
-    permission_key = "provider.orc_model"
+    serializer_class = OCRProviderSerializerProvider
+    permission_key = "provider.ocr_model"
     filterset_class = ObjFilter
 
     @HasPermission("provide_list-View")
