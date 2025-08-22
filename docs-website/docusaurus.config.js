@@ -66,10 +66,10 @@ const config = {
             "label":"快速入门",
             "to":"#"
           },
-            {
-              "label":"产品文档",
-              "to":"/docs/intro"
-            },
+          {
+            "label":"产品文档",
+            "to":"/docs/opspilot"
+          },
           {
             "label":"运维手册",
             "to":"#"
