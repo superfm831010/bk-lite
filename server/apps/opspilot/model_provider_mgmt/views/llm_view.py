@@ -254,10 +254,11 @@ class LLMModelViewSet(AuthViewSet):
             return JsonResponse({"result": False, "message": message})
         LLMModel.objects.create(
             name=params["name"],
-            llm_model_type=params["llm_model_type"],
+            model_type_id=params["model_type"],
             llm_config=params["llm_config"],
             enabled=params.get("enabled", True),
             team=params.get("team"),
+            label=params.get("label"),
             is_build_in=False,
         )
         return JsonResponse({"result": True})
