@@ -3,7 +3,7 @@ from django_filters.rest_framework import FilterSet
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import AuthViewSet
-from apps.opspilot.model_provider_mgmt.serializers.embed_serializer import EmbedProviderSerializerProvider
+from apps.opspilot.model_provider_mgmt.serializers.embed_serializer import EmbedProviderSerializer
 from apps.opspilot.models import EmbedProvider
 
 
@@ -21,7 +21,7 @@ class ObjFilter(FilterSet):
 
 
 class EmbedProviderViewSet(AuthViewSet):
-    serializer_class = EmbedProviderSerializerProvider
+    serializer_class = EmbedProviderSerializer
     queryset = EmbedProvider.objects.all()
     permission_key = "provider.embed_model"
     filterset_class = ObjFilter

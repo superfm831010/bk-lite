@@ -3,7 +3,7 @@ from apps.opspilot.model_provider_mgmt.serializers.model_type_serializer import 
 from apps.opspilot.models import OCRProvider
 
 
-class OCRProviderSerializerProvider(AuthSerializer, ProviderModelTypeSerializer):
+class OCRProviderSerializer(AuthSerializer, ProviderModelTypeSerializer):
     permission_key = "provider.ocr_model"
 
     class Meta:

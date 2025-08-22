@@ -3,7 +3,7 @@ from apps.opspilot.model_provider_mgmt.serializers.model_type_serializer import 
 from apps.opspilot.models import RerankProvider
 
 
-class RerankProviderSerializerProvider(AuthSerializer, ProviderModelTypeSerializer):
+class RerankProviderSerializer(AuthSerializer, ProviderModelTypeSerializer):
     permission_key = "provider.rerank_model"
 
     class Meta:

@@ -15,7 +15,7 @@ from apps.opspilot.knowledge_mgmt.models import KnowledgeBase
 from apps.opspilot.model_provider_mgmt.models import LLMModel, LLMSkill
 from apps.opspilot.model_provider_mgmt.models.llm_skill import SkillRequestLog, SkillTools
 from apps.opspilot.model_provider_mgmt.serializers.llm_serializer import (
-    LLMProviderModelSerializer,
+    LLMModelSerializer,
     LLMSerializer,
     SkillRequestLogSerializer,
     SkillToolsSerializer,
@@ -228,7 +228,7 @@ class ObjFilter(FilterSet):
 
 
 class LLMModelViewSet(AuthViewSet):
-    serializer_class = LLMProviderModelSerializer
+    serializer_class = LLMModelSerializer
     queryset = LLMModel.objects.all()
     permission_key = "provider.llm_model"
     filterset_class = ObjFilter

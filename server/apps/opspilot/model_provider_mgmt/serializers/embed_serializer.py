@@ -3,7 +3,7 @@ from apps.opspilot.model_provider_mgmt.serializers.model_type_serializer import 
 from apps.opspilot.models import EmbedProvider
 
 
-class EmbedProviderSerializerProvider(AuthSerializer, ProviderModelTypeSerializer):
+class EmbedProviderSerializer(AuthSerializer, ProviderModelTypeSerializer):
     permission_key = "provider.embed_model"
 
     class Meta:

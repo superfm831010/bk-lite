@@ -6,7 +6,7 @@ from apps.opspilot.model_provider_mgmt.serializers.model_type_serializer import 
 from apps.opspilot.models import LLMModel, LLMSkill, SkillRequestLog, SkillTools
 
 
-class LLMProviderModelSerializer(AuthSerializer, ProviderModelTypeSerializer):
+class LLMModelSerializer(AuthSerializer, ProviderModelTypeSerializer):
     permission_key = "provider.llm_model"
 
     class Meta:
