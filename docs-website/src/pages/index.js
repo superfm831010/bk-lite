@@ -7,12 +7,9 @@ import PlatformShowcase from '@site/src/components/AIShowcase';
 import PartnersShowcase from '@site/src/components/PartnersShowcase';
 import FinalCTA from '@site/src/components/FinalCTA';
 import LiquidNavbar from '@site/src/components/LiquidNavbar';
-
-import Heading from '@theme/Heading';
 import styles from './index.module.css';
 
 function HomepageHeader() {
-  const {siteConfig} = useDocusaurusContext();
   return (
     <header className={styles.heroBanner}>
       <div className={styles.heroBackground}>

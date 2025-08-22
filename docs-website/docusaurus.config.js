@@ -1,12 +1,4 @@
-// @ts-check
-// `@type` JSDoc annotations allow editor autocompletion and type checking
-// (when paired with `@ts-check`).
-// There are various equivalent ways to declare your Docusaurus config.
-// See: https://docusaurus.io/docs/api/docusaurus-config
-
 import {themes as prismThemes} from 'prism-react-renderer';
-
-// This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -14,28 +6,19 @@ const config = {
   tagline: 'AI 原生的轻量化蓝鲸平台，重塑智能运维体验',
   favicon: 'img/logo-site.png',
 
-  // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
-    v4: true, // Improve compatibility with the upcoming Docusaurus v4
+    v4: true, 
   },
 
-  // Set the production url of your site here
-  url: 'https://bklite.tencent.com',
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
+  url: 'https://bklite.ai',
   baseUrl: '/',
 
-  // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'TencentBlueKing', // Usually your GitHub org/user name.
-  projectName: 'bk-lite', // Usually your repo name.
+  organizationName: 'BlueKing Lite',
+  projectName: 'bk-lite',
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
 
-  // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: 'zh-Hans',
     locales: ['zh-Hans', 'en'],
@@ -48,10 +31,8 @@ const config = {
       ({
         docs: {
           sidebarPath: './sidebars.js',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/TencentBlueKing/bk-lite/tree/main/docs-website/',
+            'https://github.com/TencentBlueKing/bk-lite',
         },
         blog: {
           showReadingTime: true,
@@ -59,17 +40,12 @@ const config = {
             type: ['rss', 'atom'],
             xslt: true,
           },
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/TencentBlueKing/bk-lite/tree/main/docs-website/',
-          // Useful options to enforce blogging best practices
+          editUrl: 'https://github.com/TencentBlueKing/bk-lite',
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
           onUntruncatedBlogPosts: 'warn',
         },
         theme: {
-          customCss: './src/css/custom.css',
         },
       }),
     ],
@@ -78,7 +54,6 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      // Replace with your project's social card
       image: 'img/bklite-social-card.jpg',
       navbar: {
         title: 'BlueKing Lite',
@@ -87,6 +62,30 @@ const config = {
           src: 'img/logo-site.png',
         },
         items: [
+          {
+            "label":"快速入门",
+            "to":"#"
+          },
+            {
+              "label":"产品文档",
+              "to":"/docs/intro"
+            },
+          {
+            "label":"运维手册",
+            "to":"#"
+          },
+          {
+            "label":"资源下载",
+            "to":"#"
+          },
+          {
+            "label":"FAQ",
+            "to":"#"
+          },
+          {
+            "label":"关于我们",
+            "to":"#"
+          },
           {
             href: 'https://github.com/TencentBlueKing/bk-lite',
             label: 'GitHub',
@@ -106,11 +105,11 @@ const config = {
               },
               {
                 label: '快速入门',
-                to: '/docs/intro',
+                to: '#',
               },
               {
                 label: 'API 文档',
-                to: '/docs/tutorial-extras/manage-docs-versions',
+                to: '#',
               },
             ],
           },
@@ -123,7 +122,7 @@ const config = {
               },
               {
                 label: '开发者论坛',
-                href: 'https://bbs.bk.tencent.com/',
+                href: '#',
               },
               {
                 label: 'GitHub',
@@ -136,20 +135,25 @@ const config = {
             items: [
               {
                 label: '博客',
-                to: '/blog',
+                to: '#',
               },
               {
                 label: '企业服务',
-                href: 'https://cloud.tencent.com/',
+                href: '#',
               },
               {
                 label: '开源协议',
-                href: 'https://github.com/TencentBlueKing/bk-lite/blob/main/LICENSE',
+                href: 'https://github.com/TencentBlueKing/bk-lite/blob/master/LICENSE.txt',
               },
             ],
           },
         ],
         copyright: `Copyright © ${new Date().getFullYear()} BlueKing Lite.`,
+      },
+      colorMode: {
+        defaultMode: 'light',
+        disableSwitch: true,
+        respectPrefersColorScheme: false,
       },
       prism: {
         theme: prismThemes.github,
