@@ -33,13 +33,14 @@ const QAPairResultPage: React.FC = () => {
   const [detailDrawerVisible, setDetailDrawerVisible] = useState<boolean>(false);
   const [selectedQAPair, setSelectedQAPair] = useState<QAPair | null>(null);
   const [submitLoading, setSubmitLoading] = useState<boolean>(false);
+  const [generateAnswerLoading, setGenerateAnswerLoading] = useState<boolean>(false);
   
   const searchParams = useSearchParams();
   const qaPairId = searchParams ? searchParams.get('qaPairId') : null;
   const knowledgeId = searchParams ? searchParams.get('id') : null;
   const documentId = searchParams ? searchParams.get('documentId') : null;
   
-  const { fetchQAPairDetails, createOneQAPair, updateQAPair, deleteOneQAPair } = useKnowledgeApi();
+  const { fetchQAPairDetails, createOneQAPair, updateQAPair, deleteOneQAPair, generateAnswerToEs } = useKnowledgeApi();
 
   const fetchData = async (page: number, pageSize: number, searchValue?: string) => {
     if (qaPairId) {
@@ -167,6 +168,28 @@ const QAPairResultPage: React.FC = () => {
     }
   };
 
+  const handleGenerateAnswer = async () => {
+    if (!qaPairId || !knowledgeId) {
+      console.error('Missing required parameters: qaPairId or knowledgeId');
+      return;
+    }
+
+    setGenerateAnswerLoading(true);
+    try {
+      await generateAnswerToEs({
+        qa_pairs_id: parseInt(qaPairId, 10)
+      });
+      
+      fetchData(currentPage, pageSize, searchTerm);
+      message.success(t('knowledge.qaPairs.answerGenerateSuccess'));
+    } catch (error) {
+      console.error('Failed to generate answer:', error);
+      message.error(t('knowledge.qaPairs.answerGenerateFailed'));
+    } finally {
+      setGenerateAnswerLoading(false);
+    }
+  };
+
   return (
     <div className="w-full h-full">
       <div className="flex justify-between items-center mb-4">
@@ -186,6 +209,13 @@ const QAPairResultPage: React.FC = () => {
             onClick={handleAddQAClick}
           >
             {t('common.add')}
+          </Button>
+          <Button
+            type="default"
+            loading={generateAnswerLoading}
+            onClick={handleGenerateAnswer}
+          >
+            {t('knowledge.qaPairs.generateAnswer')}
           </Button>
         </div>
       </div>

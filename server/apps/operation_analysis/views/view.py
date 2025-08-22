@@ -120,7 +120,8 @@ class DataSourceAPIModelViewSet(ModelViewSet):
         params = request.data
         namespace_list = instance.namespaces.all()
         namespace, path = instance.rest_api.split("/", 1)
-        client = GetNatsData(namespace=namespace, path=path, params=params, namespace_list=namespace_list)
+        client = GetNatsData(namespace=namespace, path=path, params=params, namespace_list=namespace_list,
+                             request=request)
         result = []
         try:
             data = client.get_data()

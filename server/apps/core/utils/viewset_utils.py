@@ -94,6 +94,35 @@ class GenericViewSetFun(object):
             logger.error(f"Error getting rule instances: {e}")
             return False
 
+    def get_queryset_by_permission(self, request, queryset, permission_key=None):
+        user = getattr(request, "user", None)
+        if not user:
+            return self.value_error(_("User not found in request"))
+
+        current_team = request.COOKIES.get("current_team", "0")
+        fields = [i.name for i in queryset.model._meta.fields]
+        if "created_by" in fields:
+            query = Q(team__contains=int(current_team), created_by=request.user.username, domain=request.user.domain)
+        else:
+            query = Q()
+        permission_key = permission_key or getattr(self, "permission_key", None)
+        if permission_key:
+            app_name = self._get_app_name()
+            permission_data = get_permission_rules(user, current_team, app_name, permission_key)
+            instance_ids = [i["id"] for i in permission_data.get("instance", [])]
+            team = permission_data.get("team", [])
+            if instance_ids:
+                query |= Q(id__in=instance_ids)
+            for i in team:
+                query |= Q(team__contains=int(i))
+            if not instance_ids and not team:
+                return queryset.filter(id=0)
+        return queryset.filter(query)
+
+    @staticmethod
+    def value_error(msg):
+        return JsonResponse({"result": False, "message": msg})
+
 
 class AuthViewSet(MaintainerViewSet, GenericViewSetFun):
     SUPERUSER_RULE_ID = ["0", "-1"]
@@ -127,31 +156,8 @@ class AuthViewSet(MaintainerViewSet, GenericViewSetFun):
     def query_by_groups(self, request, queryset):
         """根据用户组权限过滤查询结果"""
         try:
-            user = getattr(request, "user", None)
-            if not user:
-                return self.value_error(_("User not found in request"))
-            current_team = request.COOKIES.get("current_team", "0")
-            fields = [i.name for i in queryset.model._meta.fields]
-            if "created_by" in fields:
-                query = Q(
-                    team__contains=int(current_team), created_by=request.user.username, domain=request.user.domain
-                )
-            else:
-                query = Q()
-
-            if hasattr(self, "permission_key"):
-                app_name = self._get_app_name()
-                permission_data = get_permission_rules(user, current_team, app_name, self.permission_key)
-                instance_ids = [i["id"] for i in permission_data.get("instance", [])]
-                team = permission_data.get("team", [])
-                if instance_ids:
-                    query |= Q(id__in=instance_ids)
-                for i in team:
-                    query |= Q(team__contains=int(i))
-                if not instance_ids and not team:
-                    return self._list(queryset.filter(id=0))
-            queryset = queryset.filter(query)
-            return self._list(queryset.order_by(self.ORDERING_FIELD))
+            new_queryset = self.get_queryset_by_permission(request, queryset)
+            return self._list(new_queryset.order_by(self.ORDERING_FIELD))
 
         except Exception as e:
             logger.error(f"Error in query_by_groups: {e}")
@@ -189,6 +195,10 @@ class AuthViewSet(MaintainerViewSet, GenericViewSetFun):
             raise
 
     def retrieve(self, request, *args, **kwargs):
+        serializer = self.get_detail(request, *args, **kwargs)
+        return Response(serializer.data)
+
+    def get_detail(self, request, *args, **kwargs):
         user = getattr(request, "user", None)
         instance = self.get_object()
         if getattr(user, "is_superuser", False):
@@ -199,11 +209,8 @@ class AuthViewSet(MaintainerViewSet, GenericViewSetFun):
             if not has_permission:
                 return self.value_error(_("User does not have permission to view this instance"))
         serializer = self.get_serializer(instance)
-        return Response(serializer.data)
-
-    @staticmethod
-    def value_error(msg):
-        return JsonResponse({"result": False, "message": msg})
+        """获取详情"""
+        return serializer
 
     def destroy(self, request, *args, **kwargs):
         user = getattr(request, "user", None)

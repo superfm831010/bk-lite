@@ -22,6 +22,7 @@ class LLMModel(models.Model, EncryptMixin):
     is_demo = models.BooleanField(default=False)
     consumer_team = models.CharField(default="", blank=True, null=True, max_length=64)
     model_type = models.ForeignKey("ModelType", on_delete=models.SET_NULL, verbose_name="模型类型", blank=True, null=True)
+    label = models.CharField(max_length=100, verbose_name="标签", blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -50,3 +51,5 @@ class ModelType(models.Model):
     name = models.CharField(max_length=50, verbose_name="模型类型名称", unique=True)
     display_name = models.CharField(max_length=100, verbose_name="显示名称")
     icon = models.CharField(max_length=100, verbose_name="图标", blank=True, null=True)
+    is_build_in = models.BooleanField(default=False)
+    index = models.IntegerField(default=0, verbose_name="排序")

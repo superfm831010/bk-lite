@@ -4,7 +4,7 @@ from rest_framework.fields import empty
 from apps.opspilot.models import ModelType
 
 
-class ModelTypeSerializer(serializers.ModelSerializer):
+class ProviderModelTypeSerializer(serializers.ModelSerializer):
     icon = serializers.SerializerMethodField()
     model_type_name = serializers.SerializerMethodField()
 
@@ -24,3 +24,19 @@ class ModelTypeSerializer(serializers.ModelSerializer):
         if instance.model_type:
             return self.type_map.get(instance.model_type_id, {}).get("display_name", "")
         return ""
+
+
+class ModelTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ModelType
+        fields = "__all__"
+
+    def create(self, validated_data):
+        last_obj = ModelType.objects.order_by("-index").first()
+        if last_obj:
+            last_index = last_obj.index + 1
+        else:
+            last_obj = 0
+        validated_data["index"] = last_index
+        instance = super().create(validated_data)
+        return instance

@@ -20,22 +20,22 @@ from apps.opspilot.utils.graph_utils import GraphUtils
 
 
 @shared_task
-def general_embed(knowledge_document_id_list, username, domain="domain.com"):
+def general_embed(knowledge_document_id_list, username, domain="domain.com", delete_qa_pairs=False):
     logger.info(f"general_embed: {knowledge_document_id_list}")
     document_list = KnowledgeDocument.objects.filter(id__in=knowledge_document_id_list)
-    general_embed_by_document_list(document_list, username=username, domain=domain)
+    general_embed_by_document_list(document_list, username=username, domain=domain, delete_qa_pairs=delete_qa_pairs)
     logger.info(f"knowledge training finished: {knowledge_document_id_list}")
 
 
 @shared_task
-def retrain_all(knowledge_base_id, username, domain="domain.com"):
+def retrain_all(knowledge_base_id, username, domain, delete_qa_pairs):
     logger.info("Start retraining")
     document_list = KnowledgeDocument.objects.filter(knowledge_base_id=knowledge_base_id)
     document_list.update(train_status=DocumentStatus.CHUNKING)
-    general_embed_by_document_list(document_list, username=username, domain=domain)
+    general_embed_by_document_list(document_list, username=username, domain=domain, delete_qa_pairs=delete_qa_pairs)
 
 
-def general_embed_by_document_list(document_list, is_show=False, username="", domain="domain.com"):
+def general_embed_by_document_list(document_list, is_show=False, username="", domain="", delete_qa_pairs=False):
     if is_show:
         res, remote_docs = invoke_one_document(document_list[0], is_show)
         docs = [i["page_content"] for i in remote_docs][:10]
@@ -52,6 +52,10 @@ def general_embed_by_document_list(document_list, is_show=False, username="", do
         total_count=len(knowledge_ids),
     )
     train_progress = round(float(1 / len(task_obj.knowledge_ids)) * 100, 2)
+    fun = delete_document_relation
+    if delete_qa_pairs:
+        fun = delete_document_qa_pairs
+
     for index, document in tqdm(enumerate(document_list)):
         try:
             invoke_document_to_es(document=document)
@@ -63,7 +67,20 @@ def general_embed_by_document_list(document_list, is_show=False, username="", do
         if index < len(document_list) - 1:
             task_obj.name = document_list[index + 1].name
         task_obj.save()
+        fun(document)
     task_obj.delete()
+
+
+def delete_document_qa_pairs(document):
+    ChunkHelper.delete_qa_pairs_by_document(document.knowledge_index_name(), document.id)
+    qa_pairs = QAPairs.objects.filter(document_id=document.id)
+    for i in qa_pairs:
+        i.generate_count = ChunkHelper.get_qa_paris_qa_count(document.knowledge_index_name(), i.id)
+        i.save()
+
+
+def delete_document_relation(document):
+    ChunkHelper.delete_document_relation(document.knowledge_index_name(), document.id)
 
 
 @shared_task
@@ -148,12 +165,11 @@ def format_web_page_invoke_kwargs(document):
 
 def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
     embed_config = {}
-    embed_model_name = ""
     semantic_embed_config = {}
     semantic_embed_model_name = ""
     if knowledge_document.knowledge_base.embed_model:
         embed_config = knowledge_document.knowledge_base.embed_model.decrypted_embed_config
-        embed_model_name = knowledge_document.knowledge_base.embed_model.name
+        embed_config["model"] = embed_config.get("model", knowledge_document.knowledge_base.embed_model.name)
     if knowledge_document.semantic_chunk_parse_embedding_model:
         semantic_embed_config = knowledge_document.semantic_chunk_parse_embedding_model.decrypted_embed_config
         semantic_embed_model_name = knowledge_document.semantic_chunk_parse_embedding_model.name
@@ -181,7 +197,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "knowledge_id": str(knowledge_document.id),
         "embed_model_base_url": embed_config.get("base_url", ""),
         "embed_model_api_key": embed_config.get("api_key", "") or " ",
-        "embed_model_name": embed_config.get("model", embed_model_name),
+        "embed_model_name": embed_config.get("model", ""),
         "chunk_mode": knowledge_document.chunk_type,
         "chunk_size": knowledge_document.general_parse_chunk_size,
         "chunk_overlap": knowledge_document.general_parse_chunk_overlap,
@@ -211,29 +227,24 @@ def sync_web_page_knowledge(web_page_knowledge_id):
     web_page.knowledge_document.train_status = DocumentStatus.CHUNKING
     web_page.knowledge_document.save()
     general_embed_by_document_list(
-        document_list, username=web_page.knowledge_document.created_by, domain=web_page.knowledge_document.domain
+        document_list, False, web_page.knowledge_document.created_by, web_page.knowledge_document.domain, True
     )
 
 
 @shared_task
-def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id):
+def create_qa_pairs(qa_pairs_id_list, only_question):
     qa_pairs_list = QAPairs.objects.filter(id__in=qa_pairs_id_list)
     if not qa_pairs_list:
         logger.info(f"QAPairs with ID {qa_pairs_id_list} not found.")
         return
-    knowledge_base = KnowledgeBase.objects.filter(id=knowledge_base_id).first()
-    if not knowledge_base:
-        logger.error(f"KnowledgeBase with ID {knowledge_base_id} not found.")
-        return
-    llm_model = LLMModel.objects.filter(id=llm_model_id).first()
-    if not llm_model:
-        logger.error(f"LLMModel with ID {llm_model_id} not found.")
-        return
+    knowledge_base = qa_pairs_list[0].knowledge_base
+    question_llm = qa_pairs_list[0].llm_model
+    answer_llm = qa_pairs_list[0].answer_llm_model
     username = qa_pairs_list[0].created_by
     task_obj = KnowledgeTask.objects.create(
         created_by=username,
         domain=qa_pairs_list[0].domain,
-        knowledge_base_id=knowledge_base_id,
+        knowledge_base_id=knowledge_base.id,
         task_name=qa_pairs_list[0].name,
         knowledge_ids=[doc for doc in qa_pairs_id_list],
         train_progress=0,
@@ -243,27 +254,29 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
 
     es_index = knowledge_base.knowledge_index_name()
     embed_config = knowledge_base.embed_model.decrypted_embed_config
-    embed_model_name = knowledge_base.embed_model.name
-    openai_api_base = llm_model.decrypted_llm_config["openai_base_url"]
-    openai_api_key = llm_model.decrypted_llm_config["openai_api_key"]
-    model = llm_model.decrypted_llm_config["model"]
+    embed_config["model"] = embed_config.get("model", knowledge_base.embed_model.name)
+    llm_setting = {
+        "question": {
+            "openai_api_base": question_llm.decrypted_llm_config["openai_base_url"],
+            "openai_api_key": question_llm.decrypted_llm_config["openai_api_key"],
+            "model": question_llm.decrypted_llm_config["model"] or question_llm.name,
+        },
+        "answer": {
+            "openai_api_base": answer_llm.decrypted_llm_config["openai_base_url"],
+            "openai_api_key": answer_llm.decrypted_llm_config["openai_api_key"],
+            "model": answer_llm.decrypted_llm_config["model"] or answer_llm.name,
+        },
+    }
+
     client = ChunkHelper()
     for qa_pairs_obj in qa_pairs_list:
         # 修改状态为生成中
         try:
             qa_pairs_obj.status = "generating"
             qa_pairs_obj.save()
-            content_list = get_qa_content(qa_pairs_obj, es_index)
-            success_count = client.create_qa_pairs_by_content(
-                content_list,
-                embed_config,
-                embed_model_name,
-                es_index,
-                model,
-                openai_api_base,
-                openai_api_key,
-                qa_count,
-                qa_pairs_obj,
+            content_list = client.get_qa_content(qa_pairs_obj.document_id, es_index)
+            success_count = client.create_document_qa_pairs(
+                content_list, embed_config, es_index, llm_setting, qa_pairs_obj, only_question
             )
         except Exception as e:
             logger.exception(e)
@@ -280,26 +293,29 @@ def create_qa_pairs(qa_pairs_id_list, llm_model_id, qa_count, knowledge_base_id)
     task_obj.delete()
 
 
-def get_qa_content(qa_pairs_obj: QAPairs, es_index):
+@shared_task
+def generate_answer(qa_pairs_id):
+    qa_pairs = QAPairs.objects.get(id=qa_pairs_id)
     client = ChunkHelper()
-    document_id = qa_pairs_obj.document_id
-    res = client.get_document_es_chunk(
-        es_index, 1, 10000, metadata_filter={"knowledge_id": str(document_id)}, get_count=False
-    )
-    if res.get("status") != "success":
-        raise Exception(f"Failed to get document chunk for document ID {document_id}.")
-    return_data = []
-    for i in res["documents"]:
-        meta_data = i.get("metadata", {})
-        if not meta_data:
-            continue
-        return_data.append(
-            {
-                "chunk_id": meta_data["chunk_id"],
-                "content": i["page_content"],
-                "knowledge_id": meta_data["knowledge_id"],
-            }
-        )
+    index_name = qa_pairs.knowledge_base.knowledge_index_name()
+    return_data = get_chunk_and_question(client, index_name, qa_pairs)
+    client.update_qa_pairs_answer(return_data, qa_pairs, index_name)
+
+
+def get_chunk_and_question(client, index_name, qa_pairs):
+    chunk_data = client.get_qa_content(qa_pairs.document_id, index_name)
+    chunk_data_map = {i["chunk_id"]: i["content"] for i in chunk_data}
+    metadata_filter = {"qa_pairs_id": str(qa_pairs.id)}
+    res = client.get_document_es_chunk(index_name, page_size=10000, metadata_filter=metadata_filter, get_count=False)
+    return_data = [
+        {
+            "question": i["page_content"],
+            "id": i["metadata"]["chunk_id"],
+            "content": chunk_data_map.get(i["metadata"].get("base_chunk_id", ""), ""),
+        }
+        for i in res.get("documents", [])
+        if not i["metadata"].get("qa_answer")
+    ]
     return return_data
 
 
@@ -513,13 +529,12 @@ def create_qa_pairs_task(knowledge_base_id, qa_name, username, domain):
 
 def set_import_kwargs(knowledge_base):
     embed_config = knowledge_base.embed_model.decrypted_embed_config
-    embed_model_name = knowledge_base.embed_model.name
     kwargs = {
         "knowledge_base_id": knowledge_base.knowledge_index_name(),
         "knowledge_id": "0",
         "embed_model_base_url": embed_config.get("base_url", ""),
         "embed_model_api_key": embed_config.get("api_key", "") or " ",
-        "embed_model_name": embed_config.get("model", embed_model_name),
+        "embed_model_name": embed_config.get("model", knowledge_base.embed_model.name),
         "chunk_mode": "full",
         "chunk_size": 9999,
         "chunk_overlap": 128,
@@ -538,7 +553,7 @@ def create_qa_pairs_by_custom(qa_pairs_id, content_list):
     qa_pairs = QAPairs.objects.get(id=qa_pairs_id)
     es_index = qa_pairs.knowledge_base.knowledge_index_name()
     embed_config = qa_pairs.knowledge_base.embed_model.decrypted_embed_config
-    embed_model_name = qa_pairs.knowledge_base.embed_model.name
+    embed_config["model"] = embed_config.get("model", qa_pairs.knowledge_base.embed_model.name)
     chunk_obj = {}
     task_obj = KnowledgeTask.objects.create(
         created_by=qa_pairs.created_by,
@@ -550,9 +565,7 @@ def create_qa_pairs_by_custom(qa_pairs_id, content_list):
         is_qa_task=True,
     )
     try:
-        success_count = ChunkHelper.create_qa_pairs(
-            content_list, chunk_obj, es_index, embed_config, embed_model_name, qa_pairs_id
-        )
+        success_count = ChunkHelper.create_qa_pairs(content_list, chunk_obj, es_index, embed_config, qa_pairs_id)
         qa_pairs.generate_count = success_count
         qa_pairs.status = "completed"
     except Exception as e:
@@ -563,7 +576,17 @@ def create_qa_pairs_by_custom(qa_pairs_id, content_list):
 
 
 @shared_task
-def create_qa_pairs_by_chunk(qa_pairs_id, chunk_list, llm_model_id, qa_count):
+def create_qa_pairs_by_chunk(qa_pairs_id, kwargs):
+    """
+    {
+           "chunk_list": params["chunk_list"],
+           "llm_model_id": params["llm_model_id"],
+           "answer_llm_model_id": params["answer_llm_model_id"],
+           "qa_count": params["qa_count"],
+           "question_prompt": params["question_prompt"],
+           "answer_prompt": params["answer_prompt"]
+       }
+    """
     qa_pairs_obj = QAPairs.objects.get(id=qa_pairs_id)
     qa_pairs_obj.status = "generating"
     qa_pairs_obj.save()
@@ -573,15 +596,25 @@ def create_qa_pairs_by_chunk(qa_pairs_id, chunk_list, llm_model_id, qa_count):
             "content": i["content"],
             "knowledge_id": qa_pairs_obj.document_id,
         }
-        for i in chunk_list
+        for i in kwargs["chunk_list"]
     ]
-    llm_model = LLMModel.objects.filter(id=llm_model_id).first()
+    question_llm = LLMModel.objects.filter(id=kwargs["llm_model_id"]).first()
+    answer_llm = LLMModel.objects.filter(id=kwargs["answer_llm_model_id"]).first()
+    llm_setting = {
+        "question": {
+            "openai_api_base": question_llm.decrypted_llm_config["openai_base_url"],
+            "openai_api_key": question_llm.decrypted_llm_config["openai_api_key"],
+            "model": question_llm.decrypted_llm_config["model"] or question_llm.name,
+        },
+        "answer": {
+            "openai_api_base": answer_llm.decrypted_llm_config["openai_base_url"],
+            "openai_api_key": answer_llm.decrypted_llm_config["openai_api_key"],
+            "model": answer_llm.decrypted_llm_config["model"] or answer_llm.name,
+        },
+    }
     es_index = qa_pairs_obj.knowledge_base.knowledge_index_name()
     embed_config = qa_pairs_obj.knowledge_base.embed_model.decrypted_embed_config
-    embed_model_name = qa_pairs_obj.knowledge_base.embed_model.name
-    openai_api_base = llm_model.decrypted_llm_config["openai_base_url"]
-    openai_api_key = llm_model.decrypted_llm_config["openai_api_key"]
-    model = llm_model.decrypted_llm_config["model"]
+    embed_config["model"] = embed_config.get("model", qa_pairs_obj.knowledge_base.embed_model.name)
     client = ChunkHelper()
     task_obj = KnowledgeTask.objects.create(
         created_by=qa_pairs_obj.created_by,
@@ -596,15 +629,14 @@ def create_qa_pairs_by_chunk(qa_pairs_id, chunk_list, llm_model_id, qa_count):
     success_count = client.create_qa_pairs_by_content(
         content_list,
         embed_config,
-        embed_model_name,
         es_index,
-        model,
-        openai_api_base,
-        openai_api_key,
-        qa_count,
+        llm_setting,
         qa_pairs_obj,
-        is_delete=False,
-        task_obj=task_obj,
+        kwargs["qa_count"],
+        kwargs["question_prompt"],
+        kwargs["answer_prompt"],
+        task_obj,
+        kwargs["only_question"],
     )
     qa_pairs_obj.generate_count += success_count
     qa_pairs_obj.status = "completed"

@@ -7,11 +7,13 @@ from apps.monitor.services.metrics import Metrics
 from apps.core.utils.permission_utils import get_permission_rules, permission_filter
 from apps.monitor.constants import INSTANCE_MODULE
 from apps.monitor.utils.victoriametrics_api import VictoriaMetricsAPI
+from apps.core.logger import nats_logger as logger
 
 
 @nats_client.register
-def monitor_objects():
+def monitor_objects(*args, **kwargs):
     """查询监控对象列表"""
+    logger.info("=== monitor_objects called , args={}, kwargs={}===".format(args, kwargs))
     queryset = MonitorObject.objects.all().order_by('id')
     serializer = MonitorObjectSerializer(queryset, many=True)
     result = {"result": True, "data": serializer.data, "message": ""}
@@ -19,8 +21,10 @@ def monitor_objects():
 
 
 @nats_client.register
-def monitor_metrics(monitor_obj_id: str):
+def monitor_metrics(monitor_obj_id: str, *args, **kwargs):
     """查询指标信息"""
+    logger.info(
+        "=== monitor_metrics called , monitor_obj_id={}, args={}, kwargs={}===".format(monitor_obj_id, args, kwargs))
     try:
         monitor_obj = MonitorObject.objects.get(id=monitor_obj_id)
     except MonitorObject.DoesNotExist:
@@ -36,10 +40,10 @@ def monitor_metrics(monitor_obj_id: str):
 
 
 @nats_client.register
-def monitor_object_instances(monitor_obj_id: str, permission_data: dict):
+def monitor_object_instances(monitor_obj_id: str, *args, **kwargs):
     """查询监控对象实例列表
         monitor_obj_id: 监控对象ID
-        permission_data: {
+        user_info: {
             team: 当前组织ID
             user: 用户对象或用户名
         }
@@ -49,9 +53,11 @@ def monitor_object_instances(monitor_obj_id: str, permission_data: dict):
     except MonitorObject.DoesNotExist:
         return {"result": False, "data": [], "message": "监控对象不存在"}
 
+    user_info = kwargs["user_info"]
+
     # 获取用户在当前组织下的实例权限
-    user = permission_data.get('user')
-    current_team = permission_data.get('team')
+    user = user_info.get('user')
+    current_team = user_info.get('team')
 
     if not user or not current_team:
         return {"result": False, "data": [], "message": "缺少用户或组织信息"}
@@ -107,7 +113,7 @@ def monitor_object_instances(monitor_obj_id: str, permission_data: dict):
 
 
 @nats_client.register
-def query_monitor_data_by_metric(query_data: dict, permission_data: dict):
+def query_monitor_data_by_metric(query_data: dict, *args, **kwargs):
     """查询指标数据
         query_data: {
             monitor_obj_id: 监控对象ID
@@ -117,7 +123,7 @@ def query_monitor_data_by_metric(query_data: dict, permission_data: dict):
             step: 指标采集间隔（eg: 5s）
             instance_ids: [实例ID1, 实例ID2, ...]
         },
-        permission_data: {
+        user_info: {
             team: 当前组织ID
             user: 用户对象或用户名
         }
@@ -135,9 +141,11 @@ def query_monitor_data_by_metric(query_data: dict, permission_data: dict):
     step = query_data.get('step', '5m')
     instance_ids = query_data.get('instance_ids', [])
 
+    user_info = kwargs["user_info"]
+
     # 获取用户权限
-    user = permission_data.get('user')
-    current_team = permission_data.get('team')
+    user = user_info.get('user')
+    current_team = user_info.get('team')
 
     if not user or not current_team:
         return {"result": False, "data": [], "message": "缺少用户或组织信息"}
@@ -232,12 +240,12 @@ def query_monitor_data_by_metric(query_data: dict, permission_data: dict):
 
 
 @nats_client.register
-def mm_query_range(query: str, start, end, step="5m"):
+def mm_query_range(query: str, start, end, step="5m", *args, **kwargs):
     resp = VictoriaMetricsAPI().query_range(query, start, end, step)
     return {"result": True, "data": resp, "message": ""}
 
 
 @nats_client.register
-def mm_query(query: str, step="5m"):
+def mm_query(query: str, step="5m", *args, **kwargs):
     resp = VictoriaMetricsAPI().query(query, step)
     return {"result": True, "data": resp, "message": ""}
