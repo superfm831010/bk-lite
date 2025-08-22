@@ -144,7 +144,9 @@
       "enableScrolling": "Enable auto-scrolling",
       "stopScrolling": "Turn off auto-scrolling",
       "selectGroup": "Please select the group",
-      "search": "搜索"
+      "search": "Search",
+      "displayFields": "Table Display Fields",
+      "hiddenFields": "Optional Fields"
     },
     "integration": {
       "interval": "Interval",
