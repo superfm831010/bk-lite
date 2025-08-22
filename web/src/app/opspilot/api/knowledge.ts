@@ -339,6 +339,10 @@ export const useKnowledgeApi = () => {
     document_source: string;
     qa_count: number;
     llm_model_id: number;
+    answer_llm_model_id: number;
+    question_prompt: string;
+    answer_prompt: string;
+    only_question?: boolean;
     chunk_list: Array<{
       content: string;
       id: string;
@@ -470,6 +474,47 @@ export const useKnowledgeApi = () => {
     return post('/opspilot/knowledge_mgmt/knowledge_document/delete_chunks/', payload);
   };
 
+  /**
+   * Generates questions from documents.
+   */
+  const generateQuestions = async (payload: {
+    document_list: Array<{ document_id: number }>;
+    knowledge_base_id: number;
+    llm_model_id: number;
+    question_prompt: string;
+  }): Promise<Array<{
+    question: string;
+    content: string;
+  }>> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/generate_question/', payload);
+  };
+
+  /**
+   * Generates answers for questions.
+   */
+  const generateAnswers = async (payload: {
+    answer_llm_model_id: number;
+    answer_prompt: string;
+    question_data: Array<{
+      question: string;
+      content: string;
+    }>;
+  }): Promise<Array<{
+    answer: string;
+    question: string;
+  }>> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/generate_answer/', payload);
+  };
+
+  /**
+   * Generates answers to ES for QA pairs.
+   */
+  const generateAnswerToEs = async (payload: {
+    qa_pairs_id: number;
+  }): Promise<any> => {
+    return post('/opspilot/knowledge_mgmt/qa_pairs/generate_answer_to_es/', payload);
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -519,5 +564,8 @@ export const useKnowledgeApi = () => {
     importQaJson,
     getChunkDetail,
     deleteChunks,
+    generateQuestions,
+    generateAnswers,
+    generateAnswerToEs,
   };
 };
