@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.rpc.cmdb import CMDB
+from apps.rpc.log import Log
 from apps.rpc.monitor import Monitor
 from apps.rpc.node_mgmt import NodeMgmt
 from apps.rpc.opspilot import OpsPilot
@@ -84,6 +85,7 @@ class GroupDataRuleViewSet(viewsets.ModelViewSet):
             "system-manager": SystemMgmt,
             "node": NodeMgmt,
             "monitor": Monitor,
+            "log": Log,
             "cmdb": CMDB,
         }
         app = params.pop("app")

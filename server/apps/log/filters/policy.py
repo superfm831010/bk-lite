@@ -1,4 +1,5 @@
 import django_filters
+from django.db.models import Q
 from apps.log.models.policy import Policy, Alert, Event
 
 
@@ -21,16 +22,31 @@ class AlertFilter(django_filters.FilterSet):
     policy_name = django_filters.CharFilter(field_name='policy__name', lookup_expr='icontains')
     collect_type = django_filters.NumberFilter(field_name='collect_type__id')
     level = django_filters.CharFilter(lookup_expr='exact')
+    levels = django_filters.CharFilter(method='filter_levels')  # 支持多选级别
     status = django_filters.CharFilter(lookup_expr='exact')
     source_id = django_filters.CharFilter(lookup_expr='icontains')
+    content = django_filters.CharFilter(lookup_expr='icontains')  # 支持内容搜索
     start_event_time = django_filters.DateTimeFromToRangeFilter()
     end_event_time = django_filters.DateTimeFromToRangeFilter()
     created_at = django_filters.DateTimeFromToRangeFilter()
 
     class Meta:
         model = Alert
-        fields = ['policy', 'policy_name', 'collect_type', 'level', 'status', 'source_id',
+        fields = ['policy', 'policy_name', 'collect_type', 'level', 'levels', 'status', 'source_id', 'content',
                  'start_event_time', 'end_event_time', 'created_at']
+
+    def filter_levels(self, queryset, name, value):
+        """
+        支持告警级别多选过滤
+        参数格式: levels=critical,warning,info 或 levels=critical
+        """
+        if not value:
+            return queryset
+        
+        level_list = [level.strip() for level in value.split(',') if level.strip()]
+        if level_list:
+            return queryset.filter(level__in=level_list)
+        return queryset
 
 
 class EventFilter(django_filters.FilterSet):

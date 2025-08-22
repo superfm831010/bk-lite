@@ -1,4 +1,5 @@
 import toml
+import yaml
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
@@ -16,6 +17,29 @@ class CollectTypeViewSet(ModelViewSet):
     queryset = CollectType.objects.all()
     serializer_class = CollectTypeSerializer
     filterset_class = CollectTypeFilter
+
+    @swagger_auto_schema(
+        operation_description="获取所有采集类型的属性",
+        operation_id="get_all_attrs",
+    )
+    @action(methods=['get'], detail=False, url_path='all_attrs')
+    def get_all_attrs(self, request):
+        """
+        获取所有采集类型的属性，并进行去重
+        """
+        # 获取所有采集类型的属性列表
+        collect_types = CollectType.objects.all()
+
+        # 收集所有属性并去重
+        all_attrs = set()
+        for collect_type in collect_types:
+            if collect_type.attrs and isinstance(collect_type.attrs, list):
+                all_attrs.update(collect_type.attrs)
+
+        # 转换为排序的列表，保证返回结果的一致性
+        unique_attrs = sorted(list(all_attrs))
+
+        return WebUtils.response_success(unique_attrs)
 
 
 class CollectInstanceViewSet(ViewSet):
@@ -38,10 +62,10 @@ class CollectInstanceViewSet(ViewSet):
         """
         List all collect instances.
         """
-        collect_type_id = request.query_params.get("collect_type_id")
-        name = request.query_params.get("name")
-        page = int(request.query_params.get("page", 1))
-        page_size = int(request.query_params.get("page_size", 10))
+        collect_type_id = request.data.get("collect_type_id")
+        name = request.data.get("name")
+        page = int(request.data.get("page", 1))
+        page_size = int(request.data.get("page_size", 10))
 
         data = CollectTypeService.search_instance(
             collect_type_id=collect_type_id,
@@ -78,7 +102,6 @@ class CollectInstanceViewSet(ViewSet):
                             "instance_name": openapi.Schema(type=openapi.TYPE_STRING, description="实例类型"),
                             "group_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_INTEGER), description="组织id列表"),
                             "node_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_INTEGER), description="节点id列表"),
-                            "stream_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_STRING), description="数据流ID列表"),
                             "...": openapi.Schema(type=openapi.TYPE_OBJECT, description="其他信息"),
                         }
                     )
@@ -201,7 +224,10 @@ class CollectConfigViewSet(ViewSet):
                 configs = NodeMgmt().get_configs_by_ids([config_obj.id])
             config = configs[0]
 
-            config["content"] = toml.loads(config[content_key])
+            if config_obj.file_type == "yaml":
+                config["content"] = yaml.safe_load(config[content_key])
+            else:
+                config["content"] = toml.loads(config[content_key])
 
             if config_obj.is_child:
                 result["child"] = config
@@ -217,7 +243,6 @@ class CollectConfigViewSet(ViewSet):
             properties={
                 "instance_id": openapi.Schema(type=openapi.TYPE_STRING, description="采集实例ID"),
                 "collect_type_id": openapi.Schema(type=openapi.TYPE_STRING, description="采集类型ID"),
-                "stream_ids": openapi.Schema(type=openapi.TYPE_ARRAY,items=openapi.Schema(type=openapi.TYPE_STRING), description="数据流ID列表"),
                 "child": openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
@@ -243,6 +268,5 @@ class CollectConfigViewSet(ViewSet):
             request.data.get("base"),
             request.data.get("instance_id"),
             request.data.get("collect_type_id"),
-            request.data.get("stream_ids", [])
         )
         return WebUtils.response_success()

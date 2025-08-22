@@ -35,9 +35,6 @@ class MonitorObjectVieSet(viewsets.ModelViewSet):
             result["display_type"] = lan.get_val("MONITOR_OBJECT_TYPE", result["type"]) or result["type"]
             result["display_name"] = lan.get_val("MONITOR_OBJECT", result["name"]) or result["name"]
 
-        orgs = {i["id"] for i in request.user.group_list if i["name"] == "OpsPilotGuest"}
-        orgs.add(request.COOKIES.get("current_team"))
-
         if request.GET.get("add_instance_count") in ["true", "True"]:
 
             inst_res = get_permissions_rules(

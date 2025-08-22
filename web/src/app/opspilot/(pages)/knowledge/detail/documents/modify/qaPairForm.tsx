@@ -1,17 +1,22 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle, useCallback, useMemo, useRef } from 'react';
-import { Form, Select, InputNumber, Tabs, message, Button, Drawer, Space, Tag, Divider, Empty } from 'antd';
+import { Form, Select, InputNumber, Tabs, message, Button, Drawer, Space, Tag, Divider, Empty, Input, Card, Spin, Skeleton } from 'antd';
 import { PlusOutlined, CloseOutlined, ClearOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
 import { useSkillApi } from '@/app/opspilot/api/skill';
 import { useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
+import Icon from '@/components/icon';
 
 const { TabPane } = Tabs;
+const { TextArea } = Input;
 
 interface QAPairFormData {
-  llmModel: number;
+  questionLlmModel: number;
+  answerLlmModel: number;
   qaCount: number;
+  questionPrompt: string;
+  answerPrompt: string;
   selectedDocuments: string[];
 }
 
@@ -27,6 +32,12 @@ interface QAPairFormProps {
   onFormDataChange?: (data: QAPairFormData) => void;
 }
 
+interface PreviewQAPair {
+  question: string;
+  answer?: string;
+  content: string;
+}
+
 const QAPairForm = forwardRef<any, QAPairFormProps>(({ 
   initialData, 
   onFormChange = () => {}, 
@@ -36,10 +47,11 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const id = searchParams ? searchParams.get('id') : null;
-  const { fetchDocuments, createQAPairs } = useKnowledgeApi();
+  const { fetchDocuments, createQAPairs, generateQuestions, generateAnswers } = useKnowledgeApi();
   const { fetchLlmModels: fetchLlmModelsApi } = useSkillApi();
 
   const [llmModels, setLlmModels] = useState<any[]>([]);
+  const [llmModelsLoading, setLlmModelsLoading] = useState<boolean>(false);
   const [documentData, setDocumentData] = useState<{[key: string]: DocumentItem[]}>({
     file: [],
     web_page: [],
@@ -58,9 +70,18 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   
+  // Preview related states
+  const [previewQAPairs, setPreviewQAPairs] = useState<PreviewQAPair[]>([]);
+  const [questionGenerating, setQuestionGenerating] = useState<boolean>(false);
+  const [answerGenerating, setAnswerGenerating] = useState<boolean>(false);
+  const [questionsGenerated, setQuestionsGenerated] = useState<boolean>(false);
+  
   const formValuesRef = useRef({
-    llmModel: 0,
-    qaCount: 10
+    questionLlmModel: 0,
+    answerLlmModel: 0,
+    qaCount: 1,
+    questionPrompt: '',
+    answerPrompt: ''
   });
   const onFormChangeRef = useRef(onFormChange);
   const onFormDataChangeRef = useRef(onFormDataChange);
@@ -80,21 +101,27 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
   }));
 
   const fetchLlmModels = useCallback(async () => {
+    setLlmModelsLoading(true);
     try {
       const models = await fetchLlmModelsApi();
       setLlmModels(models);
       
-      // Set default LLM model to first item if no initial data
-      if (!initialData?.llmModel && models.length > 0) {
+      // Set default LLM models to first item if no initial data
+      if (!initialData?.questionLlmModel && models.length > 0) {
         const defaultValues = {
-          llmModel: models[0].id,
-          qaCount: 10
+          questionLlmModel: models[0].id,
+          answerLlmModel: models[0].id,
+          qaCount: 1,
+          questionPrompt: '请根据我提供的文本内容，生成与其紧密相关的问题，要求如下：\n1、仔细阅读并理解整段文本（该文本为长文档的一个分块）。\n2、从文本中提炼3-5个关键信息点，并据此生成问题。\n3、问题应涵盖主要事实、细节、原因、影响等，不要集中在单一方面。\n4、问题必须基于原文内容，不能引入不存在或推测性的信息。\n5、问题应简洁、明确、完整，不带有"根据本文"或"文中提到"等表述。\n6、仅输出问题列表，每行一个，不附加答案。',
+          answerPrompt: '请根据我提供的文本和相应问题列表，生成每个问题的答案，要求如下：\n1、仔细阅读文本，逐一回答问题。\n2、答案必须严格基于源文信息，不能编造或添加未提及内容。\n3、保持客观中立，避免主观评价或情感化表达。\n4、每个答案应完整且清晰。'
         };
         form.setFieldsValue(defaultValues);
         formValuesRef.current = defaultValues;
       }
     } catch {
       message.error(t('common.fetchFailed'));
+    } finally {
+      setLlmModelsLoading(false);
     }
   }, [initialData, form]);
 
@@ -126,11 +153,11 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       }));
       
     } catch {
-      message.error('获取文档列表失败');
+      message.error(t('knowledge.qaPairs.fetchDocumentsListFailed'));
     } finally {
       setLoading(false);
     }
-  }, [id, fetchDocuments]);
+  }, [id, fetchDocuments, t]);
 
   useEffect(() => {
     if (drawerVisible && activeDocumentTab && id) {
@@ -145,8 +172,11 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
   useEffect(() => {
     if (initialData) {
       const values = {
-        llmModel: initialData.llmModel || 0,
-        qaCount: initialData.qaCount || 10
+        questionLlmModel: initialData.questionLlmModel || 0,
+        answerLlmModel: initialData.answerLlmModel || 0,
+        qaCount: initialData.qaCount || 1,
+        questionPrompt: initialData.questionPrompt || '',
+        answerPrompt: initialData.answerPrompt || ''
       };
       form.setFieldsValue(values);
       formValuesRef.current = values;
@@ -182,9 +212,9 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
   const tempSelectedDocumentsList = useMemo(() => {
     return tempSelectedDocuments.map(key => {
       const docInfo = getSelectedDocumentInfo(key);
-      return docInfo ? { ...docInfo } : { key, title: `文档 ${key}`, type: 'unknown' };
+      return docInfo ? { ...docInfo } : { key, title: t('knowledge.qaPairs.defaultDocumentTitle') + key, type: 'unknown' };
     }).filter(Boolean);
-  }, [tempSelectedDocuments]);
+  }, [tempSelectedDocuments, getSelectedDocumentInfo, t]);
 
   const getDocumentTypeLabel = useCallback((type: string) => {
     switch (type) {
@@ -201,8 +231,11 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
 
   const handleFormValuesChange = useCallback((_: any, allValues: any) => {
     const newValues = {
-      llmModel: allValues.llmModel || 0,
-      qaCount: allValues.qaCount || 10
+      questionLlmModel: allValues.questionLlmModel || 0,
+      answerLlmModel: allValues.answerLlmModel || 0,
+      qaCount: allValues.qaCount || 1,
+      questionPrompt: allValues.questionPrompt || '',
+      answerPrompt: allValues.answerPrompt || ''
     };
     formValuesRef.current = newValues;
   }, []);
@@ -211,7 +244,8 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
   const validateAndNotify = useCallback(() => {
     const timer = setTimeout(() => {
       const isValid = !!(
-        formValuesRef.current.llmModel && 
+        formValuesRef.current.questionLlmModel && 
+        formValuesRef.current.answerLlmModel && 
         formValuesRef.current.qaCount && 
         selectedDocuments.length > 0
       );
@@ -259,12 +293,12 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
         <div className="font-medium">{text}</div>
       </div>
     ),
-  }], [t]);
+  }], []);
 
   // Create QA pairs based on selected documents and form data
-  const handleCreateQAPairs = useCallback(async () => {
-    if (!id || selectedDocuments.length === 0 || !formValuesRef.current.llmModel) {
-      message.error('请确保已选择文档和LLM模型');
+  const handleCreateQAPairs = useCallback(async (onlyQuestion = false) => {
+    if (!id || selectedDocuments.length === 0 || !formValuesRef.current.questionLlmModel || !formValuesRef.current.answerLlmModel) {
+      message.error(t('knowledge.qaPairs.ensureDocumentsAndModelsSelected'));
       return;
     }
 
@@ -277,7 +311,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       const documentList = selectedDocuments.map(docKey => {
         const docInfo = getSelectedDocumentInfo(docKey);
         return {
-          name: docInfo?.title || `文档-${docKey}`,
+          name: docInfo?.title || t('knowledge.qaPairs.documentPrefix') + docKey,
           document_id: parseInt(docKey),
           document_source: docInfo?.type || 'file'
         };
@@ -285,72 +319,177 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
 
       const payload = {
         knowledge_base_id: parseInt(id),
-        llm_model_id: formValuesRef.current.llmModel,
+        llm_model_id: formValuesRef.current.questionLlmModel,
+        answer_llm_model_id: formValuesRef.current.answerLlmModel,
         qa_count: formValuesRef.current.qaCount,
-        document_list: documentList
+        question_prompt: formValuesRef.current.questionPrompt,
+        answer_prompt: formValuesRef.current.answerPrompt,
+        document_list: documentList,
+        only_question: onlyQuestion
       };
 
       await createQAPairs(payload);
-      message.success('问答对创建成功');
+      message.success(t('knowledge.qaPairs.qaPairsCreateSuccess'));
       
       // Return success to parent component
       return Promise.resolve();
       
     } catch (error) {
-      message.error('问答对创建失败');
+      message.error(t('knowledge.qaPairs.qaPairsCreateFailed'));
       throw error;
     } finally {
       setLoading(false);
     }
-  }, [id, selectedDocuments, form, createQAPairs, getSelectedDocumentInfo]);
+  }, [id, selectedDocuments, form]);
+
+  // Generate questions for preview
+  const handleGenerateQuestions = useCallback(async () => {
+    if (!id || selectedDocuments.length === 0 || !formValuesRef.current.questionLlmModel) {
+      message.error(t('knowledge.qaPairs.ensureDocumentsAndModelsSelected'));
+      return;
+    }
+
+    setQuestionGenerating(true);
+    try {
+      // Take first 10 documents for preview
+      const previewDocuments = selectedDocuments.slice(0, 10);
+      
+      const payload = {
+        document_list: previewDocuments.map(docKey => ({ document_id: parseInt(docKey) })),
+        knowledge_base_id: parseInt(id),
+        llm_model_id: formValuesRef.current.questionLlmModel,
+        question_prompt: formValuesRef.current.questionPrompt || form.getFieldValue('questionPrompt') || ''
+      };
+
+      const questionData = await generateQuestions(payload);
+      
+      setPreviewQAPairs(questionData.map(item => ({
+        question: item.question,
+        content: item.content
+      })));
+      setQuestionsGenerated(true);
+      message.success(t('knowledge.qaPairs.questionGenerateSuccess'));
+    } catch (error) {
+      message.error(t('knowledge.qaPairs.questionGenerateFailed'));
+      console.error('Generate questions error:', error);
+    } finally {
+      setQuestionGenerating(false);
+    }
+  }, [id, selectedDocuments, generateQuestions, form, t]);
+
+  // Generate answers for preview
+  const handleGenerateAnswers = useCallback(async () => {
+    if (!formValuesRef.current.answerLlmModel || previewQAPairs.length === 0) {
+      message.error(t('knowledge.qaPairs.generateQuestionFirst'));
+      return;
+    }
+
+    setAnswerGenerating(true);
+    try {
+      const payload = {
+        answer_llm_model_id: formValuesRef.current.answerLlmModel,
+        answer_prompt: formValuesRef.current.answerPrompt || form.getFieldValue('answerPrompt') || '',
+        question_data: previewQAPairs.map(item => ({
+          question: item.question,
+          content: item.content
+        }))
+      };
+
+      const answerData = await generateAnswers(payload);
+      
+      setPreviewQAPairs(prev => prev.map((item, index) => ({
+        ...item,
+        answer: answerData[index]?.answer || ''
+      })));
+      message.success(t('knowledge.qaPairs.answerGenerateSuccess'));
+    } catch (error) {
+      message.error(t('knowledge.qaPairs.answerGenerateFailed'));
+      console.error('Generate answers error:', error);
+    } finally {
+      setAnswerGenerating(false);
+    }
+  }, [previewQAPairs, generateAnswers, form]);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{ qaCount: 10, ...initialData }}
-        onValuesChange={handleFormValuesChange}
-      >
-        <Form.Item
-          name="llmModel"
-          label={t('knowledge.qaPairs.llmModel')}
-          rules={[{ required: true }]}
-        >
-          <Select
-            placeholder={t('common.select')}
-            loading={loading}
-            size="large"
+    <div className="flex gap-6 h-full">
+      {/* Left side - Form */}
+      <div className="w-1/2 flex flex-col">
+        {llmModelsLoading ? (
+          <div className="space-y-4">
+            <Skeleton active paragraph={{ rows: 1 }} />
+            <Skeleton active paragraph={{ rows: 1 }} />
+            <Skeleton active paragraph={{ rows: 1 }} />
+            <Skeleton active paragraph={{ rows: 1 }} />
+            <Skeleton active paragraph={{ rows: 3 }} />
+            <Skeleton active paragraph={{ rows: 3 }} />
+          </div>
+        ) : (
+          <Form
+            form={form}
+            layout="vertical"
+            initialValues={{ qaCount: 1, ...initialData }}
+            onValuesChange={handleFormValuesChange}
+            className="flex-1"
           >
-            {llmModels.map(model => (
-              <Select.Option key={model.id} value={model.id}>
-                {model.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
+            <Form.Item
+              name="questionLlmModel"
+              label={t('knowledge.qaPairs.questionLlmModel')}
+              rules={[{ required: true, message: t('knowledge.qaPairs.selectQuestionLlmModel') }]}
+            >
+              <Select
+                placeholder={t('knowledge.qaPairs.selectQuestionLlmModel')}
+                loading={llmModelsLoading}
+                showSearch
+                filterOption={(input, option) =>
+                  typeof option?.children === 'string' && (option.children as string).toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {llmModels.map(model => (
+                  <Select.Option key={model.id} value={model.id}>
+                    {model.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
 
-        <Form.Item
-          name="qaCount"
-          label={t('knowledge.qaPairs.qaCount')}
-          rules={[{ required: true }]}
-        >
-          <InputNumber
-            min={1}
-            max={1000}
-            className="w-full"
-            size="large"
-          />
-        </Form.Item>
+            <Form.Item
+              name="answerLlmModel"
+              label={t('knowledge.qaPairs.answerLlmModel')}
+              rules={[{ required: true, message: t('knowledge.qaPairs.selectAnswerLlmModel') }]}
+            >
+              <Select
+                placeholder={t('knowledge.qaPairs.selectAnswerLlmModel')}
+                loading={llmModelsLoading}
+                showSearch
+                filterOption={(input, option) =>
+                  typeof option?.children === 'string' && (option.children as string).toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {llmModels.map(model => (
+                  <Select.Option key={model.id} value={model.id}>
+                    {model.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
 
-        <Form.Item
-          label={
-            <div className="flex items-center">
-              <span>{t('knowledge.qaPairs.targetDocuments')}</span>
-              <Space className="ml-4">
-                <span className="text-blue-500">
-                  ({selectedDocuments.length}) {t('knowledge.qaPairs.documentsSelected')}
-                </span>
+            <Form.Item
+              name="qaCount"
+              label={t('knowledge.qaPairs.qaCount')}
+              rules={[{ required: true }]}
+            >
+              <InputNumber
+                min={1}
+                max={1000}
+                className="w-full"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={t('knowledge.qaPairs.targetDocuments')}
+              required
+            >
+              <div>
                 <Button
                   type="primary"
                   icon={<PlusOutlined />}
@@ -362,17 +501,114 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
                 >
                   {t('common.add')}
                 </Button>
-              </Space>
-            </div>
-          }
-          required
-        >
-          <div style={{ display: 'none' }}>
-            <input value={selectedDocuments.join(',')} readOnly />
-          </div>
-        </Form.Item>
-      </Form>
+                <span className="text-blue-500 ml-2">
+                  ({selectedDocuments.length}) {t('knowledge.qaPairs.documentsSelected')}
+                </span>
+              </div>
+            </Form.Item>
 
+            <Form.Item
+              name="questionPrompt"
+              label={t('knowledge.qaPairs.questionPrompt')}
+            >
+              <TextArea
+                rows={4}
+                placeholder={t('knowledge.qaPairs.questionPromptPlaceholder')}
+                maxLength={2000}
+                showCount
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="answerPrompt"
+              label={t('knowledge.qaPairs.answerPrompt')}
+            >
+              <TextArea
+                rows={4}
+                placeholder={t('knowledge.qaPairs.answerPromptPlaceholder')}
+                maxLength={2000}
+                showCount
+              />
+            </Form.Item>
+          </Form>
+        )}
+      </div>
+
+      {/* Right side - Preview */}
+      <div className="w-1/2 flex flex-col">
+        <div className="flex-1 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium m-0">{t('knowledge.qaPairs.preview')}</h3>
+            <Space>
+              <Button
+                type="primary"
+                onClick={handleGenerateQuestions}
+                loading={questionGenerating}
+                disabled={selectedDocuments.length === 0 || !formValuesRef.current.questionLlmModel}
+              >
+                {t('knowledge.qaPairs.generateQuestion')}
+              </Button>
+              <Button
+                type="primary"
+                onClick={handleGenerateAnswers}
+                loading={answerGenerating}
+                disabled={!questionsGenerated || previewQAPairs.length === 0 || !formValuesRef.current.answerLlmModel}
+              >
+                {t('knowledge.qaPairs.generateAnswer')}
+              </Button>
+            </Space>
+          </div>
+          
+          <div className="flex-1 overflow-auto">
+            {questionGenerating || answerGenerating ? (
+              <div className="flex justify-center items-center h-32">
+                <Spin size="large" />
+              </div>
+            ) : previewQAPairs.length === 0 ? (
+              <Empty
+                description={t('knowledge.qaPairs.previewDescription')}
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {previewQAPairs.map((qaPair, index) => (
+                  <Card
+                    key={index}
+                    size="small"
+                    className="min-h-[120px] bg-[var(--color-fill-2)]"
+                  >
+                    <div className="flex flex-col h-full">
+                      <div className="flex-1 flex flex-col mb-3">
+                        <div className="flex items-start gap-2">
+                          <Icon type="question-circle-fill" className="mt-1 flex-shrink-0 text-blue-500" />
+                          <p className="line-clamp-2 text-ellipsis overflow-hidden leading-6 m-0 text-xs text-[var(--color-text-1)] font-medium">
+                            {qaPair.question || '--'}
+                          </p>
+                        </div>
+                      </div>
+                      {qaPair.answer && (
+                        <>
+                          <Divider className="my-2" />
+                          <div className="flex-1 flex flex-col">
+                            <div className="flex items-start gap-2">
+                              <Icon type="answer" className="mt-1 flex-shrink-0 text-green-500" />
+                              <p className="line-clamp-2 text-ellipsis overflow-hidden leading-6 m-0 text-xs text-[var(--color-text-3)]">
+                                {qaPair.answer || '--'}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Document selection drawer */}
       <Drawer
         title={t('knowledge.qaPairs.selectDocuments')}
         placement="right"
@@ -389,7 +625,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
               onClick={() => {
                 setSelectedDocuments(tempSelectedDocuments);
                 setDrawerVisible(false);
-                message.success(`已选择 ${tempSelectedDocuments.length} 个文档`);
+                message.success(t('knowledge.qaPairs.documentsSelectedSuccess') + `：${tempSelectedDocuments.length}`);
               }}
             >
               {t('common.confirm')} ({tempSelectedDocuments.length})
@@ -398,7 +634,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
         }
       >
         <div className="flex gap-4" style={{ height: 'calc(100vh - 160px)' }}>
-          <div className="w-3/5 border rounded-lg p-4 bg-gray-50 flex flex-col">
+          <div className="w-3/5 border rounded-lg p-4 flex flex-col">
             <Tabs
               activeKey={activeDocumentTab}
               onChange={handleTabChange}
@@ -436,7 +672,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
           </div>
 
           <div className="w-2/5 flex flex-col">
-            <div className="border rounded-lg p-4 bg-white h-full flex flex-col">
+            <div className="border rounded-lg p-4 h-full flex flex-col">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-base font-medium m-0">
                   {t('knowledge.qaPairs.pendingDocuments')} ({tempSelectedDocuments.length})
@@ -459,7 +695,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
               <div className="flex-1 overflow-auto">
                 {tempSelectedDocumentsList.length === 0 ? (
                   <Empty 
-                    description="请从左侧表格选择文档"
+                    description={t('knowledge.qaPairs.selectFromLeftTable')}
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
                     className="mt-8"
                   />
@@ -503,7 +739,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
               {tempSelectedDocuments.length > 0 && (
                 <div className="mt-4 pt-3 border-t border-gray-200 flex-shrink-0">
                   <div className="text-xs text-blue-600 text-center">
-                    点击&ldquo;确认&rdquo;按钮后生效
+                    {t('knowledge.qaPairs.clickConfirmToApply')}
                   </div>
                 </div>
               )}

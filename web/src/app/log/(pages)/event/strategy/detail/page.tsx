@@ -42,7 +42,7 @@ const StrategyOperation = () => {
   const { isLoading } = useApiClient();
   const { getSystemChannelList, getPolicy, createPolicy, updatePolicy } =
     useLogEventApi();
-  const { getCollectTypesById } = useLogIntegrationApi();
+  const { getCollectTypesById, getLogStreams } = useLogIntegrationApi();
   const LEVEL_LIST = useLevelList();
   const SCHEDULE_LIST = useScheduleList();
   const ALGORITHM_LIST = useAlgorithmList();
@@ -69,6 +69,7 @@ const StrategyOperation = () => {
   const [formData, setFormData] = useState<StrategyFields>({});
   const [channelList, setChannelList] = useState<ChannelItem[]>([]);
   const [fieldList, setFieldList] = useState<string[]>([]);
+  const [streamList, setStreamList] = useState<ListItem[]>([]);
 
   const isEdit = useMemo(() => type === 'edit', [type]);
 
@@ -78,6 +79,7 @@ const StrategyOperation = () => {
       Promise.all([
         getFields(),
         getChannelList(),
+        getGroups(),
         detailId && getStragyDetail(),
       ]).finally(() => {
         setPageLoading(false);
@@ -135,6 +137,14 @@ const StrategyOperation = () => {
     setFieldList(fields);
   };
 
+  const getGroups = async () => {
+    const data = await getLogStreams({
+      page_size: -1,
+      page: 1,
+    });
+    setStreamList(data || []);
+  };
+
   const dealDetail = (data: StrategyFields) => {
     const { schedule, period, alert_condition = {}, alert_type } = data;
     const detailData = {
@@ -147,6 +157,8 @@ const StrategyOperation = () => {
     if (alert_type === 'aggregate') {
       setTerm(alert_condition.rule?.mode || '');
       setConditions(alert_condition.rule?.conditions || []);
+    } else {
+      setConditions([{ op: null, field: null, value: '', func: null }]);
     }
     form.setFieldsValue(detailData);
     setUnit(schedule?.type || '');
@@ -313,6 +325,30 @@ const StrategyOperation = () => {
                         ]}
                       >
                         <SelectCard data={ALGORITHM_LIST} />
+                      </Form.Item>
+                      <Form.Item<StrategyFields>
+                        rules={[
+                          { required: true, message: t('common.required') },
+                        ]}
+                        label={
+                          <span className="w-[82px]">
+                            {t('log.integration.logGroup')}
+                          </span>
+                        }
+                        tooltip={t('log.integration.logGroupTips')}
+                        name="log_groups"
+                      >
+                        <Select
+                          style={{ width: 800 }}
+                          showSearch
+                          mode="tags"
+                          maxTagCount="responsive"
+                          placeholder={t('log.integration.logGroup')}
+                          options={streamList.map((item: ListItem) => ({
+                            value: item.id,
+                            label: item.name,
+                          }))}
+                        ></Select>
                       </Form.Item>
                       <Form.Item<StrategyFields>
                         required
@@ -521,25 +557,34 @@ const StrategyOperation = () => {
                             {t('log.event.alertName')}
                           </span>
                         }
+                        shouldUpdate={(prevValues, currentValues) =>
+                          prevValues.alert_type !== currentValues.alert_type
+                        }
                       >
-                        <Form.Item
-                          name="alert_name"
-                          noStyle
-                          rules={[
-                            {
-                              required: true,
-                              message: t('common.required'),
-                            },
-                          ]}
-                        >
-                          <Input
-                            placeholder={t('log.event.alertName')}
-                            className="w-[800px]"
-                          />
-                        </Form.Item>
-                        <div className="text-[var(--color-text-3)] mt-[10px]">
-                          {t('log.event.alertNameTitle')}
-                        </div>
+                        {({ getFieldValue }) => (
+                          <>
+                            <Form.Item
+                              name="alert_name"
+                              noStyle
+                              rules={[
+                                {
+                                  required: true,
+                                  message: t('common.required'),
+                                },
+                              ]}
+                            >
+                              <Input
+                                placeholder={t('log.event.alertName')}
+                                className="w-[800px]"
+                              />
+                            </Form.Item>
+                            <div className="text-[var(--color-text-3)] mt-[10px]">
+                              {getFieldValue('alert_type') === 'aggregate'
+                                ? t('log.event.alertNameTitle')
+                                : t('log.event.keyWordAlertNameTitle')}
+                            </div>
+                          </>
+                        )}
                       </Form.Item>
                       <Form.Item<StrategyFields>
                         name="alert_level"

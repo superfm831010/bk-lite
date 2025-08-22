@@ -5,6 +5,7 @@ from rest_framework.viewsets import ViewSet
 
 from apps.core.utils.web_utils import WebUtils
 from apps.log.services.search import SearchService
+from apps.log.utils.log_group import LogGroupQueryBuilder
 
 
 class LogSearchViewSet(ViewSet):
@@ -17,6 +18,11 @@ class LogSearchViewSet(ViewSet):
                 "start_time": openapi.Schema(type=openapi.TYPE_STRING, description="Start time for the search"),
                 "end_time": openapi.Schema(type=openapi.TYPE_STRING, description="End time for the search"),
                 "limit": openapi.Schema(type=openapi.TYPE_INTEGER, description="Number of results to return", default=10),
+                "log_groups": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_STRING, description="Log group IDs"),
+                    description="List of log group IDs to filter the search"
+                ),
             },
             required=["query"]
         ),
@@ -31,11 +37,17 @@ class LogSearchViewSet(ViewSet):
         start_time = request.data.get('start_time', '')
         end_time = request.data.get('end_time', '')
         limit = request.data.get('limit', 10)
+        log_groups = request.data.get('log_groups', [])
 
         if not query:
             return WebUtils.response_error("Query parameter is required.")
 
-        data = SearchService.search_logs(query, start_time, end_time, limit)
+        # 验证日志分组
+        is_valid, error_msg, _ = LogGroupQueryBuilder.validate_log_groups(log_groups)
+        if not is_valid:
+            return WebUtils.response_error(error_msg)
+
+        data = SearchService.search_logs(query, start_time, end_time, limit, log_groups)
         return WebUtils.response_success(data)
 
     @swagger_auto_schema(
@@ -49,6 +61,11 @@ class LogSearchViewSet(ViewSet):
                 "field": openapi.Schema(type=openapi.TYPE_STRING, description="Field to search hits in"),
                 "fields_limit": openapi.Schema(type=openapi.TYPE_INTEGER, description="Limit of fields to return", default=5),
                 "step": openapi.Schema(type=openapi.TYPE_STRING, description="Step interval for hits", default='5m'),
+                "log_groups": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_STRING, description="Log group IDs"),
+                    description="List of log group IDs to filter the search"
+                ),
             },
             required=["query", "field"]
         ),
@@ -65,17 +82,24 @@ class LogSearchViewSet(ViewSet):
         field = request.data.get('field', '')
         fields_limit = request.data.get('fields_limit', 5)
         step = request.data.get('step', '5m')
+        log_groups = request.data.get('log_groups', [])
 
         if not query or not field:
             return WebUtils.response_error("Query and field parameters are required.")
 
-        data = SearchService.search_hits(query, start_time, end_time, field, fields_limit, step)
+        # 验证日志分组
+        is_valid, error_msg, _ = LogGroupQueryBuilder.validate_log_groups(log_groups)
+        if not is_valid:
+            return WebUtils.response_error(error_msg)
+
+        data = SearchService.search_hits(query, start_time, end_time, field, fields_limit, step, log_groups)
         return WebUtils.response_success(data)
 
     @swagger_auto_schema(
         operation_description="Tail logs",
         manual_parameters=[
-            openapi.Parameter('query', openapi.IN_QUERY, description="Query to filter logs", type=openapi.TYPE_STRING)
+            openapi.Parameter('query', openapi.IN_QUERY, description="Query to filter logs", type=openapi.TYPE_STRING),
+            openapi.Parameter('log_groups', openapi.IN_QUERY, description="Comma-separated log group IDs", type=openapi.TYPE_STRING)
         ],
         tags=['LogSearch']
     )
@@ -85,7 +109,19 @@ class LogSearchViewSet(ViewSet):
         实现长连接接口，用于实时获取日志数据
         """
         query = request.query_params.get("query", "")
+        log_groups_param = request.query_params.get("log_groups", "")
+
+        # 解析log_groups参数
+        log_groups = []
+        if log_groups_param:
+            log_groups = [group.strip() for group in log_groups_param.split(',') if group.strip()]
+
         if not query:
             return WebUtils.response_error("Query parameters are required.")
 
-        return SearchService.tail(query)
+        # 验证日志分组
+        is_valid, error_msg, _ = LogGroupQueryBuilder.validate_log_groups(log_groups)
+        if not is_valid:
+            return WebUtils.response_error(error_msg)
+
+        return SearchService.tail(query, log_groups)

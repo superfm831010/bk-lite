@@ -6,6 +6,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.logger import opspilot_logger as logger
 from apps.core.mixinx import EncryptMixin
 from apps.core.utils.viewset_utils import AuthViewSet
@@ -43,11 +44,21 @@ class LLMViewSet(AuthViewSet):
     permission_key = "skill"
 
     @action(methods=["GET"], detail=False)
+    @HasPermission("skill_list-View")
     def get_template_list(self, request):
         skill_list = LLMSkill.objects.filter(is_template=True)
         serializer = self.get_serializer(skill_list, many=True)
         return Response(serializer.data)
 
+    @HasPermission("skill_list-View")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @HasPermission("skill_list-Delete")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+    @HasPermission("skill_list-Add")
     def create(self, request, *args, **kwargs):
         params = request.data
         if not request.user.is_superuser:
@@ -74,6 +85,7 @@ class LLMViewSet(AuthViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    @HasPermission("skill_setting-Edit")
     def update(self, request, *args, **kwargs):
         instance: LLMSkill = self.get_object()
         if not request.user.is_superuser:
@@ -93,6 +105,9 @@ class LLMViewSet(AuthViewSet):
             return JsonResponse({"result": False, "message": message})
         if (not request.user.is_superuser) and (instance.created_by != request.user.username):
             params.pop("team", [])
+        if "team" in params:
+            delete_team = [i for i in instance.team if i not in params["team"]]
+            self.delete_rules(instance.id, delete_team)
         if "llm_model" in params:
             params["llm_model_id"] = params.pop("llm_model")
         if "km_llm_model" in params:
@@ -127,7 +142,12 @@ class LLMViewSet(AuthViewSet):
             yield f"data: {json.dumps(error_data, ensure_ascii=False)}\n\n"
             yield "data: [DONE]\n\n"
 
-        response = StreamingHttpResponse(error_generator(), content_type="text/event-stream")
+        # 使用异步兼容的生成器包装器
+        from apps.opspilot.utils.sse_chat import _create_async_compatible_generator
+
+        async_generator = _create_async_compatible_generator(error_generator())
+
+        response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
         response["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response["X-Accel-Buffering"] = "no"  # Nginx
         # response["Pragma"] = "no-cache"
@@ -138,6 +158,7 @@ class LLMViewSet(AuthViewSet):
         return response
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("skill_setting-View")
     def execute(self, request):
         """
         {
@@ -193,17 +214,36 @@ class LLMViewSet(AuthViewSet):
             return self._create_error_stream_response(str(e))
 
 
+class ObjFilter(FilterSet):
+    name = filters.CharFilter(field_name="name", lookup_expr="icontains")
+    enabled = filters.CharFilter(method="filter_enabled")
+
+    @staticmethod
+    def filter_enabled(qs, field_name, value):
+        """查询类型"""
+        if not value:
+            return qs
+        enabled = value == "1"
+        return qs.filter(enabled=enabled)
+
+
 class LLMModelViewSet(AuthViewSet):
     serializer_class = LLMModelSerializer
     queryset = LLMModel.objects.all()
-    search_fields = ["name"]
     permission_key = "provider.llm_model"
+    filterset_class = ObjFilter
+
+    @HasPermission("provide_list-View")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("provide_list-View")
     def search_by_groups(self, request):
         model_list = LLMModel.objects.all().values_list("name", flat=True)
         return JsonResponse({"result": True, "data": list(model_list)})
 
+    @HasPermission("provide_list-Add")
     def create(self, request, *args, **kwargs):
         params = request.data
         if not params.get("team"):
@@ -214,14 +254,16 @@ class LLMModelViewSet(AuthViewSet):
             return JsonResponse({"result": False, "message": message})
         LLMModel.objects.create(
             name=params["name"],
-            llm_model_type=params["llm_model_type"],
+            model_type_id=params["model_type"],
             llm_config=params["llm_config"],
             enabled=params.get("enabled", True),
             team=params.get("team"),
+            label=params.get("label"),
             is_build_in=False,
         )
         return JsonResponse({"result": True})
 
+    @HasPermission("provide_list-Setting")
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         params = request.data
@@ -233,6 +275,7 @@ class LLMModelViewSet(AuthViewSet):
             return JsonResponse({"result": False, "message": message})
         return super().update(request, *args, **kwargs)
 
+    @HasPermission("provide_list-Delete")
     def destroy(self, request, *args, **kwargs):
         obj = self.get_object()
         if obj.is_build_in:
@@ -253,6 +296,7 @@ class SkillRequestLogViewSet(viewsets.ModelViewSet):
     filterset_class = LogFilter
     ordering = ("-created_at",)
 
+    @HasPermission("skill_invocation_logs-View")
     def list(self, request, *args, **kwargs):
         if not request.GET.get("skill_id"):
             return JsonResponse({"result": False, "message": _("Skill id not found")})
@@ -268,3 +312,19 @@ class SkillToolsViewSet(AuthViewSet):
     queryset = SkillTools.objects.all()
     filterset_class = ToolsFilter
     permission_key = "tools"
+
+    @HasPermission("tool_list-View")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @HasPermission("tool_list-Add")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @HasPermission("tool_list-Setting")
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @HasPermission("tool_list-Delete")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)

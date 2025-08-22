@@ -62,8 +62,8 @@ const PreprocessStep: React.FC<{
     initialConfig.chunk_type || chunkTypes[0].key
   );
   const [formData, setFormData] = useState({
-    chunkSize: initialConfig?.general_parse_chunk_size || 2000,
-    chunkOverlap: initialConfig?.general_parse_chunk_overlap || 0,
+    chunkSize: initialConfig?.general_parse_chunk_size || 200,
+    chunkOverlap: initialConfig?.general_parse_chunk_overlap || 50,
     semanticModel: initialConfig?.semantic_chunk_parse_embedding_model || null,
   });
   const [previewData, setPreviewData] = useState<PreviewData[]>([]);
@@ -112,7 +112,7 @@ const PreprocessStep: React.FC<{
   const updateConfig = (updates: Partial<typeof formData> & { chunkType?: keyof typeof chunkImages }) => {
     const newChunkType = updates.chunkType ?? chunkType;
     const updatedFormData = {
-      chunkSize: updates.chunkType ? 2000 : formData.chunkSize,
+      chunkSize: updates.chunkType ? 200 : formData.chunkSize,
       chunkOverlap: updates.chunkType ? 0 : formData.chunkOverlap,
       semanticModel: updates.chunkType ? null : formData.semanticModel,
       ...updates,
@@ -189,7 +189,7 @@ const PreprocessStep: React.FC<{
         ))}
       </div>
       <div className="flex justify-between">
-        <div className={`flex-1 pr-4 ${styles.config}`}>
+        <div className={`flex-1 w-0 pr-4 ${styles.config}`}>
           {chunkType !== 'full' && (
             <>
               <h2 className="text-sm font-semibold mb-3">{t('knowledge.documents.chunkParams')}</h2>
@@ -274,7 +274,7 @@ const PreprocessStep: React.FC<{
           </div>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 w-0">
           <div className="flex justify-between">
             <h2 className="text-sm font-semibold mb-3">{t('knowledge.documents.preview')}</h2>
             <Button type="primary" size="small" onClick={handlePreviewClick} loading={loadingPreview}>

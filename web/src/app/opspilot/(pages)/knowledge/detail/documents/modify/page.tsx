@@ -60,12 +60,22 @@ const KnowledgeModifyPage = () => {
   const [webLinkData, setWebLinkData] = useState<{ name: string, link: string, deep: number, sync_enabled?: boolean, sync_time?: string }>({ name: '', link: '', deep: 1 });
   const [manualData, setManualData] = useState<{ name: string, content: string }>({ name: '', content: '' });
   interface QAPairFormData {
-    llmModel: number;
+    questionLlmModel: number;
+    answerLlmModel: number;
     qaCount: number;
+    questionPrompt: string;
+    answerPrompt: string;
     selectedDocuments: string[];
   }
 
-  const [qaPairData, setQaPairData] = useState<QAPairFormData>({ llmModel: 0, qaCount: 10, selectedDocuments: [] });
+  const [qaPairData, setQaPairData] = useState<QAPairFormData>({ 
+    questionLlmModel: 0, 
+    answerLlmModel: 0, 
+    qaCount: 10, 
+    questionPrompt: '',
+    answerPrompt: '',
+    selectedDocuments: [] 
+  });
   const [customQAData, setCustomQAData] = useState<{ name: string; qaList: Array<{ id: string; question: string; answer: string }> }>({ 
     name: '', 
     qaList: [] 
@@ -241,8 +251,8 @@ const KnowledgeModifyPage = () => {
           const defaultConfig = {
             knowledge_source_type: type || 'file',
             knowledge_document_list: documentIds,
-            general_parse_chunk_size: 2000,
-            general_parse_chunk_overlap: 0,
+            general_parse_chunk_size: 200,
+            general_parse_chunk_overlap: 50,
             semantic_chunk_parse_embedding_model: null,
             chunk_type: 'fixed_size',
           };
@@ -326,11 +336,16 @@ const KnowledgeModifyPage = () => {
     });
   }, []);
 
-  const handleQAPairDataChange = useCallback((data: { llmModel: number, qaCount: number, selectedDocuments: string[] }) => {
+  const handleQAPairDataChange = useCallback((data: { questionLlmModel: number, answerLlmModel: number, qaCount: number, questionPrompt: string, answerPrompt: string, selectedDocuments: string[] }) => {
     setQaPairData(prev => {
       // Only update if data has actually changed
       const selectedDocsChanged = JSON.stringify(prev.selectedDocuments) !== JSON.stringify(data.selectedDocuments);
-      if (prev.llmModel !== data.llmModel || prev.qaCount !== data.qaCount || selectedDocsChanged) {
+      if (prev.questionLlmModel !== data.questionLlmModel || 
+          prev.answerLlmModel !== data.answerLlmModel || 
+          prev.qaCount !== data.qaCount || 
+          prev.questionPrompt !== data.questionPrompt ||
+          prev.answerPrompt !== data.answerPrompt ||
+          selectedDocsChanged) {
         return data;
       }
       return prev;
@@ -358,7 +373,7 @@ const KnowledgeModifyPage = () => {
 
   const renderQAPairContent = () => {
     return (
-      <div className="px-7 py-5">
+      <div className="py-5">
         <QAPairForm 
           ref={formRef}
           initialData={qaPairData} 
@@ -370,19 +385,27 @@ const KnowledgeModifyPage = () => {
             {t('common.cancel')}
           </Button>
           <Button 
-            type="primary" 
-            onClick={handleCreateQAPair} 
+            type="default" 
+            onClick={() => handleCreateQAPair(true)} 
             disabled={!isStepValid} 
             loading={loading}
           >
-            {t('common.confirm')}
+            {t('knowledge.qaPairs.onlyGenerateQuestion')}
+          </Button>
+          <Button 
+            type="primary" 
+            onClick={() => handleCreateQAPair(false)} 
+            disabled={!isStepValid} 
+            loading={loading}
+          >
+            {t('knowledge.qaPairs.generateQuestionAndAnswer')}
           </Button>
         </div>
       </div>
     );
   };
 
-  const handleCreateQAPair = async () => {
+  const handleCreateQAPair = async (questionOnly: boolean) => {
     if (!formRef.current) {
       message.error('表单未初始化');
       return;
@@ -390,7 +413,7 @@ const KnowledgeModifyPage = () => {
 
     setLoading(true);
     try {
-      await formRef.current.createQAPairs();
+      await formRef.current.createQAPairs(questionOnly);
       router.push(`/opspilot/knowledge/detail/documents?id=${id}&name=${name}&desc=${desc}&type=qa_pairs`);
     } catch (error) {
       console.error('Create QA pairs failed:', error);

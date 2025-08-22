@@ -1,6 +1,10 @@
 import json
 import re
 import time
+import os
+import asyncio
+import threading
+from typing import AsyncGenerator
 
 import requests
 from django.conf import settings
@@ -27,7 +31,9 @@ def generate_stream_error(message):
         }
         yield f"data: {json.dumps(error_chunk)}\n\n"
 
-    response = StreamingHttpResponse(generator(), content_type="text/event-stream")
+    # 使用异步兼容生成器
+    async_generator = _create_async_compatible_generator(generator())
+    response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
     # 添加必要的头信息以防止缓冲
     response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
@@ -236,8 +242,11 @@ def _generate_sse_stream(url, headers, chat_kwargs, skill_name, show_think):
     has_think_tags = True
     sse_headers = {**headers, "Accept": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive"}
 
+    # SSL验证配置 - 从环境变量读取
+    ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
+    
     try:
-        res = requests.post(url, headers=sse_headers, json=chat_kwargs, timeout=300, verify=False, stream=True)
+        res = requests.post(url, headers=sse_headers, json=chat_kwargs, timeout=300, verify=ssl_verify, stream=True)
         res.raise_for_status()
 
         for line in res.iter_lines(decode_unicode=True):
@@ -288,6 +297,21 @@ def _generate_sse_stream(url, headers, chat_kwargs, skill_name, show_think):
         yield ("STATS", "", 0, 0)
 
 
+def _create_async_compatible_generator(sync_generator):
+    """创建与 ASGI 兼容的异步生成器"""
+    async def async_wrapper():
+        """异步包装器"""
+        try:
+            # 将同步生成器转换为异步生成器
+            for item in sync_generator:
+                yield item
+        except Exception as e:
+            logger.error(f"Async generator wrapper error: {e}")
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+    
+    return async_wrapper()
+
+
 def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=None):
     llm_model = LLMModel.objects.get(id=params["llm_model"])
     show_think = params.pop("show_think", True)
@@ -330,7 +354,9 @@ def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=N
             error_chunk = _create_error_chunk(f"聊天错误: {str(e)}", skill_name)
             yield f"data: {json.dumps(error_chunk)}\n\n"
 
-    response = StreamingHttpResponse(generate_stream(), content_type="text/event-stream")
+    # 使用异步兼容生成器来避免 StreamingHttpResponse 警告
+    async_compatible_generator = _create_async_compatible_generator(generate_stream())
+    response = StreamingHttpResponse(async_compatible_generator, content_type="text/event-stream")
     response["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response["X-Accel-Buffering"] = "no"  # Nginx
     # response["Pragma"] = "no-cache"
@@ -351,18 +377,21 @@ def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=N
                 final_stats, skill_name, skill_id, current_ip, kwargs, user_message, show_think, group, llm_model
             )
 
-    response.streaming_content = _wrap_generator_with_callback(response.streaming_content, log_after_response)
+    response.streaming_content = _wrap_async_generator_with_callback(response.streaming_content, log_after_response)
 
     return response
 
 
-def _wrap_generator_with_callback(generator, callback):
-    """包装生成器，在完成后执行回调"""
-    try:
-        for item in generator:
-            yield item
-    finally:
-        callback()
+def _wrap_async_generator_with_callback(async_generator, callback):
+    """包装异步生成器，在完成后执行回调"""
+    async def wrapped_generator():
+        try:
+            async for item in async_generator:
+                yield item
+        finally:
+            callback()
+    
+    return wrapped_generator()
 
 
 def _log_and_update_tokens(

@@ -197,7 +197,8 @@
       "description": "Description",
       "descriptionMaxLength": "Description cannot exceed 500 characters",
       "selectIcon": "Select Icon",
-      "searchIcon": "Search Icon"
+      "searchIcon": "Search Icon",
+      "builtinAppClickTip": "Non-built-in applications are not clickable"
     },
     "security": {
       "settings": "Security Settings",

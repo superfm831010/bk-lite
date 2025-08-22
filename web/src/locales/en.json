@@ -101,6 +101,8 @@
       "off": "off"
     },
     "copySuccess": "Copied successfully",
-    "copyFailed": "Failed to copy"
+    "copyFailed": "Failed to copy",
+    "successfullyExported": "Successfully exported",
+    "exportFailed": "Failed to export"
   }
 }

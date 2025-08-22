@@ -36,6 +36,11 @@ class CollectService(object):
             "pgsql_info": "PgsqlInfo",
             "weblogic_info": "WebLogicInfo",
             "keepalived_info": "KeepalivedInfo",
+            "tongweb_info": "TongWebInfo",
+            "dameng_info": "DaMengInfo",
+            "oracle_info": "OracleInfo",
+            "db2_info": "DB2Info",
+            "tidb_info": "TiDBInfo",
         }
 
     def import_plugin(self, plugin_name):

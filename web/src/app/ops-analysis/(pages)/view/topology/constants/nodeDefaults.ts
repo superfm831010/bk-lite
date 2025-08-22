@@ -1,8 +1,8 @@
 // 节点尺寸配置
 export const NODE_DIMENSIONS = {
   ICON_NODE: {
-    WIDTH: 120,
-    HEIGHT: 120,
+    WIDTH: 110,
+    HEIGHT: 110,
   },
   SINGLE_VALUE_NODE: {
     WIDTH: 120,
@@ -40,7 +40,7 @@ export const COLORS = {
 
   // 边框颜色
   BORDER: {
-    DEFAULT: '#d9d9d9',
+    DEFAULT: '#e0ddddff',
     LIGHT: '#f0f0f0',
     DARK: '#434343',
     PRIMARY: '#1890FF',
@@ -136,9 +136,6 @@ export const NODE_DEFAULTS = {
     fontFamily: TYPOGRAPHY.FONT_FAMILY.DEFAULT,
     borderRadius: SPACING.BORDER_RADIUS.DEFAULT,
     strokeWidth: SPACING.STROKE_WIDTH.THIN,
-    threshold: 80,
-    unit: '',
-    query: '',
   },
 
   // 文本节点默认配置
@@ -150,6 +147,19 @@ export const NODE_DEFAULTS = {
     textColor: COLORS.TEXT.PRIMARY,
     fontSize: TYPOGRAPHY.FONT_SIZE.TEXT_NODE,
     fontWeight: TYPOGRAPHY.FONT_WEIGHT.NORMAL,
+    strokeWidth: SPACING.STROKE_WIDTH.THIN,
+  },
+
+  // 图表节点默认配置
+  CHART_NODE: {
+    width: 400,
+    height: 220,
+    backgroundColor: COLORS.BACKGROUND.WHITE,
+    borderColor: COLORS.BORDER.DEFAULT,
+    textColor: COLORS.TEXT.PRIMARY,
+    fontSize: TYPOGRAPHY.FONT_SIZE.ICON_LABEL,
+    fontWeight: TYPOGRAPHY.FONT_WEIGHT.MEDIUM,
+    borderRadius: SPACING.BORDER_RADIUS.DEFAULT,
     strokeWidth: SPACING.STROKE_WIDTH.THIN,
   },
 } as const;
@@ -173,15 +183,15 @@ export const FORM_DEFAULTS = {
     textColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.textColor,
     backgroundColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.backgroundColor,
     borderColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.borderColor,
-    threshold: NODE_DEFAULTS.SINGLE_VALUE_NODE.threshold,
-    unit: NODE_DEFAULTS.SINGLE_VALUE_NODE.unit,
-    query: NODE_DEFAULTS.SINGLE_VALUE_NODE.query,
   },
 
   ICON_NODE: {
+    width: 90,
+    height: 90,
     backgroundColor: NODE_DEFAULTS.ICON_NODE.backgroundColor,
     borderColor: NODE_DEFAULTS.ICON_NODE.borderColor,
     logoType: 'default' as const,
     logoIcon: 'cc-host',
+    logoUrl: ''
   },
 } as const;

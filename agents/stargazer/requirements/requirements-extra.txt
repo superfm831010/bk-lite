@@ -93,7 +93,7 @@ pandas==2.2.3
 # qingyun
 qingcloud-sdk==1.2.14
 
-ujson==4.1.0
+ujson==5.4.0
 # tencent env
 importlib-metadata==4.6.1
 importlib-resources==5.2.0
@@ -111,6 +111,6 @@ pyasn1==0.4.8
 pyasn1-modules==0.2.8
 
 PyMySQL==1.1.1
-
+oracledb==3.3.0
 # paramiko
 paramiko==3.5.0

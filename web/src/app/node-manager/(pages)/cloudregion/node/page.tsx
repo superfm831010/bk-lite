@@ -329,7 +329,7 @@ const Node = () => {
       selectedsystem === 'linux'
         ? 'natsexecutor_linux'
         : 'natsexecutor_windows';
-    const plugins = ['Telegraf', 'Export', 'JMX'];
+    const plugins = ['Telegraf', 'Vector', 'Export', 'JMX'];
     const columnItems: any = plugins.map((type: string) => ({
       title: type,
       dataIndex: type,

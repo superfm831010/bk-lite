@@ -393,7 +393,14 @@ const KnowledgeGraphEditPage: React.FC = () => {
           label={t('knowledge.knowledgeGraph.llmModel')}
           rules={[{ required: true, message: t('common.pleaseSelect') + t('knowledge.knowledgeGraph.llmModel') }]}
         >
-          <Select placeholder={t('common.pleaseSelect') + t('knowledge.knowledgeGraph.llmModel')} loading={llmModels.length === 0}>
+          <Select 
+            placeholder={t('common.pleaseSelect') + t('knowledge.knowledgeGraph.llmModel')} 
+            loading={llmModels.length === 0}
+            showSearch
+            filterOption={(input, option) =>
+              typeof option?.children === 'string' && (option.children as string).toLowerCase().includes(input.toLowerCase())
+            }
+          >
             {llmModels.map(model => (
               <Select.Option key={model.id} value={model.id}>
                 {model.name}
@@ -407,7 +414,14 @@ const KnowledgeGraphEditPage: React.FC = () => {
           label={t('knowledge.knowledgeGraph.rerankModel')}
           rules={[{ required: true, message: t('common.pleaseSelect') + t('knowledge.knowledgeGraph.rerankModel') }]}
         >
-          <Select placeholder={t('common.pleaseSelect') + t('knowledge.knowledgeGraph.rerankModel')} loading={rerankModels.length === 0}>
+          <Select 
+            placeholder={t('common.pleaseSelect') + t('knowledge.knowledgeGraph.rerankModel')} 
+            loading={rerankModels.length === 0}
+            showSearch
+            filterOption={(input, option) =>
+              typeof option?.children === 'string' && (option.children as string).toLowerCase().includes(input.toLowerCase())
+            }
+          >
             {rerankModels.map(model => (
               <Select.Option key={model.id} value={model.id}>
                 {model.name}
@@ -421,7 +435,14 @@ const KnowledgeGraphEditPage: React.FC = () => {
           label={t('knowledge.form.embedModel')}
           rules={[{ required: true, message: t('common.pleaseSelect') + t('knowledge.form.embedModel') }]}
         >
-          <Select placeholder={t('common.pleaseSelect') + t('knowledge.form.embedModel')} loading={embedModels.length === 0}>
+          <Select 
+            placeholder={t('common.pleaseSelect') + t('knowledge.form.embedModel')} 
+            loading={embedModels.length === 0}
+            showSearch
+            filterOption={(input, option) =>
+              typeof option?.children === 'string' && (option.children as string).toLowerCase().includes(input.toLowerCase())
+            }
+          >
             {embedModels.map(model => (
               <Select.Option key={model.id} value={model.id}>
                 {model.name}

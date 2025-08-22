@@ -39,7 +39,8 @@ init_alerts() {
 
 init_operation_analysis() {
     echo "运营分析系统资源初始化..."
-    python manage.py init_source_api_data || true
+    python manage.py init_default_namespace || true
+    python manage.py init_source_api_data --update || true
 }
 
 init_opspilot() {
@@ -47,7 +48,15 @@ init_opspilot() {
     python manage.py init_bot || true
     python manage.py init_channel || true
     python manage.py init_llm || true
+    python manage.py init_provider_model  || true
 }
+
+init_playground() {
+    echo "playground资源初始化..."
+    python manage.py category_init || true
+}
+
+
 
 init_log(){
     echo "日志模块初始化..."
@@ -73,6 +82,7 @@ if [ -z "$INSTALL_APPS" ]; then
     init_operation_analysis
     init_opspilot
     init_log
+    init_playground
     opspilot_installed=true
 else
     # 按逗号分割 INSTALL_APPS
@@ -103,6 +113,9 @@ else
                 ;;
             "operation_analysis")
                 init_operation_analysis
+                ;;
+            "playground")
+                init_playground
                 ;;
             "opspilot")
                 init_opspilot

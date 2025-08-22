@@ -4,6 +4,7 @@ from django_filters import filters
 from django_filters.rest_framework import FilterSet
 from rest_framework.decorators import action
 
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.logger import opspilot_logger as logger
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.bot_mgmt.serializers import BotSerializer
@@ -31,6 +32,7 @@ class BotViewSet(AuthViewSet):
     permission_key = "bot"
     filterset_class = BotFilter
 
+    @HasPermission("bot_list-Add")
     def create(self, request, *args, **kwargs):
         data = request.data
         if not request.user.is_superuser:
@@ -64,6 +66,7 @@ class BotViewSet(AuthViewSet):
             )
         return JsonResponse({"result": True})
 
+    @HasPermission("bot_settings-Edit")
     def update(self, request, *args, **kwargs):
         obj: Bot = self.get_object()
         if not request.user.is_superuser:
@@ -79,6 +82,9 @@ class BotViewSet(AuthViewSet):
         node_port = data.pop("node_port", None)
         if (not request.user.is_superuser) and (obj.created_by != request.user.username):
             data.pop("team", [])
+        if "team" in data:
+            delete_team = [i for i in obj.team if i not in data["team"]]
+            self.delete_rules(obj.id, delete_team)
         for key in data.keys():
             setattr(obj, key, data[key])
         if node_port:
@@ -104,6 +110,7 @@ class BotViewSet(AuthViewSet):
             obj.save()
         return JsonResponse({"result": True})
 
+    @HasPermission("bot_channel-View")
     @action(methods=["GET"], detail=False)
     def get_bot_channels(self, request):
         bot_id = request.GET.get("bot_id")
@@ -121,6 +128,7 @@ class BotViewSet(AuthViewSet):
             )
         return JsonResponse({"result": True, "data": return_data})
 
+    @HasPermission("bot_channel-Setting")
     @action(methods=["POST"], detail=False)
     def update_bot_channel(self, request):
         channel_id = request.data.get("id")
@@ -139,6 +147,7 @@ class BotViewSet(AuthViewSet):
         channel.save()
         return JsonResponse({"result": True})
 
+    @HasPermission("bot_list-Delete")
     def destroy(self, request, *args, **kwargs):
         obj = self.get_object()
         if obj.online:
@@ -147,6 +156,7 @@ class BotViewSet(AuthViewSet):
         return super().destroy(request, *args, **kwargs)
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("bot_settings-Save&Publish")
     def start_pilot(self, request):
         bot_ids = request.data.get("bot_ids")
         bots = Bot.objects.filter(id__in=bot_ids)
@@ -166,6 +176,7 @@ class BotViewSet(AuthViewSet):
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("bot_settings-Save&Publish")
     def stop_pilot(self, request):
         bot_ids = request.data.get("bot_ids")
         bots = Bot.objects.filter(id__in=bot_ids)

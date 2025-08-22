@@ -57,14 +57,17 @@ else
     log "INFO" "未检测到 --opspilot 参数，禁用 OpsPilot 功能"
 fi
 
+INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,alert,log,mlops,operation_analysis"
+
 if [[ $OPSPILOT_ENABLED == "true" ]]; then
-    export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,opspilot"
+    export INSTALL_APPS="${INSTALL_APPS},opspilot"
+    log "INFO" "启用 OpsPilot 功能，安装应用列表: ${INSTALL_APPS}"
+    # 使用 compose/ops_pilot.yaml 文件
     export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/ops_pilot.yaml config --no-interpolate"
 else
-    export INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt"
+    log "INFO" "禁用 OpsPilot 功能，安装应用列表: ${INSTALL_APPS}"
     export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml config --no-interpolate"
 fi
-
 
 # Function to validate environment variables
 validate_env_var() {
@@ -220,10 +223,13 @@ DOCKER_IMAGE_MINIO=minio/minio:RELEASE.2024-05-01T01-11-10Z-cpuv1
 DOCKER_IMAGE_RABBITMQ=rabbitmq:management
 DOCKER_IMAGE_ELASTICSEARCH=bklite/elasticsearch
 DOCKER_IMAGE_METIS=bklite/metis
+DOCKER_IMAGE_VICTORIALOGS=victoriametrics/victoria-logs:v1.25.0
+DOCKER_IMAGE_MLFLOW=bklite/mlflow
+DOCKER_IMAGE_NATS_EXECUTOR=bklite/nats-executor
 
 # 采集器镜像
 # TODO: 不同OS/架构支持
-export DOCKER_IMAGE_FUSION_COLLECTOR=bklite/fusion-collector:linux-amd64
+export DOCKER_IMAGE_FUSION_COLLECTOR=bklite/fusion-collector:latest
 
 # 从镜像生成控制器&采集器包
 log "INFO" "开始生成控制器和采集器包..."
@@ -233,7 +239,7 @@ if [[ "$CPU_ARCH" == "x86_64" ]]; then
    [ -d pkgs ] && rm -rvf pkgs
    mkdir -p pkgs/controller
    mkdir -p pkgs/collector
-   docker run --rm -v $PWD/pkgs:/pkgs --entrypoint=/bin/bash $DOCKER_IMAGE_FUSION_COLLECTOR -c "tar -czvf /pkgs/controller/lite_controller_linux_amd64.tar.gz . ;cp -av bin/* /pkgs/collector/"
+   docker run --rm -v $PWD/pkgs:/pkgs --entrypoint=/bin/bash $DOCKER_IMAGE_FUSION_COLLECTOR -c "cp -av bin/* /pkgs/collector/;cd /opt; cp fusion-collectors/misc/* fusion-collectors/;zip -r /pkgs/controller/fusion-collectors.zip fusion-collectors"
 elif [[ "$CPU_ARCH" == "aarch64" ]]; then
    log "WARNING" "当前CPU架构为arm64，暂时无内置采集器"
 else
@@ -332,6 +338,10 @@ TRAEFIK_ENABLE_DASHBOARD=${TRAEFIK_ENABLE_DASHBOARD}
 DEFAULT_REQUEST_TIMEOUT=${DEFAULT_REQUEST_TIMEOUT}
 DIST_ARCH=${DIST_ARCH}
 DOCKER_NETWORK=${DOCKER_NETWORK}
+DOCKER_IMAGE_VICTORIALOGS=${DOCKER_IMAGE_VICTORIALOGS}
+DOCKER_IMAGE_MLFLOW=${DOCKER_IMAGE_MLFLOW}
+DOCKER_IMAGE_NATS_EXECUTOR=${DOCKER_IMAGE_NATS_EXECUTOR}
+
 INSTALL_APPS="${INSTALL_APPS}"
 EOF
 
@@ -339,9 +349,12 @@ EOF
 log "INFO" "生成合成的 docker-compose.yaml 文件..."
 $COMPOSE_CMD > docker-compose.yaml
 
+log "INFO" "拉取最新的镜像..."
+${DOCKER_COMPOSE_CMD} pull
+
 # 按照特定顺序启动服务
-log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j)..."
-${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics neo4j
+log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j, VictoriaLogs, MLflow, NATS Executor)..."
+${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics neo4j victoria-logs mlflow nats-executor
 
 # 创建 JetStream - 使用正确的网络名称
 log "INFO" "创建JetStream..."
@@ -366,6 +379,15 @@ ${DOCKER_COMPOSE_CMD} up -d server
 log "INFO" "启动所有服务"
 ${DOCKER_COMPOSE_CMD} up -d
 sleep 10
+
+log "INFO" "开始初始化内置插件"
+$DOCKER_COMPOSE_CMD exec -T server /bin/bash -s <<EOF
+python manage.py controller_package_init --pk_version latest --file_path /apps/pkgs/controller/fusion-collectors.zip
+python manage.py collector_package_init --os linux --object Telegraf --pk_version latest --file_path /apps/pkgs/collector/telegraf
+python manage.py collector_package_init --os linux --object Vector --pk_version latest --file_path /apps/pkgs/collector/vector
+python manage.py collector_package_init --os linux --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/nats-executor
+EOF
+
 log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_WEB_PORT 访问系统"
 log "SUCCESS" "初始用户名: admin, 初始密码: password"
 log "SUCCESS" "控制器安装信息："

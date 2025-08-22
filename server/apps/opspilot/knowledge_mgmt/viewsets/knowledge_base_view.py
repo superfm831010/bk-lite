@@ -5,8 +5,15 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.core.decorators.api_permission import HasRole
+from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import AuthViewSet
+from apps.opspilot.knowledge_mgmt.models import (
+    FileKnowledge,
+    KnowledgeGraph,
+    ManualKnowledge,
+    QAPairs,
+    WebPageKnowledge,
+)
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.serializers import KnowledgeBaseSerializer
 from apps.opspilot.models import EmbedProvider, KnowledgeBase, KnowledgeDocument
@@ -20,7 +27,25 @@ class KnowledgeBaseViewSet(AuthViewSet):
     search_fields = ("name",)
     permission_key = "knowledge"
 
-    @HasRole()
+    @HasPermission("knowledge_list-View")
+    def retrieve(self, request, *args, **kwargs):
+        serializer = self.get_detail(request, *args, **kwargs)
+        return_data = serializer.data
+        query = {"knowledge_document__knowledge_base_id": kwargs["pk"]}
+        count_data = {
+            "file_count": FileKnowledge.objects.filter(**query).count(),
+            "web_page_count": WebPageKnowledge.objects.filter(**query).count(),
+            "manual_count": ManualKnowledge.objects.filter(**query).count(),
+            "qa_count": QAPairs.objects.filter(knowledge_base_id=kwargs["pk"]).count(),
+            "graph_count": KnowledgeGraph.objects.filter(knowledge_base_id=kwargs["pk"]).count(),
+        }
+        count_data["document_count"] = sum(
+            value for key, value in count_data.items() if key not in ["qa_count", "graph_count"]
+        )
+        return_data.update(count_data)
+        return JsonResponse({"result": True, "data": return_data})
+
+    @HasPermission("knowledge_list-Add")
     def create(self, request, *args, **kwargs):
         params = request.data
         if not params.get("team"):
@@ -45,7 +70,7 @@ class KnowledgeBaseViewSet(AuthViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    @HasRole()
+    @HasPermission("knowledge_list-Edit")
     def update(self, request, *args, **kwargs):
         instance: KnowledgeBase = self.get_object()
         params = request.data
@@ -54,11 +79,12 @@ class KnowledgeBaseViewSet(AuthViewSet):
                 return JsonResponse(
                     {"result": False, "message": _("The knowledge base is training and cannot be modified.")}
                 )
-            retrain_all.delay(instance.id, username=request.user.username, domain=request.user.domain)
+            delete_qa_pairs = params.pop("delete_qa_pairs", False)
+            retrain_all.delay(instance.id, request.user.username, request.user.domain, delete_qa_pairs)
         return super().update(request, *args, **kwargs)
 
     @action(methods=["POST"], detail=True)
-    @HasRole()
+    @HasPermission("knowledge_setting-Edit")
     def update_settings(self, request, *args, **kwargs):
         instance: KnowledgeBase = self.get_object()
         if not request.user.is_superuser:
@@ -97,16 +123,19 @@ class KnowledgeBaseViewSet(AuthViewSet):
         instance.save()
         return JsonResponse({"result": True})
 
-    @HasRole()
+    @HasPermission("knowledge_list-Delete")
     def destroy(self, request, *args, **kwargs):
         if KnowledgeDocument.objects.filter(knowledge_base_id=kwargs["pk"]).exists():
             return JsonResponse(
                 {"result": False, "message": _("This knowledge base contains documents and cannot be deleted.")}
             )
+        elif QAPairs.objects.filter(knowledge_base_id=kwargs["pk"]).exists():
+            return JsonResponse(
+                {"result": False, "message": _("This knowledge base contains Q&A pairs and cannot be deleted.")}
+            )
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=["GET"])
-    @HasRole()
     def get_teams(self, request):
         groups = request.user.group_list
         return JsonResponse({"result": True, "data": groups})

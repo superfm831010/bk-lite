@@ -1,17 +1,25 @@
-import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Button, Drawer, Spin } from 'antd';
+import React, {
+  useRef,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+  useState,
+  useCallback,
+} from 'react';
+import { Spin } from 'antd';
 import { useTopologyState } from './hooks/useTopologyState';
 import { useGraphOperations } from './hooks/useGraphOperations';
 import { useTextOperations } from './hooks/useTextOperations';
-import { useContextMenuAndModal } from './hooks/useContextMenuAndModal';
+import { useContextMenuAndModal } from './hooks/useGraphInteractions';
 import { DirItem } from '@/app/ops-analysis/types';
+import { NodeType, DropPosition } from '@/app/ops-analysis/types/topology';
 import TopologyToolbar from './components/toolbar';
 import ContextMenu from './components/contextMenu';
 import EdgeConfigPanel from './components/edgeConfPanel';
-import Sidebar from './components/sidebar';
+import Sidebar from './components/nodeSidebar';
 import TextEditInput from './components/textEditInput';
 import NodeConfPanel from './components/nodeConfPanel';
-
+import ViewConfig from '../dashBoard/components/viewConfig';
 interface TopologyProps {
   selectedTopology?: DirItem | null;
 }
@@ -20,162 +28,254 @@ export interface TopologyRef {
   hasUnsavedChanges: () => boolean;
 }
 
-const Topology = forwardRef<TopologyRef, TopologyProps>(({ selectedTopology }, ref) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+const Topology = forwardRef<TopologyRef, TopologyProps>(
+  ({ selectedTopology }, ref) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const canvasContainerRef = useRef<HTMLDivElement>(null);
+    const [addNodeVisible, setAddNodeVisible] = useState(false);
+    const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(
+      null
+    );
+    const [dropPosition, setDropPosition] = useState<DropPosition | null>(null);
 
-  const state = useTopologyState();
+    const state = useTopologyState();
 
-  const {
-    zoomIn,
-    zoomOut,
-    handleFit,
-    handleDelete,
-    addNode,
-    handleNodeUpdate,
-    handleSaveTopology,
-    handleLoadTopology,
-    nodeEditFormInstance,
-    setNodeEditFormInstance,
-    loading,
-  } = useGraphOperations(containerRef, state);
+    const {
+      zoomIn,
+      zoomOut,
+      handleFit,
+      handleDelete,
+      addNode,
+      handleNodeUpdate,
+      handleViewConfigConfirm,
+      handleAddChartNode,
+      handleSaveTopology,
+      handleLoadTopology,
+      resizeCanvas,
+      loading,
+    } = useGraphOperations(containerRef, state);
 
-  const { handleAddText, finishTextEdit, cancelTextEdit } = useTextOperations(
-    containerRef,
-    state
-  );
+    const { handleAddText, finishTextEdit, cancelTextEdit } = useTextOperations(
+      containerRef,
+      state
+    );
 
-  const { handleEdgeConfigConfirm, closeEdgeConfig, handleMenuClick } =
-    useContextMenuAndModal(containerRef, state);
+    const { handleEdgeConfigConfirm, closeEdgeConfig, handleMenuClick } =
+      useContextMenuAndModal(containerRef, state);
 
-  // 创建保存函数的包装器
-  const handleSave = () => {
-    handleSaveTopology(selectedTopology);
-  };
+    // 监听画布容器大小变化，自动调整画布大小
+    const handleCanvasResize = useCallback(() => {
+      if (resizeCanvas && canvasContainerRef.current) {
+        // 稍微延迟以确保DOM已经更新
+        setTimeout(() => {
+          if (canvasContainerRef.current) {
+            const rect = canvasContainerRef.current.getBoundingClientRect();
+            resizeCanvas(rect.width, rect.height);
+          }
+        }, 100);
+      }
+    }, [resizeCanvas]);
 
-  // 是否处于编辑模式
-  const hasUnsavedChanges = () => {
-    return state.isEditMode;
-  };
+    // 使用 ResizeObserver 监听容器大小变化
+    useEffect(() => {
+      if (!canvasContainerRef.current) return;
 
-  // 暴露方法给父组件
-  useImperativeHandle(ref, () => ({
-    hasUnsavedChanges,
-  }));
+      const resizeObserver = new ResizeObserver(() => {
+        // 防抖处理
+        clearTimeout((window as any).topologyResizeTimeout);
+        (window as any).topologyResizeTimeout = setTimeout(() => {
+          handleCanvasResize();
+        }, 150);
+      });
 
-  useEffect(() => {
-    if (selectedTopology?.data_id && state.graphInstance) {
-      handleLoadTopology(selectedTopology.data_id);
-    }
-  }, [selectedTopology?.data_id, state.graphInstance]);
+      resizeObserver.observe(canvasContainerRef.current);
 
-  const handleSelectMode = () => {
-    state.setIsSelectMode(!state.isSelectMode);
-    if (state.graphInstance) {
-      state.graphInstance.enableSelection();
-    }
-  };
+      return () => {
+        resizeObserver.disconnect();
+        clearTimeout((window as any).topologyResizeTimeout);
+      };
+    }, [handleCanvasResize]);
 
-  return (
-    <div className="flex-1 p-4 pb-0 overflow-auto flex flex-col bg-[var(--color-bg-1)]">
-      {/* 工具栏 */}
-      <TopologyToolbar
-        selectedTopology={selectedTopology}
-        onEdit={state.toggleEditMode}
-        onSave={handleSave}
-        onZoomIn={zoomIn}
-        onZoomOut={zoomOut}
-        onFit={handleFit}
-        onDelete={handleDelete}
-        onSelectMode={handleSelectMode}
-        onAddText={handleAddText}
-        isSelectMode={state.isSelectMode}
-        isEditMode={state.isEditMode}
-      />
+    // 监听侧边栏收起展开，重新调整画布大小
+    useEffect(() => {
+      handleCanvasResize();
+    }, [state.collapsed, handleCanvasResize]);
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* 侧边栏 */}
-        <Sidebar
-          collapsed={state.collapsed}
-          setCollapsed={state.setCollapsed}
-          onAddNode={addNode}
+    const handleShowNodeConfig = (
+      nodeType: NodeType,
+      position?: DropPosition
+    ) => {
+      setSelectedNodeType(nodeType);
+      setDropPosition(position || { x: 300, y: 200 });
+      setAddNodeVisible(true);
+    };
+
+    const handleNodeEditClose = () => {
+      if (addNodeVisible) {
+        setAddNodeVisible(false);
+        setSelectedNodeType(null);
+        setDropPosition(null);
+      } else {
+        state.setNodeEditVisible(false);
+        state.setEditingNodeData(null);
+      }
+    };
+
+    const handleNodeConfirm = async (values: any) => {
+      if (addNodeVisible) {
+        if (!selectedNodeType || !dropPosition) return;
+        addNode(selectedNodeType.id, values, dropPosition);
+      } else {
+        await handleNodeUpdate(values);
+      }
+      handleNodeEditClose();
+    };
+
+    const getNodeInitialValues = () => {
+      return addNodeVisible ? undefined : state.getEditNodeInitialValues();
+    };
+
+    const getNodeType = () => {
+      return addNodeVisible
+        ? (selectedNodeType?.id as 'single-value' | 'icon')
+        : (state.editingNodeData?.type as 'single-value' | 'icon');
+    };
+
+    const getNodeTitle = () => {
+      return state.isEditMode ? '编辑节点' : '查看节点';
+    };
+
+    const getNodeReadonly = () => {
+      return addNodeVisible ? false : !state.isEditMode;
+    };
+
+    const handleSave = () => {
+      if (selectedTopology) {
+        handleSaveTopology(selectedTopology);
+      }
+    };
+
+    const hasUnsavedChanges = () => {
+      return state.isEditMode;
+    };
+
+    useImperativeHandle(ref, () => ({
+      hasUnsavedChanges,
+    }));
+
+    useEffect(() => {
+      if (selectedTopology?.data_id && state.graphInstance) {
+        handleLoadTopology(selectedTopology.data_id);
+      }
+    }, [selectedTopology?.data_id, state.graphInstance]);
+
+    useEffect(() => {
+      state.resetAllStates();
+    }, [selectedTopology?.data_id]);
+
+    const handleSelectMode = () => {
+      state.setIsSelectMode(!state.isSelectMode);
+      if (state.graphInstance) {
+        state.graphInstance.enableSelection();
+      }
+    };
+
+    return (
+      <div className="flex-1 p-4 pb-0 overflow-auto flex flex-col bg-[var(--color-bg-1)]">
+        {/* 工具栏 */}
+        <TopologyToolbar
+          selectedTopology={selectedTopology}
+          onEdit={state.toggleEditMode}
+          onSave={handleSave}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          onFit={handleFit}
+          onDelete={handleDelete}
+          onSelectMode={handleSelectMode}
+          onAddText={handleAddText}
+          isSelectMode={state.isSelectMode}
           isEditMode={state.isEditMode}
         />
 
-        {/* 画布容器 */}
-        <div className="flex-1 bg-[var(--color-bg-1)] relative">
-          {loading && (
-            <div className="h-full flex items-center justify-center">
-              <Spin size="large" />
-            </div>
-          )}
-          <div ref={containerRef} className="absolute inset-0" tabIndex={-1} />
-          {/* 文本编辑输入框 */}
-          <TextEditInput
-            isEditingText={state.isEditingText}
-            editPosition={state.editPosition}
-            inputWidth={state.inputWidth}
-            tempTextInput={state.tempTextInput}
-            setTempTextInput={state.setTempTextInput}
-            finishTextEdit={finishTextEdit}
-            cancelTextEdit={cancelTextEdit}
+        <div className="flex-1 flex overflow-hidden">
+          {/* 侧边栏 */}
+          <Sidebar
+            collapsed={state.collapsed}
+            setCollapsed={state.setCollapsed}
+            onShowNodeConfig={handleShowNodeConfig}
+            onAddChartNode={handleAddChartNode}
+            isEditMode={state.isEditMode}
           />
-        </div>
-      </div>
 
-      {/* 右键菜单 */}
-      <ContextMenu
-        visible={state.contextMenuVisible}
-        position={state.contextMenuPosition}
-        onMenuClick={handleMenuClick}
-        isEditMode={state.isEditMode}
-      />
-
-      {/* 边配置面板 */}
-      <EdgeConfigPanel
-        visible={state.edgeConfigVisible}
-        readonly={!state.isEditMode}
-        onClose={closeEdgeConfig}
-        edgeData={state.currentEdgeData}
-        onConfirm={handleEdgeConfigConfirm}
-      />
-
-      {/* 节点编辑面板 */}
-      <Drawer
-        title={state.isEditMode ? '编辑节点' : '查看节点'}
-        placement="right"
-        width={600}
-        open={state.nodeEditVisible}
-        onClose={state.handleNodeEditClose}
-        footer={
-          state.isEditMode ? (
-            <div className="flex justify-end space-x-2">
-              <Button
-                type="primary"
-                onClick={() => handleNodeUpdate(nodeEditFormInstance)}
+          {/* 画布容器 */}
+          <div
+            ref={canvasContainerRef}
+            className="flex-1 bg-[var(--color-bg-1)] relative"
+          >
+            {loading && (
+              <div
+                className="absolute inset-0 flex items-center justify-center backdrop-blur-sm z-10"
+                style={{
+                  backgroundColor: 'var(--color-bg-1)',
+                  opacity: 0.8,
+                }}
               >
-                确认
-              </Button>
-              <Button onClick={state.handleNodeEditClose}>取消</Button>
-            </div>
-          ) : (
-            <div className="flex justify-end">
-              <Button onClick={state.handleNodeEditClose}>关闭</Button>
-            </div>
-          )
-        }
-      >
-        {state.editingNodeData && (
-          <NodeConfPanel
-            nodeType={state.editingNodeData.type as 'single-value' | 'icon'}
-            onFormReady={setNodeEditFormInstance}
-            readonly={!state.isEditMode}
-            initialValues={state.getEditNodeInitialValues()}
-          />
-        )}
-      </Drawer>
-    </div>
-  );
-});
+                <Spin size="large" />
+              </div>
+            )}
+            <div
+              ref={containerRef}
+              className="absolute inset-0"
+              tabIndex={-1}
+            />
+            <TextEditInput
+              isEditingText={state.isEditingText}
+              editPosition={state.editPosition}
+              inputWidth={state.inputWidth}
+              tempTextInput={state.tempTextInput}
+              setTempTextInput={state.setTempTextInput}
+              finishTextEdit={finishTextEdit}
+              cancelTextEdit={cancelTextEdit}
+            />
+          </div>
+        </div>
+
+        <ContextMenu
+          visible={state.contextMenuVisible}
+          position={state.contextMenuPosition}
+          onMenuClick={handleMenuClick}
+          isEditMode={state.isEditMode}
+        />
+
+        <EdgeConfigPanel
+          visible={state.edgeConfigVisible}
+          readonly={!state.isEditMode}
+          onClose={closeEdgeConfig}
+          edgeData={state.currentEdgeData}
+          onConfirm={handleEdgeConfigConfirm}
+        />
+
+        <NodeConfPanel
+          visible={state.nodeEditVisible || addNodeVisible}
+          title={getNodeTitle()}
+          nodeType={getNodeType()}
+          readonly={getNodeReadonly()}
+          initialValues={getNodeInitialValues()}
+          onClose={handleNodeEditClose}
+          onConfirm={handleNodeConfirm}
+          onCancel={handleNodeEditClose}
+        />
+
+        <ViewConfig
+          open={state.viewConfigVisible}
+          item={state.editingNodeData}
+          onClose={() => state.setViewConfigVisible(false)}
+          onConfirm={handleViewConfigConfirm}
+        />
+      </div>
+    );
+  }
+);
 
 Topology.displayName = 'Topology';
 

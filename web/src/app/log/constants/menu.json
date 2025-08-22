@@ -13,13 +13,14 @@
       "name": "Event",
       "children": [
         {
-          "icon": "weiwangguanicon-defuben-",
           "title": "告警",
+          "icon": "weiwangguanicon-defuben-",
           "url": "/log/event/alert",
-          "name": "alert_list1"
+          "name": "alert_list"
         },
         {
           "title": "策略",
+          "icon": "mulu",
           "url": "/log/event/strategy",
           "name": "strategy_list",
           "children": [
@@ -34,19 +35,19 @@
     },
     {
       "title": "集成",
-      "icon": "moxing2",
+      "icon": "zichan-quanbushebei",
       "url": "/log/integration",
       "name": "Integration",
       "children": [
         {
           "title": "日志接收",
-          "icon": "",
+          "icon": "caijiqi",
           "url": "/log/integration/receive",
           "name": "receive"
         },
         {
           "title": "日志集成",
-          "icon": "",
+          "icon": "yangbenkuguanli",
           "url": "/log/integration/list",
           "name": "integration_list",
           "children": [
@@ -58,7 +59,7 @@
             },
             {
               "title": "简介",
-              "icon": "guanli",
+              "icon": "mulu",
               "url": "/log/integration/list/detail/output",
               "name": "integration_output"
             }
@@ -66,7 +67,7 @@
         },
         {
           "title": "日志分组",
-          "icon": "",
+          "icon": "zuzhiguanli",
           "url": "/log/integration/grouping",
           "name": "grouping"
         }
@@ -87,13 +88,14 @@
       "name": "Event",
       "children": [
         {
-          "icon": "weiwangguanicon-defuben-",
           "title": "Alert",
           "url": "/log/event/alert",
-          "name": "alert_list1"
+          "icon": "weiwangguanicon-defuben-",
+          "name": "alert_list"
         },
         {
           "title": "Strategy",
+          "icon": "mulu",
           "url": "/log/event/strategy",
           "name": "strategy_list",
           "children": [
@@ -108,19 +110,19 @@
     },
     {
       "title": "Integration",
-      "icon": "moxing2",
+      "icon": "zichan-quanbushebei",
       "url": "/log/integration",
       "name": "integration",
       "children": [
         {
           "title": "Log receive",
-          "icon": "",
+          "icon": "caijiqi",
           "url": "/log/integration/receive",
           "name": "asset"
         },
         {
           "title": "Log Integration",
-          "icon": "",
+          "icon": "yangbenkuguanli",
           "url": "/log/integration/list",
           "name": "integration_list",
           "children": [
@@ -132,7 +134,7 @@
             },
             {
               "title": "Introduction",
-              "icon": "guanli",
+              "icon": "mulu",
               "url": "/log/integration/list/detail/output",
               "name": "integration_metric"
             }
@@ -140,7 +142,7 @@
         },
         {
           "title": "Log Grouping",
-          "icon": "",
+          "icon": "zuzhiguanli",
           "url": "/log/integration/grouping",
           "name": "grouping"
         }

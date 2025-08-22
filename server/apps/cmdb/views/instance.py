@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
@@ -350,15 +350,6 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_info-Delete Associate")
     @action(detail=False, methods=["delete"], url_path="association/(?P<id>.+?)")
     def instance_association_delete(self, request, id: int):
-        # rules = rules = get_cmdb_rules(request=request, permission_key=PERMISSION_INSTANCES)
-        # association = InstanceManage.instance_association_by_asso_id(int(id))
-        # src_model_id = association['edge']['src_model_id']
-        # src_cls_id = ModelManage.search_model_info(src_model_id)["classification_id"]
-        # dst_model_id = association['edge']['dst_model_id']
-        # dst_cls_id = ModelManage.search_model_info(dst_model_id)["classification_id"]
-        # dst_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, dst_model_id, rules, dst_cls_id)
-        # src_permission = CmdbRulesFormatUtil.format_rules(PERMISSION_INSTANCES, src_model_id, rules, src_cls_id)
-        # TODO 后续补充权限 得有源实例和目标实例的权限才能操作
         InstanceManage.instance_association_delete(int(id), request.user.username)
         return WebUtils.response_success()
 
@@ -450,7 +441,7 @@ class InstanceViewSet(viewsets.ViewSet):
 
     @swagger_auto_schema(
         operation_id="inst_import",
-        operation_description="实例导入",
+        operation_description="实例导入支持编辑",
         manual_parameters=[
             openapi.Parameter(
                 "model_id",
@@ -474,48 +465,45 @@ class InstanceViewSet(viewsets.ViewSet):
     @HasPermission("asset_info-Add")
     @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import")
     def inst_import(self, request, model_id):
-        result = InstanceManage.inst_import(
-            model_id,
-            request.data.get("file").file,
-            request.user.username,
+        import_message = InstanceManage().inst_import_support_edit(
+            model_id=model_id,
+            file_stream=request.data.get("file").file,
+            operator=request.user.username,
         )
-        return WebUtils.response_success(result)
+        return JsonResponse({"data": [], "result": True, "message": import_message})
 
-    @swagger_auto_schema(
-        operation_id="inst_import_support_edit",
-        operation_description="实例导入支持编辑",
-        manual_parameters=[
-            openapi.Parameter(
-                "model_id",
-                openapi.IN_PATH,
-                description="模型ID",
-                type=openapi.TYPE_STRING,
-            )
-        ],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "file": openapi.Schema(
-                    type=openapi.TYPE_FILE,
-                    format=openapi.FORMAT_BINARY,
-                    description="文件",
-                ),
-            },
-            required=["file"],
-        ),
-    )
-    @HasPermission("asset_info-Edit")
-    @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import_support_edit")
-    def inst_import_support_edit(self, request, model_id):
-        add_result, update_result = InstanceManage.inst_import_support_edit(
-            model_id,
-            request.data.get("file").file,
-            request.user.username,
-        )
-        return WebUtils.response_success({
-            "add_result": add_result,
-            "update_result": update_result,
-        })
+    # @swagger_auto_schema(
+    #     operation_id="inst_import_support_edit",
+    #     operation_description="实例导入支持编辑",
+    #     manual_parameters=[
+    #         openapi.Parameter(
+    #             "model_id",
+    #             openapi.IN_PATH,
+    #             description="模型ID",
+    #             type=openapi.TYPE_STRING,
+    #         )
+    #     ],
+    #     request_body=openapi.Schema(
+    #         type=openapi.TYPE_OBJECT,
+    #         properties={
+    #             "file": openapi.Schema(
+    #                 type=openapi.TYPE_FILE,
+    #                 format=openapi.FORMAT_BINARY,
+    #                 description="文件",
+    #             ),
+    #         },
+    #         required=["file"],
+    #     ),
+    # )
+    # @HasPermission("asset_info-Edit")
+    # @action(methods=["post"], detail=False, url_path=r"(?P<model_id>.+?)/inst_import_support_edit")
+    # def inst_import_support_edit(self, request, model_id):
+    #     import_message = InstanceManage.inst_import_support_edit(
+    #         model_id,
+    #         request.data.get("file").file,
+    #         request.user.username,
+    #     )
+    #     return JsonResponse({"data": [], "result": True, "message": import_message})
 
     @swagger_auto_schema(
         operation_id="inst_export",
@@ -543,6 +531,8 @@ class InstanceViewSet(viewsets.ViewSet):
         select_all = model_permission_map.get("select_all", False)
         inst_names = [] if select_all else list(inst_name_permission_map.keys())
 
+        attr_list = request.data.get("attr_list", [])
+        association_list = request.data.get("association_list", [])
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         response["Content-Disposition"] = f"attachment;filename={f'{model_id}_export.xlsx'}"
         response.write(InstanceManage.inst_export(
@@ -550,9 +540,10 @@ class InstanceViewSet(viewsets.ViewSet):
             request.data,
             format_group_params(request.COOKIES.get("current_team")),
             request.user.roles,
-            rules,
             inst_names,
-            request.user.username
+            request.user.username,
+            attr_list=attr_list,
+            association_list=association_list
         ).read())
         return response
 

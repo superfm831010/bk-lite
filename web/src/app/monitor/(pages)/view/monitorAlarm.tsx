@@ -204,7 +204,7 @@ const Alert: React.FC<ViewModalProps> = ({
       content: searchText,
       page: pagination.current,
       page_size: pagination.pageSize,
-      monitor_objects: monitorObject,
+      monitor_object_id: monitorObject,
       created_at_after: dayjs(recentTimeRange[0]).toISOString(),
       created_at_before: dayjs(recentTimeRange[1]).toISOString(),
     };

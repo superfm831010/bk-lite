@@ -9,6 +9,7 @@ volumes:
   victoria-metrics:
   postgres:
   neo4j:
+  victoria-logs:
 
 services:
   traefik:
@@ -112,4 +113,48 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    restart: always
+  
+  victoria-logs:
+    image: ${DOCKER_IMAGE_VICTORIALOGS}
+    restart: always
+    networks:
+      - prod
+    volumes:
+      - victoria-logs:/vlogs
+    command:
+      - -storageDataPath=/vlogs
+      - -loggerFormat=json
+      - -insert.maxLineSizeBytes=10000000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://victoria-logs:9428/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mlflow:
+    image: ${DOCKER_IMAGE_MLFLOW}
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "15000"
+    networks:
+      - prod
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://mlflow:15000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    
+  nats-executor:
+    image: ${DOCKER_IMAGE_NATS_EXECUTOR}
+    container_name: nats-executor
+    environment:
+      - NATS_INSTANCE_ID=default
+      - NATS_URLS=nats://$NATS_ADMIN_USERNAME:$NATS_ADMIN_PASSWORD@nats:4222
+    networks:
+      - prod
     restart: always
