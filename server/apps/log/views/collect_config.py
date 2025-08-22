@@ -62,10 +62,10 @@ class CollectInstanceViewSet(ViewSet):
         """
         List all collect instances.
         """
-        collect_type_id = request.query_params.get("collect_type_id")
-        name = request.query_params.get("name")
-        page = int(request.query_params.get("page", 1))
-        page_size = int(request.query_params.get("page_size", 10))
+        collect_type_id = request.data.get("collect_type_id")
+        name = request.data.get("name")
+        page = int(request.data.get("page", 1))
+        page_size = int(request.data.get("page_size", 10))
 
         data = CollectTypeService.search_instance(
             collect_type_id=collect_type_id,

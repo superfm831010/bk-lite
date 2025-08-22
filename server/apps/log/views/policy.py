@@ -85,6 +85,8 @@ class PolicyViewSet(viewsets.ModelViewSet):
 
         # 提取organizations数据，不传给serializer
         organizations = request.data.pop('organizations', [])
+        if not organizations:
+            return WebUtils.response_error("organizations is required")
 
         response = super().create(request, *args, **kwargs)
         policy_id = response.data['id']
