@@ -261,7 +261,7 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
           </div>
         }
       >
-        <Spin spinning={loading}>
+        <Spin spinning={loading || llmModelsLoading}>
           <div className="space-y-6">
             <Form
               form={form}
