@@ -144,7 +144,9 @@
       "enableScrolling": "开启自动滚动",
       "stopScrolling": "关闭自动滚动",
       "selectGroup": "请选择分组",
-      "search": "搜索"
+      "search": "搜索",
+      "displayFields": "表格展示字段",
+      "hiddenFields": "可选字段"
     },
     "integration": {
       "interval": "间隔",
