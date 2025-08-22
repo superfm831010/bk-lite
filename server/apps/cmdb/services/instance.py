@@ -409,7 +409,8 @@ class InstanceManage(object):
     def download_import_template(model_id: str):
         """下载导入模板"""
         attrs = ModelManage.search_model_attr_v2(model_id)
-        return Export(attrs).export_template()
+        association = ModelManage.model_association_search(model_id)
+        return Export(attrs, model_id=model_id, association=association).export_template()
 
     @staticmethod
     def inst_import(model_id: str, file_stream: bytes, operator: str):
@@ -436,16 +437,16 @@ class InstanceManage(object):
 
         return results
 
-    @staticmethod
-    def inst_import_support_edit(model_id: str, file_stream: bytes, operator: str):
+    def inst_import_support_edit(self, model_id: str, file_stream: bytes, operator: str):
         """实例导入-支持编辑"""
         attrs = ModelManage.search_model_attr_v2(model_id)
         model_info = ModelManage.search_model_info(model_id)
 
         with Neo4jClient() as ag:
             exist_items, _ = ag.query_entity(INSTANCE, [{"field": "model_id", "type": "str=", "value": model_id}])
-        add_results, update_results = Import(model_id, attrs, exist_items, operator).import_inst_list_support_edit(
-            file_stream)
+
+        _import = Import(model_id, attrs, exist_items, operator)
+        add_results, update_results, asso_result = _import.import_inst_list_support_edit(file_stream)
 
         add_changes = [
             dict(
@@ -461,22 +462,37 @@ class InstanceManage(object):
         exist_items__id_map = {i["_id"]: i for i in exist_items}
         update_changes = [
             dict(
-                inst_id=i["_id"],
-                model_id=i["model_id"],
-                before_data=exist_items__id_map[i["_id"]],
+                inst_id=i["data"]["_id"],
+                model_id=i["data"]["model_id"],
+                before_data=exist_items__id_map[i["data"]["_id"]],
                 model_object=OPERATOR_INSTANCE,
-                message=f"导入模型实例. 模型:{model_info['model_name']} 更新模型实例:{i.get('inst_name') or i.get('ip_addr', '')}",
+                message=f"导入模型实例. 模型:{model_info['model_name']} 更新模型实例:{i['data'].get('inst_name') or i['data'].get('ip_addr', '')}",
             )
-            for i in update_results
+            for i in update_results if i["success"]
         ]
         batch_create_change_record(INSTANCE, CREATE_INST, add_changes, operator=operator)
         batch_create_change_record(INSTANCE, UPDATE_INST, update_changes, operator=operator)
-        return add_results, update_results
+        result_message = self.format_result_message(_import.import_result_message)
+        return result_message
 
     @staticmethod
-    def inst_export(model_id: str, ids: list, user_groups: list, roles: list, inst_names: list, created: str = ""):
+    def format_result_message(result: dict):
+        key_map = {"add": "新增", "update": "更新", "asso": "关联"}
+        add_mgs = ""
+        for _key in ["add", "update", "asso"]:
+            success_count = result[_key]["success"]
+            fail_count = result[_key]["error"]
+            data = result[_key]["data"]
+            message = " ,".join(data)
+            add_mgs += f"{key_map[_key]}: 成功{success_count}个，失败{fail_count}个. {message}\n"
+        return add_mgs
+
+    @staticmethod
+    def inst_export(model_id: str, ids: list, user_groups: list, roles: list, inst_names: list, created: str = "",
+                    attr_list: list = [], association_list: list = []):
         """实例导出"""
         attrs = ModelManage.search_model_attr_v2(model_id)
+        association = ModelManage.model_association_search(model_id)
 
         with Neo4jClient() as ag:
             if ids:
@@ -517,7 +533,10 @@ class InstanceManage(object):
 
                 inst_list, _ = ag.query_entity(INSTANCE, query_params, permission_params=final_permission_condition)
 
-        return Export(attrs).export_inst_list(inst_list)
+        attrs = [i for i in attrs if i["attr_id"] in attr_list] if attr_list else attrs
+        association = [i for i in association if
+                       i["model_asst_id"] in association_list] if association_list else association
+        return Export(attrs, model_id=model_id, association=association).export_inst_list(inst_list)
 
     @staticmethod
     def topo_search(inst_id: int):

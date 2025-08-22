@@ -3,6 +3,7 @@ import React from 'react';
 
 export interface SearchTableProps {
   dataSource: TableDataItem[];
+  fields: string[];
   loading?: boolean;
   scroll?: {
     x?: string | number;
@@ -50,4 +51,13 @@ export interface LogTerminalProps {
 
 export interface LogTerminalRef {
   startLogStream: () => void;
+}
+
+export interface FieldListProps {
+  loading?: boolean;
+  className?: string;
+  style?: Record<string, string>;
+  fields: string[];
+  addToQuery: (row: TableDataItem, type: string) => void;
+  changeDisplayColumns: (columns: string[]) => void;
 }

@@ -12,6 +12,7 @@ import Collapse from '@/components/collapse';
 import CustomBarChart from '@/app/log/components/charts/barChart';
 import GrammarExplanation from '@/app/log/components/operate-drawer';
 import SearchTable from './searchTable';
+import FieldList from './fieldList';
 import LogTerminal from './logTerminal';
 import { ChartData, Pagination, TableDataItem } from '@/app/log/types';
 import useApiClient from '@/utils/request';
@@ -30,7 +31,7 @@ const SearchView: React.FC = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const { isLoading } = useApiClient();
-  const { getLogStreams } = useIntegrationApi();
+  const { getLogStreams, getFields } = useIntegrationApi();
   const { getHits, getLogs } = useSearchApi();
   const { convertToLocalizedTime } = useLocalizedTime();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -45,6 +46,8 @@ const SearchView: React.FC = () => {
   const [queryTime, setQueryTime] = useState<Date>(new Date());
   const [queryEndTime, setQueryEndTime] = useState<Date>(new Date());
   const [groupList, setGroupList] = useState<ListItem[]>([]);
+  const [fields, setFields] = useState<string[]>([]);
+  const [columnFields, setColumnFields] = useState<string[]>([]);
   const [groups, setGroups] = useState<React.Key[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     current: 0,
@@ -171,9 +174,11 @@ const SearchView: React.FC = () => {
 
   const initData = async () => {
     setPageLoading(true);
-    Promise.all([getGroups(), getLogData('init')]).finally(() => {
-      setPageLoading(false);
-    });
+    Promise.all([getGroups(), getAllFields(), getLogData('init')]).finally(
+      () => {
+        setPageLoading(false);
+      }
+    );
   };
 
   const getGroups = async () => {
@@ -182,6 +187,11 @@ const SearchView: React.FC = () => {
       page: 1,
     });
     setGroupList(data || []);
+  };
+
+  const getAllFields = async () => {
+    const data = await getFields();
+    setFields(data || []);
   };
 
   const getLogData = async (type: string, times?: number[]) => {
@@ -462,13 +472,25 @@ const SearchView: React.FC = () => {
                 overflowY: 'hidden',
               }}
             >
-              <SearchTable
-                dataSource={tableData}
-                loading={tableLoading}
-                scroll={{ y: scrollHeight }}
-                addToQuery={addToQuery}
-                onLoadMore={loadMore}
-              />
+              <div className={searchStyle.tableArea}>
+                <FieldList
+                  style={{ height: scrollHeight + 'px' }}
+                  className="w-[180px] min-w-[180px]"
+                  fields={fields}
+                  addToQuery={addToQuery}
+                  changeDisplayColumns={(val) => {
+                    setColumnFields(val);
+                  }}
+                />
+                <SearchTable
+                  dataSource={tableData}
+                  fields={columnFields}
+                  loading={tableLoading}
+                  scroll={{ x: 'calc(100vw-300px)', y: scrollHeight }}
+                  addToQuery={addToQuery}
+                  onLoadMore={loadMore}
+                />
+              </div>
             </Card>
           </>
         ) : (

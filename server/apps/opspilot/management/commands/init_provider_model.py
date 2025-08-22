@@ -28,6 +28,7 @@ class Command(BaseCommand):
             llm_model_list = json.load(f)
         exist_llm = {i.name: i for i in LLMModel.objects.filter(is_build_in=True)}
         create_llm_model = []
+        update_llm_model = []
         for i in llm_model_list:
             if i["name"] not in exist_llm:
                 create_llm_model.append(
@@ -37,6 +38,7 @@ class Command(BaseCommand):
                         is_build_in=True,
                         enabled=False,
                         team=[group_id],
+                        label=i.get("label", ""),
                         llm_config={
                             "openai_api_key": "your_openai_api_key",
                             "openai_base_url": i["openai_base_url"],
@@ -46,9 +48,16 @@ class Command(BaseCommand):
                         },
                     )
                 )
+            else:
+                llm_model = exist_llm[i["name"]]
+                llm_model.label = i.get("label", "")
+                update_llm_model.append(llm_model)
         if create_llm_model:
             LLMModel.objects.bulk_create(create_llm_model)
             print(f"Created {len(create_llm_model)} llm models")
+        if update_llm_model:
+            LLMModel.objects.bulk_update(update_llm_model, ["label"])
+            print(f"Updated {len(update_llm_model)} llm models")
 
     @staticmethod
     def create_or_update_embed_model(group_id, model_type_map):
@@ -111,9 +120,17 @@ class Command(BaseCommand):
             model_type_data = json.load(f)
         exist_model_type = {i.name: i for i in ModelType.objects.all()}
         create_model_type = []
+        model_type = ModelType.objects.last()
+        if model_type:
+            index = model_type.index + 1
+        else:
+            index = 0
         for i in model_type_data:
             if i["name"] not in exist_model_type:
+                i["is_build_in"] = True
+                i["index"] = index
                 create_model_type.append(ModelType(**i))
+                index += 1
         if create_model_type:
             ModelType.objects.bulk_create(create_model_type)
             print(f"Created {len(create_model_type)} model types")
