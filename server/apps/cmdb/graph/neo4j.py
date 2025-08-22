@@ -1,4 +1,5 @@
 import os
+import json
 from typing import List, Union
 
 from dotenv import load_dotenv
@@ -8,7 +9,7 @@ from neo4j.graph import Path
 from apps.cmdb.constants import INSTANCE, ModelConstraintKey
 from apps.cmdb.graph.format_type import FORMAT_TYPE
 from apps.core.exceptions.base_app_exception import BaseAppException
-
+from apps.core.logger import cmdb_logger as logger
 load_dotenv()
 
 
@@ -530,6 +531,108 @@ class Neo4jClient:
 
         return dict(
             src_result=self.format_topo(inst_id, src_objs, True), dst_result=self.format_topo(inst_id, dst_objs, False)
+        )
+
+    @staticmethod
+    def get_topo_config() -> dict:
+        try:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            topo_config_path = os.path.join(base_dir, "cmdb_config", "instance", "topo_config.json")
+
+            if not os.path.isfile(topo_config_path):
+                logger.warning("Topo config file not found: %s", topo_config_path)
+                return {}
+
+            with open(topo_config_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            if not isinstance(data, dict):
+                logger.warning("Topo config is not a dictionary: %s", topo_config_path)
+                return {}
+            return data
+
+        except (OSError, json.JSONDecodeError) as e:
+            logger.error("Failed to load topo config: %s, error: %s", topo_config_path, e)
+            return {}
+
+
+    def convert_to_cypher_match(self, label_str: str, model_id: str, params_str: str, dst: bool = True) -> str:
+        """
+        根据 JSON 配置生成 Neo4j Cypher 查询语句
+
+        :param label_str: 节点标签
+        :param model_id: 当前模型 ID
+        :param params_str: WHERE 附加条件（字符串）
+        :param dst: True 查询后继路径，False 查询前驱路径
+        :return: 生成的 Cypher 查询语句
+        """
+        # 方向配置
+        edge_type = "dst" if dst else "src"
+        default_match = (
+            f"MATCH p={f'(m{label_str}) - [*]->(n{label_str})' if dst else f'(n{label_str}) - [*]->(m{label_str})'}"
+            f"WHERE NOT (m){'<--()' if dst else '-->()'} {params_str} RETURN p"
+        )
+        # 获取拓扑配置
+        topo_path = self.get_topo_config().get(model_id)
+
+        # 没有配置
+        if not topo_path:
+            return default_match
+
+        edge_list = topo_path.get(edge_type)
+        if not edge_list:
+            return default_match
+
+        cypher_parts = []
+        node_aliases = {}
+        rep_alias = ""
+
+        # 为每一个关系生成相应的MATCH部分
+        for i, relation in enumerate(edge_list):
+            self_obj = relation['self_obj']
+            target_obj = relation['target_obj']
+            assoc = relation['assoc']
+
+            # 处理self_obj
+            if self_obj not in node_aliases:
+                node_aliases[self_obj] = f'v{i}'
+            self_alias = node_aliases[self_obj]
+
+            # 添加self_obj节点
+            if i == 0:
+                if edge_type == "src":
+                    rep_alias = self_alias
+                cypher_parts.append(f"({self_alias}:instance {{model_id: '{self_obj}'}})")
+
+            # 处理target_obj
+            if target_obj not in node_aliases:
+                node_aliases[target_obj] = f'v{i + 1}'
+            target_alias = node_aliases[target_obj]
+            if edge_type == "dst":
+                rep_alias = target_alias
+            # 添加关系和target_obj节点
+            cypher_parts.append(f"-[:{assoc}]->({target_alias}:instance {{model_id: '{target_obj}'}})")
+
+        # 拼接最终 MATCH
+        match_path = "".join(cypher_parts)
+        where_clause = f"WHERE 1=1 {params_str.replace('n', rep_alias)}"
+
+        return f"MATCH p={match_path}\n{where_clause}\nRETURN p"
+
+
+    def query_topo_test_config(self, label: str, inst_id: int, model_id: str):
+        """查询实例拓扑"""
+        label_str = f":{label}" if label else ""
+        params_str = self.format_search_params([{"field": "id", "type": "id=", "value": inst_id}])
+        if params_str:
+            params_str = f"AND {params_str}"
+
+        src_objs = self.session.run(self.convert_to_cypher_match(label_str, model_id, params_str, dst=False))
+        dst_objs = self.session.run(self.convert_to_cypher_match(label_str, model_id, params_str, dst=True))
+
+        return dict(
+            src_result=self.format_topo(inst_id, src_objs, True),
+            dst_result=self.format_topo(inst_id, dst_objs, False)
         )
 
     def format_topo(self, start_id, objs, entity_is_src=True):

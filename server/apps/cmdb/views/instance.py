@@ -592,6 +592,7 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_info-View")
     def topo_search(self, request, model_id: str, inst_id: int):
+        print(model_id,inst_id)
         instance = InstanceManage.query_entity_by_id(inst_id)
         if not instance:
             return WebUtils.response_error(response_data=[], error_message="实例不存在",
@@ -608,6 +609,45 @@ class InstanceViewSet(viewsets.ViewSet):
 
         result = InstanceManage.topo_search(int(inst_id))
         return WebUtils.response_success(result)
+
+    @swagger_auto_schema(
+        operation_id="topo_search_test_config",
+        operation_description="实例拓扑查询",
+        manual_parameters=[
+            openapi.Parameter(
+                "model_id",
+                openapi.IN_PATH,
+                description="模型ID",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter("inst_id", openapi.IN_PATH, description="实例ID", type=openapi.TYPE_NUMBER),
+        ],
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path=r"topo_search_test_config/(?P<model_id>.+?)/(?P<inst_id>.+?)",
+    )
+    @HasPermission("asset_info-View")
+    def topo_search_test_config(self, request, model_id: str, inst_id: int):
+        instance = InstanceManage.query_entity_by_id(inst_id)
+        if not instance:
+            return WebUtils.response_error(response_data=[], error_message="实例不存在",
+                                           status_code=status.HTTP_404_NOT_FOUND)
+
+        if instance.get("_creator") != request.user.username:
+            rules = get_cmdb_rules(request=request, permission_key=PERMISSION_INSTANCES)
+            has_permission = CmdbRulesFormatUtil.has_object_permission(rules=rules, obj_type=PERMISSION_INSTANCES,
+                                                                       classification_id=None,
+                                                                       model_id=model_id, operator=VIEW,
+                                                                       instance_name=instance["inst_name"])
+            if not has_permission:
+                return WebUtils.response_error(response_data=[], error_message="抱歉！您没有此实例的权限",
+                                               status_code=status.HTTP_403_FORBIDDEN)
+
+        result = InstanceManage.topo_search_test_config(int(inst_id), model_id)
+        return WebUtils.response_success(result)
+
 
     @swagger_auto_schema(
         operation_id="show_field_settings",
