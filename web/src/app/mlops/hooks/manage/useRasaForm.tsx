@@ -623,7 +623,7 @@ const useRasaSlotForm = ({
   useEffect(() => {
     if (visiable && formData) {
       setSampleList(formData?.values || [null]);
-    } else if (visiable) {
+    } else if (!visiable) {
       setSampleList([null]);
     }
   }, [formData, visiable]);
@@ -782,7 +782,7 @@ const useRasaFormData = () => {
     let params = {};
 
     if (type === 'add') {
-      if (['rule', 'story'].includes(selectKey)) {
+      if (['rule'].includes(selectKey)) {
         params = {
           ...data,
           dataset: formData?.dataset,
@@ -790,9 +790,16 @@ const useRasaFormData = () => {
             [item?.type]: item.select
           }))
         };
+      } else if(selectKey === 'story') {
+        params = {
+          ...data,
+          dataset: formData?.dataset,
+          steps: []
+        };
       } else if (selectKey === 'slot') {
         params = {
           ...data,
+          dataset: formData?.dataset,
           values: slotType === 'categorical' ? sampleList : []
         }
       } else {

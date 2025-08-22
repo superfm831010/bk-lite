@@ -132,7 +132,7 @@ const Detail = () => {
           customMenuItems={activeTap === 'rasa' ? rasaMenus : []}
           // onBackButtonClick={}
         >
-          <div className='w-full relative'>
+          <div className='w-full h-full relative'>
             {renderPage[activeTap]}
           </div>
         </Sublayout>

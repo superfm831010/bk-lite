@@ -170,3 +170,9 @@ export interface TableData {
   anomaly?: number,
   [key: string]: any
 }
+
+export interface NodeType {
+  type: string;
+  label: string;
+  color: string;
+}

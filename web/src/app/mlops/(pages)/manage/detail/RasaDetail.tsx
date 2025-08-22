@@ -1,4 +1,4 @@
-import { Button, message, Popconfirm, Breadcrumb, Input } from "antd";
+import { Button, message, Popconfirm, Input } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import CustomTable from "@/components/custom-table";
 import RasaModal from "./rasaModal";
@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ColumnItem } from "@/types";
 import { ModalRef, TableData } from "@/app/mlops/types";
 import useMlopsManageApi from "@/app/mlops/api/manage";
+import StoryFlow from "./components/StoryFlow";
 const { Search } = Input;
 
 const RasaDetail = () => {
@@ -31,7 +32,9 @@ const RasaDetail = () => {
   } = useMlopsManageApi();
   // const [selectKey, setSelectKey] = useState<string>('intent');
   const [loading, setLoading] = useState<boolean>(false);
+  const [openFlow, setOpenFlow] = useState<boolean>(false);
   const [tableData, setTableData] = useState<TableData[]>([]);
+  const [currentStory, setCurrentStory] = useState<TableData | null>(null);
 
   const btnsElements = (record: any) => (<>
     <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
@@ -87,7 +90,23 @@ const RasaDetail = () => {
         dataIndex: 'action',
         key: 'action',
         width: 180,
-        render: (_, record) => btnsElements(record)
+        render: (_, record) => (<>
+          <Button type="link" className="mr-2" onClick={() => {
+            console.log('change');
+            setCurrentStory(record);
+            setOpenFlow(true);
+          }}>{t(`common.detail`)}</Button>
+          <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
+          <Popconfirm
+            title={t(`common.delConfirm`)}
+            description={t(`common.delConfirmCxt`)}
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => handleDel(record.id)}
+          >
+            <Button type="link" danger>{t(`common.delete`)}</Button>
+          </Popconfirm>
+        </>)
       }
     ],
     'response': [
@@ -211,54 +230,16 @@ const RasaDetail = () => {
     menu: searchParams.get('menu') || 'intent',
   }), [searchParams]);
 
-  // const items: () => TabsProps['items'] = () => {
-  //   return [
-  //     {
-  //       key: 'intent',
-  //       label: t(`datasets.intent`),
-  //       children: renderTable('intent'),
-  //     },
-  //     {
-  //       key: 'response',
-  //       label: t(`datasets.response`),
-  //       children: renderTable('response'),
-  //     },
-  //     {
-  //       key: 'rule',
-  //       label: t(`datasets.rule`),
-  //       children: renderTable('rule')
-  //     },
-  //     {
-  //       key: 'story',
-  //       label: t(`datasets.story`),
-  //       children: renderTable('story'),
-  //     },
-  //     {
-  //       key: 'entity',
-  //       label: t(`datasets.entity`),
-  //       children: renderTable('entity')
-  //     },
-  //     {
-  //       key: 'slot',
-  //       label: t(`datasets.slot`),
-  //       children: renderTable('slot')
-  //     }
-  //   ]
-  // };
 
   useEffect(() => {
     if (menu) {
       getTableData();
     }
-  }, [menu])
+  }, [menu]);
 
-  // const renderTable = (key: string) => {
-  //   return (
-  //     <CustomTable rowKey="id" loading={loading} columns={columnsMap[key]} dataSource={tableData} />
-  //   )
-  // };
 
   const getTableData = async (search: string = '') => {
+    setOpenFlow(false);
     setLoading(true);
     try {
       const data = await getFileMap[menu]({ name: search, dataset: folder_id });
@@ -278,7 +259,7 @@ const RasaDetail = () => {
 
   const onSearch = (value: string) => {
     getTableData(value);
-  }
+  };
 
   const handleAdd = () => {
     modalRef.current?.showModal({ type: 'add', title: `add${menu}`, form: { dataset: folder_id } })
@@ -300,35 +281,41 @@ const RasaDetail = () => {
     }
   };
 
+
   return (
     <>
       <div className="w-full h-full relative">
-        <div className="absolute right-0 top-8 z-10">
-          <Search
-            className="w-[240px] mr-1.5"
-            placeholder={t('common.search')}
-            enterButton
-            onSearch={onSearch}
-            style={{ fontSize: 15 }}
-          />
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            {t(`common.add`)}
-          </Button>
-        </div>
-        <div>
-          <Breadcrumb
-            separator=">"
-            items={[
-              {
-                title: <a href="/mlops/manage">{t(`datasets.datasets`)}</a>
-              },
-              {
-                title: t(`datasets.datasetsDetail`)
-              }
-            ]}
-          />
-        </div>
-        <CustomTable rowKey="id" loading={loading} columns={columnsMap[menu]} dataSource={tableData} />
+        {
+          !openFlow ? (
+            <>
+              <div className="flex justify-end">
+                <Search
+                  className="w-[240px] mr-1.5"
+                  placeholder={t('common.search')}
+                  enterButton
+                  onSearch={onSearch}
+                  style={{ fontSize: 15 }}
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+                  {t(`common.add`)}
+                </Button>
+              </div>
+              <CustomTable rowKey="id" loading={loading} columns={columnsMap[menu]} dataSource={tableData} />
+            </>
+          ) : (
+            <>
+              <StoryFlow
+                currentStory={currentStory}
+                dataset={folder_id || ''}
+                backToList={() => {
+                  setOpenFlow(false)
+                  getTableData()
+                }}
+                onSuccess={() => getTableData()}
+              />
+            </>
+          )
+        }
         {/* <Tabs defaultActiveKey="1" items={items()} onChange={onChange} /> */}
       </div>
       <RasaModal ref={modalRef} selectKey={menu} folder_id={folder_id as string} onSuccess={() => getTableData()} />

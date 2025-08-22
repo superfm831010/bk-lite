@@ -55,6 +55,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
         formRef.current?.setFieldValue('entity_type', formData?.entity_type);
         onEntityTypeChange(formData?.entity_type);
       } else if (formData?.slot_type) {
+        onSlotTypeChange(formData?.slot_type)
         formRef.current?.setFieldValue('slot_type', formData?.slot_type);
         formRef.current?.setFieldValue('is_apply', formData?.is_apply);
       }
@@ -139,7 +140,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
                       value: 'categorical'
                     },
                     {
-                      label: 'float(记录数值类型，浮点型)',
+                      label: 'float(记录数值类型)',
                       value: 'float'
                     },
                     {
@@ -149,10 +150,6 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
                     {
                       label: 'bool(布尔值，是或者否)',
                       value: 'bool'
-                    },
-                    {
-                      label: 'int(记录数值类型，整数型)',
-                      value: 'int'
                     }
                   ]} onChange={onSlotTypeChange} />
                 </Form.Item>
@@ -166,23 +163,28 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
                   <Switch onChange={onSlotPredictionChange} />
                 </Form.Item>
                 {slotType === 'categorical' && (
-                  <Form.Item
-                    label={'类别'}
-                    rules={[{ required: true, validator: validateSampleList }]}
-                  >
-                    {renderElement}
-                  </Form.Item>
+                  <>
+                    <Form.Item
+                      label={'类别'}
+                      rules={[{ required: true, validator: validateSampleList }]}
+                    >
+                      {renderElement}
+                    </Form.Item>
+                  </>
                 )}
               </>
             )
           }
-          {(!['entity', 'slot'].includes(selectKey)) && (
-            <Form.Item
-              label={selectKey === 'rule' ? '步骤' : '样例'}
-              rules={[{ required: true, validator: validateSampleList }]}
-            >
-              {renderElement}
-            </Form.Item>
+          {(!['entity', 'slot', 'story'].includes(selectKey)) && (
+            <>
+              <Form.Item
+                label={selectKey === 'rule' ? '步骤' : '样例'}
+                rules={[{ required: true, validator: validateSampleList }]}
+              >
+
+                {renderElement}
+              </Form.Item>
+            </>
           )}
         </Form>
       </OperateModal>
