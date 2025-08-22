@@ -75,17 +75,20 @@ class ModelMigrate:
         for model in self.model_config.get("models", []):
             model.update(is_pre=True)
             self.model_add_organization(model)
-            attrs = []
+            _attrs = []
             attr_key = f"attr-{model['model_id']}"
-            if attr_key in self.model_config:
-                attrs = self.model_config[attr_key]
+            attrs = self.model_config.get(attr_key, [])
             for attr in attrs:
                 attr.update(is_pre=True)
                 try:
                     attr["option"] = ast.literal_eval(attr["option"])
                 except Exception:
                     pass
-            models.append({**model, "attrs": json.dumps(attrs)})
+                # 过滤掉关键字段为空的行
+                if not attr["attr_id"]:
+                    continue
+                _attrs.append(attr)
+            models.append({**model, "attrs": json.dumps(_attrs)})
 
         with Neo4jClient() as ag:
             exist_items, _ = ag.query_entity(MODEL, [])
