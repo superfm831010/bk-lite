@@ -46,7 +46,7 @@ function HomepageHeader() {
               </Link>
               <Link
                 className={clsx(styles.button, styles['button--secondary'])}
-                to="/docs/tutorial-basics/create-a-document">
+                to="#">
                 <span className={styles.buttonIcon}>📖</span>
                 快速入门
               </Link>
