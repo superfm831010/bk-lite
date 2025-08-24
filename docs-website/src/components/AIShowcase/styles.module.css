@@ -854,6 +854,17 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+  .platformFeatureGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .platformFeatureCard {
+    min-height: 290px;
+  }
+}
+
 @media (max-width: 1024px) {
   .platformFeatureGrid {
     grid-template-columns: repeat(3, 1fr);
@@ -885,13 +896,79 @@
   
   .platformFeatureGrid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+    gap: 1.2rem;
     margin-top: 3rem;
   }
   
   .platformFeatureCard {
-    padding: 1.25rem;
-    min-height: 240px;
+    padding: 1.5rem;
+    min-height: 300px;
+  }
+  
+  .platformFeatureIcon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .iconEmoji {
+    font-size: 1.4rem;
+  }
+  
+  .platformFeatureTitle {
+    font-size: 1.15rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .platformFeatureDescription {
+    font-size: 0.9rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .metricValue {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+  
+  .highlightTag {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .platformFeatureGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .platformFeatureCard {
+    padding: 1.3rem;
+    min-height: 285px;
+  }
+  
+  .platformFeatureTitle {
+    font-size: 1.1rem;
+  }
+  
+  .platformFeatureDescription {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .platformFeatureGrid {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+  
+  .sectionTitle {
+    font-size: 2rem;
+  }
+  
+  .platformFeatureCard {
+    padding: 1.5rem;
+    min-height: 280px;
   }
   
   .platformFeatureIcon {
@@ -905,42 +982,27 @@
   
   .platformFeatureTitle {
     font-size: 1.1rem;
+    margin-bottom: 0.75rem;
   }
   
   .platformFeatureDescription {
-    font-size: 0.85rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .platformFeatureGrid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
   }
   
-  .sectionTitle {
-    font-size: 2rem;
-  }
-  
-  .platformFeatureCard {
-    padding: 1rem;
-    min-height: 220px;
-  }
-  
-  .platformFeatureIcon {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .iconEmoji {
-    font-size: 1.2rem;
-  }
-  
-  .platformFeatureTitle {
-    font-size: 1rem;
+  .metricValue {
+    padding: 0.45rem 0.8rem;
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
   }
   
   .highlightTag {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
+    padding: 0.28rem 0.55rem;
+  }
+  
+  .highlightTags {
+    gap: 0.35rem;
   }
 }
