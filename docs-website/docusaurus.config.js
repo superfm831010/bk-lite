@@ -46,6 +46,7 @@ const config = {
           onUntruncatedBlogPosts: 'warn',
         },
         theme: {
+          customCss: './src/css/custom.css',
         },
       }),
     ],
@@ -64,26 +65,26 @@ const config = {
         items: [
           {
             "label":"部署指南",
-            "to":"#"
+            "to":"/docs/deploy/docker-compose"
           },
           {
             "label":"产品文档",
-            "to":"/docs/opspilot"
+            "to":"/docs/products/opspilot"
           },
           {
             "label":"运维手册",
             "to":"#"
           },
           {
+            "label":"开发指南",
+            "to":"#"
+          },          
+          {
             "label":"资源下载",
             "to":"#"
           },
           {
             "label":"FAQ",
-            "to":"#"
-          },
-          {
-            "label":"关于我们",
             "to":"#"
           },
           {

@@ -4,7 +4,7 @@
  */
 
 .finalCTA {
-  padding: 8rem 0;
+  padding: 4rem 0;
   background: linear-gradient(
     180deg,
     #ffffff 0%,
@@ -170,7 +170,7 @@
 /* Responsive design */
 @media screen and (max-width: 996px) {
   .finalCTA {
-    padding: 6rem 0;
+    padding: 3rem 0;
   }
   
   .ctaTitle {
@@ -188,7 +188,7 @@
 
 @media screen and (max-width: 768px) {
   .finalCTA {
-    padding: 8rem 0;
+    padding: 4rem 0;
   }
   
   .ctaTitle {
@@ -262,7 +262,7 @@
 
 @media screen and (max-width: 480px) {
   .finalCTA {
-    padding: 6rem 0;
+    padding: 3rem 0;
   }
   
   .ctaTitle {
