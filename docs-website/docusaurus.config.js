@@ -63,7 +63,7 @@ const config = {
         },
         items: [
           {
-            "label":"快速入门",
+            "label":"部署指南",
             "to":"#"
           },
           {
@@ -104,13 +104,9 @@ const config = {
                 href: 'https://bklite.canway.net/',
               },
               {
-                label: '快速入门',
+                label: '部署指南',
                 to: '#',
-              },
-              {
-                label: 'API 文档',
-                to: '#',
-              },
+              }
             ],
           },
           {
@@ -119,10 +115,6 @@ const config = {
               {
                 label: '腾讯蓝鲸',
                 href: 'https://bk.tencent.com/',
-              },
-              {
-                label: '开发者论坛',
-                href: '#',
               },
               {
                 label: 'GitHub',
@@ -134,11 +126,7 @@ const config = {
             title: '更多',
             items: [
               {
-                label: '博客',
-                to: '#',
-              },
-              {
-                label: '企业服务',
+                label: '企业版',
                 href: '#',
               },
               {
