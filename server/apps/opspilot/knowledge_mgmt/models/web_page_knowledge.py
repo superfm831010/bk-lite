@@ -36,3 +36,7 @@ class WebPageKnowledge(models.Model, PeriodicTaskUtils):
         task_args = f"[{self.id}]"
         task_path = "apps.opspilot.tasks.sync_web_page_knowledge"
         self.create_periodic_task(sync_time, task_name, task_args, task_path)
+
+    def delete_sync_periodic_task(self):
+        task_name = f"sync_web_page_knowledge_{self.id}"
+        self.delete_periodic_task(task_name)
