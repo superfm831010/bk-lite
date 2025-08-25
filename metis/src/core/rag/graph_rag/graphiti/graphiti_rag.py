@@ -61,6 +61,7 @@ class GraphitiRAG:
         async_openai = AsyncOpenAI(
             api_key=llm_config['api_key'],
             base_url=llm_config['base_url'],
+            timeout=120
         )
         return OpenAIClient(
             client=async_openai,
