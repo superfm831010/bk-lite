@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, Input as AntdInput, Switch, message, Select } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { useUserInfoContext } from '@/context/userInfo';
-import { Model, ModelConfig } from '@/app/opspilot/types/provider';
-import { MODEL_TYPE_OPTIONS, CONFIG_MAP } from '@/app/opspilot/constants/provider';
+import { Model, ModelConfig, ModelGroup } from '@/app/opspilot/types/provider';
+import { CONFIG_MAP, MODEL_CATEGORY_OPTIONS, getProviderType } from '@/app/opspilot/constants/provider';
 import OperateModal from '@/components/operate-modal';
 import EditablePasswordField from '@/components/dynamic-form/editPasswordField';
 import GroupTreeSelect from '@/components/group-tree-select';
+import { useProviderApi } from '@/app/opspilot/api/provider';
 
 interface ProviderModalProps {
   visible: boolean;
@@ -30,6 +31,29 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
   const [form] = Form.useForm();
   const { t } = useTranslation();
   const { selectedGroup } = useUserInfoContext();
+  const { fetchModelGroups } = useProviderApi();
+  const [modelGroups, setModelGroups] = useState<ModelGroup[]>([]);
+  const [groupsLoading, setGroupsLoading] = useState<boolean>(false);
+
+  // Fetch model groups when modal opens
+  useEffect(() => {
+    if (visible) {
+      const fetchGroups = async () => {
+        setGroupsLoading(true);
+        try {
+          const providerType = getProviderType(filterType);
+          const groups = await fetchModelGroups('', providerType);
+          setModelGroups(groups);
+        } catch (error) {
+          console.error('Failed to fetch model groups:', error);
+          message.error(t('common.fetchFailed'));
+        } finally {
+          setGroupsLoading(false);
+        }
+      };
+      fetchGroups();
+    }
+  }, [visible, filterType]);
 
   React.useEffect(() => {
     if (!visible) return;
@@ -39,7 +63,8 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
       form.setFieldsValue({
         name: model.name || '',
         modelName: (model[configField as keyof Model] as ModelConfig)?.model || '',
-        type: model.llm_model_type || '',
+        model_type: model.model_type || '',
+        label: model.label || '',
         team: model.team,
         apiKey: filterType === 'llm_model' ? model.llm_config?.openai_api_key || '' : config?.api_key || '',
         url: filterType === 'llm_model' ? model.llm_config?.openai_base_url || '' : config?.base_url || '',
@@ -49,11 +74,10 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
     } else {
       form.resetFields();
       form.setFieldsValue({
-        type: 'chat-gpt',
         enabled: true
       });
     }
-  }, [visible]);
+  }, [visible, mode, model, form, filterType]);
 
   const handleOk = () => {
     form.validateFields()
@@ -83,27 +107,61 @@ const ProviderModal: React.FC<ProviderModalProps> = ({
         >
           <AntdInput placeholder={`${t('common.input')}${t('provider.form.name')}`} />
         </Form.Item>
-        {filterType !== 'ocr_provider' && (<Form.Item
-          name="modelName"
-          label={t('provider.form.modelName')}
-          rules={[{ required: true, message: `${t('common.input')}${t('provider.form.modelName')}` }]}
-        >
-          <AntdInput placeholder={`${t('common.input')}${t('provider.form.modelName')}`} />
-        </Form.Item>)}
-        {filterType === 'llm_model' && (<Form.Item
-          name="type"
+
+        {filterType !== 'ocr_provider' && (
+          <Form.Item
+            name="modelName"
+            label={t('provider.form.modelName')}
+            rules={[{ required: true, message: `${t('common.input')}${t('provider.form.modelName')}` }]}
+          >
+            <AntdInput placeholder={`${t('common.input')}${t('provider.form.modelName')}`} />
+          </Form.Item>
+        )}
+
+        <Form.Item
+          name="model_type"
           label={t('provider.form.type')}
           rules={[{ required: true, message: `${t('common.selectMsg')}${t('provider.form.type')}` }]}
-          initialValue="chat-gpt"
         >
-          <Select placeholder={`${t('common.selectMsg')}${t('provider.form.type')}`}>
-            {Object.entries(MODEL_TYPE_OPTIONS).map(([value, displayText]) => (
-              <Select.Option key={value} value={value}>
-                {displayText}
+          <Select 
+            placeholder={`${t('common.selectMsg')}${t('provider.form.type')}`}
+            loading={groupsLoading}
+            showSearch
+            filterOption={(input, option) =>
+              (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+            }
+            notFoundContent={groupsLoading ? t('common.loading') : t('common.noData')}
+          >
+            {modelGroups.map((group) => (
+              <Select.Option key={group.id} value={group.id}>
+                {group.display_name || group.name}
               </Select.Option>
             ))}
           </Select>
-        </Form.Item>)}
+        </Form.Item>
+
+        {filterType === 'llm_model' && (
+          <Form.Item
+            name="label"
+            label={t('provider.form.label')}
+            rules={[{ required: true, message: `${t('common.selectMsg')}${t('provider.form.label')}` }]}
+          >
+            <Select 
+              placeholder={`${t('common.selectMsg')}${t('provider.form.label')}`}
+              showSearch
+              filterOption={(input, option) =>
+                (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {MODEL_CATEGORY_OPTIONS.map((option) => (
+                <Select.Option key={option.value} value={option.value}>
+                  {option.label}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        )}
+
         <Form.Item
           name="url"
           label={t('provider.form.url')}

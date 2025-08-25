@@ -457,11 +457,21 @@
       "enabled": "启用",
       "name": "名称",
       "modelName": "模型名称",
-      "type": "类型",
+      "type": "模型分组",
+      "label": "模型类别",
       "group": "分组",
       "consumerTeam": "配额分配组"
     },
-    "deleteConfirm": "你确定要删除此模型吗？"
+    "deleteConfirm": "你确定要删除此模型吗？",
+    "group": {
+      "title": "模型分组",
+      "name": "分组名",
+      "displayName": "分组显示名",
+      "deleteConfirm": "你确定要删除此分组吗？",
+      "deleteConfirmContent": "此操作将删除该分组",
+      "reorderSuccess": "分组顺序更新成功",
+      "reorderFailed": "更新分组顺序失败"
+    }
   },
   "studio": {
     "menu": "Studio",
