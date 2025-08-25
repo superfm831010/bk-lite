@@ -3,12 +3,10 @@ from django.utils.functional import cached_property
 
 from apps.core.encoders import PrettyJSONEncoder
 from apps.core.mixinx import EncryptMixin
-from apps.opspilot.enum import LLMModelChoices
 
 
 class LLMModel(models.Model, EncryptMixin):
     name = models.CharField(max_length=255, verbose_name="名称")
-    llm_model_type = models.CharField(max_length=255, choices=LLMModelChoices.choices, verbose_name="LLM模型类型")
     llm_config = models.JSONField(
         verbose_name="LLM配置",
         blank=True,
