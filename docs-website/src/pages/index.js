@@ -46,7 +46,7 @@ function HomepageHeader() {
               </Link>
               <Link
                 className={clsx(styles.button, styles['button--secondary'])}
-                to="#">
+                to="/docs/deploy/docker-compose">
                 <span className={styles.buttonIcon}>📦</span>
                 部署指南
               </Link>
