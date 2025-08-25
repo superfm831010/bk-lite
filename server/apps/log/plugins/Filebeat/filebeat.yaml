@@ -21,63 +21,32 @@ output.logstash:
 
 # ================================== Inputs ===================================
 filebeat.inputs:
+# ================================== 健康检查模式 - 最小数据量 ==================================
 - type: filestream
-  id: filebeat-self-logs
+  id: filebeat-health-check
   enabled: true
   paths:
     - /opt/fusion-collectors/log/filebeat/filebeat-*.ndjson
 
+  # 减少数据量配置
+  scan_frequency: 300s  # 进一步降低到5分钟
+  close_inactive: 60s   # 1分钟后关闭非活跃文件
+  ignore_older: 30m     # 只处理30分钟内的文件
+
+  # 移除ERROR过滤 - Filebeat正常运行时很少产生ERROR
+  # 改为监控启动和关闭事件来验证功能
+  include_lines: ['"message":"Starting filebeat"', '"message":"Stopping filebeat"', '"message":"filebeat stopped"']
+
   fields:
     log_type: "filebeat"
     component: "self"
+    health_check_mode: true
     node_ip: "${node.ip}"
     cloud_region: "${node.cloud_region}"
   fields_under_root: false
 
-  close_inactive: 1m
-  close_removed: true
-  clean_removed: true
-  prospector.scanner.check_interval: 10s
-
+  # 移除复杂的JSON解析器
   processors:
-    - decode_json_fields:
-        fields: ["message"]
-        target: "parsed_message"
-        add_error_key: true
-
-    - script:
-        lang: javascript
-        source: >
-          function process(event) {
-            var evt = event.Get();
-            if (evt.parsed_message && evt.parsed_message.monitoring) {
-              var m = evt.parsed_message.monitoring.metrics;
-              
-              // 核心指标提取
-              if (m.filebeat) {
-                event.Put("events_active", m.filebeat.events.active || 0);
-                event.Put("events_done", m.filebeat.events.done || 0);
-                event.Put("harvester_running", m.filebeat.harvester.running || 0);
-              }
-              
-              if (m.beat) {
-                event.Put("memory_mb", Math.round((m.beat.memstats.memory_alloc || 0) / 1024 / 1024));
-                event.Put("uptime_s", Math.round((m.beat.info.uptime.ms || 0) / 1000));
-              }
-              
-              if (m.libbeat && m.libbeat.output) {
-                event.Put("output_acked", m.libbeat.output.events.acked || 0);
-              }
-              
-              event.Put("log_level", evt.parsed_message["log.level"] || "info");
-              event.Put("logger", evt.parsed_message["log.logger"] || "filebeat");
-              
-              event.Put("message", "mem:" + Math.round((m.beat ? m.beat.memstats.memory_alloc : 0) / 1024 / 1024) + 
-                       "M send:" + (m.filebeat ? m.filebeat.events.done : 0));
-            }
-            return event;
-          }
-
     - drop_fields:
-        fields: ["parsed_message"]
+        fields: ["agent.ephemeral_id", "ecs.version"]
         ignore_missing: true

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "Auditbeat_linux",
+    "name": "Auditbeat",
+    "controller_default_run": false,
+    "icon": "",
+    "node_operating_system": "linux",
+    "service_type": "exec",
+    "executable_path": "/opt/fusion-collectors/bin/auditbeat",
+    "execute_parameters": "-c %s",
+    "validation_parameters": "",
+    "default_template": "",
+    "introduction": "Auditbeat is a lightweight shipper for audit data collection and security monitoring using official Logstash protocol.",
+    "enabled_default_config": true,
+    "default_config": {
+      "nats": "# ================================== General ===================================\nname: \"auditbeat-${node.ip}-${node.cloud_region}\"\ntags: [\"bk-lite\", \"logstash\", \"security\"]\n# ================================== Logging ===================================\nlogging.level: info\nlogging.to_files: true\nlogging.files:\n  path: /opt/fusion-collectors/log/auditbeat\n  name: auditbeat\n  keepfiles: 7\n  permissions: 0600\n# ================================== Outputs ===================================\noutput.logstash:\n  hosts: [\"localhost:15044\"]\n  worker: 1\n  bulk_max_size: 2048\n  timeout: 30s\n  max_retries: 3\n# ================================== Processors ===================================\nprocessors:\n  - add_host_metadata:\n      when.not.contains.tags: forwarded\n\n  - add_process_metadata:\n      match_pids: [\"process.pid\", \"process.parent.pid\"]\n      target: process\n\n  - script:\n      lang: javascript\n      source: >\n        function process(event) {\n          var evt = event.Get();\n          \n          // 统一时间戳格式\n          if (evt['@timestamp']) {\n            event.Put('timestamp', evt['@timestamp']);\n          }\n          \n          // 提取关键安全字段\n          if (evt.auditd) {\n            event.Put('audit_type', evt.auditd.message_type || 'unknown');\n            event.Put('audit_result', evt.auditd.result || 'unknown');\n            \n            if (evt.user) {\n              event.Put('user_name', evt.user.name || evt.user.audit.name || 'unknown');\n              event.Put('user_id', evt.user.id || evt.user.audit.id || 'unknown');\n            }\n            \n            if (evt.process) {\n              event.Put('process_name', evt.process.name || 'unknown');\n              event.Put('process_pid', evt.process.pid || 0);\n            }\n          }\n          \n          if (evt.file) {\n            event.Put('file_path', evt.file.path || 'unknown');\n            event.Put('file_action', evt.event.action || 'unknown');\n          }\n          \n          return event;\n        }\n# ================================== Modules ===================================\nauditbeat.modules:\n# ================================== 基础模块 - 确保探针正常运行 ==================================\n- module: auditd\n  enabled: true\n  \n  # 最小审计规则 - 仅用于验证功能正常\n  audit_rules: |\n    # 基础系统监控 - 验证 auditd 连接正常\n    -w /etc/passwd -p wa -k basic_monitoring\n\n  fields:\n    log_type: \"auditbeat\"\n    component: \"auditd\"\n    node_ip: \"${node.ip}\"\n    cloud_region: \"${node.cloud_region}\"\n  fields_under_root: false\n"
+    }
+  }
+]
+

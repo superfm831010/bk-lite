@@ -1,0 +1,296 @@
+# ================================== DNS Protocol 配置 ==================================
+- type: dns
+  enabled: true
+
+  # ================================== 端口配置 ==================================
+  ports:
+    {% for port in ports | default([53]) %}
+    - {{ port }}
+    {% endfor %}
+
+  # ================================== DNS解析配置 ==================================
+  # 包含权威记录
+  {% if include_authorities is defined %}
+  include_authorities: {{ include_authorities | lower }}
+  {% else %}
+  include_authorities: true
+  {% endif %}
+
+  # 包含附加记录
+  {% if include_additionals is defined %}
+  include_additionals: {{ include_additionals | lower }}
+  {% else %}
+  include_additionals: true
+  {% endif %}
+
+  # ================================== 查询过滤配置 ==================================
+  {% if query_filters %}
+  {% if query_filters.include_query_types %}
+  # 仅包含特定查询类型
+  include_query_types:
+    {% for qtype in query_filters.include_query_types %}
+    - {{ qtype }}
+    {% endfor %}
+  {% endif %}
+
+  {% if query_filters.exclude_query_types %}
+  # 排除特定查询类型
+  exclude_query_types:
+    {% for qtype in query_filters.exclude_query_types %}
+    - {{ qtype }}
+    {% endfor %}
+  {% endif %}
+
+  {% if query_filters.include_domains %}
+  # 仅包含特定域名
+  include_domains:
+    {% for domain in query_filters.include_domains %}
+    - {{ domain }}
+    {% endfor %}
+  {% endif %}
+
+  {% if query_filters.exclude_domains %}
+  # 排除特定域名
+  exclude_domains:
+    {% for domain in query_filters.exclude_domains %}
+    - {{ domain }}
+    {% endfor %}
+  {% endif %}
+  {% endif %}
+
+  # ================================== 性能配置 ==================================
+  # 事务超时时间
+  transaction_timeout: {{ transaction_timeout | default('10s') }}
+
+  # ================================== 字段标识配置 ==================================
+  fields:
+    collect_type: "dns"
+    instance_id: "{{ instance_id }}"
+    dns_monitoring_scope: "{{ monitoring_scope | default('all_queries') }}"
+    {% if dns_server_type %}
+    dns_server_type: "{{ dns_server_type }}"
+    {% endif %}
+    {% if custom_fields %}
+    {% for key, value in custom_fields.items() %}
+    {{ key }}: "{{ value }}"
+    {% endfor %}
+    {% endif %}
+  fields_under_root: {{ fields_under_root | default(true) | lower }}
+
+  # ================================== 处理器配置 ==================================
+  processors:
+    # 添加主机元数据
+    - add_host_metadata:
+        when.not.contains.tags: forwarded
+
+    # DNS协议增强处理
+    - script:
+        lang: javascript
+        source: >
+          function process(event) {
+            var evt = event.Get();
+
+            // 标准化时间戳
+            if (evt['@timestamp']) {
+              event.Put('timestamp', evt['@timestamp']);
+            }
+
+            // DNS基础信息标准化
+            event.Put('protocol_type', 'dns');
+
+            // 提取网络信息
+            if (evt.source && evt.destination) {
+              event.Put('source_ip', evt.source.ip || 'unknown');
+              event.Put('source_port', evt.source.port || 0);
+              event.Put('destination_ip', evt.destination.ip || 'unknown');
+              event.Put('destination_port', evt.destination.port || 53);
+            }
+
+            // DNS查询和响应信息
+            if (evt.dns) {
+              var dns = evt.dns;
+
+              // 查询信息
+              if (dns.question) {
+                event.Put('dns_query', dns.question.name || 'unknown');
+                event.Put('dns_query_type', dns.question.type || 'unknown');
+                event.Put('dns_query_class', dns.question.class || 'IN');
+              }
+
+              // 响应信息
+              event.Put('dns_response_code', dns.response_code || 'NOERROR');
+              event.Put('dns_answers_count', dns.answers_count || 0);
+              event.Put('dns_authorities_count', dns.authorities_count || 0);
+              event.Put('dns_additionals_count', dns.additionals_count || 0);
+
+              // DNS标志
+              if (dns.flags) {
+                event.Put('dns_flags', dns.flags);
+                event.Put('dns_authoritative', dns.flags.authoritative || false);
+                event.Put('dns_truncated', dns.flags.truncated_response || false);
+                event.Put('dns_recursion_desired', dns.flags.recursion_desired || false);
+                event.Put('dns_recursion_available', dns.flags.recursion_available || false);
+              }
+
+              // 解析结果
+              if (dns.answers && dns.answers.length > 0) {
+                var answers = [];
+                var ips = [];
+                for (var i = 0; i < dns.answers.length; i++) {
+                  var answer = dns.answers[i];
+                  answers.push(answer.data || '');
+                  if (answer.type === 'A' || answer.type === 'AAAA') {
+                    ips.push(answer.data);
+                  }
+                }
+                event.Put('dns_answers', answers);
+                event.Put('dns_resolved_ips', ips);
+              }
+            }
+
+            // 计算响应时间
+            if (evt.event && evt.event.duration) {
+              var responseTimeMs = Math.round(evt.event.duration / 1000000); // 纳秒转毫秒
+              event.Put('dns_response_time_ms', responseTimeMs);
+            }
+
+            return event;
+          }
+
+    # DNS安全和性能分析
+    - script:
+        lang: javascript
+        source: >
+          function process(event) {
+            var evt = event.Get();
+            var alerts = [];
+            var categories = [];
+            var riskScore = 0;
+
+            var query = evt.dns_query || '';
+            var queryType = evt.dns_query_type || '';
+            var responseCode = evt.dns_response_code || '';
+            var responseTime = evt.dns_response_time_ms || 0;
+            var destinationIP = evt.destination_ip || '';
+
+            // 查询类型分类
+            var commonTypes = ['A', 'AAAA', 'CNAME', 'MX'];
+            var securityTypes = ['TXT', 'PTR', 'NS', 'SOA'];
+
+            if (commonTypes.includes(queryType)) {
+              categories.push('common_query');
+            } else if (securityTypes.includes(queryType)) {
+              categories.push('security_query');
+              riskScore += 1;
+            } else {
+              categories.push('uncommon_query');
+              riskScore += 2;
+            }
+
+            // DNS服务器分类
+            var internalServers = ['192.168.', '10.', '172.16.', '172.17.', '172.18.', '172.19.', '172.20.', '172.21.', '172.22.', '172.23.', '172.24.', '172.25.', '172.26.', '172.27.', '172.28.', '172.29.', '172.30.', '172.31.'];
+            var publicServers = ['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1', '114.114.114.114'];
+
+            var isInternal = internalServers.some(function(prefix) {
+              return destinationIP.startsWith(prefix);
+            });
+            var isPublic = publicServers.includes(destinationIP);
+
+            if (isInternal) {
+              categories.push('internal_dns');
+            } else if (isPublic) {
+              categories.push('public_dns');
+            } else {
+              categories.push('custom_dns');
+              riskScore += 2;
+            }
+
+            // 响应状态分析
+            if (responseCode === 'NOERROR') {
+              categories.push('successful_query');
+            } else if (responseCode === 'NXDOMAIN') {
+              categories.push('domain_not_found');
+              riskScore += 1;
+            } else if (['SERVFAIL', 'REFUSED'].includes(responseCode)) {
+              categories.push('query_failed');
+              alerts.push('dns_query_failed');
+              riskScore += 3;
+            }
+
+            // 性能分析
+            if (responseTime >= {{ performance_thresholds.response_time_critical_ms | default(1000) }}) {
+              alerts.push('slow_dns_response');
+              riskScore += 3;
+            } else if (responseTime >= {{ performance_thresholds.response_time_warning_ms | default(100) }}) {
+              alerts.push('moderate_dns_response');
+              riskScore += 1;
+            }
+
+            // 安全检查 - 可疑域名
+            var suspiciousDomains = ['.bit', '.onion', 'dga-', 'malware', 'botnet'];
+            if (suspiciousDomains.some(function(pattern) {
+              return query.toLowerCase().includes(pattern);
+            })) {
+              alerts.push('suspicious_domain');
+              riskScore += 8;
+            }
+
+            // DGA检测（域名生成算法）
+            var dgaPatterns = [
+              /^[a-z]{8,20}\.(com|net|org)$/,
+              /[0-9a-f]{16,}\./,
+              /.*-[0-9]{4,8}\./
+            ];
+            if (dgaPatterns.some(function(pattern) {
+              return pattern.test(query.toLowerCase());
+            })) {
+              alerts.push('potential_dga');
+              riskScore += 6;
+            }
+
+            // DNS隧道检测
+            if (query.length > 50 && queryType === 'TXT') {
+              alerts.push('potential_dns_tunneling');
+              riskScore += 7;
+            }
+
+            // 异常查询频率检测（需要基于时间窗口统计）
+            var queryCount = evt.dns_query_count || 1;
+            if (queryCount > {{ performance_thresholds.query_rate_high | default(100) }}) {
+              alerts.push('high_query_rate');
+              riskScore += 4;
+            }
+
+            // 设置风险等级
+            var riskLevel = 'low';
+            if (riskScore >= 15) {
+              riskLevel = 'critical';
+            } else if (riskScore >= 10) {
+              riskLevel = 'high';
+            } else if (riskScore >= 5) {
+              riskLevel = 'medium';
+            }
+
+            event.Put('dns_categories', categories);
+            event.Put('risk_score', riskScore);
+            event.Put('risk_level', riskLevel);
+
+            if (alerts.length > 0) {
+              event.Put('dns_alerts', alerts);
+            }
+
+            return event;
+          }
+
+    {% if processors %}
+    # 用户自定义处理器
+    {% for processor in processors %}
+    - {{ processor | to_yaml | indent(6, True) }}
+    {% endfor %}
+    {% endif %}
+
+    # 删除不必要的字段以减少存储
+    - drop_fields:
+        fields: ["agent.ephemeral_id", "agent.hostname", "agent.id", "agent.type", "agent.version"]
+        ignore_missing: true
+

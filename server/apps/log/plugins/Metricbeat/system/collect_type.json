@@ -1,0 +1,28 @@
+{
+  "name": "system",
+  "collector": "Metricbeat",
+  "icon": "system_metrics",
+  "description": "Collects system-level performance metrics including CPU, memory, disk, network, and process statistics",
+  "default_query": "collect_type: system AND metricset: [cpu, memory, load] | stats avg(cpu_usage_pct), avg(memory_usage_pct) by host.name | sort by avg(cpu_usage_pct) desc",
+  "attrs": [
+    "cpu_usage_pct",
+    "memory_usage_pct",
+    "memory_used_mb",
+    "memory_total_mb",
+    "load_1m",
+    "load_5m",
+    "load_15m",
+    "disk_usage_pct",
+    "disk_used_gb",
+    "disk_total_gb",
+    "network_in_bytes",
+    "network_out_bytes",
+    "network_in_packets",
+    "network_out_packets",
+    "uptime_seconds",
+    "processes_total",
+    "processes_running",
+    "timestamp"
+  ]
+}
+

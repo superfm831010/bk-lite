@@ -1,0 +1,419 @@
+# ================================== System Module 配置 ==================================
+- module: system
+  enabled: true
+
+  # ================================== 数据集配置 ==================================
+  # 可选数据集: package, host, login, process, socket, user
+  datasets:
+    {% for dataset in datasets | default(['login', 'process', 'socket', 'user']) %}
+    - {{ dataset }}
+    {% endfor %}
+
+  # ================================== 通用配置 ==================================
+  # 数据收集周期
+  period: {{ period | default('10s') }}
+
+  # 状态数据收集周期（针对静态数据如用户、包等）
+  state.period: {{ state_period | default('12h') }}
+
+  # ================================== 登录监控配置 ==================================
+  {% if 'login' in datasets | default(['login', 'process', 'socket', 'user']) %}
+  login:
+    # 登录记录文件路径（默认自动检测）
+    {% if login_config and login_config.wtmp_file %}
+    wtmp_file: "{{ login_config.wtmp_file }}"
+    {% endif %}
+
+    # 最大登录历史记录数
+    {% if login_config and login_config.login_record_number %}
+    login_record_number: {{ login_config.login_record_number }}
+    {% endif %}
+
+    # 监控失败登录
+    {% if login_config and login_config.track_failed_logins is defined %}
+    track_failed_logins: {{ login_config.track_failed_logins | lower }}
+    {% endif %}
+
+    # 登录类型过滤
+    {% if login_config and login_config.login_types %}
+    login_types:
+      {% for login_type in login_config.login_types %}
+      - {{ login_type }}
+      {% endfor %}
+    {% endif %}
+  {% endif %}
+
+  # ================================== 进程监控配置 ==================================
+  {% if 'process' in datasets | default(['login', 'process', 'socket', 'user']) %}
+  process:
+    # 是否包含进程参数（可能包含敏感信息）
+    {% if process_config and process_config.include_args is defined %}
+    include_args: {{ process_config.include_args | lower }}
+    {% else %}
+    include_args: false
+    {% endif %}
+
+    # 是否包含进程环境变量
+    {% if process_config and process_config.include_env is defined %}
+    include_env: {{ process_config.include_env | lower }}
+    {% else %}
+    include_env: false
+    {% endif %}
+
+    # 进程状态过滤（running, sleeping, stopped, zombie等）
+    {% if process_config and process_config.state_filter %}
+    state_filter:
+      {% for state in process_config.state_filter %}
+      - {{ state }}
+      {% endfor %}
+    {% endif %}
+
+    # 关键进程监控
+    {% if process_config and process_config.critical_processes %}
+    critical_processes:
+      {% for process in process_config.critical_processes %}
+      - {{ process }}
+      {% endfor %}
+    {% else %}
+    critical_processes:
+      - sshd
+      - sudo
+      - su
+      - cron
+      - systemd
+    {% endif %}
+
+    # 进程创建频率阈值（每分钟）
+    {% if process_config and process_config.creation_rate_threshold %}
+    creation_rate_threshold: {{ process_config.creation_rate_threshold }}
+    {% endif %}
+  {% endif %}
+
+  # ================================== 套接字监控配置 ==================================
+  {% if 'socket' in datasets | default(['login', 'process', 'socket', 'user']) %}
+  socket:
+    # 包含监听端口
+    {% if socket_config and socket_config.include_listeners is defined %}
+    include_listeners: {{ socket_config.include_listeners | lower }}
+    {% else %}
+    include_listeners: true
+    {% endif %}
+
+    # 协议过滤（tcp, udp, unix等）
+    {% if socket_config and socket_config.protocols %}
+    protocols:
+      {% for protocol in socket_config.protocols %}
+      - {{ protocol }}
+      {% endfor %}
+    {% else %}
+    protocols:
+      - tcp
+      - udp
+    {% endif %}
+
+    # 监控端口范围
+    {% if socket_config and socket_config.port_ranges %}
+    port_ranges:
+      {% for range in socket_config.port_ranges %}
+      - {{ range }}
+      {% endfor %}
+    {% endif %}
+
+    # 排除本地连接
+    {% if socket_config and socket_config.exclude_localhost is defined %}
+    exclude_localhost: {{ socket_config.exclude_localhost | lower }}
+    {% endif %}
+  {% endif %}
+
+  # ================================== 用户监控配置 ==================================
+  {% if 'user' in datasets | default(['login', 'process', 'socket', 'user']) %}
+  user:
+    # 监控用户变化
+    {% if user_config and user_config.track_user_changes is defined %}
+    track_user_changes: {{ user_config.track_user_changes | lower }}
+    {% else %}
+    track_user_changes: true
+    {% endif %}
+
+    # 监控组变化
+    {% if user_config and user_config.track_group_changes is defined %}
+    track_group_changes: {{ user_config.track_group_changes | lower }}
+    {% else %}
+    track_group_changes: true
+    {% endif %}
+
+    # 特权用户监控
+    {% if user_config and user_config.privileged_users %}
+    privileged_users:
+      {% for user in user_config.privileged_users %}
+      - {{ user }}
+      {% endfor %}
+    {% else %}
+    privileged_users:
+      - root
+      - admin
+      - sudo
+    {% endif %}
+  {% endif %}
+
+  # ================================== 软件包监控配置 ==================================
+  {% if 'package' in datasets | default([]) %}
+  package:
+    # 包管理器类型（auto, dpkg, rpm, homebrew等）
+    {% if package_config and package_config.manager %}
+    manager: {{ package_config.manager }}
+    {% else %}
+    manager: auto
+    {% endif %}
+
+    # 监控包安装
+    {% if package_config and package_config.track_installs is defined %}
+    track_installs: {{ package_config.track_installs | lower }}
+    {% else %}
+    track_installs: true
+    {% endif %}
+
+    # 监控包卸载
+    {% if package_config and package_config.track_removals is defined %}
+    track_removals: {{ package_config.track_removals | lower }}
+    {% else %}
+    track_removals: true
+    {% endif %}
+
+    # 监控包更新
+    {% if package_config and package_config.track_updates is defined %}
+    track_updates: {{ package_config.track_updates | lower }}
+    {% else %}
+    track_updates: true
+    {% endif %}
+  {% endif %}
+
+  # ================================== 主机信息配置 ==================================
+  {% if 'host' in datasets | default([]) %}
+  host:
+    # 收集网络接口信息
+    {% if host_config and host_config.include_network is defined %}
+    include_network: {{ host_config.include_network | lower }}
+    {% else %}
+    include_network: true
+    {% endif %}
+
+    # 收集磁盘信息
+    {% if host_config and host_config.include_disk is defined %}
+    include_disk: {{ host_config.include_disk | lower }}
+    {% else %}
+    include_disk: true
+    {% endif %}
+  {% endif %}
+
+  # ================================== 字段标识配置 ==================================
+  fields:
+    collect_type: "system"
+    instance_id: "{{ instance_id }}"
+    monitoring_level: "{{ monitoring_level | default('standard') }}"
+    {% if security_profile %}
+    security_profile: "{{ security_profile }}"
+    {% endif %}
+    {% if custom_fields %}
+    {% for key, value in custom_fields.items() %}
+    {{ key }}: "{{ value }}"
+    {% endfor %}
+    {% endif %}
+  fields_under_root: {{ fields_under_root | default(true) | lower }}
+
+  # ================================== 处理器配置 ==================================
+  processors:
+    # 添加主机元数据
+    - add_host_metadata:
+        when.not.contains.tags: forwarded
+
+    # 添加进程元数据
+    - add_process_metadata:
+        match_pids: ["process.pid", "process.parent.pid"]
+        target: process
+        include_fields: ["process.name", "process.title", "process.executable", "process.args"]
+
+    # 系统事件增强处理
+    - script:
+        lang: javascript
+        source: >
+          function process(event) {
+            var evt = event.Get();
+
+            // 统一事件类型标识
+            if (evt.event && evt.event.dataset) {
+              var dataset = evt.event.dataset;
+              event.Put("event_dataset", dataset);
+
+              // 根据数据集类型设置事件类型
+              if (dataset.includes("login")) {
+                event.Put("event_type", "user_login");
+              } else if (dataset.includes("process")) {
+                event.Put("event_type", "process_activity");
+              } else if (dataset.includes("socket")) {
+                event.Put("event_type", "network_activity");
+              } else if (dataset.includes("user")) {
+                event.Put("event_type", "user_management");
+              } else if (dataset.includes("package")) {
+                event.Put("event_type", "package_management");
+              } else {
+                event.Put("event_type", "system_activity");
+              }
+            }
+
+            // 用户信息标准化
+            if (evt.user) {
+              event.Put("user_name", evt.user.name || "unknown");
+              event.Put("user_id", evt.user.id || "unknown");
+              if (evt.user.group) {
+                event.Put("user_group", evt.user.group.name || evt.user.group.id || "unknown");
+              }
+            }
+
+            // 进程信息标准化
+            if (evt.process) {
+              event.Put("process_name", evt.process.name || "unknown");
+              event.Put("process_pid", evt.process.pid || 0);
+              if (evt.process.parent) {
+                event.Put("process_ppid", evt.process.parent.pid || 0);
+              }
+              if (evt.process.args && evt.process.args.length > 0) {
+                event.Put("process_args", evt.process.args.join(" "));
+              }
+              if (evt.process.executable) {
+                event.Put("process_executable", evt.process.executable);
+              }
+            }
+
+            // 网络信息标准化
+            if (evt.source) {
+              if (evt.source.ip) {
+                event.Put("source_ip", evt.source.ip);
+              }
+              if (evt.source.port) {
+                event.Put("source_port", evt.source.port);
+              }
+            }
+
+            if (evt.destination) {
+              if (evt.destination.ip) {
+                event.Put("destination_ip", evt.destination.ip);
+              }
+              if (evt.destination.port) {
+                event.Put("destination_port", evt.destination.port);
+              }
+            }
+
+            if (evt.network && evt.network.protocol) {
+              event.Put("protocol", evt.network.protocol);
+            }
+
+            return event;
+          }
+
+    # 安全事件风险评估
+    - script:
+        lang: javascript
+        source: >
+          function process(event) {
+            var evt = event.Get();
+            var riskScore = 0;
+            var riskFactors = [];
+
+            // 基于事件类型的风险评估
+            var eventType = evt.event_type || "";
+
+            // 登录相关风险
+            if (eventType === "user_login") {
+              var sourceIp = evt.source_ip || "";
+              var userName = evt.user_name || "";
+
+              // 检查是否为外部IP登录
+              if (sourceIp && !sourceIp.startsWith("192.168.") &&
+                  !sourceIp.startsWith("10.") && !sourceIp.startsWith("127.")) {
+                riskScore += 5;
+                riskFactors.push("external_login");
+              }
+
+              // 检查是否为特权用户
+              if (["root", "admin", "sudo"].includes(userName)) {
+                riskScore += 3;
+                riskFactors.push("privileged_user");
+              }
+
+              // 检查非工作时间登录
+              var timestamp = new Date(evt['@timestamp'] || evt.timestamp);
+              var hour = timestamp.getHours();
+              if (hour < 6 || hour > 22) {
+                riskScore += 2;
+                riskFactors.push("off_hours_login");
+              }
+            }
+
+            // 进程相关风险
+            if (eventType === "process_activity") {
+              var processName = evt.process_name || "";
+              var processArgs = evt.process_args || "";
+
+              // 检查高风险进程
+              var suspiciousProcesses = ["nc", "netcat", "nmap", "wget", "curl"];
+              if (suspiciousProcesses.some(function(p) { return processName.includes(p); })) {
+                riskScore += 7;
+                riskFactors.push("suspicious_process");
+              }
+
+              // 检查可疑参数
+              var suspiciousArgs = ["/etc/passwd", "/etc/shadow", "chmod 777", "rm -rf"];
+              if (suspiciousArgs.some(function(arg) { return processArgs.includes(arg); })) {
+                riskScore += 8;
+                riskFactors.push("suspicious_arguments");
+              }
+            }
+
+            // 网络相关风险
+            if (eventType === "network_activity") {
+              var destPort = evt.destination_port || 0;
+              var protocol = evt.protocol || "";
+
+              // 检查高风险端口
+              var riskPorts = [22, 23, 3389, 5432, 3306];
+              if (riskPorts.includes(destPort)) {
+                riskScore += 4;
+                riskFactors.push("risky_port");
+              }
+
+              // 检查异常协议
+              if (protocol === "icmp") {
+                riskScore += 2;
+                riskFactors.push("icmp_traffic");
+              }
+            }
+
+            // 设置风险等级
+            var riskLevel = "low";
+            if (riskScore >= 15) {
+              riskLevel = "critical";
+            } else if (riskScore >= 10) {
+              riskLevel = "high";
+            } else if (riskScore >= 5) {
+              riskLevel = "medium";
+            }
+
+            event.Put("risk_score", riskScore);
+            event.Put("risk_level", riskLevel);
+            event.Put("risk_factors", riskFactors);
+
+            return event;
+          }
+
+    {% if processors %}
+    # 用户自定义处理器
+    {% for processor in processors %}
+    - {{ processor | to_yaml | indent(6, True) }}
+    {% endfor %}
+    {% endif %}
+
+    # 删除不必要的字段以减少存储
+    - drop_fields:
+        fields: ["agent.ephemeral_id", "agent.hostname", "agent.id", "agent.type", "agent.version"]
+        ignore_missing: true

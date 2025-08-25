@@ -1,0 +1,282 @@
+# ================================== HTTP Protocol 配置 ==================================
+- type: http
+  enabled: true
+
+  # ================================== 端口配置 ==================================
+  ports:
+    {% for port in ports | default([80, 8080, 8000, 5000, 8002]) %}
+    - {{ port }}
+    {% endfor %}
+
+  # ================================== 请求/响应处理配置 ==================================
+  # 最大请求头数量
+  max_request_headers: {{ max_request_headers | default(64) }}
+
+  # 最大响应头数量
+  max_response_headers: {{ max_response_headers | default(64) }}
+
+  # 最大消息大小（字节）
+  max_message_size: {{ max_message_size | default(10485760) }}
+
+  # ================================== 内容解析配置 ==================================
+  # 解析请求体
+  {% if parse_request_body is defined %}
+  parse_request_body: {{ parse_request_body | lower }}
+  {% else %}
+  parse_request_body: true
+  {% endif %}
+
+  # 解析响应体
+  {% if parse_response_body is defined %}
+  parse_response_body: {{ parse_response_body | lower }}
+  {% else %}
+  parse_response_body: true
+  {% endif %}
+
+  # 包含请求体
+  {% if include_request_body is defined %}
+  include_request_body: {{ include_request_body | lower }}
+  {% else %}
+  include_request_body: false
+  {% endif %}
+
+  # 包含响应体
+  {% if include_response_body is defined %}
+  include_response_body: {{ include_response_body | lower }}
+  {% else %}
+  include_response_body: false
+  {% endif %}
+
+  # ================================== URL路径配置 ==================================
+  {% if url_filters %}
+  {% if url_filters.include_paths %}
+  # 仅包含特定路径
+  include_paths:
+    {% for path in url_filters.include_paths %}
+    - {{ path }}
+    {% endfor %}
+  {% endif %}
+
+  {% if url_filters.exclude_paths %}
+  # 排除特定路径
+  exclude_paths:
+    {% for path in url_filters.exclude_paths %}
+    - {{ path }}
+    {% endfor %}
+  {% endif %}
+  {% endif %}
+
+  # ================================== 性能配置 ==================================
+  # 事务超时时间
+  transaction_timeout: {{ transaction_timeout | default('10s') }}
+
+  # 是否隐藏关键字
+  {% if hide_keywords is defined %}
+  hide_keywords: {{ hide_keywords | lower }}
+  {% else %}
+  hide_keywords: ["password", "passwd", "pwd", "secret", "token", "key", "authorization"]
+  {% endif %}
+
+  # ================================== 字段标识配置 ==================================
+  fields:
+    collect_type: "http"
+    instance_id: "{{ instance_id }}"
+    protocol_monitoring: "{{ monitoring_type | default('web_application') }}"
+    {% if service_name %}
+    service_name: "{{ service_name }}"
+    {% endif %}
+    {% if custom_fields %}
+    {% for key, value in custom_fields.items() %}
+    {{ key }}: "{{ value }}"
+    {% endfor %}
+    {% endif %}
+  fields_under_root: {{ fields_under_root | default(true) | lower }}
+
+  # ================================== 处理器配置 ==================================
+  processors:
+    # 添加主机元数据
+    - add_host_metadata:
+        when.not.contains.tags: forwarded
+
+    # HTTP协议增强处理
+    - script:
+        lang: javascript
+        source: >
+          function process(event) {
+            var evt = event.Get();
+
+            // 标准化时间戳
+            if (evt['@timestamp']) {
+              event.Put('timestamp', evt['@timestamp']);
+            }
+
+            // HTTP基础信息标准化
+            event.Put('protocol_type', 'http');
+
+            // 提取网络信息
+            if (evt.source && evt.destination) {
+              event.Put('source_ip', evt.source.ip || 'unknown');
+              event.Put('source_port', evt.source.port || 0);
+              event.Put('destination_ip', evt.destination.ip || 'unknown');
+              event.Put('destination_port', evt.destination.port || 0);
+            }
+
+            // HTTP请求信息
+            if (evt.http) {
+              if (evt.http.request) {
+                var req = evt.http.request;
+                event.Put('http_method', req.method || 'unknown');
+                event.Put('http_request_size_bytes', req.body && req.body.bytes || 0);
+
+                if (req.headers) {
+                  event.Put('http_user_agent', req.headers['user-agent'] || 'unknown');
+                  event.Put('http_referer', req.headers.referer || '');
+                  event.Put('http_host', req.headers.host || '');
+                  event.Put('http_content_type', req.headers['content-type'] || '');
+                }
+              }
+
+              // HTTP响应信息
+              if (evt.http.response) {
+                var resp = evt.http.response;
+                event.Put('http_status_code', resp.status_code || 0);
+                event.Put('http_response_size_bytes', resp.body && resp.body.bytes || 0);
+                event.Put('http_response_time_ms', resp.time || 0);
+
+                if (resp.headers) {
+                  event.Put('http_content_length', resp.headers['content-length'] || 0);
+                  event.Put('http_server', resp.headers.server || '');
+                }
+              }
+            }
+
+            // URL信息处理
+            if (evt.url) {
+              event.Put('http_url', evt.url.original || evt.url.path || 'unknown');
+              event.Put('http_path', evt.url.path || '/');
+              event.Put('http_query', evt.url.query || '');
+              event.Put('http_domain', evt.url.domain || '');
+            }
+
+            return event;
+          }
+
+    # HTTP安全和性能分析
+    - script:
+        lang: javascript
+        source: >
+          function process(event) {
+            var evt = event.Get();
+            var alerts = [];
+            var categories = [];
+            var riskScore = 0;
+
+            var method = evt.http_method || '';
+            var statusCode = evt.http_status_code || 0;
+            var responseTime = evt.http_response_time_ms || 0;
+            var url = evt.http_url || '';
+            var userAgent = evt.http_user_agent || '';
+            var sourceIP = evt.source_ip || '';
+
+            // HTTP状态码分类
+            if (statusCode >= 200 && statusCode < 300) {
+              categories.push('success_response');
+            } else if (statusCode >= 300 && statusCode < 400) {
+              categories.push('redirect_response');
+            } else if (statusCode >= 400 && statusCode < 500) {
+              categories.push('client_error');
+              riskScore += 2;
+              if (statusCode === 401 || statusCode === 403) {
+                alerts.push('authentication_error');
+                riskScore += 3;
+              }
+            } else if (statusCode >= 500) {
+              categories.push('server_error');
+              alerts.push('server_error');
+              riskScore += 5;
+            }
+
+            // 性能分析
+            if (responseTime >= {{ performance_thresholds.response_time_critical_ms | default(5000) }}) {
+              alerts.push('slow_response_critical');
+              riskScore += 4;
+            } else if (responseTime >= {{ performance_thresholds.response_time_warning_ms | default(1000) }}) {
+              alerts.push('slow_response_warning');
+              riskScore += 2;
+            }
+
+            // URL路径分类
+            var apiPaths = ['/api/', '/v1/', '/v2/', '/rest/'];
+            var adminPaths = ['/admin', '/login', '/auth', '/config'];
+            var staticPaths = ['/static/', '/assets/', '/css/', '/js/', '/images/'];
+
+            if (apiPaths.some(function(p) { return url.includes(p); })) {
+              categories.push('api_request');
+            } else if (adminPaths.some(function(p) { return url.includes(p); })) {
+              categories.push('admin_request');
+              riskScore += 2;
+            } else if (staticPaths.some(function(p) { return url.includes(p); })) {
+              categories.push('static_resource');
+            } else {
+              categories.push('web_page');
+            }
+
+            // 安全检查
+            var suspiciousUAs = ['sqlmap', 'nikto', 'nmap', 'masscan'];
+            if (suspiciousUAs.some(function(ua) { return userAgent.toLowerCase().includes(ua); })) {
+              alerts.push('suspicious_user_agent');
+              riskScore += 8;
+            }
+
+            var attackPatterns = ['union.*select', 'script.*alert', '../', 'etc/passwd'];
+            if (attackPatterns.some(function(pattern) {
+              return new RegExp(pattern, 'i').test(url);
+            })) {
+              alerts.push('potential_attack');
+              riskScore += 10;
+            }
+
+            // HTTP方法分类
+            if (['GET', 'HEAD'].includes(method)) {
+              categories.push('read_operation');
+            } else if (['POST', 'PUT', 'PATCH'].includes(method)) {
+              categories.push('write_operation');
+              riskScore += 1;
+            } else if (method === 'DELETE') {
+              categories.push('delete_operation');
+              riskScore += 2;
+            }
+
+            // 设置风险等级
+            var riskLevel = 'low';
+            if (riskScore >= 15) {
+              riskLevel = 'critical';
+            } else if (riskScore >= 10) {
+              riskLevel = 'high';
+            } else if (riskScore >= 5) {
+              riskLevel = 'medium';
+            }
+
+            event.Put('http_categories', categories);
+            event.Put('risk_score', riskScore);
+            event.Put('risk_level', riskLevel);
+
+            if (alerts.length > 0) {
+              event.Put('http_alerts', alerts);
+            }
+
+            return event;
+          }
+
+    {% if processors %}
+    # 用户自定义处理器
+    {% for processor in processors %}
+    - {{ processor | to_yaml | indent(6, True) }}
+    {% endfor %}
+    {% endif %}
+
+    # 删除不必要的字段以减少存储
+    - drop_fields:
+        fields: ["agent.ephemeral_id", "agent.hostname", "agent.id", "agent.type", "agent.version"]
+        ignore_missing: true
+

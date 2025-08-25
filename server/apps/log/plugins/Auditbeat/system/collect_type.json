@@ -1,0 +1,31 @@
+{
+  "name": "system",
+  "collector": "Auditbeat",
+  "icon": "system_audit",
+  "description": "Monitors system-level security events including user sessions, process lifecycle, network connections, and package changes",
+  "default_query": "collect_type: system AND event_type: [user_login, process_start, socket_opened] | stats count by event_type, user_name | sort by count desc",
+  "attrs": [
+    "event_type",
+    "user_name",
+    "user_id",
+    "user_group",
+    "process_name",
+    "process_pid",
+    "process_ppid",
+    "process_args",
+    "process_executable",
+    "source_ip",
+    "destination_ip",
+    "destination_port",
+    "protocol",
+    "socket_family",
+    "login_type",
+    "session_id",
+    "terminal",
+    "package_name",
+    "package_version",
+    "package_action",
+    "timestamp"
+  ]
+}
+
