@@ -7,7 +7,6 @@ import { ArrowRightOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import {
   AttrFieldType,
   UserItem,
-  ModelItem,
 } from '@/app/cmdb/types/assetManage';
 import { Spin, Input, Tabs, Button, Tag, Empty } from 'antd';
 import useApiClient from '@/utils/request';
@@ -37,17 +36,17 @@ const AssetSearch = () => {
   const { isLoading } = useApiClient();
   const commonContext = useCommon();
 
-  const { getModelList, getModelAttrList } = useModelApi();
+  const { getModelAttrList } = useModelApi();
   const { fulltextSearchInstances } = useInstanceApi();
 
   const users = useRef(commonContext?.userList || []);
   const userList: UserItem[] = users.current;
+  const modelList = commonContext?.modelList || [];
   const [propertyList, setPropertyList] = useState<AttrFieldType[]>([]);
   const [searchText, setSearchText] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('');
   const [items, setItems] = useState<TabJsxItem[]>([]);
   const [showSearch, setShowSearch] = useState<boolean>(true);
-  const [modelList, setModelList] = useState<ModelItem[]>([]);
   const [instDetail, setInstDetail] = useState<TabJsxItem[]>([]);
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [activeInstItem, setActiveInstItem] = useState<number>(-1);
@@ -55,9 +54,8 @@ const AssetSearch = () => {
   const [historyList, setHistoryList] = useState<string[]>([]);
 
   useEffect(() => {
-    if (isLoading) return;
-    getInitData();
-  }, [isLoading]);
+    if (isLoading || !modelList.length) return;
+  }, [isLoading, modelList]);
 
   useEffect(() => {
     const histories = localStorage.getItem('assetSearchHistory');
@@ -73,16 +71,6 @@ const AssetSearch = () => {
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value);
-  };
-
-  const getInitData = async () => {
-    setPageLoading(true);
-    try {
-      const data = await getModelList();
-      setModelList(data);
-    } finally {
-      setPageLoading(false);
-    }
   };
 
   const handleSearch = async () => {

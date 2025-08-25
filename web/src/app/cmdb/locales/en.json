@@ -104,7 +104,14 @@
       "credentialManagement": "Credential Manage",
       "AssociationManagement": "Association Management",
       "confirmAndAssociate": "Confirm & Associate",
-      "searchHistory": "Search History"
+      "searchHistory": "Search History",
+      "selectAttributes": "Select Attributes",
+      "selectAssociations": "Select Associations",
+      "noAssociations": "No associations available",
+      "atLeastOneAttribute": "Please select at least one attribute",
+      "exportSuccess": "Export successful",
+      "exportFailed": "Export failed",
+      "assetList": "Asset List"
     },
     "Collection": {
         "fullTitle": "Fully Collection",
