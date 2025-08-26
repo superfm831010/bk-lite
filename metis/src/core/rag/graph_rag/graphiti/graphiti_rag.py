@@ -20,6 +20,7 @@ from src.core.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderC
 from src.core.rag.graph_rag.graphiti.metis_raranker_config import MetisRerankerConfig
 from src.core.rag.graph_rag.graphiti.metis_reranker_client import MetisRerankerClient
 from sanic.log import logger
+from graphiti_core.driver.falkordb_driver import FalkorDriver
 
 
 class GraphitiRAG:
@@ -30,11 +31,13 @@ class GraphitiRAG:
 
     def _create_basic_graphiti(self) -> Graphiti:
         """创建基础的Graphiti实例（不包含LLM客户端）"""
-        return Graphiti(
-            core_settings.neo4j_host,
-            core_settings.neo4j_username,
-            core_settings.neo4j_password,
+        driver = FalkorDriver(
+            host=core_settings.knowledge_graph_host,
+            username=core_settings.knowledge_graph_username,
+            password=core_settings.knowledge_graph_password,
+            port=core_settings.knowledge_graph_port
         )
+        return Graphiti(graph_driver=driver)
 
     def _create_embed_client(self, embed_config: dict) -> MetisEmbedder:
         """创建嵌入客户端"""
@@ -89,12 +92,14 @@ class GraphitiRAG:
         if rerank_config:
             kwargs['cross_encoder'] = self._create_rerank_client(rerank_config)
 
-        return Graphiti(
-            core_settings.neo4j_host,
-            core_settings.neo4j_username,
-            core_settings.neo4j_password,
-            **kwargs
+        driver = FalkorDriver(
+            host=core_settings.knowledge_graph_host,
+            username=core_settings.knowledge_graph_username,
+            password=core_settings.knowledge_graph_password,
+            port=core_settings.knowledge_graph_port
         )
+        kwargs['graph_driver'] = driver
+        return Graphiti(**kwargs)
 
     def _extract_configs_from_request(self, req) -> tuple[Optional[dict], Optional[dict], Optional[dict]]:
         """从请求对象中提取配置信息"""
@@ -145,17 +150,17 @@ class GraphitiRAG:
         graphiti = self._create_basic_graphiti()
 
         # 查询节点
-        nodes_result = await graphiti.driver.execute_query(
+        nodes_result, _, _ = await graphiti.driver.execute_query(
             """
             MATCH (n) WHERE n.group_id IN $group_ids
             RETURN n.name as name, n.uuid as uuid, n.fact as fact, n.summary as summary, 
                    id(n) as node_id, n.group_id as group_id, labels(n) as labels
             """,
-            params={"group_ids": req.group_ids}
+            group_ids=req.group_ids
         )
 
         # 查询边
-        edges_result = await graphiti.driver.execute_query(
+        edges_result, _, _ = await graphiti.driver.execute_query(
             """
             MATCH (n)-[r]-(m) 
             WHERE n.group_id IN $group_ids AND m.group_id IN $group_ids
@@ -164,7 +169,7 @@ class GraphitiRAG:
                    n.name as source_name, m.name as target_name,
                    r.fact as fact, id(n) as source_id, id(m) as target_id
             """,
-            params={"group_ids": req.group_ids}
+            group_ids=req.group_ids
         )
 
         # 构建边列表
@@ -179,7 +184,7 @@ class GraphitiRAG:
                 'target_id': record['target_id'],
                 'fact': record['fact']
             }
-            for record in edges_result.records
+            for record in edges_result
         ]
 
         # 构建节点列表
@@ -193,7 +198,7 @@ class GraphitiRAG:
                 "summary": record['summary'],
                 "labels": record['labels'],
             }
-            for record in nodes_result.records
+            for record in nodes_result
         ]
 
         return {"nodes": nodes, "edges": edges}
@@ -295,14 +300,15 @@ class GraphitiRAG:
         node_info_map = {}
         if node_uid_set:
             node_uids = list(node_uid_set)
-            node_result = await graphiti_instance.driver.execute_query(
+            logger.info(f"查询节点信息: node_uids数量={len(node_uids)}")
+            node_result, _, _ = await graphiti_instance.driver.execute_query(
                 """
                 MATCH (n) 
                 WHERE n.uuid IN $node_uids
                 RETURN n.uuid as uuid, n.name as name, n.fact as fact, 
                        n.summary as summary, labels(n) as labels
                 """,
-                params={"node_uids": node_uids}
+                node_uids=node_uids
             )
 
             node_info_map = {
@@ -312,8 +318,9 @@ class GraphitiRAG:
                     'summary': record['summary'],
                     'labels': record['labels']
                 }
-                for record in node_result.records
+                for record in node_result
             }
+            logger.info(f"查询到节点信息: 节点数量={len(node_info_map)}")
 
         # 构建结果文档
         docs = [
