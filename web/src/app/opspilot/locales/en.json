@@ -49,6 +49,8 @@
       "ensureDocumentsAndModelsSelected": "Please ensure documents and LLM models are selected",
       "qaPairsCreateSuccess": "QA pairs created successfully",
       "qaPairsCreateFailed": "Failed to create QA pairs",
+      "qaPairsUpdateSuccess": "QA pairs updated successfully",
+      "qaPairsUpdateFailed": "Failed to update QA pairs",
       "fetchDocumentsListFailed": "Failed to fetch documents list",
       "documentsSelectedSuccess": "Selected documents",
       "defaultDocumentTitle": "Document",
@@ -113,7 +115,8 @@
       "generateQuestionAndAnswer": "Generate Questions and Answers",
       "formNotInitialized": "Form not initialized",
       "documentsAndModelsRequired": "Please ensure documents and LLM models are selected",
-      "documentNotFound": "Document"
+      "documentNotFound": "Document",
+      "editModeDocumentInfo": "Document association is automatically handled in edit mode"
     },
     "knowledgeGraph": {
       "title": "Knowledge Graph",

@@ -12,6 +12,7 @@ import type { DataNode } from 'antd/lib/tree';
 import { Form } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { Input, Button, Modal, Dropdown, Menu, Tree, Empty, Spin } from 'antd';
+import { useSearchParams } from 'next/navigation';
 import { useDirectoryApi } from '@/app/ops-analysis/api/index';
 import {
   SidebarProps,
@@ -32,6 +33,7 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
   ({ onSelect, onDataUpdate }, ref) => {
     const [form] = Form.useForm();
     const { t } = useTranslation();
+    const searchParams = useSearchParams();
     const [dirs, setDirs] = useState<DirItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [submitLoading, setSubmitLoading] = useState(false);
@@ -382,11 +384,47 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
       return undefined;
     };
 
+    // 根据data_id查找项目
+    const findItemByDataId = (
+      items: DirItem[],
+      id: string
+    ): DirItem | undefined => {
+      for (const item of items) {
+        if (item.id === id) return item;
+        if (item.children) {
+          const found = findItemByDataId(item.children, id);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+
+    // 根据URL参数选中对应项目
+    const selectItemFromUrlParams = (items: DirItem[]) => {
+      const urlType = searchParams.get('type');
+      const urlId = searchParams.get('id');
+
+      if (!urlType || !urlId) return;
+
+      const item = findItemByDataId(items, urlId);
+      if (
+        item &&
+        item.type === urlType &&
+        (item.type === 'dashboard' || item.type === 'topology')
+      ) {
+        setSelectedKeys([item.id]);
+        if (onSelect) {
+          onSelect(item.type, item);
+        }
+      }
+    };
+
     const loadDirectories = async () => {
       try {
         setLoading(true);
         const data = await getDirectoryTree();
         setDirs(data);
+        selectItemFromUrlParams(data);
       } catch (error) {
         console.error('Failed to load directories:', error);
       } finally {

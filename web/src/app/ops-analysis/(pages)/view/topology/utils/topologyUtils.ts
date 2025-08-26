@@ -34,7 +34,7 @@ const createPortGroup = (x: number, y: number, fillColor = PORT_DEFAULTS.FILL_CO
 });
 
 // 创建标准端口配置的通用函数
-const createPortConfig = (width: number, height: number, fillColor = PORT_DEFAULTS.FILL_COLOR) => ({
+export const createPortConfig = (width: number, height: number, fillColor = PORT_DEFAULTS.FILL_COLOR) => ({
   groups: {
     top: createPortGroup(width / 2, 0, fillColor),
     bottom: createPortGroup(width / 2, height, fillColor),
@@ -467,7 +467,7 @@ export const calculateNodeLayout = (iconWidth: number, iconHeight: number) => {
 };
 
 // 更新节点尺寸和端口位置的工具函数
-const updateNodeSizeAndPorts = (node: any, iconWidth: number, iconHeight: number) => {
+export const updateNodeSizeAndPorts = (node: any, iconWidth: number, iconHeight: number) => {
   const layout = calculateNodeLayout(iconWidth, iconHeight);
 
   node.resize(layout.nodeWidth, layout.nodeHeight);
@@ -514,8 +514,8 @@ export const updateNodeProperties = (node: any, nodeConfig: any, iconList: any[]
     selectedFields: nodeConfig.selectedFields || [],
     config: {
       ...nodeConfig.config,
-      width: nodeConfig.width,
-      height: nodeConfig.height,
+      width: nodeConfig.config.width,
+      height: nodeConfig.config.height,
     },
   });
 
@@ -539,8 +539,8 @@ export const updateNodeProperties = (node: any, nodeConfig: any, iconList: any[]
     const logoUrl = getLogoUrl(nodeConfig, iconList);
     node.setAttrByPath('icon/xlink:href', logoUrl);
 
-    if (nodeConfig.width && nodeConfig.height) {
-      updateNodeSizeAndPorts(node, nodeConfig.width, nodeConfig.height);
+    if (nodeConfig.config.width && nodeConfig.config.height) {
+      updateNodeSizeAndPorts(node, nodeConfig.config.width, nodeConfig.config.height);
       node.setAttrByPath('icon/xlink:href', logoUrl);
     }
 
@@ -566,8 +566,8 @@ export const getIconNodeStyle = (nodeConfig: any, logoUrl: string) => {
   const config = nodeConfig.config || {};
   const defaults = NODE_DEFAULTS.ICON_NODE;
 
-  const iconWidth = nodeConfig.width || config.width || defaults.width;
-  const iconHeight = nodeConfig.height || config.height || defaults.height;
+  const iconWidth = config.width || defaults.width;
+  const iconHeight = config.height || defaults.height;
   const layout = calculateNodeLayout(iconWidth, iconHeight);
   const logoType = nodeConfig.logoType || 'default';
 
@@ -641,8 +641,8 @@ export const getChartNodeStyle = (nodeConfig: any) => {
     borderColor: nodeConfig.borderColor || config.borderColor || defaults.borderColor,
     textColor: nodeConfig.textColor || config.textColor || defaults.textColor,
     fontSize: nodeConfig.fontSize || config.fontSize || defaults.fontSize,
-    width: nodeConfig.width || config.width || defaults.width,
-    height: nodeConfig.height || config.height || defaults.height,
+    width: config.width || defaults.width,
+    height: config.height || defaults.height,
   };
 
   return {

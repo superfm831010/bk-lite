@@ -47,6 +47,11 @@ services:
       - "${REDIS_PASSWORD}"
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "redis", "-p", "6379", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - prod
 
@@ -158,3 +163,17 @@ services:
     networks:
       - prod
     restart: always
+
+  falkordb:
+    image: ${DOCKER_IMAGE_FALKORDB}
+    restart: always
+    environment:
+      - REDIS_ARGS="--requirepass ${FALKORDB_PASSWORD}"
+      - FALKORDB_ARGS="THREAD_COUNT 4"
+    networks:
+      - prod
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "redis", "-p", "6379", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

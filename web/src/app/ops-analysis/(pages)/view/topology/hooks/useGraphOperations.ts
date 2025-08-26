@@ -29,6 +29,7 @@ import { Graph } from '@antv/x6';
 import { iconList } from '@/app/cmdb/utils/common';
 import { register } from '@antv/x6-react-shape';
 import { Selection } from '@antv/x6-plugin-selection';
+import { Transform } from '@antv/x6-plugin-transform';
 import { COLORS, NODE_DEFAULTS } from '../constants/nodeDefaults';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { TopologyNodeData } from '@/app/ops-analysis/types/topology';
@@ -49,6 +50,8 @@ import {
   getValueByPath,
   formatDisplayValue,
   updateNodeProperties,
+  createPortConfig,
+  updateNodeSizeAndPorts,
 } from '../utils/topologyUtils';
 import { useGraphData } from './useGraphData';
 import type { Edge } from '@antv/x6';
@@ -454,6 +457,45 @@ export const useGraphOperations = (
       hideAllEdgeTools(graph);
     });
 
+    // 统一的节点尺寸更新处理函数
+    const handleNodeSizeUpdate = (node: any, isRealtime = false) => {
+      const nodeData = node.getData();
+      if (!nodeData?.config) return;
+
+      const size = node.getSize();
+      const updatedConfig = {
+        ...nodeData,
+        config: {
+          ...nodeData.config,
+          width: size.width,
+          height: size.height,
+        },
+      };
+
+      node.setData(updatedConfig);
+
+      if (nodeData.type === 'icon' || nodeData.type === 'single-value') {
+        if (isRealtime) {
+          updateNodeSizeAndPorts(node, size.width, size.height);
+        } else {
+          updateNodeProperties(node, updatedConfig, iconList);
+        }
+      } else if (nodeData.type === 'chart') {
+        const chartPortConfig = createPortConfig(size.width, size.height);
+        node.prop('ports', chartPortConfig);
+      }
+    };
+
+    // 拖拽过程中的实时更新
+    graph.on('node:resize', ({ node }) => {
+      handleNodeSizeUpdate(node, true);
+    });
+
+    // 拖拽结束后的最终更新
+    graph.on('node:resized', ({ node }) => {
+      handleNodeSizeUpdate(node, false);
+    });
+
     graph.getNodes().forEach((node) => {
       const nodeData = node.getData();
       if (nodeData?.type !== 'text') {
@@ -556,9 +598,28 @@ export const useGraphOperations = (
       new Selection({
         enabled: true,
         rubberband: true,
-        showNodeSelectionBox: true,
+        showNodeSelectionBox: false,
         modifiers: 'shift',
         filter: (cell) => cell.isNode() || cell.isEdge(),
+      })
+    );
+
+    // 节点缩放插件
+    graph.use(
+      new Transform({
+        resizing: {
+          enabled: (node) => {
+            const nodeData = node.getData();
+            return nodeData?.type !== 'text';
+          },
+          minWidth: 32,
+          minHeight: 32,
+          preserveAspectRatio: (node) => {
+            const nodeData = node.getData();
+            return nodeData?.type === 'icon' || nodeData?.type === 'single-value';
+          },
+        },
+        rotating: false,
       })
     );
 

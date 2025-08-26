@@ -1,0 +1,23 @@
+{
+  "name": "dns",
+  "collector": "Packetbeat",
+  "icon": "dns_protocol",
+  "description": "Monitors DNS queries and responses for network security analysis, domain resolution tracking, and DNS performance monitoring",
+  "default_query": "collect_type: dns | stats count by dns_query_type, dns_response_code | sort by count desc",
+  "attrs": [
+    "dns_query",
+    "dns_query_type",
+    "dns_response_code",
+    "dns_answers_count",
+    "dns_authorities_count",
+    "dns_additionals_count",
+    "dns_response_time_ms",
+    "dns_flags",
+    "source_ip",
+    "destination_ip",
+    "destination_port",
+    "protocol_type",
+    "timestamp"
+  ]
+}
+

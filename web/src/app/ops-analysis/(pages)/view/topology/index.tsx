@@ -6,6 +6,7 @@ import React, {
   useState,
   useCallback,
 } from 'react';
+import './topology.scss';
 import { Spin } from 'antd';
 import { useTopologyState } from './hooks/useTopologyState';
 import { useGraphOperations } from './hooks/useGraphOperations';

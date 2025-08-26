@@ -49,6 +49,8 @@
       "ensureDocumentsAndModelsSelected": "请确保已选择文档和LLM模型",
       "qaPairsCreateSuccess": "问答对创建成功",
       "qaPairsCreateFailed": "问答对创建失败",
+      "qaPairsUpdateSuccess": "问答对更新成功",
+      "qaPairsUpdateFailed": "问答对更新失败",
       "fetchDocumentsListFailed": "获取文档列表失败",
       "documentsSelectedSuccess": "已选择文档个数",
       "defaultDocumentTitle": "文档",
@@ -113,7 +115,8 @@
       "generateQuestionAndAnswer": "生成问题和答案",
       "formNotInitialized": "表单未初始化",
       "documentsAndModelsRequired": "请确保已选择文档和LLM模型",
-      "documentNotFound": "文档"
+      "documentNotFound": "文档",
+      "editModeDocumentInfo": "编辑模式下文档关联由系统自动处理"
     },
     "knowledgeGraph": {
       "title": "知识图谱",

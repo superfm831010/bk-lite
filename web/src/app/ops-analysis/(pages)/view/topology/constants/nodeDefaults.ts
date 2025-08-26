@@ -1,8 +1,8 @@
 // 节点尺寸配置
 export const NODE_DIMENSIONS = {
   ICON_NODE: {
-    WIDTH: 110,
-    HEIGHT: 110,
+    WIDTH: 100,
+    HEIGHT: 100,
   },
   SINGLE_VALUE_NODE: {
     WIDTH: 120,
@@ -123,6 +123,9 @@ export const NODE_DEFAULTS = {
     fontWeight: TYPOGRAPHY.FONT_WEIGHT.MEDIUM,
     borderRadius: SPACING.BORDER_RADIUS.DEFAULT,
     strokeWidth: SPACING.STROKE_WIDTH.THIN,
+    logoType: 'default' as const,
+    logoIcon: 'cc-host',
+    logoUrl: '',
   },
 
   // 单值节点默认配置
@@ -176,22 +179,4 @@ export const PORT_DEFAULTS = {
   MAGNET: true,
 } as const;
 
-// 表单默认值（用于编辑面板）
-export const FORM_DEFAULTS = {
-  SINGLE_VALUE: {
-    fontSize: NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize,
-    textColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.textColor,
-    backgroundColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.backgroundColor,
-    borderColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.borderColor,
-  },
 
-  ICON_NODE: {
-    width: 90,
-    height: 90,
-    backgroundColor: NODE_DEFAULTS.ICON_NODE.backgroundColor,
-    borderColor: NODE_DEFAULTS.ICON_NODE.borderColor,
-    logoType: 'default' as const,
-    logoIcon: 'cc-host',
-    logoUrl: ''
-  },
-} as const;

@@ -5,6 +5,7 @@ import { useExecConfig } from './collectTypes/exec';
 import { useSyslogConfig } from './collectTypes/syslog';
 import { useDockerConfig } from './collectTypes/docker';
 import { useFilestreamConfig } from './collectTypes/filestream';
+import { useAuditdConfig } from './collectTypes/auditd';
 
 export const useCollectTypeConfig = () => {
   const fileConfig = useFileConfig();
@@ -12,6 +13,7 @@ export const useCollectTypeConfig = () => {
   const syslogConfig = useSyslogConfig();
   const dockerConfig = useDockerConfig();
   const filestreamConfig = useFilestreamConfig();
+  const auditdConfig = useAuditdConfig();
 
   const configs: any = useMemo(
     () => ({
@@ -20,6 +22,7 @@ export const useCollectTypeConfig = () => {
       syslog: syslogConfig,
       docker: dockerConfig,
       filestream: filestreamConfig,
+      auditd: auditdConfig,
     }),
     []
   );

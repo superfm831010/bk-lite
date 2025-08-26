@@ -1,11 +1,9 @@
-import json
-
 import nats_client
 from apps.log.utils.query_log import VictoriaMetricsAPI
 
 
 @nats_client.register
-def log_search(query, start_time, end_time, limit=10):
+def log_search(query, start_time, end_time, limit=10, *args, **kwargs):
     """搜索日志"""
     vm_api = VictoriaMetricsAPI()
     data = vm_api.query(query, start_time, end_time, limit)
@@ -13,7 +11,7 @@ def log_search(query, start_time, end_time, limit=10):
 
 
 @nats_client.register
-def log_hits(query, start_time, end_time, field, fields_limit=5, step="5m"):
+def log_hits(query, start_time, end_time, field, fields_limit=5, step="5m", *args, **kwargs):
     """搜索日志命中数"""
     vm_api = VictoriaMetricsAPI()
     resp = vm_api.hits(query, start_time, end_time, field, fields_limit, step)
