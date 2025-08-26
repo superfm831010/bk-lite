@@ -1,301 +1,52 @@
 # ================================== System Module 配置 ==================================
 - module: system
-  enabled: true
 
-  # ================================== 指标集配置 ==================================
   metricsets:
-    {% for metricset in metricsets | default(['cpu', 'memory', 'load', 'network', 'filesystem']) %}
+    {% if metricsets %}
+    {% for metricset in metricsets %}
     - {{ metricset }}
     {% endfor %}
+    {% else %}
+    # 官网推荐的默认指标集
+    - cpu
+    - load
+    - memory
+    - network
+    - process
+    - process_summary
+    - uptime
+    - socket_summary
+    {% endif %}
 
-  # ================================== 收集周期配置 ==================================
-  # 默认收集周期
   period: {{ period | default('10s') }}
+  processes: {{ processes | default(['.*']) | to_json }}
 
-  # 特定指标集的收集周期
-  {% if metricset_periods %}
-  {% for metricset, period in metricset_periods.items() %}
-  {{ metricset }}.period: {{ period }}
-  {% endfor %}
+  cpu.metrics: {{ cpu_metrics | default(['percentages', 'normalized_percentages']) | to_json }}
+  core.metrics: {{ core_metrics | default(['percentages']) | to_json }}
+
+  {% if hostfs %}
+  # 容器中监控宿主机时使用
+  hostfs: "{{ hostfs }}"
   {% endif %}
 
-  # ================================== CPU监控配置 ==================================
-  {% if 'cpu' in metricsets | default(['cpu', 'memory', 'load']) %}
-  cpu:
-    # CPU时钟周期计算
-    {% if cpu_config and cpu_config.cpu_ticks is defined %}
-    cpu_ticks: {{ cpu_config.cpu_ticks | lower }}
-    {% endif %}
-
-    # 标准化CPU百分比（0-1范围）
-    {% if cpu_config and cpu_config.normalize_pct is defined %}
-    normalize_pct: {{ cpu_config.normalize_pct | lower }}
-    {% else %}
-    normalize_pct: true
-    {% endif %}
+  {% if filesystem_ignore_types %}
+  # 忽略的文件系统类型
+  filesystem.ignore_types: {{ filesystem_ignore_types | to_json }}
   {% endif %}
 
-  # ================================== 内存监控配置 ==================================
-  {% if 'memory' in metricsets | default(['cpu', 'memory', 'load']) %}
-  memory:
-    # 包含内存详细统计
-    {% if memory_config and memory_config.include_stats is defined %}
-    include_stats: {{ memory_config.include_stats | lower }}
-    {% else %}
-    include_stats: true
+  {% if process_include_top_n %}
+  # Top N 进程配置
+  process.include_top_n:
+    enabled: {{ process_include_top_n.enabled | default(true) | lower }}
+    {% if process_include_top_n.by_cpu %}
+    by_cpu: {{ process_include_top_n.by_cpu }}
+    {% endif %}
+    {% if process_include_top_n.by_memory %}
+    by_memory: {{ process_include_top_n.by_memory }}
     {% endif %}
   {% endif %}
 
-  # ================================== 网络监控配置 ==================================
-  {% if 'network' in metricsets | default([]) %}
-  network:
-    # 监控的网络接口（默认所有）
-    {% if network_config and network_config.interfaces %}
-    interfaces:
-      {% for interface in network_config.interfaces %}
-      - {{ interface }}
-      {% endfor %}
-    {% endif %}
-
-    # 排除的网络接口
-    {% if network_config and network_config.exclude_interfaces %}
-    exclude_interfaces:
-      {% for interface in network_config.exclude_interfaces %}
-      - {{ interface }}
-      {% endfor %}
-    {% else %}
-    exclude_interfaces:
-      - lo
-      - docker0
-    {% endif %}
-  {% endif %}
-
-  # ================================== 文件系统监控配置 ==================================
-  {% if 'filesystem' in metricsets | default([]) %}
-  filesystem:
-    # 忽略的文件系统类型
-    {% if filesystem_config and filesystem_config.ignore_types %}
-    ignore_types:
-      {% for fstype in filesystem_config.ignore_types %}
-      - {{ fstype }}
-      {% endfor %}
-    {% else %}
-    ignore_types:
-      - proc
-      - sysfs
-      - devfs
-      - devtmpfs
-      - tmpfs
-      - overlay
-    {% endif %}
-
-    # 忽略的挂载点
-    {% if filesystem_config and filesystem_config.ignore_mount_points %}
-    ignore_mount_points:
-      {% for mount in filesystem_config.ignore_mount_points %}
-      - {{ mount }}
-      {% endfor %}
-    {% endif %}
-  {% endif %}
-
-  # ================================== 进程监控配置 ==================================
-  {% if 'process' in metricsets | default([]) or 'process_summary' in metricsets | default([]) %}
-  process:
-    # 进程名称匹配模式
-    {% if process_config and process_config.processes %}
-    processes:
-      {% for process in process_config.processes %}
-      - {{ process }}
-      {% endfor %}
-    {% else %}
-    processes: ['.*']
-    {% endif %}
-
-    # Top N 进程配置
-    {% if process_config and process_config.include_top_n %}
-    process.include_top_n.by_cpu: {{ process_config.include_top_n.by_cpu | default(5) }}
-    process.include_top_n.by_memory: {{ process_config.include_top_n.by_memory | default(5) }}
-    {% endif %}
-
-    # 命令行缓存
-    {% if process_config and process_config.cmdline_cache is defined %}
-    process.cmdline.cache.enabled: {{ process_config.cmdline_cache | lower }}
-    {% else %}
-    process.cmdline.cache.enabled: true
-    {% endif %}
-
-    # CGroups 支持
-    {% if process_config and process_config.cgroups is defined %}
-    process.cgroups.enabled: {{ process_config.cgroups | lower }}
-    {% else %}
-    process.cgroups.enabled: true
-    {% endif %}
-  {% endif %}
-
-  # ================================== 服务监控配置 ==================================
-  {% if 'service' in metricsets | default([]) %}
-  service:
-    # 监控的服务状态
-    {% if service_config and service_config.state_filter %}
-    state_filter:
-      {% for state in service_config.state_filter %}
-      - {{ state }}
-      {% endfor %}
-    {% else %}
-    state_filter: ["active", "inactive", "failed"]
-    {% endif %}
-
-    # 服务名称模式
-    {% if service_config and service_config.service_patterns %}
-    service_patterns:
-      {% for pattern in service_config.service_patterns %}
-      - {{ pattern }}
-      {% endfor %}
-    {% endif %}
-  {% endif %}
-
-  # ================================== 字段标识配置 ==================================
   fields:
     collect_type: "system"
-    instance_id: "{{ instance_id }}"
-    monitoring_profile: "{{ monitoring_profile | default('standard') }}"
-    {% if environment %}
-    environment: "{{ environment }}"
-    {% endif %}
-    {% if custom_fields %}
-    {% for key, value in custom_fields.items() %}
-    {{ key }}: "{{ value }}"
-    {% endfor %}
-    {% endif %}
-  fields_under_root: {{ fields_under_root | default(true) | lower }}
-
-  # ================================== 处理器配置 ==================================
-  processors:
-    # 添加主机元数据
-    - add_host_metadata:
-        when.not.contains.tags: forwarded
-
-    # 系统指标标准化处理
-    - script:
-        lang: javascript
-        source: >
-          function process(event) {
-            var evt = event.Get();
-
-            // 标准化时间戳
-            if (evt['@timestamp']) {
-              event.Put('timestamp', evt['@timestamp']);
-            }
-
-            // CPU指标标准化
-            if (evt.system && evt.system.cpu) {
-              var cpu = evt.system.cpu;
-              if (cpu.total && cpu.total.pct !== undefined) {
-                event.Put('cpu_usage_pct', Math.round(cpu.total.pct * 10000) / 100);
-                event.Put('cpu_user_pct', Math.round((cpu.user.pct || 0) * 10000) / 100);
-                event.Put('cpu_system_pct', Math.round((cpu.system.pct || 0) * 10000) / 100);
-                event.Put('cpu_iowait_pct', Math.round((cpu.iowait.pct || 0) * 10000) / 100);
-              }
-
-              if (cpu.cores !== undefined) {
-                event.Put('cpu_cores', cpu.cores);
-              }
-            }
-
-            // 内存指标标准化
-            if (evt.system && evt.system.memory) {
-              var memory = evt.system.memory;
-              if (memory.total && memory.used && memory.used.bytes !== undefined) {
-                var totalMB = Math.round(memory.total / 1024 / 1024);
-                var usedMB = Math.round(memory.used.bytes / 1024 / 1024);
-                var usagePct = Math.round((memory.used.bytes / memory.total) * 10000) / 100;
-
-                event.Put('memory_total_mb', totalMB);
-                event.Put('memory_used_mb', usedMB);
-                event.Put('memory_usage_pct', usagePct);
-                event.Put('memory_available_mb', Math.round((memory.available || 0) / 1024 / 1024));
-              }
-
-              // 交换分区指标
-              if (memory.swap) {
-                event.Put('swap_total_mb', Math.round((memory.swap.total || 0) / 1024 / 1024));
-                event.Put('swap_used_mb', Math.round((memory.swap.used.bytes || 0) / 1024 / 1024));
-              }
-            }
-
-            // 负载指标标准化
-            if (evt.system && evt.system.load) {
-              var load = evt.system.load;
-              event.Put('load_1m', Math.round((load['1'] || 0) * 100) / 100);
-              event.Put('load_5m', Math.round((load['5'] || 0) * 100) / 100);
-              event.Put('load_15m', Math.round((load['15'] || 0) * 100) / 100);
-
-              // 标准化负载（相对于CPU核心数）
-              var cores = evt.cpu_cores || evt.system.cpu.cores || 1;
-              event.Put('load_1m_norm', Math.round((load['1'] || 0) / cores * 100) / 100);
-              event.Put('load_5m_norm', Math.round((load['5'] || 0) / cores * 100) / 100);
-              event.Put('load_15m_norm', Math.round((load['15'] || 0) / cores * 100) / 100);
-            }
-
-            return event;
-          }
-
-    # 性能阈值告警处理
-    - script:
-        lang: javascript
-        source: >
-          function process(event) {
-            var evt = event.Get();
-            var alerts = [];
-            var alertLevel = "normal";
-
-            // CPU告警检查
-            var cpuUsage = evt.cpu_usage_pct || 0;
-            if (cpuUsage >= {{ thresholds.cpu_critical | default(90) }}) {
-              alerts.push("cpu_critical");
-              alertLevel = "critical";
-            } else if (cpuUsage >= {{ thresholds.cpu_warning | default(70) }}) {
-              alerts.push("cpu_warning");
-              if (alertLevel === "normal") alertLevel = "warning";
-            }
-
-            // 内存告警检查
-            var memUsage = evt.memory_usage_pct || 0;
-            if (memUsage >= {{ thresholds.memory_critical | default(95) }}) {
-              alerts.push("memory_critical");
-              alertLevel = "critical";
-            } else if (memUsage >= {{ thresholds.memory_warning | default(80) }}) {
-              alerts.push("memory_warning");
-              if (alertLevel === "normal") alertLevel = "warning";
-            }
-
-            // 负载告警检查（相对于CPU核心数）
-            var load1m = evt.load_1m_norm || 0;
-            var cores = evt.cpu_cores || 1;
-            if (load1m >= {{ thresholds.load_critical_factor | default(1.0) }}) {
-              alerts.push("load_critical");
-              alertLevel = "critical";
-            } else if (load1m >= {{ thresholds.load_warning_factor | default(0.8) }}) {
-              alerts.push("load_warning");
-              if (alertLevel === "normal") alertLevel = "warning";
-            }
-
-            if (alerts.length > 0) {
-              event.Put("alerts", alerts);
-              event.Put("alert_level", alertLevel);
-            }
-
-            return event;
-          }
-
-    {% if processors %}
-    # 用户自定义处理器
-    {% for processor in processors %}
-    - {{ processor | to_yaml | indent(6, True) }}
-    {% endfor %}
-    {% endif %}
-
-    # 删除不必要的字段以减少存储
-    - drop_fields:
-        fields: ["agent.ephemeral_id", "agent.hostname", "agent.id", "agent.type", "agent.version"]
-        ignore_missing: true
+    instance_id: "{{ instance_id | default('default') }}"
+  fields_under_root: true

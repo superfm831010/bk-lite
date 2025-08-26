@@ -1,281 +1,61 @@
 # ================================== Docker Module 配置 ==================================
 - module: docker
-  enabled: true
 
-  # ================================== 指标集配置 ==================================
   metricsets:
-    {% for metricset in metricsets | default(['container', 'cpu', 'memory', 'network']) %}
+    {% if metricsets %}
+    {% for metricset in metricsets %}
     - {{ metricset }}
     {% endfor %}
+    {% else %}
+    # 官网推荐的默认指标集
+    - container
+    - cpu
+    - diskio
+    - event
+    - healthcheck
+    - info
+    - memory
+    - network
+    {% endif %}
 
-  # ================================== 收集周期配置 ==================================
+  hosts: {{ hosts | default(['unix:///var/run/docker.sock']) | to_json }}
   period: {{ period | default('10s') }}
 
-  # ================================== Docker连接配置 ==================================
-  # Docker socket路径
-  hosts:
-    {% for host in hosts | default(['unix:///var/run/docker.sock']) %}
-    - {{ host }}
-    {% endfor %}
-
-  # ================================== 容器过滤配置 ==================================
-  {% if container_filters %}
-  # 容器名称过滤（支持正则表达式）
-  {% if container_filters.include_containers %}
-  include_containers:
-    {% for pattern in container_filters.include_containers %}
-    - {{ pattern }}
-    {% endfor %}
+  {% if labels_dedot is defined %}
+  # 标签中的点号替换为下划线
+  labels.dedot: {{ labels_dedot | lower }}
   {% endif %}
 
-  {% if container_filters.exclude_containers %}
-  exclude_containers:
-    {% for pattern in container_filters.exclude_containers %}
-    - {{ pattern }}
-    {% endfor %}
+  {% if podman is defined %}
+  # Podman 兼容模式
+  podman: {{ podman | lower }}
   {% endif %}
 
-  {% if container_filters.include_labels %}
-  # 标签过滤
-  include_labels:
-    {% for label in container_filters.include_labels %}
-    - {{ label }}
-    {% endfor %}
+  {% if skip_major %}
+  # 跳过指定主设备号的磁盘IO指标
+  skip_major: {{ skip_major | to_json }}
   {% endif %}
 
-  {% if container_filters.exclude_labels %}
-  exclude_labels:
-    {% for label in container_filters.exclude_labels %}
-    - {{ label }}
-    {% endfor %}
-  {% endif %}
+  {% if cpu_cores is defined %}
+  # 按CPU核心收集指标
+  cpu.cores: {{ cpu_cores | lower }}
   {% endif %}
 
-  # ================================== 性能配置 ==================================
-  # 并发处理数
-  {% if max_workers %}
-  max_workers: {{ max_workers }}
+  {% if ssl_config %}
+  # TLS 连接配置
+  ssl:
+    {% if ssl_config.certificate_authority %}
+    certificate_authority: "{{ ssl_config.certificate_authority }}"
+    {% endif %}
+    {% if ssl_config.certificate %}
+    certificate: "{{ ssl_config.certificate }}"
+    {% endif %}
+    {% if ssl_config.key %}
+    key: "{{ ssl_config.key }}"
+    {% endif %}
   {% endif %}
 
-  # 连接超时时间
-  {% if timeout %}
-  timeout: {{ timeout }}
-  {% endif %}
-
-  # ================================== 详细信息配置 ==================================
-  # 是否收集容器标签
-  {% if include_labels is defined %}
-  include_labels: {{ include_labels | lower }}
-  {% else %}
-  include_labels: true
-  {% endif %}
-
-  # 是否收集环境变量
-  {% if include_env is defined %}
-  include_env: {{ include_env | lower }}
-  {% else %}
-  include_env: false
-  {% endif %}
-
-  # ================================== 字段标识配置 ==================================
   fields:
     collect_type: "docker"
-    instance_id: "{{ instance_id }}"
-    docker_monitoring_scope: "{{ monitoring_scope | default('all_containers') }}"
-    {% if environment %}
-    environment: "{{ environment }}"
-    {% endif %}
-    {% if custom_fields %}
-    {% for key, value in custom_fields.items() %}
-    {{ key }}: "{{ value }}"
-    {% endfor %}
-    {% endif %}
-  fields_under_root: {{ fields_under_root | default(true) | lower }}
-
-  # ================================== 处理器配置 ==================================
-  processors:
-    # 添加主机元数据
-    - add_host_metadata:
-        when.not.contains.tags: forwarded
-
-    # 添加Docker元数据
-    - add_docker_metadata:
-        host: "unix:///var/run/docker.sock"
-        match_fields: ["container.id"]
-        match_pids: ["process.pid", "process.parent.pid"]
-
-    # Docker指标标准化处理
-    - script:
-        lang: javascript
-        source: >
-          function process(event) {
-            var evt = event.Get();
-
-            // 标准化时间戳
-            if (evt['@timestamp']) {
-              event.Put('timestamp', evt['@timestamp']);
-            }
-
-            // 容器基础信息标准化
-            if (evt.container) {
-              var container = evt.container;
-              event.Put('container_id', container.id || 'unknown');
-              event.Put('container_name', container.name || 'unknown');
-              event.Put('container_image', container.image || 'unknown');
-              event.Put('container_status', container.status || 'unknown');
-
-              if (container.labels) {
-                // 提取常用标签
-                event.Put('container_labels', container.labels);
-                if (container.labels.version) {
-                  event.Put('container_version', container.labels.version);
-                }
-                if (container.labels.environment) {
-                  event.Put('container_environment', container.labels.environment);
-                }
-              }
-
-              // CPU指标标准化
-              if (container.cpu && container.cpu.total && container.cpu.total.pct !== undefined) {
-                event.Put('container_cpu_pct', Math.round(container.cpu.total.pct * 10000) / 100);
-                event.Put('container_cpu_kernel_pct', Math.round((container.cpu.kernel.pct || 0) * 10000) / 100);
-                event.Put('container_cpu_user_pct', Math.round((container.cpu.user.pct || 0) * 10000) / 100);
-              }
-
-              // 内存指标标准化
-              if (container.memory) {
-                if (container.memory.usage && container.memory.usage.bytes !== undefined) {
-                  var memoryMB = Math.round(container.memory.usage.bytes / 1024 / 1024);
-                  event.Put('container_memory_mb', memoryMB);
-
-                  if (container.memory.limit && container.memory.limit > 0) {
-                    var limitMB = Math.round(container.memory.limit / 1024 / 1024);
-                    var usagePct = Math.round((container.memory.usage.bytes / container.memory.limit) * 10000) / 100;
-                    event.Put('container_memory_limit_mb', limitMB);
-                    event.Put('container_memory_usage_pct', usagePct);
-                  }
-                }
-
-                if (container.memory.rss && container.memory.rss.bytes) {
-                  event.Put('container_memory_rss_mb', Math.round(container.memory.rss.bytes / 1024 / 1024));
-                }
-              }
-
-              // 网络指标标准化
-              if (container.network) {
-                event.Put('container_network_in_bytes', container.network.in.bytes || 0);
-                event.Put('container_network_out_bytes', container.network.out.bytes || 0);
-                event.Put('container_network_in_packets', container.network.in.packets || 0);
-                event.Put('container_network_out_packets', container.network.out.packets || 0);
-
-                // 网络流量MB转换
-                event.Put('container_network_in_mb', Math.round((container.network.in.bytes || 0) / 1024 / 1024 * 100) / 100);
-                event.Put('container_network_out_mb', Math.round((container.network.out.bytes || 0) / 1024 / 1024 * 100) / 100);
-              }
-
-              // 磁盘IO指标标准化
-              if (container.diskio) {
-                event.Put('container_diskio_read_bytes', container.diskio.read.bytes || 0);
-                event.Put('container_diskio_write_bytes', container.diskio.write.bytes || 0);
-                event.Put('container_diskio_read_ops', container.diskio.read.ops || 0);
-                event.Put('container_diskio_write_ops', container.diskio.write.ops || 0);
-
-                // 磁盘IO MB转换
-                event.Put('container_diskio_read_mb', Math.round((container.diskio.read.bytes || 0) / 1024 / 1024 * 100) / 100);
-                event.Put('container_diskio_write_mb', Math.round((container.diskio.write.bytes || 0) / 1024 / 1024 * 100) / 100);
-              }
-            }
-
-            // Docker守护进程信息
-            if (evt.docker && evt.docker.info) {
-              var info = evt.docker.info;
-              event.Put('docker_version', info.version || 'unknown');
-              event.Put('docker_containers_total', info.containers.total || 0);
-              event.Put('docker_containers_running', info.containers.running || 0);
-              event.Put('docker_images_total', info.images || 0);
-            }
-
-            return event;
-          }
-
-    # 容器状态和告警处理
-    - script:
-        lang: javascript
-        source: >
-          function process(event) {
-            var evt = event.Get();
-            var alerts = [];
-            var categories = [];
-            var containerName = evt.container_name || '';
-            var containerStatus = evt.container_status || '';
-
-            // 容器分类
-            var systemPatterns = ['nginx', 'mysql', 'redis', 'postgres', 'elasticsearch'];
-            var appPatterns = ['app', 'web', 'api', 'service'];
-            var monitoringPatterns = ['prometheus', 'grafana', 'kibana', 'logstash'];
-
-            if (systemPatterns.some(function(p) { return containerName.toLowerCase().includes(p); })) {
-              categories.push('system_container');
-            } else if (appPatterns.some(function(p) { return containerName.toLowerCase().includes(p); })) {
-              categories.push('application_container');
-            } else if (monitoringPatterns.some(function(p) { return containerName.toLowerCase().includes(p); })) {
-              categories.push('monitoring_container');
-            } else {
-              categories.push('other_container');
-            }
-
-            // 状态告警
-            if (containerStatus === 'exited') {
-              alerts.push('container_stopped');
-            } else if (containerStatus === 'restarting') {
-              alerts.push('container_restarting');
-            } else if (containerStatus === 'dead') {
-              alerts.push('container_dead');
-            }
-
-            // 资源使用告警
-            var cpuPct = evt.container_cpu_pct || 0;
-            var memoryPct = evt.container_memory_usage_pct || 0;
-            var networkInMB = evt.container_network_in_mb || 0;
-            var diskioReadMB = evt.container_diskio_read_mb || 0;
-
-            if (cpuPct >= {{ cpu_critical_threshold | default(90) }}) {
-              alerts.push('high_cpu_usage');
-            } else if (cpuPct >= {{ cpu_warning_threshold | default(70) }}) {
-              alerts.push('medium_cpu_usage');
-            }
-
-            if (memoryPct >= {{ memory_critical_threshold | default(95) }}) {
-              alerts.push('high_memory_usage');
-            } else if (memoryPct >= {{ memory_warning_threshold | default(80) }}) {
-              alerts.push('medium_memory_usage');
-            }
-
-            if (networkInMB >= {{ network_high_threshold | default(100) }}) {
-              alerts.push('high_network_usage');
-            }
-
-            if (diskioReadMB >= {{ diskio_high_threshold | default(50) }}) {
-              alerts.push('high_diskio_usage');
-            }
-
-            event.Put('container_categories', categories);
-            if (alerts.length > 0) {
-              event.Put('container_alerts', alerts);
-            }
-
-            return event;
-          }
-
-    {% if processors %}
-    # 用户自定义处理器
-    {% for processor in processors %}
-    - {{ processor | to_yaml | indent(6, True) }}
-    {% endfor %}
-    {% endif %}
-
-    # 删除不必要的字段以减少存储
-    - drop_fields:
-        fields: ["agent.ephemeral_id", "agent.hostname", "agent.id", "agent.type", "agent.version"]
-        ignore_missing: true
-
+    instance_id: "{{ instance_id | default('default') }}"
+  fields_under_root: true

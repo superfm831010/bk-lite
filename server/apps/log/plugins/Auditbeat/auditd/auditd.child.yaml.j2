@@ -1,223 +1,49 @@
 # ================================== Auditd Module 配置 ==================================
 - module: auditd
-  enabled: true
 
-  # ================================== 审计规则配置 ==================================
-  {% if audit_rule_files %}
-  # 从文件加载审计规则
-  audit_rule_files:
-    {% for rule_file in audit_rule_files %}
-    - {{ rule_file }}
-    {% endfor %}
-  {% endif %}
+  resolve_ids: true
+  failure_mode: silent
+  backlog_limit: 8192
+  rate_limit: 0
+  include_raw_message: false
+  include_warnings: false
+  backpressure_strategy: auto
+  immutable: false
 
-  # ================================== 内联审计规则 ==================================
-  {% if audit_rules or rule_categories %}
+  {% if audit_rules %}
+  # 用户自定义审计规则
   audit_rules: |
-    {% if audit_rules %}
-    # 用户自定义规则
     {% for rule in audit_rules %}
     {{ rule }}
     {% endfor %}
-    {% endif %}
+  {% endif %}
 
-    {% if rule_categories %}
-    # 按类别配置的审计规则
+  {% if rule_categories %}
+  audit_rules: |
     {% for category in rule_categories %}
-    {% if category == "identity_management" %}
-    # 身份管理监控规则
-    -w /etc/passwd -p wa -k identity_passwd
-    -w /etc/group -p wa -k identity_group
-    -w /etc/shadow -p wa -k identity_shadow
-    -w /etc/sudoers -p wa -k identity_sudoers
-    -w /etc/sudoers.d/ -p wa -k identity_sudoers
-    -w /etc/security/opasswd -p wa -k identity_opasswd
+    {% if category == "security" %}
+    # 安全监控 - 身份管理 + 权限提升
+    -w /etc/passwd -p wa -k identity
+    -w /etc/shadow -p wa -k identity
+    -w /etc/sudoers -p wa -k privilege
+    -w /usr/bin/sudo -p x -k privilege
+    -w /usr/bin/su -p x -k privilege
     {% endif %}
-
-    {% if category == "system_integrity" %}
-    # 系统完整性监控规则
-    -w /bin/ -p wa -k system_integrity_bin
-    -w /sbin/ -p wa -k system_integrity_sbin
-    -w /usr/bin/ -p wa -k system_integrity_usr_bin
-    -w /usr/sbin/ -p wa -k system_integrity_usr_sbin
-    -w /lib/ -p wa -k system_integrity_lib
-    -w /lib64/ -p wa -k system_integrity_lib64
-    -w /boot/ -p wa -k system_integrity_boot
+    {% if category == "system" %}
+    # 系统监控 - 关键文件变更
+    -w /bin/ -p wa -k system_files
+    -w /sbin/ -p wa -k system_files
+    -w /boot/ -p wa -k system_files
     {% endif %}
-
-    {% if category == "privilege_escalation" %}
-    # 权限提升监控规则
-    -a always,exit -F arch=b64 -S setuid -F a0=0 -F exe=/usr/bin/su -k privilege_escalation
-    -a always,exit -F arch=b32 -S setuid -F a0=0 -F exe=/usr/bin/su -k privilege_escalation
-    -w /usr/bin/sudo -p x -k privilege_escalation
-    -w /usr/bin/su -p x -k privilege_escalation
-    -a always,exit -F arch=b64 -S setresuid -F a0=0 -k privilege_escalation
-    -a always,exit -F arch=b32 -S setresuid -F a0=0 -k privilege_escalation
+    {% if category == "network" %}
+    # 网络监控 - 连接活动
+    -a always,exit -F arch=b64 -S socket -k network
+    -a always,exit -F arch=b32 -S socket -k network
     {% endif %}
-
-    {% if category == "network_monitoring" %}
-    # 网络活动监控规则
-    -a always,exit -F arch=b64 -S socket -k network_socket
-    -a always,exit -F arch=b32 -S socket -k network_socket
-    -a always,exit -F arch=b64 -S connect -k network_connect
-    -a always,exit -F arch=b32 -S connect -k network_connect
-    -a always,exit -F arch=b64 -S bind -k network_bind
-    -a always,exit -F arch=b32 -S bind -k network_bind
-    {% endif %}
-
-    {% if category == "file_access" %}
-    # 敏感文件访问监控规则
-    -a always,exit -F arch=b64 -S open -F dir=/etc -F success=1 -k file_access_etc
-    -a always,exit -F arch=b32 -S open -F dir=/etc -F success=1 -k file_access_etc
-    -a always,exit -F arch=b64 -S openat -F dir=/etc -F success=1 -k file_access_etc
-    -a always,exit -F arch=b32 -S openat -F dir=/etc -F success=1 -k file_access_etc
-    {% endif %}
-
-    {% endfor %}
-    {% endif %}
-  {% endif %}
-
-  # ================================== 性能配置 ==================================
-  # 审计队列大小（默认: 8192）
-  audit_queue_size: {{ audit_queue_size | default(8192) }}
-
-  # 失败模式（0=silent, 1=printk, 2=panic）
-  failure_mode: {{ failure_mode | default(1) }}
-
-  # 速率限制（events/sec，0为无限制）
-  rate_limit: {{ rate_limit | default(0) }}
-
-  # 退避时间（毫秒）
-  backlog_wait_time: {{ backlog_wait_time | default(60000) }}
-
-  # 审计日志最大文件大小
-  max_audit_message_size: {{ max_audit_message_size | default(8170) }}
-
-  # ================================== 过滤配置 ==================================
-  {% if include_raw_message is defined %}
-  # 包含原始消息（默认: false，可能很大）
-  include_raw_message: {{ include_raw_message | lower }}
-  {% endif %}
-
-  {% if include_warnings is defined %}
-  # 包含警告信息（默认: false）
-  include_warnings: {{ include_warnings | lower }}
-  {% endif %}
-
-  {% if kernel_warn_timeout is defined %}
-  # 内核警告超时时间
-  kernel_warn_timeout: {{ kernel_warn_timeout }}
-  {% endif %}
-
-  # ================================== 事件过滤 ==================================
-  {% if event_types %}
-  # 仅收集指定类型的审计事件
-  event_types:
-    {% for event_type in event_types %}
-    - {{ event_type }}
     {% endfor %}
   {% endif %}
 
-  {% if exclude_event_types %}
-  # 排除的审计事件类型
-  exclude_event_types:
-    {% for event_type in exclude_event_types %}
-    - {{ event_type }}
-    {% endfor %}
-  {% endif %}
-
-  # ================================== 字段标识配置 ==================================
   fields:
     collect_type: "auditd"
-    instance_id: "{{ instance_id }}"
-    audit_category: "{{ audit_category | default('general') }}"
-    {% if environment %}
-    environment: "{{ environment }}"
-    {% endif %}
-    {% if custom_fields %}
-    {% for key, value in custom_fields.items() %}
-    {{ key }}: "{{ value }}"
-    {% endfor %}
-    {% endif %}
-  fields_under_root: {{ fields_under_root | default(true) | lower }}
-
-  # ================================== 处理器配置 ==================================
-  processors:
-    # 添加主机元数据
-    - add_host_metadata:
-        when.not.contains.tags: forwarded
-
-    # 添加进程元数据
-    - add_process_metadata:
-        match_pids: ["process.pid", "process.parent.pid"]
-        target: process
-
-    # 审计事件增强处理
-    - script:
-        lang: javascript
-        source: >
-          function process(event) {
-            var evt = event.Get();
-
-            // 提取并标准化审计类型
-            if (evt.auditd && evt.auditd.message_type) {
-              event.Put("audit_type", evt.auditd.message_type);
-
-              // 根据审计类型分类
-              var messageType = evt.auditd.message_type;
-              if (["USER_LOGIN", "USER_AUTH", "USER_LOGOUT", "USER_START", "USER_END"].includes(messageType)) {
-                event.Put("audit_category", "authentication");
-              } else if (["SYSCALL"].includes(messageType)) {
-                event.Put("audit_category", "system_call");
-              } else if (messageType.startsWith("USER_")) {
-                event.Put("audit_category", "user_management");
-              } else {
-                event.Put("audit_category", "other");
-              }
-            }
-
-            // 提取用户信息
-            if (evt.user) {
-              var user = evt.user.audit || evt.user;
-              event.Put("user_name", user.name || "unknown");
-              event.Put("user_id", user.id || "unknown");
-            }
-
-            // 提取进程信息
-            if (evt.process) {
-              event.Put("process_name", evt.process.name || "unknown");
-              event.Put("process_pid", evt.process.pid || 0);
-              if (evt.process.parent) {
-                event.Put("process_ppid", evt.process.parent.pid || 0);
-              }
-            }
-
-            // 提取文件路径信息
-            if (evt.file && evt.file.path) {
-              event.Put("file_path", evt.file.path);
-            }
-
-            // 提取网络信息
-            if (evt.source && evt.source.ip) {
-              event.Put("source_ip", evt.source.ip);
-            }
-
-            // 提取会话信息
-            if (evt.auditd && evt.auditd.session) {
-              event.Put("session_id", evt.auditd.session);
-            }
-
-            return event;
-          }
-
-    {% if processors %}
-    # 用户自定义处理器
-    {% for processor in processors %}
-    - {{ processor | to_yaml | indent(6, True) }}
-    {% endfor %}
-    {% endif %}
-
-    # 删除不必要的字段以减少存储
-    - drop_fields:
-        fields: ["agent.ephemeral_id", "agent.hostname", "agent.id", "agent.type", "agent.version"]
-        ignore_missing: true
+    instance_id: "{{ instance_id | default('default') }}"
+  fields_under_root: true

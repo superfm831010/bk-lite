@@ -22,7 +22,14 @@
     "uptime_seconds",
     "processes_total",
     "processes_running",
+    "process_name",
+    "process_pid",
+    "process_ppid",
+    "process_state",
+    "process_cpu_pct",
+    "process_memory_mb",
+    "process_memory_pct",
+    "process_threads",
     "timestamp"
   ]
 }
-
