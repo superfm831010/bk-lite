@@ -546,6 +546,14 @@ class InstanceManage(object):
         return result
 
     @staticmethod
+    def topo_search_test_config(inst_id: int, model_id: str):
+        """拓扑查询"""
+        with Neo4jClient() as ag:
+            result = ag.query_topo_test_config(INSTANCE, inst_id, model_id)
+        return result
+
+
+    @staticmethod
     def create_or_update(data: dict):
         if not data["show_fields"]:
             raise BaseAppException("展示字段不能为空！")
