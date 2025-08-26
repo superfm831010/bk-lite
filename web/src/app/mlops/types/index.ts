@@ -174,5 +174,6 @@ export interface TableData {
 export interface NodeType {
   type: string;
   label: string;
-  color: string;
+  color?: string;
+  icon: string;
 }

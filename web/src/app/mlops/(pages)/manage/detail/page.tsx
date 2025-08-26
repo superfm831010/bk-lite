@@ -4,6 +4,7 @@ import {
   useSearchParams,
 } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
+import { useRouter } from 'next/navigation';
 import AnomalyDetail from './AnomalyDetail';
 import RasaDetail from './RasaDetail';
 // import PageLayout from '@/components/page-layout';
@@ -14,6 +15,7 @@ import { MenuItem } from '@/types';
 
 const Detail = () => {
   const { t } = useTranslation();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const {
     folder_id,
@@ -53,44 +55,51 @@ const Detail = () => {
   const rasaMenus: MenuItem[] = [
     {
       name: 'intent',
-      title: t(`datasets.intent`),
+      title: t(`datasets.intentTitle`),
       url: `/mlops/manage/detail?${datasetInfo}&menu=intent`,
-      icon: 'Gc_103_face-Data',
-      operation: []
-    },
-    {
-      name: 'response',
-      title: t(`datasets.response`),
-      url: `/mlops/manage/detail?${datasetInfo}&menu=response`,
-      icon: 'huifu1',
-      operation: []
-    },
-    {
-      name: 'rule',
-      title: t(`datasets.rule`),
-      url: `/mlops/manage/detail?${datasetInfo}&menu=rule`,
-      icon: 'guanlianguize',
-      operation: []
-    },
-    {
-      name: 'story',
-      title: t(`datasets.story`),
-      url: `/mlops/manage/detail?${datasetInfo}&menu=story`,
-      icon: 'guanlianguize',
+      icon: 'suanwangyitu',
       operation: []
     },
     {
       name: 'entity',
-      title: t(`datasets.entity`),
+      title: t(`datasets.entityTitle`),
       url: `/mlops/manage/detail?${datasetInfo}&menu=entity`,
-      icon: 'shiti',
+      icon: 'shitishu',
+      operation: []
+    },
+    {
+      name: 'response',
+      title: t(`datasets.responseTitle`),
+      url: `/mlops/manage/detail?${datasetInfo}&menu=response`,
+      icon: 'huifu',
       operation: []
     },
     {
       name: 'slot',
-      title: t(`datasets.slot`),
+      title: t(`datasets.slotTitle`),
       url: `/mlops/manage/detail?${datasetInfo}&menu=slot`,
-      icon: 'bianliang1',
+      icon: 'bianliang-xin',
+      operation: []
+    },
+    {
+      name: 'form',
+      title: t(`datasets.formTitle`),
+      url: `/mlops/manage/detail?${datasetInfo}&menu=form`,
+      icon: 'wannengbiaodan',
+      operation: []
+    },
+    {
+      name: 'rule',
+      title: t(`datasets.ruleTitle`),
+      url: `/mlops/manage/detail?${datasetInfo}&menu=rule`,
+      icon: 'guizepeizhi',
+      operation: []
+    },
+    {
+      name: 'story',
+      title: t(`datasets.storyTitle`),
+      url: `/mlops/manage/detail?${datasetInfo}&menu=story`,
+      icon: 'wodegushi',
       operation: []
     },
   ];
@@ -120,6 +129,10 @@ const Detail = () => {
     return <TopSection title={folder_name} content={description} />
   }, [menu]);
 
+  const backToList = () => {
+    router.push(`/mlops/manage/list`);
+  };
+
   return (
     <>
       <div className='w-full'>
@@ -130,7 +143,7 @@ const Detail = () => {
           activeKeyword
           keywordName='menu'
           customMenuItems={activeTap === 'rasa' ? rasaMenus : []}
-          // onBackButtonClick={}
+          onBackButtonClick={backToList}
         >
           <div className='w-full h-full relative'>
             {renderPage[activeTap]}

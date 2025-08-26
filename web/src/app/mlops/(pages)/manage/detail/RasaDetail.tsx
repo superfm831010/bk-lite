@@ -195,6 +195,24 @@ const RasaDetail = () => {
         dataIndex: 'action',
         render: (_, record) => btnsElements(record)
       }
+    ],
+    form: [
+      {
+        title: '表单名称',
+        key: 'name',
+        dataIndex: 'name'
+      },
+      {
+        title: '槽数量',
+        key: 'slots',
+        dataIndex: 'slots'
+      },
+      {
+        title: t(`common.action`),
+        key: 'action',
+        dataIndex: 'action',
+        render: (_, record) => btnsElements(record)
+      }
     ]
   };
 
@@ -204,7 +222,8 @@ const RasaDetail = () => {
     'rule': getRasaRuleFileList,
     'story': getRasaStoryFileList,
     'entity': getRasaEntityList,
-    'slot': getRasaSlotList
+    'slot': getRasaSlotList,
+    'form': () => {}
   };
 
   const delFileMap: Record<string, any> = {
@@ -213,7 +232,8 @@ const RasaDetail = () => {
     'rule': deleteRasaRuleFile,
     'story': deleteRasaStoryFile,
     'entity': deleteRasaEntityFile,
-    'slot': deleteRasaSlotFile
+    'slot': deleteRasaSlotFile,
+    'form': () => {}
   };
 
   const {

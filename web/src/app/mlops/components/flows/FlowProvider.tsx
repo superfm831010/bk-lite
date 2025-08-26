@@ -25,7 +25,6 @@ const FlowWrapper: React.FC<FlowWrapperProps> = ({
   loading,
   handleSaveFlow
 }) => {
-  console.log(initialEdges,initialNodes)
   return (
     <ReactFlowProvider>
       <div className={`${flowStyle.flowContainer}`}>

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { Input, Button, Select, message, FormInstance } from "antd";
+import { Input, Button, Select, message, FormInstance, Checkbox } from "antd";
 import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
 import { cloneDeep } from 'lodash';
 import { Option } from "@/types";
@@ -15,6 +15,18 @@ interface SampleItem {
 
 interface IntentResponseItem {
   name: string;
+}
+
+interface FormManageItem {
+  type: string;
+  select: string;
+  isRequired: boolean;
+}
+
+interface SlotOption {
+  label: string,
+  value: any,
+  slot_type: string
 }
 
 const styles = {
@@ -143,7 +155,6 @@ const useRasaIntentForm = (
           </li>
         ))}
       </ul>
-      {/* <EntitySelectModal ref={modalRef} dataset={folder_id} onSuccess={handleEntitySelect} /> */}
     </>
   ), [sampleList, handleTextSelection]);
 
@@ -688,6 +699,146 @@ const useRasaSlotForm = ({
   }
 };
 
+const useRasaForms = ({
+  // folder_id,
+  selectKey,
+  formData,
+  visiable
+}: {
+  folder_id: number;
+  selectKey: string;
+  formData?: any;
+  visiable?: boolean;
+}) => {
+  const { t } = useTranslation();
+  // const { getRasaIntentFileList, getRasaResponseFileList } = useMlopsManageApi();
+  const [sampleList, setSampleList] = useState<(FormManageItem | null)[]>([]);
+  const [options, setOptions] = useState<SlotOption[]>([]);
+
+  // 当模态框显示且有formData时，初始化sampleList
+  useEffect(() => {
+    if (visiable && formData?.steps) {
+      const list = formData.steps.map((item: any) => {
+        return {
+          type: item?.type,
+          select: item?.select
+        }
+      });
+      setSampleList(list);
+    } else if (visiable) {
+      setSampleList([{ type: '', select: '', isRequired: false }]);
+    }
+  }, [formData, visiable]);
+
+  useEffect(() => {
+    // 只有当前selectKey是rule时才发送请求
+    if (selectKey !== 'form') return;
+
+    const fetchOptions = async () => {
+      try {
+
+        setOptions([]);
+      } catch (e) {
+        console.log(e);
+        message.error(t(`common.fetchFailed`));
+      }
+    };
+
+    fetchOptions();
+  }, [selectKey])
+
+  const addSampleList = () => {
+    const keys = cloneDeep(sampleList);
+    keys.push({ type: '', select: '', isRequired: false });
+    setSampleList(keys);
+  };
+
+  const deleteSampleList = (index: number) => {
+    const keys = cloneDeep(sampleList);
+    keys.splice(index, 1);
+    setSampleList(keys);
+  };
+
+  const onTypeChange = (value: string, index: number) => {
+    const keys = cloneDeep(sampleList);
+    keys[index] = {
+      type: value as string,
+      select: '',
+      isRequired: false
+    };
+    setSampleList(keys);
+  };
+
+  const onSelectSampleChange = (value: string, index: number) => {
+    const keys = cloneDeep(sampleList);
+    const item = keys[index];
+    if (item && typeof item === 'object' && 'select' in item) {
+      item.select = value;
+    }
+    setSampleList(keys);
+  };
+
+  const onCheckSampleChange = (value: boolean, index: number) => {
+    const keys = cloneDeep(sampleList);
+    const item = keys[index];
+    if (item && typeof item === 'object' && 'isRequired' in item) {
+      item.isRequired = value;
+    }
+    setSampleList(keys);
+  };
+
+  const renderElement = useMemo(() => (
+    <ul>
+      {sampleList.map((item, index) => (
+        <li
+          className={`flex ${index + 1 !== sampleList?.length && styles.listItemSpacing}`}
+          key={index}
+        >
+          <Select
+            className={styles.selectWidth}
+            defaultValue={item?.type || 'intent'}
+            onChange={(value) => onTypeChange(value, index)}
+            options={[
+              { label: '意图', value: 'intent' },
+              { label: '响应', value: 'response' }
+            ]}
+          />
+          <Select
+            className={`!w-[45%]`}
+            value={item?.select}
+            options={options.filter(itm => itm?.slot_type === item?.type)}
+            onChange={(value: any) => {
+              onSelectSampleChange(value, index);
+            }}
+          />
+          <Checkbox
+            checked={item?.isRequired}
+            onChange={(e) => onCheckSampleChange(e.target.checked, index)}
+            className="flex justify-center items-center ml-2"
+          >必填</Checkbox>
+          <Button
+            icon={<PlusOutlined />}
+            className={styles.buttonMargin}
+            onClick={addSampleList}
+          />
+          {!!index && (
+            <Button
+              icon={<MinusOutlined />}
+              className={styles.buttonMargin}
+              onClick={() => deleteSampleList(index)}
+            />
+          )}
+        </li>
+      ))}
+    </ul>
+  ), [sampleList]);
+
+  return {
+    sampleList,
+    renderElement
+  }
+};
+
 // 输入验证hooks
 const useInputValidation = () => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -744,7 +895,8 @@ const useRasaApiMethods = () => {
     'rule': addRasaRuleFile,
     'story': addRasaStoryFile,
     'entity': addRasaEntityFile,
-    'slot': addRasaSlotFile
+    'slot': addRasaSlotFile,
+    'form': () => { }
   };
 
   const handleUpdateMap: Record<string, any> = {
@@ -753,7 +905,8 @@ const useRasaApiMethods = () => {
     'rule': updateRasaRuleFile,
     'story': updateRasaStoryFile,
     'entity': updateRasaEntityFile,
-    'slot': updateRasaSlotFile
+    'slot': updateRasaSlotFile,
+    'form': () => { }
   };
 
   return { handleAddMap, handleUpdateMap };
@@ -790,7 +943,7 @@ const useRasaFormData = () => {
             [item?.type]: item.select
           }))
         };
-      } else if(selectKey === 'story') {
+      } else if (selectKey === 'story') {
         params = {
           ...data,
           dataset: formData?.dataset,
@@ -802,11 +955,23 @@ const useRasaFormData = () => {
           dataset: formData?.dataset,
           values: slotType === 'categorical' ? sampleList : []
         }
-      } else {
+      } else if (selectKey === 'entity') {
         params = {
           ...data,
           dataset: formData?.dataset,
           example: entityType === 'Text' ? [] : sampleList
+        };
+      } else if (['response', 'intent'].includes(selectKey)) {
+        params = {
+          ...data,
+          dataset: formData?.dataset,
+          example: sampleList
+        };
+      } else {
+        params = {
+          ...data,
+          dataset: formData?.dataset,
+          example: sampleList
         };
       }
     } else {
@@ -822,11 +987,20 @@ const useRasaFormData = () => {
           ...data,
           values: slotType === 'categorical' ? sampleList : []
         }
-      }
-      else {
+      } else if (selectKey === 'entity') {
         params = {
           ...data,
-          example: (selectKey !== 'entity' || entityType === 'Lookup') ? sampleList : []
+          example: (entityType === 'Lookup') ? sampleList : []
+        };
+      } else if (selectKey === 'intent' || selectKey === 'response') {
+        params = {
+          ...data,
+          example: sampleList
+        };
+      } else {
+        params = {
+          ...data,
+          example: sampleList
         };
       }
     }
@@ -886,6 +1060,7 @@ const useRasaFormManager = ({
   const storyForm = useRasaStoryForm({ folder_id: Number(folder_id), selectKey, formData, visiable });
   const entityForm = useRasaEntityForm({ selectKey, formData, visiable, entityType });
   const slotForm = useRasaSlotForm({ selectKey, formData, visiable });
+  const formForm = useRasaForms({ folder_id: Number(folder_id), selectKey, formData, visiable });
 
   // 处理从Modal传来的实体选择
   const handleEntitySelectFromModal = useCallback((entityName: string) => {
@@ -910,6 +1085,8 @@ const useRasaFormManager = ({
         return entityForm;
       case 'slot':
         return slotForm;
+      case 'form':
+        return formForm;
       default:
         return intentForm;
     }

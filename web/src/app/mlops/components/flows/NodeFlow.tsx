@@ -18,18 +18,13 @@ import {
   IsValidConnection
 } from '@xyflow/react';
 import { Button } from 'antd';
-import { IntentNode, ResponseNode, SlotNode } from './CustomNodes';
+import { IntentNode, ResponseNode, SlotNode, FormNode } from './CustomNodes';
 import '@xyflow/react/dist/style.css';
 import { useCallback, useMemo, useState } from 'react';
+import { NodeType } from '@/app/mlops/types';
 import { useTranslation } from '@/utils/i18n';
 import NodePanel from './NodePanel';
 import NodeDetailDrawer from './NodeDetail';
-
-interface NodeType {
-  type: string;
-  label: string;
-  color: string;
-}
 
 const NodeFlow = ({
   initialNodes,
@@ -58,6 +53,7 @@ const NodeFlow = ({
   const onConnect = useCallback(
     (params: Connection) => {
       console.log(params);
+      if(params.source === params.target) return;
       setEdges((eds) => addEdge(params, eds));
       setNodes((nds) => 
         nds.map((node) => {
@@ -162,13 +158,10 @@ const NodeFlow = ({
       setDetailOpen(true);
       setCurrentNode(node);
     }
-
-    console.log(node);
   };
 
   // 更改节点详情处理
   const handleChangeNodeDetail = (data: any) => {
-    console.log(data);
     const _nodes = nodes.map((item) => {
       if (item.id === currentNode?.id) {
         return {
@@ -183,26 +176,27 @@ const NodeFlow = ({
         ...item,
         data: {
           ...item.data,
-          source: item.data?.source === currentNode?.id ? data.name : item.data?.source,
-          target: item.data?.target === currentNode?.id ? data.name : item.data?.target,
+          source: item.data?.source === currentNode?.id ? null : item.data?.source,
+          target: item.data?.target === currentNode?.id ? null : item.data?.target,
         }
       };
     });
-    const _edges = edges.map((item) => {
-      if(item.target === currentNode?.id) {
-        return {
-          ...item,
-          target: data?.name
-        }
-      }
-      if(item.source === currentNode?.id) {
-        return {
-          ...item,
-          source: data?.name
-        }
-      }
-      return item;
-    })
+    // const _edges = edges.map((item) => {
+    //   if(item.target === currentNode?.id) {
+    //     return {
+    //       ...item,
+    //       target: data?.name
+    //     }
+    //   }
+    //   if(item.source === currentNode?.id) {
+    //     return {
+    //       ...item,
+    //       source: data?.name
+    //     }
+    //   }
+    //   return item;
+    // });
+    const _edges = edges.filter(item => ![item.source, item.target].includes(currentNode?.id as string));
 
     setEdges(_edges);
     setNodes(_nodes);
@@ -211,14 +205,14 @@ const NodeFlow = ({
   // 删除节点处理
   const handleDelNode = () => {
     const _nodes = nodes.filter((item) => item.id !== currentNode?.id);
+    const _edges = edges.filter((item) => ![item.source, item.target].includes(currentNode?.id as string));
     setNodes(_nodes);
+    setEdges(_edges);
   };
 
   // 循环链接判断
   const isValidConnection: IsValidConnection<Edge> = useCallback(
     (connection) => {
-      // we are using getNodes and getEdges helpers here
-      // to make sure we create isValidConnection function only once
       const nodes = getNodes();
       const edges = getEdges();
       const target = nodes.find((node) => node.id === connection.target);
@@ -254,7 +248,8 @@ const NodeFlow = ({
   const customNodeTypes: NodeTypes = useMemo(() => ({
     intent: IntentNode,
     response: ResponseNode,
-    slot: SlotNode
+    slot: SlotNode,
+    form: FormNode,
   }), [])
 
   return (

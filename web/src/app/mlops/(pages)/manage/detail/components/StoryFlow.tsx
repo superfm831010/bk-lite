@@ -23,9 +23,10 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
   const { updateRasaStoryFile } = useMlopsManageApi();
   const [flowLoading, setFlowLoading] = useState<boolean>(false);
   const nodeTypes: NodeType[] = [
-    { type: 'intent', label: '意图节点', color: '' },
-    { type: 'response', label: '响应节点', color: '' },
-    { type: 'slot', label: '槽节点', color: '' }
+    { type: 'intent', label: '意图节点', icon: 'tijiaoxiangfa' },
+    { type: 'response', label: '响应节点', icon: 'huifu-copy' },
+    { type: 'slot', label: '槽节点', icon: 'dangqianbianliang' },
+    { type: 'form', label: '表单节点', icon: 'biaodan' },
   ];
 
   const [initialNodes, initialEdges] = useMemo(() => {
