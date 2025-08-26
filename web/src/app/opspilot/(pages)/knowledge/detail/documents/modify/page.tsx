@@ -39,7 +39,7 @@ const KnowledgeModifyPage = () => {
     updateChunkSettings,
     getDocListConfig,
     getDocumentConfig,
-    createCustomQAPairs
+    createCustomQAPairs,
   } = useKnowledgeApi();
 
   const [currentStep, setCurrentStep] = useState<number>(0);
