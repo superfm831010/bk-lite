@@ -30,6 +30,8 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
 
   const searchParams = useSearchParams();
   const modelId: string = searchParams.get('model_id') || '';
+  const classificationName: string =
+    searchParams.get('classification_name') || '';
   const isPre = searchParams.get('is_pre') === 'true';
   const modelRef = useRef<any>(null);
   const [groupList, setGroupList] = useState<ClassificationItem[]>([]);
@@ -138,6 +140,11 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
               </div>
               <div className="text-[var(--color-text-2)] text-[12px] break-all">
                 {modelId}
+                {classificationName && (
+                  <span className="ml-2">
+                    【{t('Model.modelGroup')}：{classificationName}】
+                  </span>
+                )}
               </div>
             </div>
             {!isPre && (
