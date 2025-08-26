@@ -217,7 +217,15 @@
       "patternDes": "Depending on how you configure other multiline options, lines that match the specified regular expression are considered either continuations of a previous line or the start of a new multiline event. You can set the negate option to negate the pattern.",
       "timeoutDes": "After the specified timeout, Filebeat sends the multiline event even if no new pattern is found to start a new event. The default is 5s.",
       "before": "Before",
-      "after": "After"
+      "after": "After",
+      "ruleCategories": "Default Rule",
+      "ruleCategoriesDes": "Preset rule categories to simplify configuration",
+      "security": "Security Monitoring",
+      "system": "System Monitoring",
+      "network": "Network Monitoring",
+      "securityDes": "Identity management and privilege escalation",
+      "systemDes": "Key document changes",
+      "networkDes": "Connect activities"
     },
     "event": {
       "executionTime": "Execution Time",
