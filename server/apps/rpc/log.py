@@ -47,4 +47,4 @@ class LogOperationAnaRpc(BaseOperationAnaRpc):
         fields_limit: 返回的字段值个数限制，默认5
         step: 统计粒度，默认5m
         """
-        return self.client.run("hits", query, start_time, end_time, field, fields_limit, step,**kwargs)
+        return self.client.run("log_hits", query, start_time, end_time, field, fields_limit, step,**kwargs)

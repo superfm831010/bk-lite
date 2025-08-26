@@ -242,10 +242,34 @@ def query_monitor_data_by_metric(query_data: dict, *args, **kwargs):
 @nats_client.register
 def mm_query_range(query: str, start, end, step="5m", *args, **kwargs):
     resp = VictoriaMetricsAPI().query_range(query, start, end, step)
-    return {"result": True, "data": resp, "message": ""}
+    if resp["status"] == "success":
+        _result = resp["data"]["result"]
+        if _result:
+            values = _result[0].get("values", [])
+        else:
+            values = []
+        # 格式转换给单值
+        data = []
+        for _value in values:
+            data.append({"name": _value[0], "value": _value[1]})
+    else:
+        data = []
+    return {"result": True, "data": data, "message": ""}
 
 
 @nats_client.register
 def mm_query(query: str, step="5m", *args, **kwargs):
     resp = VictoriaMetricsAPI().query(query, step)
-    return {"result": True, "data": resp, "message": ""}
+    if resp["status"] == "success":
+        _result = resp["data"]["result"]
+        if _result:
+            values = _result[0].get("value", [])
+        else:
+            values = []
+            # 格式转换给单值
+        data = []
+        if values:
+            data.append({"name": values[0], "value": values[-1]})
+    else:
+        data = []
+    return {"result": True, "data": data, "message": ""}

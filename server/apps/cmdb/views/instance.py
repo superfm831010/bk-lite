@@ -533,11 +533,12 @@ class InstanceViewSet(viewsets.ViewSet):
 
         attr_list = request.data.get("attr_list", [])
         association_list = request.data.get("association_list", [])
+        inst_ids = request.data.get("inst_ids", [])
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         response["Content-Disposition"] = f"attachment;filename={f'{model_id}_export.xlsx'}"
         response.write(InstanceManage.inst_export(
             model_id,
-            request.data,
+            inst_ids,
             format_group_params(request.COOKIES.get("current_team")),
             request.user.roles,
             inst_names,
