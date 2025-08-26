@@ -217,7 +217,15 @@
       "patternDes": "根据您配置其他多行选项的方式，与指定正则表达式匹配的行将被视为上一行的延续或新多行事件的开始。您可以设置该negate选项来否定该模式。",
       "timeoutDes": "在指定的超时时间之后，即使未找到新的模式来启动新事件，Filebeat也会发送多行事件。默认值为5秒。",
       "before": "前面",
-      "after": "后面"
+      "after": "后面",
+      "ruleCategories": "预设规则",
+      "ruleCategoriesDes": " 预设规则类别，简化配置",
+      "security": "安全监控",
+      "system": "系统监控",
+      "network": "网络监控",
+      "securityDes": "身份管理 + 权限提升",
+      "systemDes": "关键文件变更",
+      "networkDes": "连接活动"
     },
     "event": {
       "executionTime": "执行时间",
