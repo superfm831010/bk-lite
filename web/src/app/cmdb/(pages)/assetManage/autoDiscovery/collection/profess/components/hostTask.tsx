@@ -48,6 +48,8 @@ const HostTask: React.FC<HostTaskFormProps> = ({
     onSuccess,
     onClose,
     formatValues: (values) => {
+      const collectType = baseRef.current?.collectionType;
+      const ipRange = values.ipRange?.length ? values.ipRange : undefined;
       const driverType = selectedNode.tabItems?.find(
         (item) => item.model_id === modelId
       )?.type;
@@ -67,12 +69,24 @@ const HostTask: React.FC<HostTaskFormProps> = ({
         model_id: modelId,
         task_type: modelItem.task_type,
         driver_type: driverType,
-        instances: instance || [],
+        accessPointId: values.access_point?.[0]?.id,
         credential: {
           username: values.username,
           password: values.password,
           port: values.port,
         },
+        ...(collectType === 'ip'
+          ? {
+            ip_range: ipRange.join('-'),
+            instances: [],
+            params: {
+              organization: [values.organization?.[0]],
+            },
+          }
+          : {
+            ip_range: '',
+            instances: instance || [],
+          }),
       };
     },
   });
@@ -90,10 +104,11 @@ const HostTask: React.FC<HostTaskFormProps> = ({
         form.setFieldsValue({
           ipRange,
           ...values,
+          organization: values.params?.organization,
           username: values.credential?.username,
           password: values.credential?.password,
           port: values.credential.port,
-          accessPointId: values.access_point?.[0]?.id
+          accessPointId: values.access_point?.[0]?.id,
         });
       } else {
         form.setFieldsValue(HOST_FORM_INITIAL_VALUES);

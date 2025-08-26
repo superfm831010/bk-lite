@@ -19,17 +19,15 @@ import ModelModal from './list/modelModal';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/utils/i18n';
 import PermissionWrapper from '@/components/permission';
-import {
-  useModelApi,
-  useClassificationApi,
-  useInstanceApi,
-} from '@/app/cmdb/api';
+import { useClassificationApi, useInstanceApi } from '@/app/cmdb/api';
+import { useCommon } from '@/app/cmdb/context/common';
 
 const AssetManage = () => {
-  const { getModelList } = useModelApi();
   const { getClassificationList, deleteClassification } =
     useClassificationApi();
   const { getModelInstanceCount } = useInstanceApi();
+  const commonContext = useCommon();
+  const modelListFromContext = commonContext?.modelList || [];
   const { confirm } = Modal;
   const { t } = useTranslation();
   const router = useRouter();
@@ -44,8 +42,10 @@ const AssetManage = () => {
   const [rawModelGroup, setRawModelGroup] = useState<GroupItem[]>([]);
 
   useEffect(() => {
-    getModelGroup();
-  }, []);
+    if (modelListFromContext.length > 0) {
+      getModelGroup();
+    }
+  }, [modelListFromContext]);
 
   useEffect(() => {
     if (!searchText.trim()) {
@@ -114,7 +114,11 @@ const AssetManage = () => {
     getModelGroup();
   };
 
-  const updateModelList = () => {
+  const updateModelList = async () => {
+    // 首先刷新 CommonProvider 中的 modelList
+    if (commonContext?.refreshModelList) {
+      await commonContext.refreshModelList();
+    }
     getModelGroup();
   };
 
@@ -125,12 +129,13 @@ const AssetManage = () => {
     setSearchText((e.target as HTMLInputElement).value);
   };
 
-  const linkToDetail = (model: ModelItem) => {
+  const linkToDetail = (model: ModelItem, classificationName: string) => {
     const params = new URLSearchParams({
       model_id: model.model_id,
       model_name: model.model_name,
       icn: model.icn,
       classification_id: model.classification_id,
+      classification_name: classificationName,
       is_pre: model.is_pre,
     }).toString();
     router.push(`/cmdb/assetManage/management/detail/attributes?${params}`);
@@ -163,8 +168,7 @@ const AssetManage = () => {
   const getModelGroup = async () => {
     setLoading(true);
     try {
-      const [modeldata, groupData, instCount] = await Promise.all([
-        getModelList(),
+      const [groupData, instCount] = await Promise.all([
         getClassificationList(),
         getModelInstanceCount(),
       ]);
@@ -173,7 +177,7 @@ const AssetManage = () => {
         list: [],
         count: 0,
       }));
-      modeldata.forEach((modelItem: ModelItem) => {
+      modelListFromContext.forEach((modelItem: ModelItem) => {
         const target = groups.find(
           (item: GroupItem) =>
             item.classification_id === modelItem.classification_id
@@ -302,10 +306,13 @@ const AssetManage = () => {
                         <div
                           className={assetManageStyle.leftSide}
                           onClick={() =>
-                            linkToDetail({
-                              ...model,
-                              classification_id: item.classification_id,
-                            })
+                            linkToDetail(
+                              {
+                                ...model,
+                                classification_id: item.classification_id,
+                              },
+                              item.classification_name
+                            )
                           }
                         >
                           <HolderOutlined
