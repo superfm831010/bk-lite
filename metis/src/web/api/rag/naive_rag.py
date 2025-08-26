@@ -14,7 +14,7 @@ from src.web.entity.rag.base.document_list_request import DocumentListRequest
 from src.web.entity.rag.base.document_metadata_update_request import DocumentMetadataUpdateRequest
 from src.web.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
 from src.web.entity.rag.base.index_delete_request import IndexDeleteRequest
-from src.core.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
+from src.core.rag.naive_rag.pgvector.pgvector_rag import PgvectorRag
 from src.web.services.rag_service import RagService
 
 naive_rag_api_router = Blueprint("naive_rag_api_router", url_prefix="/rag")
@@ -24,7 +24,7 @@ naive_rag_api_router = Blueprint("naive_rag_api_router", url_prefix="/rag")
 @auth.login_required
 @validate(json=DocumentRetrieverRequest)
 def naive_rag_test(request, body: DocumentRetrieverRequest):
-    rag = ElasticSearchRag()
+    rag = PgvectorRag()
     documents = rag.search(body)
     return json({
         "status": "success",
@@ -37,7 +37,7 @@ def naive_rag_test(request, body: DocumentRetrieverRequest):
 @auth.login_required
 @validate(json=DocumentCountRequest)
 async def count_index_document(request, body: DocumentCountRequest):
-    rag = ElasticSearchRag()
+    rag = PgvectorRag()
     count = rag.count_index_document(body)
     return json({"status": "success", "message": "", "count": count})
 
@@ -74,7 +74,7 @@ async def custom_content_ingest(request):
 
     # 执行文档存储
     logger.debug(f"开始存储{len(chunked_docs)}个文档分块，将自动添加created_time字段以支持时间排序")
-    RagService.store_documents_to_es(
+    RagService.store_documents_to_pg(
         chunked_docs=chunked_docs,
         knowledge_base_id=request.form.get('knowledge_base_id'),
         embed_model_base_url=request.form.get('embed_model_base_url'),
@@ -118,7 +118,7 @@ async def website_ingest(request):
 
     # 执行文档存储
     logger.debug(f"开始存储网站内容{len(chunked_docs)}个文档分块，将自动添加created_time字段")
-    RagService.store_documents_to_es(
+    RagService.store_documents_to_pg(
         chunked_docs=chunked_docs,
         knowledge_base_id=request.form.get('knowledge_base_id'),
         embed_model_base_url=request.form.get('embed_model_base_url'),
@@ -178,7 +178,7 @@ async def file_ingest(request):
 
         # 执行文档存储
         logger.debug(f"开始存储文件内容{len(chunked_docs)}个文档分块，将自动添加created_time字段")
-        RagService.store_documents_to_es(
+        RagService.store_documents_to_pg(
             chunked_docs=chunked_docs,
             knowledge_base_id=request.form.get('knowledge_base_id'),
             embed_model_base_url=request.form.get('embed_model_base_url'),
@@ -194,7 +194,7 @@ async def file_ingest(request):
 @validate(json=IndexDeleteRequest)
 @auth.login_required
 async def delete_index(request, body: IndexDeleteRequest):
-    rag = ElasticSearchRag()
+    rag = PgvectorRag()
     rag.delete_index(body)
     return json({"status": "success", "message": ""})
 
@@ -203,7 +203,7 @@ async def delete_index(request, body: IndexDeleteRequest):
 @auth.login_required
 @validate(json=DocumentDeleteRequest)
 async def delete_doc(request, body: DocumentDeleteRequest):
-    rag = ElasticSearchRag()
+    rag = PgvectorRag()
     rag.delete_document(body)
     return json({"status": "success", "message": ""})
 
@@ -212,13 +212,8 @@ async def delete_doc(request, body: DocumentDeleteRequest):
 @auth.login_required
 @validate(json=DocumentListRequest)
 async def list_rag_document(request, body: DocumentListRequest):
-    rag = ElasticSearchRag()
-
-    # 记录排序字段，用于向后兼容性检查
+    rag = PgvectorRag()
     logger.debug(f"查询文档列表，排序字段: {body.sort_field}, 排序方式: {body.sort_order}")
-    if body.sort_field and 'created_time' in body.sort_field:
-        logger.debug("使用时间字段排序，已启用字段映射检查和向后兼容性处理")
-
     documents = rag.list_index_document(body)
     return json({"status": "success", "message": "", "documents": [doc.dict() for doc in documents]})
 
@@ -227,6 +222,6 @@ async def list_rag_document(request, body: DocumentListRequest):
 @auth.login_required
 @validate(json=DocumentMetadataUpdateRequest)
 async def update_rag_document_metadata(request, body: DocumentMetadataUpdateRequest):
-    rag = ElasticSearchRag()
+    rag = PgvectorRag()
     rag.update_metadata(body)
     return json({"status": "success", "message": "文档元数据更新成功"})

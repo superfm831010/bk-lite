@@ -18,7 +18,8 @@ from src.core.ocr.ocr_manager import OcrManager
 from src.web.entity.rag.base.document_ingest_request import DocumentIngestRequest
 from src.core.loader.image_loader import ImageLoader
 from src.core.loader.ppt_loader import PPTLoader
-from src.core.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
+from src.core.rag.naive_rag.pgvector.pgvector_rag import PgvectorRag
+from src.core.rag.naive_rag.pgvector.pgvector_config import PgvectorConfig
 
 
 class RagService:
@@ -62,10 +63,88 @@ class RagService:
         )
 
         start_time = time.time()
-        rag = ElasticSearchRag()
+        rag = PgvectorRag()
         rag.ingest(elasticsearch_store_request)
         elapsed_time = time.time() - start_time
         logger.debug(f"ES存储完成, 耗时: {elapsed_time:.2f}秒")
+
+    @classmethod
+    def store_documents_to_pg(cls, chunked_docs, knowledge_base_id, embed_model_base_url,
+                              embed_model_api_key, embed_model_name, metadata={}, index_mode='append',
+                              performance_mode='default'):
+        """
+        将文档存储到PostgreSQL(pgvector)，并更新文档的chunk_id
+
+        Args:
+            chunked_docs: 分块后的文档
+            knowledge_base_id: 知识库ID
+            embed_model_base_url: 嵌入模型基础URL
+            embed_model_api_key: 嵌入模型API密钥
+            embed_model_name: 嵌入模型名称
+            metadata: 额外的元数据
+            index_mode: 索引模式，默认为'append'
+            performance_mode: 性能模式 ('default', 'performance', 'memory_efficient')
+
+        Returns:
+            tuple: (存储的文档数量, 插入的chunk_id列表)
+        """
+        logger.debug(
+            f"存储文档到PostgreSQL, 知识库ID: {knowledge_base_id}, 模型名称: {embed_model_name}, "
+            f"分块数: {len(chunked_docs)}, 索引模式: {index_mode}, 性能模式: {performance_mode}")
+
+        # 根据性能模式选择配置
+        if performance_mode == 'performance':
+            config = PgvectorConfig.get_performance_config()
+            logger.debug("使用性能优化配置")
+        elif performance_mode == 'memory_efficient':
+            config = PgvectorConfig.get_memory_efficient_config()
+            logger.debug("使用内存优化配置")
+        else:
+            config = PgvectorConfig.get_default_config()
+            logger.debug("使用默认配置")
+
+        # 自动添加创建时间
+        created_time = datetime.now().isoformat()
+        logger.debug(f"为文档添加创建时间: {created_time}")
+
+        # 为每个文档添加创建时间和其他元数据
+        for doc in chunked_docs:
+            # 添加创建时间到每个文档的元数据中
+            doc.metadata['created_time'] = created_time
+
+        # 应用额外的元数据
+        if metadata:
+            logger.debug(f"应用额外元数据: {metadata}")
+            for doc in chunked_docs:
+                doc.metadata.update(metadata)
+
+        # 构建存储请求
+        pgvector_store_request = DocumentIngestRequest(
+            index_name=knowledge_base_id,
+            docs=chunked_docs,
+            embed_model_base_url=embed_model_base_url,
+            embed_model_api_key=embed_model_api_key,
+            embed_model_name=embed_model_name,
+            index_mode=index_mode,
+        )
+
+        start_time = time.time()
+        rag = PgvectorRag(config=config)  # 使用配置初始化
+
+        try:
+            # 存储文档并获取插入的chunk_id列表
+            inserted_chunk_ids = rag.ingest(pgvector_store_request)
+            elapsed_time = time.time() - start_time
+
+            logger.debug(f"PostgreSQL存储完成, 耗时: {elapsed_time:.2f}秒, "
+                         f"插入文档数: {len(chunked_docs)}, 获得chunk_id数: {len(inserted_chunk_ids)}")
+
+            return len(chunked_docs), inserted_chunk_ids
+
+        except Exception as e:
+            elapsed_time = time.time() - start_time
+            logger.error(f"PostgreSQL存储失败, 耗时: {elapsed_time:.2f}秒, 错误: {e}")
+            raise
 
     @classmethod
     def perform_chunking(cls, docs, chunk_mode, request, is_preview, content_type):
@@ -190,10 +269,12 @@ class RagService:
         logger.debug(f"为文件 {file_path} (类型: {file_extension}) 初始化加载器")
         # 初始化OCR
         ocr = OcrManager.load_ocr(ocr_type=request.form.get('ocr_type'),
-                                  olm_base_url=request.form.get('olm_base_url'),
+                                  olm_base_url=request.form.get(
+                                      'olm_base_url'),
                                   olm_api_key=request.form.get('olm_api_key'),
                                   olm_model=request.form.get('olm_model'),
-                                  azure_base_url=request.form.get('azure_base_url'),
+                                  azure_base_url=request.form.get(
+                                      'azure_base_url'),
                                   azure_api_key=request.form.get('azure_api_key'))
 
         if file_extension in ['docx', 'doc']:
