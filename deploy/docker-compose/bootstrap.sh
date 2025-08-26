@@ -57,7 +57,7 @@ else
     log "INFO" "未检测到 --opspilot 参数，禁用 OpsPilot 功能"
 fi
 
-INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,alert,log,mlops,operation_analysis"
+INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,alerts,log,mlops,operation_analysis"
 
 if [[ $OPSPILOT_ENABLED == "true" ]]; then
     export INSTALL_APPS="${INSTALL_APPS},opspilot"
