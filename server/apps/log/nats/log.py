@@ -1,5 +1,3 @@
-import json
-
 import nats_client
 from apps.log.utils.query_log import VictoriaMetricsAPI
 
