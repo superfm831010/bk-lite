@@ -1,462 +1,239 @@
 /**
- * Refined Apple-Inspired Hero Section
- * Clean, sophisticated and elegant design with perfect polish
+ * Apple-Inspired Hero (Simplified)
+ * - Variables for palette/gradients
+ * - Shared typography
+ * - Consolidated shapes & buttons
  */
+
+:root {
+  /* palette */
+  --bg-start: #fff;
+  --bg-25:   #f8fbff;
+  --bg-50:   #f0f9ff;
+  --bg-75:   #e0f2fe;
+  --bg-end:  #e8f4fd;
+
+  --text-main: #1d1d1f;
+  --text-sub:  #64748b;
+
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --blue-800: #1e40af;
+
+  --cyan-500: #06b6d4;
+  --violet-500: #8b5cf6;
+  --pink-500: #ec4899;
+
+  /* gradients */
+  --hero-bg: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-25) 25%, var(--bg-50) 50%, var(--bg-75) 75%, var(--bg-end) 100%);
+  --accent-grad: linear-gradient(135deg, var(--blue-800) 0%, var(--blue-500) 25%, var(--cyan-500) 50%, var(--violet-500) 75%, var(--pink-500) 100%);
+  --accent-line: linear-gradient(135deg, var(--blue-500), var(--cyan-500), var(--violet-500));
+  --stat-grad: linear-gradient(135deg, #1d1d1f 0%, #424242 100%);
+  --btn-grad: linear-gradient(135deg, var(--blue-500) 0%, var(--blue-600) 50%, var(--blue-700) 100%);
+  --btn-grad-hover: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-700) 50%, var(--blue-800) 100%);
+
+  /* timing */
+  --easing: cubic-bezier(0.16, 1, 0.3, 1);
+  --radius-lg: 16px;
+
+  /* fonts */
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  --font-text:    -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+/* Dark theme overrides */
+[data-theme='dark'] {
+  --hero-bg: linear-gradient(180deg, #000 0%, #1a1a1c 25%, #1d1d1f 50%, #2d2d2f 75%, #1d1d1f 100%);
+  --text-main: #f5f5f7;
+  --text-sub:  #a1a1aa;
+  --stat-grad: linear-gradient(135deg, #f5f5f7 0%, #d1d5db 100%);
+}
 
 .heroBanner {
   position: relative;
-  padding: 8rem 0 10rem 0;
-  text-align: center;
-  overflow: hidden;
-  background: 
-    linear-gradient(180deg, 
-      #ffffff 0%,     /* 纯白起点 */
-      #f8fbff 25%,    /* 淡蓝白 */
-      #f0f9ff 50%,    /* 浅蓝 */
-      #e0f2fe 75%,    /* 明亮蓝 */
-      #e8f4fd 100%    /* 深蓝收尾 */
-    );
-  min-height: 100vh;
   display: flex;
   align-items: center;
-  margin-top: 60px; /* 为导航栏留出空间 */
+  justify-content: center;
+  min-height: 100vh;
+  padding: 8rem 0 10rem;
+  margin-top: 60px;         /* navbar space */
+  text-align: center;
+  overflow: hidden;
+  background: var(--hero-bg);
 }
 
-.heroBackground {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
+.heroBackground,
+.floatingShapes {
+  position: absolute; inset: 0;
+  overflow: hidden; pointer-events: none;
 }
+
+.shape {
+  position: absolute; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(59,130,246,.10), rgba(147,197,253,.05));
+  filter: blur(1px);
+  width: var(--size); height: var(--size);
+  animation: float var(--dur, 22s) var(--easing) infinite;
+}
+
+/* Use once in HTML:
+   <span class="shape" style="--size:300px; top:10%; left:10%; --dur:20s;"></span>
+   <span class="shape" style="--size:200px; top:60%; right:15%; --dur:25s;"></span>
+   <span class="shape" style="--size:150px; bottom:20%; left:60%; --dur:30s;"></span>
+*/
 
 .heroContent {
-  position: relative;
-  z-index: 2;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-
-.heroAnimation {
-  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.heroTitle {
-  font-size: 3.75rem;
-  font-weight: 700;
-  margin-bottom: 0.75rem;
-  color: #1d1d1f;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  position: relative; z-index: 1;
+  max-width: 1200px; padding: 0 2rem; margin: 0 auto;
+  animation: fadeInUp .9s var(--easing);
 }
 
 .heroTitleAccent {
-  font-size: 3.75rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #1e3a8a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 2rem;
-  display: block;
+  font: 800 3.75rem/1 var(--font-display);
   letter-spacing: -0.03em;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  background: var(--accent-grad);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0 0 2rem; display: block;
+  animation: fadeInScale 1s var(--easing) .1s both;
   position: relative;
 }
-
 .heroTitleAccent::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 2px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  border-radius: 1px;
-  opacity: 0.6;
+  content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%);
+  width: 80px; height: 2px; border-radius: 1px; opacity: .6;
+  background: var(--accent-line);
+  animation: expandLine 1.1s var(--easing) .4s both;
 }
 
 .heroSubtitle {
-  font-size: 1.375rem;
-  font-weight: 400;
-  margin-bottom: 3.5rem;
-  color: #64748b;
-  line-height: 1.5;
-  max-width: 640px;
-  margin-left: auto;
-  margin-right: auto;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font: 400 1.375rem/1.5 var(--font-text);
+  color: var(--text-sub);
+  max-width: 640px; margin: 0 auto 3.5rem;
   letter-spacing: -0.005em;
+  animation: fadeInUp .9s var(--easing) .15s both;
 }
 
 .heroStats {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0;
-  margin-bottom: 4rem;
-  flex-wrap: nowrap;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0 1rem;
+  display: flex; justify-content: space-between; align-items: center; gap: 0;
+  max-width: 600px; margin: 0 auto 4rem; padding: 0 1rem; flex-wrap: nowrap;
+  animation: fadeInUp .9s var(--easing) .2s both;
 }
 
 .statCard {
-  text-align: center;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: visible;
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative; flex: 1; display: flex; justify-content: center; align-items: center;
+  text-align: center; transition: transform .35s var(--easing);
 }
+.statCard:hover { transform: translateY(-3px) scale(1.02); }
 
-.statCard:hover {
-  transform: translateY(-3px);
-}
-
-.statCard:hover {
-  transform: translateY(-3px);
+.statCard:not(:last-child)::after {
+  content: ""; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  width: 1px; height: 30px; opacity: .6;
+  background: linear-gradient(to bottom, transparent, rgba(209,213,219,.8) 50%, transparent);
 }
 
 .statValue {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1d1d1f;
-  margin-bottom: 0;
-  letter-spacing: -0.01em;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-  line-height: 1.2;
-  white-space: nowrap;
-  background: linear-gradient(135deg, #1d1d1f 0%, #424242 100%);
-  -webkit-background-clip: text;
+  font: 700 1.25rem/1.2 var(--font-display);
+  letter-spacing: -0.01em; margin: 0;
+  background: var(--stat-grad);
+  -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
+  white-space: nowrap;
 }
-
 .statLabel {
-  font-size: 0.875rem;
-  color: #86868b;
-  font-weight: 400;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-  letter-spacing: 0.01em;
-  line-height: 1.4;
-  margin-bottom: 0;
+  font: 400 .875rem/1.4 var(--font-text);
+  color: #86868b; margin: 0;
 }
 
-/* 精致的分隔线 */
-.statCard:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1px;
-  height: 30px;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(209, 213, 219, 0.5) 20%,
-    rgba(209, 213, 219, 0.8) 50%,
-    rgba(209, 213, 219, 0.5) 80%,
-    transparent 100%
-  );
-  opacity: 0.6;
-  transition: opacity 0.3s ease;
-}
-
-.statCard:hover:not(:last-child)::after {
-  opacity: 0.8;
-}
-
-.buttons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
+/* Buttons */
+.buttons { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center;
+  animation: fadeInUp .9s var(--easing) .3s both; }
 
 .button {
-  font-size: 1.125rem;
-  padding: 1.25rem 2.5rem;
-  border-radius: 18px;
-  font-weight: 600;
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  min-width: 200px;
-  justify-content: center;
-  letter-spacing: 0.005em;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  --pad-y: .875rem; --pad-x: 1.75rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-width: 160px; padding: var(--pad-y) var(--pad-x);
+  border-radius: var(--radius-lg); border: 0; cursor: pointer;
+  font: 600 1rem/1 var(--font-text); letter-spacing: .005em;
+  position: relative; overflow: hidden;
+  transition: transform .25s var(--easing), box-shadow .25s var(--easing), background .25s var(--easing);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
+.button::before {
+  content: ""; position: absolute; inset: 0; translate: -100% 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+  transition: translate .6s var(--easing);
+}
+.button:hover::before { translate: 100% 0; }
 
 .button--primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-  box-shadow: 
-    0 4px 20px rgba(59, 130, 246, 0.25),
-    0 2px 10px rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff; background: var(--btn-grad);
+  box-shadow: 0 4px 16px rgba(59,130,246,.25), 0 2px 8px rgba(59,130,246,.15), inset 0 1px 0 rgba(255,255,255,.25);
+  border: 1px solid rgba(255,255,255,.2);
 }
-
 .button--primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 
-    0 8px 35px rgba(59, 130, 246, 0.35),
-    0 4px 15px rgba(59, 130, 246, 0.2);
-  color: white;
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  background: var(--btn-grad-hover);
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 8px 32px rgba(59,130,246,.35), 0 4px 16px rgba(59,130,246,.25), inset 0 1px 0 rgba(255,255,255,.3);
 }
 
 .button--secondary {
-  background: rgba(255, 255, 255, 0.9);
-  color: #3b82f6;
-  border: 2px solid rgba(59, 130, 246, 0.3);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  box-shadow: 
-    0 4px 20px rgba(59, 130, 246, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  color: var(--blue-700); background: rgba(255,255,255,.85);
+  border: 2px solid rgba(59,130,246,.2);
+  box-shadow: 0 4px 16px rgba(59,130,246,.08), 0 2px 8px rgba(255,255,255,.1), inset 0 1px 0 rgba(255,255,255,.9);
 }
-
 .button--secondary:hover {
-  background: rgba(59, 130, 246, 0.95);
-  transform: translateY(-3px);
-  color: white;
-  border-color: rgba(59, 130, 246, 0.5);
-  box-shadow: 
-    0 8px 35px rgba(59, 130, 246, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: rgba(255,255,255,.95);
+  transform: translateY(-4px) scale(1.03);
+  border-color: rgba(59,130,246,.4);
 }
 
-.buttonIcon {
-  font-size: 1.1rem;
-  transition: transform 0.3s ease;
-}
+/* Icon nudges */
+.buttonIcon { font-size: 1.25rem; width: 24px; height: 24px; display: inline-grid; place-items: center; transition: transform .35s var(--easing) }
+.buttonArrow { font-size: .9rem; opacity: .8; transition: transform .35s var(--easing), opacity .35s var(--easing) }
+.button--primary:hover .buttonArrow { transform: translateX(3px); opacity: 1 }
+.button:hover .buttonIcon { transform: scale(1.12) translateY(-1px) }
 
-.buttonArrow {
-  font-size: 0.9rem;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.button--primary:hover .buttonArrow {
-  transform: translateX(3px);
-}
-
-.button--primary:hover .buttonIcon {
-  transform: scale(1.1);
-}
-
-/* Apple 风格暗色模式 */
-[data-theme='dark'] .heroBanner {
-  background: 
-    linear-gradient(180deg, 
-      #000000 0%, 
-      #1a1a1c 25%,
-      #1d1d1f 50%,
-      #2d2d2f 75%,
-      #1d1d1f 100%
-    );
-}
-
-[data-theme='dark'] .heroTitle {
-  color: #f5f5f7;
-}
-
-[data-theme='dark'] .heroTitleAccent {
-  background: linear-gradient(135deg, #60a5fa 0%, #93c5fd 50%, #dbeafe 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-[data-theme='dark'] .heroTitleAccent::after {
-  background: linear-gradient(135deg, #60a5fa, #93c5fd);
-}
-
-[data-theme='dark'] .heroSubtitle {
-  color: #a1a1aa;
-}
-
-[data-theme='dark'] .statValue {
-  color: #f5f5f7;
-  background: linear-gradient(135deg, #f5f5f7 0%, #d1d5db 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-[data-theme='dark'] .statLabel {
-  color: #86868b;
-}
-
+/* Dark-mode specific tweaks */
 [data-theme='dark'] .statCard:not(:last-child)::after {
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(75, 85, 99, 0.5) 20%,
-    rgba(75, 85, 99, 0.8) 50%,
-    rgba(75, 85, 99, 0.5) 80%,
-    transparent 100%
-  );
+  background: linear-gradient(to bottom, transparent, rgba(75,85,99,.8) 50%, transparent);
 }
-
-[data-theme='dark'] .button--primary {
-  background: linear-gradient(135deg, #f5f5f7 0%, #e5e7eb 100%);
-  color: #1d1d1f;
-  box-shadow: 
-    0 4px 20px rgba(245, 245, 247, 0.15),
-    0 2px 10px rgba(245, 245, 247, 0.1);
-}
-
-[data-theme='dark'] .button--primary:hover {
-  background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
-  color: #1d1d1f;
-  box-shadow: 
-    0 8px 35px rgba(245, 245, 247, 0.25),
-    0 4px 15px rgba(245, 245, 247, 0.15);
-}
-
 [data-theme='dark'] .button--secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f5f5f7;
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: rgba(15,23,42,.85); color: var(--blue-400);
+  border-color: rgba(96,165,250,.25);
+  box-shadow: 0 4px 16px rgba(0,0,0,.25), 0 2px 8px rgba(96,165,250,.08), inset 0 1px 0 rgba(96,165,250,.15);
 }
-
 [data-theme='dark'] .button--secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #f5f5f7;
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 
-    0 8px 35px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  background: rgba(15,23,42,.95);
+  color: #93c5fd; border-color: rgba(96,165,250,.4);
 }
 
-/* 响应式设计优化 */
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 6rem 0 8rem 0;
-    min-height: 90vh;
-    margin-top: 60px;
-  }
-  
-  .heroTitle {
-    font-size: 3.25rem;
-  }
-  
-  .heroTitleAccent {
-    font-size: 3.25rem;
-  }
-  
-  .heroSubtitle {
-    font-size: 1.25rem;
-  }
-  
-  .heroStats {
-    gap: 1.5rem;
-    max-width: 500px;
-  }
-  
-  .statCard {
-    min-width: 100px;
-  }
-  
-  .statValue {
-    font-size: 1.5rem;
-  }
-  
-  .statCard:not(:last-child)::after {
-    height: 40px;
-  }
-  
-  .buttons {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .button {
-    width: 100%;
-    max-width: 300px;
-  }
+/* Responsive */
+@media (max-width: 996px) {
+  .heroBanner { padding: 6rem 0 8rem; min-height: 90vh }
+  .heroTitleAccent { font-size: 3.25rem }
+  .heroSubtitle { font-size: 1.25rem }
+  .heroStats { gap: 1.5rem; max-width: 500px }
+  .statCard { min-width: 100px }
+  .statCard:not(:last-child)::after { height: 40px }
+  .button { width: 100%; max-width: 280px; padding: .75rem 1.25rem; font-size: .95rem }
+}
+@media (max-width: 768px) {
+  .heroBanner { padding: 4rem 0 6rem; min-height: 85vh }
+  .heroTitleAccent { font-size: 2.75rem }
+  .heroSubtitle { font-size: 1.125rem; margin-bottom: 3rem }
+  .heroStats { gap: 1rem; max-width: 400px; margin-bottom: 3rem }
+  .statCard { min-width: 80px }
+  .statCard:not(:last-child)::after { height: 35px }
 }
 
-@media screen and (max-width: 768px) {
-  .heroBanner {
-    padding: 4rem 0 6rem 0;
-    min-height: 85vh;
-    margin-top: 60px;
-  }
-  
-  .heroTitle {
-    font-size: 2.75rem;
-  }
-  
-  .heroTitleAccent {
-    font-size: 2.75rem;
-  }
-  
-  .heroSubtitle {
-    font-size: 1.125rem;
-    margin-bottom: 3rem;
-  }
-  
-  .heroStats {
-    flex-direction: row;
-    gap: 1rem;
-    max-width: 400px;
-    margin-bottom: 3rem;
-  }
-  
-  .statCard {
-    min-width: 80px;
-    max-width: none;
-  }
-  
-  .statValue {
-    font-size: 1.25rem;
-  }
-  
-  .statCard:not(:last-child)::after {
-    height: 35px;
-  }
-  
-  .button {
-    padding: 1.125rem 2rem;
-    font-size: 1rem;
-  }
+/* Animations (reduced set) */
+@keyframes fadeInUp { from{opacity:0; transform:translateY(28px)} to{opacity:1; transform:none} }
+@keyframes fadeInScale { from{opacity:0; transform:translateY(16px) scale(.96)} to{opacity:1; transform:none} }
+@keyframes expandLine { from{width:0; opacity:0} to{width:80px; opacity:.6} }
+@keyframes float {
+  0%,100% { transform: translate(0) rotate(0) }
+  33%     { transform: translate(10px,-18px) rotate(5deg) }
+  66%     { transform: translate(-6px,12px) rotate(-4deg) }
 }
-
-/* 精致动画 */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-

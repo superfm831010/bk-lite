@@ -3,6 +3,8 @@
 # @Time: 2025/7/22 18:24
 # @Author: windyzhao
 from apps.rpc.alerts import AlertOperationAnaRpc
+from apps.rpc.monitor import MonitorOperationAnaRpc
+from apps.rpc.log import LogOperationAnaRpc
 from apps.core.logger import operation_analysis_logger as logger
 
 
@@ -11,13 +13,31 @@ class GetNatsData:
     获取NATS数据源数据
     """
 
-    def __init__(self, namespace: str, path: str, namespace_list: list, params: dict = None):
+    def __init__(self, namespace: str, path: str, namespace_list: list, params: dict = {}, request=None):
+        self.request = request
         self.path = path
         self.params = params or {}
+        self.update_request_params()
         self.namespace = namespace
         self.namespace_list = namespace_list
         self.namespace_server_map = self.set_namespace_servers()
         self.namespace_map = self.set_namespace_map()
+
+    @property
+    def user_param_key(self):
+        return "user_info"
+
+    def update_request_params(self):
+        """
+        更新请求参数 带上当前请求的用户和组织信息
+        :return:
+        """
+        username = self.request.user.username
+        team = int(self.request.COOKIES.get("current_team"))
+        self.params[self.user_param_key] = {
+            "team": team,
+            "user": username
+        }
 
     def set_namespace_servers(self):
         result = {}
@@ -33,7 +53,7 @@ class GetNatsData:
     @staticmethod
     def set_namespace_map():
         # TODO 每个注册的命名空间 必须重写__init__ 补上server参数
-        result = {"alert": AlertOperationAnaRpc}
+        result = {"alert": AlertOperationAnaRpc, "monitor": MonitorOperationAnaRpc, "log": LogOperationAnaRpc}
         return result
 
     def _get_client(self, server):
@@ -60,7 +80,7 @@ class GetNatsData:
 
                 return_data = fun(**self.params)
                 result[namespace.name] = return_data.get("data", [])
-            except Exception as e:
+            except Exception as e: # noqa
                 result[namespace.name] = []
                 import traceback
                 logger.error(

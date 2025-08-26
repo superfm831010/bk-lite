@@ -1,56 +1,85 @@
-import React from 'react';
+import React, { useState } from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import Heading from '@theme/Heading';
 import styles from './styles.module.css';
 
 export default function FinalCTA() {
+  const [showQRCode, setShowQRCode] = useState(false);
+
+  const handleJoinCommunity = (e) => {
+    e.preventDefault();
+    setShowQRCode(true);
+  };
+
+  const closeQRCode = () => {
+    setShowQRCode(false);
+  };
+
   return (
     <section className={styles.finalCTA}>
       <div className="container">
         <div className={styles.ctaContainer}>
           <div className={styles.ctaContent}>
-            <div className={styles.ctaIcon}>
-              <span className={styles.iconEmoji}>🚀</span>
-            </div>
             <Heading as="h2" className={styles.ctaTitle}>
-              开启您的 AI 驱动数字化转型之旅
+              开启您的 AI 驱动运维探索之旅
             </Heading>
             <p className={styles.ctaDescription}>
-              BKLite 为您提供完整的轻量级蓝鲸解决方案，从部署到运维，从监控到自动化，
-              让 AI 成为您业务增长的强大引擎。现在就开始，体验下一代智能运维平台的魅力。
+              BKLite 提供轻量化的蓝鲸开源方案，从部署到运维，从监控到自动化，帮助社区和团队快速构建智能运维能力。现在就上手，体验下一代开源运维平台。
             </p>
             <div className={styles.ctaButtons}>
               <Link
                 className={clsx(styles.ctaButton, styles.ctaPrimary)}
-                to="/docs/intro"
-              >
-                🎯 免费试用
-              </Link>
-              <Link
-                className={clsx(styles.ctaButton, styles.ctaSecondary)}
                 to="https://github.com/TencentBlueKing/bk-lite"
               >
-                📖 查看源码
+                ⭐ 支持我们
               </Link>
+              <button
+                className={clsx(styles.ctaButton, styles.ctaSecondary)}
+                onClick={handleJoinCommunity}
+              >
+                🌍 加入社区
+              </button>
             </div>
             <div className={styles.ctaFeatures}>
               <div className={styles.feature}>
-                <span className={styles.featureIcon}>✅</span>
-                <span>30天免费试用</span>
-              </div>
-              <div className={styles.feature}>
                 <span className={styles.featureIcon}>⚡</span>
-                <span>5分钟快速部署</span>
+                <span>5分钟快速上手</span>
               </div>
               <div className={styles.feature}>
-                <span className={styles.featureIcon}>🛡️</span>
-                <span>企业级安全保障</span>
+                <span className={styles.featureIcon}>🛠️</span>
+                <span>模块化设计</span>
+              </div>
+              <div className={styles.feature}>
+                <span className={styles.featureIcon}>🤝</span>
+                <span>开源社区共建</span>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
+      {/* QR Code Modal */}
+      {showQRCode && (
+        <div className={styles.qrModal} onClick={closeQRCode}>
+          <div className={styles.qrModalContent} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.closeButton} onClick={closeQRCode}>
+              ×
+            </button>
+            <h3 className={styles.qrTitle}>扫码加入社区</h3>
+            <div className={styles.qrImageContainer}>
+              <img 
+                src="/img/community-qrcode.png" 
+                alt="社区二维码" 
+                className={styles.qrImage}
+              />
+            </div>
+            <p className={styles.qrDescription}>
+              扫描二维码加入 BlueKing Lite 开源社区，与开发者们一起交流讨论
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

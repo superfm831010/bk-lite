@@ -62,8 +62,8 @@ const PreprocessStep: React.FC<{
     initialConfig.chunk_type || chunkTypes[0].key
   );
   const [formData, setFormData] = useState({
-    chunkSize: initialConfig?.general_parse_chunk_size || 2000,
-    chunkOverlap: initialConfig?.general_parse_chunk_overlap || 0,
+    chunkSize: initialConfig?.general_parse_chunk_size || 200,
+    chunkOverlap: initialConfig?.general_parse_chunk_overlap || 50,
     semanticModel: initialConfig?.semantic_chunk_parse_embedding_model || null,
   });
   const [previewData, setPreviewData] = useState<PreviewData[]>([]);
@@ -112,7 +112,7 @@ const PreprocessStep: React.FC<{
   const updateConfig = (updates: Partial<typeof formData> & { chunkType?: keyof typeof chunkImages }) => {
     const newChunkType = updates.chunkType ?? chunkType;
     const updatedFormData = {
-      chunkSize: updates.chunkType ? 2000 : formData.chunkSize,
+      chunkSize: updates.chunkType ? 200 : formData.chunkSize,
       chunkOverlap: updates.chunkType ? 0 : formData.chunkOverlap,
       semanticModel: updates.chunkType ? null : formData.semanticModel,
       ...updates,

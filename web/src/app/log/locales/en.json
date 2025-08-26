@@ -144,7 +144,9 @@
       "enableScrolling": "Enable auto-scrolling",
       "stopScrolling": "Turn off auto-scrolling",
       "selectGroup": "Please select the group",
-      "search": "搜索"
+      "search": "Search",
+      "displayFields": "Table Display Fields",
+      "hiddenFields": "Optional Fields"
     },
     "integration": {
       "interval": "Interval",
@@ -186,7 +188,7 @@
       "allSatisfy": "Satisfy all",
       "allRules": "rules",
       "logGroup": "Log Group",
-      "logGroupTips": "Please divide the received logs into groups, and the viewing permissions for the logs will be isolated according to the log groups.",
+      "logGroupTips": "The effective log grouping scope of this strategy",
       "belongingGroupTips": "Receive instance viewing and operations, and isolate permissions according to their organization.",
       "multiline": "Multi row merge",
       "multilineAllRequired": "The value must be filled in",
@@ -197,13 +199,25 @@
       "multilineDes": "Merge the collected logs according to corresponding rules and conditions",
       "timeoutMsTips": "Parameter used to control multi-line merge timeout in log processing, in milliseconds (ms). It defines the maximum waiting time for the system to wait for the next matching line. When this time threshold is exceeded, the buffer content will be forcibly flushed for output even if the current log message is incomplete.",
       "modeTips": "Defines the aggregation logic for log lines, which determines when the merge will stop based on the rules of start pattern and merge regex.",
-      "startPatternTips": "Match the starting line of new log events through regular expressions to distinguish independent log entries.",
-      "conditionPatternTips": "Use regular expressions to determine whether subsequent logs should be merged into the current log event.",
+      "startPatternTips": "Match the starting line of a new log event using regular expressions to distinguish between independent log entries. \r\nTypical Application Scenarios: \r\n1. Java Logs: Starting with a timestamp or log level \r\n2. Docker Logs: Matching specific prefixes of container logs (such as [2022-10-01]) \r\n3. SQL Query: Identifying the starting keyword of an SQL statement (such as SELECT)",
+      "conditionPatternTips": "Use regular expressions to determine whether subsequent logs should be merged into the current log event. \r\nTypical application scenarios:\r\n1. Java stack trace: an exception stack using ^s+ matching scaling. \r\n2. Continuation character scenario: \\\\$ matches a line ending with a back slash (indicating that the next line is a continuation of the current line). \r\n3. Terminator scenario: ;$ Match lines ending with semicolons (indicating the end of the log)",
       "continuePast": "Stop when encountering lines that don't match the condition, but capture one additional line. For example, when logs end with a backslash \\, it will merge both the line with \\ and the next line. Suitable for cases where you know you need to read one more line after the end marker.",
       "continueThrough": "Continue merging all lines that match the condition until encountering a non-matching line. For example, in Java error stack traces, all lines starting with spaces will be merged into the previous log. Suitable for scenarios with clear 'subordinate line' characteristics.",
       "haltBefore": "Keep merging until encountering a line that matches the condition (but not including that line). For example, stop when seeing a new log timestamp, ensuring the timestamp belongs to the next log. Suitable when new logs have clear starting markers.",
       "haltWith": "Merge up to and including the first line that matches the condition. For example, when logs end with a semicolon ;, it will include the line with the semicolon to indicate the end. Suitable for cases with clear end markers.",
-      "k8sNote": "K8S only supports active reporting, and is not supported to be accessed here for the time being."
+      "k8sNote": "K8S only supports active reporting, and is not supported to be accessed here for the time being.",
+      "paths": "Files Path",
+      "maxLines": "Max Lines",
+      "maxLinesDes": "The maximum number of lines that can be combined into one event. If the multiline message contains more than max_lines, any additional lines are discarded.",
+      "match": "Matching Direction",
+      "matchDes": "Specifies how Filebeat combines matching lines into an event.",
+      "negate": "Reverse Matching",
+      "negateDes": "Defines whether the pattern is negated. ",
+      "pattern": "Regular Pattern",
+      "patternDes": "Depending on how you configure other multiline options, lines that match the specified regular expression are considered either continuations of a previous line or the start of a new multiline event. You can set the negate option to negate the pattern.",
+      "timeoutDes": "After the specified timeout, Filebeat sends the multiline event even if no new pattern is found to start a new event. The default is 5s.",
+      "before": "Before",
+      "after": "After"
     },
     "event": {
       "executionTime": "Execution Time",

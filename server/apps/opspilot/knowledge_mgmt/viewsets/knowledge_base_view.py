@@ -7,7 +7,13 @@ from rest_framework.response import Response
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import AuthViewSet
-from apps.opspilot.knowledge_mgmt.models import QAPairs
+from apps.opspilot.knowledge_mgmt.models import (
+    FileKnowledge,
+    KnowledgeGraph,
+    ManualKnowledge,
+    QAPairs,
+    WebPageKnowledge,
+)
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.serializers import KnowledgeBaseSerializer
 from apps.opspilot.models import EmbedProvider, KnowledgeBase, KnowledgeDocument
@@ -20,6 +26,24 @@ class KnowledgeBaseViewSet(AuthViewSet):
     ordering = ("-id",)
     search_fields = ("name",)
     permission_key = "knowledge"
+
+    @HasPermission("knowledge_list-View")
+    def retrieve(self, request, *args, **kwargs):
+        serializer = self.get_detail(request, *args, **kwargs)
+        return_data = serializer.data
+        query = {"knowledge_document__knowledge_base_id": kwargs["pk"]}
+        count_data = {
+            "file_count": FileKnowledge.objects.filter(**query).count(),
+            "web_page_count": WebPageKnowledge.objects.filter(**query).count(),
+            "manual_count": ManualKnowledge.objects.filter(**query).count(),
+            "qa_count": QAPairs.objects.filter(knowledge_base_id=kwargs["pk"]).count(),
+            "graph_count": KnowledgeGraph.objects.filter(knowledge_base_id=kwargs["pk"]).count(),
+        }
+        count_data["document_count"] = sum(
+            value for key, value in count_data.items() if key not in ["qa_count", "graph_count"]
+        )
+        return_data.update(count_data)
+        return JsonResponse({"result": True, "data": return_data})
 
     @HasPermission("knowledge_list-Add")
     def create(self, request, *args, **kwargs):
@@ -55,7 +79,8 @@ class KnowledgeBaseViewSet(AuthViewSet):
                 return JsonResponse(
                     {"result": False, "message": _("The knowledge base is training and cannot be modified.")}
                 )
-            retrain_all.delay(instance.id, username=request.user.username, domain=request.user.domain)
+            delete_qa_pairs = params.pop("delete_qa_pairs", False)
+            retrain_all.delay(instance.id, request.user.username, request.user.domain, delete_qa_pairs)
         return super().update(request, *args, **kwargs)
 
     @action(methods=["POST"], detail=True)

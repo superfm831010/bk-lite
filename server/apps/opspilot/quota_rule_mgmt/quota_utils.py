@@ -97,6 +97,8 @@ class QuotaUtils(object):
         for quota in self.quota_list:
             token_config = quota["token_set"]
             for llm_model, value in token_config.items():
+                if not llm_model or not value or not value.get("value"):
+                    continue
                 llm_model_token_set.setdefault(llm_model, []).append(
                     int(value["value"]) * unit_map.get(value["unit"], 1)
                 )

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
-import { Form, Select, InputNumber, message, Spin, Tag } from 'antd';
+import { Form, Select, InputNumber, Input, message, Spin, Tag, Button, Space } from 'antd';
 import { RobotOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { useKnowledgeApi } from '@/app/opspilot/api/knowledge';
@@ -11,9 +11,18 @@ import type {
   GenerateQAPairModalProps,
   ModalRef,
   DocumentInfo,
-  FormData,
   ChunkItem
 } from '@/app/opspilot/types/knowledge';
+
+const { TextArea } = Input;
+
+interface FormData {
+  questionLlmModel: number;
+  answerLlmModel: number;
+  qaCount: number;
+  questionPrompt: string;
+  answerPrompt: string;
+}
 
 const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
   ({ onSuccess }, ref) => {
@@ -33,8 +42,11 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
     const [documentInfo, setDocumentInfo] = useState<DocumentInfo | null>(null);
 
     const formRef = useRef<FormData>({
-      llmModel: 0,
-      qaCount: 1
+      questionLlmModel: 0,
+      answerLlmModel: 0,
+      qaCount: 1,
+      questionPrompt: '',
+      answerPrompt: ''
     });
 
     const fetchDocumentDetail = async (docId: string) => {
@@ -45,7 +57,7 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
         setDocumentInfo(detail);
       } catch (error) {
         console.error('Failed to fetch document detail:', error);
-        message.error('获取文档信息失败');
+        message.error(t('knowledge.qaPairs.fetchDocumentsListFailed'));
       } finally {
         setLoading(false);
       }
@@ -66,8 +78,11 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
         // 重置表单到默认值
         form.resetFields();
         formRef.current = {
-          llmModel: 0,
-          qaCount: 1
+          questionLlmModel: 0,
+          answerLlmModel: 0,
+          qaCount: 1,
+          questionPrompt: '',
+          answerPrompt: ''
         };
       }
     }));
@@ -79,11 +94,14 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
         const models = await fetchLlmModelsApi();
         setLlmModels(models);
         
-        // 设置默认模型
+        // 设置默认模型和提示语
         if (models.length > 0) {
           const defaultValues = {
-            llmModel: models[0].id,
-            qaCount: 1
+            questionLlmModel: models[0].id,
+            answerLlmModel: models[0].id,
+            qaCount: 1,
+            questionPrompt: '请根据我提供的文本内容，生成与其紧密相关的问题，要求如下：\n1、仔细阅读并理解整段文本（该文本为长文档的一个分块）。\n2、从文本中提炼3-5个关键信息点，并据此生成问题。\n3、问题应涵盖主要事实、细节、原因、影响等，不要集中在单一方面。\n4、问题必须基于原文内容，不能引入不存在或推测性的信息。\n5、问题应简洁、明确、完整，不带有"根据本文"或"文中提到"等表述。\n6、仅输出问题列表，每行一个，不附加答案。',
+            answerPrompt: '请根据我提供的文本和相应问题列表，生成每个问题的答案，要求如下：\n1、仔细阅读文本，逐一回答问题。\n2、答案必须严格基于源文信息，不能编造或添加未提及内容。\n3、保持客观中立，避免主观评价或情感化表达。\n4、每个答案应完整且清晰。'
           };
           form.setFieldsValue(defaultValues);
           formRef.current = defaultValues;
@@ -104,13 +122,16 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
     // 处理表单值变化
     const handleFormValuesChange = (changedValues: any, allValues: FormData) => {
       formRef.current = {
-        llmModel: allValues.llmModel || 0,
-        qaCount: allValues.qaCount || 1
+        questionLlmModel: allValues.questionLlmModel || 0,
+        answerLlmModel: allValues.answerLlmModel || 0,
+        qaCount: allValues.qaCount || 1,
+        questionPrompt: allValues.questionPrompt || '',
+        answerPrompt: allValues.answerPrompt || ''
       };
     };
 
     // 处理确认操作
-    const handleConfirm = async () => {
+    const handleConfirm = async (onlyQuestion = false) => {
       try {
         await form.validateFields();
         
@@ -120,17 +141,19 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
           selectedChunks,
           selectedChunksLength: selectedChunks.length,
           formRefCurrent: formRef.current,
-          llmModel: formRef.current.llmModel,
-          documentInfo
+          questionLlmModel: formRef.current.questionLlmModel,
+          answerLlmModel: formRef.current.answerLlmModel,
+          documentInfo,
+          onlyQuestion
         });
         
         if (!documentId) {
-          message.error('文档ID不存在');
+          message.error(t('knowledge.qaPairs.documentNotFound') + 'ID不存在');
           return;
         }
         
         if (!documentInfo) {
-          message.error('文档信息未加载');
+          message.error(t('knowledge.qaPairs.fetchDocumentsListFailed'));
           return;
         }
         
@@ -139,8 +162,13 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
           return;
         }
         
-        if (!formRef.current.llmModel || formRef.current.llmModel === 0) {
-          message.error('请选择LLM模型');
+        if (!formRef.current.questionLlmModel || formRef.current.questionLlmModel === 0) {
+          message.error(t('knowledge.qaPairs.selectQuestionLlmModel'));
+          return;
+        }
+
+        if (!onlyQuestion && (!formRef.current.answerLlmModel || formRef.current.answerLlmModel === 0)) {
+          message.error(t('knowledge.qaPairs.selectAnswerLlmModel'));
           return;
         }
 
@@ -153,7 +181,11 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
           document_id: parseInt(documentId),
           document_source: documentInfo.knowledge_source_type,
           qa_count: formRef.current.qaCount,
-          llm_model_id: formRef.current.llmModel,
+          llm_model_id: formRef.current.questionLlmModel,
+          answer_llm_model_id: formRef.current.answerLlmModel,
+          question_prompt: formRef.current.questionPrompt,
+          answer_prompt: formRef.current.answerPrompt,
+          only_question: onlyQuestion,
           chunk_list: selectedChunks.map(chunk => ({
             content: chunk.content,
             id: chunk.id
@@ -196,36 +228,96 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
         }
         open={visible}
         confirmLoading={confirmLoading}
-        onOk={handleConfirm}
         onCancel={handleCancel}
-        okText={t('knowledge.qaPairs.startGenerate')}
         cancelText={t('common.cancel')}
         cancelButtonProps={{ disabled: confirmLoading }}
-        width={580}
+        width={680}
         destroyOnClose
+        footer={
+          <div className="flex justify-end">
+            <Space>
+              <Button
+                onClick={handleCancel}
+                disabled={confirmLoading}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                onClick={() => handleConfirm(true)}
+                disabled={confirmLoading}
+                loading={confirmLoading}
+              >
+                {t('knowledge.qaPairs.onlyGenerateQuestion')}
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => handleConfirm(false)}
+                disabled={confirmLoading}
+                loading={confirmLoading}
+              >
+                {t('knowledge.qaPairs.generateQuestionAndAnswer')}
+              </Button>
+            </Space>
+          </div>
+        }
       >
-        <Spin spinning={loading}>
+        <Spin spinning={loading || llmModelsLoading}>
           <div className="space-y-6">
             <Form
               form={form}
               layout="vertical"
               onValuesChange={handleFormValuesChange}
               initialValues={{
-                qaCount: 1
+                qaCount: 1,
+                questionPrompt: '',
+                answerPrompt: ''
               }}
             >
               <Form.Item
-                name="llmModel"
+                name="questionLlmModel"
                 label={
                   <div className="flex items-center">
                     <RobotOutlined className="mr-1" />
-                    {t('knowledge.qaPairs.llmModel')}
+                    {t('knowledge.qaPairs.questionLlmModel')}
                   </div>
                 }
-                rules={[{ required: true, message: t('common.required') }]}
+                rules={[{ required: true, message: t('knowledge.qaPairs.selectQuestionLlmModel') }]}
               >
                 <Select
-                  placeholder={t('knowledge.qaPairs.selectLlmModel')}
+                  placeholder={t('knowledge.qaPairs.selectQuestionLlmModel')}
+                  loading={llmModelsLoading}
+                  size="large"
+                  showSearch
+                  optionFilterProp="label"
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={llmModels.map(model => ({
+                    key: model.id,
+                    value: model.id,
+                    label: model.name,
+                    children: (
+                      <div className="flex items-center">
+                        <RobotOutlined className="mr-2 text-blue-500" />
+                        {model.name}
+                      </div>
+                    )
+                  }))}
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="answerLlmModel"
+                label={
+                  <div className="flex items-center">
+                    <RobotOutlined className="mr-1" />
+                    {t('knowledge.qaPairs.answerLlmModel')}
+                  </div>
+                }
+                rules={[{ required: true, message: t('knowledge.qaPairs.selectAnswerLlmModel') }]}
+              >
+                <Select
+                  placeholder={t('knowledge.qaPairs.selectAnswerLlmModel')}
                   loading={llmModelsLoading}
                   size="large"
                   showSearch
@@ -271,6 +363,30 @@ const GenerateQAPairModal = forwardRef<ModalRef, GenerateQAPairModalProps>(
                   className="w-full"
                   size="large"
                   placeholder={t('knowledge.qaPairs.enterQaCount')}
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="questionPrompt"
+                label={t('knowledge.qaPairs.questionPrompt')}
+              >
+                <TextArea
+                  rows={4}
+                  placeholder={t('knowledge.qaPairs.questionPromptPlaceholder')}
+                  maxLength={2000}
+                  showCount
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="answerPrompt"
+                label={t('knowledge.qaPairs.answerPrompt')}
+              >
+                <TextArea
+                  rows={4}
+                  placeholder={t('knowledge.qaPairs.answerPromptPlaceholder')}
+                  maxLength={2000}
+                  showCount
                 />
               </Form.Item>
             </Form>

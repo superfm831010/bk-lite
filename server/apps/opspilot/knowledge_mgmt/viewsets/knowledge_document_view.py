@@ -11,7 +11,7 @@ from rest_framework.decorators import action
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph
+from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph, QAPairs
 from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
 from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.serializers import KnowledgeDocumentSerializer
@@ -50,6 +50,8 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             return JsonResponse({"result": False, "message": _("training document can not be deleted")})
         with transaction.atomic():
             ConversationTag.objects.filter(knowledge_document_id=instance.id).delete()
+            for i in QAPairs.objects.filter(document_id=instance.id):
+                i.delete()
             instance.delete()
         return JsonResponse({"result": True})
 
@@ -61,7 +63,9 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         if type(knowledge_document_ids) is not list:
             knowledge_document_ids = [knowledge_document_ids]
         KnowledgeDocument.objects.filter(id__in=knowledge_document_ids).update(train_status=DocumentStatus.TRAINING)
-        general_embed.delay(knowledge_document_ids, request.user.username, request.user.domain)
+        general_embed.delay(
+            knowledge_document_ids, request.user.username, request.user.domain, kwargs["delete_qa_pairs"]
+        )
         return JsonResponse({"result": True})
 
     @action(methods=["GET"], detail=False)
@@ -245,10 +249,10 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         KnowledgeDocument.objects.filter(id__in=doc_ids).delete()
         index_name = f"knowledge_base_{knowledge_base_id}"
         try:
-            KnowledgeSearchService.delete_es_content(
-                index_name,
-                ",".join([str(i) for i in doc_ids]),
-            )
+            for i in doc_ids:
+                KnowledgeSearchService.delete_es_content(index_name, str(i))
+            for i in QAPairs.objects.filter(document_id=doc_ids):
+                i.delete()
         except Exception as e:
             logger.exception(e)
             return JsonResponse({"result": False, "message": _("delete failed")})
@@ -388,5 +392,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             document.semantic_chunk_parse_embedding_model = EmbedProvider.objects.get(
                 id=kwargs["semantic_chunk_parse_embedding_model"]
             )
-        res = general_embed_by_document_list([document], is_show=True, username=request.user.username)
+        res = general_embed_by_document_list(
+            [document], is_show=True, username=request.user.username, domain=request.user.domain
+        )
         return JsonResponse({"result": True, "data": res})
