@@ -206,6 +206,8 @@ export const useGraphData = (
 
       const viewSets = topologyData.view_sets || {};
       loadTopologyData(viewSets);
+      // 适应画布
+      graphInstance.zoomToFit({ padding: 20, maxScale: 1 });
     } catch (error) {
       console.error('加载拓扑图失败:', error);
     } finally {
@@ -325,9 +327,6 @@ export const useGraphData = (
       loadChartNodeData(nodeId, config);
     });
 
-    setTimeout(() => {
-      graphInstance.centerContent();
-    }, 300);
   }, [graphInstance, updateSingleNodeData, loadChartNodeData, startLoadingAnimation]);
 
   return {
