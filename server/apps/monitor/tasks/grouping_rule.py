@@ -57,6 +57,8 @@ class SyncInstance:
                     "auto": True,
                     "is_deleted": False,
                 }
+            obj_msg = f"监控-实例发现{monitor_info['name']},数量:{metrics.get('stats', {}).get('seriesFetched', '0')}"
+            logger.info(obj_msg)
         return instances_map
 
     # 查询库中已有的实例

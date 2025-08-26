@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import json
 from typing import Any, Protocol, TypedDict
 
 from pydantic import BaseModel, Field
 
 from .models import Message, PromptFunction, PromptVersion
+from .prompt_helpers import to_prompt_json
 
 
 class EdgeDuplicate(BaseModel):
@@ -67,11 +67,11 @@ def edge(context: dict[str, Any]) -> list[Message]:
         Given the following context, determine whether the New Edge represents any of the edges in the list of Existing Edges.
 
         <EXISTING EDGES>
-        {json.dumps(context['related_edges'], indent=2)}
+        {to_prompt_json(context['related_edges'], ensure_ascii=context.get('ensure_ascii', False), indent=2)}
         </EXISTING EDGES>
 
         <NEW EDGE>
-        {json.dumps(context['extracted_edges'], indent=2)}
+        {to_prompt_json(context['extracted_edges'], ensure_ascii=context.get('ensure_ascii', False), indent=2)}
         </NEW EDGE>
         
         Task:
@@ -98,7 +98,7 @@ def edge_list(context: dict[str, Any]) -> list[Message]:
         Given the following context, find all of the duplicates in a list of facts:
 
         Facts:
-        {json.dumps(context['edges'], indent=2)}
+        {to_prompt_json(context['edges'], ensure_ascii=context.get('ensure_ascii', False), indent=2)}
 
         Task:
         If any facts in Facts is a duplicate of another fact, return a new fact with one of their uuid's.
@@ -141,9 +141,9 @@ def resolve_edge(context: dict[str, Any]) -> list[Message]:
         
 
         Task:
-        If the NEW FACT represents the same factual information as any fact in EXISTING FACTS, return the idx of the duplicate fact.
+        If the NEW FACT represents identical factual information of one or more in EXISTING FACTS, return the idx of the duplicate facts.
         Facts with similar information that contain key differences should not be marked as duplicates.
-        If the NEW FACT is not a duplicate of any of the EXISTING FACTS, return -1.
+        If the NEW FACT is not a duplicate of any of the EXISTING FACTS, return an empty list.
         
         Given the predefined FACT TYPES, determine if the NEW FACT should be classified as one of these types.
         Return the fact type as fact_type or DEFAULT if NEW FACT is not one of the FACT TYPES.
@@ -153,8 +153,8 @@ def resolve_edge(context: dict[str, Any]) -> list[Message]:
         If there are no contradicted facts, return an empty list.
 
         Guidelines:
-        1. The facts do not need to be completely identical to be duplicates, they just need to express the same information.
-        2. Some facts may be very similar but will have key differences, particularly around numeric values in the facts.
+        1. Some facts may be very similar but will have key differences, particularly around numeric values in the facts.
+            Do not mark these facts as duplicates.
         """,
         ),
     ]

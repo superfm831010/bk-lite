@@ -53,7 +53,8 @@ class BaseOpenAIClient(LLMClient):
         max_tokens: int = DEFAULT_MAX_TOKENS,
     ):
         if cache:
-            raise NotImplementedError('Caching is not implemented for OpenAI-based clients')
+            raise NotImplementedError(
+                'Caching is not implemented for OpenAI-based clients')
 
         if config is None:
             config = LLMConfig()
@@ -95,7 +96,8 @@ class BaseOpenAIClient(LLMClient):
             if m.role == 'user':
                 openai_messages.append({'role': 'user', 'content': m.content})
             elif m.role == 'system':
-                openai_messages.append({'role': 'system', 'content': m.content})
+                openai_messages.append(
+                    {'role': 'system', 'content': m.content})
         return openai_messages
 
     def _get_model_for_size(self, model_size: ModelSize) -> str:
@@ -107,14 +109,18 @@ class BaseOpenAIClient(LLMClient):
 
     def _handle_structured_response(self, response: Any) -> dict[str, Any]:
         """Handle structured response parsing and validation."""
-        response_object = response.choices[0].message
+        # For OpenAI beta chat.completions.parse response
+        parsed_response = response.choices[0].message
 
-        if response_object.parsed:
-            return response_object.parsed.model_dump()
-        elif response_object.refusal:
-            raise RefusalError(response_object.refusal)
+        if parsed_response.parsed:
+            # Convert pydantic model to dict
+            return parsed_response.parsed.model_dump()
+        elif parsed_response.refusal:
+            raise RefusalError(parsed_response.refusal)
         else:
-            raise Exception(f'Invalid response from LLM: {response_object.model_dump()}')
+            # Fallback to content parsing
+            content = parsed_response.content or '{}'
+            return json.loads(content)
 
     def _handle_json_response(self, response: Any) -> dict[str, Any]:
         """Handle JSON response parsing."""
@@ -152,7 +158,8 @@ class BaseOpenAIClient(LLMClient):
                 return self._handle_json_response(response)
 
         except openai.LengthFinishReasonError as e:
-            raise Exception(f'Output length exceeded max tokens {self.max_tokens}: {e}') from e
+            raise Exception(
+                f'Output length exceeded max tokens {self.max_tokens}: {e}') from e
         except openai.RateLimitError as e:
             raise RateLimitError from e
         except Exception as e:
@@ -193,7 +200,8 @@ class BaseOpenAIClient(LLMClient):
 
                 # Don't retry if we've hit the max retries
                 if retry_count >= self.MAX_RETRIES:
-                    logger.error(f'Max retries ({self.MAX_RETRIES}) exceeded. Last error: {e}')
+                    logger.error(
+                        f'Max retries ({self.MAX_RETRIES}) exceeded. Last error: {e}')
                     raise
 
                 retry_count += 1
@@ -214,4 +222,5 @@ class BaseOpenAIClient(LLMClient):
                 )
 
         # If we somehow get here, raise the last error
-        raise last_error or Exception('Max retries exceeded with no specific error')
+        raise last_error or Exception(
+            'Max retries exceeded with no specific error')

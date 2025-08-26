@@ -29,29 +29,16 @@ from graphiti_core.embedder import EmbedderClient
 from graphiti_core.errors import EdgeNotFoundError, GroupsEdgesNotFoundError
 from graphiti_core.helpers import parse_db_date
 from graphiti_core.models.edges.edge_db_queries import (
-    COMMUNITY_EDGE_SAVE,
-    ENTITY_EDGE_SAVE,
+    COMMUNITY_EDGE_RETURN,
+    ENTITY_EDGE_RETURN,
+    EPISODIC_EDGE_RETURN,
     EPISODIC_EDGE_SAVE,
+    get_community_edge_save_query,
+    get_entity_edge_save_query,
 )
 from graphiti_core.nodes import Node
 
 logger = logging.getLogger(__name__)
-
-ENTITY_EDGE_RETURN: LiteralString = """
-        RETURN
-            e.uuid AS uuid,
-            startNode(e).uuid AS source_node_uuid,
-            endNode(e).uuid AS target_node_uuid,
-            e.created_at AS created_at,
-            e.name AS name,
-            e.group_id AS group_id,
-            e.fact AS fact,
-            e.episodes AS episodes,
-            e.expired_at AS expired_at,
-            e.valid_at AS valid_at,
-            e.invalid_at AS invalid_at,
-            properties(e) AS attributes
-            """
 
 
 class Edge(BaseModel, ABC):
@@ -67,13 +54,28 @@ class Edge(BaseModel, ABC):
     async def delete(self, driver: GraphDriver):
         result = await driver.execute_query(
             """
-        MATCH (n)-[e:MENTIONS|RELATES_TO|HAS_MEMBER {uuid: $uuid}]->(m)
-        DELETE e
-        """,
+            MATCH (n)-[e:MENTIONS|RELATES_TO|HAS_MEMBER {uuid: $uuid}]->(m)
+            DELETE e
+            """,
             uuid=self.uuid,
         )
 
         logger.debug(f'Deleted Edge: {self.uuid}')
+
+        return result
+
+    @classmethod
+    async def delete_by_uuids(cls, driver: GraphDriver, uuids: list[str]):
+        result = await driver.execute_query(
+            """
+            MATCH (n)-[e:MENTIONS|RELATES_TO|HAS_MEMBER]->(m)
+            WHERE e.uuid IN $uuids
+            DELETE e
+            """,
+            uuids=uuids,
+        )
+
+        logger.debug(f'Deleted Edges: {uuids}')
 
         return result
 
@@ -108,14 +110,10 @@ class EpisodicEdge(Edge):
     async def get_by_uuid(cls, driver: GraphDriver, uuid: str):
         records, _, _ = await driver.execute_query(
             """
-        MATCH (n:Episodic)-[e:MENTIONS {uuid: $uuid}]->(m:Entity)
-        RETURN
-            e.uuid As uuid,
-            e.group_id AS group_id,
-            n.uuid AS source_node_uuid, 
-            m.uuid AS target_node_uuid, 
-            e.created_at AS created_at
-        """,
+            MATCH (n:Episodic)-[e:MENTIONS {uuid: $uuid}]->(m:Entity)
+            RETURN
+            """
+            + EPISODIC_EDGE_RETURN,
             uuid=uuid,
             routing_='r',
         )
@@ -130,15 +128,11 @@ class EpisodicEdge(Edge):
     async def get_by_uuids(cls, driver: GraphDriver, uuids: list[str]):
         records, _, _ = await driver.execute_query(
             """
-        MATCH (n:Episodic)-[e:MENTIONS]->(m:Entity)
-        WHERE e.uuid IN $uuids
-        RETURN
-            e.uuid As uuid,
-            e.group_id AS group_id,
-            n.uuid AS source_node_uuid, 
-            m.uuid AS target_node_uuid, 
-            e.created_at AS created_at
-        """,
+            MATCH (n:Episodic)-[e:MENTIONS]->(m:Entity)
+            WHERE e.uuid IN $uuids
+            RETURN
+            """
+            + EPISODIC_EDGE_RETURN,
             uuids=uuids,
             routing_='r',
         )
@@ -162,19 +156,17 @@ class EpisodicEdge(Edge):
 
         records, _, _ = await driver.execute_query(
             """
-        MATCH (n:Episodic)-[e:MENTIONS]->(m:Entity)
-        WHERE e.group_id IN $group_ids
-        """
+            MATCH (n:Episodic)-[e:MENTIONS]->(m:Entity)
+            WHERE e.group_id IN $group_ids
+            """
             + cursor_query
             + """
-        RETURN
-            e.uuid As uuid,
-            e.group_id AS group_id,
-            n.uuid AS source_node_uuid, 
-            m.uuid AS target_node_uuid, 
-            e.created_at AS created_at
-        ORDER BY e.uuid DESC 
-        """
+            RETURN
+            """
+            + EPISODIC_EDGE_RETURN
+            + """
+            ORDER BY e.uuid DESC 
+            """
             + limit_query,
             group_ids=group_ids,
             uuid=uuid_cursor,
@@ -222,11 +214,14 @@ class EntityEdge(Edge):
         return self.fact_embedding
 
     async def load_fact_embedding(self, driver: GraphDriver):
-        query: LiteralString = """
+        records, _, _ = await driver.execute_query(
+            """
             MATCH (n:Entity)-[e:RELATES_TO {uuid: $uuid}]->(m:Entity)
             RETURN e.fact_embedding AS fact_embedding
-        """
-        records, _, _ = await driver.execute_query(query, uuid=self.uuid, routing_='r')
+            """,
+            uuid=self.uuid,
+            routing_='r',
+        )
 
         if len(records) == 0:
             raise EdgeNotFoundError(self.uuid)
@@ -252,7 +247,7 @@ class EntityEdge(Edge):
         edge_data.update(self.attributes or {})
 
         result = await driver.execute_query(
-            ENTITY_EDGE_SAVE,
+            get_entity_edge_save_query(driver.provider),
             edge_data=edge_data,
         )
 
@@ -264,8 +259,9 @@ class EntityEdge(Edge):
     async def get_by_uuid(cls, driver: GraphDriver, uuid: str):
         records, _, _ = await driver.execute_query(
             """
-        MATCH (n:Entity)-[e:RELATES_TO {uuid: $uuid}]->(m:Entity)
-        """
+            MATCH (n:Entity)-[e:RELATES_TO {uuid: $uuid}]->(m:Entity)
+            RETURN
+            """
             + ENTITY_EDGE_RETURN,
             uuid=uuid,
             routing_='r',
@@ -284,9 +280,10 @@ class EntityEdge(Edge):
 
         records, _, _ = await driver.execute_query(
             """
-        MATCH (n:Entity)-[e:RELATES_TO]->(m:Entity)
-        WHERE e.uuid IN $uuids
-        """
+            MATCH (n:Entity)-[e:RELATES_TO]->(m:Entity)
+            WHERE e.uuid IN $uuids
+            RETURN
+            """
             + ENTITY_EDGE_RETURN,
             uuids=uuids,
             routing_='r',
@@ -303,20 +300,32 @@ class EntityEdge(Edge):
         group_ids: list[str],
         limit: int | None = None,
         uuid_cursor: str | None = None,
+        with_embeddings: bool = False,
     ):
         cursor_query: LiteralString = 'AND e.uuid < $uuid' if uuid_cursor else ''
         limit_query: LiteralString = 'LIMIT $limit' if limit is not None else ''
+        with_embeddings_query: LiteralString = (
+            """,
+                e.fact_embedding AS fact_embedding
+                """
+            if with_embeddings
+            else ''
+        )
 
         records, _, _ = await driver.execute_query(
             """
-        MATCH (n:Entity)-[e:RELATES_TO]->(m:Entity)
-        WHERE e.group_id IN $group_ids
-        """
+            MATCH (n:Entity)-[e:RELATES_TO]->(m:Entity)
+            WHERE e.group_id IN $group_ids
+            """
             + cursor_query
-            + ENTITY_EDGE_RETURN
             + """
-        ORDER BY e.uuid DESC 
-        """
+            RETURN
+            """
+            + ENTITY_EDGE_RETURN
+            + with_embeddings_query
+            + """
+            ORDER BY e.uuid DESC 
+            """
             + limit_query,
             group_ids=group_ids,
             uuid=uuid_cursor,
@@ -332,13 +341,15 @@ class EntityEdge(Edge):
 
     @classmethod
     async def get_by_node_uuid(cls, driver: GraphDriver, node_uuid: str):
-        query: LiteralString = (
+        records, _, _ = await driver.execute_query(
             """
-                                                        MATCH (n:Entity {uuid: $node_uuid})-[e:RELATES_TO]-(m:Entity)
-                                                        """
-            + ENTITY_EDGE_RETURN
+            MATCH (n:Entity {uuid: $node_uuid})-[e:RELATES_TO]-(m:Entity)
+            RETURN
+            """
+            + ENTITY_EDGE_RETURN,
+            node_uuid=node_uuid,
+            routing_='r',
         )
-        records, _, _ = await driver.execute_query(query, node_uuid=node_uuid, routing_='r')
 
         edges = [get_entity_edge_from_record(record) for record in records]
 
@@ -348,7 +359,7 @@ class EntityEdge(Edge):
 class CommunityEdge(Edge):
     async def save(self, driver: GraphDriver):
         result = await driver.execute_query(
-            COMMUNITY_EDGE_SAVE,
+            get_community_edge_save_query(driver.provider),
             community_uuid=self.source_node_uuid,
             entity_uuid=self.target_node_uuid,
             uuid=self.uuid,
@@ -364,14 +375,10 @@ class CommunityEdge(Edge):
     async def get_by_uuid(cls, driver: GraphDriver, uuid: str):
         records, _, _ = await driver.execute_query(
             """
-        MATCH (n:Community)-[e:HAS_MEMBER {uuid: $uuid}]->(m:Entity | Community)
-        RETURN
-            e.uuid As uuid,
-            e.group_id AS group_id,
-            n.uuid AS source_node_uuid, 
-            m.uuid AS target_node_uuid, 
-            e.created_at AS created_at
-        """,
+            MATCH (n:Community)-[e:HAS_MEMBER {uuid: $uuid}]->(m)
+            RETURN
+            """
+            + COMMUNITY_EDGE_RETURN,
             uuid=uuid,
             routing_='r',
         )
@@ -384,15 +391,11 @@ class CommunityEdge(Edge):
     async def get_by_uuids(cls, driver: GraphDriver, uuids: list[str]):
         records, _, _ = await driver.execute_query(
             """
-        MATCH (n:Community)-[e:HAS_MEMBER]->(m:Entity | Community)
-        WHERE e.uuid IN $uuids
-        RETURN
-            e.uuid As uuid,
-            e.group_id AS group_id,
-            n.uuid AS source_node_uuid, 
-            m.uuid AS target_node_uuid, 
-            e.created_at AS created_at
-        """,
+            MATCH (n:Community)-[e:HAS_MEMBER]->(m)
+            WHERE e.uuid IN $uuids
+            RETURN
+            """
+            + COMMUNITY_EDGE_RETURN,
             uuids=uuids,
             routing_='r',
         )
@@ -414,19 +417,17 @@ class CommunityEdge(Edge):
 
         records, _, _ = await driver.execute_query(
             """
-        MATCH (n:Community)-[e:HAS_MEMBER]->(m:Entity | Community)
-        WHERE e.group_id IN $group_ids
-        """
+            MATCH (n:Community)-[e:HAS_MEMBER]->(m)
+            WHERE e.group_id IN $group_ids
+            """
             + cursor_query
             + """
-        RETURN
-            e.uuid As uuid,
-            e.group_id AS group_id,
-            n.uuid AS source_node_uuid, 
-            m.uuid AS target_node_uuid, 
-            e.created_at AS created_at
-        ORDER BY e.uuid DESC
-        """
+            RETURN
+            """
+            + COMMUNITY_EDGE_RETURN
+            + """
+            ORDER BY e.uuid DESC
+            """
             + limit_query,
             group_ids=group_ids,
             uuid=uuid_cursor,
@@ -456,6 +457,7 @@ def get_entity_edge_from_record(record: Any) -> EntityEdge:
         source_node_uuid=record['source_node_uuid'],
         target_node_uuid=record['target_node_uuid'],
         fact=record['fact'],
+        fact_embedding=record.get('fact_embedding'),
         name=record['name'],
         group_id=record['group_id'],
         episodes=record['episodes'],

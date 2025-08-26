@@ -23,7 +23,7 @@ function HomepageHeader() {
         <div className={styles.heroAnimation}>
           <div className={styles.heroTitleAccent}>BlueKing Lite</div>
           <p className={styles.heroSubtitle}>
-            AI 原生的轻量化蓝鲸平台，重塑智能运维体验
+            AI 原生的轻量化运维平台，重塑智能运维体验
           </p>
           <div className={styles.heroStats}>
             <div className={styles.statCard}>
@@ -40,15 +40,15 @@ function HomepageHeader() {
             <Link
                 className={clsx(styles.button, styles['button--primary'])}
                 to="https://bklite.canway.net/">
-                <span className={styles.buttonIcon}>⚡</span>
+                <span className={styles.buttonIcon}>🚀</span>
                 在线体验
-                <span className={styles.buttonArrow}>→</span>
+                <span className={styles.buttonArrow}>▶</span>
               </Link>
               <Link
                 className={clsx(styles.button, styles['button--secondary'])}
-                to="/docs/tutorial-basics/create-a-document">
-                <span className={styles.buttonIcon}>📖</span>
-                快速入门
+                to="/docs/deploy/docker-compose">
+                <span className={styles.buttonIcon}>📦</span>
+                部署指南
               </Link>
           </div>
         </div>
@@ -61,8 +61,8 @@ export default function Home() {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title={`${siteConfig.title} - 轻量级蓝鲸平台`}
-      description="BKLite是下一代轻量级蓝鲸平台，融合AI技术，为企业提供简单高效的数字化转型解决方案">
+      title={`${siteConfig.title} - 轻量级运维平台`}
+      description="">
       <LiquidNavbar />
       <HomepageHeader />
       <main>

@@ -43,12 +43,15 @@ class DocLoader:
             return []
 
         tables = document.tables
-        for table in tqdm(tables, desc=f"解析[{self.file_path}]的表格"):
-            docs.append(Document(self.table_to_md(table),
-                                 metadata={"format": "table"}))
+        if tables:
+            logger.info(f"检测到[{self.file_path}]中有[{len(tables)}]个表格,开始解析表格")
+            for table in tqdm(tables, desc=f"解析[{self.file_path}]的表格"):
+                docs.append(Document(self.table_to_md(table),
+                                     metadata={"format": "table"}))
 
         # 提取图片并使用OCR识别
         if self.ocr is not None:
+            logger.info(f"解析任务[{self.file_path}]启用了OCR识别,开始提取图片")
             for rel in document.part.rels.values():
                 if "image" in rel.target_ref:
                     image_data = rel.target_part.blob
