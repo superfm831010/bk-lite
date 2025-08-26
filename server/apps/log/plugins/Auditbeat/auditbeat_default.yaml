@@ -71,7 +71,7 @@ auditbeat.modules:
 
   # 减少数据量配置
   rate_limit: 10  # 限制每秒最多10个事件
-  failure_mode: 0  # 静默模式，减少噪音
+  failure_mode: silent  # 静默模式，减少噪音
 
   fields:
     log_type: "auditbeat"
