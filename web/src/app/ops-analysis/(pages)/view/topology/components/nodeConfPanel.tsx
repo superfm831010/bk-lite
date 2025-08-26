@@ -3,7 +3,7 @@ import { useDataSourceManager } from '@/app/ops-analysis/hooks/useDataSource';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { NodeConfPanelProps } from '@/app/ops-analysis/types/topology';
 import { iconList } from '@/app/cmdb/utils/common';
-import { FORM_DEFAULTS } from '../constants/nodeDefaults';
+import { NODE_DEFAULTS } from '../constants/nodeDefaults';
 import { processDataSourceParams } from '@/app/ops-analysis/utils/widgetDataTransform';
 import DataSourceParamsConfig from '@/app/ops-analysis/components/paramsConfig';
 import DataSourceSelect from '@/app/ops-analysis/components/dataSourceSelect';
@@ -66,17 +66,17 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       logoType: 'default',
       logoIcon: 'cc-host',
       logoUrl: '',
-      fontSize: FORM_DEFAULTS.SINGLE_VALUE.fontSize,
-      textColor: FORM_DEFAULTS.SINGLE_VALUE.textColor,
-      backgroundColor: FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
-      borderColor: FORM_DEFAULTS.SINGLE_VALUE.borderColor,
+      fontSize: NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize,
+      textColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.textColor,
+      backgroundColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.backgroundColor,
+      borderColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.borderColor,
       selectedFields: [],
     };
 
     if (nodeType === 'icon') {
       defaultValues.name = '';
-      defaultValues.width = FORM_DEFAULTS.ICON_NODE.width;
-      defaultValues.height = FORM_DEFAULTS.ICON_NODE.height;
+      defaultValues.width = NODE_DEFAULTS.ICON_NODE.width;
+      defaultValues.height = NODE_DEFAULTS.ICON_NODE.height;
     }
 
     setSelectedIcon('cc-host');
@@ -603,7 +603,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
               <>
                 <Form.Item label="字体大小" name="fontSize">
                   <InputNumber
-                    defaultValue={FORM_DEFAULTS.SINGLE_VALUE.fontSize}
+                    defaultValue={NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize}
                     min={10}
                     max={48}
                     step={1}
@@ -617,7 +617,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
                 <Form.Item label="文本颜色" name="textColor">
                   <Input
                     type="color"
-                    defaultValue={FORM_DEFAULTS.SINGLE_VALUE.textColor}
+                    defaultValue={NODE_DEFAULTS.SINGLE_VALUE_NODE.textColor}
                     className="w-20 h-8"
                     disabled={readonly}
                   />
@@ -625,7 +625,9 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
                 <Form.Item label="背景颜色" name="backgroundColor">
                   <Input
                     type="color"
-                    defaultValue={FORM_DEFAULTS.SINGLE_VALUE.backgroundColor}
+                    defaultValue={
+                      NODE_DEFAULTS.SINGLE_VALUE_NODE.backgroundColor
+                    }
                     className="w-20 h-8"
                     disabled={readonly}
                   />
@@ -634,7 +636,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
                 <Form.Item label="边框颜色" name="borderColor">
                   <Input
                     type="color"
-                    defaultValue={FORM_DEFAULTS.SINGLE_VALUE.borderColor}
+                    defaultValue={NODE_DEFAULTS.SINGLE_VALUE_NODE.borderColor}
                     className="w-20 h-8"
                     disabled={readonly}
                   />
@@ -645,7 +647,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
               <>
                 <Form.Item label="图标宽度" name="width">
                   <InputNumber
-                    defaultValue={FORM_DEFAULTS.ICON_NODE.width}
+                    defaultValue={NODE_DEFAULTS.ICON_NODE.width}
                     min={20}
                     max={300}
                     step={1}
@@ -658,7 +660,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
 
                 <Form.Item label="图标高度" name="height">
                   <InputNumber
-                    defaultValue={FORM_DEFAULTS.ICON_NODE.height}
+                    defaultValue={NODE_DEFAULTS.ICON_NODE.height}
                     min={20}
                     max={300}
                     step={1}

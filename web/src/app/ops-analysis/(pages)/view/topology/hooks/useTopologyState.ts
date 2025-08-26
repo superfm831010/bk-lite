@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import type { Graph, Edge } from '@antv/x6';
-import { FORM_DEFAULTS } from '../constants/nodeDefaults';
+import { NODE_DEFAULTS } from '../constants/nodeDefaults';
 import { EdgeData } from '@/app/ops-analysis/types/topology';
 
 export const useTopologyState = () => {
@@ -90,10 +90,10 @@ export const useTopologyState = () => {
         dataSource: editingNodeData.dataSource,
         dataSourceParams: editingNodeData.dataSourceParams || {}, 
         selectedFields: editingNodeData.selectedFields || [], 
-        fontSize: config.fontSize || FORM_DEFAULTS.SINGLE_VALUE.fontSize,
-        textColor: config.textColor || FORM_DEFAULTS.SINGLE_VALUE.textColor,
-        backgroundColor: config.backgroundColor || FORM_DEFAULTS.SINGLE_VALUE.backgroundColor,
-        borderColor: config.borderColor || FORM_DEFAULTS.SINGLE_VALUE.borderColor
+        fontSize: config.fontSize || NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize,
+        textColor: config.textColor || NODE_DEFAULTS.SINGLE_VALUE_NODE.textColor,
+        backgroundColor: config.backgroundColor || NODE_DEFAULTS.SINGLE_VALUE_NODE.backgroundColor,
+        borderColor: config.borderColor || NODE_DEFAULTS.SINGLE_VALUE_NODE.borderColor
       };
     }
 
@@ -108,12 +108,12 @@ export const useTopologyState = () => {
         editingNodeData.logoType === 'custom'
           ? editingNodeData.logoUrl
           : undefined,
-      width: editingNodeData.width || editingNodeData.config?.width || FORM_DEFAULTS.ICON_NODE.width,
-      height: editingNodeData.height || editingNodeData.config?.height || FORM_DEFAULTS.ICON_NODE.height,
+      width: editingNodeData.config?.width || NODE_DEFAULTS.ICON_NODE.width,
+      height: editingNodeData.config?.height || NODE_DEFAULTS.ICON_NODE.height,
       dataSourceParams: editingNodeData.dataSourceParams || {}, 
       selectedFields: editingNodeData.selectedFields || [],
-      backgroundColor: editingNodeData.config?.backgroundColor || FORM_DEFAULTS.ICON_NODE.backgroundColor,
-      borderColor: editingNodeData.config?.borderColor || FORM_DEFAULTS.ICON_NODE.borderColor,
+      backgroundColor: editingNodeData.config?.backgroundColor || NODE_DEFAULTS.ICON_NODE.backgroundColor,
+      borderColor: editingNodeData.config?.borderColor || NODE_DEFAULTS.ICON_NODE.borderColor,
     };
   }, [editingNodeData]);
 
