@@ -20,7 +20,6 @@ bash bootstrap.sh
 > 如需体验ops-pilot, 执行下述动作
 ```bash
 bash bootstrap.sh --opspilot
-docker-compose --profile opspilot up -d
 # 当使用plugin形式安装compose时
 # docker compose --profile opspilot up -d
 ```
@@ -31,9 +30,9 @@ docker-compose --profile opspilot up -d
 ```bash
 #!/bin/bash
 # 清除现有的容器，卷和网络
-docker-compose --profile opspilot down --volumes
+docker-compose down --volumes
 # 当使用plugin形式安装compose时
-# docker compose --profile opspilot down --volumes
+# docker compose down --volumes
 # 清除生成的安装包，环境变量和compose文件
 rm -rvf pkgs *.env docker-compose.yaml .env
 ```
