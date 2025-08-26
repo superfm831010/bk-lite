@@ -251,6 +251,7 @@ export const getQAPairColumns = (
     key: 'action',
     render: (_: any, record: QAPairData) => {
       const isProcessing = record.status === 'pending' || record.status === 'generating';
+      const isDocumentGenerated = record.create_type === 'document';
       
       return (
         <Space>
@@ -267,6 +268,22 @@ export const getQAPairColumns = (
               {t('common.export')}
             </Button>
           </PermissionWrapper>
+          {isDocumentGenerated && (
+            <PermissionWrapper
+              requiredPermissions={['Set']}
+              instPermissions={knowledgeBasePermissions}>
+              <Button
+                type="link"
+                size="small"
+                disabled={isProcessing}
+                onClick={() => {
+                  router.push(`/opspilot/knowledge/detail/documents/modify?type=qa_pairs&id=${id}&name=${name}&desc=${desc}&parId=${record.id}`);
+                }}
+              >
+                {t('common.set')}
+              </Button>
+            </PermissionWrapper>
+          )}
           <PermissionWrapper
             requiredPermissions={['Delete']}
             instPermissions={knowledgeBasePermissions}>
