@@ -535,7 +535,7 @@ class InstanceManage(object):
 
         attrs = [i for i in attrs if i["attr_id"] in attr_list] if attr_list else attrs
         association = [i for i in association if
-                       i["model_asst_id"] in association_list] if association_list else association
+                       i["model_asst_id"] in association_list] if association_list else []
         return Export(attrs, model_id=model_id, association=association).export_inst_list(inst_list)
 
     @staticmethod

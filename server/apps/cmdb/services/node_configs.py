@@ -384,7 +384,7 @@ class SSHNodeParamsMixin:
         return credential_data
 
     def get_instance_id(self, instance):
-        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
+        return f"{self.instance.id}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
 
 
 class HostNodeParams(SSHNodeParamsMixin, BaseNodeParams):
