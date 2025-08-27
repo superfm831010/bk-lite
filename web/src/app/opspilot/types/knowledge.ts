@@ -39,14 +39,8 @@ export interface ModelOption {
 }
 
 export interface ConfigDataProps {
-  selectedSearchTypes: string[];
   rerankModel: boolean;
   selectedRerankModel: string | null;
-  textSearchWeight: number;
-  vectorSearchWeight: number;
-  textSearchMode: string;
-  quantity: number;
-  candidate: number;
   selectedEmbedModel: string | null;
   resultCount: number | null;
   rerankTopK: number;
@@ -56,6 +50,9 @@ export interface ConfigDataProps {
   ragSize: number;
   qaSize: number;
   graphSize: number;
+  // New retrieval strategy fields
+  searchType: 'similarity_score_threshold' | 'mmr';
+  scoreThreshold: number;
 }
 
 export interface TableData {
@@ -195,5 +192,34 @@ export interface FormData {
 
 export interface ChunkItem {
   id: string;
+  content: string;
+}
+
+// QAPairForm 相关类型定义
+export interface QAPairFormData {
+  questionLlmModel: number;
+  answerLlmModel: number;
+  qaCount: number;
+  questionPrompt: string;
+  answerPrompt: string;
+  selectedDocuments: string[];
+}
+
+export interface DocumentItem {
+  key: string;
+  title: string;
+  description?: string;
+  type?: string;
+}
+
+export interface QAPairFormProps {
+  initialData?: Partial<QAPairFormData>;
+  onFormChange?: (isValid: boolean) => void;
+  onFormDataChange?: (data: QAPairFormData) => void;
+}
+
+export interface PreviewQAPair {
+  question: string;
+  answer?: string;
   content: string;
 }
