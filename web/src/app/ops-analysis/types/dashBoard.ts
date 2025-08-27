@@ -48,8 +48,8 @@ export interface ViewConfigProps {
 
 export interface ComponentSelectorProps {
   visible: boolean;
-  onAdd: (widget: string, config?: any) => void;
   onCancel: () => void;
+  onOpenConfig?: (item: any) => void;
 }
 
 export interface BaseWidgetProps {

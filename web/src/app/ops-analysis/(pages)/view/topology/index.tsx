@@ -17,10 +17,11 @@ import { NodeType, DropPosition } from '@/app/ops-analysis/types/topology';
 import TopologyToolbar from './components/toolbar';
 import ContextMenu from './components/contextMenu';
 import EdgeConfigPanel from './components/edgeConfPanel';
-import Sidebar from './components/nodeSidebar';
+import NodeSidebar from './components/nodeSidebar';
 import TextEditInput from './components/textEditInput';
 import NodeConfPanel from './components/nodeConfPanel';
 import ViewConfig from '../dashBoard/components/viewConfig';
+import ViewSelector from '../dashBoard/components/viewSelector';
 interface TopologyProps {
   selectedTopology?: DirItem | null;
 }
@@ -38,7 +39,11 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       null
     );
     const [dropPosition, setDropPosition] = useState<DropPosition | null>(null);
-
+    const [viewSelectorVisible, setViewSelectorVisible] = useState(false);
+    const [chartDropPosition, setChartDropPosition] = useState<{
+      x: number;
+      y: number;
+    } | null>(null);
     const state = useTopologyState();
 
     const {
@@ -111,6 +116,64 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       setAddNodeVisible(true);
     };
 
+    const handleShowChartSelector = (position?: DropPosition) => {
+      setChartDropPosition(position || { x: 300, y: 200 });
+      setViewSelectorVisible(true);
+    };
+
+    const handleChartSelectorConfirm = (layoutItem: any) => {
+      if (chartDropPosition) {
+        const chartNodeData = {
+          widget: layoutItem.widget,
+          name: layoutItem.title,
+          type: 'chart',
+          config: layoutItem.config,
+          position: chartDropPosition,
+          isNewNode: true,
+        };
+
+        state.setEditingNodeData(chartNodeData);
+        state.setViewConfigVisible(true);
+      }
+      setViewSelectorVisible(false);
+      setChartDropPosition(null);
+    };
+
+    const handleChartSelectorCancel = () => {
+      setViewSelectorVisible(false);
+      setChartDropPosition(null);
+    };
+
+    const handleTopologyViewConfigConfirm = async (values: any) => {
+      if (state.editingNodeData) {
+        // 检查是否是新节点
+        if (state.editingNodeData.isNewNode && state.editingNodeData.position) {
+          // 创建新的图表节点配置
+          const chartNodeConfig = {
+            name: values.name || state.editingNodeData.name,
+            dataSource: values.dataSource,
+            dataSourceParams: values.dataSourceParams || [],
+            valueConfig: {
+              chartType: values.chartType,
+              dataSource: values.dataSource,
+              dataSourceParams: values.dataSourceParams,
+              name: values.name || state.editingNodeData.name,
+            },
+          };
+
+          await handleAddChartNode(
+            state.editingNodeData.widget,
+            chartNodeConfig,
+            state.editingNodeData.position
+          );
+
+          state.setEditingNodeData(null);
+          state.setViewConfigVisible(false);
+        } else {
+          await handleViewConfigConfirm(values);
+        }
+      }
+    };
     const handleNodeEditClose = () => {
       if (addNodeVisible) {
         setAddNodeVisible(false);
@@ -200,11 +263,11 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
 
         <div className="flex-1 flex overflow-hidden">
           {/* 侧边栏 */}
-          <Sidebar
+          <NodeSidebar
             collapsed={state.collapsed}
             setCollapsed={state.setCollapsed}
             onShowNodeConfig={handleShowNodeConfig}
-            onAddChartNode={handleAddChartNode}
+            onShowChartSelector={handleShowChartSelector}
             isEditMode={state.isEditMode}
           />
 
@@ -267,11 +330,17 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           onCancel={handleNodeEditClose}
         />
 
+        <ViewSelector
+          visible={viewSelectorVisible}
+          onOpenConfig={handleChartSelectorConfirm}
+          onCancel={handleChartSelectorCancel}
+        />
+
         <ViewConfig
           open={state.viewConfigVisible}
           item={state.editingNodeData}
           onClose={() => state.setViewConfigVisible(false)}
-          onConfirm={handleViewConfigConfirm}
+          onConfirm={handleTopologyViewConfigConfirm}
         />
       </div>
     );

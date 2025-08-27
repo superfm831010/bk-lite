@@ -5,6 +5,7 @@ import { NodeConfPanelProps } from '@/app/ops-analysis/types/topology';
 import { iconList } from '@/app/cmdb/utils/common';
 import { NODE_DEFAULTS } from '../constants/nodeDefaults';
 import { processDataSourceParams } from '@/app/ops-analysis/utils/widgetDataTransform';
+import { buildTreeData } from '../utils/dataTreeUtils';
 import DataSourceParamsConfig from '@/app/ops-analysis/components/paramsConfig';
 import DataSourceSelect from '@/app/ops-analysis/components/dataSourceSelect';
 import SelectIcon, {
@@ -16,10 +17,10 @@ import {
   InputNumber,
   Upload,
   Radio,
-  Checkbox,
   Spin,
   Button,
   Drawer,
+  Tree,
 } from 'antd';
 import {
   UploadOutlined,
@@ -41,7 +42,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [logoType, setLogoType] = useState<'default' | 'custom'>('default');
   const [selectedIcon, setSelectedIcon] = useState<string>('');
-  const [dataFields, setDataFields] = useState<string[]>([]);
+  const [treeData, setTreeData] = useState<any[]>([]);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const [currentDataSource, setCurrentDataSource] = useState<number | null>(
@@ -84,7 +85,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     setLogoPreview('');
     setCurrentDataSource(null);
     setSelectedDataSource(undefined);
-    setDataFields([]);
+    setTreeData([]);
     setSelectedFields([]);
 
     form.setFieldsValue(defaultValues);
@@ -206,7 +207,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       setCurrentDataSource(dataSourceId);
       const selectedSource = dataSources.find((ds) => ds.id === dataSourceId);
       setSelectedDataSource(selectedSource);
-      setDataFields([]);
+      setTreeData([]);
       setSelectedFields([]);
 
       const currentValues = form.getFieldsValue();
@@ -228,41 +229,6 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     [dataSources, setSelectedDataSource, form, setDefaultParamValues]
   );
 
-  const getObjectFields = useCallback(
-    (obj: any, prefix = '', level = 0): string[] => {
-      if (
-        level >= 2 ||
-        typeof obj !== 'object' ||
-        obj === null ||
-        Array.isArray(obj)
-      ) {
-        return prefix ? [prefix] : [];
-      }
-
-      const fields: string[] = [];
-
-      Object.keys(obj).forEach((key) => {
-        const value = obj[key];
-        const currentPath = prefix ? `${prefix}.${key}` : key;
-
-        if (
-          typeof value === 'object' &&
-          value !== null &&
-          !Array.isArray(value) &&
-          level < 1
-        ) {
-          const subFields = getObjectFields(value, currentPath, level + 1);
-          fields.push(...subFields);
-        } else {
-          fields.push(currentPath);
-        }
-      });
-
-      return fields;
-    },
-    []
-  );
-
   const fetchDataFields = useCallback(async () => {
     if (!currentDataSource) {
       return;
@@ -280,34 +246,25 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         requestParams
       );
 
-      let fields: string[] = [];
+      // 构建树形数据
+      const tree = buildTreeData(data);
+      setTreeData(tree);
 
-      if (Array.isArray(data) && data.length > 0) {
-        const firstRow = data[0];
-
-        if (
-          typeof firstRow === 'object' &&
-          firstRow !== null &&
-          !Array.isArray(firstRow)
-        ) {
-          fields = getObjectFields(firstRow);
-        } else if (Array.isArray(firstRow)) {
-          fields = firstRow.map((_, index) => `字段${index + 1}`);
-        } else {
-          fields = ['数据值'];
-        }
-      } else if (
-        typeof data === 'object' &&
-        data !== null &&
-        !Array.isArray(data)
-      ) {
-        fields = getObjectFields(data);
-      }
-
-      setDataFields(fields);
+      // 同时构建扁平的字段列表用于后续处理
+      const flatFields: string[] = [];
+      const collectFields = (nodes: any[]) => {
+        nodes.forEach((node) => {
+          if (node.isLeaf && node.value) {
+            flatFields.push(node.value);
+          }
+          if (node.children) {
+            collectFields(node.children);
+          }
+        });
+      };
+      collectFields(tree);
     } catch (error) {
       console.error('获取数据字段失败:', error);
-      setDataFields([]);
     } finally {
       setLoadingData(false);
     }
@@ -316,13 +273,14 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     form,
     selectedDataSource?.params,
     getSourceDataByApiId,
-    getObjectFields,
   ]);
 
   const handleFieldChange = useCallback(
-    (checkedValues: string[]) => {
-      setSelectedFields(checkedValues);
-      form.setFieldsValue({ selectedFields: checkedValues });
+    (checkedKeys: string[]) => {
+      const newSelectedFields =
+        checkedKeys.length > 0 ? [checkedKeys[checkedKeys.length - 1]] : [];
+      setSelectedFields(newSelectedFields);
+      form.setFieldsValue({ selectedFields: newSelectedFields });
     },
     [form]
   );
@@ -519,61 +477,54 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
                   />
                 </div>
 
-                {dataFields.length > 0 ? (
+                {treeData.length > 0 ? (
                   <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                     <div className="text-sm text-gray-600 mb-3">
                       选择要显示的数据字段：
                     </div>
                     <Form.Item name="selectedFields" noStyle>
-                      <Checkbox.Group
-                        options={dataFields.map((field) => ({
-                          label: (
-                            <span
-                              className={
-                                field.includes('.')
-                                  ? 'text-blue-600'
-                                  : 'text-gray-800'
+                      <Tree
+                        checkable
+                        checkStrictly
+                        defaultExpandAll
+                        checkedKeys={selectedFields}
+                        onCheck={(checkedKeys: any) => {
+                          const keys = Array.isArray(checkedKeys)
+                            ? checkedKeys
+                            : checkedKeys.checked;
+                          // 过滤出叶子节点
+                          const findNode = (
+                            nodes: any[],
+                            targetKey: string
+                          ): any => {
+                            for (const node of nodes) {
+                              if (node.key === targetKey) {
+                                return node;
                               }
-                            >
-                              {field.includes('.') ? (
-                                <>
-                                  {field.split('.').map((part, index, arr) => (
-                                    <span key={index}>
-                                      {index > 0 && (
-                                        <span className="text-gray-400 mx-1">
-                                          .
-                                        </span>
-                                      )}
-                                      <span
-                                        className={
-                                          index === arr.length - 1
-                                            ? 'font-medium'
-                                            : 'text-gray-600'
-                                        }
-                                      >
-                                        {part}
-                                      </span>
-                                    </span>
-                                  ))}
-                                </>
-                              ) : (
-                                field
-                              )}
-                            </span>
-                          ),
-                          value: field,
-                        }))}
-                        value={selectedFields}
-                        onChange={handleFieldChange}
-                        className="flex flex-col space-y-2"
+                              if (node.children) {
+                                const found = findNode(
+                                  node.children,
+                                  targetKey
+                                );
+                                if (found) return found;
+                              }
+                            }
+                            return null;
+                          };
+
+                          // 只保留叶子节点的选择
+                          const leafKeys = keys.filter((key: string) => {
+                            const node = findNode(treeData, key);
+                            return node && node.isLeaf;
+                          });
+
+                          handleFieldChange(leafKeys);
+                        }}
+                        treeData={treeData}
+                        height={300}
+                        className="bg-white border border-gray-200 rounded p-2"
                       />
                     </Form.Item>
-                  </div>
-                ) : dataSourcesLoading ? (
-                  <div className="text-center py-4 text-gray-500">
-                    <div className="flex items-center justify-center">
-                      <Spin size="small" className="mr-2" />
-                    </div>
                   </div>
                 ) : currentDataSource ? (
                   <div className="text-center py-4 text-gray-500">
