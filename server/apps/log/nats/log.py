@@ -17,6 +17,8 @@ def log_hits(query, start_time, end_time, field, fields_limit=5, step="5m", *arg
     resp = vm_api.hits(query, start_time, end_time, field, fields_limit, step)
     data = []
     for hit_dict in resp["hits"]:
-        data.append(hit_dict.get("total", 0))
+        timestamps = hit_dict.get("timestamps", [])
+        values = hit_dict.get("values", [])
+        data.extend([{"name": k, "value": v} for k, v in zip(timestamps, values)])
 
     return {"result": True, "data": data, "message": ""}
