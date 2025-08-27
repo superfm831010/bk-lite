@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Icon from '@/components/icon';
-import ComponentSelector from '../../dashBoard/components/viewSelector';
 import { SidebarProps, NodeType } from '@/app/ops-analysis/types/topology';
 import { Button } from 'antd';
 import {
@@ -15,15 +14,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   isEditMode = false,
   setCollapsed,
   onShowNodeConfig,
-  onAddChartNode,
+  onShowChartSelector,
 }) => {
-  const [componentSelectorVisible, setComponentSelectorVisible] =
-    useState(false);
-  const [chartDropPosition, setChartDropPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-
   const nodeTypes: NodeType[] = [
     {
       id: 'single-value',
@@ -57,8 +49,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
 
     if (nodeType.id === 'chart') {
-      setChartDropPosition({ x: 300, y: 200 });
-      setComponentSelectorVisible(true);
+      const position = { x: 300, y: 200 };
+      onShowChartSelector?.(position);
     } else if (onShowNodeConfig) {
       const position = { x: 300, y: 200 };
       onShowNodeConfig(nodeType, position);
@@ -157,8 +149,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               }
 
               if (nodeType.id === 'chart') {
-                setChartDropPosition(position);
-                setComponentSelectorVisible(true);
+                onShowChartSelector?.(position);
               } else if (onShowNodeConfig) {
                 onShowNodeConfig(nodeType, position);
               }
@@ -182,19 +173,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       document.removeEventListener('dragover', handleGlobalDragOver);
     };
   }, [nodeTypes, onShowNodeConfig]);
-
-  const handleChartComponentAdd = (widget: string, config?: any) => {
-    if (onAddChartNode && chartDropPosition) {
-      onAddChartNode(widget, config, chartDropPosition);
-    }
-    setComponentSelectorVisible(false);
-    setChartDropPosition(null);
-  };
-
-  const handleChartComponentCancel = () => {
-    setComponentSelectorVisible(false);
-    setChartDropPosition(null);
-  };
 
   return (
     <>
@@ -251,12 +229,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
       </div>
-
-      <ComponentSelector
-        visible={componentSelectorVisible}
-        onAdd={handleChartComponentAdd}
-        onCancel={handleChartComponentCancel}
-      />
     </>
   );
 };
