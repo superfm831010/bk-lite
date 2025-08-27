@@ -27,7 +27,7 @@ class Log(object):
 
 class LogOperationAnaRpc(BaseOperationAnaRpc):
 
-    def search(self, query, start_time, end_time, limit=10, **kwargs):
+    def search(self, query, time_range, limit=10, **kwargs):
         """
         日志搜索
         query: 日志查询语句
@@ -35,9 +35,9 @@ class LogOperationAnaRpc(BaseOperationAnaRpc):
         end_time: 结束时间，eg:2025-08-16T11:52:13.106Z
         limit: 返回结果条数，默认10
         """
-        return self.client.run("log_search", query=query, start_time=start_time, end_time=end_time, limit=limit, **kwargs)
+        return self.client.run("log_search", query=query, time_range=time_range, limit=limit, **kwargs)
 
-    def hits(self, query, start_time, end_time, field, fields_limit=5, step="5m", **kwargs):
+    def hits(self, query, time_range, field, fields_limit=5, step="5m", **kwargs):
         """
         日志命中
         query: 日志查询语句
@@ -47,4 +47,4 @@ class LogOperationAnaRpc(BaseOperationAnaRpc):
         fields_limit: 返回的字段值个数限制，默认5
         step: 统计粒度，默认5m
         """
-        return self.client.run("log_hits", query=query, start_time=start_time, end_time=end_time, field=field, fields_limit=fields_limit, step=step, **kwargs)
+        return self.client.run("log_hits", query=query, time_range=time_range, field=field, fields_limit=fields_limit, step=step, **kwargs)
