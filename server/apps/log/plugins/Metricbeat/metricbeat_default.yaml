@@ -21,42 +21,16 @@ processors:
   - add_host_metadata:
       when.not.contains.tags: forwarded
 
-  - script:
-      lang: javascript
-      source: >
-        function process(event) {
-          var evt = event.Get();
-          
-          // 标准化时间戳
-          if (evt['@timestamp']) {
-            event.Put('timestamp', evt['@timestamp']);
-          }
-          
-          // 提取关键性能指标
-          if (evt.system) {
-            if (evt.system.load) {
-              event.Put('load_1m', evt.system.load['1']);
-              event.Put('load_5m', evt.system.load['5']);
-              event.Put('load_15m', evt.system.load['15']);
-            }
-          }
-          
-          return event;
-        }
-
 # ================================== Modules ===================================
 metricbeat.modules:
-# ================================== 健康检查模式 - 最小数据量 ==================================
 - module: system
   metricsets:
-    - uptime  # 改为监控系统运行时间，数据量更少且更稳定
+    - uptime
   enabled: true
-  period: 300s  # 进一步降低到5分钟
+  period: 600s  # 从300s改为600s，降低到10分钟一次
 
   fields:
     log_type: "metricbeat"
-    component: "system"
     health_check_mode: true
-    node_ip: "${node.ip}"
-    cloud_region: "${node.cloud_region}"
-  fields_under_root: false
+    _msg: "health check"
+  fields_under_root: true
