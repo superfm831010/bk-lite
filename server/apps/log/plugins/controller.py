@@ -1,5 +1,6 @@
 import os
 import uuid
+import json
 
 from jinja2 import Environment, FileSystemLoader, DebugUndefined
 
@@ -48,6 +49,10 @@ class Controller:
         """
         _context = {**context}
         env = Environment(loader=FileSystemLoader(template_dir), undefined=DebugUndefined)
+
+        # 添加 to_json 过滤器
+        env.filters['to_json'] = lambda obj: json.dumps(obj, ensure_ascii=False)
+
         template = env.get_template(file_name)
         return template.render(_context)
 
