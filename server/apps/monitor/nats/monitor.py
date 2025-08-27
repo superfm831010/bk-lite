@@ -1,4 +1,5 @@
 import nats_client
+from apps.core.utils.time_util import format_time_iso, format_timestamp
 
 from apps.monitor.models import MonitorObject, Metric, MonitorInstance
 from apps.monitor.serializers.monitor_object import MonitorObjectSerializer
@@ -240,8 +241,11 @@ def query_monitor_data_by_metric(query_data: dict, *args, **kwargs):
 
 
 @nats_client.register
-def mm_query_range(query: str, start, end, step="5m", *args, **kwargs):
-    resp = VictoriaMetricsAPI().query_range(query, start, end, step)
+def mm_query_range(query: str, time_range: list, step="5m", *args, **kwargs):
+    start_time, end_time = time_range
+    start_time = format_timestamp(start_time)
+    end_time = format_timestamp(end_time)
+    resp = VictoriaMetricsAPI().query_range(query, start_time, end_time, step)
     if resp["status"] == "success":
         _result = resp["data"]["result"]
         if _result:

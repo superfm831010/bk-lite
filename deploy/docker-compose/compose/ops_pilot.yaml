@@ -49,6 +49,7 @@ services:
       KNOWLEDGE_GRAPH_HOST: falkordb
       KNOWLEDGE_GRAPH_PASSWORD: ${FALKORDB_PASSWORD}
       KNOWLEDGE_GRAPH_PORT: 6379
+      GRAPHITI_TELEMETRY_ENABLED: "false"
     networks:
       - prod
     depends_on:
