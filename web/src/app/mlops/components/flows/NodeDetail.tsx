@@ -26,7 +26,7 @@ const NodeDetailDrawer = ({
   handleDelNode: () => void;
 }) => {
   const { t } = useTranslation();
-  const { getRasaIntentFileList, getRasaResponseFileList, getRasaSlotList } = useMlopsManageApi();
+  const { getRasaIntentFileList, getRasaResponseFileList, getRasaSlotList, getRasaFormList } = useMlopsManageApi();
   const [loading, setLoading] = useState<boolean>(false);
   const [options, setOptions] = useState<NodeOption[]>([]);
   const formRef = useRef<FormInstance>(null);
@@ -51,6 +51,9 @@ const NodeDetailDrawer = ({
         case 'slot':
           data = await getRasaSlotList({ dataset });
           break;
+        case 'form':
+          data = await getRasaFormList({ dataset });
+          break;
         default:
           break;
       }
@@ -66,7 +69,7 @@ const NodeDetailDrawer = ({
       });
       setOptions(options);
       if(node.data) {
-        formRef.current?.setFieldValue("select", node.data?.id);
+        formRef.current?.setFieldValue("select", node.data?.name);
       }
     } catch (e) {
       console.log(e)
@@ -93,17 +96,17 @@ const NodeDetailDrawer = ({
 
   return (
     <Drawer
-      title={"节点详情"}
+      title={t(`mlops-common.nodeDetail`)}
       open={open}
       width={400}
       onClose={closeDrawer}
       footer={[
-        <Button key="delete" className="float-right" danger onClick={delNode}>删除节点</Button>,
+        <Button key="delete" className="float-right" danger onClick={delNode}>{t(`mlops-common.delNode`)}</Button>,
       ]}
     >
       <div className="w-full h-full">
         <Form ref={formRef} layout="vertical">
-          <Form.Item label={"选择"} name="select">
+          <Form.Item label={t(`common.select`)} name="select">
             <Select options={options} placeholder={t(`common.selectMsg`)} onChange={handleChange} loading={loading} />
           </Form.Item>
         </Form>

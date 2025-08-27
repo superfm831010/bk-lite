@@ -64,7 +64,6 @@ const ModelRelease = () => {
       dataIndex: 'status',
       key: 'status',
       render: (_, record) => {
-        console.log(record.status)
         return <Switch checked={record.status === 'active'} onChange={(value: boolean) => handleModelAcitve(record.id, value)} />
       }
     },

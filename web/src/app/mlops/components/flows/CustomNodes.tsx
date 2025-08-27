@@ -29,10 +29,10 @@ export const IntentNode = ({ data, selected }: NodeProps<AppNode>) => {
     <div className={`px-4 py-2 shadow-md rounded-md text-[var(--color-text-1)] border-2 ${selected ? 'border-indigo-700' : 'border-indigo-500'}`}>
 
       {data.label && <div className="font-bold">{data.label}</div>}
-      {data.id &&
+      {data.name &&
         <div className="flex justify-center items-center">
           <Icon type='tijiaoxiangfa' className='mr-2 !w-4 !h-4' />
-          <span className='text-xs'>{data?.id}</span>
+          <span className='text-xs'>{data?.name}</span>
         </div>
       }
       {/* <Handle type="source" position={Position.Top} isConnectable={sourceConnections.length < 1} /> */}
@@ -53,9 +53,9 @@ export const SlotNode = ({ data, selected }: NodeProps<AppNode>) => {
   return (
     <div className={`px-4 py-2 shadow-md rounded-md text-[var(--color-text-1)] border-2 ${selected ? 'border-green-700' : 'border-green-500'}`}>
       {data.label && <div className="font-bold">{data.label}</div>}
-      {data.id && <div className="flex justify-center items-center">
+      {data.name && <div className="flex justify-center items-center">
         <Icon type='dangqianbianliang' className='mr-2 !w-4 !h-4' />
-        <span className='text-xs'>{data?.id}</span>
+        <span className='text-xs'>{data?.name}</span>
       </div>}
       <Handle type="source" position={Position.Top} isConnectable={sourceConnections.length < 1} />
       <Handle type="target" position={Position.Bottom} isConnectable={targetsConnections.length < 1} />
@@ -76,10 +76,10 @@ export const ResponseNode = ({ data, selected }: NodeProps<AppNode>) => {
   return (
     <div className={`px-4 py-2 shadow-md rounded-md text-[var(--color-text-1)] border-2 ${selected ? 'border-sky-600' : 'border-sky-400'}`}>
       {data.label && <div className="font-bold">{data.label}</div>}
-      {data.id &&
+      {data.name &&
         <div className="flex justify-center items-center">
           <Icon type='huifu-copy' className='mr-2 !w-4 !h-4' />
-          <span className='text-xs'>{data?.id}</span>
+          <span className='text-xs'>{data?.name}</span>
         </div>
       }
       <Handle type="source" position={Position.Top} isConnectable={sourceConnections.length < 1} />
@@ -100,10 +100,10 @@ export const FormNode = ({ data, selected }: NodeProps<AppNode>) => {
     <div className={`px-4 py-2 shadow-md rounded-md text-[var(--color-text-1)] border-2 ${selected ? 'border-red-700' : 'border-red-500'}`}>
       
       {data.label && <div className="font-bold">{data.label}</div>}
-      {data.id &&
+      {data.name &&
         <div className="flex justify-center items-center">
           <Icon type='biaodan' className='mr-2 !w-4 !h-4' />
-          <span className='text-xs'>{data?.id}</span>
+          <span className='text-xs'>{data?.name}</span>
         </div>
       }
       <Handle type="source" position={Position.Top} isConnectable={sourceConnections.length < 1} />

@@ -23,10 +23,10 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
   const { updateRasaStoryFile } = useMlopsManageApi();
   const [flowLoading, setFlowLoading] = useState<boolean>(false);
   const nodeTypes: NodeType[] = [
-    { type: 'intent', label: '意图节点', icon: 'tijiaoxiangfa' },
-    { type: 'response', label: '响应节点', icon: 'huifu-copy' },
-    { type: 'slot', label: '槽节点', icon: 'dangqianbianliang' },
-    { type: 'form', label: '表单节点', icon: 'biaodan' },
+    { type: 'intent', label: t(`datasets.intentNode`), icon: 'tijiaoxiangfa' },
+    { type: 'response', label: t(`datasets.responseNode`), icon: 'huifu-copy' },
+    { type: 'slot', label: t(`datasets.slotNode`), icon: 'dangqianbianliang' },
+    { type: 'form', label: t(`datasets.formNode`), icon: 'biaodan' },
   ];
 
   const [initialNodes, initialEdges] = useMemo(() => {
@@ -64,6 +64,7 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
           position: item.position,
           data: {
             id: item?.id,
+            name: item?.name,
             source: item.source || null,
             target: item.target || null
           }
@@ -83,12 +84,11 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
         const steps = data.nodes.map((item: Node) => {
           return {
             id: item.id,
+            name: item.data?.name || '',
             type: item.type,
             position: item.position,
             source: item.data?.source || null,
             target: item.data?.target || null,
-            // source: null,
-            // target: null,
           }
         });
 
@@ -114,7 +114,7 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
       dataset={dataset}
       loading={flowLoading}
       panel={[
-        <Button key="back" size="small" variant="outlined" className="mr-2 text-xs" onClick={backToList}>返回列表</Button>,
+        <Button key="back" size="small" variant="outlined" className="mr-2 text-xs" onClick={backToList}>{t(`mlops-common.backToList`)}</Button>,
       ]}
       handleSaveFlow={(data) => updateStoryData(data)}
     />

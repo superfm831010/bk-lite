@@ -9,7 +9,7 @@ import EntitySelectModal from "./entitySelectModal";
 import { ModalRef } from "@/app/mlops/types";
 
 interface SampleItem {
-  type: 'intent' | 'response';
+  type: 'intent' | 'response' | 'form';
   select: string;
 }
 
@@ -19,7 +19,7 @@ interface IntentResponseItem {
 
 interface FormManageItem {
   type: string;
-  select: string;
+  name: string;
   isRequired: boolean;
 }
 
@@ -30,8 +30,9 @@ interface SlotOption {
 }
 
 const styles = {
-  inputWidth: 'w-[79%]',
+  inputWidth: '!w-[79%]',
   selectWidth: '!w-[80px] mr-2',
+  selectMiddle: '!w-[60%]',
   buttonMargin: 'ml-[10px]',
   listItemSpacing: 'mb-[10px]'
 };
@@ -173,6 +174,7 @@ const useRasaResponseForm = ({
   formData?: any;
   visiable?: boolean;
 }) => {
+  const { t } = useTranslation();
   const [sampleList, setSampleList] = useState<(string | null)[]>([]);
 
   // 当模态框显示且有formData时，初始化sampleList
@@ -214,12 +216,13 @@ const useRasaResponseForm = ({
         >
           <Select key="text" className={styles.selectWidth} defaultValue="text" options={[
             {
-              label: '文本',
+              label: t(`mlops-common.text`),
               value: 'text'
             }
           ]} />
           <Input
-            className={styles.inputWidth}
+            className={styles.selectMiddle}
+            // className="!w-[60%]"
             value={item as string}
             onChange={(e) => {
               onSampleListChange(e, index);
@@ -260,11 +263,12 @@ const useRasaRuleForm = ({
   visiable?: boolean;
 }) => {
   const { t } = useTranslation();
-  const { getRasaIntentFileList, getRasaResponseFileList } = useMlopsManageApi();
+  const { getRasaIntentFileList, getRasaResponseFileList, getRasaFormList } = useMlopsManageApi();
   const [sampleList, setSampleList] = useState<(SampleItem | null)[]>([]);
   const [options, setOptions] = useState<Record<string, Option[]>>({
     intent: [],
-    response: []
+    response: [],
+    form: []
   });
 
   // 当模态框显示且有formData时，初始化sampleList
@@ -272,8 +276,8 @@ const useRasaRuleForm = ({
     if (visiable && formData?.steps) {
       const list = formData.steps.map((item: any) => {
         return {
-          type: (item?.intent ? 'intent' : 'response') as 'intent' | 'response',
-          select: item?.intent || item?.response
+          type: item?.type,
+          select: item?.name
         }
       });
       setSampleList(list);
@@ -288,9 +292,10 @@ const useRasaRuleForm = ({
 
     const fetchOptions = async () => {
       try {
-        const [intentList, responseList] = await Promise.all([
+        const [intentList, responseList, formList] = await Promise.all([
           getRasaIntentFileList({ dataset: folder_id }),
-          getRasaResponseFileList({ dataset: folder_id })
+          getRasaResponseFileList({ dataset: folder_id }),
+          getRasaFormList({ dataset: folder_id })
         ]);
         const intentOption = (intentList as IntentResponseItem[])?.map((item) => ({
           label: item.name,
@@ -300,9 +305,14 @@ const useRasaRuleForm = ({
           label: item.name,
           value: item.name
         })) || [];
+        const formOption = (formList as IntentResponseItem[])?.map((item) => ({
+          label: item.name,
+          value: item.name
+        })) || [];
         setOptions({
           intent: intentOption,
-          response: responseOption
+          response: responseOption,
+          form: formOption
         });
       } catch (e) {
         console.log(e);
@@ -328,7 +338,7 @@ const useRasaRuleForm = ({
   const onTypeChange = (value: string, index: number) => {
     const keys = cloneDeep(sampleList);
     keys[index] = {
-      type: value as 'intent' | 'response',
+      type: value as 'intent' | 'response' | 'form',
       select: ''
     };
     setSampleList(keys);
@@ -352,15 +362,16 @@ const useRasaRuleForm = ({
         >
           <Select
             className={styles.selectWidth}
-            defaultValue={item?.type || 'intent'}
+            value={item?.type || 'intent'}
             onChange={(value) => onTypeChange(value, index)}
             options={[
-              { label: '意图', value: 'intent' },
-              { label: '响应', value: 'response' }
+              { label: t(`datasets.intent`), value: 'intent' },
+              { label: t(`datasets.response`), value: 'response' },
+              { label: t(`datasets.form`), value: 'form' }
             ]}
           />
           <Select
-            className={styles.inputWidth}
+            className={styles.selectMiddle}
             value={item?.select}
             options={options[item?.type as string]}
             onChange={(value: any) => {
@@ -494,11 +505,11 @@ const useRasaStoryForm = ({
         >
           <Select
             className={styles.selectWidth}
-            defaultValue={item?.type || 'intent'}
+            value={item?.type || 'intent'}
             onChange={(value) => onTypeChange(value, index)}
             options={[
-              { label: '意图', value: 'intent' },
-              { label: '响应', value: 'response' }
+              { label: t(`datasets.intent`), value: 'intent' },
+              { label: t(`datasets.response`), value: 'response' }
             ]}
           />
           <Select
@@ -700,7 +711,7 @@ const useRasaSlotForm = ({
 };
 
 const useRasaForms = ({
-  // folder_id,
+  folder_id,
   selectKey,
   formData,
   visiable
@@ -711,22 +722,23 @@ const useRasaForms = ({
   visiable?: boolean;
 }) => {
   const { t } = useTranslation();
-  // const { getRasaIntentFileList, getRasaResponseFileList } = useMlopsManageApi();
+  const { getRasaSlotList } = useMlopsManageApi();
   const [sampleList, setSampleList] = useState<(FormManageItem | null)[]>([]);
   const [options, setOptions] = useState<SlotOption[]>([]);
 
   // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
-    if (visiable && formData?.steps) {
-      const list = formData.steps.map((item: any) => {
+    if (visiable && formData?.slots) {
+      const list = formData.slots.map((item: any) => {
         return {
+          name: item?.name,
           type: item?.type,
-          select: item?.select
+          isRequired: item?.isRequired
         }
       });
       setSampleList(list);
     } else if (visiable) {
-      setSampleList([{ type: '', select: '', isRequired: false }]);
+      setSampleList([{ type: 'text', name: '', isRequired: false }]);
     }
   }, [formData, visiable]);
 
@@ -736,8 +748,16 @@ const useRasaForms = ({
 
     const fetchOptions = async () => {
       try {
-
-        setOptions([]);
+        const data = await getRasaSlotList({ dataset: folder_id });
+        if (!data) return;
+        const _options = data?.map((item: any) => {
+          return {
+            label: item?.name,
+            value: item?.name,
+            slot_type: item?.slot_type
+          }
+        });
+        setOptions(_options || []);
       } catch (e) {
         console.log(e);
         message.error(t(`common.fetchFailed`));
@@ -749,7 +769,7 @@ const useRasaForms = ({
 
   const addSampleList = () => {
     const keys = cloneDeep(sampleList);
-    keys.push({ type: '', select: '', isRequired: false });
+    keys.push({ type: '', name: '', isRequired: false });
     setSampleList(keys);
   };
 
@@ -763,7 +783,7 @@ const useRasaForms = ({
     const keys = cloneDeep(sampleList);
     keys[index] = {
       type: value as string,
-      select: '',
+      name: '',
       isRequired: false
     };
     setSampleList(keys);
@@ -772,8 +792,8 @@ const useRasaForms = ({
   const onSelectSampleChange = (value: string, index: number) => {
     const keys = cloneDeep(sampleList);
     const item = keys[index];
-    if (item && typeof item === 'object' && 'select' in item) {
-      item.select = value;
+    if (item && typeof item === 'object' && 'name' in item) {
+      item.name = value;
     }
     setSampleList(keys);
   };
@@ -796,16 +816,34 @@ const useRasaForms = ({
         >
           <Select
             className={styles.selectWidth}
-            defaultValue={item?.type || 'intent'}
+            value={item?.type || 'text'}
             onChange={(value) => onTypeChange(value, index)}
             options={[
-              { label: '意图', value: 'intent' },
-              { label: '响应', value: 'response' }
+              {
+                label: 'text(记录普通文本)',
+                value: 'text'
+              },
+              {
+                label: 'categorical(记录分类类别，枚举)',
+                value: 'categorical'
+              },
+              {
+                label: 'float(记录数值类型)',
+                value: 'float'
+              },
+              {
+                label: 'list(保存多个值的列表)',
+                value: 'list'
+              },
+              {
+                label: 'bool(布尔值，是或者否)',
+                value: 'bool'
+              }
             ]}
           />
           <Select
             className={`!w-[45%]`}
-            value={item?.select}
+            value={item?.name}
             options={options.filter(itm => itm?.slot_type === item?.type)}
             onChange={(value: any) => {
               onSelectSampleChange(value, index);
@@ -815,7 +853,7 @@ const useRasaForms = ({
             checked={item?.isRequired}
             onChange={(e) => onCheckSampleChange(e.target.checked, index)}
             className="flex justify-center items-center ml-2"
-          >必填</Checkbox>
+          >{t(`mlops-common.required`)}</Checkbox>
           <Button
             icon={<PlusOutlined />}
             className={styles.buttonMargin}
@@ -831,7 +869,7 @@ const useRasaForms = ({
         </li>
       ))}
     </ul>
-  ), [sampleList]);
+  ), [sampleList, options]);
 
   return {
     sampleList,
@@ -840,19 +878,24 @@ const useRasaForms = ({
 };
 
 // 输入验证hooks
-const useInputValidation = () => {
+const useInputValidation = (selectKey: string) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const allowedKeys = [
       'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
       'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
-      'Home', 'End', 'PageUp', 'PageDown'
+      'Home', 'End', 'PageUp', 'PageDown', 'Shift'
     ];
 
     if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
       return;
     }
 
-    const regex = /^[a-zA-Z\s]$/;
+    // 如果是rule类型，允许所有字符（包括中文）
+    if (selectKey === 'rule') {
+      return;
+    }
+
+    const regex = /^[a-zA-Z0-9_\-\s]$/;
     if (!regex.test(e.key)) {
       e.preventDefault();
     }
@@ -860,7 +903,13 @@ const useInputValidation = () => {
 
   const handleNameChange = (formRef: React.RefObject<FormInstance>, e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    const filteredValue = value.replace(/[^a-zA-Z\s]/g, '');
+
+    // 如果是rule类型，不过滤任何字符
+    if (selectKey === 'rule') {
+      return;
+    }
+
+    const filteredValue = value.replace(/[^a-zA-Z0-9_\-\s]/g, '');
 
     if (filteredValue !== value) {
       formRef.current?.setFieldsValue({
@@ -886,7 +935,9 @@ const useRasaApiMethods = () => {
     addRasaEntityFile,
     updateRasaEntityFile,
     addRasaSlotFile,
-    updateRasaSlotFile
+    updateRasaSlotFile,
+    addRasaFormFile,
+    updateRasaFormFile
   } = useMlopsManageApi();
 
   const handleAddMap: Record<string, any> = {
@@ -896,7 +947,7 @@ const useRasaApiMethods = () => {
     'story': addRasaStoryFile,
     'entity': addRasaEntityFile,
     'slot': addRasaSlotFile,
-    'form': () => { }
+    'form': addRasaFormFile
   };
 
   const handleUpdateMap: Record<string, any> = {
@@ -906,7 +957,7 @@ const useRasaApiMethods = () => {
     'story': updateRasaStoryFile,
     'entity': updateRasaEntityFile,
     'slot': updateRasaSlotFile,
-    'form': () => { }
+    'form': updateRasaFormFile
   };
 
   return { handleAddMap, handleUpdateMap };
@@ -935,12 +986,13 @@ const useRasaFormData = () => {
     let params = {};
 
     if (type === 'add') {
-      if (['rule'].includes(selectKey)) {
+      if (selectKey === 'rule') {
         params = {
           ...data,
           dataset: formData?.dataset,
           steps: sampleList.map((item: any) => ({
-            [item?.type]: item.select
+            type: item?.type,
+            name: item?.select
           }))
         };
       } else if (selectKey === 'story') {
@@ -967,6 +1019,12 @@ const useRasaFormData = () => {
           dataset: formData?.dataset,
           example: sampleList
         };
+      } else if (selectKey === 'form') {
+        params = {
+          ...data,
+          dataset: formData?.dataset,
+          slots: sampleList
+        }
       } else {
         params = {
           ...data,
@@ -975,11 +1033,12 @@ const useRasaFormData = () => {
         };
       }
     } else {
-      if (['rule', 'story'].includes(selectKey)) {
+      if (selectKey === 'rule') {
         params = {
           ...data,
           steps: sampleList.map((item: any) => ({
-            [item?.type]: item.select
+            type: item?.type,
+            name: item?.select
           }))
         };
       } else if (selectKey === 'slot') {
@@ -997,6 +1056,11 @@ const useRasaFormData = () => {
           ...data,
           example: sampleList
         };
+      } else if (selectKey === 'form') {
+        params = {
+          ...data,
+          slots: sampleList
+        }
       } else {
         params = {
           ...data,
@@ -1039,7 +1103,7 @@ const useRasaFormManager = ({
 
   const { handleAddMap, handleUpdateMap } = useRasaApiMethods();
   const { validateSampleList, prepareFormParams } = useRasaFormData();
-  const { handleKeyDown, handleNameChange } = useInputValidation();
+  const { handleKeyDown, handleNameChange } = useInputValidation(selectKey);
 
   // 文字选择回调函数
   const handleTextSelection = useCallback((textData: any) => {
@@ -1069,7 +1133,7 @@ const useRasaFormManager = ({
     }
     // 清除选择状态
     setSelectedTextForEntity(null);
-  }, [selectKey, intentForm]);
+  }, [selectKey]);
 
   const getCurrentForm = () => {
     switch (selectKey) {

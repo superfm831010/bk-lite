@@ -78,7 +78,7 @@ const EntitySelectModal = forwardRef<ModalRef, EntitySelectModalProps>(({ datase
   return (
     <OperateModal
       width={400}
-      title="选择实体"
+      title={t(`datasets.entitySelect`)}
       open={open}
       footer={[
         <Button key="confirm" type="primary" loading={confirmLoading} onClick={handleSubmit} >{t(`common.confirm`)}</Button>,
@@ -100,15 +100,15 @@ const EntitySelectModal = forwardRef<ModalRef, EntitySelectModalProps>(({ datase
           <>
             <Form.Item
               name="entity"
-              label="添加实体"
+              label={t(`datasets.addentity`)}
               rules={[
                 { required: true, message: t(`common.selectMsg`) }
               ]}
             >
-              <Select options={options} placeholder="请选择一个实体" />
+              <Select options={options} placeholder={t(`datasets.entitySelect`)} />
             </Form.Item>
-            <p>若无合适实体，点击
-              <a href="#" className="text-[var(--color-text-active)] font-" onClick={() => setIsAdd(true)}>新增</a>
+            <p>{t(`datasets.entityTip`)}
+              <a href="#" className="text-[var(--color-text-active)]" onClick={() => setIsAdd(true)}>{t(`common.add`)}</a>
             </p>
           </>
         )}

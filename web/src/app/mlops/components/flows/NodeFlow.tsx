@@ -53,11 +53,11 @@ const NodeFlow = ({
   const onConnect = useCallback(
     (params: Connection) => {
       console.log(params);
-      if(params.source === params.target) return;
+      if (params.source === params.target) return;
       setEdges((eds) => addEdge(params, eds));
-      setNodes((nds) => 
+      setNodes((nds) =>
         nds.map((node) => {
-          if(node.id === params.source) {
+          if (node.id === params.source) {
             return {
               ...node,
               data: {
@@ -69,9 +69,9 @@ const NodeFlow = ({
           return node;
         })
       );
-      setNodes((nds) => 
+      setNodes((nds) =>
         nds.map((node) => {
-          if(node.id === params.target) {
+          if (node.id === params.target) {
             return {
               ...node,
               data: {
@@ -144,12 +144,12 @@ const NodeFlow = ({
   // 获取节点标签
   const getNodeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      intent: '意图节点',
-      response: '响应节点',
-      slot: '槽节点'
+      intent: t(`datasets.intentNode`),
+      response: t(`datasets.responseNode`),
+      slot: t(`datasets.slotNode`)
     };
 
-    return labels[type] || '默认节点';
+    return labels[type] || t(`mlops-common.defaultNode`);
   };
 
   // 选中节点处理
@@ -166,9 +166,10 @@ const NodeFlow = ({
       if (item.id === currentNode?.id) {
         return {
           ...item,
-          id: data?.name,
+          id: `${item.type}_${data?.name}_${Date.now()}`,
           data: {
-            id: data?.name,
+            id: `${item.type}_${data?.name}`,
+            name: data?.name,
           }
         }
       }
@@ -235,13 +236,22 @@ const NodeFlow = ({
 
   // 获取默认节点数据
   const getDefaultNodeData = (type: string) => {
-    switch (type) {
-      case 'intent':
-        return {};
-      case 'response':
-        return {};
-      default:
-        return {}
+    // switch (type) {
+    //   case 'intent':
+    //     return {
+    //       target: null,
+    //       source: null
+    //     };
+    //   case 'response':
+    //     return {};
+    //   default:
+    //     return {}
+    // }
+    return {
+      type: type,
+      name: '',
+      target: null,
+      source: null
     }
   };
 
@@ -296,7 +306,7 @@ const NodeFlow = ({
               variant="outlined"
               className="mr-2 text-xs"
               onClick={onRestore}
-            >重置</Button>
+            >{t(`mlops-common.reset`)}</Button>
             {panel}
           </Panel>
         )}

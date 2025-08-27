@@ -3,6 +3,7 @@ import { Button } from 'antd';
 import { NodeType } from '@/app/mlops/types';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import Icon from '@/components/icon';
+import { useTranslation } from '@/utils/i18n';
 
 interface NodePanelProps {
   nodeTypes: NodeType[];
@@ -10,9 +11,10 @@ interface NodePanelProps {
 }
 
 const NodePanel: React.FC<NodePanelProps> = ({ onDragStart, nodeTypes }) => {
+  const { t } = useTranslation();
   const [showTab, setShowTable] = useState<boolean>(true);
   return (
-    <div className={`w-[200px] h-full absolute ${showTab ? 'left-0': 'left-[-200px]'} transition-all duration-300 ease-in-out z-10 bg-[var(--color-bg-4)] border-r border-gray-200 shadow-lg`}>
+    <div className={`w-[200px] h-full absolute ${showTab ? 'left-0' : 'left-[-200px]'} transition-all duration-300 ease-in-out z-10 bg-[var(--color-bg-4)] border-r border-gray-200 shadow-lg`}>
       {/* 切换按钮 */}
       <div className='absolute top-[50%] right-0 translate-x-[60%] translate-y-[-50%] z-20'>
         <Button
@@ -23,12 +25,12 @@ const NodePanel: React.FC<NodePanelProps> = ({ onDragStart, nodeTypes }) => {
           onClick={() => setShowTable(x => !x)}
         />
       </div>
-      
+
       {/* 面板标题 */}
       <div className="px-4 py-3 border-b border-gray-100">
-        <h3 className="text-xs font-medium text-gray-800">节点选择</h3>
+        <h3 className="text-xs font-medium text-gray-800">{t(`mlops-common.nodeSelect`)}</h3>
       </div>
-      
+
       {/* 节点列表 */}
       <div className="px-4 py-4 space-y-2">
         {nodeTypes.map((nodeType: NodeType) => (
@@ -39,16 +41,15 @@ const NodePanel: React.FC<NodePanelProps> = ({ onDragStart, nodeTypes }) => {
             onDragStart={(event) => onDragStart(event, nodeType.type)}
           >
             <Icon type={nodeType.icon} className='!w-5 !h-5' />
-            {/* <div className={`w-2 h-2 rounded-full ${nodeType.color || 'bg-blue-500'}`}></div> */}
             <span className="text-sm text-gray-700">{nodeType.label}</span>
           </div>
         ))}
       </div>
-      
+
       {/* 底部提示 */}
       <div className="absolute bottom-4 left-4 right-4">
         <div className="text-xs text-gray-500 text-center">
-          拖拽节点到画布创建
+          {t(`mlops-common.nodePanelMsg`)}
         </div>
       </div>
     </div>

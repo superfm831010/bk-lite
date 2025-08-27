@@ -86,7 +86,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
             ]}
           >
             <Input
-              placeholder={"仅允许输入英文"}
+              placeholder={t(`common.inputMsg`)}
               onKeyDown={handleKeyDown}
               onChange={handleNameChange}
             />
@@ -104,15 +104,15 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
                 <Select
                   placeholder={t(`common.selectMsg`)}
                   options={[
-                    { label: 'Text(需要在语料中特殊标志)', value: 'Text' },
-                    { label: 'Lookup(单独定义值列表，适合枚举类型内容)', value: 'Lookup' }
+                    { label: t(`datasets.entityText`), value: 'Text' },
+                    { label: t(`datasets.entityLookup`), value: 'Lookup' }
                   ]}
                   onChange={onEntityTypeChange}
                 />
               </Form.Item>
               {entityType === 'Lookup' && (
                 <Form.Item
-                  label={'样例'}
+                  label={t(`datasets.example`)}
                   rules={[{ required: true, validator: validateSampleList }]}
                 >
                   {renderElement}
@@ -155,7 +155,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
                 </Form.Item>
                 <Form.Item
                   name={'is_apply'}
-                  label={'是否应用对话预测'}
+                  label={t(`datasets.slotApply`)}
                   rules={[
                     { required: true, message: t(`common.selectMsg`) }
                   ]}
@@ -165,7 +165,8 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
                 {slotType === 'categorical' && (
                   <>
                     <Form.Item
-                      label={'类别'}
+                      name='samplelist'
+                      label={t(`datasets.category`)}
                       rules={[{ required: true, validator: validateSampleList }]}
                     >
                       {renderElement}
@@ -178,10 +179,9 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
           {(!['entity', 'slot', 'story'].includes(selectKey)) && (
             <>
               <Form.Item
-                label={selectKey === 'rule' ? '步骤' : '样例'}
+                label={selectKey === 'rule' ? t(`datasets.step`) : t(`datasets.example`)}
                 rules={[{ required: true, validator: validateSampleList }]}
               >
-
                 {renderElement}
               </Form.Item>
             </>

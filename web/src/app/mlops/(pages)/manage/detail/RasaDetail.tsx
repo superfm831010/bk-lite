@@ -2,7 +2,6 @@ import { Button, message, Popconfirm, Input } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import CustomTable from "@/components/custom-table";
 import RasaModal from "./rasaModal";
-// import type { TabsProps } from 'antd';
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/utils/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -28,9 +27,10 @@ const RasaDetail = () => {
     getRasaEntityList,
     deleteRasaEntityFile,
     getRasaSlotList,
-    deleteRasaSlotFile
+    deleteRasaSlotFile,
+    getRasaFormList,
+    deleteRasaFormFile
   } = useMlopsManageApi();
-  // const [selectKey, setSelectKey] = useState<string>('intent');
   const [loading, setLoading] = useState<boolean>(false);
   const [openFlow, setOpenFlow] = useState<boolean>(false);
   const [tableData, setTableData] = useState<TableData[]>([]);
@@ -175,12 +175,13 @@ const RasaDetail = () => {
         title: t(`common.action`),
         key: 'action',
         dataIndex: 'action',
+        width: 180,
         render: (_, record) => btnsElements(record)
       }
     ],
     slot: [
       {
-        title: '槽名称',
+        title: t(`datasets.slotName`),
         key: 'name',
         dataIndex: 'name'
       },
@@ -193,24 +194,26 @@ const RasaDetail = () => {
         title: t(`common.action`),
         key: 'action',
         dataIndex: 'action',
+        width: 180,
         render: (_, record) => btnsElements(record)
       }
     ],
     form: [
       {
-        title: '表单名称',
+        title: t(`datasets.formName`),
         key: 'name',
         dataIndex: 'name'
       },
       {
-        title: '槽数量',
-        key: 'slots',
-        dataIndex: 'slots'
+        title: t(`datasets.slotNum`),
+        key: 'slot_count',
+        dataIndex: 'slot_count'
       },
       {
         title: t(`common.action`),
         key: 'action',
         dataIndex: 'action',
+        width: 180,
         render: (_, record) => btnsElements(record)
       }
     ]
@@ -223,7 +226,7 @@ const RasaDetail = () => {
     'story': getRasaStoryFileList,
     'entity': getRasaEntityList,
     'slot': getRasaSlotList,
-    'form': () => {}
+    'form': getRasaFormList
   };
 
   const delFileMap: Record<string, any> = {
@@ -233,7 +236,7 @@ const RasaDetail = () => {
     'story': deleteRasaStoryFile,
     'entity': deleteRasaEntityFile,
     'slot': deleteRasaSlotFile,
-    'form': () => {}
+    'form': deleteRasaFormFile
   };
 
   const {
@@ -336,7 +339,6 @@ const RasaDetail = () => {
             </>
           )
         }
-        {/* <Tabs defaultActiveKey="1" items={items()} onChange={onChange} /> */}
       </div>
       <RasaModal ref={modalRef} selectKey={menu} folder_id={folder_id as string} onSuccess={() => getTableData()} />
     </>
