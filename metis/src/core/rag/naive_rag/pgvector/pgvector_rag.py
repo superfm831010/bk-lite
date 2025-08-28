@@ -27,10 +27,20 @@ class PgvectorRag(BaseRag):
     def __init__(self):
         pass
 
+    def _get_psycopg_uri(self) -> str:
+        """将SQLAlchemy格式的URI转换为psycopg支持的格式"""
+        uri = core_settings.db_uri
+        # 移除SQLAlchemy方言前缀，如 postgresql+psycopg:// -> postgresql://
+        if uri.startswith('postgresql+psycopg://'):
+            uri = uri.replace('postgresql+psycopg://', 'postgresql://')
+        elif uri.startswith('postgres+psycopg://'):
+            uri = uri.replace('postgres+psycopg://', 'postgresql://')
+        return uri
+
     def _execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict]:
         """执行SQL查询"""
         try:
-            with psycopg.connect(core_settings.db_uri) as conn:
+            with psycopg.connect(self._get_psycopg_uri()) as conn:
                 with conn.cursor() as cur:
                     cur.execute(query, params or {})
                     if cur.description:
@@ -98,6 +108,12 @@ class PgvectorRag(BaseRag):
                     f"e.cmetadata->>%({param_key}_field)s ILIKE %({param_key}_value)s")
                 params[f"{param_key}_field"] = field_key
                 params[f"{param_key}_value"] = str(value)
+            elif key.endswith("__not_blank"):
+                field_key = key.replace("__not_blank", "")
+                conditions.append(
+                    f"(e.cmetadata ? %(metadata_{field_key}_not_blank_exists)s AND TRIM(e.cmetadata->>%(metadata_{field_key}_not_blank_field)s) != '')")
+                params[f"metadata_{field_key}_not_blank_exists"] = field_key
+                params[f"metadata_{field_key}_not_blank_field"] = field_key
             else:
                 conditions.append(
                     f"e.cmetadata->>%({param_key}_field)s = %({param_key}_value)s")
@@ -383,9 +399,9 @@ class PgvectorRag(BaseRag):
         search_req.metadata_filter = search_req.metadata_filter or {}
 
         if rag_type == 'naive':
-            search_req.metadata_filter['qa_answer__missing'] = True
+            search_req.metadata_filter['qa_question__missing'] = True
         elif rag_type == 'qa':
-            search_req.metadata_filter['qa_answer__exists'] = True
+            search_req.metadata_filter['qa_question__exists'] = True
             search_req.k = req.qa_size
 
         try:
@@ -457,7 +473,8 @@ class PgvectorRag(BaseRag):
             else:
                 # 默认使用相似度阈值搜索
                 results_with_scores = vector_store.similarity_search_with_relevance_scores(
-                    req.search_query, k=req.k, score_threshold=req.score_threshold or 0.0
+                    req.search_query, k=req.k, score_threshold=req.score_threshold or 0.0,
+                    filter=search_kwargs["filter"]
                 )
                 results = []
                 for doc, score in results_with_scores:
@@ -502,6 +519,9 @@ class PgvectorRag(BaseRag):
             elif key.endswith("__ilike"):
                 field = key.replace("__ilike", "")
                 pgvector_filter[field] = {"$ilike": value}
+            elif key.endswith("__not_blank"):
+                field = key.replace("__not_blank", "")
+                pgvector_filter[field] = {"$ne": ""}
             else:
                 pgvector_filter[key] = {"$eq": value}
 
