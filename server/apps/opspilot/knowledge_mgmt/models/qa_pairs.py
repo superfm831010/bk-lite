@@ -31,6 +31,5 @@ class QAPairs(MaintainerInfo, TimeInfo):
     def delete(self, *args, **kwargs):
         from apps.opspilot.utils.chunk_helper import ChunkHelper
 
-        index_name = self.knowledge_base.knowledge_index_name()
-        ChunkHelper.delete_es_content(index_name, self.id)
+        ChunkHelper.delete_es_content(self.id)
         return super().delete(*args, **kwargs)  # 调用父类的delete方法来执行实际的删除操作

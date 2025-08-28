@@ -286,7 +286,7 @@ def generate_answer(qa_pairs_id):
     client = ChunkHelper()
     index_name = qa_pairs.knowledge_base.knowledge_index_name()
     return_data = get_chunk_and_question(client, index_name, qa_pairs)
-    client.update_qa_pairs_answer(return_data, qa_pairs, index_name)
+    client.update_qa_pairs_answer(return_data, qa_pairs)
 
 
 def get_chunk_and_question(client, index_name, qa_pairs):
@@ -418,6 +418,7 @@ def _process_qa_pairs_batch(qa_pairs_list, file_data, knowledge_base, task_obj):
 
     for qa_pairs in qa_pairs_list:
         qa_json = file_data[qa_pairs.name]
+        kwargs["knowledge_id"] = f"qa_pairs_id_{qa_pairs.id}"
         success_count = _process_single_qa_pairs(qa_pairs, qa_json, kwargs, url, headers)
 
         # 更新问答对数量和任务进度

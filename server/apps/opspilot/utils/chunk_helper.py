@@ -91,14 +91,6 @@ class ChunkHelper(ChatServerHelper):
             return False
 
     @classmethod
-    def delete_qa_pairs_by_document(cls, index_name, knowledge_id):
-        kwargs = {"index_name": index_name, "metadata_filter": {"knowledge_id": knowledge_id}}
-        try:
-            ChatServerHelper.post_chat_server(kwargs, cls.del_url)
-        except Exception as e:
-            logger.exception(e)
-
-    @classmethod
     def create_qa_pairs(cls, qa_paris, chunk_obj, index_name, embed_config, qa_pairs_id):
         success_count = 0
         kwargs, metadata = cls.set_qa_pairs_params(embed_config, index_name, qa_pairs_id, chunk_obj)
@@ -120,50 +112,6 @@ class ChunkHelper(ChatServerHelper):
                 continue
             success_count += 1
         return success_count
-
-    @classmethod
-    def update_document_qa_pairs_count(cls, es_index, qa_count, chunk_id):
-        if not qa_count:
-            return {}
-        detail = cls.get_chunk_detail(es_index, chunk_id)
-        qa_count += detail.get("qa_count", 0)
-        detail["qa_count"] = qa_count
-        kwargs = {
-            "knowledge_ids": [],
-            "chunk_ids": [chunk_id],
-            "metadata": detail,
-        }
-        res = ChatServerHelper.post_chat_server(kwargs, cls.update_url)
-        return res
-
-    @classmethod
-    def get_chunk_detail(cls, es_index, chunk_id):
-        res = cls.get_document_es_chunk(es_index, 1, 1, metadata_filter={"chunk_id": str(chunk_id)}, get_count=False)
-        if res.get("status") != "success" or not res.get("documents"):
-            return {}
-        return res["documents"][0]["metadata"]
-
-    @classmethod
-    def get_chunk_qa_count(cls, es_index, chunk_id):
-        count_url = f"{settings.METIS_SERVER_URL}/api/rag/count_index_document"
-        query = {
-            "index_name": es_index,
-            "metadata_filter": {"base_chunk_id": str(chunk_id), "is_doc": "0"},
-            "query": "",
-        }
-        count_res = ChatServerHelper.post_chat_server(query, count_url)
-        return count_res.get("count", 0)
-
-    @classmethod
-    def get_qa_paris_qa_count(cls, es_index, qa_pairs_id):
-        count_url = f"{settings.METIS_SERVER_URL}/api/rag/count_index_document"
-        query = {
-            "index_name": es_index,
-            "metadata_filter": {"qa_pairs_id": str(qa_pairs_id), "is_doc": "0"},
-            "query": "",
-        }
-        count_res = ChatServerHelper.post_chat_server(query, count_url)
-        return count_res.get("count", 0)
 
     @classmethod
     def set_qa_pairs_params(cls, embed_config, index_name, qa_pairs_id, chunk_obj=None):
@@ -207,7 +155,7 @@ class ChunkHelper(ChatServerHelper):
         return {"result": True}
 
     @classmethod
-    def update_qa_pairs(cls, index_name, chunk_id, question, answer):
+    def update_qa_pairs(cls, chunk_id, question, answer):
         kwargs = {
             "knowledge_ids": [],
             "chunk_ids": [chunk_id],
@@ -322,7 +270,7 @@ class ChunkHelper(ChatServerHelper):
         return success_count
 
     @classmethod
-    def update_qa_pairs_answer(cls, return_data, qa_pairs, index_name):
+    def update_qa_pairs_answer(cls, return_data, qa_pairs):
         if not return_data:
             return
         answer_llm = qa_pairs.answer_llm_model
@@ -340,4 +288,4 @@ class ChunkHelper(ChatServerHelper):
             answer = res["data"].get("answer")
             if not answer:
                 continue
-            cls.update_qa_pairs(index_name, i["id"], i["question"], answer)
+            cls.update_qa_pairs(i["id"], i["question"], answer)
