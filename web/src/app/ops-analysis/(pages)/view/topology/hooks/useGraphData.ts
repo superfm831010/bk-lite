@@ -42,12 +42,8 @@ import { TopologyNodeData } from '@/app/ops-analysis/types/topology';
 import { DirItem } from '@/app/ops-analysis/types';
 import {
   getEdgeStyleWithLabel,
-  getSingleValueNodeStyle,
-  getIconNodeStyle,
-  getChartNodeStyle,
-  getTextNodeStyle,
-  getLogoUrl,
 } from '../utils/topologyUtils';
+import { createNodeByType } from '../utils/registerNode';
 import { iconList } from '@/app/cmdb/utils/common';
 
 /**
@@ -262,31 +258,27 @@ export const useGraphData = (
     const chartNodesToLoad: Array<{ nodeId: string; config: any }> = [];
 
     data.nodes.forEach((nodeConfig) => {
+      // 使用注册的节点创建节点数据
       let nodeData: any;
 
-      if (nodeConfig.type === 'single-value') {
-        nodeData = getSingleValueNodeStyle(nodeConfig);
-      } else if (nodeConfig.type === 'text') {
-        nodeData = getTextNodeStyle(nodeConfig);
-      } else if (nodeConfig.type === 'chart') {
-        const valueConfig = {
+      if (nodeConfig.type === 'chart') {
+        const chartNodeConfig = {
           ...nodeConfig,
           widget: nodeConfig.widget,
           isLoading: !!nodeConfig.dataSource,
           rawData: null,
           hasError: false,
         };
-        nodeData = getChartNodeStyle(valueConfig);
+        nodeData = createNodeByType(chartNodeConfig, iconList);
 
         if (nodeConfig.dataSource) {
           chartNodesToLoad.push({
             nodeId: nodeConfig.id,
-            config: valueConfig,
+            config: chartNodeConfig,
           });
         }
       } else {
-        const logoUrl = getLogoUrl(nodeConfig, iconList);
-        nodeData = getIconNodeStyle(nodeConfig, logoUrl);
+        nodeData = createNodeByType(nodeConfig, iconList);
       }
 
       graphInstance.addNode(nodeData);

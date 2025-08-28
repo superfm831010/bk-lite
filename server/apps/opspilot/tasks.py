@@ -193,7 +193,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "semantic_chunk_model_api_key": semantic_embed_config.get("api_key", "") or " ",
         "semantic_chunk_model": semantic_embed_config.get("model", semantic_embed_model_name),
         "preview": "true" if preview else "false",
-        "metadata": json.dumps({"enabled": True, "is_doc": "1", "qa_count": 0}),
+        "metadata": json.dumps({"enabled": "true", "is_doc": "1", "qa_count": 0}),
     }
     kwargs.update(ocr_config)
     return kwargs
@@ -435,7 +435,7 @@ def _process_qa_pairs_batch(qa_pairs_list, file_data, knowledge_base, task_obj):
 def _process_single_qa_pairs(qa_pairs, qa_json, kwargs, url, headers):
     """处理单个问答对集合"""
     metadata = {
-        "enabled": True,
+        "enabled": "true",
         "base_chunk_id": "",
         "qa_pairs_id": str(qa_pairs.id),
         "is_doc": "0",
