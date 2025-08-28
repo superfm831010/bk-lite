@@ -14,6 +14,7 @@
   send_response: {{ send_response | default(true) | lower }}
 
   fields:
+    collector: "Packetbeat"
     collect_type: "dns"
     instance_id: "{{ instance_id }}"
     protocol_type: "dns"

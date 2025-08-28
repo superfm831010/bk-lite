@@ -47,6 +47,7 @@
   {% endif %}
 
   fields:
+    collector: "Metricbeat"
     collect_type: "system"
     instance_id: "{{ instance_id | default('default') }}"
   fields_under_root: true
