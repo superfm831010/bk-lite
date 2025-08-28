@@ -29,6 +29,24 @@ class PgvectorRag(BaseRag):
     def __init__(self):
         pass
 
+    def ensure_fulltext_index(self) -> None:
+        """确保全文检索索引存在，提高全文搜索性能"""
+        try:
+            # 创建GIN索引来优化全文检索性能
+            create_index_query = """
+                CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_langchain_pg_embedding_fulltext 
+                ON langchain_pg_embedding 
+                USING GIN (to_tsvector('simple', document))
+            """
+
+            logger.info("开始创建全文检索索引...")
+            self._execute_query(create_index_query)
+            logger.info("全文检索索引创建完成")
+
+        except Exception as e:
+            # 索引创建失败不应该影响正常功能
+            logger.warning(f"全文检索索引创建失败（不影响功能）: {e}")
+
     def _rrf(self, results: List[List[str]], rank_const: int = 1, min_score: float = 0) -> tuple[List[str], List[float]]:
         """Reciprocal Rank Fusion算法实现"""
         scores: Dict[str, float] = defaultdict(float)
@@ -54,7 +72,7 @@ class PgvectorRag(BaseRag):
 
     @timeit("全文搜索")
     def _fulltext_search(self, req: DocumentRetrieverRequest) -> List[Document]:
-        """执行PostgreSQL模糊搜索（简化版，只使用ILIKE）"""
+        """执行PostgreSQL全文检索（使用tsvector和tsquery）"""
         try:
             where_clauses = []
             params = {}
@@ -70,7 +88,120 @@ class PgvectorRag(BaseRag):
                 if metadata_condition:
                     where_clauses.append(metadata_condition)
 
-            # 使用ILIKE模糊搜索（所有查询都用模糊匹配）
+            # 预处理搜索查询：清理特殊字符，准备用于全文检索
+            search_query = req.search_query.strip()
+            # 移除可能导致tsquery语法错误的特殊字符
+            cleaned_query = search_query.replace("'", "").replace(
+                '"', '').replace('&', ' ').replace('|', ' ').replace('!', ' ')
+            # 将多个空格合并为单个空格
+            cleaned_query = ' '.join(cleaned_query.split())
+
+            if not cleaned_query:
+                logger.warning(f"全文搜索跳过 - 原因: 查询词为空")
+                return []
+
+            # 使用PostgreSQL全文检索
+            # to_tsvector: 将文档转换为tsvector格式（支持中英文）
+            # to_tsquery: 将查询转换为tsquery格式
+            # ts_rank: 计算相关性分数
+            where_clauses.append(
+                "to_tsvector('simple', e.document) @@ to_tsquery('simple', %(search_tsquery)s)")
+
+            # 构建tsquery：将搜索词用&连接（AND操作）
+            query_terms = cleaned_query.split()
+            tsquery_parts = []
+            for term in query_terms:
+                if term:
+                    # 为每个词添加前缀匹配支持（:*表示前缀匹配）
+                    tsquery_parts.append(f"'{term}':*")
+
+            if not tsquery_parts:
+                logger.warning(f"全文搜索跳过 - 原因: 无有效查询词")
+                return []
+
+            params['search_tsquery'] = ' & '.join(tsquery_parts)
+
+            # 构建全文检索查询
+            query = f"""
+                SELECT e.id, e.document, e.cmetadata,
+                       ts_rank(to_tsvector('simple', e.document), to_tsquery('simple', %(search_tsquery)s)) as ts_score,
+                       ts_rank_cd(to_tsvector('simple', e.document), to_tsquery('simple', %(search_tsquery)s)) as ts_score_cd
+                FROM langchain_pg_embedding e
+                JOIN langchain_pg_collection c ON e.collection_id = c.uuid
+                WHERE {" AND ".join(where_clauses)}
+                ORDER BY 
+                    ts_rank_cd(to_tsvector('simple', e.document), to_tsquery('simple', %(search_tsquery)s)) DESC,
+                    ts_rank(to_tsvector('simple', e.document), to_tsquery('simple', %(search_tsquery)s)) DESC,
+                    LENGTH(e.document) ASC
+                LIMIT %(limit)s
+            """
+            params['limit'] = req.k * 2  # 获取更多候选文档
+
+            logger.debug(
+                f"使用全文检索 - 查询词: '{search_query}', tsquery: '{params['search_tsquery']}'")
+            logger.debug(f"全文检索SQL: {query}")
+            logger.debug(f"全文检索参数: {params}")
+
+            results = self._execute_query(query, params)
+            documents = []
+
+            for result in results:
+                metadata = result['cmetadata'] if isinstance(
+                    result['cmetadata'], dict) else {}
+
+                ts_score = float(result['ts_score']
+                                 ) if result['ts_score'] else 0.0
+                ts_score_cd = float(
+                    result['ts_score_cd']) if result['ts_score_cd'] else 0.0
+
+                # 使用ts_rank_cd作为主要分数，ts_rank作为辅助分数
+                # 归一化为0.3-1.0范围，确保不会被阈值过滤且低于向量搜索分数
+                final_score = max(ts_score_cd, ts_score)
+                normalized_score = min(
+                    0.3 + final_score * 0.7, 1.0) if final_score > 0 else 0.3
+
+                metadata.update({
+                    'ts_score': ts_score,
+                    'ts_score_cd': ts_score_cd,
+                    'similarity_score': normalized_score,
+                    'search_method': 'fulltext'
+                })
+
+                documents.append(Document(
+                    id=result['id'],
+                    page_content=result['document'],
+                    metadata=metadata
+                ))
+
+            logger.debug(
+                f"全文检索完成 - 索引: {req.index_name}, 查询: '{search_query}', 结果数: {len(documents)}")
+            return documents
+
+        except Exception as e:
+            logger.error(
+                f"全文检索异常 - 索引: {req.index_name}, 查询: '{req.search_query}', 错误: {e}")
+            # 降级为ILIKE搜索
+            logger.info(f"降级为ILIKE搜索 - 索引: {req.index_name}")
+            return self._fallback_ilike_search(req)
+
+    def _fallback_ilike_search(self, req: DocumentRetrieverRequest) -> List[Document]:
+        """降级的ILIKE模糊搜索实现"""
+        try:
+            where_clauses = []
+            params = {}
+
+            # 构建基础查询条件
+            where_clauses.append("c.name = %(index_name)s")
+            params['index_name'] = req.index_name
+
+            # 添加元数据过滤
+            if req.metadata_filter:
+                metadata_condition = self._build_metadata_filter(
+                    req.metadata_filter, params)
+                if metadata_condition:
+                    where_clauses.append(metadata_condition)
+
+            # 使用ILIKE模糊搜索
             search_query = req.search_query.strip()
             where_clauses.append("e.document ILIKE %(search_pattern)s")
             params['search_pattern'] = f"%{search_query}%"
@@ -78,7 +209,7 @@ class PgvectorRag(BaseRag):
             # 构建模糊搜索查询
             query = f"""
                 SELECT e.id, e.document, e.cmetadata,
-                       1.0 as bm25_score
+                       1.0 as fallback_score
                 FROM langchain_pg_embedding e
                 JOIN langchain_pg_collection c ON e.collection_id = c.uuid
                 WHERE {" AND ".join(where_clauses)}
@@ -92,11 +223,9 @@ class PgvectorRag(BaseRag):
                 LIMIT %(limit)s
             """
             params['exact_pattern'] = f"%{search_query}%"
-            params['limit'] = req.k * 2  # 获取更多候选文档
+            params['limit'] = req.k * 2
 
-            logger.debug(f"使用模糊搜索 - 查询词: '{search_query}'")
-            logger.debug(f"模糊搜索SQL: {query}")
-            logger.debug(f"模糊搜索参数: {params}")
+            logger.debug(f"降级ILIKE搜索 - 查询词: '{search_query}'")
 
             results = self._execute_query(query, params)
             documents = []
@@ -104,11 +233,12 @@ class PgvectorRag(BaseRag):
             for result in results:
                 metadata = result['cmetadata'] if isinstance(
                     result['cmetadata'], dict) else {}
-                bm25_score = float(result['bm25_score'])
-                metadata['bm25_score'] = bm25_score
-                # 将BM25分数归一化为0.5-1.0范围作为相似度分数，确保不会被阈值过滤
-                metadata['similarity_score'] = min(0.5 + bm25_score * 0.5, 1.0)
-                metadata['search_method'] = 'ilike'
+                fallback_score = float(result['fallback_score'])
+                metadata.update({
+                    'fallback_score': fallback_score,
+                    'similarity_score': 0.3,  # 降级搜索使用较低的固定分数
+                    'search_method': 'ilike_fallback'
+                })
 
                 documents.append(Document(
                     id=result['id'],
@@ -116,13 +246,13 @@ class PgvectorRag(BaseRag):
                     metadata=metadata
                 ))
 
-            logger.debug(
-                f"模糊搜索完成 - 索引: {req.index_name}, 查询: '{search_query}', 结果数: {len(documents)}")
+            logger.info(
+                f"降级ILIKE搜索完成 - 索引: {req.index_name}, 结果数: {len(documents)}")
             return documents
 
         except Exception as e:
             logger.error(
-                f"模糊搜索异常 - 索引: {req.index_name}, 查询: '{req.search_query}', 错误: {e}")
+                f"降级ILIKE搜索异常 - 索引: {req.index_name}, 错误: {e}")
             return []
 
     def _get_psycopg_uri(self) -> str:
@@ -527,6 +657,12 @@ class PgvectorRag(BaseRag):
                 query, {'index_name': req.index_name})
             logger.info(
                 f"覆盖模式清理完成 - 索引: {req.index_name}, 清理记录: {affected_rows}")
+
+        # 确保全文检索索引存在（仅在首次导入时尝试创建）
+        try:
+            self.ensure_fulltext_index()
+        except Exception as e:
+            logger.warning(f"全文检索索引创建跳过: {e}")
 
         embedding = EmbedBuilder.get_embed(
             req.embed_model_base_url,
