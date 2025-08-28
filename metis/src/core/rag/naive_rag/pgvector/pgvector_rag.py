@@ -1,6 +1,7 @@
 import copy
 import json
 from typing import List, Dict, Any, Optional
+from collections import defaultdict
 
 import psycopg
 from langchain_core.documents import Document
@@ -27,6 +28,92 @@ class PgvectorRag(BaseRag):
 
     def __init__(self):
         pass
+
+    def _rrf(self, results: List[List[str]], rank_const: int = 1, min_score: float = 0) -> tuple[List[str], List[float]]:
+        """Reciprocal Rank Fusion算法实现"""
+        scores: Dict[str, float] = defaultdict(float)
+        for result in results:
+            for i, doc_id in enumerate(result):
+                scores[doc_id] += 1 / (i + rank_const)
+
+        scored_items = list(scores.items())
+        scored_items.sort(reverse=True, key=lambda x: x[1])
+
+        sorted_ids = [item[0] for item in scored_items]
+        sorted_scores = [item[1] for item in scored_items]
+
+        # 过滤低分结果
+        filtered_results = [(doc_id, score) for doc_id, score in zip(
+            sorted_ids, sorted_scores) if score >= min_score]
+
+        if filtered_results:
+            filtered_ids, filtered_scores = zip(*filtered_results)
+            return list(filtered_ids), list(filtered_scores)
+        else:
+            return [], []
+
+    @timeit("全文搜索")
+    def _fulltext_search(self, req: DocumentRetrieverRequest) -> List[Document]:
+        """执行PostgreSQL全文搜索"""
+        try:
+            where_clauses = []
+            params = {}
+
+            # 构建基础查询条件
+            where_clauses.append("c.name = %(index_name)s")
+            params['index_name'] = req.index_name
+
+            # 添加元数据过滤
+            if req.metadata_filter:
+                metadata_condition = self._build_metadata_filter(
+                    req.metadata_filter, params)
+                if metadata_condition:
+                    where_clauses.append(metadata_condition)
+
+            # 添加全文搜索条件
+            where_clauses.append(
+                "to_tsvector('simple', e.document) @@ plainto_tsquery('simple', %(search_query)s)")
+            params['search_query'] = req.search_query
+
+            where_clause = " AND ".join(where_clauses)
+
+            # 构建全文搜索查询
+            query = f"""
+                SELECT e.id, e.document, e.cmetadata,
+                       ts_rank(to_tsvector('simple', e.document), plainto_tsquery('simple', %(search_query)s)) as bm25_score
+                FROM langchain_pg_embedding e
+                JOIN langchain_pg_collection c ON e.collection_id = c.uuid
+                WHERE {where_clause}
+                ORDER BY bm25_score DESC
+                LIMIT %(limit)s
+            """
+            params['limit'] = req.k * 2  # 获取更多候选文档
+
+            results = self._execute_query(query, params)
+            documents = []
+
+            for result in results:
+                metadata = result['cmetadata'] if isinstance(
+                    result['cmetadata'], dict) else {}
+                bm25_score = float(result['bm25_score'])
+                metadata['bm25_score'] = bm25_score
+                # 将BM25分数归一化为0.5-1.0范围作为相似度分数，确保不会被阈值过滤
+                metadata['similarity_score'] = min(0.5 + bm25_score * 0.5, 1.0)
+                metadata['search_method'] = 'fulltext'
+
+                documents.append(Document(
+                    id=result['id'],
+                    page_content=result['document'],
+                    metadata=metadata
+                ))
+
+            logger.debug(
+                f"全文搜索完成 - 索引: {req.index_name}, 结果数: {len(documents)}")
+            return documents
+
+        except Exception as e:
+            logger.error(f"全文搜索异常 - 索引: {req.index_name}, 错误: {e}")
+            return []
 
     def _get_psycopg_uri(self) -> str:
         """将SQLAlchemy格式的URI转换为psycopg支持的格式"""
@@ -562,17 +649,83 @@ class PgvectorRag(BaseRag):
                         doc.metadata = {}
                     doc.metadata['similarity_score'] = 1.0
             else:
-                # 默认使用相似度阈值搜索
-                results_with_scores = vector_store.similarity_search_with_relevance_scores(
-                    req.search_query, k=req.k, score_threshold=req.score_threshold or 0.0,
-                    filter=search_kwargs["filter"]
+                # HybridSearch: 结合向量搜索和全文搜索，各占一定比例
+                # 计算各自应该返回的文档数量（确保均衡分配，各占约50%）
+                vector_k = max(1, req.k // 2)  # 向量搜索部分：至少1个，通常占一半
+                fulltext_k = max(1, req.k - vector_k)  # 全文搜索部分：占剩余部分
+
+                logger.info(
+                    f"HybridSearch: vector_k={vector_k}, fulltext_k={fulltext_k}, total_k={req.k}")
+
+                # 1. 执行向量搜索（多取一些候选，提高质量）
+                vector_results_with_scores = vector_store.similarity_search_with_relevance_scores(
+                    req.search_query, k=vector_k * 2, score_threshold=req.score_threshold or 0.0,
+                    filter=search_kwargs.get("filter")
                 )
-                results = []
-                for doc, score in results_with_scores:
+                vector_results = []
+                vector_doc_ids = []
+                for doc, score in vector_results_with_scores:
                     if not hasattr(doc, 'metadata'):
                         doc.metadata = {}
                     doc.metadata['similarity_score'] = float(score)
-                    results.append(doc)
+                    doc.metadata['search_method'] = 'vector'
+                    vector_results.append(doc)
+                    vector_doc_ids.append(str(doc.metadata.get(
+                        'chunk_id', doc.id if hasattr(doc, 'id') else str(id(doc)))))
+
+                # 2. 执行全文搜索（调整k值以获取相应比例的结果）
+                fulltext_req = copy.deepcopy(req)
+                fulltext_req.k = fulltext_k * 2  # 多取一些候选，提高质量
+                fulltext_results = self._fulltext_search(fulltext_req)
+                fulltext_doc_ids = []
+                for doc in fulltext_results:
+                    fulltext_doc_ids.append(str(doc.metadata.get(
+                        'chunk_id', doc.id if hasattr(doc, 'id') else str(id(doc)))))
+
+                # 3. 使用RRF合并结果，确保各自的比例贡献
+                if vector_doc_ids or fulltext_doc_ids:
+                    rrf_input = []
+
+                    # 限制各自的贡献数量，确保比例平衡
+                    if vector_doc_ids:
+                        # 只取前vector_k个向量搜索结果参与RRF
+                        rrf_input.append(vector_doc_ids[:vector_k])
+                    if fulltext_doc_ids:
+                        # 只取前fulltext_k个全文搜索结果参与RRF
+                        rrf_input.append(fulltext_doc_ids[:fulltext_k])
+
+                    merged_doc_ids, rrf_scores = self._rrf(
+                        rrf_input, rank_const=1, min_score=0)
+
+                    # 4. 构建合并后的文档映射
+                    all_docs = {}
+                    for doc in vector_results:
+                        doc_id = str(doc.metadata.get(
+                            'chunk_id', doc.id if hasattr(doc, 'id') else str(id(doc))))
+                        all_docs[doc_id] = doc
+                    for doc in fulltext_results:
+                        doc_id = str(doc.metadata.get(
+                            'chunk_id', doc.id if hasattr(doc, 'id') else str(id(doc))))
+                        if doc_id not in all_docs:  # 避免重复
+                            all_docs[doc_id] = doc
+
+                    # 5. 按RRF分数排序并构建最终结果
+                    results = []
+                    for i, (doc_id, rrf_score) in enumerate(zip(merged_doc_ids[:req.k], rrf_scores[:req.k])):
+                        if doc_id in all_docs:
+                            doc = all_docs[doc_id]
+                            if not hasattr(doc, 'metadata'):
+                                doc.metadata = {}
+
+                            # 保留原有的similarity_score，如果没有则设置为0.0
+                            if 'similarity_score' not in doc.metadata:
+                                doc.metadata['similarity_score'] = 0.0
+
+                            doc.metadata['rrf_score'] = float(rrf_score)
+                            doc.metadata['hybrid_rank'] = i + 1
+                            results.append(doc)
+                else:
+                    results = []
 
             # 添加搜索元数据
             for i, doc in enumerate(results):
