@@ -3,7 +3,7 @@ import json
 from django.core.management import BaseCommand
 
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.model_provider_mgmt.models import EmbedProvider, LLMModel, ModelType, RerankProvider
+from apps.opspilot.model_provider_mgmt.models import EmbedProvider, LLMModel, ModelType, OCRProvider, RerankProvider
 from apps.system_mgmt.models import Group
 
 
@@ -18,6 +18,7 @@ class Command(BaseCommand):
             self.create_or_update_llm_model(group_id, model_type_map)
             self.create_or_update_embed_model(group_id, model_type_map)
             self.create_or_update_rerank_model(group_id, model_type_map)
+            self.create_or_update_ocr_model(group_id, model_type_map)
         except Exception as e:
             logger.exception(e)
 
@@ -120,6 +121,7 @@ class Command(BaseCommand):
             model_type_data = json.load(f)
         exist_model_type = {i.name: i for i in ModelType.objects.all()}
         create_model_type = []
+        update_model_type = []
         model_type = ModelType.objects.last()
         if model_type:
             index = model_type.index + 1
@@ -131,6 +133,43 @@ class Command(BaseCommand):
                 i["index"] = index
                 create_model_type.append(ModelType(**i))
                 index += 1
+            else:
+                update_model = exist_model_type[i["name"]]
+                update_model.tags = i.get("tags", [])
+                update_model_type.append(update_model)
         if create_model_type:
             ModelType.objects.bulk_create(create_model_type)
             print(f"Created {len(create_model_type)} model types")
+        if update_model_type:
+            ModelType.objects.bulk_update(update_model_type, ["tags"])
+            print(f"Updated {len(update_model_type)} model types")
+
+    @staticmethod
+    def create_or_update_ocr_model(group_id, model_type_map):
+        ocr_model_file = "apps/opspilot/management/json_file/ocr_model.json"
+        with open(ocr_model_file, "r", encoding="utf-8") as f:
+            ocr_model_list = json.load(f)
+        exist_ocr = {i.name: i for i in OCRProvider.objects.filter(is_build_in=True)}
+        create_ocr_model = []
+        for i in ocr_model_list:
+            if i["name"] not in exist_ocr:
+                ocr_config = {
+                    "base_url": i["base_url"],
+                    "api_key": "your_openai_api_key",
+                }
+                if i["name"] == "AzureOCR":
+                    ocr_config["endpoint"] = ""
+                create_ocr_model.append(
+                    OCRProvider(
+                        name=i["name"],
+                        model_type_id=model_type_map.get(i["model_type"], None),
+                        enabled=False,
+                        is_build_in=True,
+                        team=[group_id],
+                        ocr_config=ocr_config,
+                    )
+                )
+
+        if create_ocr_model:
+            OCRProvider.objects.bulk_create(create_ocr_model)
+            print(f"Created {len(create_ocr_model)} ocr models")

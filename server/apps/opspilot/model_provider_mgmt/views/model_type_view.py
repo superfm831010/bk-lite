@@ -16,10 +16,11 @@ class ModelTypeViewSet(viewsets.ModelViewSet, GenericViewSetFun):
     search_fields = ("name", "display_name")
 
     def list(self, request, *args, **kwargs):
+        provider_type = request.query_params.get("provider_type", "")
         queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.filter(tags__contains=provider_type)
         serializer = self.get_serializer(queryset, many=True)
         return_data = serializer.data
-        provider_type = request.query_params.get("provider_type", "")
         provider_model_map = {
             "llm": LLMModel,
             "embed": EmbedProvider,
