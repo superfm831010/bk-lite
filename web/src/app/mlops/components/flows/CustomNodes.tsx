@@ -20,9 +20,9 @@ export const IntentNode = ({ data, selected }: NodeProps<AppNode>) => {
   const targetsConnections = useNodeConnections({
     handleType: 'target'
   });
-  // const sourceConnections = useNodeConnections({
-  //   handleType: 'source'
-  // });
+  const sourceConnections = useNodeConnections({
+    handleType: 'source'
+  });
 
 
   return (
@@ -35,7 +35,7 @@ export const IntentNode = ({ data, selected }: NodeProps<AppNode>) => {
           <span className='text-xs'>{data?.name}</span>
         </div>
       }
-      {/* <Handle type="source" position={Position.Top} isConnectable={sourceConnections.length < 1} /> */}
+      <Handle type="source" position={Position.Top} isConnectable={sourceConnections.length < 1} />
       <Handle type="target" position={Position.Bottom} isConnectable={targetsConnections.length < 1} />
     </div>
   );
@@ -98,7 +98,6 @@ export const FormNode = ({ data, selected }: NodeProps<AppNode>) => {
 
   return (
     <div className={`px-4 py-2 shadow-md rounded-md text-[var(--color-text-1)] border-2 ${selected ? 'border-red-700' : 'border-red-500'}`}>
-      
       {data.label && <div className="font-bold">{data.label}</div>}
       {data.name &&
         <div className="flex justify-center items-center">
@@ -106,8 +105,12 @@ export const FormNode = ({ data, selected }: NodeProps<AppNode>) => {
           <span className='text-xs'>{data?.name}</span>
         </div>
       }
-      <Handle type="source" position={Position.Top} isConnectable={sourceConnections.length < 1} />
-      <Handle type="target" position={Position.Bottom} isConnectable={targetsConnections.length < 1} />
+      <Handle type="source" position={Position.Top}
+        isConnectable={sourceConnections.length < 1}
+      />
+      <Handle type="target" position={Position.Bottom}
+        isConnectable={targetsConnections.length < 1}
+      />
     </div>
   );
 };

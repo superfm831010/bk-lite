@@ -92,7 +92,6 @@ const RasaDetail = () => {
         width: 180,
         render: (_, record) => (<>
           <Button type="link" className="mr-2" onClick={() => {
-            console.log('change');
             setCurrentStory(record);
             setOpenFlow(true);
           }}>{t(`common.detail`)}</Button>

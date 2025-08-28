@@ -55,12 +55,12 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
         formRef.current?.setFieldValue('entity_type', formData?.entity_type);
         onEntityTypeChange(formData?.entity_type);
       } else if (formData?.slot_type) {
-        onSlotTypeChange(formData?.slot_type)
+        onSlotTypeChange(formData?.slot_type);
         formRef.current?.setFieldValue('slot_type', formData?.slot_type);
         formRef.current?.setFieldValue('is_apply', formData?.is_apply);
       }
     }
-  }, [formData, visiable]);
+  }, [formData?.name, formData?.entity_type, formData?.slot_type, formData?.is_apply, visiable]);
 
   return (
     <>
@@ -91,7 +91,6 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
               onChange={handleNameChange}
             />
           </Form.Item>
-
           {selectKey === 'entity' && (
             <>
               <Form.Item
@@ -120,61 +119,60 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
               )}
             </>
           )}
-          {
-            selectKey === 'slot' && (
-              <>
-                <Form.Item
-                  name="slot_type"
-                  label={t(`common.type`)}
-                  rules={[
-                    { required: true, message: t(`common.selectMsg`) }
-                  ]}
-                >
-                  <Select options={[
-                    {
-                      label: 'text(记录普通文本)',
-                      value: 'text'
-                    },
-                    {
-                      label: 'categorical(记录分类类别，枚举)',
-                      value: 'categorical'
-                    },
-                    {
-                      label: 'float(记录数值类型)',
-                      value: 'float'
-                    },
-                    {
-                      label: 'list(保存多个值的列表)',
-                      value: 'list'
-                    },
-                    {
-                      label: 'bool(布尔值，是或者否)',
-                      value: 'bool'
-                    }
-                  ]} onChange={onSlotTypeChange} />
-                </Form.Item>
-                <Form.Item
-                  name={'is_apply'}
-                  label={t(`datasets.slotApply`)}
-                  rules={[
-                    { required: true, message: t(`common.selectMsg`) }
-                  ]}
-                >
-                  <Switch onChange={onSlotPredictionChange} />
-                </Form.Item>
-                {slotType === 'categorical' && (
-                  <>
-                    <Form.Item
-                      name='samplelist'
-                      label={t(`datasets.category`)}
-                      rules={[{ required: true, validator: validateSampleList }]}
-                    >
-                      {renderElement}
-                    </Form.Item>
-                  </>
-                )}
-              </>
-            )
+          {selectKey === 'slot' && (
+            <>
+              <Form.Item
+                name="slot_type"
+                label={t(`common.type`)}
+                rules={[
+                  { required: true, message: t(`common.selectMsg`) }
+                ]}
+              >
+                <Select options={[
+                  {
+                    label: 'text(记录普通文本)',
+                    value: 'text'
+                  },
+                  {
+                    label: 'categorical(记录分类类别，枚举)',
+                    value: 'categorical'
+                  },
+                  {
+                    label: 'float(记录数值类型)',
+                    value: 'float'
+                  },
+                  {
+                    label: 'list(保存多个值的列表)',
+                    value: 'list'
+                  },
+                  {
+                    label: 'bool(布尔值，是或者否)',
+                    value: 'bool'
+                  }
+                ]} onChange={onSlotTypeChange} />
+              </Form.Item>
+              <Form.Item
+                name={'is_apply'}
+                label={t(`datasets.slotApply`)}
+                rules={[
+                  { required: true, message: t(`common.selectMsg`) }
+                ]}
+              >
+                <Switch onChange={onSlotPredictionChange} />
+              </Form.Item>
+              {slotType === 'categorical' && (
+                <>
+                  <Form.Item
+                    name='samplelist'
+                    label={t(`datasets.category`)}
+                    rules={[{ required: true, validator: validateSampleList }]}
+                  >
+                    {renderElement}
+                  </Form.Item>
+                </>
+              )}
+            </>
+          )
           }
           {(!['entity', 'slot', 'story'].includes(selectKey)) && (
             <>

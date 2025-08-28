@@ -31,7 +31,7 @@ const NodeFlow = ({
   initialEdges,
   nodeTypes,
   dataset,
-  panel,
+  panel = [],
   handleSaveFlow
 }: {
   initialNodes: Node[],
@@ -57,26 +57,13 @@ const NodeFlow = ({
       setEdges((eds) => addEdge(params, eds));
       setNodes((nds) =>
         nds.map((node) => {
-          if (node.id === params.source) {
+          if (node.id === params.source || node.id === params.target) {
             return {
               ...node,
               data: {
                 ...node.data,
-                source: params.target
-              }
-            }
-          }
-          return node;
-        })
-      );
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === params.target) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                target: params.source,
+                source: node.id === params.source ? params.target : node.data?.source,
+                target: node.id === params.target ? params.source : node.data?.target
               }
             }
           }
@@ -102,7 +89,6 @@ const NodeFlow = ({
   // 处理拖拽放下
   const onDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    // const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
     const type = event.dataTransfer.getData('application/reactflow');
 
     // 校验节点类型
@@ -218,7 +204,7 @@ const NodeFlow = ({
       const edges = getEdges();
       const target = nodes.find((node) => node.id === connection.target);
       const hasCycle = (node: any, visited = new Set()) => {
-        if (visited.has(node.id)) return false;
+        if (visited.has(node.id)) return false; 
 
         visited.add(node.id);
 
@@ -290,26 +276,24 @@ const NodeFlow = ({
         nodeTypes={customNodeTypes}
       >
         <Background />
-        {panel?.length && (
-          <Panel position='top-right'>
-            <Button
-              key="save"
-              size="small"
-              color="default"
-              variant="outlined"
-              className="mr-2 text-xs"
-              onClick={onSave}
-            >{t(`common.save`)}</Button>
-            <Button
-              key="reset"
-              size="small"
-              variant="outlined"
-              className="mr-2 text-xs"
-              onClick={onRestore}
-            >{t(`mlops-common.reset`)}</Button>
-            {panel}
-          </Panel>
-        )}
+        <Panel position='top-right'>
+          <Button
+            key="save"
+            size="small"
+            color="default"
+            variant="outlined"
+            className="mr-2 text-xs"
+            onClick={onSave}
+          >{t(`common.save`)}</Button>
+          <Button
+            key="reset"
+            size="small"
+            variant="outlined"
+            className="mr-2 text-xs"
+            onClick={onRestore}
+          >{t(`mlops-common.reset`)}</Button>
+          {panel?.length > 0 && panel}
+        </Panel>
         <Controls />
         {/* <MiniMap /> */}
       </ReactFlow>
