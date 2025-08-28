@@ -6,7 +6,7 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-import './topology.scss';
+import styles from './index.module.scss';
 import { Spin } from 'antd';
 import { useTopologyState } from './hooks/useTopologyState';
 import { useGraphOperations } from './hooks/useGraphOperations';
@@ -245,7 +245,9 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
     };
 
     return (
-      <div className="flex-1 p-4 pb-0 overflow-auto flex flex-col bg-[var(--color-bg-1)]">
+      <div
+        className={`flex-1 p-4 pb-0 overflow-auto flex flex-col bg-[var(--color-bg-1)] ${styles.topologyContainer}`}
+      >
         {/* 工具栏 */}
         <TopologyToolbar
           selectedTopology={selectedTopology}

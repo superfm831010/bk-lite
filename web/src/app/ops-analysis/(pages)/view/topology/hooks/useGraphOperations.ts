@@ -38,11 +38,6 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   getEdgeStyle,
   hideAllPorts,
-  getSingleValueNodeStyle,
-  getIconNodeStyle,
-  getChartNodeStyle,
-  getTextNodeStyle,
-  getLogoUrl,
   hideAllEdgeTools,
   showPorts,
   showEdgeTools,
@@ -51,9 +46,9 @@ import {
   formatDisplayValue,
   updateNodeProperties,
   createPortConfig,
-  updateNodeSizeAndPorts,
   adjustSingleValueNodeSize,
 } from '../utils/topologyUtils';
+import { registerNodes, createNodeByType } from '../utils/registerNode';
 import { useGraphData } from './useGraphData';
 
 export const useGraphOperations = (
@@ -477,13 +472,11 @@ export const useGraphOperations = (
       node.setData(updatedConfig);
 
       if (nodeData.type === 'icon' || nodeData.type === 'single-value') {
-        if (isRealtime) {
-          updateNodeSizeAndPorts(node, size.width, size.height);
-        } else {
+        if (!isRealtime) {
           updateNodeProperties(node, updatedConfig, iconList);
         }
       } else if (nodeData.type === 'chart') {
-        const chartPortConfig = createPortConfig(size.width, size.height);
+        const chartPortConfig = createPortConfig();
         node.prop('ports', chartPortConfig);
       }
     };
@@ -512,6 +505,9 @@ export const useGraphOperations = (
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // 首先注册所有节点类型
+    registerNodes();
+
     const graph: X6Graph = new Graph({
       container: containerRef.current,
       grid: true,
@@ -522,14 +518,19 @@ export const useGraphOperations = (
           name: 'center',
           args: { dx: 0, dy: 0 },
         },
-        connectionPoint: { name: 'anchor' },
+        connectionPoint: { name: 'boundary' },
+        connector: { name: 'normal' },
+        router: { name: 'manhattan' },
         allowBlank: false,
         allowMulti: true,
         allowLoop: false,
         highlight: true,
         snap: { radius: 20 },
         createEdge: () =>
-          graph.createEdge({ shape: 'edge', ...getEdgeStyle('single') }),
+          graph.createEdge({
+            shape: 'edge',
+            ...getEdgeStyle('single')
+          }),
         validateMagnet: ({ magnet }) => {
           return (
             isEditModeRef.current && magnet.getAttribute('magnet') === 'true'
@@ -661,18 +662,8 @@ export const useGraphOperations = (
       ...formValues,
     };
 
-    let nodeData: any;
-
-    if (nodeConfig.type === 'single-value') {
-      nodeData = getSingleValueNodeStyle(nodeConfig);
-    } else if (nodeConfig.type === 'text') {
-      nodeData = getTextNodeStyle(nodeConfig);
-    } else if (nodeConfig.type === 'chart') {
-      nodeData = getChartNodeStyle(nodeConfig);
-    } else {
-      const logoUrl = getLogoUrl(nodeConfig, iconList);
-      nodeData = getIconNodeStyle(nodeConfig, logoUrl);
-    }
+    // 使用注册的节点创建节点数据
+    const nodeData = createNodeByType(nodeConfig, iconList);
 
     const addedNode = graphInstance.addNode(nodeData);
 
