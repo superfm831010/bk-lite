@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { getTextNodeStyle } from '../utils/topologyUtils';
+import { createNodeByType } from '../utils/registerNode';
 
 export const useTextOperations = (
   containerRef: React.RefObject<HTMLDivElement>,
@@ -26,13 +26,16 @@ export const useTextOperations = (
   const handleAddText = useCallback(() => {
     if (!isEditMode || !graphInstance) return;
 
-    const textNode = graphInstance.addNode({
+    const textNodeConfig = {
+      id: `text_${Date.now()}`,
+      type: 'text',
       x: 100 + Math.random() * 50,
       y: 100 + Math.random() * 50,
-      label: '双击编辑文本',
-      data: { type: 'text', isPlaceholder: true },
-      ...getTextNodeStyle(),
-    });
+      name: '双击编辑文本',
+    };
+
+    const nodeData = createNodeByType(textNodeConfig);
+    const textNode = graphInstance.addNode(nodeData);
 
     setTimeout(() => {
       startTextEditRef.current?.(textNode.id, '');

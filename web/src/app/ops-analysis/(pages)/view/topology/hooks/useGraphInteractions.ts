@@ -41,7 +41,6 @@ import {
   MenuClickEvent,
   UseContextMenuAndModalReturn,
   Point,
-  PortPositions,
   EdgeData
 } from '@/app/ops-analysis/types/topology';
 
@@ -244,9 +243,8 @@ export const useContextMenuAndModal = (
 
         const localPoint = getCurrentMousePosition(e);
 
-        // 查找目标节点和端口的逻辑
+        // 查找目标节点的逻辑
         let targetCell: Node | null = null;
-        let targetPort: string | null = null;
 
         for (const node of graphInstance.getNodes()) {
           if (node.id === contextMenuNodeId) continue;
@@ -260,45 +258,6 @@ export const useContextMenuAndModal = (
             localPoint.y <= bbox.y + bbox.height
           ) {
             targetCell = node;
-
-            // 基于图标区域计算端口位置（正方形分布）
-            const iconX = bbox.x + 25;
-            const iconY = bbox.y + 5;
-            const iconWidth = 60;
-            const iconHeight = 60;
-
-            const ports = ['top', 'bottom', 'left', 'right'];
-            const portPositions: PortPositions = {
-              top: { x: iconX + iconWidth / 2, y: iconY },
-              bottom: { x: iconX + iconWidth / 2, y: iconY + iconHeight },
-              left: { x: iconX, y: iconY + iconHeight / 2 },
-              right: { x: iconX + iconWidth, y: iconY + iconHeight / 2 },
-            };
-
-            let minDistance = Infinity;
-            let nearestPort = 'top';
-
-            ports.forEach((port) => {
-              const portPos = portPositions[port as keyof PortPositions];
-              const distance = Math.sqrt(
-                Math.pow(localPoint.x - portPos.x, 2) +
-                Math.pow(localPoint.y - portPos.y, 2)
-              );
-
-              if (distance <= 6) {
-                targetPort = port;
-                return;
-              }
-
-              if (distance < minDistance) {
-                minDistance = distance;
-                nearestPort = port;
-              }
-            });
-
-            if (!targetPort) {
-              targetPort = nearestPort;
-            }
             break; 
           }
         }
@@ -307,26 +266,13 @@ export const useContextMenuAndModal = (
           tempEdge.remove();
         }
 
-        if (targetCell && targetCell.id !== contextMenuNodeId && targetPort) {
+        if (targetCell && targetCell.id !== contextMenuNodeId) {
           const sourceNode = graphInstance.getCellById(contextMenuNodeId);
           if (sourceNode && targetCell) {
-            const sourceBbox = sourceNode.getBBox();
-            const targetBbox = targetCell.getBBox();
-
-            const dx = targetBbox.x + targetBbox.width / 2 - (sourceBbox.x + sourceBbox.width / 2);
-            const dy = targetBbox.y + targetBbox.height / 2 - (sourceBbox.y + sourceBbox.height / 2);
-
-            let sourcePort = 'right';
-            if (Math.abs(dx) > Math.abs(dy)) {
-              sourcePort = dx > 0 ? 'right' : 'left';
-            } else {
-              sourcePort = dy > 0 ? 'bottom' : 'top';
-            }
-
             const finalEdge = graphInstance.addEdge({
               id: `edge_${uuidv4()}`,
-              source: { cell: contextMenuNodeId, port: sourcePort },
-              target: { cell: targetCell.id, port: targetPort },
+              source: { cell: contextMenuNodeId },
+              target: { cell: targetCell.id },
               ...getEdgeStyle(connectionType),
               data: { connectionType, lineType: 'common_line' },
             });
