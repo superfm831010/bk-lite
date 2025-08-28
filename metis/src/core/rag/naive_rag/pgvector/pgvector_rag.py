@@ -54,7 +54,7 @@ class PgvectorRag(BaseRag):
 
     @timeit("全文搜索")
     def _fulltext_search(self, req: DocumentRetrieverRequest) -> List[Document]:
-        """执行PostgreSQL全文搜索"""
+        """执行PostgreSQL模糊搜索（简化版，只使用ILIKE）"""
         try:
             where_clauses = []
             params = {}
@@ -70,127 +70,33 @@ class PgvectorRag(BaseRag):
                 if metadata_condition:
                     where_clauses.append(metadata_condition)
 
-            # 处理搜索条件：对于短词使用模糊匹配，长词使用全文搜索
+            # 使用ILIKE模糊搜索（所有查询都用模糊匹配）
             search_query = req.search_query.strip()
-            use_ilike_search = len(
-                search_query) <= 2 or not search_query.replace(' ', '')
+            where_clauses.append("e.document ILIKE %(search_pattern)s")
+            params['search_pattern'] = f"%{search_query}%"
 
-            if use_ilike_search:
-                # 对短词或特殊字符使用ILIKE模糊匹配
-                where_clauses.append("e.document ILIKE %(search_pattern)s")
-                params['search_pattern'] = f"%{search_query}%"
-
-                # 构建模糊搜索查询
-                query = f"""
-                    SELECT e.id, e.document, e.cmetadata,
-                           1.0 as bm25_score
-                    FROM langchain_pg_embedding e
-                    JOIN langchain_pg_collection c ON e.collection_id = c.uuid
-                    WHERE {" AND ".join(where_clauses)}
-                    ORDER BY 
-                        CASE 
-                            WHEN e.document ILIKE %(exact_pattern)s THEN 1
-                            WHEN e.document LIKE %(search_pattern)s THEN 2
-                            ELSE 3
-                        END,
-                        LENGTH(e.document) ASC
-                    LIMIT %(limit)s
-                """
-                params['exact_pattern'] = f"%{search_query}%"
-
-                logger.debug(
-                    f"使用模糊搜索 - 查询词: '{search_query}' (长度: {len(search_query)})")
-            else:
-                # 对较长的词使用全文搜索，同时添加模糊匹配作为后备
-                try:
-                    # 尝试构建tsquery，如果失败则回退到模糊匹配
-                    test_query = f"SELECT plainto_tsquery('simple', '{search_query.replace("'", "''")}');"
-                    self._execute_query(test_query)
-
-                    # 全文搜索 + 模糊匹配的混合条件
-                    fulltext_condition = "to_tsvector('simple', e.document) @@ plainto_tsquery('simple', %(search_query)s)"
-                    ilike_condition = "e.document ILIKE %(search_pattern)s"
-                    search_condition = f"({fulltext_condition} OR {ilike_condition})"
-                    where_clauses.append(search_condition)
-
-                    params['search_query'] = search_query
-                    params['search_pattern'] = f"%{search_query}%"
-
-                    # 构建混合搜索查询
-                    query = f"""
-                        SELECT e.id, e.document, e.cmetadata,
-                               CASE 
-                                   WHEN to_tsvector('simple', e.document) @@ plainto_tsquery('simple', %(search_query)s) 
-                                   THEN ts_rank(to_tsvector('simple', e.document), plainto_tsquery('simple', %(search_query)s))
-                                   ELSE 0.1
-                               END as bm25_score
-                        FROM langchain_pg_embedding e
-                        JOIN langchain_pg_collection c ON e.collection_id = c.uuid
-                        WHERE {" AND ".join(where_clauses)}
-                        ORDER BY bm25_score DESC, LENGTH(e.document) ASC
-                        LIMIT %(limit)s
-                    """
-
-                    logger.debug(f"使用混合搜索 - 查询词: '{search_query}' (全文+模糊)")
-                except Exception:
-                    # 全文搜索失败，回退到纯模糊匹配
-                    where_clauses[-1] = "e.document ILIKE %(search_pattern)s"
-                    params = {k: v for k, v in params.items() if k !=
-                              'search_query'}
-                    params['search_pattern'] = f"%{search_query}%"
-
-                    query = f"""
-                        SELECT e.id, e.document, e.cmetadata,
-                               1.0 as bm25_score
-                        FROM langchain_pg_embedding e
-                        JOIN langchain_pg_collection c ON e.collection_id = c.uuid
-                        WHERE {" AND ".join(where_clauses)}
-                        ORDER BY LENGTH(e.document) ASC
-                        LIMIT %(limit)s
-                    """
-
-                    logger.debug(f"回退到模糊搜索 - 查询词: '{search_query}' (全文搜索失败)")
-
+            # 构建模糊搜索查询
+            query = f"""
+                SELECT e.id, e.document, e.cmetadata,
+                       1.0 as bm25_score
+                FROM langchain_pg_embedding e
+                JOIN langchain_pg_collection c ON e.collection_id = c.uuid
+                WHERE {" AND ".join(where_clauses)}
+                ORDER BY 
+                    CASE 
+                        WHEN e.document ILIKE %(exact_pattern)s THEN 1
+                        WHEN LOWER(e.document) LIKE LOWER(%(search_pattern)s) THEN 2
+                        ELSE 3
+                    END,
+                    LENGTH(e.document) ASC
+                LIMIT %(limit)s
+            """
+            params['exact_pattern'] = f"%{search_query}%"
             params['limit'] = req.k * 2  # 获取更多候选文档
 
-            # 添加调试信息：打印实际执行的SQL和参数
-            logger.debug(f"全文搜索SQL调试 - 查询: {query}")
-            logger.debug(f"全文搜索参数调试 - 参数: {params}")
-
-            # 先不使用元数据过滤，测试基础搜索
-            if req.metadata_filter and 'is_doc' in req.metadata_filter:
-                logger.debug(f"检测到is_doc过滤条件: {req.metadata_filter['is_doc']}")
-
-                # 暂时去掉元数据过滤，只保留索引名和搜索条件进行测试
-                test_where_clauses = [f"c.name = %(index_name)s"]
-                if use_ilike_search:
-                    test_where_clauses.append(
-                        "e.document ILIKE %(search_pattern)s")
-                else:
-                    if 'search_query' in params:
-                        fulltext_condition = "to_tsvector('simple', e.document) @@ plainto_tsquery('simple', %(search_query)s)"
-                        ilike_condition = "e.document ILIKE %(search_pattern)s"
-                        test_where_clauses.append(
-                            f"({fulltext_condition} OR {ilike_condition})")
-                    else:
-                        test_where_clauses.append(
-                            "e.document ILIKE %(search_pattern)s")
-
-                test_query = query.replace(" AND ".join(
-                    where_clauses), " AND ".join(test_where_clauses))
-                test_params = {k: v for k, v in params.items(
-                ) if not k.startswith('metadata_')}
-
-                logger.debug(f"测试查询(无元数据过滤): {test_query}")
-                logger.debug(f"测试参数: {test_params}")
-
-                test_results = self._execute_query(test_query, test_params)
-                logger.debug(f"无元数据过滤的搜索结果数: {len(test_results)}")
-
-                if test_results:
-                    # 检查第一个结果的元数据
-                    sample_metadata = test_results[0].get('cmetadata', {})
-                    logger.debug(f"样本文档元数据: {sample_metadata}")
+            logger.debug(f"使用模糊搜索 - 查询词: '{search_query}'")
+            logger.debug(f"模糊搜索SQL: {query}")
+            logger.debug(f"模糊搜索参数: {params}")
 
             results = self._execute_query(query, params)
             documents = []
@@ -202,7 +108,7 @@ class PgvectorRag(BaseRag):
                 metadata['bm25_score'] = bm25_score
                 # 将BM25分数归一化为0.5-1.0范围作为相似度分数，确保不会被阈值过滤
                 metadata['similarity_score'] = min(0.5 + bm25_score * 0.5, 1.0)
-                metadata['search_method'] = 'fulltext' if not use_ilike_search else 'ilike'
+                metadata['search_method'] = 'ilike'
 
                 documents.append(Document(
                     id=result['id'],
@@ -211,12 +117,12 @@ class PgvectorRag(BaseRag):
                 ))
 
             logger.debug(
-                f"全文搜索完成 - 索引: {req.index_name}, 查询: '{search_query}', 结果数: {len(documents)}")
+                f"模糊搜索完成 - 索引: {req.index_name}, 查询: '{search_query}', 结果数: {len(documents)}")
             return documents
 
         except Exception as e:
             logger.error(
-                f"全文搜索异常 - 索引: {req.index_name}, 查询: '{req.search_query}', 错误: {e}")
+                f"模糊搜索异常 - 索引: {req.index_name}, 查询: '{req.search_query}', 错误: {e}")
             return []
 
     def _get_psycopg_uri(self) -> str:
@@ -348,6 +254,66 @@ class PgvectorRag(BaseRag):
                 params[f"{param_key}_value"] = str(value)
 
         return "(" + " AND ".join(conditions) + ")" if conditions else ""
+
+    def _detect_collection_embedding_dimension(self, collection_name: str) -> Optional[int]:
+        """检测指定collection的embedding维度"""
+        try:
+            query = """
+                SELECT vector_dims(e.embedding) as dimension
+                FROM langchain_pg_embedding e
+                JOIN langchain_pg_collection c ON e.collection_id = c.uuid
+                WHERE c.name = %(collection_name)s
+                LIMIT 1
+            """
+            results = self._execute_query(query, {'collection_name': collection_name})
+            if results:
+                dimension = results[0]['dimension']
+                logger.debug(f"检测到collection '{collection_name}' 的embedding维度: {dimension}")
+                return int(dimension)
+            else:
+                logger.warning(f"Collection '{collection_name}' 中没有找到embedding数据")
+                return None
+        except Exception as e:
+            logger.error(f"检测embedding维度失败 - collection: {collection_name}, 错误: {e}")
+            return None
+
+    def _get_compatible_embedding(self, req: DocumentRetrieverRequest, target_dimension: int):
+        """根据目标维度获取兼容的embedding模型"""
+        # 常见embedding模型的维度映射
+        dimension_to_model = {
+            512: {
+                'model_name': 'bce-embedding-base_v1',
+                'base_url': req.embed_model_base_url
+            },
+            768: {
+                'model_name': 'bge-small-zh-v1.5', 
+                'base_url': req.embed_model_base_url
+            },
+            1024: {
+                'model_name': 'text-embedding-ada-002',
+                'base_url': req.embed_model_base_url
+            }
+        }
+        
+        if target_dimension in dimension_to_model:
+            model_info = dimension_to_model[target_dimension]
+            logger.info(f"为维度 {target_dimension} 选择embedding模型: {model_info['model_name']}")
+            
+            return EmbedBuilder.get_embed(
+                model_info['base_url'],
+                model_info['model_name'],
+                req.embed_model_api_key,
+                model_info['base_url']
+            )
+        else:
+            # 如果没有匹配的模型，返回默认模型
+            logger.warning(f"未找到维度 {target_dimension} 的匹配模型，使用原始配置")
+            return EmbedBuilder.get_embed(
+                req.embed_model_base_url,
+                req.embed_model_name,
+                req.embed_model_api_key,
+                req.embed_model_base_url
+            )
 
     def _build_where_clauses(self, req, where_clauses: List[str], params: Dict[str, Any]) -> None:
         """构建WHERE子句"""
