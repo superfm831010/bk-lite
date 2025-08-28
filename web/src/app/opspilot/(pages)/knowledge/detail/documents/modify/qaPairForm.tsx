@@ -7,36 +7,10 @@ import { useSkillApi } from '@/app/opspilot/api/skill';
 import { useSearchParams } from 'next/navigation';
 import CustomTable from '@/components/custom-table';
 import Icon from '@/components/icon';
+import type { DocumentItem, QAPairFormProps, PreviewQAPair } from '@/app/opspilot/types/knowledge';
 
 const { TabPane } = Tabs;
 const { TextArea } = Input;
-
-interface QAPairFormData {
-  questionLlmModel: number;
-  answerLlmModel: number;
-  qaCount: number;
-  questionPrompt: string;
-  answerPrompt: string;
-  selectedDocuments: string[];
-}
-
-interface DocumentItem {
-  key: string;
-  title: string;
-  description?: string;
-}
-
-interface QAPairFormProps {
-  initialData?: Partial<QAPairFormData>;
-  onFormChange?: (isValid: boolean) => void;
-  onFormDataChange?: (data: QAPairFormData) => void;
-}
-
-interface PreviewQAPair {
-  question: string;
-  answer?: string;
-  content: string;
-}
 
 const QAPairForm = forwardRef<any, QAPairFormProps>(({ 
   initialData, 
@@ -94,6 +68,10 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
   const onFormChangeRef = useRef(onFormChange);
   const onFormDataChangeRef = useRef(onFormDataChange);
 
+  // 添加表单准备状态
+  const [formReady, setFormReady] = useState(false);
+  const [editData, setEditData] = useState<any>(null);
+
   useEffect(() => {
     onFormChangeRef.current = onFormChange;
     onFormDataChangeRef.current = onFormDataChange;
@@ -114,7 +92,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       const models = await fetchLlmModelsApi();
       setLlmModels(models);
       
-      if (!initialData?.questionLlmModel && models.length > 0) {
+      if (!parId && !initialData?.questionLlmModel && models.length > 0) {
         const defaultValues = {
           questionLlmModel: models[0].id,
           answerLlmModel: models[0].id,
@@ -130,7 +108,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     } finally {
       setLlmModelsLoading(false);
     }
-  }, [initialData, form]);
+  }, [parId, initialData]);
 
   const fetchDocumentsByType = useCallback(async (type: string, page: number, pageSize: number) => {
     if (!id) return;
@@ -139,7 +117,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     try {
       const result = await fetchDocuments({
         knowledge_source_type: type,
-        knowledge_base_id: id,
+        knowledge_base_id: id ? parseInt(id, 10) : undefined,
         page,
         page_size: pageSize
       });
@@ -176,6 +154,13 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     fetchLlmModels();
   }, []);
 
+  // 监听表单准备状态
+  useEffect(() => {
+    if (!llmModelsLoading && llmModels.length > 0) {
+      setFormReady(true);
+    }
+  }, [llmModelsLoading, llmModels]);
+
   useEffect(() => {
     if (initialData) {
       const values = {
@@ -194,46 +179,58 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     }
   }, [initialData, form, isEditMode]);
 
+  // 获取编辑数据
   useEffect(() => {
     const fetchQAPairDetails = async () => {
-      if (parId && llmModels.length > 0) {
-        setIsEditMode(true);
-        try {
-          const qaPairDetail = await getQAPairDetail(Number(parId));
-          
-          const editValues = {
-            questionLlmModel: qaPairDetail.llm_model,
-            answerLlmModel: qaPairDetail.answer_llm_model,
-            qaCount: qaPairDetail.qa_count,
-            questionPrompt: qaPairDetail.question_prompt || '',
-            answerPrompt: qaPairDetail.answer_prompt || ''
-          };
-          
-          if (qaPairDetail.document_id) {
-            const documentKeys = [qaPairDetail.document_id.toString()];
-            setSelectedDocuments(documentKeys);
-          }
-          
-          setTimeout(() => {
-            form.setFieldsValue(editValues);
-            formValuesRef.current = editValues;
-            
-            setTimeout(() => {
-              validateAndNotify();
-            }, 50);
-          }, 100);
-          
-        } catch (error) {
-          console.error('Failed to fetch QA pair details:', error);
-          message.error(t('common.fetchFailed'));
+      if (!parId) return;
+      
+      setIsEditMode(true);
+      try {
+        const qaPairDetail = await getQAPairDetail(Number(parId));
+        
+        const editValues = {
+          questionLlmModel: qaPairDetail.llm_model,
+          answerLlmModel: qaPairDetail.answer_llm_model,
+          qaCount: qaPairDetail.qa_count,
+          questionPrompt: qaPairDetail.question_prompt || '',
+          answerPrompt: qaPairDetail.answer_prompt || ''
+        };
+        
+        if (qaPairDetail.document_id) {
+          const documentKeys = [qaPairDetail.document_id.toString()];
+          setSelectedDocuments(documentKeys);
         }
-      } else if (parId) {
-        setIsEditMode(true);
+        
+        // 保存编辑数据，等待表单准备好后再设置
+        setEditData(editValues);
+        
+      } catch (error) {
+        console.error('Failed to fetch QA pair details:', error);
+        message.error(t('common.fetchFailed'));
       }
     };
 
     fetchQAPairDetails();
-  }, [parId, llmModels.length, form]);
+  }, [parId]);
+
+  // 当表单准备好且有编辑数据时，设置表单值
+  useEffect(() => {
+    if (formReady && editData && parId) {
+      // 使用 setTimeout 确保表单完全渲染
+      setTimeout(() => {
+        try {
+          form.setFieldsValue(editData);
+          formValuesRef.current = editData;
+          
+          // 立即触发验证
+          validateAndNotify();
+          
+        } catch (error) {
+          console.error('设置表单值时出错:', error);
+        }
+      }, 200);
+    }
+  }, [formReady, editData, parId, form]);
 
   useEffect(() => {
     if (parId) {
@@ -294,32 +291,43 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       answerPrompt: allValues.answerPrompt || ''
     };
     formValuesRef.current = newValues;
-  }, []);
+    
+    // 立即触发验证，不使用异步
+    const hasValidDocuments = isEditMode || selectedDocuments.length > 0;
+    const isValid = !!(
+      newValues.questionLlmModel && 
+      newValues.answerLlmModel && 
+      newValues.qaCount && 
+      hasValidDocuments
+    );
+    
+    onFormChangeRef.current(isValid);
+    onFormDataChangeRef.current({
+      ...newValues,
+      selectedDocuments
+    });
+  }, [selectedDocuments, isEditMode]);
 
   const validateAndNotify = useCallback(() => {
-    const timer = setTimeout(() => {
-      const hasValidDocuments = isEditMode || selectedDocuments.length > 0;
-      const isValid = !!(
-        formValuesRef.current.questionLlmModel && 
-        formValuesRef.current.answerLlmModel && 
-        formValuesRef.current.qaCount && 
-        hasValidDocuments
-      );
-      
-      onFormChangeRef.current(isValid);
-      onFormDataChangeRef.current({
-        ...formValuesRef.current,
-        selectedDocuments
-      });
-    }, 0);
+    const hasValidDocuments = isEditMode || selectedDocuments.length > 0;
+    const isValid = !!(
+      formValuesRef.current.questionLlmModel && 
+      formValuesRef.current.answerLlmModel && 
+      formValuesRef.current.qaCount && 
+      hasValidDocuments
+    );
     
-    return () => clearTimeout(timer);
+    onFormChangeRef.current(isValid);
+    onFormDataChangeRef.current({
+      ...formValuesRef.current,
+      selectedDocuments
+    });
   }, [selectedDocuments, isEditMode]);
 
   useEffect(() => {
     const cleanup = validateAndNotify();
     return cleanup;
-  }, [validateAndNotify]);
+  }, []);
 
   const handleTabChange = useCallback((tabKey: string) => {
     setActiveDocumentTab(tabKey);
@@ -443,7 +451,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     } finally {
       setQuestionGenerating(false);
     }
-  }, [id, selectedDocuments, generateQuestions, form, t]);
+  }, [id, selectedDocuments, form]);
 
   const handleGenerateAnswers = useCallback(async () => {
     if (!formValuesRef.current.answerLlmModel || previewQAPairs.length === 0) {
@@ -456,6 +464,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       const payload = {
         answer_llm_model_id: formValuesRef.current.answerLlmModel,
         answer_prompt: formValuesRef.current.answerPrompt || form.getFieldValue('answerPrompt') || '',
+        knowledge_base_id: id ? parseInt(id, 10) : 0,
         question_data: previewQAPairs.map(item => ({
           question: item.question,
           content: item.content
@@ -475,7 +484,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     } finally {
       setAnswerGenerating(false);
     }
-  }, [previewQAPairs, generateAnswers, form]);
+  }, [previewQAPairs, form]);
 
   return (
     <div className="flex gap-6 h-full">

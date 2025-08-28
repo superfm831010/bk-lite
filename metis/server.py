@@ -67,6 +67,9 @@ def bootstrap() -> Sanic:
         'class': 'src.core.sanic_plus.log.sanic_log_formater.SanicAccessFormatter',
     }
 
+    # 禁用 Sanic access 日志
+    LOGGING_CONFIG_DEFAULTS['loggers']['sanic.access']['level'] = 'WARNING'
+
     app = Sanic("Metis", config=config, log_config=LOGGING_CONFIG_DEFAULTS)
 
     app.blueprint(api)

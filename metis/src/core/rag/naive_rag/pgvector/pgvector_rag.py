@@ -10,6 +10,7 @@ from sanic.log import logger
 from src.core.embed.embed_builder import EmbedBuilder
 from src.core.rerank.rerank_manager import ReRankManager
 from src.core.sanic_plus.env.core_settings import core_settings
+from src.core.sanic_plus.utils.timing_decorator import timeit
 from src.web.entity.rag.base.document_count_request import DocumentCountRequest
 from src.web.entity.rag.base.document_delete_request import DocumentDeleteRequest
 from src.web.entity.rag.base.document_ingest_request import DocumentIngestRequest
@@ -37,18 +38,53 @@ class PgvectorRag(BaseRag):
             uri = uri.replace('postgres+psycopg://', 'postgresql://')
         return uri
 
+    @timeit("SQL更新执行")
+    def _execute_update_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> int:
+        """执行UPDATE/DELETE等非查询SQL，返回影响的行数"""
+        try:
+            with psycopg.connect(self._get_psycopg_uri()) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(query, params or {})
+                    affected_rows = cur.rowcount
+                    conn.commit()
+
+                    # 记录影响行数
+                    param_keys = list(params.keys()) if params else []
+                    logger.info(
+                        f"SQL更新详情 - 影响行数: {affected_rows}, 参数键: {param_keys}")
+                    return affected_rows
+        except Exception as e:
+            # 隐藏敏感参数，只记录参数键名
+            param_keys = list(params.keys()) if params else []
+            logger.error(f"SQL更新异常详情 - 参数键: {param_keys}")
+            raise
+
+    @timeit("SQL查询执行")
     def _execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict]:
         """执行SQL查询"""
         try:
             with psycopg.connect(self._get_psycopg_uri()) as conn:
                 with conn.cursor() as cur:
                     cur.execute(query, params or {})
+                    conn.commit()
+
+                    result_count = 0
                     if cur.description:
                         columns = [desc[0] for desc in cur.description]
-                        return [dict(zip(columns, row)) for row in cur.fetchall()]
-                    return []
+                        results = [dict(zip(columns, row))
+                                   for row in cur.fetchall()]
+                        result_count = len(results)
+                    else:
+                        results = []
+
+                    # 记录查询结果数
+                    param_keys = list(params.keys()) if params else []
+                    logger.info(
+                        f"SQL查询详情 - 结果数: {result_count}, 参数键: {param_keys}")
+                    return results
         except Exception as e:
-            logger.error(f"SQL执行失败: {e}")
+            param_keys = list(params.keys()) if params else []
+            logger.error(f"SQL查询异常详情 - 参数键: {param_keys}")
             raise
 
     def _get_chunk_ids_by_knowledge_ids(self, knowledge_ids: List[str]) -> List[str]:
@@ -137,16 +173,34 @@ class PgvectorRag(BaseRag):
             where_clauses.append("e.document ILIKE %(query_pattern)s")
             params['query_pattern'] = f"%{req.query}%"
 
+    @timeit("元数据更新")
     def update_metadata(self, req: DocumentMetadataUpdateRequest) -> None:
         """更新文档元数据"""
         chunk_ids = self._collect_target_chunk_ids(
             req.chunk_ids, req.knowledge_ids)
 
         if not chunk_ids:
-            logger.warning("未找到要更新的文档")
+            logger.info("元数据更新跳过 - 原因: 未找到匹配的文档")
             return
 
-        logger.info(f"开始更新元数据，chunk数量: {len(chunk_ids)}")
+        logger.info(f"元数据更新开始 - 目标chunks: {len(chunk_ids)}")
+
+        # 验证要更新的记录是否存在
+        check_query = """
+            SELECT id FROM langchain_pg_embedding 
+            WHERE id = ANY(%(chunk_ids)s)
+        """
+        existing_records = self._execute_query(
+            check_query, {'chunk_ids': chunk_ids})
+        existing_ids = [record['id'] for record in existing_records]
+
+        if not existing_ids:
+            logger.warning(f"元数据更新失败 - 原因: 指定chunks不存在, 数量: {len(chunk_ids)}")
+            return
+
+        if len(existing_ids) != len(chunk_ids):
+            missing_count = len(chunk_ids) - len(existing_ids)
+            logger.warning(f"元数据更新部分失败 - 缺失chunks: {missing_count}个")
 
         query = """
             UPDATE langchain_pg_embedding 
@@ -155,16 +209,21 @@ class PgvectorRag(BaseRag):
         """
         params = {
             'new_metadata': json.dumps(req.metadata),
-            'chunk_ids': chunk_ids
+            'chunk_ids': existing_ids
         }
 
         try:
-            self._execute_query(query, params)
-            logger.info(f"元数据更新成功，影响记录: {len(chunk_ids)}个")
+            affected_rows = self._execute_update_query(query, params)
+
+            if affected_rows > 0:
+                logger.info(f"元数据更新详情 - 更新数量: {affected_rows}")
+            else:
+                logger.warning("元数据更新无效果 - 可能原因: 数据无变化")
         except Exception as e:
-            logger.error(f"元数据更新失败: {e}")
+            logger.error(f"元数据更新异常详情 - 错误: {e}")
             raise
 
+    @timeit("文档计数")
     def count_index_document(self, req: DocumentCountRequest) -> int:
         """统计索引中符合条件的文档数量"""
         where_clauses = []
@@ -183,27 +242,35 @@ class PgvectorRag(BaseRag):
         try:
             results = self._execute_query(count_query, params)
             count = results[0]['count'] if results else 0
-            logger.debug(f"文档计数结果: {count}, 索引: {req.index_name}")
+            logger.info(f"文档计数详情 - 索引: {req.index_name}, 文档数: {count}")
             return count
         except Exception as e:
             if "does not exist" in str(e):
-                logger.debug(f"索引不存在: {req.index_name}")
+                logger.info(f"文档计数详情 - 索引: {req.index_name}, 文档数: 0 (索引不存在)")
                 return 0
-            logger.error(f"文档计数失败: {e}, 索引: {req.index_name}")
+            logger.error(f"文档计数异常 - 索引: {req.index_name}")
             raise
 
+    @timeit("索引删除")
     def delete_index(self, req: IndexDeleteRequest):
         """删除指定的索引"""
-        logger.info(f"删除索引: {req.index_name}")
+        logger.info(f"索引删除开始 - 索引: {req.index_name}")
+
         try:
             query = "DELETE FROM langchain_pg_collection WHERE name = %(collection_name)s"
-            self._execute_query(query, {'collection_name': req.index_name})
-            logger.info(f"索引删除成功: {req.index_name}")
+            affected_rows = self._execute_update_query(
+                query, {'collection_name': req.index_name})
+
+            if affected_rows > 0:
+                logger.info(
+                    f"索引删除详情 - 索引: {req.index_name}, 清理记录: {affected_rows}")
+            else:
+                logger.info(f"索引删除详情 - 索引: {req.index_name} (索引不存在)")
         except Exception as e:
             if "does not exist" in str(e):
-                logger.debug(f"索引不存在: {req.index_name}")
+                logger.info(f"索引删除详情 - 索引: {req.index_name} (索引不存在)")
             else:
-                logger.error(f"索引删除失败: {e}")
+                logger.error(f"索引删除异常 - 索引: {req.index_name}")
                 raise
 
     def _build_document_list_query(self, req: DocumentListRequest, where_clause: str, params: Dict[str, Any]) -> str:
@@ -246,6 +313,7 @@ class PgvectorRag(BaseRag):
         {limit_clause}
         """
 
+    @timeit("文档列表查询")
     def list_index_document(self, req: DocumentListRequest) -> List[Document]:
         """列出索引中符合条件的文档"""
         where_clauses = []
@@ -285,15 +353,18 @@ class PgvectorRag(BaseRag):
                     metadata=metadata
                 ))
 
-            page_info = f" (分页: {req.page}/{req.size})" if req.page > 0 and req.size > 0 else " (全部)"
-            logger.debug(f"文档列表查询完成, 返回: {len(documents)}个{page_info}")
+            page_info = f" (分页: {req.page}/{req.size})" if req.page > 0 and req.size > 0 else ""
+            logger.info(
+                f"文档列表查询完成 - 索引: {req.index_name}, 返回: {len(documents)}个{page_info}")
             return documents
 
         except Exception as e:
             if "does not exist" in str(e):
-                logger.debug(f"索引不存在: {req.index_name}")
+                logger.info(
+                    f"文档列表查询完成 - 索引: {req.index_name}, 返回: 0个 (索引不存在)")
                 return []
-            logger.error(f"文档列表查询失败: {e}")
+            logger.error(
+                f"文档列表查询失败 - 索引: {req.index_name}, 错误: {e}")
             raise
 
     def _handle_qa_records(self, chunk_ids: List[str], keep_qa: bool) -> None:
@@ -305,28 +376,33 @@ class PgvectorRag(BaseRag):
                 SET cmetadata = jsonb_set(cmetadata, '{base_chunk_id}', '""'::jsonb)
                 WHERE cmetadata->>'base_chunk_id' = ANY(%(chunk_ids)s)
             """
-            self._execute_query(query, {'chunk_ids': chunk_ids})
-            logger.debug("已更新关联QA记录的base_chunk_id")
+            affected_rows = self._execute_update_query(
+                query, {'chunk_ids': chunk_ids})
+            if affected_rows > 0:
+                logger.info(f"QA记录保留处理完成 - 更新关联: {affected_rows}个")
         else:
             # 删除关联的QA记录
             query = """
                 DELETE FROM langchain_pg_embedding 
                 WHERE cmetadata->>'base_chunk_id' = ANY(%(chunk_ids)s)
             """
-            self._execute_query(query, {'chunk_ids': chunk_ids})
-            logger.debug("已删除关联QA记录")
+            affected_rows = self._execute_update_query(
+                query, {'chunk_ids': chunk_ids})
+            if affected_rows > 0:
+                logger.info(f"QA记录清理完成 - 删除: {affected_rows}个")
 
+    @timeit("文档删除")
     def delete_document(self, req: DocumentDeleteRequest) -> None:
         """删除文档记录"""
         chunk_ids = self._collect_target_chunk_ids(
             req.chunk_ids, req.knowledge_ids)
 
         if not chunk_ids:
-            logger.warning("未找到要删除的文档")
+            logger.info("文档删除跳过 - 原因: 未找到匹配的文档")
             return
 
         logger.info(
-            f"开始删除文档，chunk数量: {len(chunk_ids)}, keep_qa: {req.keep_qa}")
+            f"文档删除开始 - 目标chunks: {len(chunk_ids)}, 保留QA: {req.keep_qa}")
 
         try:
             # 处理关联的QA记录
@@ -334,21 +410,26 @@ class PgvectorRag(BaseRag):
 
             # 删除主文档
             query = "DELETE FROM langchain_pg_embedding WHERE id = ANY(%(chunk_ids)s)"
-            self._execute_query(query, {'chunk_ids': chunk_ids})
-            logger.info(f"文档删除成功，删除记录: {len(chunk_ids)}个")
+            affected_rows = self._execute_update_query(
+                query, {'chunk_ids': chunk_ids})
+
+            logger.info(f"文档删除成功 - 删除数量: {affected_rows}")
         except Exception as e:
-            logger.error(f"文档删除失败: {e}")
+            logger.error(f"文档删除失败 - 错误: {e}")
             raise
 
+    @timeit("文档导入")
     def ingest(self, req: DocumentIngestRequest) -> List[str]:
         """将文档导入到索引中"""
         logger.info(
-            f"文档导入开始, 索引: {req.index_name}, 模式: {req.index_mode}, 文档数: {len(req.docs)}")
+            f"文档导入开始 - 索引: {req.index_name}, 模式: {req.index_mode}, 文档数: {len(req.docs)}")
 
         if req.index_mode == 'overwrite':
             query = "DELETE FROM langchain_pg_collection WHERE name = %(index_name)s"
-            self._execute_query(query, {'index_name': req.index_name})
-            logger.info(f"覆盖模式，清理现有数据: {req.index_name}")
+            affected_rows = self._execute_update_query(
+                query, {'index_name': req.index_name})
+            logger.info(
+                f"覆盖模式清理完成 - 索引: {req.index_name}, 清理记录: {affected_rows}")
 
         embedding = EmbedBuilder.get_embed(
             req.embed_model_base_url,
@@ -367,16 +448,20 @@ class PgvectorRag(BaseRag):
         try:
             chunk_ids = [doc.metadata["chunk_id"] for doc in req.docs]
             vector_store.add_documents(req.docs, ids=chunk_ids)
-            logger.info(f"文档导入成功, 索引: {req.index_name}, 导入数量: {len(req.docs)}")
+
+            logger.info(
+                f"文档导入成功 - 索引: {req.index_name}, 导入数量: {len(req.docs)}")
             return chunk_ids
         except Exception as e:
-            logger.error(f"文档导入失败: {e}")
+            logger.error(
+                f"文档导入失败 - 索引: {req.index_name}, 错误: {e}")
             raise
 
+    @timeit("文档搜索")
     def search(self, req: DocumentRetrieverRequest) -> List[Document]:
         """搜索符合条件的文档"""
         logger.info(
-            f"文档搜索开始, 索引: {req.index_name}, naive_rag: {req.enable_naive_rag}, qa_rag: {req.enable_qa_rag}")
+            f"文档搜索开始 - 索引: {req.index_name}, naive_rag: {req.enable_naive_rag}, qa_rag: {req.enable_qa_rag}")
 
         results = []
 
@@ -388,29 +473,34 @@ class PgvectorRag(BaseRag):
             qa_results = self._search_by_type(req, 'qa')
             results.extend(qa_results)
 
-        logger.info(f"文档搜索完成, 索引: {req.index_name}, 结果数: {len(results)}")
+        logger.info(
+            f"文档搜索完成 - 索引: {req.index_name}, 结果数: {len(results)}")
         return results
 
+    @timeit("分类搜索")
     def _search_by_type(self, req: DocumentRetrieverRequest, rag_type: str) -> List[Document]:
         """按类型执行搜索"""
-        logger.debug(f"执行{rag_type}RAG搜索, 索引: {req.index_name}")
+        logger.debug(f"搜索执行开始 - 类型: {rag_type}, 索引: {req.index_name}")
 
         search_req = copy.deepcopy(req)
         search_req.metadata_filter = search_req.metadata_filter or {}
 
         if rag_type == 'naive':
-            search_req.metadata_filter['qa_question__missing'] = True
+            search_req.metadata_filter['is_doc'] = "1"
         elif rag_type == 'qa':
-            search_req.metadata_filter['qa_question__exists'] = True
+            search_req.metadata_filter['is_doc'] = "0"
             search_req.k = req.qa_size
 
         try:
             results = self._perform_search(search_req)
             results = self._process_search_results(results, req, rag_type)
-            logger.debug(f"{rag_type}RAG搜索完成, 结果数: {len(results)}")
+
+            logger.debug(
+                f"搜索执行完成 - 类型: {rag_type}, 结果数: {len(results)}")
             return results
         except Exception as e:
-            logger.error(f"{rag_type}RAG搜索失败: {e}")
+            logger.error(
+                f"搜索执行失败 - 类型: {rag_type}, 错误: {e}")
             return []
 
     def _process_search_results(self, results: List[Document], req: DocumentRetrieverRequest, rag_type: str) -> List[Document]:
@@ -431,6 +521,7 @@ class PgvectorRag(BaseRag):
 
         return results
 
+    @timeit("向量搜索")
     def _perform_search(self, req: DocumentRetrieverRequest) -> List[Document]:
         """执行向量搜索"""
         try:
@@ -493,11 +584,10 @@ class PgvectorRag(BaseRag):
                     'index_name': req.index_name
                 })
 
-            logger.debug(f"向量搜索完成, 结果数: {len(results)}, 类型: {req.search_type}")
             return results
 
         except Exception as e:
-            logger.error(f"向量搜索失败: {e}")
+            logger.error(f"向量搜索异常 - 索引: {req.index_name}, 错误: {e}")
             return []
 
     def _convert_metadata_filter(self, metadata_filter: dict) -> dict:
@@ -527,12 +617,11 @@ class PgvectorRag(BaseRag):
 
         return pgvector_filter
 
+    @timeit("重排序")
     def _rerank_results(self, req: DocumentRetrieverRequest, results: List[Document]) -> List[Document]:
         """重排序处理"""
         if not results:
             return results
-
-        logger.debug(f"重排序开始, 原始: {len(results)}, 目标: {req.rerank_top_k}")
 
         reranked_results = ReRankManager.rerank_documents(
             rerank_model_base_url=req.rerank_model_base_url,
@@ -543,24 +632,28 @@ class PgvectorRag(BaseRag):
             rerank_top_k=req.rerank_top_k,
         )
 
-        logger.debug(f"重排序完成, 结果数: {len(reranked_results)}")
+        logger.debug(
+            f"重排序完成 - 输入: {len(results)}, 输出: {len(reranked_results)}")
         return reranked_results
 
+    @timeit("召回处理")
     def process_recall_stage(self, req: DocumentRetrieverRequest, results: List[Document]) -> List[Document]:
         """处理检索阶段，根据不同的召回模式处理搜索结果"""
         recall_mode = req.rag_recall_mode
-        logger.debug(f"召回处理开始, 模式: {recall_mode}, 输入: {len(results)}")
 
         try:
             strategy = RecallStrategyFactory.get_strategy(recall_mode)
             processed_results = strategy.process_recall(req, results, None)
+
             logger.debug(
-                f"召回处理完成, 模式: {recall_mode}, 输出: {len(processed_results)}")
+                f"召回处理完成 - 模式: {recall_mode}, 输入: {len(results)}, 输出: {len(processed_results)}")
             return processed_results
         except ValueError as e:
-            logger.warning(f"召回策略'{recall_mode}'不存在: {e}, 使用默认策略'chunk'")
+            logger.warning(f"召回策略异常 - 模式: '{recall_mode}' 不存在, 使用默认策略 'chunk'")
             default_strategy = RecallStrategyFactory.get_strategy('chunk')
             processed_results = default_strategy.process_recall(
                 req, results, None)
-            logger.debug(f"默认召回处理完成, 输出: {len(processed_results)}")
+
+            logger.debug(
+                f"默认召回处理完成 - 输入: {len(results)}, 输出: {len(processed_results)}")
             return processed_results
