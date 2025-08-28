@@ -255,66 +255,6 @@ class PgvectorRag(BaseRag):
 
         return "(" + " AND ".join(conditions) + ")" if conditions else ""
 
-    def _detect_collection_embedding_dimension(self, collection_name: str) -> Optional[int]:
-        """检测指定collection的embedding维度"""
-        try:
-            query = """
-                SELECT vector_dims(e.embedding) as dimension
-                FROM langchain_pg_embedding e
-                JOIN langchain_pg_collection c ON e.collection_id = c.uuid
-                WHERE c.name = %(collection_name)s
-                LIMIT 1
-            """
-            results = self._execute_query(query, {'collection_name': collection_name})
-            if results:
-                dimension = results[0]['dimension']
-                logger.debug(f"检测到collection '{collection_name}' 的embedding维度: {dimension}")
-                return int(dimension)
-            else:
-                logger.warning(f"Collection '{collection_name}' 中没有找到embedding数据")
-                return None
-        except Exception as e:
-            logger.error(f"检测embedding维度失败 - collection: {collection_name}, 错误: {e}")
-            return None
-
-    def _get_compatible_embedding(self, req: DocumentRetrieverRequest, target_dimension: int):
-        """根据目标维度获取兼容的embedding模型"""
-        # 常见embedding模型的维度映射
-        dimension_to_model = {
-            512: {
-                'model_name': 'bce-embedding-base_v1',
-                'base_url': req.embed_model_base_url
-            },
-            768: {
-                'model_name': 'bge-small-zh-v1.5', 
-                'base_url': req.embed_model_base_url
-            },
-            1024: {
-                'model_name': 'text-embedding-ada-002',
-                'base_url': req.embed_model_base_url
-            }
-        }
-        
-        if target_dimension in dimension_to_model:
-            model_info = dimension_to_model[target_dimension]
-            logger.info(f"为维度 {target_dimension} 选择embedding模型: {model_info['model_name']}")
-            
-            return EmbedBuilder.get_embed(
-                model_info['base_url'],
-                model_info['model_name'],
-                req.embed_model_api_key,
-                model_info['base_url']
-            )
-        else:
-            # 如果没有匹配的模型，返回默认模型
-            logger.warning(f"未找到维度 {target_dimension} 的匹配模型，使用原始配置")
-            return EmbedBuilder.get_embed(
-                req.embed_model_base_url,
-                req.embed_model_name,
-                req.embed_model_api_key,
-                req.embed_model_base_url
-            )
-
     def _build_where_clauses(self, req, where_clauses: List[str], params: Dict[str, Any]) -> None:
         """构建WHERE子句"""
         where_clauses.append("c.name = %(index_name)s")
