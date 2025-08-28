@@ -1,9 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, {
+  useState,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
-import ComponentSelector from './components/viewSelector';
+import ViewSelector from './components/viewSelector';
 import ViewConfig from './components/viewConfig';
 import TimeSelector from '@/components/time-selector';
 // @ts-expect-error missing type declarations for react-grid-layout
@@ -38,20 +43,54 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
     const [originalLayout, setOriginalLayout] = useState<LayoutItem[]>([]);
     const [configDrawerVisible, setConfigDrawerVisible] = useState(false);
     const [currentConfigItem, setCurrentConfigItem] = useState<any>(null);
+    const [isNewComponentConfig, setIsNewComponentConfig] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [otherConfig, setOtherConfig] = useState<any>({});
+    const [originalOtherConfig, setOriginalOtherConfig] = useState<any>({});
     const timeDefaultValue = {
       selectValue: 10080,
       rangePickerVaule: null,
     };
 
-    const getInitialTimeRange = () => {
+    const getInitialTimeRange = (savedTimeConfig?: any) => {
       const endTime = dayjs().valueOf();
-      const startTime = dayjs()
-        .subtract(timeDefaultValue.selectValue, 'minute')
-        .valueOf();
-      return { start: startTime, end: endTime };
+      let timeValue = timeDefaultValue.selectValue;
+      let rangePickerVaule = null;
+      let selectValue = timeDefaultValue.selectValue;
+
+      // 如果有保存的时间配置，优先使用保存的配置
+      if (savedTimeConfig?.timeSelector) {
+        selectValue =
+          savedTimeConfig.timeSelector.selectValue ||
+          timeDefaultValue.selectValue;
+        rangePickerVaule = savedTimeConfig.timeSelector.rangePickerVaule;
+
+        if (
+          selectValue === 0 &&
+          rangePickerVaule &&
+          Array.isArray(rangePickerVaule)
+        ) {
+          // 使用自定义时间范围
+          return {
+            start: dayjs(rangePickerVaule[0]).valueOf(),
+            end: dayjs(rangePickerVaule[1]).valueOf(),
+            selectValue: 0,
+            rangePickerVaule: rangePickerVaule,
+          };
+        } else {
+          timeValue = selectValue;
+        }
+      }
+
+      const startTime = dayjs().subtract(timeValue, 'minute').valueOf();
+      return {
+        start: startTime,
+        end: endTime,
+        selectValue: selectValue,
+        rangePickerVaule: null,
+      };
     };
     const [globalTimeRange, setGlobalTimeRange] = useState<any>(
       getInitialTimeRange()
@@ -74,6 +113,8 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
         if (!selectedDashboard) {
           setLayout([]);
           setOriginalLayout([]);
+          setOtherConfig({});
+          setOriginalOtherConfig({});
           return;
         }
         try {
@@ -91,10 +132,19 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
             setLayout([]);
             setOriginalLayout([]);
           }
+
+          const savedOtherConfig = dashboardData.other || {};
+          setOtherConfig(savedOtherConfig);
+          setOriginalOtherConfig({ ...savedOtherConfig });
+
+          // 根据保存的配置初始化时间范围
+          setGlobalTimeRange(getInitialTimeRange(savedOtherConfig));
         } catch (error) {
           console.error('加载仪表盘数据失败:', error);
           setLayout([]);
           setOriginalLayout([]);
+          setOtherConfig({});
+          setOriginalOtherConfig({});
         } finally {
           setLoading(false);
         }
@@ -107,8 +157,8 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
       setAddModalVisible(false);
       setConfigDrawerVisible(false);
       setCurrentConfigItem(null);
+      setIsNewComponentConfig(false);
       setSaving(false);
-      setGlobalTimeRange(getInitialTimeRange());
       setRefreshKey(0);
     }, [selectedDashboard?.data_id]);
 
@@ -116,9 +166,20 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
 
     // 检查是否有未保存的更改
     const hasUnsavedChanges = () => {
-      if (originalLayout.length === 0 && layout.length === 0) return false;
+      if (
+        originalLayout.length === 0 &&
+        layout.length === 0 &&
+        Object.keys(originalOtherConfig).length === 0 &&
+        Object.keys(otherConfig).length === 0
+      ) {
+        return false;
+      }
       try {
-        return JSON.stringify(layout) !== JSON.stringify(originalLayout);
+        const layoutChanged =
+          JSON.stringify(layout) !== JSON.stringify(originalLayout);
+        const otherConfigChanged =
+          JSON.stringify(otherConfig) !== JSON.stringify(originalOtherConfig);
+        return layoutChanged || otherConfigChanged;
       } catch (error) {
         console.error('检查未保存更改时出错:', error);
         return false;
@@ -130,8 +191,32 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
       hasUnsavedChanges,
     }));
 
-    const handleTimeChange = (timeData: any) => {
+    const handleTimeChange = (range: number[], originValue: number | null) => {
+      // 更新全局时间范围
+      const timeData = {
+        start:
+          range[0] ||
+          dayjs().subtract(timeDefaultValue.selectValue, 'minute').valueOf(),
+        end: range[1] || dayjs().valueOf(),
+        selectValue: originValue,
+        rangePickerVaule:
+          originValue === 0 ? [dayjs(range[0]), dayjs(range[1])] : null,
+      };
+
       setGlobalTimeRange(timeData);
+
+      // 更新otherConfig中的timeSelector配置
+      const timeSelectorConfig = {
+        selectValue:
+          originValue !== null ? originValue : timeDefaultValue.selectValue,
+        rangePickerVaule:
+          originValue === 0 ? [dayjs(range[0]), dayjs(range[1])] : null,
+      };
+
+      setOtherConfig((prev: any) => ({
+        ...prev,
+        timeSelector: timeSelectorConfig,
+      }));
     };
 
     const handleRefresh = () => {
@@ -182,11 +267,12 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
           name: selectedDashboard.name,
           desc: selectedDashboard.desc || '',
           filters: {},
-          other: {},
+          other: otherConfig,
           view_sets: layout,
         };
         await saveDashboard(selectedDashboard.data_id, saveData);
         setOriginalLayout([...layout]);
+        setOriginalOtherConfig({ ...otherConfig });
         message.success(t('common.saveSuccess'));
       } catch (error) {
         console.error('保存仪表盘失败:', error);
@@ -202,32 +288,47 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
     const handleEdit = (id: string) => {
       const item = layout.find((i) => i.i === id);
       setCurrentConfigItem(item);
+      setIsNewComponentConfig(false);
+      setConfigDrawerVisible(true);
+    };
+
+    const handleOpenConfig = (item: any) => {
+      setCurrentConfigItem(item);
+      setIsNewComponentConfig(true);
       setConfigDrawerVisible(true);
     };
 
     const handleConfigConfirm = (values: any) => {
-      setLayout((prevLayout) =>
-        prevLayout.map((item) => {
-          if (item.i === currentConfigItem?.i) {
-            return {
-              ...item,
-              title: values.name,
-              config: {
-                ...item.config,
-                ...values,
-              },
-            };
-          }
-          return item;
-        })
-      );
+      if (isNewComponentConfig && currentConfigItem) {
+        // 新组件：添加到布局中
+        handleAddComponent(currentConfigItem.widget, values);
+      } else {
+        // 编辑现有组件：更新布局
+        setLayout((prevLayout) =>
+          prevLayout.map((item) => {
+            if (item.i === currentConfigItem?.i) {
+              return {
+                ...item,
+                title: values.name,
+                config: {
+                  ...item.config,
+                  ...values,
+                },
+              };
+            }
+            return item;
+          })
+        );
+      }
       setConfigDrawerVisible(false);
       setCurrentConfigItem(null);
+      setIsNewComponentConfig(false);
     };
 
     const handleConfigClose = () => {
       setConfigDrawerVisible(false);
       setCurrentConfigItem(null);
+      setIsNewComponentConfig(false);
     };
 
     const handleDelete = (id: string) => {
@@ -264,8 +365,9 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
             {
               <div className="flex items-center space-x-2 py-2">
                 <TimeSelector
+                  key={`time-selector-${selectedDashboard?.data_id || 'default'}`}
                   onlyRefresh={!needGlobalTimeSelector}
-                  defaultValue={timeDefaultValue}
+                  defaultValue={otherConfig.timeSelector || timeDefaultValue}
                   onChange={handleTimeChange}
                   onRefresh={handleRefresh}
                 />
@@ -373,7 +475,7 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
                       <div className="widget-body flex-1 h-full rounded-b overflow-hidden">
                         <WidgetWrapper
                           key={item.i}
-                          widgetType={item.widget}
+                          chartType={item.config?.chartType}
                           config={item.config}
                           globalTimeRange={globalTimeRange}
                           refreshKey={refreshKey}
@@ -387,10 +489,10 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
           })()}
         </div>
 
-        <ComponentSelector
+        <ViewSelector
           visible={addModalVisible}
-          onAdd={handleAddComponent}
           onCancel={() => setAddModalVisible(false)}
+          onOpenConfig={handleOpenConfig}
         />
         <ViewConfig
           open={configDrawerVisible}

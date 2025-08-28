@@ -2,5 +2,6 @@ from pydantic import BaseModel
 
 
 class DocumentDeleteRequest(BaseModel):
-    index_name: str
-    metadata_filter: dict = {}
+    chunk_ids: list[str]
+    knowledge_ids: list[str]
+    keep_qa: bool

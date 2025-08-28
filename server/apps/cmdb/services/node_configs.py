@@ -378,13 +378,13 @@ class SSHNodeParamsMixin:
         }
         host_ip = host.get("ip_addr", "") if host and isinstance(host, dict) else host
         if host_ip != node_ip:
-            credential_data["username"] = self.credential.get("username", ""),
-            credential_data["password"] = self.credential.get("password", ""),
-            credential_data["port"] = self.credential.get("port", 22),
+            credential_data["username"] = self.credential.get("username", "")
+            credential_data["password"] = self.credential.get("password", "")
+            credential_data["port"] = self.credential.get("port", 22)
         return credential_data
 
     def get_instance_id(self, instance):
-        return f"{self.instance.id}_{instance}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
+        return f"{self.instance.id}_{instance['inst_name']}" if self.has_set_instances else f"{self.instance.id}_{instance}"
 
 
 class HostNodeParams(SSHNodeParamsMixin, BaseNodeParams):

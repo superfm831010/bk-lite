@@ -1,0 +1,26 @@
+{
+  "name": "docker",
+  "collector": "Metricbeat",
+  "icon": "docker_metrics",
+  "description": "Collects Docker container and image metrics including resource usage, network, and container lifecycle events",
+  "default_query": "collect_type: docker AND metricset: [container, cpu, memory] | stats avg(container_cpu_pct), avg(container_memory_mb) by container_name | sort by avg(container_cpu_pct) desc",
+  "attrs": [
+    "container_id",
+    "container_name",
+    "container_image",
+    "container_status",
+    "container_cpu_pct",
+    "container_memory_mb",
+    "container_memory_limit_mb",
+    "container_memory_usage_pct",
+    "container_network_in_bytes",
+    "container_network_out_bytes",
+    "container_diskio_read_bytes",
+    "container_diskio_write_bytes",
+    "container_uptime_seconds",
+    "container_restarts",
+    "docker_version",
+    "timestamp"
+  ]
+}
+
