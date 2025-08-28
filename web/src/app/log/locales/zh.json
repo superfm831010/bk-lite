@@ -226,6 +226,13 @@
       "securityDes": "身份管理 + 权限提升",
       "systemDes": "关键文件变更",
       "networkDes": "连接活动",
+      "containerDes": "container指标集提供容器信息和状态统计数据。",
+      "eventDes": "event指标集提供Docker事件统计数据。",
+      "healthcheckDes": "healthcheck指标集提供容器健康检查状态统计数据。",
+      "infoDes": "info指标集提供Docker守护进程信息统计数据。",
+      "imageDes": "image指标集提供Docker镜像信息统计数据。",
+      "networkSummaryDes": "network_summary指标集提供网络连接摘要统计数据。",
+      "docherNetworkDes": "network指标集提供容器网络流量统计数据。",
       "cpuDes": "cpu指标集提供CPU统计数据。",
       "loadDes": "load指标集提供负载统计数据。",
       "memoryDes": "memory指标集提供内存统计数据。",
@@ -243,7 +250,11 @@
       "serviceDes": "service指标集报告systemd服务的状态。",
       "metricsets": "指标集",
       "ports": "端口列表",
-      "portsDes": "监控的HTTP端口列表"
+      "portsDes": "监控的HTTP端口列表",
+      "auditBeatPaths": "目录路径",
+      "auditBeatPathsDes": "需要监控的目录路径列表",
+      "dockerHosts": "连接地址",
+      "dockerHostsDes": "Docker API 连接地址列表"
     },
     "event": {
       "executionTime": "执行时间",
