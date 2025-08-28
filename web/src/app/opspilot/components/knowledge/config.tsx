@@ -179,7 +179,7 @@ const ConfigComponent: React.FC<ConfigProps> = ({ configData, setConfigData }) =
               
               {configData.searchType === 'similarity_score_threshold' && (
                 <div className="flex items-center justify-between mb-4">
-                  <label className="text-sm w-[100px]">{t('knowledge.threshold')}</label>
+                  <label className="text-sm w-[80px]">{t('knowledge.threshold')}</label>
                   <div className='flex flex-1 items-center gap-4'>
                     <Slider
                       className="flex-1"
