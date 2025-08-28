@@ -16,7 +16,7 @@ class GraphUtils(ChunkHelper):
             res = cls.get_document_es_chunk(
                 index_name,
                 page=1,
-                page_size=10000,
+                page_size=0,
                 search_text="",
                 metadata_filter={"is_doc": "1", "knowledge_id": str(i["id"])},
                 get_count=False,

@@ -16,13 +16,6 @@ class KnowledgeBase(MaintainerInfo, TimeInfo):
         blank=True,
         null=True,
     )
-    enable_vector_search = models.BooleanField(
-        default=True,
-        verbose_name=_("Enable Vector Search"),
-    )
-    vector_search_weight = models.FloatField(default=0.1, verbose_name=_("Vector Search weight"))
-    enable_text_search = models.BooleanField(default=True, verbose_name=_("Enable Text Search"))
-    text_search_weight = models.FloatField(default=0.9, verbose_name=_("Text Search Weight"))
     enable_rerank = models.BooleanField(default=True, verbose_name=_("Enable Rerank"))
     rerank_top_k = models.IntegerField(default=10, verbose_name=_("Rerank Top K"))
     rerank_model = models.ForeignKey(
@@ -32,9 +25,8 @@ class KnowledgeBase(MaintainerInfo, TimeInfo):
         blank=True,
         null=True,
     )
-    rag_k = models.IntegerField(default=50, verbose_name=_("Number of Results"))
-    rag_num_candidates = models.IntegerField(default=1000, verbose_name=_("Number of Candidates"))
-    text_search_mode = models.CharField(default="match", max_length=20, verbose_name=_("Text search mode"))
+    search_type = models.CharField(default="similarity_score_threshold", verbose_name=_("Search Type"), max_length=50)
+    score_threshold = models.FloatField(default=0.7, verbose_name=_("Score threshold"))
     enable_naive_rag = models.BooleanField(default=True)
     enable_qa_rag = models.BooleanField(default=True)
     enable_graph_rag = models.BooleanField(default=False)
