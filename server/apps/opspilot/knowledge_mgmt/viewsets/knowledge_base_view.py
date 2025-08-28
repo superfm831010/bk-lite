@@ -57,10 +57,6 @@ class KnowledgeBaseViewSet(AuthViewSet):
         params["created_by"] = request.user.username
         if params.get("enable_rerank") is None:
             params["enable_rerank"] = False
-        if params.get("rag_k") is None:
-            params["rag_k"] = 10
-        if params.get("rag_num_candidates") is None:
-            params["rag_num_candidates"] = 50
         if not params.get("team"):
             params["team"] = [int(request.COOKIES.get("current_team"))]
         serializer = self.get_serializer(data=params)
@@ -104,22 +100,21 @@ class KnowledgeBaseViewSet(AuthViewSet):
             instance.introduction = kwargs["introduction"]
         if kwargs.get("team"):
             instance.team = kwargs["team"]
-        instance.enable_vector_search = kwargs["enable_vector_search"]
-        instance.vector_search_weight = kwargs["vector_search_weight"]
-        instance.enable_text_search = kwargs["enable_text_search"]
-        instance.text_search_weight = kwargs["text_search_weight"]
         instance.enable_rerank = kwargs["enable_rerank"]
-        instance.rerank_model_id = kwargs["rerank_model"]
-        instance.text_search_mode = kwargs["text_search_mode"]
-        instance.rag_k = kwargs["rag_k"]
-        instance.rerank_top_k = kwargs.get("rerank_top_k", 10)
+        if kwargs.get("rerank_model") is None:
+            instance.rerank_model = None
+        else:
+            instance.rerank_model_id = kwargs["rerank_model"]
+            instance.rerank_top_k = kwargs["rerank_top_k"]
         instance.enable_naive_rag = kwargs["enable_naive_rag"]
         instance.enable_qa_rag = kwargs["enable_qa_rag"]
         instance.enable_graph_rag = kwargs["enable_graph_rag"]
+
         instance.rag_size = kwargs["rag_size"]
         instance.qa_size = kwargs["qa_size"]
         instance.graph_size = kwargs["graph_size"]
-        instance.rag_num_candidates = kwargs["rag_num_candidates"]
+        instance.search_type = kwargs["search_type"]
+        instance.score_threshold = kwargs.get("score_threshold", 0.7)
         instance.save()
         return JsonResponse({"result": True})
 
