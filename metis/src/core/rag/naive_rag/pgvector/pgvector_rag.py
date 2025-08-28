@@ -1,7 +1,6 @@
 import copy
 import json
 from typing import List, Dict, Any, Optional
-from collections import defaultdict
 
 import psycopg
 from langchain_core.documents import Document
@@ -24,236 +23,203 @@ from src.core.rag.naive_rag.recall_strategies.recall_strategy_factory import Rec
 
 
 class PgvectorRag(BaseRag):
-    """基于PostgreSQL + pgvector的RAG实现"""
+    """基于PostgreSQL + pgvector的RAG实现
+
+    提供基于向量搜索的文档检索功能，支持：
+    - 相似度搜索和MMR搜索
+    - 元数据过滤
+    - 重排序和召回处理
+    - 完整的CRUD操作
+    """
 
     def __init__(self):
         pass
 
-    def ensure_fulltext_index(self) -> None:
-        """确保全文检索索引存在，提高全文搜索性能"""
+    # ==================== 核心搜索功能 ====================
+
+    @timeit("文档搜索")
+    def search(self, req: DocumentRetrieverRequest) -> List[Document]:
+        """搜索符合条件的文档
+
+        Args:
+            req: 文档检索请求，包含搜索参数和过滤条件
+
+        Returns:
+            匹配的文档列表
+        """
+        logger.info(
+            f"文档搜索开始 - 索引: {req.index_name}, naive_rag: {req.enable_naive_rag}, qa_rag: {req.enable_qa_rag}")
+
+        results = []
+
+        if req.enable_naive_rag:
+            naive_results = self._search_by_type(req, 'naive')
+            results.extend(naive_results)
+
+        if req.enable_qa_rag:
+            qa_results = self._search_by_type(req, 'qa')
+            results.extend(qa_results)
+
+        logger.info(
+            f"文档搜索完成 - 索引: {req.index_name}, 结果数: {len(results)}")
+        return results
+
+    @timeit("分类搜索")
+    def _search_by_type(self, req: DocumentRetrieverRequest, rag_type: str) -> List[Document]:
+        """按类型执行搜索"""
+        logger.debug(f"搜索执行开始 - 类型: {rag_type}, 索引: {req.index_name}")
+
+        search_req = copy.deepcopy(req)
+        search_req.metadata_filter = search_req.metadata_filter or {}
+
+        if rag_type == 'naive':
+            search_req.metadata_filter['is_doc'] = "1"
+        elif rag_type == 'qa':
+            search_req.metadata_filter['is_doc'] = "0"
+            search_req.k = req.qa_size
+
         try:
-            # 创建GIN索引来优化全文检索性能
-            create_index_query = """
-                CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_langchain_pg_embedding_fulltext 
-                ON langchain_pg_embedding 
-                USING GIN (to_tsvector('simple', document))
-            """
-
-            logger.info("开始创建全文检索索引...")
-            self._execute_query(create_index_query)
-            logger.info("全文检索索引创建完成")
-
-        except Exception as e:
-            # 索引创建失败不应该影响正常功能
-            logger.warning(f"全文检索索引创建失败（不影响功能）: {e}")
-
-    def _rrf(self, results: List[List[str]], rank_const: int = 1, min_score: float = 0) -> tuple[List[str], List[float]]:
-        """Reciprocal Rank Fusion算法实现"""
-        scores: Dict[str, float] = defaultdict(float)
-        for result in results:
-            for i, doc_id in enumerate(result):
-                scores[doc_id] += 1 / (i + rank_const)
-
-        scored_items = list(scores.items())
-        scored_items.sort(reverse=True, key=lambda x: x[1])
-
-        sorted_ids = [item[0] for item in scored_items]
-        sorted_scores = [item[1] for item in scored_items]
-
-        # 过滤低分结果
-        filtered_results = [(doc_id, score) for doc_id, score in zip(
-            sorted_ids, sorted_scores) if score >= min_score]
-
-        if filtered_results:
-            filtered_ids, filtered_scores = zip(*filtered_results)
-            return list(filtered_ids), list(filtered_scores)
-        else:
-            return [], []
-
-    @timeit("全文搜索")
-    def _fulltext_search(self, req: DocumentRetrieverRequest) -> List[Document]:
-        """执行PostgreSQL全文检索（使用tsvector和tsquery）"""
-        try:
-            where_clauses = []
-            params = {}
-
-            # 构建基础查询条件
-            where_clauses.append("c.name = %(index_name)s")
-            params['index_name'] = req.index_name
-
-            # 添加元数据过滤
-            if req.metadata_filter:
-                metadata_condition = self._build_metadata_filter(
-                    req.metadata_filter, params)
-                if metadata_condition:
-                    where_clauses.append(metadata_condition)
-
-            # 预处理搜索查询：清理特殊字符，准备用于全文检索
-            search_query = req.search_query.strip()
-            # 移除可能导致tsquery语法错误的特殊字符
-            cleaned_query = search_query.replace("'", "").replace(
-                '"', '').replace('&', ' ').replace('|', ' ').replace('!', ' ')
-            # 将多个空格合并为单个空格
-            cleaned_query = ' '.join(cleaned_query.split())
-
-            if not cleaned_query:
-                logger.warning(f"全文搜索跳过 - 原因: 查询词为空")
-                return []
-
-            # 使用PostgreSQL全文检索
-            # to_tsvector: 将文档转换为tsvector格式（支持中英文）
-            # to_tsquery: 将查询转换为tsquery格式
-            # ts_rank: 计算相关性分数
-            where_clauses.append(
-                "to_tsvector('simple', e.document) @@ to_tsquery('simple', %(search_tsquery)s)")
-
-            # 构建tsquery：将搜索词用&连接（AND操作）
-            query_terms = cleaned_query.split()
-            tsquery_parts = []
-            for term in query_terms:
-                if term:
-                    # 为每个词添加前缀匹配支持（:*表示前缀匹配）
-                    tsquery_parts.append(f"'{term}':*")
-
-            if not tsquery_parts:
-                logger.warning(f"全文搜索跳过 - 原因: 无有效查询词")
-                return []
-
-            params['search_tsquery'] = ' & '.join(tsquery_parts)
-
-            # 构建全文检索查询
-            query = f"""
-                SELECT e.id, e.document, e.cmetadata,
-                       ts_rank(to_tsvector('simple', e.document), to_tsquery('simple', %(search_tsquery)s)) as ts_score,
-                       ts_rank_cd(to_tsvector('simple', e.document), to_tsquery('simple', %(search_tsquery)s)) as ts_score_cd
-                FROM langchain_pg_embedding e
-                JOIN langchain_pg_collection c ON e.collection_id = c.uuid
-                WHERE {" AND ".join(where_clauses)}
-                ORDER BY 
-                    ts_rank_cd(to_tsvector('simple', e.document), to_tsquery('simple', %(search_tsquery)s)) DESC,
-                    ts_rank(to_tsvector('simple', e.document), to_tsquery('simple', %(search_tsquery)s)) DESC,
-                    LENGTH(e.document) ASC
-                LIMIT %(limit)s
-            """
-            params['limit'] = req.k * 2  # 获取更多候选文档
+            results = self._perform_search(search_req)
+            results = self._process_search_results(results, req, rag_type)
 
             logger.debug(
-                f"使用全文检索 - 查询词: '{search_query}', tsquery: '{params['search_tsquery']}'")
-            logger.debug(f"全文检索SQL: {query}")
-            logger.debug(f"全文检索参数: {params}")
-
-            results = self._execute_query(query, params)
-            documents = []
-
-            for result in results:
-                metadata = result['cmetadata'] if isinstance(
-                    result['cmetadata'], dict) else {}
-
-                ts_score = float(result['ts_score']
-                                 ) if result['ts_score'] else 0.0
-                ts_score_cd = float(
-                    result['ts_score_cd']) if result['ts_score_cd'] else 0.0
-
-                # 使用ts_rank_cd作为主要分数，ts_rank作为辅助分数
-                # 归一化为0.3-1.0范围，确保不会被阈值过滤且低于向量搜索分数
-                final_score = max(ts_score_cd, ts_score)
-                normalized_score = min(
-                    0.3 + final_score * 0.7, 1.0) if final_score > 0 else 0.3
-
-                metadata.update({
-                    'ts_score': ts_score,
-                    'ts_score_cd': ts_score_cd,
-                    'similarity_score': normalized_score,
-                    'search_method': 'fulltext'
-                })
-
-                documents.append(Document(
-                    id=result['id'],
-                    page_content=result['document'],
-                    metadata=metadata
-                ))
-
-            logger.debug(
-                f"全文检索完成 - 索引: {req.index_name}, 查询: '{search_query}', 结果数: {len(documents)}")
-            return documents
-
+                f"搜索执行完成 - 类型: {rag_type}, 结果数: {len(results)}")
+            return results
         except Exception as e:
             logger.error(
-                f"全文检索异常 - 索引: {req.index_name}, 查询: '{req.search_query}', 错误: {e}")
-            # 降级为ILIKE搜索
-            logger.info(f"降级为ILIKE搜索 - 索引: {req.index_name}")
-            return self._fallback_ilike_search(req)
-
-    def _fallback_ilike_search(self, req: DocumentRetrieverRequest) -> List[Document]:
-        """降级的ILIKE模糊搜索实现"""
-        try:
-            where_clauses = []
-            params = {}
-
-            # 构建基础查询条件
-            where_clauses.append("c.name = %(index_name)s")
-            params['index_name'] = req.index_name
-
-            # 添加元数据过滤
-            if req.metadata_filter:
-                metadata_condition = self._build_metadata_filter(
-                    req.metadata_filter, params)
-                if metadata_condition:
-                    where_clauses.append(metadata_condition)
-
-            # 使用ILIKE模糊搜索
-            search_query = req.search_query.strip()
-            where_clauses.append("e.document ILIKE %(search_pattern)s")
-            params['search_pattern'] = f"%{search_query}%"
-
-            # 构建模糊搜索查询
-            query = f"""
-                SELECT e.id, e.document, e.cmetadata,
-                       1.0 as fallback_score
-                FROM langchain_pg_embedding e
-                JOIN langchain_pg_collection c ON e.collection_id = c.uuid
-                WHERE {" AND ".join(where_clauses)}
-                ORDER BY 
-                    CASE 
-                        WHEN e.document ILIKE %(exact_pattern)s THEN 1
-                        WHEN LOWER(e.document) LIKE LOWER(%(search_pattern)s) THEN 2
-                        ELSE 3
-                    END,
-                    LENGTH(e.document) ASC
-                LIMIT %(limit)s
-            """
-            params['exact_pattern'] = f"%{search_query}%"
-            params['limit'] = req.k * 2
-
-            logger.debug(f"降级ILIKE搜索 - 查询词: '{search_query}'")
-
-            results = self._execute_query(query, params)
-            documents = []
-
-            for result in results:
-                metadata = result['cmetadata'] if isinstance(
-                    result['cmetadata'], dict) else {}
-                fallback_score = float(result['fallback_score'])
-                metadata.update({
-                    'fallback_score': fallback_score,
-                    'similarity_score': 0.3,  # 降级搜索使用较低的固定分数
-                    'search_method': 'ilike_fallback'
-                })
-
-                documents.append(Document(
-                    id=result['id'],
-                    page_content=result['document'],
-                    metadata=metadata
-                ))
-
-            logger.info(
-                f"降级ILIKE搜索完成 - 索引: {req.index_name}, 结果数: {len(documents)}")
-            return documents
-
-        except Exception as e:
-            logger.error(
-                f"降级ILIKE搜索异常 - 索引: {req.index_name}, 错误: {e}")
+                f"搜索执行失败 - 类型: {rag_type}, 错误: {e}")
             return []
+
+    @timeit("向量搜索")
+    def _perform_search(self, req: DocumentRetrieverRequest) -> List[Document]:
+        """执行向量搜索
+
+        Args:
+            req: 文档检索请求
+
+        Returns:
+            搜索结果文档列表
+        """
+        try:
+            req.validate_search_params()
+
+            embedding = EmbedBuilder.get_embed(
+                req.embed_model_base_url,
+                req.embed_model_name,
+                req.embed_model_api_key,
+                req.embed_model_base_url
+            )
+
+            vector_store = PGVector(
+                embeddings=embedding,
+                collection_name=req.index_name,
+                connection=core_settings.db_uri,
+                use_jsonb=True,
+            )
+
+            search_kwargs = {"k": req.k}
+            if req.metadata_filter:
+                pgvector_filter = self._convert_metadata_filter(
+                    req.metadata_filter)
+                if pgvector_filter:
+                    search_kwargs["filter"] = pgvector_filter
+
+            # 执行搜索
+            if req.search_type == "mmr":
+                return self._execute_mmr_search(vector_store, req, search_kwargs)
+            else:
+                return self._execute_similarity_search(vector_store, req, search_kwargs)
+
+        except Exception as e:
+            logger.error(f"向量搜索异常 - 索引: {req.index_name}, 错误: {e}")
+            return []
+
+    def _execute_mmr_search(self, vector_store: PGVector, req: DocumentRetrieverRequest, search_kwargs: dict) -> List[Document]:
+        """执行MMR搜索"""
+        search_kwargs.update({
+            "fetch_k": req.get_effective_fetch_k(),
+            "lambda_mult": req.lambda_mult
+        })
+
+        # 先获取带分数的相似度搜索结果用于MMR
+        candidate_docs_with_scores = vector_store.similarity_search_with_relevance_scores(
+            req.search_query,
+            k=req.get_effective_fetch_k(),
+            score_threshold=req.score_threshold or 0.0,
+            filter=search_kwargs.get("filter")
+        )
+
+        # 执行MMR搜索
+        results = vector_store.max_marginal_relevance_search(
+            req.search_query, **search_kwargs)
+
+        # 为MMR结果设置相似度分数
+        self._set_mmr_scores(results, candidate_docs_with_scores)
+
+        # 添加搜索元数据
+        self._add_search_metadata(results, req)
+
+        logger.debug(f"MMR搜索完成 - 结果数: {len(results)}")
+        return results
+
+    def _execute_similarity_search(self, vector_store: PGVector, req: DocumentRetrieverRequest, search_kwargs: dict) -> List[Document]:
+        """执行相似度搜索"""
+        results_with_scores = vector_store.similarity_search_with_relevance_scores(
+            req.search_query,
+            k=req.k,
+            score_threshold=req.score_threshold or 0.0,
+            filter=search_kwargs.get("filter")
+        )
+
+        results = []
+        for doc, score in results_with_scores:
+            if not hasattr(doc, 'metadata'):
+                doc.metadata = {}
+            doc.metadata['similarity_score'] = float(score)
+            doc.metadata['search_method'] = 'similarity'
+            results.append(doc)
+
+        # 添加搜索元数据
+        self._add_search_metadata(results, req)
+
+        logger.debug(f"相似度搜索完成 - 结果数: {len(results)}")
+        return results
+
+    def _set_mmr_scores(self, results: List[Document], candidate_docs_with_scores: List[tuple]) -> None:
+        """为MMR结果设置相似度分数"""
+        score_map = {}
+        for doc, score in candidate_docs_with_scores:
+            doc_key = doc.page_content[:100]  # 使用内容前100字符作为键
+            score_map[doc_key] = float(score)
+
+        for i, doc in enumerate(results):
+            if not hasattr(doc, 'metadata'):
+                doc.metadata = {}
+
+            doc_key = doc.page_content[:100]
+            if doc_key in score_map:
+                doc.metadata['similarity_score'] = score_map[doc_key]
+            else:
+                # 如果找不到对应分数，使用排序位置计算近似分数
+                # 分数范围0.3-1.0，排名越靠前分数越高
+                normalized_score = max(0.3, 1.0 - (i * 0.1))
+                doc.metadata['similarity_score'] = normalized_score
+
+            doc.metadata['search_method'] = 'mmr'
+            doc.metadata['mmr_rank'] = i + 1
+
+    def _add_search_metadata(self, results: List[Document], req: DocumentRetrieverRequest) -> None:
+        """为搜索结果添加元数据"""
+        for i, doc in enumerate(results):
+            if not hasattr(doc, 'metadata'):
+                doc.metadata = {}
+            doc.metadata.update({
+                'search_type': req.search_type,
+                'rank': i + 1,
+                'index_name': req.index_name
+            })
+
+    # ==================== 数据库连接和查询 ====================
 
     def _get_psycopg_uri(self) -> str:
         """将SQLAlchemy格式的URI转换为psycopg支持的格式"""
@@ -313,6 +279,8 @@ class PgvectorRag(BaseRag):
             param_keys = list(params.keys()) if params else []
             logger.error(f"SQL查询异常详情 - 参数键: {param_keys}")
             raise
+
+    # ==================== 工具方法 ====================
 
     def _get_chunk_ids_by_knowledge_ids(self, knowledge_ids: List[str]) -> List[str]:
         """根据knowledge_ids查询chunk_ids"""
@@ -399,6 +367,8 @@ class PgvectorRag(BaseRag):
         if hasattr(req, 'query') and req.query:
             where_clauses.append("e.document ILIKE %(query_pattern)s")
             params['query_pattern'] = f"%{req.query}%"
+
+    # ==================== CRUD操作 ====================
 
     @timeit("元数据更新")
     def update_metadata(self, req: DocumentMetadataUpdateRequest) -> None:
@@ -499,6 +469,8 @@ class PgvectorRag(BaseRag):
             else:
                 logger.error(f"索引删除异常 - 索引: {req.index_name}")
                 raise
+
+    # ==================== 文档操作 ====================
 
     def _build_document_list_query(self, req: DocumentListRequest, where_clause: str, params: Dict[str, Any]) -> str:
         """构建文档列表查询SQL"""
@@ -658,12 +630,6 @@ class PgvectorRag(BaseRag):
             logger.info(
                 f"覆盖模式清理完成 - 索引: {req.index_name}, 清理记录: {affected_rows}")
 
-        # 确保全文检索索引存在（仅在首次导入时尝试创建）
-        try:
-            self.ensure_fulltext_index()
-        except Exception as e:
-            logger.warning(f"全文检索索引创建跳过: {e}")
-
         embedding = EmbedBuilder.get_embed(
             req.embed_model_base_url,
             req.embed_model_name,
@@ -690,51 +656,7 @@ class PgvectorRag(BaseRag):
                 f"文档导入失败 - 索引: {req.index_name}, 错误: {e}")
             raise
 
-    @timeit("文档搜索")
-    def search(self, req: DocumentRetrieverRequest) -> List[Document]:
-        """搜索符合条件的文档"""
-        logger.info(
-            f"文档搜索开始 - 索引: {req.index_name}, naive_rag: {req.enable_naive_rag}, qa_rag: {req.enable_qa_rag}")
-
-        results = []
-
-        if req.enable_naive_rag:
-            naive_results = self._search_by_type(req, 'naive')
-            results.extend(naive_results)
-
-        if req.enable_qa_rag:
-            qa_results = self._search_by_type(req, 'qa')
-            results.extend(qa_results)
-
-        logger.info(
-            f"文档搜索完成 - 索引: {req.index_name}, 结果数: {len(results)}")
-        return results
-
-    @timeit("分类搜索")
-    def _search_by_type(self, req: DocumentRetrieverRequest, rag_type: str) -> List[Document]:
-        """按类型执行搜索"""
-        logger.debug(f"搜索执行开始 - 类型: {rag_type}, 索引: {req.index_name}")
-
-        search_req = copy.deepcopy(req)
-        search_req.metadata_filter = search_req.metadata_filter or {}
-
-        if rag_type == 'naive':
-            search_req.metadata_filter['is_doc'] = "1"
-        elif rag_type == 'qa':
-            search_req.metadata_filter['is_doc'] = "0"
-            search_req.k = req.qa_size
-
-        try:
-            results = self._perform_search(search_req)
-            results = self._process_search_results(results, req, rag_type)
-
-            logger.debug(
-                f"搜索执行完成 - 类型: {rag_type}, 结果数: {len(results)}")
-            return results
-        except Exception as e:
-            logger.error(
-                f"搜索执行失败 - 类型: {rag_type}, 错误: {e}")
-            return []
+    # ==================== 搜索结果处理 ====================
 
     def _process_search_results(self, results: List[Document], req: DocumentRetrieverRequest, rag_type: str) -> List[Document]:
         """处理搜索结果"""
@@ -753,141 +675,6 @@ class PgvectorRag(BaseRag):
                 results = self.process_recall_stage(req, results)
 
         return results
-
-    @timeit("向量搜索")
-    def _perform_search(self, req: DocumentRetrieverRequest) -> List[Document]:
-        """执行向量搜索"""
-        try:
-            req.validate_search_params()
-
-            embedding = EmbedBuilder.get_embed(
-                req.embed_model_base_url,
-                req.embed_model_name,
-                req.embed_model_api_key,
-                req.embed_model_base_url
-            )
-
-            vector_store = PGVector(
-                embeddings=embedding,
-                collection_name=req.index_name,
-                connection=core_settings.db_uri,
-                use_jsonb=True,
-            )
-
-            search_kwargs = {"k": req.k}
-            if req.metadata_filter:
-                pgvector_filter = self._convert_metadata_filter(
-                    req.metadata_filter)
-                if pgvector_filter:
-                    search_kwargs["filter"] = pgvector_filter
-
-            # 执行搜索
-            if req.search_type == "mmr":
-                search_kwargs.update({
-                    "fetch_k": req.get_effective_fetch_k(),
-                    "lambda_mult": req.lambda_mult
-                })
-                results = vector_store.max_marginal_relevance_search(
-                    req.search_query, **search_kwargs)
-                # MMR搜索设置默认相似度分数
-                for doc in results:
-                    if not hasattr(doc, 'metadata'):
-                        doc.metadata = {}
-                    doc.metadata['similarity_score'] = 1.0
-            else:
-                # HybridSearch: 结合向量搜索和全文搜索，各占一定比例
-                # 计算各自应该返回的文档数量（确保均衡分配，各占约50%）
-                vector_k = max(1, req.k // 2)  # 向量搜索部分：至少1个，通常占一半
-                fulltext_k = max(1, req.k - vector_k)  # 全文搜索部分：占剩余部分
-
-                logger.info(
-                    f"HybridSearch: vector_k={vector_k}, fulltext_k={fulltext_k}, total_k={req.k}")
-
-                # 1. 执行向量搜索（多取一些候选，提高质量）
-                vector_results_with_scores = vector_store.similarity_search_with_relevance_scores(
-                    req.search_query, k=vector_k * 2, score_threshold=req.score_threshold or 0.0,
-                    filter=search_kwargs.get("filter")
-                )
-                vector_results = []
-                vector_doc_ids = []
-                for doc, score in vector_results_with_scores:
-                    if not hasattr(doc, 'metadata'):
-                        doc.metadata = {}
-                    doc.metadata['similarity_score'] = float(score)
-                    doc.metadata['search_method'] = 'vector'
-                    vector_results.append(doc)
-                    vector_doc_ids.append(str(doc.metadata.get(
-                        'chunk_id', doc.id if hasattr(doc, 'id') else str(id(doc)))))
-
-                # 2. 执行全文搜索（调整k值以获取相应比例的结果）
-                fulltext_req = copy.deepcopy(req)
-                fulltext_req.k = fulltext_k * 2  # 多取一些候选，提高质量
-                fulltext_results = self._fulltext_search(fulltext_req)
-                fulltext_doc_ids = []
-                for doc in fulltext_results:
-                    fulltext_doc_ids.append(str(doc.metadata.get(
-                        'chunk_id', doc.id if hasattr(doc, 'id') else str(id(doc)))))
-
-                # 3. 使用RRF合并结果，确保各自的比例贡献
-                if vector_doc_ids or fulltext_doc_ids:
-                    rrf_input = []
-
-                    # 限制各自的贡献数量，确保比例平衡
-                    if vector_doc_ids:
-                        # 只取前vector_k个向量搜索结果参与RRF
-                        rrf_input.append(vector_doc_ids[:vector_k])
-                    if fulltext_doc_ids:
-                        # 只取前fulltext_k个全文搜索结果参与RRF
-                        rrf_input.append(fulltext_doc_ids[:fulltext_k])
-
-                    merged_doc_ids, rrf_scores = self._rrf(
-                        rrf_input, rank_const=1, min_score=0)
-
-                    # 4. 构建合并后的文档映射
-                    all_docs = {}
-                    for doc in vector_results:
-                        doc_id = str(doc.metadata.get(
-                            'chunk_id', doc.id if hasattr(doc, 'id') else str(id(doc))))
-                        all_docs[doc_id] = doc
-                    for doc in fulltext_results:
-                        doc_id = str(doc.metadata.get(
-                            'chunk_id', doc.id if hasattr(doc, 'id') else str(id(doc))))
-                        if doc_id not in all_docs:  # 避免重复
-                            all_docs[doc_id] = doc
-
-                    # 5. 按RRF分数排序并构建最终结果
-                    results = []
-                    for i, (doc_id, rrf_score) in enumerate(zip(merged_doc_ids[:req.k], rrf_scores[:req.k])):
-                        if doc_id in all_docs:
-                            doc = all_docs[doc_id]
-                            if not hasattr(doc, 'metadata'):
-                                doc.metadata = {}
-
-                            # 保留原有的similarity_score，如果没有则设置为0.0
-                            if 'similarity_score' not in doc.metadata:
-                                doc.metadata['similarity_score'] = 0.0
-
-                            doc.metadata['rrf_score'] = float(rrf_score)
-                            doc.metadata['hybrid_rank'] = i + 1
-                            results.append(doc)
-                else:
-                    results = []
-
-            # 添加搜索元数据
-            for i, doc in enumerate(results):
-                if not hasattr(doc, 'metadata'):
-                    doc.metadata = {}
-                doc.metadata.update({
-                    'search_type': req.search_type,
-                    'rank': i + 1,
-                    'index_name': req.index_name
-                })
-
-            return results
-
-        except Exception as e:
-            logger.error(f"向量搜索异常 - 索引: {req.index_name}, 错误: {e}")
-            return []
 
     def _convert_metadata_filter(self, metadata_filter: dict) -> dict:
         """将内部元数据过滤格式转换为pgvector支持的格式"""
@@ -915,6 +702,8 @@ class PgvectorRag(BaseRag):
                 pgvector_filter[key] = {"$eq": value}
 
         return pgvector_filter
+
+    # ==================== 重排序和召回处理 ====================
 
     @timeit("重排序")
     def _rerank_results(self, req: DocumentRetrieverRequest, results: List[Document]) -> List[Document]:
