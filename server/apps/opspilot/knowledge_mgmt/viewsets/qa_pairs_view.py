@@ -269,12 +269,10 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
     @CheckKnowledgePermission(QAPairs, "qa_pairs_id")
     def update_qa_pairs(self, request):
         params = request.data
-        qa_paris = QAPairs.objects.get(id=params["qa_pairs_id"])
-        index_name = qa_paris.knowledge_base.knowledge_index_name()
         chunk_id = params["id"]
         question = params["question"]
         answer = params["answer"]
-        result = ChunkHelper.update_qa_pairs(index_name, chunk_id, question, answer)
+        result = ChunkHelper.update_qa_pairs(chunk_id, question, answer)
         if not result:
             return JsonResponse({"result": False, "message": _("Failed to update QA pair.")})
         return JsonResponse({"result": True})
