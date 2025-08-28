@@ -1,9 +1,18 @@
 import { useTranslation } from '@/utils/i18n';
 import { useMemo } from 'react';
 
+const DISPLAY_PLUGINS: string[] = [
+  'Telegraf',
+  'Vector',
+  'Beat',
+  'Export',
+  'JMX',
+];
+
 const COLLECTOR_LABEL: Record<string, string[]> = {
   Telegraf: ['Telegraf'],
   Vector: ['Vector'],
+  Beat: ['Auditbeat', 'Metricbeat', 'Winlogbeat', 'Packetbeat', 'Filebeat'],
   JMX: [
     'Tomcat-JMX',
     'ActiveMQ-JMX',
@@ -76,4 +85,4 @@ const useMenuItem = () => {
   );
 };
 
-export { COLLECTOR_LABEL, useMenuItem };
+export { COLLECTOR_LABEL, useMenuItem, DISPLAY_PLUGINS };
