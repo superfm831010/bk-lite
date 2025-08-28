@@ -51,3 +51,4 @@ class ModelType(models.Model):
     icon = models.CharField(max_length=100, verbose_name="图标", blank=True, null=True)
     is_build_in = models.BooleanField(default=False)
     index = models.IntegerField(default=0, verbose_name="排序")
+    tags = models.JSONField(default=list)

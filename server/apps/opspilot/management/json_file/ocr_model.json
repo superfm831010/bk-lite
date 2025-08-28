@@ -10,12 +10,12 @@
     "base_url": "http://ocr-server/paddle_ocr"
   },
   {
-    "model_type": "default",
+    "model_type": "cloud",
     "name": "AzureOCR",
     "base_url": "http://ocr-server/azure_ocr"
   },
   {
-    "model_type": "default",
+    "model_type": "hugging_face",
     "name": "OlmOCR",
     "base_url": "ttp://ocr-server/olm_ocr"
   }
