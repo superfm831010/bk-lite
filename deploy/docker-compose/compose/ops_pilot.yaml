@@ -40,7 +40,7 @@ services:
     image: ${DOCKER_IMAGE_METIS}
     restart: always
     environment:
-      DB_URI: postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@pgvector:5432/metis
+      DB_URI: postgresql+psycopg://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@pgvector:5432/metis
       SECRET_KEY: ${SECRET_KEY}
       MODE: DEBUG
       TRANSFORMERS_OFFLINE: true
