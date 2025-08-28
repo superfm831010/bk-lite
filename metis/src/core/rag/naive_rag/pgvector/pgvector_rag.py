@@ -681,12 +681,6 @@ class PgvectorRag(BaseRag):
         if not metadata_filter:
             return {}
 
-        def _convert_bool_value(val):
-            """转换布尔值字符串为布尔类型"""
-            if isinstance(val, str) and val.lower() in ("true", "false"):
-                return val.lower() == "true"
-            return val
-
         pgvector_filter = {}
         for key, value in metadata_filter.items():
             if key.endswith("__exists"):
@@ -703,11 +697,9 @@ class PgvectorRag(BaseRag):
                 pgvector_filter[field] = {"$ilike": value}
             elif key.endswith("__not_blank"):
                 field = key.replace("__not_blank", "")
-                converted_value = _convert_bool_value("")
-                pgvector_filter[field] = {"$ne": converted_value}
+                pgvector_filter[field] = {"$ne": ""}
             else:
-                converted_value = _convert_bool_value(value)
-                pgvector_filter[key] = {"$eq": converted_value}
+                pgvector_filter[key] = {"$eq": value}
 
         return pgvector_filter
 
