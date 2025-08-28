@@ -8,6 +8,7 @@ import pyotp
 import qrcode
 from django.contrib.auth.hashers import check_password, make_password
 from django.db.models import Q
+from django.utils import timezone
 
 import nats_client
 from apps.core.backends import cache
@@ -519,6 +520,7 @@ def wechat_user_register(user_id, nick_name):
     )
     role_list = list(set(user.role_list + default_role))
     user.role_list = role_list
+    user.last_login = timezone.now()
     user.save()
     try:
         default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", app="opspilot", group_id=default_group.id)
@@ -629,6 +631,8 @@ def get_user_login_token(user, username):
     user_obj = {"user_id": user.id, "login_time": int(time.time())}
     token = jwt.encode(payload=user_obj, key=secret_key, algorithm=algorithm)
     enable_otp = SystemSettings.objects.filter(key="enable_otp").first()
+    user.last_login = timezone.now()
+    user.save()
     if not enable_otp:
         enable_otp = False
     else:

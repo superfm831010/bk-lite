@@ -44,6 +44,7 @@
   {% endif %}
 
   fields:
+    collector: "Auditbeat"
     collect_type: "auditd"
     instance_id: "{{ instance_id | default('default') }}"
   fields_under_root: true

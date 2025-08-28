@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import GenericViewSetFun, MaintainerViewSet
-from apps.opspilot.knowledge_mgmt.models import QAPairs
+from apps.opspilot.knowledge_mgmt.models import KnowledgeBase, QAPairs
 from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.serializers.qa_pairs_serializers import QAPairsSerializer
 from apps.opspilot.model_provider_mgmt.models import LLMModel
@@ -21,6 +21,7 @@ from apps.opspilot.tasks import (
     generate_answer,
 )
 from apps.opspilot.utils.chunk_helper import ChunkHelper
+from apps.opspilot.utils.permission_check import CheckKnowledgePermission
 
 
 class QAPairsFilter(FilterSet):
@@ -34,12 +35,35 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
     filterset_class = QAPairsFilter
     ordering = ("-id",)
 
+    @HasPermission("knowledge_document-View")
+    @CheckKnowledgePermission(QAPairs)
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @HasPermission("knowledge_document-Delete")
+    @CheckKnowledgePermission(QAPairs)
+    def destroy(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.status == "generating" or obj.status == "pending":
+            return JsonResponse({"result": False, "message": _("QA pairs is generating, cannot delete")})
+        return super().destroy(request, *args, **kwargs)
+
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Add")
+    @CheckKnowledgePermission(QAPairs)
     def generate_question(self, request):
         params = request.data
         client = ChunkHelper()
         data_count = 0
         chunk_data = []
+        if not request.user.is_superuser:
+            knowledge_base = KnowledgeBase.objects.get(id=params["knowledge_base_id"])
+            current_team = request.COOKIES.get("current_team", "0")
+            has_permission = self.get_has_permission(request.user, knowledge_base, current_team)
+            if not has_permission:
+                return JsonResponse(
+                    {"result": False, "message": _("You do not have permission to update this instance")}
+                )
         for i in params.get("document_list", []):
             chunk_data.extend(
                 client.get_qa_content(
@@ -71,6 +95,8 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         return JsonResponse({"result": True, "data": return_data})
 
     @action(methods=["POST"], detail=False)
+    @HasPermission("knowledge_document-Add")
+    @CheckKnowledgePermission(QAPairs)
     def generate_answer(self, request):
         params = request.data
         llm_model = LLMModel.objects.get(id=params["answer_llm_model_id"])
@@ -95,6 +121,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
 
     @action(methods=["POST"], detail=False)
     @HasPermission("knowledge_document-Add")
+    @CheckKnowledgePermission(QAPairs)
     def create_qa_pairs(self, request):
         params = request.data
         document_list = params.get("document_list", [])
@@ -123,8 +150,14 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         create_qa_pairs.delay([instance.id for instance in add_list], params.get("only_question", False))
         return JsonResponse({"result": True})
 
+    @HasPermission("knowledge_document-Set")
+    @CheckKnowledgePermission(QAPairs)
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
     @action(methods=["POST"], detail=False)
     @HasPermission("knowledge_document-Add")
+    @CheckKnowledgePermission(QAPairs, "qa_pairs_id")
     def generate_answer_to_es(self, request):
         qa_paris_id = request.data.get("qa_pairs_id")
         if not qa_paris_id:
@@ -138,6 +171,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
 
     @action(methods=["POST"], detail=False)
     @HasPermission("knowledge_document-Add")
+    @CheckKnowledgePermission(QAPairs)
     def import_qa_json(self, request):
         files = request.FILES.getlist("file")
         if not files:
@@ -179,6 +213,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
 
     @action(methods=["GET"], detail=True)
     @HasPermission("knowledge_document-View")
+    @CheckKnowledgePermission(QAPairs)
     def get_details(self, request, *args, **kwargs):
         instance: QAPairs = self.get_object()
         client = ChunkHelper()
@@ -191,7 +226,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         res = client.get_document_es_chunk(index_name, page, page_size, search_text, metadata_filter)
         return_data = [
             {
-                "question": i["page_content"],
+                "question": i["metadata"]["qa_question"],
                 "answer": i["metadata"]["qa_answer"],
                 "id": i["metadata"]["chunk_id"],
                 "base_chunk_id": i["metadata"].get("base_chunk_id", ""),
@@ -200,8 +235,10 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         ]
         return JsonResponse({"result": True, "data": {"items": return_data, "count": res["count"]}})
 
+    # TODO 前端配合添加参数knowledge_base_id
     @action(methods=["GET"], detail=False)
     @HasPermission("knowledge_document-View")
+    @CheckKnowledgePermission(QAPairs)
     def get_chunk_qa_pairs(self, request):
         """
         Get chunk QA pairs
@@ -211,7 +248,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         res = ChunkHelper.get_document_es_chunk(
             index_name,
             1,
-            10000,
+            0,
             metadata_filter={"base_chunk_id": str(chunk_id)},
         )
         if res.get("status", "fail") != "success":
@@ -229,20 +266,20 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
 
     @action(methods=["POST"], detail=False)
     @HasPermission("knowledge_document-Set")
+    @CheckKnowledgePermission(QAPairs, "qa_pairs_id")
     def update_qa_pairs(self, request):
         params = request.data
-        qa_paris = QAPairs.objects.get(id=params["qa_pairs_id"])
-        index_name = qa_paris.knowledge_base.knowledge_index_name()
         chunk_id = params["id"]
         question = params["question"]
         answer = params["answer"]
-        result = ChunkHelper.update_qa_pairs(index_name, chunk_id, question, answer)
+        result = ChunkHelper.update_qa_pairs(chunk_id, question, answer)
         if not result:
             return JsonResponse({"result": False, "message": _("Failed to update QA pair.")})
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
     @HasPermission("knowledge_document-Add")
+    @CheckKnowledgePermission(QAPairs, "qa_pairs_id")
     def create_one_qa_pairs(self, request):
         params = request.data
         qa_paris = QAPairs.objects.get(id=params["qa_pairs_id"])
@@ -251,27 +288,28 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         answer = params["answer"]
         embed_config = qa_paris.knowledge_base.embed_model.decrypted_embed_config
         embed_config["model"] = embed_config.get("model", qa_paris.knowledge_base.embed_model.name)
-        result = ChunkHelper.create_one_qa_pairs(
-            embed_config, index_name, params["qa_pairs_id"], params["knowledge_id"], question, answer
-        )
+        result = ChunkHelper.create_one_qa_pairs(embed_config, index_name, params["qa_pairs_id"], question, answer)
+        if result["result"]:
+            qa_paris.generate_count += 1
+            qa_paris.save()
         return JsonResponse(result)
 
     @action(methods=["POST"], detail=False)
     @HasPermission("knowledge_document-Delete")
+    @CheckKnowledgePermission(QAPairs, "qa_pairs_id")
     def delete_one_qa_pairs(self, request):
         params = request.data
-        qa_paris = QAPairs.objects.get(id=params["qa_pairs_id"])
-        index_name = qa_paris.knowledge_base.knowledge_index_name()
         chunk_id = params["id"]
-        result = ChunkHelper.delete_chunk(index_name, chunk_id)
+        result = ChunkHelper.delete_es_content(chunk_id, True)
         if not result:
             return JsonResponse({"result": False, "message": _("Failed to delete QA pair.")})
-        if params["base_chunk_id"]:
-            ChunkHelper.update_document_qa_pairs_count(index_name, -1, params["base_chunk_id"])
+        # if params["base_chunk_id"]:
+        #     ChunkHelper.update_document_qa_pairs_count(index_name, -1, params["base_chunk_id"])
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=False)
     @HasPermission("knowledge_document-Add")
+    @CheckKnowledgePermission(QAPairs)
     def create_qa_pairs_by_custom(self, request):
         params = request.data
         qa_pairs = QAPairs.objects.create(
@@ -290,6 +328,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
 
     @action(methods=["POST"], detail=False)
     @HasPermission("knowledge_document-Add")
+    @CheckKnowledgePermission(QAPairs)
     def create_qa_pairs_by_chunk(self, request):
         params = request.data
         qa_pairs, _ = QAPairs.objects.get_or_create(
@@ -323,6 +362,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
 
     @action(methods=["GET"], detail=False)
     @HasPermission("knowledge_document-View")
+    @CheckKnowledgePermission(QAPairs, "document_id", id_field="document_id")
     def get_qa_pairs_task_status(self, request):
         document_id = request.GET.get("document_id")
         qa_pairs_obj = QAPairs.objects.filter(
@@ -347,6 +387,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
 
     @action(methods=["POST"], detail=False)
     @HasPermission("knowledge_document-Add")
+    @CheckKnowledgePermission(QAPairs, "qa_pairs_id")
     def export_qa_pairs(self, request):
         instance_id = request.data.get("qa_pairs_id")
         instance = QAPairs.objects.get(id=instance_id)
@@ -360,7 +401,7 @@ class QAPairsViewSet(MaintainerViewSet, GenericViewSetFun):
         res = ChunkHelper.get_document_es_chunk(
             instance.knowledge_base.knowledge_index_name(),
             1,
-            10000,
+            0,
             metadata_filter={"qa_pairs_id": str(instance_id)},
             get_count=False,
         )

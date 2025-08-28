@@ -282,7 +282,6 @@ class LLMService:
                 params = dict(
                     default_kwargs,
                     **{
-                        "size": knowledge_base.rag_size,
                         "enable_naive_rag": True,
                         "enable_qa_rag": False,
                         "enable_graph_rag": False,
@@ -293,7 +292,6 @@ class LLMService:
                 params = dict(
                     default_kwargs,
                     **{
-                        "size": knowledge_base.qa_size,
                         "enable_naive_rag": False,
                         "enable_qa_rag": True,
                         "enable_graph_rag": False,
@@ -351,14 +349,10 @@ class LLMService:
         kwargs = {
             "index_name": knowledge_base.knowledge_index_name(),
             "metadata_filter": {"enabled": True},
-            "threshold": score_threshold,
-            "enable_term_search": knowledge_base.enable_text_search,  # TODO 确认是否这个参数
-            "text_search_weight": knowledge_base.text_search_weight,
-            "text_search_mode": knowledge_base.text_search_mode,
-            "enable_vector_search": knowledge_base.enable_vector_search,
-            "vector_search_weight": knowledge_base.vector_search_weight,
-            "rag_k": knowledge_base.rag_k,
-            "rag_num_candidates": knowledge_base.rag_num_candidates,
+            "score_threshold": score_threshold,
+            "k": knowledge_base.rag_size,
+            "qa_size": knowledge_base.qa_size,
+            "search_type": knowledge_base.search_type,  # 0: similarity, mmr, similarity_score_threshold
             "enable_rerank": knowledge_base.enable_rerank,
             "embed_model_base_url": embed_model_base_url,
             "embed_model_api_key": embed_model_api_key,

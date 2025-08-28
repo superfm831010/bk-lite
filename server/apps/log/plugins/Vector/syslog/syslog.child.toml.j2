@@ -13,6 +13,7 @@ mode = "tcp"  # 也可以是 udp
 type = "remap"
 inputs = ["syslog_{{ instance_id }}"]
 source = '''
+.collector = "Vector"
 .collect_type = "syslog"
 .instance_id = "{{ instance_id }}"
 '''

@@ -25,6 +25,7 @@ multiline.timeout_ms = {{ multiline.timeout_ms }}
 type = "remap"
 inputs = ["file_{{ instance_id }}"]
 source = '''
+.collector = "Vector"
 .collect_type = "file"
 .instance_id = "{{ instance_id }}"
 '''
