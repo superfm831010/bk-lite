@@ -62,6 +62,7 @@
 
   # ================================== 字段标识配置 ==================================
   fields:
+    collector: "Filebeat"
     collect_type: "filestream"
     instance_id: "{{ instance_id }}"
   fields_under_root: {{ fields_under_root | default(true) | lower }}

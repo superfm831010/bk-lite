@@ -4,7 +4,7 @@ import nats_client
 from apps.node_mgmt.models import CloudRegion
 from apps.node_mgmt.node_init.collector_init import import_collector
 from apps.node_mgmt.services.node import NodeService
-from apps.core.logger import node_logger as logger
+# from apps.core.logger import node_logger as logger
 
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.node_mgmt.models import CollectorConfiguration, ChildConfig, Collector, Node, NodeCollectorConfiguration
@@ -190,21 +190,21 @@ def collector_list(query_data: dict):
 @nats_client.register
 def import_collectors(collectors: list):
     """导入采集器"""
-    logger.info(f"import_collectors: {collectors}")
+    # logger.info(f"import_collectors: {collectors}")
     return import_collector(collectors)
 
 
 @nats_client.register
 def batch_add_node_child_config(configs: list):
     """批量添加子配置"""
-    logger.info(f"batch_add_node_child_config: {configs}")
+    # logger.info(f"batch_add_node_child_config: {configs}")
     NatsService().batch_create_child_configs(configs)
 
 
 @nats_client.register
 def batch_add_node_config(configs: list):
     """批量添加配置"""
-    logger.info(f"batch_add_node_config: {configs}")
+    # logger.info(f"batch_add_node_config: {configs}")
     NatsService().batch_create_configs(configs)
 
 

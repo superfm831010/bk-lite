@@ -25,6 +25,7 @@
   include_response_body: {{ include_response_body | default(false) | lower }}
 
   fields:
+    collector: "Packetbeat"
     collect_type: "http"
     instance_id: "{{ instance_id }}"
     protocol_type: "http"
