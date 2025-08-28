@@ -93,6 +93,8 @@ const OperateModal: React.FC<OperateModalProps> = ({
   const [params, setParams] = React.useState<ParamItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [duplicateNames, setDuplicateNames] = React.useState<string[]>([]);
+  const [emptyNames, setEmptyNames] = React.useState<string[]>([]);
+  const [emptyAliases, setEmptyAliases] = React.useState<string[]>([]);
   const [namespaceList, setNamespaceList] = React.useState<NamespaceItem[]>([]);
   const [namespaceLoading, setNamespaceLoading] = React.useState(false);
   const { createDataSource, updateDataSource } = useDataSourceApi();
@@ -143,6 +145,8 @@ const OperateModal: React.FC<OperateModalProps> = ({
 
     form.resetFields();
     setDuplicateNames([]);
+    setEmptyNames([]);
+    setEmptyAliases([]);
     fetchNamespaces();
 
     if (!currentRow) {
@@ -197,10 +201,40 @@ const OperateModal: React.FC<OperateModalProps> = ({
     return duplicates.length === 0;
   };
 
+  const checkEmptyValues = (currentParams: ParamItem[]) => {
+    const emptyNameList: string[] = [];
+    const emptyAliasList: string[] = [];
+
+    currentParams.forEach((param) => {
+      if (!param.name || !param.name.trim()) {
+        emptyNameList.push(param.id!);
+      }
+      if (!param.alias_name || !param.alias_name.trim()) {
+        emptyAliasList.push(param.id!);
+      }
+    });
+
+    setEmptyNames(emptyNameList);
+    setEmptyAliases(emptyAliasList);
+
+    return emptyNameList.length === 0 && emptyAliasList.length === 0;
+  };
+
   const handleAliasChange = (val: string, id: string) => {
     setParams((prev: ParamItem[]) =>
       prev.map((item) => (item.id === id ? { ...item, alias_name: val } : item))
     );
+  };
+
+  const handleAliasBlur = (val: string, id: string) => {
+    const newParams = params.map((item) => {
+      if (item.id === id) {
+        return { ...item, alias_name: val.trim() };
+      }
+      return item;
+    });
+    setParams(newParams);
+    checkEmptyValues(newParams);
   };
 
   const handleDefaultChange = (val: any, id: string, type: string) => {
@@ -284,6 +318,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
     }
     setParams(newParams);
     checkDuplicateNames(newParams);
+    checkEmptyValues(newParams);
   };
 
   const handleParamNameChange = (val: string, id: string) => {
@@ -292,11 +327,6 @@ const OperateModal: React.FC<OperateModalProps> = ({
         return {
           ...item,
           name: val,
-          // 如果别名为空或等于旧的参数名，则同步更新别名
-          alias_name:
-            !item.alias_name || item.alias_name === item.name
-              ? val
-              : item.alias_name,
         };
       }
       return item;
@@ -313,6 +343,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
     });
     setParams(newParams);
     checkDuplicateNames(newParams);
+    checkEmptyValues(newParams);
   };
 
   const columns = [
@@ -327,7 +358,12 @@ const OperateModal: React.FC<OperateModalProps> = ({
           placeholder={t('dataSource.name')}
           onChange={(e) => handleParamNameChange(e.target.value, record.id!)}
           onBlur={(e) => handleParamNameBlur(e.target.value, record.id!)}
-          status={duplicateNames.includes(record.name) ? 'error' : undefined}
+          status={
+            duplicateNames.includes(record.name) ||
+            emptyNames.includes(record.id!)
+              ? 'error'
+              : undefined
+          }
         />
       ),
     },
@@ -338,9 +374,11 @@ const OperateModal: React.FC<OperateModalProps> = ({
       width: 120,
       render: (_: any, record: ParamItem) => (
         <Input
-          value={record.alias_name || record.name}
+          value={record.alias_name || ''}
           placeholder={t('dataSource.aliasName')}
           onChange={(e) => handleAliasChange(e.target.value, record.id!)}
+          onBlur={(e) => handleAliasBlur(e.target.value, record.id!)}
+          status={emptyAliases.includes(record.id!) ? 'error' : undefined}
         />
       ),
     },
@@ -503,8 +541,13 @@ const OperateModal: React.FC<OperateModalProps> = ({
       const validParams = params.filter(
         (param) => param.name && param.name.trim()
       );
+
+      // 检查参数名称和别名是否为空
+      if (!checkEmptyValues(params)) {
+        setLoading(false);
+        return;
+      }
       if (!checkDuplicateNames(validParams)) {
-        message.error(t('dataSource.paramNameNotAllowDuplicate'));
         setLoading(false);
         return;
       }
@@ -518,7 +561,6 @@ const OperateModal: React.FC<OperateModalProps> = ({
         return false;
       });
       if (hasEmptyFixedValue) {
-        message.error(t('dataSource.fixedParamRequiredValue'));
         setLoading(false);
         return;
       }
@@ -649,8 +691,8 @@ const OperateModal: React.FC<OperateModalProps> = ({
               style={{
                 color: 'var(--color-fail)',
                 fontSize: '12px',
-                marginTop: '4px',
-                padding: '4px 8px',
+                marginTop: '2px',
+                padding: '2px 8px',
               }}
             >
               {t('dataSource.duplicateParamNames')}

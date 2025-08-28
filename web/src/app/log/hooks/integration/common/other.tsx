@@ -99,10 +99,35 @@ const useDirectionList = (): ListItem[] => {
   );
 };
 
+const useRuleCategories = (): ListItem[] => {
+  const { t } = useTranslation();
+  return useMemo(
+    () => [
+      {
+        id: 'security',
+        name: t('log.integration.security'),
+        label: t('log.integration.securityDes'),
+      },
+      {
+        id: 'system',
+        name: t('log.integration.system'),
+        label: t('log.integration.systemDes'),
+      },
+      {
+        id: 'network',
+        name: t('log.integration.network'),
+        label: t('log.integration.networkDes'),
+      },
+    ],
+    [t]
+  );
+};
+
 export {
   useAssetMenuItems,
   useConditionList,
   useTermList,
   useConditionModeList,
   useDirectionList,
+  useRuleCategories,
 };

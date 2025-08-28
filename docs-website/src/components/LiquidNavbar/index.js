@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import './styles.module.css';
 
 export default function LiquidNavbar() {
   useEffect(() => {
@@ -31,17 +32,6 @@ export default function LiquidNavbar() {
     
     // 添加滚动监听器
     window.addEventListener('scroll', requestTick, { passive: true });
-    
-    // 添加鼠标移动效果
-    const navbar = document.querySelector('.navbar');
-    if (navbar) {
-      navbar.addEventListener('mousemove', (e) => {
-        const rect = navbar.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        
-        navbar.style.setProperty('--mouse-x', `${x}%`);
-      });
-    }
     
     return () => {
       window.removeEventListener('scroll', requestTick);

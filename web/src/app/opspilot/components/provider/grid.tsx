@@ -9,16 +9,17 @@ import { Model, ModelConfig } from '@/app/opspilot/types/provider';
 import PermissionWrapper from '@/components/permission';
 import ConfigModal from '@/app/opspilot/components/provider/configModal';
 import { useProviderApi } from '@/app/opspilot/api/provider';
-import { CONFIG_MAP } from '@/app/opspilot/constants/provider';
+import { CONFIG_MAP, MODEL_CATEGORY_MAPPING } from '@/app/opspilot/constants/provider';
 
 interface ProviderGridProps {
   models: Model[];
   filterType: string;
   loading: boolean;
   setModels: React.Dispatch<React.SetStateAction<Model[]>>;
+  onRefreshData?: () => void;
 }
 
-const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading, setModels }) => {
+const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading, setModels, onRefreshData }) => {
   const { t } = useTranslation();
   const { updateProvider, deleteProvider } = useProviderApi();
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
@@ -67,12 +68,14 @@ const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading
     const updatedModel: Model = {
       ...selectedModel,
       name: values.name,
-      llm_model_type: values.type,
+      label: values.label,
+      model_type: values.model_type,
       enabled: values.enabled,
       team: values.team,
       consumer_team: values.consumer_team
     };
 
+    // Build different config based on provider type
     if (filterType === 'llm_model') {
       updatedModel.llm_config = {
         ...selectedModel.llm_config,
@@ -99,6 +102,7 @@ const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading
         message.success(t('common.updateSuccess'));
         setModels(prevModels => prevModels.map(model => (model.id === updatedModel.id ? updatedModel : model)));
         setIsModalVisible(false);
+        onRefreshData && onRefreshData();
       } else {
         message.error(t('common.updateFailed'));
       }
@@ -117,6 +121,7 @@ const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading
           await deleteProvider(filterType, model.id);
           message.success(t('common.delSuccess'));
           setModels(prevModels => prevModels.filter(item => item.id !== model.id));
+          onRefreshData && onRefreshData();
         } catch {
           message.error(t('common.delFailed'));
         }
@@ -132,7 +137,7 @@ const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
             {models.map((model) => (
-              <div className={`rounded-lg shadow p-4 relative ${styles.gridContainer}`} key={model.id}>
+              <div className={`rounded-lg p-4 relative ${styles.gridContainer}`} key={model.id}>
                 <div className="flex justify-between items-start">
                   <div style={{flex: '0 0 auto'}}>
                     <Image
@@ -145,9 +150,18 @@ const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading
                   </div>
                   <div className={`flex-1 ml-2 ${styles.nameContainer}`}>
                     <h3 className={`text-sm font-semibold break-words mb-1 ${styles.name}`}>{model.name}</h3>
-                    <span className="inline-block mt-1 px-2 font-mini rounded-xl border">
-                      {filterType}
-                    </span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {model.model_type_name && (
+                        <span className="inline-block font-mini px-2 py-0.2 rounded-sm bg-blue-50 text-blue-600">
+                          {model.model_type_name}
+                        </span>
+                      )}
+                      {model.label && (
+                        <span className="inline-block font-mini px-2 py-0.2 rounded-sm bg-green-50 text-green-600">
+                          {MODEL_CATEGORY_MAPPING[model.label] || model.label}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <Dropdown overlay={menu(model)} trigger={['click']} placement="bottomRight">
                     <div className="cursor-pointer">

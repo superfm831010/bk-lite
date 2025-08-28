@@ -20,21 +20,24 @@ from src.core.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderC
 from src.core.rag.graph_rag.graphiti.metis_raranker_config import MetisRerankerConfig
 from src.core.rag.graph_rag.graphiti.metis_reranker_client import MetisRerankerClient
 from sanic.log import logger
+from graphiti_core.driver.falkordb_driver import FalkorDriver
 
 
 class GraphitiRAG:
     """Graphiti知识图谱RAG实现类"""
-    
+
     def __init__(self):
         pass
 
     def _create_basic_graphiti(self) -> Graphiti:
         """创建基础的Graphiti实例（不包含LLM客户端）"""
-        return Graphiti(
-            core_settings.neo4j_host,
-            core_settings.neo4j_username,
-            core_settings.neo4j_password,
+        driver = FalkorDriver(
+            host=core_settings.knowledge_graph_host,
+            username=core_settings.knowledge_graph_username,
+            password=core_settings.knowledge_graph_password,
+            port=core_settings.knowledge_graph_port
         )
+        return Graphiti(graph_driver=driver)
 
     def _create_embed_client(self, embed_config: dict) -> MetisEmbedder:
         """创建嵌入客户端"""
@@ -61,6 +64,7 @@ class GraphitiRAG:
         async_openai = AsyncOpenAI(
             api_key=llm_config['api_key'],
             base_url=llm_config['base_url'],
+            timeout=120
         )
         return OpenAIClient(
             client=async_openai,
@@ -71,36 +75,38 @@ class GraphitiRAG:
         )
 
     def _create_full_graphiti(
-        self, 
+        self,
         llm_config: Optional[dict] = None,
         embed_config: Optional[dict] = None,
         rerank_config: Optional[dict] = None
     ) -> Graphiti:
         """创建完整配置的Graphiti实例"""
         kwargs = {}
-        
+
         if llm_config:
             kwargs['llm_client'] = self._create_llm_client(llm_config)
-        
+
         if embed_config:
             kwargs['embedder'] = self._create_embed_client(embed_config)
-            
+
         if rerank_config:
             kwargs['cross_encoder'] = self._create_rerank_client(rerank_config)
-        
-        return Graphiti(
-            core_settings.neo4j_host,
-            core_settings.neo4j_username,
-            core_settings.neo4j_password,
-            **kwargs
+
+        driver = FalkorDriver(
+            host=core_settings.knowledge_graph_host,
+            username=core_settings.knowledge_graph_username,
+            password=core_settings.knowledge_graph_password,
+            port=core_settings.knowledge_graph_port
         )
+        kwargs['graph_driver'] = driver
+        return Graphiti(**kwargs)
 
     def _extract_configs_from_request(self, req) -> tuple[Optional[dict], Optional[dict], Optional[dict]]:
         """从请求对象中提取配置信息"""
         llm_config = None
         embed_config = None
         rerank_config = None
-        
+
         # 提取LLM配置（如果存在）
         if hasattr(req, 'openai_api_key') and req.openai_api_key:
             llm_config = {
@@ -108,7 +114,7 @@ class GraphitiRAG:
                 'base_url': req.openai_api_base,
                 'model': req.openai_model
             }
-        
+
         # 提取嵌入模型配置（如果存在）
         if hasattr(req, 'embed_model_base_url') and req.embed_model_base_url:
             embed_config = {
@@ -116,7 +122,7 @@ class GraphitiRAG:
                 'model_name': req.embed_model_name,
                 'api_key': req.embed_model_api_key
             }
-        
+
         # 提取重排序模型配置（如果存在）
         if hasattr(req, 'rerank_model_base_url') and req.rerank_model_base_url:
             rerank_config = {
@@ -124,7 +130,7 @@ class GraphitiRAG:
                 'model_name': req.rerank_model_name,
                 'api_key': req.rerank_model_api_key
             }
-        
+
         return llm_config, embed_config, rerank_config
 
     async def delete_index(self, req: IndexDeleteRequest):
@@ -142,19 +148,19 @@ class GraphitiRAG:
         """列出索引文档（节点和边）"""
         logger.info(f"查询索引文档: group_ids={req.group_ids}")
         graphiti = self._create_basic_graphiti()
-        
+
         # 查询节点
-        nodes_result = await graphiti.driver.execute_query(
+        nodes_result, _, _ = await graphiti.driver.execute_query(
             """
             MATCH (n) WHERE n.group_id IN $group_ids
             RETURN n.name as name, n.uuid as uuid, n.fact as fact, n.summary as summary, 
                    id(n) as node_id, n.group_id as group_id, labels(n) as labels
             """,
-            params={"group_ids": req.group_ids}
+            group_ids=req.group_ids
         )
 
         # 查询边
-        edges_result = await graphiti.driver.execute_query(
+        edges_result, _, _ = await graphiti.driver.execute_query(
             """
             MATCH (n)-[r]-(m) 
             WHERE n.group_id IN $group_ids AND m.group_id IN $group_ids
@@ -163,7 +169,7 @@ class GraphitiRAG:
                    n.name as source_name, m.name as target_name,
                    r.fact as fact, id(n) as source_id, id(m) as target_id
             """,
-            params={"group_ids": req.group_ids}
+            group_ids=req.group_ids
         )
 
         # 构建边列表
@@ -178,7 +184,7 @@ class GraphitiRAG:
                 'target_id': record['target_id'],
                 'fact': record['fact']
             }
-            for record in edges_result.records
+            for record in edges_result
         ]
 
         # 构建节点列表
@@ -192,9 +198,9 @@ class GraphitiRAG:
                 "summary": record['summary'],
                 "labels": record['labels'],
             }
-            for record in nodes_result.records
+            for record in nodes_result
         ]
-        
+
         return {"nodes": nodes, "edges": edges}
 
     async def delete_document(self, req: DocumentDeleteRequest):
@@ -218,12 +224,14 @@ class GraphitiRAG:
     async def ingest(self, req: GraphitiRagDocumentIngestRequest):
         """文档摄取"""
         logger.info(f"开始摄取文档: group_id={req.group_id}, 文档数量={len(req.docs)}")
-        
+
         # 提取配置
-        llm_config, embed_config, rerank_config = self._extract_configs_from_request(req)
+        llm_config, embed_config, rerank_config = self._extract_configs_from_request(
+            req)
 
         # 创建完整配置的Graphiti实例
-        graphiti_instance = self._create_full_graphiti(llm_config, embed_config, rerank_config)
+        graphiti_instance = self._create_full_graphiti(
+            llm_config, embed_config, rerank_config)
 
         # 处理文档
         mapping = {}
@@ -242,28 +250,32 @@ class GraphitiRAG:
         # 可选：重建社区
         if req.rebuild_community:
             await self.build_communities(graphiti_instance, [req.group_id])
-            
+
         logger.info(f"文档摄取完成: 成功摄取{len(mapping)}个文档")
         return mapping
 
     async def rebuild_community(self, req: RebuildCommunityRequest):
         """重建社区"""
         logger.info(f"重建社区: group_ids={req.group_ids}")
-        
+
         # 提取配置
-        llm_config, embed_config, rerank_config = self._extract_configs_from_request(req)
+        llm_config, embed_config, rerank_config = self._extract_configs_from_request(
+            req)
 
         # 创建完整配置的Graphiti实例
-        graphiti_instance = self._create_full_graphiti(llm_config, embed_config, rerank_config)
+        graphiti_instance = self._create_full_graphiti(
+            llm_config, embed_config, rerank_config)
         await self.build_communities(graphiti_instance, req.group_ids)
         logger.info("社区重建完成")
 
     async def search(self, req: DocumentRetrieverRequest) -> List[Document]:
         """搜索文档"""
-        logger.info(f"开始搜索: query={req.search_query}, group_ids={req.group_ids}, size={req.size}")
-        
+        logger.info(
+            f"开始搜索: query={req.search_query}, group_ids={req.group_ids}, size={req.size}")
+
         # 提取配置（搜索时不需要LLM客户端）
-        _, embed_config, rerank_config = self._extract_configs_from_request(req)
+        _, embed_config, rerank_config = self._extract_configs_from_request(
+            req)
 
         # 创建Graphiti实例
         graphiti_instance = self._create_full_graphiti(
@@ -288,14 +300,15 @@ class GraphitiRAG:
         node_info_map = {}
         if node_uid_set:
             node_uids = list(node_uid_set)
-            node_result = await graphiti_instance.driver.execute_query(
+            logger.info(f"查询节点信息: node_uids数量={len(node_uids)}")
+            node_result, _, _ = await graphiti_instance.driver.execute_query(
                 """
                 MATCH (n) 
                 WHERE n.uuid IN $node_uids
                 RETURN n.uuid as uuid, n.name as name, n.fact as fact, 
                        n.summary as summary, labels(n) as labels
                 """,
-                params={"node_uids": node_uids}
+                node_uids=node_uids
             )
 
             node_info_map = {
@@ -305,8 +318,9 @@ class GraphitiRAG:
                     'summary': record['summary'],
                     'labels': record['labels']
                 }
-                for record in node_result.records
+                for record in node_result
             }
+            logger.info(f"查询到节点信息: 节点数量={len(node_info_map)}")
 
         # 构建结果文档
         docs = [

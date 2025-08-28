@@ -9,9 +9,10 @@ class CoreSettings(BaseSettings):
     elasticsearch_password: str = ''
     admin_password: str = ''
 
-    neo4j_host: str = ''
-    neo4j_username: str = ''
-    neo4j_password: str = ''
+    knowledge_graph_host: str = ''
+    knowledge_graph_port: int = 6379
+    knowledge_graph_username: str = ''
+    knowledge_graph_password: str = ''
 
     def is_debug_mode(self) -> bool:
         return self.mode == 'DEBUG'
@@ -20,7 +21,7 @@ class CoreSettings(BaseSettings):
         return self.mode == 'PROD'
 
     def graphiti_enabled(self) -> bool:
-        return bool(self.neo4j_host and self.neo4j_username and self.neo4j_password)
+        return bool(self.knowledge_graph_host and self.knowledge_graph_password)
 
     class Config:
         env_file = ".env"

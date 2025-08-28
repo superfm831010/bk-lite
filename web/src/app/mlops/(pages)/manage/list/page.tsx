@@ -51,7 +51,7 @@ const DatasetManagePage = () => {
   ];
 
   useEffect(() => {
-    setSelectedKeys(['anomaly'])
+    setSelectedKeys(['anomaly']);
   }, []);
 
   useEffect(() => {
@@ -95,7 +95,7 @@ const DatasetManagePage = () => {
   const navigateToNode = (item: any) => {
     const [activeTab] = selectedKeys;
     router.push(
-      `/mlops/manage/detail?folder_id=${item?.id}&folder_name=${item.name}&description=${item.description}&activeTap=${activeTab}`
+      `/mlops/manage/detail?folder_id=${item?.id}&folder_name=${item.name}&description=${item.description}&activeTap=${activeTab}&menu=intent`
     );
   };
 

@@ -46,6 +46,7 @@ const config = {
           onUntruncatedBlogPosts: 'warn',
         },
         theme: {
+          customCss: './src/css/custom.css',
         },
       }),
     ],
@@ -63,27 +64,27 @@ const config = {
         },
         items: [
           {
-            "label":"快速入门",
-            "to":"#"
+            "label":"部署指南",
+            "to":"/docs/deploy/docker-compose"
           },
-            {
-              "label":"产品文档",
-              "to":"/docs/intro"
-            },
+          {
+            "label":"产品文档",
+            "to":"/docs/products/opspilot"
+          },
           {
             "label":"运维手册",
             "to":"#"
           },
+          {
+            "label":"开发指南",
+            "to":"#"
+          },          
           {
             "label":"资源下载",
             "to":"#"
           },
           {
             "label":"FAQ",
-            "to":"#"
-          },
-          {
-            "label":"关于我们",
             "to":"#"
           },
           {
@@ -104,13 +105,9 @@ const config = {
                 href: 'https://bklite.canway.net/',
               },
               {
-                label: '快速入门',
+                label: '部署指南',
                 to: '#',
-              },
-              {
-                label: 'API 文档',
-                to: '#',
-              },
+              }
             ],
           },
           {
@@ -119,10 +116,6 @@ const config = {
               {
                 label: '腾讯蓝鲸',
                 href: 'https://bk.tencent.com/',
-              },
-              {
-                label: '开发者论坛',
-                href: '#',
               },
               {
                 label: 'GitHub',
@@ -134,11 +127,7 @@ const config = {
             title: '更多',
             items: [
               {
-                label: '博客',
-                to: '#',
-              },
-              {
-                label: '企业服务',
+                label: '企业版',
                 href: '#',
               },
               {

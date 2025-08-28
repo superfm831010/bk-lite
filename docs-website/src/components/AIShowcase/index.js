@@ -36,13 +36,13 @@ const platformFeatures = [
     description: '支持边缘环境自主运行，具备断网续航和故障自愈能力',
     badge: '边缘计算',
     color: 'orange',
-    metric: '离线运行',
+    metric: '边缘运行',
     highlights: ['自动修复', '智能决策']
   },
   {
     icon: '🤖',
-    title: 'AI原生设计',
-    description: '底层架构融入AI能力，提供智能运维和故障预测功能',
+    title: 'AI原生',
+    description: '底层架构融入AI能力，提供智能运维和自主修复能力',
     badge: 'AI驱动',
     color: 'indigo',
     metric: '智能预测',
@@ -51,16 +51,16 @@ const platformFeatures = [
   {
     icon: '📈',
     title: '无感扩容',
-    description: '平滑扩展，自动检测负载变化进行弹性伸缩',
+    description: '一体机模式下即插即用，插上网线就能自动识别并扩容节点',
     badge: '弹性伸缩',
     color: 'teal',
     metric: '自动扩容',
-    highlights: ['零停机', '负载均衡']
+    highlights: ['即插即用', '平滑扩展']
   },
   {
     icon: '🌍',
     title: '国际化',
-    description: '支持多语言界面，适配不同地区合规要求',
+    description: '支持多语言界面，适配不同地区使用需求',
     badge: '全球化',
     color: 'cyan',
     metric: '多语言',

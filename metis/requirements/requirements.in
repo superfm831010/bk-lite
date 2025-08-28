@@ -8,6 +8,9 @@ pillow==10.3.0
 pandas==2.2.2
 numpy==1.26.4
 pyarmor==9.1.5
+falkordb==1.2.0
+langchain-postgres==0.0.15
+psycopg==3.2.3
 
 # Web
 sanic==25.3.0

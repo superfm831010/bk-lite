@@ -7,16 +7,54 @@ const FeatureList = [
   {
     title: 'OpsPilot',
     icon: <FaHelicopter color="var(--ifm-color-primary)" />,
-    gradient: 'gradient-1',
-    badge: 'AI助手',
-    metric: '自动化',
-    highlights: ['智能诊断', '故障修复'],
+    gradient: 'gradient-opspilot',
+    badge: '智能运维',
+    highlights: ['智能诊断','自主修复'],
     description: (
       <>
-        AI 驱动的运维助手，支持故障诊断与修复建议，帮助快速定位和解决问题。
+       整合诊断、定位与修复能力，助力企业从人工驱动运维模式升级为智能化运维体系
       </>
     ),
   },
+  {
+    title: '监控中心',
+    icon: <FaChartBar color="var(--ifm-color-primary)" />,
+    gradient: 'gradient-monitoring',
+    badge: '基础监控',
+    metric: '全栈覆盖',
+    highlights: ['秒级监控', '边缘自治'],
+    description: (
+      <>
+        统一的基础监控能力，支持多环境指标采集与告警，保障系统稳定。
+      </>
+    ),
+  },  
+  {
+    title: '日志中心',
+    icon: <FaClipboardList color="var(--ifm-color-primary)" />,
+    gradient: 'gradient-log',
+    badge: '日志管理',
+    metric: '集中可视',
+    highlights: ['统一采集', '快速检索'],
+    description: (
+      <>
+        提供集中化的日志采集与存储，支持高效检索和可视化分析，助力运维故障排查与系统优化。
+      </>
+    ),
+  },
+  {
+    title: 'CMDB',
+    icon: <FaDatabase color="var(--ifm-color-primary)" />,
+    gradient: 'gradient-3',
+    badge: '配置管理',
+    metric: '全局视图',
+    highlights: ['自动发现', '关系拓扑'],
+    description: (
+      <>
+        配置管理数据库，支持资源自动发现、动态关系建模与统一管理。
+      </>
+    ),
+  },  
   {
     title: 'ITSM',
     icon: <FaTicketAlt color="var(--ifm-color-primary)" />,
@@ -31,57 +69,33 @@ const FeatureList = [
     ),
   },
   {
-    title: 'CMDB',
-    icon: <FaDatabase color="var(--ifm-color-primary)" />,
-    gradient: 'gradient-3',
-    badge: '配置管理',
-    metric: '资产视图',
-    highlights: ['自动发现', '关联分析'],
-    description: (
-      <>
-        配置管理数据库，统一管理资源与关系，支持自动发现和关联分析。
-      </>
-    ),
-  },
-  {
-    title: '监控中心',
-    icon: <FaChartBar color="var(--ifm-color-primary)" />,
-    gradient: 'gradient-4',
-    badge: '实时监控',
-    metric: '全方位',
-    highlights: ['性能监控', '根因定位'],
-    description: (
-      <>
-        系统与应用的实时监控，涵盖性能与业务指标，支持问题根因定位。
-      </>
-    ),
-  },
-  {
-    title: '日志中心',
-    icon: <FaClipboardList color="var(--ifm-color-primary)" />,
-    gradient: 'gradient-5',
-    badge: '日志管理',
-    metric: '海量存储',
-    highlights: ['集中采集', '智能检索'],
-    description: (
-      <>
-        集中式日志平台，支持采集、存储、检索与分析，提供查询与可视化能力。
-      </>
-    ),
-  },
-  {
     title: '告警中心',
     icon: <FaBell color="var(--ifm-color-primary)" />,
     gradient: 'gradient-6',
     badge: '智能告警',
     metric: '降噪分析',
-    highlights: ['智能降噪', '及时响应'],
+    highlights: ['多源接入', '灵活分派'],
     description: (
       <>
-        灵活的告警引擎，支持多维规则与降噪分析，确保关键问题及时响应。
+        统一的告警中心，支持多源事件接入与复杂分析，结合灵活派单机制，确保关键问题高效响应。
       </>
     ),
   },
+
+  {
+    title: '运营分析',
+    icon: <FaChartLine color="var(--ifm-color-primary)" />,
+    gradient: 'gradient-9',
+    badge: '数据分析',
+    metric: '全局洞察',
+    highlights: ['联邦分析', '业务优化'],
+    description: (
+      <>
+        统一使用系统内的各类数据，支持多维报表与趋势洞察，助力运维与业务决策优化。
+      </>
+    ),
+  },
+
   {
     title: 'Console',
     icon: <FaLaptopCode color="var(--ifm-color-primary)" />,
@@ -108,55 +122,46 @@ const FeatureList = [
       </>
     ),
   },
-  {
-    title: '运营分析',
-    icon: <FaChartLine color="var(--ifm-color-primary)" />,
-    gradient: 'gradient-9',
-    badge: '数据分析',
-    metric: '业务决策',
-    highlights: ['趋势分析', '运营优化'],
-    description: (
-      <>
-        支持多维度数据报表与趋势分析，为运维优化和决策提供参考。
-      </>
-    ),
-  },
+
+
   {
     title: '节点管理',
     icon: <FaServer color="var(--ifm-color-primary)" />,
     gradient: 'gradient-10',
     badge: '集群管理',
-    metric: '生命周期',
-    highlights: ['批量操作', '自动运维'],
+    metric: '节点运维',
+    highlights: ['进程托管', '探针分发'],
     description: (
       <>
-        支持节点生命周期管理与批量操作，简化集群环境的基础设施管理。
+        支持节点探针的生命周期管理与批量操作，简化集群环境的基础设施管理。
       </>
     ),
   },
+
   {
     title: 'MLOps',
     icon: <FaBrain color="var(--ifm-color-primary)" />,
     gradient: 'gradient-11',
     badge: '机器学习',
     metric: 'AI运维',
-    highlights: ['模型管理', '规模部署'],
+    highlights: ['数据管理', '模型训练'],
     description: (
       <>
         面向运维场景的机器学习平台，覆盖模型训练、部署与监控全流程。
       </>
     ),
   },
+
   {
     title: 'PlayGround',
     icon: <FaFlask color="var(--ifm-color-primary)" />,
     gradient: 'gradient-12',
-    badge: '实验环境',
+    badge: '体验环境',
     metric: '沙箱测试',
     highlights: ['快速验证', '安全实验'],
     description: (
       <>
-        在线实验环境，支持快速验证与安全测试新功能。
+        在线体验AI能力的环境，支持快速验证与安全测试新功能。
       </>
     ),
   },
@@ -180,7 +185,6 @@ function Feature({title, description, gradient, icon, badge, metric, highlights}
           <p className={styles.featureDescription}>{description}</p>
           
           <div className={styles.metricHighlight}>
-            <span className={styles.metricValue}>{metric}</span>
             <div className={styles.highlightTags}>
               {highlights.map((highlight, idx) => (
                 <span key={idx} className={styles.highlightTag}>

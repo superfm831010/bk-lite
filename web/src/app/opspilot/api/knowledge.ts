@@ -515,6 +515,37 @@ export const useKnowledgeApi = () => {
     return post('/opspilot/knowledge_mgmt/qa_pairs/generate_answer_to_es/', payload);
   };
 
+  /**
+   * Fetches QA pair detail by ID.
+   */
+  const getQAPairDetail = async (qaPairId: number): Promise<{
+    id: number;
+    name: string;
+    llm_model: number;
+    answer_llm_model: number;
+    qa_count: number;
+    question_prompt: string;
+    answer_prompt: string;
+    document_id: number;
+    document_source: string;
+  }> => {
+    return get(`/opspilot/knowledge_mgmt/qa_pairs/${qaPairId}/`);
+  };
+
+  /**
+   * Updates QA pair configuration.
+   */
+  const updateQAPairConfig = async (qaPairId: number, payload: {
+    llm_model_id: number;
+    qa_count: number;
+    question_prompt: string;
+    answer_prompt: string;
+    answer_llm_model_id: number;
+    only_question?: boolean;
+  }): Promise<any> => {
+    return patch(`/opspilot/knowledge_mgmt/qa_pairs/${qaPairId}/`, payload);
+  };
+
   return {
     fetchEmbeddingModels,
     fetchKnowledgeBase,
@@ -567,5 +598,7 @@ export const useKnowledgeApi = () => {
     generateQuestions,
     generateAnswers,
     generateAnswerToEs,
+    getQAPairDetail,
+    updateQAPairConfig,
   };
 };

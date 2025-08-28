@@ -47,7 +47,15 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const id = searchParams ? searchParams.get('id') : null;
-  const { fetchDocuments, createQAPairs, generateQuestions, generateAnswers } = useKnowledgeApi();
+  const parId = searchParams ? searchParams.get('parId') : null;
+  const { 
+    fetchDocuments, 
+    createQAPairs, 
+    generateQuestions, 
+    generateAnswers,
+    getQAPairDetail,
+    updateQAPairConfig 
+  } = useKnowledgeApi();
   const { fetchLlmModels: fetchLlmModelsApi } = useSkillApi();
 
   const [llmModels, setLlmModels] = useState<any[]>([]);
@@ -70,11 +78,11 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   
-  // Preview related states
   const [previewQAPairs, setPreviewQAPairs] = useState<PreviewQAPair[]>([]);
   const [questionGenerating, setQuestionGenerating] = useState<boolean>(false);
   const [answerGenerating, setAnswerGenerating] = useState<boolean>(false);
   const [questionsGenerated, setQuestionsGenerated] = useState<boolean>(false);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   
   const formValuesRef = useRef({
     questionLlmModel: 0,
@@ -106,7 +114,6 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       const models = await fetchLlmModelsApi();
       setLlmModels(models);
       
-      // Set default LLM models to first item if no initial data
       if (!initialData?.questionLlmModel && models.length > 0) {
         const defaultValues = {
           questionLlmModel: models[0].id,
@@ -157,7 +164,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     } finally {
       setLoading(false);
     }
-  }, [id, fetchDocuments, t]);
+  }, [id]);
 
   useEffect(() => {
     if (drawerVisible && activeDocumentTab && id) {
@@ -181,12 +188,61 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       form.setFieldsValue(values);
       formValuesRef.current = values;
       
-      if (initialData.selectedDocuments) {
+      if (!isEditMode && initialData.selectedDocuments) {
         setSelectedDocuments(initialData.selectedDocuments);
       }
     }
-  }, [initialData, form]);
+  }, [initialData, form, isEditMode]);
 
+  useEffect(() => {
+    const fetchQAPairDetails = async () => {
+      if (parId && llmModels.length > 0) {
+        setIsEditMode(true);
+        try {
+          const qaPairDetail = await getQAPairDetail(Number(parId));
+          
+          const editValues = {
+            questionLlmModel: qaPairDetail.llm_model,
+            answerLlmModel: qaPairDetail.answer_llm_model,
+            qaCount: qaPairDetail.qa_count,
+            questionPrompt: qaPairDetail.question_prompt || '',
+            answerPrompt: qaPairDetail.answer_prompt || ''
+          };
+          
+          if (qaPairDetail.document_id) {
+            const documentKeys = [qaPairDetail.document_id.toString()];
+            setSelectedDocuments(documentKeys);
+          }
+          
+          setTimeout(() => {
+            form.setFieldsValue(editValues);
+            formValuesRef.current = editValues;
+            
+            setTimeout(() => {
+              validateAndNotify();
+            }, 50);
+          }, 100);
+          
+        } catch (error) {
+          console.error('Failed to fetch QA pair details:', error);
+          message.error(t('common.fetchFailed'));
+        }
+      } else if (parId) {
+        setIsEditMode(true);
+      }
+    };
+
+    fetchQAPairDetails();
+  }, [parId, llmModels.length, form]);
+
+  useEffect(() => {
+    if (parId) {
+      setIsEditMode(true);
+    } else {
+      setIsEditMode(false);
+    }
+  }, [parId]);
+  
   const handleDocumentSelect = useCallback((keys: React.Key[]) => {
     setTempSelectedDocuments(keys.map(key => key.toString()));
   }, []);
@@ -240,14 +296,14 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     formValuesRef.current = newValues;
   }, []);
 
-  // Use a more stable approach to trigger validation
   const validateAndNotify = useCallback(() => {
     const timer = setTimeout(() => {
+      const hasValidDocuments = isEditMode || selectedDocuments.length > 0;
       const isValid = !!(
         formValuesRef.current.questionLlmModel && 
         formValuesRef.current.answerLlmModel && 
         formValuesRef.current.qaCount && 
-        selectedDocuments.length > 0
+        hasValidDocuments
       );
       
       onFormChangeRef.current(isValid);
@@ -258,7 +314,7 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     }, 0);
     
     return () => clearTimeout(timer);
-  }, [selectedDocuments]);
+  }, [selectedDocuments, isEditMode]);
 
   useEffect(() => {
     const cleanup = validateAndNotify();
@@ -278,12 +334,10 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     }
   }, [pageSize]);
 
-  // Memoize paginated documents to prevent unnecessary re-renders
   const paginatedDocuments = useMemo(() => {
     return documentData[activeDocumentTab] || [];
   }, [documentData, activeDocumentTab]);
 
-  // Memoize columns to prevent Table re-renders
   const columns = useMemo(() => [{
     title: t('knowledge.documents.name'),
     dataIndex: 'title',
@@ -295,9 +349,13 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     ),
   }], []);
 
-  // Create QA pairs based on selected documents and form data
   const handleCreateQAPairs = useCallback(async (onlyQuestion = false) => {
-    if (!id || selectedDocuments.length === 0 || !formValuesRef.current.questionLlmModel || !formValuesRef.current.answerLlmModel) {
+    if (!id || !formValuesRef.current.questionLlmModel || !formValuesRef.current.answerLlmModel) {
+      message.error(t('knowledge.qaPairs.ensureDocumentsAndModelsSelected'));
+      return;
+    }
+
+    if (!isEditMode && selectedDocuments.length === 0) {
       message.error(t('knowledge.qaPairs.ensureDocumentsAndModelsSelected'));
       return;
     }
@@ -307,42 +365,53 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
       
       setLoading(true);
       
-      // Build document list with metadata
-      const documentList = selectedDocuments.map(docKey => {
-        const docInfo = getSelectedDocumentInfo(docKey);
-        return {
-          name: docInfo?.title || t('knowledge.qaPairs.documentPrefix') + docKey,
-          document_id: parseInt(docKey),
-          document_source: docInfo?.type || 'file'
+      if (isEditMode && parId) {
+        const updatePayload = {
+          llm_model_id: formValuesRef.current.questionLlmModel,
+          qa_count: formValuesRef.current.qaCount,
+          question_prompt: formValuesRef.current.questionPrompt,
+          answer_prompt: formValuesRef.current.answerPrompt,
+          answer_llm_model_id: formValuesRef.current.answerLlmModel,
+          only_question: onlyQuestion
         };
-      });
 
-      const payload = {
-        knowledge_base_id: parseInt(id),
-        llm_model_id: formValuesRef.current.questionLlmModel,
-        answer_llm_model_id: formValuesRef.current.answerLlmModel,
-        qa_count: formValuesRef.current.qaCount,
-        question_prompt: formValuesRef.current.questionPrompt,
-        answer_prompt: formValuesRef.current.answerPrompt,
-        document_list: documentList,
-        only_question: onlyQuestion
-      };
+        await updateQAPairConfig(Number(parId), updatePayload);
+        message.success(t('knowledge.qaPairs.qaPairsUpdateSuccess'));
+      } else {
+        const documentList = selectedDocuments.map(docKey => {
+          const docInfo = getSelectedDocumentInfo(docKey);
+          return {
+            name: docInfo?.title || t('knowledge.qaPairs.documentPrefix') + docKey,
+            document_id: parseInt(docKey),
+            document_source: docInfo?.type || 'file'
+          };
+        });
 
-      await createQAPairs(payload);
-      message.success(t('knowledge.qaPairs.qaPairsCreateSuccess'));
+        const payload = {
+          knowledge_base_id: parseInt(id),
+          llm_model_id: formValuesRef.current.questionLlmModel,
+          answer_llm_model_id: formValuesRef.current.answerLlmModel,
+          qa_count: formValuesRef.current.qaCount,
+          question_prompt: formValuesRef.current.questionPrompt,
+          answer_prompt: formValuesRef.current.answerPrompt,
+          document_list: documentList,
+          only_question: onlyQuestion
+        };
+
+        await createQAPairs(payload);
+        message.success(t('knowledge.qaPairs.qaPairsCreateSuccess'));
+      }
       
-      // Return success to parent component
       return Promise.resolve();
       
     } catch (error) {
-      message.error(t('knowledge.qaPairs.qaPairsCreateFailed'));
+      message.error(isEditMode ? t('knowledge.qaPairs.qaPairsUpdateFailed') : t('knowledge.qaPairs.qaPairsCreateFailed'));
       throw error;
     } finally {
       setLoading(false);
     }
-  }, [id, selectedDocuments, form]);
+  }, [id, selectedDocuments, form, isEditMode, parId]);
 
-  // Generate questions for preview
   const handleGenerateQuestions = useCallback(async () => {
     if (!id || selectedDocuments.length === 0 || !formValuesRef.current.questionLlmModel) {
       message.error(t('knowledge.qaPairs.ensureDocumentsAndModelsSelected'));
@@ -351,7 +420,6 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
 
     setQuestionGenerating(true);
     try {
-      // Take first 10 documents for preview
       const previewDocuments = selectedDocuments.slice(0, 10);
       
       const payload = {
@@ -377,7 +445,6 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     }
   }, [id, selectedDocuments, generateQuestions, form, t]);
 
-  // Generate answers for preview
   const handleGenerateAnswers = useCallback(async () => {
     if (!formValuesRef.current.answerLlmModel || previewQAPairs.length === 0) {
       message.error(t('knowledge.qaPairs.generateQuestionFirst'));
@@ -412,7 +479,6 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
 
   return (
     <div className="flex gap-6 h-full">
-      {/* Left side - Form */}
       <div className="w-1/2 flex flex-col">
         {llmModelsLoading ? (
           <div className="space-y-4">
@@ -487,22 +553,30 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
 
             <Form.Item
               label={t('knowledge.qaPairs.targetDocuments')}
-              required
+              required={!isEditMode}
             >
               <div>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  size="small"
-                  onClick={() => {
-                    setTempSelectedDocuments(selectedDocuments);
-                    setDrawerVisible(true);
-                  }}
-                >
-                  {t('common.add')}
-                </Button>
+                {!isEditMode && (
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    size="small"
+                    onClick={() => {
+                      setTempSelectedDocuments(selectedDocuments);
+                      setDrawerVisible(true);
+                    }}
+                  >
+                    {t('common.add')}
+                  </Button>
+                )}
                 <span className="text-blue-500 ml-2">
-                  ({selectedDocuments.length}) {t('knowledge.qaPairs.documentsSelected')}
+                  {isEditMode ? (
+                    selectedDocuments.length > 0 ? 
+                      `(${selectedDocuments.length}) ${t('knowledge.qaPairs.documentsSelected')}` :
+                      `(${selectedDocuments.length}) ${t('knowledge.qaPairs.noDocumentsSelected')}`
+                  ) : (
+                    `(${selectedDocuments.length}) ${t('knowledge.qaPairs.documentsSelected')}`
+                  )}
                 </span>
               </div>
             </Form.Item>
@@ -534,7 +608,6 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
         )}
       </div>
 
-      {/* Right side - Preview */}
       <div className="w-1/2 flex flex-col">
         <div className="flex-1 flex flex-col">
           <div className="flex items-center justify-between mb-4">
@@ -608,7 +681,6 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
         </div>
       </div>
 
-      {/* Document selection drawer */}
       <Drawer
         title={t('knowledge.qaPairs.selectDocuments')}
         placement="right"

@@ -8,7 +8,7 @@ from langchain_openai import ChatOpenAI
 from src.core.llm.entity.basic_llm_request import BasicLLMRequest
 from src.core.sanic_plus.utils.template_loader import TemplateLoader
 from src.core.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
-from src.core.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
+from src.core.rag.naive_rag.pgvector.pgvector_rag import PgvectorRag
 from sanic.log import logger
 
 
@@ -74,8 +74,8 @@ class BasicNode:
                     f"智能知识路由判断:[{rag_search_request.index_name}]不适合当前问题,跳过检索")
                 continue
 
-            elasticsearch_rag = ElasticSearchRag()
-            naive_rag_search_result = elasticsearch_rag.search(rag_search_request)
+            rag = PgvectorRag()
+            naive_rag_search_result = rag.search(rag_search_request)
             rag_result.extend(naive_rag_search_result)
 
             # 执行图谱 RAG 检索
@@ -85,10 +85,11 @@ class BasicNode:
 
         # 准备模板数据
         template_data = self._prepare_template_data(rag_result, config)
-        
+
         # 使用模板生成 RAG 消息
-        rag_message = TemplateLoader.render_template('prompts/graph/naive_rag_node_prompt', template_data)
-        
+        rag_message = TemplateLoader.render_template(
+            'prompts/graph/naive_rag_node_prompt', template_data)
+
         logger.info(f"RAG增强Prompt: {rag_message}")
         state["messages"].append(HumanMessage(content=rag_message))
         return state
@@ -107,10 +108,10 @@ class BasicNode:
             'user_message': config["configurable"]["graph_request"].user_message
         }
         selected_knowledge_prompt = TemplateLoader.render_template(
-            'prompts/graph/knowledge_route_selection_prompt', 
+            'prompts/graph/knowledge_route_selection_prompt',
             template_data
         )
-        
+
         logger.debug(f"知识路由选择Prompt: {selected_knowledge_prompt}")
         selected_km_response = llm.invoke(selected_knowledge_prompt)
         return json_repair.loads(selected_km_response.content)
@@ -126,7 +127,7 @@ class BasicNode:
 
             # 处理检索结果
             return self._process_graph_results(graph_result, rag_search_request.graph_rag_request.group_ids)
-            
+
         except Exception as e:
             logger.error(f"GraphRAG检索处理异常: {str(e)}")
             return []
@@ -136,7 +137,7 @@ class BasicNode:
         graphiti = GraphitiRAG()
         rag_search_request.graph_rag_request.search_query = rag_search_request.search_query
         graph_result = await graphiti.search(req=rag_search_request.graph_rag_request)
-        
+
         logger.info(
             f"GraphRAG模式检索知识库: {rag_search_request.graph_rag_request.group_ids}, "
             f"结果数量: {len(graph_result)}"
@@ -164,7 +165,8 @@ class BasicNode:
             self._collect_summary_info(graph_item, summary_dict)
 
         # 生成去重的summary结果
-        summary_results = self._generate_summary_results(summary_dict, default_group_id)
+        summary_results = self._generate_summary_results(
+            summary_dict, default_group_id)
         processed_results.extend(summary_results)
 
         return processed_results
@@ -209,19 +211,19 @@ class BasicNode:
         for summary_content, associated_nodes in summary_dict.items():
             nodes_list = ', '.join(sorted(associated_nodes))
             summary_with_nodes = f"节点详情: 以下内容与节点 [{nodes_list}] 相关:\n{summary_content}"
-            
+
             summary_result = self._create_summary_result_object(
                 summary_with_nodes, nodes_list, group_id, summary_content
             )
             summary_results.append(summary_result)
-        
+
         return summary_results
 
-    def _create_relation_result_object(self, relation_content: str, source_name: str, 
-                                     target_name: str, group_id: str):
+    def _create_relation_result_object(self, relation_content: str, source_name: str,
+                                       target_name: str, group_id: str):
         """创建关系事实结果对象"""
         content_hash = hash(relation_content) % 100000
-        
+
         class RelationResult:
             def __init__(self):
                 self.page_content = relation_content
@@ -237,14 +239,14 @@ class BasicNode:
                         }
                     }
                 }
-        
+
         return RelationResult()
 
-    def _create_summary_result_object(self, summary_with_nodes: str, nodes_list: str, 
-                                    group_id: str, summary_content: str):
+    def _create_summary_result_object(self, summary_with_nodes: str, nodes_list: str,
+                                      group_id: str, summary_content: str):
         """创建summary结果对象"""
         content_hash = hash(summary_content) % 100000
-        
+
         class SummaryResult:
             def __init__(self):
                 self.page_content = summary_with_nodes
@@ -260,7 +262,7 @@ class BasicNode:
                         }
                     }
                 }
-        
+
         return SummaryResult()
 
     def _prepare_template_data(self, rag_result: list, config: RunnableConfig) -> dict:
@@ -268,12 +270,12 @@ class BasicNode:
         # 转换RAG结果为模板友好的格式
         rag_results = []
         for r in rag_result:
-            metadata = r.metadata['_source']['metadata']
+            metadata = r.metadata
             rag_results.append({
                 'title': metadata.get('knowledge_title', 'N/A'),
                 'knowledge_id': metadata.get('knowledge_id', 0),
                 'chunk_number': metadata.get('chunk_number', 0),
-                'chunk_id': metadata.get('chunk_id', 'N/A'),
+                'chunk_id': r.id,
                 'segment_number': metadata.get('segment_number', 0),
                 'segment_id': metadata.get('segment_id', 'N/A'),
                 'content': r.page_content
