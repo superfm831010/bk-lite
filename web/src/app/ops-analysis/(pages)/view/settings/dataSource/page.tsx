@@ -90,7 +90,7 @@ const Datasource: React.FC = () => {
       onOk: async () => {
         try {
           await deleteDataSource(row.id);
-          message.success(t('common.deleteSuccess'));
+          message.success(t('successfullyDeleted'));
           fetchDataSources();
         } catch (error: any) {
           message.error(error.message);
@@ -120,17 +120,6 @@ const Datasource: React.FC = () => {
       dataIndex: 'desc',
       key: 'desc',
       width: 200,
-    },
-    {
-      title: '状态',
-      dataIndex: 'is_active',
-      key: 'is_active',
-      width: 100,
-      render: (isActive: boolean) => (
-        <span style={{ color: isActive ? '#52c41a' : '#ff4d4f' }}>
-          {isActive ? '活跃' : '禁用'}
-        </span>
-      ),
     },
     {
       title: t('dataSource.createdTime'),

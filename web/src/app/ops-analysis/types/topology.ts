@@ -161,7 +161,7 @@ export interface SidebarProps {
   isEditMode?: boolean;
   setCollapsed: (collapsed: boolean) => void;
   onShowNodeConfig?: (nodeType: NodeType, dropPosition?: DropPosition) => void;
-  onAddChartNode?: (widget: string, config?: any, dropPosition?: DropPosition) => void;
+  onShowChartSelector?: (dropPosition?: DropPosition) => void;
 }
 
 export interface NodeType {
