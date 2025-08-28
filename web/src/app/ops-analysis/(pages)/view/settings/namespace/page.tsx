@@ -90,7 +90,7 @@ const Namespace: React.FC = () => {
       onOk: async () => {
         try {
           await deleteNamespace(row.id);
-          message.success(t('common.deleteSuccess'));
+          message.success(t('successfullyDeleted'));
           fetchNamespaces();
         } catch (error: any) {
           message.error(error.message);

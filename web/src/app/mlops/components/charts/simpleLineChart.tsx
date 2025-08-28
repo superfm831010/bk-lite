@@ -27,11 +27,9 @@ const SimpleLineChart: React.FC<SimpleLineChartProps> = ({
   unit = '',
 }) => {
 
-  // 🎯 获取图表数据的键值（类似 lineChart 的 getChartAreaKeys）
   const getChartAreaKeys = useCallback((arr: StepData[]): string[] => {
     const keys = new Set<string>();
     
-    // 🎯 确保 arr 是数组
     if (!Array.isArray(arr)) {
       console.warn('getChartAreaKeys: 传入的参数不是数组', arr);
       return [];
@@ -49,10 +47,8 @@ const SimpleLineChart: React.FC<SimpleLineChartProps> = ({
     return Array.from(keys);
   }, []);
 
-  // 🎯 生成图表区域的键值
   const chartKeys = useMemo(() => getChartAreaKeys(data), [data, getChartAreaKeys]);
 
-  // 🎯 Y轴标签渲染函数（参考 lineChart）
   const renderYAxisTick = useCallback((props: any) => {
     const { x, y, payload } = props;
     const label = String(payload.value);
@@ -74,7 +70,6 @@ const SimpleLineChart: React.FC<SimpleLineChartProps> = ({
     );
   }, []);
 
-  // 🎯 自定义工具提示组件（简化版）
   const CustomTooltip = useCallback(({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (

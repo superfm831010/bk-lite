@@ -43,7 +43,7 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
         name: item.name,
         widget: item.widget,
         dataSource: item.dataSource || item.valueConfig?.dataSource,
-        chartType: item.valueConfig?.chartType || 'line',
+        chartType: item.valueConfig?.chartType,
         dataSourceParams:
           item.dataSourceParams || item.valueConfig?.dataSourceParams || [],
         ...item.valueConfig,
@@ -53,7 +53,7 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
         name: item.config?.name || item.title,
         widget: item.widget,
         dataSource: item.config?.dataSource,
-        chartType: item.config?.chartType || 'line',
+        chartType: item.config?.chartType,
         dataSourceParams: item.config?.dataSourceParams || [],
         ...item.config,
       };
@@ -236,7 +236,7 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
 
         <div className="mb-6">
           <div className="font-bold text-[var(--color-text-1)] mb-4">
-            {t('dashboard.chartType')}
+            {t('dashboard.chartTypeLabel')}
           </div>
           <Form.Item
             label={t('dashboard.chartTypeLabel')}
@@ -245,9 +245,7 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
             initialValue="line"
           >
             <Radio.Group
-              disabled={['trendLine', 'osPie', 'errorBar'].includes(
-                widgetItem?.widget || ''
-              )}
+              disabled={['trendLine'].includes(widgetItem?.widget || '')}
             >
               <Radio.Button value="line">
                 {t('dashboard.lineChart')}

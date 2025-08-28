@@ -52,9 +52,9 @@ import {
   updateNodeProperties,
   createPortConfig,
   updateNodeSizeAndPorts,
+  adjustSingleValueNodeSize,
 } from '../utils/topologyUtils';
 import { useGraphData } from './useGraphData';
-import type { Edge } from '@antv/x6';
 
 export const useGraphOperations = (
   containerRef: React.RefObject<HTMLDivElement>,
@@ -70,6 +70,63 @@ export const useGraphOperations = (
   }, []);
 
   const { getSourceDataByApiId } = useDataSourceApi();
+
+  // 样式重置和高亮的公共函数
+  const resetAllStyles = useCallback((graph: X6Graph) => {
+    graph.getNodes().forEach((node: any) => {
+      const nodeData = node.getData();
+      if (nodeData?.type !== 'text') {
+        node.setAttrByPath('body/stroke', nodeData.config?.borderColor || '#ddd');
+        node.setAttrByPath('body/strokeWidth', 1);
+      }
+    });
+
+    // 重置所有边样式
+    graph.getEdges().forEach((edge: any) => {
+      edge.setAttrs({
+        line: {
+          ...edge.getAttrs().line,
+          stroke: COLORS.EDGE.DEFAULT,
+          strokeWidth: 1,
+        },
+      });
+    });
+  }, []);
+
+  const highlightCell = useCallback((cell: any) => {
+    if (cell.isNode()) {
+      const nodeData = cell.getData();
+      if (nodeData?.type !== 'text') {
+        cell.setAttrByPath('body/stroke', '#1890ff');
+        cell.setAttrByPath('body/strokeWidth', 1);
+      }
+    } else if (cell.isEdge()) {
+      cell.setAttrs({
+        line: {
+          ...cell.getAttrs().line,
+          stroke: COLORS.EDGE.SELECTED,
+          strokeWidth: 1,
+        },
+      });
+      addEdgeTools(cell);
+    }
+  }, []);
+
+  const highlightNode = useCallback((node: any) => {
+    const nodeData = node.getData();
+    if (nodeData?.type !== 'text') {
+      node.setAttrByPath('body/stroke', '#1890ff');
+      node.setAttrByPath('body/strokeWidth', 1);
+    }
+  }, []);
+
+  const resetNodeStyle = useCallback((node: any) => {
+    const nodeData = node.getData();
+    if (nodeData?.type !== 'text') {
+      node.setAttrByPath('body/stroke', nodeData.config?.borderColor || '#ddd');
+      node.setAttrByPath('body/strokeWidth', 1);
+    }
+  }, []);
 
   const {
     graphInstance,
@@ -143,6 +200,9 @@ export const useGraphOperations = (
         };
         node.setData(updatedData);
         node.setAttrByPath('label/text', displayValue);
+
+        // 调整节点大小以适应文本内容
+        adjustSingleValueNodeSize(node, displayValue);
       } else {
         throw new Error('无数据');
       }
@@ -155,7 +215,10 @@ export const useGraphOperations = (
         hasError: true,
       };
       node.setData(updatedData);
-      node.setAttrByPath('label/text', '');
+      node.setAttrByPath('label/text', '无数据');
+
+      // 调整节点大小以适应错误文本
+      adjustSingleValueNodeSize(node, '无数据');
     }
   }, [graphInstance, getSourceDataByApiId]);
 
@@ -169,7 +232,12 @@ export const useGraphOperations = (
         return;
       }
 
-      node.setAttrByPath('label/text', loadingStates[currentIndex]);
+      const currentLoadingText = loadingStates[currentIndex];
+      node.setAttrByPath('label/text', currentLoadingText);
+
+      // 调整节点大小以适应loading文本
+      adjustSingleValueNodeSize(node, currentLoadingText, 80);
+
       currentIndex = (currentIndex + 1) % loadingStates.length;
 
       setTimeout(updateLoading, 300);
@@ -317,55 +385,10 @@ export const useGraphOperations = (
       if (!isEditModeRef.current) return;
 
       setSelectedCells(selected.map((cell) => cell.id));
-
-      graph.getNodes().forEach((node: any) => {
-        const nodeData = node.getData();
-        if (nodeData?.type !== 'text') {
-          node.setAttrByPath('body/stroke', nodeData.config?.borderColor || '#ddd');
-          node.setAttrByPath('body/strokeWidth', 1);
-        }
-      });
-
-      graph.getEdges().forEach((edge: any) => {
-        edge.setAttrs({
-          line: {
-            ...edge.getAttrs().line,
-            stroke: edge.getAttrs().line?.stroke || COLORS.EDGE.DEFAULT,
-            strokeWidth: edge.getAttrs().line?.strokeWidth || 1,
-          },
-        });
-      });
-
-      selected.forEach((cell) => {
-        if (cell.isNode()) {
-          const nodeData = cell.getData();
-          if (nodeData?.type !== 'text') {
-            cell.setAttrByPath('body/stroke', '#1890ff');
-            cell.setAttrByPath('body/strokeWidth', 1);
-          }
-        } else if (cell.isEdge()) {
-          cell.setAttrs({
-            line: {
-              ...cell.getAttrs().line,
-              stroke: COLORS.EDGE.SELECTED,
-              strokeWidth: 1,
-            },
-          });
-          addEdgeTools(cell);
-        }
-      });
-
-      if (selected.length === 1 && selected[0].isEdge()) {
-        const edge = selected[0];
-        const sourceId = edge.getSourceCellId();
-        const targetId = edge.getTargetCellId();
-        const sourceNode = graph.getCellById(sourceId);
-        const targetNode = graph.getCellById(targetId);
-
-        if (sourceNode && targetNode) {
-          openEdgeConfig(edge, sourceNode, targetNode);
-        }
-      }
+      // 重置所有样式
+      resetAllStyles(graph);
+      // 高亮选中的元素
+      selected.forEach(highlightCell);
     });
 
     graph.on('edge:dblclick', ({ edge }) => {
@@ -391,23 +414,8 @@ export const useGraphOperations = (
       hideAllEdgeTools(graph);
       setContextMenuVisible(false);
 
-      graph.getNodes().forEach((node: any) => {
-        const nodeData = node.getData();
-        if (nodeData?.type !== 'text') {
-          node.setAttrByPath('body/stroke', nodeData.config?.borderColor || '#ddd');
-          node.setAttrByPath('body/strokeWidth', 1);
-        }
-      });
-
-      graph.getEdges().forEach((edge: any) => {
-        edge.setAttrs({
-          line: {
-            ...edge.getAttrs().line,
-            stroke: COLORS.EDGE.DEFAULT,
-            strokeWidth: 1,
-          },
-        });
-      });
+      // 重置所有样式
+      resetAllStyles(graph);
 
       graph.cleanSelection();
       setSelectedCells([]);
@@ -425,8 +433,7 @@ export const useGraphOperations = (
         showPorts(graph, node);
         const isSelected = selectedCells.includes(node.id);
         if (!isSelected) {
-          node.setAttrByPath('body/stroke', '#1890ff');
-          node.setAttrByPath('body/strokeWidth', 1);
+          highlightNode(node);
         }
       }
     });
@@ -441,14 +448,9 @@ export const useGraphOperations = (
     graph.on('node:mouseleave', ({ node }) => {
       hideAllPorts(graph);
       hideAllEdgeTools(graph);
-      const nodeData = node.getData();
-      if (nodeData?.type !== 'text') {
-        // 只有在未选中状态才恢复默认边框
-        const isSelected = selectedCells.includes(node.id);
-        if (!isSelected) {
-          node.setAttrByPath('body/stroke', nodeData.config?.borderColor || '#ddd');
-          node.setAttrByPath('body/strokeWidth', 1);
-        }
+      const isSelected = selectedCells.includes(node.id);
+      if (!isSelected) {
+        resetNodeStyle(node);
       }
     });
 
@@ -504,30 +506,6 @@ export const useGraphOperations = (
         );
       }
     });
-  };
-
-  const openEdgeConfig = (edge: Edge, sourceNode: any, targetNode: any) => {
-    const edgeData = edge.getData();
-    const sourceNodeData = sourceNode.getData?.() || {};
-    const targetNodeData = targetNode.getData?.() || {};
-
-    const currentEdgeData = {
-      id: edge.id,
-      lineType: edgeData?.lineType || 'common_line',
-      lineName: edgeData?.lineName || '',
-      sourceNode: {
-        id: sourceNode.id,
-        name: sourceNodeData.name || sourceNode.id,
-      },
-      targetNode: {
-        id: targetNode.id,
-        name: targetNodeData.name || targetNode.id,
-      },
-      sourceInterface: edgeData?.sourceInterface,
-      targetInterface: edgeData?.targetInterface,
-    };
-    setCurrentEdgeData(currentEdgeData);
-    setEdgeConfigVisible(true);
   };
 
   // 图形初始化
@@ -698,6 +676,11 @@ export const useGraphOperations = (
 
     const addedNode = graphInstance.addNode(nodeData);
 
+    // 如果是单值节点，调整大小以适应初始文本（节点名称）
+    if (nodeConfig.type === 'single-value') {
+      adjustSingleValueNodeSize(addedNode, nodeConfig.name || '单值节点');
+    }
+
     // 如果是单值节点且有数据源，启动loading动画并更新数据显示
     if (nodeConfig.type === 'single-value' && nodeConfig.dataSource && nodeConfig.selectedFields?.length) {
       startLoadingAnimation(addedNode);
@@ -766,6 +749,7 @@ export const useGraphOperations = (
           name: values.name || state.editingNodeData.name,
           valueConfig: {
             ...state.editingNodeData.valueConfig,
+            chartType: values.chartType,
             dataSource: values.dataSource,
             dataSourceParams: values.dataSourceParams,
             name: values.name || state.editingNodeData.name,
@@ -796,8 +780,8 @@ export const useGraphOperations = (
 
     const chartNodeConfig: any = {
       widget: widget,
-      name: config?.name || '图表节点',
-      valueConfig: config,
+      name: config?.name,
+      valueConfig: config.valueConfig,
       type: 'chart',
       dataSource: config?.dataSource,
       dataSourceParams: config?.dataSourceParams || [],

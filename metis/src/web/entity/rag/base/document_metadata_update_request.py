@@ -2,6 +2,6 @@ from pydantic import BaseModel
 
 
 class DocumentMetadataUpdateRequest(BaseModel):
-    index_name: str
-    metadata_filter: dict = {}
+    knowledge_ids: list[str] = []
+    chunk_ids: list[str] = []
     metadata: dict = {}
