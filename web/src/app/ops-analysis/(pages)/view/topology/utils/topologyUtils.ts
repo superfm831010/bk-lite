@@ -8,8 +8,46 @@ const PORT_RADIUS = PORT_DEFAULTS.RADIUS;
 export const getValueByPath = (obj: any, path: string): any => {
   if (!obj || !path) return undefined;
 
+  // 处理特殊的数据结构：包含 namespace_id 和 data 的数组
+  if (Array.isArray(obj) && obj.length > 0) {
+    const firstItem = obj[0];
+
+    // 如果是特殊的数据结构
+    if (firstItem && typeof firstItem === 'object' && firstItem.namespace_id && firstItem.data) {
+      if (path === 'namespace_id') {
+        return firstItem.namespace_id;
+      }
+
+      if (path.startsWith('data.')) {
+        const fieldPath = path.substring(5); // 移除 'data.' 前缀
+
+        // 如果 data 是数组，取第一个元素
+        if (Array.isArray(firstItem.data) && firstItem.data.length > 0) {
+          return getValueByPath(firstItem.data[0], fieldPath);
+        } else if (typeof firstItem.data === 'object' && firstItem.data !== null) {
+          return getValueByPath(firstItem.data, fieldPath);
+        }
+      }
+    }
+  }
+
+  // 标准路径解析
   return path.split('.').reduce((current, key) => {
-    return current && current[key] !== undefined ? current[key] : undefined;
+    if (current === null || current === undefined) return undefined;
+
+    // 处理数组索引
+    if (Array.isArray(current)) {
+      const index = parseInt(key, 10);
+      if (!isNaN(index) && index >= 0 && index < current.length) {
+        return current[index];
+      }
+      // 如果key不是数字，尝试在数组的每个元素中查找
+      return current.length > 0 && current[0] && typeof current[0] === 'object'
+        ? current[0][key]
+        : undefined;
+    }
+
+    return current[key];
   }, obj);
 };
 
@@ -17,6 +55,73 @@ export const formatDisplayValue = (value: any): string => {
   if (value === null || value === undefined) return '-';
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
+};
+
+/**
+ * 计算文本宽度的工具函数
+ * @param text 要计算的文本内容
+ * @param fontSize 字体大小
+ * @param fontFamily 字体族，默认为系统字体
+ * @returns 文本宽度（像素）
+ */
+export const calculateTextWidth = (text: string, fontSize: number, fontFamily: string = 'system-ui, -apple-system, sans-serif'): number => {
+  // 创建一个临时的canvas来测量文本宽度
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    // 降级方案：根据字符数量估算宽度
+    return text.length * fontSize * 0.6;
+  }
+
+  context.font = `${fontSize}px ${fontFamily}`;
+  const metrics = context.measureText(text);
+
+  // 清理canvas元素
+  canvas.remove();
+
+  return metrics.width;
+};
+
+/**
+ * 调整单值节点大小以适应文本内容
+ * @param node X6节点实例
+ * @param text 要显示的文本
+ * @param minWidth 最小宽度，默认120
+ * @param padding 内边距，默认20
+ */
+export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: number = 120, padding: number = 20) => {
+  if (!node || !text) return;
+
+  const nodeData = node.getData();
+  const config = nodeData?.config || {};
+  const fontSize = config.fontSize || NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize;
+
+  // 计算文本宽度
+  const textWidth = calculateTextWidth(text, fontSize);
+
+  // 计算节点应该的宽度（文本宽度 + 内边距，但不小于最小宽度）
+  const targetWidth = Math.max(textWidth + padding, minWidth);
+  const currentSize = node.getSize();
+
+  // 只有当宽度变化较大时才调整（避免频繁微调）
+  if (Math.abs(targetWidth - currentSize.width) > 10) {
+    node.resize(targetWidth, currentSize.height);
+
+    // 更新端口配置以适应新尺寸
+    const newPortConfig = createPortConfig(targetWidth, currentSize.height);
+    node.prop('ports', newPortConfig);
+
+    // 更新节点数据中的配置
+    const updatedNodeData = {
+      ...nodeData,
+      config: {
+        ...config,
+        width: targetWidth,
+      }
+    };
+    node.setData(updatedNodeData);
+  }
 };
 
 // 创建端口组的通用函数
@@ -34,7 +139,7 @@ const createPortGroup = (x: number, y: number, fillColor = PORT_DEFAULTS.FILL_CO
 });
 
 // 创建标准端口配置的通用函数
-const createPortConfig = (width: number, height: number, fillColor = PORT_DEFAULTS.FILL_COLOR) => ({
+export const createPortConfig = (width: number, height: number, fillColor = PORT_DEFAULTS.FILL_COLOR) => ({
   groups: {
     top: createPortGroup(width / 2, 0, fillColor),
     bottom: createPortGroup(width / 2, height, fillColor),
@@ -467,7 +572,7 @@ export const calculateNodeLayout = (iconWidth: number, iconHeight: number) => {
 };
 
 // 更新节点尺寸和端口位置的工具函数
-const updateNodeSizeAndPorts = (node: any, iconWidth: number, iconHeight: number) => {
+export const updateNodeSizeAndPorts = (node: any, iconWidth: number, iconHeight: number) => {
   const layout = calculateNodeLayout(iconWidth, iconHeight);
 
   node.resize(layout.nodeWidth, layout.nodeHeight);
@@ -514,8 +619,8 @@ export const updateNodeProperties = (node: any, nodeConfig: any, iconList: any[]
     selectedFields: nodeConfig.selectedFields || [],
     config: {
       ...nodeConfig.config,
-      width: nodeConfig.width,
-      height: nodeConfig.height,
+      width: nodeConfig.config.width,
+      height: nodeConfig.config.height,
     },
   });
 
@@ -539,8 +644,8 @@ export const updateNodeProperties = (node: any, nodeConfig: any, iconList: any[]
     const logoUrl = getLogoUrl(nodeConfig, iconList);
     node.setAttrByPath('icon/xlink:href', logoUrl);
 
-    if (nodeConfig.width && nodeConfig.height) {
-      updateNodeSizeAndPorts(node, nodeConfig.width, nodeConfig.height);
+    if (nodeConfig.config.width && nodeConfig.config.height) {
+      updateNodeSizeAndPorts(node, nodeConfig.config.width, nodeConfig.config.height);
       node.setAttrByPath('icon/xlink:href', logoUrl);
     }
 
@@ -566,8 +671,8 @@ export const getIconNodeStyle = (nodeConfig: any, logoUrl: string) => {
   const config = nodeConfig.config || {};
   const defaults = NODE_DEFAULTS.ICON_NODE;
 
-  const iconWidth = nodeConfig.width || config.width || defaults.width;
-  const iconHeight = nodeConfig.height || config.height || defaults.height;
+  const iconWidth = config.width || defaults.width;
+  const iconHeight = config.height || defaults.height;
   const layout = calculateNodeLayout(iconWidth, iconHeight);
   const logoType = nodeConfig.logoType || 'default';
 
@@ -641,8 +746,8 @@ export const getChartNodeStyle = (nodeConfig: any) => {
     borderColor: nodeConfig.borderColor || config.borderColor || defaults.borderColor,
     textColor: nodeConfig.textColor || config.textColor || defaults.textColor,
     fontSize: nodeConfig.fontSize || config.fontSize || defaults.fontSize,
-    width: nodeConfig.width || config.width || defaults.width,
-    height: nodeConfig.height || config.height || defaults.height,
+    width: config.width || defaults.width,
+    height: config.height || defaults.height,
   };
 
   return {

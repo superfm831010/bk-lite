@@ -237,7 +237,7 @@ const TopMenu = () => {
                   >
                     <div>
                       <Link
-                        href={item.url}
+                        href={"#"}
                         prefetch={false} legacyBehavior>
                         <a
                           ref={menuRefs.current[item.url] || null}

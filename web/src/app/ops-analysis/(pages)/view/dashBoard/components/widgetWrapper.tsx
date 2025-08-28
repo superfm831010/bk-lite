@@ -8,17 +8,17 @@ import ComLine from '../widgets/comLine';
 import ComBar from '../widgets/comBar';
 
 const componentMap: Record<string, React.ComponentType<any>> = {
-  trendLine: ComLine,
-  osPie: ComPie,
-  errorBar: ComBar,
+  line: ComLine,
+  pie: ComPie,
+  bar: ComBar,
 };
 
 interface WidgetWrapperProps extends BaseWidgetProps {
-  widgetType?: string;
+  chartType?: string;
 }
 
 const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
-  widgetType,
+  chartType,
   config,
   globalTimeRange,
   refreshKey,
@@ -65,11 +65,11 @@ const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
     );
   }
 
-  const Component = widgetType ? componentMap[widgetType] : null;
+  const Component = chartType ? componentMap[chartType] : null;
   if (!Component) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="text-gray-500">未知的组件类型: {widgetType}</div>
+        <div className="text-gray-500">未知的组件类型: {chartType}</div>
       </div>
     );
   }

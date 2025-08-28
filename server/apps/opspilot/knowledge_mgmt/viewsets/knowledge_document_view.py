@@ -304,8 +304,11 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             obj.name = name
             obj.save()
         doc.save()
-        if obj.knowledge_source_type == "web_page" and doc.sync_enabled:
-            doc.create_sync_periodic_task()
+        if obj.knowledge_source_type == "web_page":
+            if doc.sync_enabled:
+                doc.create_sync_periodic_task()
+            else:
+                doc.delete_sync_periodic_task()
 
         return JsonResponse({"result": True})
 

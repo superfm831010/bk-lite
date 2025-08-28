@@ -18,7 +18,7 @@ from src.core.ocr.ocr_manager import OcrManager
 from src.web.entity.rag.base.document_ingest_request import DocumentIngestRequest
 from src.core.loader.image_loader import ImageLoader
 from src.core.loader.ppt_loader import PPTLoader
-from src.core.rag.naive_rag.elasticsearch.elasticsearch_rag import ElasticSearchRag
+from src.core.rag.naive_rag.pgvector.pgvector_rag import PgvectorRag
 
 
 class RagService:
@@ -62,10 +62,49 @@ class RagService:
         )
 
         start_time = time.time()
-        rag = ElasticSearchRag()
+        rag = PgvectorRag()
         rag.ingest(elasticsearch_store_request)
         elapsed_time = time.time() - start_time
         logger.debug(f"ES存储完成, 耗时: {elapsed_time:.2f}秒")
+
+    @classmethod
+    def store_documents_to_pg(cls,
+                              chunked_docs, knowledge_base_id, embed_model_base_url,
+                              embed_model_api_key, embed_model_name, metadata={}):
+        logger.debug(
+            f"""存储文档到PostgreSQL, 知识库ID: {knowledge_base_id}, 模型名称: {embed_model_name},分块数: {len(chunked_docs)} """)
+
+        # 自动添加创建时间
+        for doc in chunked_docs:
+            created_time = datetime.now().isoformat()
+            doc.metadata['created_time'] = created_time
+
+        # 应用额外的元数据
+        if metadata:
+            for doc in chunked_docs:
+                doc.metadata.update(metadata)
+
+        # 构建存储请求
+        pgvector_store_request = DocumentIngestRequest(
+            index_name=knowledge_base_id,
+            docs=chunked_docs,
+            embed_model_base_url=embed_model_base_url,
+            embed_model_api_key=embed_model_api_key,
+            embed_model_name=embed_model_name,
+        )
+
+        try:
+            start_time = time.time()
+            rag = PgvectorRag()
+            rag.ingest(pgvector_store_request)
+            elapsed_time = time.time() - start_time
+
+            logger.debug(f"PostgreSQL存储完成, 耗时: {elapsed_time:.2f}秒")
+
+        except Exception as e:
+            elapsed_time = time.time() - start_time
+            logger.error(f"PostgreSQL存储失败, 耗时: {elapsed_time:.2f}秒, 错误: {e}")
+            raise
 
     @classmethod
     def perform_chunking(cls, docs, chunk_mode, request, is_preview, content_type):
@@ -190,10 +229,12 @@ class RagService:
         logger.debug(f"为文件 {file_path} (类型: {file_extension}) 初始化加载器")
         # 初始化OCR
         ocr = OcrManager.load_ocr(ocr_type=request.form.get('ocr_type'),
-                                  olm_base_url=request.form.get('olm_base_url'),
+                                  olm_base_url=request.form.get(
+                                      'olm_base_url'),
                                   olm_api_key=request.form.get('olm_api_key'),
                                   olm_model=request.form.get('olm_model'),
-                                  azure_base_url=request.form.get('azure_base_url'),
+                                  azure_base_url=request.form.get(
+                                      'azure_base_url'),
                                   azure_api_key=request.form.get('azure_api_key'))
 
         if file_extension in ['docx', 'doc']:

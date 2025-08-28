@@ -56,7 +56,8 @@ class OpenAIClient(BaseOpenAIClient):
             config = LLMConfig()
 
         if client is None:
-            self.client = AsyncOpenAI(api_key=config.api_key, base_url=config.base_url)
+            self.client = AsyncOpenAI(
+                api_key=config.api_key, base_url=config.base_url)
         else:
             self.client = client
 
@@ -68,14 +69,16 @@ class OpenAIClient(BaseOpenAIClient):
         max_tokens: int,
         response_model: type[BaseModel],
     ):
-        """Create a structured completion using OpenAI's beta parse API."""
-        return await self.client.beta.chat.completions.parse(
+        """Create a structured completion using OpenAI's structured output."""
+        response = await self.client.beta.chat.completions.parse(
             model=model,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
-            response_format=response_model,  # type: ignore
+            response_format=response_model,
         )
+
+        return response
 
     async def _create_completion(
         self,

@@ -73,14 +73,14 @@ class MonitorOperationAnaRpc(BaseOperationAnaRpc):
             **kwargs
         )
 
-    def query_range(self, query: str, start, end, step="5m", **kwargs):
+    def query_range(self, query: str, time_range:str, step="5m", **kwargs):
         """查询时间范围内的指标数据
             query: 指标查询语句
             start: 开始时间（UTC时间戳）
             end: 结束时间（UTC时间戳）
             step: 数据采集间隔，默认为5分钟
         """
-        return self.client.run("mm_query_range", query=query, start=start, end=end, step=step, **kwargs)
+        return self.client.run("mm_query_range", query=query, time_range=time_range, step=step, **kwargs)
 
     def query(self, query: str, step="5m", **kwargs):
         """查询单点指标数据

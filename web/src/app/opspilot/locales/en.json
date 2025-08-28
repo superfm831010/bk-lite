@@ -49,6 +49,8 @@
       "ensureDocumentsAndModelsSelected": "Please ensure documents and LLM models are selected",
       "qaPairsCreateSuccess": "QA pairs created successfully",
       "qaPairsCreateFailed": "Failed to create QA pairs",
+      "qaPairsUpdateSuccess": "QA pairs updated successfully",
+      "qaPairsUpdateFailed": "Failed to update QA pairs",
       "fetchDocumentsListFailed": "Failed to fetch documents list",
       "documentsSelectedSuccess": "Selected documents",
       "defaultDocumentTitle": "Document",
@@ -113,7 +115,8 @@
       "generateQuestionAndAnswer": "Generate Questions and Answers",
       "formNotInitialized": "Form not initialized",
       "documentsAndModelsRequired": "Please ensure documents and LLM models are selected",
-      "documentNotFound": "Document"
+      "documentNotFound": "Document",
+      "editModeDocumentInfo": "Document association is automatically handled in edit mode"
     },
     "knowledgeGraph": {
       "title": "Knowledge Graph",
@@ -455,10 +458,20 @@
       "name": "Name",
       "modelName": "Model Name",
       "type": "Type",
+      "label": "Label",
       "group": "Group",
       "consumerTeam": "Consumer Team"
     },
-    "deleteConfirm": "Are you sure you want to delete this model?"
+    "deleteConfirm": "Are you sure you want to delete this model?",
+    "group": {
+      "title": "Model Groups",
+      "name": "Name",
+      "displayName": "Display Name",
+      "deleteConfirm": "Are you sure you want to delete this group?",
+      "deleteConfirmContent": "This action will delete the group",
+      "reorderSuccess": "Group order updated successfully",
+      "reorderFailed": "Failed to update group order"
+    }
   },
   "studio": {
     "menu": "Studio",

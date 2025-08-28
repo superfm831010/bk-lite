@@ -5,11 +5,11 @@
 from django.db import models
 from django.db.models import JSONField
 from rest_framework.exceptions import ValidationError
-from django.conf import settings
 
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
 from apps.core.utils.crypto.password_crypto import PasswordCrypto
+from apps.operation_analysis.constants import SECRET_KEY
 
 
 class NameSpace(MaintainerInfo, TimeInfo):
@@ -37,7 +37,7 @@ class NameSpace(MaintainerInfo, TimeInfo):
         if not raw_password:
             return raw_password
 
-        crypto = PasswordCrypto(settings.SECRET_KEY)
+        crypto = PasswordCrypto(SECRET_KEY)
         return crypto.encrypt(raw_password)
 
     @property
@@ -50,7 +50,7 @@ class NameSpace(MaintainerInfo, TimeInfo):
             return self.password
 
         try:
-            crypto = PasswordCrypto(settings.SECRET_KEY)
+            crypto = PasswordCrypto(SECRET_KEY)
             return crypto.decrypt(self.password)
         except Exception:
             # 如果解密失败，可能是明文密码，直接返回

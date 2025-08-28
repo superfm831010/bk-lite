@@ -44,7 +44,6 @@
     "dataSourceAttr": "数据源属性",
     "styleSettings": "样式设置",
     "filterSettings": "筛选设置",
-    "chartType": "图表类型",
     "chartTypeLabel": "图表类型",
     "lineChart": "折线图",
     "barChart": "柱状图",
@@ -59,6 +58,7 @@
     "createdTime": "创建时间",
     "params": "参数",
     "aliasName": "别名",
+    "required": "必填",
     "defaultValue": "默认值",
     "introTitle": "数据源",
     "introMsg": "选择NATS服务作为数据源",
@@ -79,13 +79,9 @@
     "operation": "操作",
     "addParam": "添加参数",
     "duplicateParamNames": "参数名重复：",
-    "paramNameNotAllowDuplicate": "参数名不允许重复",
-    "paramNameCannotBeEmpty": "参数名不能为空",
     "updateDataSourceSuccess": "更新数据源成功",
     "createDataSourceSuccess": "创建数据源成功",
-    "operationFailed": "操作失败",
-    "fixedParamRequiredValue": "固定类型的参数必须有默认值",
-    "required": "必填"
+    "operationFailed": "操作失败"
   },
   "namespace": {
     "title": "命名空间",

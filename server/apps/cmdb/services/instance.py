@@ -319,6 +319,17 @@ class InstanceManage(object):
                 dst_edge = ag.query_edge(INSTANCE_ASSOCIATION, dst_query_data)
                 if dst_edge:
                     raise BaseAppException("destination instance already exists association!")
+        # n:1关联校验
+        elif asso_info["mapping"] == "n:1":
+            # 检查源实例是否已经存在关联
+            with Neo4jClient() as ag:
+                src_query_data = [
+                    {"field": "src_inst_id", "type": "int=", "value": data["src_inst_id"]},
+                    {"field": "model_asst_id", "type": "str=", "value": data["model_asst_id"]},
+                ]
+                src_edge = ag.query_edge(INSTANCE_ASSOCIATION, src_query_data)
+                if src_edge:
+                    raise BaseAppException("source instance already exists association!")
 
         # 1:1关联校验
         elif asso_info["mapping"] == "1:1":
@@ -341,6 +352,8 @@ class InstanceManage(object):
                 dst_edge = ag.query_edge(INSTANCE_ASSOCIATION, dst_query_data)
                 if dst_edge:
                     raise BaseAppException("destination instance already exists association!")
+        else:
+            raise BaseAppException("association mapping error! mapping={}".format(asso_info["mapping"]))
 
     @staticmethod
     def instance_association_create(data: dict, operator: str):
@@ -535,7 +548,7 @@ class InstanceManage(object):
 
         attrs = [i for i in attrs if i["attr_id"] in attr_list] if attr_list else attrs
         association = [i for i in association if
-                       i["model_asst_id"] in association_list] if association_list else association
+                       i["model_asst_id"] in association_list] if association_list else []
         return Export(attrs, model_id=model_id, association=association).export_inst_list(inst_list)
 
     @staticmethod
@@ -544,6 +557,14 @@ class InstanceManage(object):
         with Neo4jClient() as ag:
             result = ag.query_topo(INSTANCE, inst_id)
         return result
+
+    @staticmethod
+    def topo_search_test_config(inst_id: int, model_id: str):
+        """拓扑查询"""
+        with Neo4jClient() as ag:
+            result = ag.query_topo_test_config(INSTANCE, inst_id, model_id)
+        return result
+
 
     @staticmethod
     def create_or_update(data: dict):

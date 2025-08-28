@@ -46,7 +46,6 @@ class GetNatsData:
                 server_url = f"nats://{namespace.account}:{namespace.decrypt_password}@{namespace.domain}:4222"
             else:
                 server_url = f"nats://{namespace.account}:{namespace.decrypt_password}@{namespace.domain}"
-
             result[namespace.id] = server_url
         return result
 

@@ -85,13 +85,14 @@ def bootstrap() -> Sanic:
             print(f.read())
 
         if core_settings.graphiti_enabled():
-            logger.info(f"启动知识图谱能力, Neo4j地址{core_settings.neo4j_host}")
+            logger.info(
+                f"启动知识图谱能力, 知识图谱地址{core_settings.knowledge_graph_host}")
 
             from src.core.rag.graph_rag.graphiti.graphiti_rag import GraphitiRAG
             rag = GraphitiRAG()
             await rag.setup_graph()
         else:
-            logger.info("未配置 NEO4J 地址，跳过知识图谱能力的启动......")
+            logger.info("未配置 知识图谱 地址，跳过知识图谱能力的启动......")
 
     @app.command
     def sync_db():
@@ -116,5 +117,3 @@ def bootstrap() -> Sanic:
         PPOcr()
 
     return app
-
-

@@ -27,7 +27,6 @@ export const formatTimeRange = (timeParams: any): string[] => {
   return [startTimeStr, endTimeStr];
 };
 
-// 抽取的普通函数，可以在任何地方调用
 export const fetchWidgetData = async ({
   config,
   globalTimeRange,

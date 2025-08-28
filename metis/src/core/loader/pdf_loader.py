@@ -35,7 +35,7 @@ class PDFLoader:
     def _get_table_areas(self, pdf):
         """获取所有页面的表格区域"""
         table_areas = []
-        for page in pdf:
+        for page in tqdm(pdf, desc=f"检测PDF表格区域[{self.file_path}]"):
             # 使用 fitz 的表格检测功能
             tables = page.find_tables()
             if tables and tables.tables:
@@ -82,6 +82,7 @@ class PDFLoader:
         """解析PDF中的图片内容"""
         docs = []
         if not self.ocr:
+            logger.info(f"[{self.file_path}]未配置OCR,跳过图片解析")
             return docs
 
         for page_number in tqdm(range(1, len(pdf) + 1), desc=f"解析PDF图片[{self.file_path}]"):
@@ -92,13 +93,16 @@ class PDFLoader:
                     base_image = pdf.extract_image(xref_value)
                     image_bytes = base_image["image"]
 
-                    image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+                    image_base64 = base64.b64encode(
+                        image_bytes).decode('utf-8')
 
                     with tempfile.NamedTemporaryFile(delete=True, suffix=".png") as tmp_file:
                         tmp_file.write(image_bytes)
                         predict_result = self.ocr.predict(tmp_file.name)
-                        metadata = {"format": "image", "page": page_number, "image_base64": image_base64}
-                        docs.append(Document(predict_result, metadata=metadata))
+                        metadata = {
+                            "format": "image", "page": page_number, "image_base64": image_base64}
+                        docs.append(
+                            Document(predict_result, metadata=metadata))
                 except Exception as e:
                     logger.error(f"解析图片失败: {e}")
 
@@ -110,7 +114,8 @@ class PDFLoader:
         try:
             with BytesIO(open(self.file_path, 'rb').read()) as pdf_file:
                 tables = read_pdf(pdf_file, pages='all')
-                page_numbers = read_pdf(pdf_file, pages='all', output_format='json')
+                page_numbers = read_pdf(
+                    pdf_file, pages='all', output_format='json')
 
                 for i, (table, page_info) in enumerate(zip(tables, page_numbers)):
                     page_num = page_info.get('page_number', i + 1)
@@ -155,7 +160,8 @@ class PDFLoader:
                         if page_text:
                             docs.append(Document(
                                 page_text,
-                                metadata={"format": "text", "page": page_number}
+                                metadata={"format": "text",
+                                          "page": page_number}
                             ))
             except Exception as e:
                 logger.error(f"解析PDF文本失败: {e}", exc_info=True)
