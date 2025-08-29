@@ -139,7 +139,7 @@ class ChunkHelper(ChatServerHelper):
             "preview": "false",
         }
         metadata = {
-            "enabled": True,
+            "enabled": "true",
             "base_chunk_id": chunk_obj.get("chunk_id", ""),
             "qa_pairs_id": str(qa_pairs_id),
             "is_doc": "0",

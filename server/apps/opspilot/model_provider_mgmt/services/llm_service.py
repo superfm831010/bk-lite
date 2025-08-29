@@ -348,7 +348,7 @@ class LLMService:
         score_threshold = score_threshold_map.get(knowledge_base.id, 0.7)
         kwargs = {
             "index_name": knowledge_base.knowledge_index_name(),
-            "metadata_filter": {"enabled": True},
+            "metadata_filter": {"enabled": "true"},
             "score_threshold": score_threshold,
             "k": knowledge_base.rag_size,
             "qa_size": knowledge_base.qa_size,
