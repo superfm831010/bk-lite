@@ -58,15 +58,6 @@
 - 引用文本使用简洁的数字标识，如"1"、"2"等
 - 在句子中合适的位置插入引用，不要影响阅读体验
 
-在回复的最后，请添加一个"参考资料"部分,格式如下:
-
-参考资料: 
-{% if rag_results %}
-{% for rag_result in rag_results %}
-    - [{{ loop.index }}] {{ rag_result.title or '知识片段' + loop.index|string }}
-{% endfor %}
-{% endif %}
-
 其中数字与正文中的引用标识保持一致，标题为对应参考资料的title字段内容。
 {% endif %}
 
