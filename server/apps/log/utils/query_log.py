@@ -1,7 +1,7 @@
 import json
 
 import requests
-from apps.log.constants import VICTORIALOGS_HOST, VICTORIALOGS_USER, VICTORIALOGS_PWD
+from apps.log.constants import VICTORIALOGS_HOST, VICTORIALOGS_USER, VICTORIALOGS_PWD, VICTORIALOGS_SSL_VERIFY
 
 
 class VictoriaMetricsAPI:
@@ -9,6 +9,7 @@ class VictoriaMetricsAPI:
         self.host = VICTORIALOGS_HOST
         self.username = VICTORIALOGS_USER
         self.password = VICTORIALOGS_PWD
+        self.ssl_verify = VICTORIALOGS_SSL_VERIFY
 
     def query(self, query, start, end, limit=10):
         data = {"query": query, "start": start, "end": end, "limit": limit}
@@ -16,6 +17,7 @@ class VictoriaMetricsAPI:
             f"{self.host}/select/logsql/query",
             params=data,
             auth=(self.username, self.password),
+            verify=self.ssl_verify,  # 添加SSL验证配置
         )
         response.raise_for_status()
         result = []
@@ -31,6 +33,7 @@ class VictoriaMetricsAPI:
             f"{self.host}/select/logsql/hits",
             params=data,
             auth=(self.username, self.password),
+            verify=self.ssl_verify,  # 添加SSL验证配置
         )
         response.raise_for_status()
         return response.json()
@@ -42,6 +45,7 @@ class VictoriaMetricsAPI:
                 f"{self.host}/select/logsql/tail",
                 params=data,
                 auth=(self.username, self.password),
+                verify=self.ssl_verify,  # 添加SSL验证配置
                 stream=True,
         ) as response:
             response.raise_for_status()
