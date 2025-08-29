@@ -38,6 +38,7 @@ const LogTerminal = forwardRef<LogTerminalRef, LogTerminalProps>(
     );
     const containerRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const MAX_LOGS_COUNT = 1000; //终端最多展示多少条日志
 
     // 自动滚动到底部
     const scrollToBottom = useCallback(() => {
@@ -96,6 +97,15 @@ const LogTerminal = forwardRef<LogTerminalRef, LogTerminalProps>(
     const togglePause = useCallback(() => {
       setIsPaused((prev) => !prev);
     }, []);
+
+    const updateLogs = (list: string) => {
+      setLogs((prevLogs) => {
+        const logList = [...prevLogs, list];
+        const length = logList.length;
+        if (length <= MAX_LOGS_COUNT) return logList;
+        return logList.slice(length - MAX_LOGS_COUNT, length);
+      });
+    };
 
     // 开始日志流
     const startLogStream = useCallback(async () => {
@@ -157,13 +167,10 @@ const LogTerminal = forwardRef<LogTerminalRef, LogTerminalProps>(
                 if (msgMatch && msgMatch[1]) {
                   logContent = msgMatch[1];
                 }
-                setLogs((prevLogs) => {
-                  return [...prevLogs, logContent];
-                });
+                // 最多展示1000条日志
+                updateLogs(logContent);
               } catch {
-                setLogs((prevLogs) => {
-                  return [...prevLogs, trimmed];
-                });
+                updateLogs(trimmed);
               }
             }
           } catch (error: any) {
