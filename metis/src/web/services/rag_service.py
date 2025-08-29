@@ -23,10 +23,10 @@ from src.core.rag.naive_rag.pgvector.pgvector_rag import PgvectorRag
 
 class RagService:
     @classmethod
-    def store_documents_to_es(cls, chunked_docs, knowledge_base_id, embed_model_base_url,
+    def store_documents_to_pg(cls, chunked_docs, knowledge_base_id, embed_model_base_url,
                               embed_model_api_key, embed_model_name, metadata={}):
         """
-        将文档存储到ElasticSearch
+        将文档存储到PgVector
 
         Args:
             chunked_docs: 分块后的文档
@@ -37,7 +37,7 @@ class RagService:
             metadata: 额外的元数据
         """
         logger.debug(
-            f"存储文档到ES, 知识库ID: {knowledge_base_id}, 模型名称: {embed_model_name}, 分块数: {len(chunked_docs)}")
+            f"存储文档到PgVector, 知识库ID: {knowledge_base_id}, 模型名称: {embed_model_name}, 分块数: {len(chunked_docs)}")
 
         # 自动添加创建时间
         created_time = datetime.now().isoformat()
@@ -53,7 +53,7 @@ class RagService:
             for doc in chunked_docs:
                 doc.metadata.update(metadata)
 
-        elasticsearch_store_request = DocumentIngestRequest(
+        pg_store_request = DocumentIngestRequest(
             index_name=knowledge_base_id,
             docs=chunked_docs,
             embed_model_base_url=embed_model_base_url,
@@ -63,9 +63,9 @@ class RagService:
 
         start_time = time.time()
         rag = PgvectorRag()
-        rag.ingest(elasticsearch_store_request)
+        rag.ingest(pg_store_request)
         elapsed_time = time.time() - start_time
-        logger.debug(f"ES存储完成, 耗时: {elapsed_time:.2f}秒")
+        logger.debug(f"PgVector存储完成, 耗时: {elapsed_time:.2f}秒")
 
     @classmethod
     def store_documents_to_pg(cls,

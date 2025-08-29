@@ -8,17 +8,17 @@ from src.web.entity.rag.base.document_retriever_request import DocumentRetriever
 
 class BaseRecallStrategy(ABC):
     """召回策略基类"""
-    
+
     @abstractmethod
-    def process_recall(self, req: DocumentRetrieverRequest, search_result: List[Document], es_client) -> List[Document]:
+    def process_recall(self, req: DocumentRetrieverRequest, search_result: List[Document], rag_client) -> List[Document]:
         """
         处理召回逻辑
-        
+
         Args:
             req: 检索请求对象
             search_result: 初始搜索结果
-            es_client: Elasticsearch 客户端
-            
+            rag_client: RAG客户端 (PgvectorRag)
+
         Returns:
             处理后的搜索结果
         """
@@ -28,7 +28,7 @@ class BaseRecallStrategy(ABC):
     def get_strategy_name(self) -> str:
         """
         获取策略名称
-        
+
         Returns:
             策略名称
         """

@@ -345,6 +345,13 @@ class PgvectorRag(BaseRag):
                     f"(e.cmetadata ? %(metadata_{field_key}_not_blank_exists)s AND TRIM(e.cmetadata->>%(metadata_{field_key}_not_blank_field)s) != '')")
                 params[f"metadata_{field_key}_not_blank_exists"] = field_key
                 params[f"metadata_{field_key}_not_blank_field"] = field_key
+            elif key.endswith("__in"):
+                field_key = key.replace("__in", "")
+                if isinstance(value, list) and value:
+                    conditions.append(
+                        f"e.cmetadata->>%({param_key}_field)s = ANY(%({param_key}_value)s)")
+                    params[f"{param_key}_field"] = field_key
+                    params[f"{param_key}_value"] = value
             else:
                 conditions.append(
                     f"e.cmetadata->>%({param_key}_field)s = %({param_key}_value)s")
@@ -731,7 +738,7 @@ class PgvectorRag(BaseRag):
 
         try:
             strategy = RecallStrategyFactory.get_strategy(recall_mode)
-            processed_results = strategy.process_recall(req, results, None)
+            processed_results = strategy.process_recall(req, results, self)
 
             logger.debug(
                 f"召回处理完成 - 模式: {recall_mode}, 输入: {len(results)}, 输出: {len(processed_results)}")
@@ -740,7 +747,7 @@ class PgvectorRag(BaseRag):
             logger.warning(f"召回策略异常 - 模式: '{recall_mode}' 不存在, 使用默认策略 'chunk'")
             default_strategy = RecallStrategyFactory.get_strategy('chunk')
             processed_results = default_strategy.process_recall(
-                req, results, None)
+                req, results, self)
 
             logger.debug(
                 f"默认召回处理完成 - 输入: {len(results)}, 输出: {len(processed_results)}")

@@ -235,16 +235,12 @@ class BasicNode:
             def __init__(self):
                 self.page_content = relation_content
                 self.metadata = {
-                    '_source': {
-                        'metadata': {
-                            'knowledge_title': f"图谱关系: {source_name} - {target_name}",
-                            'knowledge_id': group_id,
-                            'chunk_number': 1,
-                            'chunk_id': f"relation_{content_hash}",
-                            'segment_number': 1,
-                            'segment_id': f"relation_{content_hash}"
-                        }
-                    }
+                    'knowledge_title': f"图谱关系: {source_name} - {target_name}",
+                    'knowledge_id': group_id,
+                    'chunk_number': 1,
+                    'chunk_id': f"relation_{content_hash}",
+                    'segment_number': 1,
+                    'segment_id': f"relation_{content_hash}"
                 }
 
         return RelationResult()
@@ -258,17 +254,15 @@ class BasicNode:
             def __init__(self):
                 self.page_content = summary_with_nodes
                 self.metadata = {
-                    '_source': {
-                        'metadata': {
-                            'knowledge_title': f"图谱节点详情: {nodes_list}",
-                            'knowledge_id': group_id,
-                            'chunk_number': 1,
-                            'chunk_id': f"summary_{content_hash}",
-                            'segment_number': 1,
-                            'segment_id': f"summary_{content_hash}"
-                        }
-                    }
+                    'knowledge_title': f"图谱节点详情: {nodes_list}",
+                    'knowledge_id': group_id,
+                    'chunk_number': 1,
+                    'chunk_id': f"summary_{content_hash}",
+                    'segment_number': 1,
+                    'segment_id': f"summary_{content_hash}"
                 }
+
+        return SummaryResult()
 
         return SummaryResult()
 
@@ -277,8 +271,8 @@ class BasicNode:
         # 转换RAG结果为模板友好的格式
         rag_results = []
         for r in rag_result:
-            # 从正确的metadata路径获取数据
-            metadata = r.metadata.get('_source', {}).get('metadata', {})
+            # 直接从metadata获取数据（PgvectorRag返回扁平结构）
+            metadata = getattr(r, 'metadata', {})
             rag_results.append({
                 'title': metadata.get('knowledge_title', 'N/A'),
                 'knowledge_id': metadata.get('knowledge_id', 0),
@@ -321,6 +315,7 @@ class BasicNode:
 
             if qa_question and qa_answer:
                 doc.page_content = f"问题: {qa_question}\n答案: {qa_answer}"
+                doc.metadata['knowledge_title'] = qa_question
         elif is_doc == "1":
             # 文档类型：直接 append qa_answer
             qa_answer = metadata.get('qa_answer')
