@@ -73,7 +73,7 @@ class GraphUtils(ChunkHelper):
             "docs": docs,
         }
         try:
-            res = cls.post_chat_server(kwargs, url)
+            res = cls.post_chat_server(kwargs, url, timeout=3600)
             if not res:
                 return {"result": False, "message": _("Failed to create graph. Please check the server logs.")}
         except Exception as e:
