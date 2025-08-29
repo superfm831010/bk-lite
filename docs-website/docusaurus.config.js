@@ -88,6 +88,11 @@ const config = {
             "to":"#"
           },
           {
+            label: '在线体验',
+            href: 'https://bklite.canway.net/',
+            position: 'right',
+          },
+          {
             href: 'https://github.com/TencentBlueKing/bk-lite',
             label: 'GitHub',
             position: 'right',

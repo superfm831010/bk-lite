@@ -12,6 +12,35 @@ import confetti from 'canvas-confetti';
 import styles from './index.module.css';
 
 function HomepageHeader() {
+  const [selectedVersion, setSelectedVersion] = useState('ai');
+  
+  // 版本配置
+  const versions = {
+    basic: {
+      name: '基础版',
+      command: 'curl -sSL https://bklite.ai/install.run | bash -',
+      description: '核心功能，极简部署',
+      icon: '⚡',
+      color: '#6b7280',
+      gradient: 'linear-gradient(135deg, #6b7280, #9ca3af)'
+    },
+    ai: {
+      name: '智能版',
+      command: 'curl -sSL https://bklite.ai/install.run | bash -s - --opspilot',
+      description: 'AI驱动，智能运维',
+      icon: '✨',
+      color: '#3b82f6',
+      gradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)'
+    }
+  };
+
+  // 版本切换处理函数
+  const handleVersionChange = (version) => {
+    if (version !== selectedVersion) {
+      setSelectedVersion(version);
+    }
+  };
+
   // 基础炮台效果
   const basicCannon = () => {
     confetti({
@@ -80,7 +109,7 @@ function HomepageHeader() {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText('curl -sSL https://bklite.ai/install.run| bash -');
+      await navigator.clipboard.writeText(versions[selectedVersion].command);
       
       // 随机选择一种撒花效果
       const effects = [basicCannon, randomDirection, realisticLook];
@@ -119,15 +148,39 @@ function HomepageHeader() {
             </div>
           </div>
           <div className={styles.quickInstall}>
+            {/* 版本选择器 */}
+            <div className={styles.versionSelector}>
+              <div className={styles.versionTabs} data-selected={selectedVersion}>
+                {Object.entries(versions).map(([key, version]) => (
+                  <button
+                    key={key}
+                    className={`${styles.versionTab} ${selectedVersion === key ? styles.versionTabActive : ''}`}
+                    onClick={() => handleVersionChange(key)}
+                  >
+                    <span className={styles.versionIcon}>{version.icon}</span>
+                    <div className={styles.versionInfo}>
+                      <div className={styles.versionName}>{version.name}</div>
+                      <div className={styles.versionDesc}>{version.description}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* 代码块 */}
             <div className={styles.codeBlock}>
               <div className={styles.codeContentWrapper}>
                 <pre className={styles.codeContent}>
-                  <code>curl -sSL https://bklite.ai/install.run| bash -</code>
+                  <code>{versions[selectedVersion].command}</code>
                 </pre>
                 <button 
                   className={styles.copyButton}
                   onClick={handleCopy}
                   title="复制脚本"
+                  style={{
+                    background: `${versions[selectedVersion].gradient.replace('135deg,', '135deg, ')}15`,
+                    color: versions[selectedVersion].color
+                  }}
                 >
                   <span className={styles.copyIcon}>
                     📋
@@ -135,21 +188,6 @@ function HomepageHeader() {
                 </button>
               </div>
             </div>
-          </div>
-          <div className={styles.buttons}>
-            <Link
-                className={clsx(styles.button, styles['button--primary'])}
-                to="https://bklite.canway.net/">
-                <span className={styles.buttonIcon}>🚀</span>
-                在线体验
-                <span className={styles.buttonArrow}>▶</span>
-              </Link>
-              <Link
-                className={clsx(styles.button, styles['button--secondary'])}
-                to="/docs/deploy/docker-compose">
-                <span className={styles.buttonIcon}>📦</span>
-                部署指南
-              </Link>
           </div>
         </div>
       </div>

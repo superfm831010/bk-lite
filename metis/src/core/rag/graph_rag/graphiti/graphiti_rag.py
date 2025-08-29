@@ -64,7 +64,7 @@ class GraphitiRAG:
         async_openai = AsyncOpenAI(
             api_key=llm_config['api_key'],
             base_url=llm_config['base_url'],
-            timeout=120
+            timeout=600  # 增加到10分钟，避免长时间ingest操作超时
         )
         return OpenAIClient(
             client=async_openai,
@@ -235,24 +235,52 @@ class GraphitiRAG:
 
         # 处理文档
         mapping = {}
-        for doc in tqdm(req.docs, desc="处理文档"):
-            name = f"{doc.metadata['knowledge_title']}_{doc.metadata['knowledge_id']}_{doc.metadata['chunk_id']}"
-            episode = await graphiti_instance.add_episode(
-                name=name,
-                episode_body=doc.page_content,
-                source=EpisodeType.text,
-                source_description=doc.metadata['knowledge_title'],
-                reference_time=datetime.now(timezone.utc),
-                group_id=req.group_id,
-            )
-            mapping[doc.metadata['chunk_id']] = episode.episode.uuid
+        success_count = 0
+        failed_count = 0
+
+        for i, doc in enumerate(tqdm(req.docs, desc="处理文档")):
+            try:
+                name = f"{doc.metadata['knowledge_title']}_{doc.metadata['knowledge_id']}_{doc.metadata['chunk_id']}"
+                logger.info(f"处理文档 {i+1}/{len(req.docs)}: {name}")
+
+                episode = await graphiti_instance.add_episode(
+                    name=name,
+                    episode_body=doc.page_content,
+                    source=EpisodeType.text,
+                    source_description=doc.metadata['knowledge_title'],
+                    reference_time=datetime.now(timezone.utc),
+                    group_id=req.group_id,
+                )
+                mapping[doc.metadata['chunk_id']] = episode.episode.uuid
+                success_count += 1
+
+                # 每处理10个文档输出一次进度
+                if (i + 1) % 10 == 0:
+                    logger.info(
+                        f"已处理 {i+1}/{len(req.docs)} 个文档，成功: {success_count}, 失败: {failed_count}")
+
+            except Exception as e:
+                failed_count += 1
+                logger.error(f"处理文档失败 {name}: {e}")
+                # 继续处理下一个文档，不中断整个流程
 
         # 可选：重建社区
         if req.rebuild_community:
-            await self.build_communities(graphiti_instance, [req.group_id])
+            logger.info("开始重建社区...")
+            try:
+                await self.build_communities(graphiti_instance, [req.group_id])
+                logger.info("社区重建完成")
+            except Exception as e:
+                logger.error(f"社区重建失败: {e}")
+                # 社区重建失败不影响整体结果
 
-        logger.info(f"文档摄取完成: 成功摄取{len(mapping)}个文档")
-        return mapping
+        logger.info(f"文档摄取完成: 成功摄取{success_count}个文档，失败{failed_count}个文档")
+        return {
+            "mapping": mapping,
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "total_count": len(req.docs)
+        }
 
     async def rebuild_community(self, req: RebuildCommunityRequest):
         """重建社区"""

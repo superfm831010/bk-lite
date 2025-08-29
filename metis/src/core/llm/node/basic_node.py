@@ -270,12 +270,13 @@ class BasicNode:
         # 转换RAG结果为模板友好的格式
         rag_results = []
         for r in rag_result:
-            metadata = r.metadata
+            # 从正确的metadata路径获取数据
+            metadata = r.metadata.get('_source', {}).get('metadata', {})
             rag_results.append({
                 'title': metadata.get('knowledge_title', 'N/A'),
                 'knowledge_id': metadata.get('knowledge_id', 0),
                 'chunk_number': metadata.get('chunk_number', 0),
-                'chunk_id': r.id,
+                'chunk_id': metadata.get('chunk_id', 'N/A'),
                 'segment_number': metadata.get('segment_number', 0),
                 'segment_id': metadata.get('segment_id', 'N/A'),
                 'content': r.page_content

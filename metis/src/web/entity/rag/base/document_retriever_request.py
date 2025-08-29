@@ -11,7 +11,7 @@ class DocumentRetrieverRequest(BaseModel):
 
     支持pgvector的两种搜索模式：
     1. mmr: 最大边际相关性搜索（兼顾相关性和多样性）
-    2. similarity_score_threshold: 带相似度阈值的搜索
+    2. similarity_score_threshold: 混合搜索（结合向量搜索和全文搜索，使用RRF合并）
     """
 
     # 基础参数
@@ -23,7 +23,7 @@ class DocumentRetrieverRequest(BaseModel):
     k: int = Field(default=5, ge=1, le=100, description="返回的文档数量")
     search_type: Literal["mmr", "similarity_score_threshold"] = Field(
         default="similarity_score_threshold",
-        description="搜索类型：mmr(最大边际相关性)、similarity_score_threshold(阈值过滤)"
+        description="搜索类型：mmr(最大边际相关性)、similarity_score_threshold(混合搜索)"
     )
 
     # 相似度阈值搜索参数（仅在search_type为similarity_score_threshold时必需）
@@ -31,7 +31,7 @@ class DocumentRetrieverRequest(BaseModel):
         default=0.7,
         ge=0.0,
         le=1.0,
-        description="相似度阈值，仅在similarity_score_threshold模式下使用"
+        description="相似度阈值，在混合搜索中用于过滤向量搜索结果"
     )
 
     # MMR搜索参数（仅在search_type为mmr时使用）
