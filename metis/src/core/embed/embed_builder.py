@@ -39,5 +39,6 @@ class EmbedBuilder:
                 model=model_name,
                 api_key=model_api_key,
                 base_url=model_base_url,
+                timeout=300,  # 5分钟超时，适应批量嵌入操作
             )
             return embeddings
