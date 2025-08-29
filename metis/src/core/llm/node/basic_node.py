@@ -76,7 +76,14 @@ class BasicNode:
 
             rag = PgvectorRag()
             naive_rag_search_result = rag.search(rag_search_request)
-            rag_result.extend(naive_rag_search_result)
+
+            rag_documents = []
+            for doc in naive_rag_search_result:
+                # 根据 is_doc 字段处理文档内容
+                processed_doc = self._process_document_content(doc)
+                rag_documents.append(processed_doc)
+
+            rag_result.extend(rag_documents)
 
             # 执行图谱 RAG 检索
             if rag_search_request.enable_graph_rag:
@@ -290,6 +297,37 @@ class BasicNode:
         }
 
         return template_data
+
+    def _process_document_content(self, doc):
+        """
+        根据 is_doc 字段处理文档内容
+
+        Args:
+            doc: 文档对象，包含 page_content 和 metadata
+
+        Returns:
+            处理后的文档对象
+        """
+        # 获取元数据
+        metadata = getattr(doc, 'metadata', {})
+        is_doc = metadata.get('is_doc')
+
+        logger.debug(f"处理文档内容 - is_doc: {is_doc}")
+
+        if is_doc == "0":
+            # QA类型：用 qa_question 和 qa_answer 组合替换 page_content
+            qa_question = metadata.get('qa_question')
+            qa_answer = metadata.get('qa_answer')
+
+            if qa_question and qa_answer:
+                doc.page_content = f"问题: {qa_question}\n答案: {qa_answer}"
+        elif is_doc == "1":
+            # 文档类型：直接 append qa_answer
+            qa_answer = metadata.get('qa_answer')
+            if qa_answer:
+                doc.page_content += f"\n{qa_answer}"
+
+        return doc
 
     def user_message_node(self, state: Dict[str, Any], config: RunnableConfig) -> Dict[str, Any]:
         state["messages"].append(HumanMessage(
