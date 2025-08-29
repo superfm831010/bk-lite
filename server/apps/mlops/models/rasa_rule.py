@@ -20,15 +20,6 @@ class RasaRule(MaintainerInfo, TimeInfo):
         default=list
     )
 
-    intent_count = models.IntegerField(
-        default=0,
-        verbose_name="意图数量"
-    )
-
-    response_count = models.IntegerField(
-        default=0,
-        verbose_name="响应数量"
-    )
 
     class Meta:
         verbose_name = "rasa规则"
@@ -37,14 +28,3 @@ class RasaRule(MaintainerInfo, TimeInfo):
     def __str__(self):
         return f'{self.name}-{self.dataset.name}'
 
-    def save(self, *args, **kwargs):
-        """
-        重写save方法，保存时自动计算count
-        """
-        if isinstance(self.steps,list):
-            self.intent_count = int(len([i for i in self.steps if 'intent' in i]))
-            self.response_count = int(len([i for i in self.steps if 'response' in i]))
-        else:
-            self.intent_count = 0
-            self.response_count = 0
-        super().save(*args, **kwargs)
