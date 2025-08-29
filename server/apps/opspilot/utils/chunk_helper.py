@@ -241,14 +241,15 @@ class ChunkHelper(ChatServerHelper):
             },
             **llm_setting["answer"],
         )
-        train_progress = round(float(1 / len(content_list)) * 100, 2)
+        train_progress = round(float(1 / len(content_list)) * 100, 4)
+        task_progress = 0
         for i in content_list:
             generate_count = cls.generate_qa(q_kwargs, a_kwargs, i, embed_config, es_index, qa_pairs_obj, only_question)
             # res = cls.update_document_qa_pairs_count(es_index, generate_count, i["chunk_id"])
             # if not res:
             #     logger.error(f"Failed to update document QA pairs count for chunk_id ID: {i['chunk_id']}")
             success_count += generate_count
-            task_progress = task_obj.train_progress + train_progress
+            task_progress += train_progress
             task_obj.train_progress = round(task_progress, 2)
             task_obj.save()
         return success_count
