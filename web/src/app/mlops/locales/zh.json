@@ -61,6 +61,7 @@
     "form": "表单",
     "formTitle": "表单管理",
     "formName": "表单名称",
+    "formNum": "表单数量",
     "formNode": "表单节点",
     "addform": "新增数据集",
     "addintent": "新增意图",

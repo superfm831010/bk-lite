@@ -86,6 +86,16 @@ const RasaDetail = () => {
         key: 'response_count'
       },
       {
+        title: t(`datasets.slotNum`),
+        dataIndex: 'slot_count',
+        key: 'slot_count'
+      },
+      {
+        title: t(`datasets.formNum`),
+        dataIndex: 'form_count',
+        key: 'form_count'
+      },
+      {
         title: t(`common.action`),
         dataIndex: 'action',
         key: 'action',
@@ -142,6 +152,11 @@ const RasaDetail = () => {
         title: t(`datasets.responseNum`),
         dataIndex: 'response_count',
         key: 'response_count'
+      },
+      {
+        title: t(`datasets.formNum`),
+        dataIndex: 'form_count',
+        key: 'form_count'
       },
       {
         title: t(`common.action`),

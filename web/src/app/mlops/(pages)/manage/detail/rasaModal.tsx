@@ -158,7 +158,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
                   { required: true, message: t(`common.selectMsg`) }
                 ]}
               >
-                <Switch onChange={onSlotPredictionChange} />
+                <Switch onChange={onSlotPredictionChange} defaultChecked={false} />
               </Form.Item>
               {slotType === 'categorical' && (
                 <>
@@ -172,8 +172,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
                 </>
               )}
             </>
-          )
-          }
+          )}
           {(!['entity', 'slot', 'story'].includes(selectKey)) && (
             <>
               <Form.Item

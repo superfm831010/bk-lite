@@ -107,7 +107,7 @@ const Detail = () => {
 
   const showSideMenu = useMemo(() => {
     return activeTap === 'anomaly' ? false : true;
-  }, [activeTap])
+  }, [activeTap]);
 
   const renderPage: Record<string, React.ReactNode> = useMemo(() => ({
     anomaly: <AnomalyDetail />,

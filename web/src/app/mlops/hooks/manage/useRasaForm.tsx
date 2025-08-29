@@ -51,16 +51,26 @@ const useRasaIntentForm = (
     onTextSelection?: (data: any) => void;
   }
 ) => {
-  // const modalRef = useRef<ModalRef>(null);
+  const { t } = useTranslation();
   const [sampleList, setSampleList] = useState<(string | null)[]>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const selectedTextRef = useRef<any>(null);
+  const isInitializedRef = useRef<boolean>(false); // 添加初始化标记
 
-  // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
-    if (visiable && formData) {
-      setSampleList(formData?.example_count ? formData?.example : [null]);
-    } else if (visiable) {
-      setSampleList([null]);
+    // 只在首次显示时或formData真正改变时初始化
+    if (visiable && !isInitializedRef.current) {
+      if (formData) {
+        setSampleList(formData?.example_count ? formData?.example : [null]);
+      } else {
+        setSampleList([null]);
+      }
+      isInitializedRef.current = true;
+    }
+    
+    // 当模态框关闭时重置初始化标记
+    if (!visiable) {
+      isInitializedRef.current = false;
     }
   }, [formData, visiable]);
 
@@ -73,16 +83,17 @@ const useRasaIntentForm = (
 
     if (start !== null && end !== null && start !== end) {
       const text = input.value.substring(start, end);
+
       if (text.trim()) {
         const textInfo = {
-          text: text.trim(),
+          text: text,
           start,
           end,
-          inputIndex: index
+          inputIndex: index,
+          fullInputValue: input.value
         };
         selectedTextRef.current = textInfo;
         onTextSelection?.(textInfo)
-        // modalRef.current?.showModal({ type: '' });
       }
     }
   }, [onTextSelection]);
@@ -103,61 +114,138 @@ const useRasaIntentForm = (
     e: React.ChangeEvent<HTMLInputElement>,
     index: number
   ) => {
-    const keys = cloneDeep(sampleList);
-    keys[index] = e.target.value;
-    setSampleList(keys);
+    setSampleList(prevList => {
+      const keys = cloneDeep(prevList);
+      keys[index] = e.target.value;
+      return keys;
+    });
   };
 
   const handleEntitySelect = useCallback((entityName: string) => {
     const currentSelectedText = selectedTextRef.current;
     if (currentSelectedText) {
-      const { text, start, end, inputIndex } = currentSelectedText;
-      const currentValue = sampleList[inputIndex] as string;
+      const { text, start, end, inputIndex, fullInputValue } = currentSelectedText;
+      // 使用存储的输入框值，而不是sampleList中的值
+      const currentValue = fullInputValue || '';
 
+      // 使用trim后的文本作为实体内容，但保持原始的start和end位置
+      const trimmedText = text.trim();
       const newValue =
         currentValue.substring(0, start) +
-        `[${text}](${entityName})` +
+        `[${trimmedText}](${entityName})` +
         currentValue.substring(end);
-      const keys = cloneDeep(sampleList);
-      keys[inputIndex] = newValue;
-      setSampleList(keys);
-      selectedTextRef.current = null;
-    }
-  }, [sampleList]);
 
-  const renderElement = useMemo(() => (
-    <>
-      <ul>
-        {sampleList.map((item, index) => (
-          <li
-            className={`flex ${index + 1 !== sampleList?.length && styles.listItemSpacing}`}
-            key={index}
-          >
-            <Input
-              className={styles.inputWidth}
-              value={item as string}
-              onChange={(e) => {
-                onSampleListChange(e, index);
-              }}
-              onSelect={(e) => handleTextSelection(index, e)}
-            />
-            <Button
-              icon={<PlusOutlined />}
-              className={styles.buttonMargin}
-              onClick={addSampleList}
-            />
-            {!!index && (
-              <Button
-                icon={<MinusOutlined />}
-                className={styles.buttonMargin}
-                onClick={() => deleteSampleList(index)}
-              />
-            )}
-          </li>
-        ))}
-      </ul>
-    </>
-  ), [sampleList, handleTextSelection]);
+      setSampleList(prevList => {
+        const keys = cloneDeep(prevList);
+        keys[inputIndex] = newValue;
+        return keys;
+      });
+      selectedTextRef.current = null;
+      // 添加实体后切换到显示模式
+      setEditingIndex(null);
+    }
+  }, []); // 移除sampleList依赖，使用函数式更新
+
+  const renderElement = useMemo(() => {
+    // 解析实体文字函数
+    const parseEntityText = (text: string) => {
+      if (!text) return [];
+
+      const entityRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+      const parts = [];
+      let lastIndex = 0;
+      let match;
+
+      while ((match = entityRegex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          parts.push({
+            type: 'text',
+            content: text.slice(lastIndex, match.index)
+          });
+        }
+
+        parts.push({
+          type: 'entity',
+          content: match[1],
+          entityName: match[2]
+        });
+
+        lastIndex = match.index + match[0].length;
+      }
+
+      if (lastIndex < text.length) {
+        parts.push({
+          type: 'text',
+          content: text.slice(lastIndex)
+        });
+      }
+
+      return parts;
+    };
+
+    return (
+      <>
+        <ul>
+          {sampleList.map((item, index) => {
+            const parts = parseEntityText(item as string);
+            const hasEntities = parts.some((part: any) => part.type === 'entity');
+            const isEditing = editingIndex === index;
+
+            return (
+              <li
+                className={`flex ${index + 1 !== sampleList?.length && styles.listItemSpacing}`}
+                key={index}
+              >
+                {!hasEntities || isEditing ? (
+                  <Input
+                    className={styles.inputWidth}
+                    value={item as string || ''}
+                    onChange={(e) => onSampleListChange(e, index)}
+                    onSelect={(e) => handleTextSelection(index, e)}
+                    onBlur={() => setEditingIndex(null)}
+                    autoFocus={isEditing}
+                    placeholder={t(`common.inputMsg`)}
+                  />
+                ) : (
+                  <div
+                    className={`${styles.inputWidth} border border-gray-300 rounded-md px-3 py-1 min-h-[32px] bg-white flex items-center cursor-text hover:border-blue-400`}
+                    onClick={() => setEditingIndex(index)}
+                  >
+                    {parts.map((part: any, partIndex: number) => (
+                      <span
+                        key={partIndex}
+                        className={
+                          part.type === 'entity'
+                            ? 'text-blue-600'
+                            : 'text-gray-900'
+                        }
+                        title={part.type === 'entity' ? `实体: ${part.entityName}` : undefined}
+                      >
+                        {part.content}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <Button
+                  icon={<PlusOutlined />}
+                  className={styles.buttonMargin}
+                  onClick={addSampleList}
+                />
+                {!!index && (
+                  <Button
+                    icon={<MinusOutlined />}
+                    className={styles.buttonMargin}
+                    onClick={() => deleteSampleList(index)}
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </>
+    );
+  }, [sampleList, handleTextSelection, editingIndex, onSampleListChange]);
 
   return {
     sampleList,
@@ -222,7 +310,6 @@ const useRasaResponseForm = ({
           ]} />
           <Input
             className={styles.selectMiddle}
-            // className="!w-[60%]"
             value={item as string}
             onChange={(e) => {
               onSampleListChange(e, index);
@@ -271,7 +358,6 @@ const useRasaRuleForm = ({
     form: []
   });
 
-  // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
     if (visiable && formData?.steps) {
       const list = formData.steps.map((item: any) => {
@@ -287,7 +373,6 @@ const useRasaRuleForm = ({
   }, [formData, visiable]);
 
   useEffect(() => {
-    // 只有当前selectKey是rule时才发送请求
     if (selectKey !== 'rule') return;
 
     const fetchOptions = async () => {
@@ -314,7 +399,7 @@ const useRasaRuleForm = ({
           response: responseOption,
           form: formOption
         });
-      } catch (e) {
+      } catch(e) {
         console.log(e);
         message.error(t(`common.fetchFailed`));
       }
@@ -420,7 +505,6 @@ const useRasaStoryForm = ({
     response: []
   });
 
-  // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
     if (visiable && formData?.steps) {
       const list = formData.steps.map((item: any) => {
@@ -436,7 +520,6 @@ const useRasaStoryForm = ({
   }, [formData, visiable]);
 
   useEffect(() => {
-    // 只有当前selectKey是story时才发送请求
     if (selectKey !== 'story') return;
 
     const fetchOptions = async () => {
@@ -457,8 +540,7 @@ const useRasaStoryForm = ({
           intent: intentOption,
           response: responseOption
         });
-      } catch (e) {
-        console.log(e);
+      } catch {
         message.error(t(`common.fetchFailed`));
       }
     };
@@ -555,7 +637,6 @@ const useRasaEntityForm = ({
   entityType?: string;
 }) => {
   const [sampleList, setSampleList] = useState<(string | null)[]>([]);
-  // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
     if (visiable && formData) {
       setSampleList(formData?.example || [null]);
@@ -567,7 +648,6 @@ const useRasaEntityForm = ({
   useEffect(() => {
     if (entityType === 'Lookup') {
       const data = formData?.example?.length ? formData.example : [null];
-      console.log(data);
       setSampleList(data);
     }
   }, [entityType])
@@ -641,7 +721,6 @@ const useRasaSlotForm = ({
 }) => {
   const [sampleList, setSampleList] = useState<(string | null)[]>([]);
 
-  // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
     if (visiable && formData) {
       setSampleList(formData?.values || [null]);
@@ -726,7 +805,6 @@ const useRasaForms = ({
   const [sampleList, setSampleList] = useState<(FormManageItem | null)[]>([]);
   const [options, setOptions] = useState<SlotOption[]>([]);
 
-  // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
     if (visiable && formData?.slots) {
       const list = formData.slots.map((item: any) => {
@@ -743,7 +821,6 @@ const useRasaForms = ({
   }, [formData, visiable]);
 
   useEffect(() => {
-    // 只有当前selectKey是rule时才发送请求
     if (selectKey !== 'form') return;
 
     const fetchOptions = async () => {
@@ -758,7 +835,7 @@ const useRasaForms = ({
           }
         });
         setOptions(_options || []);
-      } catch (e) {
+      } catch(e) {
         console.log(e);
         message.error(t(`common.fetchFailed`));
       }
@@ -1133,7 +1210,7 @@ const useRasaFormManager = ({
     }
     // 清除选择状态
     setSelectedTextForEntity(null);
-  }, [selectKey]);
+  }, [selectKey, intentForm.handleEntitySelect]);
 
   const getCurrentForm = () => {
     switch (selectKey) {
@@ -1170,7 +1247,6 @@ const useRasaFormManager = ({
     try {
       const data = await formRef.current?.validateFields();
       const params = prepareFormParams(type, selectKey, data, currentForm.sampleList, formData, entityType, slotType);
-      console.log(params);
       if (type === 'add') {
         await handleAddMap[selectKey](params);
         message.success(t(`common.addSuccess`));
@@ -1181,7 +1257,7 @@ const useRasaFormManager = ({
 
       onSuccess();
       setVisiable(false);
-    } catch (e) {
+    } catch(e) {
       console.log(e);
       message.error(t(`common.error`));
     } finally {

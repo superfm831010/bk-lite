@@ -52,7 +52,7 @@ const NodeFlow = ({
   // 处理链接线
   const onConnect = useCallback(
     (params: Connection) => {
-      console.log(params);
+      // console.log(params);
       if (params.source === params.target) return;
       setEdges((eds) => addEdge(params, eds));
       setNodes((nds) =>
