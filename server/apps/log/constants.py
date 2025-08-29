@@ -4,6 +4,8 @@ import os
 VICTORIALOGS_HOST = os.getenv("VICTORIALOGS_HOST")
 VICTORIALOGS_USER = os.getenv("VICTORIALOGS_USER")
 VICTORIALOGS_PWD = os.getenv("VICTORIALOGS_PWD")
+# 添加SSL验证配置，支持环境变量控制
+VICTORIALOGS_SSL_VERIFY = os.getenv("VICTORIALOGS_SSL_VERIFY", "false").lower() == "true"
 
 # 策略相关常量
 POLICY_MODULE = "policy"
