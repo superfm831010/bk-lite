@@ -91,12 +91,14 @@ class ChunkHelper(ChatServerHelper):
             return False
 
     @classmethod
-    def create_qa_pairs(cls, qa_paris, chunk_obj, index_name, embed_config, qa_pairs_id):
+    def create_qa_pairs(cls, qa_paris, chunk_obj, index_name, embed_config, qa_pairs_id, task_obj):
         success_count = 0
         kwargs, metadata = cls.set_qa_pairs_params(embed_config, index_name, qa_pairs_id, chunk_obj)
         headers = cls.get_chat_server_header()
         # SSL验证配置 - 从环境变量读取
         ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
+        train_progress = round(float(1 / len(qa_paris)) * 100, 4)
+        task_progress = 0
         for i in qa_paris:
             params = dict(kwargs, **{"content": i["question"]})
             params["metadata"] = json.dumps(dict(metadata, **{"qa_question": i["question"], "qa_answer": i["answer"]}))
@@ -111,6 +113,10 @@ class ChunkHelper(ChatServerHelper):
                 logger.exception(f"创建问答对失败: {res.get('message', '')}")
                 continue
             success_count += 1
+            task_obj.completed_count += 1
+            task_progress += train_progress
+            task_obj.train_progress = round(task_progress, 2)
+            task_obj.save()
         return success_count
 
     @classmethod
@@ -218,7 +224,9 @@ class ChunkHelper(ChatServerHelper):
         return {"result": True, "data": return_data}
 
     @classmethod
-    def create_document_qa_pairs(cls, content_list, embed_config, es_index, llm_setting, qa_pairs_obj, only_question):
+    def create_document_qa_pairs(
+        cls, content_list, embed_config, es_index, llm_setting, qa_pairs_obj, only_question, task_obj
+    ):
         success_count = 0
         q_kwargs = dict(
             {
@@ -233,12 +241,17 @@ class ChunkHelper(ChatServerHelper):
             },
             **llm_setting["answer"],
         )
+        train_progress = round(float(1 / len(content_list)) * 100, 4)
+        task_progress = 0
         for i in content_list:
             generate_count = cls.generate_qa(q_kwargs, a_kwargs, i, embed_config, es_index, qa_pairs_obj, only_question)
             # res = cls.update_document_qa_pairs_count(es_index, generate_count, i["chunk_id"])
             # if not res:
             #     logger.error(f"Failed to update document QA pairs count for chunk_id ID: {i['chunk_id']}")
             success_count += generate_count
+            task_progress += train_progress
+            task_obj.train_progress = round(task_progress, 2)
+            task_obj.save()
         return success_count
 
     @classmethod
