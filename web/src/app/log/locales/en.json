@@ -254,7 +254,8 @@
       "auditBeatPaths": "Directory Paths",
       "auditBeatPathsDes": "List of directory paths that need to be monitored",
       "dockerHosts": "Connection Address",
-      "dockerHostsDes": "Connection addresses for Docker API"
+      "dockerHostsDes": "Connection addresses for Docker API",
+      "viewLogs": "View Logs"
     },
     "event": {
       "executionTime": "Execution Time",
