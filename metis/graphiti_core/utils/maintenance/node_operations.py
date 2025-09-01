@@ -126,15 +126,7 @@ async def extract_nodes(
                 prompt_library.extract_nodes.extract_json(context), response_model=ExtractedEntities
             )
 
-        try:
-            response_object = ExtractedEntities(**llm_response)
-        except Exception as e:
-            # 添加调试输出，记录LLM原始响应和文档内容
-            logger.error(
-                f"ExtractedEntities 验证失败，文档内容: {episode.content}")
-            logger.error(f"ExtractedEntities 验证失败，LLM 原始响应: {llm_response}")
-            # 创建一个空的 response_object 来避免程序崩溃
-            response_object = ExtractedEntities(extracted_entities=[])
+        response_object = ExtractedEntities(**llm_response)
 
         extracted_entities: list[ExtractedEntity] = response_object.extracted_entities
 
