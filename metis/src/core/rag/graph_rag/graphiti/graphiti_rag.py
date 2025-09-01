@@ -270,6 +270,10 @@ class GraphitiRAG:
             except Exception as e:
                 failed_count += 1
                 logger.error(f"处理文档失败 {name}: {e}")
+                # 添加更详细的调试信息
+                logger.error(f"文档内容长度: {len(doc.page_content)}")
+                logger.error(f"文档内容前500字符: {doc.page_content[:500]}...")
+                logger.error(f"文档元数据: {doc.metadata}")
                 # 继续处理下一个文档，不中断整个流程
 
         # 可选：重建社区
