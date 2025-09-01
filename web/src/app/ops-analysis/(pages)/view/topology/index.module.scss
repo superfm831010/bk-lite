@@ -1,0 +1,6 @@
+/* 拓扑图容器样式 */
+.topologyContainer {
+  :global(.x6-node foreignObject) {
+    overflow: hidden !important;
+  }
+}

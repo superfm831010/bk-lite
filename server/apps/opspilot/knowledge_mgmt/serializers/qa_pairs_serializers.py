@@ -13,5 +13,5 @@ class QAPairsSerializer(UsernameSerializer):
         if instance.status in ["generating", "pending"]:
             raise Exception("The document is being trained, please try again later.")
         instance = super().update(instance, validated_data)
-        create_qa_pairs([instance.id], only_question, True)
+        create_qa_pairs.delay([instance.id], only_question, True)
         return instance

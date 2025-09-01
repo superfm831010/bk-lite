@@ -40,7 +40,7 @@ class KnowledgeSearchService:
         params = {
             "index_name": knowledge_base_folder.knowledge_index_name(),
             "search_query": query,
-            "metadata_filter": {"enabled": True},
+            "metadata_filter": {"enabled": "true"},
             "score_threshold": score_threshold,
             "k": kwargs.get("rag_size", 50),
             "qa_size": kwargs.get("qa_size", 50),
@@ -160,7 +160,7 @@ class KnowledgeSearchService:
         kwargs = {
             "index_name": index_name,
             "metadata_filter": {"chunk_id": str(chunk_id)},
-            "metadata": {"enabled": enabled},
+            "metadata": {"enabled": "true" if enabled else "false"},
         }
         ChatServerHelper.post_chat_server(kwargs, url)
 

@@ -193,7 +193,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "semantic_chunk_model_api_key": semantic_embed_config.get("api_key", "") or " ",
         "semantic_chunk_model": semantic_embed_config.get("model", semantic_embed_model_name),
         "preview": "true" if preview else "false",
-        "metadata": json.dumps({"enabled": True, "is_doc": "1", "qa_count": 0}),
+        "metadata": json.dumps({"enabled": "true", "is_doc": "1", "qa_count": 0}),
     }
     kwargs.update(ocr_config)
     return kwargs
@@ -235,7 +235,6 @@ def create_qa_pairs(qa_pairs_id_list, only_question, delete_old_qa_pairs=False):
         train_progress=0,
         is_qa_task=True,
     )
-    train_progress = round(float(1 / len(task_obj.knowledge_ids)) * 100, 2)
 
     es_index = knowledge_base.knowledge_index_name()
     embed_config = knowledge_base.embed_model.decrypted_embed_config
@@ -257,13 +256,18 @@ def create_qa_pairs(qa_pairs_id_list, only_question, delete_old_qa_pairs=False):
     for qa_pairs_obj in qa_pairs_list:
         # 修改状态为生成中
         try:
+            task_obj.task_name = qa_pairs_obj.name
+            task_obj.completed_count = 0
+            task_obj.train_progress = 0
             qa_pairs_obj.status = "generating"
             qa_pairs_obj.save()
             content_list = client.get_qa_content(qa_pairs_obj.document_id, es_index)
             if delete_old_qa_pairs:
                 ChunkHelper.delete_es_content(qa_pairs_obj.id)
+            task_obj.total_count = len(content_list)
+            task_obj.save()
             success_count = client.create_document_qa_pairs(
-                content_list, embed_config, es_index, llm_setting, qa_pairs_obj, only_question
+                content_list, embed_config, es_index, llm_setting, qa_pairs_obj, only_question, task_obj
             )
         except Exception as e:
             logger.exception(e)
@@ -273,10 +277,6 @@ def create_qa_pairs(qa_pairs_id_list, only_question, delete_old_qa_pairs=False):
             qa_pairs_obj.status = "completed"
             qa_pairs_obj.generate_count = success_count
             qa_pairs_obj.save()
-        task_progress = task_obj.train_progress + train_progress
-        task_obj.train_progress = round(task_progress, 2)
-        task_obj.save()
-
     task_obj.delete()
 
 
@@ -414,37 +414,44 @@ def _process_qa_pairs_batch(qa_pairs_list, file_data, knowledge_base, task_obj):
     url = f"{settings.METIS_SERVER_URL}/api/rag/custom_content_ingest"
     headers = ChatServerHelper.get_chat_server_header()
     kwargs = set_import_kwargs(knowledge_base)
-    train_progress = round(float(1 / len(qa_pairs_list)) * 100, 2)
 
     for qa_pairs in qa_pairs_list:
         qa_json = file_data[qa_pairs.name]
         kwargs["knowledge_id"] = f"qa_pairs_id_{qa_pairs.id}"
-        success_count = _process_single_qa_pairs(qa_pairs, qa_json, kwargs, url, headers)
+        success_count = _process_single_qa_pairs(qa_pairs, qa_json, kwargs, url, headers, task_obj)
 
         # 更新问答对数量和任务进度
+        qa_pairs.status = "completed"
         qa_pairs.qa_count += success_count
         qa_pairs.generate_count += success_count
         qa_pairs.save()
-        task_progress = task_obj.train_progress + train_progress
-        task_obj.train_progress = round(task_progress, 2)
-        task_obj.save()
 
         logger.info(f"批量创建问答对完成: {qa_pairs.name}, 总数: {len(qa_json)}, 成功: {success_count}")
 
 
-def _process_single_qa_pairs(qa_pairs, qa_json, kwargs, url, headers):
+def _process_single_qa_pairs(qa_pairs, qa_json, kwargs, url, headers, task_obj):
     """处理单个问答对集合"""
     metadata = {
-        "enabled": True,
+        "enabled": "true",
         "base_chunk_id": "",
         "qa_pairs_id": str(qa_pairs.id),
         "is_doc": "0",
     }
+    qa_pairs.status = "generating"
+    qa_pairs.save()
 
     success_count = 0
     error_count = 0
 
+    task_obj.task_name = qa_pairs.name
+    task_obj.completed_count = 0
+    task_obj.total_count = len(qa_json)
+    task_obj.train_progress = 0
+    task_obj.save()
+
     logger.info(f"开始处理问答对数据: {qa_pairs.name}")
+    train_progress = round(float(1 / len(qa_json)) * 100, 4)
+    task_progress = 0
     for index, qa_item in enumerate(tqdm(qa_json)):
         result = _create_single_qa_item(qa_item, index, kwargs, metadata, url, headers)
         if result is None:
@@ -456,7 +463,10 @@ def _process_single_qa_pairs(qa_pairs, qa_json, kwargs, url, headers):
         # 每10个记录输出一次进度日志
         if (index + 1) % 10 == 0:
             logger.info(f"已处理 {index + 1}/{len(qa_json)} 个问答对，成功: {success_count}, 失败: {error_count}")
-
+        task_progress += train_progress
+        task_obj.train_progress = round(task_progress, 2)
+        task_obj.completed_count += 1
+        task_obj.save()
     return success_count
 
 
@@ -510,6 +520,7 @@ def create_qa_pairs_task(knowledge_base_id, qa_name, username, domain):
         created_by=username,
         domain=domain,
         create_type="import",
+        status="pending",
     )
     logger.info(f"问答对对象{'创建' if created else '获取'}成功: {qa_pairs.name}")
     return qa_pairs
@@ -551,9 +562,12 @@ def create_qa_pairs_by_custom(qa_pairs_id, content_list):
         knowledge_ids=[qa_pairs.id],
         train_progress=0,
         is_qa_task=True,
+        total_count=len(content_list),
     )
     try:
-        success_count = ChunkHelper.create_qa_pairs(content_list, chunk_obj, es_index, embed_config, qa_pairs_id)
+        success_count = ChunkHelper.create_qa_pairs(
+            content_list, chunk_obj, es_index, embed_config, qa_pairs_id, task_obj
+        )
         qa_pairs.generate_count = success_count
         qa_pairs.status = "completed"
     except Exception as e:

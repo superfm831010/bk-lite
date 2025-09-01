@@ -20,8 +20,7 @@ class RasaSlot(MaintainerInfo, TimeInfo):
         ('categorical', '记录分类类别，枚举'),
         ('float', '记录数值'),
         ('bool', '记录布尔值'),
-        ('list', '记录数值列表'),
-        ('int', '记录整数')
+        ('list', '记录数值列表')
     ]
 
     slot_type = models.CharField(

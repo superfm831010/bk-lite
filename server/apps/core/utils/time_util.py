@@ -30,5 +30,5 @@ def format_timestamp(time_str: str):
     """
     dt = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
     timestamp = dt.timestamp()
-    formatted_timestamp = f"{timestamp:.2f}"
+    formatted_timestamp = str(int(timestamp))
     return formatted_timestamp

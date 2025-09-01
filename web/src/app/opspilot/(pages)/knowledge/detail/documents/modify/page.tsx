@@ -316,10 +316,14 @@ const KnowledgeModifyPage = () => {
     setIsStepValid(true);
   }, []);
 
-  const handleWebLinkDataChange = useCallback((data: { name: string, link: string, deep: number }) => {
+  const handleWebLinkDataChange = useCallback((data: { name: string, link: string, deep: number, sync_enabled: boolean, sync_time: string }) => {
     setWebLinkData(prev => {
       // Only update if data has actually changed
-      if (prev.name !== data.name || prev.link !== data.link || prev.deep !== data.deep) {
+      if (prev.name !== data.name || 
+          prev.link !== data.link || 
+          prev.deep !== data.deep || 
+          prev.sync_enabled !== data.sync_enabled || 
+          prev.sync_time !== data.sync_time) {
         return data;
       }
       return prev;
