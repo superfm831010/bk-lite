@@ -1,16 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from langchain_core.documents import Document
 
 from src.web.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
+
+if TYPE_CHECKING:
+    from src.core.rag.naive_rag.pgvector.pgvector_rag import PgvectorRag
 
 
 class BaseRecallStrategy(ABC):
     """召回策略基类"""
 
     @abstractmethod
-    def process_recall(self, req: DocumentRetrieverRequest, search_result: List[Document], rag_client) -> List[Document]:
+    def process_recall(self, req: DocumentRetrieverRequest, search_result: List[Document], rag_client: "PgvectorRag") -> List[Document]:
         """
         处理召回逻辑
 

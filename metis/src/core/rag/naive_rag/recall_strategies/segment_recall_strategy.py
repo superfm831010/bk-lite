@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from langchain_core.documents import Document
 from sanic.log import logger
@@ -7,15 +7,22 @@ from src.web.entity.rag.base.document_retriever_request import DocumentRetriever
 from src.web.entity.rag.base.document_list_request import DocumentListRequest
 from src.core.rag.naive_rag.recall_strategies.base_recall_strategy import BaseRecallStrategy
 
+if TYPE_CHECKING:
+    from src.core.rag.naive_rag.pgvector.pgvector_rag import PgvectorRag
+
 
 class SegmentRecallStrategy(BaseRecallStrategy):
     """Segment 召回策略 - 根据 segment_id 恢复段落片段"""
+
+    # 常量配置：避免硬编码
+    _MAX_QUERY_SIZE = 10000  # 单次查询最大文档数量
+    _MAX_SEGMENT_IDS = 100  # 最大处理的 segment_id 数量
 
     def get_strategy_name(self) -> str:
         """获取策略名称"""
         return "segment"
 
-    def process_recall(self, req: DocumentRetrieverRequest, search_result: List[Document], rag_client) -> List[Document]:
+    def process_recall(self, req: DocumentRetrieverRequest, search_result: List[Document], rag_client: "PgvectorRag") -> List[Document]:
         """
         处理 Segment 召回模式
 
@@ -26,6 +33,9 @@ class SegmentRecallStrategy(BaseRecallStrategy):
 
         Returns:
             处理后的搜索结果
+
+        Raises:
+            ValueError: 当 segment_id 数量超过限制时
         """
         # 1. 从搜索结果中提取所有相关的 segment_id
         segments_id_set = set()
@@ -35,27 +45,44 @@ class SegmentRecallStrategy(BaseRecallStrategy):
                 segments_id_set.add(segment_id)
 
         if not segments_id_set:
-            logger.warning("没有找到有效的 segment_id，返回原始搜索结果")
+            logger.warning("Segment召回策略: 搜索结果中未找到有效的segment_id")
             return search_result
 
-        # 2. 通过RAG客户端查找所有的 segment_id 内容
+        # 2. 安全检查：防止查询过多数据
+        if len(segments_id_set) > self._MAX_SEGMENT_IDS:
+            logger.warning(
+                f"Segment召回策略: segment_id数量({len(segments_id_set)})超过限制({self._MAX_SEGMENT_IDS})，截取处理")
+            segments_id_set = set(list(segments_id_set)[
+                                  :self._MAX_SEGMENT_IDS])
+
+        # 3. 通过RAG客户端查找所有的 segment_id 内容
         try:
             # 使用PgvectorRag的list_index_document方法查询
             list_req = DocumentListRequest(
                 index_name=req.index_name,
                 metadata_filter={"segment_id__in": list(segments_id_set)},
                 page=0,
-                size=10000
+                size=self._MAX_QUERY_SIZE,
+                query=""  # Segment召回策略不需要文本查询
             )
             all_segment_docs = rag_client.list_index_document(list_req)
 
-            logger.info(f"Segment模式查询完成，找到 {len(all_segment_docs)} 个相关片段")
+            logger.info(
+                f"Segment召回策略: 查询完成，segment_id数量={len(segments_id_set)}, 文档片段数={len(all_segment_docs)}")
 
+        except (ConnectionError, TimeoutError) as e:
+            logger.error(
+                f"Segment召回策略: 数据库连接失败，回退到原始结果 - {type(e).__name__}: {e}")
+            return search_result
+        except ValueError as e:
+            logger.error(f"Segment召回策略: 请求参数错误，回退到原始结果 - {e}")
+            return search_result
         except Exception as e:
-            logger.error(f"Segment召回查询失败: {e}")
+            logger.error(
+                f"Segment召回策略: 查询异常，回退到原始结果 - {type(e).__name__}: {e}")
             return search_result
 
-        # 3. 按 segment_id 分组处理
+        # 4. 按 segment_id 分组处理
         segment_id_dict = {}
         for doc in all_segment_docs:
             segment_id = doc.metadata.get('segment_id')
@@ -64,13 +91,13 @@ class SegmentRecallStrategy(BaseRecallStrategy):
                     segment_id_dict[segment_id] = []
                 segment_id_dict[segment_id].append(doc)
 
-        # 4. 按 segment_id 分组处理并排序
+        # 5. 按 segment_id 分组处理并排序
         result_hits = []
         for segment_id, docs in segment_id_dict.items():
-            # 按 chunk_number 排序
+            # 按 chunk_number 排序，确保文档片段的逻辑顺序
             sorted_docs = sorted(docs, key=lambda x: int(
                 x.metadata.get('chunk_number', 0)))
             result_hits.extend(sorted_docs)
 
-        logger.info(f"Segment模式重组完成，共恢复 {len(result_hits)} 份文档片段")
+        logger.info(f"Segment召回策略: 重组完成，共恢复文档片段数={len(result_hits)}")
         return result_hits

@@ -1,9 +1,12 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from langchain_core.documents import Document
 
 from src.web.entity.rag.base.document_retriever_request import DocumentRetrieverRequest
 from src.core.rag.naive_rag.recall_strategies.base_recall_strategy import BaseRecallStrategy
+
+if TYPE_CHECKING:
+    from src.core.rag.naive_rag.pgvector.pgvector_rag import PgvectorRag
 
 
 class ChunkRecallStrategy(BaseRecallStrategy):
@@ -13,7 +16,7 @@ class ChunkRecallStrategy(BaseRecallStrategy):
         """获取策略名称"""
         return "chunk"
 
-    def process_recall(self, req: DocumentRetrieverRequest, search_result: List[Document], rag_client) -> List[Document]:
+    def process_recall(self, req: DocumentRetrieverRequest, search_result: List[Document], rag_client: "PgvectorRag") -> List[Document]:
         """
         处理 Chunk 召回模式 - 直接返回原始搜索结果
 
