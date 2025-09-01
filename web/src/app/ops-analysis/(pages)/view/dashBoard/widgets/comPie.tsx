@@ -8,7 +8,6 @@ import { ChartDataTransformer } from '@/app/ops-analysis/utils/chartDataTransfor
 interface OsPieProps {
   rawData: any;
   loading?: boolean;
-  config?: any;
   onReady?: (ready: boolean) => void;
 }
 

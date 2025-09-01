@@ -1,29 +1,12 @@
+
 /**
- * useGraphOperations Hook
- * 
  * 拓扑图操作管理核心 Hook，负责图形的初始化、事件处理、节点操作和用户交互
- * 
- * 主要功能：
- * 1. 图形初始化 - 创建 X6 图形实例，配置画布属性和插件
- * 2. 事件绑定 - 处理节点/边的点击、双击、右键菜单、鼠标悬停等交互事件
- * 3. 节点操作 - 添加、更新、删除各类型节点（图标、文本、单值、图表）
- * 4. 数据更新 - 单值节点数据实时更新，图表节点数据加载
- * 5. 视图控制 - 缩放、适应画布、选择模式等视图操作
- * 6. 编辑模式 - 支持拖拽连线、节点编辑、文本编辑等编辑功能
- * 
- * 依赖关系：
- * - useGraphData: 处理数据序列化、保存和加载功能
- * - topologyUtils: 提供节点样式、边样式等工具函数
- * - X6 图形库: 提供底层图形渲染和交互能力
- * 
- * @param containerRef - 图形容器的 React ref
- * @param state - 组件状态管理对象，包含各种状态和状态更新函数
- * @returns 图形操作相关的方法集合
  */
 
 import { useCallback, useEffect } from 'react';
-import type { Graph as X6Graph } from '@antv/x6';
 import ChartNode from '../components/chartNode';
+import type { Graph as X6Graph } from '@antv/x6';
+import { v4 as uuidv4 } from 'uuid';
 import { formatTimeRange } from '@/app/ops-analysis/utils/widgetDataTransform';
 import { Graph } from '@antv/x6';
 import { iconList } from '@/app/cmdb/utils/common';
@@ -34,7 +17,8 @@ import { COLORS, NODE_DEFAULTS } from '../constants/nodeDefaults';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { TopologyNodeData } from '@/app/ops-analysis/types/topology';
 import { DataSourceParam } from '@/app/ops-analysis/types/dashBoard';
-import { v4 as uuidv4 } from 'uuid';
+import { updateNodeAttributes, registerNodes, createNodeByType } from '../utils/registerNode';
+import { useGraphData } from './useGraphData';
 import {
   getEdgeStyle,
   hideAllPorts,
@@ -44,12 +28,9 @@ import {
   addEdgeTools,
   getValueByPath,
   formatDisplayValue,
-  updateNodeProperties,
   createPortConfig,
   adjustSingleValueNodeSize,
 } from '../utils/topologyUtils';
-import { registerNodes, createNodeByType } from '../utils/registerNode';
-import { useGraphData } from './useGraphData';
 
 export const useGraphOperations = (
   containerRef: React.RefObject<HTMLDivElement>,
@@ -66,23 +47,19 @@ export const useGraphOperations = (
 
   const { getSourceDataByApiId } = useDataSourceApi();
 
-  // 样式重置和高亮的公共函数
   const resetAllStyles = useCallback((graph: X6Graph) => {
     graph.getNodes().forEach((node: any) => {
       const nodeData = node.getData();
       if (nodeData?.type !== 'text') {
-        node.setAttrByPath('body/stroke', nodeData.config?.borderColor || '#ddd');
-        node.setAttrByPath('body/strokeWidth', 1);
+        node.setAttrByPath('body/stroke', nodeData.styleConfig?.borderColor);
       }
     });
 
-    // 重置所有边样式
     graph.getEdges().forEach((edge: any) => {
       edge.setAttrs({
         line: {
           ...edge.getAttrs().line,
           stroke: COLORS.EDGE.DEFAULT,
-          strokeWidth: 1,
         },
       });
     });
@@ -93,7 +70,6 @@ export const useGraphOperations = (
       const nodeData = cell.getData();
       if (nodeData?.type !== 'text') {
         cell.setAttrByPath('body/stroke', '#1890ff');
-        cell.setAttrByPath('body/strokeWidth', 1);
       }
     } else if (cell.isEdge()) {
       cell.setAttrs({
@@ -111,15 +87,13 @@ export const useGraphOperations = (
     const nodeData = node.getData();
     if (nodeData?.type !== 'text') {
       node.setAttrByPath('body/stroke', '#1890ff');
-      node.setAttrByPath('body/strokeWidth', 1);
     }
   }, []);
 
   const resetNodeStyle = useCallback((node: any) => {
     const nodeData = node.getData();
     if (nodeData?.type !== 'text') {
-      node.setAttrByPath('body/stroke', nodeData.config?.borderColor || '#ddd');
-      node.setAttrByPath('body/strokeWidth', 1);
+      node.setAttrByPath('body/stroke', nodeData.styleConfig?.borderColor || '#ddd');
     }
   }, []);
 
@@ -154,17 +128,18 @@ export const useGraphOperations = (
     if (!nodeConfig || !graphInstance) return;
 
     const node = graphInstance.getCellById(nodeConfig.id);
+    const { valueConfig } = nodeConfig || {};
     if (!node) return;
 
-    if (nodeConfig.type !== 'single-value' || !nodeConfig.dataSource || !nodeConfig.selectedFields?.length) {
+    if (nodeConfig.type !== 'single-value' || !valueConfig?.dataSource || !valueConfig?.selectedFields?.length) {
       return;
     }
 
     try {
       let requestParams = {};
 
-      if (nodeConfig.dataSourceParams && Array.isArray(nodeConfig.dataSourceParams)) {
-        requestParams = nodeConfig.dataSourceParams.reduce((acc: any, param: DataSourceParam) => {
+      if (valueConfig.dataSourceParams && Array.isArray(valueConfig.dataSourceParams)) {
+        requestParams = valueConfig.dataSourceParams.reduce((acc: any, param: DataSourceParam) => {
           if (param.value !== undefined) {
             acc[param.name] = (param.type === 'timeRange')
               ? formatTimeRange(param.value)
@@ -174,10 +149,10 @@ export const useGraphOperations = (
         }, {});
       }
 
-      const resData = await getSourceDataByApiId(nodeConfig.dataSource, requestParams);
+      const resData = await getSourceDataByApiId(valueConfig.dataSource, requestParams);
       if (resData && Array.isArray(resData) && resData.length > 0) {
         const latestData = resData[resData.length - 1];
-        const field = nodeConfig.selectedFields[0];
+        const field = valueConfig.selectedFields[0];
         const value = getValueByPath(latestData, field);
 
         let displayValue;
@@ -196,7 +171,6 @@ export const useGraphOperations = (
         node.setData(updatedData);
         node.setAttrByPath('label/text', displayValue);
 
-        // 调整节点大小以适应文本内容
         adjustSingleValueNodeSize(node, displayValue);
       } else {
         throw new Error('无数据');
@@ -212,7 +186,6 @@ export const useGraphOperations = (
       node.setData(updatedData);
       node.setAttrByPath('label/text', '无数据');
 
-      // 调整节点大小以适应错误文本
       adjustSingleValueNodeSize(node, '无数据');
     }
   }, [graphInstance, getSourceDataByApiId]);
@@ -230,7 +203,6 @@ export const useGraphOperations = (
       const currentLoadingText = loadingStates[currentIndex];
       node.setAttrByPath('label/text', currentLoadingText);
 
-      // 调整节点大小以适应loading文本
       adjustSingleValueNodeSize(node, currentLoadingText, 80);
 
       currentIndex = (currentIndex + 1) % loadingStates.length;
@@ -275,7 +247,6 @@ export const useGraphOperations = (
     }
   }, [graphInstance, isEditingText, setIsEditMode]);
 
-  // 使用数据操作hooks
   const dataOperations = useGraphData(graphInstance, updateSingleNodeData, startLoadingAnimation, handleSave);
 
   const bindGraphEvents = (graph: X6Graph) => {
@@ -307,8 +278,8 @@ export const useGraphOperations = (
           state.setViewConfigVisible(true);
         }
       } else if (clickedNodeData?.type !== 'text') {
-        const iconWidth = clickedNodeData.config?.width;
-        const iconHeight = clickedNodeData.config?.height;
+        const iconWidth = clickedNodeData.styleConfig?.width;
+        const iconHeight = clickedNodeData.styleConfig?.height;
         setEditingNodeData({
           ...clickedNodeData,
           id: node.id,
@@ -380,9 +351,7 @@ export const useGraphOperations = (
       if (!isEditModeRef.current) return;
 
       setSelectedCells(selected.map((cell) => cell.id));
-      // 重置所有样式
       resetAllStyles(graph);
-      // 高亮选中的元素
       selected.forEach(highlightCell);
     });
 
@@ -409,7 +378,6 @@ export const useGraphOperations = (
       hideAllEdgeTools(graph);
       setContextMenuVisible(false);
 
-      // 重置所有样式
       resetAllStyles(graph);
 
       graph.cleanSelection();
@@ -454,16 +422,14 @@ export const useGraphOperations = (
       hideAllEdgeTools(graph);
     });
 
-    // 统一的节点尺寸更新处理函数
     const handleNodeSizeUpdate = (node: any, isRealtime = false) => {
       const nodeData = node.getData();
-      if (!nodeData?.config) return;
 
       const size = node.getSize();
       const updatedConfig = {
         ...nodeData,
-        config: {
-          ...nodeData.config,
+        styleConfig: {
+          ...(nodeData.styleConfig || {}),
           width: size.width,
           height: size.height,
         },
@@ -473,7 +439,7 @@ export const useGraphOperations = (
 
       if (nodeData.type === 'icon' || nodeData.type === 'single-value') {
         if (!isRealtime) {
-          updateNodeProperties(node, updatedConfig, iconList);
+          updateNodeAttributes(node, updatedConfig, iconList);
         }
       } else if (nodeData.type === 'chart') {
         const chartPortConfig = createPortConfig();
@@ -481,12 +447,10 @@ export const useGraphOperations = (
       }
     };
 
-    // 拖拽过程中的实时更新
     graph.on('node:resize', ({ node }) => {
       handleNodeSizeUpdate(node, true);
     });
 
-    // 拖拽结束后的最终更新
     graph.on('node:resized', ({ node }) => {
       handleNodeSizeUpdate(node, false);
     });
@@ -501,11 +465,9 @@ export const useGraphOperations = (
     });
   };
 
-  // 图形初始化
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // 首先注册所有节点类型
     registerNodes();
 
     const graph: X6Graph = new Graph({
@@ -610,7 +572,6 @@ export const useGraphOperations = (
     };
   }, []);
 
-  // 基础图形操作
   const zoomIn = useCallback(() => {
     if (graphInstance) {
       const next = scale + 0.1;
@@ -647,37 +608,20 @@ export const useGraphOperations = (
     }
   }, [graphInstance]);
 
-  // 添加节点到画布
-  const addNode = useCallback((nodeType: string, formValues: any, position: { x: number; y: number }) => {
+  const addNewNode = useCallback((nodeConfig: any) => {
     if (!graphInstance) {
       return null;
     }
-
-    // 创建基础节点配置
-    const nodeConfig: TopologyNodeData = {
-      id: `node_${uuidv4()}`,
-      type: nodeType,
-      x: position.x,
-      y: position.y,
-      ...formValues,
-    };
-
-    // 使用注册的节点创建节点数据
     const nodeData = createNodeByType(nodeConfig, iconList);
-
+    const { valueConfig } = nodeConfig || {};
     const addedNode = graphInstance.addNode(nodeData);
-
-    // 如果是单值节点，调整大小以适应初始文本（节点名称）
     if (nodeConfig.type === 'single-value') {
       adjustSingleValueNodeSize(addedNode, nodeConfig.name || '单值节点');
     }
-
-    // 如果是单值节点且有数据源，启动loading动画并更新数据显示
-    if (nodeConfig.type === 'single-value' && nodeConfig.dataSource && nodeConfig.selectedFields?.length) {
+    if (nodeConfig.type === 'single-value' && valueConfig?.dataSource && valueConfig?.selectedFields?.length) {
       startLoadingAnimation(addedNode);
       updateSingleNodeData({ ...nodeConfig, id: addedNode.id });
     }
-
     return addedNode.id;
   }, [graphInstance, updateSingleNodeData, startLoadingAnimation]);
 
@@ -685,24 +629,33 @@ export const useGraphOperations = (
     if (!values) {
       return;
     }
+    const editingNode = state.editingNodeData;
+    const { valueConfig, styleConfig } = editingNode || {};
     try {
       const updatedConfig = {
-        id: state.editingNodeData.id,
-        type: state.editingNodeData.type,
-        name: values.name || state.editingNodeData.name,
-        logoType: values.logoType || state.editingNodeData.logoType,
-        logoIcon: values.logoIcon || state.editingNodeData.logoIcon,
-        logoUrl: values.logoUrl || state.editingNodeData.logoUrl,
-        dataSource: values.dataSource || state.editingNodeData.dataSource,
-        dataSourceParams: values.dataSourceParams || state.editingNodeData.dataSourceParams,
-        selectedFields: values.selectedFields || state.editingNodeData.selectedFields,
-        config: {
-          textColor: values.textColor || state.editingNodeData.config?.textColor,
-          fontSize: values.fontSize || state.editingNodeData.config?.fontSize,
-          backgroundColor: values.backgroundColor || state.editingNodeData.config?.backgroundColor,
-          borderColor: values.borderColor || state.editingNodeData.config?.borderColor,
-          width: values.width || state.editingNodeData.config?.width,
-          height: values.height || state.editingNodeData.config?.height,
+        id: editingNode.id,
+        type: editingNode.type,
+        name: values.name || editingNode.name,
+        position: editingNode.position,
+        logoType: values.logoType || editingNode.logoType,
+        logoIcon: values.logoIcon || editingNode.logoIcon,
+        logoUrl: values.logoUrl || editingNode.logoUrl,
+        valueConfig: {
+          selectedFields: values.selectedFields || valueConfig?.selectedFields,
+          chartType: values.chartType || valueConfig?.chartType,
+          dataSource: values.dataSource || valueConfig?.dataSource,
+          dataSourceParams: values.dataSourceParams || valueConfig?.dataSourceParams,
+        },
+        styleConfig: {
+          textColor: values.textColor || styleConfig?.textColor,
+          fontSize: values.fontSize || styleConfig?.fontSize,
+          backgroundColor: values.backgroundColor || styleConfig?.backgroundColor,
+          borderColor: values.borderColor || styleConfig?.borderColor,
+          borderWidth: values.borderWidth || styleConfig?.borderWidth,
+          width: values.width || styleConfig?.width,
+          height: values.height || styleConfig?.height,
+          lineType: values.lineType || styleConfig?.lineType,
+          shapeType: values.shapeType || styleConfig?.shapeType,
         },
       };
 
@@ -714,9 +667,9 @@ export const useGraphOperations = (
       if (!node) {
         return;
       }
-      updateNodeProperties(node, updatedConfig, iconList);
+      updateNodeAttributes(node, updatedConfig, iconList);
 
-      if (updatedConfig.type === 'single-value' && updatedConfig.dataSource && updatedConfig.selectedFields?.length) {
+      if (updatedConfig.type === 'single-value' && updatedConfig.valueConfig?.dataSource && updatedConfig.valueConfig?.selectedFields?.length) {
         updateSingleNodeData(updatedConfig);
       }
 
@@ -735,15 +688,11 @@ export const useGraphOperations = (
       if (node) {
         const updatedData = {
           ...state.editingNodeData,
-          dataSource: values.dataSource,
-          dataSourceParams: values.dataSourceParams,
           name: values.name || state.editingNodeData.name,
           valueConfig: {
-            ...state.editingNodeData.valueConfig,
             chartType: values.chartType,
             dataSource: values.dataSource,
             dataSourceParams: values.dataSourceParams,
-            name: values.name || state.editingNodeData.name,
           },
           isLoading: !!values.dataSource,
           hasError: false,
@@ -758,50 +707,125 @@ export const useGraphOperations = (
     state.setViewConfigVisible(false);
   }, [graphInstance, state, dataOperations]);
 
-  const handleAddChartNode = useCallback(async (
-    widget: string,
-    config?: any,
-    position?: { x: number; y: number }
-  ) => {
+
+  const handleAddChartNode = useCallback(async (values: any) => {
     if (!graphInstance) {
       return null;
     }
-
-    const defaultPosition = position || { x: 300, y: 200 };
-
-    const chartNodeConfig: any = {
-      widget: widget,
-      name: config?.name,
-      valueConfig: config.valueConfig,
+    const nodeConfig = {
+      id: `node_${uuidv4()}`,
       type: 'chart',
-      dataSource: config?.dataSource,
-      dataSourceParams: config?.dataSourceParams || [],
-      isLoading: !!config?.dataSource,
-      rawData: null,
-      hasError: false,
+      name: values.name,
+      position: state.editingNodeData.position,
+      styleConfig: {},
+      valueConfig: {
+        chartType: values.chartType,
+        dataSource: values.dataSource,
+        dataSourceParams: values.dataSourceParams,
+      },
     };
-
-    const nodeId = addNode('chart', chartNodeConfig, defaultPosition);
-
-    if (config?.dataSource && nodeId) {
-      dataOperations.loadChartNodeData(nodeId, chartNodeConfig);
+    const nodeId = addNewNode(nodeConfig);
+    if (nodeConfig.valueConfig?.dataSource && nodeId) {
+      dataOperations.loadChartNodeData(nodeId, nodeConfig.valueConfig);
     }
+  }, [graphInstance, addNewNode, dataOperations]);
 
-    return nodeId;
-  }, [graphInstance, addNode, dataOperations]);
 
-  // 手动调整画布大小
   const resizeCanvas = useCallback((width?: number, height?: number) => {
     if (!graphInstance || !containerRef.current) return;
 
     if (width && height) {
       graphInstance.resize(width, height);
     } else {
-      // 自动获取容器大小
       const rect = containerRef.current.getBoundingClientRect();
       graphInstance.resize(rect.width, rect.height);
     }
   }, [graphInstance]);
+
+  const toggleEditMode = useCallback(() => {
+    const newEditMode = !state.isEditMode;
+    state.setIsEditMode(newEditMode);
+    state.isEditModeRef.current = newEditMode;
+
+    if (graphInstance) {
+      if (newEditMode) {
+        graphInstance.enablePlugins(['selection']);
+      } else {
+        graphInstance.disablePlugins(['selection']);
+
+        if (state.isEditingText) {
+          state.setIsEditingText(false);
+          state.setEditingNodeId(null);
+          state.setTempTextInput('');
+          state.setEditPosition({ x: 0, y: 0 });
+          state.setInputWidth(120);
+          state.setOriginalText('');
+        }
+
+        state.setContextMenuVisible(false);
+        graphInstance.cleanSelection();
+        state.setSelectedCells([]);
+      }
+    }
+  }, [state, graphInstance]);
+
+  const getEditNodeInitialValues = useCallback(() => {
+    if (!state.editingNodeData) return {};
+
+    const editingNodeData = state.editingNodeData;
+    const baseValues = {
+      name: editingNodeData.name
+    };
+
+    const styleConfig = editingNodeData.styleConfig || {};
+    const valueConfig = editingNodeData.valueConfig || {};
+    switch (editingNodeData.type) {
+      case 'single-value':
+        return {
+          ...baseValues,
+          fontSize: styleConfig.fontSize,
+          textColor: styleConfig.textColor,
+          backgroundColor: styleConfig.backgroundColor,
+          borderColor: styleConfig.borderColor,
+          selectedFields: valueConfig.selectedFields || [],
+          dataSource: valueConfig.dataSource,
+          dataSourceParams: valueConfig.dataSourceParams || {},
+        };
+
+      case 'icon':
+        return {
+          ...baseValues,
+          logoType: editingNodeData.logoType || 'default',
+          logoIcon: editingNodeData.logoType === 'default' ? editingNodeData.logoIcon : 'cc-host',
+          logoUrl: editingNodeData.logoType === 'custom' ? editingNodeData.logoUrl : undefined,
+          width: styleConfig.width,
+          height: styleConfig.height,
+          backgroundColor: styleConfig.backgroundColor,
+          borderColor: styleConfig.borderColor,
+          borderWidth: styleConfig.borderWidth,
+        };
+
+      case 'basic-shape':
+        return {
+          ...baseValues,
+          width: styleConfig.width,
+          height: styleConfig.height,
+          backgroundColor: styleConfig.backgroundColor,
+          borderColor: styleConfig.borderColor,
+          borderWidth: styleConfig.borderWidth,
+          lineType: styleConfig.lineType,
+          shapeType: styleConfig.shapeType,
+        };
+
+      default:
+        return baseValues;
+    }
+  }, [state.editingNodeData]);
+
+  const handleNodeEditClose = useCallback(() => {
+    state.setNodeEditVisible(false);
+    state.setEditingNodeData(null);
+  }, [state]);
 
   return {
     zoomIn,
@@ -810,11 +834,14 @@ export const useGraphOperations = (
     handleDelete,
     handleSelectMode,
     handleSave,
-    addNode,
+    addNewNode,
     handleNodeUpdate,
     handleViewConfigConfirm,
     handleAddChartNode,
     resizeCanvas,
+    toggleEditMode,
+    getEditNodeInitialValues,
+    handleNodeEditClose,
     ...dataOperations,
   };
 };

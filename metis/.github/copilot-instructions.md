@@ -44,7 +44,6 @@ from sanic.log import logger
 
 5. Sanic 框架规范
 	•	I/O 操作：所有外部调用必须为 async，并设置 超时与取消机制。
-	•	并发控制：使用 asyncio.Semaphore 管理并发。
 	•	请求处理：入口参数统一使用 Pydantic 校验。
 
 ⸻
@@ -65,3 +64,6 @@ from sanic.log import logger
 	•	可测试性：具备充分的单元测试或集成测试条件。
 	•	可回滚性：变更边界明确，易于撤销。
 	•	可观测性：关键路径具备日志与监控。
+
+8. 技术组件
+	*  图数据库使用了 FalkorDB，不支持 Neo4J 的一些特殊语法，注意查询语句的兼容性。

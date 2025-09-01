@@ -119,6 +119,57 @@
     "deleteSelected": "删除选中",
     "exitEdit": "退出编辑",
     "viewAlarmList": "查看告警列表",
-    "viewMonitorDetails": "查看监控详情"
+    "viewMonitorDetails": "查看监控详情",
+    "nodeConfig": {
+        "dataSource": "数据源",
+        "dataSourceType": "数据源类型",
+        "paramSettings": "参数设置",
+        "dataSettings": "数据设置",
+        "nodeStyle": "节点样式",
+        "basicSettings": "基础设置",
+        "logoType": "Logo类型",
+        "default": "默认",
+        "custom": "自定义",
+        "selectIcon": "选择图标",
+        "uploadImage": "上传图片",
+        "fontSize": "字体大小",
+        "textColor": "文本颜色",
+        "width": "宽度",
+        "height": "高度",
+        "backgroundColor": "背景颜色",
+        "borderColor": "边框颜色",
+        "borderWidth": "边框宽度",
+        "solidLine": "实线",
+        "dashedLine": "虚线",
+        "dottedLine": "点线",
+        "shapeType": "图形类型",
+        "rectangle": "矩形",
+        "circle": "圆形",
+        "noColor": "无颜色",
+        "name": "名称",
+        "confirm": "确认",
+        "close": "关闭",
+        "cancel": "取消",
+        "refreshDataFields": "刷新数据字段",
+        "selectDataFields": "选择要显示的数据字段",
+        "fetchingDataFields": "正在获取数据字段",
+        "clickRefreshToGetFields": "点击刷新按钮获取数据字段",
+        "selectDataSourceFirst": "请先选择数据源",
+        "selectedIcon": "已选择的图标",
+        "uploadedImage": "已上传的图片"
+    },
+    "nodeTypes": {
+        "singleValue": "单值",
+        "icon": "图标",
+        "basicShape": "基础图形",
+        "chart": "图表",
+        "node": "节点"
+    },
+    "nodeTitles": {
+        "single-value": "单值节点",
+        "icon": "图标节点",
+        "basic-shape": "基础图形节点",
+        "chart": "图表节点"
+    }
   }
 }

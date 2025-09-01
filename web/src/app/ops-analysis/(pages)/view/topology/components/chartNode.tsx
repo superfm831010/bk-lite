@@ -20,24 +20,19 @@ const ChartNode: React.FC<ChartNodeProps> = ({ node }) => {
   const nodeData = node.getData();
   const {
     valueConfig,
-    config,
+    styleConfig,
     isLoading,
     rawData,
     hasError,
     name: componentName,
   } = nodeData;
 
-  const width = config?.width || NODE_DEFAULTS.CHART_NODE.width;
-  const height = config?.height || NODE_DEFAULTS.CHART_NODE.height;
+  const width = styleConfig?.width || NODE_DEFAULTS.CHART_NODE.width;
+  const height = styleConfig?.height || NODE_DEFAULTS.CHART_NODE.height;
 
   const widgetProps = {
     rawData: rawData || null,
     loading: isLoading || false,
-    config: {
-      lineColor: valueConfig?.lineColor || '#1890ff',
-      barColor: valueConfig?.barColor || '#1890ff',
-      ...valueConfig,
-    },
   };
 
   const shouldShowLoading = isLoading || (!rawData && !hasError);
