@@ -42,18 +42,16 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
       return {
         name: item.name,
         widget: item.widget,
-        dataSource: item.dataSource || item.valueConfig?.dataSource,
         chartType: item.valueConfig?.chartType,
-        dataSourceParams:
-          item.dataSourceParams || item.valueConfig?.dataSourceParams || [],
-        ...item.valueConfig,
+        dataSource: item.valueConfig?.dataSource,
+        dataSourceParams: item.valueConfig?.dataSourceParams || [],
       };
     } else if (isDashboardFormat(item)) {
       return {
         name: item.config?.name || item.title,
         widget: item.widget,
-        dataSource: item.config?.dataSource,
         chartType: item.config?.chartType,
+        dataSource: item.config?.dataSource,
         dataSourceParams: item.config?.dataSourceParams || [],
         ...item.config,
       };

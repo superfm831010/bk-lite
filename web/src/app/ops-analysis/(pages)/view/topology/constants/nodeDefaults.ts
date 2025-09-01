@@ -165,6 +165,21 @@ export const NODE_DEFAULTS = {
     borderRadius: SPACING.BORDER_RADIUS.DEFAULT,
     strokeWidth: SPACING.STROKE_WIDTH.THIN,
   },
+
+  // 基础图形节点默认配置
+  BASIC_SHAPE_NODE: {
+    width: 120,
+    height: 80,
+    backgroundColor: COLORS.BACKGROUND.WHITE,
+    borderColor: COLORS.BORDER.DEFAULT,
+    borderWidth: SPACING.STROKE_WIDTH.DEFAULT,
+    lineType: 'solid' as const,
+    shapeType: 'rectangle' as const,
+    textColor: COLORS.TEXT.PRIMARY,
+    fontSize: TYPOGRAPHY.FONT_SIZE.DEFAULT,
+    fontWeight: TYPOGRAPHY.FONT_WEIGHT.NORMAL,
+    borderRadius: SPACING.BORDER_RADIUS.DEFAULT,
+  },
 } as const;
 
 // 端口默认配置

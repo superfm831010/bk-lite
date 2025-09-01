@@ -118,6 +118,57 @@
     "deleteSelected": "Delete Selected",
     "exitEdit": "Exit Edit",
     "viewAlarmList": "View Alarm List",
-    "viewMonitorDetails": "View Monitor Details"
+    "viewMonitorDetails": "View Monitor Details",
+    "nodeConfig": {
+        "dataSource": "Data Source",
+        "dataSourceType": "Data Source Type",
+        "paramSettings": "Parameter Settings",
+        "dataSettings": "Data Settings",
+        "nodeStyle": "Node Style",
+        "basicSettings": "Basic Settings",
+        "logoType": "Logo Type",
+        "default": "Default",
+        "custom": "Custom",
+        "selectIcon": "Select Icon",
+        "uploadImage": "Upload Image",
+        "fontSize": "Font Size",
+        "textColor": "Text Color",
+        "width": "Width",
+        "height": "Height",
+        "backgroundColor": "Background Color",
+        "borderColor": "Border Color",
+        "borderWidth": "Border Width",
+        "solidLine": "Solid",
+        "dashedLine": "Dashed",
+        "dottedLine": "Dotted",
+        "shapeType": "Shape Type",
+        "rectangle": "Rectangle",
+        "circle": "Circle",
+        "noColor": "No Color",
+        "name": "Name",
+        "confirm": "Confirm",
+        "close": "Close",
+        "cancel": "Cancel",
+        "refreshDataFields": "Refresh Data Fields",
+        "selectDataFields": "Select data fields to display",
+        "fetchingDataFields": "Fetching data fields...",
+        "clickRefreshToGetFields": "Click refresh button to get data fields",
+        "selectDataSourceFirst": "Please select a data source first",
+        "selectedIcon": "Selected Icon",
+        "uploadedImage": "Uploaded Image"
+    },
+    "nodeTypes": {
+        "singleValue": "Single Value",
+        "icon": "Icon",
+        "basicShape": "Basic Shape",
+        "chart": "Chart",
+        "node": "Node"
+    },
+    "nodeTitles": {
+        "single-value": "Single Value Node",
+        "icon": "Icon Node",
+        "basic-shape": "Basic Shape Node",
+        "chart": "Chart Node"
+    }
   }
 }
