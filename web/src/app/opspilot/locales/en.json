@@ -474,7 +474,8 @@
       "deleteConfirm": "Are you sure you want to delete this group?",
       "deleteConfirmContent": "This action will delete the group",
       "reorderSuccess": "Group order updated successfully",
-      "reorderFailed": "Failed to update group order"
+      "reorderFailed": "Failed to update group order",
+      "tags": "Tags"
     }
   },
   "studio": {
