@@ -1,28 +1,19 @@
-/**
- * 拓扑图节点注册工厂
- * 根据当前项目的节点类型(icon, single-value, text, chart)注册对应的节点形状
- */
-
 import ChartNode from '../components/chartNode';
 import { Graph } from '@antv/x6';
 import { register } from '@antv/x6-react-shape';
 import { NODE_DEFAULTS } from '../constants/nodeDefaults';
 import { createPortConfig } from './topologyUtils';
 
-// 节点类型映射
 const NODE_TYPE_MAP = {
   'icon': 'icon-node',
   'single-value': 'single-value-node',
   'text': 'text-node',
-  'chart': 'chart-node'
+  'chart': 'chart-node',
+  'basic-shape': 'basic-shape-node'
 } as const;
 
-// 默认图标路径
 const DEFAULT_ICON_PATH = '/app/assets/assetModelIcon/cc-default_默认.svg';
 
-/**
- * 注册图标节点
- */
 const registerIconNode = () => {
   const { ICON_NODE } = NODE_DEFAULTS;
 
@@ -41,10 +32,10 @@ const registerIconNode = () => {
         stroke: ICON_NODE.borderColor,
         strokeWidth: ICON_NODE.strokeWidth,
         rx: ICON_NODE.borderRadius,
-        ry: ICON_NODE.borderRadius,
-        magnet: true,
+        ry: ICON_NODE.borderRadius
       },
       image: {
+        fill: ICON_NODE.backgroundColor,
         refWidth: '70%',
         refHeight: '70%',
         refX: '50%',
@@ -69,9 +60,6 @@ const registerIconNode = () => {
   });
 };
 
-/**
- * 注册单值节点
- */
 const registerSingleValueNode = () => {
   const { SINGLE_VALUE_NODE } = NODE_DEFAULTS;
 
@@ -90,7 +78,6 @@ const registerSingleValueNode = () => {
         strokeWidth: SINGLE_VALUE_NODE.strokeWidth,
         rx: SINGLE_VALUE_NODE.borderRadius,
         ry: SINGLE_VALUE_NODE.borderRadius,
-        magnet: true,
       },
       label: {
         fill: SINGLE_VALUE_NODE.textColor,
@@ -107,9 +94,6 @@ const registerSingleValueNode = () => {
   });
 };
 
-/**
- * 注册文本节点
- */
 const registerTextNode = () => {
   const { TEXT_NODE } = NODE_DEFAULTS;
 
@@ -138,13 +122,33 @@ const registerTextNode = () => {
         textWrap: { width: '100%', height: '100%' }
       }
     },
-    ports: { groups: {}, items: [] } // 文本节点不需要连接端口
+    ports: { groups: {}, items: [] }
   });
 };
 
-/**
- * 注册图表节点
- */
+const registerBasicShapeNode = () => {
+  const { BASIC_SHAPE_NODE } = NODE_DEFAULTS;
+
+  Graph.registerNode('basic-shape-node', {
+    inherit: 'rect',
+    width: BASIC_SHAPE_NODE.width,
+    height: BASIC_SHAPE_NODE.height,
+    markup: [
+      { tagName: 'rect', selector: 'body' }
+    ],
+    attrs: {
+      body: {
+        fill: BASIC_SHAPE_NODE.backgroundColor,
+        stroke: BASIC_SHAPE_NODE.borderColor,
+        strokeWidth: BASIC_SHAPE_NODE.borderWidth,
+        rx: BASIC_SHAPE_NODE.borderRadius,
+        ry: BASIC_SHAPE_NODE.borderRadius,
+      }
+    },
+    ports: createPortConfig()
+  });
+};
+
 const registerChartNode = () => {
   const { CHART_NODE } = NODE_DEFAULTS;
 
@@ -157,15 +161,10 @@ const registerChartNode = () => {
   });
 };
 
-// 记录已注册的节点类型
 const registeredNodes = new Set<string>();
 
-/**
- * 注册所有节点类型
- */
 export const registerNodes = () => {
   try {
-    // 检查是否已经注册过，避免重复注册
     if (!registeredNodes.has('icon-node')) {
       registerIconNode();
       registeredNodes.add('icon-node');
@@ -181,6 +180,11 @@ export const registerNodes = () => {
       registeredNodes.add('text-node');
     }
 
+    if (!registeredNodes.has('basic-shape-node')) {
+      registerBasicShapeNode();
+      registeredNodes.add('basic-shape-node');
+    }
+
     if (!registeredNodes.has('chart-node')) {
       registerChartNode();
       registeredNodes.add('chart-node');
@@ -191,16 +195,10 @@ export const registerNodes = () => {
   }
 };
 
-/**
- * 根据节点类型获取对应的注册节点名称
- */
 export const getRegisteredNodeShape = (nodeType: string): string => {
   return NODE_TYPE_MAP[nodeType as keyof typeof NODE_TYPE_MAP] || 'icon-node';
 };
 
-/**
- * 获取图标URL
- */
 const getIconUrl = (nodeConfig: any, iconList?: any[]): string => {
   if (nodeConfig.logoType === 'default' && nodeConfig.logoIcon) {
     if (iconList) {
@@ -219,94 +217,51 @@ const getIconUrl = (nodeConfig: any, iconList?: any[]): string => {
   return DEFAULT_ICON_PATH;
 };
 
-/**
- * 创建基础节点数据
- */
-const createBaseNodeData = (nodeConfig: any, shape: string) => ({
-  id: nodeConfig.id,
-  shape,
-  x: nodeConfig.x || 100,
-  y: nodeConfig.y || 100,
-  label: nodeConfig.name || '',
-  data: {
-    type: nodeConfig.type,
-    name: nodeConfig.name,
-    config: nodeConfig.config || {},
-    ...nodeConfig
-  }
-});
-
-/**
- * 创建图标节点
- */
 const createIconNode = (nodeConfig: any, baseNodeData: any, iconList?: any[]) => {
   const logoUrl = getIconUrl(nodeConfig, iconList);
-  const { ICON_NODE } = NODE_DEFAULTS;
 
   return {
     ...baseNodeData,
-    width: nodeConfig.config?.width || ICON_NODE.width,
-    height: nodeConfig.config?.height || ICON_NODE.height,
+    width: nodeConfig.styleConfig?.width,
+    height: nodeConfig.styleConfig?.height,
     attrs: {
-      body: {
-        fill: nodeConfig.config?.backgroundColor || ICON_NODE.backgroundColor,
-        stroke: nodeConfig.config?.borderColor || ICON_NODE.borderColor
-      },
-      image: { 'xlink:href': logoUrl },
-      label: {
-        fill: nodeConfig.config?.textColor || ICON_NODE.textColor,
-        fontSize: nodeConfig.config?.fontSize || ICON_NODE.fontSize,
-        fontWeight: ICON_NODE.fontWeight,
-        textAnchor: 'middle',
-        textVerticalAnchor: 'top',
-        refX: '50%',
-        refY: '100%',
-        refY2: '20',
-        textWrap: { width: '90%', ellipsis: true }
+      image: {
+        'xlink:href': logoUrl
       }
     },
     ports: createPortConfig()
   };
 };
 
-/**
- * 创建单值节点
- */
 const createSingleValueNode = (nodeConfig: any, baseNodeData: any) => {
-  const { SINGLE_VALUE_NODE } = NODE_DEFAULTS;
-  const hasDataSource = nodeConfig.dataSource && nodeConfig.selectedFields?.length > 0;
+  const valueConfig = nodeConfig.valueConfig || {};
+  const hasDataSource = valueConfig.dataSource && valueConfig.selectedFields?.length > 0;
 
   return {
     ...baseNodeData,
-    width: nodeConfig.config?.width || SINGLE_VALUE_NODE.width,
-    height: nodeConfig.config?.height || SINGLE_VALUE_NODE.height,
     data: {
       ...baseNodeData.data,
-      dataSource: nodeConfig.dataSource,
-      dataSourceParams: nodeConfig.dataSourceParams || [],
-      selectedFields: nodeConfig.selectedFields || [],
+      dataSource: valueConfig.dataSource,
+      dataSourceParams: valueConfig.dataSourceParams || [],
+      selectedFields: valueConfig.selectedFields || [],
       isLoading: hasDataSource,
       hasError: false
     },
     attrs: {
       body: {
-        fill: nodeConfig.config?.backgroundColor || SINGLE_VALUE_NODE.backgroundColor,
-        stroke: nodeConfig.config?.borderColor || SINGLE_VALUE_NODE.borderColor
+        fill: nodeConfig.styleConfig?.backgroundColor,
+        stroke: nodeConfig.styleConfig?.borderColor
       },
       label: {
-        fill: nodeConfig.config?.textColor || SINGLE_VALUE_NODE.textColor,
-        fontSize: nodeConfig.config?.fontSize || SINGLE_VALUE_NODE.fontSize
+        fill: nodeConfig.styleConfig?.textColor,
+        fontSize: nodeConfig.styleConfig?.fontSize
       }
     },
     ports: createPortConfig()
   };
 };
 
-/**
- * 创建文本节点
- */
 const createTextNode = (nodeConfig: any, baseNodeData: any) => {
-  const { TEXT_NODE } = NODE_DEFAULTS;
 
   return {
     ...baseNodeData,
@@ -316,31 +271,88 @@ const createTextNode = (nodeConfig: any, baseNodeData: any) => {
     },
     attrs: {
       label: {
-        fill: nodeConfig.config?.textColor || TEXT_NODE.textColor,
-        fontSize: nodeConfig.config?.fontSize || TEXT_NODE.fontSize,
+        fill: nodeConfig.styleConfig?.textColor,
+        fontSize: nodeConfig.styleConfig?.fontSize,
         text: nodeConfig.name || '双击编辑文本'
       }
     }
   };
 };
 
-/**
- * 创建图表节点
- */
-const createChartNode = (nodeConfig: any, baseNodeData: any) => {
-  const { CHART_NODE } = NODE_DEFAULTS;
+const createBasicShapeNode = (nodeConfig: any, baseNodeData: any) => {
+  const { BASIC_SHAPE_NODE } = NODE_DEFAULTS;
+
+  const getShapeSpecificAttrs = (shapeType: string) => {
+    // 直接使用配置对象中的值
+    const backgroundColor = nodeConfig.styleConfig?.backgroundColor;
+    const borderColor = nodeConfig.styleConfig?.borderColor;
+    const borderWidth = nodeConfig.styleConfig?.borderWidth;
+    const lineType = nodeConfig.styleConfig?.lineType;
+
+    // 支持透明背景 - 处理ColorPicker的透明值
+    const isTransparent = !backgroundColor ||
+      backgroundColor === 'transparent' ||
+      backgroundColor === 'none' ||
+      backgroundColor === '' ||
+      backgroundColor === 'rgba(0,0,0,0)';
+
+    const baseAttrs: any = {
+      fill: isTransparent ? BASIC_SHAPE_NODE.backgroundColor : backgroundColor,
+      fillOpacity: isTransparent ? 0 : 1,
+      stroke: borderColor,
+      strokeWidth: borderWidth,
+    };
+
+    if (lineType === 'dashed') {
+      baseAttrs.strokeDasharray = '5,5';
+    } else if (lineType === 'dotted') {
+      baseAttrs.strokeDasharray = '2,2';
+    } else {
+      baseAttrs.strokeDasharray = 'none';
+    }
+
+    switch (shapeType) {
+      case 'circle':
+        return {
+          ...baseAttrs,
+          rx: '50%',
+          ry: '50%'
+        };
+      case 'rectangle':
+      default:
+        return {
+          ...baseAttrs,
+          rx: BASIC_SHAPE_NODE.borderRadius,
+          ry: BASIC_SHAPE_NODE.borderRadius
+        };
+    }
+  };
+
+  const shapeType = nodeConfig.styleConfig?.shapeType;
+  const width = nodeConfig.styleConfig?.width;
+  const height = nodeConfig.styleConfig?.height;
 
   return {
     ...baseNodeData,
-    width: nodeConfig.config?.width || CHART_NODE.width,
-    height: nodeConfig.config?.height || CHART_NODE.height,
+    width: width,
+    height: height,
+    attrs: {
+      body: getShapeSpecificAttrs(shapeType)
+    },
+    ports: createPortConfig()
+  };
+};
+
+const createChartNode = (nodeConfig: any, baseNodeData: any) => {
+  return {
+    ...baseNodeData,
+    width: nodeConfig.styleConfig?.width,
+    height: nodeConfig.styleConfig?.height,
     data: {
       ...baseNodeData.data,
       widget: nodeConfig.widget,
       valueConfig: nodeConfig.valueConfig,
-      dataSource: nodeConfig.dataSource,
-      dataSourceParams: nodeConfig.dataSourceParams || [],
-      isLoading: !!nodeConfig.dataSource,
+      isLoading: !!nodeConfig.valueConfig.dataSource,
       rawData: null,
       hasError: false
     },
@@ -348,109 +360,163 @@ const createChartNode = (nodeConfig: any, baseNodeData: any) => {
   };
 };
 
-/**
- * 使用注册的节点创建节点数据
- */
 export const createNodeByType = (nodeConfig: any, iconList?: any[]): any => {
   const shape = getRegisteredNodeShape(nodeConfig.type);
-  const baseNodeData = createBaseNodeData(nodeConfig, shape);
-
-  // 根据节点类型创建特定节点
-  const nodeCreators = {
-    'icon': () => createIconNode(nodeConfig, baseNodeData, iconList),
-    'single-value': () => createSingleValueNode(nodeConfig, baseNodeData),
-    'text': () => createTextNode(nodeConfig, baseNodeData),
-    'chart': () => createChartNode(nodeConfig, baseNodeData)
+  const baseNodeData = {
+    id: nodeConfig.id,
+    x: nodeConfig.position?.x || nodeConfig.x,
+    y: nodeConfig.position?.y || nodeConfig.y,
+    shape,
+    label: nodeConfig.name || '',
+    data: { ...nodeConfig },
   };
-
-  return nodeCreators[nodeConfig.type as keyof typeof nodeCreators]?.() || baseNodeData;
+  switch (nodeConfig.type) {
+    case 'icon':
+      return createIconNode(nodeConfig, baseNodeData, iconList);
+    case 'single-value':
+      return createSingleValueNode(nodeConfig, baseNodeData);
+    case 'text':
+      return createTextNode(nodeConfig, baseNodeData);
+    case 'basic-shape':
+      return createBasicShapeNode(nodeConfig, baseNodeData);
+    case 'chart':
+      return createChartNode(nodeConfig, baseNodeData);
+    default:
+      return baseNodeData;
+  }
 };
 
-/**
- * 更新图标节点属性
- */
 const updateIconNodeAttributes = (node: any, nodeConfig: any, iconList?: any[]) => {
-  const { ICON_NODE } = NODE_DEFAULTS;
   const logoUrl = getIconUrl(nodeConfig, iconList);
-
   node.setAttrs({
-    body: {
-      fill: nodeConfig.config?.backgroundColor || ICON_NODE.backgroundColor,
-      stroke: nodeConfig.config?.borderColor || ICON_NODE.borderColor,
-    },
     image: {
       'xlink:href': logoUrl
     },
     label: {
-      fill: nodeConfig.config?.textColor || ICON_NODE.textColor,
-      fontSize: nodeConfig.config?.fontSize || ICON_NODE.fontSize,
+      fill: nodeConfig.styleConfig?.textColor
     }
   });
 
-  // 如果尺寸发生变化，更新节点尺寸和端口
-  if (nodeConfig.config?.width && nodeConfig.config?.height) {
+  if (nodeConfig.styleConfig?.width && nodeConfig.styleConfig?.height) {
     const { width: currentWidth, height: currentHeight } = node.getSize();
 
-    if (currentWidth !== nodeConfig.config.width || currentHeight !== nodeConfig.config.height) {
-      node.resize(nodeConfig.config.width, nodeConfig.config.height);
-      node.prop('ports', createPortConfig()); // 重新计算端口位置
+    if (currentWidth !== nodeConfig.styleConfig.width || currentHeight !== nodeConfig.styleConfig.height) {
+      node.resize(nodeConfig.styleConfig.width, nodeConfig.styleConfig.height);
+      node.prop('ports', createPortConfig());
     }
   }
 };
 
-/**
- * 更新单值节点属性
- */
 const updateSingleValueNodeAttributes = (node: any, nodeConfig: any) => {
-  const { SINGLE_VALUE_NODE } = NODE_DEFAULTS;
-
   node.setAttrs({
     body: {
-      fill: nodeConfig.config?.backgroundColor || SINGLE_VALUE_NODE.backgroundColor,
-      stroke: nodeConfig.config?.borderColor || SINGLE_VALUE_NODE.borderColor,
+      fill: nodeConfig.styleConfig?.backgroundColor,
+      stroke: nodeConfig.styleConfig?.borderColor,
     },
     label: {
-      fill: nodeConfig.config?.textColor || SINGLE_VALUE_NODE.textColor,
-      fontSize: nodeConfig.config?.fontSize || SINGLE_VALUE_NODE.fontSize,
+      fill: nodeConfig.styleConfig?.textColor,
+      fontSize: nodeConfig.styleConfig?.fontSize,
     }
   });
 };
 
-/**
- * 更新文本节点属性
- */
 const updateTextNodeAttributes = (node: any, nodeConfig: any) => {
-  const { TEXT_NODE } = NODE_DEFAULTS;
-
   node.setAttrs({
     body: {
-      fill: nodeConfig.config?.backgroundColor || TEXT_NODE.backgroundColor,
-      stroke: nodeConfig.config?.borderColor || TEXT_NODE.borderColor,
+      fill: nodeConfig.styleConfig?.backgroundColor,
+      stroke: nodeConfig.styleConfig?.borderColor,
     },
     label: {
-      fill: nodeConfig.config?.textColor || TEXT_NODE.textColor,
-      fontSize: nodeConfig.config?.fontSize || TEXT_NODE.fontSize,
+      fill: nodeConfig.styleConfig?.textColor,
+      fontSize: nodeConfig.styleConfig?.fontSize,
       text: nodeConfig.name || '双击编辑文本',
     }
   });
 };
 
-/**
- * 动态更新节点属性（用于配置面板更新）
- */
+const updateBasicShapeNodeAttributes = (node: any, nodeConfig: any) => {
+  const { BASIC_SHAPE_NODE } = NODE_DEFAULTS;
+
+  const getShapeSpecificAttrs = (shapeType: string) => {
+    // 直接使用配置对象中的值
+    const backgroundColor = nodeConfig.styleConfig?.backgroundColor;
+    const borderColor = nodeConfig.styleConfig?.borderColor;
+    const borderWidth = nodeConfig.styleConfig?.borderWidth;
+    const lineType = nodeConfig.styleConfig?.lineType;
+
+    // 支持透明背景 - 处理ColorPicker的透明值
+    const isTransparent = !backgroundColor ||
+      backgroundColor === 'transparent' ||
+      backgroundColor === 'none' ||
+      backgroundColor === '' ||
+      backgroundColor === 'rgba(0,0,0,0)';
+
+    const baseAttrs: any = {
+      fill: isTransparent ? BASIC_SHAPE_NODE.backgroundColor : backgroundColor,
+      fillOpacity: isTransparent ? 0 : 1,
+      stroke: borderColor,
+      strokeWidth: borderWidth,
+    };
+
+    // 根据线条类型设置 strokeDasharray
+    if (lineType === 'dashed') {
+      baseAttrs.strokeDasharray = '5,5';
+    } else if (lineType === 'dotted') {
+      baseAttrs.strokeDasharray = '2,2';
+    } else {
+      // 实线类型，确保清除 strokeDasharray
+      baseAttrs.strokeDasharray = 'none';
+    }
+
+    switch (shapeType) {
+      case 'circle':
+        return {
+          ...baseAttrs,
+          rx: '50%',
+          ry: '50%'
+        };
+      case 'rectangle':
+      default:
+        return {
+          ...baseAttrs,
+          rx: BASIC_SHAPE_NODE.borderRadius,
+          ry: BASIC_SHAPE_NODE.borderRadius
+        };
+    }
+  };
+
+  const shapeType = nodeConfig.styleConfig?.shapeType;
+
+  node.setAttrs({
+    body: getShapeSpecificAttrs(shapeType)
+  });
+
+  const width = nodeConfig.styleConfig?.width;
+  const height = nodeConfig.styleConfig?.height;
+  if (width && height) {
+    const { width: currentWidth, height: currentHeight } = node.getSize();
+
+    if (currentWidth !== width || currentHeight !== height) {
+      node.resize(width, height);
+      node.prop('ports', createPortConfig());
+    }
+  }
+};
+
 export const updateNodeAttributes = (node: any, nodeConfig: any, iconList?: any[]): void => {
   if (!node || !nodeConfig) return;
 
+  node.setLabel(nodeConfig.name);
   node.setData({
     ...node.getData(),
     ...nodeConfig,
-    config: nodeConfig.config || {}
   });
 
   const updateStrategies = {
     'icon': () => updateIconNodeAttributes(node, nodeConfig, iconList),
     'single-value': () => updateSingleValueNodeAttributes(node, nodeConfig),
-    'text': () => updateTextNodeAttributes(node, nodeConfig)
+    'text': () => updateTextNodeAttributes(node, nodeConfig),
+    'basic-shape': () => updateBasicShapeNodeAttributes(node, nodeConfig)
   };
 
   updateStrategies[nodeConfig.type as keyof typeof updateStrategies]?.();
