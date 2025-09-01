@@ -25,56 +25,16 @@ packetbeat.interfaces.buffer_size_mb: 30
 processors:
   - add_host_metadata:
       when.not.contains.tags: forwarded
-
-  - script:
-      lang: javascript
-      source: >
-        function process(event) {
-          var evt = event.Get();
-          
-          // 标准化时间戳
-          if (evt['@timestamp']) {
-            event.Put('timestamp', evt['@timestamp']);
-          }
-          
-          // 基础网络信息提取
-          if (evt.source && evt.destination) {
-            event.Put('source_ip', evt.source.ip || 'unknown');
-            event.Put('source_port', evt.source.port || 0);
-            event.Put('destination_ip', evt.destination.ip || 'unknown');
-            event.Put('destination_port', evt.destination.port || 0);
-          }
-          
-          // HTTP基础信息提取
-          if (evt.type === 'http' && evt.http) {
-            event.Put('protocol_type', 'http');
-            event.Put('http_method', evt.http.request.method || 'unknown');
-            event.Put('http_status_code', evt.http.response.status_code || 0);
-          }
-          
-          return event;
-        }
-
 # ================================== Protocols ===================================
 packetbeat.protocols:
-# ================================== 健康检查模式 - 最小数据量 ==================================
-- type: http
-  ports: [8080]  # 仅监控8080端口，减少常见80端口的流量噪音
+- type: icmp
   enabled: true
 
-  # 减少数据量配置
-  max_message_size: 1024  # 限制消息大小为1KB
-  transaction_timeout: 1s  # 减少事务超时时间
-
-  # 过滤配置 - 只监控特定路径
-  include_body_for: ["application/json"]
-  include_request_body: false
-  include_response_body: false
+  # 添加采样配置，减少数据量
+  sample_rate: 0.1  # 只采样10%的ICMP包，大幅减少数据量
 
   fields:
     log_type: "packetbeat"
-    component: "http"
     health_check_mode: true
-    node_ip: "${node.ip}"
-    cloud_region: "${node.cloud_region}"
-  fields_under_root: false
+    _msg: "health check"
+  fields_under_root: true

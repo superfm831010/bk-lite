@@ -1,41 +1,37 @@
-# Docker-Compose 方式部署
+# 系统部署
 
 ## 部署要求
-
 
 * docker >= 20.10.23
 * docker-compose >=v2.27.0 
 
-**如要体验ops-pilot相关特性，推荐服务器单台内存>16GB**
+**如要体验OpsPilot AI相关特性，推荐服务器单台内存>8GB**
 
 ## 安装部署
 
-> bootstrap.sh是幂等的，多次运行不会对当前部署造成影响
-> 部署bk-lite
+### 完整版安装（包含OpsPilot AI模块）
+
+推荐使用完整版安装，体验完整的AI助手功能：
+
 ```bash
-git clone https://github.com/TencentBlueKing/bk-lite.git
-cd bk-lite/deploy/docker-compose
-bash bootstrap.sh
+curl -sSL https://bklite.ai/install.run | bash -s - --opspilot
 ```
 
-> 如需体验ops-pilot, 执行下述动作
+### 基础版安装（不包含OpsPilot AI模块）
+
+如果服务器资源有限或不需要AI功能，可选择基础版安装：
+
 ```bash
-bash bootstrap.sh --opspilot
-docker-compose --profile opspilot up -d
-# 当使用plugin形式安装compose时
-# docker compose --profile opspilot up -d
+curl -sSL https://bklite.ai/install.run | bash -
 ```
+
+> 注：安装脚本是幂等的，多次运行不会对当前部署造成影响
 
 ## 卸载
-> 需在deploy/docker-compose目录下执行
+
+如需完全卸载系统，执行以下命令：
 
 ```bash
-#!/bin/bash
-# 清除现有的容器，卷和网络
-docker-compose --profile opspilot down --volumes
-# 当使用plugin形式安装compose时
-# docker compose --profile opspilot down --volumes
-# 清除生成的安装包，环境变量和compose文件
-rm -rvf pkgs *.env docker-compose.yaml .env
+curl -sSL https://bklite.ai/uninstall.sh | bash -
 ```
 

@@ -9,6 +9,6 @@ class DocumentListRequest(BaseModel):
     metadata_filter: dict
     query: str
     sort_field: Optional[str] = Field(
-        default="metadata.created_time", description="排序字段，默认为创建时间")
+        default="created_time", description="排序字段，默认为创建时间")
     sort_order: Optional[str] = Field(
         default="desc", description="排序方式，支持asc/desc，默认为desc")

@@ -98,26 +98,27 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         service = KnowledgeSearchService()
         knowledge_base = KnowledgeBase.objects.get(id=knowledge_base_id)
         docs = qa_docs = graph_list = []
+        score_threshold = kwargs.get("score_threshold", knowledge_base.score_threshold)
         if kwargs.get("enable_naive_rag", True):
             params = dict(
                 kwargs,
                 **{
-                    "size": kwargs.get("rag_size", knowledge_base.rag_size),
+                    "rag_size": kwargs.get("rag_size", knowledge_base.rag_size),
                     "enable_qa_rag": False,
                     "enable_graph_rag": False,
                 },
             )
-            docs = service.search(knowledge_base, query, params, is_qa=False)
+            docs = service.search(knowledge_base, query, params, score_threshold, is_qa=False)
         if kwargs.get("enable_qa_rag", True):
             params = dict(
                 kwargs,
                 **{
-                    "size": kwargs.get("qa_size", knowledge_base.qa_size),
+                    "qa_size": kwargs.get("qa_size", knowledge_base.qa_size),
                     "enable_naive_rag": False,
                     "enable_graph_rag": False,
                 },
             )
-            qa_docs = service.search(knowledge_base, query, params, is_qa=True)
+            qa_docs = service.search(knowledge_base, query, params, score_threshold, is_qa=True)
         if kwargs.get("enable_graph_rag", False):
             graph_obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base.id).first()
             if graph_obj:
@@ -144,7 +145,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         instance: KnowledgeDocument = self.get_object()
         page = int(request.GET.get("page", 1))
         page_size = int(request.GET.get("page_size", 10))
-        search_text = request.GET.get("search_text", "")
+        search_text = request.GET.get("search_term", "")
         index_name = instance.knowledge_index_name()
         res = ChunkHelper.get_document_es_chunk(
             index_name,
@@ -210,18 +211,12 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
     @HasPermission("knowledge_document-Delete")
     def delete_chunks(self, request):
         params = request.data
-        index_name = f"knowledge_base_{params['knowledge_base_id']}"
         chunk_ids = params["ids"]
+        keep_qa = not params.get("delete_all", False)
         for chunk_id in chunk_ids:
-            result = ChunkHelper.delete_chunk(index_name, chunk_id)
+            result = ChunkHelper.delete_es_content(chunk_id, True, keep_qa)
             if not result:
                 return JsonResponse({"result": False, "message": _("Failed to delete QA pair.")})
-        if params.get("delete_all", False):
-            for chunk_id in chunk_ids:
-                ChunkHelper.delete_chunk(index_name, chunk_id, True)
-        else:
-            for chunk_id in chunk_ids:
-                ChunkHelper.delete_chunk_relation(index_name, chunk_id)
         return JsonResponse({"result": True})
 
     @action(methods=["POST"], detail=True)
@@ -251,8 +246,7 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
         try:
             for i in doc_ids:
                 KnowledgeSearchService.delete_es_content(index_name, str(i))
-            for i in QAPairs.objects.filter(document_id=doc_ids):
-                i.delete()
+            QAPairs.objects.filter(document_id__in=doc_ids).delete()
         except Exception as e:
             logger.exception(e)
             return JsonResponse({"result": False, "message": _("delete failed")})

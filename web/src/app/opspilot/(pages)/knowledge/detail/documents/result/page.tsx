@@ -343,6 +343,7 @@ const DocsResultPage: React.FC = () => {
           <ChunkDetail
             chunkContent={selectedChunk.content}
             chunkId={selectedChunk.id}
+            knowledgeBaseId={knowledgeBaseId ? Number(knowledgeBaseId) : undefined}
             indexName={selectedChunk.index_name}
             visible={drawerVisible}
           />

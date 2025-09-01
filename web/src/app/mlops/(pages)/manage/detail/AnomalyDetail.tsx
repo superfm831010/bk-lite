@@ -243,7 +243,7 @@ const AnomalyDetail = () => {
             separator=">"
             items={[
               {
-                title: <a href="/mlops/manage">{t(`datasets.datasets`)}</a>
+                title: <a href="#" onClick={() => router.push(`/mlops/manage/list`)}>{t(`datasets.datasets`)}</a>
               },
               {
                 title: t(`datasets.datasetsDetail`)

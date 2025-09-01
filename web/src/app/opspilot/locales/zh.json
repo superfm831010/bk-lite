@@ -49,6 +49,8 @@
       "ensureDocumentsAndModelsSelected": "请确保已选择文档和LLM模型",
       "qaPairsCreateSuccess": "问答对创建成功",
       "qaPairsCreateFailed": "问答对创建失败",
+      "qaPairsUpdateSuccess": "问答对更新成功",
+      "qaPairsUpdateFailed": "问答对更新失败",
       "fetchDocumentsListFailed": "获取文档列表失败",
       "documentsSelectedSuccess": "已选择文档个数",
       "defaultDocumentTitle": "文档",
@@ -113,7 +115,8 @@
       "generateQuestionAndAnswer": "生成问题和答案",
       "formNotInitialized": "表单未初始化",
       "documentsAndModelsRequired": "请确保已选择文档和LLM模型",
-      "documentNotFound": "文档"
+      "documentNotFound": "文档",
+      "editModeDocumentInfo": "编辑模式下文档关联由系统自动处理"
     },
     "knowledgeGraph": {
       "title": "知识图谱",
@@ -188,6 +191,10 @@
     "qaRag": "问答对", 
     "graphRag": "知识图谱",
     "extract": "提取",
+    "retrievalStrategy": "检索策略",
+    "threshold": "阈值",
+    "thresholdDesc": "使用相似性分数阈值根据相关性分数过滤结果",
+    "mmrDesc": "使用最大边际相关性来平衡相关性和多样性",
     "documents": {
       "title": "文档",
       "description": "文档管理用于添加新知识，包括本地文件、网页链接或自定义文本。新添加的知识可以分块，以便机器人使用。",
@@ -485,6 +492,8 @@
     "pilotDesc": "基于rasa创建的应用，支持对话框、企微、钉钉等对外渠道。",
     "lobeChat": "LobeChat",
     "lobeChatDesc": "支持接入lobeChat的web界面作为与用户的交互渠道。",
+    "chatflow": "Chatflow",
+    "chatflowDesc": "Chatflow能够编排智能体的能力，通过API或者定时等方式触发执行。",
     "form": {
       "type": "应用类型",
       "name": "名称",

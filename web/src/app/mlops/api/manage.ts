@@ -44,35 +44,112 @@ const useMlopsManageApi = () => {
 
   // 获取Rasa意图列表
   const getRasaIntentFileList = async ({
+    name = '',
+    dataset,
     page = 1,
     page_size = -1
   }: {
+    name?: string;
+    dataset: string | number;
     page?: number;
     page_size?: number;
   }) => {
-    return await get(`/mlops/rasa_intent/?page=${page}&page_size=${page_size}`)
+    return await get(`/mlops/rasa_intent/?dataset=${dataset}&name=${name}&page=${page}&page_size=${page_size}`)
   };
 
   // 获取Rasa响应列表
   const getRasaResponseFileList = async ({
+    name = '',
+    dataset,
     page = 1,
     page_size = -1,
   }: {
+    name?: string,
+    dataset: string | number,
     page?: number,
     page_size?: number
   }) => {
-    return await get(`/mlops/rasa_response/?page=${page}&page_size=${page_size}`);
+    return await get(`/mlops/rasa_response/?dataset=${dataset}&name=${name}&page=${page}&page_size=${page_size}`);
   };
 
   // 获取Rasa规则列表
   const getRasaRuleFileList = async ({
+    name = '',
+    dataset,
     page = 1,
     page_size = -1,
   }: {
+    name?: string,
+    dataset: string | number,
     page?: number,
     page_size?: number
   }) => {
-    return await get(`/mlops/rasa_rule/?page=${page}&page_size=${page_size}`);
+    return await get(`/mlops/rasa_rule/?dataset=${dataset}&name=${name}&page=${page}&page_size=${page_size}`);
+  };
+
+  // 获取Rasa故事列表
+  const getRasaStoryFileList = async ({
+    name = '',
+    dataset,
+    page = 1,
+    page_size = -1,
+  }: {
+    name?: string,
+    dataset: string | number,
+    page?: number,
+    page_size?: number
+  }) => {
+    return await get(`/mlops/rasa_story/?dataset=${dataset}&name=${name}&page=${page}&page_size=${page_size}`);
+  };
+
+  // 获取Rasa实体列表
+  const getRasaEntityList = async ({
+    name = '',
+    dataset,
+    page = 1,
+    page_size = -1,
+  }: {
+    name?: string,
+    dataset: string | number,
+    page?: number,
+    page_size?: number
+  }) => {
+    return await get(`/mlops/rasa_entity/?dataset=${dataset}&name=${name}&page=${page}&page_size=${page_size}`);
+  };
+
+  // 获取Rasa 实体数
+  const getRasaEntityCount = async () => {
+    return await get(`/mlops/rasa_entity/count`)
+  };
+
+  // 获取Rasa槽列表
+  const getRasaSlotList = async ({
+    name = '',
+    dataset,
+    page = 1,
+    page_size = -1,
+  }: {
+    name?: string,
+    dataset: string | number,
+    page?: number,
+    page_size?: number
+  }) => {
+    return await get(`/mlops/rasa_slot/?dataset=${dataset}&name=${name}&page=${page}&page_size=${page_size}`)
+  };
+
+  // 获取Rasa表单列表
+  const getRasaFormList = async ({
+    name = '',
+    dataset,
+    page = 1,
+    page_size = -1,
+  }: {
+    name?: string,
+    dataset: string | number,
+    page?: number,
+    page_size?: number
+  }) => {
+    return await get(`/mlops/rasa_form/?dataset=${dataset}&name=${name}&page=${page}&page_size=${page_size}`)
   };
 
   // 获取指定异常检测数据集详情
@@ -144,7 +221,52 @@ const useMlopsManageApi = () => {
     }[]
   }) => {
     return await post(`/mlops/rasa_rule`, params);
-  }
+  };
+
+  // 新增Rasa故事
+  const addRasaStoryFile = async (params: {
+    name: string;
+    dataset: number;
+    steps: {
+      intent?: string;
+      response?: string;
+    }[]
+  }) => {
+    return await post(`/mlops/rasa_story`, params);
+  };
+
+  // 新增Rasa实体
+  const addRasaEntityFile = async (params: {
+    name: string;
+    dataset: number;
+    entity_type: string;
+    example: string[];
+  }) => {
+    return await post(`/mlops/rasa_entity`, params);
+  };
+
+  // 新增Rasa槽
+  const addRasaSlotFile = async (params: {
+    name: string;
+    dataset: number;
+    slot_type: string;
+    is_apply: string;
+  }) => {
+    return await post(`/mlops/rasa_slot`, params);
+  };
+
+  // 新增Rasa表单
+  const addRasaFormFile = async (params: {
+    name: string;
+    dataset: number;
+    slots: {
+      name: string;
+      type: string;
+      isRequired: boolean;
+    }
+  }) => {
+    return await post(`/mlops/rasa_form`, params);
+  };
 
   // 新增异常数据检测集样本
   const addAnomalyTrainData = async (params: TrainDataBrochure) => {
@@ -167,7 +289,7 @@ const useMlopsManageApi = () => {
     return await put(`/mlops/rasa_datasets/${id}`, params);
   };
 
-  // 更新Rasa 意图文件
+  // 更新Rasa意图文件
   const updateRasaIntentFile = async (id: number, params: {
     name: string;
     example: string[];
@@ -175,7 +297,7 @@ const useMlopsManageApi = () => {
     return await put(`/mlops/rasa_intent/${id}`, params);
   };
 
-  // 更新Rasa 响应文件
+  // 更新Rasa响应文件
   const updateRasaResponseFile = async (id: number, params: {
     name: string;
     example: string[];
@@ -192,6 +314,47 @@ const useMlopsManageApi = () => {
     }[];
   }) => {
     return await put(`/mlops/rasa_rule/${id}`, params);
+  };
+
+  // 更新Rasa故事文件
+  const updateRasaStoryFile = async (id: number, params: {
+    name: string;
+    steps: {
+      intent?: string;
+      response?: string;
+    }[];
+  }) => {
+    return await put(`/mlops/rasa_story/${id}`, params);
+  };
+
+  // 更新Rasa实体文件
+  const updateRasaEntityFile = async (id: number, params: {
+    name: string;
+    entity_type: string;
+    exmaple: string[];
+  }) => {
+    return await put(`/mlops/rasa_entity/${id}`, params);
+  };
+
+  // 更新Rasa槽文件
+  const updateRasaSlotFile = async (id: number, params: {
+    name: string;
+    slot_type: string;
+    is_apply: string;
+  }) => {
+    return await put(`/mlops/rasa_slot/${id}`, params);
+  };
+
+  // 更新Rasa表单文件
+  const updateRasaFormFile = async (id: number, params: {
+    name: string;
+    slots: {
+      name: string;
+      type: string;
+      isRequired: boolean;
+    }
+  }) => {
+    return await put(`/mlops/rasa_form/${id}`, params)
   };
 
   // 标注数据
@@ -216,19 +379,39 @@ const useMlopsManageApi = () => {
     return await del(`/mlops/rasa_datasets/${id}`);
   };
 
-  // 删除指定意图文件
+  // 删除指定Rasa意图文件
   const deleteRasaIntentFile = async (id: number) => {
     return await del(`/mlops/rasa_intent/${id}`);
   };
 
-  // 删除指定响应文件
+  // 删除指定Rasa响应文件
   const deleteRasaResponseFile = async (id: number) => {
     return await del(`/mlops/rasa_response/${id}`);
   };
 
-  // 删除指定规则文件
+  // 删除指定Rasa规则文件
   const deleteRasaRuleFile = async (id: number) => {
     return await del(`/mlops/rasa_rule/${id}`);
+  };
+
+  // 删除指定Rasa故事文件
+  const deleteRasaStoryFile = async (id: number) => {
+    return await del(`/mlops/rasa_story/${id}`);
+  };
+
+  // 删除指定Rasa实体文件
+  const deleteRasaEntityFile = async (id: number) => {
+    return await del(`/mlops/rasa_entity/${id}`);
+  };
+
+  // 删除指定Rasa槽文件
+  const deleteRasaSlotFile = async (id: number) => {
+    return await del(`/mlops/rasa_slot/${id}`);
+  };
+
+  // 删除指定Rasa表单文件
+  const deleteRasaFormFile = async (id: number) => {
+    return await del(`/mlops/rasa_form/${id}`);
   };
 
   // 删除训练数据
@@ -245,17 +428,30 @@ const useMlopsManageApi = () => {
     getRasaIntentFileList,
     getRasaResponseFileList,
     getRasaRuleFileList,
+    getRasaStoryFileList,
+    getRasaEntityList,
+    getRasaEntityCount,
+    getRasaSlotList,
+    getRasaFormList,
     addAnomalyDatasets,
     addRasaDatasets,
     addRasaIntentFile,
     addRasaResponseFile,
     addRasaRuleFile,
+    addRasaEntityFile,
     addAnomalyTrainData,
+    addRasaStoryFile,
+    addRasaSlotFile,
+    addRasaFormFile,
     updateAnomalyDatasets,
     updateRasaDatasets,
     updateRasaIntentFile,
     updateRasaResponseFile,
     updateRasaRuleFile,
+    updateRasaStoryFile,
+    updateRasaEntityFile,
+    updateRasaSlotFile,
+    updateRasaFormFile,
     labelingData,
     deleteAnomalyDatasets,
     deleteAnomalyTrainData,
@@ -263,6 +459,10 @@ const useMlopsManageApi = () => {
     deleteRasaIntentFile,
     deleteRasaResponseFile,
     deleteRasaRuleFile,
+    deleteRasaStoryFile,
+    deleteRasaEntityFile,
+    deleteRasaSlotFile,
+    deleteRasaFormFile
   }
 };
 
