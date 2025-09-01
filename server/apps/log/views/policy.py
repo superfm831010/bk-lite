@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from django.db import models
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.core.utils.permission_utils import get_permission_rules, permission_filter
+from apps.core.utils.permission_utils import get_permission_rules, get_permissions_rules, permission_filter
 from apps.core.utils.web_utils import WebUtils
 from apps.log.constants import POLICY_MODULE, DEFAULT_PERMISSION, ALERT_STATUS_NEW, ALERT_STATUS_CLOSED
 from apps.log.filters.policy import PolicyFilter, AlertFilter, EventFilter
@@ -238,48 +238,160 @@ class AlertViewSet(viewsets.ModelViewSet):
     filterset_class = AlertFilter
     pagination_class = CustomPageNumberPagination
 
+    def _check_permission(self, collect_type_id, policy_id, teams, permissions, cur_team):
+        """
+        检查策略权限的辅助方法
+        """
+        # 转换数据类型，确保一致性
+        teams = {str(t) for t in teams}
+        cur_team = set(str(t) for t in cur_team) if isinstance(cur_team, list) else {str(cur_team)}
+
+        # 超管权限检查
+        admin_permission = permissions.get("all", {})
+        admin_cur_team = admin_permission.get("team")
+        if admin_cur_team:
+            admin_teams = {str(t) for t in admin_cur_team}
+            if teams & admin_teams:
+                return True
+        else:
+            # 如果当前策略不在当前组中，也无权限
+            if not (cur_team & teams):
+                return False
+
+        # 普通用户权限检查
+        collect_type_permission = permissions.get(str(collect_type_id))
+        if not collect_type_permission:
+            # 未设置特定权限时，根据当前组判断
+            return bool(cur_team & teams)
+
+        # 获取实例权限和团队权限
+        inst_permission = {str(i["id"]) for i in collect_type_permission.get("instance", [])}
+        team_permission = {str(i["id"]) for i in collect_type_permission.get("team", [])}
+
+        # 存在权限配置但都为空时，代表此采集类型当前组没有任何权限
+        if not inst_permission and not team_permission:
+            return False
+
+        # 如果实例权限中包含当前策略ID，直接返回True
+        if str(policy_id) in inst_permission:
+            return True
+
+        # 如果当前组在团队权限中有权限，直接返回True
+        if teams & team_permission:
+            return True
+
+        return False
+
+    def _get_all_accessible_policy_ids(self, request):
+        """
+        获取当前用户所有有权限的策略ID
+        """
+        current_team = request.COOKIES.get("current_team")
+        if not current_team:
+            return []
+
+        # 获取所有采集类型下policy模块的权限规则
+        permissions_result = get_permissions_rules(
+            request.user,
+            current_team,
+            "log",
+            POLICY_MODULE,
+        )
+
+        policy_permissions = permissions_result.get("data", {})
+        cur_team = permissions_result.get("team", [])
+
+        if not policy_permissions:
+            return []
+
+        # 获取所有策略及其关联的组织
+        policy_objs = Policy.objects.select_related('collect_type').prefetch_related('policyorganization_set').filter(
+            enable=True  # 只查询启用的策略
+        )
+        accessible_policy_ids = []
+
+        for policy_obj in policy_objs:
+            collect_type_id = policy_obj.collect_type_id
+            policy_id = policy_obj.id
+            # 获取策略关联的组织
+            teams = {str(i.organization) for i in policy_obj.policyorganization_set.all()}
+
+            # 检查权限
+            if self._check_permission(collect_type_id, policy_id, teams, policy_permissions, cur_team):
+                accessible_policy_ids.append(policy_id)
+
+        return accessible_policy_ids
+
     @swagger_auto_schema(
         operation_id="alert_list",
         operation_description="告警列表查询",
         manual_parameters=[
             openapi.Parameter('levels', openapi.IN_QUERY, description="告警级别多选，用逗号分隔，如：critical,warning,info", type=openapi.TYPE_STRING),
             openapi.Parameter('content', openapi.IN_QUERY, description="告警内容关键字搜索", type=openapi.TYPE_STRING),
-            openapi.Parameter('collect_type', openapi.IN_QUERY, description="采集类型ID", type=openapi.TYPE_INTEGER, required=True),
+            openapi.Parameter('collect_type', openapi.IN_QUERY, description="采集类型ID，如果不传则查询所有有权限的采集类型", type=openapi.TYPE_INTEGER, required=False),
         ],
     )
     def list(self, request, *args, **kwargs):
         collect_type_id = request.query_params.get('collect_type', None)
-        if not collect_type_id:
-            return WebUtils.response_error("collect_type is required")
+        
+        if collect_type_id:
+            # 原有逻辑：查询特定采集类型的告警
+            permission = get_permission_rules(
+                request.user,
+                request.COOKIES.get("current_team"),
+                "log",
+                f"{POLICY_MODULE}.{collect_type_id}",
+            )
 
-        # 获取policy模块的权限规则
-        permission = get_permission_rules(
-            request.user,
-            request.COOKIES.get("current_team"),
-            "log",
-            f"{POLICY_MODULE}.{collect_type_id}",
-        )
+            # 先过滤出有权限的Policy
+            policy_qs = permission_filter(
+                Policy,
+                permission,
+                team_key="policyorganization__organization__in",
+                id_key="id__in"
+            )
+            policy_qs = policy_qs.filter(
+                collect_type_id=collect_type_id,
+                policyorganization__organization=request.COOKIES.get("current_team")
+            ).distinct()
 
-        # 先过滤出有权限的Policy
-        policy_qs = permission_filter(
-            Policy,
-            permission,
-            team_key="policyorganization__organization__in",
-            id_key="id__in"
-        )
-        policy_qs = policy_qs.filter(
-            collect_type_id=collect_type_id,
-            policyorganization__organization=request.COOKIES.get("current_team")
-        ).distinct()
+            # 获取有权限的policy_ids
+            policy_ids = list(policy_qs.values_list("id", flat=True))
 
-        # 获取有权限的policy_ids
-        policy_ids = list(policy_qs.values_list("id", flat=True))
+            # 权限映射（用于后续添加权限信息）
+            policy_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
+        else:
+            # 新逻辑：查询所有有权限的采集类型的告警
+            policy_ids = self._get_all_accessible_policy_ids(request)
+            
+            if not policy_ids:
+                return WebUtils.response_success({"count": 0, "items": []})
+            
+            # 批量获取权限映射，参考监控模块的简洁风格
+            collect_type_ids = Policy.objects.filter(id__in=policy_ids).values_list('collect_type_id', flat=True).distinct()
+
+            # 批量获取所有采集类型的权限，只调用一次API
+            policy_permission_map = {}
+            permissions_result = get_permissions_rules(
+                request.user,
+                request.COOKIES.get("current_team"),
+                "log",
+                POLICY_MODULE,
+            )
+
+            # 从批量获取的权限数据中提取每个采集类型的权限映射
+            all_permissions = permissions_result.get("data", {})
+            for ct_id in collect_type_ids:
+                ct_permissions = all_permissions.get(str(ct_id), {})
+                ct_instances = ct_permissions.get("instance", [])
+                for inst in ct_instances:
+                    policy_permission_map[inst["id"]] = inst["permission"]
 
         # 基于policy权限过滤告警
         queryset = self.filter_queryset(self.get_queryset())
         queryset = queryset.filter(policy_id__in=policy_ids).distinct()
 
-        # 获取分页参数，设置默认值
+        # 获取分页参数
         page = int(request.GET.get('page', 1))
         page_size = int(request.GET.get('page_size', 10))
 
@@ -296,8 +408,6 @@ class AlertViewSet(viewsets.ModelViewSet):
         results = serializer.data
 
         # 添加权限信息到每个告警
-        policy_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
-
         for alert_info in results:
             policy_id = alert_info.get("policy")
             if policy_id in policy_permission_map:
@@ -427,8 +537,6 @@ class AlertViewSet(viewsets.ModelViewSet):
 
     def _get_step_based_stats(self, queryset, step_minutes):
         """基于step动态分割时间区间进行统计，按告警级别分组"""
-        from django.db.models import Count
-
         # 获取数据的时间范围
         time_range_data = queryset.aggregate(
             min_time=models.Min('created_at'),
