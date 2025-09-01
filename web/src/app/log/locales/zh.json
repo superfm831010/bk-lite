@@ -254,7 +254,8 @@
       "auditBeatPaths": "目录路径",
       "auditBeatPathsDes": "需要监控的目录路径列表",
       "dockerHosts": "连接地址",
-      "dockerHostsDes": "Docker API 连接地址列表"
+      "dockerHostsDes": "Docker API 连接地址列表",
+      "viewLogs": "查看日志"
     },
     "event": {
       "executionTime": "执行时间",
