@@ -26,9 +26,7 @@ from graphiti_core.driver.falkordb_driver import FalkorDriver
 
 class GraphitiRAG:
     """Graphiti知识图谱RAG实现类"""
-
-    # LLM客户端超时时间（秒）
-    LLM_TIMEOUT_SECONDS = 600
+    LLM_TIMEOUT_SECONDS = 60*60*24
 
     def __init__(self):
         pass
