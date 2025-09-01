@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import { useDataSourceManager } from '@/app/ops-analysis/hooks/useDataSource';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { NodeConfPanelProps } from '@/app/ops-analysis/types/topology';
@@ -6,6 +12,7 @@ import { iconList } from '@/app/cmdb/utils/common';
 import { NODE_DEFAULTS } from '../constants/nodeDefaults';
 import { processDataSourceParams } from '@/app/ops-analysis/utils/widgetDataTransform';
 import { buildTreeData } from '../utils/dataTreeUtils';
+import { useTranslation } from '@/utils/i18n';
 import DataSourceParamsConfig from '@/app/ops-analysis/components/paramsConfig';
 import DataSourceSelect from '@/app/ops-analysis/components/dataSourceSelect';
 import SelectIcon, {
@@ -21,12 +28,20 @@ import {
   Button,
   Drawer,
   Tree,
+  Select,
+  ColorPicker,
 } from 'antd';
 import {
   UploadOutlined,
   AppstoreOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
+
+const NODE_TYPE_DEFAULTS = {
+  icon: NODE_DEFAULTS.ICON_NODE,
+  'basic-shape': NODE_DEFAULTS.BASIC_SHAPE_NODE,
+  'single-value': NODE_DEFAULTS.SINGLE_VALUE_NODE,
+} as const;
 
 const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   nodeType,
@@ -41,7 +56,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   const [form] = Form.useForm();
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [logoType, setLogoType] = useState<'default' | 'custom'>('default');
-  const [selectedIcon, setSelectedIcon] = useState<string>('');
+  const [selectedIcon, setSelectedIcon] = useState<string>('cc-host');
   const [treeData, setTreeData] = useState<any[]>([]);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -50,6 +65,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   );
   const selectIconRef = useRef<SelectIconRef>(null);
   const { getSourceDataByApiId } = useDataSourceApi();
+  const { t } = useTranslation();
 
   const {
     dataSources,
@@ -61,23 +77,41 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     restoreUserParamValues,
   } = useDataSourceManager();
 
-  // 初始化新增模式
+  const nodeDefaults = useMemo(() => {
+    return (
+      NODE_TYPE_DEFAULTS[nodeType as keyof typeof NODE_TYPE_DEFAULTS] ||
+      NODE_DEFAULTS.SINGLE_VALUE_NODE
+    );
+  }, [nodeType]);
+
+  const getIconUrl = useCallback((iconKey: string) => {
+    const iconItem = iconList.find((item) => item.key === iconKey);
+    return iconItem
+      ? `/app/assets/assetModelIcon/${iconItem.url}.svg`
+      : `/app/assets/assetModelIcon/cc-default_默认.svg`;
+  }, []);
+
   const initializeNewNode = useCallback(() => {
     const defaultValues: any = {
       logoType: 'default',
       logoIcon: 'cc-host',
       logoUrl: '',
-      fontSize: NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize,
-      textColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.textColor,
-      backgroundColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.backgroundColor,
-      borderColor: NODE_DEFAULTS.SINGLE_VALUE_NODE.borderColor,
+      fontSize: nodeDefaults.fontSize,
+      textColor: nodeDefaults.textColor,
+      backgroundColor: nodeDefaults.backgroundColor,
+      borderColor: nodeDefaults.borderColor,
       selectedFields: [],
+      name: '',
+      width: nodeDefaults.width,
+      height: nodeDefaults.height,
     };
 
-    if (nodeType === 'icon') {
-      defaultValues.name = '';
-      defaultValues.width = NODE_DEFAULTS.ICON_NODE.width;
-      defaultValues.height = NODE_DEFAULTS.ICON_NODE.height;
+    if (nodeType === 'basic-shape') {
+      const basicShapeDefaults =
+        nodeDefaults as typeof NODE_DEFAULTS.BASIC_SHAPE_NODE;
+      defaultValues.borderWidth = basicShapeDefaults.borderWidth;
+      defaultValues.lineType = basicShapeDefaults.lineType;
+      defaultValues.shapeType = basicShapeDefaults.shapeType;
     }
 
     setSelectedIcon('cc-host');
@@ -91,7 +125,6 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     form.setFieldsValue(defaultValues);
   }, [form, setSelectedDataSource, nodeType]);
 
-  // 初始化编辑模式
   const initializeEditNode = useCallback(
     (values: any) => {
       const formValues: any = {
@@ -99,14 +132,17 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         logoType: values.logoType,
         logoIcon: values.logoType === 'default' ? values.logoIcon : undefined,
         logoUrl: values.logoType === 'custom' ? values.logoUrl : undefined,
-        width: values.width,
-        height: values.height,
         dataSource: values.dataSource,
         selectedFields: values.selectedFields,
+        width: values.width,
+        height: values.height,
         fontSize: values.fontSize,
         textColor: values.textColor,
         backgroundColor: values.backgroundColor,
         borderColor: values.borderColor,
+        borderWidth: values.borderWidth,
+        lineType: values.lineType,
+        shapeType: values.shapeType,
       };
 
       setSelectedIcon(values.logoIcon || 'cc-host');
@@ -145,6 +181,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       setSelectedDataSource,
       setDefaultParamValues,
       restoreUserParamValues,
+      nodeType,
     ]
   );
 
@@ -156,51 +193,51 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         initializeNewNode();
       }
     }
-  }, [initialValues, dataSourcesLoading]);
+  }, [visible, dataSourcesLoading]);
 
-  const handleLogoUpload = (file: any) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setLogoPreview(e.target?.result as string);
-      form.setFieldsValue({ logoUrl: e.target?.result });
-    };
-    reader.readAsDataURL(file);
-    return false;
-  };
+  const handleLogoUpload = useCallback(
+    (file: any) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLogoPreview(e.target?.result as string);
+        form.setFieldsValue({ logoUrl: e.target?.result });
+      };
+      reader.readAsDataURL(file);
+      return false;
+    },
+    [form]
+  );
 
-  const handleLogoTypeChange = (e: any) => {
-    const type = e.target.value;
-    setLogoType(type);
+  const handleLogoTypeChange = useCallback(
+    (e: any) => {
+      const type = e.target.value;
+      setLogoType(type);
 
-    if (type === 'default') {
-      setLogoPreview('');
-      form.setFieldsValue({ logoUrl: undefined });
-    } else {
-      setSelectedIcon('');
-      form.setFieldsValue({ logoIcon: undefined });
-    }
-  };
+      if (type === 'default') {
+        setLogoPreview('');
+        form.setFieldsValue({ logoUrl: undefined });
+      } else {
+        setSelectedIcon('');
+        form.setFieldsValue({ logoIcon: undefined });
+      }
+    },
+    [form]
+  );
 
-  const handleSelectIcon = () => {
-    if (selectIconRef.current) {
-      selectIconRef.current.showModal({
-        title: '选择图标',
-        defaultIcon: selectedIcon || 'server',
-      });
-    }
-  };
+  const handleSelectIcon = useCallback(() => {
+    selectIconRef.current?.showModal({
+      title: t('topology.nodeConfig.selectIcon'),
+      defaultIcon: selectedIcon || 'server',
+    });
+  }, [selectedIcon, t]);
 
-  const handleIconSelect = (iconKey: string) => {
-    setSelectedIcon(iconKey);
-    form.setFieldsValue({ logoIcon: iconKey });
-  };
-
-  const getIconUrl = (iconKey: string) => {
-    const iconItem = iconList.find((item) => item.key === iconKey);
-    return iconItem
-      ? `/app/assets/assetModelIcon/${iconItem.url}.svg`
-      : `/app/assets/assetModelIcon/cc-default_默认.svg`;
-  };
+  const handleIconSelect = useCallback(
+    (iconKey: string) => {
+      setSelectedIcon(iconKey);
+      form.setFieldsValue({ logoIcon: iconKey });
+    },
+    [form]
+  );
 
   const handleDataSourceChange = useCallback(
     (dataSourceId: number) => {
@@ -230,9 +267,8 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   );
 
   const fetchDataFields = useCallback(async () => {
-    if (!currentDataSource) {
-      return;
-    }
+    if (!currentDataSource) return;
+
     setLoadingData(true);
     try {
       const formValues = form.getFieldsValue();
@@ -241,30 +277,15 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         sourceParams: selectedDataSource?.params,
         userParams: userParams,
       });
+
       const data: any = await getSourceDataByApiId(
         currentDataSource,
         requestParams
       );
-
-      // 构建树形数据
       const tree = buildTreeData(data);
       setTreeData(tree);
-
-      // 同时构建扁平的字段列表用于后续处理
-      const flatFields: string[] = [];
-      const collectFields = (nodes: any[]) => {
-        nodes.forEach((node) => {
-          if (node.isLeaf && node.value) {
-            flatFields.push(node.value);
-          }
-          if (node.children) {
-            collectFields(node.children);
-          }
-        });
-      };
-      collectFields(tree);
     } catch (error) {
-      console.error('获取数据字段失败:', error);
+      console.error('Failed to fetch data fields:', error);
     } finally {
       setLoadingData(false);
     }
@@ -276,19 +297,68 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   ]);
 
   const handleFieldChange = useCallback(
-    (checkedKeys: string[]) => {
+    (checkedKeys: any) => {
+      const keys = Array.isArray(checkedKeys)
+        ? checkedKeys
+        : checkedKeys.checked;
+
+      const findNode = (nodes: any[], targetKey: string): any => {
+        for (const node of nodes) {
+          if (node.key === targetKey) {
+            return node;
+          }
+          if (node.children) {
+            const found = findNode(node.children, targetKey);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      const leafKeys = keys.filter((key: string) => {
+        const node = findNode(treeData, key);
+        return node && node.isLeaf;
+      });
+
       const newSelectedFields =
-        checkedKeys.length > 0 ? [checkedKeys[checkedKeys.length - 1]] : [];
+        leafKeys.length > 0 ? [leafKeys[leafKeys.length - 1]] : [];
       setSelectedFields(newSelectedFields);
       form.setFieldsValue({ selectedFields: newSelectedFields });
     },
-    [form]
+    [form, treeData]
   );
 
-  const handleConfirm = async () => {
+  const renderColorPicker = useCallback(
+    () => (
+      <ColorPicker
+        disabled={readonly}
+        size="small"
+        showText
+        allowClear
+        format="hex"
+      />
+    ),
+    [readonly]
+  );
+
+  const processColorValue = useCallback((colorValue: any) => {
+    if (!colorValue) return undefined;
+    if (typeof colorValue === 'string') return colorValue;
+    if (colorValue.toHexString) return colorValue.toHexString();
+    if (colorValue.toRgbString) return colorValue.toRgbString();
+    return colorValue;
+  }, []);
+
+  const handleConfirm = useCallback(async () => {
     try {
       const values = await form.validateFields();
-      // 处理数据源参数转换
+
+      ['textColor', 'backgroundColor', 'borderColor'].forEach((key) => {
+        if (values[key]) {
+          values[key] = processColorValue(values[key]);
+        }
+      });
+
       if (values.params && selectedDataSource?.params) {
         values.dataSourceParams = processFormParamsForSubmit(
           values.params,
@@ -297,13 +367,17 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         delete values.params;
       }
 
-      if (onConfirm) {
-        onConfirm(values);
-      }
+      onConfirm?.(values);
     } catch (error) {
-      console.error('表单验证失败:', error);
+      console.error('Form validation failed:', error);
     }
-  };
+  }, [
+    form,
+    selectedDataSource,
+    processFormParamsForSubmit,
+    onConfirm,
+    processColorValue,
+  ]);
 
   const handleCancel = () => {
     if (onCancel) {
@@ -313,321 +387,383 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     }
   };
 
+  const renderLogoSelector = useMemo(() => {
+    if (nodeType !== 'icon') return null;
+
+    return (
+      <>
+        <Form.Item
+          label={t('topology.nodeConfig.logoType')}
+          name="logoType"
+          initialValue="default"
+        >
+          <Radio.Group onChange={handleLogoTypeChange} disabled={readonly}>
+            <Radio value="default">{t('topology.nodeConfig.default')}</Radio>
+            <Radio value="custom">{t('topology.nodeConfig.custom')}</Radio>
+          </Radio.Group>
+        </Form.Item>
+
+        <Form.Item
+          label=" "
+          colon={false}
+          name={logoType === 'default' ? 'logoIcon' : 'logoUrl'}
+        >
+          {logoType === 'default' ? (
+            <div className="flex items-center space-x-3">
+              <div
+                onClick={handleSelectIcon}
+                className="w-20 h-20 border-2 border-dashed border-[#d9d9d9] hover:border-[#40a9ff] cursor-pointer flex flex-col items-center justify-center rounded-lg transition-colors duration-200 bg-[#fafafa] hover:bg-[#f0f0f0]"
+              >
+                {selectedIcon ? (
+                  <img
+                    src={getIconUrl(selectedIcon)}
+                    alt={t('topology.nodeConfig.selectedIcon')}
+                    className="w-12 h-12 object-cover"
+                  />
+                ) : (
+                  <>
+                    <AppstoreOutlined className="text-xl text-[#8c8c8c] mb-1" />
+                    <span className="text-xs text-[#8c8c8c]">
+                      {t('topology.nodeConfig.selectIcon')}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-3">
+              <Upload
+                accept="image/*"
+                showUploadList={false}
+                beforeUpload={handleLogoUpload}
+                disabled={readonly}
+              >
+                <div className="w-20 h-20 border-2 border-dashed border-[#d9d9d9] hover:border-[#40a9ff] cursor-pointer flex flex-col items-center justify-center rounded-lg transition-colors duration-200 bg-[#fafafa] hover:bg-[#f0f0f0]">
+                  {logoPreview ? (
+                    <img
+                      src={logoPreview}
+                      alt={t('topology.nodeConfig.uploadedImage')}
+                      className="w-12 h-12 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <>
+                      <UploadOutlined className="text-xl text-[#8c8c8c] mb-1" />
+                      <span className="text-xs text-[#8c8c8c]">
+                        {t('topology.nodeConfig.uploadImage')}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </Upload>
+            </div>
+          )}
+        </Form.Item>
+      </>
+    );
+  }, [
+    nodeType,
+    logoType,
+    selectedIcon,
+    logoPreview,
+    readonly,
+    handleLogoTypeChange,
+    handleSelectIcon,
+    handleLogoUpload,
+    getIconUrl,
+  ]);
+
+  const renderDataSourceConfig = useMemo(() => {
+    if (nodeType !== 'single-value') return null;
+
+    return (
+      <>
+        <div className="mb-6">
+          <div className="font-bold text-[var(--color-text-1)] mb-4">
+            {t('topology.nodeConfig.dataSource')}
+          </div>
+          <Form.Item
+            label={t('topology.nodeConfig.dataSourceType')}
+            name="dataSource"
+            rules={[{ required: true, message: t('common.selectMsg') }]}
+          >
+            <DataSourceSelect
+              loading={dataSourcesLoading}
+              dataSources={dataSources}
+              placeholder={t('common.selectMsg')}
+              style={{ width: '100%' }}
+              onChange={handleDataSourceChange}
+              disabled={readonly}
+            />
+          </Form.Item>
+        </div>
+
+        <div className="mb-6">
+          <div className="font-bold text-[var(--color-text-1)] mb-4">
+            {t('topology.nodeConfig.paramSettings')}
+          </div>
+          <Spin size="small" spinning={dataSourcesLoading}>
+            <DataSourceParamsConfig
+              selectedDataSource={selectedDataSource}
+              readonly={readonly || dataSourcesLoading}
+              includeFilterTypes={['params', 'fixed', 'filter']}
+              fieldPrefix="params"
+            />
+          </Spin>
+        </div>
+
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="font-bold text-[var(--color-text-1)]">
+              {t('topology.nodeConfig.dataSettings')}
+            </div>
+            <Button
+              type="text"
+              icon={<ReloadOutlined />}
+              onClick={fetchDataFields}
+              loading={loadingData}
+              disabled={!currentDataSource || readonly || dataSourcesLoading}
+              size="small"
+              title={t('topology.nodeConfig.refreshDataFields')}
+            />
+          </div>
+
+          {treeData.length > 0 ? (
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="text-sm text-gray-600 mb-3">
+                {t('topology.nodeConfig.selectDataFields')}
+              </div>
+              <Form.Item name="selectedFields" noStyle>
+                <Tree
+                  checkable
+                  checkStrictly
+                  defaultExpandAll
+                  checkedKeys={selectedFields}
+                  onCheck={handleFieldChange}
+                  treeData={treeData}
+                  height={300}
+                  className="bg-white border border-gray-200 rounded p-2"
+                />
+              </Form.Item>
+            </div>
+          ) : currentDataSource ? (
+            <div className="text-center py-4 text-gray-500">
+              {loadingData ? (
+                <div className="flex items-center justify-center">
+                  <Spin size="small" className="mr-2" />
+                  <span>{t('topology.nodeConfig.fetchingDataFields')}</span>
+                </div>
+              ) : (
+                <span>{t('topology.nodeConfig.clickRefreshToGetFields')}</span>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              {t('topology.nodeConfig.selectDataSourceFirst')}
+            </div>
+          )}
+        </div>
+      </>
+    );
+  }, [
+    nodeType,
+    dataSourcesLoading,
+    dataSources,
+    selectedDataSource,
+    currentDataSource,
+    loadingData,
+    treeData,
+    selectedFields,
+    readonly,
+    handleDataSourceChange,
+    fetchDataFields,
+    handleFieldChange,
+    t,
+  ]);
+
+  const renderStyleConfig = useMemo(() => {
+    return (
+      <div className="mb-6">
+        <div className="font-bold text-[var(--color-text-1)] mb-4">
+          {t('topology.nodeConfig.nodeStyle')}
+        </div>
+
+        {nodeType === 'single-value' && (
+          <>
+            <Form.Item
+              label={t('topology.nodeConfig.fontSize')}
+              name="fontSize"
+            >
+              <InputNumber
+                min={10}
+                max={48}
+                step={1}
+                addonAfter="px"
+                disabled={readonly}
+                placeholder={t('common.inputMsg')}
+                style={{ width: '120px' }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={t('topology.nodeConfig.textColor')}
+              name="textColor"
+            >
+              {renderColorPicker()}
+            </Form.Item>
+          </>
+        )}
+
+        {['icon', 'basic-shape'].includes(nodeType) && (
+          <>
+            <Form.Item label={t('topology.nodeConfig.width')} name="width">
+              <InputNumber
+                min={20}
+                max={nodeType === 'basic-shape' ? 500 : 300}
+                step={1}
+                addonAfter="px"
+                disabled={readonly}
+                placeholder={t('common.inputMsg')}
+                style={{ width: '120px' }}
+              />
+            </Form.Item>
+
+            <Form.Item label={t('topology.nodeConfig.height')} name="height">
+              <InputNumber
+                min={20}
+                max={nodeType === 'basic-shape' ? 500 : 300}
+                step={1}
+                addonAfter="px"
+                disabled={readonly}
+                placeholder={t('common.inputMsg')}
+                style={{ width: '120px' }}
+              />
+            </Form.Item>
+          </>
+        )}
+
+        {nodeType === 'basic-shape' && (
+          <>
+            <Form.Item
+              label={t('topology.nodeConfig.backgroundColor')}
+              name="backgroundColor"
+            >
+              {renderColorPicker()}
+            </Form.Item>
+
+            <Form.Item
+              label={t('topology.nodeConfig.borderColor')}
+              name="borderColor"
+            >
+              {renderColorPicker()}
+            </Form.Item>
+
+            <Form.Item
+              label={t('topology.nodeConfig.borderWidth')}
+              name="borderWidth"
+            >
+              <InputNumber
+                min={0}
+                max={10}
+                step={1}
+                addonAfter="px"
+                disabled={readonly}
+                placeholder={t('common.inputMsg')}
+                style={{ width: '120px' }}
+              />
+            </Form.Item>
+
+            <Form.Item label={t('topology.lineType')} name="lineType">
+              <Select placeholder={t('common.selectMsg')} disabled={readonly}>
+                <Select.Option value="solid">
+                  {t('topology.nodeConfig.solidLine')}
+                </Select.Option>
+                <Select.Option value="dashed">
+                  {t('topology.nodeConfig.dashedLine')}
+                </Select.Option>
+                <Select.Option value="dotted">
+                  {t('topology.nodeConfig.dottedLine')}
+                </Select.Option>
+              </Select>
+            </Form.Item>
+          </>
+        )}
+      </div>
+    );
+  }, [nodeType, readonly, form, t]);
+
+  const renderBasicSettings = useMemo(() => {
+    if (nodeType === 'single-value') return null;
+
+    return (
+      <>
+        <div className="font-bold text-[var(--color-text-1)] mb-4">
+          {t('topology.nodeConfig.basicSettings')}
+        </div>
+        {nodeType === 'icon' && (
+          <Form.Item
+            label={t('topology.nodeConfig.name')}
+            name="name"
+            rules={[{ required: true, message: t('common.inputMsg') }]}
+          >
+            <Input placeholder={t('common.inputMsg')} disabled={readonly} />
+          </Form.Item>
+        )}
+
+        {nodeType === 'basic-shape' && (
+          <Form.Item
+            label={t('topology.nodeConfig.shapeType')}
+            name="shapeType"
+            rules={[{ required: true, message: t('common.selectMsg') }]}
+          >
+            <Select placeholder={t('common.selectMsg')} disabled={readonly}>
+              <Select.Option value="rectangle">
+                {t('topology.nodeConfig.rectangle')}
+              </Select.Option>
+              <Select.Option value="circle">
+                {t('topology.nodeConfig.circle')}
+              </Select.Option>
+            </Select>
+          </Form.Item>
+        )}
+
+        {nodeType === 'icon' && renderLogoSelector}
+      </>
+    );
+  }, [nodeType, readonly, renderLogoSelector, t]);
+
   return (
     <Drawer
-      title={title || `${nodeType === 'single-value' ? '单值' : '图标'}节点`}
+      title={
+        title ||
+        t(`topology.nodeTitles.${nodeType}`) ||
+        t('topology.nodeTitles.chart')
+      }
       placement="right"
       width={600}
       open={visible}
       onClose={onClose}
       footer={
-        readonly ? (
-          <div className="flex justify-end">
-            <Button onClick={handleCancel}>关闭</Button>
-          </div>
-        ) : (
-          <div className="flex justify-end space-x-2">
+        <div className="flex justify-end space-x-2">
+          {!readonly && (
             <Button type="primary" onClick={handleConfirm}>
-              确认
+              {t('topology.nodeConfig.confirm')}
             </Button>
-            <Button onClick={handleCancel}>取消</Button>
-          </div>
-        )
+          )}
+          <Button onClick={handleCancel}>
+            {readonly
+              ? t('topology.nodeConfig.close')
+              : t('topology.nodeConfig.cancel')}
+          </Button>
+        </div>
       }
     >
-      <div>
-        <Form form={form} labelCol={{ span: 4 }} layout="horizontal">
-          <div>
-            {/* 图标类型显示名称和Logo配置 */}
-            {nodeType === 'icon' && (
-              <>
-                <div className="font-bold text-[var(--color-text-1)] mb-4">
-                  基础设置
-                </div>
-                <Form.Item
-                  label="名称"
-                  name="name"
-                  rules={[{ required: true, message: '请输入节点名称' }]}
-                >
-                  <Input placeholder="请输入节点名称" disabled={readonly} />
-                </Form.Item>
+      <Form form={form} labelCol={{ span: 4 }} layout="horizontal">
+        {renderBasicSettings}
+        {renderDataSourceConfig}
+        {renderStyleConfig}
+      </Form>
 
-                <Form.Item
-                  label="Logo类型"
-                  name="logoType"
-                  initialValue="default"
-                >
-                  <Radio.Group
-                    onChange={handleLogoTypeChange}
-                    disabled={readonly}
-                  >
-                    <Radio value="default">默认</Radio>
-                    <Radio value="custom">自定义</Radio>
-                  </Radio.Group>
-                </Form.Item>
-
-                <Form.Item
-                  label=" "
-                  colon={false}
-                  name={logoType === 'default' ? 'logoIcon' : 'logoUrl'}
-                  dependencies={['logoType']}
-                >
-                  {logoType === 'default' ? (
-                    <div className="flex items-center space-x-3">
-                      <div
-                        onClick={handleSelectIcon}
-                        className="w-20 h-20 border-2 border-dashed border-[#d9d9d9] hover:border-[#40a9ff] cursor-pointer flex flex-col items-center justify-center rounded-lg transition-colors duration-200 bg-[#fafafa] hover:bg-[#f0f0f0]"
-                      >
-                        {selectedIcon ? (
-                          <img
-                            src={getIconUrl(selectedIcon)}
-                            alt="已选择的图标"
-                            className="w-12 h-12 object-cover"
-                          />
-                        ) : (
-                          <>
-                            <AppstoreOutlined className="text-xl text-[#8c8c8c] mb-1" />
-                            <span className="text-xs text-[#8c8c8c]">
-                              选择图标
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-3">
-                      <Upload
-                        accept="image/*"
-                        showUploadList={false}
-                        beforeUpload={handleLogoUpload}
-                      >
-                        <div className="w-20 h-20 border-2 border-dashed border-[#d9d9d9] hover:border-[#40a9ff] cursor-pointer flex flex-col items-center justify-center rounded-lg transition-colors duration-200 bg-[#fafafa] hover:bg-[#f0f0f0]">
-                          {logoPreview ? (
-                            <img
-                              src={logoPreview}
-                              alt="已上传的图片"
-                              className="w-12 h-12 object-cover rounded-lg"
-                            />
-                          ) : (
-                            <>
-                              <UploadOutlined className="text-xl text-[#8c8c8c] mb-1" />
-                              <span className="text-xs text-[#8c8c8c]">
-                                上传图片
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </Upload>
-                    </div>
-                  )}
-                </Form.Item>
-              </>
-            )}
-          </div>
-
-          {nodeType === 'single-value' && (
-            <>
-              <div className="mb-6">
-                <div className="font-bold text-[var(--color-text-1)] mb-4">
-                  数据源
-                </div>
-                <Form.Item
-                  label="数据源类型"
-                  name="dataSource"
-                  rules={[{ required: true, message: '请选择数据源' }]}
-                >
-                  <DataSourceSelect
-                    loading={dataSourcesLoading}
-                    dataSources={dataSources}
-                    placeholder="请选择数据源"
-                    style={{ width: '100%' }}
-                    onChange={handleDataSourceChange}
-                    disabled={readonly}
-                  />
-                </Form.Item>
-              </div>
-              <div className="mb-6">
-                <div className="font-bold text-[var(--color-text-1)] mb-4">
-                  参数设置
-                </div>
-                <Spin size="small" spinning={dataSourcesLoading}>
-                  <DataSourceParamsConfig
-                    selectedDataSource={selectedDataSource}
-                    readonly={readonly || dataSourcesLoading}
-                    includeFilterTypes={['params', 'fixed', 'filter']}
-                    fieldPrefix="params"
-                  />
-                </Spin>
-              </div>
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="font-bold text-[var(--color-text-1)]">
-                    数据设置
-                  </div>
-                  <Button
-                    type="text"
-                    icon={<ReloadOutlined />}
-                    onClick={fetchDataFields}
-                    loading={loadingData}
-                    disabled={
-                      !currentDataSource || readonly || dataSourcesLoading
-                    }
-                    size="small"
-                    title="刷新数据字段"
-                  />
-                </div>
-
-                {treeData.length > 0 ? (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <div className="text-sm text-gray-600 mb-3">
-                      选择要显示的数据字段：
-                    </div>
-                    <Form.Item name="selectedFields" noStyle>
-                      <Tree
-                        checkable
-                        checkStrictly
-                        defaultExpandAll
-                        checkedKeys={selectedFields}
-                        onCheck={(checkedKeys: any) => {
-                          const keys = Array.isArray(checkedKeys)
-                            ? checkedKeys
-                            : checkedKeys.checked;
-                          // 过滤出叶子节点
-                          const findNode = (
-                            nodes: any[],
-                            targetKey: string
-                          ): any => {
-                            for (const node of nodes) {
-                              if (node.key === targetKey) {
-                                return node;
-                              }
-                              if (node.children) {
-                                const found = findNode(
-                                  node.children,
-                                  targetKey
-                                );
-                                if (found) return found;
-                              }
-                            }
-                            return null;
-                          };
-
-                          // 只保留叶子节点的选择
-                          const leafKeys = keys.filter((key: string) => {
-                            const node = findNode(treeData, key);
-                            return node && node.isLeaf;
-                          });
-
-                          handleFieldChange(leafKeys);
-                        }}
-                        treeData={treeData}
-                        height={300}
-                        className="bg-white border border-gray-200 rounded p-2"
-                      />
-                    </Form.Item>
-                  </div>
-                ) : currentDataSource ? (
-                  <div className="text-center py-4 text-gray-500">
-                    {loadingData ? (
-                      <div className="flex items-center justify-center">
-                        <Spin size="small" className="mr-2" />
-                        <span>正在获取数据字段...</span>
-                      </div>
-                    ) : (
-                      <span>点击刷新按钮获取数据字段</span>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-4 text-gray-500">
-                    请先选择数据源
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          <div className="mb-6">
-            <div className="font-bold text-[var(--color-text-1)] mb-4">
-              节点样式
-            </div>
-            {nodeType === 'single-value' && (
-              <>
-                <Form.Item label="字体大小" name="fontSize">
-                  <InputNumber
-                    defaultValue={NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize}
-                    min={10}
-                    max={48}
-                    step={1}
-                    addonAfter="px"
-                    disabled={readonly}
-                    placeholder="请输入字体大小"
-                    style={{ width: '120px' }}
-                  />
-                </Form.Item>
-
-                <Form.Item label="文本颜色" name="textColor">
-                  <Input
-                    type="color"
-                    defaultValue={NODE_DEFAULTS.SINGLE_VALUE_NODE.textColor}
-                    className="w-20 h-8"
-                    disabled={readonly}
-                  />
-                </Form.Item>
-                <Form.Item label="背景颜色" name="backgroundColor">
-                  <Input
-                    type="color"
-                    defaultValue={
-                      NODE_DEFAULTS.SINGLE_VALUE_NODE.backgroundColor
-                    }
-                    className="w-20 h-8"
-                    disabled={readonly}
-                  />
-                </Form.Item>
-
-                <Form.Item label="边框颜色" name="borderColor">
-                  <Input
-                    type="color"
-                    defaultValue={NODE_DEFAULTS.SINGLE_VALUE_NODE.borderColor}
-                    className="w-20 h-8"
-                    disabled={readonly}
-                  />
-                </Form.Item>
-              </>
-            )}
-            {nodeType === 'icon' && (
-              <>
-                <Form.Item label="图标宽度" name="width">
-                  <InputNumber
-                    defaultValue={NODE_DEFAULTS.ICON_NODE.width}
-                    min={20}
-                    max={300}
-                    step={1}
-                    addonAfter="px"
-                    disabled={readonly}
-                    placeholder="请输入图标宽度"
-                    style={{ width: '120px' }}
-                  />
-                </Form.Item>
-
-                <Form.Item label="图标高度" name="height">
-                  <InputNumber
-                    defaultValue={NODE_DEFAULTS.ICON_NODE.height}
-                    min={20}
-                    max={300}
-                    step={1}
-                    addonAfter="px"
-                    disabled={readonly}
-                    placeholder="请输入图标高度"
-                    style={{ width: '120px' }}
-                  />
-                </Form.Item>
-              </>
-            )}
-          </div>
-        </Form>
-
-        <SelectIcon ref={selectIconRef} onSelect={handleIconSelect} />
-      </div>
+      <SelectIcon ref={selectIconRef} onSelect={handleIconSelect} />
     </Drawer>
   );
 };

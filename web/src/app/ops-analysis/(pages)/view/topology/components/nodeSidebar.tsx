@@ -7,16 +7,24 @@ import {
   LeftOutlined,
   AppstoreOutlined,
   BarChartOutlined,
+  BorderOutlined,
 } from '@ant-design/icons';
 
 const Sidebar: React.FC<SidebarProps> = ({
   collapsed,
   isEditMode = false,
+  graphInstance,
   setCollapsed,
   onShowNodeConfig,
   onShowChartSelector,
 }) => {
   const nodeTypes: NodeType[] = [
+    {
+      id: 'basic-shape',
+      name: '基础图形',
+      icon: <BorderOutlined className="text-blue-600" />,
+      description: '添加基础图形节点（矩形、圆形等）',
+    },
     {
       id: 'single-value',
       name: '单值',
@@ -111,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     } else {
       setCollapsed(true);
     }
-  }, [isEditMode, setCollapsed]);
+  }, [isEditMode]);
 
   // 添加全局拖拽监听器
   useEffect(() => {
@@ -129,29 +137,19 @@ const Sidebar: React.FC<SidebarProps> = ({
             );
 
             if (nodeType) {
-              const canvasElement =
-                document.querySelector('.x6-graph-svg') ||
-                document.querySelector('.x6-graph') ||
-                document.querySelector('.x6-graph-scroller');
+              let position = { x: e.clientX, y: e.clientY };
 
-              let position = { x: 300, y: 200 };
-
-              if (canvasElement) {
-                const rect = canvasElement.getBoundingClientRect();
-                let x = e.clientX - rect.left;
-                let y = e.clientY - rect.top;
-
-                // 节点应该相对于其中心位置放置
-                x = Math.max(0, x - 60);
-                y = Math.max(0, y - 40);
-
-                position = { x, y };
+              if (graphInstance && 'pageToLocal' in graphInstance) {
+                position = (graphInstance as any).pageToLocal(
+                  e.clientX,
+                  e.clientY
+                );
               }
 
               if (nodeType.id === 'chart') {
                 onShowChartSelector?.(position);
-              } else if (onShowNodeConfig) {
-                onShowNodeConfig(nodeType, position);
+              } else {
+                onShowNodeConfig?.(nodeType, position);
               }
             }
           }
@@ -172,7 +170,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       document.removeEventListener('drop', handleGlobalDrop);
       document.removeEventListener('dragover', handleGlobalDragOver);
     };
-  }, [nodeTypes, onShowNodeConfig]);
+  }, [nodeTypes, graphInstance]);
 
   return (
     <>

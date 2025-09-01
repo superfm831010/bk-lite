@@ -18,7 +18,9 @@ import {
   Organization,
   Pagination,
   TableDataItem,
+  TreeItem,
 } from '@/app/log/types';
+import { ObjectItem } from '@/app/log/types/event';
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
 import { DownOutlined } from '@ant-design/icons';
@@ -30,6 +32,7 @@ import EditInstance from './editInstance';
 import Permission from '@/components/permission';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import type { TableProps, MenuProps } from 'antd';
+import TreeSelector from '@/app/log/components/tree-selector';
 const { confirm } = Modal;
 
 type TableRowSelection<T extends object = object> =
@@ -37,7 +40,7 @@ type TableRowSelection<T extends object = object> =
 
 const Asset = () => {
   const { isLoading } = useApiClient();
-  const { getInstanceList, deleteLogInstance } = useLogApi();
+  const { getInstanceList, deleteLogInstance, getCollectTypes } = useLogApi();
   const { t } = useTranslation();
   const commonContext = useCommon();
   const authList = useRef(commonContext?.authOrganizations || []);
@@ -57,6 +60,9 @@ const Asset = () => {
   const [frequence, setFrequence] = useState<number>(0);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [treeData, setTreeData] = useState<TreeItem[]>([]);
+  const [objectId, setObjectId] = useState<React.Key>('');
+  const [treeLoading, setTreeLoading] = useState<boolean>(false);
 
   const handleAssetMenuClick: MenuProps['onClick'] = (e) => {
     openInstanceModal(
@@ -134,6 +140,13 @@ const Asset = () => {
               {t('log.integration.updateConfigration')}
             </Button>
           </Permission>
+          <Button
+            className="ml-[10px]"
+            type="link"
+            onClick={() => viewLog(record)}
+          >
+            {t('log.integration.viewLogs')}
+          </Button>
           <Permission requiredPermissions={['Delete']}>
             <Popconfirm
               title={t('common.deleteTitle')}
@@ -162,11 +175,11 @@ const Asset = () => {
     if (!isLoading) {
       onRefresh();
     }
-  }, [pagination.current, pagination.pageSize]);
+  }, [pagination.current, pagination.pageSize, objectId]);
 
   useEffect(() => {
     if (!isLoading) {
-      onRefresh();
+      getObjects();
     }
   }, [isLoading]);
 
@@ -181,7 +194,59 @@ const Asset = () => {
     return () => {
       clearTimer();
     };
-  }, [frequence, pagination.current, pagination.pageSize, searchText]);
+  }, [
+    frequence,
+    pagination.current,
+    pagination.pageSize,
+    searchText,
+    objectId,
+  ]);
+
+  const viewLog = (row: TableDataItem) => {
+    const params = {
+      query: `instance_id:"${row.id}"`,
+    };
+    const queryString = new URLSearchParams(params).toString();
+    const url = `/log/search?${queryString}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const getObjects = async () => {
+    try {
+      setTreeLoading(true);
+      const data: ObjectItem[] = await getCollectTypes();
+      setTreeData(getTreeData(data));
+    } finally {
+      setTreeLoading(false);
+    }
+  };
+
+  const getTreeData = (data: ObjectItem[]): TreeItem[] => {
+    const groupedData = data.reduce((acc, item) => {
+      if (!acc[item.collector]) {
+        acc[item.collector] = {
+          title: item.collector || '--',
+          key: item.collector,
+          children: [],
+        };
+      }
+      acc[item.collector].children.push({
+        title: item.name || '--',
+        label: item.name || '--',
+        key: item.id,
+        children: [],
+      });
+      return acc;
+    }, {} as Record<string, TreeItem>);
+    return [
+      {
+        title: t('common.all'),
+        key: 'all',
+        children: [],
+      },
+      ...Object.values(groupedData),
+    ];
+  };
 
   const onRefresh = () => {
     getAssetInsts();
@@ -257,6 +322,7 @@ const Asset = () => {
       const params = {
         page: pagination.current,
         page_size: pagination.pageSize,
+        collect_type_id: objectId === 'all' ? '' : objectId,
         name: type === 'clear' ? '' : searchText,
       };
       const data = await getInstanceList(params);
@@ -300,55 +366,69 @@ const Asset = () => {
     onChange: onSelectChange,
   };
 
+  const handleObjectChange = async (id: string) => {
+    setObjectId(id);
+  };
+
   return (
-    <div className="bg-[var(--color-bg-1)] h-full p-[20px]">
-      <div className="flex justify-between items-center mb-[10px]">
-        <Input
-          allowClear
-          className="w-[320px]"
-          placeholder={t('common.searchPlaceHolder')}
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          onPressEnter={() => getAssetInsts()}
-          onClear={clearText}
-        ></Input>
-        <div className="flex">
-          <Dropdown
-            className="mr-[8px]"
-            overlayClassName="customMenu"
-            menu={assetMenuProps}
-            disabled={enableOperateAsset}
-          >
-            <Button>
-              <Space>
-                {t('common.action')}
-                <DownOutlined />
-              </Space>
-            </Button>
-          </Dropdown>
-          <TimeSelector
-            onlyRefresh
-            onFrequenceChange={onFrequenceChange}
-            onRefresh={onRefresh}
-          />
-        </div>
-      </div>
-      <CustomTable
-        scroll={{ y: 'calc(100vh - 320px)', x: 'max-content' }}
-        columns={columns}
-        dataSource={tableData}
-        pagination={pagination}
-        loading={tableLoading}
-        rowKey="id"
-        onChange={handleTableChange}
-        rowSelection={rowSelection}
-      ></CustomTable>
-      <EditConfig ref={configRef} onSuccess={() => getAssetInsts()} />
-      <EditInstance
-        ref={instanceRef}
-        organizationList={organizationList}
-        onSuccess={() => getAssetInsts()}
+    <div className="flex overflow-hidden">
+      <TreeSelector
+        data={treeData}
+        loading={treeLoading}
+        showAllMenu
+        defaultSelectedKey="all"
+        onNodeSelect={handleObjectChange}
       />
+      <div className="w-[calc(100vw-240px)] min-w-[1040px] bg-[var(--color-bg-1)] p-[20px]">
+        <div className="flex justify-between items-center mb-[10px]">
+          <Input
+            allowClear
+            className="w-[320px]"
+            placeholder={t('common.searchPlaceHolder')}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onPressEnter={() => getAssetInsts()}
+            onClear={clearText}
+          ></Input>
+          <div className="flex">
+            <Dropdown
+              className="mr-[8px]"
+              overlayClassName="customMenu"
+              menu={assetMenuProps}
+              disabled={enableOperateAsset}
+            >
+              <Button>
+                <Space>
+                  {t('common.action')}
+                  <DownOutlined />
+                </Space>
+              </Button>
+            </Dropdown>
+            <TimeSelector
+              onlyRefresh
+              onFrequenceChange={onFrequenceChange}
+              onRefresh={onRefresh}
+            />
+          </div>
+        </div>
+        <CustomTable
+          className="w-full"
+          scroll={{ y: 'calc(100vh - 336px)', x: 'calc(100vw- 280x)' }}
+          columns={columns}
+          dataSource={tableData}
+          pagination={pagination}
+          loading={tableLoading}
+          rowKey="id"
+          onChange={handleTableChange}
+          rowSelection={rowSelection}
+        ></CustomTable>
+        <EditConfig ref={configRef} onSuccess={() => getAssetInsts()} />
+        <EditInstance
+          ref={instanceRef}
+          organizationList={organizationList}
+          onSuccess={() => getAssetInsts()}
+        />
+      </div>
     </div>
   );
 };

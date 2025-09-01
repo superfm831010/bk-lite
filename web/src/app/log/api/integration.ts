@@ -58,7 +58,7 @@ const useIntegrationApi = () => {
   };
 
   const getInstanceList = async (data: {
-    collect_type_id?: number;
+    collect_type_id?: React.Key;
     page?: number;
     page_size?: number;
     name?: string;
