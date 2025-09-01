@@ -1,4 +1,5 @@
 from django_filters import rest_framework as filters
+from django.db.models import Count
 
 from apps.log.models import CollectType, CollectInstance, CollectConfig
 
@@ -6,10 +7,21 @@ from apps.log.models import CollectType, CollectInstance, CollectConfig
 class CollectTypeFilter(filters.FilterSet):
     name = filters.CharFilter(lookup_expr='icontains')
     collector = filters.CharFilter(lookup_expr='icontains')
+    add_policy_count = filters.BooleanFilter(method='filter_add_policy_count')
 
     class Meta:
         model = CollectType
-        fields = ['name', 'collector']
+        fields = ['name', 'collector', 'add_policy_count']
+
+    def filter_add_policy_count(self, queryset, name, value):
+        """
+        过滤器方法，用于处理add_policy_count参数
+        使用annotate进行聚合查询，避免N+1问题
+        """
+        if value:
+            # 使用annotate一次性计算所有采集类型的策略数量
+            return queryset.annotate(policy_count=Count('policy'))
+        return queryset
 
 
 class CollectInstanceFilter(filters.FilterSet):

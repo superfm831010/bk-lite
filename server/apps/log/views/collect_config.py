@@ -19,6 +19,44 @@ class CollectTypeViewSet(ModelViewSet):
     filterset_class = CollectTypeFilter
 
     @swagger_auto_schema(
+        operation_description="获取采集类型列表",
+        manual_parameters=[
+            openapi.Parameter(
+                'add_policy_count',
+                openapi.IN_QUERY,
+                description="是否计算采集类型下的策略数量统计",
+                type=openapi.TYPE_BOOLEAN,
+                default=False,
+                required=False
+            ),
+            openapi.Parameter(
+                'name',
+                openapi.IN_QUERY,
+                description="按名称模糊搜索",
+                type=openapi.TYPE_STRING,
+                required=False
+            ),
+            openapi.Parameter(
+                'collector',
+                openapi.IN_QUERY,
+                description="按采集器名称模糊搜索",
+                type=openapi.TYPE_STRING,
+                required=False
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """
+        获取采集类型列表
+
+        支持参数：
+        - add_policy_count: 是否计算策略数量，true/false，默认false
+        - name: 按名称模糊搜索
+        - collector: 按采集器名称模糊搜索
+        """
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
         operation_description="获取所有采集类型的属性",
         operation_id="get_all_attrs",
     )
