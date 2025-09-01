@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime, timezone
 
 from langchain_core.documents import Document
@@ -17,14 +17,18 @@ from src.web.entity.rag.graphiti.document_retriever_request import DocumentRetri
 from src.web.entity.rag.graphiti.rebuild_community_request import RebuildCommunityRequest
 from src.core.rag.graph_rag.graphiti.metis_embedder import MetisEmbedder
 from src.core.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderConfig
-from src.core.rag.graph_rag.graphiti.metis_raranker_config import MetisRerankerConfig
+from src.core.rag.graph_rag.graphiti.metis_reranker_config import MetisRerankerConfig
 from src.core.rag.graph_rag.graphiti.metis_reranker_client import MetisRerankerClient
+from src.core.sanic_plus.utils.timing_decorator import timeit
 from sanic.log import logger
 from graphiti_core.driver.falkordb_driver import FalkorDriver
 
 
 class GraphitiRAG:
     """Graphiti知识图谱RAG实现类"""
+
+    # LLM客户端超时时间（秒）
+    LLM_TIMEOUT_SECONDS = 600
 
     def __init__(self):
         pass
@@ -64,7 +68,7 @@ class GraphitiRAG:
         async_openai = AsyncOpenAI(
             api_key=llm_config['api_key'],
             base_url=llm_config['base_url'],
-            timeout=600  # 增加到10分钟，避免长时间ingest操作超时
+            timeout=self.LLM_TIMEOUT_SECONDS  # 使用类变量避免硬编码
         )
         return OpenAIClient(
             client=async_openai,
@@ -101,7 +105,11 @@ class GraphitiRAG:
         kwargs['graph_driver'] = driver
         return Graphiti(**kwargs)
 
-    def _extract_configs_from_request(self, req) -> tuple[Optional[dict], Optional[dict], Optional[dict]]:
+    def _extract_configs_from_request(
+        self,
+        req: Union[GraphitiRagDocumentIngestRequest,
+                   DocumentRetrieverRequest, RebuildCommunityRequest]
+    ) -> tuple[Optional[dict], Optional[dict], Optional[dict]]:
         """从请求对象中提取配置信息"""
         llm_config = None
         embed_config = None
@@ -216,11 +224,13 @@ class GraphitiRAG:
         graphiti = self._create_basic_graphiti()
         await graphiti.build_indices_and_constraints()
 
+    @timeit("community_building")
     async def build_communities(self, graphiti_instance: Graphiti, group_ids: List[str]):
         """构建社区"""
         logger.info(f"构建社区: group_ids={group_ids}")
         await graphiti_instance.build_communities(group_ids=group_ids)
 
+    @timeit("document_ingest")
     async def ingest(self, req: GraphitiRagDocumentIngestRequest):
         """文档摄取"""
         logger.info(f"开始摄取文档: group_id={req.group_id}, 文档数量={len(req.docs)}")
@@ -282,6 +292,7 @@ class GraphitiRAG:
             "total_count": len(req.docs)
         }
 
+    @timeit("community_rebuild")
     async def rebuild_community(self, req: RebuildCommunityRequest):
         """重建社区"""
         logger.info(f"重建社区: group_ids={req.group_ids}")
@@ -296,6 +307,7 @@ class GraphitiRAG:
         await self.build_communities(graphiti_instance, req.group_ids)
         logger.info("社区重建完成")
 
+    @timeit("document_search")
     async def search(self, req: DocumentRetrieverRequest) -> List[Document]:
         """搜索文档"""
         logger.info(
