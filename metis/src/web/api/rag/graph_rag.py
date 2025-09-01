@@ -23,16 +23,9 @@ async def ingest(request, body: GraphitiRagDocumentIngestRequest):
 
     try:
         rag = GraphitiRAG()
-        # 使用 asyncio.wait_for 增加整体超时控制
-        rs = await asyncio.wait_for(rag.ingest(body), timeout=1800)  # 30分钟超时
+        rs = await rag.ingest(body)
         logger.info(f"文档摄取请求完成: group_id={body.group_id}")
         return json({"status": "success", "result": rs})
-    except asyncio.TimeoutError:
-        logger.error(f"文档摄取超时: group_id={body.group_id}, 超时时间: 30分钟")
-        return json({
-            "status": "error",
-            "message": "文档摄取操作超时，请减少文档数量或联系管理员"
-        }, status=408)
     except Exception as e:
         logger.error(f"文档摄取异常: group_id={body.group_id}, 错误: {e}")
         return json({
