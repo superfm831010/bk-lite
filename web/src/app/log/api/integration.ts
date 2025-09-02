@@ -20,6 +20,8 @@ const useIntegrationApi = () => {
     params: {
       collector?: React.Key | null;
       collect_type_id?: React.Key | null;
+      add_policy_count?: boolean;
+      add_instance_count?: boolean;
       name?: string;
       page?: number;
       page_size?: number;

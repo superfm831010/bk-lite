@@ -92,7 +92,6 @@ const Alert: React.FC = () => {
   const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [treeData, setTreeData] = useState<TreeItem[]>([]);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [defaultSelectObj, setDefaultSelectObj] = useState<React.Key>('');
   const [objectId, setObjectId] = useState<React.Key>('');
 
   const columns: ColumnItem[] = [
@@ -293,7 +292,6 @@ const Alert: React.FC = () => {
       setPageLoading(true);
       const data: ObjectItem[] = await getCollectTypes();
       setObjects(data);
-      setDefaultSelectObj(data[0]?.id);
       setTreeData(getTreeData(data));
     } finally {
       setPageLoading(false);
@@ -317,7 +315,14 @@ const Alert: React.FC = () => {
       });
       return acc;
     }, {} as Record<string, TreeItem>);
-    return Object.values(groupedData);
+    return [
+      {
+        title: t('common.all'),
+        key: 'all',
+        children: [],
+      },
+      ...Object.values(groupedData),
+    ];
   };
 
   const alertCloseConfirm = async (id: string | number) => {
@@ -345,7 +350,7 @@ const Alert: React.FC = () => {
     const params = {
       status: isActive ? 'new' : 'closed',
       levels: filtersMap.level.join(','),
-      collect_type: objectId,
+      collect_type: objectId === 'all' ? '' : objectId,
       content: searchText || '',
       page: pagination.current,
       page_size: pagination.pageSize,
@@ -472,7 +477,8 @@ const Alert: React.FC = () => {
         <div className={alertStyle.alert}>
           <TreeSelector
             data={treeData}
-            defaultSelectedKey={defaultSelectObj as string}
+            showAllMenu
+            defaultSelectedKey="all"
             onNodeSelect={handleObjectChange}
           />
           <div className={alertStyle.alarmList}>
