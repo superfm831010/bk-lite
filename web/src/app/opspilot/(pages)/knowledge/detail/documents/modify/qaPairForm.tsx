@@ -86,6 +86,23 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     createQAPairs: handleCreateQAPairs
   }));
 
+  const validateAndNotify = useCallback(() => {
+    const hasValidDocuments = isEditMode || selectedDocuments.length > 0;
+    const isValid = !!(
+      (formValuesRef.current.questionLlmModel !== undefined && formValuesRef.current.questionLlmModel !== null) && 
+      (formValuesRef.current.answerLlmModel !== undefined && formValuesRef.current.answerLlmModel !== null) && 
+      formValuesRef.current.qaCount && 
+      formValuesRef.current.qaCount > 0 &&
+      hasValidDocuments
+    );
+    
+    onFormChangeRef.current(isValid);
+    onFormDataChangeRef.current({
+      ...formValuesRef.current,
+      selectedDocuments
+    });
+  }, [selectedDocuments, isEditMode]);
+
   const fetchLlmModels = useCallback(async () => {
     setLlmModelsLoading(true);
     try {
@@ -102,13 +119,18 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
         };
         form.setFieldsValue(defaultValues);
         formValuesRef.current = defaultValues;
+        
+        // 设置默认值后立即触发验证
+        setTimeout(() => {
+          validateAndNotify();
+        }, 100);
       }
     } catch {
       message.error(t('common.fetchFailed'));
     } finally {
       setLlmModelsLoading(false);
     }
-  }, [parId, initialData]);
+  }, [parId, initialData, validateAndNotify]);
 
   const fetchDocumentsByType = useCallback(async (type: string, page: number, pageSize: number) => {
     if (!id) return;
@@ -284,8 +306,8 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
 
   const handleFormValuesChange = useCallback((_: any, allValues: any) => {
     const newValues = {
-      questionLlmModel: allValues.questionLlmModel || 0,
-      answerLlmModel: allValues.answerLlmModel || 0,
+      questionLlmModel: allValues.questionLlmModel !== undefined ? allValues.questionLlmModel : 0,
+      answerLlmModel: allValues.answerLlmModel !== undefined ? allValues.answerLlmModel : 0,
       qaCount: allValues.qaCount || 1,
       questionPrompt: allValues.questionPrompt || '',
       answerPrompt: allValues.answerPrompt || ''
@@ -295,9 +317,10 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     // 立即触发验证，不使用异步
     const hasValidDocuments = isEditMode || selectedDocuments.length > 0;
     const isValid = !!(
-      newValues.questionLlmModel && 
-      newValues.answerLlmModel && 
+      (newValues.questionLlmModel !== undefined && newValues.questionLlmModel !== null) && 
+      (newValues.answerLlmModel !== undefined && newValues.answerLlmModel !== null) && 
       newValues.qaCount && 
+      newValues.qaCount > 0 &&
       hasValidDocuments
     );
     
@@ -308,26 +331,15 @@ const QAPairForm = forwardRef<any, QAPairFormProps>(({
     });
   }, [selectedDocuments, isEditMode]);
 
-  const validateAndNotify = useCallback(() => {
-    const hasValidDocuments = isEditMode || selectedDocuments.length > 0;
-    const isValid = !!(
-      formValuesRef.current.questionLlmModel && 
-      formValuesRef.current.answerLlmModel && 
-      formValuesRef.current.qaCount && 
-      hasValidDocuments
-    );
-    
-    onFormChangeRef.current(isValid);
-    onFormDataChangeRef.current({
-      ...formValuesRef.current,
-      selectedDocuments
-    });
-  }, [selectedDocuments, isEditMode]);
-
   useEffect(() => {
     const cleanup = validateAndNotify();
     return cleanup;
   }, []);
+
+  // 监听 selectedDocuments 变化，触发验证
+  useEffect(() => {
+    validateAndNotify();
+  }, [selectedDocuments, validateAndNotify]);
 
   const handleTabChange = useCallback((tabKey: string) => {
     setActiveDocumentTab(tabKey);

@@ -1,8 +1,15 @@
 import React, { useEffect } from 'react';
-import { Form, Input, message } from 'antd';
+import { Form, Input, Select, message } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { ModelGroupModalProps } from '@/app/opspilot/types/provider';
 import OperateModal from '@/components/operate-modal';
+
+const TAG_OPTIONS = [
+  { label: 'LLM', value: 'llm' },
+  { label: 'Embed', value: 'embed' },
+  { label: 'OCR', value: 'ocr' },
+  { label: 'Rerank', value: 'rerank' },
+];
 
 const ModelGroupModal: React.FC<ModelGroupModalProps> = ({
   visible,
@@ -22,6 +29,7 @@ const ModelGroupModal: React.FC<ModelGroupModalProps> = ({
       form.setFieldsValue({
         name: group.name,
         display_name: group.display_name,
+        tags: group.tags || [],
       });
     } else {
       form.resetFields();
@@ -34,6 +42,7 @@ const ModelGroupModal: React.FC<ModelGroupModalProps> = ({
         const submitValues = {
           name: values.name,
           display_name: values.display_name,
+          tags: values.tags || [],
           ...(mode === 'edit' && group?.icon && { icon: group.icon })
         };
         onOk(submitValues);
@@ -74,6 +83,18 @@ const ModelGroupModal: React.FC<ModelGroupModalProps> = ({
           ]}
         >
           <Input placeholder={`${t('common.input')}${t('provider.group.displayName')}`} />
+        </Form.Item>
+
+        <Form.Item
+          name="tags"
+          label={t('provider.group.tags')}
+        >
+          <Select
+            mode="multiple"
+            placeholder={`${t('common.select')}${t('provider.group.tags')}`}
+            options={TAG_OPTIONS}
+            allowClear
+          />
         </Form.Item>
       </Form>
     </OperateModal>
