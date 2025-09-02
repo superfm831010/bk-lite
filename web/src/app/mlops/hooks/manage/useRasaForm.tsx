@@ -722,8 +722,8 @@ const useRasaSlotForm = ({
   const [sampleList, setSampleList] = useState<(string | null)[]>([]);
 
   useEffect(() => {
-    if (visiable && formData) {
-      setSampleList(formData?.values || [null]);
+    if (visiable && formData?.values) {
+      setSampleList(formData?.values.length ?  formData?.values : [null]);
     } else if (!visiable) {
       setSampleList([null]);
     }

@@ -111,7 +111,10 @@
     "train": "Training set",
     "test": "Test set",
     "validate": "Validate set",
-    "selectWarn": "Please select a training file type"
+    "selectWarn": "Please select a training file type",
+    "editEaxmpleTip": "One example per line. Select text to add entity annotations",
+    "noSearchData": "No matching results found",
+    "selectEntityTip": "Tip: Select text in edit mode to add entity annotations"
   },
   "traintask": {
     "train": "Train",
