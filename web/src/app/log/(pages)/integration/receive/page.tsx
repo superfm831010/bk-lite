@@ -173,7 +173,7 @@ const Asset = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      onRefresh();
+      getAssetInsts();
     }
   }, [pagination.current, pagination.pageSize, objectId]);
 
@@ -214,7 +214,9 @@ const Asset = () => {
   const getObjects = async () => {
     try {
       setTreeLoading(true);
-      const data: ObjectItem[] = await getCollectTypes();
+      const data: ObjectItem[] = await getCollectTypes({
+        add_instance_count: true,
+      });
       setTreeData(getTreeData(data));
     } finally {
       setTreeLoading(false);
@@ -231,7 +233,7 @@ const Asset = () => {
         };
       }
       acc[item.collector].children.push({
-        title: item.name || '--',
+        title: `${item.name}(${item.instance_count || 0})`,
         label: item.name || '--',
         key: item.id,
         children: [],
@@ -249,6 +251,7 @@ const Asset = () => {
   };
 
   const onRefresh = () => {
+    getObjects();
     getAssetInsts();
   };
 
@@ -271,6 +274,7 @@ const Asset = () => {
                 pagination.current--;
             }
             setSelectedRowKeys([]);
+            getObjects();
             getAssetInsts();
           } finally {
             resolve(true);
@@ -346,6 +350,7 @@ const Asset = () => {
       await deleteLogInstance(data);
       message.success(t('common.successfullyDeleted'));
       getAssetInsts();
+      getObjects();
     } finally {
       setConfirmLoading(false);
     }
