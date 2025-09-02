@@ -1,12 +1,16 @@
+# -- coding: utf-8 --
+# @File: falkordb.py
+# @Time: 2025/8/29 14:48
+# @Author: windyzhao
 import os
 import json
 from typing import List, Union
 
 from dotenv import load_dotenv
-from neo4j import GraphDatabase
-from neo4j.graph import Path
+from falkordb import falkordb
 
 from apps.cmdb.constants import INSTANCE, ModelConstraintKey
+from apps.cmdb.graph.falkordb_format import FormatDBResult
 from apps.cmdb.graph.format_type import FORMAT_TYPE
 from apps.core.exceptions.base_app_exception import BaseAppException
 from apps.core.logger import cmdb_logger as logger
@@ -14,54 +18,84 @@ from apps.core.logger import cmdb_logger as logger
 load_dotenv()
 
 
-class Neo4jClient:
+class FalkorDBClient:
     def __init__(self):
-        self.driver = GraphDatabase.driver(
-            os.getenv("NEO4J_URI"),
-            auth=(os.getenv("NEO4J_USER"), os.getenv("NEO4J_PASSWORD")),
-        )
-        self.session = None
+        self.password = os.getenv("FALKORDB_REQUIREPASS", "") or None
+        self.host = os.getenv('FALKORDB_HOST', '10.10.40.189')
+        self.port = int(os.getenv("FALKORDB_PORT", "6379"))
+        self.database = os.getenv("FALKORDB_DATABASE", "cmdb_graph")
+        self._client = None
+        self._graph = None
+
+    def connect(self, graph_name="default_graph"):
+        """建立连接并选择Graph"""
+        try:
+            self._client = falkordb.FalkorDB(
+                host=self.host,
+                port=self.port,
+                password=self.password
+            )
+            self._graph = self._client.select_graph(graph_name)
+            logger.info(f"已连接到 FalkorDB，选择Graph: {graph_name}")
+
+            return True
+        except Exception:  # noqa
+            import traceback
+            logger.info(f"连接失败: {traceback.format_exc()}")
+            return False
 
     def close(self):
         """关闭连接"""
-        if self.session:
-            self.session.close()
-        if self.driver:
-            self.driver.close()
+        if self._client:
+            self._client = None
+            self._graph = None
 
     def __enter__(self):
-        self.session = self.driver.session()
-        # print("连接了neo4j")
+        """上下文管理器入口"""
+        self.connect()
+        # print("连接了FalkorDB")
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
-        # print("关闭了neo4j连接")
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """上下文管理器退出"""
+        # self.close()
+        pass
 
-    def entity_to_list(self, data: iter):
+    # 析构函数（备用）
+    def __del__(self):
+        """对象销毁时自动关闭连接"""
+        # self.close()
+        pass
+
+    def entity_to_list(self, data):
         """将使用fetchall查询的结果转换成列表类型"""
-        return [self.entity_to_dict(i) for i in data]
+        _format = FormatDBResult(data)
+        result = _format.to_list_of_lists()
+        return [self.entity_to_dict(i, _format=False) for i in result]
 
-    def entity_to_dict(self, data: tuple):
+    @staticmethod
+    def entity_to_dict(data: dict, _format=True):
         """将使用single查询的结果转换成字典类型"""
-        return dict(_id=data[0].id, _label=list(data[0].labels)[0], **data[0]._properties)
+        if _format:
+            _format = FormatDBResult(data)
+            result = _format.to_list_of_dicts()
+            data = result[0] if result else {}
+        return data
 
-    def edge_to_list(self, data: iter, return_entity: bool):
+    @staticmethod
+    def edge_to_list(data, return_entity: bool):
         """将使用fetchall查询的结果转换成列表类型"""
-        result = []
-        for i in data:
-            result.append({
-                "src": self.entity_to_dict((i[0].start_node,)),
-                "edge": self.edge_to_dict((i[0].relationships[0],)),
-                "dst": self.entity_to_dict((i[0].end_node,)),
-            })
+        _format = FormatDBResult(data)
+        result = _format.format_edge_to_list()
         return result if return_entity else [i["edge"] for i in result]
 
-    def edge_to_dict(self, data: tuple):
+    def edge_to_dict(self, data):
         """将使用single查询的结果转换成字典类型"""
-        return dict(_id=data[0].id, _label=data[0].type, **data[0]._properties)
+        _data = self.entity_to_dict(data=data)
+        return _data
 
-    def format_properties(self, properties: dict):
+    @staticmethod
+    def format_properties(properties: dict):
         """将属性格式化为sql中的字符串格式"""
         properties_str = "{"
         for key, value in properties.items():
@@ -156,7 +190,7 @@ class Neo4jClient:
 
         # 创建实体
         properties_str = self.format_properties(properties)
-        entity = self.session.run(f"CREATE (n:{label} {properties_str}) RETURN n").single()
+        entity = self._graph.query(f"CREATE (n:{label} {properties_str}) RETURN n")
 
         return self.entity_to_dict(entity)
 
@@ -192,20 +226,21 @@ class Neo4jClient:
 
         # 校验边是否已经存在
         check_asst_val = properties.get(check_asst_key)
-        edge_count = self.session.run(
-            f"MATCH (a:{a_label})-[e]-(b:{b_label}) WHERE id(a) = {a_id} AND id(b) = {b_id} AND e.{check_asst_key} = '{check_asst_val}' RETURN COUNT(e) AS count"
+        result = self._graph.query(
+            f"MATCH (a:{a_label})-[e]-(b:{b_label}) WHERE ID(a) = {a_id} AND ID(b) = {b_id} AND e.{check_asst_key} = '{check_asst_val}' RETURN COUNT(e) AS count"
             # noqa
-        ).single()["count"]
+        )
+        result = FormatDBResult(result).to_list_of_lists()
+        edge_count = result[0] if result else 0
         if edge_count > 0:
             raise BaseAppException("edge already exists")
 
         # 创建边
         properties_str = self.format_properties(properties)
-        edge = self.session.run(
-            # f"MATCH (a:{a_label}), (b:{b_label}) WHERE id(a) = {a_id} AND id(b) = {b_id} CREATE (a)-[e:{label} {properties_str}]->(b) RETURN e"  # noqa
-            f"MATCH (a:{a_label}) WHERE id(a) = {a_id} WITH a MATCH (b:{b_label}) WHERE id(b) = {b_id} CREATE (a)-[e:{label} {properties_str}]->(b) RETURN e"
+        edge = self._graph.query(
+            f"MATCH (a:{a_label}) WHERE ID(a) = {a_id} WITH a MATCH (b:{b_label}) WHERE ID(b) = {b_id} CREATE (a)-[e:{label} {properties_str}]->(b) RETURN e"
             # noqa
-        ).single()
+        )
 
         return self.edge_to_dict(edge)
 
@@ -356,17 +391,19 @@ class Neo4jClient:
         count_str = f"MATCH (n{label_str}) {params_str} RETURN COUNT(n) AS count"
         count = None
         if page:
-            count = self.session.run(count_str).single()["count"]
+            _result = self._graph.query(count_str)
+            result = FormatDBResult(_result).to_list_of_lists()
+            count = result[0] if result else 0
             sql_str += f" SKIP {page['skip']} LIMIT {page['limit']}"
 
-        objs = self.session.run(sql_str)
+        objs = self._graph.query(sql_str)
         return self.entity_to_list(objs), count
 
     def query_entity_by_id(self, id: int):
         """
         查询实体详情
         """
-        obj = self.session.run(f"MATCH (n) WHERE id(n) = {id} RETURN n").single()
+        obj = self._graph.query(f"MATCH (n) WHERE ID(n) = {id} RETURN n")
         if not obj:
             return {}
         return self.entity_to_dict(obj)
@@ -375,7 +412,7 @@ class Neo4jClient:
         """
         查询实体列表
         """
-        objs = self.session.run(f"MATCH (n) WHERE id(n) IN {ids} RETURN n")
+        objs = self._graph.query(f"MATCH (n) WHERE ID(n) IN {ids} RETURN n")
         if not objs:
             return []
         return self.entity_to_list(objs)
@@ -385,7 +422,7 @@ class Neo4jClient:
         查询实体列表 通过实例名称
         """
         queries = f"AND n.model_id= '{model_id}'" if model_id else ""
-        objs = self.session.run(f"MATCH (n) WHERE n.inst_name IN {inst_names} {queries} RETURN n")
+        objs = self._graph.query(f"MATCH (n) WHERE n.inst_name IN {inst_names} {queries} RETURN n")
         if not objs:
             return []
         return self.entity_to_list(objs)
@@ -404,7 +441,7 @@ class Neo4jClient:
         params_str = self.format_search_params(params, param_type)
         params_str = f"WHERE {params_str}" if params_str else params_str
 
-        objs = self.session.run(f"MATCH p=((a)-[n{label_str}]->(b)) {params_str} RETURN p")
+        objs = self._graph.query(f"MATCH p=(a)-[n{label_str}]->(b) {params_str} RETURN p")
 
         return self.edge_to_list(objs, return_entity)
 
@@ -412,7 +449,7 @@ class Neo4jClient:
         """
         查询边详情
         """
-        objs = self.session.run(f"MATCH p=((a)-[n]->(b)) WHERE id(n) = {id} RETURN p")
+        objs = self._graph.query(f"MATCH p=(a)-[n]->(b) WHERE ID(n) = {id} RETURN p")
         edges = self.edge_to_list(objs, return_entity)
         return edges[0]
 
@@ -481,7 +518,7 @@ class Neo4jClient:
         properties_str = self.format_properties_set(properties)
         if not properties_str:
             raise BaseAppException("properties is empty")
-        nodes = self.session.run(f"MATCH (n{label_str}) WHERE id(n) IN {node_ids} SET {properties_str} RETURN n")
+        nodes = self._graph.query(f"MATCH (n{label_str}) WHERE ID(n) IN {node_ids} SET {properties_str} RETURN n")
         return nodes
 
     def format_properties_remove(self, attrs: list):
@@ -498,21 +535,21 @@ class Neo4jClient:
         params_str = self.format_search_params(params)
         params_str = f"WHERE {params_str}" if params_str else params_str
 
-        self.session.run(f"MATCH (n{label_str}) {params_str} REMOVE {properties_str} RETURN n")
+        self._graph.query(f"MATCH (n{label_str}) {params_str} REMOVE {properties_str} RETURN n")
 
     def batch_delete_entity(self, label: str, entity_ids: list):
         """批量删除实体"""
         label_str = f":{label}" if label else ""
-        self.session.run(f"MATCH (n{label_str}) WHERE id(n) IN {entity_ids} DETACH DELETE n")
+        self._graph.query(f"MATCH (n{label_str}) WHERE ID(n) IN {entity_ids} DETACH DELETE n")
 
     def detach_delete_entity(self, label: str, id: int):
         """删除实体，以及实体的关联关系"""
         label_str = f":{label}" if label else ""
-        self.session.run(f"MATCH (n{label_str}) WHERE id(n) = {id} DETACH DELETE n")
+        self._graph.query(f"MATCH (n{label_str}) WHERE ID(n) = {id} DETACH DELETE n")
 
     def delete_edge(self, edge_id: int):
         """删除边"""
-        self.session.run(f"MATCH ()-[n]->() WHERE id(n) = {edge_id} DELETE n")
+        self._graph.query(f"MATCH ()-[n]->() WHERE ID(n) = {edge_id} DELETE n")
 
     def entity_objs(self, label: str, params: list, permission_params: str = ""):
         """实体对象查询"""
@@ -523,7 +560,7 @@ class Neo4jClient:
 
         sql_str = f"MATCH (n{label_str}) {params_str} RETURN n"
 
-        inst_objs = self.session.run(sql_str)
+        inst_objs = self._graph.query(sql_str)
         return inst_objs
 
     def query_topo(self, label: str, inst_id: int):
@@ -533,11 +570,11 @@ class Neo4jClient:
         params_str = self.format_search_params([{"field": "id", "type": "id=", "value": inst_id}])
         if params_str:
             params_str = f"AND {params_str}"
-        src_objs = self.session.run(
-            f"MATCH p=(n{label_str})-[*]->(m{label_str}) WHERE NOT (m)-->() {params_str} RETURN p"
+        src_objs = self._graph.query(
+            f"MATCH p=(n{label_str})-[*]->(m{label_str}) WHERE NOT EXISTS((m)-->()) {params_str} RETURN p"
         )
-        dst_objs = self.session.run(
-            f"MATCH p=(m{label_str})-[*]->(n{label_str}) WHERE NOT (m)<--() {params_str} RETURN p"
+        dst_objs = self._graph.query(
+            f"MATCH p=(m{label_str})-[*]->(n{label_str}) WHERE NOT EXISTS((m)<--()) {params_str} RETURN p"
         )
 
         return dict(
@@ -580,7 +617,7 @@ class Neo4jClient:
         edge_type = "dst" if dst else "src"
         default_match = (
             f"MATCH p={f'(m{label_str}) - [*]->(n{label_str})' if dst else f'(n{label_str}) - [*]->(m{label_str})'}"
-            f"WHERE NOT (m){'<--()' if dst else '-->()'} {params_str} RETURN p"
+            f"WHERE NOT EXISTS(({('m' if dst else 'm')}){('<--()' if dst else '-->()')}) {params_str} RETURN p"
         )
         # 获取拓扑配置
         topo_path = self.get_topo_config().get(model_id)
@@ -636,8 +673,8 @@ class Neo4jClient:
         if params_str:
             params_str = f"AND {params_str}"
 
-        src_objs = self.session.run(self.convert_to_cypher_match(label_str, model_id, params_str, dst=False))
-        dst_objs = self.session.run(self.convert_to_cypher_match(label_str, model_id, params_str, dst=True))
+        src_objs = self._graph.query(self.convert_to_cypher_match(label_str, model_id, params_str, dst=False))
+        dst_objs = self._graph.query(self.convert_to_cypher_match(label_str, model_id, params_str, dst=True))
 
         return dict(
             src_result=self.format_topo(inst_id, src_objs, True),
@@ -654,8 +691,8 @@ class Neo4jClient:
         entity_map = {}
         for obj in objs:
             for element in obj:
-                if not isinstance(element, Path):
-                    continue
+                # if not isinstance(element, Path):
+                #     continue
                 # 分离出路径中的点和线
                 nodes = element.nodes  # 获取所有节点
                 relationships = element.relationships  # 获取所有关系
@@ -755,9 +792,9 @@ class Neo4jClient:
             final_params_str = f"WHERE {final_params_str}"
 
         count_sql = f"MATCH (n{label_str}) {final_params_str} RETURN n.{group_by_attr} AS {group_by_attr}, COUNT(n) AS count"
-        data = self.session.run(count_sql)
-
-        return {i[group_by_attr]: i["count"] for i in data}
+        data = self._graph.query(count_sql)
+        result = FormatDBResult(data).to_result_of_count()
+        return result
 
     def full_text(self, search: str, permission_params: str = "", instance_permission_params: list = {},
                   created: str = ""):
@@ -787,11 +824,28 @@ class Neo4jClient:
         final_permission_condition = " OR ".join(permission_conditions) if permission_conditions else ""
 
         # 组合权限条件和全文检索条件
-        where_condition = f"({final_permission_condition}) AND" if final_permission_condition else ""
+        where_condition = f"({final_permission_condition}) AND " if final_permission_condition else ""
 
-        query = f"""MATCH (n:{INSTANCE}) WHERE {where_condition} ANY(key IN keys(n) WHERE (NOT n[key] IS NULL AND ANY(value IN n[key] WHERE toString(value) CONTAINS '{search}'))) RETURN n"""  # noqa
-        objs = self.session.run(query)
-        return self.entity_to_list(objs)
+        # 使用 FalkorDB 兼容的全文检索语法
+        # 通过 toString() 函数将所有属性值转换为字符串进行搜索
+        search_condition = f"ANY(key IN keys(n) WHERE key <> 'organization' AND n[key] IS NOT NULL AND toString(n[key]) CONTAINS '{search}')"
+
+        query = f"""MATCH (n:{INSTANCE}) WHERE {where_condition}{search_condition} RETURN n"""
+
+        try:
+            objs = self._graph.query(query)
+            return self.entity_to_list(objs)
+        except Exception as e:
+            logger.error(f"Full text search failed: {e}")
+            # 如果还是失败，使用最简单的方案：只搜索特定的字符串字段
+            try:
+                # 搜索常见的字符串字段
+                fallback_query = f"""MATCH (n:{INSTANCE}) WHERE {where_condition}(n.inst_name CONTAINS '{search}' OR n.model_id CONTAINS '{search}' OR toString(n._id) CONTAINS '{search}') RETURN n"""
+                objs = self._graph.query(fallback_query)
+                return self.entity_to_list(objs)
+            except Exception as fallback_e:
+                logger.error(f"Fallback full text search also failed: {fallback_e}")
+                return []
 
     def batch_save_entity(
             self,
