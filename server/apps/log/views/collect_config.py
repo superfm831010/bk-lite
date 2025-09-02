@@ -5,8 +5,11 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
+from apps.core.utils.permission_utils import get_permissions_rules, check_instance_permission
 from apps.core.utils.web_utils import WebUtils
+from apps.log.constants import POLICY_MODULE
 from apps.log.models import CollectType, CollectInstance, CollectConfig
+from apps.log.models.policy import Policy
 from apps.log.serializers.collect_config import CollectTypeSerializer
 from apps.log.filters.collect_config import CollectTypeFilter
 from apps.log.services.collect_type import CollectTypeService
@@ -63,7 +66,62 @@ class CollectTypeViewSet(ModelViewSet):
         - name: 按名称模糊搜索
         - collector: 按采集器名称模糊搜索
         """
-        return super().list(request, *args, **kwargs)
+        # 获取基础查询集
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        results = serializer.data
+
+        # 检查是否需要添加策略数量统计（带权限控制）
+        if request.GET.get("add_policy_count") in ["true", "True"]:
+            # 获取策略权限
+            policy_res = get_permissions_rules(
+                request.user,
+                request.COOKIES.get("current_team"),
+                "log",
+                POLICY_MODULE,
+            )
+
+            policy_permissions, cur_team = policy_res.get("data", {}), policy_res.get("team", [])
+
+            # 获取所有策略并进行权限检查
+            policy_objs = Policy.objects.select_related('collect_type').prefetch_related('policyorganization_set').all()
+            policy_map = {}
+
+            for policy_obj in policy_objs:
+                collect_type_id = str(policy_obj.collect_type_id)
+                policy_id = policy_obj.id
+                teams = {org.organization for org in policy_obj.policyorganization_set.all()}
+
+                # 使用通用权限检查函数
+                _check = check_instance_permission(collect_type_id, policy_id, teams, policy_permissions, cur_team)
+                if not _check:
+                    continue
+
+                if policy_obj.collect_type_id not in policy_map:
+                    policy_map[policy_obj.collect_type_id] = 0
+                policy_map[policy_obj.collect_type_id] += 1
+
+            # 添加策略数量到结果中
+            for result in results:
+                result["policy_count"] = policy_map.get(result["id"], 0)
+
+        # 检查是否需要添加实例数量统计（无权限控制，直接统计）
+        if request.GET.get("add_instance_count") in ["true", "True"]:
+            # 直接统计实例数量，不进行权限检查
+            from django.db.models import Count
+
+            # 使用数据库级别的聚合查询，性能更优
+            instance_counts = CollectInstance.objects.values('collect_type_id').annotate(
+                count=Count('id')
+            ).values_list('collect_type_id', 'count')
+
+            instance_map = dict(instance_counts)
+
+            # 添加实例数量到结果中
+            for result in results:
+                result["instance_count"] = instance_map.get(result["id"], 0)
+
+        return WebUtils.response_success(results)
 
     @swagger_auto_schema(
         operation_description="获取所有采集类型的属性",
