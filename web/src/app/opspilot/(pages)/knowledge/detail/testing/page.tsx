@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Input, Button, message, Spin, Empty, Skeleton, List, Segmented, Card, Divider } from 'antd';
+import { Input, Button, message, Spin, Empty, Skeleton, List, Segmented, Card, Divider, Tag } from 'antd';
 import ConfigComponent from '@/app/opspilot/components/knowledge/config';
 import { useTranslation } from '@/utils/i18n';
 import styles from './index.module.scss';
@@ -273,11 +273,12 @@ const TestingPage: React.FC = () => {
             >
               <div className="space-y-3">
                 <div>
-                  <div className="flex items-start gap-2">
-                    <Icon type="question-circle-fill" className="text-lg mt-1 flex-shrink-0" />
+                  <div className="flex items-center gap-2">
+                    <Icon type="question-circle-fill" className="text-lg flex-shrink-0" />
                     <div className="flex-1">
-                      <div className="text-sm text-[var(--color-text-1)] font-medium leading-6">
+                      <div className="text-xs text-[var(--color-text-1)] font-medium leading-6">
                         {qaPair.question}
+                        <Tag color="geekblue" className="font-mini">{t('knowledge.score')}:  {qaPair.score}</Tag>
                       </div>
                     </div>
                   </div>
@@ -286,10 +287,10 @@ const TestingPage: React.FC = () => {
                 <Divider className="my-3" />
                 
                 <div>
-                  <div className="flex items-start gap-2">
-                    <Icon type="answer" className="text-lg mt-1 flex-shrink-0" />
+                  <div className="flex items-center gap-2">
+                    <Icon type="answer" className="text-lg flex-shrink-0" />
                     <div className="flex-1">
-                      <div className="text-sm text-[var(--color-text-3)] leading-6">
+                      <div className="text-xs text-[var(--color-text-3)] leading-6">
                         {qaPair.answer}
                       </div>
                     </div>
