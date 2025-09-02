@@ -325,7 +325,10 @@
       "originalLog": "原始日志",
       "event": "事件",
       "aggregateFields": "聚合字段名",
-      "seeMore": "查看详情"
+      "seeMore": "查看详情",
+      "noticeWay": "暂无通知渠道，可去",
+      "systemManage": "系统管理",
+      "config": "配置。"
     }
   }
 }

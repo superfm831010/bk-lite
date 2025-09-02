@@ -325,7 +325,10 @@
       "originalLog": "Original Log",
       "event": "Event",
       "aggregateFields": "Aggregate Fields",
-      "seeMore": "See More"
+      "seeMore": "See More",
+      "noticeWay": "There is currently no notification channel available. You can go to the",
+      "systemManage": "system management",
+      "config": "to configure it."
     }
   }
 }
