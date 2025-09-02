@@ -1,21 +1,21 @@
 import FlowWrapper from "@/app/mlops/components/flows/FlowProvider";
 import { NodeType, TableData } from '@/app/mlops/types';
 import { Node, Edge } from "@xyflow/react";
-import { Button, message } from "antd";
+import { message } from "antd";
 import { useMemo, useState } from "react";
 import { useTranslation } from "@/utils/i18n";
 import useMlopsManageApi from "@/app/mlops/api/manage";
 
 interface StoryFlowWrapperProps {
   dataset: string;
-  backToList: () => void;
+  backToList?: () => void;
   currentStory: TableData | null;
   onSuccess: () => void;
 }
 
 const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
   dataset,
-  backToList,
+  // backToList,
   currentStory,
   onSuccess
 }) => {
@@ -70,7 +70,6 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
           }
         };
       });
-
       return [nodes, edges];
     }
     return [[], []];
@@ -113,9 +112,9 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
       nodeTypes={nodeTypes}
       dataset={dataset}
       loading={flowLoading}
-      panel={[
-        <Button key="back" size="small" variant="outlined" className="mr-2 text-xs" onClick={backToList}>{t(`mlops-common.backToList`)}</Button>,
-      ]}
+      // panel={[
+      //   <Button key="back" size="small" variant="outlined" className="mr-2 text-xs" onClick={backToList}>{t(`mlops-common.backToList`)}</Button>,
+      // ]}
       handleSaveFlow={(data) => updateStoryData(data)}
     />
   )

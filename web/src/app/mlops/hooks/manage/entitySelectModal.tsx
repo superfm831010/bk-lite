@@ -45,7 +45,6 @@ const EntitySelectModal = forwardRef<ModalRef, EntitySelectModalProps>(({ datase
   };
 
   const handleSubmit = async () => {
-    console.log('submit')
     setConfirmLoading(true);
     try {
       const data = await formRef.current?.validateFields();
@@ -59,7 +58,6 @@ const EntitySelectModal = forwardRef<ModalRef, EntitySelectModalProps>(({ datase
         await addRasaEntityFile(param)
         setIsAdd(false);
       } else {
-        console.log(isAdd);
         const { entity } = data;
         onSuccess(entity)
         setOpen(false);
@@ -73,7 +71,7 @@ const EntitySelectModal = forwardRef<ModalRef, EntitySelectModalProps>(({ datase
 
   const onCancel = () => {
     setOpen(false);
-  }
+  };
 
   return (
     <OperateModal

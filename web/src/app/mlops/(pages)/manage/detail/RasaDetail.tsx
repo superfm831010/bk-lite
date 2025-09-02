@@ -1,4 +1,9 @@
-import { Button, message, Popconfirm, Input } from "antd";
+import {
+  Button,
+  message,
+  Popconfirm,
+  Input
+} from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import CustomTable from "@/components/custom-table";
 import RasaModal from "./rasaModal";
@@ -8,7 +13,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ColumnItem } from "@/types";
 import { ModalRef, TableData } from "@/app/mlops/types";
 import useMlopsManageApi from "@/app/mlops/api/manage";
-import StoryFlow from "./components/StoryFlow";
+import ExampleContent from "./components/exampleContent";
 const { Search } = Input;
 
 const RasaDetail = () => {
@@ -32,9 +37,8 @@ const RasaDetail = () => {
     deleteRasaFormFile
   } = useMlopsManageApi();
   const [loading, setLoading] = useState<boolean>(false);
-  const [openFlow, setOpenFlow] = useState<boolean>(false);
   const [tableData, setTableData] = useState<TableData[]>([]);
-  const [currentStory, setCurrentStory] = useState<TableData | null>(null);
+  const treeList = ['intent', 'response', 'story'];
 
   const btnsElements = (record: any) => (<>
     <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
@@ -50,83 +54,89 @@ const RasaDetail = () => {
   </>);
 
   const columnsMap: Record<string, ColumnItem[]> = {
-    'intent': [
-      {
-        title: t(`datasets.intentName`),
-        dataIndex: 'name',
-        key: 'name'
-      },
-      {
-        title: t(`datasets.exampleNum`),
-        dataIndex: 'example_count',
-        key: 'example_count'
-      },
-      {
-        title: t(`common.action`),
-        dataIndex: 'action',
-        key: 'action',
-        width: 180,
-        render: (_, record) => btnsElements(record)
-      }
-    ],
-    'story': [
-      {
-        title: t(`datasets.storyName`),
-        dataIndex: 'name',
-        key: 'name'
-      },
-      {
-        title: t(`datasets.intentNum`),
-        dataIndex: 'intent_count',
-        key: 'intent_count'
-      },
-      {
-        title: t(`datasets.responseNum`),
-        dataIndex: 'response_count',
-        key: 'response_count'
-      },
-      {
-        title: t(`common.action`),
-        dataIndex: 'action',
-        key: 'action',
-        width: 180,
-        render: (_, record) => (<>
-          <Button type="link" className="mr-2" onClick={() => {
-            setCurrentStory(record);
-            setOpenFlow(true);
-          }}>{t(`common.detail`)}</Button>
-          <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
-          <Popconfirm
-            title={t(`common.delConfirm`)}
-            description={t(`common.delConfirmCxt`)}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-            onConfirm={() => handleDel(record.id)}
-          >
-            <Button type="link" danger>{t(`common.delete`)}</Button>
-          </Popconfirm>
-        </>)
-      }
-    ],
-    'response': [
-      {
-        title: t(`datasets.responseName`),
-        dataIndex: 'name',
-        key: 'name'
-      },
-      {
-        title: t(`datasets.responseNum`),
-        dataIndex: 'example_count',
-        key: 'example_count'
-      },
-      {
-        title: t(`common.action`),
-        dataIndex: 'action',
-        key: 'action',
-        width: 180,
-        render: (_, record) => btnsElements(record)
-      }
-    ],
+    // 'intent': [
+    //   {
+    //     title: t(`datasets.intentName`),
+    //     dataIndex: 'name',
+    //     key: 'name'
+    //   },
+    //   {
+    //     title: t(`datasets.exampleNum`),
+    //     dataIndex: 'example_count',
+    //     key: 'example_count'
+    //   },
+    //   {
+    //     title: t(`common.action`),
+    //     dataIndex: 'action',
+    //     key: 'action',
+    //     width: 180,
+    //     render: (_, record) => btnsElements(record)
+    //   }
+    // ],
+    // 'story': [
+    //   {
+    //     title: t(`datasets.storyName`),
+    //     dataIndex: 'name',
+    //     key: 'name'
+    //   },
+    //   {
+    //     title: t(`datasets.intentNum`),
+    //     dataIndex: 'intent_count',
+    //     key: 'intent_count'
+    //   },
+    //   {
+    //     title: t(`datasets.responseNum`),
+    //     dataIndex: 'response_count',
+    //     key: 'response_count'
+    //   },
+    //   {
+    //     title: t(`datasets.slotNum`),
+    //     dataIndex: 'slot_count',
+    //     key: 'slot_count'
+    //   },
+    //   {
+    //     title: t(`datasets.formNum`),
+    //     dataIndex: 'form_count',
+    //     key: 'form_count'
+    //   },
+    //   {
+    //     title: t(`common.action`),
+    //     dataIndex: 'action',
+    //     key: 'action',
+    //     width: 180,
+    //     render: (_, record) => (<>
+    //       <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
+    //       <Popconfirm
+    //         title={t(`common.delConfirm`)}
+    //         description={t(`common.delConfirmCxt`)}
+    //         okText={t('common.confirm')}
+    //         cancelText={t('common.cancel')}
+    //         onConfirm={() => handleDel(record.id)}
+    //       >
+    //         <Button type="link" danger>{t(`common.delete`)}</Button>
+    //       </Popconfirm>
+    //     </>)
+    //   }
+    // ],
+    // 'response': [
+    //   {
+    //     title: t(`datasets.responseName`),
+    //     dataIndex: 'name',
+    //     key: 'name'
+    //   },
+    //   {
+    //     title: t(`datasets.responseNum`),
+    //     dataIndex: 'example_count',
+    //     key: 'example_count'
+    //   },
+    //   {
+    //     title: t(`common.action`),
+    //     dataIndex: 'action',
+    //     key: 'action',
+    //     width: 180,
+    //     render: (_, record) => btnsElements(record)
+    //   }
+    // ],
     'rule': [
       {
         title: t(`datasets.ruleName`),
@@ -142,6 +152,11 @@ const RasaDetail = () => {
         title: t(`datasets.responseNum`),
         dataIndex: 'response_count',
         key: 'response_count'
+      },
+      {
+        title: t(`datasets.formNum`),
+        dataIndex: 'form_count',
+        key: 'form_count'
       },
       {
         title: t(`common.action`),
@@ -261,11 +276,18 @@ const RasaDetail = () => {
 
 
   const getTableData = async (search: string = '') => {
-    setOpenFlow(false);
     setLoading(true);
     try {
       const data = await getFileMap[menu]({ name: search, dataset: folder_id });
-      setTableData(data);
+      if (menu === 'story') {
+        const _data = data?.map(((item: any) => ({
+          ...item,
+          icon: 'chakanshuji'
+        })));
+        setTableData(_data);
+      } else {
+        setTableData(data);
+      }
     } catch (e) {
       console.log(e);
       message.error(t(`common.fetchFailed`));
@@ -308,7 +330,20 @@ const RasaDetail = () => {
     <>
       <div className="w-full h-full relative">
         {
-          !openFlow ? (
+          treeList.includes(menu) ? (
+            <>
+              <ExampleContent
+                dataset={folder_id || ''}
+                menu={menu}
+                loading={loading}
+                data={tableData}
+                handleAdd={handleAdd}
+                handleDel={handleDel}
+                handleEdit={handleEdit}
+                onSuccess={getTableData}
+              />
+            </>
+          ) : (
             <>
               <div className="flex justify-end">
                 <Search
@@ -323,18 +358,6 @@ const RasaDetail = () => {
                 </Button>
               </div>
               <CustomTable rowKey="id" loading={loading} columns={columnsMap[menu]} dataSource={tableData} />
-            </>
-          ) : (
-            <>
-              <StoryFlow
-                currentStory={currentStory}
-                dataset={folder_id || ''}
-                backToList={() => {
-                  setOpenFlow(false)
-                  getTableData()
-                }}
-                onSuccess={() => getTableData()}
-              />
             </>
           )
         }
