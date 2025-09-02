@@ -8,6 +8,8 @@ import { useFilestreamConfig } from './collectTypes/filestream';
 import { useAuditdConfig } from './collectTypes/auditd';
 import { useSystemConfig } from './collectTypes/system';
 import { useHttpConfig } from './collectTypes/http';
+import { useDnsConfig } from './collectTypes/dns';
+import { useFileIntegrityConfig } from './collectTypes/fileIntegrity';
 
 export const useCollectTypeConfig = () => {
   const fileConfig = useFileConfig();
@@ -18,6 +20,8 @@ export const useCollectTypeConfig = () => {
   const auditdConfig = useAuditdConfig();
   const systemConfig = useSystemConfig();
   const httpConfig = useHttpConfig();
+  const dnsConfig = useDnsConfig();
+  const fileIntegrityConfig = useFileIntegrityConfig();
 
   const configs: any = useMemo(
     () => ({
@@ -29,6 +33,8 @@ export const useCollectTypeConfig = () => {
       auditd: auditdConfig,
       system: systemConfig,
       http: httpConfig,
+      file_integrity: fileIntegrityConfig,
+      dns: dnsConfig,
     }),
     []
   );

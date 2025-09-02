@@ -366,11 +366,12 @@ export const useKnowledgeApi = () => {
   /**
    * Fetches QA pairs for a specific chunk.
    */
-  const fetchChunkQAPairs = async (indexName: string, chunkId: string): Promise<any> => {
+  const fetchChunkQAPairs = async (indexName: string, chunkId: string, knowledgeBaseId: number | undefined): Promise<any> => {
     return get('/opspilot/knowledge_mgmt/qa_pairs/get_chunk_qa_pairs/', {
       params: {
         index_name: indexName,
         chunk_id: chunkId,
+        knowledge_base_id: knowledgeBaseId
       },
     });
   };
@@ -495,6 +496,7 @@ export const useKnowledgeApi = () => {
   const generateAnswers = async (payload: {
     answer_llm_model_id: number;
     answer_prompt: string;
+    knowledge_base_id: number;
     question_data: Array<{
       question: string;
       content: string;

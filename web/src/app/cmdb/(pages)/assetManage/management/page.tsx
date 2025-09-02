@@ -129,13 +129,12 @@ const AssetManage = () => {
     setSearchText((e.target as HTMLInputElement).value);
   };
 
-  const linkToDetail = (model: ModelItem, classificationName: string) => {
+  const linkToDetail = (model: ModelItem) => {
     const params = new URLSearchParams({
       model_id: model.model_id,
       model_name: model.model_name,
       icn: model.icn,
       classification_id: model.classification_id,
-      classification_name: classificationName,
       is_pre: model.is_pre,
     }).toString();
     router.push(`/cmdb/assetManage/management/detail/attributes?${params}`);
@@ -306,13 +305,10 @@ const AssetManage = () => {
                         <div
                           className={assetManageStyle.leftSide}
                           onClick={() =>
-                            linkToDetail(
-                              {
-                                ...model,
-                                classification_id: item.classification_id,
-                              },
-                              item.classification_name
-                            )
+                            linkToDetail({
+                              ...model,
+                              classification_id: item.classification_id,
+                            })
                           }
                         >
                           <HolderOutlined

@@ -1,9 +1,6 @@
 import { EdgeCreationData } from '@/app/ops-analysis/types/topology';
 import { NODE_DEFAULTS, PORT_DEFAULTS, COLORS, SPACING } from '../constants/nodeDefaults';
 
-const CONTENT_PENDING = 2;
-const PORT_RADIUS = PORT_DEFAULTS.RADIUS;
-
 // 通用工具函数
 export const getValueByPath = (obj: any, path: string): any => {
   if (!obj || !path) return undefined;
@@ -94,8 +91,8 @@ export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: num
   if (!node || !text) return;
 
   const nodeData = node.getData();
-  const config = nodeData?.config || {};
-  const fontSize = config.fontSize || NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize;
+  const styleConfig = nodeData?.styleConfig || {};
+  const fontSize = styleConfig.fontSize || NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize;
 
   // 计算文本宽度
   const textWidth = calculateTextWidth(text, fontSize);
@@ -109,14 +106,14 @@ export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: num
     node.resize(targetWidth, currentSize.height);
 
     // 更新端口配置以适应新尺寸
-    const newPortConfig = createPortConfig(targetWidth, currentSize.height);
+    const newPortConfig = createPortConfig(PORT_DEFAULTS.FILL_COLOR, { width: targetWidth, height: currentSize.height });
     node.prop('ports', newPortConfig);
 
     // 更新节点数据中的配置
     const updatedNodeData = {
       ...nodeData,
-      config: {
-        ...config,
+      styleConfig: {
+        ...styleConfig,
         width: targetWidth,
       }
     };
@@ -124,9 +121,11 @@ export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: num
   }
 };
 
-// 创建端口组的通用函数
-const createPortGroup = (x: number, y: number, fillColor = PORT_DEFAULTS.FILL_COLOR) => ({
-  position: { name: 'absolute', args: { x, y } },
+// 创建端口组的通用函数 - 使用X6内置位置定位器
+const createPortGroup = (positionName: string, fillColor = PORT_DEFAULTS.FILL_COLOR) => ({
+  position: {
+    name: positionName,
+  },
   attrs: {
     circle: {
       magnet: PORT_DEFAULTS.MAGNET,
@@ -138,120 +137,93 @@ const createPortGroup = (x: number, y: number, fillColor = PORT_DEFAULTS.FILL_CO
   },
 });
 
-// 创建标准端口配置的通用函数
-export const createPortConfig = (width: number, height: number, fillColor = PORT_DEFAULTS.FILL_COLOR) => ({
-  groups: {
-    top: createPortGroup(width / 2, 0, fillColor),
-    bottom: createPortGroup(width / 2, height, fillColor),
-    left: createPortGroup(0, height / 2, fillColor),
-    right: createPortGroup(width, height / 2, fillColor),
-  },
-  items: [
-    { id: 'top', group: 'top' },
-    { id: 'bottom', group: 'bottom' },
-    { id: 'left', group: 'left' },
-    { id: 'right', group: 'right' },
-  ],
-});
+// 创建标准端口配置的通用函数 - 根据节点尺寸动态生成密集端口
+export const createPortConfig = (fillColor = PORT_DEFAULTS.FILL_COLOR, nodeSize = { width: 120, height: 80 }) => {
+  const portGroups: any = {};
+  const portItems: any[] = [];
 
-// 创建高级端口配置的函数（用于图标节点的复杂端口位置计算）
-const createAdvancedPortConfig = (layout: any) => ({
-  groups: {
-    top: createPortGroup(layout.ports.top.x, layout.ports.top.y, '#FFFFFF'),
-    bottom: createPortGroup(layout.ports.bottom.x, layout.ports.bottom.y, '#FFFFFF'),
-    left: createPortGroup(layout.ports.left.x, layout.ports.left.y, '#FFFFFF'),
-    right: createPortGroup(layout.ports.right.x, layout.ports.right.y, '#FFFFFF'),
-  },
-  items: [
-    { id: 'top', group: 'top' },
-    { id: 'bottom', group: 'bottom' },
-    { id: 'left', group: 'left' },
-    { id: 'right', group: 'right' },
-  ],
-});
+  // 主要的四个端口（可见）
+  const mainPorts = ['top', 'bottom', 'left', 'right'];
+  mainPorts.forEach(portName => {
+    portGroups[portName] = createPortGroup(portName, fillColor);
+    portItems.push({ id: portName, group: portName });
+  });
 
-// 创建基础属性配置的通用函数
-const createBaseAttrs = (config: {
-  backgroundColor: string;
-  borderColor: string;
-  textColor: string;
-  fontSize: number;
-  width: number;
-  height: number;
-  borderRadius?: number;
-}) => ({
-  body: {
-    fill: config.backgroundColor,
-    stroke: config.borderColor,
-    strokeWidth: 1,
-    rx: config.borderRadius || 4,
-    ry: config.borderRadius || 4,
-  },
-  label: {
-    fill: config.textColor,
-    fontSize: config.fontSize,
-    textAnchor: 'middle',
-    textVerticalAnchor: 'middle',
-  },
-});
+  // 固定像素间隔配置
+  const PIXEL_INTERVAL = 12; // 每12像素一个端口
+  const MIN_DISTANCE_FROM_CORNER = 8; // 距离角落的最小距离
 
-export const getNodeStyle = () => {
-  const defaults = NODE_DEFAULTS.ICON_NODE;
-  const layout = calculateNodeLayout(defaults.width, defaults.height);
+  // 水平边（top, bottom）- 根据节点宽度动态生成
+  ['top', 'bottom'].forEach(side => {
+    const y = side === 'top' ? '0%' : '100%';
+    const availableWidth = nodeSize.width - 2 * MIN_DISTANCE_FROM_CORNER;
+    const numPorts = Math.floor(availableWidth / PIXEL_INTERVAL);
+
+    for (let i = 1; i <= numPorts; i++) {
+      const portName = `${side}-${i}`;
+      const xPos = MIN_DISTANCE_FROM_CORNER + i * PIXEL_INTERVAL;
+      const xPercent = (xPos / nodeSize.width) * 100;
+
+      // 跳过与主端口位置重叠的端口（中心附近）
+      if (Math.abs(xPercent - 50) < 8) continue;
+
+      portGroups[portName] = {
+        position: {
+          name: 'absolute',
+          args: { x: `${xPercent}%`, y: y }
+        },
+        attrs: {
+          circle: {
+            magnet: PORT_DEFAULTS.MAGNET,
+            stroke: PORT_DEFAULTS.STROKE_COLOR,
+            r: PORT_DEFAULTS.RADIUS,
+            fill: fillColor,
+            opacity: 0, // 完全隐藏
+          },
+        },
+      };
+      portItems.push({ id: portName, group: portName });
+    }
+  });
+
+  // 垂直边（left, right）- 根据节点高度动态生成
+  ['left', 'right'].forEach(side => {
+    const x = side === 'left' ? '0%' : '100%';
+    const availableHeight = nodeSize.height - 2 * MIN_DISTANCE_FROM_CORNER;
+    const numPorts = Math.floor(availableHeight / PIXEL_INTERVAL);
+
+    for (let i = 1; i <= numPorts; i++) {
+      const portName = `${side}-${i}`;
+      const yPos = MIN_DISTANCE_FROM_CORNER + i * PIXEL_INTERVAL;
+      const yPercent = (yPos / nodeSize.height) * 100;
+
+      // 跳过与主端口位置重叠的端口（中心附近）
+      if (Math.abs(yPercent - 50) < 10) continue;
+
+      portGroups[portName] = {
+        position: {
+          name: 'absolute',
+          args: { x: x, y: `${yPercent}%` }
+        },
+        attrs: {
+          circle: {
+            magnet: PORT_DEFAULTS.MAGNET,
+            stroke: PORT_DEFAULTS.STROKE_COLOR,
+            r: PORT_DEFAULTS.RADIUS,
+            fill: fillColor,
+            opacity: 0, // 完全隐藏
+          },
+        },
+      };
+      portItems.push({ id: portName, group: portName });
+    }
+  });
 
   return {
-    width: layout.nodeWidth,
-    height: layout.nodeHeight,
-    markup: [
-      {
-        tagName: 'rect',
-        selector: 'body',
-      },
-      {
-        tagName: 'image',
-        selector: 'icon',
-      },
-      {
-        tagName: 'rect',
-        selector: 'label-bg',
-      },
-      {
-        tagName: 'text',
-        selector: 'label',
-      },
-    ],
-    attrs: {
-      body: {
-        x: layout.body.x,
-        y: layout.body.y,
-        width: layout.body.width,
-        height: layout.body.height,
-        fill: '#ffffff',
-        stroke: '#ddd',
-        strokeWidth: 1,
-        rx: 4,
-        ry: 4,
-      },
-      icon: {
-        x: layout.icon.x,
-        y: layout.icon.y,
-        width: layout.icon.width,
-        height: layout.icon.height,
-      },
-      label: {
-        fill: defaults.textColor,
-        fontSize: 14,
-        fontWeight: defaults.fontWeight,
-        x: layout.label.x,
-        y: layout.label.y,
-        textAnchor: 'middle',
-        textVerticalAnchor: 'middle',
-      },
-    },
-    ports: createAdvancedPortConfig(layout),
+    groups: portGroups,
+    items: portItems,
   };
 };
-
 export const createEdgeLabel = (text: string = '') => {
   return {
     attrs: {
@@ -383,7 +355,7 @@ export const hideAllEdgeTools = (graph: any) => {
 
 export const showPorts = (graph: any, cell: any) => {
   if (cell.isNode()) {
-    // 只为有端口的节点显示端口（排除文本节点）
+    // 只为有端口的节点显示主要端口（排除文本节点）
     const nodeData = cell.getData();
     if (nodeData?.type !== 'text') {
       ['top', 'bottom', 'left', 'right'].forEach((port) =>
@@ -415,361 +387,4 @@ export const hideAllPorts = (graph: any) => {
       );
     }
   });
-};
-
-// 文本节点样式配置
-export const getTextNodeStyle = (nodeConfig?: any) => {
-  const defaults = NODE_DEFAULTS.TEXT_NODE;
-
-  const baseStyle = {
-    width: defaults.width,
-    height: defaults.height,
-    markup: [
-      {
-        tagName: 'rect',
-        selector: 'body',
-      },
-      {
-        tagName: 'text',
-        selector: 'label',
-      },
-    ],
-    attrs: {
-      body: {
-        fill: defaults.backgroundColor,
-        stroke: defaults.borderColor,
-        strokeWidth: defaults.strokeWidth,
-      },
-      label: {
-        fill: defaults.textColor,
-        fontSize: defaults.fontSize,
-        fontWeight: defaults.fontWeight,
-        textAnchor: 'middle',
-        textVerticalAnchor: 'middle',
-        refX: '50%',
-        refY: '50%',
-      },
-    },
-    ports: { groups: {}, items: [] },
-  };
-
-  if (!nodeConfig) {
-    return baseStyle;
-  }
-
-  return {
-    id: nodeConfig.id,
-    x: nodeConfig.x || 100,
-    y: nodeConfig.y || 100,
-    label: nodeConfig.name,
-    data: {
-      type: nodeConfig.type,
-      name: nodeConfig.name,
-      config: nodeConfig.config,
-      isPlaceholder: false,
-    },
-    ...baseStyle,
-  };
-};
-
-// 获取logo URL的辅助函数
-export const getLogoUrl = (nodeConfig: any, iconList: any[]) => {
-  if (nodeConfig.logoType === 'default' && nodeConfig.logoIcon) {
-    const iconItem = iconList.find((item) => item.key === nodeConfig.logoIcon);
-    if (iconItem) {
-      return `/app/assets/assetModelIcon/${iconItem.url}.svg`;
-    }
-    return `/app/assets/assetModelIcon/${nodeConfig.logoIcon}.svg`;
-  } else if (nodeConfig.logoType === 'custom' && nodeConfig.logoUrl) {
-    return nodeConfig.logoUrl;
-  }
-  return '/app/assets/assetModelIcon/cc-default_默认.svg';
-};
-
-// 单值节点样式配置
-export const getSingleValueNodeStyle = (nodeConfig: any) => {
-  const config = nodeConfig.config || {};
-  const defaults = NODE_DEFAULTS.SINGLE_VALUE_NODE;
-
-  // 使用表单值、配置值或默认值
-  const styleConfig = {
-    textColor: nodeConfig.textColor || config.textColor || defaults.textColor,
-    backgroundColor: nodeConfig.backgroundColor || config.backgroundColor || defaults.backgroundColor,
-    borderColor: nodeConfig.borderColor || config.borderColor || defaults.borderColor,
-    fontSize: nodeConfig.fontSize || config.fontSize || defaults.fontSize,
-    width: defaults.width,
-    height: defaults.height,
-    borderRadius: defaults.borderRadius,
-  };
-
-  const baseAttrs = createBaseAttrs(styleConfig);
-
-  // 判断是否需要显示loading状态
-  const hasDataSource = nodeConfig.dataSource && nodeConfig.selectedFields?.length > 0;
-  return {
-    id: nodeConfig.id,
-    x: nodeConfig.x || 100,
-    y: nodeConfig.y || 100,
-    shape: 'rect',
-    width: styleConfig.width,
-    height: styleConfig.height,
-    label: nodeConfig.name,
-    data: {
-      type: nodeConfig.type || 'single-value',
-      name: nodeConfig.name,
-      dataSource: nodeConfig.dataSource,
-      dataSourceParams: nodeConfig.dataSourceParams || {},
-      selectedFields: nodeConfig.selectedFields || [],
-      isLoading: hasDataSource,
-      config: {
-        ...styleConfig,
-        ...config,
-      },
-    },
-    attrs: {
-      ...baseAttrs,
-      label: {
-        ...baseAttrs.label,
-        text: nodeConfig.name,
-        fontFamily: defaults.fontFamily,
-      },
-    },
-    ports: createPortConfig(styleConfig.width, styleConfig.height),
-  };
-};
-
-// 统一的节点布局计算函数
-export const calculateNodeLayout = (iconWidth: number, iconHeight: number) => {
-  const nodeWidth = iconWidth + CONTENT_PENDING;
-  const nodeHeight = iconHeight + CONTENT_PENDING;
-
-  return {
-    nodeWidth,
-    nodeHeight,
-    body: {
-      x: 0,
-      y: 0,
-      width: iconWidth - PORT_RADIUS,
-      height: iconHeight - PORT_RADIUS,
-    },
-    icon: {
-      x: CONTENT_PENDING / 2,
-      y: CONTENT_PENDING / 2,
-      width: iconWidth,
-      height: iconHeight,
-    },
-    label: {
-      x: CONTENT_PENDING,
-      y: iconHeight / 2 + 26,
-    },
-    ports: {
-      top: { x: iconWidth / 2 + PORT_RADIUS / 2, y: 0 },
-      bottom: { x: iconWidth / 2 + PORT_RADIUS / 2, y: iconHeight + PORT_RADIUS },
-      left: { x: 0, y: iconHeight / 2 + PORT_RADIUS / 2 },
-      right: { x: iconWidth + PORT_RADIUS, y: iconHeight / 2 + PORT_RADIUS / 2 },
-    }
-  };
-};
-
-// 更新节点尺寸和端口位置的工具函数
-export const updateNodeSizeAndPorts = (node: any, iconWidth: number, iconHeight: number) => {
-  const layout = calculateNodeLayout(iconWidth, iconHeight);
-
-  node.resize(layout.nodeWidth, layout.nodeHeight);
-
-  node.setAttrByPath('body/x', layout.body.x);
-  node.setAttrByPath('body/y', layout.body.y);
-  node.setAttrByPath('body/width', layout.body.width);
-  node.setAttrByPath('body/height', layout.body.height);
-
-  // 更新图标位置和大小
-  node.setAttrByPath('icon/x', layout.icon.x);
-  node.setAttrByPath('icon/y', layout.icon.y);
-  node.setAttrByPath('icon/width', layout.icon.width);
-  node.setAttrByPath('icon/height', layout.icon.height);
-
-  // 更新标签位置
-  node.setAttrByPath('label/x', layout.label.x);
-  node.setAttrByPath('label/y', layout.label.y);
-
-  // 更新端口位置
-  node.prop('ports/groups/top/position/args', layout.ports.top);
-  node.prop('ports/groups/bottom/position/args', layout.ports.bottom);
-  node.prop('ports/groups/left/position/args', layout.ports.left);
-  node.prop('ports/groups/right/position/args', layout.ports.right);
-};
-
-// 通用节点更新函数
-export const updateNodeProperties = (node: any, nodeConfig: any, iconList: any[]) => {
-  node.setLabel(nodeConfig.name);
-  node.setData({
-    type: nodeConfig.type,
-    name: nodeConfig.name,
-    logoType: nodeConfig.logoType,
-    logoIcon:
-      nodeConfig.logoType === 'default'
-        ? nodeConfig.logoIcon
-        : 'cc-host',
-    logoUrl:
-      nodeConfig.logoType === 'custom'
-        ? nodeConfig.logoUrl
-        : undefined,
-    dataSource: nodeConfig.dataSource,
-    dataSourceParams: nodeConfig.dataSourceParams,
-    selectedFields: nodeConfig.selectedFields || [],
-    config: {
-      ...nodeConfig.config,
-      width: nodeConfig.config.width,
-      height: nodeConfig.config.height,
-    },
-  });
-
-  if (nodeConfig.type === 'single-value') {
-    // 更新单值节点属性
-    node.setAttrByPath('label/text', nodeConfig.name);
-    if (nodeConfig.config?.textColor) {
-      node.setAttrByPath('label/fill', nodeConfig.config.textColor);
-    }
-    if (nodeConfig.config?.fontSize) {
-      node.setAttrByPath('label/fontSize', nodeConfig.config.fontSize);
-    }
-    if (nodeConfig.config?.backgroundColor) {
-      node.setAttrByPath('body/fill', nodeConfig.config.backgroundColor);
-    }
-    if (nodeConfig.config?.borderColor) {
-      node.setAttrByPath('body/stroke', nodeConfig.config.borderColor);
-    }
-  } else {
-    // 更新图标节点属性
-    const logoUrl = getLogoUrl(nodeConfig, iconList);
-    node.setAttrByPath('icon/xlink:href', logoUrl);
-
-    if (nodeConfig.config.width && nodeConfig.config.height) {
-      updateNodeSizeAndPorts(node, nodeConfig.config.width, nodeConfig.config.height);
-      node.setAttrByPath('icon/xlink:href', logoUrl);
-    }
-
-    const defaults = NODE_DEFAULTS.ICON_NODE;
-    const backgroundColor = nodeConfig.config?.backgroundColor || defaults.backgroundColor;
-    const borderColor = nodeConfig.config?.borderColor || defaults.borderColor;
-
-    node.setAttrByPath('body/fill', backgroundColor);
-    node.setAttrByPath('body/stroke', borderColor);
-
-    if (nodeConfig.config?.textColor) {
-      node.setAttrByPath('label/fill', nodeConfig.config.textColor);
-    }
-    if (nodeConfig.config?.fontSize) {
-      node.setAttrByPath('label/fontSize', nodeConfig.config.fontSize);
-    }
-  }
-};
-
-// 图标节点样式配置
-export const getIconNodeStyle = (nodeConfig: any, logoUrl: string) => {
-  const baseNodeStyle = getNodeStyle();
-  const config = nodeConfig.config || {};
-  const defaults = NODE_DEFAULTS.ICON_NODE;
-
-  const iconWidth = config.width || defaults.width;
-  const iconHeight = config.height || defaults.height;
-  const layout = calculateNodeLayout(iconWidth, iconHeight);
-  const logoType = nodeConfig.logoType || 'default';
-
-  return {
-    id: nodeConfig.id,
-    x: nodeConfig.x,
-    y: nodeConfig.y,
-    width: layout.nodeWidth,
-    height: layout.nodeHeight,
-    label: nodeConfig.name,
-    markup: baseNodeStyle.markup,
-    data: {
-      type: nodeConfig.type || 'icon',
-      name: nodeConfig.name,
-      logoType: logoType,
-      logoIcon:
-        logoType === 'default'
-          ? nodeConfig.logoIcon
-          : 'cc-host',
-      logoUrl:
-        logoType === 'custom'
-          ? nodeConfig.logoUrl
-          : undefined,
-      dataSourceParams: nodeConfig.dataSourceParams || {},
-      selectedFields: nodeConfig.selectedFields || [],
-      config: {
-        width: iconWidth,
-        height: iconHeight,
-        ...config,
-      },
-    },
-    // 覆盖图标的 URL 和位置
-    attrs: {
-      ...baseNodeStyle.attrs,
-      body: {
-        ...baseNodeStyle.attrs.body,
-        x: layout.body.x,
-        y: layout.body.y,
-        width: layout.body.width,
-        height: layout.body.height,
-        fill: '#ffffff',
-        stroke: '#ddd',
-      },
-      icon: {
-        ...baseNodeStyle.attrs.icon,
-        'xlink:href': logoUrl,
-        x: layout.icon.x,
-        y: layout.icon.y,
-        width: layout.icon.width,
-        height: layout.icon.height,
-      },
-      label: {
-        ...baseNodeStyle.attrs.label,
-        x: layout.label.x,
-        y: layout.label.y,
-        fill: '#666666',
-        fontSize: 14,
-      },
-    },
-    ports: createAdvancedPortConfig(layout),
-  };
-};
-
-// 图表节点样式配置
-export const getChartNodeStyle = (nodeConfig: any) => {
-  const config = nodeConfig.config || {};
-  const defaults = NODE_DEFAULTS.CHART_NODE;
-
-  const styleConfig = {
-    backgroundColor: nodeConfig.backgroundColor || config.backgroundColor || defaults.backgroundColor,
-    borderColor: nodeConfig.borderColor || config.borderColor || defaults.borderColor,
-    textColor: nodeConfig.textColor || config.textColor || defaults.textColor,
-    fontSize: nodeConfig.fontSize || config.fontSize || defaults.fontSize,
-    width: config.width || defaults.width,
-    height: config.height || defaults.height,
-  };
-
-  return {
-    id: nodeConfig.id,
-    x: nodeConfig.x,
-    y: nodeConfig.y,
-    width: styleConfig.width,
-    height: styleConfig.height,
-    shape: 'react-shape',
-    data: {
-      type: nodeConfig.type || 'chart',
-      name: nodeConfig.name,
-      widget: nodeConfig.widget,
-      valueConfig: nodeConfig.valueConfig || {},
-      dataSource: nodeConfig.dataSource,
-      dataSourceParams: nodeConfig.dataSourceParams || [],
-      selectedFields: nodeConfig.selectedFields || [],
-      config: {
-        ...styleConfig,
-        ...config,
-      },
-    },
-    ports: createPortConfig(styleConfig.width, styleConfig.height),
-  };
 };

@@ -1,4 +1,10 @@
 [
+    {
+    "model_type": "网易有道",
+    "model": "bce-reranker-base_v1",
+    "name": "BCE Reranker Base v1",
+    "base_url": "https://docs.siliconflow.cn/reference/creatererank4"
+  },
   {
     "model_type": "网易有道",
     "model": "bce-reranker-base_v1",

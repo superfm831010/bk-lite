@@ -10,6 +10,7 @@ volumes:
   postgres:
   neo4j:
   victoria-logs:
+  falkordb:
 
 services:
   traefik:
@@ -168,8 +169,8 @@ services:
     image: ${DOCKER_IMAGE_FALKORDB}
     restart: always
     environment:
-      - REDIS_ARGS="--requirepass ${FALKORDB_PASSWORD}"
-      - FALKORDB_ARGS="THREAD_COUNT 4"
+      - REDIS_ARGS=--requirepass ${FALKORDB_PASSWORD}
+      - FALKORDB_ARGS=THREAD_COUNT 4
     networks:
       - prod
     healthcheck:
@@ -177,3 +178,5 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    volumes:
+      - falkordb:/var/lib/falkordb/data

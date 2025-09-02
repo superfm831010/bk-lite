@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Input, Button, message, Spin, Empty, Skeleton, List, Segmented, Card, Divider } from 'antd';
+import { Input, Button, message, Spin, Empty, Skeleton, List, Segmented, Card, Divider, Tag } from 'antd';
 import ConfigComponent from '@/app/opspilot/components/knowledge/config';
 import { useTranslation } from '@/utils/i18n';
 import styles from './index.module.scss';
@@ -128,17 +128,31 @@ const TestingPage: React.FC = () => {
   const segmentedOptions = getSegmentedOptions();
 
   const getConfigParams = () => {
+    // Calculate rag_k from enabled RAG types - use the maximum value from enabled types
+    let ragK = 10; // default value
+    const enabledSizes = [];
+    
+    if (configData.enableNaiveRag && configData.ragSize > 0) {
+      enabledSizes.push(configData.ragSize);
+    }
+    if (configData.enableQaRag && configData.qaSize > 0) {
+      enabledSizes.push(configData.qaSize);
+    }
+    if (configData.enableGraphRag && configData.graphSize > 0) {
+      enabledSizes.push(configData.graphSize);
+    }
+    
+    if (enabledSizes.length > 0) {
+      ragK = Math.max(...enabledSizes);
+    }
+
     return {
       embed_model: configData.selectedEmbedModel,
       enable_rerank: configData.rerankModel,
       rerank_model: configData.selectedRerankModel,
-      enable_text_search: configData.selectedSearchTypes.includes('textSearch'),
-      text_search_weight: configData.textSearchWeight,
-      text_search_mode: configData.textSearchMode,
-      enable_vector_search: configData.selectedSearchTypes.includes('vectorSearch'),
-      vector_search_weight: configData.vectorSearchWeight,
-      rag_k: configData.quantity,
-      rag_num_candidates: configData.candidate,
+      search_type: configData.searchType,
+      score_threshold: configData.scoreThreshold,
+      rag_k: ragK,
       result_count: configData.resultCount,
       rerank_top_k: configData.rerankTopK,
       enable_naive_rag: configData.enableNaiveRag,
@@ -158,10 +172,6 @@ const TestingPage: React.FC = () => {
     };
     if (!searchText.trim()) {
       message.error(t('common.fieldRequired'));
-      return false;
-    }
-    if (configData.candidate < configData.quantity) {
-      message.error(t('knowledge.returnQuanityTip'));
       return false;
     }
     setLoading(true);
@@ -263,11 +273,12 @@ const TestingPage: React.FC = () => {
             >
               <div className="space-y-3">
                 <div>
-                  <div className="flex items-start gap-2">
-                    <Icon type="question-circle-fill" className="text-lg mt-1 flex-shrink-0" />
+                  <div className="flex items-center gap-2">
+                    <Icon type="question-circle-fill" className="text-lg flex-shrink-0" />
                     <div className="flex-1">
-                      <div className="text-sm text-[var(--color-text-1)] font-medium leading-6">
+                      <div className="text-xs text-[var(--color-text-1)] font-medium leading-6">
                         {qaPair.question}
+                        <Tag color="geekblue" className="font-mini">{t('knowledge.score')}:  {qaPair.score}</Tag>
                       </div>
                     </div>
                   </div>
@@ -276,10 +287,10 @@ const TestingPage: React.FC = () => {
                 <Divider className="my-3" />
                 
                 <div>
-                  <div className="flex items-start gap-2">
-                    <Icon type="answer" className="text-lg mt-1 flex-shrink-0" />
+                  <div className="flex items-center gap-2">
+                    <Icon type="answer" className="text-lg flex-shrink-0" />
                     <div className="flex-1">
-                      <div className="text-sm text-[var(--color-text-3)] leading-6">
+                      <div className="text-xs text-[var(--color-text-3)] leading-6">
                         {qaPair.answer}
                       </div>
                     </div>

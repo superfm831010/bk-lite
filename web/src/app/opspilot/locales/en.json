@@ -13,6 +13,10 @@
     "or": "or",
     "goToTesting": "Go to Testing",
     "sourceFiles": "Source Files",
+    "retrievalStrategy": "Retrieval Strategy",
+    "threshold": "Threshold",
+    "thresholdDesc": "Use similarity score threshold to filter results based on relevance score",
+    "mmrDesc": "Use Maximal Marginal Relevance to balance relevance and diversity",
     "form": {
       "name": "Name",
       "group": "Group",
@@ -470,7 +474,8 @@
       "deleteConfirm": "Are you sure you want to delete this group?",
       "deleteConfirmContent": "This action will delete the group",
       "reorderSuccess": "Group order updated successfully",
-      "reorderFailed": "Failed to update group order"
+      "reorderFailed": "Failed to update group order",
+      "tags": "Tags"
     }
   },
   "studio": {
@@ -485,6 +490,8 @@
     "pilotDesc": "An application created based on Rasa, supporting external channels such as chat interfaces, WeChat Work, DingTalk, etc.",
     "lobeChat": "LobeChat",
     "lobeChatDesc": "Supports connecting to the LobeChat web interface as an interaction channel with users.",
+    "chatflow": "Chatflow",
+    "chatflowDesc": "Chatflow enables the orchestration of agent capabilities, triggered through APIs or scheduled executions.",
     "form": {
       "type": "Studio Type",
       "name": "Name",

@@ -6,8 +6,9 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-import './topology.scss';
+import styles from './index.module.scss';
 import { Spin } from 'antd';
+import { v4 as uuidv4 } from 'uuid';
 import { useTopologyState } from './hooks/useTopologyState';
 import { useGraphOperations } from './hooks/useGraphOperations';
 import { useTextOperations } from './hooks/useTextOperations';
@@ -51,7 +52,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       zoomOut,
       handleFit,
       handleDelete,
-      addNode,
+      addNewNode,
       handleNodeUpdate,
       handleViewConfigConfirm,
       handleAddChartNode,
@@ -59,6 +60,8 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       handleLoadTopology,
       resizeCanvas,
       loading,
+      getEditNodeInitialValues,
+      toggleEditMode,
     } = useGraphOperations(containerRef, state);
 
     const { handleAddText, finishTextEdit, cancelTextEdit } = useTextOperations(
@@ -82,12 +85,10 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       }
     }, [resizeCanvas]);
 
-    // 使用 ResizeObserver 监听容器大小变化
     useEffect(() => {
       if (!canvasContainerRef.current) return;
 
       const resizeObserver = new ResizeObserver(() => {
-        // 防抖处理
         clearTimeout((window as any).topologyResizeTimeout);
         (window as any).topologyResizeTimeout = setTimeout(() => {
           handleCanvasResize();
@@ -100,12 +101,11 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
         resizeObserver.disconnect();
         clearTimeout((window as any).topologyResizeTimeout);
       };
-    }, [handleCanvasResize]);
+    }, []);
 
-    // 监听侧边栏收起展开，重新调整画布大小
     useEffect(() => {
       handleCanvasResize();
-    }, [state.collapsed, handleCanvasResize]);
+    }, [state.collapsed]);
 
     const handleShowNodeConfig = (
       nodeType: NodeType,
@@ -145,35 +145,16 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
     };
 
     const handleTopologyViewConfigConfirm = async (values: any) => {
-      if (state.editingNodeData) {
-        // 检查是否是新节点
-        if (state.editingNodeData.isNewNode && state.editingNodeData.position) {
-          // 创建新的图表节点配置
-          const chartNodeConfig = {
-            name: values.name || state.editingNodeData.name,
-            dataSource: values.dataSource,
-            dataSourceParams: values.dataSourceParams || [],
-            valueConfig: {
-              chartType: values.chartType,
-              dataSource: values.dataSource,
-              dataSourceParams: values.dataSourceParams,
-              name: values.name || state.editingNodeData.name,
-            },
-          };
-
-          await handleAddChartNode(
-            state.editingNodeData.widget,
-            chartNodeConfig,
-            state.editingNodeData.position
-          );
-
-          state.setEditingNodeData(null);
-          state.setViewConfigVisible(false);
-        } else {
-          await handleViewConfigConfirm(values);
-        }
+      if (!state.editingNodeData) return;
+      if (state.editingNodeData.isNewNode && state.editingNodeData.position) {
+        await handleAddChartNode(values);
+        state.setEditingNodeData(null);
+        state.setViewConfigVisible(false);
+      } else {
+        await handleViewConfigConfirm(values);
       }
     };
+
     const handleNodeEditClose = () => {
       if (addNodeVisible) {
         setAddNodeVisible(false);
@@ -188,7 +169,33 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
     const handleNodeConfirm = async (values: any) => {
       if (addNodeVisible) {
         if (!selectedNodeType || !dropPosition) return;
-        addNode(selectedNodeType.id, values, dropPosition);
+        const nodeConfig: any = {
+          id: `node_${uuidv4()}`,
+          type: selectedNodeType.id,
+          name: values.name || selectedNodeType.name,
+          position: dropPosition,
+          logoType: values.logoType,
+          logoIcon: values.logoIcon,
+          logoUrl: values.logoUrl,
+          valueConfig: {
+            selectedFields: values.selectedFields || [],
+            chartType: values.chartType,
+            dataSource: values.dataSource,
+            dataSourceParams: values.dataSourceParams || [],
+          },
+          styleConfig: {
+            width: values.width,
+            height: values.height,
+            backgroundColor: values.backgroundColor,
+            borderColor: values.borderColor,
+            borderWidth: values.borderWidth,
+            textColor: values.textColor,
+            fontSize: values.fontSize,
+            lineType: values.lineType,
+            shapeType: values.shapeType,
+          },
+        };
+        addNewNode(nodeConfig);
       } else {
         await handleNodeUpdate(values);
       }
@@ -196,13 +203,16 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
     };
 
     const getNodeInitialValues = () => {
-      return addNodeVisible ? undefined : state.getEditNodeInitialValues();
+      return addNodeVisible ? undefined : getEditNodeInitialValues();
     };
 
     const getNodeType = () => {
       return addNodeVisible
-        ? (selectedNodeType?.id as 'single-value' | 'icon')
-        : (state.editingNodeData?.type as 'single-value' | 'icon');
+        ? (selectedNodeType?.id as 'single-value' | 'icon' | 'basic-shape')
+        : (state.editingNodeData?.type as
+            | 'single-value'
+            | 'icon'
+            | 'basic-shape');
     };
 
     const getNodeTitle = () => {
@@ -245,11 +255,13 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
     };
 
     return (
-      <div className="flex-1 p-4 pb-0 overflow-auto flex flex-col bg-[var(--color-bg-1)]">
+      <div
+        className={`flex-1 p-4 pb-0 overflow-auto flex flex-col bg-[var(--color-bg-1)] ${styles.topologyContainer}`}
+      >
         {/* 工具栏 */}
         <TopologyToolbar
           selectedTopology={selectedTopology}
-          onEdit={state.toggleEditMode}
+          onEdit={toggleEditMode}
           onSave={handleSave}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
@@ -265,10 +277,11 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           {/* 侧边栏 */}
           <NodeSidebar
             collapsed={state.collapsed}
+            isEditMode={state.isEditMode}
+            graphInstance={state.graphInstance ?? undefined}
             setCollapsed={state.setCollapsed}
             onShowNodeConfig={handleShowNodeConfig}
             onShowChartSelector={handleShowChartSelector}
-            isEditMode={state.isEditMode}
           />
 
           {/* 画布容器 */}

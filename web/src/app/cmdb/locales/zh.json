@@ -35,6 +35,7 @@
     "password": "密码",
     "boolean": "布尔值",
     "organization": "组织",
+    "associatedOrganization": "所属组织",
     "exportTemplate": "导出模板",
     "selectAll": "全选",
     "selected": "已选择",

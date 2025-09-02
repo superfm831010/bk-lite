@@ -15,11 +15,17 @@ export const usePolling = (
 ) => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const savedCallback = useRef(callback);
+  const enabledRef = useRef(enabled);
 
   // 保存最新的回调函数引用
   useEffect(() => {
     savedCallback.current = callback;
   }, [callback]);
+
+  // 保存最新的enabled状态
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
 
   // 清理定时器函数
   const clearTimer = () => {
@@ -29,23 +35,27 @@ export const usePolling = (
     }
   };
 
+  const startPolling = () => {
+    if (!enabledRef.current) {
+      return;
+    }
+
+    timerRef.current = setTimeout(() => {
+      if (enabledRef.current) {
+        savedCallback.current();
+        startPolling();
+      }
+    }, interval);
+  };
+
   // 定时器管理
   useEffect(() => {
     // 先清理之前的定时器
     clearTimer();
 
-    if (!enabled) {
-      return;
+    if (enabled) {
+      startPolling();
     }
-
-    // 设置新的定时器
-    timerRef.current = setTimeout(() => {
-      savedCallback.current();
-      // 递归设置下一次定时器
-      if (enabled) {
-        timerRef.current = setTimeout(savedCallback.current, interval);
-      }
-    }, interval);
 
     // 组件卸载时清理定时器
     return () => clearTimer();

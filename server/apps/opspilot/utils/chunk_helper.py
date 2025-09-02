@@ -37,9 +37,9 @@ class ChunkHelper(ChatServerHelper):
         a_kwargs = dict({"extra_prompt": answer_prompt}, **llm_setting["answer"])
         for i in content_list:
             generate_count = cls.generate_qa(q_kwargs, a_kwargs, i, embed_config, es_index, qa_pairs_obj, only_question)
-            res = cls.update_document_qa_pairs_count(es_index, generate_count, i["chunk_id"])
-            if not res:
-                logger.error(f"Failed to update document QA pairs count for chunk_id ID: {i['chunk_id']}")
+            # res = cls.update_document_qa_pairs_count(es_index, generate_count, i["chunk_id"])
+            # if not res:
+            #     logger.error(f"Failed to update document QA pairs count for chunk_id ID: {i['chunk_id']}")
             success_count += generate_count
             task_obj.completed_count += 1
             task_obj.save()
@@ -77,115 +77,47 @@ class ChunkHelper(ChatServerHelper):
         return res
 
     @classmethod
-    def delete_es_content(cls, index_name, qa_pairs_id):
-        kwargs = {"index_name": index_name, "metadata_filter": {"qa_pairs_id": str(qa_pairs_id)}}
-        try:
-            ChatServerHelper.post_chat_server(kwargs, cls.del_url)
-        except Exception as e:
-            logger.exception(e)
-
-    @classmethod
-    def delete_qa_pairs_by_document(cls, index_name, knowledge_id):
-        kwargs = {"index_name": index_name, "metadata_filter": {"knowledge_id": knowledge_id}}
-        try:
-            ChatServerHelper.post_chat_server(kwargs, cls.del_url)
-        except Exception as e:
-            logger.exception(e)
-
-    @classmethod
-    def delete_chunk(cls, index_name, chunk_id, is_base=False):
-        if is_base:
-            kwargs = {"index_name": index_name, "metadata_filter": {"base_chunk_id": str(chunk_id)}}
-        else:
-            kwargs = {"index_name": index_name, "metadata_filter": {"chunk_id": str(chunk_id)}}
-        try:
-            ChatServerHelper.post_chat_server(kwargs, cls.del_url)
-        except Exception as e:
-            logger.exception(e)
-            return {"result": False}
-        return {"result": True}
-
-    @classmethod
-    def delete_chunk_relation(cls, index_name, chunk_id):
+    def delete_es_content(cls, doc_id, is_chunk=False, keep_qa=False):
         kwargs = {
-            "index_name": index_name,
-            "metadata_filter": {"base_chunk_id": str(chunk_id)},
-            "metadata": {"base_chunk_id": ""},
+            "chunk_ids": [str(doc_id)] if is_chunk else [],
+            "knowledge_ids": [f"qa_pairs_id_{doc_id}"] if not is_chunk else [],
+            "keep_qa": keep_qa,
         }
         try:
-            ChatServerHelper.post_chat_server(kwargs, cls.update_url)
+            ChatServerHelper.post_chat_server(kwargs, cls.del_url)
+            return True
         except Exception as e:
             logger.exception(e)
-            return {"result": False}
-        return {"result": True}
+            return False
 
     @classmethod
-    def delete_document_relation(cls, index_name, knowledge_id):
-        kwargs = {
-            "index_name": index_name,
-            "metadata_filter": {"knowledge_id": knowledge_id},
-            "metadata": {"base_chunk_id": ""},
-        }
-        try:
-            ChatServerHelper.post_chat_server(kwargs, cls.update_url)
-        except Exception as e:
-            logger.exception(e)
-            return {"result": False}
-        return {"result": True}
-
-    @classmethod
-    def create_qa_pairs(cls, qa_paris, chunk_obj, index_name, embed_config, qa_pairs_id):
+    def create_qa_pairs(cls, qa_paris, chunk_obj, index_name, embed_config, qa_pairs_id, task_obj):
         success_count = 0
         kwargs, metadata = cls.set_qa_pairs_params(embed_config, index_name, qa_pairs_id, chunk_obj)
         headers = cls.get_chat_server_header()
         # SSL验证配置 - 从环境变量读取
         ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
+        train_progress = round(float(1 / len(qa_paris)) * 100, 4)
+        task_progress = 0
         for i in qa_paris:
             params = dict(kwargs, **{"content": i["question"]})
             params["metadata"] = json.dumps(dict(metadata, **{"qa_question": i["question"], "qa_answer": i["answer"]}))
             response = requests.post(cls.create_url, headers=headers, data=params, verify=ssl_verify)
-            res = response.json()
+            try:
+                res = response.json()
+            except Exception as e:
+                logger.exception(e)
+                logger.error(response.text)
+                continue
             if res.get("status", "fail") != "success":
                 logger.exception(f"创建问答对失败: {res.get('message', '')}")
                 continue
             success_count += 1
+            task_obj.completed_count += 1
+            task_progress += train_progress
+            task_obj.train_progress = round(task_progress, 2)
+            task_obj.save()
         return success_count
-
-    @classmethod
-    def update_document_qa_pairs_count(cls, es_index, qa_count, chunk_id):
-        if not qa_count:
-            return {}
-        current_count = cls.get_chunk_qa_count(es_index, chunk_id)
-        qa_count += current_count
-        kwargs = {
-            "index_name": es_index,
-            "metadata_filter": {"chunk_id": str(chunk_id), "is_doc": "1"},
-            "metadata": {"qa_count": qa_count},
-        }
-        res = ChatServerHelper.post_chat_server(kwargs, cls.update_url)
-        return res
-
-    @classmethod
-    def get_chunk_qa_count(cls, es_index, chunk_id):
-        count_url = f"{settings.METIS_SERVER_URL}/api/rag/count_index_document"
-        query = {
-            "index_name": es_index,
-            "metadata_filter": {"base_chunk_id": str(chunk_id), "is_doc": "0"},
-            "query": "",
-        }
-        count_res = ChatServerHelper.post_chat_server(query, count_url)
-        return count_res.get("count", 0)
-
-    @classmethod
-    def get_qa_paris_qa_count(cls, es_index, qa_pairs_id):
-        count_url = f"{settings.METIS_SERVER_URL}/api/rag/count_index_document"
-        query = {
-            "index_name": es_index,
-            "metadata_filter": {"qa_pairs_id": str(qa_pairs_id), "is_doc": "0"},
-            "query": "",
-        }
-        count_res = ChatServerHelper.post_chat_server(query, count_url)
-        return count_res.get("count", 0)
 
     @classmethod
     def set_qa_pairs_params(cls, embed_config, index_name, qa_pairs_id, chunk_obj=None):
@@ -193,7 +125,7 @@ class ChunkHelper(ChatServerHelper):
             chunk_obj = {}
         kwargs = {
             "knowledge_base_id": index_name,
-            "knowledge_id": chunk_obj.get("knowledge_id", "0"),
+            "knowledge_id": f"qa_pairs_id_{qa_pairs_id}",
             "embed_model_base_url": embed_config.get("base_url", ""),
             "embed_model_api_key": embed_config.get("api_key", "") or " ",
             "embed_model_name": embed_config.get("model", ""),
@@ -207,7 +139,7 @@ class ChunkHelper(ChatServerHelper):
             "preview": "false",
         }
         metadata = {
-            "enabled": True,
+            "enabled": "true",
             "base_chunk_id": chunk_obj.get("chunk_id", ""),
             "qa_pairs_id": str(qa_pairs_id),
             "is_doc": "0",
@@ -215,8 +147,8 @@ class ChunkHelper(ChatServerHelper):
         return kwargs, metadata
 
     @classmethod
-    def create_one_qa_pairs(cls, embed_config, index_name, qa_pairs_id, knowledge_id, question, answer, chunk_id=""):
-        chunk_obj = {"knowledge_id": knowledge_id, "chunk_id": chunk_id}
+    def create_one_qa_pairs(cls, embed_config, index_name, qa_pairs_id, question, answer, chunk_id=""):
+        chunk_obj = {"chunk_id": chunk_id}
         kwargs, metadata = cls.set_qa_pairs_params(embed_config, index_name, qa_pairs_id, chunk_obj)
         metadata.update({"qa_question": question, "qa_answer": answer})
         params = dict(kwargs, **{"content": question, "metadata": json.dumps(metadata)})
@@ -229,17 +161,17 @@ class ChunkHelper(ChatServerHelper):
         return {"result": True}
 
     @classmethod
-    def update_qa_pairs(cls, index_name, chunk_id, question, answer):
+    def update_qa_pairs(cls, chunk_id, question, answer):
         kwargs = {
-            "index_name": index_name,
-            "metadata_filter": {"chunk_id": str(chunk_id)},
+            "knowledge_ids": [],
+            "chunk_ids": [chunk_id],
             "metadata": {"qa_question": question, "qa_answer": answer},
         }
         res = ChatServerHelper.post_chat_server(kwargs, cls.update_url)
         return res
 
     @classmethod
-    def get_qa_content(cls, document_id, es_index, page_size=10000):
+    def get_qa_content(cls, document_id, es_index, page_size=0):
         res = cls.get_document_es_chunk(
             es_index, 1, page_size, metadata_filter={"knowledge_id": str(document_id)}, get_count=False
         )
@@ -292,7 +224,9 @@ class ChunkHelper(ChatServerHelper):
         return {"result": True, "data": return_data}
 
     @classmethod
-    def create_document_qa_pairs(cls, content_list, embed_config, es_index, llm_setting, qa_pairs_obj, only_question):
+    def create_document_qa_pairs(
+        cls, content_list, embed_config, es_index, llm_setting, qa_pairs_obj, only_question, task_obj
+    ):
         success_count = 0
         q_kwargs = dict(
             {
@@ -307,12 +241,17 @@ class ChunkHelper(ChatServerHelper):
             },
             **llm_setting["answer"],
         )
+        train_progress = round(float(1 / len(content_list)) * 100, 4)
+        task_progress = 0
         for i in content_list:
             generate_count = cls.generate_qa(q_kwargs, a_kwargs, i, embed_config, es_index, qa_pairs_obj, only_question)
-            res = cls.update_document_qa_pairs_count(es_index, generate_count, i["chunk_id"])
-            if not res:
-                logger.error(f"Failed to update document QA pairs count for chunk_id ID: {i['chunk_id']}")
+            # res = cls.update_document_qa_pairs_count(es_index, generate_count, i["chunk_id"])
+            # if not res:
+            #     logger.error(f"Failed to update document QA pairs count for chunk_id ID: {i['chunk_id']}")
             success_count += generate_count
+            task_progress += train_progress
+            task_obj.train_progress = round(task_progress, 2)
+            task_obj.save()
         return success_count
 
     @classmethod
@@ -336,7 +275,6 @@ class ChunkHelper(ChatServerHelper):
                 embed_config,
                 es_index,
                 qa_pairs_obj.id,
-                str(qa_pairs_obj.document_id),
                 u["question"],
                 answer,
                 chunk["chunk_id"],
@@ -345,7 +283,7 @@ class ChunkHelper(ChatServerHelper):
         return success_count
 
     @classmethod
-    def update_qa_pairs_answer(cls, return_data, qa_pairs, index_name):
+    def update_qa_pairs_answer(cls, return_data, qa_pairs):
         if not return_data:
             return
         answer_llm = qa_pairs.answer_llm_model
@@ -363,4 +301,4 @@ class ChunkHelper(ChatServerHelper):
             answer = res["data"].get("answer")
             if not answer:
                 continue
-            cls.update_qa_pairs(index_name, i["id"], i["question"], answer)
+            cls.update_qa_pairs(i["id"], i["question"], answer)

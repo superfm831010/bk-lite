@@ -191,6 +191,10 @@
     "qaRag": "问答对", 
     "graphRag": "知识图谱",
     "extract": "提取",
+    "retrievalStrategy": "检索策略",
+    "threshold": "阈值",
+    "thresholdDesc": "使用相似性分数阈值根据相关性分数过滤结果",
+    "mmrDesc": "使用最大边际相关性来平衡相关性和多样性",
     "documents": {
       "title": "文档",
       "description": "文档管理用于添加新知识，包括本地文件、网页链接或自定义文本。新添加的知识可以分块，以便机器人使用。",
@@ -473,7 +477,8 @@
       "deleteConfirm": "你确定要删除此分组吗？",
       "deleteConfirmContent": "此操作将删除该分组",
       "reorderSuccess": "分组顺序更新成功",
-      "reorderFailed": "更新分组顺序失败"
+      "reorderFailed": "更新分组顺序失败",
+      "tags": "标签"
     }
   },
   "studio": {
@@ -488,6 +493,8 @@
     "pilotDesc": "基于rasa创建的应用，支持对话框、企微、钉钉等对外渠道。",
     "lobeChat": "LobeChat",
     "lobeChatDesc": "支持接入lobeChat的web界面作为与用户的交互渠道。",
+    "chatflow": "Chatflow",
+    "chatflowDesc": "Chatflow能够编排智能体的能力，通过API或者定时等方式触发执行。",
     "form": {
       "type": "应用类型",
       "name": "名称",

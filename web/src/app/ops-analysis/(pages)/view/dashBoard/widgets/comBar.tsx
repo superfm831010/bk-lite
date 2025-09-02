@@ -8,7 +8,6 @@ import { ChartDataTransformer } from '@/app/ops-analysis/utils/chartDataTransfor
 interface BarChartProps {
   rawData: any;
   loading?: boolean;
-  config?: any;
   onReady?: (ready: boolean) => void;
 }
 
@@ -76,7 +75,7 @@ const BarChart: React.FC<BarChartProps> = ({
       top: 14,
       left: 18,
       right: 24,
-      bottom: 35,
+      bottom: 20,
       containLabel: true,
     },
     xAxis: {

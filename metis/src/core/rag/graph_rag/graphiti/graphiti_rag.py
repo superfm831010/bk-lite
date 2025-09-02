@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime, timezone
 
 from langchain_core.documents import Document
@@ -17,14 +17,16 @@ from src.web.entity.rag.graphiti.document_retriever_request import DocumentRetri
 from src.web.entity.rag.graphiti.rebuild_community_request import RebuildCommunityRequest
 from src.core.rag.graph_rag.graphiti.metis_embedder import MetisEmbedder
 from src.core.rag.graph_rag.graphiti.metis_embedder_config import MetisEmbedderConfig
-from src.core.rag.graph_rag.graphiti.metis_raranker_config import MetisRerankerConfig
+from src.core.rag.graph_rag.graphiti.metis_reranker_config import MetisRerankerConfig
 from src.core.rag.graph_rag.graphiti.metis_reranker_client import MetisRerankerClient
+from src.core.sanic_plus.utils.timing_decorator import timeit
 from sanic.log import logger
 from graphiti_core.driver.falkordb_driver import FalkorDriver
 
 
 class GraphitiRAG:
     """Graphiti知识图谱RAG实现类"""
+    LLM_TIMEOUT_SECONDS = 60*60*24
 
     def __init__(self):
         pass
@@ -64,7 +66,7 @@ class GraphitiRAG:
         async_openai = AsyncOpenAI(
             api_key=llm_config['api_key'],
             base_url=llm_config['base_url'],
-            timeout=120
+            timeout=self.LLM_TIMEOUT_SECONDS  # 使用类变量避免硬编码
         )
         return OpenAIClient(
             client=async_openai,
@@ -101,7 +103,11 @@ class GraphitiRAG:
         kwargs['graph_driver'] = driver
         return Graphiti(**kwargs)
 
-    def _extract_configs_from_request(self, req) -> tuple[Optional[dict], Optional[dict], Optional[dict]]:
+    def _extract_configs_from_request(
+        self,
+        req: Union[GraphitiRagDocumentIngestRequest,
+                   DocumentRetrieverRequest, RebuildCommunityRequest]
+    ) -> tuple[Optional[dict], Optional[dict], Optional[dict]]:
         """从请求对象中提取配置信息"""
         llm_config = None
         embed_config = None
@@ -216,11 +222,13 @@ class GraphitiRAG:
         graphiti = self._create_basic_graphiti()
         await graphiti.build_indices_and_constraints()
 
+    @timeit("community_building")
     async def build_communities(self, graphiti_instance: Graphiti, group_ids: List[str]):
         """构建社区"""
         logger.info(f"构建社区: group_ids={group_ids}")
         await graphiti_instance.build_communities(group_ids=group_ids)
 
+    @timeit("document_ingest")
     async def ingest(self, req: GraphitiRagDocumentIngestRequest):
         """文档摄取"""
         logger.info(f"开始摄取文档: group_id={req.group_id}, 文档数量={len(req.docs)}")
@@ -235,25 +243,58 @@ class GraphitiRAG:
 
         # 处理文档
         mapping = {}
-        for doc in tqdm(req.docs, desc="处理文档"):
-            name = f"{doc.metadata['knowledge_title']}_{doc.metadata['knowledge_id']}_{doc.metadata['chunk_id']}"
-            episode = await graphiti_instance.add_episode(
-                name=name,
-                episode_body=doc.page_content,
-                source=EpisodeType.text,
-                source_description=doc.metadata['knowledge_title'],
-                reference_time=datetime.now(timezone.utc),
-                group_id=req.group_id,
-            )
-            mapping[doc.metadata['chunk_id']] = episode.episode.uuid
+        success_count = 0
+        failed_count = 0
+
+        for i, doc in enumerate(tqdm(req.docs, desc="处理文档")):
+            try:
+                name = f"{doc.metadata['knowledge_title']}_{doc.metadata['knowledge_id']}_{doc.metadata['chunk_id']}"
+                logger.info(f"处理文档 {i+1}/{len(req.docs)}: {name}")
+
+                episode = await graphiti_instance.add_episode(
+                    name=name,
+                    episode_body=doc.page_content,
+                    source=EpisodeType.text,
+                    source_description=doc.metadata['knowledge_title'],
+                    reference_time=datetime.now(timezone.utc),
+                    group_id=req.group_id,
+                )
+                mapping[doc.metadata['chunk_id']] = episode.episode.uuid
+                success_count += 1
+
+                # 每处理10个文档输出一次进度
+                if (i + 1) % 10 == 0:
+                    logger.info(
+                        f"已处理 {i+1}/{len(req.docs)} 个文档，成功: {success_count}, 失败: {failed_count}")
+
+            except Exception as e:
+                failed_count += 1
+                logger.error(f"处理文档失败 {name}: {e}")
+                # 添加更详细的调试信息
+                logger.error(f"文档内容长度: {len(doc.page_content)}")
+                logger.error(f"文档内容前500字符: {doc.page_content[:500]}...")
+                logger.error(f"文档元数据: {doc.metadata}")
+                # 继续处理下一个文档，不中断整个流程
 
         # 可选：重建社区
         if req.rebuild_community:
-            await self.build_communities(graphiti_instance, [req.group_id])
+            logger.info("开始重建社区...")
+            try:
+                await self.build_communities(graphiti_instance, [req.group_id])
+                logger.info("社区重建完成")
+            except Exception as e:
+                logger.error(f"社区重建失败: {e}")
+                # 社区重建失败不影响整体结果
 
-        logger.info(f"文档摄取完成: 成功摄取{len(mapping)}个文档")
-        return mapping
+        logger.info(f"文档摄取完成: 成功摄取{success_count}个文档，失败{failed_count}个文档")
+        return {
+            "mapping": mapping,
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "total_count": len(req.docs)
+        }
 
+    @timeit("community_rebuild")
     async def rebuild_community(self, req: RebuildCommunityRequest):
         """重建社区"""
         logger.info(f"重建社区: group_ids={req.group_ids}")
@@ -268,6 +309,7 @@ class GraphitiRAG:
         await self.build_communities(graphiti_instance, req.group_ids)
         logger.info("社区重建完成")
 
+    @timeit("document_search")
     async def search(self, req: DocumentRetrieverRequest) -> List[Document]:
         """搜索文档"""
         logger.info(

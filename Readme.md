@@ -15,7 +15,8 @@ Blueking Lite 是一个 **AI First** 的**轻量版**运维产品，具有部署
 
 - **快速体验**: https://bklite.canway.net （微信扫码登录）
 - **英文文档**: [English Documents Available](readme_en.md)
-
+- **极速安装**: `curl -sSL https://bklite.ai/install.run| bash -`
+- 
 ### 💬 交流群
 
 <div align="center">

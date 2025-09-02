@@ -20,63 +20,22 @@ output.logstash:
 processors:
   - add_host_metadata:
       when.not.contains.tags: forwarded
-
-  - add_process_metadata:
-      match_pids: ["process.pid", "process.parent.pid"]
-      target: process
-
-  - script:
-      lang: javascript
-      source: >
-        function process(event) {
-          var evt = event.Get();
-          
-          // 统一时间戳格式
-          if (evt['@timestamp']) {
-            event.Put('timestamp', evt['@timestamp']);
-          }
-          
-          // 提取关键安全字段
-          if (evt.auditd) {
-            event.Put('audit_type', evt.auditd.message_type || 'unknown');
-            event.Put('audit_result', evt.auditd.result || 'unknown');
-            
-            if (evt.user) {
-              event.Put('user_name', evt.user.name || evt.user.audit.name || 'unknown');
-              event.Put('user_id', evt.user.id || evt.user.audit.id || 'unknown');
-            }
-            
-            if (evt.process) {
-              event.Put('process_name', evt.process.name || 'unknown');
-              event.Put('process_pid', evt.process.pid || 0);
-            }
-          }
-          
-          if (evt.file) {
-            event.Put('file_path', evt.file.path || 'unknown');
-            event.Put('file_action', evt.event.action || 'unknown');
-          }
-          
-          return event;
-        }
 # ================================== Modules ===================================
 auditbeat.modules:
-# ================================== 健康检查模式 - 最小数据量 ==================================
-- module: auditd
+- module: file_integrity
   enabled: true
 
-  # 极简审计规则 - 仅监控sudo使用，用于验证功能
-  audit_rules: |
-    -w /usr/bin/sudo -p x -k health_check
+  # 只监控一个最轻量的文件，避免重复
+  paths:
+  - /etc/hostname
 
-  # 减少数据量配置
-  rate_limit: 10  # 限制每秒最多10个事件
-  failure_mode: silent  # 静默模式，减少噪音
+  # 大幅减少扫描频率，降低资源占用
+  scan_frequency: 600s  # 改为10分钟，减少一半扫描频率
+  hash_types: [md5]     # 从sha1改为md5，计算更快
+  max_file_size: 100KB  # 从1MB降低到100KB，减少处理开销
 
   fields:
     log_type: "auditbeat"
-    component: "auditd"
     health_check_mode: true
-    node_ip: "${node.ip}"
-    cloud_region: "${node.cloud_region}"
-  fields_under_root: false
+    _msg: "health check"
+  fields_under_root: true

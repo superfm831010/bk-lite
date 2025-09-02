@@ -172,16 +172,17 @@ const AssetSearch = () => {
                         isEdit: false,
                         value: list.children,
                         hideUserAvatar: true,
-                      }).toString() || '--';
-                    return fieldVal.includes(searchText) ||
+                      }) || '--';
+                    const isStrField =
+                      typeof fieldVal === 'string' &&
+                      fieldVal.includes(searchText);
+                    return isStrField ||
                       ['inst_name', 'organization'].includes(list.key) ? (
                         <li key={list.key}>
-                          <span>{list.label}</span>:
+                          <span>{list.label}</span>：
                           <span
                             className={
-                              fieldVal.includes(searchText)
-                                ? 'text-[var(--color-primary)]'
-                                : ''
+                              isStrField ? 'text-[var(--color-primary)]' : ''
                             }
                           >
                             {fieldVal}
@@ -222,7 +223,9 @@ const AssetSearch = () => {
                     isEdit: false,
                     value: list.children,
                     hideUserAvatar: true,
-                  }).toString() || '--';
+                  }) || '--';
+                const isStrField =
+                  typeof fieldVal === 'string' && fieldVal.includes(searchText);
                 return (
                   <li
                     key={list.key}
@@ -235,14 +238,12 @@ const AssetSearch = () => {
                       >
                         {list.label}
                       </span>
-                      <span className={assetSearchStyle.labelColon}>:</span>
+                      <span className={assetSearchStyle.labelColon}>：</span>
                     </span>
                     <span
                       title={fieldVal}
                       className={`${
-                        fieldVal.includes(searchText)
-                          ? 'text-[var(--color-primary)]'
-                          : ''
+                        isStrField ? 'text-[var(--color-primary)]' : ''
                       } ${assetSearchStyle.listItemValue}`}
                     >
                       {fieldVal}

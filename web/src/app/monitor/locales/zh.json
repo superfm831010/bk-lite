@@ -353,7 +353,10 @@
       "historicalAlarmsMapTips": "展示所选时间范围内，符合过滤项的所有历史告警分布图。",
       "promQLPlaceholder": "请参考Prometheus的语法撰写PromQL，通常可以查询并过滤相关的指标。",
       "monitoringTarget": "监控目标",
-      "alarmLevel": "告警级别"
+      "alarmLevel": "告警级别",
+      "noticeWay": "暂无通知渠道，可去",
+      "systemManage": "系统管理",
+      "config": "配置。"
     },
     "intergrations": {
       "intergration": "集成",
