@@ -161,6 +161,7 @@ const TestingPage: React.FC = () => {
       rag_size: configData.ragSize,
       qa_size: configData.qaSize,
       graph_size: configData.graphSize,
+      rag_recall_mode: configData.ragRecallMode,
     };
   };
 

@@ -53,6 +53,7 @@ export interface ConfigDataProps {
   // New retrieval strategy fields
   searchType: 'similarity_score_threshold' | 'mmr';
   scoreThreshold: number;
+  ragRecallMode?: 'chunk' | 'segment' | 'origin';
 }
 
 export interface TableData {

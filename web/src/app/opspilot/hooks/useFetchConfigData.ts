@@ -25,7 +25,8 @@ const useFetchConfigData = (id: string | null) => {
     qaSize: 0,
     graphSize: 0,
     searchType: 'similarity_score_threshold',
-    scoreThreshold: 0.3
+    scoreThreshold: 0.3,
+    ragRecallMode: 'chunk'
   });
   const [loading, setLoading] = useState(true);
   const [knowledgeBasePermissions, setKnowledgeBasePermissions] = useState<string[]>([]);
@@ -54,7 +55,8 @@ const useFetchConfigData = (id: string | null) => {
           qaSize: data.qa_size || 0,
           graphSize: data.graph_size || 0,
           searchType: data.search_type || 'similarity_score_threshold',
-          scoreThreshold: data.score_threshold || 0.3
+          scoreThreshold: data.score_threshold || 0.3,
+          ragRecallMode: data.rag_recall_mode || 'chunk'
         });
         setKnowledgeBasePermissions(data.permissions || []);
       } catch (error) {
