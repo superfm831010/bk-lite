@@ -455,6 +455,11 @@ const StrategyOperation = () => {
     router.push(targetUrl);
   };
 
+  const linkToSystemManage = () => {
+    const url = '/system-manager/channel';
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const createStrategy = () => {
     form?.validateFields().then((values) => {
       const params = deepClone(values);
@@ -1156,13 +1161,27 @@ const StrategyOperation = () => {
                                   },
                                 ]}
                               >
-                                <Radio.Group>
-                                  {channelList.map((item) => (
-                                    <Radio key={item.id} value={item.id}>
-                                      {`${item.name}（${item.channel_type}）`}
-                                    </Radio>
-                                  ))}
-                                </Radio.Group>
+                                {channelList.length ? (
+                                  <Radio.Group>
+                                    {channelList.map((item) => (
+                                      <Radio key={item.id} value={item.id}>
+                                        {`${item.name}（${item.channel_type}）`}
+                                      </Radio>
+                                    ))}
+                                  </Radio.Group>
+                                ) : (
+                                  <span>
+                                    {t('monitor.events.noticeWay')}
+                                    <Button
+                                      type="link"
+                                      className="p-0 mx-[4px]"
+                                      onClick={linkToSystemManage}
+                                    >
+                                      {t('monitor.events.systemManage')}
+                                    </Button>
+                                    {t('monitor.events.config')}
+                                  </span>
+                                )}
                               </Form.Item>
                               <Form.Item<StrategyFields>
                                 label={
