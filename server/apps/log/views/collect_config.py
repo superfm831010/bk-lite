@@ -30,6 +30,14 @@ class CollectTypeViewSet(ModelViewSet):
                 required=False
             ),
             openapi.Parameter(
+                'add_instance_count',
+                openapi.IN_QUERY,
+                description="是否计算采集类型下的实例数量统计",
+                type=openapi.TYPE_BOOLEAN,
+                default=False,
+                required=False
+            ),
+            openapi.Parameter(
                 'name',
                 openapi.IN_QUERY,
                 description="按名称模糊搜索",
@@ -51,6 +59,7 @@ class CollectTypeViewSet(ModelViewSet):
 
         支持参数：
         - add_policy_count: 是否计算策略数量，true/false，默认false
+        - add_instance_count: 是否计算实例数量，true/false，默认false
         - name: 按名称模糊搜索
         - collector: 按采集器名称模糊搜索
         """
