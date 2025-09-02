@@ -1,22 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ReactEcharts from 'echarts-for-react';
+import ChartLegend from '../components/chartLegend';
 import { Spin, Empty } from 'antd';
+import { randomColorForLegend } from '@/app/ops-analysis/utils/randomColorForChart';
+import { ChartDataTransformer } from '@/app/ops-analysis/utils/chartDataTransform';
 
 interface OsPieProps {
   rawData: any;
   loading?: boolean;
-  config?: any;
   onReady?: (ready: boolean) => void;
 }
 
 const OsPie: React.FC<OsPieProps> = ({ rawData, loading = false, onReady }) => {
   const [isDataReady, setIsDataReady] = useState(false);
+  const chartRef = useRef<any>(null);
+  const chartColors = randomColorForLegend();
 
   const transformData = (rawData: any) => {
-    if (rawData && rawData.data && Array.isArray(rawData.data)) {
-      return rawData.data;
-    }
-    return [];
+    return ChartDataTransformer.transformToPieData(rawData);
   };
 
   const chartData = transformData(rawData);
@@ -31,6 +32,7 @@ const OsPie: React.FC<OsPieProps> = ({ rawData, loading = false, onReady }) => {
     }
   }, [chartData, loading, onReady]);
   const option: any = {
+    color: chartColors,
     animation: true,
     calculable: true,
     title: { show: false },
@@ -56,21 +58,16 @@ const OsPie: React.FC<OsPieProps> = ({ rawData, loading = false, onReady }) => {
       },
     },
     legend: {
-      top: '3%',
-      left: 'center',
-      textStyle: {
-        color: '#666',
-        fontSize: 12,
-      },
-      itemGap: 20,
+      show: false,
     },
     series: [
       {
-        name: '操作系统',
+        name: '',
         type: 'pie',
-        center: ['50%', '56%'],
-        radius: ['43%', '65%'],
+        center: ['50%', '50%'],
+        radius: ['45%', '69%'],
         avoidLabelOverlap: false,
+        selectedMode: 'single',
         label: {
           show: true,
           position: 'center',
@@ -102,9 +99,13 @@ const OsPie: React.FC<OsPieProps> = ({ rawData, loading = false, onReady }) => {
           smooth: true,
         },
         itemStyle: {
-          borderRadius: 4,
+          borderRadius: 2,
           borderColor: '#fff',
-          borderWidth: 2,
+          borderWidth: 1,
+        },
+        emphasis: {
+          focus: 'none',
+          scaleSize: 5,
         },
         data: chartData || [],
       },
@@ -128,13 +129,26 @@ const OsPie: React.FC<OsPieProps> = ({ rawData, loading = false, onReady }) => {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex">
+      {/* 图表区域 */}
       <div className="flex-1">
         <ReactEcharts
+          ref={chartRef}
           option={option}
           style={{ height: '100%', width: '100%' }}
         />
       </div>
+
+      {/* 图例区域 */}
+      {chartData && chartData.length > 1 && (
+        <div className="w-34 flex-shrink-0 h-full">
+          <ChartLegend
+            chart={chartRef.current?.getEchartsInstance()}
+            data={chartData.map((item: any) => ({ name: item.name }))}
+            colors={chartColors}
+          />
+        </div>
+      )}
     </div>
   );
 };

@@ -1,0 +1,21 @@
+{
+  "name": "auditd",
+  "collector": "Auditbeat",
+  "icon": "auditd",
+  "description": "Collects Linux audit framework logs for comprehensive system security monitoring and compliance",
+  "default_query": "collect_type: auditd AND audit_type: [SYSCALL, USER_LOGIN, USER_AUTH] | stats count by audit_type, user_name | sort by count desc",
+  "attrs": [
+    "audit_type",
+    "user_name",
+    "user_id",
+    "process_name",
+    "process_pid",
+    "audit_result",
+    "file_path",
+    "source_ip",
+    "session_id",
+    "command",
+    "timestamp"
+  ]
+}
+

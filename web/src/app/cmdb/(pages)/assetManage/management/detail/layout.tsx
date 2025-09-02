@@ -17,6 +17,7 @@ import { useTranslation } from '@/utils/i18n';
 import { useClassificationApi, useModelApi } from '@/app/cmdb/api';
 import { ModelDetailContext } from './context';
 import { useCommon } from '@/app/cmdb/context/common';
+import { OrganizationField } from '@/app/cmdb/utils/common';
 
 const AboutLayout = ({ children }: { children: React.ReactNode }) => {
   const { isLoading } = useApiClient();
@@ -30,8 +31,6 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
 
   const searchParams = useSearchParams();
   const modelId: string = searchParams.get('model_id') || '';
-  const classificationName: string =
-    searchParams.get('classification_name') || '';
   const isPre = searchParams.get('is_pre') === 'true';
   const modelRef = useRef<any>(null);
   const [groupList, setGroupList] = useState<ClassificationItem[]>([]);
@@ -140,11 +139,10 @@ const AboutLayout = ({ children }: { children: React.ReactNode }) => {
               </div>
               <div className="text-[var(--color-text-2)] text-[12px] break-all">
                 {modelId}
-                {classificationName && (
-                  <span className="ml-2">
-                    【{t('Model.modelGroup')}：{classificationName}】
-                  </span>
-                )}
+                <span className="ml-2">
+                  【{t('associatedOrganization')}：
+                  <OrganizationField value={modelDetail.group} />】
+                </span>
               </div>
             </div>
             {!isPre && (

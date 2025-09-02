@@ -113,7 +113,11 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
     if (type === 'settings') {
       router.push('/ops-analysis/view/settings/dataSource');
     } else {
-      router.push('/ops-analysis/view');
+      const params = new URLSearchParams({
+        type: itemInfo?.type || '',
+        id: itemInfo?.id || '',
+      }).toString();
+      router.push(`/ops-analysis/view?${params}`);
     }
   };
 

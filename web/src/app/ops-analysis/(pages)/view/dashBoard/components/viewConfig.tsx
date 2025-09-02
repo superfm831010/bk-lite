@@ -42,18 +42,16 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
       return {
         name: item.name,
         widget: item.widget,
-        dataSource: item.dataSource || item.valueConfig?.dataSource,
-        chartType: item.valueConfig?.chartType || 'line',
-        dataSourceParams:
-          item.dataSourceParams || item.valueConfig?.dataSourceParams || [],
-        ...item.valueConfig,
+        chartType: item.valueConfig?.chartType,
+        dataSource: item.valueConfig?.dataSource,
+        dataSourceParams: item.valueConfig?.dataSourceParams || [],
       };
     } else if (isDashboardFormat(item)) {
       return {
         name: item.config?.name || item.title,
         widget: item.widget,
+        chartType: item.config?.chartType,
         dataSource: item.config?.dataSource,
-        chartType: item.config?.chartType || 'line',
         dataSourceParams: item.config?.dataSourceParams || [],
         ...item.config,
       };
@@ -236,7 +234,7 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
 
         <div className="mb-6">
           <div className="font-bold text-[var(--color-text-1)] mb-4">
-            {t('dashboard.chartType')}
+            {t('dashboard.chartTypeLabel')}
           </div>
           <Form.Item
             label={t('dashboard.chartTypeLabel')}
@@ -245,9 +243,7 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
             initialValue="line"
           >
             <Radio.Group
-              disabled={['trendLine', 'osPie', 'errorBar'].includes(
-                widgetItem?.widget || ''
-              )}
+              disabled={['trendLine'].includes(widgetItem?.widget || '')}
             >
               <Radio.Button value="line">
                 {t('dashboard.lineChart')}

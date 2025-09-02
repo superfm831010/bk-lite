@@ -40,16 +40,11 @@ class KnowledgeSearchService:
         params = {
             "index_name": knowledge_base_folder.knowledge_index_name(),
             "search_query": query,
-            "metadata_filter": {"enabled": True},
-            "size": kwargs["size"],
-            "threshold": score_threshold,
-            "enable_term_search": kwargs["enable_text_search"],
-            "text_search_weight": kwargs["text_search_weight"],
-            "text_search_mode": kwargs["text_search_mode"],
-            "enable_vector_search": kwargs["enable_vector_search"],
-            "vector_search_weight": kwargs["vector_search_weight"],
-            "rag_k": kwargs["rag_k"],
-            "rag_num_candidates": kwargs["rag_num_candidates"],
+            "metadata_filter": {"enabled": "true"},
+            "score_threshold": score_threshold,
+            "k": kwargs.get("rag_size", 50),
+            "qa_size": kwargs.get("qa_size", 50),
+            "search_type": kwargs["search_type"],
             "enable_rerank": kwargs["enable_rerank"],
             "embed_model_base_url": embed_mode_config["base_url"],
             "embed_model_api_key": embed_mode_config["api_key"] or " ",
@@ -64,6 +59,7 @@ class KnowledgeSearchService:
             "enable_qa_rag": kwargs["enable_qa_rag"],
             "graph_rag_request": {},
         }
+
         return params
 
     @staticmethod
@@ -127,8 +123,8 @@ class KnowledgeSearchService:
             return []
         # 处理搜索结果
         for doc in result["documents"]:
-            score = doc["metadata"]["_score"]
-            meta_data = doc["metadata"]["_source"]["metadata"]
+            score = doc["metadata"].get("similarity_score", 0)
+            meta_data = doc["metadata"]
             doc_info = {}
             if kwargs["enable_rerank"]:
                 doc_info["rerank_score"] = doc["metadata"]["relevance_score"]
@@ -138,7 +134,7 @@ class KnowledgeSearchService:
                         "question": meta_data["qa_question"],
                         "answer": meta_data["qa_answer"],
                         "score": score,
-                        "knowledge_id": 0,
+                        "knowledge_id": meta_data["knowledge_id"],
                         "knowledge_title": meta_data["knowledge_title"],
                     }
                 )
@@ -164,15 +160,18 @@ class KnowledgeSearchService:
         kwargs = {
             "index_name": index_name,
             "metadata_filter": {"chunk_id": str(chunk_id)},
-            "metadata": {"enabled": enabled},
+            "metadata": {"enabled": "true" if enabled else "false"},
         }
         ChatServerHelper.post_chat_server(kwargs, url)
 
     @staticmethod
-    def delete_es_content(index_name, doc_id, doc_name="", is_chunk=False):
+    def delete_es_content(index_name, doc_id, doc_name="", is_chunk=False, keep_qa=False):
         url = f"{settings.METIS_SERVER_URL}/api/rag/delete_doc"
-        key = "knowledge_id" if not is_chunk else "chunk_id"
-        kwargs = {"index_name": index_name, "metadata_filter": {key: str(doc_id)}}
+        kwargs = {
+            "chunk_ids": [str(doc_id)] if is_chunk else [],
+            "knowledge_ids": [str(doc_id)] if not is_chunk else [],
+            "keep_qa": keep_qa,
+        }
         try:
             ChatServerHelper.post_chat_server(kwargs, url)
             if doc_name:

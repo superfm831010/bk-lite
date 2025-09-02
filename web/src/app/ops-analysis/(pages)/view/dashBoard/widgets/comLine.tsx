@@ -3,11 +3,11 @@ import ReactEcharts from 'echarts-for-react';
 import ChartLegend from '../components/chartLegend';
 import { Spin, Empty } from 'antd';
 import { randomColorForLegend } from '@/app/ops-analysis/utils/randomColorForChart';
+import { ChartDataTransformer } from '@/app/ops-analysis/utils/chartDataTransform';
 
 interface TrendLineProps {
   rawData: any;
   loading?: boolean;
-  config?: any;
   onReady?: (ready: boolean) => void;
 }
 
@@ -21,62 +21,14 @@ const TrendLine: React.FC<TrendLineProps> = ({
   const chartColors = randomColorForLegend();
 
   const transformData = (rawData: any) => {
-    if (!rawData) {
-      return { dates: [], values: [] };
-    }
-
-    if (Array.isArray(rawData) && rawData.length === 0) {
-      return { dates: [], values: [] };
-    }
-
-    if (Array.isArray(rawData) && rawData.length > 0) {
-      if (
-        rawData[0] &&
-        typeof rawData[0] === 'object' &&
-        rawData[0].namespace_id &&
-        rawData[0].data
-      ) {
-        const allDatesSet = new Set<string>();
-        rawData.forEach((namespace: any) => {
-          if (namespace.data && Array.isArray(namespace.data)) {
-            namespace.data.forEach((item: any[]) => {
-              allDatesSet.add(item[0]);
-            });
-          }
-        });
-        const dates = Array.from(allDatesSet).sort();
-
-        const series = rawData.map((namespace: any) => {
-          const dataMap: { [key: string]: number } = {};
-          if (namespace.data && Array.isArray(namespace.data)) {
-            namespace.data.forEach((item: any[]) => {
-              dataMap[item[0]] = item[1];
-            });
-          }
-
-          const values = dates.map((date) => dataMap[date] || 0);
-
-          return {
-            name: namespace.namespace_id,
-            data: values,
-          };
-        });
-
-        return { dates, series };
-      } else {
-        const dates = rawData.map((item: any[]) => item[0]);
-        const values = rawData.map((item: any[]) => item[1]);
-        return { dates, values };
-      }
-    }
-    return { dates: [], values: [] };
+    return ChartDataTransformer.transformToLineBarData(rawData);
   };
 
   const chartData = transformData(rawData);
 
   useEffect(() => {
     if (!loading) {
-      const hasData = chartData && chartData.dates.length > 0;
+      const hasData = chartData && chartData.categories.length > 0;
       setIsDataReady(hasData);
       if (onReady) {
         onReady(hasData);
@@ -123,26 +75,39 @@ const TrendLine: React.FC<TrendLineProps> = ({
     },
     grid: {
       top: 14,
-      left: 10,
-      right: 20,
-      bottom: 10,
+      left: 18,
+      right: 24,
+      bottom: 20,
       containLabel: true,
     },
     xAxis: {
       type: 'category',
-      data: chartData?.dates || [],
+      data: chartData?.categories || [],
       nameRotate: -90,
       axisLabel: {
         margin: 15,
         textStyle: {
-          color: '#8c8c8c',
+          color: '#7f92a7',
           fontSize: 11,
         },
         rotate: 0,
+        interval: 'auto',
+        formatter: function (value: string) {
+          return value;
+        },
       },
       axisLine: {
         lineStyle: {
           color: '#e8e8e8',
+        },
+      },
+      axisTick: {
+        show: false,
+      },
+      splitLine: {
+        show: false,
+        lineStyle: {
+          color: '#f0f0f0',
         },
       },
     },
@@ -150,6 +115,9 @@ const TrendLine: React.FC<TrendLineProps> = ({
       type: 'value',
       minInterval: 1,
       axisTick: {
+        show: false,
+      },
+      axisLine: {
         show: false,
       },
       axisLabel: {
@@ -160,14 +128,14 @@ const TrendLine: React.FC<TrendLineProps> = ({
           return value.toString();
         },
         textStyle: {
-          color: '#666',
+          color: '#7f92a7',
         },
       },
       splitLine: {
         show: true,
         lineStyle: {
           color: '#f0f0f0',
-          type: 'dashed',
+          type: 'solid',
         },
       },
     },
@@ -214,7 +182,7 @@ const TrendLine: React.FC<TrendLineProps> = ({
     );
   }
 
-  if (!isDataReady || !chartData || chartData.dates.length === 0) {
+  if (!isDataReady || !chartData || chartData.categories.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center">
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -233,7 +201,7 @@ const TrendLine: React.FC<TrendLineProps> = ({
         />
       </div>
 
-      {chartData?.series && chartData.series.length > 0 && (
+      {chartData?.series && chartData.series.length > 1 && (
         <div className="w-32 ml-2 flex-shrink-0 h-full">
           <ChartLegend
             chart={chartRef.current?.getEchartsInstance()}

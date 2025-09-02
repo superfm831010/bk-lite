@@ -16,7 +16,7 @@ class GraphUtils(ChunkHelper):
             res = cls.get_document_es_chunk(
                 index_name,
                 page=1,
-                page_size=10000,
+                page_size=0,
                 search_text="",
                 metadata_filter={"is_doc": "1", "knowledge_id": str(i["id"])},
                 get_count=False,
@@ -73,7 +73,7 @@ class GraphUtils(ChunkHelper):
             "docs": docs,
         }
         try:
-            res = cls.post_chat_server(kwargs, url)
+            res = cls.post_chat_server(kwargs, url, timeout=3600)
             if not res:
                 return {"result": False, "message": _("Failed to create graph. Please check the server logs.")}
         except Exception as e:

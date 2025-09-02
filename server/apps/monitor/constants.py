@@ -4,6 +4,8 @@ import os
 VICTORIAMETRICS_HOST = os.getenv("VICTORIAMETRICS_HOST")
 VICTORIAMETRICS_USER = os.getenv("VICTORIAMETRICS_USER")
 VICTORIAMETRICS_PWD = os.getenv("VICTORIAMETRICS_PWD")
+# 添加SSL验证配置，支持环境变量控制
+VICTORIAMETRICS_SSL_VERIFY = os.getenv("VICTORIAMETRICS_SSL_VERIFY", "false").lower() == "true"
 
 MONITOR_OBJ_KEYS = ["name", "type", "default_metric", "instance_id_keys", "supplementary_indicators"]
 

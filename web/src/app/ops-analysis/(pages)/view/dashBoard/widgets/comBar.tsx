@@ -3,11 +3,11 @@ import ReactEcharts from 'echarts-for-react';
 import ChartLegend from '../components/chartLegend';
 import { Spin, Empty } from 'antd';
 import { randomColorForLegend } from '@/app/ops-analysis/utils/randomColorForChart';
+import { ChartDataTransformer } from '@/app/ops-analysis/utils/chartDataTransform';
 
 interface BarChartProps {
   rawData: any;
   loading?: boolean;
-  config?: any;
   onReady?: (ready: boolean) => void;
 }
 
@@ -21,68 +21,7 @@ const BarChart: React.FC<BarChartProps> = ({
   const chartColors = randomColorForLegend();
 
   const transformData = (rawData: any) => {
-    if (!rawData) {
-      return { categories: [], values: [] };
-    }
-
-    if (Array.isArray(rawData) && rawData.length === 0) {
-      return { categories: [], values: [] };
-    }
-
-    if (Array.isArray(rawData) && rawData.length > 0) {
-      // 检查是否是新的对象格式 [{name: "xxx", count: 20}, ...]
-      if (
-        rawData[0] &&
-        typeof rawData[0] === 'object' &&
-        'name' in rawData[0] &&
-        'count' in rawData[0]
-      ) {
-        const categories = rawData.map((item: any) => item.name);
-        const values = rawData.map((item: any) => item.count);
-        return { categories, values };
-      }
-      // 检查是否是多维数据（多个系列）
-      else if (
-        rawData[0] &&
-        typeof rawData[0] === 'object' &&
-        rawData[0].namespace_id &&
-        rawData[0].data
-      ) {
-        const allCategoriesSet = new Set<string>();
-        rawData.forEach((namespace: any) => {
-          if (namespace.data && Array.isArray(namespace.data)) {
-            namespace.data.forEach((item: any[]) => {
-              allCategoriesSet.add(item[0]);
-            });
-          }
-        });
-        const categories = Array.from(allCategoriesSet).sort();
-
-        const series = rawData.map((namespace: any) => {
-          const dataMap: { [key: string]: number } = {};
-          if (namespace.data && Array.isArray(namespace.data)) {
-            namespace.data.forEach((item: any[]) => {
-              dataMap[item[0]] = item[1];
-            });
-          }
-
-          const values = categories.map((category) => dataMap[category] || 0);
-
-          return {
-            name: namespace.namespace_id,
-            data: values,
-          };
-        });
-
-        return { categories, series };
-      } else {
-        // 原有的二维数组格式 [[key, value], ...]
-        const categories = rawData.map((item: any[]) => item[0]);
-        const values = rawData.map((item: any[]) => item[1]);
-        return { categories, values };
-      }
-    }
-    return { categories: [], values: [] };
+    return ChartDataTransformer.transformToLineBarData(rawData);
   };
 
   const chartData = transformData(rawData);
@@ -133,10 +72,10 @@ const BarChart: React.FC<BarChartProps> = ({
       },
     },
     grid: {
-      top: 30,
-      left: 10,
-      right: 30,
-      bottom: 25,
+      top: 14,
+      left: 18,
+      right: 24,
+      bottom: 20,
       containLabel: true,
     },
     xAxis: {
@@ -146,15 +85,12 @@ const BarChart: React.FC<BarChartProps> = ({
       axisLabel: {
         margin: 15,
         textStyle: {
-          color: '#8c8c8c',
+          color: '#7f92a7',
           fontSize: 11,
         },
         rotate: 0,
         interval: 'auto',
         formatter: function (value: string) {
-          if (value && value.length > 10) {
-            return value.substring(0, 10) + '...';
-          }
           return value;
         },
       },
@@ -190,7 +126,7 @@ const BarChart: React.FC<BarChartProps> = ({
           return value.toString();
         },
         textStyle: {
-          color: '#666',
+          color: '#7f92a7',
         },
       },
       splitLine: {
@@ -262,7 +198,7 @@ const BarChart: React.FC<BarChartProps> = ({
       </div>
 
       {/* 图例区域 - 仅在多系列数据时显示 */}
-      {chartData?.series && chartData.series.length > 0 && (
+      {chartData?.series && chartData.series.length > 1 && (
         <div className="w-32 ml-2 flex-shrink-0 h-full">
           <ChartLegend
             chart={chartRef.current?.getEchartsInstance()}

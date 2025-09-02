@@ -8,25 +8,61 @@ export interface Point {
   y: number;
 }
 
+// 状态管理相关类型
+export interface GraphState {
+  instance: X6Graph | null;
+  scale: number;
+  selectedCells: string[];
+  isSelectMode: boolean;
+  isEditMode: boolean;
+  collapsed: boolean;
+}
+
+export interface ContextMenuState {
+  nodeId: string;
+  visible: boolean;
+  position: { x: number; y: number };
+}
+
+export interface TextEditState {
+  isEditing: boolean;
+  nodeId: string | null;
+  tempInput: string;
+  position: { x: number; y: number };
+  inputWidth: number;
+  originalText: string;
+}
+
+export interface EdgeConfigState {
+  visible: boolean;
+  data: EdgeData | null;
+}
+
+export interface NodeEditState {
+  visible: boolean;
+  data: any;
+}
+
 // 节点相关类型扩展
 export interface TopologyNodeData {
   type: string;
   name: string;
   widget?: string;
-  dataSource?: number;
-  dataSourceParams?: DataSourceParam[];
+  position: Point;
   valueConfig?: {
-    name?: string;
-    dataSource?: number;
     chartType?: string;
+    dataSource?: number;
     dataSourceParams?: DataSourceParam[];
-    [key: string]: any;
+    selectedFields?: string[];
   };
-  config?: {
+  styleConfig?: {
     width?: number;
     height?: number;
     backgroundColor?: string;
     borderColor?: string;
+    borderWidth?: number;
+    lineType?: 'solid' | 'dashed' | 'dotted';
+    shapeType?: 'rectangle' | 'circle';
     textColor?: string;
     fontSize?: number;
     fontWeight?: string | number;
@@ -112,7 +148,7 @@ export interface EdgeCreationData {
 }
 
 export interface NodeConfPanelProps {
-  nodeType: 'single-value' | 'icon' | 'chart';
+  nodeType: 'single-value' | 'icon' | 'chart' | 'basic-shape';
   readonly?: boolean;
   visible?: boolean;
   title?: string;
@@ -130,6 +166,11 @@ export interface NodeConfPanelProps {
     textColor?: string;
     backgroundColor?: string;
     borderColor?: string;
+    borderWidth?: number;
+    lineType?: 'solid' | 'dashed' | 'dotted';
+    width?: number;
+    height?: number;
+    shapeType?: 'rectangle' | 'circle';
     dataSourceParams?: DataSourceParam[];
     filterParams?: Record<string, any>;
     chartWidget?: string;
@@ -159,9 +200,10 @@ export interface EdgeConfigPanelProps {
 export interface SidebarProps {
   collapsed: boolean;
   isEditMode?: boolean;
+  graphInstance?: X6Graph;
   setCollapsed: (collapsed: boolean) => void;
   onShowNodeConfig?: (nodeType: NodeType, dropPosition?: DropPosition) => void;
-  onAddChartNode?: (widget: string, config?: any, dropPosition?: DropPosition) => void;
+  onShowChartSelector?: (dropPosition?: DropPosition) => void;
 }
 
 export interface NodeType {

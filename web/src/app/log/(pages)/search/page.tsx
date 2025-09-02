@@ -5,7 +5,15 @@ import { ListItem, TimeSelectorDefaultValue, TimeSelectorRef } from '@/types';
 import { useSearchParams } from 'next/navigation';
 import { SearchOutlined, BulbFilled } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
-import { Card, Input, Button, Select, Segmented, Spin } from 'antd';
+import {
+  Card,
+  Input,
+  Button,
+  Select,
+  Segmented,
+  Spin,
+  InputNumber,
+} from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import searchStyle from './index.module.scss';
 import Collapse from '@/components/collapse';
@@ -54,13 +62,11 @@ const SearchView: React.FC = () => {
     total: 0,
     pageSize: PAGE_LIMIT,
   });
-  const [hasMore, setHasMore] = useState<boolean>(false);
   const [expand, setExpand] = useState<boolean>(true);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [visible, setVisible] = useState<boolean>(false);
   const [activeMenu, setActiveMenu] = useState<string>('list');
   const [pageLoading, setPageLoading] = useState<boolean>(false);
-  const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [terminalLoading, setTerminalLoading] = useState<boolean>(false);
   const [timeDefaultValue, setTimeDefaultValue] =
     useState<TimeSelectorDefaultValue>({
@@ -68,6 +74,7 @@ const SearchView: React.FC = () => {
       rangePickerVaule: endTime ? [dayjs(+startTime), dayjs(+endTime)] : null,
     });
   const [windowHeight, setWindowHeight] = useState<number>(window.innerHeight);
+  const [limit, setLimit] = useState<number | null>(1000);
 
   const isList = useMemo(() => activeMenu === 'list', [activeMenu]);
 
@@ -93,7 +100,7 @@ const SearchView: React.FC = () => {
     return () => {
       clearTimer();
     };
-  }, [frequence, searchText, groups]);
+  }, [frequence, searchText, groups, limit]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -108,59 +115,6 @@ const SearchView: React.FC = () => {
   const clearTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
-  };
-
-  // 根据chartList和页数计算时间范围和limit
-  const calculateTimeRange = (chartList: ChartData[], page: number) => {
-    if (!chartList.length) {
-      return null;
-    }
-    // 计算前面页数已经消费的数据量
-    let startIndex = 0;
-    if (page > 1) {
-      // 找到当前页的起始位置
-      for (let pageIdx = 1; pageIdx < page; pageIdx++) {
-        let pageLimit = 0;
-        let tempIndex = startIndex;
-        // 计算这一页的limit
-        while (tempIndex < chartList.length && pageLimit < PAGE_LIMIT) {
-          pageLimit += chartList[tempIndex].value;
-          tempIndex++;
-        }
-        startIndex = tempIndex;
-      }
-    }
-    // 计算当前页的数据
-    let currentPageLimit = 0;
-    let endIndex = startIndex;
-    while (endIndex < chartList.length && currentPageLimit < PAGE_LIMIT) {
-      currentPageLimit += chartList[endIndex].value;
-      endIndex++;
-    }
-    if (currentPageLimit === 0) {
-      return null;
-    }
-    // 检查是否还有下一页 - 计算剩余数据的limit
-    let nextPageLimit = 0;
-    let nextIndex = endIndex;
-    while (nextIndex < chartList.length && nextPageLimit < PAGE_LIMIT) {
-      nextPageLimit += chartList[nextIndex].value;
-      nextIndex++;
-    }
-    // 如果是最后一页，hasMore为false，否则判断下一页的limit是否>=PAGE_LIMIT
-    const isLastPage = endIndex >= chartList.length;
-    const endTime =
-      chartList[isLastPage ? endIndex - 1 : endIndex]?.time - PAGE_LIMIT;
-    return {
-      start_time: new Date(chartList[startIndex]?.time).toISOString(),
-      end_time: new Date(
-        isLastPage
-          ? Number((getParams().step || '').replace('ms', '')) + endTime
-          : endTime
-      ).toISOString(),
-      limit: currentPageLimit,
-      hasMore: !isLastPage,
-    };
   };
 
   const onTabChange = async (val: string) => {
@@ -195,98 +149,34 @@ const SearchView: React.FC = () => {
   };
 
   const getLogData = async (type: string, times?: number[]) => {
-    try {
-      setPageLoading(type !== 'timer');
-      setQueryTime(new Date());
-      setQueryEndTime(new Date());
-      const params = getParams(times);
-      const data = await getHits(params);
-      const chartList = aggregateLogs(data?.hits);
-      const total = chartList.reduce((pre, cur) => (pre += cur.value), 0);
-      setChartData(chartList);
-      setPagination((pre) => ({
-        ...pre,
-        total: total,
-        current: 1,
-      }));
-      setHasMore(chartList.length > 0 && total > PAGE_LIMIT);
-      setTableData([]); // 重置表格数据
-      await getTableData({
-        type,
-        times,
-        chartList,
-        total,
-      });
-    } finally {
-      setPageLoading(type === 'init');
-      setQueryEndTime(new Date());
-    }
-  };
-
-  const getTableData = async (extra: {
-    type: string;
-    chartList: ChartData[];
-    times?: number[];
-    total?: number;
-  }) => {
-    setTableLoading(extra.type === 'loadMore');
-    try {
-      // 根据chartList和pagination计算时间范围
-      let params: SearchParams;
-      if (extra.type === 'loadMore') {
-        // 加载更多时，根据当前页数计算时间范围
-        const timeRange = calculateTimeRange(
-          extra.chartList,
-          pagination.current + 1
+    setPageLoading(type !== 'timer');
+    setQueryTime(new Date());
+    setQueryEndTime(new Date());
+    const params = getParams(times);
+    setChartData([]);
+    setTableData([]);
+    await Promise.all([getHits(params), getLogs(params)])
+      .then((res) => {
+        const chartData = aggregateLogs(res[0]?.hits);
+        const listData: TableDataItem[] = (res[1] || []).map(
+          (item: TableDataItem) => ({
+            ...item,
+            id: uuidv4(),
+          })
         );
-        if (!timeRange) {
-          setHasMore(false);
-          return;
-        }
-        params = {
-          ...getParams(extra.times),
-          start_time: timeRange.start_time,
-          end_time: timeRange.end_time,
-          limit: timeRange.limit,
-        };
-        setHasMore(timeRange.hasMore);
-      } else {
-        // 初始加载或刷新时，使用第一页的时间范围
-        const timeRange = calculateTimeRange(extra.chartList, 1);
-        if (!timeRange) {
-          return;
-        }
-        params = {
-          ...getParams(extra.times),
-          start_time: timeRange.start_time,
-          end_time: timeRange.end_time,
-          limit: timeRange.limit,
-        };
-        setHasMore(timeRange.hasMore);
-      }
-      const data = await getLogs(params);
-      const listData = (data || []).map((item: TableDataItem) => ({
-        ...item,
-        id: uuidv4(),
-      }));
-      if (extra.type === 'loadMore') {
-        // 加载更多时，追加数据
-        setTableData((prev) => [...prev, ...listData]);
+        const total = chartData.reduce((pre, cur) => (pre += cur.value), 0);
         setPagination((pre) => ({
           ...pre,
-          current: pre.current + 1,
+          total: total,
+          current: 1,
         }));
-        return;
-      }
-      // 初始加载或刷新时，替换数据
-      setTableData(listData);
-      setPagination((pre) => ({
-        ...pre,
-        current: 1,
-      }));
-    } finally {
-      setTableLoading(false);
-    }
+        setChartData(chartData);
+        setTableData(listData);
+      })
+      .finally(() => {
+        setPageLoading(type === 'init');
+        setQueryEndTime(new Date());
+      });
   };
 
   const getParams = (seletedTimes?: number[]) => {
@@ -305,7 +195,7 @@ const SearchView: React.FC = () => {
       field: '_stream',
       fields_limit: 5,
       query: text || '*',
-      limit: PAGE_LIMIT,
+      limit,
     };
     params.step = Math.round((times[1] - times[0]) / 100) + 'ms';
     return params;
@@ -350,14 +240,6 @@ const SearchView: React.FC = () => {
     }));
     const times = arr.map((item) => dayjs(item).valueOf());
     getLogData('refresh', times);
-  };
-
-  const loadMore = () => {
-    if (!hasMore || tableLoading) return;
-    getTableData({
-      type: 'loadMore',
-      chartList: chartData,
-    });
   };
 
   return (
@@ -416,7 +298,22 @@ const SearchView: React.FC = () => {
             ]}
             onChange={onTabChange}
           />
-          <div className={isList ? '' : 'hidden'}>
+          <div className={isList ? 'flex items-center' : 'hidden'}>
+            <span className="text-[var(--color-text-3)] text-[12px] mr-[8px]">
+              {t('log.search.listTotal')}
+            </span>
+            <div className="flex">
+              <InputNumber
+                className="mr-[8px] w-[100px]"
+                placeholder={t('common.inputMsg')}
+                value={limit}
+                min={1}
+                max={1000000}
+                precision={0}
+                controls={false}
+                onChange={(val) => setLimit(val || 1)}
+              />
+            </div>
             <TimeSelector
               ref={timeSelectorRef}
               defaultValue={timeDefaultValue}
@@ -485,10 +382,8 @@ const SearchView: React.FC = () => {
                 <SearchTable
                   dataSource={tableData}
                   fields={columnFields}
-                  loading={tableLoading}
                   scroll={{ x: 'calc(100vw-300px)', y: scrollHeight }}
                   addToQuery={addToQuery}
-                  onLoadMore={loadMore}
                 />
               </div>
             </Card>

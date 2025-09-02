@@ -353,7 +353,10 @@
       "historicalAlarmsMapTips": "Displays a graph of the distribution of all historical alarms that match the filter for the selected time range.",
       "promQLPlaceholder": "Please refer to the syntax of Prometheus to write PromQL, which can usually query and filter relevant metrics.",
       "monitoringTarget": "Monitoring target",
-      "alarmLevel": "Alarm Level"
+      "alarmLevel": "Alarm Level",
+      "noticeWay": "There is currently no notification channel available. You can go to the",
+      "systemManage": "system management",
+      "config": "to configure it."
     },
     "intergrations": {
       "intergration": "Intergration",

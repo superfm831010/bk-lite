@@ -65,7 +65,8 @@ const ProviderPage: React.FC = () => {
         count: group.model_count || 0, // Use model_count from API response
         is_build_in: group.is_build_in || false,
         index: group.index || 0,
-        models: []
+        models: [],
+        tags: group.tags || [],
       }));
       
       // Sort by index field
@@ -149,15 +150,11 @@ const ProviderPage: React.FC = () => {
     const category = categoryFilter !== undefined ? categoryFilter : selectedCategory;
     if (currentTab?.type === 'llm_model' && category !== 'all') {
       filteredByGroup = filteredByGroup.filter(model => {
-        // 检查模型的label字段是否匹配选择的类别
-        // 支持英文值和中文值的匹配
         const modelLabel = model.label;
         if (!modelLabel) return false;
         
-        // 直接匹配英文值
         if (modelLabel === category) return true;
         
-        // 匹配中文值（从MODEL_CATEGORY_OPTIONS中查找对应的中文标签）
         const categoryOption = MODEL_CATEGORY_OPTIONS.find(option => option.value === category);
         if (categoryOption && modelLabel === categoryOption.label) return true;
         
@@ -276,13 +273,14 @@ const ProviderPage: React.FC = () => {
     }
   };
 
-  const handleGroupModalOk = async (values: { name: string; display_name: string; icon?: string }) => {
+  const handleGroupModalOk = async (values: { name: string; display_name: string; tags?: string[]; icon?: string }) => {
     setGroupModalLoading(true);
     try {
       if (groupModalMode === 'add') {
         await createModelGroup('', {
           name: values.name,
           display_name: values.display_name,
+          tags: values.tags || [],
           icon: ''
         });
         message.success(t('common.addSuccess'));
@@ -290,6 +288,7 @@ const ProviderPage: React.FC = () => {
         await updateModelGroup('', String(editingGroup.id), {
           name: values.name,
           display_name: values.display_name,
+          tags: values.tags || [],
           icon: ''
         });
         message.success(t('common.updateSuccess'));

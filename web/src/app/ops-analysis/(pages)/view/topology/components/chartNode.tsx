@@ -7,9 +7,9 @@ import ComPie from '../../dashBoard/widgets/comPie';
 import ComBar from '../../dashBoard/widgets/comBar';
 
 const componentMap: Record<string, React.ComponentType<any>> = {
-  trendLine: ComLine,
-  osPie: ComPie,
-  errorBar: ComBar,
+  line: ComLine,
+  pie: ComPie,
+  bar: ComBar,
 };
 
 interface ChartNodeProps {
@@ -18,26 +18,28 @@ interface ChartNodeProps {
 
 const ChartNode: React.FC<ChartNodeProps> = ({ node }) => {
   const nodeData = node.getData();
-  const { widget, valueConfig, config, isLoading, rawData, hasError, name } =
-    nodeData;
+  const {
+    valueConfig,
+    styleConfig,
+    isLoading,
+    rawData,
+    hasError,
+    name: componentName,
+  } = nodeData;
 
-  const width = config?.width || NODE_DEFAULTS.CHART_NODE.width;
-  const height = config?.height || NODE_DEFAULTS.CHART_NODE.height;
-  const componentName = name || widget || '未知组件';
+  const width = styleConfig?.width || NODE_DEFAULTS.CHART_NODE.width;
+  const height = styleConfig?.height || NODE_DEFAULTS.CHART_NODE.height;
 
   const widgetProps = {
     rawData: rawData || null,
     loading: isLoading || false,
-    config: {
-      lineColor: valueConfig?.lineColor || '#1890ff',
-      barColor: valueConfig?.barColor || '#1890ff',
-      ...valueConfig,
-    },
   };
 
   const shouldShowLoading = isLoading || (!rawData && !hasError);
 
-  const Component = widget ? componentMap[widget] : null;
+  const Component = valueConfig.chartType
+    ? componentMap[valueConfig.chartType]
+    : null;
 
   return (
     <div
@@ -54,7 +56,7 @@ const ChartNode: React.FC<ChartNodeProps> = ({ node }) => {
       {componentName && (
         <div
           style={{
-            padding: '12px',
+            padding: '12px 12px 0',
             fontSize: '14px',
             color: 'var(--color-text-1)',
           }}
@@ -94,7 +96,7 @@ const ChartNode: React.FC<ChartNodeProps> = ({ node }) => {
         ) : (
           <div className="h-full flex flex-col items-center justify-center">
             <div className="text-xs text-gray-500">
-              未知的组件类型: {widget}
+              未知的组件类型: {valueConfig.chartType}
             </div>
           </div>
         )}
