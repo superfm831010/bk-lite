@@ -85,6 +85,7 @@ const Node = () => {
     useState<boolean>(false);
   const [system, setSystem] = useState<string>('linux');
   const [activeColumns, setActiveColumns] = useState<ColumnItem[]>([]);
+  const DISPLAY_PLUGINS_COUNT = 4; // 最多展示几个插件
 
   const columns = useColumns({
     checkConfig: (row: TableDataItem) => {
@@ -323,16 +324,16 @@ const Node = () => {
       );
     });
     if (tagList.length) {
-      const items = tagList.slice(2).map((tag, index) => ({
+      const items = tagList.slice(DISPLAY_PLUGINS_COUNT).map((tag, index) => ({
         key: index,
         label: tag,
       }));
       return (
         <div className="flex items-center justify-center">
-          {tagList.length > 2 ? (
+          {tagList.length > DISPLAY_PLUGINS_COUNT ? (
             <>
-              {tagList.slice(0, 2)}
-              <Dropdown menu={{ items }}>
+              {tagList.slice(0, DISPLAY_PLUGINS_COUNT)}
+              <Dropdown menu={{ items }} placement="bottom">
                 <EllipsisOutlined className="text-[var(--color-primary)] text-[16px] cursor-pointer" />
               </Dropdown>
             </>
