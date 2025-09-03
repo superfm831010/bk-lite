@@ -5,8 +5,6 @@ class CoreSettings(BaseSettings):
     mode: str = 'PROD'
     secret_key: str = ''
     db_uri: str = ''
-    elasticsearch_url: str = ''
-    elasticsearch_password: str = ''
     admin_password: str = ''
 
     knowledge_graph_host: str = ''

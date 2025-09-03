@@ -132,8 +132,10 @@ const DocumentsPage: React.FC = () => {
     fetchKnowledgeBaseDetails();
   }, []);
 
-  const fetchQAPairData = useCallback(async (text = '') => {
-    setQaPairLoading(true);
+  const fetchQAPairData = useCallback(async (text = '', skipLoading = false) => {
+    if (!skipLoading) {
+      setQaPairLoading(true);
+    }
     const { current, pageSize } = qaPairPagination;
     const params = {
       name: text,
@@ -152,9 +154,21 @@ const DocumentsPage: React.FC = () => {
     } catch {
       message.error(t('common.fetchFailed'));
     } finally {
-      setQaPairLoading(false);
+      if (!skipLoading) {
+        setQaPairLoading(false);
+      }
     }
   }, [qaPairPagination.current, qaPairPagination.pageSize, id]);
+
+  const shouldPollQAPair = qaPairData.some((item: any) => 
+    item.status === 'generating'
+  );
+
+  usePolling(
+    () => fetchQAPairData(searchText, true),
+    10000,
+    shouldPollQAPair && mainTabKey === 'qa_pairs'
+  );
 
   const handleDeleteSingleQAPair = async (qaPairId: number) => {
     confirm({

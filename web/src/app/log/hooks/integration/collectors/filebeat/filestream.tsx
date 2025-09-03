@@ -9,7 +9,7 @@ export const useFilebeatConfig = () => {
   const pluginConfig = {
     collector: 'Filebeat',
     collect_type: 'filestream',
-    icon: '',
+    icon: 'rizhi3',
   };
 
   return {

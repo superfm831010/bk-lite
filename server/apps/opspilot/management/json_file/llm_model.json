@@ -714,41 +714,6 @@
     "openai_base_url": "https://huggingface.co/Qwen/QwenLong-L1"
   },
   {
-    "model_type": "Qwen",
-    "model": "qwen3",
-    "name": "Qwen3",
-    "label": "文本类",
-    "openai_base_url": "https://huggingface.co/Qwen/Qwen3-7B"
-  },
-  {
-    "model_type": "Qwen",
-    "model": "Qwen3-Coder",
-    "name": "Qwen3 Coder",
-    "label": "代码类",
-    "openai_base_url": "https://huggingface.co/Qwen/Qwen3-7B-Coder"
-  },
-  {
-    "model_type": "Qwen",
-    "model": "Qwen3-Instruct",
-    "name": "Qwen3 Instruct",
-    "label": "文本类",
-    "openai_base_url": "https://huggingface.co/Qwen/Qwen3-7B-Instruct"
-  },
-  {
-    "model_type": "Qwen",
-    "model": "Qwen3-Thinking",
-    "name": "Qwen3 Thinking",
-    "label": "推理增强",
-    "openai_base_url": "https://huggingface.co/Qwen/Qwen3-7B-Thinking"
-  },
-  {
-    "model_type": "Qwen",
-    "model": "qwenLong-l1",
-    "name": "QwenLong L1",
-    "label": "文本类",
-    "openai_base_url": "https://huggingface.co/Qwen/QwenLong-L1"
-  },
-  {
     "model_type": "QwQ",
     "model": "QwQ-32B",
     "name": "QwQ 32B",

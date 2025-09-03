@@ -234,6 +234,7 @@ DOCKER_IMAGE_PGVECTOR=pgvector/pgvector:pg15
 # TODO: 不同OS/架构支持
 export DOCKER_IMAGE_FUSION_COLLECTOR=bklite/fusion-collector:latest
 
+docker pull $DOCKER_IMAGE_FUSION_COLLECTOR
 # 从镜像生成控制器&采集器包
 log "INFO" "开始生成控制器和采集器包..."
 # 获取当前cpu架构

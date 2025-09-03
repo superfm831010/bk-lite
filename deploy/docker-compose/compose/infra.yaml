@@ -169,8 +169,8 @@ services:
     image: ${DOCKER_IMAGE_FALKORDB}
     restart: always
     environment:
-      - REDIS_ARGS="--requirepass ${FALKORDB_PASSWORD}"
-      - FALKORDB_ARGS="THREAD_COUNT 4"
+      - REDIS_ARGS=--requirepass ${FALKORDB_PASSWORD}
+      - FALKORDB_ARGS=THREAD_COUNT 4
     networks:
       - prod
     healthcheck:

@@ -24,7 +24,7 @@ from apps.cmdb.collection.constants import (
     MIDDLEWARE_METRIC_MAP, QCLOUD_COLLECT_CLUSTER, DB_COLLECT_METRIC_MAP,
 )
 from apps.cmdb.constants import INSTANCE
-from apps.cmdb.graph.neo4j import Neo4jClient
+from apps.cmdb.graph.drivers.graph_client import GraphClient
 from apps.cmdb.models import OidMapping
 from apps.core.logger import cmdb_logger as logger
 
@@ -80,7 +80,7 @@ class MetricsCannula:
             if self.filter_collect_task:
                 params.append({"field": "collect_task", "type": "str=", "value": self.task_id})
 
-            with Neo4jClient() as ag:
+            with GraphClient() as ag:
                 already_data, _ = ag.query_entity(INSTANCE, params)
                 management = Management(
                     self.organization,
@@ -1705,8 +1705,7 @@ class QCloudCollectMetrics(CollectBase):
     @staticmethod
     def set_instance_inst_name(data, *args, **kwargs):
         if not data.get("resource_name"):
-            print(data)
-        inst_name = f"{data['resource_name']}_{data['resource_id']}"
+            inst_name = f"{data['resource_name']}_{data['resource_id']}"
         return inst_name
 
     def set_asso_instances(self, data, *args, **kwargs):

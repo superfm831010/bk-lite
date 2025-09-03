@@ -31,10 +31,12 @@ class Neo4jClient:
 
     def __enter__(self):
         self.session = self.driver.session()
+        # print("连接了neo4j")
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
+        # print("关闭了neo4j连接")
 
     def entity_to_list(self, data: iter):
         """将使用fetchall查询的结果转换成列表类型"""
@@ -46,14 +48,13 @@ class Neo4jClient:
 
     def edge_to_list(self, data: iter, return_entity: bool):
         """将使用fetchall查询的结果转换成列表类型"""
-        result = [
-            {
+        result = []
+        for i in data:
+            result.append({
                 "src": self.entity_to_dict((i[0].start_node,)),
                 "edge": self.edge_to_dict((i[0].relationships[0],)),
                 "dst": self.entity_to_dict((i[0].end_node,)),
-            }
-            for i in data
-        ]
+            })
         return result if return_entity else [i["edge"] for i in result]
 
     def edge_to_dict(self, data: tuple):
@@ -565,7 +566,6 @@ class Neo4jClient:
             logger.error("Failed to load topo config: %s, error: %s", topo_config_path, e)
             return {}
 
-
     def convert_to_cypher_match(self, label_str: str, model_id: str, params_str: str, dst: bool = True) -> str:
         """
         根据 JSON 配置生成 Neo4j Cypher 查询语句
@@ -628,7 +628,6 @@ class Neo4jClient:
         where_clause = f"WHERE 1=1 {params_str.replace('n', rep_alias)}"
 
         return f"MATCH p={match_path}\n{where_clause}\nRETURN p"
-
 
     def query_topo_test_config(self, label: str, inst_id: int, model_id: str):
         """查询实例拓扑"""
@@ -829,7 +828,7 @@ class Neo4jClient:
                         update_results.append(results)
                     except Exception as e:
                         logger.info(f"update entity error: {e}")
-                        update_results.append({"success": False, "data": properties,"message":"update entity error"})
+                        update_results.append({"success": False, "data": properties, "message": "update entity error"})
 
                 else:
                     # 暂存统一新增

@@ -11,7 +11,7 @@ from apps.cmdb.constants import (
     MODEL_ASSOCIATION,
     SUBORDINATE_MODEL, INIT_MODEL_GROUP,
 )
-from apps.cmdb.graph.neo4j import Neo4jClient
+from apps.cmdb.graph.drivers.graph_client import GraphClient
 from apps.cmdb.utils.base import get_default_group_id
 from apps.core.logger import cmdb_logger as logger
 
@@ -52,7 +52,7 @@ class ModelMigrate:
         for classification in self.model_config.get("classifications", []):
             classification.update(is_pre=True)
 
-        with Neo4jClient() as ag:
+        with GraphClient() as ag:
             exist_items, _ = ag.query_entity(CLASSIFICATION, [])
             result = ag.batch_create_entity(
                 CLASSIFICATION,
@@ -90,7 +90,7 @@ class ModelMigrate:
                 _attrs.append(attr)
             models.append({**model, "attrs": json.dumps(_attrs)})
 
-        with Neo4jClient() as ag:
+        with GraphClient() as ag:
             exist_items, _ = ag.query_entity(MODEL, [])
             exist_classifications, _ = ag.query_entity(CLASSIFICATION, [])
             classification_map = {i["classification_id"]: i["_id"] for i in exist_classifications}
@@ -123,7 +123,7 @@ class ModelMigrate:
         for association in associations:
             association.update(is_pre=True)
 
-        with Neo4jClient() as ag:
+        with GraphClient() as ag:
             models, _ = ag.query_entity(MODEL, [])
             model_map = {i["model_id"]: i["_id"] for i in models}
             asso_list = [
@@ -163,7 +163,7 @@ class ModelMigrate:
 
     def check_and_update_old_models_group(self):
         """检查并补充旧模型的组织字段"""
-        with Neo4jClient() as ag:
+        with GraphClient() as ag:
             # 查询所有模型
             all_models, _ = ag.query_entity(MODEL, [])
 

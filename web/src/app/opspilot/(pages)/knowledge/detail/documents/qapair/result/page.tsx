@@ -233,9 +233,9 @@ const QAPairResultPage: React.FC = () => {
                   <Card
                     size="small"
                     className="
-                      min-h-[160px] cursor-pointer transition-all duration-200 ease-in-out
+                      min-h-[170px] cursor-pointer transition-all duration-200 ease-in-out
                       hover:-translate-y-0.5 hover:shadow-lg bg-[var(--color-fill-2)]
-                      [&_.ant-card-body]:h-auto [&_.ant-card-body]:min-h-[120px] [&_.ant-card-body]:p-4
+                      [&_.ant-card-body]:h-auto [&_.ant-card-body]:min-h-[130px] [&_.ant-card-body]:p-4
                       relative
                     "
                     onClick={() => handleCardClick(qaPair)}

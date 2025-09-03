@@ -1,6 +1,5 @@
 import { EdgeCreationData } from '@/app/ops-analysis/types/topology';
 import { NODE_DEFAULTS, PORT_DEFAULTS, COLORS, SPACING } from '../constants/nodeDefaults';
-import { updateNodeAttributes } from './registerNode';
 
 // 通用工具函数
 export const getValueByPath = (obj: any, path: string): any => {
@@ -92,8 +91,8 @@ export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: num
   if (!node || !text) return;
 
   const nodeData = node.getData();
-  const config = nodeData?.config || {};
-  const fontSize = config.fontSize || NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize;
+  const styleConfig = nodeData?.styleConfig || {};
+  const fontSize = styleConfig.fontSize || NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize;
 
   // 计算文本宽度
   const textWidth = calculateTextWidth(text, fontSize);
@@ -113,8 +112,8 @@ export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: num
     // 更新节点数据中的配置
     const updatedNodeData = {
       ...nodeData,
-      config: {
-        ...config,
+      styleConfig: {
+        ...styleConfig,
         width: targetWidth,
       }
     };
@@ -388,9 +387,4 @@ export const hideAllPorts = (graph: any) => {
       );
     }
   });
-};
-
-export const updateNodeProperties = (node: any, nodeConfig: any, iconList: any[]) => {
-  updateNodeAttributes(node, nodeConfig, iconList);
-  node.setLabel(nodeConfig.name);
 };

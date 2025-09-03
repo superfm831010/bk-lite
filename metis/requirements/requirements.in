@@ -25,7 +25,6 @@ langchain-experimental==0.3.4
 langchain-mcp-adapters==0.1.9
 langgraph==0.6.2
 langgraph-checkpoint-postgres==2.0.21
-langchain-elasticsearch==0.3.2
 langchain-huggingface==0.1.2
 json-repair==0.39.1
 neo4j-graphrag==1.7.0

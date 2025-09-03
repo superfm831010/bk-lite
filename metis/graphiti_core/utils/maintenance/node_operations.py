@@ -146,9 +146,11 @@ async def extract_nodes(
             for entity in missing_entities:
                 custom_prompt += f'\n{entity},'
 
-    filtered_extracted_entities = [entity for entity in extracted_entities if entity.name.strip()]
+    filtered_extracted_entities = [
+        entity for entity in extracted_entities if entity.name.strip()]
     end = time()
-    logger.debug(f'Extracted new nodes: {filtered_extracted_entities} in {(end - start) * 1000} ms')
+    logger.debug(
+        f'Extracted new nodes: {filtered_extracted_entities} in {(end - start) * 1000} ms')
     # Convert the extracted data into EntityNode objects
     extracted_nodes = []
     for extracted_entity in filtered_extracted_entities:
@@ -162,7 +164,8 @@ async def extract_nodes(
 
         # Check if this entity type should be excluded
         if excluded_entity_types and entity_type_name in excluded_entity_types:
-            logger.debug(f'Excluding entity "{extracted_entity.name}" of type "{entity_type_name}"')
+            logger.debug(
+                f'Excluding entity "{extracted_entity.name}" of type "{entity_type_name}"')
             continue
 
         labels: list[str] = list({'Entity', str(entity_type_name)})
@@ -175,9 +178,11 @@ async def extract_nodes(
             created_at=utc_now(),
         )
         extracted_nodes.append(new_node)
-        logger.debug(f'Created new node: {new_node.name} (UUID: {new_node.uuid})')
+        logger.debug(
+            f'Created new node: {new_node.name} (UUID: {new_node.uuid})')
 
-    logger.debug(f'Extracted nodes: {[(n.name, n.uuid) for n in extracted_nodes]}')
+    logger.debug(
+        f'Extracted nodes: {[(n.name, n.uuid) for n in extracted_nodes]}')
     return extracted_nodes
 
 
@@ -211,7 +216,8 @@ async def resolve_extracted_nodes(
         else existing_nodes_override
     )
 
-    existing_nodes_dict: dict[str, EntityNode] = {node.uuid: node for node in candidate_nodes}
+    existing_nodes_dict: dict[str, EntityNode] = {
+        node.uuid: node for node in candidate_nodes}
 
     existing_nodes: list[EntityNode] = list(existing_nodes_dict.values())
 
@@ -229,7 +235,8 @@ async def resolve_extracted_nodes(
         ],
     )
 
-    entity_types_dict: dict[str, type[BaseModel]] = entity_types if entity_types is not None else {}
+    entity_types_dict: dict[str, type[BaseModel]
+                            ] = entity_types if entity_types is not None else {}
 
     # Prepare context for LLM
     extracted_nodes_context = [
@@ -260,7 +267,8 @@ async def resolve_extracted_nodes(
         response_model=NodeResolutions,
     )
 
-    node_resolutions: list[NodeDuplicate] = NodeResolutions(**llm_response).entity_resolutions
+    node_resolutions: list[NodeDuplicate] = NodeResolutions(
+        **llm_response).entity_resolutions
 
     resolved_nodes: list[EntityNode] = []
     uuid_map: dict[str, str] = {}
@@ -286,11 +294,13 @@ async def resolve_extracted_nodes(
         if duplicate_idx not in duplicates and duplicate_idx > -1:
             duplicates.append(duplicate_idx)
         for idx in duplicates:
-            existing_node = existing_nodes[idx] if idx < len(existing_nodes) else resolved_node
+            existing_node = existing_nodes[idx] if idx < len(
+                existing_nodes) else resolved_node
 
             node_duplicates.append((extracted_node, existing_node))
 
-    logger.debug(f'Resolved nodes: {[(n.name, n.uuid) for n in resolved_nodes]}')
+    logger.debug(
+        f'Resolved nodes: {[(n.name, n.uuid) for n in resolved_nodes]}')
 
     new_node_duplicates: list[
         tuple[EntityNode, EntityNode]
@@ -315,7 +325,8 @@ async def extract_attributes_from_nodes(
                 node,
                 episode,
                 previous_episodes,
-                entity_types.get(next((item for item in node.labels if item != 'Entity'), ''))
+                entity_types.get(
+                    next((item for item in node.labels if item != 'Entity'), ''))
                 if entity_types is not None
                 else None,
                 clients.ensure_ascii,
@@ -365,7 +376,8 @@ async def extract_attributes_from_node(
     llm_response = (
         (
             await llm_client.generate_response(
-                prompt_library.extract_nodes.extract_attributes(attributes_context),
+                prompt_library.extract_nodes.extract_attributes(
+                    attributes_context),
                 response_model=entity_type,
                 model_size=ModelSize.small,
             )

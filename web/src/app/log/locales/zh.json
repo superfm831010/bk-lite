@@ -137,7 +137,7 @@
       "grammarExplanation": "语法说明",
       "list": "列表",
       "terminal": "终端",
-      "listTotal": "列表总条数",
+      "listTotal": "表格展示总条数",
       "exit": "退出全屏",
       "full": "全屏展示",
       "clearLogs": "清空日志",
@@ -254,7 +254,8 @@
       "auditBeatPaths": "目录路径",
       "auditBeatPathsDes": "需要监控的目录路径列表",
       "dockerHosts": "连接地址",
-      "dockerHostsDes": "Docker API 连接地址列表"
+      "dockerHostsDes": "Docker API 连接地址列表",
+      "viewLogs": "查看日志"
     },
     "event": {
       "executionTime": "执行时间",
@@ -324,7 +325,10 @@
       "originalLog": "原始日志",
       "event": "事件",
       "aggregateFields": "聚合字段名",
-      "seeMore": "查看详情"
+      "seeMore": "查看详情",
+      "noticeWay": "暂无通知渠道，可去",
+      "systemManage": "系统管理",
+      "config": "配置。"
     }
   }
 }

@@ -1,35 +1,7 @@
 /**
  * useGraphData Hook
  * 
- * 拓扑图数据管理核心 Hook，专注于数据持久化、序列化和加载功能
- * 
- * 主要功能：
- * 1. 数据序列化 - 将图形实例中的节点和边数据转换为可存储的JSON格式
- * 2. 数据持久化 - 保存拓扑图配置到后端服务，支持版本管理和云端同步
- * 3. 数据加载 - 从后端加载拓扑图配置并恢复到图形实例中
- * 4. 图表数据管理 - 处理图表节点的数据源配置和实时数据更新
- * 5. 节点样式重建 - 根据配置重新构建各类型节点的样式和属性
- * 6. 边线配置恢复 - 恢复连线的样式、标签和自定义属性
- * 
- * 数据流程：
- * - 序列化：图形实例 → JSON数据 → 后端存储
- * - 反序列化：后端数据 → JSON配置 → 图形实例重建
- * 
- * 支持的节点类型：
- * - icon: 图标节点，支持自定义图标、颜色、尺寸等配置
- * - single-value: 单值显示节点，支持数据源绑定和实时更新
- * - text: 文本节点，支持字体样式和颜色配置
- * - chart: 图表节点，支持多种图表类型和数据可视化
- * 
- * 支持的边线类型：
- * - common_line: 普通连线，支持标签和自定义样式
- * - network_line: 网络连线，专用于网络拓扑场景
- * 
- * @param graphInstance - X6图形实例，用于操作图形元素
- * @param updateSingleNodeData - 单值节点数据更新回调函数
- * @param startLoadingAnimation - 启动loading动画的回调函数
- * @param handleSaveCallback - 保存完成后的回调函数，用于状态同步
- * @returns 数据操作相关的方法集合和加载状态
+ * 拓扑图数据管理核心 Hook，负责数据持久化、序列化和加载功能
  */
 
 import { useCallback, useState } from 'react';
@@ -40,16 +12,31 @@ import { useTopologyApi } from '@/app/ops-analysis/api/topology';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { TopologyNodeData } from '@/app/ops-analysis/types/topology';
 import { DirItem } from '@/app/ops-analysis/types';
-import {
-  getEdgeStyleWithLabel,
-} from '../utils/topologyUtils';
+import { getEdgeStyleWithLabel } from '../utils/topologyUtils';
 import { createNodeByType } from '../utils/registerNode';
 import { iconList } from '@/app/cmdb/utils/common';
 
-/**
- * 图形数据操作相关的自定义Hook
- * 负责数据的加载、保存、序列化等操作
- */
+const serializeNodeConfig = (nodeData: any, nodeType: string) => {
+  const styleConfigMapping: Record<string, string[]> = {
+    'single-value': ['textColor', 'fontSize', 'backgroundColor', 'borderColor'],
+    'basic-shape': ['width', 'height', 'backgroundColor', 'borderColor', 'borderWidth', 'lineType', 'shapeType'],
+    icon: ['width', 'height'],
+    text: ['fontSize', 'fontWeight', 'textColor'],
+    chart: ['width', 'height'],
+  };
+
+  const fields = styleConfigMapping[nodeType] || [];
+  const styleConfig: any = {};
+
+  fields.forEach((field) => {
+    if (nodeData.styleConfig?.[field] !== undefined) {
+      styleConfig[field] = nodeData.styleConfig[field];
+    }
+  });
+
+  return Object.keys(styleConfig).length > 0 ? styleConfig : undefined;
+};
+
 export const useGraphData = (
   graphInstance: X6Graph | null,
   updateSingleNodeData: (nodeConfig: TopologyNodeData) => void,
@@ -68,94 +55,36 @@ export const useGraphData = (
       const position = node.getPosition();
 
       const serializedNode: TopologyNodeData = {
-        id: node.id,
-        x: position.x,
-        y: position.y,
+        id: nodeData.id,
         type: nodeData.type,
         name: nodeData.name,
+        position,
+        logoType: nodeData.logoType,
+        logoIcon: nodeData.logoIcon,
+        logoUrl: nodeData.logoUrl,
+        valueConfig: nodeData.valueConfig,
+        styleConfig: serializeNodeConfig(nodeData, nodeData.type),
       };
-
-      if (nodeData.dataSource) {
-        serializedNode.dataSource = nodeData.dataSource;
-      }
-
-      if (nodeData.dataSourceParams) {
-        serializedNode.dataSourceParams = nodeData.dataSourceParams;
-      }
-
-      if (nodeData.selectedFields) {
-        serializedNode.selectedFields = nodeData.selectedFields;
-      }
-
-      if (nodeData.type === 'icon') {
-        serializedNode.logoType = nodeData.logoType;
-        serializedNode.logoIcon = nodeData.logoType === 'default' ? nodeData.logoIcon : undefined;
-        serializedNode.logoUrl = nodeData.logoType === 'custom' ? nodeData.logoUrl : undefined;
-        if (nodeData.config) {
-          serializedNode.config = {
-            backgroundColor: nodeData.config.backgroundColor,
-            borderColor: nodeData.config.borderColor,
-            textColor: nodeData.config.textColor,
-            fontSize: nodeData.config.fontSize,
-            width: nodeData.config.width,
-            height: nodeData.config.height,
-          };
-        }
-      } else if (nodeData.type === 'single-value') {
-        if (nodeData.config) {
-          serializedNode.config = {
-            textColor: nodeData.config.textColor,
-            fontSize: nodeData.config.fontSize,
-            backgroundColor: nodeData.config.backgroundColor,
-            borderColor: nodeData.config.borderColor,
-          };
-        }
-      } else if (nodeData.type === 'text') {
-        if (nodeData.config) {
-          serializedNode.config = {
-            fontSize: nodeData.config.fontSize,
-            fontWeight: nodeData.config.fontWeight,
-            textColor: nodeData.config.textColor,
-          };
-        }
-      } else if (nodeData.type === 'chart') {
-        serializedNode.widget = nodeData.widget;
-        if (nodeData.valueConfig) {
-          serializedNode.valueConfig = nodeData.valueConfig;
-        }
-        if (nodeData.config) {
-          serializedNode.config = {
-            width: nodeData.config.width,
-            height: nodeData.config.height,
-            ...nodeData.config,
-          };
-        }
-      }
 
       return serializedNode;
     });
 
     const edges = graphInstance.getEdges().map((edge: any) => {
       const edgeData = edge.getData();
-      const sourcePort = edge.getSourcePortId();
-      const targetPort = edge.getTargetPortId();
-
       return {
         id: edge.id,
         source: edge.getSourceCellId(),
         target: edge.getTargetCellId(),
-        sourcePort,
-        targetPort,
+        sourcePort: edge.getSourcePortId(),
+        targetPort: edge.getTargetPortId(),
         lineType: edgeData?.lineType || 'common_line',
         lineName: edgeData?.lineName || '',
         sourceInterface: edgeData?.sourceInterface,
         targetInterface: edgeData?.targetInterface,
-        config: edgeData?.config
-          ? {
-            strokeColor: edgeData.config.strokeColor,
-            strokeWidth: edgeData.config.strokeWidth,
-          }
-          : undefined,
+        config: edgeData?.config ? {
+          strokeColor: edgeData.config.strokeColor,
+          strokeWidth: edgeData.config.strokeWidth,
+        } : undefined,
       };
     });
 
@@ -178,49 +107,23 @@ export const useGraphData = (
           edges: topologyData.edges,
         },
       };
+
       await saveTopology(selectedTopology.data_id, saveData);
-
-      // 调用保存完成回调
       handleSaveCallback?.();
-
       message.success('拓扑图保存成功');
     } catch (error) {
       console.error('保存拓扑图失败:', error);
+      message.error('保存拓扑图失败');
     } finally {
       setLoading(false);
     }
   }, [serializeTopologyData, saveTopology, handleSaveCallback]);
 
-  const handleLoadTopology = useCallback(async (topologyId: string | number) => {
-    if (!graphInstance) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const topologyData = await getTopologyDetail(topologyId);
-
-      const viewSets = topologyData.view_sets || {};
-      loadTopologyData(viewSets);
-      // 适应画布
-      graphInstance.zoomToFit({ padding: 20, maxScale: 1 });
-    } catch (error) {
-      console.error('加载拓扑图失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [graphInstance]);
-
-  // 加载图表节点数据
   const loadChartNodeData = useCallback(async (nodeId: string, valueConfig: any) => {
-    if (!graphInstance || !valueConfig.dataSource) {
-      return;
-    }
+    if (!graphInstance || !valueConfig.dataSource) return;
 
     const node = graphInstance.getCellById(nodeId);
-    if (!node) {
-      return;
-    }
+    if (!node) return;
 
     try {
       const chartData = await fetchWidgetData({
@@ -231,50 +134,46 @@ export const useGraphData = (
 
       if (chartData) {
         const currentNodeData = node.getData();
-        const updatedData = {
+        node.setData({
           ...currentNodeData,
           isLoading: false,
           rawData: chartData,
           hasError: false,
-        };
-        node.setData(updatedData);
+        });
       }
     } catch {
       const currentNodeData = node.getData();
-      const updatedData = {
+      node.setData({
         ...currentNodeData,
         isLoading: false,
         hasError: true,
-      };
-      node.setData(updatedData);
+      });
     }
   }, [graphInstance, getSourceDataByApiId]);
 
-  // 加载拓扑数据到画布
   const loadTopologyData = useCallback((data: { nodes: any[], edges: any[] }) => {
     if (!graphInstance) return;
+
     graphInstance.clearCells();
+    const chartNodesToLoad: Array<{ nodeId: string; valueConfig: any }> = [];
 
-    const chartNodesToLoad: Array<{ nodeId: string; config: any }> = [];
-
-    data.nodes.forEach((nodeConfig) => {
-      // 使用注册的节点创建节点数据
+    data.nodes?.forEach((nodeConfig) => {
       let nodeData: any;
+      const valueConfig = nodeConfig.valueConfig || {};
 
       if (nodeConfig.type === 'chart') {
         const chartNodeConfig = {
           ...nodeConfig,
-          widget: nodeConfig.widget,
-          isLoading: !!nodeConfig.dataSource,
+          isLoading: !!valueConfig?.dataSource,
           rawData: null,
           hasError: false,
         };
-        nodeData = createNodeByType(chartNodeConfig, iconList);
 
-        if (nodeConfig.dataSource) {
+        nodeData = createNodeByType(chartNodeConfig, iconList);
+        if (valueConfig?.dataSource) {
           chartNodesToLoad.push({
             nodeId: nodeConfig.id,
-            config: chartNodeConfig,
+            valueConfig: chartNodeConfig.valueConfig,
           });
         }
       } else {
@@ -283,7 +182,7 @@ export const useGraphData = (
 
       graphInstance.addNode(nodeData);
 
-      if (nodeConfig.type === 'single-value' && nodeConfig.dataSource && nodeConfig.selectedFields?.length) {
+      if (nodeConfig.type === 'single-value' && valueConfig?.dataSource && valueConfig?.selectedFields?.length) {
         const addedNode = graphInstance.getCellById(nodeConfig.id);
         if (addedNode) {
           startLoadingAnimation(addedNode);
@@ -292,7 +191,7 @@ export const useGraphData = (
       }
     });
 
-    data.edges.forEach((edgeConfig) => {
+    data.edges?.forEach((edgeConfig) => {
       const edgeData: any = {
         lineType: edgeConfig.lineType as 'common_line' | 'network_line',
         lineName: edgeConfig.lineName,
@@ -315,19 +214,33 @@ export const useGraphData = (
       graphInstance.addEdge(edge);
     });
 
-    chartNodesToLoad.forEach(({ nodeId, config }) => {
-      loadChartNodeData(nodeId, config);
+    chartNodesToLoad.forEach(({ nodeId, valueConfig }) => {
+      loadChartNodeData(nodeId, valueConfig);
     });
-
   }, [graphInstance, updateSingleNodeData, loadChartNodeData, startLoadingAnimation]);
+
+  const handleLoadTopology = useCallback(async (topologyId: string | number) => {
+    if (!graphInstance) return;
+
+    setLoading(true);
+    try {
+      const topologyData = await getTopologyDetail(topologyId);
+      const viewSets = topologyData.view_sets || {};
+
+      loadTopologyData(viewSets);
+      graphInstance.zoomToFit({ padding: 20, maxScale: 1 });
+    } catch (error) {
+      console.error('加载拓扑图失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [graphInstance, getTopologyDetail, loadTopologyData]);
 
   return {
     loading,
     setLoading,
-    serializeTopologyData,
     handleSaveTopology,
     handleLoadTopology,
     loadChartNodeData,
-    loadTopologyData,
   };
 };
