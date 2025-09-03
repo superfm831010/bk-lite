@@ -31,6 +31,8 @@ class KnowledgeBase(MaintainerInfo, TimeInfo):
     enable_qa_rag = models.BooleanField(default=True)
     enable_graph_rag = models.BooleanField(default=False)
 
+    rag_recall_mode = models.CharField(default="chunk", max_length=20)
+
     rag_size = models.IntegerField(default=50)
     qa_size = models.IntegerField(default=50, verbose_name=_("QA size"))
     graph_size = models.IntegerField(default=50, verbose_name=_("Graph size"))

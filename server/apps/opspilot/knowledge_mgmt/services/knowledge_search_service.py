@@ -53,7 +53,7 @@ class KnowledgeSearchService:
             "rerank_model_api_key": rerank_model_api_key,
             "rerank_model_name": rerank_model_name,
             "rerank_top_k": kwargs["rerank_top_k"],
-            "rag_recall_mode": "chunk",
+            "rag_recall_mode": kwargs.get("rag_recall_mode", "chunk"),
             "enable_naive_rag": kwargs["enable_naive_rag"],
             "enable_graph_rag": False,
             "enable_qa_rag": kwargs["enable_qa_rag"],

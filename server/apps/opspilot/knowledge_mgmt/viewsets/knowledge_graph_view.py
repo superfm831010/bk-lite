@@ -30,7 +30,7 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
         obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base_id).first()
         if not obj:
             return JsonResponse({"result": True, "data": {"is_exists": False}})
-        if obj.status != "completed":
+        if obj.status == "pending":
             return JsonResponse(
                 {"result": True, "data": {"graph": {}, "graph_id": obj.id, "is_exists": True, "status": obj.status}}
             )
