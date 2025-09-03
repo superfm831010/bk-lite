@@ -10,6 +10,7 @@ import { useSystemConfig } from './collectTypes/system';
 import { useHttpConfig } from './collectTypes/http';
 import { useDnsConfig } from './collectTypes/dns';
 import { useFileIntegrityConfig } from './collectTypes/fileIntegrity';
+import { useKubernetesConfig } from './collectTypes/kubernetes';
 
 export const useCollectTypeConfig = () => {
   const fileConfig = useFileConfig();
@@ -22,6 +23,7 @@ export const useCollectTypeConfig = () => {
   const httpConfig = useHttpConfig();
   const dnsConfig = useDnsConfig();
   const fileIntegrityConfig = useFileIntegrityConfig();
+  const kubernetesConfig = useKubernetesConfig();
 
   const configs: any = useMemo(
     () => ({
@@ -35,6 +37,7 @@ export const useCollectTypeConfig = () => {
       http: httpConfig,
       file_integrity: fileIntegrityConfig,
       dns: dnsConfig,
+      kubernetes: kubernetesConfig,
     }),
     []
   );
