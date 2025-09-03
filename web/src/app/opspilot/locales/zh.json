@@ -195,6 +195,10 @@
     "threshold": "阈值",
     "thresholdDesc": "使用相似性分数阈值根据相关性分数过滤结果",
     "mmrDesc": "使用最大边际相关性来平衡相关性和多样性",
+    "recallMethod": "召回方式",
+    "recallByChunk": "分块",
+    "recallBySegment": "分段",
+    "recallByOrigin": "全篇",
     "documents": {
       "title": "文档",
       "description": "文档管理用于添加新知识，包括本地文件、网页链接或自定义文本。新添加的知识可以分块，以便机器人使用。",
