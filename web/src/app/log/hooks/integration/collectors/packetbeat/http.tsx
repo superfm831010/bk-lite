@@ -9,7 +9,7 @@ export const usePacketbeatConfig = () => {
   const pluginConfig = {
     collector: 'Packetbeat',
     collect_type: 'http',
-    icon: '',
+    icon: 'wangluo',
   };
 
   return {

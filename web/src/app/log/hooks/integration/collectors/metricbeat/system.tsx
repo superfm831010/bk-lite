@@ -9,7 +9,7 @@ export const useMetricbeatConfig = () => {
   const pluginConfig = {
     collector: 'Metricbeat',
     collect_type: 'system',
-    icon: '',
+    icon: 'zhibiao',
   };
 
   return {

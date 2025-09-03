@@ -182,6 +182,7 @@ const Strategy: React.FC = () => {
   }, [pagination.current, pagination.pageSize, objectId]);
 
   const handleObjectChange = async (id: string) => {
+    setTableData([])
     setObjectId(id);
   };
 

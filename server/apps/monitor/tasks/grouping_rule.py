@@ -44,6 +44,10 @@ class SyncInstance:
             if not query:
                 continue
             metrics = VictoriaMetricsAPI().query(query, step="10m")
+
+            # 记录当前监控对象发现的实例数量
+            current_monitor_instance_count = 0
+
             for metric_info in metrics.get("data", {}).get("result", []):
                 instance_id = tuple([metric_info["metric"].get(i) for i in monitor_info["instance_id_keys"]])
                 instance_name = "__".join([str(i) for i in instance_id])
@@ -57,7 +61,9 @@ class SyncInstance:
                     "auto": True,
                     "is_deleted": False,
                 }
-            obj_msg = f"监控-实例发现{monitor_info['name']},数量:{metrics.get('stats', {}).get('seriesFetched', '0')}"
+                current_monitor_instance_count += 1
+
+            obj_msg = f"监控-实例发现{monitor_info['name']},数量:{current_monitor_instance_count}"
             logger.info(obj_msg)
         return instances_map
 

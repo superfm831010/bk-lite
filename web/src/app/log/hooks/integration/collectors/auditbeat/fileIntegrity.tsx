@@ -9,7 +9,7 @@ export const useAuditbeatConfig = () => {
   const pluginConfig = {
     collector: 'Auditbeat',
     collect_type: 'file_integrity',
-    icon: '',
+    icon: 'shenjirizhi3',
   };
 
   return {
