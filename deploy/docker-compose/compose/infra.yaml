@@ -89,7 +89,7 @@ services:
 
   postgres:
     container_name: postgres
-    image: postgres:15
+    image: ${DOCKER_IMAGE_POSTGRES}
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
