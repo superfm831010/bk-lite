@@ -69,6 +69,20 @@ class NameSpace(MaintainerInfo, TimeInfo):
         super().save(*args, **kwargs)
 
 
+class DataSourceTag(MaintainerInfo, TimeInfo):
+    tag_id = models.CharField(max_length=64, verbose_name="标签id", unique=True)
+    name = models.CharField(max_length=64, verbose_name="标签名称", unique=True)
+    desc = models.TextField(verbose_name="描述", blank=True, null=True)
+    build_in = models.BooleanField(default=False, verbose_name="是否内置")
+
+    class Meta:
+        db_table = "operation_analysis_data_source_tag"
+        verbose_name = "数据源标签"
+
+    def __str__(self):
+        return f"{self.name}({self.tag_id})"
+
+
 class DataSourceAPIModel(MaintainerInfo, TimeInfo):
     name = models.CharField(max_length=255, verbose_name="数据源名称")
     rest_api = models.CharField(max_length=255, verbose_name="REST API URL")
@@ -77,6 +91,8 @@ class DataSourceAPIModel(MaintainerInfo, TimeInfo):
     params = JSONField(help_text="API请求参数", verbose_name="请求参数", blank=True, null=True)
     namespaces = models.ManyToManyField(NameSpace, related_name='data_sources', help_text="会话关联的事件",
                                         verbose_name="命名空间", blank=True)
+    tag = models.ManyToManyField(to=DataSourceTag, related_name='data_sources', help_text="数据源标签", blank=True)
+    chart_type = JSONField(help_text="图表类型", default=list, blank=True, null=True)
 
     class Meta:
         db_table = "operation_analysis_data_source_api"
