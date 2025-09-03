@@ -44,9 +44,6 @@
     "styleSettings": "Style Settings",
     "filterSettings": "Filter Settings",
     "chartTypeLabel": "Chart Type",
-    "lineChart": "Line Chart",
-    "barChart": "Bar Chart",
-    "pieChart": "Pie Chart",
     "paramSettings": "Parameter Settings"
   },
   "dataSource": {
@@ -80,7 +77,13 @@
     "duplicateParamNames": "Duplicate parameter names: ",
     "updateDataSourceSuccess": "Data source updated successfully",
     "createDataSourceSuccess": "Data source created successfully",
-    "operationFailed": "Operation failed"
+    "operationFailed": "Operation failed",
+    "tag": "Tag",
+    "chartType": "Chart Type",
+    "lineChart": "Line Chart",
+    "barChart": "Bar Chart",
+    "pieChart": "Pie Chart",
+    "singleValue": "Single Value"
   },
   "namespace": {
     "title": "Namespace",
@@ -121,7 +124,6 @@
     "viewMonitorDetails": "View Monitor Details",
     "nodeConfig": {
         "dataSource": "Data Source",
-        "dataSourceType": "Data Source Type",
         "paramSettings": "Parameter Settings",
         "dataSettings": "Data Settings",
         "nodeStyle": "Node Style",

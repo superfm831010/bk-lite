@@ -3,12 +3,7 @@ import dayjs from 'dayjs';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { DatasourceItem, ParamItem } from '@/app/ops-analysis/types/dataSource';
 
-export interface DataSourceManagerOptions {
-  autoFetch?: boolean;
-}
-
-export const useDataSourceManager = (options: DataSourceManagerOptions = {}) => {
-  const { autoFetch = true } = options;
+export const useDataSourceManager = () => {
   const [dataSources, setDataSources] = useState<DatasourceItem[]>([]);
   const [dataSourcesLoading, setDataSourcesLoading] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState<DatasourceItem | undefined>();
@@ -20,8 +15,7 @@ export const useDataSourceManager = (options: DataSourceManagerOptions = {}) => 
       const data: DatasourceItem[] = await getDataSourceList();
       setDataSources(data || []);
       return data || [];
-    } catch (error) {
-      console.error('获取数据源失败:', error);
+    } catch {
       setDataSources([]);
       return [];
     } finally {
@@ -30,18 +24,12 @@ export const useDataSourceManager = (options: DataSourceManagerOptions = {}) => 
   };
 
   const findDataSource = (
-    widget: string,
     dataSourceId?: string | number
   ): DatasourceItem | undefined => {
     if (dataSourceId) {
       const id = typeof dataSourceId === 'string' ? parseInt(dataSourceId, 10) : dataSourceId;
       return dataSources.find((ds) => ds.id === id);
     }
-
-    if (widget === 'trendLine') {
-      return dataSources.find((ds) => ds.rest_api === 'alert/get_alert_trend_data');
-    }
-
     return undefined;
   };
 
@@ -102,17 +90,14 @@ export const useDataSourceManager = (options: DataSourceManagerOptions = {}) => 
   };
 
   useEffect(() => {
-    if (autoFetch) {
-      fetchDataSources();
-    }
-  }, [autoFetch]);
+    fetchDataSources();
+  }, []);
 
   return {
     dataSources,
     dataSourcesLoading,
     selectedDataSource,
     setSelectedDataSource,
-
     fetchDataSources,
     findDataSource,
     setDefaultParamValues,
