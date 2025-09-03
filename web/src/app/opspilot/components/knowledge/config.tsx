@@ -150,20 +150,6 @@ const ConfigComponent: React.FC<ConfigProps> = ({ configData, setConfigData }) =
                 <Card
                   size="small"
                   className={`flex-1 cursor-pointer transition-all duration-200 ${
-                    configData.searchType === 'similarity_score_threshold' 
-                      ? 'border-blue-500 shadow-sm' 
-                      : 'hover:shadow-sm'
-                  }`}
-                  onClick={() => setConfigData(prevData => ({ ...prevData, searchType: 'similarity_score_threshold' }))}
-                >
-                  <div className="text-center">
-                    <h4 className="font-medium text-sm mb-2">{t('knowledge.threshold')}</h4>
-                    <p className="text-xs text-gray-500">{t('knowledge.thresholdDesc')}</p>
-                  </div>
-                </Card>
-                <Card
-                  size="small"
-                  className={`flex-1 cursor-pointer transition-all duration-200 ${
                     configData.searchType === 'mmr' 
                       ? 'border-blue-500 shadow-sm' 
                       : 'hover:shadow-sm'
@@ -173,6 +159,20 @@ const ConfigComponent: React.FC<ConfigProps> = ({ configData, setConfigData }) =
                   <div className="text-center">
                     <h4 className="font-medium text-sm mb-2">MMR</h4>
                     <p className="text-xs text-gray-500">{t('knowledge.mmrDesc')}</p>
+                  </div>
+                </Card>
+                <Card
+                  size="small"
+                  className={`flex-1 cursor-pointer transition-all duration-200 ${
+                    configData.searchType === 'similarity_score_threshold' 
+                      ? 'border-blue-500 shadow-sm' 
+                      : 'hover:shadow-sm'
+                  }`}
+                  onClick={() => setConfigData(prevData => ({ ...prevData, searchType: 'similarity_score_threshold' }))}
+                >
+                  <div className="text-center">
+                    <h4 className="font-medium text-sm mb-2">{t('knowledge.threshold')}</h4>
+                    <p className="text-xs text-gray-500">{t('knowledge.thresholdDesc')}</p>
                   </div>
                 </Card>
               </div>

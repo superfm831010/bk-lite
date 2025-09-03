@@ -1705,7 +1705,7 @@ class QCloudCollectMetrics(CollectBase):
     @staticmethod
     def set_instance_inst_name(data, *args, **kwargs):
         if not data.get("resource_name"):
-        inst_name = f"{data['resource_name']}_{data['resource_id']}"
+            inst_name = f"{data['resource_name']}_{data['resource_id']}"
         return inst_name
 
     def set_asso_instances(self, data, *args, **kwargs):

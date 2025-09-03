@@ -291,7 +291,7 @@ const useMlopsManageApi = () => {
 
   // 更新Rasa意图文件
   const updateRasaIntentFile = async (id: number, params: {
-    name: string;
+    name?: string;
     example: string[];
   }) => {
     return await put(`/mlops/rasa_intent/${id}`, params);
@@ -299,7 +299,7 @@ const useMlopsManageApi = () => {
 
   // 更新Rasa响应文件
   const updateRasaResponseFile = async (id: number, params: {
-    name: string;
+    name?: string;
     example: string[];
   }) => {
     return await put(`/mlops/rasa_response/${id}`, params);
