@@ -87,21 +87,6 @@ services:
     depends_on:
       - nats
 
-  neo4j:
-    image: ${DOCKER_NEO4J_IMAGE}
-    container_name: neo4j
-    restart: always
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-      - "7473:7473"
-    networks:
-      - prod
-    environment:
-      - NEO4J_AUTH=${NEO4J_AUTH}
-    volumes:
-      - neo4j:/data
-
   postgres:
     container_name: postgres
     image: postgres:15

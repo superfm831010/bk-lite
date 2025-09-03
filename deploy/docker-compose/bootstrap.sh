@@ -169,9 +169,6 @@ else
     export NATS_ADMIN_PASSWORD=$(generate_password 32)
     export NATS_MONITOR_USERNAME=monitor
     export NATS_MONITOR_PASSWORD=$(generate_password 32)
-    export NEO4J_USERNAME=neo4j
-    export NEO4J_PASSWORD=$(generate_password 32)
-    export NEO4J_AUTH="${NEO4J_USERNAME}/${NEO4J_PASSWORD}"
     export MINIO_ROOT_USER=minio
     export MINIO_ROOT_PASSWORD=$(generate_password 32)
     export RABBITMQ_DEFAULT_USER=rabbit
@@ -192,9 +189,6 @@ export NATS_ADMIN_USERNAME=$NATS_ADMIN_USERNAME
 export NATS_ADMIN_PASSWORD=$NATS_ADMIN_PASSWORD
 export NATS_MONITOR_USERNAME=$NATS_MONITOR_USERNAME
 export NATS_MONITOR_PASSWORD=$NATS_MONITOR_PASSWORD
-export NEO4J_USERNAME=$NEO4J_USERNAME
-export NEO4J_PASSWORD=$NEO4J_PASSWORD
-export NEO4J_AUTH=$NEO4J_AUTH
 export MINIO_ROOT_USER=$MINIO_ROOT_USER
 export MINIO_ROOT_PASSWORD=$MINIO_ROOT_PASSWORD
 export RABBITMQ_DEFAULT_USER=$RABBITMQ_DEFAULT_USER
@@ -314,9 +308,6 @@ NATS_ADMIN_USERNAME=${NATS_ADMIN_USERNAME}
 NATS_ADMIN_PASSWORD=${NATS_ADMIN_PASSWORD}
 NATS_MONITOR_USERNAME=${NATS_MONITOR_USERNAME}
 NATS_MONITOR_PASSWORD=${NATS_MONITOR_PASSWORD}
-NEO4J_USERNAME=${NEO4J_USERNAME}
-NEO4J_PASSWORD=${NEO4J_PASSWORD}
-NEO4J_AUTH=${NEO4J_AUTH}
 MINIO_ROOT_USER=${MINIO_ROOT_USER}
 MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
 RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
@@ -360,8 +351,8 @@ log "INFO" "拉取最新的镜像..."
 ${DOCKER_COMPOSE_CMD} pull
 
 # 按照特定顺序启动服务
-log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, Neo4j, VictoriaLogs, MLflow, NATS Executor)..."
-${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics neo4j victoria-logs mlflow nats-executor
+log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, falkordb, VictoriaLogs, MLflow, NATS Executor)..."
+${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics falkordb victoria-logs mlflow nats-executor
 
 # 创建 JetStream - 使用正确的网络名称
 log "INFO" "创建JetStream..."
