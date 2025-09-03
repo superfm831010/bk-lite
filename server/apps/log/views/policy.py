@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from django.db import models
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.core.utils.permission_utils import get_permission_rules, permission_filter
+from apps.core.utils.permission_utils import get_permission_rules, get_permissions_rules, permission_filter, check_instance_permission
 from apps.core.utils.web_utils import WebUtils
 from apps.log.constants import POLICY_MODULE, DEFAULT_PERMISSION, ALERT_STATUS_NEW, ALERT_STATUS_CLOSED
 from apps.log.filters.policy import PolicyFilter, AlertFilter, EventFilter
@@ -238,48 +238,106 @@ class AlertViewSet(viewsets.ModelViewSet):
     filterset_class = AlertFilter
     pagination_class = CustomPageNumberPagination
 
+    def _get_all_accessible_policy_ids(self, request):
+        """
+        获取当前用户所有有权限的策略ID
+        优化版本：参考监控模块的权限判断逻辑，减少SQL查询次数
+        """
+        current_team = request.COOKIES.get("current_team")
+        if not current_team:
+            return []
+
+        # 获取所有采集类型下policy模块的权限规则
+        permissions_result = get_permissions_rules(
+            request.user,
+            current_team,
+            "log",
+            POLICY_MODULE,
+        )
+
+        policy_permissions = permissions_result.get("data", {})
+        cur_team = permissions_result.get("team", [])
+
+        if not policy_permissions:
+            return []
+
+        # 一次性获取所有策略及其关联组织，减少SQL查询
+        all_policies = Policy.objects.select_related('collect_type').prefetch_related(
+            'policyorganization_set'
+        ).all()
+
+        accessible_policy_ids = []
+
+        # 遍历所有策略，在内存中进行权限检查（使用通用权限检查函数）
+        for policy_obj in all_policies:
+            collect_type_id = str(policy_obj.collect_type_id)
+            policy_id = policy_obj.id
+
+            # 获取策略关联的组织
+            teams = {org.organization for org in policy_obj.policyorganization_set.all()}
+
+            # 使用通用权限检查函数
+            if check_instance_permission(collect_type_id, policy_id, teams, policy_permissions, cur_team):
+                accessible_policy_ids.append(policy_id)
+
+        return accessible_policy_ids
+
     @swagger_auto_schema(
         operation_id="alert_list",
         operation_description="告警列表查询",
         manual_parameters=[
-            openapi.Parameter('levels', openapi.IN_QUERY, description="告警级别多选，用逗号分隔，如：critical,warning,info", type=openapi.TYPE_STRING),
-            openapi.Parameter('content', openapi.IN_QUERY, description="告警内容关键字搜索", type=openapi.TYPE_STRING),
-            openapi.Parameter('collect_type', openapi.IN_QUERY, description="采集类型ID", type=openapi.TYPE_INTEGER, required=True),
+            openapi.Parameter('levels', openapi.IN_QUERY, description="告警级别多选，用逗号分隔，如：critical,warning,info", type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('content', openapi.IN_QUERY, description="告警内容关键字搜索", type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('collect_type', openapi.IN_QUERY, description="采集类型ID，如果不传则查询所有有权限的采集类型", type=openapi.TYPE_INTEGER, required=False),
+            openapi.Parameter('page', openapi.IN_QUERY, description="页码", type=openapi.TYPE_INTEGER, required=False, default=1),
+            openapi.Parameter('page_size', openapi.IN_QUERY, description="每页数据条数", type=openapi.TYPE_INTEGER, required=False, default=10),
         ],
     )
     def list(self, request, *args, **kwargs):
+        """
+        告警列表查询
+
+        支持两种查询模式：
+        1. 传入collect_type：查询特定采集类型的告警
+        2. 不传collect_type：查询当前用户所有有权限的采集类型的告警
+        """
         collect_type_id = request.query_params.get('collect_type', None)
-        if not collect_type_id:
-            return WebUtils.response_error("collect_type is required")
 
-        # 获取policy模块的权限规则
-        permission = get_permission_rules(
-            request.user,
-            request.COOKIES.get("current_team"),
-            "log",
-            f"{POLICY_MODULE}.{collect_type_id}",
-        )
+        if collect_type_id:
+            # 查询特定采集类型的告警
+            permission = get_permission_rules(
+                request.user,
+                request.COOKIES.get("current_team"),
+                "log",
+                f"{POLICY_MODULE}.{collect_type_id}",
+            )
 
-        # 先过滤出有权限的Policy
-        policy_qs = permission_filter(
-            Policy,
-            permission,
-            team_key="policyorganization__organization__in",
-            id_key="id__in"
-        )
-        policy_qs = policy_qs.filter(
-            collect_type_id=collect_type_id,
-            policyorganization__organization=request.COOKIES.get("current_team")
-        ).distinct()
+            # 应用权限过滤
+            policy_qs = permission_filter(
+                Policy,
+                permission,
+                team_key="policyorganization__organization__in",
+                id_key="id__in"
+            )
+            policy_qs = policy_qs.filter(
+                collect_type_id=collect_type_id,
+                policyorganization__organization=request.COOKIES.get("current_team")
+            ).distinct()
 
-        # 获取有权限的policy_ids
-        policy_ids = list(policy_qs.values_list("id", flat=True))
+            # 获取有权限的policy_ids
+            policy_ids = list(policy_qs.values_list("id", flat=True))
+        else:
+            # 查询所有有权限的采集类型的告警（使用优化后的统一方法）
+            policy_ids = self._get_all_accessible_policy_ids(request)
+
+            if not policy_ids:
+                return WebUtils.response_success({"count": 0, "items": []})
 
         # 基于policy权限过滤告警
         queryset = self.filter_queryset(self.get_queryset())
         queryset = queryset.filter(policy_id__in=policy_ids).distinct()
 
-        # 获取分页参数，设置默认值
+        # 获取分页参数
         page = int(request.GET.get('page', 1))
         page_size = int(request.GET.get('page_size', 10))
 
@@ -295,15 +353,50 @@ class AlertViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(page_data, many=True)
         results = serializer.data
 
-        # 添加权限信息到每个告警
-        policy_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
+        return WebUtils.response_success({"count": total_count, "items": results})
 
-        for alert_info in results:
-            policy_id = alert_info.get("policy")
-            if policy_id in policy_permission_map:
-                alert_info["permission"] = policy_permission_map[policy_id]
-            else:
-                alert_info["permission"] = DEFAULT_PERMISSION
+    @swagger_auto_schema(
+        operation_id="alert_list_all",
+        operation_description="查询所有有权限的采集类型告警列表",
+        manual_parameters=[
+            openapi.Parameter('levels', openapi.IN_QUERY, description="告警级别多选，用逗号分隔，如：critical,warning,info", type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('content', openapi.IN_QUERY, description="告警内容关键字搜索", type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('page', openapi.IN_QUERY, description="页码", type=openapi.TYPE_INTEGER, required=False, default=1),
+            openapi.Parameter('page_size', openapi.IN_QUERY, description="每页数据条数", type=openapi.TYPE_INTEGER, required=False, default=10),
+        ],
+    )
+    @action(methods=['get'], detail=False, url_path='all')
+    def alert_list_all(self, request):
+        """
+        查询当前用户所有有权限的采集类型的告警列表
+
+        URL: /api/alerts/all/
+        """
+        # 使用优化后的统一方法获取策略ID和权限映射
+        policy_ids = self._get_all_accessible_policy_ids(request)
+
+        if not policy_ids:
+            return WebUtils.response_success({"count": 0, "items": []})
+
+        # 基于policy权限过滤告警
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.filter(policy_id__in=policy_ids).distinct()
+
+        # 获取分页参数
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
+
+        # 计算分页
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        # 获取总数和当前页数据
+        total_count = queryset.count()
+        page_data = queryset[start:end]
+
+        # 序列化数据
+        serializer = self.get_serializer(page_data, many=True)
+        results = serializer.data
 
         return WebUtils.response_success({"count": total_count, "items": results})
 
@@ -355,19 +448,23 @@ class AlertViewSet(viewsets.ModelViewSet):
         operation_id="alert_stats",
         operation_description="告警统计 - 基于step动态分割时间区间统计",
         manual_parameters=[
-            openapi.Parameter('levels', openapi.IN_QUERY, description="告警级别多选，用逗号分隔，如：critical,warning,info", type=openapi.TYPE_STRING),
-            openapi.Parameter('content', openapi.IN_QUERY, description="告警内容关键字搜索", type=openapi.TYPE_STRING),
-            openapi.Parameter('collect_type', openapi.IN_QUERY, description="采集类型ID", type=openapi.TYPE_INTEGER, required=True),
-            openapi.Parameter('start_event_time', openapi.IN_QUERY, description="开始时间", type=openapi.TYPE_STRING),
-            openapi.Parameter('end_event_time', openapi.IN_QUERY, description="结束时间", type=openapi.TYPE_STRING),
-            openapi.Parameter('status', openapi.IN_QUERY, description="告警状态：new(活跃) 或 closed(关闭)", type=openapi.TYPE_STRING, enum=['new', 'closed'], default='new'),
-            openapi.Parameter('step', openapi.IN_QUERY, description="时间步长，单位分钟，默认60分钟", type=openapi.TYPE_INTEGER, default=60),
+            openapi.Parameter('levels', openapi.IN_QUERY, description="告警级别多选，用逗号分隔，如：critical,warning,info", type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('content', openapi.IN_QUERY, description="告警内容关键字搜索", type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('collect_type', openapi.IN_QUERY, description="采集类型ID，不传则统计所有有权限的采集类型", type=openapi.TYPE_INTEGER, required=False),
+            openapi.Parameter('start_event_time', openapi.IN_QUERY, description="开始时间", type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('end_event_time', openapi.IN_QUERY, description="结束时间", type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('status', openapi.IN_QUERY, description="告警状态：new(活跃) 或 closed(关闭)", type=openapi.TYPE_STRING, enum=['new', 'closed'], default='new', required=False),
+            openapi.Parameter('step', openapi.IN_QUERY, description="时间步长，单位分钟，默认60分钟", type=openapi.TYPE_INTEGER, default=60, required=False),
         ]
     )
     @action(methods=['get'], detail=False, url_path='stats')
     def stats(self, request):
         """
-        告警统计接口，基于step动态分割时间区间
+        告警统计接口，基于step动态分割时间区间统计
+
+        支持两种统计模式：
+        1. 传入collect_type：统计特定采集类型的告警
+        2. 不传collect_type：统计当前用户所有有权限的采集类型的告警
 
         工作原理：
         1. 根据过滤条件获取告警数据
@@ -375,33 +472,43 @@ class AlertViewSet(viewsets.ModelViewSet):
         3. 按step步长分割时间区间
         4. 统计每个区间内指定状态的告警数量
         """
-
         collect_type_id = request.query_params.get('collect_type', None)
-        if not collect_type_id:
-            return WebUtils.response_error("collect_type is required")
 
-        # 获取policy模块的权限规则（与list接口保持一致）
-        permission = get_permission_rules(
-            request.user,
-            request.COOKIES.get("current_team"),
-            "log",
-            f"{POLICY_MODULE}.{collect_type_id}",
-        )
+        if collect_type_id:
+            # 统计特定采集类型的告警
+            permission = get_permission_rules(
+                request.user,
+                request.COOKIES.get("current_team"),
+                "log",
+                f"{POLICY_MODULE}.{collect_type_id}",
+            )
 
-        # 先过滤出有权限的Policy（与list接口保持一致）
-        policy_qs = permission_filter(
-            Policy,
-            permission,
-            team_key="policyorganization__organization__in",
-            id_key="id__in"
-        )
-        policy_qs = policy_qs.filter(
-            collect_type_id=collect_type_id,
-            policyorganization__organization=request.COOKIES.get("current_team")
-        ).distinct()
+            # 先过滤出有权限的Policy
+            policy_qs = permission_filter(
+                Policy,
+                permission,
+                team_key="policyorganization__organization__in",
+                id_key="id__in"
+            )
+            policy_qs = policy_qs.filter(
+                collect_type_id=collect_type_id,
+                policyorganization__organization=request.COOKIES.get("current_team")
+            ).distinct()
 
-        # 获取有权限的policy_ids
-        policy_ids = list(policy_qs.values_list("id", flat=True))
+            # 获取有权限的policy_ids
+            policy_ids = list(policy_qs.values_list("id", flat=True))
+        else:
+            # 统计所有有权限的采集类型的告警（使用优化后的统一方法）
+            policy_ids = self._get_all_accessible_policy_ids(request)
+
+            if not policy_ids:
+                return WebUtils.response_success({
+                    "total": 0,
+                    "status": request.query_params.get('status', ALERT_STATUS_NEW),
+                    "time_range": {"start": None, "end": None},
+                    "step_minutes": int(request.query_params.get('step', 60)),
+                    "time_series": []
+                })
 
         # 基于policy权限过滤告警（与list接口保持一致）
         queryset = self.filter_queryset(self.get_queryset())
@@ -427,8 +534,6 @@ class AlertViewSet(viewsets.ModelViewSet):
 
     def _get_step_based_stats(self, queryset, step_minutes):
         """基于step动态分割时间区间进行统计，按告警级别分组"""
-        from django.db.models import Count
-
         # 获取数据的时间范围
         time_range_data = queryset.aggregate(
             min_time=models.Min('created_at'),

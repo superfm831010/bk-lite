@@ -84,3 +84,61 @@ def delete_instance_rules(app_name, permission_key, instance_id, group_ids):
     app, child_module, client, module = set_rules_module_params(app_name, permission_key)
     result = client.delete_rules(group_ids, instance_id, app, module, child_module)
     return result
+
+
+def check_instance_permission(object_type_id, instance_id, teams, permissions, cur_team):
+    """
+    通用实例权限检查逻辑
+
+    Args:
+        object_type_id: 对象类型ID（如monitor_object_id, collect_type_id）
+        instance_id: 实例ID（如策略ID、监控实例ID）
+        teams: 实例关联的团队集合
+        permissions: 权限数据结构
+        cur_team: 当前用户团队
+
+    Returns:
+        bool: 是否有权限
+
+    Examples:
+        # 监控模块使用
+        has_permission = check_instance_permission(monitor_object_id, instance_id, teams, permissions, cur_team)
+
+        # 日志模块使用
+        has_permission = check_instance_permission(collect_type_id, policy_id, teams, permissions, cur_team)
+    """
+    # 超管权限检查
+    admin_cur_team = permissions.get("all", {}).get("team")
+    if admin_cur_team:
+        if teams & set(admin_cur_team):
+            return True
+
+    cur_team = set(cur_team)
+
+    # 普通用户权限检查 - 未设置实例权限时，根据当前组判断
+    permission = permissions.get(str(object_type_id))
+    if not permission:
+        if cur_team & teams:
+            # 此实例组织在当前组中，有权限
+            return True
+        else:
+            # 此实例组织不在当前组，无权限
+            return False
+
+    inst_permission = {i["id"] for i in permission.get("instance", [])}
+    team_permission = {i["id"] for i in permission.get("team", [])}
+
+    # 存在实例权限，但是都为空时，代表此对象当前组没有任何此类对象的实例权限
+    if not inst_permission and not team_permission:
+        return False
+
+    # 如果实例权限中包含当前实例ID，直接返回True
+    if instance_id in inst_permission:
+        return True
+
+    team_permission = set(team_permission)
+    # 如果当前组在团队权限中有权限，直接返回True
+    if teams & team_permission:
+        return True
+
+    return False
