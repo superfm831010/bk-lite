@@ -49,18 +49,26 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
   useEffect(() => {
     if (visiable && formRef.current && formData) {
       formRef.current?.resetFields();
-      formRef.current?.setFieldValue('name', formData?.name);
+      if (formData?.name) {
+        formRef.current?.setFieldsValue({
+          name: formData?.name
+        });
+      }
 
       if (formData?.entity_type) {
-        formRef.current?.setFieldValue('entity_type', formData?.entity_type);
+        formRef.current?.setFieldsValue({
+          entity_type: formData?.entity_type
+        });
         onEntityTypeChange(formData?.entity_type);
       } else if (formData?.slot_type) {
         onSlotTypeChange(formData?.slot_type);
-        formRef.current?.setFieldValue('slot_type', formData?.slot_type);
-        formRef.current?.setFieldValue('is_apply', formData?.is_apply);
+        formRef.current?.setFieldsValue({
+          slot_type: formData?.slot_type,
+          is_apply: formData?.is_apply
+        })
       }
     }
-  }, [formData?.name, formData?.entity_type, formData?.slot_type, formData?.is_apply, visiable]);
+  }, [visiable]);
 
   return (
     <>

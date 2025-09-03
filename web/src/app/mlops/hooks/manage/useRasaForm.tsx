@@ -39,10 +39,10 @@ const styles = {
 
 const useRasaIntentForm = (
   {
-    // folder_id,
     formData,
     visiable,
-    onTextSelection
+    onTextSelection,
+    selectKey
   }: {
     folder_id: number;
     selectKey: string;
@@ -58,6 +58,11 @@ const useRasaIntentForm = (
   const isInitializedRef = useRef<boolean>(false); // 添加初始化标记
 
   useEffect(() => {
+    // 🔧 只在当前选择类型为 intent 时才执行
+    if (selectKey !== 'intent') {
+      return;
+    }
+    
     // 只在首次显示时或formData真正改变时初始化
     if (visiable && !isInitializedRef.current) {
       if (formData) {
@@ -72,7 +77,7 @@ const useRasaIntentForm = (
     if (!visiable) {
       isInitializedRef.current = false;
     }
-  }, [formData, visiable]);
+  }, [formData, visiable, selectKey]);
 
   // 添加选择检测函数
   const handleTextSelection = useCallback((index: number, event: React.SyntheticEvent) => {
@@ -256,7 +261,8 @@ const useRasaIntentForm = (
 
 const useRasaResponseForm = ({
   formData,
-  visiable
+  visiable,
+  selectKey
 }: {
   selectKey: string;
   formData?: any;
@@ -267,12 +273,17 @@ const useRasaResponseForm = ({
 
   // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
+    // 🔧 只在当前选择类型为 response 时才执行
+    if (selectKey !== 'response') {
+      return;
+    }
+    
     if (visiable && formData) {
       setSampleList(formData?.example_count ? formData?.example : [null]);
     } else if (visiable) {
       setSampleList([null]);
     }
-  }, [formData, visiable]);
+  }, [formData, visiable, selectKey]);
 
   const addSampleList = () => {
     const keys = cloneDeep(sampleList);
@@ -359,6 +370,11 @@ const useRasaRuleForm = ({
   });
 
   useEffect(() => {
+    // 🔧 只在当前选择类型为 rule 时才执行
+    if (selectKey !== 'rule') {
+      return;
+    }
+    
     if (visiable && formData?.steps) {
       const list = formData.steps.map((item: any) => {
         return {
@@ -370,7 +386,7 @@ const useRasaRuleForm = ({
     } else if (visiable) {
       setSampleList([{ type: 'intent' as const, select: '' }]);
     }
-  }, [formData, visiable]);
+  }, [formData, visiable, selectKey]);
 
   useEffect(() => {
     if (selectKey !== 'rule') return;
@@ -626,7 +642,7 @@ const useRasaStoryForm = ({
 };
 
 const useRasaEntityForm = ({
-  // selectKey,
+  selectKey,
   formData,
   visiable,
   entityType,
@@ -638,19 +654,29 @@ const useRasaEntityForm = ({
 }) => {
   const [sampleList, setSampleList] = useState<(string | null)[]>([]);
   useEffect(() => {
+    // 🔧 只在当前选择类型为 entity 时才执行
+    if (selectKey !== 'entity') {
+      return;
+    }
+    
     if (visiable && formData) {
       setSampleList(formData?.example || [null]);
     } else if (visiable) {
       setSampleList([null]);
     }
-  }, [formData, visiable]);
+  }, [formData, visiable, selectKey]);
 
   useEffect(() => {
+    // 🔧 只在当前选择类型为 entity 时才执行
+    if (selectKey !== 'entity') {
+      return;
+    }
+    
     if (entityType === 'Lookup') {
       const data = formData?.example?.length ? formData.example : [null];
       setSampleList(data);
     }
-  }, [entityType])
+  }, [entityType, selectKey])
 
   const onSampleListChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -806,6 +832,11 @@ const useRasaForms = ({
   const [options, setOptions] = useState<SlotOption[]>([]);
 
   useEffect(() => {
+    // 🔧 只在当前选择类型为 form 时才执行
+    if (selectKey !== 'form') {
+      return;
+    }
+    
     if (visiable && formData?.slots) {
       const list = formData.slots.map((item: any) => {
         return {
@@ -818,7 +849,7 @@ const useRasaForms = ({
     } else if (visiable) {
       setSampleList([{ type: 'text', name: '', isRequired: false }]);
     }
-  }, [formData, visiable]);
+  }, [formData, visiable, selectKey]);
 
   useEffect(() => {
     if (selectKey !== 'form') return;
@@ -1188,7 +1219,7 @@ const useRasaFormManager = ({
     modalRef.current?.showModal({ type: '' });
   }, []);
 
-  // 始终调用所有的 hooks，但只使用需要的
+  // 🔧 所有 hooks 都调用，但在各个hook内部会检查是否为当前激活类型
   const intentForm = useRasaIntentForm({
     folder_id: Number(folder_id),
     selectKey,
@@ -1196,12 +1227,46 @@ const useRasaFormManager = ({
     visiable,
     onTextSelection: selectKey === 'intent' ? handleTextSelection : undefined
   });
-  const responseForm = useRasaResponseForm({ selectKey, formData, visiable });
-  const ruleForm = useRasaRuleForm({ folder_id: Number(folder_id), selectKey, formData, visiable });
-  const storyForm = useRasaStoryForm({ folder_id: Number(folder_id), selectKey, formData, visiable });
-  const entityForm = useRasaEntityForm({ selectKey, formData, visiable, entityType });
-  const slotForm = useRasaSlotForm({ selectKey, formData, visiable });
-  const formForm = useRasaForms({ folder_id: Number(folder_id), selectKey, formData, visiable });
+  
+  const responseForm = useRasaResponseForm({ 
+    selectKey, 
+    formData, 
+    visiable
+  });
+  
+  const ruleForm = useRasaRuleForm({ 
+    folder_id: Number(folder_id), 
+    selectKey, 
+    formData, 
+    visiable
+  });
+  
+  const storyForm = useRasaStoryForm({ 
+    folder_id: Number(folder_id), 
+    selectKey, 
+    formData, 
+    visiable
+  });
+  
+  const entityForm = useRasaEntityForm({ 
+    selectKey, 
+    formData, 
+    visiable, 
+    entityType
+  });
+  
+  const slotForm = useRasaSlotForm({ 
+    selectKey, 
+    formData, 
+    visiable
+  });
+  
+  const formForm = useRasaForms({ 
+    folder_id: Number(folder_id), 
+    selectKey, 
+    formData, 
+    visiable
+  });
 
   // 处理从Modal传来的实体选择
   const handleEntitySelectFromModal = useCallback((entityName: string) => {
@@ -1268,6 +1333,7 @@ const useRasaFormManager = ({
   const handleCancel = () => {
     setVisiable(false);
     setEntityType('Text');
+    setSlotType('text');
   };
 
   const onEntityTypeChange = (value: string) => {

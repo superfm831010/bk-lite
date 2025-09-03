@@ -326,8 +326,8 @@ const ExampleContent = ({ menu, data, dataset, loading, handleAdd, handleEdit, h
     if (value.trim() && treeData.length > 0) {
       setSelectKey([treeData[0].key]);
     }
-  }, [treeData]); 
-  
+  }, [treeData]);
+
   const onSelect = useCallback((key: Key[]) => {
     if (key.length) setSelectKey(key);
   }, []);
@@ -381,40 +381,14 @@ const ExampleContent = ({ menu, data, dataset, loading, handleAdd, handleEdit, h
                   />
                 ) : supportedItems.includes(menu as any) ? (
                   <div className="h-full flex flex-col border border-gray-200 rounded">
-                    {/* 头部工具栏 */}
-                    <div className="flex justify-between items-center p-3 border-b border-gray-200 bg-gray-50">
-                      <h3 className="text-sm font-medium text-gray-800">
-                        {t(`datasets.example`)} ({menu})
-                      </h3>
-                      <div className="flex space-x-2">
-                        {editingExample ? (
-                          <>
-                            <Button
-                              size="small"
-                              onClick={() => {
-                                setEditingExample(false);
-                                setExampleText(currentExampleText);
-                              }}
-                            >
-                              {t('common.cancel')}
-                            </Button>
-                            <Button
-                              type="primary"
-                              size="small"
-                              onClick={handleSaveExample}
-                            >
-                              {t('common.save')}
-                            </Button>
-                          </>
-                        ) : (
-                          <Button
-                            type="primary"
-                            size="small"
-                            onClick={() => setEditingExample(true)}
-                          >
-                            {t('common.edit')}
-                          </Button>
-                        )}
+
+                    {/* 底部提示 */}
+                    <div className="px-3 py-1 border-b border-gray-200 bg-gray-50">
+                      <h1>Examples</h1>
+                      <div className="text-xs text-gray-500">
+                        {/* {t(`datasets.selectEntityTip`)} */}
+                        支持为此{t(`datasets.${menu}`)}批量添加样例，通过换行进行区分。
+                        {menu === 'intent' && '同时意图可通过框选关键字，为关键字添加实体'}
                       </div>
                     </div>
 
@@ -448,14 +422,42 @@ const ExampleContent = ({ menu, data, dataset, loading, handleAdd, handleEdit, h
                       )}
                     </div>
 
-                    {/* 底部提示 */}
-                    {menu === 'intent' && (
-                      <div className="px-3 py-2 border-t border-gray-200 bg-gray-50">
-                        <div className="text-xs text-gray-500">
-                          {t(`datasets.selectEntityTip`)}
-                        </div>
+                    {/* 头部工具栏 */}
+                    <div className="flex justify-end items-center p-3 border-t border-gray-200 bg-gray-50">
+                      {/* <h3 className="text-sm font-medium text-gray-800">
+                        {t(`datasets.example`)} ({menu})
+                      </h3> */}
+                      <div className="flex space-x-2">
+                        {editingExample ? (
+                          <>
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                setEditingExample(false);
+                                setExampleText(currentExampleText);
+                              }}
+                            >
+                              {t('common.cancel')}
+                            </Button>
+                            <Button
+                              type="primary"
+                              size="small"
+                              onClick={handleSaveExample}
+                            >
+                              {t('common.save')}
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            type="primary"
+                            size="small"
+                            onClick={() => setEditingExample(true)}
+                          >
+                            {t('common.edit')}
+                          </Button>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 ) : (
                   <div className="h-full flex items-center justify-center text-gray-400">
