@@ -42,6 +42,7 @@ class CollectService(object):
             "db2_info": "DB2Info",
             "tidb_info": "TiDBInfo",
             "jetty_info": "JettyInfo",
+            "hbase_info": "HBaseInfo",
         }
 
     def import_plugin(self, plugin_name):

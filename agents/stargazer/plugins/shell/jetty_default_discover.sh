@@ -12,10 +12,11 @@ get_jetty_version() {
 }
 convert_to_dict() {
     local exports
-    exports=$(grep -E 'export (JAVA_HOME|PATH)=' ~/.bashrc)
+    exports=$(grep -E 'export JAVA_HOME=' ~/.bashrc)
     if [ -n "$exports" ]; then
         eval "$exports"
     fi
+    export PATH=${JAVA_HOME}/bin:$PATH
     local jetty_exe=$1
     declare -A cmd_dict
     while IFS= read -r line; do

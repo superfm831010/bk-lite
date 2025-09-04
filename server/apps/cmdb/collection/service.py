@@ -2127,6 +2127,19 @@ class DBCollectCollectMetrics(CollectBase):
                 "dm_home_bash": "dm_home_bash",
                 "dm_db_max_sessions": "dm_db_max_sessions",
                 "dm_redo_log": "dm_redo_log",
+            },
+            "hbase": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "install_path": "install_path",
+                "log_path": "log_path",
+                "config_file": "config_file",
+                "tmp_dir": "tmp_dir",
+                "cluster_distributed": "cluster_distributed",
+                "unsafe_stream_capability_enforce": "unsafe_stream_capability_enforce",
+                "java_path": "java_path",
             }
         }
         return mapping

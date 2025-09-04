@@ -132,6 +132,7 @@ DB_COLLECT_METRIC_MAP = {
     "dameng": ["dameng_info_gauge"],
     "db2": ["db2_info_gauge"],
     "tidb": ["tidb_info_gauge"],
+    "hbase": ["hbase_info_gauge"],
 }
 
 MIDDLEWARE_METRIC_MAP = {

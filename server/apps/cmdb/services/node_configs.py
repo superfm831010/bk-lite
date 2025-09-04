@@ -511,6 +511,10 @@ class JettyNodeParams(SSHNodeParamsMixin, BaseNodeParams):
     supported_model_id = "jetty"
     plugin_name = "jetty_info"
 
+class HBaseNodeParams(SSHNodeParamsMixin, BaseNodeParams):
+    supported_model_id = "hbase"
+    plugin_name = "hbase_info"
+
 class NodeParamsFactory:
     """
     工厂类，根据 instance 的 model_id 返回对应的 NodeParams 实例
