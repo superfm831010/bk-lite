@@ -232,7 +232,7 @@ const ExampleContent = ({ menu, data, dataset, loading, handleAdd, handleEdit, h
     return selectedData;
   }, [selectKey, treeData, data, menu]);
 
-  // 高亮搜索关键词的渲染函数
+  // 搜索结果渲染
   const highlightText = useCallback((text: string, searchValue: string) => {
     if (!searchValue.trim() || !text) return text;
 
@@ -248,7 +248,6 @@ const ExampleContent = ({ menu, data, dataset, loading, handleAdd, handleEdit, h
     );
   }, []);
 
-  // 使用useCallback优化渲染函数，添加搜索高亮
   const renderTitle = useCallback((data: any) => {
     const displayName = data?.name || '--';
     const highlightedName = highlightText(displayName, searchValue);
@@ -300,7 +299,6 @@ const ExampleContent = ({ menu, data, dataset, loading, handleAdd, handleEdit, h
     )
   }, [handleEdit, handleDel, t, highlightText, searchValue]);
 
-  // 使用useCallback优化事件处理
   const onChange = useCallback((value: string) => {
     setSearchValue(value);
     // 如果搜索框清空，清除选中状态
@@ -382,7 +380,7 @@ const ExampleContent = ({ menu, data, dataset, loading, handleAdd, handleEdit, h
                 ) : supportedItems.includes(menu as any) ? (
                   <div className="h-full flex flex-col border border-gray-200 rounded">
 
-                    {/* 底部提示 */}
+                    {/* 顶部介绍 */}
                     <div className="px-3 py-1 border-b border-gray-200 bg-gray-50">
                       <h1>Examples</h1>
                       <div className="text-xs text-gray-500">
@@ -422,7 +420,7 @@ const ExampleContent = ({ menu, data, dataset, loading, handleAdd, handleEdit, h
                       )}
                     </div>
 
-                    {/* 头部工具栏 */}
+                    {/* 底部工具栏 */}
                     <div className="flex justify-end items-center p-3 border-t border-gray-200 bg-gray-50">
                       {/* <h3 className="text-sm font-medium text-gray-800">
                         {t(`datasets.example`)} ({menu})

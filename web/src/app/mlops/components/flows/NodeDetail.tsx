@@ -69,7 +69,9 @@ const NodeDetailDrawer = ({
       });
       setOptions(options);
       if(node.data) {
-        formRef.current?.setFieldValue("select", node.data?.name);
+        formRef.current?.setFieldsValue({
+          select: node.data?.name
+        });
       }
     } catch (e) {
       console.log(e)

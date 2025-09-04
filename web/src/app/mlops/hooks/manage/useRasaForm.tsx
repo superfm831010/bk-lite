@@ -58,11 +58,10 @@ const useRasaIntentForm = (
   const isInitializedRef = useRef<boolean>(false); // 添加初始化标记
 
   useEffect(() => {
-    // 🔧 只在当前选择类型为 intent 时才执行
     if (selectKey !== 'intent') {
       return;
     }
-    
+
     // 只在首次显示时或formData真正改变时初始化
     if (visiable && !isInitializedRef.current) {
       if (formData) {
@@ -72,7 +71,7 @@ const useRasaIntentForm = (
       }
       isInitializedRef.current = true;
     }
-    
+
     // 当模态框关闭时重置初始化标记
     if (!visiable) {
       isInitializedRef.current = false;
@@ -149,7 +148,7 @@ const useRasaIntentForm = (
       // 添加实体后切换到显示模式
       setEditingIndex(null);
     }
-  }, []); // 移除sampleList依赖，使用函数式更新
+  }, []); 
 
   const renderElement = useMemo(() => {
     // 解析实体文字函数
@@ -273,11 +272,10 @@ const useRasaResponseForm = ({
 
   // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
-    // 🔧 只在当前选择类型为 response 时才执行
     if (selectKey !== 'response') {
       return;
     }
-    
+
     if (visiable && formData) {
       setSampleList(formData?.example_count ? formData?.example : [null]);
     } else if (visiable) {
@@ -370,11 +368,10 @@ const useRasaRuleForm = ({
   });
 
   useEffect(() => {
-    // 🔧 只在当前选择类型为 rule 时才执行
     if (selectKey !== 'rule') {
       return;
     }
-    
+
     if (visiable && formData?.steps) {
       const list = formData.steps.map((item: any) => {
         return {
@@ -390,7 +387,6 @@ const useRasaRuleForm = ({
 
   useEffect(() => {
     if (selectKey !== 'rule') return;
-
     const fetchOptions = async () => {
       try {
         const [intentList, responseList, formList] = await Promise.all([
@@ -415,7 +411,7 @@ const useRasaRuleForm = ({
           response: responseOption,
           form: formOption
         });
-      } catch(e) {
+      } catch (e) {
         console.log(e);
         message.error(t(`common.fetchFailed`));
       }
@@ -654,11 +650,10 @@ const useRasaEntityForm = ({
 }) => {
   const [sampleList, setSampleList] = useState<(string | null)[]>([]);
   useEffect(() => {
-    // 🔧 只在当前选择类型为 entity 时才执行
     if (selectKey !== 'entity') {
       return;
     }
-    
+
     if (visiable && formData) {
       setSampleList(formData?.example || [null]);
     } else if (visiable) {
@@ -667,11 +662,10 @@ const useRasaEntityForm = ({
   }, [formData, visiable, selectKey]);
 
   useEffect(() => {
-    // 🔧 只在当前选择类型为 entity 时才执行
     if (selectKey !== 'entity') {
       return;
     }
-    
+
     if (entityType === 'Lookup') {
       const data = formData?.example?.length ? formData.example : [null];
       setSampleList(data);
@@ -749,7 +743,7 @@ const useRasaSlotForm = ({
 
   useEffect(() => {
     if (visiable && formData?.values) {
-      setSampleList(formData?.values.length ?  formData?.values : [null]);
+      setSampleList(formData?.values.length ? formData?.values : [null]);
     } else if (!visiable) {
       setSampleList([null]);
     }
@@ -832,11 +826,10 @@ const useRasaForms = ({
   const [options, setOptions] = useState<SlotOption[]>([]);
 
   useEffect(() => {
-    // 🔧 只在当前选择类型为 form 时才执行
     if (selectKey !== 'form') {
       return;
     }
-    
+
     if (visiable && formData?.slots) {
       const list = formData.slots.map((item: any) => {
         return {
@@ -845,7 +838,7 @@ const useRasaForms = ({
           isRequired: item?.isRequired
         }
       });
-      setSampleList(list);
+      setSampleList(list.length > 0 ? list : [{ type: 'text', name: '', isRequired: false }]);
     } else if (visiable) {
       setSampleList([{ type: 'text', name: '', isRequired: false }]);
     }
@@ -866,7 +859,7 @@ const useRasaForms = ({
           }
         });
         setOptions(_options || []);
-      } catch(e) {
+      } catch (e) {
         console.log(e);
         message.error(t(`common.fetchFailed`));
       }
@@ -952,7 +945,7 @@ const useRasaForms = ({
           <Select
             className={`!w-[45%]`}
             value={item?.name}
-            options={options.filter(itm => itm?.slot_type === item?.type)}
+            options={options.filter(itm => itm?.slot_type === (item?.type || 'text'))}
             onChange={(value: any) => {
               onSelectSampleChange(value, index);
             }}
@@ -1091,93 +1084,46 @@ const useRasaFormData = () => {
     entityType?: string,
     slotType?: string,
   ) => {
-    let params = {};
+    // 基础参数
+    const baseParams = { ...data };
 
     if (type === 'add') {
-      if (selectKey === 'rule') {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          steps: sampleList.map((item: any) => ({
-            type: item?.type,
-            name: item?.select
-          }))
-        };
-      } else if (selectKey === 'story') {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          steps: []
-        };
-      } else if (selectKey === 'slot') {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          values: slotType === 'categorical' ? sampleList : []
-        }
-      } else if (selectKey === 'entity') {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          example: entityType === 'Text' ? [] : sampleList
-        };
-      } else if (['response', 'intent'].includes(selectKey)) {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          example: sampleList
-        };
-      } else if (selectKey === 'form') {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          slots: sampleList
-        }
-      } else {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          example: sampleList
-        };
-      }
-    } else {
-      if (selectKey === 'rule') {
-        params = {
-          ...data,
-          steps: sampleList.map((item: any) => ({
-            type: item?.type,
-            name: item?.select
-          }))
-        };
-      } else if (selectKey === 'slot') {
-        params = {
-          ...data,
-          values: slotType === 'categorical' ? sampleList : []
-        }
-      } else if (selectKey === 'entity') {
-        params = {
-          ...data,
-          example: (entityType === 'Lookup') ? sampleList : []
-        };
-      } else if (selectKey === 'intent' || selectKey === 'response') {
-        params = {
-          ...data,
-          example: sampleList
-        };
-      } else if (selectKey === 'form') {
-        params = {
-          ...data,
-          slots: sampleList
-        }
-      } else {
-        params = {
-          ...data,
-          example: sampleList
-        };
-      }
+      baseParams.dataset = formData?.dataset;
     }
 
-    return params;
+    const paramConfig: Record<string, (sampleList: any[], entityType?: string, slotType?: string) => any> = {
+      rule: (sampleList) => ({
+        steps: sampleList.map((item: any) => ({
+          type: item?.type,
+          name: item?.select
+        }))
+      }),
+      story: () => ({
+        steps: type === 'add' ? [] : formData?.steps || []
+      }),
+      slot: (sampleList, _, slotType) => ({
+        values: slotType === 'categorical' ? sampleList : []
+      }),
+      entity: (sampleList, entityType) => ({
+        example: type === 'add'
+          ? (entityType === 'Text' ? [] : sampleList)
+          : (entityType === 'Lookup' ? sampleList : [])
+      }),
+      form: (sampleList) => {
+        console.log(sampleList);
+        return ({
+          slots: sampleList
+        })
+      },
+      default: (sampleList) => ({
+        example: sampleList
+      })
+    }
+
+    const configFn = paramConfig[selectKey] || paramConfig.default;
+    const specificParams = configFn(sampleList, entityType, slotType);
+
+    return { ...baseParams, ...specificParams };
   };
 
   return { validateSampleList, prepareFormParams };
@@ -1219,7 +1165,6 @@ const useRasaFormManager = ({
     modalRef.current?.showModal({ type: '' });
   }, []);
 
-  // 🔧 所有 hooks 都调用，但在各个hook内部会检查是否为当前激活类型
   const intentForm = useRasaIntentForm({
     folder_id: Number(folder_id),
     selectKey,
@@ -1227,44 +1172,44 @@ const useRasaFormManager = ({
     visiable,
     onTextSelection: selectKey === 'intent' ? handleTextSelection : undefined
   });
-  
-  const responseForm = useRasaResponseForm({ 
-    selectKey, 
-    formData, 
+
+  const responseForm = useRasaResponseForm({
+    selectKey,
+    formData,
     visiable
   });
-  
-  const ruleForm = useRasaRuleForm({ 
-    folder_id: Number(folder_id), 
-    selectKey, 
-    formData, 
+
+  const ruleForm = useRasaRuleForm({
+    folder_id: Number(folder_id),
+    selectKey,
+    formData,
     visiable
   });
-  
-  const storyForm = useRasaStoryForm({ 
-    folder_id: Number(folder_id), 
-    selectKey, 
-    formData, 
+
+  const storyForm = useRasaStoryForm({
+    folder_id: Number(folder_id),
+    selectKey,
+    formData,
     visiable
   });
-  
-  const entityForm = useRasaEntityForm({ 
-    selectKey, 
-    formData, 
-    visiable, 
+
+  const entityForm = useRasaEntityForm({
+    selectKey,
+    formData,
+    visiable,
     entityType
   });
-  
-  const slotForm = useRasaSlotForm({ 
-    selectKey, 
-    formData, 
+
+  const slotForm = useRasaSlotForm({
+    selectKey,
+    formData,
     visiable
   });
-  
-  const formForm = useRasaForms({ 
-    folder_id: Number(folder_id), 
-    selectKey, 
-    formData, 
+
+  const formForm = useRasaForms({
+    folder_id: Number(folder_id),
+    selectKey,
+    formData,
     visiable
   });
 
@@ -1322,7 +1267,7 @@ const useRasaFormManager = ({
 
       onSuccess();
       setVisiable(false);
-    } catch(e) {
+    } catch (e) {
       console.log(e);
       message.error(t(`common.error`));
     } finally {
@@ -1334,6 +1279,7 @@ const useRasaFormManager = ({
     setVisiable(false);
     setEntityType('Text');
     setSlotType('text');
+    setSlotPrediction(false);
   };
 
   const onEntityTypeChange = (value: string) => {
