@@ -45,11 +45,11 @@ class GraphClient:
 
     def _get_driver_type(self) -> str:
         """从环境变量获取驱动类型"""
-        neo4j_uri = os.getenv('NEO4J_URI', "")
-        if neo4j_uri:
-            return self.DRIVER_NEO4J
-        else:
+        falkordb_host = os.getenv('FALKORDB_HOST', "")
+        if falkordb_host:
             return self.DRIVER_FALKORDB
+        else:
+            return self.DRIVER_NEO4J
 
     def __getattr__(self, name):
         """
