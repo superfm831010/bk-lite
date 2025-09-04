@@ -189,24 +189,7 @@ class MonitorAlertMetricSnapshotViewSet(viewsets.ViewSet):
             openapi.Parameter("alert_id", openapi.IN_PATH, description="告警ID", type=openapi.TYPE_INTEGER, required=True),
             openapi.Parameter("page", openapi.IN_QUERY, description="页码", type=openapi.TYPE_INTEGER, required=False),
             openapi.Parameter("page_size", openapi.IN_QUERY, description="每页数量", type=openapi.TYPE_INTEGER, required=False),
-        ],
-        responses={
-            200: openapi.Response(
-                description="成功",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'count': openapi.Schema(type=openapi.TYPE_INTEGER, description='总数量'),
-                        'results': openapi.Schema(
-                            type=openapi.TYPE_ARRAY,
-                            items=openapi.Schema(type=openapi.TYPE_OBJECT),
-                            description='快照数据列表'
-                        )
-                    }
-                )
-            ),
-            404: openapi.Response(description="告警不存在")
-        }
+        ]
     )
     @action(methods=['get'], detail=False, url_path='query/(?P<alert_id>[^/.]+)')
     def get_snapshots(self, request, alert_id):
