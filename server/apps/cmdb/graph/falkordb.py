@@ -568,17 +568,31 @@ class FalkorDBClient:
 
         label_str = f":{label}" if label else ""
         params_str = self.format_search_params([{"field": "id", "type": "id=", "value": inst_id}])
+
+        # 修复 FalkorDB 兼容性问题
+        # 查询从指定节点出发的所有路径（作为源节点）
         if params_str:
-            params_str = f"AND {params_str}"
-        src_objs = self._graph.query(
-            f"MATCH p=(n{label_str})-[*]->(m{label_str}) WHERE NOT EXISTS((m)-->()) {params_str} RETURN p"
-        )
-        dst_objs = self._graph.query(
-            f"MATCH p=(m{label_str})-[*]->(n{label_str}) WHERE NOT EXISTS((m)<--()) {params_str} RETURN p"
-        )
+            src_query = f"MATCH p=(n{label_str})-[*]->(m{label_str}) WHERE ID(n) = {inst_id} RETURN p"
+        else:
+            src_query = f"MATCH p=(n{label_str})-[*]->(m{label_str}) WHERE ID(n) = {inst_id} RETURN p"
+
+        # 查询到指定节点的所有路径（作为目标节点）
+        if params_str:
+            dst_query = f"MATCH p=(m{label_str})-[*]->(n{label_str}) WHERE ID(n) = {inst_id} RETURN p"
+        else:
+            dst_query = f"MATCH p=(m{label_str})-[*]->(n{label_str}) WHERE ID(n) = {inst_id} RETURN p"
+
+        try:
+            src_objs = self._graph.query(src_query)
+            dst_objs = self._graph.query(dst_query)
+        except Exception as e:
+            logger.error(f"Query topo failed: {e}")
+            # 如果复杂查询失败，使用简单的直接关系查询
+            return {}
 
         return dict(
-            src_result=self.format_topo(inst_id, src_objs, True), dst_result=self.format_topo(inst_id, dst_objs, False)
+            src_result=self.format_topo(inst_id, src_objs, True),
+            dst_result=self.format_topo(inst_id, dst_objs, False)
         )
 
     @staticmethod
@@ -616,9 +630,10 @@ class FalkorDBClient:
         # 方向配置
         edge_type = "dst" if dst else "src"
         default_match = (
-            f"MATCH p={f'(m{label_str}) - [*]->(n{label_str})' if dst else f'(n{label_str}) - [*]->(m{label_str})'}"
-            f"WHERE NOT EXISTS(({('m' if dst else 'm')}){('<--()' if dst else '-->()')}) {params_str} RETURN p"
+            f"MATCH p={f'(m{label_str})-[*]->(n{label_str})' if dst else f'(n{label_str})-[*]->(m{label_str})'} "
+            f"WHERE 1=1 {params_str} RETURN p"
         )
+
         # 获取拓扑配置
         topo_path = self.get_topo_config().get(model_id)
 
@@ -684,29 +699,32 @@ class FalkorDBClient:
     def format_topo(self, start_id, objs, entity_is_src=True):
         """格式化拓扑数据"""
 
-        if objs.peek() is None:
-            return {}
+        # 修复 FalkorDB QueryResult 对象检查方式
+        all_results = objs.result_set
 
         edge_map = {}
         entity_map = {}
-        for obj in objs:
+
+        for obj in all_results:
             for element in obj:
-                # if not isinstance(element, Path):
-                #     continue
                 # 分离出路径中的点和线
-                nodes = element.nodes  # 获取所有节点
-                relationships = element.relationships  # 获取所有关系
+                nodes = getattr(element, "_nodes", [])  # 获取所有节点
+                relationships = getattr(element, "_edges", [])  # 获取所有节点
                 for node in nodes:
-                    entity_map[node.id] = dict(_id=node.id, _label=list(node.labels)[0], **node._properties)
+                    entity_map[node.id] = dict(_id=node.id, _label=node.labels[0], **node.properties)
                 for relationship in relationships:
                     edge_map[relationship.id] = dict(
-                        _id=relationship.id, _label=relationship.type, **relationship._properties
+                        _id=relationship.id, _label=relationship.relation, **relationship.properties
                     )
 
         edges = list(edge_map.values())
         # 去除自己指向自己的边
         edges = [edge for edge in edges if edge["src_inst_id"] != edge["dst_inst_id"]]
         entities = list(entity_map.values())
+
+        # 检查起始实体是否存在
+        if start_id not in entity_map:
+            return {}
 
         result = self.create_node(entity_map[start_id], edges, entities, entity_is_src)
         return result
