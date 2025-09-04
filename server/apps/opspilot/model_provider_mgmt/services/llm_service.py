@@ -91,7 +91,8 @@ class LLMService:
 
         return text_message, image_data
 
-    def _process_chat_history(self, chat_history: List[Dict[str, Any]], window_size: int) -> List[Dict[str, Any]]:
+    @staticmethod
+    def process_chat_history(chat_history: List[Dict[str, Any]], window_size: int) -> List[Dict[str, Any]]:
         """
         处理聊天历史，处理窗口大小和图片数据
 
@@ -136,7 +137,7 @@ class LLMService:
             extra_config.update(km_request)
         user_message, image_data = self._process_user_message_and_images(kwargs["user_message"])
         # 处理聊天历史
-        chat_history = self._process_chat_history(kwargs["chat_history"], kwargs.get("conversation_window_size", 10))
+        chat_history = self.process_chat_history(kwargs["chat_history"], kwargs.get("conversation_window_size", 10))
         # 构建聊天参数
         chat_kwargs = {
             "openai_api_base": llm_model.decrypted_llm_config["openai_base_url"],
@@ -361,7 +362,7 @@ class LLMService:
             "rerank_model_api_key": rerank_model_api_key,
             "rerank_model_name": rerank_model_name,
             "rerank_top_k": knowledge_base.rerank_top_k,
-            "rag_recall_mode": "chunk",
+            "rag_recall_mode": knowledge_base.rag_recall_mode,
             "graph_rag_request": {},
         }
         return kwargs

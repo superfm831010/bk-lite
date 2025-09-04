@@ -1,3 +1,6 @@
+import json
+
+from django.conf import settings
 from django.http import JsonResponse, StreamingHttpResponse
 from django.utils.translation import gettext as _
 from django_filters import filters
@@ -20,7 +23,9 @@ from apps.opspilot.model_provider_mgmt.serializers.llm_serializer import (
     SkillRequestLogSerializer,
     SkillToolsSerializer,
 )
+from apps.opspilot.model_provider_mgmt.services.llm_service import llm_service
 from apps.opspilot.quota_rule_mgmt.quota_utils import get_quota_client
+from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 from apps.opspilot.utils.sse_chat import stream_chat
 
 
@@ -212,6 +217,39 @@ class LLMViewSet(AuthViewSet):
         except Exception as e:
             logger.exception(e)
             return self._create_error_stream_response(str(e))
+
+    @action(methods=["POST"], detail=False)
+    def get_question(self, request):
+        prompt = """1、根据上下文对话，猜测我可能想问的三个问题
+2、仅需要给出问题，不需要思考过程和猜想过程
+3、在上下文中，这三个问题不能出现过
+4、三个问题不能有重复
+5、以Json格式返回，示例如下： ["问题1", "问题2", "问题3"]
+"""
+        kwargs = request.data
+        llm_model = LLMModel.objects.get(id=kwargs.get("llm_model_id"))
+        chat_kwargs = {
+            "openai_api_base": llm_model.decrypted_llm_config["openai_base_url"],
+            "openai_api_key": llm_model.decrypted_llm_config["openai_api_key"],
+            "model": llm_model.decrypted_llm_config["model"],
+            "system_message_prompt": prompt,
+            "temperature": 0.7,
+            "user_message": "请给出三个我想问的问题",
+            "chat_history": llm_service.process_chat_history(kwargs["chat_history"], 99),
+            "image_data": [],
+            "user_id": str(request.user.id),
+            "enable_naive_rag": False,
+            "rag_stage": "string",
+            "naive_rag_request": [],
+        }
+        url = f"{settings.METIS_SERVER_URL}/api/agent/invoke_chatbot_workflow"
+        result = ChatServerHelper.post_chat_server(chat_kwargs, url)
+        data = result["message"]
+        try:
+            return_data = json.loads(data)
+        except ValueError:
+            return JsonResponse({"result": False, "message": data})
+        return JsonResponse({"result": True, "data": return_data})
 
 
 class ObjFilter(FilterSet):

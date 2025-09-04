@@ -23,11 +23,11 @@ class FalkorDBClient:
         self.password = os.getenv("FALKORDB_REQUIREPASS", "") or None
         self.host = os.getenv('FALKORDB_HOST', '10.10.40.189')
         self.port = int(os.getenv("FALKORDB_PORT", "6379"))
-        self.database = os.getenv("FALKORDB_DATABASE", "cmdb_graph")
+        self.database = os.getenv("FALKORDB_DATABASE", "default_graph")
         self._client = None
         self._graph = None
 
-    def connect(self, graph_name="default_graph"):
+    def connect(self):
         """建立连接并选择Graph"""
         try:
             self._client = falkordb.FalkorDB(
@@ -35,8 +35,8 @@ class FalkorDBClient:
                 port=self.port,
                 password=self.password
             )
-            self._graph = self._client.select_graph(graph_name)
-            logger.info(f"已连接到 FalkorDB，选择Graph: {graph_name}")
+            self._graph = self._client.select_graph(self.database)
+            logger.info(f"已连接到 FalkorDB，选择Graph: {self.database}")
 
             return True
         except Exception:  # noqa
