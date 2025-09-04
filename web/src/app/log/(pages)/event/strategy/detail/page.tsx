@@ -332,28 +332,35 @@ const StrategyOperation = () => {
                         <SelectCard data={ALGORITHM_LIST} />
                       </Form.Item>
                       <Form.Item<StrategyFields>
-                        rules={[
-                          { required: true, message: t('common.required') },
-                        ]}
+                        required
                         label={
-                          <span className="w-[82px]">
+                          <span className="w-[100px]">
                             {t('log.integration.logGroup')}
                           </span>
                         }
-                        tooltip={t('log.integration.logGroupTips')}
-                        name="log_groups"
                       >
-                        <Select
-                          style={{ width: 800 }}
-                          showSearch
-                          mode="tags"
-                          maxTagCount="responsive"
-                          placeholder={t('log.integration.logGroup')}
-                          options={streamList.map((item: ListItem) => ({
-                            value: item.id,
-                            label: item.name,
-                          }))}
-                        ></Select>
+                        <Form.Item
+                          name="log_groups"
+                          noStyle
+                          rules={[
+                            { required: true, message: t('common.required') },
+                          ]}
+                        >
+                          <Select
+                            style={{ width: 800 }}
+                            showSearch
+                            mode="tags"
+                            maxTagCount="responsive"
+                            placeholder={t('log.integration.logGroup')}
+                            options={streamList.map((item: ListItem) => ({
+                              value: item.id,
+                              label: item.name,
+                            }))}
+                          ></Select>
+                        </Form.Item>
+                        <div className="text-[var(--color-text-3)] mt-[10px]">
+                          {t('log.integration.logGroupTips')}
+                        </div>
                       </Form.Item>
                       <Form.Item<StrategyFields>
                         required
