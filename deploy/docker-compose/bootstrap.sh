@@ -386,11 +386,6 @@ docker run --rm --network=bklite-prod \
     --max-msg-size=-1 --max-msgs=-1 --max-msgs-per-subject=1000000 \
     --dupe-window=5m --no-allow-rollup --no-deny-delete --no-deny-purge
 
-# 启动 Postgres 并等待服务就绪
-log "INFO" "启动 Postgres..."
-${DOCKER_COMPOSE_CMD} up -d postgres
-wait_container_health postgres "Postgres"
-
 log "INFO" "启动所有服务"
 ${DOCKER_COMPOSE_CMD} up -d
 sleep 10
