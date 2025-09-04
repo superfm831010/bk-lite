@@ -148,3 +148,12 @@ def get_alert_trend_data(*args, **kwargs) -> Dict[str, Any]:
         result.append([period_str, period_counts.get(period_str, 0)])
 
     return {"result": True, "data": result, "message": ""}
+
+
+@nats_client.register
+def alert_test(*args, **kwargs):
+    """
+    测试nats的告警接口
+    """
+    logger.info("=== alert_test ===, args={}, kwargs={}".format(args, kwargs))
+    return {"result": True, "data": "alert_test success", "message": ""}

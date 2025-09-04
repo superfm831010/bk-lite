@@ -14,7 +14,6 @@ import { TopologyNodeData } from '@/app/ops-analysis/types/topology';
 import { DirItem } from '@/app/ops-analysis/types';
 import { getEdgeStyleWithLabel } from '../utils/topologyUtils';
 import { createNodeByType } from '../utils/registerNode';
-import { iconList } from '@/app/cmdb/utils/common';
 
 const serializeNodeConfig = (nodeData: any, nodeType: string) => {
   const styleConfigMapping: Record<string, string[]> = {
@@ -72,6 +71,8 @@ export const useGraphData = (
 
     const edges = graphInstance.getEdges().map((edge: any) => {
       const edgeData = edge.getData();
+      const vertices = edge.getVertices(); 
+
       return {
         id: edge.id,
         source: edge.getSourceCellId(),
@@ -82,6 +83,7 @@ export const useGraphData = (
         lineName: edgeData?.lineName || '',
         sourceInterface: edgeData?.sourceInterface,
         targetInterface: edgeData?.targetInterface,
+        vertices: vertices || [],
         config: edgeData?.config ? {
           strokeColor: edgeData.config.strokeColor,
           strokeWidth: edgeData.config.strokeWidth,
@@ -170,7 +172,7 @@ export const useGraphData = (
           hasError: false,
         };
 
-        nodeData = createNodeByType(chartNodeConfig, iconList);
+        nodeData = createNodeByType(chartNodeConfig);
         if (valueConfig?.dataSource) {
           chartNodesToLoad.push({
             nodeId: nodeConfig.id,
@@ -178,7 +180,7 @@ export const useGraphData = (
           });
         }
       } else {
-        nodeData = createNodeByType(nodeConfig, iconList);
+        nodeData = createNodeByType(nodeConfig);
       }
 
       graphInstance.addNode(nodeData);
@@ -198,6 +200,7 @@ export const useGraphData = (
         lineName: edgeConfig.lineName,
         sourceInterface: edgeConfig.sourceInterface,
         targetInterface: edgeConfig.targetInterface,
+        vertices: edgeConfig.vertices || [],
         config: edgeConfig.config,
       };
 
@@ -213,6 +216,11 @@ export const useGraphData = (
       });
 
       graphInstance.addEdge(edge);
+
+      // 恢复拐点数据
+      if (edgeConfig.vertices && edgeConfig.vertices.length > 0) {
+        edge.setVertices(edgeConfig.vertices);
+      }
     });
 
     chartNodesToLoad.forEach(({ nodeId, valueConfig }) => {

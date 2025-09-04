@@ -330,6 +330,7 @@
     "createBlankAgent": "Create Blank Agent",
     "createFromTemplate": "Create From Template",
     "information": "Information",
+    "selectTemplate": "Select Template",
     "form": {
       "name": "Name",
       "group": "Group",
@@ -337,6 +338,7 @@
       "owner": "Owner",
       "llmModel": "LLM Model",
       "showThought": "Show Thought",
+      "enableSuggest": "Enable Suggest",
       "temperature": "Temperature",
       "temperatureTip": "Used to control the randomness and creativity of text generation; a low temperature produces more definitive results, while a high temperature increases the diversity and randomness of the text.",
       "prompt": "Prompt",

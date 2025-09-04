@@ -100,7 +100,6 @@ const ViewConfig: React.FC<ViewConfigPropsWithManager> = ({
   const handleConfirm = async () => {
     try {
       const values = await form.validateFields();
-      console.log('Form Values:', values);
       if (values.params && selectedDataSource?.params) {
         values.dataSourceParams = processFormParamsForSubmit(
           values.params,

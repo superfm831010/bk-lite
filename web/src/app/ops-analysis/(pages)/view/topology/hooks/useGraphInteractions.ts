@@ -1,28 +1,17 @@
 /**
  * 拓扑图交互功能管理 Hook，专注于处理用户交互操作和模态框管理
  */
-import { v4 as uuidv4 } from 'uuid';
 import type { Edge, Node, Cell } from '@antv/x6';
 import { useCallback } from 'react';
 import { message } from 'antd';
-import { getEdgeStyle, addEdgeTools, createEdgeLabel } from '../utils/topologyUtils';
+import { createEdgeLabel, getEdgeStyle } from '../utils/topologyUtils';
+import { createEdgeByType } from '../utils/registerEdge';
 import {
   TopologyState,
   MenuClickEvent,
   UseContextMenuAndModalReturn,
   Point,
-  EdgeData
 } from '@/app/ops-analysis/types/topology';
-
-const getNodeName = (node: Cell): string => {
-  const nodeData = (node as any).getData?.();
-  if (nodeData?.name) return nodeData.name;
-
-  const attrs = (node as any).getAttrs?.();
-  if (attrs?.label?.text) return attrs.label.text;
-
-  return node.id;
-};
 
 const removeAllEdgeLabels = (edge: Edge) => {
   const labels = edge.getLabels();
@@ -56,7 +45,13 @@ export const useContextMenuAndModal = (
       const edge = graphInstance.getCellById(currentEdgeData.id) as Edge;
       if (!edge) return;
 
-      edge.setData({ ...edge.getData(), ...values });
+      const currentVertices = edge.getVertices();
+
+      edge.setData({
+        ...edge.getData(),
+        ...values,
+        vertices: currentVertices
+      });
 
       if (values.lineType === 'network_line') {
         removeAllEdgeLabels(edge);
@@ -81,6 +76,40 @@ export const useContextMenuAndModal = (
     state.setEdgeConfigVisible(false);
     setCurrentEdgeData(null);
   }, [setCurrentEdgeData, state]);
+
+  const handleEdgeConfiguration = useCallback(
+    (selectedCell: Cell) => {
+      if (!selectedCell.isEdge()) return;
+
+      const edge = selectedCell as Edge;
+      const edgeData = edge.getData();
+      const sourceNode = edge.getSourceNode();
+      const targetNode = edge.getTargetNode();
+
+      if (edgeData && sourceNode && targetNode) {
+        const sourceNodeData = sourceNode.getData();
+        const targetNodeData = targetNode.getData();
+
+        setCurrentEdgeData({
+          id: edge.id,
+          lineType: edgeData.lineType || 'common_line',
+          lineName: edgeData.lineName || '',
+          sourceNode: {
+            id: sourceNode.id,
+            name: sourceNodeData?.name || sourceNode.id,
+          },
+          targetNode: {
+            id: targetNode.id,
+            name: targetNodeData?.name || targetNode.id,
+          },
+          sourceInterface: edgeData.sourceInterface,
+          targetInterface: edgeData.targetInterface,
+        });
+        state.setEdgeConfigVisible(true);
+      }
+    },
+    [setCurrentEdgeData, state]
+  );
 
   const handleViewModeMenuClick = useCallback(
     (key: string, sourceNode: any) => {
@@ -219,30 +248,17 @@ export const useContextMenuAndModal = (
         if (targetCell && targetCell.id !== contextMenuNodeId) {
           const sourceNode = graphInstance.getCellById(contextMenuNodeId);
           if (sourceNode) {
-            const finalEdge = graphInstance.addEdge({
-              id: `edge_${uuidv4()}`,
-              source: { cell: contextMenuNodeId },
-              target: { cell: targetCell.id },
-              ...getEdgeStyle(connectionType),
-              data: { connectionType, lineType: 'common_line' },
-            });
-            addEdgeTools(finalEdge);
+            const { edge: finalEdge, edgeData } = createEdgeByType(
+              graphInstance,
+              contextMenuNodeId,
+              targetCell.id,
+              connectionType
+            );
 
-            const edgeData: EdgeData = {
-              id: finalEdge.id,
-              lineType: 'common_line' as const,
-              lineName: '',
-              sourceNode: {
-                id: sourceNode.id,
-                name: getNodeName(sourceNode),
-              },
-              targetNode: {
-                id: targetCell.id,
-                name: getNodeName(targetCell),
-              },
-            };
-            setCurrentEdgeData(edgeData);
-            state.setEdgeConfigVisible(true);
+            if (finalEdge && edgeData) {
+              setCurrentEdgeData(edgeData);
+              state.setEdgeConfigVisible(true);
+            }
           }
         }
       };
@@ -271,24 +287,33 @@ export const useContextMenuAndModal = (
 
       if (!graphInstance || !contextMenuNodeId) return;
 
-      if (!isEditMode) {
-        const sourceNode = graphInstance.getCellById(contextMenuNodeId);
-        if (!sourceNode) return;
+      const selectedCell = graphInstance.getCellById(contextMenuNodeId);
+      if (!selectedCell) return;
 
-        handleViewModeMenuClick(key, sourceNode);
+      if (selectedCell.isEdge() && key === 'configure') {
+        handleEdgeConfiguration(selectedCell);
         return;
       }
 
-      const targetNode = graphInstance.getCellById(contextMenuNodeId);
-      if (!targetNode) return;
-
-      if (handleNodeLayerOperation(key, targetNode)) {
+      if (key === 'delete') {
+        selectedCell.remove();
         return;
       }
 
-      const connectionType = key as 'none' | 'single' | 'double';
-      if (['none', 'single', 'double'].includes(connectionType)) {
-        handleConnectionDrawing(connectionType);
+      if (selectedCell.isNode()) {
+        if (!isEditMode) {
+          handleViewModeMenuClick(key, selectedCell);
+          return;
+        }
+
+        if (handleNodeLayerOperation(key, selectedCell)) {
+          return;
+        }
+
+        const connectionType = key as 'none' | 'single' | 'double';
+        if (['none', 'single', 'double'].includes(connectionType)) {
+          handleConnectionDrawing(connectionType);
+        }
       }
     },
     [
@@ -296,6 +321,7 @@ export const useContextMenuAndModal = (
       contextMenuNodeId,
       setContextMenuVisible,
       isEditMode,
+      handleEdgeConfiguration,
       handleViewModeMenuClick,
       handleNodeLayerOperation,
       handleConnectionDrawing,
