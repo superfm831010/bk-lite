@@ -146,6 +146,7 @@ MIDDLEWARE_METRIC_MAP = {
     "weblogic": ["weblogic_info_gauge"],
     "keepalived": ["keepalived_info_gauge"],
     "tongweb": ["tongweb_info_gauge"],
+    "jetty": ["jetty_info_gauge"],
 }
 
 # Tencent cloud

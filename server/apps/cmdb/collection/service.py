@@ -1661,6 +1661,20 @@ class MiddlewareCollectMetrics(CollectBase):
                 "metaspace_size": "metaspace_size",
                 "max_metaspace_size": "max_metaspace_size",
             },
+            "jetty": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "jetty_home": "jetty_home",
+                "java_version": "java_version",
+                "monitored_dir": "monitored_dir",
+                "bin_path": "bin_path",
+                "java_vendor": "java_vendor",
+                "war_name": "war_name",
+                "jvm_para": "jvm_para",
+                "max_threads": "max_threads",
+            },
         }
 
         return mapping
