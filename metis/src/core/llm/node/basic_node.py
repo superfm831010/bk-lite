@@ -39,6 +39,14 @@ class BasicNode:
 
         return state
 
+    def suggest_question_node(self, state: Dict[str, Any], config: RunnableConfig) -> Dict[str, Any]:
+        if config["configurable"]["graph_request"].enable_suggest:
+            suggest_question_prompt = TemplateLoader.render_template(
+                'prompts/graph/suggest_question_prompt', {})
+            state["messages"].append(SystemMessage(
+                content=suggest_question_prompt))
+        return state
+
     def add_chat_history_node(self, state: Dict[str, Any], config: RunnableConfig) -> Dict[str, Any]:
         if config["configurable"]['graph_request'].chat_history:
             for chat in config["configurable"]['graph_request'].chat_history:
