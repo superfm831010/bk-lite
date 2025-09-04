@@ -43,7 +43,15 @@ async def react_agent_stream_response(workflow, body, res):
     result = await workflow.stream(body)
 
     async for chunk in result:
-        if isinstance(chunk[0], (ToolMessage, AIMessage, AIMessageChunk)):
+        if isinstance(chunk[0], (ToolMessage)):
+            content = f"🔧 {chunk[0].name}: {chunk[0].content}\n"
+            response_sse_obj = create_response_obj(
+                delta_content=content)
+            json_content = json_util.dumps(
+                response_sse_obj, ensure_ascii=False)
+            await res.write(f"data: {json_content}\n\n".encode('utf-8'))
+
+        if isinstance(chunk[0], (AIMessage, AIMessageChunk)):
             content = chunk[0].content
             completion_token += workflow.count_tokens(content)
 
