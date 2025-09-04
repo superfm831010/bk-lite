@@ -152,6 +152,7 @@ class LLMService:
             "enable_naive_rag": kwargs["enable_rag"],
             "rag_stage": "string",
             "naive_rag_request": naive_rag_request,
+            "enable_suggest": kwargs.get("enable_suggest", False),
         }
         if kwargs.get("thread_id"):
             chat_kwargs["thread_id"] = str(kwargs["thread_id"])
