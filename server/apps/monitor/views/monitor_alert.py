@@ -12,8 +12,9 @@ from apps.core.utils.permission_utils import get_permission_rules, permission_fi
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.constants import DEFAULT_PERMISSION, POLICY_MODULE
 from apps.monitor.models import MonitorAlert, MonitorEvent, MonitorPolicy, MonitorEventRawData
+from apps.monitor.models.monitor_policy import MonitorAlertMetricSnapshot
 from apps.monitor.filters.monitor_alert import MonitorAlertFilter
-from apps.monitor.serializers.monitor_alert import MonitorAlertSerializer
+from apps.monitor.serializers.monitor_alert import MonitorAlertSerializer, MonitorAlertMetricSnapshotSerializer
 from apps.monitor.serializers.monitor_policy import MonitorPolicySerializer
 from config.drf.pagination import CustomPageNumberPagination
 
@@ -177,3 +178,83 @@ class MonitorEventVieSet(viewsets.ViewSet):
         event_obj = MonitorEvent.objects.filter(policy_id=alert_obj.policy_id, monitor_instance_id=alert_obj.monitor_instance_id).order_by("-created_at").first()
         raw_data = MonitorEventRawData.objects.filter(event_id=event_obj.id).first()
         return WebUtils.response_success(raw_data.data if raw_data else {})
+
+
+class MonitorAlertMetricSnapshotViewSet(viewsets.ViewSet):
+    """告警指标快照视图集"""
+
+    @swagger_auto_schema(
+        operation_description="查询告警指标快照",
+        manual_parameters=[
+            openapi.Parameter("alert_id", openapi.IN_PATH, description="告警ID", type=openapi.TYPE_INTEGER, required=True),
+            openapi.Parameter("page", openapi.IN_QUERY, description="页码", type=openapi.TYPE_INTEGER, required=False),
+            openapi.Parameter("page_size", openapi.IN_QUERY, description="每页数量", type=openapi.TYPE_INTEGER, required=False),
+        ],
+        responses={
+            200: openapi.Response(
+                description="成功",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'count': openapi.Schema(type=openapi.TYPE_INTEGER, description='总数量'),
+                        'results': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(type=openapi.TYPE_OBJECT),
+                            description='快照数据列表'
+                        )
+                    }
+                )
+            ),
+            404: openapi.Response(description="告警不存在")
+        }
+    )
+    @action(methods=['get'], detail=False, url_path='query/(?P<alert_id>[^/.]+)')
+    def get_snapshots(self, request, alert_id):
+        """根据告警ID查询指标快照数据"""
+        try:
+            # 1. 根据告警ID获取告警对象
+            alert_obj = MonitorAlert.objects.get(id=alert_id)
+        except MonitorAlert.DoesNotExist:
+            return WebUtils.response_error("告警不存在", status_code=404)
+
+        # 2. 构建查询条件 - 根据告警ID以及告警的开始结束时间
+        snapshot_query = {
+            'alert_id': alert_obj.id,
+            'snapshot_time__gte': alert_obj.start_event_time,
+        }
+
+        # 如果告警已结束，添加结束时间过滤条件
+        if alert_obj.end_event_time:
+            snapshot_query['snapshot_time__lte'] = alert_obj.end_event_time
+
+        # 3. 查询指标快照数据
+        queryset = MonitorAlertMetricSnapshot.objects.filter(**snapshot_query).order_by('snapshot_time')
+
+        # 4. 分页处理
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
+
+        if page_size == -1:
+            # 返回所有数据
+            snapshots = queryset
+        else:
+            # 分页返回
+            start = (page - 1) * page_size
+            end = start + page_size
+            snapshots = queryset[start:end]
+
+        # 5. 序列化数据
+        serializer = MonitorAlertMetricSnapshotSerializer(snapshots, many=True)
+
+        return WebUtils.response_success({
+            'count': queryset.count(),
+            'results': serializer.data,
+            'alert_info': {
+                'id': alert_obj.id,
+                'policy_id': alert_obj.policy_id,
+                'monitor_instance_id': alert_obj.monitor_instance_id,
+                'start_event_time': alert_obj.start_event_time,
+                'end_event_time': alert_obj.end_event_time,
+                'status': alert_obj.status
+            }
+        })
