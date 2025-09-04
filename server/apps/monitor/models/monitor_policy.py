@@ -101,14 +101,13 @@ class MonitorAlertMetricSnapshot(TimeInfo):
 
     # 快照数据 - 保持简洁，只存储核心数据
     snapshot_time = models.DateTimeField(db_index=True, verbose_name='快照时间')
-    raw_data = models.JSONField(default=list, verbose_name='原始指标数据')  # 修改为 list 默认值，与代码实际使用保持一致
+    raw_data = models.JSONField(default=list, verbose_name='原始指标数据')
 
     class Meta:
         verbose_name = '告警指标快照'
         verbose_name_plural = '告警指标快照'
         indexes = [
             models.Index(fields=['alert', 'snapshot_time']),
-            models.Index(fields=['policy_id', 'monitor_instance_id', 'snapshot_time']),
         ]
 
 
