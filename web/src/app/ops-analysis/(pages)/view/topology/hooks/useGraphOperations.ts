@@ -4,16 +4,14 @@
  */
 
 import { useCallback, useEffect } from 'react';
-import ChartNode from '../components/chartNode';
 import type { Graph as X6Graph } from '@antv/x6';
 import { v4 as uuidv4 } from 'uuid';
 import { formatTimeRange } from '@/app/ops-analysis/utils/widgetDataTransform';
 import { Graph } from '@antv/x6';
 import { iconList } from '@/app/cmdb/utils/common';
-import { register } from '@antv/x6-react-shape';
 import { Selection } from '@antv/x6-plugin-selection';
 import { Transform } from '@antv/x6-plugin-transform';
-import { COLORS, NODE_DEFAULTS } from '../constants/nodeDefaults';
+import { COLORS } from '../constants/nodeDefaults';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { TopologyNodeData } from '@/app/ops-analysis/types/topology';
 import { DataSourceParam } from '@/app/ops-analysis/types/dashBoard';
@@ -36,15 +34,6 @@ export const useGraphOperations = (
   containerRef: React.RefObject<HTMLDivElement>,
   state: any
 ) => {
-  useEffect(() => {
-    register({
-      shape: 'react-shape',
-      width: NODE_DEFAULTS.CHART_NODE.width,
-      height: NODE_DEFAULTS.CHART_NODE.height,
-      component: ChartNode,
-    });
-  }, []);
-
   const { getSourceDataByApiId } = useDataSourceApi();
 
   const resetAllStyles = useCallback((graph: X6Graph) => {
@@ -636,6 +625,7 @@ export const useGraphOperations = (
         id: editingNode.id,
         type: editingNode.type,
         name: values.name || editingNode.name,
+        description: values.description || editingNode.description || '',
         position: editingNode.position,
         logoType: values.logoType || editingNode.logoType,
         logoIcon: values.logoIcon || editingNode.logoIcon,
@@ -716,6 +706,7 @@ export const useGraphOperations = (
       id: `node_${uuidv4()}`,
       type: 'chart',
       name: values.name,
+      description: values.description || '',
       position: state.editingNodeData.position,
       styleConfig: {},
       valueConfig: {

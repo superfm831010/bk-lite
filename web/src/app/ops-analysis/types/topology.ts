@@ -45,10 +45,14 @@ export interface NodeEditState {
 
 // 节点相关类型扩展
 export interface TopologyNodeData {
+  id?: string;
   type: string;
   name: string;
-  widget?: string;
   position: Point;
+  logoType?: string;
+  logoIcon?: string;
+  logoUrl?: string;
+  description?: string;
   valueConfig?: {
     chartType?: string;
     dataSource?: number;
@@ -67,15 +71,6 @@ export interface TopologyNodeData {
     fontSize?: number;
     fontWeight?: string | number;
   };
-  logoType?: string;
-  logoIcon?: string;
-  logoUrl?: string;
-  selectedFields?: string[];
-  width?: number;
-  height?: number;
-  id?: string;
-  x?: number;
-  y?: number;
 }
 
 // 图形实例操作类型
