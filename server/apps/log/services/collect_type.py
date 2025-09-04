@@ -176,8 +176,24 @@ class CollectTypeService:
             instance.collectinstanceorganization_set.create(organization=org)
 
     @staticmethod
-    def search_instance(collect_type_id, name, page, page_size):
+    def search_instance(collect_type_id, name, page, page_size, current_team):
+        """
+        查询采集实例列表
+
+        Args:
+            collect_type_id: 采集类型ID，可选
+            name: 实例名称，可选，支持模糊查询
+            page: 页码
+            page_size: 每页数量
+            current_team: 当前组织ID，必填
+        """
         queryset = CollectInstance.objects.select_related("collect_type")
+
+        # 根据当前组织过滤采集实例（必填条件）
+        queryset = queryset.filter(
+            collectinstanceorganization__organization=current_team
+        )
+
         if collect_type_id:
             queryset = queryset.filter(collect_type_id=collect_type_id)
         if name:

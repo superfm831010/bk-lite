@@ -40,6 +40,7 @@ init_alerts() {
 init_operation_analysis() {
     echo "运营分析系统资源初始化..."
     python manage.py init_default_namespace || true
+    python manage.py init_tag --update || true
     python manage.py init_source_api_data --update || true
 }
 

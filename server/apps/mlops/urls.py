@@ -12,6 +12,7 @@ from apps.mlops.views.rasa_story import RasaStoryViewSet
 from apps.mlops.views.rasa_entity import RasaEntityViewSet
 from apps.mlops.views.rasa_slot import RasaSlotViewSet
 from apps.mlops.views.rasa_form import RasaFormViewSet
+from apps.mlops.views.rasa_action import RasaActionViewSet
 
 router = routers.DefaultRouter()
 
@@ -27,5 +28,6 @@ router.register(r'rasa_story', RasaStoryViewSet, basename='rasa_story')
 router.register(r'rasa_entity', RasaEntityViewSet, basename='rasa_entity')
 router.register(r'rasa_slot', RasaSlotViewSet, basename='rasa_slot')
 router.register(r'rasa_form', RasaFormViewSet, basename='rasa_form')
+router.register(r'rasa_action', RasaActionViewSet, basename='rasa_action')
 
 urlpatterns = router.urls

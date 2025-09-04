@@ -2,6 +2,7 @@
 # @File: get_nats_source_data.py
 # @Time: 2025/7/22 18:24
 # @Author: windyzhao
+from apps.operation_analysis.nats import DefaultNastClient
 from apps.rpc.alerts import AlertOperationAnaRpc
 from apps.rpc.monitor import MonitorOperationAnaRpc
 from apps.rpc.log import LogOperationAnaRpc
@@ -22,6 +23,10 @@ class GetNatsData:
         self.namespace_list = namespace_list
         self.namespace_server_map = self.set_namespace_servers()
         self.namespace_map = self.set_namespace_map()
+
+    @property
+    def default_namespace_name(self):
+        return "default"
 
     @property
     def user_param_key(self):
@@ -51,15 +56,17 @@ class GetNatsData:
 
     @staticmethod
     def set_namespace_map():
-        # TODO 每个注册的命名空间 必须重写__init__ 补上server参数
-        result = {"alert": AlertOperationAnaRpc, "monitor": MonitorOperationAnaRpc, "log": LogOperationAnaRpc}
+        result = {"alert": AlertOperationAnaRpc, "monitor": MonitorOperationAnaRpc, "log": LogOperationAnaRpc,
+                  "default": DefaultNastClient}
         return result
 
     def _get_client(self, server):
         if self.namespace not in self.namespace_map.keys():
-            raise Exception("NATS namespace not found")
+            logger.info("==NATS命名空间未配置，使用默认命名空间==: namespace={}".format(self.namespace))
+            client = self.namespace_map[self.default_namespace_name](server=server, func_name=self.path)
+        else:
+            client = self.namespace_map[self.namespace](server=server)
 
-        client = self.namespace_map[self.namespace](server=server)
         return client
 
     def get_data(self) -> dict:
@@ -73,13 +80,16 @@ class GetNatsData:
             server_url = self.namespace_server_map[namespace.id]
             nats_client = self._get_client(server=server_url)
             try:
-                fun = getattr(nats_client, self.path, None)
+                if hasattr(nats_client, "DEFAULT_NATS"):
+                    fun = getattr(nats_client, "get_customization_nast_data", None)
+                else:
+                    fun = getattr(nats_client, self.path, None)
                 if fun is None:
                     raise RuntimeError(f"NamePaces({self.namespace}) Module not found func({self.path})!")
 
                 return_data = fun(**self.params)
                 result[namespace.name] = return_data.get("data", [])
-            except Exception as e: # noqa
+            except Exception as e:  # noqa
                 result[namespace.name] = []
                 import traceback
                 logger.error(

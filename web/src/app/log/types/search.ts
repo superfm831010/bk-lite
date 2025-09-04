@@ -21,6 +21,7 @@ export interface SearchParams {
   fields_limit?: number;
   step?: string;
   limit?: number | null;
+  log_groups?: React.Key[];
 }
 
 export interface LogStream {

@@ -24,7 +24,7 @@ class LogSearchViewSet(ViewSet):
                     description="List of log group IDs to filter the search"
                 ),
             },
-            required=["query"]
+            required=["query", "log_groups"]
         ),
         tags=['LogSearch']
     )
@@ -67,7 +67,7 @@ class LogSearchViewSet(ViewSet):
                     description="List of log group IDs to filter the search"
                 ),
             },
-            required=["query", "field"]
+            required=["query", "field", "log_groups"]
         ),
         tags=['LogSearch']
     )

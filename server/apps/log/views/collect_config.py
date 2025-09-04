@@ -165,18 +165,30 @@ class CollectInstanceViewSet(ViewSet):
     @action(methods=['post'], detail=False, url_path='search')
     def search(self, request):
         """
-        List all collect instances.
+        List all collect instances with organization filter.
         """
         collect_type_id = request.data.get("collect_type_id")
         name = request.data.get("name")
         page = int(request.data.get("page", 1))
         page_size = int(request.data.get("page_size", 10))
 
+        # 获取当前用户选择的组织（必填）
+        current_team = request.COOKIES.get("current_team")
+        if not current_team:
+            return WebUtils.response_error("未选择组织，请先选择组织后再查询")
+
+        try:
+            current_team = int(current_team)
+        except (ValueError, TypeError):
+            return WebUtils.response_error("组织ID格式错误")
+
+        # 调用服务层，传入组织参数
         data = CollectTypeService.search_instance(
             collect_type_id=collect_type_id,
             name=name,
             page=page,
-            page_size=page_size
+            page_size=page_size,
+            current_team=current_team
         )
 
         return WebUtils.response_success(data)

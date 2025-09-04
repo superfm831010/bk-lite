@@ -77,6 +77,13 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     restoreUserParamValues,
   } = useDataSourceManager();
 
+  const filteredDataSources = useMemo(() => {
+    return dataSources.filter(
+      (dataSource) =>
+        dataSource.chart_type && dataSource.chart_type.includes('single')
+    );
+  }, [dataSources]);
+
   const nodeDefaults = useMemo(() => {
     return (
       NODE_TYPE_DEFAULTS[nodeType as keyof typeof NODE_TYPE_DEFAULTS] ||
@@ -154,8 +161,8 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         setLogoPreview(values.logoUrl);
       }
 
-      if (values.dataSource && dataSources.length > 0) {
-        const selectedSource = dataSources.find(
+      if (values.dataSource && filteredDataSources.length > 0) {
+        const selectedSource = filteredDataSources.find(
           (ds) => ds.id === values.dataSource
         );
         setSelectedDataSource(selectedSource);
@@ -177,7 +184,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     },
     [
       form,
-      dataSources,
+      filteredDataSources,
       setSelectedDataSource,
       setDefaultParamValues,
       restoreUserParamValues,
@@ -242,7 +249,9 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   const handleDataSourceChange = useCallback(
     (dataSourceId: number) => {
       setCurrentDataSource(dataSourceId);
-      const selectedSource = dataSources.find((ds) => ds.id === dataSourceId);
+      const selectedSource = filteredDataSources.find(
+        (ds) => ds.id === dataSourceId
+      );
       setSelectedDataSource(selectedSource);
       setTreeData([]);
       setSelectedFields([]);
@@ -263,7 +272,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         });
       }
     },
-    [dataSources, setSelectedDataSource, form, setDefaultParamValues]
+    [filteredDataSources, setSelectedDataSource, form, setDefaultParamValues]
   );
 
   const fetchDataFields = useCallback(async () => {
@@ -482,13 +491,13 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
             {t('topology.nodeConfig.dataSource')}
           </div>
           <Form.Item
-            label={t('topology.nodeConfig.dataSourceType')}
+            label={t('dashboard.dataSourceType')}
             name="dataSource"
             rules={[{ required: true, message: t('common.selectMsg') }]}
           >
             <DataSourceSelect
               loading={dataSourcesLoading}
-              dataSources={dataSources}
+              dataSources={filteredDataSources}
               placeholder={t('common.selectMsg')}
               style={{ width: '100%' }}
               onChange={handleDataSourceChange}

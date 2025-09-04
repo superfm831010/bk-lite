@@ -4,5 +4,9 @@
   "icon": "filestream",
   "description": "Collects logs from filestream using Filebeat HTTP output",
   "default_query": "collect_type: filestream | last 1 by (_time) partition by (instance_id)",
-  "attrs": ["path", "message", "source_type", "timestamp"]
+  "attrs": [
+    "collect_type",
+    "collector",
+    "instance_id"
+  ]
 }
