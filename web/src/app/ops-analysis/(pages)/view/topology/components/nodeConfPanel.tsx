@@ -505,21 +505,21 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
             />
           </Form.Item>
         </div>
-
-        <div className="mb-6">
-          <div className="font-bold text-[var(--color-text-1)] mb-4">
-            {t('topology.nodeConfig.paramSettings')}
+        {selectedDataSource?.params && selectedDataSource.params.length > 0 && (
+          <div className="mb-6">
+            <div className="font-bold text-[var(--color-text-1)] mb-4">
+              {t('dashboard.paramSettings')}
+            </div>
+            <Spin size="small" spinning={dataSourcesLoading}>
+              <DataSourceParamsConfig
+                selectedDataSource={selectedDataSource}
+                readonly={readonly || dataSourcesLoading}
+                includeFilterTypes={['params', 'fixed', 'filter']}
+                fieldPrefix="params"
+              />
+            </Spin>
           </div>
-          <Spin size="small" spinning={dataSourcesLoading}>
-            <DataSourceParamsConfig
-              selectedDataSource={selectedDataSource}
-              readonly={readonly || dataSourcesLoading}
-              includeFilterTypes={['params', 'fixed', 'filter']}
-              fieldPrefix="params"
-            />
-          </Spin>
-        </div>
-
+        )}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="font-bold text-[var(--color-text-1)]">
@@ -536,40 +536,59 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
             />
           </div>
 
-          {treeData.length > 0 ? (
-            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-              <div className="text-sm text-gray-600 mb-3">
-                {t('topology.nodeConfig.selectDataFields')}
-              </div>
-              <Form.Item name="selectedFields" noStyle>
-                <Tree
-                  checkable
-                  checkStrictly
-                  defaultExpandAll
-                  checkedKeys={selectedFields}
-                  onCheck={handleFieldChange}
-                  treeData={treeData}
-                  height={300}
-                  className="bg-white border border-gray-200 rounded p-2"
-                />
-              </Form.Item>
-            </div>
-          ) : currentDataSource ? (
-            <div className="text-center py-4 text-gray-500">
-              {loadingData ? (
-                <div className="flex items-center justify-center">
-                  <Spin size="small" className="mr-2" />
-                  <span>{t('topology.nodeConfig.fetchingDataFields')}</span>
+          <Form.Item
+            name="selectedFields"
+            rules={[
+              {
+                required: true,
+                validator: (_, value) => {
+                  if (!value || value.length === 0) {
+                    return Promise.reject(
+                      new Error(t('topology.nodeConfig.selectAtLeastOneField'))
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <div>
+              {treeData.length > 0 ? (
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="text-sm text-gray-600 mb-3">
+                    {t('topology.nodeConfig.selectDataFields')}
+                  </div>
+                  <Tree
+                    checkable
+                    checkStrictly
+                    defaultExpandAll
+                    checkedKeys={selectedFields}
+                    onCheck={handleFieldChange}
+                    treeData={treeData}
+                    height={300}
+                    className="bg-white border border-gray-200 rounded p-2"
+                  />
+                </div>
+              ) : currentDataSource ? (
+                <div className="text-center py-4 text-gray-500">
+                  {loadingData ? (
+                    <div className="flex items-center justify-center">
+                      <Spin size="small" className="mr-2" />
+                      <span>{t('topology.nodeConfig.fetchingDataFields')}</span>
+                    </div>
+                  ) : (
+                    <span>
+                      {t('topology.nodeConfig.clickRefreshToGetFields')}
+                    </span>
+                  )}
                 </div>
               ) : (
-                <span>{t('topology.nodeConfig.clickRefreshToGetFields')}</span>
+                <div className="text-center py-4 text-gray-500">
+                  {t('topology.nodeConfig.selectDataSourceFirst')}
+                </div>
               )}
             </div>
-          ) : (
-            <div className="text-center py-4 text-gray-500">
-              {t('topology.nodeConfig.selectDataSourceFirst')}
-            </div>
-          )}
+          </Form.Item>
         </div>
       </>
     );

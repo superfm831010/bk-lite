@@ -122,9 +122,16 @@
     "exitEdit": "Exit Edit",
     "viewAlarmList": "View Alarm List",
     "viewMonitorDetails": "View Monitor Details",
+    "bringToFront": "Bring to Front",
+    "bringForward": "Bring Forward",
+    "sendBackward": "Send Backward",
+    "noArrowConnection": "No Arrow Connection",
+    "singleArrowConnection": "Single Arrow Connection",
+    "doubleArrowConnection": "Double Arrow Connection",
+    "configureEdge": "Configure Edge",
+    "delete": "Delete",
     "nodeConfig": {
         "dataSource": "Data Source",
-        "paramSettings": "Parameter Settings",
         "dataSettings": "Data Settings",
         "nodeStyle": "Node Style",
         "basicSettings": "Basic Settings",
@@ -157,7 +164,8 @@
         "clickRefreshToGetFields": "Click refresh button to get data fields",
         "selectDataSourceFirst": "Please select a data source first",
         "selectedIcon": "Selected Icon",
-        "uploadedImage": "Uploaded Image"
+        "uploadedImage": "Uploaded Image",
+        "selectAtLeastOneField": "Please select at least one data field to display"
     },
     "nodeTypes": {
         "singleValue": "Single Value",

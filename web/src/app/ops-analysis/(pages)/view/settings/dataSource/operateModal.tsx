@@ -26,6 +26,7 @@ import {
   Checkbox,
   Spin,
   message,
+  Empty,
 } from 'antd';
 
 const FormTimeSelector: React.FC<{
@@ -162,7 +163,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
     fetchTags();
 
     if (!currentRow) {
-      setParams([createDefaultParam()]);
+      setParams([]);
       return;
     }
 
@@ -189,7 +190,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
         }))
       );
     } else {
-      setParams([createDefaultParam()]);
+      setParams([]);
     }
   }, [open, currentRow, form]);
 
@@ -325,9 +326,6 @@ const OperateModal: React.FC<OperateModalProps> = ({
 
   const handleDeleteParam = (id: string) => {
     const newParams = params.filter((item) => item.id !== id);
-    if (newParams.length === 0) {
-      newParams.push(createDefaultParam());
-    }
     setParams(newParams);
     checkDuplicateNames(newParams);
     checkEmptyValues(newParams);
@@ -736,16 +734,34 @@ const OperateModal: React.FC<OperateModalProps> = ({
               marginBottom: '8px',
               color: 'var(--color-text-1)',
               fontSize: '14px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
-            {t('dataSource.params')}：
+            <span>{t('dataSource.params')}：</span>
+            <Button
+              type="dashed"
+              size="small"
+              icon={<PlusCircleOutlined />}
+              onClick={() => setParams([...params, createDefaultParam()])}
+            >
+              {t('dataSource.addParam')}
+            </Button>
           </div>
-          <CustomTable
-            rowKey="id"
-            columns={columns}
-            dataSource={params}
-            pagination={false}
-          />
+          {params.length > 0 ? (
+            <CustomTable
+              rowKey="id"
+              columns={columns}
+              dataSource={params}
+              pagination={false}
+            />
+          ) : (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={t('common.noData')}
+            />
+          )}
           {duplicateNames.length > 0 && (
             <div
               style={{

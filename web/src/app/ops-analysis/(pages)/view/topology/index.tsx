@@ -14,8 +14,14 @@ import { useGraphOperations } from './hooks/useGraphOperations';
 import { useTextOperations } from './hooks/useTextOperations';
 import { useContextMenuAndModal } from './hooks/useGraphInteractions';
 import { useDataSourceManager } from '@/app/ops-analysis/hooks/useDataSource';
-import { DirItem } from '@/app/ops-analysis/types';
-import { NodeType, DropPosition } from '@/app/ops-analysis/types/topology';
+import {
+  NodeType,
+  DropPosition,
+  ViewConfigFormValues,
+  NodeConfigFormValues,
+  TopologyProps,
+  TopologyRef,
+} from '@/app/ops-analysis/types/topology';
 import type { DatasourceItem } from '@/app/ops-analysis/types/dataSource';
 import TopologyToolbar from './components/toolbar';
 import ContextMenu from './components/contextMenu';
@@ -25,14 +31,6 @@ import TextEditInput from './components/textEditInput';
 import NodeConfPanel from './components/nodeConfPanel';
 import ViewConfig from '../dashBoard/components/viewConfig';
 import ViewSelector from '../dashBoard/components/viewSelector';
-
-interface TopologyProps {
-  selectedTopology?: DirItem | null;
-}
-
-export interface TopologyRef {
-  hasUnsavedChanges: () => boolean;
-}
 
 const Topology = forwardRef<TopologyRef, TopologyProps>(
   ({ selectedTopology }, ref) => {
@@ -150,7 +148,9 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       setChartDropPosition(null);
     };
 
-    const handleTopologyViewConfigConfirm = async (values: any) => {
+    const handleTopologyViewConfigConfirm = async (
+      values: ViewConfigFormValues
+    ) => {
       if (!state.editingNodeData) return;
       if (state.editingNodeData.isNewNode && state.editingNodeData.position) {
         await handleAddChartNode(values);
@@ -172,7 +172,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       }
     };
 
-    const handleNodeConfirm = async (values: any) => {
+    const handleNodeConfirm = async (values: NodeConfigFormValues) => {
       if (addNodeVisible) {
         if (!selectedNodeType || !dropPosition) return;
         const nodeConfig = {
@@ -326,6 +326,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
         <ContextMenu
           visible={state.contextMenuVisible}
           position={state.contextMenuPosition}
+          targetType={state.contextMenuTargetType}
           onMenuClick={handleMenuClick}
           isEditMode={state.isEditMode}
         />
