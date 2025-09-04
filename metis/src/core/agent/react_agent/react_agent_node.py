@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, Dict, Any
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.prebuilt import create_react_agent
@@ -7,7 +7,7 @@ from src.core.llm.node.tools_node import ToolsNodes
 
 
 class ReActAgentNode(ToolsNodes):
-    async def agent_node(self, state: TypedDict, config: RunnableConfig) -> TypedDict:
+    async def agent_node(self, state: Dict[str, Any], config: RunnableConfig) -> Dict[str, Any]:
         messages = state["messages"]
         llm = self.get_llm_client(config["configurable"]["graph_request"])
 
