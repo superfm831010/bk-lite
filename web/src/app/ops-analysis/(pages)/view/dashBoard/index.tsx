@@ -17,9 +17,10 @@ import { Button, Empty, Dropdown, Menu, Modal, message, Spin } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { LayoutItem } from '@/app/ops-analysis/types/dashBoard';
 import { DirItem } from '@/app/ops-analysis/types';
+import { useDataSourceManager } from '@/app/ops-analysis/hooks/useDataSource';
 import { SaveOutlined, PlusOutlined, MoreOutlined } from '@ant-design/icons';
-import { getWidgetMeta } from './config/registry';
 import { useDashBoardApi } from '@/app/ops-analysis/api/dashBoard';
+import type { DatasourceItem } from '@/app/ops-analysis/types/dataSource';
 import WidgetWrapper from './components/widgetWrapper';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -38,11 +39,12 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
   ({ selectedDashboard }, ref) => {
     const { t } = useTranslation();
     const { getDashboardDetail, saveDashboard } = useDashBoardApi();
+    const dataSourceManager = useDataSourceManager();
     const [addModalVisible, setAddModalVisible] = useState(false);
     const [layout, setLayout] = useState<LayoutItem[]>([]);
     const [originalLayout, setOriginalLayout] = useState<LayoutItem[]>([]);
     const [configDrawerVisible, setConfigDrawerVisible] = useState(false);
-    const [currentConfigItem, setCurrentConfigItem] = useState<any>(null);
+    const [currentConfigItem, setCurrentConfigItem] = useState<LayoutItem>();
     const [isNewComponentConfig, setIsNewComponentConfig] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [saving, setSaving] = useState(false);
@@ -99,9 +101,9 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
     // 判断是否需要全局时间选择器
     const needGlobalTimeSelector = layout.some((item) => {
       return (
-        item.config?.dataSourceParams &&
-        Array.isArray(item.config.dataSourceParams) &&
-        item.config.dataSourceParams.some(
+        item.valueConfig?.dataSourceParams &&
+        Array.isArray(item.valueConfig.dataSourceParams) &&
+        item.valueConfig.dataSourceParams.some(
           (param: any) =>
             param.filterType === 'filter' && param.type === 'timeRange'
         )
@@ -156,7 +158,7 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
     useEffect(() => {
       setAddModalVisible(false);
       setConfigDrawerVisible(false);
-      setCurrentConfigItem(null);
+      setCurrentConfigItem(undefined);
       setIsNewComponentConfig(false);
       setSaving(false);
       setRefreshKey(0);
@@ -205,7 +207,6 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
 
       setGlobalTimeRange(timeData);
 
-      // 更新otherConfig中的timeSelector配置
       const timeSelectorConfig = {
         selectValue:
           originValue !== null ? originValue : timeDefaultValue.selectValue,
@@ -235,20 +236,19 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
       });
     };
 
-    const handleAddComponent = (widget: string, config?: any) => {
-      const widgetMeta = getWidgetMeta(widget);
+    const handleAddComponent = (config?: any) => {
       const newWidget: LayoutItem = {
         i: uuidv4(),
         x: (layout.length % 3) * 4,
         y: Infinity,
         w: 4,
         h: 3,
-        widget: widget,
-        title: config?.name || `New ${widget}`,
-        description: widgetMeta?.description || '',
-        config: {
-          ...widgetMeta?.defaultConfig,
-          ...config,
+        name: config?.name,
+        description: config?.description || '',
+        valueConfig: {
+          dataSource: config?.dataSource,
+          chartType: config?.chartType || '',
+          dataSourceParams: config?.dataSourceParams || [],
         },
       };
       setLayout((prev) => [...prev, newWidget]);
@@ -292,26 +292,38 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
       setConfigDrawerVisible(true);
     };
 
-    const handleOpenConfig = (item: any) => {
-      setCurrentConfigItem(item);
+    const handleOpenConfig = (item: DatasourceItem) => {
+      const configItem = {
+        i: '',
+        x: 0,
+        y: 0,
+        w: 4,
+        h: 3,
+        name: item.name,
+        description: item.desc,
+        valueConfig: {
+          dataSource: item?.id,
+          chartType: '',
+          dataSourceParams: [],
+        },
+      };
+      setCurrentConfigItem(configItem);
       setIsNewComponentConfig(true);
       setConfigDrawerVisible(true);
     };
 
     const handleConfigConfirm = (values: any) => {
       if (isNewComponentConfig && currentConfigItem) {
-        // 新组件：添加到布局中
-        handleAddComponent(currentConfigItem.widget, values);
+        handleAddComponent(values);
       } else {
-        // 编辑现有组件：更新布局
         setLayout((prevLayout) =>
           prevLayout.map((item) => {
             if (item.i === currentConfigItem?.i) {
               return {
                 ...item,
-                title: values.name,
-                config: {
-                  ...item.config,
+                name: values.name,
+                valueConfig: {
+                  ...item.valueConfig,
                   ...values,
                 },
               };
@@ -321,22 +333,22 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
         );
       }
       setConfigDrawerVisible(false);
-      setCurrentConfigItem(null);
+      setCurrentConfigItem(undefined);
       setIsNewComponentConfig(false);
     };
 
     const handleConfigClose = () => {
       setConfigDrawerVisible(false);
-      setCurrentConfigItem(null);
+      setCurrentConfigItem(undefined);
       setIsNewComponentConfig(false);
     };
 
     const handleDelete = (id: string) => {
       Modal.confirm({
-        title: t('deleteTitle'),
-        content: t('deleteContent'),
-        okText: t('confirm'),
-        cancelText: t('cancel'),
+        title: t('common.delConfirm'),
+        content: t('common.delConfirmCxt'),
+        okText: t('common.confirm'),
+        cancelText: t('common.cancel'),
         centered: true,
         onOk: async () => {
           try {
@@ -458,7 +470,7 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
                       <div className="widget-header pb-4 flex justify-between items-center">
                         <div className="flex-1">
                           <h4 className="text-md font-medium text-[var(--color-text-1)]">
-                            {item.title}
+                            {item.name}
                           </h4>
                           {
                             <p className="text-sm text-[var(--color-text-2)] mt-1">
@@ -475,8 +487,8 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
                       <div className="widget-body flex-1 h-full rounded-b overflow-hidden">
                         <WidgetWrapper
                           key={item.i}
-                          chartType={item.config?.chartType}
-                          config={item.config}
+                          chartType={item.valueConfig?.chartType}
+                          config={item.valueConfig}
                           globalTimeRange={globalTimeRange}
                           refreshKey={refreshKey}
                         />
@@ -496,9 +508,10 @@ const Dashboard = forwardRef<DashboardRef, DashboardProps>(
         />
         <ViewConfig
           open={configDrawerVisible}
-          item={currentConfigItem}
+          item={currentConfigItem as LayoutItem}
           onConfirm={handleConfigConfirm}
           onClose={handleConfigClose}
+          dataSourceManager={dataSourceManager}
         />
       </div>
     );

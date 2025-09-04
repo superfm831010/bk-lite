@@ -350,7 +350,6 @@ const createChartNode = (nodeConfig: any, baseNodeData: any) => {
     height: nodeConfig.styleConfig?.height,
     data: {
       ...baseNodeData.data,
-      widget: nodeConfig.widget,
       valueConfig: nodeConfig.valueConfig,
       isLoading: !!nodeConfig.valueConfig.dataSource,
       rawData: null,

@@ -58,6 +58,7 @@ export const useGraphData = (
         id: nodeData.id,
         type: nodeData.type,
         name: nodeData.name,
+        description: nodeData.description || '',
         position,
         logoType: nodeData.logoType,
         logoIcon: nodeData.logoIcon,

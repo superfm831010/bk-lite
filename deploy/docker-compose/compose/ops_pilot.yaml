@@ -51,6 +51,7 @@ services:
       KNOWLEDGE_GRAPH_PASSWORD: ${FALKORDB_PASSWORD}
       KNOWLEDGE_GRAPH_PORT: 6379
       GRAPHITI_TELEMETRY_ENABLED: "false"
+      OPENAI_API_KEY: ""
     networks:
       - prod
     depends_on:
