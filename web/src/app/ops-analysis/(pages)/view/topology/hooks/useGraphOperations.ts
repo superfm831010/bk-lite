@@ -8,7 +8,6 @@ import type { Graph as X6Graph } from '@antv/x6';
 import { v4 as uuidv4 } from 'uuid';
 import { formatTimeRange } from '@/app/ops-analysis/utils/widgetDataTransform';
 import { Graph } from '@antv/x6';
-import { iconList } from '@/app/cmdb/utils/common';
 import { Selection } from '@antv/x6-plugin-selection';
 import { Transform } from '@antv/x6-plugin-transform';
 import { COLORS } from '../constants/nodeDefaults';
@@ -16,6 +15,7 @@ import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { TopologyNodeData } from '@/app/ops-analysis/types/topology';
 import { DataSourceParam } from '@/app/ops-analysis/types/dashBoard';
 import { updateNodeAttributes, registerNodes, createNodeByType } from '../utils/registerNode';
+import { registerEdges } from '../utils/registerEdge';
 import { useGraphData } from './useGraphData';
 import {
   getEdgeStyle,
@@ -105,10 +105,10 @@ export const useGraphOperations = (
     setContextMenuVisible,
     setContextMenuPosition,
     setContextMenuNodeId,
+    setContextMenuTargetType,
     setEditingNodeData,
     setNodeEditVisible,
     setCurrentEdgeData,
-    setEdgeConfigVisible,
     startTextEditRef,
     finishTextEditRef,
   } = state;
@@ -247,6 +247,7 @@ export const useGraphOperations = (
       setContextMenuVisible(true);
       setContextMenuPosition({ x: e.clientX, y: e.clientY });
       setContextMenuNodeId(node.id);
+      setContextMenuTargetType('node');
     });
 
     graph.on('node:click', ({ e, node }) => {
@@ -280,10 +281,14 @@ export const useGraphOperations = (
       }
     });
 
-    graph.on('edge:click', ({ e, edge }) => {
-      if (e.shiftKey) {
-        return;
-      }
+    graph.on('edge:contextmenu', ({ e, edge }) => {
+      e.preventDefault();
+      setContextMenuVisible(true);
+      setContextMenuPosition({ x: e.clientX, y: e.clientY });
+      setContextMenuNodeId(edge.id);
+      setContextMenuTargetType('edge');
+
+      // 设置边数据用于配置
       const edgeData = edge.getData();
       const sourceNode = edge.getSourceNode();
       const targetNode = edge.getTargetNode();
@@ -307,7 +312,6 @@ export const useGraphOperations = (
           sourceInterface: edgeData.sourceInterface,
           targetInterface: edgeData.targetInterface,
         });
-        setEdgeConfigVisible(true);
       }
     });
 
@@ -318,6 +322,19 @@ export const useGraphOperations = (
       edge.setData({
         lineType: 'common_line',
         lineName: '',
+      });
+    });
+
+    // 监听边的拐点变化并保存
+    graph.on('edge:change:vertices', ({ edge }: any) => {
+      if (!edge || !isEditModeRef.current) return;
+
+      const vertices = edge.getVertices();
+      const currentData = edge.getData() || {};
+
+      edge.setData({
+        ...currentData,
+        vertices: vertices
       });
     });
 
@@ -428,7 +445,7 @@ export const useGraphOperations = (
 
       if (nodeData.type === 'icon' || nodeData.type === 'single-value') {
         if (!isRealtime) {
-          updateNodeAttributes(node, updatedConfig, iconList);
+          updateNodeAttributes(node, updatedConfig);
         }
       } else if (nodeData.type === 'chart') {
         const chartPortConfig = createPortConfig();
@@ -458,6 +475,7 @@ export const useGraphOperations = (
     if (!containerRef.current) return;
 
     registerNodes();
+    registerEdges();
 
     const graph: X6Graph = new Graph({
       container: containerRef.current,
@@ -517,9 +535,9 @@ export const useGraphOperations = (
         nodeMovable: true,
         edgeMovable: true,
         arrowheadMovable: true,
-        vertexMovable: false,
-        vertexAddable: false,
-        vertexDeletable: false,
+        vertexMovable: true,
+        vertexAddable: true,
+        vertexDeletable: true,
         magnetConnectable: true,
       },
     });
@@ -601,7 +619,7 @@ export const useGraphOperations = (
     if (!graphInstance) {
       return null;
     }
-    const nodeData = createNodeByType(nodeConfig, iconList);
+    const nodeData = createNodeByType(nodeConfig);
     const { valueConfig } = nodeConfig || {};
     const addedNode = graphInstance.addNode(nodeData);
     if (nodeConfig.type === 'single-value') {
@@ -657,7 +675,7 @@ export const useGraphOperations = (
       if (!node) {
         return;
       }
-      updateNodeAttributes(node, updatedConfig, iconList);
+      updateNodeAttributes(node, updatedConfig);
 
       if (updatedConfig.type === 'single-value' && updatedConfig.valueConfig?.dataSource && updatedConfig.valueConfig?.selectedFields?.length) {
         updateSingleNodeData(updatedConfig);
