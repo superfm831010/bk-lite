@@ -93,6 +93,12 @@ const SearchTable: React.FC<SearchTableProps> = ({
             </span>
             <span className="mr-3">
               <span className="text-[var(--color-text-3)]">
+                {t('log.integration.collector')}：
+              </span>
+              <span>{record.collector || '--'}</span>
+            </span>
+            <span>
+              <span className="text-[var(--color-text-3)]">
                 {t('log.integration.collectType')}：
               </span>
               <span>{record.collect_type || '--'}</span>
