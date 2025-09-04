@@ -372,6 +372,7 @@ const Asset = () => {
   };
 
   const handleObjectChange = async (id: string) => {
+    setTableData([]);
     setObjectId(id);
   };
 

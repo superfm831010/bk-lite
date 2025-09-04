@@ -3,7 +3,7 @@
 # @Time: 2025/7/18 10:59
 # @Author: windyzhao
 from rest_framework import serializers
-from apps.operation_analysis.models import DataSourceAPIModel, Dashboard, Directory, Topology, NameSpace
+from apps.operation_analysis.models import DataSourceAPIModel, Dashboard, Directory, Topology, NameSpace, DataSourceTag
 
 
 class BaseFormatTimeSerializer(serializers.ModelSerializer):
@@ -66,3 +66,9 @@ class NameSpaceModelSerializer(BaseFormatTimeSerializer):
         extra_kwargs = {
             "password": {"write_only": True},
         }
+
+
+class DataSourceTagModelSerializer(BaseFormatTimeSerializer):
+    class Meta:
+        model = DataSourceTag
+        fields = "__all__"
