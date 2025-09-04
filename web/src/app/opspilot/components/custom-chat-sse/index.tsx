@@ -138,6 +138,22 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
     });
   }, []);
 
+  // Parse and handle suggestion links in content
+  const parseSuggestionLinks = useCallback((content: string) => {
+    // Match pattern like [1](suggest:xxxxx) or [2](suggest: xxx)
+    const suggestionRegex = /\[(\d+)\]\(suggest:\s*([^)]+)\)/g;
+    
+    return content.replace(suggestionRegex, (match, number, suggestionText) => {
+      const trimmedText = suggestionText.trim();
+      
+      // Create a button-style clickable element using Tailwind classes
+      return `<button class="suggestion-button inline-block text-[var(--color-text-1)] text-left border border-[var(--color-border-1)] rounded-full px-3 py-1.5 mx-1 my-1 cursor-pointer text-xs transition-all duration-200 ease-in-out hover:shadow-md hover:-translate-y-0.5 hover:border-blue-400 active:scale-95" 
+                data-suggestion="${trimmedText}">
+                ${trimmedText}
+              </button>`;
+    });
+  }, []);
+
   // Handle click events for clickable elements in guide text
   const handleGuideClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
@@ -247,6 +263,74 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
       }
     }
   }, []);
+
+  // Handle suggestion button click
+  const handleSuggestionClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('suggestion-button')) {
+      const suggestionText = target.getAttribute('data-suggestion');
+      if (suggestionText && !loading && token) {
+        console.log('Clicking suggestion button with text:', suggestionText);
+        
+        setLoading(true);
+        
+        // Create user message
+        const newUserMessage: CustomChatMessage = {
+          id: uuidv4(),
+          content: suggestionText,
+          role: 'user',
+          createAt: new Date().toISOString(),
+          updateAt: new Date().toISOString(),
+        };
+
+        console.log('Created user message:', newUserMessage);
+
+        // Create bot loading message
+        const botLoadingMessage: CustomChatMessage = {
+          id: uuidv4(),
+          content: '',
+          role: 'bot',
+          createAt: new Date().toISOString(),
+          updateAt: new Date().toISOString(),
+        };
+
+        // Get current message state first, then immediately update UI
+        const currentMessages = messages;
+        const updatedMessages = [...currentMessages, newUserMessage, botLoadingMessage];
+        updateMessages(updatedMessages);
+        currentBotMessageRef.current = botLoadingMessage;
+
+        // Execute sending logic asynchronously
+        (async () => {
+          try {
+            if (handleSendMessage) {
+              const result = await handleSendMessage(suggestionText, currentMessages);
+              
+              if (result === null) {
+                updateMessages(currentMessages);
+                setLoading(false);
+                return;
+              }
+              
+              const { url, payload } = result;
+              await handleSSEStream(url, payload, botLoadingMessage);
+            }
+          } catch (error: any) {
+            console.error(`${t('chat.sendFailed')}:`, error);
+            
+            updateMessages(prevMessages => 
+              prevMessages.map(msgItem => 
+                msgItem.id === botLoadingMessage.id 
+                  ? { ...msgItem, content: t('chat.connectionError') }
+                  : msgItem
+              )
+            );
+            setLoading(false);
+          }
+        })();
+      }
+    }
+  }, [loading, token, messages]);
 
   const handleFullscreenToggle = () => {
     setIsFullscreen(!isFullscreen);
@@ -535,13 +619,17 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
     // Parse reference links and make them clickable
     // If content is empty or just a default placeholder, show loading state
     const parsedContent = parseReferenceLinks(content || '');
+    const parsedSuggestionContent = parseSuggestionLinks(parsedContent);
     
     return (
       <>
         <div
-          dangerouslySetInnerHTML={{ __html: md.render(parsedContent) }}
+          dangerouslySetInnerHTML={{ __html: md.render(parsedSuggestionContent) }}
           className={styles.markdownBody}
-          onClick={handleReferenceClick}
+          onClick={(e) => {
+            handleReferenceClick(e);
+            handleSuggestionClick(e);
+          }}
         />
         {(Array.isArray(knowledgeBase) && knowledgeBase.length) ? <KnowledgeBase knowledgeList={knowledgeBase} /> : null}
       </>
