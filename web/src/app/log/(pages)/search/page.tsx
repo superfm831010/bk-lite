@@ -404,7 +404,7 @@ const SearchView: React.FC = () => {
             <LogTerminal
               ref={terminalRef}
               className="h-[calc(100vh-244px)]"
-              query={getParams()?.query || '*'}
+              query={getParams()}
               fetchData={(val) => setTerminalLoading(val)}
             />
           </Spin>

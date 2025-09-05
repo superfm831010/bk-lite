@@ -46,7 +46,7 @@ export interface AggregatedResult {
 
 export interface LogTerminalProps {
   className?: string;
-  query: string;
+  query: SearchParams;
   fetchData?: (loading: boolean) => void;
 }
 
