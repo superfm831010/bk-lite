@@ -9,6 +9,7 @@ import { getChartTypeList } from '@/app/ops-analysis/constants/common';
 import { PlusCircleOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { useNamespaceApi } from '@/app/ops-analysis/api/namespace';
+import { useOpsAnalysis } from '@/app/ops-analysis/context/common';
 import { useTranslation } from '@/utils/i18n';
 import {
   OperateModalProps,
@@ -99,10 +100,9 @@ const OperateModal: React.FC<OperateModalProps> = ({
   const [emptyAliases, setEmptyAliases] = React.useState<string[]>([]);
   const [namespaceList, setNamespaceList] = React.useState<NamespaceItem[]>([]);
   const [namespaceLoading, setNamespaceLoading] = React.useState(false);
-  const [tagList, setTagList] = React.useState<TagItem[]>([]);
-  const [tagLoading, setTagLoading] = React.useState(false);
+  const { tagList, tagsLoading, fetchTags } = useOpsAnalysis();
   const { createDataSource, updateDataSource } = useDataSourceApi();
-  const { getNamespaceList, getTagList } = useNamespaceApi();
+  const { getNamespaceList } = useNamespaceApi();
 
   const paramTypeOptions = [
     { label: t('dataSource.paramTypes.string'), value: 'string' },
@@ -139,16 +139,6 @@ const OperateModal: React.FC<OperateModalProps> = ({
       }
     } finally {
       setNamespaceLoading(false);
-    }
-  };
-
-  const fetchTags = async () => {
-    try {
-      setTagLoading(true);
-      const { items } = await getTagList({ page: 1, page_size: 10000 });
-      setTagList(items);
-    } finally {
-      setTagLoading(false);
     }
   };
 
@@ -698,9 +688,9 @@ const OperateModal: React.FC<OperateModalProps> = ({
               label: tag.name,
               value: tag.id,
             }))}
-            disabled={tagLoading}
+            disabled={tagsLoading}
           />
-          {tagLoading && (
+          {tagsLoading && (
             <div style={{ textAlign: 'center', padding: '8px 0' }}>
               <Spin size="small" />
             </div>

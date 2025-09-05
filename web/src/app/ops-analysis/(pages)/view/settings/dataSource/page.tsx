@@ -92,7 +92,16 @@ const Datasource: React.FC = () => {
         try {
           await deleteDataSource(row.id);
           message.success(t('successfullyDeleted'));
-          fetchDataSources();
+
+          if (pagination.current > 1 && filteredList.length === 1) {
+            setPagination((prev) => ({ ...prev, current: prev.current - 1 }));
+            fetchDataSources(searchKey, {
+              current: pagination.current - 1,
+              pageSize: pagination.pageSize,
+            });
+          } else {
+            fetchDataSources();
+          }
         } catch (error: any) {
           message.error(error.message);
         }

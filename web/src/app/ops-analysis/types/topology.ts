@@ -50,6 +50,7 @@ export interface TopologyNodeData {
   type: string;
   name: string;
   position?: Point;
+  zIndex?: number; 
   logoType?: string;
   logoIcon?: string;
   logoUrl?: string;
@@ -103,6 +104,13 @@ export interface TopologyState {
   drawingEdgeRef: React.MutableRefObject<Edge | null>;
   updateDrawingState: (isDrawing: boolean) => void;
   setEdgeConfigVisible: (visible: boolean) => void;
+
+  // 节点编辑相关状态
+  setEditingNodeData: (data: any) => void;
+  setNodeEditVisible: (visible: boolean) => void;
+
+  // 视图配置相关状态  
+  setViewConfigVisible: (visible: boolean) => void;
 }
 
 // 菜单操作类型

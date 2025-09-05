@@ -129,8 +129,10 @@
     "noArrowConnection": "无箭头连接",
     "singleArrowConnection": "单向连接",
     "doubleArrowConnection": "双向连接",
+    "editNode": "编辑节点",
     "configureEdge": "配置边",
     "delete": "删除",
+    "minimap": "缩略图",
     "nodeConfig": {
         "dataSource": "数据源",
         "dataSettings": "数据设置",

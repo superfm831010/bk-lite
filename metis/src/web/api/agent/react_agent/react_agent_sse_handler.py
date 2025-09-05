@@ -44,7 +44,7 @@ async def react_agent_stream_response(workflow, body, res):
 
     async for chunk in result:
         if isinstance(chunk[0], (ToolMessage)):
-            content = f"🔧 {chunk[0].name}: {chunk[0].content}\n"
+            content = f"🔧 执行工具[{chunk[0].name}]\n\n"
             response_sse_obj = create_response_obj(
                 delta_content=content)
             json_content = json_util.dumps(

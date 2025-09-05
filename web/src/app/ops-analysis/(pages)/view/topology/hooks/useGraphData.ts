@@ -52,6 +52,7 @@ export const useGraphData = (
     const nodes = graphInstance.getNodes().map((node: any) => {
       const nodeData = node.getData();
       const position = node.getPosition();
+      const zIndex = node.getZIndex();
 
       const serializedNode: TopologyNodeData = {
         id: nodeData.id,
@@ -59,6 +60,7 @@ export const useGraphData = (
         name: nodeData.name,
         description: nodeData.description || '',
         position,
+        zIndex: zIndex || 0, 
         logoType: nodeData.logoType,
         logoIcon: nodeData.logoIcon,
         logoUrl: nodeData.logoUrl,

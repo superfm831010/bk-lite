@@ -11,8 +11,8 @@ import {
   SwapOutlined,
   SettingOutlined,
   DeleteOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
-
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
   visible,
@@ -56,6 +56,9 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         {t('topology.doubleArrowConnection')}
       </Menu.Item>
       <Menu.Divider />
+      <Menu.Item key="edit" icon={<EditOutlined />}>
+        {t('topology.editNode')}
+      </Menu.Item>
       <Menu.Item key="delete" icon={<DeleteOutlined />}>
         {t('topology.delete')}
       </Menu.Item>

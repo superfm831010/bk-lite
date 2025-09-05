@@ -4,9 +4,22 @@ import { ViewConfigProps } from '@/app/ops-analysis/types/dashBoard';
 import { Drawer, Button, Form, Input, Radio } from 'antd';
 import { ViewConfigItem } from '@/app/ops-analysis/types/dashBoard';
 import { useDataSourceManager } from '@/app/ops-analysis/hooks/useDataSource';
-import { getChartTypeList } from '@/app/ops-analysis/constants/common';
+import {
+  getChartTypeList,
+  ChartTypeItem,
+} from '@/app/ops-analysis/constants/common';
 import DataSourceParamsConfig from '@/app/ops-analysis/components/paramsConfig';
 import DataSourceSelect from '@/app/ops-analysis/components/dataSourceSelect';
+import type { DatasourceItem } from '@/app/ops-analysis/types/dataSource';
+
+interface FormValues {
+  name: string;
+  description?: string;
+  chartType: string;
+  dataSource: string | number;
+  dataSourceParams?: any[];
+  params?: Record<string, any>;
+}
 
 interface ViewConfigPropsWithManager extends ViewConfigProps {
   dataSourceManager: ReturnType<typeof useDataSourceManager>;
@@ -31,24 +44,33 @@ const ViewConfig: React.FC<ViewConfigPropsWithManager> = ({
     processFormParamsForSubmit,
   } = dataSourceManager;
 
-  const getDataSourceChartTypes = React.useMemo(() => {
-    if (!selectedDataSource?.chart_type?.length) {
+  const getFilteredChartTypes = (
+    dataSource: DatasourceItem | undefined
+  ): ChartTypeItem[] => {
+    if (!dataSource?.chart_type?.length) {
       return [];
     }
 
     const allChartTypes = getChartTypeList();
-    return selectedDataSource.chart_type
-      .map((type) => allChartTypes.find((chart) => chart.value === type))
-      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+    return dataSource.chart_type
+      .map((type: string) =>
+        allChartTypes.find((chart) => chart.value === type)
+      )
+      .filter((item): item is ChartTypeItem => Boolean(item))
+      .filter((item: ChartTypeItem) => item.value !== 'single');
+  };
+
+  const getDataSourceChartTypes = React.useMemo(() => {
+    return getFilteredChartTypes(selectedDataSource);
   }, [selectedDataSource]);
 
   const initializeItemForm = (widgetItem: ViewConfigItem): void => {
     const { valueConfig } = widgetItem;
-    const formValues = {
-      name: widgetItem?.name,
+    const formValues: FormValues = {
+      name: widgetItem?.name || '',
       description: widgetItem.description || '',
-      chartType: valueConfig?.chartType,
-      dataSource: valueConfig?.dataSource,
+      chartType: valueConfig?.chartType || '',
+      dataSource: valueConfig?.dataSource || '',
       dataSourceParams: valueConfig?.dataSourceParams || [],
       params: {},
     };
@@ -59,13 +81,10 @@ const ViewConfig: React.FC<ViewConfigPropsWithManager> = ({
       setSelectedDataSource(targetDataSource);
       formValues.params = formValues.params || {};
 
-      // 如果没有指定图表类型，使用数据源支持的第一个图表类型
+      // 如果没有指定图表类型，使用数据源支持的第一个图表类型（排除单值）
       if (!formValues.chartType && targetDataSource.chart_type?.length) {
-        const allChartTypes = getChartTypeList();
-        const firstSupportedType = targetDataSource.chart_type
-          .map((type) => allChartTypes.find((chart) => chart.value === type))
-          .find(Boolean);
-        formValues.chartType = firstSupportedType?.value;
+        const availableChartTypes = getFilteredChartTypes(targetDataSource);
+        formValues.chartType = availableChartTypes[0]?.value;
       }
 
       if (targetDataSource.params?.length) {
@@ -99,7 +118,7 @@ const ViewConfig: React.FC<ViewConfigPropsWithManager> = ({
 
   const handleConfirm = async () => {
     try {
-      const values = await form.validateFields();
+      const values: FormValues = await form.validateFields();
       if (values.params && selectedDataSource?.params) {
         values.dataSourceParams = processFormParamsForSubmit(
           values.params,
@@ -191,7 +210,7 @@ const ViewConfig: React.FC<ViewConfigPropsWithManager> = ({
             initialValue={getDataSourceChartTypes[0]?.value}
           >
             <Radio.Group>
-              {getDataSourceChartTypes.map((item) => (
+              {getDataSourceChartTypes.map((item: ChartTypeItem) => (
                 <Radio.Button key={item.value} value={item.value}>
                   {t(item.label)}
                 </Radio.Button>

@@ -51,20 +51,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
-  const handleNodeTypeClick = (nodeType: NodeType) => {
-    if (!isEditMode) {
-      return;
-    }
-
-    if (nodeType.id === 'chart') {
-      const position = { x: 300, y: 200 };
-      onShowChartSelector?.(position);
-    } else if (onShowNodeConfig) {
-      const position = { x: 300, y: 200 };
-      onShowNodeConfig(nodeType, position);
-    }
-  };
-
   const handleDragStart = (e: React.DragEvent, nodeType: NodeType) => {
     if (!isEditMode) {
       e.preventDefault();
@@ -210,7 +196,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                         : 'cursor-not-allowed'
                     }`}
                     draggable={isEditMode}
-                    onClick={() => handleNodeTypeClick(nodeType)}
                     onDragStart={(e) => handleDragStart(e, nodeType)}
                     onDragEnd={handleDragEnd}
                   >

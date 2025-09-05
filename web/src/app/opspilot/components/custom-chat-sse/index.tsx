@@ -132,8 +132,9 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
 
   // Parse and handle reference links in content
   const parseReferenceLinks = useCallback((content: string) => {
-    // Match pattern like [[48]](chunk_id=3444444|knowledge_id=4555)
+    // Match pattern like [[48]](chunk_id:3444444|knowledge_id:4555|chunk_type:Document/QA/Graph)
     const referenceRegex = /\[\[(\d+)\]\]\(([^)]+)\)/g;
+    // console.log('Parsing references in content:', content);
     
     return content.replace(referenceRegex, (match, refNumber, params) => {
       // Parse parameters from the link using | as separator
@@ -149,15 +150,32 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
       
       const chunkId = urlParams.get('chunk_id');
       const knowledgeId = urlParams.get('knowledge_id');
-      // console.log('Parsed reference:', { refNumber, chunkId, knowledgeId });
+      const chunkType = urlParams.get('chunk_type') || 'Document';
       
-      // Create a clickable span with data attributes
-      return `<span class="reference-link" 
+      const getIconType = (type: string) => {
+        switch (type) {
+          case 'Document':
+            return 'wendangguanlixitong-wendangguanlixitongtubiao';
+          case 'QA':
+            return 'wendaduihua';
+          case 'Graph':
+            return 'zhishitupu';
+          default:
+            return 'wendangguanlixitong-wendangguanlixitongtubiao';
+        }
+      };
+      
+      const iconType = getIconType(chunkType);
+      
+      // Create a clickable span with data attributes and embedded SVG icon
+      return `<span class="reference-link inline-flex items-center gap-1" 
                 data-ref-number="${refNumber}" 
                 data-chunk-id="${chunkId}" 
-                data-knowledge-id="${knowledgeId}" 
+                data-knowledge-id="${knowledgeId}"
                 style="color: #1890ff; cursor: pointer; margin: 0 2px;">
-                [${refNumber}]
+                <svg class="icon icon-${iconType} inline-block" style="width: 1em; height: 1em; vertical-align: text-bottom;" aria-hidden="true">
+                  <use href="#icon-${iconType}"></use>
+                </svg>
               </span>`;
     });
   }, []);
@@ -256,10 +274,16 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
   // Handle reference link click
   const handleReferenceClick = useCallback(async (event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
-    if (target.classList.contains('reference-link')) {
-      const chunkId = target.getAttribute('data-chunk-id');
-      const knowledgeId = target.getAttribute('data-knowledge-id');
-      
+    
+    let referenceElement = target;
+    while (referenceElement && !referenceElement.classList.contains('reference-link')) {
+      referenceElement = referenceElement.parentElement as HTMLElement;
+    }
+    
+    if (referenceElement && referenceElement.classList.contains('reference-link')) {
+      const chunkId = referenceElement.getAttribute('data-chunk-id');
+      const knowledgeId = referenceElement.getAttribute('data-knowledge-id');
+            
       if (!knowledgeId) {
         console.warn('Missing knowledge_id in reference link');
         return;
@@ -295,7 +319,7 @@ const CustomChatSSE: React.FC<CustomChatSSEProps> = ({
     }
   }, [getChunkDetail]);
 
-  // Handle suggestion button click
+  // Handsuggestion button click
   const handleSuggestionClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
     if (target.classList.contains('suggestion-button')) {

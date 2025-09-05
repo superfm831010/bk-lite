@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Select, Slider, InputNumber, Input, message, Tooltip, Switch, Card } from 'antd';
+import { Select, Slider, InputNumber, Input, message, Tooltip, Switch, Card, Radio } from 'antd';
 import { ModelOption, ConfigDataProps, ConfigProps } from '@/app/opspilot/types/knowledge';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
@@ -250,16 +250,14 @@ const ConfigComponent: React.FC<ConfigProps> = ({ configData, setConfigData }) =
       {configData.enableNaiveRag && (
         <div className="mb-4 flex items-center">
           <label className="block text-sm font-medium mb-1 w-32">{t('knowledge.recallMethod')}</label>
-          <Select
+          <Radio.Group
             className="flex-1"
-            placeholder={`${t('common.selectMsg')}${t('knowledge.recallMethod')}`}
             value={configData.ragRecallMode}
-            onChange={(value) => setConfigData(prevData => ({ ...prevData, ragRecallMode: value }))}
+            onChange={(e) => setConfigData(prevData => ({ ...prevData, ragRecallMode: e.target.value }))}
           >
-            <Option value="chunk">{t('knowledge.recallByChunk')}</Option>
-            <Option value="segment">{t('knowledge.recallBySegment')}</Option>
-            <Option value="origin">{t('knowledge.recallByOrigin')}</Option>
-          </Select>
+            <Radio value="chunk">{t('knowledge.recallByChunk')}</Radio>
+            <Radio value="segment">{t('knowledge.recallBySegment')}</Radio>
+          </Radio.Group>
         </div>
       )}
     </>
