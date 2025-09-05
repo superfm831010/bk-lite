@@ -125,7 +125,7 @@ class GenericViewSetFun(object):
 
 
 class AuthViewSet(MaintainerViewSet, GenericViewSetFun):
-    SUPERUSER_RULE_ID = ["0", 0]
+    SUPERUSER_RULE_ID = ["0"]
     ORDERING_FIELD = "-id"
 
     def filter_rules(self, rules):
