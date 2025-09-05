@@ -646,7 +646,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
             <Form.Item label={t('topology.nodeConfig.width')} name="width">
               <InputNumber
                 min={20}
-                max={nodeType === 'basic-shape' ? 500 : 300}
+                max={2000}
                 step={1}
                 addonAfter="px"
                 disabled={readonly}

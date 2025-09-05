@@ -377,6 +377,7 @@ export const createNodeByType = (nodeConfig: TopologyNodeData): CreatedNodeConfi
     shape,
     label: nodeConfig.name || '',
     data: { ...nodeConfig },
+    ...(nodeConfig.zIndex !== undefined && { zIndex: nodeConfig.zIndex }),
   };
   switch (nodeConfig.type) {
     case 'icon':

@@ -130,41 +130,79 @@ export const useContextMenuAndModal = (
 
       const currentZIndex = targetNode.getZIndex() || 0;
       const cells = graphInstance.getCells();
+      let newZIndex = currentZIndex;
 
       if (key === 'bringToFront') {
         targetNode.toFront();
+        newZIndex = targetNode.getZIndex() || 0;
         message.success('节点已置顶');
-        return true;
-      }
-
-      if (key === 'bringForward') {
+      } else if (key === 'bringForward') {
         const maxZIndex = Math.max(...cells.map(cell => cell.getZIndex() || 0));
 
         if (currentZIndex < maxZIndex) {
-          targetNode.setZIndex(currentZIndex + 1);
-          message.success(`节点上移一层，当前层级: ${currentZIndex + 1}`);
+          newZIndex = currentZIndex + 1;
+          targetNode.setZIndex(newZIndex);
+          message.success(`节点上移一层，当前层级: ${newZIndex}`);
         } else {
           message.info('节点已在最顶层');
+          return true;
         }
-        return true;
-      }
-
-      if (key === 'sendBackward') {
+      } else if (key === 'sendBackward') {
         const minZIndex = Math.min(...cells.map(cell => cell.getZIndex() || 0));
 
         if (currentZIndex > minZIndex && currentZIndex > 0) {
-          const newZIndex = Math.max(0, currentZIndex - 1);
+          newZIndex = Math.max(0, currentZIndex - 1);
           targetNode.setZIndex(newZIndex);
           message.success(`节点下移一层，当前层级: ${newZIndex}`);
         } else {
           message.info('节点已在最底层');
+          return true;
         }
-        return true;
+      } else {
+        return false;
       }
 
-      return false;
+      if (targetNode.isNode()) {
+        const nodeData = targetNode.getData() || {};
+        targetNode.setData({
+          ...nodeData,
+          zIndex: newZIndex
+        });
+      }
+
+      return true;
     },
     [graphInstance]
+  );
+
+  const handleNodeEdit = useCallback(
+    (selectedCell: Cell) => {
+      if (!selectedCell.isNode()) return;
+
+      const clickedNodeData = selectedCell.getData();
+
+      if (clickedNodeData?.type === 'chart') {
+        const chartNodeData = {
+          ...clickedNodeData,
+          id: selectedCell.id,
+          label: selectedCell.prop('label'),
+        };
+        state.setEditingNodeData(chartNodeData);
+        state.setViewConfigVisible(true);
+      } else if (clickedNodeData?.type !== 'text') {
+        const iconWidth = clickedNodeData.styleConfig?.width;
+        const iconHeight = clickedNodeData.styleConfig?.height;
+        state.setEditingNodeData({
+          ...clickedNodeData,
+          id: selectedCell.id,
+          label: selectedCell.prop('label'),
+          width: iconWidth,
+          height: iconHeight,
+        });
+        state.setNodeEditVisible(true);
+      }
+    },
+    [state]
   );
 
   const handleConnectionDrawing = useCallback(
@@ -306,6 +344,11 @@ export const useContextMenuAndModal = (
           return;
         }
 
+        if (key === 'edit') {
+          handleNodeEdit(selectedCell);
+          return;
+        }
+
         if (handleNodeLayerOperation(key, selectedCell)) {
           return;
         }
@@ -323,8 +366,10 @@ export const useContextMenuAndModal = (
       isEditMode,
       handleEdgeConfiguration,
       handleViewModeMenuClick,
+      handleNodeEdit,
       handleNodeLayerOperation,
       handleConnectionDrawing,
+      state,
     ]
   );
 

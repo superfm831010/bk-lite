@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import styles from './index.module.scss';
 import { Spin } from 'antd';
+import { PictureOutlined, MinusOutlined } from '@ant-design/icons';
 import { v4 as uuidv4 } from 'uuid';
 import { useTopologyState } from './hooks/useTopologyState';
 import { useGraphOperations } from './hooks/useGraphOperations';
@@ -36,6 +37,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
   ({ selectedTopology }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasContainerRef = useRef<HTMLDivElement>(null);
+    const minimapContainerRef = useRef<HTMLDivElement>(null);
     const [addNodeVisible, setAddNodeVisible] = useState(false);
     const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(
       null
@@ -46,6 +48,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       x: number;
       y: number;
     } | null>(null);
+    const [minimapVisible, setMinimapVisible] = useState(true);
     const state = useTopologyState();
     const dataSourceManager = useDataSourceManager();
 
@@ -64,7 +67,12 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       loading,
       getEditNodeInitialValues,
       toggleEditMode,
-    } = useGraphOperations(containerRef, state);
+    } = useGraphOperations(
+      containerRef,
+      state,
+      minimapContainerRef,
+      minimapVisible
+    );
 
     const { handleAddText, finishTextEdit, cancelTextEdit } = useTextOperations(
       containerRef,
@@ -311,6 +319,35 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
               className="absolute inset-0"
               tabIndex={-1}
             />
+
+            {minimapVisible && (
+              <div className={styles.minimapContainer}>
+                <div className={styles.minimapHeader}>
+                  <span></span>
+                  <button
+                    onClick={() => setMinimapVisible(false)}
+                    className={styles.minimapCloseBtn}
+                    title="收起缩略图"
+                  >
+                    <MinusOutlined />
+                  </button>
+                </div>
+                <div
+                  ref={minimapContainerRef}
+                  className={styles.minimapContent}
+                />
+              </div>
+            )}
+            {!minimapVisible && (
+              <button
+                onClick={() => setMinimapVisible(true)}
+                className={styles.minimapShowBtn}
+                title="显示缩略图"
+              >
+                <PictureOutlined />
+              </button>
+            )}
+
             <TextEditInput
               isEditingText={state.isEditingText}
               editPosition={state.editPosition}
