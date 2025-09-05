@@ -30,7 +30,7 @@ _procs() {
             config_file="$config_dir/hbase-site.xml"
             hbase_exe="$install_path/bin/hbase"
             [[ ! -f $hbase_exe ]] && hbase_exe=$(find $install_path -type f -name hbase -executable)
-            [[ ! -f $hbase_exe ]] && { echo "[ERROR1] $install_path：---> 没有找到hbase命令"; exit 1; }
+            [[ ! -f $hbase_exe ]] && { echo "{}"; exit 0; }
             java_path=$(echo $cmdline | awk '{print $1}')
             java_home=$(echo "$cmdline" | awk '{print $1}' | grep -oP '.*/(?=bin/java)')
             procs[$(echo $proc | awk '{print $2}')]=$hbase_exe'|'$install_path'|'$config_file'|'$java_path'|'$log_path'|'$java_home
