@@ -77,7 +77,7 @@ def get_pilot_permission_by_token(token, bot_id, group_list):
         if rule_obj is None:
             return {"result": True, "data": {"username": user.username}}
         bot_ids = [u["id"] for u in rule_obj]
-        if bot_id in bot_ids or -1 in bot_ids or 0 in bot_ids:
+        if bot_id in bot_ids or 0 in bot_ids:
             return {"result": True, "data": {"username": user.username}}
     return {"result": False}
 
@@ -480,8 +480,8 @@ def process_rule_data(rule_data):
         return True, []
 
     if isinstance(rule_data, list):
-        ids = [item.get("id") for item in rule_data if isinstance(item, dict)]
-        has_all_permission = -1 in ids or 0 in ids or "0" in ids
+        ids = [item.get("id") for item in rule_data if isinstance(item, dict) and item.get("id") not in ["-1", -1]]
+        has_all_permission = 0 in ids or "0" in ids
         return has_all_permission, rule_data if not has_all_permission else []
 
     return True, []
