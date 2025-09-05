@@ -27,6 +27,7 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
     { type: 'response', label: t(`datasets.responseNode`), icon: 'huifu-copy' },
     { type: 'slot', label: t(`datasets.slotNode`), icon: 'dangqianbianliang' },
     { type: 'form', label: t(`datasets.formNode`), icon: 'biaodan' },
+    { type: 'action', label: t(`datasets.actionNode`), icon: 'dongzuo1' },
   ];
 
   const [initialNodes, initialEdges] = useMemo(() => {

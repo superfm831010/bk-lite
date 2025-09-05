@@ -18,7 +18,7 @@ import {
   IsValidConnection
 } from '@xyflow/react';
 import { Button } from 'antd';
-import { IntentNode, ResponseNode, SlotNode, FormNode } from './CustomNodes';
+import { IntentNode, ResponseNode, SlotNode, FormNode, ActionNode } from './CustomNodes';
 import '@xyflow/react/dist/style.css';
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { NodeType } from '@/app/mlops/types';
@@ -223,6 +223,7 @@ const NodeFlow = ({
     response: ResponseNode,
     slot: SlotNode,
     form: FormNode,
+    action: ActionNode
   }), [])
 
   return (

@@ -48,6 +48,8 @@ const Detail = () => {
         return '用来描述对话流程的关键部分，他相当于对话机器人的"训练样本"，帮助模型学习如何在不同的用户输入下选择正确的动作或回复';
       case 'form':
         return '用来描述对话流程的关键部分，他相当于对话机器人的"训练样本"，帮助模型学习如何在不同的用户输入下选择正确的动作或回复';
+      case 'action':
+        return '用来描述对话流程的关键部分，他相当于对话机器人的"训练样本"，帮助模型学习如何在不同的用户输入下选择正确的动作或回复';
       default:
         return '';
     }
@@ -66,6 +68,13 @@ const Detail = () => {
       title: t(`datasets.entityTitle`),
       url: `/mlops/manage/detail?${datasetInfo}&menu=entity`,
       icon: 'shitishu',
+      operation: []
+    },
+    {
+      name: 'action',
+      title: '动作管理',
+      url: `/mlops/manage/detail?${datasetInfo}&menu=action`,
+      icon: 'dongzuozu',
       operation: []
     },
     {
