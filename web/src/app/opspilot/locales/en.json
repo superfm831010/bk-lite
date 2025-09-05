@@ -26,7 +26,7 @@
     "localFile": "Local File",
     "fileSubTitle": "Upload local files (such as PDF, DOCX, TXT) as a knowledge source.",
     "webLink": "Web Link",
-    "linkSubTitle": "Use web links as a knowledgwe source.",
+    "linkSubTitle": "Use web links as a knowledge source.",
     "cusText": "Custom Text",
     "cusTextSubTitle": "Enter custom text as a knowledge source.",
     "chunks": "Chunks",
