@@ -43,11 +43,8 @@ class PolicyViewSet(viewsets.ModelViewSet):
             id_key="id__in"
         )
 
-        # 基于collect_type和当前团队过滤
-        qs = base_qs.filter(
-            collect_type_id=collect_type_id,
-            policyorganization__organization=request.COOKIES.get("current_team")
-        )
+        # 只需要按采集类型过滤（移除冗余的组织过滤）
+        qs = base_qs.filter(collect_type_id=collect_type_id)
 
         queryset = self.filter_queryset(qs)
         queryset = queryset.distinct().select_related('collect_type')

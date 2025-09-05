@@ -21,6 +21,7 @@ export interface SearchParams {
   fields_limit?: number;
   step?: string;
   limit?: number | null;
+  log_groups?: React.Key[];
 }
 
 export interface LogStream {
@@ -45,7 +46,7 @@ export interface AggregatedResult {
 
 export interface LogTerminalProps {
   className?: string;
-  query: string;
+  query: SearchParams;
   fetchData?: (loading: boolean) => void;
 }
 

@@ -65,10 +65,10 @@ const FormTimeSelector: React.FC<{
 interface DataSourceParamsConfigProps {
   selectedDataSource?: DatasourceItem;
   readonly?: boolean;
-  includeFilterTypes?: string[]; // 需要显示的参数类型，默认显示所有
-  fieldPrefix?: string; // 字段前缀，默认为 'params'
-  form?: any; // 可选的外部 Form 实例
-  preserveValues?: boolean; // 是否保持已有的表单值，默认 false
+  includeFilterTypes?: string[];
+  fieldPrefix?: string;
+  form?: any;
+  preserveValues?: boolean;
 }
 
 const DataSourceParamsConfig: React.FC<DataSourceParamsConfigProps> = ({
@@ -85,18 +85,10 @@ const DataSourceParamsConfig: React.FC<DataSourceParamsConfigProps> = ({
     setMounted(true);
   }, []);
 
-  if (
-    !selectedDataSource?.params ||
-    !Array.isArray(selectedDataSource.params) ||
-    selectedDataSource.params.length === 0
-  ) {
-    return null;
-  }
-
-  // 过滤需要配置的参数
-  const configParams = selectedDataSource.params.filter((param: ParamItem) =>
-    includeFilterTypes.includes(param.filterType || 'fixed')
-  );
+  const configParams =
+    selectedDataSource?.params?.filter((param: ParamItem) =>
+      includeFilterTypes.includes(param.filterType || 'fixed')
+    ) || [];
 
   if (configParams.length === 0) {
     return null;
@@ -106,8 +98,7 @@ const DataSourceParamsConfig: React.FC<DataSourceParamsConfigProps> = ({
     const { type = 'string', filterType, options } = param;
     const isDisabled = readonly || filterType === 'fixed';
 
-    // 如果有选项，显示下拉选择器
-    if (options && Array.isArray(options) && options.length > 0) {
+    if (options && options.length > 0) {
       return (
         <Select
           placeholder={t('common.selectTip')}
@@ -155,17 +146,15 @@ const DataSourceParamsConfig: React.FC<DataSourceParamsConfigProps> = ({
 
   const getParamInitialValue = (param: ParamItem) => {
     const { type = 'string', value } = param;
-
     switch (type) {
       case 'boolean':
         return value ?? false;
       case 'number':
         return value ?? 0;
       case 'timeRange':
-        return value ?? 10080; // 默认7天（10080分钟）
+        return value ?? 10080;
       case 'date':
-        return value ? dayjs(value) : null; // 转换为dayjs对象
-      case 'string':
+        return value ? dayjs(value) : null;
       default:
         return value ?? '';
     }
@@ -176,19 +165,57 @@ const DataSourceParamsConfig: React.FC<DataSourceParamsConfigProps> = ({
       {configParams.map((param: ParamItem) => {
         const fieldName = [fieldPrefix, param.name];
         const initialValue = getParamInitialValue(param);
+        const labelText = param.alias_name || param.name;
+        const isLongText = labelText.length > 18;
+        const isVeryLongText = labelText.length > 30;
+
+        const getLabelStyle = (): React.CSSProperties => {
+          const baseStyle = {
+            lineHeight: '1.4',
+            width: '100%',
+          };
+
+          if (isVeryLongText) {
+            return {
+              ...baseStyle,
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              textAlign: 'left',
+            };
+          }
+          if (isLongText) {
+            return {
+              ...baseStyle,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              textAlign: 'right',
+            };
+          }
+          return {
+            ...baseStyle,
+            whiteSpace: 'nowrap',
+            overflow: 'visible',
+            textAlign: 'right',
+          };
+        };
 
         return (
           <Form.Item
-            key={`${selectedDataSource?.id || 'default'}-${param.name}`} 
-            label={param.alias_name || param.name}
+            key={`${selectedDataSource?.id || 'default'}-${param.name}`}
+            label={
+              <div style={getLabelStyle()} title={labelText}>
+                {labelText}
+              </div>
+            }
             name={fieldName}
-            initialValue={!preserveValues && mounted ? initialValue : undefined} // 只在初次挂载且不保持值时设置初始值
+            initialValue={!preserveValues && mounted ? initialValue : undefined}
             tooltip={param.desc || undefined}
+            labelCol={{ span: isVeryLongText ? 24 : 6 }}
+            wrapperCol={{ span: isVeryLongText ? 24 : 18 }}
+            style={{ marginBottom: isVeryLongText ? 20 : 16 }}
             rules={[
-              {
-                required: param.required,
-                message: `请配置${param.alias_name || param.name}`,
-              },
+              { required: param.required, message: `请配置${labelText}` },
             ]}
           >
             {renderParamInput(param)}

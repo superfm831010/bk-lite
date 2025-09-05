@@ -80,10 +80,10 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             .order_by("-id")
         )
         for i in task_list:
-            if not i["is_qa_task"]:
-                i["train_progress"] = f"{i['completed_count']}/{i['total_count']}"
-            else:
-                i["train_progress"] = f"{i['train_progress']}%"
+            # if not i["is_qa_task"]:
+            i["train_progress"] = f"{i['completed_count']}/{i['total_count']}"
+        # else:
+        #     i["train_progress"] = f"{i['train_progress']}%"
         return JsonResponse({"result": True, "data": task_list})
 
     @action(methods=["POST"], detail=False)

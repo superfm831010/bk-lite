@@ -9,40 +9,63 @@ import {
   LinkOutlined,
   ArrowRightOutlined,
   SwapOutlined,
+  SettingOutlined,
+  DeleteOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
-
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
   visible,
   position,
   isEditMode = false,
+  targetType = 'node',
   onMenuClick,
 }) => {
   const { t } = useTranslation();
 
-  const menu = isEditMode ? (
+  const getEdgeEditMenu = () => (
+    <Menu onClick={onMenuClick}>
+      <Menu.Item key="configure" icon={<SettingOutlined />}>
+        {t('topology.configureEdge')}
+      </Menu.Item>
+      <Menu.Item key="delete" icon={<DeleteOutlined />}>
+        {t('topology.delete')}
+      </Menu.Item>
+    </Menu>
+  );
+
+  const getNodeEditMenu = () => (
     <Menu onClick={onMenuClick}>
       <Menu.Item key="bringToFront" icon={<VerticalAlignTopOutlined />}>
-        置顶
+        {t('topology.bringToFront')}
       </Menu.Item>
       <Menu.Item key="bringForward" icon={<UpOutlined />}>
-        上移一层
+        {t('topology.bringForward')}
       </Menu.Item>
       <Menu.Item key="sendBackward" icon={<DownOutlined />}>
-        下移一层
+        {t('topology.sendBackward')}
       </Menu.Item>
       <Menu.Divider />
       <Menu.Item key="none" icon={<LinkOutlined />}>
-        无箭头连接
+        {t('topology.noArrowConnection')}
       </Menu.Item>
       <Menu.Item key="single" icon={<ArrowRightOutlined />}>
-        单向连接
+        {t('topology.singleArrowConnection')}
       </Menu.Item>
       <Menu.Item key="double" icon={<SwapOutlined />}>
-        双向连接
+        {t('topology.doubleArrowConnection')}
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="edit" icon={<EditOutlined />}>
+        {t('topology.editNode')}
+      </Menu.Item>
+      <Menu.Item key="delete" icon={<DeleteOutlined />}>
+        {t('topology.delete')}
       </Menu.Item>
     </Menu>
-  ) : (
+  );
+
+  const getViewMenu = () => (
     <Menu onClick={onMenuClick}>
       <Menu.Item key="viewAlarms">{t('topology.viewAlarmList')}</Menu.Item>
       <Menu.Item key="viewMonitor">
@@ -51,10 +74,23 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     </Menu>
   );
 
+  const getMenu = () => {
+    if (!isEditMode) {
+      return getViewMenu();
+    }
+    
+    if (targetType === 'edge') {
+      return getEdgeEditMenu();
+    }
+    
+    return getNodeEditMenu();
+  };
+
   if (!visible) return null;
+  
   return (
     <Dropdown
-      overlay={menu}
+      overlay={getMenu()}
       open={visible}
       getPopupContainer={() => document.body}
     >

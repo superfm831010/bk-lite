@@ -3,7 +3,7 @@ networks:
 
 services:
   telegraf:
-    image: bklite/telegraf
+    image: ${DOCKER_IMAGE_TELEGRAF}
     container_name: telegraf
     environment:
       METRIC_NATS_USERNAME: ${NATS_ADMIN_USERNAME}
@@ -18,7 +18,7 @@ services:
 
 
   fusion-collector:
-    image: bklite/fusion-collector:latest
+    image: ${DOCKER_IMAGE_FUSION_COLLECTOR}
     container_name: fusion-collector
     hostname: fusion-collector-default
     environment:

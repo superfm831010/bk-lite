@@ -327,7 +327,6 @@ def create_graph(instance_id):
     instance.save()
     res = GraphUtils.create_graph(instance)
     if not res["result"]:
-        instance.delete()
         logger.error("Failed to create graph: {}".format(res["message"]))
     else:
         instance.status = "completed"

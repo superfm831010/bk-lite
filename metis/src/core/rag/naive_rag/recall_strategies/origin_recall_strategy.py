@@ -90,13 +90,40 @@ class OriginRecallStrategy(BaseRecallStrategy):
                     knowledge_docs[knowledge_id] = []
                 knowledge_docs[knowledge_id].append(doc)
 
-        # 5. 返回所有匹配的文档，按 segment_number 排序
+        # 5. 按 knowledge_id 分组处理并重组文档
         result_hits = []
         for knowledge_id, docs in knowledge_docs.items():
             # 按 segment_number 排序，确保文档片段的逻辑顺序
             sorted_docs = sorted(docs, key=lambda x: int(
                 x.metadata.get('segment_number', 0)))
-            result_hits.extend(sorted_docs)
 
-        logger.info(f"Origin召回策略: 重组完成，共恢复文档片段数={len(result_hits)}")
+            if not sorted_docs:
+                continue
+
+            # 合并所有片段的内容
+            combined_content = ""
+            base_metadata = sorted_docs[0].metadata.copy()
+
+            for doc in sorted_docs:
+                if combined_content:
+                    combined_content += "\n"  # 片段之间用换行分隔
+                combined_content += doc.page_content
+
+            # 创建新的合并文档
+            # 更新元数据，移除 segment_number（因为已经合并）
+            if 'segment_number' in base_metadata:
+                del base_metadata['segment_number']
+
+            # 添加合并信息到元数据
+            base_metadata['is_merged_origin'] = True
+            base_metadata['merged_segment_count'] = len(sorted_docs)
+
+            merged_doc = Document(
+                page_content=combined_content,
+                metadata=base_metadata
+            )
+            result_hits.append(merged_doc)
+
+        logger.info(
+            f"Origin召回策略: 重组完成，knowledge数量={len(result_hits)}, 原始片段数={len(all_knowledge_docs)}")
         return result_hits

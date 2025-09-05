@@ -7,7 +7,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
-import { Button, Tooltip } from 'antd';
+import { Button, message, Tooltip } from 'antd';
 import {
   FullscreenOutlined,
   FullscreenExitOutlined,
@@ -115,11 +115,18 @@ const LogTerminal = forwardRef<LogTerminalRef, LogTerminalProps>(
       if (isStreaming.current) return;
       try {
         isStreaming.current = true;
+        // 构建查询参数
+        const groups = query.log_groups || [];
+        const queryParams = new URLSearchParams({
+          query: query.query || '*',
+          log_groups: groups.join(','),
+        });
+        if (!groups?.length) {
+          return message.error(t('log.search.searchError'));
+        }
         // 创建AbortController用于取消请求
         const abortController = new AbortController();
         abortControllerRef.current = abortController;
-        // 构建查询参数
-        const queryParams = new URLSearchParams({ query });
         // 直接使用fetch来处理EventStream，使用GET请求
         fetchData?.(true);
         const response = await fetch(

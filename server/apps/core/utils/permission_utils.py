@@ -125,8 +125,19 @@ def check_instance_permission(object_type_id, instance_id, teams, permissions, c
             # 此实例组织不在当前组，无权限
             return False
 
-    inst_permission = {i["id"] for i in permission.get("instance", [])}
-    team_permission = {i["id"] for i in permission.get("team", [])}
+    # 安全获取实例权限，确保类型正确
+    instance_data = permission.get("instance", [])
+    if isinstance(instance_data, list):
+        inst_permission = {i["id"] for i in instance_data if isinstance(i, dict) and "id" in i}
+    else:
+        inst_permission = set()
+
+    # 安全获取团队权限，确保类型正确
+    team_data = permission.get("team", [])
+    if isinstance(team_data, list):
+        team_permission = {i["id"] if isinstance(i, dict) and "id" in i else i for i in team_data if i is not None}
+    else:
+        team_permission = set()
 
     # 存在实例权限，但是都为空时，代表此对象当前组没有任何此类对象的实例权限
     if not inst_permission and not team_permission:
