@@ -5,9 +5,9 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from apps.core.utils.permission_utils import get_permissions_rules, check_instance_permission
+from apps.core.utils.permission_utils import get_permissions_rules, check_instance_permission, get_permission_rules, permission_filter
 from apps.core.utils.web_utils import WebUtils
-from apps.log.constants import POLICY_MODULE
+from apps.log.constants import POLICY_MODULE, INSTANCE_MODULE
 from apps.log.models import CollectType, CollectInstance, CollectConfig
 from apps.log.models.policy import Policy
 from apps.log.serializers.collect_config import CollectTypeSerializer
@@ -105,32 +105,35 @@ class CollectTypeViewSet(ModelViewSet):
             for result in results:
                 result["policy_count"] = policy_map.get(result["id"], 0)
 
-        # 检查是否需要添加实例数量统计（带组织过滤）
+        # 检查是否需要添加实例数量统计（带权限控制，参考监控模块实现）
         if request.GET.get("add_instance_count") in ["true", "True"]:
-            # 获取当前用户选择的组织
-            current_team = request.COOKIES.get("current_team")
+            # 获取采集实例权限
+            instance_res = get_permissions_rules(
+                request.user,
+                request.COOKIES.get("current_team"),
+                "log",
+                INSTANCE_MODULE,
+            )
 
-            if current_team:
-                try:
-                    current_team = int(current_team)
-                    # 使用组织过滤统计实例数量
-                    from django.db.models import Count
-                    from apps.log.models import CollectInstanceOrganization
+            instance_permissions, cur_team = instance_res.get("data", {}), instance_res.get("team", [])
 
-                    # 通过组织关联表进行过滤统计
-                    instance_counts = CollectInstanceOrganization.objects.filter(
-                        organization=current_team
-                    ).values('collect_instance__collect_type_id').annotate(
-                        count=Count('collect_instance_id', distinct=True)
-                    ).values_list('collect_instance__collect_type_id', 'count')
+            # 获取所有采集实例并进行权限检查
+            instance_objs = CollectInstance.objects.select_related('collect_type').prefetch_related('collectinstanceorganization_set').all()
+            instance_map = {}
 
-                    instance_map = dict(instance_counts)
-                except (ValueError, TypeError):
-                    # 如果组织ID格式错误，则不显示统计数据
-                    instance_map = {}
-            else:
-                # 如果没有选择组织，则不显示统计数据
-                instance_map = {}
+            for instance_obj in instance_objs:
+                collect_type_id = str(instance_obj.collect_type_id)
+                instance_id = instance_obj.id
+                teams = {org.organization for org in instance_obj.collectinstanceorganization_set.all()}
+
+                # 使用通用权限检查函数
+                _check = check_instance_permission(collect_type_id, instance_id, teams, instance_permissions, cur_team)
+                if not _check:
+                    continue
+
+                if instance_obj.collect_type_id not in instance_map:
+                    instance_map[instance_obj.collect_type_id] = 0
+                instance_map[instance_obj.collect_type_id] += 1
 
             # 添加实例数量到结果中
             for result in results:
@@ -180,7 +183,9 @@ class CollectInstanceViewSet(ViewSet):
     @action(methods=['post'], detail=False, url_path='search')
     def search(self, request):
         """
-        List all collect instances with organization filter.
+        查询采集实例列表，支持权限过滤
+
+        权限逻辑：完全参考监控模块的 monitor_instance_list 实现
         """
         collect_type_id = request.data.get("collect_type_id")
         name = request.data.get("name")
@@ -191,20 +196,46 @@ class CollectInstanceViewSet(ViewSet):
         current_team = request.COOKIES.get("current_team")
         if not current_team:
             return WebUtils.response_error("未选择组织，请先选择组织后再查询")
-        
-        try:
-            current_team = int(current_team)
-        except (ValueError, TypeError):
-            return WebUtils.response_error("组织ID格式错误")
-        
-        # 调用服务层，传入组织参数
-        data = CollectTypeService.search_instance(
+
+        if not collect_type_id:
+            return WebUtils.response_error("采集类型ID是必需的")
+
+        # 使用与监控模块完全一致的权限检查方式
+        permission = get_permission_rules(
+            request.user,
+            current_team,
+            "log",
+            f"{INSTANCE_MODULE}.{collect_type_id}",
+        )
+
+        # 应用权限过滤（与监控模块保持一致）
+        qs = permission_filter(
+            CollectInstance,
+            permission,
+            team_key="collectinstanceorganization__organization__in",
+            id_key="id__in"
+        )
+
+        # 使用服务层进行查询，传入权限过滤后的查询集
+        data = CollectTypeService.search_instance_with_permission(
             collect_type_id=collect_type_id,
             name=name,
             page=page,
             page_size=page_size,
-            current_team=current_team
+            current_team=int(current_team),
+            queryset=qs
         )
+
+        # 添加实例级别权限信息（与监控模块保持一致）
+        inst_permission_map = {i["id"]: i["permission"] for i in permission.get("instance", [])}
+
+        for instance_info in data["items"]:
+            if instance_info["id"] in inst_permission_map:
+                instance_info["permission"] = inst_permission_map[instance_info["id"]]
+            else:
+                # 导入默认权限常量
+                from apps.log.constants import DEFAULT_PERMISSION
+                instance_info["permission"] = DEFAULT_PERMISSION
 
         return WebUtils.response_success(data)
 

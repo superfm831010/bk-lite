@@ -176,7 +176,7 @@ class CollectTypeService:
             instance.collectinstanceorganization_set.create(organization=org)
 
     @staticmethod
-    def search_instance(collect_type_id, name, page, page_size, current_team):
+    def search_instance(collect_type_id, name, page, page_size, current_team, accessible_instance_ids=None):
         """
         查询采集实例列表
 
@@ -186,6 +186,7 @@ class CollectTypeService:
             page: 页码
             page_size: 每页数量
             current_team: 当前组织ID，必填
+            accessible_instance_ids: 有权限访问的实例ID列表，可选，用于权限过滤
         """
         queryset = CollectInstance.objects.select_related("collect_type")
 
@@ -198,6 +199,10 @@ class CollectTypeService:
             queryset = queryset.filter(collect_type_id=collect_type_id)
         if name:
             queryset = queryset.filter(name__icontains=name)
+
+        # 如果提供了权限过滤的实例ID列表，则进一步过滤
+        if accessible_instance_ids is not None:
+            queryset = queryset.filter(id__in=accessible_instance_ids)
 
         # 计算总数
         total_count = queryset.count()
@@ -239,3 +244,76 @@ class CollectTypeService:
         data = {"count": total_count, "items": items}
 
         return data
+
+    @staticmethod
+    def search_instance_with_permission(collect_type_id, name, page, page_size, current_team, queryset):
+        """
+        使用权限过滤后的查询集查询采集实例列表（参考监控模块实现）
+
+        Args:
+            collect_type_id: 采集类型ID，必填
+            name: 实例名称，可选，支持模糊查询
+            page: 页码
+            page_size: 每页数量
+            current_team: 当前组织ID，必填
+            queryset: 已经权限过滤的查询集（已包含组织过滤）
+        """
+        # 应用业务过滤条件（不需要再次过滤组织，因为权限过滤已经处理了）
+        queryset = queryset.filter(collect_type_id=collect_type_id)
+
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+
+        # 去重并关联查询
+        queryset = queryset.distinct().select_related('collect_type')
+
+        # 计算总数
+        total_count = queryset.count()
+
+        # 计算分页
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        # 获取当前页的数据
+        page_data = queryset[start:end]
+
+        # 获取实例ID列表用于补充额外信息
+        instance_ids = [instance.id for instance in page_data]
+
+        # 补充组织与配置信息
+        org_map = defaultdict(list)
+        org_objs = CollectInstanceOrganization.objects.filter(
+            collect_instance_id__in=instance_ids
+        ).values_list("collect_instance_id", "organization")
+        for instance_id, organization in org_objs:
+            org_map[instance_id].append(organization)
+
+        conf_map = defaultdict(list)
+        conf_objs = CollectConfig.objects.filter(
+            collect_instance_id__in=instance_ids
+        ).values_list("collect_instance", "id")
+        for instance_id, config_id in conf_objs:
+            conf_map[instance_id].append(config_id)
+
+        # 获取节点信息
+        nodes = NodeMgmt().node_list(dict(page_size=-1))
+        node_map = {node["id"]: node["name"] for node in nodes["nodes"]}
+
+        # 构建结果（与监控模块格式保持一致，使用 results 字段）
+        items = []
+        for instance in page_data:
+            item = {
+                "id": instance.id,
+                "instance_id": instance.id,  # 添加 instance_id 字段以兼容权限映射
+                "name": instance.name,
+                "node_id": instance.node_id,
+                "collect_type_id": instance.collect_type_id,
+                "collect_type__name": instance.collect_type.name,
+                "collect_type__collector": instance.collect_type.collector,
+                "organization": org_map.get(instance.id, []),
+                "config_id": conf_map.get(instance.id, []),
+                "node_name": node_map.get(instance.node_id, ""),
+            }
+            items.append(item)
+
+        return {"count": total_count, "results": items, "items": items}  # 同时提供两个字段以保证兼容性
