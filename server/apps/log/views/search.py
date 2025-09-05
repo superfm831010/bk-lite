@@ -116,6 +116,9 @@ class LogSearchViewSet(ViewSet):
         if log_groups_param:
             log_groups = [group.strip() for group in log_groups_param.split(',') if group.strip()]
 
+        if not log_groups:
+            return WebUtils.response_error("log_groups parameter is required.")
+
         if not query:
             return WebUtils.response_error("Query parameters are required.")
 
