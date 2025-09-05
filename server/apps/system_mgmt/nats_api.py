@@ -380,7 +380,7 @@ def get_user_rules_by_module(group_id, username, domain, app, module):
             if isinstance(sub_modules, dict):
                 for sub_module_id, rule_data in sub_modules.items():
                     if sub_module_id not in result:
-                        result[sub_module_id] = {"instance": [], "team": all_permission_team}
+                        result[sub_module_id] = {"instance": [], "team": all_permission_team[:]}
 
                     # 处理规则数据
                     has_all_permission, instance_data = process_rule_data(rule_data)
@@ -515,7 +515,7 @@ def wechat_user_register(user_id, nick_name):
     default_role = list(
         Role.objects.filter(
             Q(name="normal", app__in=["opspilot", "ops-console"])
-            | Q(name="guest", app__in=["opspilot", "cmdb", "monitor"])
+            | Q(name="guest", app__in=["opspilot", "cmdb", "monitor", "log"])
         ).values_list("id", flat=True)
     )
     role_list = list(set(user.role_list + default_role))
