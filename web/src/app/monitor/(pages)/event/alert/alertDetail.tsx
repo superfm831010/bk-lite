@@ -20,17 +20,13 @@ import {
   Pagination,
   TimeLineItem,
 } from '@/app/monitor/types';
-import { MetricItem, SearchParams } from '@/app/monitor/types/monitor';
+import { MetricItem } from '@/app/monitor/types/monitor';
 import { AlertOutlined } from '@ant-design/icons';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import { useAlertDetailTabs } from '@/app/monitor/hooks/event';
 import useMonitorApi from '@/app/monitor/api/index';
 import Information from './information';
-import {
-  getEnumValueUnit,
-  mergeViewQueryKeyValues,
-  renderChart,
-} from '@/app/monitor/utils/common';
+import { getEnumValueUnit, renderChart } from '@/app/monitor/utils/common';
 import {
   LEVEL_MAP,
   useLevelList,
@@ -42,7 +38,7 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const { t } = useTranslation();
     const {
       getMonitorEventDetail,
-      getInstanceQuery,
+      getSnapshot,
       getEventRaw,
       getMonitorMetrics,
     } = useMonitorApi();
@@ -113,36 +109,6 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
       }
     };
 
-    const getParams = (form: TableDataItem) => {
-      const _query: string = form.metric?.query || '';
-      const ids = form.metric?.instance_id_keys || [];
-      const params: SearchParams = {
-        query: _query.replace(
-          /__\$labels__/g,
-          mergeViewQueryKeyValues([
-            { keys: ids || [], values: form.instance_id_values },
-          ])
-        ),
-      };
-      const startTime = new Date(form.start_event_time).getTime();
-      const endTime = form.end_event_time
-        ? new Date(form.end_event_time).getTime()
-        : new Date().getTime();
-      const MAX_POINTS = 100; // 最大数据点数
-      const DEFAULT_STEP = 360; // 默认步长
-      if (startTime && endTime) {
-        params.start = startTime;
-        params.end = endTime;
-        params.step = Math.max(
-          Math.ceil(
-            (params.end / MAX_POINTS - params.start / MAX_POINTS) / DEFAULT_STEP
-          ),
-          1
-        );
-      }
-      return params;
-    };
-
     const getTableData = async (customPage?: number) => {
       setTableLoading(true);
       const currentPage = customPage || pagination.current;
@@ -181,8 +147,21 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
     const getChartData = async (form: TableDataItem = formData) => {
       setLoading(true);
       try {
-        const responseData = await getInstanceQuery(getParams(form));
-        const data = responseData.data?.result || [];
+        const responseData = await getSnapshot({
+          id: form.id,
+          page_size: -1,
+          page: 10,
+        });
+        const data = (responseData?.results || []).reduce(
+          (pre: any, cur: any) => {
+            const values = cur.raw_data?.[0]?.values?.at(-1);
+            if (values) {
+              pre.push(values);
+            }
+            return pre;
+          },
+          []
+        );
         const config = [
           {
             instance_id_values: form.instance_id_values,
@@ -193,7 +172,10 @@ const AlertDetail = forwardRef<ModalRef, ModalConfig>(
             title: form.metric?.display_name || '--',
           },
         ];
-        const _chartData = renderChart(data, config);
+        const _chartData = renderChart(
+          [{ values: data, metric: form.metric }],
+          config
+        );
         setChartData(_chartData);
       } finally {
         setLoading(false);
