@@ -105,17 +105,32 @@ class CollectTypeViewSet(ModelViewSet):
             for result in results:
                 result["policy_count"] = policy_map.get(result["id"], 0)
 
-        # 检查是否需要添加实例数量统计（无权限控制，直接统计）
+        # 检查是否需要添加实例数量统计（带组织过滤）
         if request.GET.get("add_instance_count") in ["true", "True"]:
-            # 直接统计实例数量，不进行权限检查
-            from django.db.models import Count
+            # 获取当前用户选择的组织
+            current_team = request.COOKIES.get("current_team")
 
-            # 使用数据库级别的聚合查询，性能更优
-            instance_counts = CollectInstance.objects.values('collect_type_id').annotate(
-                count=Count('id')
-            ).values_list('collect_type_id', 'count')
+            if current_team:
+                try:
+                    current_team = int(current_team)
+                    # 使用组织过滤统计实例数量
+                    from django.db.models import Count
+                    from apps.log.models import CollectInstanceOrganization
 
-            instance_map = dict(instance_counts)
+                    # 通过组织关联表进行过滤统计
+                    instance_counts = CollectInstanceOrganization.objects.filter(
+                        organization=current_team
+                    ).values('collect_instance__collect_type_id').annotate(
+                        count=Count('collect_instance_id', distinct=True)
+                    ).values_list('collect_instance__collect_type_id', 'count')
+
+                    instance_map = dict(instance_counts)
+                except (ValueError, TypeError):
+                    # 如果组织ID格式错误，则不显示统计数据
+                    instance_map = {}
+            else:
+                # 如果没有选择组织，则不显示统计数据
+                instance_map = {}
 
             # 添加实例数量到结果中
             for result in results:
