@@ -10,7 +10,7 @@ def get_log_module_data(module, child_module, page, page_size, group_id):
     """
     if module == "log_group":
         queryset = LogGroup.objects.filter(
-            streamorganization__organization=group_id
+            loggrouporganization__organization=group_id
         ).distinct("id")
     elif module == "policy":
         queryset = Policy.objects.filter(

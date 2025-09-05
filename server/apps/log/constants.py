@@ -9,6 +9,7 @@ VICTORIALOGS_SSL_VERIFY = os.getenv("VICTORIALOGS_SSL_VERIFY", "false").lower() 
 
 # 策略相关常量
 POLICY_MODULE = "policy"
+
 # 日志分组相关常量
 LOG_GROUP_MODULE = "log_group"
 DEFAULT_PERMISSION = ['View', 'Operate']

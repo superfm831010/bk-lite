@@ -5,6 +5,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import CustomTable from '@/components/custom-table';
 import TimeSelector from '@/components/time-selector';
 import { v4 as uuidv4 } from 'uuid';
+import { getChartTypeList } from '@/app/ops-analysis/constants/common';
 import { PlusCircleOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { useNamespaceApi } from '@/app/ops-analysis/api/namespace';
@@ -13,7 +14,7 @@ import {
   OperateModalProps,
   ParamItem,
 } from '@/app/ops-analysis/types/dataSource';
-import { NamespaceItem } from '@/app/ops-analysis/types/namespace';
+import { NamespaceItem, TagItem } from '@/app/ops-analysis/types/namespace';
 import {
   Drawer,
   Form,
@@ -25,6 +26,7 @@ import {
   Checkbox,
   Spin,
   message,
+  Empty,
 } from 'antd';
 
 const FormTimeSelector: React.FC<{
@@ -97,8 +99,10 @@ const OperateModal: React.FC<OperateModalProps> = ({
   const [emptyAliases, setEmptyAliases] = React.useState<string[]>([]);
   const [namespaceList, setNamespaceList] = React.useState<NamespaceItem[]>([]);
   const [namespaceLoading, setNamespaceLoading] = React.useState(false);
+  const [tagList, setTagList] = React.useState<TagItem[]>([]);
+  const [tagLoading, setTagLoading] = React.useState(false);
   const { createDataSource, updateDataSource } = useDataSourceApi();
-  const { getNamespaceList } = useNamespaceApi();
+  const { getNamespaceList, getTagList } = useNamespaceApi();
 
   const paramTypeOptions = [
     { label: t('dataSource.paramTypes.string'), value: 'string' },
@@ -133,10 +137,18 @@ const OperateModal: React.FC<OperateModalProps> = ({
           form.setFieldsValue({ namespaces: [items[0].id] });
         }
       }
-    } catch (error) {
-      console.error('获取命名空间列表失败:', error);
     } finally {
       setNamespaceLoading(false);
+    }
+  };
+
+  const fetchTags = async () => {
+    try {
+      setTagLoading(true);
+      const { items } = await getTagList({ page: 1, page_size: 10000 });
+      setTagList(items);
+    } finally {
+      setTagLoading(false);
     }
   };
 
@@ -148,9 +160,10 @@ const OperateModal: React.FC<OperateModalProps> = ({
     setEmptyNames([]);
     setEmptyAliases([]);
     fetchNamespaces();
+    fetchTags();
 
     if (!currentRow) {
-      setParams([createDefaultParam()]);
+      setParams([]);
       return;
     }
 
@@ -177,7 +190,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
         }))
       );
     } else {
-      setParams([createDefaultParam()]);
+      setParams([]);
     }
   }, [open, currentRow, form]);
 
@@ -313,9 +326,6 @@ const OperateModal: React.FC<OperateModalProps> = ({
 
   const handleDeleteParam = (id: string) => {
     const newParams = params.filter((item) => item.id !== id);
-    if (newParams.length === 0) {
-      newParams.push(createDefaultParam());
-    }
     setParams(newParams);
     checkDuplicateNames(newParams);
     checkEmptyValues(newParams);
@@ -566,8 +576,12 @@ const OperateModal: React.FC<OperateModalProps> = ({
       }
 
       const submitData = {
-        ...values,
+        rest_api: values.rest_api,
+        name: values.name.trim(),
+        desc: values.desc ? values.desc.trim() : '',
         namespaces: values.namespaces || [],
+        tag: values.tag || [],
+        chart_type: values.chart_type || [],
         params: params
           .filter((param) => param.name && param.name.trim())
           .map((param) => ({
@@ -655,7 +669,7 @@ const OperateModal: React.FC<OperateModalProps> = ({
           ]}
         >
           <Checkbox.Group
-            options={namespaceList.map((ns) => ({
+            options={namespaceList.map((ns: NamespaceItem) => ({
               label: ns.name,
               value: ns.id,
             }))}
@@ -667,6 +681,50 @@ const OperateModal: React.FC<OperateModalProps> = ({
             </div>
           )}
         </Form.Item>
+        <Form.Item
+          name="tag"
+          label={t('dataSource.tag')}
+          rules={[
+            {
+              required: true,
+              type: 'array',
+              min: 1,
+              message: t('common.selectMsg'),
+            },
+          ]}
+        >
+          <Checkbox.Group
+            options={tagList.map((tag: TagItem) => ({
+              label: tag.name,
+              value: tag.id,
+            }))}
+            disabled={tagLoading}
+          />
+          {tagLoading && (
+            <div style={{ textAlign: 'center', padding: '8px 0' }}>
+              <Spin size="small" />
+            </div>
+          )}
+        </Form.Item>
+        <Form.Item
+          name="chart_type"
+          label={t('dataSource.chartType')}
+          rules={[
+            {
+              required: true,
+              type: 'array',
+              min: 1,
+              message: t('common.selectMsg'),
+            },
+          ]}
+        >
+          <Checkbox.Group
+            options={getChartTypeList().map((item) => ({
+              label: t(item.label),
+              value: item.value,
+            }))}
+          />
+        </Form.Item>
         <Form.Item name="desc" label={t('dataSource.describe')}>
           <Input.TextArea rows={3} placeholder={t('common.inputMsg')} />
         </Form.Item>
@@ -676,16 +734,34 @@ const OperateModal: React.FC<OperateModalProps> = ({
               marginBottom: '8px',
               color: 'var(--color-text-1)',
               fontSize: '14px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
-            {t('dataSource.params')}：
+            <span>{t('dataSource.params')}：</span>
+            <Button
+              type="dashed"
+              size="small"
+              icon={<PlusCircleOutlined />}
+              onClick={() => setParams([...params, createDefaultParam()])}
+            >
+              {t('dataSource.addParam')}
+            </Button>
           </div>
-          <CustomTable
-            rowKey="id"
-            columns={columns}
-            dataSource={params}
-            pagination={false}
-          />
+          {params.length > 0 ? (
+            <CustomTable
+              rowKey="id"
+              columns={columns}
+              dataSource={params}
+              pagination={false}
+            />
+          ) : (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={t('common.noData')}
+            />
+          )}
           {duplicateNames.length > 0 && (
             <div
               style={{

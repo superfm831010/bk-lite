@@ -45,9 +45,6 @@
     "styleSettings": "样式设置",
     "filterSettings": "筛选设置",
     "chartTypeLabel": "图表类型",
-    "lineChart": "折线图",
-    "barChart": "柱状图",
-    "pieChart": "饼图",
     "paramSettings": "参数设置"
   },
   "dataSource": {
@@ -81,7 +78,13 @@
     "duplicateParamNames": "参数名重复：",
     "updateDataSourceSuccess": "更新数据源成功",
     "createDataSourceSuccess": "创建数据源成功",
-    "operationFailed": "操作失败"
+    "operationFailed": "操作失败",
+    "tag": "标签",
+    "chartType": "图表类型",
+    "lineChart": "折线图",
+    "barChart": "柱状图",
+    "pieChart": "饼图",
+    "singleValue": "单值"
   },
   "namespace": {
     "title": "命名空间",
@@ -120,10 +123,16 @@
     "exitEdit": "退出编辑",
     "viewAlarmList": "查看告警列表",
     "viewMonitorDetails": "查看监控详情",
+    "bringToFront": "置顶",
+    "bringForward": "上移一层",
+    "sendBackward": "下移一层",
+    "noArrowConnection": "无箭头连接",
+    "singleArrowConnection": "单向连接",
+    "doubleArrowConnection": "双向连接",
+    "configureEdge": "配置边",
+    "delete": "删除",
     "nodeConfig": {
         "dataSource": "数据源",
-        "dataSourceType": "数据源类型",
-        "paramSettings": "参数设置",
         "dataSettings": "数据设置",
         "nodeStyle": "节点样式",
         "basicSettings": "基础设置",
@@ -156,7 +165,8 @@
         "clickRefreshToGetFields": "点击刷新按钮获取数据字段",
         "selectDataSourceFirst": "请先选择数据源",
         "selectedIcon": "已选择的图标",
-        "uploadedImage": "已上传的图片"
+        "uploadedImage": "已上传的图片",
+        "selectAtLeastOneField": "请至少选择一个数据字段进行显示"
     },
     "nodeTypes": {
         "singleValue": "单值",

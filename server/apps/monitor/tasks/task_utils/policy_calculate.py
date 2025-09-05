@@ -66,13 +66,14 @@ def calculate_alerts(alert_name, df, thresholds, n=1):
                 break  # 一旦匹配，跳出阈值循环
 
         if not alert_triggered:
-            # 记录 info 事件
+            # 记录 info 事件，也包含 raw_data
             info_events.append({
                 "instance_id": instance_id,
                 "value": values[-1][1],
                 "timestamp": values[-1][0],
                 "level": "info",
                 "content": "info",
+                "raw_data": raw_data,  # 为 info 事件也添加原始数据
             })
 
     return alert_events, info_events

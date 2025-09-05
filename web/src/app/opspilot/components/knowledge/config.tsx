@@ -246,6 +246,22 @@ const ConfigComponent: React.FC<ConfigProps> = ({ configData, setConfigData }) =
           </div>
         </div>
       </div>
+      {/* Conditional Recall Method Section */}
+      {configData.enableNaiveRag && (
+        <div className="mb-4 flex items-center">
+          <label className="block text-sm font-medium mb-1 w-32">{t('knowledge.recallMethod')}</label>
+          <Select
+            className="flex-1"
+            placeholder={`${t('common.selectMsg')}${t('knowledge.recallMethod')}`}
+            value={configData.ragRecallMode}
+            onChange={(value) => setConfigData(prevData => ({ ...prevData, ragRecallMode: value }))}
+          >
+            <Option value="chunk">{t('knowledge.recallByChunk')}</Option>
+            <Option value="segment">{t('knowledge.recallBySegment')}</Option>
+            <Option value="origin">{t('knowledge.recallByOrigin')}</Option>
+          </Select>
+        </div>
+      )}
     </>
   );
 };

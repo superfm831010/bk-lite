@@ -2,8 +2,9 @@
 
 import React, { useState, useRef } from 'react';
 import Sidebar from '../../components/sidebar';
-import Dashboard from './dashBoard/index';
+import Dashboard, { DashboardRef } from './dashBoard/index';
 import Topology from './topology/index';
+import { TopologyRef } from '@/app/ops-analysis/types/topology';
 import { useTranslation } from '@/utils/i18n';
 import { DirectoryType, SidebarRef } from '@/app/ops-analysis/types';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
@@ -28,12 +29,12 @@ const ViewLayout: React.FC<ViewLayoutProps> = ({ children }) => {
     dashboard: null,
     topology: null,
   });
-  const dashboardRef = useRef<any>(null);
-  const topologyRef = useRef<any>(null);
+  const dashboardRef = useRef<DashboardRef>(null);
+  const topologyRef = useRef<TopologyRef>(null);
   const sidebarRef = useRef<SidebarRef>(null);
   const previousSelectionRef = useRef<{
     type: DirectoryType;
-    item: any;
+    item: DirItem | null;
   } | null>(null);
 
   const isInSettings = pathname.includes('/settings');

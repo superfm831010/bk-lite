@@ -22,6 +22,7 @@ export interface ContextMenuState {
   nodeId: string;
   visible: boolean;
   position: { x: number; y: number };
+  targetType: 'node' | 'edge';
 }
 
 export interface TextEditState {
@@ -45,16 +46,27 @@ export interface NodeEditState {
 
 // 节点相关类型扩展
 export interface TopologyNodeData {
+  id?: string;
   type: string;
   name: string;
-  widget?: string;
-  position: Point;
+  position?: Point;
+  logoType?: string;
+  logoIcon?: string;
+  logoUrl?: string;
+  description?: string;
+  // 运行时状态字段
+  isLoading?: boolean;
+  hasError?: boolean;
+  rawData?: any;
+  isPlaceholder?: boolean;
+  // 值配置 - 包含数据源相关配置
   valueConfig?: {
     chartType?: string;
     dataSource?: number;
     dataSourceParams?: DataSourceParam[];
     selectedFields?: string[];
   };
+  // 样式配置
   styleConfig?: {
     width?: number;
     height?: number;
@@ -67,15 +79,6 @@ export interface TopologyNodeData {
     fontSize?: number;
     fontWeight?: string | number;
   };
-  logoType?: string;
-  logoIcon?: string;
-  logoUrl?: string;
-  selectedFields?: string[];
-  width?: number;
-  height?: number;
-  id?: string;
-  x?: number;
-  y?: number;
 }
 
 // 图形实例操作类型
@@ -153,35 +156,16 @@ export interface NodeConfPanelProps {
   visible?: boolean;
   title?: string;
   onClose?: () => void;
-  onConfirm?: (values: any) => void;
+  onConfirm?: (values: NodeConfigFormValues) => void;
   onCancel?: () => void;
-  initialValues?: {
-    name?: string;
-    logoType?: 'default' | 'custom';
-    logoIcon?: string;
-    logoUrl?: string;
-    dataSource?: number;
-    selectedFields?: string[];
-    fontSize?: number;
-    textColor?: string;
-    backgroundColor?: string;
-    borderColor?: string;
-    borderWidth?: number;
-    lineType?: 'solid' | 'dashed' | 'dotted';
-    width?: number;
-    height?: number;
-    shapeType?: 'rectangle' | 'circle';
-    dataSourceParams?: DataSourceParam[];
-    filterParams?: Record<string, any>;
-    chartWidget?: string;
-    valueConfig?: any;
-  };
+  initialValues?: NodeConfigFormValues;
 }
 
 export interface ContextMenuProps {
   visible: boolean;
   position: { x: number; y: number };
   isEditMode?: boolean;
+  targetType?: 'node' | 'edge';
   onMenuClick: (e: { key: string }) => void;
 }
 interface InterfaceConfig {
@@ -240,4 +224,76 @@ export interface ToolbarProps {
   onDelete: () => void;
   onSelectMode: () => void;
   onAddText: () => void;
+}
+
+// ViewConfig 表单值类型
+export interface ViewConfigFormValues {
+  name: string;
+  description?: string;
+  chartType: string;
+  dataSource: number;
+  dataSourceParams?: Array<{
+    name: string;
+    value: string | number | boolean | object | null;
+    type: string;
+  }>;
+}
+
+// 节点配置表单值类型
+export interface NodeConfigFormValues {
+  name?: string;
+  logoType?: 'default' | 'custom';
+  logoIcon?: string;
+  logoUrl?: string;
+  selectedFields?: string[];
+  chartType?: string;
+  dataSource?: number;
+  dataSourceParams?: Array<{
+    name: string;
+    value: string | number | boolean | object | null;
+    type: string;
+  }>;
+  width?: number;
+  height?: number;
+  backgroundColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  textColor?: string;
+  fontSize?: number;
+  lineType?: string;
+  shapeType?: string;
+}
+
+// Topology 组件 Props 和 Ref 类型
+export interface TopologyProps {
+  selectedTopology?: DirItem | null;
+}
+
+export interface TopologyRef {
+  hasUnsavedChanges: () => boolean;
+}
+
+// 节点基础数据类型
+export interface BaseNodeData {
+  id: string;
+  x: number;
+  y: number;
+  shape: string;
+  label: string;
+  data: TopologyNodeData;
+}
+
+// X6 图形属性配置
+interface NodeAttrs {
+  body?: Record<string, any>;
+  image?: Record<string, any>;
+  label?: Record<string, any>;
+}
+
+// 创建节点返回的类型
+export interface CreatedNodeConfig extends BaseNodeData {
+  width?: number;
+  height?: number;
+  attrs?: NodeAttrs;
+  ports?: any;
 }

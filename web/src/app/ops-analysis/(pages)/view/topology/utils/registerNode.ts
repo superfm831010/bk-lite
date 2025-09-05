@@ -1,8 +1,14 @@
 import ChartNode from '../components/chartNode';
-import { Graph } from '@antv/x6';
+import { Graph, Node } from '@antv/x6';
 import { register } from '@antv/x6-react-shape';
 import { NODE_DEFAULTS } from '../constants/nodeDefaults';
 import { createPortConfig } from './topologyUtils';
+import { iconList } from '@/app/cmdb/utils/common';
+import type {
+  TopologyNodeData,
+  BaseNodeData,
+  CreatedNodeConfig,
+} from '@/app/ops-analysis/types/topology';
 
 const NODE_TYPE_MAP = {
   'icon': 'icon-node',
@@ -191,7 +197,7 @@ export const registerNodes = () => {
     }
 
   } catch (error) {
-    console.error('节点注册失败:', error);
+    console.warn('节点注册失败:', error);
   }
 };
 
@@ -199,13 +205,13 @@ export const getRegisteredNodeShape = (nodeType: string): string => {
   return NODE_TYPE_MAP[nodeType as keyof typeof NODE_TYPE_MAP] || 'icon-node';
 };
 
-const getIconUrl = (nodeConfig: any, iconList?: any[]): string => {
+const getIconUrl = (nodeConfig: TopologyNodeData): string => {
   if (nodeConfig.logoType === 'default' && nodeConfig.logoIcon) {
     if (iconList) {
       const iconItem = iconList.find(item => item.key === nodeConfig.logoIcon);
-      return iconItem
-        ? `/app/assets/assetModelIcon/${iconItem.url}.svg`
-        : `/app/assets/assetModelIcon/${nodeConfig.logoIcon}.svg`;
+      if (iconItem) {
+        return `/app/assets/assetModelIcon/${iconItem.url}.svg`;
+      }
     }
     return `/app/assets/assetModelIcon/${nodeConfig.logoIcon}.svg`;
   }
@@ -217,8 +223,8 @@ const getIconUrl = (nodeConfig: any, iconList?: any[]): string => {
   return DEFAULT_ICON_PATH;
 };
 
-const createIconNode = (nodeConfig: any, baseNodeData: any, iconList?: any[]) => {
-  const logoUrl = getIconUrl(nodeConfig, iconList);
+const createIconNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
+  const logoUrl = getIconUrl(nodeConfig);
 
   return {
     ...baseNodeData,
@@ -233,17 +239,15 @@ const createIconNode = (nodeConfig: any, baseNodeData: any, iconList?: any[]) =>
   };
 };
 
-const createSingleValueNode = (nodeConfig: any, baseNodeData: any) => {
+const createSingleValueNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
   const valueConfig = nodeConfig.valueConfig || {};
-  const hasDataSource = valueConfig.dataSource && valueConfig.selectedFields?.length > 0;
+  const hasDataSource = !!(valueConfig.dataSource && (valueConfig.selectedFields?.length ?? 0) > 0);
 
   return {
     ...baseNodeData,
     data: {
       ...baseNodeData.data,
-      dataSource: valueConfig.dataSource,
-      dataSourceParams: valueConfig.dataSourceParams || [],
-      selectedFields: valueConfig.selectedFields || [],
+      valueConfig: valueConfig,
       isLoading: hasDataSource,
       hasError: false
     },
@@ -261,7 +265,7 @@ const createSingleValueNode = (nodeConfig: any, baseNodeData: any) => {
   };
 };
 
-const createTextNode = (nodeConfig: any, baseNodeData: any) => {
+const createTextNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
 
   return {
     ...baseNodeData,
@@ -279,10 +283,10 @@ const createTextNode = (nodeConfig: any, baseNodeData: any) => {
   };
 };
 
-const createBasicShapeNode = (nodeConfig: any, baseNodeData: any) => {
+const createBasicShapeNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
   const { BASIC_SHAPE_NODE } = NODE_DEFAULTS;
 
-  const getShapeSpecificAttrs = (shapeType: string) => {
+  const getShapeSpecificAttrs = (shapeType?: string): Record<string, any> => {
     // 直接使用配置对象中的值
     const backgroundColor = nodeConfig.styleConfig?.backgroundColor;
     const borderColor = nodeConfig.styleConfig?.borderColor;
@@ -343,16 +347,15 @@ const createBasicShapeNode = (nodeConfig: any, baseNodeData: any) => {
   };
 };
 
-const createChartNode = (nodeConfig: any, baseNodeData: any) => {
+const createChartNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
   return {
     ...baseNodeData,
     width: nodeConfig.styleConfig?.width,
     height: nodeConfig.styleConfig?.height,
     data: {
       ...baseNodeData.data,
-      widget: nodeConfig.widget,
       valueConfig: nodeConfig.valueConfig,
-      isLoading: !!nodeConfig.valueConfig.dataSource,
+      isLoading: !!(nodeConfig.valueConfig?.dataSource),
       rawData: null,
       hasError: false
     },
@@ -360,19 +363,24 @@ const createChartNode = (nodeConfig: any, baseNodeData: any) => {
   };
 };
 
-export const createNodeByType = (nodeConfig: any, iconList?: any[]): any => {
+export const createNodeByType = (nodeConfig: TopologyNodeData): CreatedNodeConfig => {
   const shape = getRegisteredNodeShape(nodeConfig.type);
-  const baseNodeData = {
-    id: nodeConfig.id,
-    x: nodeConfig.position?.x || nodeConfig.x,
-    y: nodeConfig.position?.y || nodeConfig.y,
+
+  // 兼容旧数据格式：优先使用 position 对象，如果不存在则使用直接在 nodeConfig 上的 x, y
+  const x = nodeConfig.position?.x ?? (nodeConfig as any).x ?? 0;
+  const y = nodeConfig.position?.y ?? (nodeConfig as any).y ?? 0;
+
+  const baseNodeData: BaseNodeData = {
+    id: nodeConfig.id || '',
+    x,
+    y,
     shape,
     label: nodeConfig.name || '',
     data: { ...nodeConfig },
   };
   switch (nodeConfig.type) {
     case 'icon':
-      return createIconNode(nodeConfig, baseNodeData, iconList);
+      return createIconNode(nodeConfig, baseNodeData);
     case 'single-value':
       return createSingleValueNode(nodeConfig, baseNodeData);
     case 'text':
@@ -386,8 +394,8 @@ export const createNodeByType = (nodeConfig: any, iconList?: any[]): any => {
   }
 };
 
-const updateIconNodeAttributes = (node: any, nodeConfig: any, iconList?: any[]) => {
-  const logoUrl = getIconUrl(nodeConfig, iconList);
+const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
+  const logoUrl = getIconUrl(nodeConfig);
   node.setAttrs({
     image: {
       'xlink:href': logoUrl
@@ -407,7 +415,7 @@ const updateIconNodeAttributes = (node: any, nodeConfig: any, iconList?: any[]) 
   }
 };
 
-const updateSingleValueNodeAttributes = (node: any, nodeConfig: any) => {
+const updateSingleValueNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   node.setAttrs({
     body: {
       fill: nodeConfig.styleConfig?.backgroundColor,
@@ -420,7 +428,7 @@ const updateSingleValueNodeAttributes = (node: any, nodeConfig: any) => {
   });
 };
 
-const updateTextNodeAttributes = (node: any, nodeConfig: any) => {
+const updateTextNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   node.setAttrs({
     body: {
       fill: nodeConfig.styleConfig?.backgroundColor,
@@ -434,10 +442,10 @@ const updateTextNodeAttributes = (node: any, nodeConfig: any) => {
   });
 };
 
-const updateBasicShapeNodeAttributes = (node: any, nodeConfig: any) => {
+const updateBasicShapeNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   const { BASIC_SHAPE_NODE } = NODE_DEFAULTS;
 
-  const getShapeSpecificAttrs = (shapeType: string) => {
+  const getShapeSpecificAttrs = (shapeType?: string): Record<string, any> => {
     // 直接使用配置对象中的值
     const backgroundColor = nodeConfig.styleConfig?.backgroundColor;
     const borderColor = nodeConfig.styleConfig?.borderColor;
@@ -503,17 +511,17 @@ const updateBasicShapeNodeAttributes = (node: any, nodeConfig: any) => {
   }
 };
 
-export const updateNodeAttributes = (node: any, nodeConfig: any, iconList?: any[]): void => {
+export const updateNodeAttributes = (node: Node, nodeConfig: TopologyNodeData): void => {
   if (!node || !nodeConfig) return;
 
-  node.setLabel(nodeConfig.name);
+  node.setAttrByPath('label/text', nodeConfig.name);
   node.setData({
     ...node.getData(),
     ...nodeConfig,
   });
 
-  const updateStrategies = {
-    'icon': () => updateIconNodeAttributes(node, nodeConfig, iconList),
+  const updateStrategies: Record<string, () => void> = {
+    'icon': () => updateIconNodeAttributes(node, nodeConfig),
     'single-value': () => updateSingleValueNodeAttributes(node, nodeConfig),
     'text': () => updateTextNodeAttributes(node, nodeConfig),
     'basic-shape': () => updateBasicShapeNodeAttributes(node, nodeConfig)

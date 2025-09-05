@@ -14,6 +14,7 @@
     <segment_number>分段序号</segment_number>
     <segment_id>分段ID</segment_id>
     <content>具体内容</content>
+    <chunk_type>知识类型</chunk_type>
 </knowledge>
 ```
 
@@ -29,8 +30,10 @@
     <segment_number>{{ rag_result.segment_number }}</segment_number>
     <segment_id>{{ rag_result.segment_id }}</segment_id>
     <content>{{ rag_result.content }}</content>
+    <chunk_type>{{ rag_result.chunk_type }}</chunk_type>
 </knowledge>
 
+chunk_type有 Document、QA、Graph 三种类型，分别表示文档知识、问答对知识和图谱知识。
 {% endfor %}
 {% else %}
 **注意：没有找到相关的背景资料**
@@ -42,12 +45,12 @@
 ### 引用格式说明
 在回答中必须为每个使用的信息标注引用来源，格式如下：
 - 在相关内容后加上引用标记：`[[数字]](参数信息)`
-- 引用标记格式：`[[ref_id]](ref_id:值|segment_id:值|chunk_id:值|chunk_number:值|knowledge_id:值|segment_number:值)`
+- 引用标记格式：`[[ref_id]](ref_id:值|segment_id:值|chunk_id:值|chunk_number:值|knowledge_id:值|segment_number:值|chunk_type:值)`
 - 用竖线`|`分隔各个参数，保持参数顺序一致
 
 **引用示例：**
 ```
-bklite是一个AI First的知识管理平台[[1]](ref_id:1|segment_id:1|chunk_id:abc|chunk_number:1|knowledge_id:1|segment_number:1)，致力于帮助用户更高效地获取和管理知识。它采用MIT协议[[2]](ref_id:2|segment_id:2|chunk_id:def|chunk_number:2|knowledge_id:0|segment_number:12)开源发布。
+bklite是一个AI First的知识管理平台[[1]](ref_id:1|segment_id:1|chunk_id:abc|chunk_number:1|knowledge_id:1|segment_number:1｜chunk_type:QA)，致力于帮助用户更高效地获取和管理知识。它采用MIT协议[[2]](ref_id:2|segment_id:2|chunk_id:def|chunk_number:2|knowledge_id:0|segment_number:12|chunk_type:Graph)开源发布。
 ```
 
 **重要提醒：**

@@ -44,9 +44,6 @@
     "styleSettings": "Style Settings",
     "filterSettings": "Filter Settings",
     "chartTypeLabel": "Chart Type",
-    "lineChart": "Line Chart",
-    "barChart": "Bar Chart",
-    "pieChart": "Pie Chart",
     "paramSettings": "Parameter Settings"
   },
   "dataSource": {
@@ -80,7 +77,13 @@
     "duplicateParamNames": "Duplicate parameter names: ",
     "updateDataSourceSuccess": "Data source updated successfully",
     "createDataSourceSuccess": "Data source created successfully",
-    "operationFailed": "Operation failed"
+    "operationFailed": "Operation failed",
+    "tag": "Tag",
+    "chartType": "Chart Type",
+    "lineChart": "Line Chart",
+    "barChart": "Bar Chart",
+    "pieChart": "Pie Chart",
+    "singleValue": "Single Value"
   },
   "namespace": {
     "title": "Namespace",
@@ -119,10 +122,16 @@
     "exitEdit": "Exit Edit",
     "viewAlarmList": "View Alarm List",
     "viewMonitorDetails": "View Monitor Details",
+    "bringToFront": "Bring to Front",
+    "bringForward": "Bring Forward",
+    "sendBackward": "Send Backward",
+    "noArrowConnection": "No Arrow Connection",
+    "singleArrowConnection": "Single Arrow Connection",
+    "doubleArrowConnection": "Double Arrow Connection",
+    "configureEdge": "Configure Edge",
+    "delete": "Delete",
     "nodeConfig": {
         "dataSource": "Data Source",
-        "dataSourceType": "Data Source Type",
-        "paramSettings": "Parameter Settings",
         "dataSettings": "Data Settings",
         "nodeStyle": "Node Style",
         "basicSettings": "Basic Settings",
@@ -155,7 +164,8 @@
         "clickRefreshToGetFields": "Click refresh button to get data fields",
         "selectDataSourceFirst": "Please select a data source first",
         "selectedIcon": "Selected Icon",
-        "uploadedImage": "Uploaded Image"
+        "uploadedImage": "Uploaded Image",
+        "selectAtLeastOneField": "Please select at least one data field to display"
     },
     "nodeTypes": {
         "singleValue": "Single Value",

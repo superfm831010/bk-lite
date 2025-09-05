@@ -205,6 +205,9 @@ class LLMViewSet(AuthViewSet):
                 params["enable_km_route"] if params.get("enable_km_route") else skill_obj.enable_km_route
             )
             params["km_llm_model"] = params["km_llm_model"] if params.get("km_llm_model") else skill_obj.km_llm_model
+            params["enable_suggest"] = (
+                params["enable_suggest"] if params.get("enable_suggest") else skill_obj.enable_suggest
+            )
             # 调用stream_chat函数返回流式响应
             return stream_chat(params, skill_obj.name, {}, current_ip, params["user_message"])
         except LLMSkill.DoesNotExist:

@@ -43,6 +43,7 @@ class CollectService(object):
             "tidb_info": "TiDBInfo",
             "jetty_info": "JettyInfo",
             "hbase_info": "HBaseInfo",
+            "mssql_info": "MSSQLInfo",
         }
 
     def import_plugin(self, plugin_name):

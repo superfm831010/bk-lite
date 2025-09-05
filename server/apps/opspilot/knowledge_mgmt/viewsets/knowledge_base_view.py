@@ -59,6 +59,8 @@ class KnowledgeBaseViewSet(AuthViewSet):
             params["enable_rerank"] = False
         if not params.get("team"):
             params["team"] = [int(request.COOKIES.get("current_team"))]
+        params["score_threshold"] = 0.3
+        params["search_type"] = "mmr"
         serializer = self.get_serializer(data=params)
         serializer.is_valid(raise_exception=True)
         with atomic():
@@ -115,6 +117,7 @@ class KnowledgeBaseViewSet(AuthViewSet):
         instance.graph_size = kwargs["graph_size"]
         instance.search_type = kwargs["search_type"]
         instance.score_threshold = kwargs.get("score_threshold", 0.7)
+        instance.rag_recall_mode = kwargs.get("rag_recall_mode", "chunk")
         instance.save()
         return JsonResponse({"result": True})
 

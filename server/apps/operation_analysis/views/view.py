@@ -7,12 +7,12 @@ from rest_framework.response import Response
 
 from apps.operation_analysis.common.get_nats_source_data import GetNatsData
 from apps.operation_analysis.filters import DataSourceAPIModelFilter, DashboardModelFilter, DirectoryModelFilter, \
-    TopologyModelFilter, NameSpaceModelFilter
+    TopologyModelFilter, NameSpaceModelFilter, DataSourceTagModelFilter
 from apps.operation_analysis.serializers import DataSourceAPIModelSerializer, DashboardModelSerializer, \
-    DirectoryModelSerializer, TopologyModelSerializer, NameSpaceModelSerializer
+    DirectoryModelSerializer, TopologyModelSerializer, NameSpaceModelSerializer, DataSourceTagModelSerializer
 from config.drf.pagination import CustomPageNumberPagination
 from config.drf.viewsets import ModelViewSet
-from apps.operation_analysis.models import DataSourceAPIModel, Dashboard, Directory, Topology, NameSpace
+from apps.operation_analysis.models import DataSourceAPIModel, Dashboard, Directory, Topology, NameSpace, DataSourceTag
 from apps.core.logger import operation_analysis_logger as logger
 
 
@@ -222,4 +222,16 @@ class TopologyModelViewSet(ModelViewSet):
     ordering_fields = ["id"]
     ordering = ["id"]
     filterset_class = TopologyModelFilter
+    pagination_class = CustomPageNumberPagination
+
+
+class DataSourceTagModelViewSet(ModelViewSet):
+    """
+    数据源标签
+    """
+    queryset = DataSourceTag.objects.all()
+    serializer_class = DataSourceTagModelSerializer
+    ordering_fields = ["id"]
+    ordering = ["id"]
+    filterset_class = DataSourceTagModelFilter
     pagination_class = CustomPageNumberPagination

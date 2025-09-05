@@ -1,119 +1,78 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from '@/utils/i18n';
-import {
-  ViewConfigProps,
-  LayoutItem,
-} from '@/app/ops-analysis/types/dashBoard';
-import { TopologyNodeData } from '@/app/ops-analysis/types/topology';
-import { useDataSourceManager } from '@/app/ops-analysis/hooks/useDataSource';
+import { ViewConfigProps } from '@/app/ops-analysis/types/dashBoard';
 import { Drawer, Button, Form, Input, Radio } from 'antd';
+import { ViewConfigItem } from '@/app/ops-analysis/types/dashBoard';
+import { useDataSourceManager } from '@/app/ops-analysis/hooks/useDataSource';
+import { getChartTypeList } from '@/app/ops-analysis/constants/common';
 import DataSourceParamsConfig from '@/app/ops-analysis/components/paramsConfig';
 import DataSourceSelect from '@/app/ops-analysis/components/dataSourceSelect';
 
-const ViewConfig: React.FC<ViewConfigProps> = ({
+interface ViewConfigPropsWithManager extends ViewConfigProps {
+  dataSourceManager: ReturnType<typeof useDataSourceManager>;
+}
+
+const ViewConfig: React.FC<ViewConfigPropsWithManager> = ({
   open,
   item: widgetItem,
   onConfirm,
   onClose,
+  dataSourceManager,
 }) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const {
     dataSources,
-    dataSourcesLoading,
     selectedDataSource,
     setSelectedDataSource,
     findDataSource,
     setDefaultParamValues,
     restoreUserParamValues,
     processFormParamsForSubmit,
-  } = useDataSourceManager();
+  } = dataSourceManager;
 
-  const isTopologyFormat = (item: any): item is TopologyNodeData => {
-    return item && 'type' in item && item.type === 'chart';
-  };
-
-  const isDashboardFormat = (item: any): item is LayoutItem => {
-    return item && 'i' in item && 'widget' in item;
-  };
-
-  const extractItemConfig = (item: any) => {
-    if (isTopologyFormat(item)) {
-      return {
-        name: item.name,
-        widget: item.widget,
-        chartType: item.valueConfig?.chartType,
-        dataSource: item.valueConfig?.dataSource,
-        dataSourceParams: item.valueConfig?.dataSourceParams || [],
-      };
-    } else if (isDashboardFormat(item)) {
-      return {
-        name: item.config?.name || item.title,
-        widget: item.widget,
-        chartType: item.config?.chartType,
-        dataSource: item.config?.dataSource,
-        dataSourceParams: item.config?.dataSourceParams || [],
-        ...item.config,
-      };
-    }
-    return {
-      name: '',
-      widget: '',
-      dataSource: undefined,
-      chartType: 'line',
-      dataSourceParams: [],
-    };
-  };
-
-  const initializeNewItemForm = (widget: string): void => {
-    const formValues: any = {
-      name: '',
-      chartType: 'line',
-    };
-    if (widget === 'trendLine') {
-      const trendDataSource = dataSources.find(
-        (ds) => ds.rest_api === 'alert/get_alert_trend_data'
-      );
-      if (trendDataSource) {
-        formValues.dataSource = trendDataSource.id;
-        setSelectedDataSource(trendDataSource);
-      }
-      formValues.chartType = 'line';
-    } else if (widget === 'errorBar') {
-      formValues.chartType = 'bar';
-    } else if (widget === 'osPie') {
-      formValues.chartType = 'pie';
+  const getDataSourceChartTypes = React.useMemo(() => {
+    if (!selectedDataSource?.chart_type?.length) {
+      return [];
     }
 
-    form.setFieldsValue(formValues);
-  };
+    const allChartTypes = getChartTypeList();
+    return selectedDataSource.chart_type
+      .map((type) => allChartTypes.find((chart) => chart.value === type))
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  }, [selectedDataSource]);
 
-  const initializeEditItemForm = (widgetItem: any): void => {
-    const itemConfig = extractItemConfig(widgetItem);
-
-    const formValues: any = {
-      ...itemConfig,
-      name: itemConfig.name || '',
-      chartType: itemConfig.chartType || 'line',
-      dataSource: itemConfig.dataSource,
+  const initializeItemForm = (widgetItem: ViewConfigItem): void => {
+    const { valueConfig } = widgetItem;
+    const formValues = {
+      name: widgetItem?.name,
+      description: widgetItem.description || '',
+      chartType: valueConfig?.chartType,
+      dataSource: valueConfig?.dataSource,
+      dataSourceParams: valueConfig?.dataSourceParams || [],
+      params: {},
     };
+    if (!formValues) return;
 
-    const targetDataSource = findDataSource(
-      itemConfig.widget || '',
-      itemConfig.dataSource
-    );
-
+    const targetDataSource = findDataSource(formValues.dataSource);
     if (targetDataSource) {
       setSelectedDataSource(targetDataSource);
-
       formValues.params = formValues.params || {};
+
+      // 如果没有指定图表类型，使用数据源支持的第一个图表类型
+      if (!formValues.chartType && targetDataSource.chart_type?.length) {
+        const allChartTypes = getChartTypeList();
+        const firstSupportedType = targetDataSource.chart_type
+          .map((type) => allChartTypes.find((chart) => chart.value === type))
+          .find(Boolean);
+        formValues.chartType = firstSupportedType?.value;
+      }
 
       if (targetDataSource.params?.length) {
         setDefaultParamValues(targetDataSource.params, formValues.params);
-
-        if (itemConfig.dataSourceParams?.length) {
+        if (formValues.dataSourceParams?.length) {
           restoreUserParamValues(
-            itemConfig.dataSourceParams,
+            formValues.dataSourceParams,
             formValues.params
           );
         }
@@ -125,22 +84,6 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
     form.setFieldsValue(formValues);
   };
 
-  const initializeFormValues = (): void => {
-    if (dataSources.length === 0) return;
-
-    const isNewItem =
-      !widgetItem ||
-      (isDashboardFormat(widgetItem) && !widgetItem.title) ||
-      (isTopologyFormat(widgetItem) && !widgetItem.name);
-
-    if (isNewItem) {
-      const widget = widgetItem?.widget || '';
-      initializeNewItemForm(widget);
-    } else {
-      initializeEditItemForm(widgetItem);
-    }
-  };
-
   const resetForm = (): void => {
     form.resetFields();
     setSelectedDataSource(undefined);
@@ -148,7 +91,7 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
 
   useEffect(() => {
     if (open && dataSources.length > 0) {
-      initializeFormValues();
+      initializeItemForm(widgetItem);
     } else if (!open) {
       resetForm();
     }
@@ -157,7 +100,6 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
   const handleConfirm = async () => {
     try {
       const values = await form.validateFields();
-
       if (values.params && selectedDataSource?.params) {
         values.dataSourceParams = processFormParamsForSubmit(
           values.params,
@@ -202,6 +144,12 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
           >
             <Input placeholder={t('dashboard.inputName')} />
           </Form.Item>
+          <Form.Item label={t('dataSource.describe')} name="description">
+            <Input.TextArea
+              placeholder={t('common.inputMsg')}
+              autoSize={{ minRows: 2, maxRows: 4 }}
+            />
+          </Form.Item>
         </div>
 
         <div className="mb-6">
@@ -216,7 +164,7 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
             <DataSourceSelect
               placeholder={t('common.selectTip')}
               dataSources={dataSources}
-              loading={dataSourcesLoading}
+              disabled
               onDataSourceChange={setSelectedDataSource}
             />
           </Form.Item>
@@ -240,16 +188,14 @@ const ViewConfig: React.FC<ViewConfigProps> = ({
             label={t('dashboard.chartTypeLabel')}
             name="chartType"
             rules={[{ required: true, message: t('common.selectTip') }]}
-            initialValue="line"
+            initialValue={getDataSourceChartTypes[0]?.value}
           >
-            <Radio.Group
-              disabled={['trendLine'].includes(widgetItem?.widget || '')}
-            >
-              <Radio.Button value="line">
-                {t('dashboard.lineChart')}
-              </Radio.Button>
-              <Radio.Button value="bar">{t('dashboard.barChart')}</Radio.Button>
-              <Radio.Button value="pie">{t('dashboard.pieChart')}</Radio.Button>
+            <Radio.Group>
+              {getDataSourceChartTypes.map((item) => (
+                <Radio.Button key={item.value} value={item.value}>
+                  {t(item.label)}
+                </Radio.Button>
+              ))}
             </Radio.Group>
           </Form.Item>
         </div>

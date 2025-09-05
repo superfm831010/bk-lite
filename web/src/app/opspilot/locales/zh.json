@@ -195,6 +195,10 @@
     "threshold": "阈值",
     "thresholdDesc": "使用相似性分数阈值根据相关性分数过滤结果",
     "mmrDesc": "使用最大边际相关性来平衡相关性和多样性",
+    "recallMethod": "召回方式",
+    "recallByChunk": "分块",
+    "recallBySegment": "分段",
+    "recallByOrigin": "全篇",
     "documents": {
       "title": "文档",
       "description": "文档管理用于添加新知识，包括本地文件、网页链接或自定义文本。新添加的知识可以分块，以便机器人使用。",
@@ -329,6 +333,7 @@
     "createBlankAgent": "创建空白智能体",
     "createFromTemplate": "从模板创建",
     "information": "基本信息",
+    "selectTemplate": "选择模板",
     "form": {
       "name": "名称",
       "group": "分组",
@@ -336,6 +341,7 @@
       "owner": "所有者",
       "llmModel": "LLM模型",
       "showThought": "展示思考",
+      "enableSuggest": "启用问题建议",
       "temperature": "温度",
       "temperatureTip": "用于控制文本生成的随机性和创造性；低温度会生成更确定的结果，而高温度则会增加文本的多样性和随机性。",
       "prompt": "提示",

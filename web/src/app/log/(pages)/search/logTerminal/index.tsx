@@ -119,7 +119,10 @@ const LogTerminal = forwardRef<LogTerminalRef, LogTerminalProps>(
         const abortController = new AbortController();
         abortControllerRef.current = abortController;
         // 构建查询参数
-        const queryParams = new URLSearchParams({ query });
+        const queryParams = new URLSearchParams({
+          query: query.query || '*',
+          //   log_groups: JSON.stringify(query.log_groups),
+        });
         // 直接使用fetch来处理EventStream，使用GET请求
         fetchData?.(true);
         const response = await fetch(
