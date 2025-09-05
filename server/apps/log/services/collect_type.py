@@ -25,15 +25,12 @@ class CollectTypeService:
         return collect_type.lower() if collect_type else "unknown"
 
     @staticmethod
-    def batch_create_collect_configs(data: dict) -> list:
+    def batch_create_collect_configs(data: dict):
         """
         Batch create collect configurations based on the provided data.
 
         Args:
             data (dict): The data containing collector, collect_type, configs, and instances.
-
-        Returns:
-            list: A list of created collect configurations.
         """
 
         # 过滤已存在的实例
@@ -246,20 +243,22 @@ class CollectTypeService:
         return data
 
     @staticmethod
-    def search_instance_with_permission(collect_type_id, name, page, page_size, current_team, queryset):
+    def search_instance_with_permission(collect_type_id, name, page, page_size, queryset):
         """
         使用权限过滤后的查询集查询采集实例列表（参考监控模块实现）
+        支持单采集类型查询和全部采集类型查询
 
         Args:
-            collect_type_id: 采集类型ID，必填
+            collect_type_id: 采集类型ID，可选。如果不传则查询所有类型
             name: 实例名称，可选，支持模糊查询
             page: 页码
             page_size: 每页数量
-            current_team: 当前组织ID，必填
             queryset: 已经权限过滤的查询集（已包含组织过滤）
         """
-        # 应用业务过滤条件（不需要再次过滤组织，因为权限过滤已经处理了）
-        queryset = queryset.filter(collect_type_id=collect_type_id)
+        # 应用业务过滤条件
+        if collect_type_id:
+            # 单采集类型查询
+            queryset = queryset.filter(collect_type_id=collect_type_id)
 
         if name:
             queryset = queryset.filter(name__icontains=name)
@@ -316,4 +315,4 @@ class CollectTypeService:
             }
             items.append(item)
 
-        return {"count": total_count, "results": items, "items": items}  # 同时提供两个字段以保证兼容性
+        return {"count": total_count, "items": items}
