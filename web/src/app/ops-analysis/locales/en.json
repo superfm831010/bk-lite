@@ -128,8 +128,10 @@
     "noArrowConnection": "No Arrow Connection",
     "singleArrowConnection": "Single Arrow Connection",
     "doubleArrowConnection": "Double Arrow Connection",
+    "editNode": "Edit Node",
     "configureEdge": "Configure Edge",
     "delete": "Delete",
+    "minimap": "Minimap",
     "nodeConfig": {
         "dataSource": "Data Source",
         "dataSettings": "Data Settings",
