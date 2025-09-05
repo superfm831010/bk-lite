@@ -390,6 +390,18 @@ def get_user_rules_by_module(group_id, username, domain, app, module):
                             result[sub_module_id]["team"].append(rule.group_rule.group_id)
                     else:
                         result[sub_module_id]["instance"].extend(instance_data)
+            else:
+                if category not in result:
+                    result[category] = {"instance": [], "team": all_permission_team[:]}
+
+                # 处理规则数据
+                has_all_permission, instance_data = process_rule_data(sub_modules)
+
+                if has_all_permission:
+                    if rule.group_rule.group_id not in result[category]["team"]:
+                        result[category]["team"].append(rule.group_rule.group_id)
+                else:
+                    result[category]["instance"].extend(instance_data)
 
     return {"result": True, "data": result, "team": admin_teams}
 
