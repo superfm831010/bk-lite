@@ -248,7 +248,8 @@ class BasicNode:
                     'chunk_number': 1,
                     'chunk_id': f"relation_{content_hash}",
                     'segment_number': 1,
-                    'segment_id': f"relation_{content_hash}"
+                    'segment_id': f"relation_{content_hash}",
+                    'chunk_type': 'Graph'
                 }
 
         return RelationResult()
@@ -267,7 +268,8 @@ class BasicNode:
                     'chunk_number': 1,
                     'chunk_id': f"summary_{content_hash}",
                     'segment_number': 1,
-                    'segment_id': f"summary_{content_hash}"
+                    'segment_id': f"summary_{content_hash}",
+                    'chunk_type': 'Document'
                 }
 
         return SummaryResult()
@@ -288,7 +290,8 @@ class BasicNode:
                 'chunk_id': metadata.get('chunk_id', 'N/A'),
                 'segment_number': metadata.get('segment_number', 0),
                 'segment_id': metadata.get('segment_id', 'N/A'),
-                'content': r.page_content
+                'content': r.page_content,
+                'chunk_type': metadata.get('chunk_type', 'Document')
             })
 
         # 准备模板数据
@@ -324,11 +327,16 @@ class BasicNode:
             if qa_question and qa_answer:
                 doc.page_content = f"问题: {qa_question}\n答案: {qa_answer}"
                 doc.metadata['knowledge_title'] = qa_question
+            doc.metadata['chunk_type'] = 'QA'
         elif is_doc == "1":
             # 文档类型：直接 append qa_answer
             qa_answer = metadata.get('qa_answer')
             if qa_answer:
                 doc.page_content += f"\n{qa_answer}"
+            doc.metadata['chunk_type'] = 'Document'
+        else:
+            # 默认为文档类型
+            doc.metadata['chunk_type'] = 'Document'
 
         return doc
 
