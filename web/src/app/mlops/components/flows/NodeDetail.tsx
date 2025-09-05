@@ -26,7 +26,7 @@ const NodeDetailDrawer = ({
   handleDelNode: () => void;
 }) => {
   const { t } = useTranslation();
-  const { getRasaIntentFileList, getRasaResponseFileList, getRasaSlotList, getRasaFormList } = useMlopsManageApi();
+  const { getRasaIntentFileList, getRasaResponseFileList, getRasaSlotList, getRasaFormList, getRasaActionList } = useMlopsManageApi();
   const [loading, setLoading] = useState<boolean>(false);
   const [options, setOptions] = useState<NodeOption[]>([]);
   const formRef = useRef<FormInstance>(null);
@@ -54,6 +54,8 @@ const NodeDetailDrawer = ({
         case 'form':
           data = await getRasaFormList({ dataset });
           break;
+        case 'action':
+          data = await getRasaActionList({ dataset })
         default:
           break;
       }
@@ -68,7 +70,7 @@ const NodeDetailDrawer = ({
         }
       });
       setOptions(options);
-      if(node.data) {
+      if (node.data) {
         formRef.current?.setFieldsValue({
           select: node.data?.name
         });

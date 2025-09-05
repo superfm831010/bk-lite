@@ -181,7 +181,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
               )}
             </>
           )}
-          {(!['entity', 'slot', 'story'].includes(selectKey)) && (
+          {(!['entity', 'slot', 'story', 'action'].includes(selectKey)) && (
             <>
               <Form.Item
                 label={selectKey === 'rule' ? t(`datasets.step`) : t(`datasets.example`)}
