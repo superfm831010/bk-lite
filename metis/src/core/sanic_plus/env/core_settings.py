@@ -1,6 +1,4 @@
 from pydantic_settings import BaseSettings
-from server.apps.opspilot.knowledge_mgmt.models import knowledge_graph
-
 
 class CoreSettings(BaseSettings):
     mode: str = 'PROD'
