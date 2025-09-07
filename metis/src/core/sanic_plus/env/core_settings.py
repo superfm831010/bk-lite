@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from server.apps.opspilot.knowledge_mgmt.models import knowledge_graph
 
 
 class CoreSettings(BaseSettings):
@@ -11,7 +12,8 @@ class CoreSettings(BaseSettings):
     knowledge_graph_port: int = 6379
     knowledge_graph_username: str = ''
     knowledge_graph_password: str = ''
-
+    knowledge_graph_database: str = 'default_db'
+    
     def is_debug_mode(self) -> bool:
         return self.mode == 'DEBUG'
 
