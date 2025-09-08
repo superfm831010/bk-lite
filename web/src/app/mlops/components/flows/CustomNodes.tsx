@@ -296,7 +296,7 @@ export const ActionNode = ({ data, selected }: NodeProps<AppNode>) => {
 };
 
 export const CheckPoint = ({ data, selected }: NodeProps<AppNode>) => {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
   const targetsConnections = useNodeConnections({
     handleType: 'target'
   });
@@ -327,7 +327,7 @@ export const CheckPoint = ({ data, selected }: NodeProps<AppNode>) => {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {data?.name || '检查点'}
+              {data?.name || t(`datasets.checkpoint`)}
             </p>
             <p className="text-xs text-gray-500">CheckPoint</p>
           </div>
@@ -341,21 +341,11 @@ export const CheckPoint = ({ data, selected }: NodeProps<AppNode>) => {
         className="!w-2 !h-2 !bg-orange-500 !border-0 !rounded-full"
       />
       <Handle
-        // id="left"
         type="source" 
-        // style={{ left: '25%' }}
         position={Position.Bottom}
         isConnectable={sourceConnections.length < 2}
         className="!w-2 !h-2 !bg-orange-500 !border-0 !rounded-full"
       />
-      {/* <Handle 
-        id="right"
-        type="source"
-        style={{ left: 'auto', right: '25%' }}
-        position={Position.Bottom}
-        isConnectable={sourceConnections.length < 2}
-        className="!w-2 !h-2 !bg-blue-500 !border-0 !rounded-full"
-      /> */}
     </div>
   )
 }

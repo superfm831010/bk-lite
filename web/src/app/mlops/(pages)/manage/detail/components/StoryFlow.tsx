@@ -28,7 +28,7 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
     { type: 'slot', label: t(`datasets.slotNode`), icon: 'dangqianbianliang' },
     { type: 'form', label: t(`datasets.formNode`), icon: 'biaodan' },
     { type: 'action', label: t(`datasets.actionNode`), icon: 'dongzuo1' },
-    { type: 'checkpoint', label: '检查点', icon: 'fenzhi' },
+    { type: 'checkpoint', label: t(`datasets.checkpoint`), icon: 'fenzhi' },
   ];
 
   const [initialNodes, initialEdges] = useMemo(() => {
@@ -85,7 +85,6 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
 
 
   const updateStoryData = async (data: any) => {
-    console.log(data);
     setFlowLoading(true);
     try {
       if (currentStory) {

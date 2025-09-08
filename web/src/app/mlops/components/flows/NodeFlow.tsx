@@ -26,8 +26,6 @@ import { useTranslation } from '@/utils/i18n';
 import NodePanel from './NodePanel';
 import NodeDetailDrawer from './NodeDetail';
 
-
-
 const NodeFlow = ({
   initialNodes,
   initialEdges,
@@ -59,7 +57,7 @@ const NodeFlow = ({
   // 处理链接线
   const onConnect = useCallback(
     (params: Connection) => {
-      console.log(params);
+      // console.log(params);
       if (params.source === params.target) return;
       setEdges((eds) => addEdge({ ...params, animated: true }, eds));
       setNodes((nds) =>
