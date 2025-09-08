@@ -1,0 +1,9 @@
+{
+  "name": "dhcp",
+  "collector": "Packetbeat",
+  "icon": "dhcp",
+  "description": "Monitors DHCP traffic for network management, IP address allocation tracking, and troubleshooting connectivity issues",
+  "default_query": "",
+  "attrs": []
+}
+
