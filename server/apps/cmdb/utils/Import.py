@@ -262,8 +262,8 @@ class Import:
 
             for _model_src_inst_name, _dst_inst_name_list in inst_name_list.items():
                 # 导入模型的实例名称的ID 源ID
-                _model_src_inst_name_id = self.inst_name_id_map[self.model_id].get(_model_src_inst_name)
-                if not _model_src_inst_name_id:
+                import_model_inst_name_id = self.inst_name_id_map[self.model_id].get(_model_src_inst_name)
+                if not import_model_inst_name_id:
                     continue
                 # 目标模型ID
                 _dst_inst_model_id = dst_model_id if self.model_id == src_model_id else src_model_id
@@ -273,14 +273,21 @@ class Import:
                     _dst_inst_id = self.inst_name_id_map[_dst_inst_model_id].get(dst_inst_name)
                     if not _dst_inst_id:
                         continue
+                    if self.model_id == src_model_id:
+                        src_inst_id = import_model_inst_name_id
+                        dst_inst_id = _dst_inst_id
+                    else:
+                        src_inst_id = _dst_inst_id
+                        dst_inst_id = import_model_inst_name_id
+
                     add_asso_list.append(
                         dict(
                             model_asst_id=asso_key,
                             src_model_id=src_model_id,
                             dst_model_id=dst_model_id,
                             asst_id=asst_id,
-                            src_inst_id=_model_src_inst_name_id,
-                            dst_inst_id=_dst_inst_id
+                            src_inst_id=src_inst_id,
+                            dst_inst_id=dst_inst_id
                         )
                     )
 

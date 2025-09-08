@@ -39,6 +39,7 @@ class NodeMgmt(object):
             - node_id: 节点ID
             - collector_name: 采集器名称
             - env_config: 环境变量配置（可选）
+            - sort_order: 排序（可选）
         """
         return_data = self.client.run("batch_add_node_child_config", configs)
         return return_data

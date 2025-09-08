@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings
 
-
 class CoreSettings(BaseSettings):
     mode: str = 'PROD'
     secret_key: str = ''
@@ -11,7 +10,8 @@ class CoreSettings(BaseSettings):
     knowledge_graph_port: int = 6379
     knowledge_graph_username: str = ''
     knowledge_graph_password: str = ''
-
+    knowledge_graph_database: str = 'default_db'
+    
     def is_debug_mode(self) -> bool:
         return self.mode == 'DEBUG'
 

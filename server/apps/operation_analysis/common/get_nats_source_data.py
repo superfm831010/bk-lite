@@ -25,6 +25,10 @@ class GetNatsData:
         self.namespace_map = self.set_namespace_map()
 
     @property
+    def default_nats_client(self):
+        return DefaultNastClient
+
+    @property
     def default_namespace_name(self):
         return "default"
 
@@ -56,14 +60,13 @@ class GetNatsData:
 
     @staticmethod
     def set_namespace_map():
-        result = {"alert": AlertOperationAnaRpc, "monitor": MonitorOperationAnaRpc, "log": LogOperationAnaRpc,
-                  "default": DefaultNastClient}
+        result = {"alert": AlertOperationAnaRpc, "monitor": MonitorOperationAnaRpc, "log": LogOperationAnaRpc}
         return result
 
     def _get_client(self, server):
         if self.namespace not in self.namespace_map.keys():
             logger.info("==NATS命名空间未配置，使用默认命名空间==: namespace={}".format(self.namespace))
-            client = self.namespace_map[self.default_namespace_name](server=server, func_name=self.path)
+            client = self.default_nats_client(server=server, func_name=self.path)
         else:
             client = self.namespace_map[self.namespace](server=server)
 

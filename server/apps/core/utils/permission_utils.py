@@ -153,3 +153,58 @@ def check_instance_permission(object_type_id, instance_id, teams, permissions, c
         return True
 
     return False
+
+
+def filter_instances_with_permissions(instances_result, policy_permissions, current_teams):
+    """
+    过滤实例并返回权限映射
+
+    Args:
+        instances_result: 实例列表，格式: [{'instance_id': 'xxx', 'organizations': [1,2], 'collect_type_id': 1}]
+        policy_permissions: 权限数据结构
+        current_teams: 当前用户团队列表
+
+    Returns:
+        dict: {instance_id: [permissions]} 格式的权限映射
+    """
+    from apps.log.constants import DEFAULT_PERMISSION
+
+    result = {}
+    current_teams_set = set(current_teams)
+
+    for item in instances_result:
+        collect_type_id_str = str(item["collect_type_id"])
+        instance_id = item["instance_id"]
+        organizations_set = set(item["organizations"])
+
+        # 检查超管权限
+        admin_team_permission = policy_permissions.get("all", {}).get("team", [])
+        if admin_team_permission and organizations_set & set(admin_team_permission):
+            result[instance_id] = DEFAULT_PERMISSION
+            continue
+
+        # 检查特定采集类型权限
+        type_permission = policy_permissions.get(collect_type_id_str, {})
+        if not type_permission:
+            # 如果没有配置权限规则，检查组织匹配
+            if current_teams_set & organizations_set:
+                result[instance_id] = DEFAULT_PERMISSION
+            continue
+
+        # 检查实例级权限
+        instance_permissions = type_permission.get("instance", {})
+        if instance_id in instance_permissions:
+            permissions = instance_permissions[instance_id]
+            if permissions:  # 如果有具体权限
+                result[instance_id] = permissions
+            else:  # 如果权限为空列表，使用默认权限
+                result[instance_id] = DEFAULT_PERMISSION
+            continue
+
+        # 检查团队权限
+        team_permissions = set(type_permission.get("team", []))
+        if current_teams_set & team_permissions or organizations_set & team_permissions:
+            result[instance_id] = DEFAULT_PERMISSION
+
+    return result
+
