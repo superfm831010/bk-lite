@@ -8,13 +8,22 @@ import React, {
 } from 'react';
 import styles from './index.module.scss';
 import { Spin } from 'antd';
+import { PictureOutlined, MinusOutlined } from '@ant-design/icons';
 import { v4 as uuidv4 } from 'uuid';
 import { useTopologyState } from './hooks/useTopologyState';
 import { useGraphOperations } from './hooks/useGraphOperations';
 import { useTextOperations } from './hooks/useTextOperations';
 import { useContextMenuAndModal } from './hooks/useGraphInteractions';
-import { DirItem } from '@/app/ops-analysis/types';
-import { NodeType, DropPosition } from '@/app/ops-analysis/types/topology';
+import { useDataSourceManager } from '@/app/ops-analysis/hooks/useDataSource';
+import {
+  NodeType,
+  DropPosition,
+  ViewConfigFormValues,
+  NodeConfigFormValues,
+  TopologyProps,
+  TopologyRef,
+} from '@/app/ops-analysis/types/topology';
+import type { DatasourceItem } from '@/app/ops-analysis/types/dataSource';
 import TopologyToolbar from './components/toolbar';
 import ContextMenu from './components/contextMenu';
 import EdgeConfigPanel from './components/edgeConfPanel';
@@ -23,18 +32,12 @@ import TextEditInput from './components/textEditInput';
 import NodeConfPanel from './components/nodeConfPanel';
 import ViewConfig from '../dashBoard/components/viewConfig';
 import ViewSelector from '../dashBoard/components/viewSelector';
-interface TopologyProps {
-  selectedTopology?: DirItem | null;
-}
-
-export interface TopologyRef {
-  hasUnsavedChanges: () => boolean;
-}
 
 const Topology = forwardRef<TopologyRef, TopologyProps>(
   ({ selectedTopology }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasContainerRef = useRef<HTMLDivElement>(null);
+    const minimapContainerRef = useRef<HTMLDivElement>(null);
     const [addNodeVisible, setAddNodeVisible] = useState(false);
     const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(
       null
@@ -45,7 +48,9 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       x: number;
       y: number;
     } | null>(null);
+    const [minimapVisible, setMinimapVisible] = useState(true);
     const state = useTopologyState();
+    const dataSourceManager = useDataSourceManager();
 
     const {
       zoomIn,
@@ -62,7 +67,12 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       loading,
       getEditNodeInitialValues,
       toggleEditMode,
-    } = useGraphOperations(containerRef, state);
+    } = useGraphOperations(
+      containerRef,
+      state,
+      minimapContainerRef,
+      minimapVisible
+    );
 
     const { handleAddText, finishTextEdit, cancelTextEdit } = useTextOperations(
       containerRef,
@@ -121,17 +131,19 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       setViewSelectorVisible(true);
     };
 
-    const handleChartSelectorConfirm = (layoutItem: any) => {
+    const handleChartSelectorConfirm = (item: DatasourceItem) => {
       if (chartDropPosition) {
         const chartNodeData = {
-          widget: layoutItem.widget,
-          name: layoutItem.title,
-          type: 'chart',
-          config: layoutItem.config,
+          name: item.name,
+          description: item.desc,
           position: chartDropPosition,
           isNewNode: true,
+          valueConfig: {
+            dataSource: item?.id,
+            chartType: '',
+            dataSourceParams: [],
+          },
         };
-
         state.setEditingNodeData(chartNodeData);
         state.setViewConfigVisible(true);
       }
@@ -144,7 +156,9 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       setChartDropPosition(null);
     };
 
-    const handleTopologyViewConfigConfirm = async (values: any) => {
+    const handleTopologyViewConfigConfirm = async (
+      values: ViewConfigFormValues
+    ) => {
       if (!state.editingNodeData) return;
       if (state.editingNodeData.isNewNode && state.editingNodeData.position) {
         await handleAddChartNode(values);
@@ -166,10 +180,10 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       }
     };
 
-    const handleNodeConfirm = async (values: any) => {
+    const handleNodeConfirm = async (values: NodeConfigFormValues) => {
       if (addNodeVisible) {
         if (!selectedNodeType || !dropPosition) return;
-        const nodeConfig: any = {
+        const nodeConfig = {
           id: `node_${uuidv4()}`,
           type: selectedNodeType.id,
           name: values.name || selectedNodeType.name,
@@ -305,6 +319,35 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
               className="absolute inset-0"
               tabIndex={-1}
             />
+
+            {minimapVisible && (
+              <div className={styles.minimapContainer}>
+                <div className={styles.minimapHeader}>
+                  <span></span>
+                  <button
+                    onClick={() => setMinimapVisible(false)}
+                    className={styles.minimapCloseBtn}
+                    title="收起缩略图"
+                  >
+                    <MinusOutlined />
+                  </button>
+                </div>
+                <div
+                  ref={minimapContainerRef}
+                  className={styles.minimapContent}
+                />
+              </div>
+            )}
+            {!minimapVisible && (
+              <button
+                onClick={() => setMinimapVisible(true)}
+                className={styles.minimapShowBtn}
+                title="显示缩略图"
+              >
+                <PictureOutlined />
+              </button>
+            )}
+
             <TextEditInput
               isEditingText={state.isEditingText}
               editPosition={state.editPosition}
@@ -320,6 +363,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
         <ContextMenu
           visible={state.contextMenuVisible}
           position={state.contextMenuPosition}
+          targetType={state.contextMenuTargetType}
           onMenuClick={handleMenuClick}
           isEditMode={state.isEditMode}
         />
@@ -354,6 +398,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           item={state.editingNodeData}
           onClose={() => state.setViewConfigVisible(false)}
           onConfirm={handleTopologyViewConfigConfirm}
+          dataSourceManager={dataSourceManager}
         />
       </div>
     );

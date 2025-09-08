@@ -91,13 +91,40 @@ class SegmentRecallStrategy(BaseRecallStrategy):
                     segment_id_dict[segment_id] = []
                 segment_id_dict[segment_id].append(doc)
 
-        # 5. 按 segment_id 分组处理并排序
+        # 5. 按 segment_id 分组处理并重组文档
         result_hits = []
         for segment_id, docs in segment_id_dict.items():
             # 按 chunk_number 排序，确保文档片段的逻辑顺序
             sorted_docs = sorted(docs, key=lambda x: int(
                 x.metadata.get('chunk_number', 0)))
-            result_hits.extend(sorted_docs)
 
-        logger.info(f"Segment召回策略: 重组完成，共恢复文档片段数={len(result_hits)}")
+            if not sorted_docs:
+                continue
+
+            # 合并所有片段的内容
+            combined_content = ""
+            base_metadata = sorted_docs[0].metadata.copy()
+
+            for doc in sorted_docs:
+                if combined_content:
+                    combined_content += "\n"  # 片段之间用换行分隔
+                combined_content += doc.page_content
+
+            # 创建新的合并文档
+            # 更新元数据，移除 chunk_number（因为已经合并）
+            if 'chunk_number' in base_metadata:
+                del base_metadata['chunk_number']
+
+            # 添加合并信息到元数据
+            base_metadata['is_merged_segment'] = True
+            base_metadata['merged_chunk_count'] = len(sorted_docs)
+
+            merged_doc = Document(
+                page_content=combined_content,
+                metadata=base_metadata
+            )
+            result_hits.append(merged_doc)
+
+        logger.info(
+            f"Segment召回策略: 重组完成，segment数量={len(result_hits)}, 原始片段数={len(all_segment_docs)}")
         return result_hits

@@ -34,7 +34,9 @@ const RasaDetail = () => {
     getRasaSlotList,
     deleteRasaSlotFile,
     getRasaFormList,
-    deleteRasaFormFile
+    deleteRasaFormFile,
+    getRasaActionList,
+    deleteRasaActionFile
   } = useMlopsManageApi();
   const [loading, setLoading] = useState<boolean>(false);
   const [tableData, setTableData] = useState<TableData[]>([]);
@@ -230,6 +232,20 @@ const RasaDetail = () => {
         width: 180,
         render: (_, record) => btnsElements(record)
       }
+    ],
+    action: [
+      {
+        title: t(`common.name`),
+        key: 'name',
+        dataIndex: 'name'
+      },
+      {
+        title: t(`common.action`),
+        key: 'action',
+        dataIndex: 'action',
+        width: 180,
+        render: (_, record) => btnsElements(record)
+      }
     ]
   };
 
@@ -240,7 +256,8 @@ const RasaDetail = () => {
     'story': getRasaStoryFileList,
     'entity': getRasaEntityList,
     'slot': getRasaSlotList,
-    'form': getRasaFormList
+    'form': getRasaFormList,
+    'action': getRasaActionList
   };
 
   const delFileMap: Record<string, any> = {
@@ -250,7 +267,8 @@ const RasaDetail = () => {
     'story': deleteRasaStoryFile,
     'entity': deleteRasaEntityFile,
     'slot': deleteRasaSlotFile,
-    'form': deleteRasaFormFile
+    'form': deleteRasaFormFile,
+    'action': deleteRasaActionFile
   };
 
   const {

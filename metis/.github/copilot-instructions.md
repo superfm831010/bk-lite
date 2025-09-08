@@ -67,3 +67,6 @@ from sanic.log import logger
 
 8. 技术组件
 	*  图数据库使用了 FalkorDB，不支持 Neo4J 的一些特殊语法，注意查询语句的兼容性。
+
+9. 其他注意事项
+	*  不要生成新的单元测试文件，代码生成的过程中，仅使用./.venv/bin/python -c 这样的能力，去测试代码的正确性

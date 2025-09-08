@@ -223,6 +223,7 @@ def openai_completions(request):
     params["user_id"] = user.username
     params["enable_km_route"] = skill_obj.enable_km_route
     params["km_llm_model"] = skill_obj.km_llm_model
+    params["enable_suggest"] = skill_obj.enable_suggest
     user_message = params.get("user_message")
     if not stream_mode:
         return invoke_chat(params, skill_obj, kwargs, current_ip, user_message)
@@ -262,6 +263,7 @@ def lobe_skill_execute(request):
     params["user_id"] = user["username"]
     params["enable_km_route"] = skill_obj.enable_km_route
     params["km_llm_model"] = skill_obj.km_llm_model
+    params["enable_suggest"] = skill_obj.enable_suggest
     user_message = params.get("user_message")
     if not stream_mode:
         return invoke_chat(params, skill_obj, kwargs, current_ip, user_message)

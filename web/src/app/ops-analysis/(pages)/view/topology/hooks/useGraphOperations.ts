@@ -4,20 +4,19 @@
  */
 
 import { useCallback, useEffect } from 'react';
-import ChartNode from '../components/chartNode';
 import type { Graph as X6Graph } from '@antv/x6';
 import { v4 as uuidv4 } from 'uuid';
 import { formatTimeRange } from '@/app/ops-analysis/utils/widgetDataTransform';
 import { Graph } from '@antv/x6';
-import { iconList } from '@/app/cmdb/utils/common';
-import { register } from '@antv/x6-react-shape';
 import { Selection } from '@antv/x6-plugin-selection';
 import { Transform } from '@antv/x6-plugin-transform';
-import { COLORS, NODE_DEFAULTS } from '../constants/nodeDefaults';
+import { MiniMap } from '@antv/x6-plugin-minimap';
+import { COLORS } from '../constants/nodeDefaults';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
 import { TopologyNodeData } from '@/app/ops-analysis/types/topology';
 import { DataSourceParam } from '@/app/ops-analysis/types/dashBoard';
 import { updateNodeAttributes, registerNodes, createNodeByType } from '../utils/registerNode';
+import { registerEdges } from '../utils/registerEdge';
 import { useGraphData } from './useGraphData';
 import {
   getEdgeStyle,
@@ -34,17 +33,10 @@ import {
 
 export const useGraphOperations = (
   containerRef: React.RefObject<HTMLDivElement>,
-  state: any
+  state: any,
+  minimapContainerRef?: React.RefObject<HTMLDivElement>,
+  minimapVisible?: boolean
 ) => {
-  useEffect(() => {
-    register({
-      shape: 'react-shape',
-      width: NODE_DEFAULTS.CHART_NODE.width,
-      height: NODE_DEFAULTS.CHART_NODE.height,
-      component: ChartNode,
-    });
-  }, []);
-
   const { getSourceDataByApiId } = useDataSourceApi();
 
   const resetAllStyles = useCallback((graph: X6Graph) => {
@@ -116,10 +108,8 @@ export const useGraphOperations = (
     setContextMenuVisible,
     setContextMenuPosition,
     setContextMenuNodeId,
-    setEditingNodeData,
-    setNodeEditVisible,
+    setContextMenuTargetType,
     setCurrentEdgeData,
-    setEdgeConfigVisible,
     startTextEditRef,
     finishTextEditRef,
   } = state;
@@ -247,6 +237,45 @@ export const useGraphOperations = (
     }
   }, [graphInstance, isEditingText, setIsEditMode]);
 
+  // 缩略图插件初始化函数
+  const initMiniMap = useCallback((graph: X6Graph) => {
+    if (minimapContainerRef?.current && minimapVisible) {
+      graph.disposePlugins(['minimap']);
+      graph.use(
+        new MiniMap({
+          container: minimapContainerRef.current,
+          width: 210,
+          height: 144,
+          padding: 0,
+          scalable: true,
+          minScale: 0.01,
+          maxScale: 16,
+          graphOptions: {
+            grid: false,
+            background: false,
+          },
+        })
+      );
+    }
+  }, [minimapContainerRef, minimapVisible]);
+
+  // 监听缩略图可见性变化，重新初始化缩略图
+  useEffect(() => {
+    if (graphInstance) {
+      if (minimapVisible) {
+        setTimeout(() => {
+          initMiniMap(graphInstance);
+        }, 100);
+      } else {
+        try {
+          graphInstance.disposePlugins(['minimap']);
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    }
+  }, [graphInstance, minimapVisible, initMiniMap]);
+
   const dataOperations = useGraphData(graphInstance, updateSingleNodeData, startLoadingAnimation, handleSave);
 
   const bindGraphEvents = (graph: X6Graph) => {
@@ -258,43 +287,24 @@ export const useGraphOperations = (
       setContextMenuVisible(true);
       setContextMenuPosition({ x: e.clientX, y: e.clientY });
       setContextMenuNodeId(node.id);
+      setContextMenuTargetType('node');
     });
 
-    graph.on('node:click', ({ e, node }) => {
+    graph.on('node:click', ({ e }) => {
       if (e.shiftKey) {
         return;
       }
-
-      const clickedNodeData = node.getData();
-
-      if (clickedNodeData?.type === 'chart') {
-        const chartNodeData = {
-          ...clickedNodeData,
-          id: node.id,
-          label: node.prop('label'),
-        };
-        setEditingNodeData(chartNodeData);
-        if (state.setViewConfigVisible) {
-          state.setViewConfigVisible(true);
-        }
-      } else if (clickedNodeData?.type !== 'text') {
-        const iconWidth = clickedNodeData.styleConfig?.width;
-        const iconHeight = clickedNodeData.styleConfig?.height;
-        setEditingNodeData({
-          ...clickedNodeData,
-          id: node.id,
-          label: node.prop('label'),
-          width: iconWidth,
-          height: iconHeight,
-        });
-        setNodeEditVisible(true);
-      }
+      // 移除直接打开配置面板的逻辑，改为通过右键菜单的"编辑"选项
     });
 
-    graph.on('edge:click', ({ e, edge }) => {
-      if (e.shiftKey) {
-        return;
-      }
+    graph.on('edge:contextmenu', ({ e, edge }) => {
+      e.preventDefault();
+      setContextMenuVisible(true);
+      setContextMenuPosition({ x: e.clientX, y: e.clientY });
+      setContextMenuNodeId(edge.id);
+      setContextMenuTargetType('edge');
+
+      // 设置边数据用于配置
       const edgeData = edge.getData();
       const sourceNode = edge.getSourceNode();
       const targetNode = edge.getTargetNode();
@@ -318,7 +328,6 @@ export const useGraphOperations = (
           sourceInterface: edgeData.sourceInterface,
           targetInterface: edgeData.targetInterface,
         });
-        setEdgeConfigVisible(true);
       }
     });
 
@@ -329,6 +338,19 @@ export const useGraphOperations = (
       edge.setData({
         lineType: 'common_line',
         lineName: '',
+      });
+    });
+
+    // 监听边的拐点变化并保存
+    graph.on('edge:change:vertices', ({ edge }: any) => {
+      if (!edge || !isEditModeRef.current) return;
+
+      const vertices = edge.getVertices();
+      const currentData = edge.getData() || {};
+
+      edge.setData({
+        ...currentData,
+        vertices: vertices
       });
     });
 
@@ -439,7 +461,7 @@ export const useGraphOperations = (
 
       if (nodeData.type === 'icon' || nodeData.type === 'single-value') {
         if (!isRealtime) {
-          updateNodeAttributes(node, updatedConfig, iconList);
+          updateNodeAttributes(node, updatedConfig);
         }
       } else if (nodeData.type === 'chart') {
         const chartPortConfig = createPortConfig();
@@ -469,11 +491,15 @@ export const useGraphOperations = (
     if (!containerRef.current) return;
 
     registerNodes();
+    registerEdges();
 
     const graph: X6Graph = new Graph({
       container: containerRef.current,
+      width: containerRef.current.clientWidth,
+      height: containerRef.current.clientHeight,
       grid: true,
       panning: true,
+      autoResize: true,
       mousewheel: { enabled: true, modifiers: 'ctrl' },
       connecting: {
         anchor: {
@@ -524,15 +550,15 @@ export const useGraphOperations = (
           return sourceMagnetType === 'true' && targetMagnetType === 'true';
         },
       },
-      interacting: {
-        nodeMovable: true,
-        edgeMovable: true,
-        arrowheadMovable: true,
-        vertexMovable: false,
-        vertexAddable: false,
-        vertexDeletable: false,
-        magnetConnectable: true,
-      },
+      interacting: () => ({
+        nodeMovable: state.isEditModeRef.current,
+        edgeMovable: state.isEditModeRef.current,
+        arrowheadMovable: state.isEditModeRef.current,
+        vertexMovable: state.isEditModeRef.current,
+        vertexAddable: state.isEditModeRef.current,
+        vertexDeletable: state.isEditModeRef.current,
+        magnetConnectable: state.isEditModeRef.current,
+      }),
     });
 
     graph.use(
@@ -612,7 +638,7 @@ export const useGraphOperations = (
     if (!graphInstance) {
       return null;
     }
-    const nodeData = createNodeByType(nodeConfig, iconList);
+    const nodeData = createNodeByType(nodeConfig);
     const { valueConfig } = nodeConfig || {};
     const addedNode = graphInstance.addNode(nodeData);
     if (nodeConfig.type === 'single-value') {
@@ -636,6 +662,7 @@ export const useGraphOperations = (
         id: editingNode.id,
         type: editingNode.type,
         name: values.name || editingNode.name,
+        description: values.description || editingNode.description || '',
         position: editingNode.position,
         logoType: values.logoType || editingNode.logoType,
         logoIcon: values.logoIcon || editingNode.logoIcon,
@@ -667,7 +694,7 @@ export const useGraphOperations = (
       if (!node) {
         return;
       }
-      updateNodeAttributes(node, updatedConfig, iconList);
+      updateNodeAttributes(node, updatedConfig);
 
       if (updatedConfig.type === 'single-value' && updatedConfig.valueConfig?.dataSource && updatedConfig.valueConfig?.selectedFields?.length) {
         updateSingleNodeData(updatedConfig);
@@ -716,6 +743,7 @@ export const useGraphOperations = (
       id: `node_${uuidv4()}`,
       type: 'chart',
       name: values.name,
+      description: values.description || '',
       position: state.editingNodeData.position,
       styleConfig: {},
       valueConfig: {
@@ -732,13 +760,11 @@ export const useGraphOperations = (
 
 
   const resizeCanvas = useCallback((width?: number, height?: number) => {
-    if (!graphInstance || !containerRef.current) return;
-
+    if (!graphInstance) return;
     if (width && height) {
       graphInstance.resize(width, height);
     } else {
-      const rect = containerRef.current.getBoundingClientRect();
-      graphInstance.resize(rect.width, rect.height);
+      graphInstance.resize();
     }
   }, [graphInstance]);
 

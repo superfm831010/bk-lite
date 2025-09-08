@@ -20,7 +20,7 @@ class PolicyFilter(django_filters.FilterSet):
 class AlertFilter(django_filters.FilterSet):
     policy = django_filters.NumberFilter(field_name='policy__id')
     policy_name = django_filters.CharFilter(field_name='policy__name', lookup_expr='icontains')
-    collect_type = django_filters.NumberFilter(field_name='collect_type__id')
+    collect_type = django_filters.NumberFilter(field_name='collect_type__id', required=False)
     level = django_filters.CharFilter(lookup_expr='exact')
     levels = django_filters.CharFilter(method='filter_levels')  # 支持多选级别
     status = django_filters.CharFilter(lookup_expr='exact')

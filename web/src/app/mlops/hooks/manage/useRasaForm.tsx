@@ -7,9 +7,10 @@ import { useTranslation } from "@/utils/i18n";
 import useMlopsManageApi from "@/app/mlops/api/manage";
 import EntitySelectModal from "./entitySelectModal";
 import { ModalRef } from "@/app/mlops/types";
+import FormStyle from './index.module.scss'
 
 interface SampleItem {
-  type: 'intent' | 'response' | 'form';
+  type: 'intent' | 'response' | 'form' | 'action';
   select: string;
 }
 
@@ -21,6 +22,12 @@ interface FormManageItem {
   type: string;
   name: string;
   isRequired: boolean;
+}
+
+interface ResponseSampleItem {
+  type: 'text' | 'button';
+  value: string;
+  payloads?: { title: string; payload: string }[];
 }
 
 interface SlotOption {
@@ -39,10 +46,10 @@ const styles = {
 
 const useRasaIntentForm = (
   {
-    // folder_id,
     formData,
     visiable,
-    onTextSelection
+    onTextSelection,
+    selectKey
   }: {
     folder_id: number;
     selectKey: string;
@@ -58,6 +65,10 @@ const useRasaIntentForm = (
   const isInitializedRef = useRef<boolean>(false); // 添加初始化标记
 
   useEffect(() => {
+    if (selectKey !== 'intent') {
+      return;
+    }
+
     // 只在首次显示时或formData真正改变时初始化
     if (visiable && !isInitializedRef.current) {
       if (formData) {
@@ -67,12 +78,12 @@ const useRasaIntentForm = (
       }
       isInitializedRef.current = true;
     }
-    
+
     // 当模态框关闭时重置初始化标记
     if (!visiable) {
       isInitializedRef.current = false;
     }
-  }, [formData, visiable]);
+  }, [formData, visiable, selectKey]);
 
   // 添加选择检测函数
   const handleTextSelection = useCallback((index: number, event: React.SyntheticEvent) => {
@@ -144,7 +155,7 @@ const useRasaIntentForm = (
       // 添加实体后切换到显示模式
       setEditingIndex(null);
     }
-  }, []); // 移除sampleList依赖，使用函数式更新
+  }, []);
 
   const renderElement = useMemo(() => {
     // 解析实体文字函数
@@ -256,27 +267,53 @@ const useRasaIntentForm = (
 
 const useRasaResponseForm = ({
   formData,
-  visiable
+  visiable,
+  selectKey
 }: {
   selectKey: string;
   formData?: any;
   visiable?: boolean;
 }) => {
   const { t } = useTranslation();
-  const [sampleList, setSampleList] = useState<(string | null)[]>([]);
+  const [sampleList, setSampleList] = useState<ResponseSampleItem[]>([]);
+  const payloadOptions = [
+    { label: t(`common.confirm`), value: '/affirm' },
+    { label: t(`common.cancel`), value: '/deny' },
+    // { label: t(`mlops-common.restart`), value: '/restart' }
+  ];
 
   // 当模态框显示且有formData时，初始化sampleList
   useEffect(() => {
-    if (visiable && formData) {
-      setSampleList(formData?.example_count ? formData?.example : [null]);
-    } else if (visiable) {
-      setSampleList([null]);
+    if (selectKey !== 'response') {
+      return;
     }
-  }, [formData, visiable]);
+
+    if (visiable && formData) {
+      // 将原有数据转换为新的格式
+      const examples = formData?.example || [];
+      const convertedList = examples.length > 0
+        ? examples.map((item: any) => {
+          if (typeof item === 'string') {
+            return { type: 'text' as const, value: item };
+          } else if (item && typeof item === 'object') {
+            return {
+              type: item.type || 'text' as const,
+              value: item.value || item.text || '',
+              payloads: item.payloads || (item.payload ? [{ title: payloadOptions.find(opt => opt.value === item.payload)?.label || 'affirm', payload: item.payload }] : undefined)
+            };
+          }
+          return { type: 'text' as const, value: '' };
+        })
+        : [{ type: 'text' as const, value: '' }];
+      setSampleList(convertedList);
+    } else if (visiable) {
+      setSampleList([{ type: 'text' as const, value: '' }]);
+    }
+  }, [formData, visiable, selectKey]);
 
   const addSampleList = () => {
     const keys = cloneDeep(sampleList);
-    keys.push(null);
+    keys.push({ type: 'text' as const, value: '' });
     setSampleList(keys);
   };
 
@@ -286,12 +323,38 @@ const useRasaResponseForm = ({
     setSampleList(keys);
   };
 
+  const onTypeChange = (value: 'text' | 'button', index: number) => {
+    const keys = cloneDeep(sampleList);
+    keys[index] = {
+      type: value,
+      value: keys[index]?.value || '',
+      ...(value === 'button' ? { payloads: keys[index]?.payloads || [{ title: payloadOptions[0].label, payload: payloadOptions[0].value }] } : {})
+    };
+    setSampleList(keys);
+  };
+
   const onSampleListChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     index: number
   ) => {
     const keys = cloneDeep(sampleList);
-    keys[index] = e.target.value;
+    keys[index] = {
+      ...keys[index],
+      value: e.target.value
+    };
+    setSampleList(keys);
+  };
+
+  const onPayloadChange = (values: string[], index: number) => {
+    const keys = cloneDeep(sampleList);
+    const payloads = values.map(value => ({
+      title: payloadOptions.find(opt => opt.value === value)?.label || '',
+      payload: value
+    }));
+    keys[index] = {
+      ...keys[index],
+      payloads: payloads
+    };
     setSampleList(keys);
   };
 
@@ -302,19 +365,42 @@ const useRasaResponseForm = ({
           className={`flex ${index + 1 !== sampleList?.length && styles.listItemSpacing}`}
           key={index}
         >
-          <Select key="text" className={styles.selectWidth} defaultValue="text" options={[
-            {
-              label: t(`mlops-common.text`),
-              value: 'text'
-            }
-          ]} />
-          <Input
-            className={styles.selectMiddle}
-            value={item as string}
-            onChange={(e) => {
-              onSampleListChange(e, index);
-            }}
-          />
+          <div className="flex flex-col flex-1 gap-2">
+            <div className="flex gap-1">
+              <Select
+                className={styles.selectWidth}
+                value={item.type}
+                onChange={(value) => onTypeChange(value, index)}
+                options={[
+                  {
+                    label: t(`mlops-common.text`),
+                    value: 'text'
+                  },
+                  {
+                    label: t(`mlops-common.btn`),
+                    value: 'button'
+                  }
+                ]}
+              />
+              <Input
+                value={item.value}
+                onChange={(e) => onSampleListChange(e, index)}
+              />
+              {item.type === 'button' && (
+                <Select
+                  mode="tags"
+                  className={`${FormStyle.formStyle}`}
+                  popupMatchSelectWidth={false}
+                  value={item.payloads?.map(p => p.payload) || []}
+                  maxTagCount={1}
+                  maxTagTextLength={2}
+                  onChange={(values) => onPayloadChange(values, index)}
+                  options={payloadOptions}
+                />
+              )}
+            </div>
+
+          </div>
           <Button
             icon={<PlusOutlined />}
             className={styles.buttonMargin}
@@ -330,7 +416,7 @@ const useRasaResponseForm = ({
         </li>
       ))}
     </ul>
-  ), [sampleList]);
+  ), [sampleList, onTypeChange, onSampleListChange, onPayloadChange, payloadOptions, t]);
 
   return {
     sampleList,
@@ -350,7 +436,7 @@ const useRasaRuleForm = ({
   visiable?: boolean;
 }) => {
   const { t } = useTranslation();
-  const { getRasaIntentFileList, getRasaResponseFileList, getRasaFormList } = useMlopsManageApi();
+  const { getRasaIntentFileList, getRasaResponseFileList, getRasaFormList, getRasaActionList } = useMlopsManageApi();
   const [sampleList, setSampleList] = useState<(SampleItem | null)[]>([]);
   const [options, setOptions] = useState<Record<string, Option[]>>({
     intent: [],
@@ -359,6 +445,10 @@ const useRasaRuleForm = ({
   });
 
   useEffect(() => {
+    if (selectKey !== 'rule') {
+      return;
+    }
+
     if (visiable && formData?.steps) {
       const list = formData.steps.map((item: any) => {
         return {
@@ -370,17 +460,17 @@ const useRasaRuleForm = ({
     } else if (visiable) {
       setSampleList([{ type: 'intent' as const, select: '' }]);
     }
-  }, [formData, visiable]);
+  }, [formData, visiable, selectKey]);
 
   useEffect(() => {
     if (selectKey !== 'rule') return;
-
     const fetchOptions = async () => {
       try {
-        const [intentList, responseList, formList] = await Promise.all([
+        const [intentList, responseList, formList, actionList] = await Promise.all([
           getRasaIntentFileList({ dataset: folder_id }),
           getRasaResponseFileList({ dataset: folder_id }),
-          getRasaFormList({ dataset: folder_id })
+          getRasaFormList({ dataset: folder_id }),
+          getRasaActionList({ dataset: folder_id })
         ]);
         const intentOption = (intentList as IntentResponseItem[])?.map((item) => ({
           label: item.name,
@@ -394,12 +484,17 @@ const useRasaRuleForm = ({
           label: item.name,
           value: item.name
         })) || [];
+        const actionOption = (actionList as IntentResponseItem[])?.map((item) => ({
+          label: item.name,
+          value: item.name
+        })) || [];
         setOptions({
           intent: intentOption,
           response: responseOption,
-          form: formOption
+          form: formOption,
+          action: actionOption
         });
-      } catch(e) {
+      } catch (e) {
         console.log(e);
         message.error(t(`common.fetchFailed`));
       }
@@ -423,7 +518,7 @@ const useRasaRuleForm = ({
   const onTypeChange = (value: string, index: number) => {
     const keys = cloneDeep(sampleList);
     keys[index] = {
-      type: value as 'intent' | 'response' | 'form',
+      type: value as 'intent' | 'response' | 'form' | 'action',
       select: ''
     };
     setSampleList(keys);
@@ -452,7 +547,8 @@ const useRasaRuleForm = ({
             options={[
               { label: t(`datasets.intent`), value: 'intent' },
               { label: t(`datasets.response`), value: 'response' },
-              { label: t(`datasets.form`), value: 'form' }
+              { label: t(`datasets.form`), value: 'form' },
+              { label: t(`datasets.action`), value: 'action' }
             ]}
           />
           <Select
@@ -626,7 +722,7 @@ const useRasaStoryForm = ({
 };
 
 const useRasaEntityForm = ({
-  // selectKey,
+  selectKey,
   formData,
   visiable,
   entityType,
@@ -638,19 +734,27 @@ const useRasaEntityForm = ({
 }) => {
   const [sampleList, setSampleList] = useState<(string | null)[]>([]);
   useEffect(() => {
+    if (selectKey !== 'entity') {
+      return;
+    }
+
     if (visiable && formData) {
       setSampleList(formData?.example || [null]);
     } else if (visiable) {
       setSampleList([null]);
     }
-  }, [formData, visiable]);
+  }, [formData, visiable, selectKey]);
 
   useEffect(() => {
+    if (selectKey !== 'entity') {
+      return;
+    }
+
     if (entityType === 'Lookup') {
       const data = formData?.example?.length ? formData.example : [null];
       setSampleList(data);
     }
-  }, [entityType])
+  }, [entityType, selectKey])
 
   const onSampleListChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -723,7 +827,7 @@ const useRasaSlotForm = ({
 
   useEffect(() => {
     if (visiable && formData?.values) {
-      setSampleList(formData?.values.length ?  formData?.values : [null]);
+      setSampleList(formData?.values.length ? formData?.values : [null]);
     } else if (!visiable) {
       setSampleList([null]);
     }
@@ -806,6 +910,10 @@ const useRasaForms = ({
   const [options, setOptions] = useState<SlotOption[]>([]);
 
   useEffect(() => {
+    if (selectKey !== 'form') {
+      return;
+    }
+
     if (visiable && formData?.slots) {
       const list = formData.slots.map((item: any) => {
         return {
@@ -814,11 +922,11 @@ const useRasaForms = ({
           isRequired: item?.isRequired
         }
       });
-      setSampleList(list);
+      setSampleList(list.length > 0 ? list : [{ type: 'text', name: '', isRequired: false }]);
     } else if (visiable) {
       setSampleList([{ type: 'text', name: '', isRequired: false }]);
     }
-  }, [formData, visiable]);
+  }, [formData, visiable, selectKey]);
 
   useEffect(() => {
     if (selectKey !== 'form') return;
@@ -835,7 +943,7 @@ const useRasaForms = ({
           }
         });
         setOptions(_options || []);
-      } catch(e) {
+      } catch (e) {
         console.log(e);
         message.error(t(`common.fetchFailed`));
       }
@@ -921,7 +1029,7 @@ const useRasaForms = ({
           <Select
             className={`!w-[45%]`}
             value={item?.name}
-            options={options.filter(itm => itm?.slot_type === item?.type)}
+            options={options.filter(itm => itm?.slot_type === (item?.type || 'text'))}
             onChange={(value: any) => {
               onSelectSampleChange(value, index);
             }}
@@ -954,6 +1062,95 @@ const useRasaForms = ({
   }
 };
 
+const useRasaActionForm = ({
+  formData,
+  visiable,
+  selectKey
+}: {
+  selectKey: string;
+  formData?: any;
+  visiable?: boolean;
+}) => {
+  const { t } = useTranslation();
+  const [sampleList, setSampleList] = useState<(string | null)[]>([]);
+
+  // 当模态框显示且有formData时，初始化sampleList
+  useEffect(() => {
+    if (selectKey !== 'response') {
+      return;
+    }
+
+    if (visiable && formData) {
+      setSampleList(formData?.example_count ? formData?.example : [null]);
+    } else if (visiable) {
+      setSampleList([null]);
+    }
+  }, [formData, visiable, selectKey]);
+
+  const addSampleList = () => {
+    const keys = cloneDeep(sampleList);
+    keys.push(null);
+    setSampleList(keys);
+  };
+
+  const deleteSampleList = (index: number) => {
+    const keys = cloneDeep(sampleList);
+    keys.splice(index, 1);
+    setSampleList(keys);
+  };
+
+  const onSampleListChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    const keys = cloneDeep(sampleList);
+    keys[index] = e.target.value;
+    setSampleList(keys);
+  };
+
+  const renderElement = useMemo(() => (
+    <ul>
+      {sampleList.map((item, index) => (
+        <li
+          className={`flex ${index + 1 !== sampleList?.length && styles.listItemSpacing}`}
+          key={index}
+        >
+          <Select key="text" className={styles.selectWidth} defaultValue="text" options={[
+            {
+              label: t(`mlops-common.text`),
+              value: 'text'
+            }
+          ]} />
+          <Input
+            className="!w-[150px]"
+            value={item as string}
+            onChange={(e) => {
+              onSampleListChange(e, index);
+            }}
+          />
+          <Button
+            icon={<PlusOutlined />}
+            className={styles.buttonMargin}
+            onClick={addSampleList}
+          />
+          {!!index && (
+            <Button
+              icon={<MinusOutlined />}
+              className={styles.buttonMargin}
+              onClick={() => deleteSampleList(index)}
+            />
+          )}
+        </li>
+      ))}
+    </ul>
+  ), [sampleList]);
+
+  return {
+    sampleList,
+    renderElement,
+  }
+};
+
 // 输入验证hooks
 const useInputValidation = (selectKey: string) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -982,7 +1179,7 @@ const useInputValidation = (selectKey: string) => {
     const value = e.target.value;
 
     // 如果是rule类型，不过滤任何字符
-    if (selectKey === 'rule') {
+    if (selectKey === 'rule' || selectKey === 'story') {
       return;
     }
 
@@ -1014,7 +1211,9 @@ const useRasaApiMethods = () => {
     addRasaSlotFile,
     updateRasaSlotFile,
     addRasaFormFile,
-    updateRasaFormFile
+    updateRasaFormFile,
+    addRasaActionFile,
+    updateRasaActionFile
   } = useMlopsManageApi();
 
   const handleAddMap: Record<string, any> = {
@@ -1024,7 +1223,8 @@ const useRasaApiMethods = () => {
     'story': addRasaStoryFile,
     'entity': addRasaEntityFile,
     'slot': addRasaSlotFile,
-    'form': addRasaFormFile
+    'form': addRasaFormFile,
+    'action': addRasaActionFile
   };
 
   const handleUpdateMap: Record<string, any> = {
@@ -1034,7 +1234,8 @@ const useRasaApiMethods = () => {
     'story': updateRasaStoryFile,
     'entity': updateRasaEntityFile,
     'slot': updateRasaSlotFile,
-    'form': updateRasaFormFile
+    'form': updateRasaFormFile,
+    'action': updateRasaActionFile
   };
 
   return { handleAddMap, handleUpdateMap };
@@ -1060,93 +1261,46 @@ const useRasaFormData = () => {
     entityType?: string,
     slotType?: string,
   ) => {
-    let params = {};
+    // 基础参数
+    const baseParams = { ...data };
 
     if (type === 'add') {
-      if (selectKey === 'rule') {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          steps: sampleList.map((item: any) => ({
-            type: item?.type,
-            name: item?.select
-          }))
-        };
-      } else if (selectKey === 'story') {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          steps: []
-        };
-      } else if (selectKey === 'slot') {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          values: slotType === 'categorical' ? sampleList : []
-        }
-      } else if (selectKey === 'entity') {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          example: entityType === 'Text' ? [] : sampleList
-        };
-      } else if (['response', 'intent'].includes(selectKey)) {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          example: sampleList
-        };
-      } else if (selectKey === 'form') {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          slots: sampleList
-        }
-      } else {
-        params = {
-          ...data,
-          dataset: formData?.dataset,
-          example: sampleList
-        };
-      }
-    } else {
-      if (selectKey === 'rule') {
-        params = {
-          ...data,
-          steps: sampleList.map((item: any) => ({
-            type: item?.type,
-            name: item?.select
-          }))
-        };
-      } else if (selectKey === 'slot') {
-        params = {
-          ...data,
-          values: slotType === 'categorical' ? sampleList : []
-        }
-      } else if (selectKey === 'entity') {
-        params = {
-          ...data,
-          example: (entityType === 'Lookup') ? sampleList : []
-        };
-      } else if (selectKey === 'intent' || selectKey === 'response') {
-        params = {
-          ...data,
-          example: sampleList
-        };
-      } else if (selectKey === 'form') {
-        params = {
-          ...data,
-          slots: sampleList
-        }
-      } else {
-        params = {
-          ...data,
-          example: sampleList
-        };
-      }
+      baseParams.dataset = formData?.dataset;
     }
 
-    return params;
+    const paramConfig: Record<string, (sampleList: any[], entityType?: string, slotType?: string) => any> = {
+      rule: (sampleList) => ({
+        steps: sampleList.map((item: any) => ({
+          type: item?.type,
+          name: item?.select
+        }))
+      }),
+      story: () => ({
+        steps: type === 'add' ? [] : formData?.steps || []
+      }),
+      slot: (sampleList, _, slotType) => ({
+        values: slotType === 'categorical' ? sampleList : []
+      }),
+      entity: (sampleList, entityType) => ({
+        example: type === 'add'
+          ? (entityType === 'Text' ? [] : sampleList)
+          : (entityType === 'Lookup' ? sampleList : [])
+      }),
+      form: (sampleList) => {
+        return ({
+          slots: sampleList
+        })
+      },
+      action: () => ({}),
+      default: (sampleList) => ({
+        example: sampleList
+      })
+    }
+
+    const configFn = paramConfig[selectKey] || paramConfig.default;
+    const specificParams = configFn(sampleList, entityType, slotType);
+
+    return { ...baseParams, ...specificParams };
   };
 
   return { validateSampleList, prepareFormParams };
@@ -1188,7 +1342,6 @@ const useRasaFormManager = ({
     modalRef.current?.showModal({ type: '' });
   }, []);
 
-  // 始终调用所有的 hooks，但只使用需要的
   const intentForm = useRasaIntentForm({
     folder_id: Number(folder_id),
     selectKey,
@@ -1196,12 +1349,52 @@ const useRasaFormManager = ({
     visiable,
     onTextSelection: selectKey === 'intent' ? handleTextSelection : undefined
   });
-  const responseForm = useRasaResponseForm({ selectKey, formData, visiable });
-  const ruleForm = useRasaRuleForm({ folder_id: Number(folder_id), selectKey, formData, visiable });
-  const storyForm = useRasaStoryForm({ folder_id: Number(folder_id), selectKey, formData, visiable });
-  const entityForm = useRasaEntityForm({ selectKey, formData, visiable, entityType });
-  const slotForm = useRasaSlotForm({ selectKey, formData, visiable });
-  const formForm = useRasaForms({ folder_id: Number(folder_id), selectKey, formData, visiable });
+
+  const responseForm = useRasaResponseForm({
+    selectKey,
+    formData,
+    visiable
+  });
+
+  const ruleForm = useRasaRuleForm({
+    folder_id: Number(folder_id),
+    selectKey,
+    formData,
+    visiable
+  });
+
+  const storyForm = useRasaStoryForm({
+    folder_id: Number(folder_id),
+    selectKey,
+    formData,
+    visiable
+  });
+
+  const entityForm = useRasaEntityForm({
+    selectKey,
+    formData,
+    visiable,
+    entityType
+  });
+
+  const slotForm = useRasaSlotForm({
+    selectKey,
+    formData,
+    visiable
+  });
+
+  const formForm = useRasaForms({
+    folder_id: Number(folder_id),
+    selectKey,
+    formData,
+    visiable
+  });
+
+  const actionForm = useRasaActionForm({
+    selectKey,
+    formData,
+    visiable
+  });
 
   // 处理从Modal传来的实体选择
   const handleEntitySelectFromModal = useCallback((entityName: string) => {
@@ -1228,6 +1421,8 @@ const useRasaFormManager = ({
         return slotForm;
       case 'form':
         return formForm;
+      case 'action':
+        return actionForm;
       default:
         return intentForm;
     }
@@ -1257,7 +1452,7 @@ const useRasaFormManager = ({
 
       onSuccess();
       setVisiable(false);
-    } catch(e) {
+    } catch (e) {
       console.log(e);
       message.error(t(`common.error`));
     } finally {
@@ -1268,6 +1463,8 @@ const useRasaFormManager = ({
   const handleCancel = () => {
     setVisiable(false);
     setEntityType('Text');
+    setSlotType('text');
+    setSlotPrediction(false);
   };
 
   const onEntityTypeChange = (value: string) => {

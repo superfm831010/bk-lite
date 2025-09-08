@@ -77,7 +77,7 @@ def get_pilot_permission_by_token(token, bot_id, group_list):
         if rule_obj is None:
             return {"result": True, "data": {"username": user.username}}
         bot_ids = [u["id"] for u in rule_obj]
-        if bot_id in bot_ids or -1 in bot_ids or 0 in bot_ids:
+        if bot_id in bot_ids or 0 in bot_ids:
             return {"result": True, "data": {"username": user.username}}
     return {"result": False}
 
@@ -380,7 +380,7 @@ def get_user_rules_by_module(group_id, username, domain, app, module):
             if isinstance(sub_modules, dict):
                 for sub_module_id, rule_data in sub_modules.items():
                     if sub_module_id not in result:
-                        result[sub_module_id] = {"instance": [], "team": all_permission_team}
+                        result[sub_module_id] = {"instance": [], "team": all_permission_team[:]}
 
                     # 处理规则数据
                     has_all_permission, instance_data = process_rule_data(rule_data)
@@ -390,6 +390,18 @@ def get_user_rules_by_module(group_id, username, domain, app, module):
                             result[sub_module_id]["team"].append(rule.group_rule.group_id)
                     else:
                         result[sub_module_id]["instance"].extend(instance_data)
+            else:
+                if category not in result:
+                    result[category] = {"instance": [], "team": all_permission_team[:]}
+
+                # 处理规则数据
+                has_all_permission, instance_data = process_rule_data(sub_modules)
+
+                if has_all_permission:
+                    if rule.group_rule.group_id not in result[category]["team"]:
+                        result[category]["team"].append(rule.group_rule.group_id)
+                else:
+                    result[category]["instance"].extend(instance_data)
 
     return {"result": True, "data": result, "team": admin_teams}
 
@@ -468,8 +480,8 @@ def process_rule_data(rule_data):
         return True, []
 
     if isinstance(rule_data, list):
-        ids = [item.get("id") for item in rule_data if isinstance(item, dict)]
-        has_all_permission = -1 in ids or 0 in ids or "0" in ids
+        ids = [item.get("id") for item in rule_data if isinstance(item, dict) and item.get("id") not in ["-1", -1]]
+        has_all_permission = 0 in ids or "0" in ids
         return has_all_permission, rule_data if not has_all_permission else []
 
     return True, []
@@ -515,7 +527,7 @@ def wechat_user_register(user_id, nick_name):
     default_role = list(
         Role.objects.filter(
             Q(name="normal", app__in=["opspilot", "ops-console"])
-            | Q(name="guest", app__in=["opspilot", "cmdb", "monitor"])
+            | Q(name="guest", app__in=["opspilot", "cmdb", "monitor", "log"])
         ).values_list("id", flat=True)
     )
     role_list = list(set(user.role_list + default_role))

@@ -25,6 +25,7 @@ const ChartNode: React.FC<ChartNodeProps> = ({ node }) => {
     rawData,
     hasError,
     name: componentName,
+    description,
   } = nodeData;
 
   const width = styleConfig?.width || NODE_DEFAULTS.CHART_NODE.width;
@@ -56,15 +57,33 @@ const ChartNode: React.FC<ChartNodeProps> = ({ node }) => {
       {componentName && (
         <div
           style={{
-            padding: '12px 12px 0',
-            fontSize: '14px',
-            color: 'var(--color-text-1)',
+            padding: '12px 12px 8px',
+            backgroundColor: 'var(--color-bg-2)',
           }}
         >
-          {componentName}
+          <div
+            style={{
+              fontSize: '14px',
+              fontWeight: '500',
+              color: 'var(--color-text-1)',
+              marginBottom: '4px',
+              lineHeight: '20px',
+            }}
+          >
+            {componentName}
+          </div>
+          <div
+            style={{
+              fontSize: '12px',
+              color: 'var(--color-text-3)',
+              lineHeight: '16px',
+              opacity: 0.8,
+            }}
+          >
+            {description || '--'}
+          </div>
         </div>
       )}
-
       <div
         style={{
           flex: 1,

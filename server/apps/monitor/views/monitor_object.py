@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from apps.core.utils.permission_utils import get_permissions_rules
+from apps.core.utils.permission_utils import get_permissions_rules, check_instance_permission
 from apps.core.utils.web_utils import WebUtils
 from apps.monitor.constants import INSTANCE_MODULE, POLICY_MODULE
 from apps.monitor.filters.monitor_object import MonitorObjectFilter
@@ -12,7 +12,6 @@ from apps.monitor.models import MonitorInstance, MonitorPolicy
 from apps.monitor.models.monitor_object import MonitorObject
 from apps.monitor.serializers.monitor_object import MonitorObjectSerializer
 from apps.monitor.services.monitor_object import MonitorObjectService
-from apps.monitor.utils.check_permission import check_permission
 from config.drf.pagination import CustomPageNumberPagination
 
 
@@ -52,7 +51,7 @@ class MonitorObjectVieSet(viewsets.ModelViewSet):
                 monitor_object_id = inst_obj.monitor_object_id
                 instance_id = inst_obj.id
                 teams = {i.organization for i in inst_obj.monitorinstanceorganization_set.all()}
-                _check = check_permission(monitor_object_id, instance_id, teams, instance_permissions, cur_team)
+                _check = check_instance_permission(monitor_object_id, instance_id, teams, instance_permissions, cur_team)
                 if not _check:
                     continue
                 if monitor_object_id not in inst_map:
@@ -78,7 +77,7 @@ class MonitorObjectVieSet(viewsets.ModelViewSet):
                 monitor_object_id = policy_obj.monitor_object_id
                 instance_id = policy_obj.id
                 teams = {i.organization for i in policy_obj.policyorganization_set.all()}
-                _check = check_permission(monitor_object_id, instance_id, teams, policy_permissions, cur_team)
+                _check = check_instance_permission(monitor_object_id, instance_id, teams, policy_permissions, cur_team)
                 if not _check:
                     continue
                 if monitor_object_id not in policy_map:

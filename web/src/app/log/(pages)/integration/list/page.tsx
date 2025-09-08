@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
-import { Spin, Input, Button, Tag } from 'antd';
+import { Spin, Input, Button, Tag, Empty } from 'antd';
 import useApiClient from '@/utils/request';
 import useIntegrationApi from '@/app/log/api/integration';
 import integrationStyle from './index.module.scss';
@@ -136,61 +136,65 @@ const Integration = () => {
           />
         </div>
         <Spin spinning={pageLoading}>
-          <div
-            className={`flex flex-wrap w-full ${integrationStyle.integrationList}`}
-          >
-            {collectTypes.map((app) => (
-              <div key={app.id} className="w-full sm:w-1/4 p-2">
-                <div
-                  className={`bg-[var(--color-bg-1)] shadow-sm hover:shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-4 relative cursor-pointer group ${integrationStyle.cardItem}`}
-                >
-                  <div className="flex items-center space-x-4 my-2">
-                    <Icon
-                      type={getIcon(app.name, app.collector)}
-                      className="text-[48px] min-w-[48px]"
-                    />
-                    <div
-                      style={{
-                        width: 'calc(100% - 60px)',
-                      }}
-                    >
-                      <h2
-                        title={app.name}
-                        className="text-xl font-bold m-0 hide-text"
-                      >
-                        {app.name || '--'}
-                      </h2>
-                      <Tag className="mt-[4px]">{app.collector}</Tag>
-                    </div>
-                  </div>
-                  <p
-                    className={`mb-[15px] text-[var(--color-text-3)] text-[13px] ${integrationStyle.lineClamp3}`}
-                    title={app.description || '--'}
+          {collectTypes.length ? (
+            <div
+              className={`flex flex-wrap w-full ${integrationStyle.integrationList}`}
+            >
+              {collectTypes.map((app) => (
+                <div key={app.id} className="w-full sm:w-1/4 p-2">
+                  <div
+                    className={`bg-[var(--color-bg-1)] shadow-sm hover:shadow-md transition-shadow duration-300 ease-in-out rounded-lg p-4 relative cursor-pointer group ${integrationStyle.cardItem}`}
                   >
-                    {app.description || '--'}
-                  </p>
-                  <div className="w-full h-[32px] flex justify-center items-end">
-                    <Permission
-                      requiredPermissions={['Setting']}
-                      className="w-full"
-                    >
-                      <Button
-                        icon={<SettingOutlined />}
-                        type="primary"
-                        className="w-full rounded-md transition-opacity duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          linkToDetial(app);
+                    <div className="flex items-center space-x-4 my-2">
+                      <Icon
+                        type={getIcon(app.name, app.collector)}
+                        className="text-[48px] min-w-[48px]"
+                      />
+                      <div
+                        style={{
+                          width: 'calc(100% - 60px)',
                         }}
                       >
-                        {t('common.setting')}
-                      </Button>
-                    </Permission>
+                        <h2
+                          title={app.name}
+                          className="text-xl font-bold m-0 hide-text"
+                        >
+                          {app.name || '--'}
+                        </h2>
+                        <Tag className="mt-[4px]">{app.collector}</Tag>
+                      </div>
+                    </div>
+                    <p
+                      className={`mb-[15px] text-[var(--color-text-3)] text-[13px] ${integrationStyle.lineClamp3}`}
+                      title={app.description || '--'}
+                    >
+                      {app.description || '--'}
+                    </p>
+                    <div className="w-full h-[32px] flex justify-center items-end">
+                      <Permission
+                        requiredPermissions={['Setting']}
+                        className="w-full"
+                      >
+                        <Button
+                          icon={<SettingOutlined />}
+                          type="primary"
+                          className="w-full rounded-md transition-opacity duration-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            linkToDetial(app);
+                          }}
+                        >
+                          {t('common.setting')}
+                        </Button>
+                      </Permission>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          )}
         </Spin>
       </div>
     </div>

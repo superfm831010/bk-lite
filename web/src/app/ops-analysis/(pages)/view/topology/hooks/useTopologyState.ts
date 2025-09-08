@@ -25,6 +25,7 @@ export const useTopologyState = () => {
     nodeId: '',
     visible: false,
     position: { x: 0, y: 0 },
+    targetType: 'node',
   });
 
   // 文本编辑状态
@@ -162,6 +163,8 @@ export const useTopologyState = () => {
     setContextMenuVisible: (visible: boolean) => updateContextMenuState({ visible }),
     contextMenuPosition: contextMenuState.position,
     setContextMenuPosition: (position: { x: number; y: number }) => updateContextMenuState({ position }),
+    contextMenuTargetType: contextMenuState.targetType,
+    setContextMenuTargetType: (targetType: 'node' | 'edge') => updateContextMenuState({ targetType }),
 
     // 文本编辑状态和操作
     isEditingText: textEditState.isEditing,

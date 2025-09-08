@@ -13,6 +13,7 @@ import {
   Segmented,
   Spin,
   InputNumber,
+  message,
 } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import searchStyle from './index.module.scss';
@@ -27,7 +28,7 @@ import useApiClient from '@/utils/request';
 import useSearchApi from '@/app/log/api/search';
 import useIntegrationApi from '@/app/log/api/integration';
 import { SearchParams, LogTerminalRef } from '@/app/log/types/search';
-import { aggregateLogs, escapeArrayToJson } from '@/app/log/utils/common';
+import { aggregateLogs } from '@/app/log/utils/common';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import MarkdownRenderer from '@/components/markdown';
 import { v4 as uuidv4 } from 'uuid';
@@ -127,20 +128,29 @@ const SearchView: React.FC = () => {
   };
 
   const initData = async () => {
-    setPageLoading(true);
-    Promise.all([getGroups(), getAllFields(), getLogData('init')]).finally(
-      () => {
+    try {
+      setPageLoading(true);
+      const data = await getLogStreams({
+        page_size: -1,
+        page: 1,
+      });
+      const list = data || [];
+      const ids = list.at()?.id ? [list.at().id] : [];
+      setGroupList(list);
+      setGroups(ids);
+      if (!list.length) {
         setPageLoading(false);
+        return;
       }
-    );
-  };
-
-  const getGroups = async () => {
-    const data = await getLogStreams({
-      page_size: -1,
-      page: 1,
-    });
-    setGroupList(data || []);
+      Promise.all([
+        getAllFields(),
+        getLogData('init', { logGroups: ids }),
+      ]).finally(() => {
+        setPageLoading(false);
+      });
+    } catch {
+      setPageLoading(false);
+    }
   };
 
   const getAllFields = async () => {
@@ -148,11 +158,20 @@ const SearchView: React.FC = () => {
     setFields(data || []);
   };
 
-  const getLogData = async (type: string, times?: number[]) => {
+  const getLogData = async (
+    type: string,
+    extra?: {
+      times?: number[];
+      logGroups?: React.Key[];
+    }
+  ) => {
+    if (!extra?.logGroups?.length && !groups.length) {
+      return message.error(t('log.search.searchError'));
+    }
     setPageLoading(type !== 'timer');
     setQueryTime(new Date());
     setQueryEndTime(new Date());
-    const params = getParams(times);
+    const params = getParams(extra);
     setChartData([]);
     setTableData([]);
     await Promise.all([getHits(params), getLogs(params)])
@@ -179,22 +198,15 @@ const SearchView: React.FC = () => {
       });
   };
 
-  const getParams = (seletedTimes?: number[]) => {
-    const times = seletedTimes || timeSelectorRef.current?.getValue() || [];
-    let text = searchText;
-    if (groups?.length >= 1) {
-      const groupsText =
-        groups.length > 1
-          ? `streams:"${escapeArrayToJson(groups)}"`
-          : `streams:"${groups[0]}"`;
-      text = searchText ? `${groupsText} | ${searchText}` : groupsText;
-    }
+  const getParams = (extra?: { times?: number[]; logGroups?: React.Key[] }) => {
+    const times = extra?.times || timeSelectorRef.current?.getValue() || [];
     const params: SearchParams = {
       start_time: times[0] ? new Date(times[0]).toISOString() : '',
       end_time: times[1] ? new Date(times[1]).toISOString() : '',
       field: '_stream',
       fields_limit: 5,
-      query: text || '*',
+      log_groups: extra?.logGroups || groups,
+      query: searchText || '*',
       limit,
     };
     params.step = Math.round((times[1] - times[0]) / 100) + 'ms';
@@ -239,7 +251,7 @@ const SearchView: React.FC = () => {
       selectValue: 0,
     }));
     const times = arr.map((item) => dayjs(item).valueOf());
-    getLogData('refresh', times);
+    getLogData('refresh', { times });
   };
 
   return (
@@ -253,8 +265,7 @@ const SearchView: React.FC = () => {
                 width: '250px',
               }}
               showSearch
-              allowClear
-              mode="tags"
+              mode="multiple"
               maxTagCount="responsive"
               placeholder={t('log.search.selectGroup')}
               value={groups}
@@ -393,7 +404,7 @@ const SearchView: React.FC = () => {
             <LogTerminal
               ref={terminalRef}
               className="h-[calc(100vh-244px)]"
-              query={getParams()?.query || '*'}
+              query={getParams()}
               fetchData={(val) => setTerminalLoading(val)}
             />
           </Spin>

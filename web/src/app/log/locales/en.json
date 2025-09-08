@@ -137,7 +137,7 @@
       "grammarExplanation": "Grammar Explanation",
       "list": "List",
       "terminal": "Terminal",
-      "listTotal": "Displaying rows of Table",
+      "listTotal": "List Display Limit",
       "exit": "Exit Full Screen",
       "full": "Full screen display",
       "clearLogs": "Clear logs",
@@ -146,7 +146,8 @@
       "selectGroup": "Please select the group",
       "search": "Search",
       "displayFields": "Table Display Fields",
-      "hiddenFields": "Optional Fields"
+      "hiddenFields": "Optional Fields",
+      "searchError": "Log grouping cannot be empty"
     },
     "integration": {
       "interval": "Interval",

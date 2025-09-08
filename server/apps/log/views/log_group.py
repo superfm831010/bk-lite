@@ -41,8 +41,7 @@ class LogGroupViewSet(ModelViewSet):
 
         return WebUtils.response_success({
             "id": log_group.id,
-            "name": log_group.name,
-            "message": "日志分组创建成功"
+            "name": log_group.name
         })
 
     def list(self, request, *args, **kwargs):
@@ -108,8 +107,7 @@ class LogGroupViewSet(ModelViewSet):
 
         return WebUtils.response_success({
             "id": log_group.id,
-            "name": log_group.name,
-            "message": "日志分组更新成功"
+            "name": log_group.name
         })
 
     def destroy(self, request, *args, **kwargs):
@@ -123,5 +121,5 @@ class LogGroupViewSet(ModelViewSet):
         instance.delete()
 
         return WebUtils.response_success({
-            "message": f"日志分组 '{log_group_name}' 删除成功"
+            "name": log_group_name
         })
