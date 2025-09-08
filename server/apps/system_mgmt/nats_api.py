@@ -538,9 +538,11 @@ def wechat_user_register(user_id, nick_name):
         default_rule = GroupDataRule.objects.get(name="OpsPilot内置规则", app="opspilot", group_id=default_group.id)
         monitor_rule = GroupDataRule.objects.get(name="OpsPilotGuest数据权限", app="monitor", group_id=default_group.id)
         cmdb_rule = GroupDataRule.objects.get(name="游客数据权限", app="cmdb", group_id=default_group.id)
+        log_rule = GroupDataRule.objects.get(name="log内置规则", app="log", group_id=default_group.id)
         UserRule.objects.get_or_create(username=user.username, group_rule_id=cmdb_rule.id)
         UserRule.objects.get_or_create(username=user.username, group_rule_id=default_rule.id)
         UserRule.objects.get_or_create(username=user.username, group_rule_id=monitor_rule.id)
+        UserRule.objects.get_or_create(username=user.username, group_rule_id=log_rule.id)
     except Exception:  # noqa
         pass
     secret_key = os.getenv("SECRET_KEY")
