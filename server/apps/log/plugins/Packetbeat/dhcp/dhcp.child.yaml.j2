@@ -10,8 +10,8 @@
   # 采样配置，减少数据量
   sample_rate: {{ sample_rate | default(0.5) }}
 
-  # 事务超时时间
-  transaction_timeout: {{ transaction_timeout | default("10s") }}
+  # 事务超时时间（秒）
+  transaction_timeout: "{{ transaction_timeout | default(10) }}s"
 
   fields:
     collector: "Packetbeat"

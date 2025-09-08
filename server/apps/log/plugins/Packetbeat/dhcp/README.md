@@ -14,7 +14,7 @@ DHCP 协议模块用于监控 DHCP 服务器和客户端之间的通信，帮助
 |------|-------|------|
 | `ports` | `[67, 68]` | DHCP 服务器端口67，客户端端口68 |
 | `sample_rate` | `0.5` | 采样率50%，平衡监控效果和性能 |
-| `transaction_timeout` | `"10s"` | DHCP 事务超时时间 |
+| `transaction_timeout` | `10` | DHCP 事务超时时间（秒） |
 
 ### 用户可配置参数
 
@@ -24,7 +24,7 @@ DHCP 协议模块用于监控 DHCP 服务器和客户端之间的通信，帮助
 enabled: true              # 是否启用DHCP监控
 ports: [67, 68]           # DHCP端口配置，67为服务器端口，68为客户端端口
 sample_rate: 0.5          # 采样率，可根据网络流量调整
-transaction_timeout: "10s" # 事务超时时间
+transaction_timeout: 10    # 事务超时时间，单位：秒
 ```
 
 ## 使用场景

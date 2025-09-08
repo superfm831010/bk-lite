@@ -13,16 +13,16 @@ ICMP 协议模块用于监控网络连通性检查，主要用于 ping、tracero
 | 参数 | 默认值 | 说明 |
 |------|-------|------|
 | `sample_rate` | `0.1` | 采样率10%，大幅减少数据量 |
-| `health_check_mode` | `true` | 健康检查模式，优化监控效果 |
+| `transaction_timeout` | `5` | 事务超时时间（秒） |
 
 ### 用户可配置参数
 
 #### 1. 基础配置
 
 ```yaml
-icmp_enabled: true           # 是否启用ICMP监控
-icmp_sample_rate: 0.1        # 采样率，可根据网络流量调整
-health_check_mode: true      # 健康检查模式
+enabled: true                # 是否启用ICMP监控
+sample_rate: 0.1            # 采样率，可根据网络流量调整
+transaction_timeout: 5       # 事务超时时间，单位：秒
 ```
 
 ## 使用场景
