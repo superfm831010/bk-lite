@@ -37,7 +37,8 @@ class GraphitiRAG:
             host=core_settings.knowledge_graph_host,
             username=core_settings.knowledge_graph_username,
             password=core_settings.knowledge_graph_password,
-            port=core_settings.knowledge_graph_port
+            port=core_settings.knowledge_graph_port,
+            database=core_settings.knowledge_graph_database
         )
         return Graphiti(graph_driver=driver)
 
@@ -98,7 +99,8 @@ class GraphitiRAG:
             host=core_settings.knowledge_graph_host,
             username=core_settings.knowledge_graph_username,
             password=core_settings.knowledge_graph_password,
-            port=core_settings.knowledge_graph_port
+            port=core_settings.knowledge_graph_port,
+            database=core_settings.knowledge_graph_database
         )
         kwargs['graph_driver'] = driver
         return Graphiti(**kwargs)

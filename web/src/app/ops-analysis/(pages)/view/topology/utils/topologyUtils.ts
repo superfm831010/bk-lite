@@ -388,3 +388,32 @@ export const hideAllPorts = (graph: any) => {
     }
   });
 };
+
+// 计算两个节点之间的最佳连接端口
+export const calculateOptimalPorts = (sourceNode: any, targetNode: any): { sourcePort: string; targetPort: string } => {
+  const sourceBBox = sourceNode.getBBox();
+  const targetBBox = targetNode.getBBox();
+
+  const sourceCenterX = sourceBBox.x + sourceBBox.width / 2;
+  const sourceCenterY = sourceBBox.y + sourceBBox.height / 2;
+  const targetCenterX = targetBBox.x + targetBBox.width / 2;
+  const targetCenterY = targetBBox.y + targetBBox.height / 2;
+
+  const deltaX = targetCenterX - sourceCenterX;
+  const deltaY = targetCenterY - sourceCenterY;
+
+  let sourcePort = 'right';
+  let targetPort = 'left';
+
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    // 水平方向为主
+    sourcePort = deltaX > 0 ? 'right' : 'left';
+    targetPort = deltaX > 0 ? 'left' : 'right';
+  } else {
+    // 垂直方向为主
+    sourcePort = deltaY > 0 ? 'bottom' : 'top';
+    targetPort = deltaY > 0 ? 'top' : 'bottom';
+  }
+
+  return { sourcePort, targetPort };
+};

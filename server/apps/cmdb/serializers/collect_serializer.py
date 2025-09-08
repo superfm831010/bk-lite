@@ -43,7 +43,7 @@ class CollectModelLIstSerializer(UsernameSerializer):
                 "permission_map": {}
             }
             for data in permission_data:
-                if data["id"] in ["0", "-1"]:
+                if data["id"] in ["0"]:
                     _map_data["select_all"] = True
                     _map_data["permission_map"] = data["permission"]
                     break

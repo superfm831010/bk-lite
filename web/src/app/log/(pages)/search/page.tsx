@@ -13,6 +13,7 @@ import {
   Segmented,
   Spin,
   InputNumber,
+  message,
 } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import searchStyle from './index.module.scss';
@@ -27,7 +28,7 @@ import useApiClient from '@/utils/request';
 import useSearchApi from '@/app/log/api/search';
 import useIntegrationApi from '@/app/log/api/integration';
 import { SearchParams, LogTerminalRef } from '@/app/log/types/search';
-import { aggregateLogs, escapeArrayToJson } from '@/app/log/utils/common';
+import { aggregateLogs } from '@/app/log/utils/common';
 import { useLocalizedTime } from '@/hooks/useLocalizedTime';
 import MarkdownRenderer from '@/components/markdown';
 import { v4 as uuidv4 } from 'uuid';
@@ -67,6 +68,9 @@ const SearchView: React.FC = () => {
   const [visible, setVisible] = useState<boolean>(false);
   const [activeMenu, setActiveMenu] = useState<string>('list');
   const [pageLoading, setPageLoading] = useState<boolean>(false);
+  const [chartLoading, setChartLoading] = useState<boolean>(false);
+  const [treeLoading, setTreeLoading] = useState<boolean>(false);
+  const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [terminalLoading, setTerminalLoading] = useState<boolean>(false);
   const [timeDefaultValue, setTimeDefaultValue] =
     useState<TimeSelectorDefaultValue>({
@@ -74,7 +78,7 @@ const SearchView: React.FC = () => {
       rangePickerVaule: endTime ? [dayjs(+startTime), dayjs(+endTime)] : null,
     });
   const [windowHeight, setWindowHeight] = useState<number>(window.innerHeight);
-  const [limit, setLimit] = useState<number | null>(1000);
+  const [limit, setLimit] = useState<number | null>(100);
 
   const isList = useMemo(() => activeMenu === 'list', [activeMenu]);
 
@@ -86,6 +90,7 @@ const SearchView: React.FC = () => {
 
   useEffect(() => {
     if (isLoading) return;
+    getAllFields();
     initData();
   }, [isLoading]);
 
@@ -127,74 +132,111 @@ const SearchView: React.FC = () => {
   };
 
   const initData = async () => {
-    setPageLoading(true);
-    Promise.all([getGroups(), getAllFields(), getLogData('init')]).finally(
+    try {
+      setPageLoading(true);
+      const data = await getLogStreams({
+        page_size: -1,
+        page: 1,
+      });
+      const list = data || [];
+      const ids = list.at()?.id ? [list.at().id] : [];
+      setGroupList(list);
+      setGroups(ids);
+      if (list.length) {
+        getLogData('init', { logGroups: ids });
+      }
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  const getAllFields = async () => {
+    setTreeLoading(true);
+    try {
+      const data = await getFields();
+      setFields(data || []);
+    } finally {
+      setTreeLoading(false);
+    }
+  };
+
+  const getChartData = async (
+    type: string,
+    extra?: {
+      times?: number[];
+      logGroups?: React.Key[];
+    }
+  ) => {
+    setChartLoading(type !== 'timer');
+    try {
+      const params = getParams(extra);
+      const res = await getHits(params);
+      const chartData = aggregateLogs(res?.hits);
+      const total = chartData.reduce((pre, cur) => (pre += cur.value), 0);
+      setPagination((pre) => ({
+        ...pre,
+        total: total,
+        current: 1,
+      }));
+      setChartData(chartData);
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
+  const getTableData = async (
+    type: string,
+    extra?: {
+      times?: number[];
+      logGroups?: React.Key[];
+    }
+  ) => {
+    setTableLoading(type !== 'timer');
+    try {
+      const params = getParams(extra);
+      const res = await getLogs(params);
+      const listData: TableDataItem[] = (res || []).map(
+        (item: TableDataItem) => ({
+          ...item,
+          id: uuidv4(),
+        })
+      );
+      setTableData(listData);
+    } finally {
+      setTableLoading(false);
+    }
+  };
+
+  const getLogData = async (
+    type: string,
+    extra?: {
+      times?: number[];
+      logGroups?: React.Key[];
+    }
+  ) => {
+    if (!extra?.logGroups?.length && !groups.length) {
+      return message.error(t('log.search.searchError'));
+    }
+    setTableData([]);
+    setChartData([]);
+    setQueryTime(new Date());
+    setQueryEndTime(new Date());
+    Promise.all([getChartData(type, extra), getTableData(type, extra)]).finally(
       () => {
-        setPageLoading(false);
+        setQueryEndTime(new Date());
       }
     );
   };
 
-  const getGroups = async () => {
-    const data = await getLogStreams({
-      page_size: -1,
-      page: 1,
-    });
-    setGroupList(data || []);
-  };
-
-  const getAllFields = async () => {
-    const data = await getFields();
-    setFields(data || []);
-  };
-
-  const getLogData = async (type: string, times?: number[]) => {
-    setPageLoading(type !== 'timer');
-    setQueryTime(new Date());
-    setQueryEndTime(new Date());
-    const params = getParams(times);
-    setChartData([]);
-    setTableData([]);
-    await Promise.all([getHits(params), getLogs(params)])
-      .then((res) => {
-        const chartData = aggregateLogs(res[0]?.hits);
-        const listData: TableDataItem[] = (res[1] || []).map(
-          (item: TableDataItem) => ({
-            ...item,
-            id: uuidv4(),
-          })
-        );
-        const total = chartData.reduce((pre, cur) => (pre += cur.value), 0);
-        setPagination((pre) => ({
-          ...pre,
-          total: total,
-          current: 1,
-        }));
-        setChartData(chartData);
-        setTableData(listData);
-      })
-      .finally(() => {
-        setPageLoading(type === 'init');
-        setQueryEndTime(new Date());
-      });
-  };
-
-  const getParams = (seletedTimes?: number[]) => {
-    const times = seletedTimes || timeSelectorRef.current?.getValue() || [];
-    let text = searchText;
-    if (groups?.length >= 1) {
-      const groupsText =
-        groups.length > 1
-          ? `streams:"${escapeArrayToJson(groups)}"`
-          : `streams:"${groups[0]}"`;
-      text = searchText ? `${groupsText} | ${searchText}` : groupsText;
-    }
+  const getParams = (extra?: { times?: number[]; logGroups?: React.Key[] }) => {
+    const times = extra?.times || timeSelectorRef.current?.getValue() || [];
     const params: SearchParams = {
       start_time: times[0] ? new Date(times[0]).toISOString() : '',
       end_time: times[1] ? new Date(times[1]).toISOString() : '',
       field: '_stream',
       fields_limit: 5,
-      query: text || '*',
+      log_groups: extra?.logGroups || groups,
+      query: searchText || '*',
       limit,
     };
     params.step = Math.round((times[1] - times[0]) / 100) + 'ms';
@@ -239,7 +281,7 @@ const SearchView: React.FC = () => {
       selectValue: 0,
     }));
     const times = arr.map((item) => dayjs(item).valueOf());
-    getLogData('refresh', times);
+    getLogData('refresh', { times });
   };
 
   return (
@@ -253,8 +295,7 @@ const SearchView: React.FC = () => {
                 width: '250px',
               }}
               showSearch
-              allowClear
-              mode="tags"
+              mode="multiple"
               maxTagCount="responsive"
               placeholder={t('log.search.selectGroup')}
               value={groups}
@@ -325,43 +366,45 @@ const SearchView: React.FC = () => {
         </div>
         {isList ? (
           <>
-            <Card bordered={false} className="mb-[10px]">
-              <Collapse
-                title={t('log.search.histogram')}
-                icon={
-                  <div>
-                    <span className="mr-2">
-                      <span className="text-[var(--color-text-3)]">
-                        {t('log.search.total')}：
+            <Spin spinning={chartLoading}>
+              <Card bordered={false} className="mb-[10px]">
+                <Collapse
+                  title={t('log.search.histogram')}
+                  icon={
+                    <div>
+                      <span className="mr-2">
+                        <span className="text-[var(--color-text-3)]">
+                          {t('log.search.total')}：
+                        </span>
+                        <span>{pagination.total}</span>
                       </span>
-                      <span>{pagination.total}</span>
-                    </span>
-                    <span className="mr-2">
-                      <span className="text-[var(--color-text-3)]">
-                        {t('log.search.queryTime')}：
+                      <span className="mr-2">
+                        <span className="text-[var(--color-text-3)]">
+                          {t('log.search.queryTime')}：
+                        </span>
+                        <span>{convertToLocalizedTime(String(queryTime))}</span>
                       </span>
-                      <span>{convertToLocalizedTime(String(queryTime))}</span>
-                    </span>
-                    <span className="mr-2">
-                      <span className="text-[var(--color-text-3)]">
-                        {t('log.search.timeConsumption')}：
+                      <span className="mr-2">
+                        <span className="text-[var(--color-text-3)]">
+                          {t('log.search.timeConsumption')}：
+                        </span>
+                        <span>{`${
+                          Number(queryEndTime) - Number(queryTime)
+                        }ms`}</span>
                       </span>
-                      <span>{`${
-                        Number(queryEndTime) - Number(queryTime)
-                      }ms`}</span>
-                    </span>
-                  </div>
-                }
-                isOpen={expand}
-                onToggle={(val) => setExpand(val)}
-              >
-                <CustomBarChart
-                  className={searchStyle.chart}
-                  data={chartData}
-                  onXRangeChange={onXRangeChange}
-                />
-              </Collapse>
-            </Card>
+                    </div>
+                  }
+                  isOpen={expand}
+                  onToggle={(val) => setExpand(val)}
+                >
+                  <CustomBarChart
+                    className={searchStyle.chart}
+                    data={chartData}
+                    onXRangeChange={onXRangeChange}
+                  />
+                </Collapse>
+              </Card>
+            </Spin>
             <Card
               bordered={false}
               style={{
@@ -370,16 +413,19 @@ const SearchView: React.FC = () => {
               }}
             >
               <div className={searchStyle.tableArea}>
-                <FieldList
-                  style={{ height: scrollHeight + 'px' }}
-                  className="w-[180px] min-w-[180px]"
-                  fields={fields}
-                  addToQuery={addToQuery}
-                  changeDisplayColumns={(val) => {
-                    setColumnFields(val);
-                  }}
-                />
+                <Spin spinning={treeLoading}>
+                  <FieldList
+                    style={{ height: scrollHeight + 'px' }}
+                    className="w-[180px] min-w-[180px]"
+                    fields={fields}
+                    addToQuery={addToQuery}
+                    changeDisplayColumns={(val) => {
+                      setColumnFields(val);
+                    }}
+                  />
+                </Spin>
                 <SearchTable
+                  loading={tableLoading}
                   dataSource={tableData}
                   fields={columnFields}
                   scroll={{ x: 'calc(100vw-300px)', y: scrollHeight }}
@@ -393,7 +439,7 @@ const SearchView: React.FC = () => {
             <LogTerminal
               ref={terminalRef}
               className="h-[calc(100vh-244px)]"
-              query={getParams()?.query || '*'}
+              query={getParams()}
               fetchData={(val) => setTerminalLoading(val)}
             />
           </Spin>

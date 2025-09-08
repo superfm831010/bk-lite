@@ -113,6 +113,7 @@ NETWORK_INTERFACES_RELATIONS = "network_topo_info_gauge"
 PROTOCOL_METRIC_MAP = {
     "mysql": ["mysql_info_gauge"],
     "oracle": ["oracle_info_gauge"],
+    "mssql": ["mssql_info_gauge"],
 }
 
 # aliyun
@@ -132,6 +133,7 @@ DB_COLLECT_METRIC_MAP = {
     "dameng": ["dameng_info_gauge"],
     "db2": ["db2_info_gauge"],
     "tidb": ["tidb_info_gauge"],
+    "hbase": ["hbase_info_gauge"],
 }
 
 MIDDLEWARE_METRIC_MAP = {
@@ -146,6 +148,7 @@ MIDDLEWARE_METRIC_MAP = {
     "weblogic": ["weblogic_info_gauge"],
     "keepalived": ["keepalived_info_gauge"],
     "tongweb": ["tongweb_info_gauge"],
+    "jetty": ["jetty_info_gauge"],
 }
 
 # Tencent cloud

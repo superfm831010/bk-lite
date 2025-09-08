@@ -1,4 +1,3 @@
-import { Dayjs } from 'dayjs';
 import { TopologyNodeData } from './topology';
 export type FilterType = 'selector' | 'fixed';
 
@@ -14,13 +13,6 @@ export interface WidgetConfig {
   name?: string;
   chartType?: string;
   dataSource?: string | number;
-  lineColor?: string;
-  barColor?: string;
-  pageSize?: number;
-  showHeader?: boolean;
-  filterType?: FilterType;
-  timeRange?: [Dayjs, Dayjs];
-  instanceList?: string[];
   params?: { [key: string]: any };
   dataSourceParams?: any[];
 }
@@ -31,17 +23,16 @@ export interface LayoutItem {
   y: number;
   w: number;
   h: number;
-  widget: string;
-  title: string;
+  name: string;
   description?: string;
-  config?: WidgetConfig;
+  valueConfig?: WidgetConfig;
 }
 
 export type ViewConfigItem = LayoutItem | TopologyNodeData;
 
 export interface ViewConfigProps {
   open: boolean;
-  item?: ViewConfigItem;
+  item: ViewConfigItem;
   onConfirm?: (values: any) => void;
   onClose?: () => void;
 }

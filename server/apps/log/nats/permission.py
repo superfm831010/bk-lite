@@ -1,5 +1,5 @@
 import nats_client
-from apps.log.models import LogGroup, CollectType
+from apps.log.models import LogGroup, CollectType, CollectInstance
 from apps.log.models.policy import Policy
 
 
@@ -10,12 +10,17 @@ def get_log_module_data(module, child_module, page, page_size, group_id):
     """
     if module == "log_group":
         queryset = LogGroup.objects.filter(
-            streamorganization__organization=group_id
+            loggrouporganization__organization=group_id
         ).distinct("id")
     elif module == "policy":
         queryset = Policy.objects.filter(
             collect_type_id=child_module,
             policyorganization__organization=group_id
+        ).distinct("id")
+    elif module == "instance":
+        queryset = CollectInstance.objects.filter(
+            collect_type_id=child_module,
+            collectinstanceorganization__organization=group_id
         ).distinct("id")
     else:
         raise ValueError("Invalid module type")
@@ -46,5 +51,10 @@ def get_log_module_list():
             "name": "policy",
             "display_name": "Policy",
             "children": collect_type_list,
-        }
+        },
+        {
+            "name": "instance",
+            "display_name": "Instance",
+            "children": collect_type_list,
+        },
     ]

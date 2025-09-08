@@ -113,10 +113,12 @@ class ChildConfig(TimeInfo, MaintainerInfo):
     content = models.TextField(verbose_name='内容')
     collector_config = models.ForeignKey(CollectorConfiguration, on_delete=models.CASCADE, verbose_name='采集器配置')
     env_config = JSONField(default=dict, verbose_name="环境变量配置")
+    sort_order = models.IntegerField(default=0, verbose_name='排序序号')
 
     class Meta:
         verbose_name = "子配置"
         verbose_name_plural = "子配置"
+        ordering = ['sort_order', 'created_at']  # 默认按排序序号排序，次要按创建时间排序
 
     # uuid
     def save(self, *args, **kwargs):

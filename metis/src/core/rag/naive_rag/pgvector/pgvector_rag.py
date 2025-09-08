@@ -566,8 +566,8 @@ class PgvectorRag():
         # 重排序处理
         if req.enable_rerank and results:
             results = self._rerank_results(req, results)
-            if rag_type == 'naive':
-                results = self.process_recall_stage(req, results)
+        if rag_type == 'naive':
+            results = self.process_recall_stage(req, results)
 
         return results
 

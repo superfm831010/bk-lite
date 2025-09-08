@@ -19,7 +19,7 @@ const NodePanel: React.FC<NodePanelProps> = ({ onDragStart, nodeTypes }) => {
       {/* 切换按钮 */}
       <div className='absolute top-0 left-[50%] translate-x-[-50%] translate-y-[-60%] z-20'>
         <Button
-          className='border-0 shadow-md hover:shadow-lg transition-shadow duration-200'
+          className='border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-200'
           size='small'
           icon={showPanel ? <DownOutlined /> : <UpOutlined />}
           shape='circle'
