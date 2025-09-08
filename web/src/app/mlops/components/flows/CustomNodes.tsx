@@ -57,15 +57,15 @@ export const IntentNode = ({ data, selected }: NodeProps<AppNode>) => {
       </div>
       
       <Handle 
-        type="source" 
+        type="target" 
         position={Position.Top} 
-        isConnectable={sourceConnections.length < 1}
+        isConnectable={targetsConnections.length < 1}
         className="!w-2 !h-2 !bg-indigo-600 !border-0 !rounded-full"
       />
       <Handle 
-        type="target" 
+        type="source" 
         position={Position.Bottom} 
-        isConnectable={targetsConnections.length < 1}
+        isConnectable={sourceConnections.length < 1}
         className="!w-2 !h-2 !bg-indigo-600 !border-0 !rounded-full"
       />
     </div>
@@ -113,15 +113,15 @@ export const SlotNode = ({ data, selected }: NodeProps<AppNode>) => {
       </div>
       
       <Handle 
-        type="source" 
+        type="target" 
         position={Position.Top} 
-        isConnectable={sourceConnections.length < 1}
+        isConnectable={targetsConnections.length < 1}
         className="!w-2 !h-2 !bg-green-500 !border-0 !rounded-full"
       />
       <Handle 
-        type="target" 
+        type="source" 
         position={Position.Bottom} 
-        isConnectable={targetsConnections.length < 1}
+        isConnectable={sourceConnections.length < 1}
         className="!w-2 !h-2 !bg-green-500 !border-0 !rounded-full"
       />
     </div>
@@ -170,15 +170,15 @@ export const ResponseNode = ({ data, selected }: NodeProps<AppNode>) => {
       </div>
       
       <Handle 
-        type="source" 
+        type="target" 
         position={Position.Top} 
-        isConnectable={sourceConnections.length < 1}
+        isConnectable={targetsConnections.length < 1}
         className="!w-2 !h-2 !bg-cyan-500 !border-0 !rounded-full"
       />
       <Handle 
-        type="target" 
+        type="source" 
         position={Position.Bottom} 
-        isConnectable={targetsConnections.length < 1}
+        isConnectable={sourceConnections.length < 1}
         className="!w-2 !h-2 !bg-cyan-500 !border-0 !rounded-full"
       />
     </div>
@@ -225,15 +225,15 @@ export const FormNode = ({ data, selected }: NodeProps<AppNode>) => {
       </div>
       
       <Handle 
-        type="source" 
+        type="target" 
         position={Position.Top}
-        isConnectable={sourceConnections.length < 1}
+        isConnectable={targetsConnections.length < 1}
         className="!w-2 !h-2 !bg-orange-500 !border-0 !rounded-full"
       />
       <Handle 
-        type="target" 
+        type="source" 
         position={Position.Bottom}
-        isConnectable={targetsConnections.length < 1}
+        isConnectable={sourceConnections.length < 1}
         className="!w-2 !h-2 !bg-orange-500 !border-0 !rounded-full"
       />
     </div>
@@ -280,17 +280,82 @@ export const ActionNode = ({ data, selected }: NodeProps<AppNode>) => {
       </div>
       
       <Handle 
-        type="source" 
+        type="target" 
         position={Position.Top}
-        isConnectable={sourceConnections.length < 1}
+        isConnectable={targetsConnections.length < 1}
         className="!w-2 !h-2 !bg-blue-500 !border-0 !rounded-full"
       />
       <Handle 
-        type="target" 
+        type="source" 
         position={Position.Bottom}
-        isConnectable={targetsConnections.length < 1}
+        isConnectable={sourceConnections.length < 1}
         className="!w-2 !h-2 !bg-blue-500 !border-0 !rounded-full"
       />
     </div>
   );
 };
+
+export const CheckPoint = ({ data, selected }: NodeProps<AppNode>) => {
+  // const { t } = useTranslation();
+  const targetsConnections = useNodeConnections({
+    handleType: 'target'
+  });
+  const sourceConnections = useNodeConnections({
+    handleType: 'source'
+  });
+
+  return (
+    <div className={`
+      relative min-w-[140px] bg-white border border-gray-200 
+      rounded-lg shadow-sm hover:shadow-md
+      transition-all duration-200 ease-in-out
+      ${selected 
+      ? 'shadow-md' 
+      : 'hover:border-gray-300'
+    }
+    `}>
+      {/* 顶部颜色条 */}
+      <div className="h-1 bg-blue-600 rounded-t-lg"></div>
+      
+      {/* 内容区域 */}
+      <div className="px-4 py-3">
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0">
+            <div className="w-8 h-8 bg-blue-700 rounded-full flex items-center justify-center">
+              <Icon type='dongzuo1' className='!w-4 !h-4 text-white' />
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {data?.name || '检查点'}
+            </p>
+            <p className="text-xs text-gray-500">CheckPoint</p>
+          </div>
+        </div>
+      </div>
+      
+      <Handle 
+        type="target" 
+        position={Position.Top}
+        isConnectable={targetsConnections.length < 1}
+        className="!w-2 !h-2 !bg-blue-500 !border-0 !rounded-full"
+      />
+      <Handle
+        // id="left"
+        type="source" 
+        // style={{ left: '25%' }}
+        position={Position.Bottom}
+        isConnectable={sourceConnections.length < 2}
+        className="!w-2 !h-2 !bg-blue-500 !border-0 !rounded-full"
+      />
+      {/* <Handle 
+        id="right"
+        type="source"
+        style={{ left: 'auto', right: '25%' }}
+        position={Position.Bottom}
+        isConnectable={sourceConnections.length < 2}
+        className="!w-2 !h-2 !bg-blue-500 !border-0 !rounded-full"
+      /> */}
+    </div>
+  )
+}
