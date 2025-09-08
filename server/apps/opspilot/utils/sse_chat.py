@@ -11,9 +11,8 @@ from django.http import StreamingHttpResponse
 from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.bot_mgmt.utils import insert_skill_log
 from apps.opspilot.enum import SkillTypeChoices
-from apps.opspilot.model_provider_mgmt.models import LLMModel
 from apps.opspilot.model_provider_mgmt.services.llm_service import llm_service
-from apps.opspilot.quota_rule_mgmt.models import TeamTokenUseInfo
+from apps.opspilot.models import LLMModel, TeamTokenUseInfo
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 

@@ -8,4 +8,4 @@ class EmbedProviderSerializer(AuthSerializer, ProviderModelTypeSerializer):
 
     class Meta:
         model = EmbedProvider
-        fields = "__all__"
+        fields = ("name", "enabled", "team", "is_build_in", "model_type", "id", "model_type_name", "icon")

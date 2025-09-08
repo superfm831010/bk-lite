@@ -11,15 +11,13 @@ from apps.core.logger import opspilot_logger as logger
 from apps.core.mixinx import EncryptMixin
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.bot_mgmt.views import validate_remaining_token
-from apps.opspilot.knowledge_mgmt.models import KnowledgeBase
-from apps.opspilot.model_provider_mgmt.models import LLMModel, LLMSkill
-from apps.opspilot.model_provider_mgmt.models.llm_skill import SkillRequestLog, SkillTools
 from apps.opspilot.model_provider_mgmt.serializers.llm_serializer import (
     LLMModelSerializer,
     LLMSerializer,
     SkillRequestLogSerializer,
     SkillToolsSerializer,
 )
+from apps.opspilot.models import KnowledgeBase, LLMModel, LLMSkill, SkillRequestLog, SkillTools
 from apps.opspilot.quota_rule_mgmt.quota_utils import get_quota_client
 from apps.opspilot.utils.sse_chat import stream_chat
 

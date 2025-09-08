@@ -4,11 +4,14 @@ import os
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from django_minio_backend import MinioBackend
 from django_yaml_field import YAMLField
 
 from apps.core.mixinx import EncryptMixin
 from apps.core.models.maintainer_info import MaintainerInfo
 from apps.opspilot.enum import BotTypeChoice, ChannelChoices
+
+BOT_CONVERSATION_ROLE_CHOICES = [("user", "用户"), ("bot", "机器人")]
 
 
 class Bot(MaintainerInfo):
@@ -133,3 +136,91 @@ class BotChannel(models.Model, EncryptMixin):
         for key, value in self.channel_config.items():
             return_data[key] = {i: "******" if v and i in keys else v for i, v in value.items()}
         return return_data
+
+
+class BotConversationHistory(MaintainerInfo):
+    bot = models.ForeignKey("Bot", on_delete=models.CASCADE, verbose_name="机器人")
+    conversation_role = models.CharField(max_length=255, verbose_name="对话角色", choices=BOT_CONVERSATION_ROLE_CHOICES)
+    conversation = models.TextField(verbose_name="对话内容")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    channel_user = models.ForeignKey(
+        "ChannelUser", on_delete=models.CASCADE, verbose_name="通道用户", blank=True, null=True
+    )
+    citing_knowledge = models.JSONField(verbose_name="引用知识", default=list, blank=True, null=True)
+
+    def __str__(self):
+        return self.conversation
+
+    class Meta:
+        verbose_name = "对话历史"
+        verbose_name_plural = verbose_name
+        db_table = "bot_mgmt_botconversationhistory"
+
+
+class ConversationTag(models.Model):
+    question = models.TextField(verbose_name="问题")
+    answer = models.ForeignKey(
+        "BotConversationHistory", null=True, blank=True, on_delete=models.CASCADE, verbose_name="回答"
+    )
+    content = models.TextField(verbose_name="内容")
+    knowledge_base_id = models.IntegerField(verbose_name="知识库ID")
+    knowledge_document_id = models.IntegerField(verbose_name="知识文档ID")
+
+    class Meta:
+        db_table = "bot_mgmt_conversationtag"
+
+
+class RasaModel(MaintainerInfo):
+    name = models.CharField(max_length=255, verbose_name="模型名称")
+    description = models.TextField(blank=True, null=True, verbose_name="描述")
+    model_file = models.FileField(
+        verbose_name="文件",
+        null=True,
+        blank=True,
+        storage=MinioBackend(bucket_name="munchkin-private"),
+        upload_to="rasa_models",
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "模型"
+        verbose_name_plural = verbose_name
+        db_table = "bot_mgmt_rasamodel"
+
+
+class ChannelUser(models.Model):
+    user_id = models.CharField(max_length=100, verbose_name="用户ID")
+    name = models.CharField(max_length=100, verbose_name="名称", blank=True, null=True)
+    channel_type = models.CharField(max_length=100, choices=ChannelChoices.choices, verbose_name=_("channel type"))
+
+    class Meta:
+        verbose_name = "消息通道用户"
+        verbose_name_plural = verbose_name
+        db_table = "bot_mgmt_channeluser"
+
+    def to_dict(self):
+        return {
+            "user_id": self.user_id,
+            "name": self.name,
+            "channel_type": self.channel_type,
+            "channel_type_display": self.get_channel_type_display(),
+        }
+
+
+class ChannelGroup(models.Model):
+    name = models.CharField(max_length=100)
+    group_id = models.CharField(max_length=100)
+    channel_type = models.CharField(max_length=100, choices=ChannelChoices.choices, verbose_name=_("channel type"))
+
+    class Meta:
+        db_table = "bot_mgmt_channelgroup"
+
+
+class UserGroup(models.Model):
+    user = models.ForeignKey(ChannelUser, on_delete=models.CASCADE)
+    group = models.ForeignKey(ChannelGroup, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "bot_mgmt_usergroup"
