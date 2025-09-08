@@ -19,6 +19,16 @@
       ]
     },
     {
+      "name": "Analysis",
+      "children": [
+        {
+          "id": "analysis",
+          "name": "Analysis",
+          "operation": ["View"]
+        }
+      ]
+    },
+    {
       "name": "Event",
       "children": [
         {
