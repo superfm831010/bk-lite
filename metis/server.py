@@ -46,7 +46,7 @@ def verify_password(username, password) -> bool:
         try:
             return crypto.decrypt(encrypted_password) == crypto.decrypt(password)
         except Exception as e:
-            logger.error(f"请求鉴权失败: {e}, 用户名: {username}, 密码: {password}")
+            logger.error(f"请求鉴权失败: {e}, 用户名: {username}")
             return False
 
     return False
