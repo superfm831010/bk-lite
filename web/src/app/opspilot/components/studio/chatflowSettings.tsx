@@ -147,12 +147,12 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({ form, groups, onSav
       <div className="relative">
         <button
           onClick={() => setIsInfoCollapsed(!isInfoCollapsed)}
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-6 h-12 bg-white border border-gray-300 rounded-r-md shadow-sm hover:bg-gray-50 flex items-center justify-center transition-colors"
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-6 h-6 border border-gray-300 rounded-full shadow-sm hover:bg-gray-50 flex items-center justify-center transition-colors"
           style={{ left: '0px' }}
         >
           <Icon 
             type={isInfoCollapsed ? 'icon-test1' : 'icon-test'} 
-            className="text-gray-500 text-xs"
+            className="text-gray-500 text-lg"
           />
         </button>
       </div>
@@ -203,12 +203,12 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({ form, groups, onSav
       <div className="relative">
         <button
           onClick={() => setIsNodesCollapsed(!isNodesCollapsed)}
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-6 h-6 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 flex items-center justify-center transition-colors"
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-6 h-6 border border-gray-300 rounded-full shadow-sm hover:bg-gray-50 flex items-center justify-center transition-colors"
           style={{ left: '0px' }}
         >
           <Icon 
             type={isNodesCollapsed ? 'icon-test1' : 'icon-test'} 
-            className="text-gray-500 text-xs"
+            className="text-gray-500 text-lg"
           />
         </button>
       </div>
