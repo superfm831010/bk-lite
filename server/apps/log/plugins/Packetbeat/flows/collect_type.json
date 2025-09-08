@@ -1,0 +1,8 @@
+{
+  "name": "flows",
+  "collector": "Packetbeat",
+  "icon": "flows",
+  "description": "Monitors network flows for traffic analysis, bandwidth monitoring, and anomaly detection",
+  "default_query": "",
+  "attrs": []
+}

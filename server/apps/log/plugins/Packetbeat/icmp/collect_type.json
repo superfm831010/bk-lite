@@ -1,0 +1,9 @@
+{
+  "name": "icmp",
+  "collector": "Packetbeat",
+  "icon": "icmp",
+  "description": "Monitors ICMP traffic for network diagnostics, performance monitoring, and security analysis",
+  "default_query": "",
+  "attrs": []
+}
+

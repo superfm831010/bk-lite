@@ -1,0 +1,3 @@
+packetbeat.flows:
+  timeout: "{{ flows_timeout | default(30) }}s"
+  period: "{{ flows_period | default(10) }}s"
