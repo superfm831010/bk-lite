@@ -1,7 +1,8 @@
 import json
-
+import asyncio
 import requests
 from apps.log.constants import VICTORIALOGS_HOST, VICTORIALOGS_USER, VICTORIALOGS_PWD, VICTORIALOGS_SSL_VERIFY
+from apps.core.logger import log_logger as logger
 
 
 class VictoriaMetricsAPI:
@@ -17,7 +18,7 @@ class VictoriaMetricsAPI:
             f"{self.host}/select/logsql/query",
             params=data,
             auth=(self.username, self.password),
-            verify=self.ssl_verify,  # 添加SSL验证配置
+            verify=self.ssl_verify,
         )
         response.raise_for_status()
         result = []
@@ -33,22 +34,75 @@ class VictoriaMetricsAPI:
             f"{self.host}/select/logsql/hits",
             params=data,
             auth=(self.username, self.password),
-            verify=self.ssl_verify,  # 添加SSL验证配置
+            verify=self.ssl_verify,
         )
         response.raise_for_status()
         return response.json()
 
     def tail(self, query):
-        # tail是一个长连接接口，用于实时获取日志数据
+        """tail是一个长连接接口，用于实时获取日志数据"""
         data = {"query": query}
-        with requests.post(
+
+        try:
+            response = requests.post(
                 f"{self.host}/select/logsql/tail",
                 params=data,
                 auth=(self.username, self.password),
-                verify=self.ssl_verify,  # 添加SSL验证配置
+                verify=self.ssl_verify,
                 stream=True,
-        ) as response:
+                timeout=None,  # 允许长连接
+            )
             response.raise_for_status()
-            for line in response.iter_lines(decode_unicode=True):
+
+            # 使用生成器返回数据，支持流式处理
+            for line in response.iter_lines(decode_unicode=True, chunk_size=1):
                 if line:
                     yield line
+
+        except requests.exceptions.RequestException as e:
+            logger.error("VictoriaLogs tail连接失败", extra={'error': str(e)})
+            raise
+        except Exception as e:
+            logger.error(f"Tail接口意外错误", extra={
+                'query_summary': query[:50] + '...' if len(query) > 50 else query,
+                'error': str(e)
+            })
+            raise
+
+    async def tail_async(self, query):
+        """异步版本的tail方法，解决Django StreamingHttpResponse警告"""
+        data = {"query": query}
+
+        try:
+            # 在执行器中运行同步请求以避免阻塞事件循环
+            loop = asyncio.get_event_loop()
+
+            def _make_request():
+                return requests.post(
+                    f"{self.host}/select/logsql/tail",
+                    params=data,
+                    auth=(self.username, self.password),
+                    verify=self.ssl_verify,
+                    stream=True,
+                    timeout=None,
+                )
+
+            response = await loop.run_in_executor(None, _make_request)
+            response.raise_for_status()
+
+            # 异步生成器
+            for line in response.iter_lines(decode_unicode=True, chunk_size=1):
+                if line:
+                    # 让出控制权，避免阻塞事件循环
+                    await asyncio.sleep(0)
+                    yield line
+
+        except requests.exceptions.RequestException as e:
+            logger.error("异步VictoriaLogs tail连接失败", extra={'error': str(e)})
+            raise
+        except Exception as e:
+            logger.error(f"异步Tail接口意外错误", extra={
+                'query_summary': query[:50] + '...' if len(query) > 50 else query,
+                'error': str(e)
+            })
+            raise
