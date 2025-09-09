@@ -15,16 +15,19 @@ import {
   useEdgesState,
   useReactFlow,
   NodeTypes,
-  IsValidConnection
+  IsValidConnection,
+  EdgeTypes
 } from '@xyflow/react';
 import { Button } from 'antd';
 import { IntentNode, ResponseNode, SlotNode, FormNode, ActionNode, CheckPoint } from './CustomNodes';
+import CustomEdge from './ButtonEdge';
 import '@xyflow/react/dist/style.css';
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { NodeType, NodeData } from '@/app/mlops/types';
 import { useTranslation } from '@/utils/i18n';
 import NodePanel from './NodePanel';
 import NodeDetailDrawer from './NodeDetail';
+import flowStyle from './index.module.scss';
 
 const NodeFlow = ({
   initialNodes,
@@ -58,8 +61,12 @@ const NodeFlow = ({
   const onConnect = useCallback(
     (params: Connection) => {
       // console.log(params);
+      const sourceNode = nodes.find((item) => item.id === params.source);
+      const targetNode = nodes.find((item) => item.id === params.target);
+      console.log(sourceNode, targetNode);
+      console.log(params);
       if (params.source === params.target) return;
-      setEdges((eds) => addEdge({ ...params, animated: true }, eds));
+      setEdges((eds) => addEdge({ ...params, animated: true, type: 'buttonedge' }, eds));
       setNodes((nds) =>
         nds.map((node) => {
           if (node.id === params.source || node.id === params.target) {
@@ -67,8 +74,16 @@ const NodeFlow = ({
               ...node,
               data: {
                 ...node.data,
-                source: node.id === params.source ? [...node.data.source, params.target] : node.data?.source,
-                target: node.id === params.target ? [...node.data.target, params.source] : node.data?.target
+                source: node.id === params.source ? [...node.data.source, {
+                  id: targetNode?.id,
+                  name: targetNode?.data.name,
+                  type: targetNode?.type
+                }] : node.data?.source,
+                target: node.id === params.target ? [...node.data.target, {
+                  id: sourceNode?.id,
+                  name: sourceNode?.data.name,
+                  type: sourceNode?.type
+                }] : node.data?.target
               }
             }
           }
@@ -228,10 +243,51 @@ const NodeFlow = ({
     form: FormNode,
     action: ActionNode,
     checkpoint: CheckPoint
-  }), [])
+  }), []);
+
+  const edgeTypes: EdgeTypes = useMemo(() => ({
+    buttonedge: CustomEdge,
+  }), []);
+
+  // 根据 CustomNodes 中的颜色定义节点颜色
+  const getNodeColor = useCallback((node: Node<NodeData>) => {
+    switch (node.type) {
+      case 'intent':
+        return '#0ea5e9'; // sky-500 - 天蓝色
+      case 'response':
+        return '#14b8a6'; // teal-500 - 青绿色
+      case 'slot':
+        return '#22c55e'; // green-500 - 绿色
+      case 'form':
+        return '#ef4444'; // red-500 - 红色
+      case 'action':
+        return '#3b82f6'; // blue-500 - 蓝色
+      case 'checkpoint':
+        return '#f97316'; // orange-500 - 橙色
+      default:
+        return '#64748b'; // slate-500 - 默认灰色
+    }
+  }, []);
+
+  // 根据节点状态调整颜色透明度
+  const getNodeColorWithState = useCallback((node: Node<NodeData>) => {
+    const baseColor = getNodeColor(node);
+
+    // 如果节点没有名称，显示为半透明
+    if (!node.data?.name) {
+      return baseColor + '80'; // 添加50%透明度
+    }
+
+    // 如果节点被选中，增加亮度
+    if (node.selected) {
+      return baseColor;
+    }
+
+    return baseColor;
+  }, [getNodeColor]);
 
   return (
-    <div className='flex w-full h-full relative'>
+    <div className={`${flowStyle.flowContainer} flex w-full h-full relative`}>
       {/*节点面板 */}
       <NodePanel onDragStart={onDragStart} nodeTypes={nodeTypes} />
       {/* 节点详情 */}
@@ -256,6 +312,7 @@ const NodeFlow = ({
         onDragOver={onDragOver}
         fitView
         nodeTypes={customNodeTypes}
+        edgeTypes={edgeTypes}
         proOptions={{ hideAttribution: true }}
       >
         <Background />
@@ -278,7 +335,35 @@ const NodeFlow = ({
           {panel?.length > 0 && panel}
         </Panel>
         <Controls position='top-left' orientation="horizontal" />
-        <MiniMap />
+        {/* 优化后的 MiniMap */}
+        <MiniMap
+          nodeColor={getNodeColorWithState}
+          nodeStrokeColor={(node: Node<NodeData>) => {
+            if (node.selected) {
+              return '#1f2937'; // 深灰色边框表示选中
+            }
+            return node.data?.name ? '#ffffff' : '#e5e7eb'; // 有名称显示白边框，无名称显示灰边框
+          }}
+          nodeBorderRadius={6}
+          maskColor="rgba(15, 23, 42, 0.15)" // 深色半透明遮罩
+          maskStrokeColor="#334155"
+          maskStrokeWidth={1.5}
+          position="bottom-right"
+          style={{
+            backgroundColor: 'rgba(248, 250, 252, 0.98)', // 几乎不透明的浅色背景
+            border: '1px solid #cbd5e1',
+            borderRadius: '16px',
+            // boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            backdropFilter: 'blur(12px) saturate(150%)',
+            width: 200,
+            height: 160,
+            // padding: '8px',
+          }}
+          pannable
+          zoomable
+          inversePan
+          zoomStep={0.5}
+        />
       </ReactFlow>
     </div>
   )
