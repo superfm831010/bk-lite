@@ -9,6 +9,7 @@ from django.conf import settings
 from django.http import StreamingHttpResponse
 
 from apps.core.logger import opspilot_logger as logger
+from apps.core.utils.async_utils import create_async_compatible_generator
 from apps.opspilot.bot_mgmt.utils import insert_skill_log
 from apps.opspilot.enum import SkillTypeChoices
 from apps.opspilot.model_provider_mgmt.services.llm_service import llm_service
@@ -28,7 +29,9 @@ def generate_stream_error(message):
         }
         yield f"data: {json.dumps(error_chunk)}\n\n"
 
-    response = StreamingHttpResponse(generator(), content_type="text/event-stream")
+    # 使用异步兼容的生成器来解决 ASGI 环境下的问题
+    async_generator = create_async_compatible_generator(generator())
+    response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
     # 添加必要的头信息以防止缓冲
     response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
@@ -292,22 +295,6 @@ def _generate_sse_stream(url, headers, chat_kwargs, skill_name, show_think):
         yield ("STATS", "", 0, 0)
 
 
-def create_async_compatible_generator(sync_generator):
-    """创建与 ASGI 兼容的异步生成器"""
-
-    async def async_wrapper():
-        """异步包装器"""
-        try:
-            # 将同步生成器转换为异步生成器
-            for item in sync_generator:
-                yield item
-        except Exception as e:
-            logger.error(f"Async generator wrapper error: {e}")
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
-
-    return async_wrapper()
-
-
 def _log_and_update_tokens_sync(
     final_stats, skill_name, skill_id, current_ip, kwargs, user_message, show_think, group, llm_model
 ):
@@ -408,7 +395,9 @@ def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=N
             error_chunk = _create_error_chunk(f"聊天错误: {str(e)}", skill_name)
             yield f"data: {json.dumps(error_chunk)}\n\n"
 
-    response = StreamingHttpResponse(generate_stream(), content_type="text/event-stream")
+    # 使用异步兼容的生成器来解决 ASGI 环境下的问题
+    async_generator = create_async_compatible_generator(generate_stream())
+    response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
     response["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response["X-Accel-Buffering"] = "no"  # Nginx
     response["Access-Control-Allow-Origin"] = "*"

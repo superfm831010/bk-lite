@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.logger import opspilot_logger as logger
 from apps.core.mixinx import EncryptMixin
+from apps.core.utils.async_utils import create_async_compatible_generator
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.bot_mgmt.views import validate_remaining_token
 from apps.opspilot.model_provider_mgmt.serializers.llm_serializer import (
@@ -19,7 +20,7 @@ from apps.opspilot.model_provider_mgmt.serializers.llm_serializer import (
 )
 from apps.opspilot.models import KnowledgeBase, LLMModel, LLMSkill, SkillRequestLog, SkillTools
 from apps.opspilot.quota_rule_mgmt.quota_utils import get_quota_client
-from apps.opspilot.utils.sse_chat import create_async_compatible_generator, stream_chat
+from apps.opspilot.utils.sse_chat import stream_chat
 
 
 class LLMFilter(FilterSet):
