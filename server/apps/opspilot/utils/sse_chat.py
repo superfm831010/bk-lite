@@ -11,9 +11,8 @@ from django.http import StreamingHttpResponse
 from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.bot_mgmt.utils import insert_skill_log
 from apps.opspilot.enum import SkillTypeChoices
-from apps.opspilot.model_provider_mgmt.models import LLMModel
 from apps.opspilot.model_provider_mgmt.services.llm_service import llm_service
-from apps.opspilot.quota_rule_mgmt.models import TeamTokenUseInfo
+from apps.opspilot.models import LLMModel, TeamTokenUseInfo
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 
@@ -291,6 +290,22 @@ def _generate_sse_stream(url, headers, chat_kwargs, skill_name, show_think):
         error_chunk = _create_error_chunk(f"流式处理错误: {str(e)}", skill_name)
         yield f"data: {json.dumps(error_chunk)}\n\n"
         yield ("STATS", "", 0, 0)
+
+
+def create_async_compatible_generator(sync_generator):
+    """创建与 ASGI 兼容的异步生成器"""
+
+    async def async_wrapper():
+        """异步包装器"""
+        try:
+            # 将同步生成器转换为异步生成器
+            for item in sync_generator:
+                yield item
+        except Exception as e:
+            logger.error(f"Async generator wrapper error: {e}")
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return async_wrapper()
 
 
 def _log_and_update_tokens_sync(

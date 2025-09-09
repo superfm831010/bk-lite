@@ -2,12 +2,12 @@ import React from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import NodeFlow from './NodeFlow';
 import { Node, Edge } from '@xyflow/react';
-import { NodeType } from '@/app/mlops/types';
+import { NodeType, NodeData } from '@/app/mlops/types';
 import { Spin } from 'antd';
 import flowStyle from './index.module.scss';
 
 interface FlowWrapperProps {
-  initialNodes: Node[];
+  initialNodes: Node<NodeData>[];
   initialEdges: Edge[];
   nodeTypes: NodeType[];
   dataset: string;

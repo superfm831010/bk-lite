@@ -177,3 +177,10 @@ export interface NodeType {
   color?: string;
   icon: string;
 }
+
+export interface NodeData {
+  name: string;
+  source: string[],
+  target: string[],
+  [key: string]: any
+}

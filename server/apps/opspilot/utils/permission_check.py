@@ -7,7 +7,7 @@ from django.views.generic.base import View
 
 from apps.core.utils.viewset_utils import GenericViewSetFun
 from apps.core.utils.web_utils import WebUtils
-from apps.opspilot.knowledge_mgmt.models import KnowledgeBase
+from apps.opspilot.models import KnowledgeBase
 
 logger = logging.getLogger("app")
 

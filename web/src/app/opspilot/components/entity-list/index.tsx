@@ -66,7 +66,8 @@ const EntityList = <T,>({
       return {
         options: [
           { key: 1, title: t('studio.pilot') },
-          { key: 2, title: t('studio.lobeChat') }
+          { key: 2, title: t('studio.lobeChat') },
+          { key: 3, title: t('studio.chatflow') }
         ],
         searchField: 'bot_type'
       };
@@ -223,7 +224,6 @@ const EntityList = <T,>({
   };
 
   const handleMenuClick = (action: string, item: T) => {
-    console.log('Menu action:', action, 'for item:', item);
     if (action === 'edit') {
       setEditingItem(item);
       setIsModalVisible(true);
