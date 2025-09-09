@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.utils.translation import gettext as _
 
-from apps.opspilot.knowledge_mgmt.models.knowledge_graph import GraphChunkMap, KnowledgeGraph
+from apps.opspilot.models import GraphChunkMap, KnowledgeGraph
 from apps.opspilot.utils.chunk_helper import ChunkHelper
 
 

@@ -9,10 +9,8 @@ from rest_framework.decorators import action
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import GenericViewSetFun, MaintainerViewSet
-from apps.opspilot.knowledge_mgmt.models import KnowledgeBase, QAPairs
-from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
 from apps.opspilot.knowledge_mgmt.serializers.qa_pairs_serializers import QAPairsSerializer
-from apps.opspilot.model_provider_mgmt.models import LLMModel
+from apps.opspilot.models import KnowledgeBase, KnowledgeTask, LLMModel, QAPairs
 from apps.opspilot.tasks import (
     create_qa_pairs,
     create_qa_pairs_by_chunk,

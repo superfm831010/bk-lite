@@ -7,6 +7,12 @@
       "name": "search"
     },
     {
+      "title": "日志分析",
+      "icon": "daohang-yunyingfenxishi",
+      "url": "/log/analysis",
+      "name": "analysis"
+    },
+    {
       "title": "事件",
       "icon": "shujumoxingguanli",
       "url": "/log/event",
@@ -80,6 +86,12 @@
       "icon": "search-f",
       "url": "/log/search",
       "name": "search"
+    },
+    {
+      "title": "Log Analysis",
+      "icon": "daohang-yunyingfenxishi",
+      "url": "/log/analysis",
+      "name": "analysis"
     },
     {
       "title": "Event",

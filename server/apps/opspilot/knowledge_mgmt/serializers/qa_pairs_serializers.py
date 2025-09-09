@@ -1,5 +1,5 @@
 from apps.core.utils.serializers import UsernameSerializer
-from apps.opspilot.knowledge_mgmt.models import QAPairs
+from apps.opspilot.models import QAPairs
 from apps.opspilot.tasks import create_qa_pairs
 
 

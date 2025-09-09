@@ -1,5 +1,5 @@
 from apps.core.utils.serializers import UsernameSerializer
-from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph
+from apps.opspilot.models import KnowledgeGraph
 from apps.opspilot.tasks import create_graph, update_graph
 
 

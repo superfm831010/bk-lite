@@ -1,5 +1,5 @@
 import FlowWrapper from "@/app/mlops/components/flows/FlowProvider";
-import { NodeType, TableData } from '@/app/mlops/types';
+import { NodeType, TableData, NodeData } from '@/app/mlops/types';
 import { Node, Edge } from "@xyflow/react";
 import { message } from "antd";
 import { useMemo, useState } from "react";
@@ -28,6 +28,7 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
     { type: 'slot', label: t(`datasets.slotNode`), icon: 'dangqianbianliang' },
     { type: 'form', label: t(`datasets.formNode`), icon: 'biaodan' },
     { type: 'action', label: t(`datasets.actionNode`), icon: 'dongzuo1' },
+    { type: 'checkpoint', label: t(`datasets.checkpoint`), icon: 'fenzhi' },
   ];
 
   const [initialNodes, initialEdges] = useMemo(() => {
@@ -35,28 +36,34 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
       // 节点处理
       const edgeMap = new Map();
       const edges: Edge[] = [];
-      const nodes: Node[] = currentStory.steps?.map((item: any) => {
-        if (item.source) {
-          const edgeId = `${item.source}-${item.id}`;
-          if (!edgeMap.has(edgeId)) {
-            edges.push({
-              id: edgeId,
-              source: item.id,
-              target: item.source
-            });
-            edgeMap.set(edgeId, true);
-          }
+      const nodes: Node<NodeData>[] = currentStory.steps?.map((item: any) => {
+        if (item.source?.length) {
+          item.source?.forEach((source: string) => {
+            const edgeId = `${source}-${item.id}`;
+            if (!edgeMap.has(edgeId)) {
+              edges.push({
+                id: edgeId,
+                source: item.id,
+                target: source,
+                animated: true
+              });
+              edgeMap.set(edgeId, true);
+            }
+          })
         }
-        if (item.target) {
-          const edgeId = `${item.id}-${item.target}`;
-          if (!edgeMap.has(edgeId)) {
-            edges.push({
-              id: edgeId,
-              source: item.target,
-              target: item.id
-            });
-            edgeMap.set(edgeId, true);
-          }
+        if (item.target?.length) {
+          item.target?.forEach((target: string) => {
+            const edgeId = `${item.id}-${target}`;
+            if (!edgeMap.has(edgeId)) {
+              edges.push({
+                id: edgeId,
+                source: target,
+                target: item.id,
+                animated: true
+              });
+              edgeMap.set(edgeId, true);
+            }
+          })
         }
 
         return {
@@ -66,8 +73,8 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
           data: {
             id: item?.id,
             name: item?.name,
-            source: item.source || null,
-            target: item.target || null
+            source: item.source,
+            target: item.target
           }
         };
       });
@@ -87,8 +94,8 @@ const StoryFlow: React.FC<StoryFlowWrapperProps> = ({
             name: item.data?.name || '',
             type: item.type,
             position: item.position,
-            source: item.data?.source || null,
-            target: item.data?.target || null,
+            source: item.data?.source,
+            target: item.data?.target,
           }
         });
 

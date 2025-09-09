@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.fields import empty
 
 from apps.core.utils.serializers import AuthSerializer, TeamSerializer
-from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
+from apps.opspilot.enum import DocumentStatus
 from apps.opspilot.models import KnowledgeBase, KnowledgeDocument
 
 
