@@ -251,6 +251,7 @@ class ChunkHelper(ChatServerHelper):
             success_count += generate_count
             task_progress += train_progress
             task_obj.train_progress = round(task_progress, 2)
+            task_obj.completed_count += 1
             task_obj.save()
         return success_count
 

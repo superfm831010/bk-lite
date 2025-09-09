@@ -5,8 +5,8 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 
 from apps.core.utils.viewset_utils import GenericViewSetFun
-from apps.opspilot.model_provider_mgmt.models import EmbedProvider, LLMModel, ModelType, OCRProvider, RerankProvider
 from apps.opspilot.model_provider_mgmt.serializers.model_type_serializer import ModelTypeSerializer
+from apps.opspilot.models import EmbedProvider, LLMModel, ModelType, OCRProvider, RerankProvider
 
 
 class ModelTypeViewSet(viewsets.ModelViewSet, GenericViewSetFun):

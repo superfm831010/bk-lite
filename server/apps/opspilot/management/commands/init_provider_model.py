@@ -3,7 +3,7 @@ import json
 from django.core.management import BaseCommand
 
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.model_provider_mgmt.models import EmbedProvider, LLMModel, ModelType, OCRProvider, RerankProvider
+from apps.opspilot.models import EmbedProvider, LLMModel, ModelType, OCRProvider, RerankProvider
 from apps.system_mgmt.models import Group
 
 
