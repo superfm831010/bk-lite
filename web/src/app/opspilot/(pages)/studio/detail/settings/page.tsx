@@ -15,6 +15,7 @@ import PermissionWrapper from '@/components/permission';
 import styles from '@/app/opspilot/styles/common.module.scss';
 import Icon from '@/components/icon';
 import { useStudioApi } from '@/app/opspilot/api/studio';
+import ChatflowSettings from '@/app/opspilot/components/studio/chatflowSettings';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -262,6 +263,47 @@ const StudioSettingsPage: React.FC = () => {
     });
   };
 
+  // Render chatflow interface for bot_type 3
+  if (botType === 3) {
+    return (
+      <div className="relative flex w-full h-full">
+        {(pageLoading || saveLoading) && (
+          <div
+            className={`absolute inset-0 flex justify-center items-center min-h-[500px] ${overlayBgClass} bg-opacity-50 z-50`}>
+            <Spin size="large" />
+          </div>
+        )}
+        {!pageLoading && (
+          <div className="w-full flex flex-col h-full">
+            <div className="absolute top-0 right-0 flex items-center space-x-4 z-10">
+              <Tag
+                color={online ? 'green' : ''}
+                className={`${styles.statusTag} ${online ? styles.online : styles.offline}`}
+              >
+                {online ? t('studio.on') : t('studio.off')}
+              </Tag>
+              <Dropdown overlay={menu} trigger={['click']}>
+                <Button icon={<DownOutlined />} size="small" type="primary">
+                  {t('common.settings')}
+                </Button>
+              </Dropdown>
+            </div>
+            
+            <ChatflowSettings 
+              form={form}
+              groups={groups}
+              onSave={(nodes, edges) => {
+                // Handle chatflow save - 这里可以集成到设置下拉的保存逻辑中
+                console.log('Saving chatflow:', { nodes, edges });
+              }}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Original interface for bot_type 1 and 2
   return (
     <div className="relative flex w-full">
       {(pageLoading || saveLoading) && (
