@@ -46,9 +46,14 @@ export const usePacketbeatConfig = () => {
         edit: {
           formItems,
           getDefaultForm: (formData: TableDataItem) => {
-            const sources = formData?.child?.content?.[0] || {};
-            const period = sources?.flows_period || null;
-            const timeout = sources?.flows_timeout || null;
+            const sources =
+              formData?.child?.content?.['packetbeat.flows'] || {};
+            const period = sources?.period
+              ? sources?.period.replace('s', '')
+              : null;
+            const timeout = sources?.timeout
+              ? sources?.timeout.replace('s', '')
+              : null;
             return {
               flows_period: period,
               flows_timeout: timeout,
