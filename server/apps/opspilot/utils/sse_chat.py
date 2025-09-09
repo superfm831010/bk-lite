@@ -292,6 +292,22 @@ def _generate_sse_stream(url, headers, chat_kwargs, skill_name, show_think):
         yield ("STATS", "", 0, 0)
 
 
+def create_async_compatible_generator(sync_generator):
+    """创建与 ASGI 兼容的异步生成器"""
+
+    async def async_wrapper():
+        """异步包装器"""
+        try:
+            # 将同步生成器转换为异步生成器
+            for item in sync_generator:
+                yield item
+        except Exception as e:
+            logger.error(f"Async generator wrapper error: {e}")
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return async_wrapper()
+
+
 def _log_and_update_tokens_sync(
     final_stats, skill_name, skill_id, current_ip, kwargs, user_message, show_think, group, llm_model
 ):

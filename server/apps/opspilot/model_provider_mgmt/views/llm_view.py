@@ -19,7 +19,7 @@ from apps.opspilot.model_provider_mgmt.serializers.llm_serializer import (
 )
 from apps.opspilot.models import KnowledgeBase, LLMModel, LLMSkill, SkillRequestLog, SkillTools
 from apps.opspilot.quota_rule_mgmt.quota_utils import get_quota_client
-from apps.opspilot.utils.sse_chat import stream_chat
+from apps.opspilot.utils.sse_chat import create_async_compatible_generator, stream_chat
 
 
 class LLMFilter(FilterSet):
@@ -141,9 +141,8 @@ class LLMViewSet(AuthViewSet):
             yield "data: [DONE]\n\n"
 
         # 使用异步兼容的生成器包装器
-        from apps.opspilot.utils.sse_chat import _create_async_compatible_generator
 
-        async_generator = _create_async_compatible_generator(error_generator())
+        async_generator = create_async_compatible_generator(error_generator())
 
         response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
         response["Cache-Control"] = "no-cache, no-store, must-revalidate"
