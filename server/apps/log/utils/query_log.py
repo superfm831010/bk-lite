@@ -54,10 +54,25 @@ class VictoriaMetricsAPI:
             )
             response.raise_for_status()
 
-            # 使用生成器返回数据，支持流式处理
-            for line in response.iter_lines(decode_unicode=True, chunk_size=1):
+            # 确保响应使用UTF-8编码
+            response.encoding = 'utf-8'
+
+            # 使用生成器返回数据，手动处理编码确保正确显示
+            for line in response.iter_lines(chunk_size=1):
                 if line:
-                    yield line
+                    # 手动解码确保UTF-8编码正确
+                    try:
+                        decoded_line = line.decode('utf-8')
+                        yield decoded_line
+                    except UnicodeDecodeError:
+                        # 如果UTF-8解码失败，尝试其他编码
+                        try:
+                            decoded_line = line.decode('gbk')
+                            yield decoded_line
+                        except UnicodeDecodeError:
+                            # 最后使用errors='replace'避免异常
+                            decoded_line = line.decode('utf-8', errors='replace')
+                            yield decoded_line
 
         except requests.exceptions.RequestException as e:
             logger.error("VictoriaLogs tail连接失败", extra={'error': str(e)})
@@ -78,7 +93,7 @@ class VictoriaMetricsAPI:
             loop = asyncio.get_event_loop()
 
             def _make_request():
-                return requests.post(
+                response = requests.post(
                     f"{self.host}/select/logsql/tail",
                     params=data,
                     auth=(self.username, self.password),
@@ -86,16 +101,32 @@ class VictoriaMetricsAPI:
                     stream=True,
                     timeout=None,
                 )
+                # 确保响应使用UTF-8编码
+                response.encoding = 'utf-8'
+                return response
 
             response = await loop.run_in_executor(None, _make_request)
             response.raise_for_status()
 
-            # 异步生成器
-            for line in response.iter_lines(decode_unicode=True, chunk_size=1):
+            # 异步生成器，手动处理编码
+            for line in response.iter_lines(chunk_size=1):
                 if line:
-                    # 让出控制权，避免阻塞事件循环
-                    await asyncio.sleep(0)
-                    yield line
+                    # 手动解码确保UTF-8编码正确
+                    try:
+                        decoded_line = line.decode('utf-8')
+                        await asyncio.sleep(0)  # 让出控制权
+                        yield decoded_line
+                    except UnicodeDecodeError:
+                        # 如果UTF-8解码失败，尝试其他编码
+                        try:
+                            decoded_line = line.decode('gbk')
+                            await asyncio.sleep(0)
+                            yield decoded_line
+                        except UnicodeDecodeError:
+                            # 最后使用errors='replace'避免异常
+                            decoded_line = line.decode('utf-8', errors='replace')
+                            await asyncio.sleep(0)
+                            yield decoded_line
 
         except requests.exceptions.RequestException as e:
             logger.error("异步VictoriaLogs tail连接失败", extra={'error': str(e)})
