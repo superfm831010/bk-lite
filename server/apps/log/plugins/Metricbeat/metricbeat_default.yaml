@@ -23,14 +23,17 @@ processors:
 
 # ================================== Modules ===================================
 metricbeat.modules:
-- module: system
-  metricsets:
-    - uptime
-  enabled: true
-  period: 600s  # 从300s改为600s，降低到10分钟一次
+#- module: system
+#  metricsets:
+#    - uptime
+#  enabled: true
+#  period: 600s  # 从300s改为600s，降低到10分钟一次
+#
+#  fields:
+#    log_type: "metricbeat"
+#    health_check_mode: true
+#    _msg: "health check"
+#  fields_under_root: true
+#
+#
 
-  fields:
-    log_type: "metricbeat"
-    health_check_mode: true
-    _msg: "health check"
-  fields_under_root: true
