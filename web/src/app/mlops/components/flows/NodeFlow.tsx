@@ -9,7 +9,7 @@ import {
   ReactFlowInstance,
   Background,
   Controls,
-  // MiniMap,
+  MiniMap,
   Panel,
   getOutgoers,
   useEdgesState,
@@ -18,10 +18,10 @@ import {
   IsValidConnection
 } from '@xyflow/react';
 import { Button } from 'antd';
-import { IntentNode, ResponseNode, SlotNode, FormNode, ActionNode } from './CustomNodes';
+import { IntentNode, ResponseNode, SlotNode, FormNode, ActionNode, CheckPoint } from './CustomNodes';
 import '@xyflow/react/dist/style.css';
 import { useCallback, useMemo, useState, useEffect } from 'react';
-import { NodeType } from '@/app/mlops/types';
+import { NodeType, NodeData } from '@/app/mlops/types';
 import { useTranslation } from '@/utils/i18n';
 import NodePanel from './NodePanel';
 import NodeDetailDrawer from './NodeDetail';
@@ -34,7 +34,7 @@ const NodeFlow = ({
   panel = [],
   handleSaveFlow
 }: {
-  initialNodes: Node[],
+  initialNodes: Node<NodeData>[],
   initialEdges: Edge[],
   nodeTypes: NodeType[],
   dataset: string,
@@ -43,7 +43,7 @@ const NodeFlow = ({
 }) => {
   const { t } = useTranslation();
   const { getNodes, getEdges, screenToFlowPosition } = useReactFlow();
-  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance<Node<NodeData>> | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [detailOpen, setDetailOpen] = useState<boolean>(false);
@@ -59,7 +59,7 @@ const NodeFlow = ({
     (params: Connection) => {
       // console.log(params);
       if (params.source === params.target) return;
-      setEdges((eds) => addEdge(params, eds));
+      setEdges((eds) => addEdge({ ...params, animated: true }, eds));
       setNodes((nds) =>
         nds.map((node) => {
           if (node.id === params.source || node.id === params.target) {
@@ -67,8 +67,8 @@ const NodeFlow = ({
               ...node,
               data: {
                 ...node.data,
-                source: node.id === params.source ? params.target : node.data?.source,
-                target: node.id === params.target ? params.source : node.data?.target
+                source: node.id === params.source ? [...node.data.source, params.target] : node.data?.source,
+                target: node.id === params.target ? [...node.data.target, params.source] : node.data?.target
               }
             }
           }
@@ -110,7 +110,7 @@ const NodeFlow = ({
     if (!position) return;
 
     // 创建新节点
-    const newNode: Node = {
+    const newNode: Node<NodeData> = {
       id: `${type}_${Date.now()}`,
       type,
       position,
@@ -141,29 +141,32 @@ const NodeFlow = ({
   };
 
   // 更改节点详情处理
-  const handleChangeNodeDetail = (data: any) => {
+  const handleChangeNodeDetail = (name: string) => {
     const _nodes = nodes.map((item) => {
       if (item.id === currentNode?.id) {
-        return {
+        const node = {
           ...item,
-          id: `${item.type}_${data?.name}_${Date.now()}`,
+          id: `${item.type}_${name}_${Date.now()}`,
           data: {
-            id: `${item.type}_${data?.name}`,
-            name: data?.name,
+            id: `${item.type}_${name}`,
+            name: name,
+            source: [],
+            target: []
           }
-        }
+        };
+        setCurrentNode(node);
+        return node;
       }
       return {
         ...item,
         data: {
           ...item.data,
-          source: item.data?.source === currentNode?.id ? null : item.data?.source,
-          target: item.data?.target === currentNode?.id ? null : item.data?.target,
+          source: item.data.source.filter((item: string) => item !== currentNode?.id),
+          target: item.data?.target.filter((item: string) => item !== currentNode?.id),
         }
       };
     });
     const _edges = edges.filter(item => ![item.source, item.target].includes(currentNode?.id as string));
-
     setEdges(_edges);
     setNodes(_nodes);
   };
@@ -175,8 +178,8 @@ const NodeFlow = ({
         ...item,
         data: {
           ...item.data,
-          source: item.data?.source === currentNode?.id ? null : item.data?.source,
-          target: item.data?.target === currentNode?.id ? null : item.data?.target,
+          source: item.data?.source.filter((item: string) => item !== currentNode?.id),
+          target: item.data?.target.filter((item: string) => item !== currentNode?.id),
         }
       }
     });
@@ -192,7 +195,7 @@ const NodeFlow = ({
       const edges = getEdges();
       const target = nodes.find((node) => node.id === connection.target);
       const hasCycle = (node: any, visited = new Set()) => {
-        if (visited.has(node.id)) return false; 
+        if (visited.has(node.id)) return false;
 
         visited.add(node.id);
 
@@ -213,8 +216,8 @@ const NodeFlow = ({
     return {
       type: type,
       name: '',
-      target: null,
-      source: null
+      target: [],
+      source: []
     }
   };
 
@@ -223,7 +226,8 @@ const NodeFlow = ({
     response: ResponseNode,
     slot: SlotNode,
     form: FormNode,
-    action: ActionNode
+    action: ActionNode,
+    checkpoint: CheckPoint
   }), [])
 
   return (
@@ -239,7 +243,7 @@ const NodeFlow = ({
         onChange={handleChangeNodeDetail}
         onClose={() => setDetailOpen(false)}
       />
-      <ReactFlow
+      <ReactFlow<Node<NodeData>>
         nodes={nodes}
         edges={edges}
         onNodeClick={handleNodeClick}
@@ -274,7 +278,7 @@ const NodeFlow = ({
           {panel?.length > 0 && panel}
         </Panel>
         <Controls position='top-left' orientation="horizontal" />
-        {/* <MiniMap /> */}
+        <MiniMap />
       </ReactFlow>
     </div>
   )
