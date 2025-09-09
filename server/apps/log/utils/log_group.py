@@ -7,11 +7,31 @@ class LogGroupQueryBuilder:
     @staticmethod
     def json_to_logsql_expression(rule_json):
         """将规则JSON转换为VictoriaLogs LogsQL表达式"""
+
+        def escape_regex_value(value):
+            """转义正则表达式中的特殊字符"""
+            # 转义正则表达式特殊字符
+            special_chars = r'\.^$*+?{}[]|()'
+            escaped = str(value)
+            for char in special_chars:
+                escaped = escaped.replace(char, '\\' + char)
+            return escaped
+
+        def build_contains_query(field, value):
+            """构建包含查询，使用正则表达式"""
+            escaped_value = escape_regex_value(value)
+            return f'{field}:re(".*{escaped_value}.*")'
+
+        def build_not_contains_query(field, value):
+            """构建不包含查询，使用正则表达式"""
+            escaped_value = escape_regex_value(value)
+            return f'!{field}:re(".*{escaped_value}.*")'
+
         op_map = {
             "==": lambda f, v: f'{f}:"{v}"',
             "!=": lambda f, v: f'!{f}:"{v}"',
-            "contains": lambda f, v: f'{f}:*{v}*',
-            "!contains": lambda f, v: f'!{f}:*{v}*',
+            "contains": build_contains_query,
+            "!contains": build_not_contains_query,
             "startswith": lambda f, v: f'{f}:{v}*',
             "endswith": lambda f, v: f'{f}:*{v}'
         }
