@@ -17,20 +17,27 @@
   
   :global(.react-flow__edge) {
     stroke: var(--color-border-2);
-    stroke-width: 2;
+    stroke-width: 3;
+    stroke-dasharray: 8, 4;
+    animation: flowAnimation 2s linear infinite;
   }
   
   :global(.react-flow__edge:hover) {
     stroke: var(--color-primary);
+    stroke-width: 4;
+    stroke-dasharray: 10, 5;
   }
   
   :global(.react-flow__edge.selected) {
     stroke: var(--color-primary);
+    stroke-width: 4;
+    stroke-dasharray: 10, 5;
   }
   
   :global(.react-flow__connection-line) {
     stroke: var(--color-primary);
-    stroke-width: 2;
+    stroke-width: 3;
+    stroke-dasharray: 8, 4;
   }
   
   :global(.react-flow__controls) {
@@ -66,6 +73,45 @@
     padding: 2px 6px;
     border-radius: 4px;
     border: 1px solid var(--color-border);
+  }
+
+  /* 连接点样式 - 调整为10px */
+  :global(.react-flow__handle) {
+    width: 10px !important;
+    height: 10px !important;
+    border: 2px solid white !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  :global(.react-flow__handle:hover) {
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25) !important;
+  }
+  
+  :global(.react-flow__handle-top) {
+    top: 0px !important;
+  }
+  
+  :global(.react-flow__handle-bottom) {
+    bottom: 0px !important;
+  }
+  
+  :global(.react-flow__handle-left) {
+    left: 0px !important;
+  }
+  
+  :global(.react-flow__handle-right) {
+    right: 0px !important;
+  }
+  
+  /* 连线流动动画 - 向右流动 */
+  @keyframes flowAnimation {
+    0% {
+      stroke-dashoffset: 0;
+    }
+    100% {
+      stroke-dashoffset: -12;
+    }
   }
 }
 
