@@ -52,7 +52,7 @@ class VictoriaMetricsAPI:
                 stream=True,
                 timeout=(10, 120),  # 关键修复：连接超时10秒，读取超时120秒
                 headers={
-                    'Accept': 'application/x-ndjson, text/plain',
+                    'Accept': 'application/x-ndjson, text/plain, */*',
                     'Connection': 'keep-alive',
                     'Cache-Control': 'no-cache'
                 }
