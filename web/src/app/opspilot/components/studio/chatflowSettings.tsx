@@ -88,10 +88,18 @@ const NodeLibraryItem = ({ type, icon, label, onDragStart }: {
 interface ChatflowSettingsProps {
   form: any;
   groups: any[];
-  onSave: (nodes: any[], edges: any[]) => void;
+  onClear?: () => void;
+  onSaveWorkflow?: (nodes: any[], edges: any[]) => void;
+  workflowData?: { nodes: any[], edges: any[] };
 }
 
-const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({ form, groups, onSave }) => {
+const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({ 
+  form, 
+  groups, 
+  onClear, 
+  onSaveWorkflow,
+  workflowData 
+}) => {
   const { t } = useTranslation();
   const [isInfoCollapsed, setIsInfoCollapsed] = useState(false);
   const [isNodesCollapsed, setIsNodesCollapsed] = useState(false);
@@ -218,9 +226,23 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({ form, groups, onSav
         isInfoCollapsed && isNodesCollapsed ? 'pl-8' : 
           (isInfoCollapsed || isNodesCollapsed) ? 'pl-6' : 'pl-4'
       }`}>
-        <h2 className="font-semibold mb-2 text-sm text-[var(--color-text-1)]">{t('chatflow.canvas')}</h2>
-        <div className="border rounded-md shadow-sm bg-white h-[calc(100vh-200px)]">
-          <ChatflowEditor onSave={onSave} />
+        <div className="flex items-center mb-2">
+          <h2 className="font-semibold text-sm text-[var(--color-text-1)] mr-2">{t('chatflow.canvas')}</h2>
+          {onClear && (
+            <button
+              onClick={onClear}
+              className="text-gray-500 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+              title={t('chatflow.clear')}
+            >
+              <Icon type="shanchu" className="text-lg" />
+            </button>
+          )}
+        </div>
+        <div className="border rounded-md shadow-sm bg-white h-[calc(100vh-230px)]">
+          <ChatflowEditor 
+            onSave={onSaveWorkflow} 
+            initialData={workflowData}
+          />
         </div>
       </div>
     </div>
