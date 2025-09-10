@@ -180,7 +180,7 @@ export interface NodeType {
 
 export interface NodeData {
   name: string;
-  source: string[],
-  target: string[],
+  source: any[],
+  target: any[],
   [key: string]: any
 }

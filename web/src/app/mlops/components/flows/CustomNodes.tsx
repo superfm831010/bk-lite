@@ -300,9 +300,9 @@ export const CheckPoint = ({ data, selected }: NodeProps<AppNode>) => {
   const targetsConnections = useNodeConnections({
     handleType: 'target'
   });
-  const sourceConnections = useNodeConnections({
-    handleType: 'source'
-  });
+  // const sourceConnections = useNodeConnections({
+  //   handleType: 'source'
+  // });
 
   return (
     <div className={`
@@ -343,7 +343,6 @@ export const CheckPoint = ({ data, selected }: NodeProps<AppNode>) => {
       <Handle
         type="source" 
         position={Position.Bottom}
-        isConnectable={sourceConnections.length < 2}
         className="!w-2 !h-2 !bg-orange-500 !border-0 !rounded-full"
       />
     </div>
