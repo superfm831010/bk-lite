@@ -7,6 +7,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
+import Icon from '@/components/icon';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import type { DataNode } from 'antd/lib/tree';
 import { Form } from 'antd';
@@ -24,9 +25,9 @@ import {
 import {
   PlusOutlined,
   MoreOutlined,
-  AreaChartOutlined,
+  BarChartOutlined,
   SettingOutlined,
-  DeploymentUnitOutlined,
+  FolderOutlined,
 } from '@ant-design/icons';
 
 const Sidebar = forwardRef<SidebarRef, SidebarProps>(
@@ -116,8 +117,11 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
             desc: values.desc,
           };
           if (modalAction === 'addChild' && currentDir?.data_id) {
-            itemData.directory = parseInt(currentDir.data_id, 10);
-            itemData.parent = parseInt(currentDir.data_id, 10);
+            if (['dashboard', 'topology'].includes(newItemType)) {
+              itemData.directory = parseInt(currentDir.data_id, 10);
+            } else if (newItemType === 'directory') {
+              itemData.parent_id = parseInt(currentDir.data_id, 10);
+            }
           }
           await createItem(newItemType, itemData);
         }
@@ -160,14 +164,11 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
         cancelText: t('common.cancel'),
         centered: true,
         onOk: async () => {
-          setLoading(true);
           try {
             await deleteItem(item.type, item.data_id);
             loadDirectories();
           } catch (error) {
             console.error('Failed to delete directory:', error);
-          } finally {
-            setLoading(false);
           }
         },
       });
@@ -176,10 +177,11 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
     const getDirectoryIcon = (type: DirectoryType) => {
       switch (type) {
         case 'dashboard':
-          return <AreaChartOutlined className="mr-1 text-blue-500" />;
+          return <BarChartOutlined className="mr-1 text-purple-600" />;
         case 'topology':
-          return <DeploymentUnitOutlined className="mr-1 text-green-500" />;
+          return <Icon type="tuoputu" className="mr-1" />;
         case 'directory':
+          return <FolderOutlined className="mr-1" />;
         default:
           return '';
       }

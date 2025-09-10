@@ -3756,7 +3756,7 @@ wheels = [
 [[package]]
 name = "server"
 version = "3.7.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "adrf" },
     { name = "better-exceptions" },
