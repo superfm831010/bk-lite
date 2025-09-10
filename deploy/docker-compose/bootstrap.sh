@@ -394,10 +394,10 @@ sleep 10
 
 log "INFO" "开始初始化内置插件"
 $DOCKER_COMPOSE_CMD exec -T server /bin/bash -s <<EOF
-python manage.py controller_package_init --pk_version latest --file_path /apps/pkgs/controller/fusion-collectors.zip
-python manage.py collector_package_init --os linux --object Telegraf --pk_version latest --file_path /apps/pkgs/collector/telegraf
-python manage.py collector_package_init --os linux --object Vector --pk_version latest --file_path /apps/pkgs/collector/vector
-python manage.py collector_package_init --os linux --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/nats-executor
+uv run controller_package_init --pk_version latest --file_path /apps/pkgs/controller/fusion-collectors.zip
+uv run collector_package_init --os linux --object Telegraf --pk_version latest --file_path /apps/pkgs/collector/telegraf
+uv run collector_package_init --os linux --object Vector --pk_version latest --file_path /apps/pkgs/collector/vector
+uv run collector_package_init --os linux --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/nats-executor
 EOF
 
 log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_WEB_PORT 访问系统"
