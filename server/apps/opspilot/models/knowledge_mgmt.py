@@ -10,7 +10,18 @@ from apps.core.models.maintainer_info import MaintainerInfo
 from apps.core.models.time_info import TimeInfo
 from apps.opspilot.enum import DocumentStatus
 
-KNOWLEDGE_TYPES = ["md", "docx", "xlsx", "csv", "pptx", "pdf", "txt", "png", "jpg", "jpeg"]
+KNOWLEDGE_TYPES = [
+    "md",
+    "docx",
+    "xlsx",
+    "csv",
+    "pptx",
+    "pdf",
+    "txt",
+    "png",
+    "jpg",
+    "jpeg",
+]
 
 
 class KnowledgeBase(MaintainerInfo, TimeInfo):
@@ -33,7 +44,11 @@ class KnowledgeBase(MaintainerInfo, TimeInfo):
         blank=True,
         null=True,
     )
-    search_type = models.CharField(default="similarity_score_threshold", verbose_name=_("Search Type"), max_length=50)
+    search_type = models.CharField(
+        default="similarity_score_threshold",
+        verbose_name=_("Search Type"),
+        max_length=50,
+    )
     score_threshold = models.FloatField(default=0.7, verbose_name=_("Score threshold"))
     enable_naive_rag = models.BooleanField(default=True)
     enable_qa_rag = models.BooleanField(default=True)
@@ -52,7 +67,7 @@ class KnowledgeBase(MaintainerInfo, TimeInfo):
         return f"knowledge_base_{self.id}"
 
     def delete(self, *args, **kwargs):
-        from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
+        from apps.opspilot.services.knowledge_search_service import KnowledgeSearchService
 
         KnowledgeSearchService.delete_es_index(self.knowledge_index_name())
         super().delete(*args, **kwargs)
@@ -75,7 +90,11 @@ class KnowledgeDocument(MaintainerInfo, TimeInfo):
     )
     enable_ocr_parse = models.BooleanField(default=False, verbose_name=_("enable OCR parse"))
     ocr_model = models.ForeignKey(
-        "OCRProvider", blank=True, null=True, on_delete=models.CASCADE, verbose_name=_("OCR model")
+        "OCRProvider",
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        verbose_name=_("OCR model"),
     )
     mode = models.CharField(max_length=30, verbose_name=_("mode"), default="full")
     chunk_type = models.CharField(max_length=30, verbose_name=_("chunk type"), default="fixed_size")
@@ -88,7 +107,7 @@ class KnowledgeDocument(MaintainerInfo, TimeInfo):
         return self.knowledge_base.knowledge_index_name()
 
     def delete(self, *args, **kwargs):
-        from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
+        from apps.opspilot.services.knowledge_search_service import KnowledgeSearchService
 
         index_name = self.knowledge_base.knowledge_index_name()
         KnowledgeSearchService.delete_es_content(index_name, self.id, self.name)
@@ -207,7 +226,11 @@ class QAPairs(MaintainerInfo, TimeInfo):
     knowledge_base = models.ForeignKey("KnowledgeBase", on_delete=models.CASCADE)
     llm_model = models.ForeignKey("LLMModel", on_delete=models.CASCADE, null=True, blank=True)
     answer_llm_model = models.ForeignKey(
-        "LLMModel", on_delete=models.CASCADE, null=True, blank=True, related_name="answer_llm_model"
+        "LLMModel",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="answer_llm_model",
     )
 
     # 问答对相关字段

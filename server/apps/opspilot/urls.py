@@ -1,30 +1,30 @@
 from django.urls import path
 from rest_framework import routers
 
-from apps.opspilot.bot_mgmt import views
-from apps.opspilot.bot_mgmt.viewsets import BotViewSet, HistoryViewSet, RasaModelViewSet
-from apps.opspilot.channel_mgmt.viewsets import ChannelViewSet
-from apps.opspilot.knowledge_mgmt.viewsets import (
+from apps.opspilot import views
+from apps.opspilot.viewsets import (
+    BotViewSet,
+    ChannelViewSet,
+    EmbedProviderViewSet,
     FileKnowledgeViewSet,
+    HistoryViewSet,
     KnowledgeBaseViewSet,
     KnowledgeDocumentViewSet,
     KnowledgeGraphViewSet,
-    ManualKnowledgeViewSet,
-    QAPairsViewSet,
-    WebPageKnowledgeViewSet,
-)
-from apps.opspilot.model_provider_mgmt.views import (
-    EmbedProviderViewSet,
     LLMModelViewSet,
     LLMViewSet,
+    ManualKnowledgeViewSet,
     ModelTypeViewSet,
     OCRProviderViewSet,
+    QAPairsViewSet,
+    RasaModelViewSet,
     RerankProviderViewSet,
     RuleViewSet,
     SkillRequestLogViewSet,
     SkillToolsViewSet,
+    WebPageKnowledgeViewSet,
 )
-from apps.opspilot.quota_rule_mgmt.views import QuotaRuleViewSet
+from apps.opspilot.viewsets.quota_rule_view import QuotaRuleViewSet
 
 router = routers.DefaultRouter()
 # model_provider
@@ -62,17 +62,37 @@ urlpatterns = router.urls
 
 # bot open api
 urlpatterns += [
-    path(r"bot_mgmt/bot/<int:bot_id>/get_detail/", views.get_bot_detail, name="get_bot_detail"),
+    path(
+        r"bot_mgmt/bot/<int:bot_id>/get_detail/",
+        views.get_bot_detail,
+        name="get_bot_detail",
+    ),
     path(r"bot_mgmt/rasa_model_download/", views.model_download, name="model_download"),
     path(r"bot_mgmt/skill_execute/", views.skill_execute, name="skill_execute"),
-    path(r"bot_mgmt/v1/chat/completions", views.openai_completions, name="openai_completions"),
-    path(r"bot_mgmt/lobe_chat/v1/chat/completions", views.lobe_skill_execute, name="openai_completions"),
-    path(r"bot_mgmt/get_active_users_line_data/", views.get_active_users_line_data, name="get_active_users_line_data"),
     path(
-        r"bot_mgmt/get_conversations_line_data/", views.get_conversations_line_data, name="get_conversations_line_data"
+        r"bot_mgmt/v1/chat/completions",
+        views.openai_completions,
+        name="openai_completions",
     ),
     path(
-        r"bot_mgmt/get_total_token_consumption/", views.get_total_token_consumption, name="get_total_token_consumption"
+        r"bot_mgmt/lobe_chat/v1/chat/completions",
+        views.lobe_skill_execute,
+        name="openai_completions",
+    ),
+    path(
+        r"bot_mgmt/get_active_users_line_data/",
+        views.get_active_users_line_data,
+        name="get_active_users_line_data",
+    ),
+    path(
+        r"bot_mgmt/get_conversations_line_data/",
+        views.get_conversations_line_data,
+        name="get_conversations_line_data",
+    ),
+    path(
+        r"bot_mgmt/get_total_token_consumption/",
+        views.get_total_token_consumption,
+        name="get_total_token_consumption",
     ),
     path(
         r"bot_mgmt/get_token_consumption_overview/",
