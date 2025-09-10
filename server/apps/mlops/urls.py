@@ -17,10 +17,13 @@ from apps.mlops.views.rasa_pipeline import RasaPipelineViewSet
 
 router = routers.DefaultRouter()
 
-router.register(r'anomaly_detection_datasets', AnomalyDetectionDatasetViewSet)
-router.register(r'anomaly_detection_train_data', AnomalyDetectionTrainDataViewSet)
+# 异常检测
+router.register(r'anomaly_detection_datasets', AnomalyDetectionDatasetViewSet,basename='anomaly_detection_datasets')
+router.register(r'anomaly_detection_train_data', AnomalyDetectionTrainDataViewSet,basename='anomaly_detection_train_data')
 router.register(r'anomaly_detection_train_jobs', AnomalyDetectionTrainJobViewSet, basename='anomaly_detection_train_jobs')
 router.register(r'anomaly_detection_servings', AnomalyDetectionServingViewSet, basename='anomaly_detection_servings')
+
+#Rasa
 router.register(r'rasa_datasets', RasaDatasetViewSet, basename='rasa_datasets')
 router.register(r'rasa_intent', RasaIntentViewSet, basename='rasa_intent')
 router.register(r'rasa_response', RasaResponseViewSet, basename='rasa_response')

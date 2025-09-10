@@ -29,3 +29,25 @@ class LLMModelChoices(models.TextChoices):
     HUGGING_FACE = "hugging_face", "Hugging Face"
     DEEP_SEEK = "deep-seek", "DeepSeek"
     BAICHUAN = "Baichuan", "百川"
+
+
+class DocumentStatus(object):
+    TRAINING = 0
+    READY = 1
+    ERROR = 2
+    PENDING = 3
+    CHUNKING = 4
+
+    CHOICE = (
+        (TRAINING, _("Training")),
+        (READY, _("Ready")),
+        (ERROR, _("Error")),
+        (PENDING, _("Pending")),
+        (CHUNKING, _("Chunking")),
+    )
+
+
+class ActionChoice(object):
+    USE_KNOWLEDGE = 0
+
+    CHOICE = ((USE_KNOWLEDGE, _("Use specified knowledge base")),)

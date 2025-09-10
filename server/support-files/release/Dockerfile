@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.12
 WORKDIR /apps
 
 RUN apt-get update -y
@@ -11,15 +11,8 @@ ADD ./support-files/release/supervisor/celery.conf  /etc/supervisor/conf.d/celer
 ADD ./support-files/release/supervisor/consumer.conf  /etc/supervisor/conf.d/consumer.conf
 
 ADD . .
-
-RUN pip install -r ./requirements/requirements-core.txt
-RUN pip install -r ./requirements/requirements-system_mgmt.txt
-RUN pip install -r ./requirements/requirements-cmdb.txt
-RUN pip install -r ./requirements/requirements-console.txt
-RUN pip install -r ./requirements/requirements-monitor.txt
-RUN pip install -r ./requirements/requirements-node_mgmt.txt
-RUN pip install -r ./requirements/requirements-opspilot.txt
-RUN pip install -r ./requirements/requirements-mlops.txt
+RUN pip install uv
+RUN uv sync --all-groups
 
 RUN chmod +x ./support-files/release/startup.sh
 ENTRYPOINT ["/bin/bash","/apps/support-files/release/startup.sh"]

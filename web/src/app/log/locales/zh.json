@@ -256,7 +256,14 @@
       "auditBeatPathsDes": "需要监控的目录路径列表",
       "dockerHosts": "连接地址",
       "dockerHostsDes": "Docker API 连接地址列表",
-      "viewLogs": "查看日志"
+      "viewLogs": "查看日志",
+      "sampleRate": "采样率",
+      "sampleRateDes": "采样率，可根据网络流量调整，减少数据量。",
+      "dhcpPortDes": "DHCP端口配置，包括服务器端口和客户端端口。",
+      "flowsTimeout": "流量超时时间",
+      "flowsTimeoutDes": "流量超时时间（秒），超过此时间的连接被认为已结束。",
+      "flowsPeriod": "流量统计周期",
+      "flowsPeriodDes": "流量统计周期（秒），每隔此时间输出一次统计信息。"
     },
     "event": {
       "executionTime": "执行时间",
