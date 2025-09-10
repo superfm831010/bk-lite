@@ -112,12 +112,14 @@ class LogGroupQueryBuilder:
         conditions = []
 
         for group in groups:
-            if not group.rule:
-                continue
-
             try:
+                if not group.rule:
+                    # 规则为空表示"查询所有日志"，相当于 "*"
+                    conditions.append("*")
+                    continue
+
                 condition = LogGroupQueryBuilder.json_to_logsql_expression(group.rule)
-                if condition:  # 移除无意义的检查，空字符串自然会被过滤
+                if condition:
                     conditions.append(condition)
             except Exception:
                 # 规则转换失败，跳过该分组
