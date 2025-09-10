@@ -4,6 +4,8 @@
 import type { Edge, Node, Cell } from '@antv/x6';
 import { useCallback } from 'react';
 import { message } from 'antd';
+import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from '@/utils/i18n';
 import { createEdgeLabel, getEdgeStyle } from '../utils/topologyUtils';
 import { createEdgeByType } from '../utils/registerEdge';
 import {
@@ -26,6 +28,7 @@ export const useContextMenuAndModal = (
   containerRef: React.RefObject<HTMLDivElement>,
   state: TopologyState
 ): UseContextMenuAndModalReturn => {
+  const { t } = useTranslation();
   const {
     graphInstance,
     contextMenuNodeId,
@@ -39,7 +42,7 @@ export const useContextMenuAndModal = (
   } = state;
 
   const handleEdgeConfigConfirm = useCallback(
-    (values: { lineType: 'common_line' | 'network_line'; lineName?: string }) => {
+    (values: { lineType: 'common_line' | 'network_line'; lineName?: string; styleConfig?: { lineColor?: string } }) => {
       if (!currentEdgeData?.id || !graphInstance) return;
 
       const edge = graphInstance.getCellById(currentEdgeData.id) as Edge;
@@ -49,9 +52,20 @@ export const useContextMenuAndModal = (
 
       edge.setData({
         ...edge.getData(),
-        ...values,
+        lineType: values.lineType,
+        lineName: values.lineName,
+        styleConfig: values.styleConfig,
         vertices: currentVertices
       });
+
+      if (values.styleConfig?.lineColor) {
+        edge.setAttrs({
+          line: {
+            ...edge.getAttrs().line,
+            stroke: values.styleConfig.lineColor,
+          },
+        });
+      }
 
       if (values.lineType === 'network_line') {
         removeAllEdgeLabels(edge);
@@ -66,7 +80,11 @@ export const useContextMenuAndModal = (
       setCurrentEdgeData({
         ...currentEdgeData,
         lineType: values.lineType,
-        lineName: values.lineName
+        lineName: values.lineName,
+        styleConfig: {
+          ...currentEdgeData.styleConfig,
+          lineColor: values.styleConfig?.lineColor
+        }
       });
     },
     [currentEdgeData, graphInstance, setCurrentEdgeData]
@@ -94,6 +112,7 @@ export const useContextMenuAndModal = (
           id: edge.id,
           lineType: edgeData.lineType || 'common_line',
           lineName: edgeData.lineName || '',
+          styleConfig: edgeData.styleConfig || { lineColor: '#666666' },
           sourceNode: {
             id: sourceNode.id,
             name: sourceNodeData?.name || sourceNode.id,
@@ -203,6 +222,53 @@ export const useContextMenuAndModal = (
       }
     },
     [state]
+  );
+
+  const handleNodeCopy = useCallback(
+    (selectedCell: Cell) => {
+      if (!selectedCell.isNode() || !graphInstance) return;
+
+      try {
+        const originalNodeData = selectedCell.getData();
+        const originalPosition = selectedCell.getPosition();
+        const originalSize = selectedCell.getSize();
+        const originalAttrs = selectedCell.getAttrs();
+
+        const newNodeId = `node_${uuidv4()}`;
+        const newPosition = {
+          x: originalPosition.x + 200,
+          y: originalPosition.y,
+        };
+
+        const newNodeData = {
+          ...originalNodeData,
+          id: newNodeId,
+        };
+
+        const newNode = graphInstance.addNode({
+          id: newNodeId,
+          shape: selectedCell.shape,
+          x: newPosition.x,
+          y: newPosition.y,
+          width: originalSize.width,
+          height: originalSize.height,
+          attrs: { ...originalAttrs },
+          data: newNodeData,
+          zIndex: selectedCell.getZIndex(),
+        });
+
+        message.success(t('topology.nodeCopySuccess'));
+
+        if (state.isEditMode) {
+          setTimeout(() => {
+            graphInstance.select(newNode);
+          }, 100);
+        }
+      } catch {
+        message.error(t('topology.nodeCopyFailed'));
+      }
+    },
+    [graphInstance, state.isEditMode, t]
   );
 
   const handleConnectionDrawing = useCallback(
@@ -349,6 +415,11 @@ export const useContextMenuAndModal = (
           return;
         }
 
+        if (key === 'copy') {
+          handleNodeCopy(selectedCell);
+          return;
+        }
+
         if (handleNodeLayerOperation(key, selectedCell)) {
           return;
         }
@@ -367,6 +438,7 @@ export const useContextMenuAndModal = (
       handleEdgeConfiguration,
       handleViewModeMenuClick,
       handleNodeEdit,
+      handleNodeCopy,
       handleNodeLayerOperation,
       handleConnectionDrawing,
       state,
