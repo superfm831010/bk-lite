@@ -48,7 +48,7 @@ export const usePacketbeatConfig = () => {
           getDefaultForm: (formData: TableDataItem) => {
             const sources = formData?.child?.content?.[0] || {};
             const ports = sources?.ports || null;
-            const rate = sources?.rate || null;
+            const rate = sources?.sample_rate || null;
             return {
               ports,
               sample_rate: rate,

@@ -1,25 +1,8 @@
 push:
 	git add . && codegpt commit . && git push
 
-setup:
-	virtualenv .venv -p python3.10
-	./.venv/bin/pip install pip-tools
-
 install:
-	./.venv/bin/pip-compile ./requirements/requirements-core.txt \
-							./requirements/requirements-cmdb.txt \
-							./requirements/requirements-console.txt \
-							./requirements/requirements-monitor.txt \
-							./requirements/requirements-node_mgmt.txt \
-							./requirements/requirements-opspilot.txt \
-							./requirements/requirements-system_mgmt.txt \
-							./requirements/requirements-mlops.txt \
-							-v --output-file ./requirements.txt
-	./.venv/bin/pip-sync -v
-
-win-install:
-	.\.venv\Scripts\pip-compile.exe ./requirements/requirements-core.txt ./requirements/requirements-dev.txt ./requirements/requirements-ops.txt  ./requirements/requirements-extra.txt -v --output-file ./requirements.txt
-	.\.venv\Scripts\pip-sync.exe -v
+	uv sync --all-groups
 
 migrate:
 	python manage.py makemigrations
@@ -75,24 +58,6 @@ celery-flower:
 
 start-nats:
 	python manage.py nats_listener
-
-build-system-manager:
-	docker build -f ./support-files/release/system-manager/Dockerfile -t bklite/system-manager .
-
-build-console:
-	docker build -f ./support-files/release/console/Dockerfile -t bklite/ops-console .
-
-build-node-manager:
-	docker build -f ./support-files/release/node-manager/Dockerfile -t bklite/node-manager .
-
-build-cmdb:
-	docker build -f ./support-files/release/cmdb/Dockerfile -t bklite/cmdb .
-
-build-monitor:
-	docker build -f ./support-files/release/monitor/Dockerfile -t bklite/monitor .
-
-build-opspilot:
-	docker build -f ./support-files/release/opspilot/Dockerfile -t bklite/ops-pilot .
 
 test:
 	pytest

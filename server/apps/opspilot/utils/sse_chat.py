@@ -9,11 +9,11 @@ from django.conf import settings
 from django.http import StreamingHttpResponse
 
 from apps.core.logger import opspilot_logger as logger
+from apps.core.utils.async_utils import create_async_compatible_generator
 from apps.opspilot.bot_mgmt.utils import insert_skill_log
 from apps.opspilot.enum import SkillTypeChoices
-from apps.opspilot.model_provider_mgmt.models import LLMModel
 from apps.opspilot.model_provider_mgmt.services.llm_service import llm_service
-from apps.opspilot.quota_rule_mgmt.models import TeamTokenUseInfo
+from apps.opspilot.models import LLMModel, TeamTokenUseInfo
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 
@@ -29,7 +29,9 @@ def generate_stream_error(message):
         }
         yield f"data: {json.dumps(error_chunk)}\n\n"
 
-    response = StreamingHttpResponse(generator(), content_type="text/event-stream")
+    # 使用异步兼容的生成器来解决 ASGI 环境下的问题
+    async_generator = create_async_compatible_generator(generator())
+    response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
     # 添加必要的头信息以防止缓冲
     response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
@@ -393,7 +395,9 @@ def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=N
             error_chunk = _create_error_chunk(f"聊天错误: {str(e)}", skill_name)
             yield f"data: {json.dumps(error_chunk)}\n\n"
 
-    response = StreamingHttpResponse(generate_stream(), content_type="text/event-stream")
+    # 使用异步兼容的生成器来解决 ASGI 环境下的问题
+    async_generator = create_async_compatible_generator(generate_stream())
+    response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
     response["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response["X-Accel-Buffering"] = "no"  # Nginx
     response["Access-Control-Allow-Origin"] = "*"

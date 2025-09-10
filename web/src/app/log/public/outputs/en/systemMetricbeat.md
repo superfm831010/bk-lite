@@ -59,18 +59,18 @@
 
   - Suitable for various application scenarios
 
-### Metricbeat system 输出字段
+### Metricbeat system Output Fields
 
 
-|分组|字段名|描述|类型|
+|Group|Field Name|Description|Type|
 |--------|------|------|--------|
-|内置字段|collect_type|采集类型|-|
-|内置字段|collector|采集器|-|
-|内置字段|instance_id|实例id|-|
-|process|process.state|进程状态，例如 “running”|keyword|
-|process|process.cpu.pct|自上次事件以来进程占用的 CPU 时间百分比（按 CPU 核数归一化，0-1）|scaled_float|
-|process|process.cpu.start_time|进程启动时间|date|
-|process|process.memory.pct|进程占用主内存（RAM）的百分比|scaled_float|
+|Built-in Fields|collect_type|Collection type|-|
+|Built-in Fields|collector|Collector|-|
+|Built-in Fields|instance_id|Instance ID|-|
+|process|process.state|Process state, e.g. "running"|keyword|
+|process|process.cpu.pct|Percentage of CPU time used by the process since the last event (normalized by CPU cores, 0-1)|scaled_float|
+|process|process.cpu.start_time|Process start time|date|
+|process|process.memory.pct|Percentage of main memory (RAM) used by the process|scaled_float|
 |system.core|system.core.id|CPU core number|long|
 |system.core|system.core.total.pct|Total active time percentage of the core|scaled_float|
 |system.core|system.core.user.pct|User mode CPU time percentage|scaled_float|

@@ -156,26 +156,27 @@ const LogTerminal = forwardRef<LogTerminalRef, LogTerminalProps>(
         while (!abortController.signal.aborted) {
           try {
             const { done, value } = await reader.read();
-            if (done) {
-              break;
-            }
+            if (done) break;
             const chunk = decoder.decode(value, { stream: true });
-            // 处理Server-Sent Events格式的数据
             const lines = chunk.split('\n');
             for (const line of lines) {
-              const trimmed = line.trim();
-              // 跳过空行和SSE协议行
-              if (!trimmed) {
+              let trimmed = line.trim();
+              // 跳过空行和心跳检测
+              if (!trimmed || trimmed.startsWith('heartbeat:')) {
                 continue;
               }
+              // 处理SSE格式数据
               try {
-                let logContent = trimmed;
-                const msgMatch = trimmed.match(/"_msg"\s*:\s*"(.*?)",/);
-                if (msgMatch && msgMatch[1]) {
-                  logContent = msgMatch[1];
+                if (trimmed.startsWith('data:')) {
+                  trimmed = trimmed.substring(5).trim();
+                  // 尝试解析JSON
+                  const logData = JSON.parse(trimmed);
+                  const msg = logData._msg || trimmed;
+                  updateLogs(msg);
+                } else {
+                  const msgMatch = trimmed.match(/"_msg"\s*:\s*"(.*?)",/);
+                  updateLogs(msgMatch ? msgMatch[1] : trimmed);
                 }
-                // 最多展示1000条日志
-                updateLogs(logContent);
               } catch {
                 updateLogs(trimmed);
               }

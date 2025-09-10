@@ -85,18 +85,18 @@
 |docker.healthcheck.event|docker.healthcheck.event.start_date|Health check start time|date|
 |docker.healthcheck.event|docker.healthcheck.event.output|Health check output|keyword|
 |docker.healthcheck.event|docker.healthcheck.event.exit_code|Health check exit code|integer|
-|docker.image.id|docker.image.id.current|镜像创建时的唯一标识符|keyword|
-|docker.image.id|docker.image.id.parent|镜像的父标识符（如果存在）|keyword|
-|docker.image|docker.image.created|镜像的创建时间|date|
-|docker.image.size|docker.image.size.virtual|镜像大小|long|
-|docker.image.size|docker.image.size.regular|与当前镜像相关的所有缓存镜像的总大小|long|
-|docker.image|docker.image.labels|镜像标签|object|
-|docker.image|docker.image.tags|镜像标签列表|keyword|
-|docker.info.containers|docker.info.containers.paused|暂停的容器总数|long|
-|docker.info.containers|docker.info.containers.running|运行中的容器总数|long|
-|docker.info.containers|docker.info.containers.stopped|已停止的容器总数|long|
-|docker.info.containers|docker.info.containers.total|存在的容器总数|long|
-|docker.info|docker.info.id|Docker 主机唯一标识符|keyword|
+|docker.image.id|docker.image.id.current|Unique identifier when the image was created|keyword|
+|docker.image.id|docker.image.id.parent|Parent identifier of the image (if exists)|keyword|
+|docker.image|docker.image.created|Image creation time|date|
+|docker.image.size|docker.image.size.virtual|Image size|long|
+|docker.image.size|docker.image.size.regular|Total size of all cached images related to the current image|long|
+|docker.image|docker.image.labels|Image labels|object|
+|docker.image|docker.image.tags|Image tag list|keyword|
+|docker.info.containers|docker.info.containers.paused|Total number of paused containers|long|
+|docker.info.containers|docker.info.containers.running|Total number of running containers|long|
+|docker.info.containers|docker.info.containers.stopped|Total number of stopped containers|long|
+|docker.info.containers|docker.info.containers.total|Total number of existing containers|long|
+|docker.info|docker.info.id|Docker host unique identifier|keyword|
 |docker.info|docker.info.images|Total number of existing images|long|
 |docker.memory.stats|docker.memory.stats.*|Raw memory statistics from cgroups memory.stat interface|object|
 |docker.memory.commit|docker.memory.commit.total|Total committed bytes on Windows platform|long (bytes)|
