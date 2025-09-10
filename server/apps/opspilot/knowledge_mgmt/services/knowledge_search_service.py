@@ -3,8 +3,7 @@ from typing import Any, Dict, List
 from django.conf import settings
 
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.knowledge_mgmt.models import KnowledgeBase, KnowledgeGraph
-from apps.opspilot.models import EmbedProvider, RerankProvider
+from apps.opspilot.models import EmbedProvider, KnowledgeBase, KnowledgeGraph, RerankProvider
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 
@@ -53,7 +52,7 @@ class KnowledgeSearchService:
             "rerank_model_api_key": rerank_model_api_key,
             "rerank_model_name": rerank_model_name,
             "rerank_top_k": kwargs["rerank_top_k"],
-            "rag_recall_mode": "chunk",
+            "rag_recall_mode": kwargs.get("rag_recall_mode", "chunk"),
             "enable_naive_rag": kwargs["enable_naive_rag"],
             "enable_graph_rag": False,
             "enable_qa_rag": kwargs["enable_qa_rag"],
@@ -127,7 +126,7 @@ class KnowledgeSearchService:
             meta_data = doc["metadata"]
             doc_info = {}
             if kwargs["enable_rerank"]:
-                doc_info["rerank_score"] = doc["metadata"]["relevance_score"]
+                doc_info["rerank_score"] = doc["metadata"].get("relevance_score", 0)
             if is_qa:
                 doc_info.update(
                     {

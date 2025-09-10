@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Spin, Input, Button, message, Switch, Popconfirm } from 'antd';
+import { Input, Button, message, Switch, Popconfirm } from 'antd';
 import useApiClient from '@/utils/request';
 import useLogEventApi from '@/app/log/api/event';
 import useLogIntegrationApi from '@/app/log/api/integration';
@@ -182,6 +182,7 @@ const Strategy: React.FC = () => {
   }, [pagination.current, pagination.pageSize, objectId]);
 
   const handleObjectChange = async (id: string) => {
+    setTableData([])
     setObjectId(id);
   };
 
@@ -228,11 +229,15 @@ const Strategy: React.FC = () => {
     }
   };
 
-  const getObjects = async () => {
+  const getObjects = async (type?: string) => {
     try {
       setTreeLoading(true);
-      const data: ObjectItem[] = await getCollectTypes();
-      setDefaultSelectObj(objId ? +objId : data[0]?.id);
+      const data: ObjectItem[] = await getCollectTypes({
+        add_policy_count: true,
+      });
+      if (!type) {
+        setDefaultSelectObj(objId ? +objId : data[0]?.id);
+      }
       setTreeData(getTreeData(data));
     } finally {
       setTreeLoading(false);
@@ -249,7 +254,7 @@ const Strategy: React.FC = () => {
         };
       }
       acc[item.collector].children.push({
-        title: item.name || '--',
+        title: `${item.name}(${item.policy_count || 0})`,
         label: item.name || '--',
         key: item.id,
         children: [],
@@ -265,6 +270,7 @@ const Strategy: React.FC = () => {
       await deletePolicy(id);
       message.success(t('common.successfullyDeleted'));
       getAssetInsts(objectId);
+      getObjects('refresh');
     } finally {
       setConfirmLoading(false);
     }
@@ -294,48 +300,46 @@ const Strategy: React.FC = () => {
   };
 
   return (
-    <Spin spinning={treeLoading}>
-      <div className={assetStyle.asset}>
-        <TreeSelector
-          data={treeData}
-          defaultSelectedKey={defaultSelectObj as string}
-          loading={treeLoading}
-          onNodeSelect={handleObjectChange}
-        />
-        <div className={assetStyle.table}>
-          <div className={assetStyle.search}>
-            <div>
-              <Input
-                className="w-[320px]"
-                placeholder={t('common.searchPlaceHolder')}
-                allowClear
-                onPressEnter={enterText}
-                onClear={clearText}
-                onChange={(e) => setSearchText(e.target.value)}
-              ></Input>
-            </div>
-            <Permission requiredPermissions={['Add']}>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => linkToStrategyDetail('add')}
-              >
-                {t('common.add')}
-              </Button>
-            </Permission>
+    <div className={assetStyle.asset}>
+      <TreeSelector
+        data={treeData}
+        defaultSelectedKey={defaultSelectObj as string}
+        loading={treeLoading}
+        onNodeSelect={handleObjectChange}
+      />
+      <div className={assetStyle.table}>
+        <div className={assetStyle.search}>
+          <div>
+            <Input
+              className="w-[320px]"
+              placeholder={t('common.searchPlaceHolder')}
+              allowClear
+              onPressEnter={enterText}
+              onClear={clearText}
+              onChange={(e) => setSearchText(e.target.value)}
+            ></Input>
           </div>
-          <CustomTable
-            scroll={{ y: 'calc(100vh - 336px)', x: 'calc(100vw - 500px)' }}
-            columns={columns}
-            dataSource={tableData}
-            pagination={pagination}
-            loading={tableLoading}
-            rowKey="id"
-            onChange={handleTableChange}
-          ></CustomTable>
+          <Permission requiredPermissions={['Add']}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => linkToStrategyDetail('add')}
+            >
+              {t('common.add')}
+            </Button>
+          </Permission>
         </div>
+        <CustomTable
+          scroll={{ y: 'calc(100vh - 336px)', x: 'calc(100vw - 500px)' }}
+          columns={columns}
+          dataSource={tableData}
+          pagination={pagination}
+          loading={tableLoading}
+          rowKey="id"
+          onChange={handleTableChange}
+        ></CustomTable>
       </div>
-    </Spin>
+    </div>
   );
 };
 export default Strategy;

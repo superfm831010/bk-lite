@@ -7,16 +7,18 @@ from rest_framework.response import Response
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import AuthViewSet
-from apps.opspilot.knowledge_mgmt.models import (
+from apps.opspilot.enum import DocumentStatus
+from apps.opspilot.knowledge_mgmt.serializers import KnowledgeBaseSerializer
+from apps.opspilot.models import (
+    EmbedProvider,
     FileKnowledge,
+    KnowledgeBase,
+    KnowledgeDocument,
     KnowledgeGraph,
     ManualKnowledge,
     QAPairs,
     WebPageKnowledge,
 )
-from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
-from apps.opspilot.knowledge_mgmt.serializers import KnowledgeBaseSerializer
-from apps.opspilot.models import EmbedProvider, KnowledgeBase, KnowledgeDocument
 from apps.opspilot.tasks import retrain_all
 
 
@@ -59,6 +61,8 @@ class KnowledgeBaseViewSet(AuthViewSet):
             params["enable_rerank"] = False
         if not params.get("team"):
             params["team"] = [int(request.COOKIES.get("current_team"))]
+        params["score_threshold"] = 0.3
+        params["search_type"] = "mmr"
         serializer = self.get_serializer(data=params)
         serializer.is_valid(raise_exception=True)
         with atomic():
@@ -115,6 +119,7 @@ class KnowledgeBaseViewSet(AuthViewSet):
         instance.graph_size = kwargs["graph_size"]
         instance.search_type = kwargs["search_type"]
         instance.score_threshold = kwargs.get("score_threshold", 0.7)
+        instance.rag_recall_mode = kwargs.get("rag_recall_mode", "chunk")
         instance.save()
         return JsonResponse({"result": True})
 

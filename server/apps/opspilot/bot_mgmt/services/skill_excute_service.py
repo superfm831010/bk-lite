@@ -2,8 +2,8 @@ from django.conf import settings
 
 from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.bot_mgmt.utils import get_user_info
-from apps.opspilot.model_provider_mgmt.models import LLMSkill, SkillRule
 from apps.opspilot.model_provider_mgmt.services.llm_service import llm_service
+from apps.opspilot.models import LLMSkill, SkillRule
 
 
 class SkillExecuteService:
@@ -35,6 +35,7 @@ class SkillExecuteService:
             "group": llm_skill.team[0],
             "enable_km_route": llm_skill.enable_km_route,
             "km_llm_model": llm_skill.km_llm_model,
+            "enable_suggest": llm_skill.enable_suggest,
         }
 
         result = llm_service.chat(params)

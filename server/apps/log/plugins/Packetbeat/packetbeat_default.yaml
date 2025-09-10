@@ -27,14 +27,15 @@ processors:
       when.not.contains.tags: forwarded
 # ================================== Protocols ===================================
 packetbeat.protocols:
-- type: icmp
-  enabled: true
+#- type: icmp
+#  enabled: true
+#
+#  # 添加采样配置，减少数据量
+#  sample_rate: 0.1  # 只采样10%的ICMP包，大幅减少数据量
+#
+#  fields:
+#    log_type: "packetbeat"
+#    health_check_mode: true
+#    _msg: "health check"
+#  fields_under_root: true
 
-  # 添加采样配置，减少数据量
-  sample_rate: 0.1  # 只采样10%的ICMP包，大幅减少数据量
-
-  fields:
-    log_type: "packetbeat"
-    health_check_mode: true
-    _msg: "health check"
-  fields_under_root: true

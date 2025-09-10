@@ -12,6 +12,7 @@ from nats.aio.client import Client
 from .exceptions import NatsClientException
 from .types import ResponseType
 from .utils import parse_arguments
+from apps.core.logger import nats_logger as logger
 
 DEFAULT_REQUEST_TIMEOUT = 60
 
@@ -85,7 +86,12 @@ async def request_v2(
 ) -> ResponseType:
     payload = parse_arguments(args, kwargs)
 
-    nc = await get_nc_client(server=server)
+    try:
+        nc = await get_nc_client(server=server)
+    except Exception as e:  # noqa
+        import traceback
+        logger.error("==request_v2 nast connect method_name={}, error={}".format(method_name, traceback.format_exc()))
+        raise NatsClientException(f"Cannot connect to NATS server: {server}")
 
     timeout = _timeout or getattr(settings, "NATS_REQUEST_TIMEOUT", DEFAULT_REQUEST_TIMEOUT)
     try:

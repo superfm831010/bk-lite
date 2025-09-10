@@ -11,18 +11,19 @@ from rest_framework.decorators import action
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph, QAPairs
-from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
-from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
+from apps.opspilot.enum import DocumentStatus
 from apps.opspilot.knowledge_mgmt.serializers import KnowledgeDocumentSerializer
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
-from apps.opspilot.model_provider_mgmt.models import EmbedProvider
 from apps.opspilot.models import (
     ConversationTag,
+    EmbedProvider,
     FileKnowledge,
     KnowledgeBase,
     KnowledgeDocument,
+    KnowledgeGraph,
+    KnowledgeTask,
     ManualKnowledge,
+    QAPairs,
     WebPageKnowledge,
 )
 from apps.opspilot.tasks import general_embed, general_embed_by_document_list
@@ -80,10 +81,10 @@ class KnowledgeDocumentViewSet(viewsets.ModelViewSet):
             .order_by("-id")
         )
         for i in task_list:
-            if not i["is_qa_task"]:
-                i["train_progress"] = f"{i['completed_count']}/{i['total_count']}"
-            else:
-                i["train_progress"] = f"{i['train_progress']}%"
+            # if not i["is_qa_task"]:
+            i["train_progress"] = f"{i['completed_count']}/{i['total_count']}"
+        # else:
+        #     i["train_progress"] = f"{i['train_progress']}%"
         return JsonResponse({"result": True, "data": task_list})
 
     @action(methods=["POST"], detail=False)

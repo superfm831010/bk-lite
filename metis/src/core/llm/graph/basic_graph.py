@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 
 import tiktoken
 from langchain_core.messages import AIMessageChunk, AIMessage
-from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.constants import START
 from sanic.log import logger
 from src.core.llm.entity.basic_llm_request import BasicLLMRequest
@@ -45,9 +44,14 @@ class BasicGraph(ABC):
         graph_builder.add_node("naive_rag_node", node_builder.naive_rag_node)
         graph_builder.add_node("user_message_node",
                                node_builder.user_message_node)
+        graph_builder.add_node("suggest_question_node",
+                               node_builder.suggest_question_node)
 
         graph_builder.add_edge(START, "prompt_message_node")
-        graph_builder.add_edge("prompt_message_node", "add_chat_history_node")
+        graph_builder.add_edge("prompt_message_node", "suggest_question_node")
+        graph_builder.add_edge("suggest_question_node",
+                               "add_chat_history_node")
+
         graph_builder.add_edge("add_chat_history_node", "naive_rag_node")
         graph_builder.add_edge("naive_rag_node", "user_message_node")
 
@@ -62,16 +66,6 @@ class BasicGraph(ABC):
                 **request.extra_config,
             }
         }
-
-        if request.thread_id:
-            config['configurable'] = {
-                "thread_id": request.thread_id,
-                "user_id": request.user_id,
-                "trace_id": str(uuid.uuid4()),
-                **(config['configurable'] or {})
-            }
-            with PostgresSaver.from_conn_string(core_settings.db_uri) as checkpoint:
-                graph.checkpoint = checkpoint
 
         if stream_mode == 'values':
             result = await graph.ainvoke(request, config)

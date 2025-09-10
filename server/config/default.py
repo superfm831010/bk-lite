@@ -12,7 +12,6 @@ include(
     "components/celery.py",
     "components/database.py",
     "components/drf.py",
-    "components/keycloak.py",
     "components/log.py",
     "components/minio.py",
     "components/nats.py",

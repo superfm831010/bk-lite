@@ -44,6 +44,7 @@ export interface ModelGroup {
     is_build_in?: boolean;
     index?: number;
     models?: Model[];
+    tags?: string[];
 }
 
 export interface TreeNode {
@@ -60,7 +61,7 @@ export interface ModelGroupModalProps {
     visible: boolean;
     mode: 'add' | 'edit';
     group?: ModelGroup | null;
-    onOk: (values: { name: string; display_name: string; icon?: string }) => Promise<void>;
+    onOk: (values: { name: string; display_name: string; tags?: string[]; icon?: string }) => Promise<void>;
     onCancel: () => void;
     confirmLoading: boolean;
 }

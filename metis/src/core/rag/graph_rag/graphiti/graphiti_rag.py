@@ -26,9 +26,7 @@ from graphiti_core.driver.falkordb_driver import FalkorDriver
 
 class GraphitiRAG:
     """Graphiti知识图谱RAG实现类"""
-
-    # LLM客户端超时时间（秒）
-    LLM_TIMEOUT_SECONDS = 600
+    LLM_TIMEOUT_SECONDS = 60*60*24
 
     def __init__(self):
         pass
@@ -39,7 +37,8 @@ class GraphitiRAG:
             host=core_settings.knowledge_graph_host,
             username=core_settings.knowledge_graph_username,
             password=core_settings.knowledge_graph_password,
-            port=core_settings.knowledge_graph_port
+            port=core_settings.knowledge_graph_port,
+            database=core_settings.knowledge_graph_database
         )
         return Graphiti(graph_driver=driver)
 
@@ -100,7 +99,8 @@ class GraphitiRAG:
             host=core_settings.knowledge_graph_host,
             username=core_settings.knowledge_graph_username,
             password=core_settings.knowledge_graph_password,
-            port=core_settings.knowledge_graph_port
+            port=core_settings.knowledge_graph_port,
+            database=core_settings.knowledge_graph_database
         )
         kwargs['graph_driver'] = driver
         return Graphiti(**kwargs)
@@ -272,6 +272,10 @@ class GraphitiRAG:
             except Exception as e:
                 failed_count += 1
                 logger.error(f"处理文档失败 {name}: {e}")
+                # 添加更详细的调试信息
+                logger.error(f"文档内容长度: {len(doc.page_content)}")
+                logger.error(f"文档内容前500字符: {doc.page_content[:500]}...")
+                logger.error(f"文档元数据: {doc.metadata}")
                 # 继续处理下一个文档，不中断整个流程
 
         # 可选：重建社区

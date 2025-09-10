@@ -114,6 +114,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <title>BlueKing Lite - AI 原生的轻量化运维平台</title>
         <link rel="icon" href="/logo-site.png" type="image/png"/>
         <Script src="/iconfont.js" strategy="afterInteractive"/>
       </head>

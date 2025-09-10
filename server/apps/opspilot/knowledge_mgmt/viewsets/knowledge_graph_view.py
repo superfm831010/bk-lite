@@ -6,8 +6,8 @@ from rest_framework.decorators import action
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import MaintainerViewSet
-from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph
 from apps.opspilot.knowledge_mgmt.serializers.knowledge_graph_serializers import KnowledgeGraphSerializer
+from apps.opspilot.models import KnowledgeGraph
 from apps.opspilot.tasks import rebuild_graph_community_by_instance
 from apps.opspilot.utils.graph_utils import GraphUtils
 
@@ -30,7 +30,7 @@ class KnowledgeGraphViewSet(MaintainerViewSet):
         obj = KnowledgeGraph.objects.filter(knowledge_base_id=knowledge_base_id).first()
         if not obj:
             return JsonResponse({"result": True, "data": {"is_exists": False}})
-        if obj.status != "completed":
+        if obj.status == "pending":
             return JsonResponse(
                 {"result": True, "data": {"graph": {}, "graph_id": obj.id, "is_exists": True, "status": obj.status}}
             )

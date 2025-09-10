@@ -1,6 +1,5 @@
 import traceback
 
-from langgraph.checkpoint.postgres import PostgresSaver
 from sanic import Sanic
 from sanic import json
 from sanic.log import logger
@@ -47,7 +46,7 @@ def verify_password(username, password) -> bool:
         try:
             return crypto.decrypt(encrypted_password) == crypto.decrypt(password)
         except Exception as e:
-            logger.error(f"请求鉴权失败: {e}, 用户名: {username}, 密码: {password}")
+            logger.error(f"请求鉴权失败: {e}, 用户名: {username}")
             return False
 
     return False
@@ -96,15 +95,6 @@ def bootstrap() -> Sanic:
             await rag.setup_graph()
         else:
             logger.info("未配置 知识图谱 地址，跳过知识图谱能力的启动......")
-
-    @app.command
-    def sync_db():
-        try:
-            with PostgresSaver.from_conn_string(core_settings.db_uri) as checkpointer:
-                checkpointer.setup()
-        except Exception as e:
-            pass
-        logger.info("setup langgraph checkpoint finished")
 
     @app.command
     async def download_models():

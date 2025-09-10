@@ -9,7 +9,7 @@ import {
   ReactFlowInstance,
   Background,
   Controls,
-  // MiniMap,
+  MiniMap,
   Panel,
   getOutgoers,
   useEdgesState,
@@ -18,10 +18,10 @@ import {
   IsValidConnection
 } from '@xyflow/react';
 import { Button } from 'antd';
-import { IntentNode, ResponseNode, SlotNode, FormNode } from './CustomNodes';
+import { IntentNode, ResponseNode, SlotNode, FormNode, ActionNode, CheckPoint } from './CustomNodes';
 import '@xyflow/react/dist/style.css';
-import { useCallback, useMemo, useState } from 'react';
-import { NodeType } from '@/app/mlops/types';
+import { useCallback, useMemo, useState, useEffect } from 'react';
+import { NodeType, NodeData } from '@/app/mlops/types';
 import { useTranslation } from '@/utils/i18n';
 import NodePanel from './NodePanel';
 import NodeDetailDrawer from './NodeDetail';
@@ -34,7 +34,7 @@ const NodeFlow = ({
   panel = [],
   handleSaveFlow
 }: {
-  initialNodes: Node[],
+  initialNodes: Node<NodeData>[],
   initialEdges: Edge[],
   nodeTypes: NodeType[],
   dataset: string,
@@ -43,18 +43,23 @@ const NodeFlow = ({
 }) => {
   const { t } = useTranslation();
   const { getNodes, getEdges, screenToFlowPosition } = useReactFlow();
-  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance<Node<NodeData>> | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [detailOpen, setDetailOpen] = useState<boolean>(false);
   const [currentNode, setCurrentNode] = useState<Node | null>(null);
 
+  useEffect(() => {
+    setNodes(initialNodes);
+    setEdges(initialEdges);
+  }, [initialNodes, initialEdges, setNodes, setEdges]);
+
   // 处理链接线
   const onConnect = useCallback(
     (params: Connection) => {
-      console.log(params);
+      // console.log(params);
       if (params.source === params.target) return;
-      setEdges((eds) => addEdge(params, eds));
+      setEdges((eds) => addEdge({ ...params, animated: true }, eds));
       setNodes((nds) =>
         nds.map((node) => {
           if (node.id === params.source || node.id === params.target) {
@@ -62,8 +67,8 @@ const NodeFlow = ({
               ...node,
               data: {
                 ...node.data,
-                source: node.id === params.source ? params.target : node.data?.source,
-                target: node.id === params.target ? params.source : node.data?.target
+                source: node.id === params.source ? [...node.data.source, params.target] : node.data?.source,
+                target: node.id === params.target ? [...node.data.target, params.source] : node.data?.target
               }
             }
           }
@@ -105,11 +110,11 @@ const NodeFlow = ({
     if (!position) return;
 
     // 创建新节点
-    const newNode: Node = {
+    const newNode: Node<NodeData> = {
       id: `${type}_${Date.now()}`,
       type,
       position,
-      data: { label: `${getNodeLabel(type)}`, ...getDefaultNodeData(type) }
+      data: { ...getDefaultNodeData(type) }
     };
 
     setNodes((nds) => nds.concat(newNode));
@@ -127,17 +132,6 @@ const NodeFlow = ({
     setEdges(initialEdges);
   }, [setNodes]);
 
-  // 获取节点标签
-  const getNodeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      intent: t(`datasets.intentNode`),
-      response: t(`datasets.responseNode`),
-      slot: t(`datasets.slotNode`)
-    };
-
-    return labels[type] || t(`mlops-common.defaultNode`);
-  };
-
   // 选中节点处理
   const handleNodeClick = (event: React.MouseEvent, node: Node) => {
     if (node) {
@@ -147,51 +141,48 @@ const NodeFlow = ({
   };
 
   // 更改节点详情处理
-  const handleChangeNodeDetail = (data: any) => {
+  const handleChangeNodeDetail = (name: string) => {
     const _nodes = nodes.map((item) => {
       if (item.id === currentNode?.id) {
-        return {
+        const node = {
           ...item,
-          id: `${item.type}_${data?.name}_${Date.now()}`,
+          id: `${item.type}_${name}_${Date.now()}`,
           data: {
-            id: `${item.type}_${data?.name}`,
-            name: data?.name,
+            id: `${item.type}_${name}`,
+            name: name,
+            source: [],
+            target: []
           }
-        }
+        };
+        setCurrentNode(node);
+        return node;
       }
       return {
         ...item,
         data: {
           ...item.data,
-          source: item.data?.source === currentNode?.id ? null : item.data?.source,
-          target: item.data?.target === currentNode?.id ? null : item.data?.target,
+          source: item.data.source.filter((item: string) => item !== currentNode?.id),
+          target: item.data?.target.filter((item: string) => item !== currentNode?.id),
         }
       };
     });
-    // const _edges = edges.map((item) => {
-    //   if(item.target === currentNode?.id) {
-    //     return {
-    //       ...item,
-    //       target: data?.name
-    //     }
-    //   }
-    //   if(item.source === currentNode?.id) {
-    //     return {
-    //       ...item,
-    //       source: data?.name
-    //     }
-    //   }
-    //   return item;
-    // });
     const _edges = edges.filter(item => ![item.source, item.target].includes(currentNode?.id as string));
-
     setEdges(_edges);
     setNodes(_nodes);
   };
 
   // 删除节点处理
   const handleDelNode = () => {
-    const _nodes = nodes.filter((item) => item.id !== currentNode?.id);
+    const _nodes = nodes.filter((item) => item.id !== currentNode?.id).map((item) => {
+      return {
+        ...item,
+        data: {
+          ...item.data,
+          source: item.data?.source.filter((item: string) => item !== currentNode?.id),
+          target: item.data?.target.filter((item: string) => item !== currentNode?.id),
+        }
+      }
+    });
     const _edges = edges.filter((item) => ![item.source, item.target].includes(currentNode?.id as string));
     setNodes(_nodes);
     setEdges(_edges);
@@ -204,7 +195,7 @@ const NodeFlow = ({
       const edges = getEdges();
       const target = nodes.find((node) => node.id === connection.target);
       const hasCycle = (node: any, visited = new Set()) => {
-        if (visited.has(node.id)) return false; 
+        if (visited.has(node.id)) return false;
 
         visited.add(node.id);
 
@@ -222,22 +213,11 @@ const NodeFlow = ({
 
   // 获取默认节点数据
   const getDefaultNodeData = (type: string) => {
-    // switch (type) {
-    //   case 'intent':
-    //     return {
-    //       target: null,
-    //       source: null
-    //     };
-    //   case 'response':
-    //     return {};
-    //   default:
-    //     return {}
-    // }
     return {
       type: type,
       name: '',
-      target: null,
-      source: null
+      target: [],
+      source: []
     }
   };
 
@@ -246,6 +226,8 @@ const NodeFlow = ({
     response: ResponseNode,
     slot: SlotNode,
     form: FormNode,
+    action: ActionNode,
+    checkpoint: CheckPoint
   }), [])
 
   return (
@@ -261,7 +243,7 @@ const NodeFlow = ({
         onChange={handleChangeNodeDetail}
         onClose={() => setDetailOpen(false)}
       />
-      <ReactFlow
+      <ReactFlow<Node<NodeData>>
         nodes={nodes}
         edges={edges}
         onNodeClick={handleNodeClick}
@@ -274,6 +256,7 @@ const NodeFlow = ({
         onDragOver={onDragOver}
         fitView
         nodeTypes={customNodeTypes}
+        proOptions={{ hideAttribution: true }}
       >
         <Background />
         <Panel position='top-right'>
@@ -294,8 +277,8 @@ const NodeFlow = ({
           >{t(`mlops-common.reset`)}</Button>
           {panel?.length > 0 && panel}
         </Panel>
-        <Controls />
-        {/* <MiniMap /> */}
+        <Controls position='top-left' orientation="horizontal" />
+        <MiniMap />
       </ReactFlow>
     </div>
   )

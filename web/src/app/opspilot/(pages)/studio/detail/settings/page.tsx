@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Input, Select, Button, Switch, Dropdown, Menu, Tag, Checkbox, message, Spin, InputNumber } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import { DeleteOutlined, DownOutlined, CheckOutlined } from '@ant-design/icons';
@@ -15,6 +15,7 @@ import PermissionWrapper from '@/components/permission';
 import styles from '@/app/opspilot/styles/common.module.scss';
 import Icon from '@/components/icon';
 import { useStudioApi } from '@/app/opspilot/api/studio';
+import ChatflowSettings from '@/app/opspilot/components/studio/chatflowSettings';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -39,6 +40,9 @@ const StudioSettingsPage: React.FC = () => {
   const [botPermissions, setBotPermissions] = useState<string[]>([]);
   const [online, setOnline] = useState(false);
   const [botType, setBotType] = useState<number>(1);
+  // 将工作流数据状态移到顶层
+  const [workflowData, setWorkflowData] = useState<{ nodes: any[], edges: any[] }>({ nodes: [], edges: [] });
+  
   const searchParams = useSearchParams();
   const botId = searchParams ? searchParams.get('id') : null;
   const { fetchInitialData, saveBotConfig, toggleOnlineStatus } = useStudioApi();
@@ -262,6 +266,122 @@ const StudioSettingsPage: React.FC = () => {
     });
   };
 
+  // 将 chatflow 相关函数移到组件顶层
+  const handleClearCanvas = () => {
+    // 重置工作流数据为空
+    setWorkflowData({ nodes: [], edges: [] });
+    message.success('画布已清除');
+  };
+
+  const handleSaveWorkflow = useCallback((nodes: any[], edges: any[]) => {
+    setWorkflowData({ nodes, edges });
+  }, []);
+
+  const handleChatflowSave = async (isPublish = false) => {
+    setSaveLoading(true);
+    try {
+      const values = await form.validateFields();
+
+      const payload = {
+        name: values.name,
+        introduction: values.introduction,
+        team: values.group,
+        workflow_data: workflowData,
+        is_publish: isPublish
+      };
+
+      await saveBotConfig(botId, payload);
+      message.success(t(isPublish ? 'common.publishSuccess' : 'common.saveSuccess'));
+      
+      if (isPublish) {
+        setOnline(true);
+      }
+    } catch (error) {
+      console.error(error);
+      message.error(t('common.saveFailed'));
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // 将 chatflowMenu 移到组件顶层
+  const chatflowMenu = (
+    <Menu style={{ width: 300 }}>
+      <Menu.Item key="info" disabled style={{ whiteSpace: 'normal', opacity: 1, cursor: 'default' }}>
+        <div className="text-sm">{t('studio.settings.publishTip')} {t('studio.settings.selectedParams')}</div>
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="save_publish">
+        <PermissionWrapper 
+          className='w-full' 
+          requiredPermissions={['Save&Publish']} 
+          instPermissions={botPermissions}>
+          <Button type="primary" size="small" style={{ width: '100%' }} onClick={() => handleChatflowSave(true)}>
+            {t('common.save')} & {t('common.publish')}
+          </Button>
+        </PermissionWrapper>
+      </Menu.Item>
+      <Menu.Item key="save_only">
+        <PermissionWrapper 
+          className='w-full' 
+          requiredPermissions={['Edit']} 
+          instPermissions={botPermissions}>
+          <Button size="small" style={{ width: '100%' }} onClick={() => handleChatflowSave(false)}>
+            {t('common.saveOnly')}
+          </Button>
+        </PermissionWrapper>
+      </Menu.Item>
+      {online && (
+        <Menu.Item key="offline" onClick={toggleOnline}>
+          <div className="flex justify-end items-center">
+            <span className="mr-[5px] text-gray-500">{t('studio.off')}</span>
+            <Icon type="offline" />
+          </div>
+        </Menu.Item>
+      )}
+    </Menu>
+  );
+
+  // Render chatflow interface for bot_type 3
+  if (botType === 3) {
+    return (
+      <div className="relative flex w-full h-full">
+        {(pageLoading || saveLoading) && (
+          <div
+            className={`absolute inset-0 flex justify-center items-center min-h-[500px] ${overlayBgClass} bg-opacity-50 z-50`}>
+            <Spin size="large" />
+          </div>
+        )}
+        {!pageLoading && (
+          <div className="w-full flex flex-col h-full">
+            <div className="absolute top-0 right-0 flex items-center space-x-4 z-10">
+              <Tag
+                color={online ? 'green' : ''}
+                className={`${styles.statusTag} ${online ? styles.online : styles.offline}`}
+              >
+                {online ? t('studio.on') : t('studio.off')}
+              </Tag>
+              <Dropdown overlay={chatflowMenu} trigger={['click']}>
+                <Button icon={<DownOutlined />} size="small" type="primary">
+                  {t('common.settings')}
+                </Button>
+              </Dropdown>
+            </div>
+            
+            <ChatflowSettings 
+              form={form}
+              groups={groups}
+              onClear={handleClearCanvas}
+              onSaveWorkflow={handleSaveWorkflow}
+              workflowData={workflowData}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Original interface for bot_type 1 and 2
   return (
     <div className="relative flex w-full">
       {(pageLoading || saveLoading) && (

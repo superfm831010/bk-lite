@@ -39,3 +39,48 @@ INIT_NAMESPACE_DATA = [
         "updated_by": "system"
     }
 ]
+
+INIT_TAG_DATA = [
+    {"tag_id": "cmdb",
+     "name": "CMDB",
+     "desc": "",
+     "build_in": True,
+     "created_by": "system",
+     "updated_by": "system"
+     },
+    {"tag_id": "alerts",
+     "name": "告警",
+     "desc": "",
+     "build_in": True,
+     "created_by": "system",
+     "updated_by": "system"
+     },
+    {"tag_id": "monitor",
+     "name": "监控",
+     "desc": "",
+     "build_in": True,
+     "created_by": "system",
+     "updated_by": "system"
+     },
+    {"tag_id": "log",
+     "name": "日志",
+     "desc": "",
+     "build_in": True,
+     "created_by": "system",
+     "updated_by": "system"
+     },
+    {"tag_id": "biz",
+     "name": "业务",
+     "desc": "",
+     "build_in": True,
+     "created_by": "system",
+     "updated_by": "system"
+     },
+    {"tag_id": "other",
+     "name": "其他",
+     "desc": "",
+     "build_in": True,
+     "created_by": "system",
+     "updated_by": "system"
+     },
+]

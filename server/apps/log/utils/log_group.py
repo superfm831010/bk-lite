@@ -5,22 +5,43 @@ class LogGroupQueryBuilder:
     """日志分组查询构建器 - 专门处理日志分组与查询的组合逻辑"""
 
     @staticmethod
-    def json_to_jq_expression(rule_json):
+    def json_to_logsql_expression(rule_json):
+        """将规则JSON转换为VictoriaLogs LogsQL表达式"""
+
+        def escape_regex_value(value):
+            """转义正则表达式中的特殊字符"""
+            # 转义正则表达式特殊字符
+            special_chars = r'\.^$*+?{}[]|()'
+            escaped = str(value)
+            for char in special_chars:
+                escaped = escaped.replace(char, '\\' + char)
+            return escaped
+
+        def build_contains_query(field, value):
+            """构建包含查询，使用正则表达式"""
+            escaped_value = escape_regex_value(value)
+            return f'{field}:re(".*{escaped_value}.*")'
+
+        def build_not_contains_query(field, value):
+            """构建不包含查询，使用正则表达式"""
+            escaped_value = escape_regex_value(value)
+            return f'!{field}:re(".*{escaped_value}.*")'
+
         op_map = {
-            "==": lambda f, v: f'.{f} == "{v}"',
-            "!=": lambda f, v: f'.{f} != "{v}"',
-            "contains": lambda f, v: f'.{f} | contains("{v}")',
-            "!contains": lambda f, v: f'(.{f} | contains("{v}")) | not',
-            "startswith": lambda f, v: f'.{f} | startswith("{v}")',
-            "endswith": lambda f, v: f'.{f} | endswith("{v}")'
+            "==": lambda f, v: f'{f}:"{v}"',
+            "!=": lambda f, v: f'!{f}:"{v}"',
+            "contains": build_contains_query,
+            "!contains": build_not_contains_query,
+            "startswith": lambda f, v: f'{f}:{v}*',
+            "endswith": lambda f, v: f'{f}:*{v}'
         }
 
-        # 如果不存在规则，就全匹配
+        # 如果不存在规则，返回空字符串
         if not rule_json:
-            return '*'
+            return ""
 
         mode = rule_json.get("mode", "AND").upper()
-        connector = " and " if mode == "AND" else " or "
+        connector = " AND " if mode == "AND" else " OR "
 
         expressions = []
         for rule in rule_json.get("conditions", []):
@@ -33,7 +54,13 @@ class LogGroupQueryBuilder:
             else:
                 raise ValueError(f"Unsupported operation: {op}")
 
-        return connector.join(f"({e})" for e in expressions)
+        if not expressions:
+            return ""
+
+        if len(expressions) == 1:
+            return expressions[0]
+        else:
+            return f"({connector.join(expressions)})"
 
     @staticmethod
     def build_query_with_groups(user_query, log_group_ids):
@@ -85,13 +112,15 @@ class LogGroupQueryBuilder:
         conditions = []
 
         for group in groups:
-            if not group.rule:
-                continue
-
             try:
-                condition = LogGroupQueryBuilder.json_to_jq_expression(group.rule)
-                if condition and condition != '. == .':  # 排除空规则
-                    conditions.append(f"({condition})")
+                if not group.rule:
+                    # 规则为空表示"查询所有日志"，相当于 "*"
+                    conditions.append("*")
+                    continue
+
+                condition = LogGroupQueryBuilder.json_to_logsql_expression(group.rule)
+                if condition:
+                    conditions.append(condition)
             except Exception:
                 # 规则转换失败，跳过该分组
                 continue
@@ -101,22 +130,30 @@ class LogGroupQueryBuilder:
     @staticmethod
     def _combine_query_and_groups(user_query, group_conditions):
         """组合用户查询和分组条件"""
-        # 将多个日志分组规则用 OR 连接
-        group_filter = " or ".join(group_conditions)
-
         # 清理用户查询
         user_query = user_query.strip() if user_query else ""
+
+        # 将多个日志分组规则用 OR 连接
+        if len(group_conditions) > 1:
+            group_filter = f"({' OR '.join(group_conditions)})"
+        elif len(group_conditions) == 1:
+            group_filter = group_conditions[0]
+        else:
+            group_filter = ""
 
         # 组合逻辑
         if user_query and group_filter:
             # 用户有查询 + 有分组条件：AND 连接
-            return f"({user_query}) and ({group_filter})"
+            return f"({user_query}) AND ({group_filter})"
         elif group_filter:
             # 无用户查询 + 有分组条件：只使用分组条件
             return group_filter
-        else:
+        elif user_query:
             # 有用户查询 + 无分组条件：只使用用户查询
-            return user_query or "*"
+            return user_query
+        else:
+            # 无查询无分组：返回空查询（VictoriaLogs会返回所有日志）
+            return ""
 
     @staticmethod
     def validate_log_groups(log_group_ids):

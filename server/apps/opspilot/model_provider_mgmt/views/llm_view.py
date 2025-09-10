@@ -9,17 +9,16 @@ from rest_framework.response import Response
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.logger import opspilot_logger as logger
 from apps.core.mixinx import EncryptMixin
+from apps.core.utils.async_utils import create_async_compatible_generator
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.bot_mgmt.views import validate_remaining_token
-from apps.opspilot.knowledge_mgmt.models import KnowledgeBase
-from apps.opspilot.model_provider_mgmt.models import LLMModel, LLMSkill
-from apps.opspilot.model_provider_mgmt.models.llm_skill import SkillRequestLog, SkillTools
 from apps.opspilot.model_provider_mgmt.serializers.llm_serializer import (
     LLMModelSerializer,
     LLMSerializer,
     SkillRequestLogSerializer,
     SkillToolsSerializer,
 )
+from apps.opspilot.models import KnowledgeBase, LLMModel, LLMSkill, SkillRequestLog, SkillTools
 from apps.opspilot.quota_rule_mgmt.quota_utils import get_quota_client
 from apps.opspilot.utils.sse_chat import stream_chat
 
@@ -143,9 +142,8 @@ class LLMViewSet(AuthViewSet):
             yield "data: [DONE]\n\n"
 
         # 使用异步兼容的生成器包装器
-        from apps.opspilot.utils.sse_chat import _create_async_compatible_generator
 
-        async_generator = _create_async_compatible_generator(error_generator())
+        async_generator = create_async_compatible_generator(error_generator())
 
         response = StreamingHttpResponse(async_generator, content_type="text/event-stream")
         response["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -205,6 +203,9 @@ class LLMViewSet(AuthViewSet):
                 params["enable_km_route"] if params.get("enable_km_route") else skill_obj.enable_km_route
             )
             params["km_llm_model"] = params["km_llm_model"] if params.get("km_llm_model") else skill_obj.km_llm_model
+            params["enable_suggest"] = (
+                params["enable_suggest"] if params.get("enable_suggest") else skill_obj.enable_suggest
+            )
             # 调用stream_chat函数返回流式响应
             return stream_chat(params, skill_obj.name, {}, current_ip, params["user_message"])
         except LLMSkill.DoesNotExist:

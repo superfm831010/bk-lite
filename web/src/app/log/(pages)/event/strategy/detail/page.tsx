@@ -242,6 +242,11 @@ const StrategyOperation = () => {
     }
   };
 
+  const linkToSystemManage = () => {
+    const url = '/system-manager/channel';
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <Spin spinning={pageLoading} className="w-full">
       <div className={strategyStyle.strategy}>
@@ -327,28 +332,71 @@ const StrategyOperation = () => {
                         <SelectCard data={ALGORITHM_LIST} />
                       </Form.Item>
                       <Form.Item<StrategyFields>
-                        rules={[
-                          { required: true, message: t('common.required') },
-                        ]}
+                        required
                         label={
-                          <span className="w-[82px]">
+                          <span className="w-[100px]">
+                            {t('log.event.alertName')}
+                          </span>
+                        }
+                        shouldUpdate={(prevValues, currentValues) =>
+                          prevValues.alert_type !== currentValues.alert_type
+                        }
+                      >
+                        {({ getFieldValue }) => (
+                          <>
+                            <Form.Item
+                              name="alert_name"
+                              noStyle
+                              rules={[
+                                {
+                                  required: true,
+                                  message: t('common.required'),
+                                },
+                              ]}
+                            >
+                              <Input
+                                placeholder={t('log.event.alertName')}
+                                className="w-[800px]"
+                              />
+                            </Form.Item>
+                            <div className="text-[var(--color-text-3)] mt-[10px]">
+                              {getFieldValue('alert_type') === 'aggregate'
+                                ? t('log.event.alertNameTitle')
+                                : t('log.event.keyWordAlertNameTitle')}
+                            </div>
+                          </>
+                        )}
+                      </Form.Item>
+                      <Form.Item<StrategyFields>
+                        required
+                        label={
+                          <span className="w-[100px]">
                             {t('log.integration.logGroup')}
                           </span>
                         }
-                        tooltip={t('log.integration.logGroupTips')}
-                        name="log_groups"
                       >
-                        <Select
-                          style={{ width: 800 }}
-                          showSearch
-                          mode="tags"
-                          maxTagCount="responsive"
-                          placeholder={t('log.integration.logGroup')}
-                          options={streamList.map((item: ListItem) => ({
-                            value: item.id,
-                            label: item.name,
-                          }))}
-                        ></Select>
+                        <Form.Item
+                          name="log_groups"
+                          noStyle
+                          rules={[
+                            { required: true, message: t('common.required') },
+                          ]}
+                        >
+                          <Select
+                            style={{ width: 800 }}
+                            showSearch
+                            mode="tags"
+                            maxTagCount="responsive"
+                            placeholder={t('log.integration.logGroup')}
+                            options={streamList.map((item: ListItem) => ({
+                              value: item.id,
+                              label: item.name,
+                            }))}
+                          ></Select>
+                        </Form.Item>
+                        <div className="text-[var(--color-text-3)] mt-[10px]">
+                          {t('log.integration.logGroupTips')}
+                        </div>
                       </Form.Item>
                       <Form.Item<StrategyFields>
                         required
@@ -551,42 +599,6 @@ const StrategyOperation = () => {
                         </div>
                       </Form.Item>
                       <Form.Item<StrategyFields>
-                        required
-                        label={
-                          <span className="w-[100px]">
-                            {t('log.event.alertName')}
-                          </span>
-                        }
-                        shouldUpdate={(prevValues, currentValues) =>
-                          prevValues.alert_type !== currentValues.alert_type
-                        }
-                      >
-                        {({ getFieldValue }) => (
-                          <>
-                            <Form.Item
-                              name="alert_name"
-                              noStyle
-                              rules={[
-                                {
-                                  required: true,
-                                  message: t('common.required'),
-                                },
-                              ]}
-                            >
-                              <Input
-                                placeholder={t('log.event.alertName')}
-                                className="w-[800px]"
-                              />
-                            </Form.Item>
-                            <div className="text-[var(--color-text-3)] mt-[10px]">
-                              {getFieldValue('alert_type') === 'aggregate'
-                                ? t('log.event.alertNameTitle')
-                                : t('log.event.keyWordAlertNameTitle')}
-                            </div>
-                          </>
-                        )}
-                      </Form.Item>
-                      <Form.Item<StrategyFields>
                         name="alert_level"
                         label={
                           <span className="w-[100px]">
@@ -649,13 +661,27 @@ const StrategyOperation = () => {
                                   },
                                 ]}
                               >
-                                <Radio.Group>
-                                  {channelList.map((item) => (
-                                    <Radio key={item.id} value={item.id}>
-                                      {`${item.name}（${item.channel_type}）`}
-                                    </Radio>
-                                  ))}
-                                </Radio.Group>
+                                {channelList.length ? (
+                                  <Radio.Group>
+                                    {channelList.map((item) => (
+                                      <Radio key={item.id} value={item.id}>
+                                        {`${item.name}（${item.channel_type}）`}
+                                      </Radio>
+                                    ))}
+                                  </Radio.Group>
+                                ) : (
+                                  <span>
+                                    {t('log.event.noticeWay')}
+                                    <Button
+                                      type="link"
+                                      className="p-0 mx-[4px]"
+                                      onClick={linkToSystemManage}
+                                    >
+                                      {t('log.event.systemManage')}
+                                    </Button>
+                                    {t('log.event.config')}
+                                  </span>
+                                )}
                               </Form.Item>
                               <Form.Item<StrategyFields>
                                 label={
@@ -683,7 +709,7 @@ const StrategyOperation = () => {
                                 >
                                   {userList.map((item) => (
                                     <Option value={item.id} key={item.id}>
-                                      {item.username}
+                                      {item.display_name || item.username}
                                     </Option>
                                   ))}
                                 </Select>

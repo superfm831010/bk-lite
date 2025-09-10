@@ -594,7 +594,6 @@ class InstanceViewSet(viewsets.ViewSet):
     )
     @HasPermission("asset_info-View")
     def topo_search(self, request, model_id: str, inst_id: int):
-        print(model_id,inst_id)
         instance = InstanceManage.query_entity_by_id(inst_id)
         if not instance:
             return WebUtils.response_error(response_data=[], error_message="实例不存在",

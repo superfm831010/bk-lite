@@ -1,5 +1,4 @@
 import django_filters
-from django.db.models import Q
 from apps.log.models.policy import Policy, Alert, Event
 
 
@@ -20,7 +19,7 @@ class PolicyFilter(django_filters.FilterSet):
 class AlertFilter(django_filters.FilterSet):
     policy = django_filters.NumberFilter(field_name='policy__id')
     policy_name = django_filters.CharFilter(field_name='policy__name', lookup_expr='icontains')
-    collect_type = django_filters.NumberFilter(field_name='collect_type__id')
+    collect_type = django_filters.NumberFilter(field_name='collect_type__id', required=False)
     level = django_filters.CharFilter(lookup_expr='exact')
     levels = django_filters.CharFilter(method='filter_levels')  # 支持多选级别
     status = django_filters.CharFilter(lookup_expr='exact')
@@ -52,6 +51,7 @@ class AlertFilter(django_filters.FilterSet):
 class EventFilter(django_filters.FilterSet):
     policy = django_filters.NumberFilter(field_name='policy__id')
     alert = django_filters.CharFilter(field_name='alert__id')
+    alert_id = django_filters.CharFilter(field_name='alert__id')  # 添加 alert_id 作为别名，使接口更清晰
     source_id = django_filters.CharFilter(lookup_expr='icontains')
     level = django_filters.CharFilter(lookup_expr='exact')
     event_time = django_filters.DateTimeFromToRangeFilter()
@@ -59,4 +59,4 @@ class EventFilter(django_filters.FilterSet):
 
     class Meta:
         model = Event
-        fields = ['policy', 'alert', 'source_id', 'level', 'event_time', 'created_at']
+        fields = ['policy', 'alert', 'alert_id', 'source_id', 'level', 'event_time', 'created_at']

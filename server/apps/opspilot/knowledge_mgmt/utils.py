@@ -1,4 +1,4 @@
-from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
+from apps.opspilot.enum import DocumentStatus
 from apps.opspilot.models import KnowledgeDocument
 
 

@@ -5,7 +5,7 @@ import openpyxl
 from apps.cmdb.constants import INSTANCE, NEED_CONVERSION_TYPE, ORGANIZATION, USER, ENUM, MODEL_ASSOCIATION, MODEL, \
     INSTANCE_ASSOCIATION
 from apps.cmdb.constants import ModelConstraintKey
-from apps.cmdb.graph.neo4j import Neo4jClient
+from apps.cmdb.graph.drivers.graph_client import GraphClient
 from apps.cmdb.models import CREATE_INST_ASST
 from apps.cmdb.services.model import ModelManage
 from apps.cmdb.utils.change_record import create_change_record_by_asso
@@ -119,7 +119,7 @@ class Import:
     def inst_list_save(self, inst_list):
         """实例列表保存"""
 
-        with Neo4jClient() as ag:
+        with GraphClient() as ag:
             result = ag.batch_create_entity(INSTANCE, inst_list, self.get_check_attr_map(), self.exist_items,
                                             self.operator)
         return result
@@ -127,7 +127,7 @@ class Import:
     def inst_list_update(self, inst_list):
         """实例列表更新"""
 
-        with Neo4jClient() as ag:
+        with GraphClient() as ag:
             add_results, update_results = ag.batch_save_entity(INSTANCE, inst_list, self.get_check_attr_map(),
                                                                self.exist_items, self.operator)
         return add_results, update_results
@@ -199,7 +199,7 @@ class Import:
             i["model_asst_id"]: i["src_model_id"] if self.model_id != i["src_model_id"] else i["dst_model_id"] for i in
             self.model_asso_map.values()}
 
-        with Neo4jClient() as ag:
+        with GraphClient() as ag:
             # 获取当前模型的实例名称与ID映射
             exist_items, _ = ag.query_entity(INSTANCE, [{"field": "model_id", "type": "str=", "value": self.model_id}])
             self.inst_name_id_map[self.model_id] = {item["inst_name"]: item["_id"] for item in exist_items}
@@ -262,8 +262,8 @@ class Import:
 
             for _model_src_inst_name, _dst_inst_name_list in inst_name_list.items():
                 # 导入模型的实例名称的ID 源ID
-                _model_src_inst_name_id = self.inst_name_id_map[self.model_id].get(_model_src_inst_name)
-                if not _model_src_inst_name_id:
+                import_model_inst_name_id = self.inst_name_id_map[self.model_id].get(_model_src_inst_name)
+                if not import_model_inst_name_id:
                     continue
                 # 目标模型ID
                 _dst_inst_model_id = dst_model_id if self.model_id == src_model_id else src_model_id
@@ -273,14 +273,21 @@ class Import:
                     _dst_inst_id = self.inst_name_id_map[_dst_inst_model_id].get(dst_inst_name)
                     if not _dst_inst_id:
                         continue
+                    if self.model_id == src_model_id:
+                        src_inst_id = import_model_inst_name_id
+                        dst_inst_id = _dst_inst_id
+                    else:
+                        src_inst_id = _dst_inst_id
+                        dst_inst_id = import_model_inst_name_id
+
                     add_asso_list.append(
                         dict(
                             model_asst_id=asso_key,
                             src_model_id=src_model_id,
                             dst_model_id=dst_model_id,
                             asst_id=asst_id,
-                            src_inst_id=_model_src_inst_name_id,
-                            dst_inst_id=_dst_inst_id
+                            src_inst_id=src_inst_id,
+                            dst_inst_id=dst_inst_id
                         )
                     )
 
@@ -314,7 +321,7 @@ class Import:
                     "message": "【{}】与【{}】的关联关系【{}】创建失败！校验关联约束失败! ".format(src_inst_name, dst_inst_name,
                                                                                           model_asst_id)}
 
-        with Neo4jClient() as ag:
+        with GraphClient() as ag:
             try:
                 edge = ag.create_edge(
                     INSTANCE_ASSOCIATION,

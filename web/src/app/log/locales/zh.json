@@ -137,7 +137,7 @@
       "grammarExplanation": "语法说明",
       "list": "列表",
       "terminal": "终端",
-      "listTotal": "表格展示总条数",
+      "listTotal": "列表展示上限",
       "exit": "退出全屏",
       "full": "全屏展示",
       "clearLogs": "清空日志",
@@ -146,7 +146,8 @@
       "selectGroup": "请选择分组",
       "search": "搜索",
       "displayFields": "表格展示字段",
-      "hiddenFields": "可选字段"
+      "hiddenFields": "可选字段",
+      "searchError": "日志分组不能为空"
     },
     "integration": {
       "interval": "间隔",
@@ -254,7 +255,15 @@
       "auditBeatPaths": "目录路径",
       "auditBeatPathsDes": "需要监控的目录路径列表",
       "dockerHosts": "连接地址",
-      "dockerHostsDes": "Docker API 连接地址列表"
+      "dockerHostsDes": "Docker API 连接地址列表",
+      "viewLogs": "查看日志",
+      "sampleRate": "采样率",
+      "sampleRateDes": "采样率，可根据网络流量调整，减少数据量。",
+      "dhcpPortDes": "DHCP端口配置，包括服务器端口和客户端端口。",
+      "flowsTimeout": "流量超时时间",
+      "flowsTimeoutDes": "流量超时时间（秒），超过此时间的连接被认为已结束。",
+      "flowsPeriod": "流量统计周期",
+      "flowsPeriodDes": "流量统计周期（秒），每隔此时间输出一次统计信息。"
     },
     "event": {
       "executionTime": "执行时间",
@@ -324,7 +333,10 @@
       "originalLog": "原始日志",
       "event": "事件",
       "aggregateFields": "聚合字段名",
-      "seeMore": "查看详情"
+      "seeMore": "查看详情",
+      "noticeWay": "暂无通知渠道，可去",
+      "systemManage": "系统管理",
+      "config": "配置。"
     }
   }
 }

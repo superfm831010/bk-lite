@@ -24,7 +24,7 @@ from apps.cmdb.collection.constants import (
     MIDDLEWARE_METRIC_MAP, QCLOUD_COLLECT_CLUSTER, DB_COLLECT_METRIC_MAP,
 )
 from apps.cmdb.constants import INSTANCE
-from apps.cmdb.graph.neo4j import Neo4jClient
+from apps.cmdb.graph.drivers.graph_client import GraphClient
 from apps.cmdb.models import OidMapping
 from apps.core.logger import cmdb_logger as logger
 
@@ -80,7 +80,7 @@ class MetricsCannula:
             if self.filter_collect_task:
                 params.append({"field": "collect_task", "type": "str=", "value": self.task_id})
 
-            with Neo4jClient() as ag:
+            with GraphClient() as ag:
                 already_data, _ = ag.query_entity(INSTANCE, params)
                 management = Management(
                     self.organization,
@@ -1047,11 +1047,8 @@ class ProtocolCollectMetrics(CollectBase):
         sql = " or ".join(m for m in self._metrics)
         return sql
 
-    @staticmethod
-    def set_mysql_inst_name(data, *args, **kwargs):
-        # {ip}-mysql-{port}
-        inst_name = f"{data['ip_addr']}-mysql-{data['port']}"
-        return inst_name
+    def get_inst_name(self, data):
+        return f"{data['ip_addr']}-{self.model_id}-{data['port']}"
 
     @property
     def model_field_mapping(self):
@@ -1072,7 +1069,7 @@ class ProtocolCollectMetrics(CollectBase):
                 "slow_query_log_file": "slow_query_log_file",
                 "log_error": "log_error",
                 "wait_timeout": "wait_timeout",
-                "inst_name": self.set_mysql_inst_name
+                "inst_name": self.get_inst_name
             },
             "oracle": {
                 "version": "version",
@@ -1085,6 +1082,18 @@ class ProtocolCollectMetrics(CollectBase):
                 "port": "port",
                 "service_name": "service_name",
                 "inst_name": lambda data: f"{data['ip_addr']}-oracle",
+            },
+            "mssql": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "db_name": "db_name",
+                "max_conn": "max_conn",
+                "max_mem": "max_mem",
+                "order_rule": "order_rule",
+                "fill_factor": "fill_factor",
+                "boot_account": "boot_account",
             },
 
         }
@@ -1661,6 +1670,20 @@ class MiddlewareCollectMetrics(CollectBase):
                 "metaspace_size": "metaspace_size",
                 "max_metaspace_size": "max_metaspace_size",
             },
+            "jetty": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "jetty_home": "jetty_home",
+                "java_version": "java_version",
+                "monitored_dir": "monitored_dir",
+                "bin_path": "bin_path",
+                "java_vendor": "java_vendor",
+                "war_name": "war_name",
+                "jvm_para": "jvm_para",
+                "max_threads": "max_threads",
+            },
         }
 
         return mapping
@@ -1704,8 +1727,6 @@ class QCloudCollectMetrics(CollectBase):
 
     @staticmethod
     def set_instance_inst_name(data, *args, **kwargs):
-        if not data.get("resource_name"):
-            print(data)
         inst_name = f"{data['resource_name']}_{data['resource_id']}"
         return inst_name
 
@@ -2086,7 +2107,7 @@ class DBCollectCollectMetrics(CollectBase):
                 "user": "user",
                 "version": "version",
                 "bin_path": "bin_path",
-                "bk_obj_id": "bk_obj_id",
+                "dm_db_name": "dm_db_name",
             },
             "db2": {
                 "inst_name": lambda data: f"{data['ip_addr']}-db2",
@@ -2104,16 +2125,31 @@ class DBCollectCollectMetrics(CollectBase):
             },
             "tidb": {
                 "inst_name": self.get_inst_name,
-                "bk_obj_id": "bk_obj_id",
                 "ip_addr": "ip_addr",
                 "port": "port",
                 "version": "version",
+                "dm_db_name": "dm_db_name",
                 "dm_install_path": "dm_install_path",
                 "dm_conf_path": "dm_conf_path",
                 "dm_log_file": "dm_log_file",
                 "dm_home_bash": "dm_home_bash",
                 "dm_db_max_sessions": "dm_db_max_sessions",
                 "dm_redo_log": "dm_redo_log",
+                "dm_datafile": "dm_datafile",
+                "dm_mode": "dm_mode",
+            },
+            "hbase": {
+                "inst_name": self.get_inst_name,
+                "ip_addr": "ip_addr",
+                "port": "port",
+                "version": "version",
+                "install_path": "install_path",
+                "log_path": "log_path",
+                "config_file": "config_file",
+                "tmp_dir": "tmp_dir",
+                "cluster_distributed": "cluster_distributed",
+                "unsafe_stream_capability_enforce": "unsafe_stream_capability_enforce",
+                "java_path": "java_path",
             }
         }
         return mapping

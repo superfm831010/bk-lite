@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Tree, Spin, Input } from 'antd';
+import { Tree, Spin, Input, Empty } from 'antd';
 import { TreeItem, TableDataItem } from '@/app/log/types';
 import { useTranslation } from '@/utils/i18n';
 import type { TreeProps, TreeDataNode } from 'antd';
@@ -239,16 +239,20 @@ const TreeComponent: React.FC<TreeComponentProps> = ({
           onChange={(e) => setTreeSearchValue(e.target.value)}
           onSearch={handleSearchTree}
         />
-        <Tree
-          showLine
-          draggable={draggable}
-          selectedKeys={selectedKeys}
-          expandedKeys={expandedKeys}
-          treeData={treeData}
-          onExpand={(keys) => setExpandedKeys(keys)}
-          onSelect={handleSelect}
-          onDrop={onDrop}
-        />
+        {treeData.length ? (
+          <Tree
+            showLine
+            draggable={draggable}
+            selectedKeys={selectedKeys}
+            expandedKeys={expandedKeys}
+            treeData={treeData}
+            onExpand={(keys) => setExpandedKeys(keys)}
+            onSelect={handleSelect}
+            onDrop={onDrop}
+          />
+        ) : (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
       </Spin>
     </div>
   );

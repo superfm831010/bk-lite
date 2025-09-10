@@ -137,7 +137,7 @@
       "grammarExplanation": "Grammar Explanation",
       "list": "List",
       "terminal": "Terminal",
-      "listTotal": "Displaying rows of Table",
+      "listTotal": "List Display Limit",
       "exit": "Exit Full Screen",
       "full": "Full screen display",
       "clearLogs": "Clear logs",
@@ -146,7 +146,8 @@
       "selectGroup": "Please select the group",
       "search": "Search",
       "displayFields": "Table Display Fields",
-      "hiddenFields": "Optional Fields"
+      "hiddenFields": "Optional Fields",
+      "searchError": "Log grouping cannot be empty"
     },
     "integration": {
       "interval": "Interval",
@@ -254,7 +255,15 @@
       "auditBeatPaths": "Directory Paths",
       "auditBeatPathsDes": "List of directory paths that need to be monitored",
       "dockerHosts": "Connection Address",
-      "dockerHostsDes": "Connection addresses for Docker API"
+      "dockerHostsDes": "Connection addresses for Docker API",
+      "viewLogs": "View Logs",
+      "sampleRate": "Sampling Rate",
+      "sampleRateDes": "It can be adjusted according to network traffic to reduce data volume.",
+      "dhcpPortDes": "DHCP port configuration, including server ports and client ports.",
+      "flowsTimeout": "Timeout period",
+      "flowsTimeoutDes": "Traffic timeout time (in seconds), connections that exceed this time are considered to have ended.",
+      "flowsPeriod": "Statistics cycle",
+      "flowsPeriodDes": "Traffic statistics cycle (seconds), outputting statistical information every other time."
     },
     "event": {
       "executionTime": "Execution Time",
@@ -324,7 +333,10 @@
       "originalLog": "Original Log",
       "event": "Event",
       "aggregateFields": "Aggregate Fields",
-      "seeMore": "See More"
+      "seeMore": "See More",
+      "noticeWay": "There is currently no notification channel available. You can go to the",
+      "systemManage": "system management",
+      "config": "to configure it."
     }
   }
 }

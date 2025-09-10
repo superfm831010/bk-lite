@@ -152,6 +152,21 @@ const useMlopsManageApi = () => {
     return await get(`/mlops/rasa_form/?dataset=${dataset}&name=${name}&page=${page}&page_size=${page_size}`)
   };
 
+  // 获取Rasa响应动作列表
+  const getRasaActionList = async ({
+    name = '',
+    dataset,
+    page = 1,
+    page_size = -1
+  }: {
+    name?: string;
+    dataset: string |number;
+    page?: number;
+    page_size?: number;
+  }) => {
+    return await get(`/mlops/rasa_action/?dataset=${dataset}&name=${name}&page=${page}&page_size=${page_size}`)
+  };
+
   // 获取指定异常检测数据集详情
   const getOneAnomalyDataset = async (id: number) => {
     return await get(`/mlops/anomaly_detection_datasets/${id}/`);
@@ -268,6 +283,14 @@ const useMlopsManageApi = () => {
     return await post(`/mlops/rasa_form`, params);
   };
 
+  // 新增Rasa响应动作
+  const addRasaActionFile = async (params: {
+    name: string;
+    dataset: number;
+  }) => {
+    return await post(`/mlops/rasa_action`, params);
+  };
+
   // 新增异常数据检测集样本
   const addAnomalyTrainData = async (params: TrainDataBrochure) => {
     return await post(`/mlops/anomaly_detection_train_data`, params);
@@ -291,7 +314,7 @@ const useMlopsManageApi = () => {
 
   // 更新Rasa意图文件
   const updateRasaIntentFile = async (id: number, params: {
-    name: string;
+    name?: string;
     example: string[];
   }) => {
     return await put(`/mlops/rasa_intent/${id}`, params);
@@ -299,7 +322,7 @@ const useMlopsManageApi = () => {
 
   // 更新Rasa响应文件
   const updateRasaResponseFile = async (id: number, params: {
-    name: string;
+    name?: string;
     example: string[];
   }) => {
     return await put(`/mlops/rasa_response/${id}`, params);
@@ -355,6 +378,13 @@ const useMlopsManageApi = () => {
     }
   }) => {
     return await put(`/mlops/rasa_form/${id}`, params)
+  };
+
+  // 更新Rasa响应动作文件
+  const updateRasaActionFile = async (id: number, params: {
+    name: string
+  }) => {
+    return await put(`/mlops/rasa_action/${id}`, params);
   };
 
   // 标注数据
@@ -414,6 +444,11 @@ const useMlopsManageApi = () => {
     return await del(`/mlops/rasa_form/${id}`);
   };
 
+  // 删除指定Rasa响应动作文件
+  const deleteRasaActionFile = async (id: number) => {
+    return await del(`/mlops/rasa_action/${id}`);
+  };
+
   // 删除训练数据
   const deleteAnomalyTrainData = async (id: number) => {
     return await del(`/mlops/anomaly_detection_train_data/${id}/`);
@@ -433,6 +468,7 @@ const useMlopsManageApi = () => {
     getRasaEntityCount,
     getRasaSlotList,
     getRasaFormList,
+    getRasaActionList,
     addAnomalyDatasets,
     addRasaDatasets,
     addRasaIntentFile,
@@ -443,6 +479,7 @@ const useMlopsManageApi = () => {
     addRasaStoryFile,
     addRasaSlotFile,
     addRasaFormFile,
+    addRasaActionFile,
     updateAnomalyDatasets,
     updateRasaDatasets,
     updateRasaIntentFile,
@@ -452,6 +489,7 @@ const useMlopsManageApi = () => {
     updateRasaEntityFile,
     updateRasaSlotFile,
     updateRasaFormFile,
+    updateRasaActionFile,
     labelingData,
     deleteAnomalyDatasets,
     deleteAnomalyTrainData,
@@ -462,7 +500,8 @@ const useMlopsManageApi = () => {
     deleteRasaStoryFile,
     deleteRasaEntityFile,
     deleteRasaSlotFile,
-    deleteRasaFormFile
+    deleteRasaFormFile,
+    deleteRasaActionFile
   }
 };
 
