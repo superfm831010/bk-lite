@@ -3,6 +3,7 @@ push:
 
 install:
 	uv sync --all-groups
+	uv sync --all-extras
 
 migrate:
 	uv run python manage.py makemigrations
