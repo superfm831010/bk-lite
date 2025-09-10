@@ -75,7 +75,8 @@ const registerSingleValueNode = () => {
     height: SINGLE_VALUE_NODE.height,
     markup: [
       { tagName: 'rect', selector: 'body' },
-      { tagName: 'text', selector: 'label' }
+      { tagName: 'text', selector: 'label' },
+      { tagName: 'text', selector: 'nameLabel' }
     ],
     attrs: {
       body: {
@@ -92,8 +93,19 @@ const registerSingleValueNode = () => {
         textAnchor: 'middle',
         textVerticalAnchor: 'middle',
         refX: '50%',
-        refY: '50%',
+        refY: '38%',
         textWrap: { width: '90%', ellipsis: true }
+      },
+      nameLabel: {
+        fill: '#666666',
+        fontSize: 12,
+        fontFamily: SINGLE_VALUE_NODE.fontFamily,
+        textAnchor: 'middle',
+        textVerticalAnchor: 'middle',
+        refX: '50%',
+        refY: '72%',
+        textWrap: { width: '90%', ellipsis: true },
+        display: 'none'
       }
     },
     ports: createPortConfig()
@@ -242,6 +254,8 @@ const createIconNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData
 const createSingleValueNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
   const valueConfig = nodeConfig.valueConfig || {};
   const hasDataSource = !!(valueConfig.dataSource && (valueConfig.selectedFields?.length ?? 0) > 0);
+  const hasName = !!(nodeConfig.name && nodeConfig.name.trim());
+  const initialText = hasDataSource ? 'loading' : '--';
 
   return {
     ...baseNodeData,
@@ -253,12 +267,20 @@ const createSingleValueNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseN
     },
     attrs: {
       body: {
-        fill: nodeConfig.styleConfig?.backgroundColor,
-        stroke: nodeConfig.styleConfig?.borderColor
+        fill: nodeConfig.styleConfig?.backgroundColor || 'transparent',
+        stroke: nodeConfig.styleConfig?.borderColor || 'transparent'
       },
       label: {
         fill: nodeConfig.styleConfig?.textColor,
-        fontSize: nodeConfig.styleConfig?.fontSize
+        fontSize: nodeConfig.styleConfig?.fontSize,
+        refY: hasName ? '38%' : '50%',
+        text: initialText
+      },
+      nameLabel: {
+        text: hasName ? nodeConfig.name : '',
+        fill: nodeConfig.styleConfig?.nameColor || '#666666',
+        fontSize: nodeConfig.styleConfig?.nameFontSize || 12,
+        display: hasName ? 'block' : 'none'
       }
     },
     ports: createPortConfig()
@@ -417,19 +439,46 @@ const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
 };
 
 const updateSingleValueNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
-  node.setAttrs({
+  const hasName = !!(nodeConfig.name && nodeConfig.name.trim());
+
+  const nodeData = node.getData();
+  const isLoading = nodeData?.isLoading;
+
+  const shouldSetDefaultText = !isLoading;
+  let displayText = '';
+
+  if (shouldSetDefaultText) {
+    const currentText = node.getAttrByPath('label/text') as string;
+    if (!currentText || currentText === 'loading' || currentText === '无数据') {
+      displayText = hasName ? nodeConfig.name || '--' : '--';
+    } else {
+      displayText = currentText;
+    }
+  }
+  const attrs: any = {
     body: {
-      fill: nodeConfig.styleConfig?.backgroundColor,
-      stroke: nodeConfig.styleConfig?.borderColor,
+      fill: nodeConfig.styleConfig?.backgroundColor || 'transparent',
+      stroke: nodeConfig.styleConfig?.borderColor || 'transparent',
     },
     label: {
       fill: nodeConfig.styleConfig?.textColor,
       fontSize: nodeConfig.styleConfig?.fontSize,
+      refY: hasName ? '38%' : '50%'
+    },
+    nameLabel: {
+      text: hasName ? nodeConfig.name : '',
+      fill: nodeConfig.styleConfig?.nameColor || '#666666',
+      fontSize: nodeConfig.styleConfig?.nameFontSize || 12,
+      display: hasName ? 'block' : 'none'
     }
-  });
-};
+  };
 
-const updateTextNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
+  if (shouldSetDefaultText && displayText) {
+    attrs.label.text = displayText;
+  }
+
+  node.setAttrs(attrs);
+}; const updateTextNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   node.setAttrs({
     body: {
       fill: nodeConfig.styleConfig?.backgroundColor,
@@ -515,7 +564,10 @@ const updateBasicShapeNodeAttributes = (node: Node, nodeConfig: TopologyNodeData
 export const updateNodeAttributes = (node: Node, nodeConfig: TopologyNodeData): void => {
   if (!node || !nodeConfig) return;
 
-  node.setAttrByPath('label/text', nodeConfig.name);
+  // 对于非单值节点，设置label文本为name
+  if (nodeConfig.type !== 'single-value') {
+    node.setAttrByPath('label/text', nodeConfig.name);
+  }
   node.setData({
     ...node.getData(),
     ...nodeConfig,
