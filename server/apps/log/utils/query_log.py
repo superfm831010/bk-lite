@@ -50,90 +50,67 @@ class VictoriaMetricsAPI:
                 auth=(self.username, self.password),
                 verify=self.ssl_verify,
                 stream=True,
-                timeout=None,  # 允许长连接
+                timeout=(10, 120),  # 关键修复：连接超时10秒，读取超时120秒
+                headers={
+                    'Accept': 'application/x-ndjson, text/plain, */*',
+                    'Connection': 'keep-alive',
+                    'Cache-Control': 'no-cache'
+                }
             )
             response.raise_for_status()
 
             # 确保响应使用UTF-8编码
             response.encoding = 'utf-8'
 
-            # 使用生成器返回数据，手动处理编码确保正确显示
-            for line in response.iter_lines(chunk_size=1):
-                if line:
-                    # 手动解码确保UTF-8编码正确
-                    try:
-                        decoded_line = line.decode('utf-8')
-                        yield decoded_line
-                    except UnicodeDecodeError:
-                        # 如果UTF-8解码失败，尝试其他编码
-                        try:
-                            decoded_line = line.decode('gbk')
-                            yield decoded_line
-                        except UnicodeDecodeError:
-                            # 最后使用errors='replace'避免异常
-                            decoded_line = line.decode('utf-8', errors='replace')
-                            yield decoded_line
+            logger.info("VictoriaLogs tail连接成功", extra={
+                'query_preview': query[:100] + '...' if len(query) > 100 else query,
+                'host': self.host
+            })
 
-        except requests.exceptions.RequestException as e:
-            logger.error("VictoriaLogs tail连接失败", extra={'error': str(e)})
-            raise
-        except Exception as e:
-            logger.error(f"Tail接口意外错误", extra={
-                'query_summary': query[:50] + '...' if len(query) > 50 else query,
-                'error': str(e)
+            # 使用生成器返回数据，优化性能和错误处理
+            line_count = 0
+            for line in response.iter_lines(chunk_size=8192, decode_unicode=True):
+                if line:
+                    line_count += 1
+                    try:
+                        yield line.strip()
+
+                        # 每1000行记录一次状态，减少日志量
+                        if line_count % 1000 == 0:
+                            logger.debug("VictoriaLogs数据流状态", extra={
+                                'lines_received': line_count
+                            })
+
+                    except Exception as line_error:
+                        logger.warning("处理VictoriaLogs数据行失败", extra={
+                            'error': str(line_error),
+                            'line_preview': line[:100] if line else 'empty'
+                        })
+                        continue  # 跳过错误行，继续处理
+
+        except requests.exceptions.ConnectTimeout:
+            logger.error("VictoriaLogs连接超时", extra={
+                'host': self.host,
+                'timeout': '10秒'
             })
             raise
-
-    async def tail_async(self, query):
-        """异步版本的tail方法，解决Django StreamingHttpResponse警告"""
-        data = {"query": query}
-
-        try:
-            # 在执行器中运行同步请求以避免阻塞事件循环
-            loop = asyncio.get_event_loop()
-
-            def _make_request():
-                response = requests.post(
-                    f"{self.host}/select/logsql/tail",
-                    params=data,
-                    auth=(self.username, self.password),
-                    verify=self.ssl_verify,
-                    stream=True,
-                    timeout=None,
-                )
-                # 确保响应使用UTF-8编码
-                response.encoding = 'utf-8'
-                return response
-
-            response = await loop.run_in_executor(None, _make_request)
-            response.raise_for_status()
-
-            # 异步生成器，手动处理编码
-            for line in response.iter_lines(chunk_size=1):
-                if line:
-                    # 手动解码确保UTF-8编码正确
-                    try:
-                        decoded_line = line.decode('utf-8')
-                        await asyncio.sleep(0)  # 让出控制权
-                        yield decoded_line
-                    except UnicodeDecodeError:
-                        # 如果UTF-8解码失败，尝试其他编码
-                        try:
-                            decoded_line = line.decode('gbk')
-                            await asyncio.sleep(0)
-                            yield decoded_line
-                        except UnicodeDecodeError:
-                            # 最后使用errors='replace'避免异常
-                            decoded_line = line.decode('utf-8', errors='replace')
-                            await asyncio.sleep(0)
-                            yield decoded_line
-
+        except requests.exceptions.ReadTimeout:
+            logger.error("VictoriaLogs读取超时", extra={
+                'host': self.host,
+                'timeout': '120秒'
+            })
+            raise
         except requests.exceptions.RequestException as e:
-            logger.error("异步VictoriaLogs tail连接失败", extra={'error': str(e)})
+            logger.error("VictoriaLogs tail连接失败", extra={
+                'error': str(e),
+                'host': self.host,
+                'query_preview': query[:50] + '...' if len(query) > 50 else query
+            })
             raise
         except Exception as e:
-            logger.error(f"异步Tail接口意外错误", extra={
-                'query_summary': query[:50] + '...' if len(query) > 50 else query,
-                'error': str(e)
+            logger.error("VictoriaLogs tail意外错误", extra={
+                'error': str(e),
+                'error_type': type(e).__name__,
+                'query_preview': query[:50] + '...' if len(query) > 50 else query
             })
             raise
