@@ -118,4 +118,14 @@ class SearchService:
         response['Expires'] = '0'
         response['X-Accel-Buffering'] = 'no'
 
+        # response = StreamingHttpResponse(sync_event_stream(),content_type="text/event-stream; charset=utf-8")
+        # # 增强的防缓冲和兼容性响应头
+        # response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        # response['Pragma'] = 'no-cache'
+        # response['Expires'] = '0'
+        # response['X-Accel-Buffering'] = 'no'
+        # response['Connection'] = 'keep-alive'
+        # response['Access-Control-Allow-Origin'] = '*'
+        # response['Access-Control-Allow-Headers'] = 'Cache-Control'
+        # response['Transfer-Encoding'] = 'chunked'
         return response
