@@ -16,9 +16,9 @@ const nodeCategories = [
     key: 'triggers',
     labelKey: 'chatflow.triggers',
     items: [
-      { type: 'timeTrigger', icon: 'a-icon-dingshichufa1x', labelKey: 'chatflow.timeTrigger' },
-      { type: 'restfulApi', icon: 'RESTfulAPI', labelKey: 'chatflow.restfulApi' },
-      { type: 'openaiApi', icon: 'icon-test2', labelKey: 'chatflow.openaiApi' },
+      { type: 'celery', icon: 'a-icon-dingshichufa1x', labelKey: 'chatflow.celery' },
+      { type: 'restful', icon: 'RESTfulAPI', labelKey: 'chatflow.restful' },
+      { type: 'openai', icon: 'icon-test2', labelKey: 'chatflow.openai' },
     ]
   },
   {
@@ -32,16 +32,16 @@ const nodeCategories = [
     key: 'logic',
     labelKey: 'chatflow.logicNodes',
     items: [
-      { type: 'ifCondition', icon: 'tiaojianfenzhi', labelKey: 'chatflow.ifCondition' }
+      { type: 'condition', icon: 'tiaojianfenzhi', labelKey: 'chatflow.condition' }
     ]
   },
   {
     key: 'actions',
     labelKey: 'chatflow.actionNodes',
     items: [
-      { type: 'httpRequest', icon: 'HTTP', labelKey: 'chatflow.httpRequest' },
-      { type: 'promptAppend', icon: 'prompt_o', labelKey: 'chatflow.promptAppend' },
-      { type: 'knowledgeAppend', icon: 'zhishiku2', labelKey: 'chatflow.knowledgeAppend' }
+      { type: 'http', icon: 'HTTP', labelKey: 'chatflow.http' },
+      { type: 'prompt', icon: 'prompt_o', labelKey: 'chatflow.prompt' },
+      { type: 'knowledge', icon: 'zhishiku2', labelKey: 'chatflow.knowledge' }
     ]
   }
 ];
@@ -101,133 +101,148 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({
   workflowData 
 }) => {
   const { t } = useTranslation();
-  const [isInfoCollapsed, setIsInfoCollapsed] = useState(false);
-  const [isNodesCollapsed, setIsNodesCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [activeAccordionKeys, setActiveAccordionKeys] = useState<string[]>(['nodes']); // 默认只展开节点，信息不展开
 
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.effectAllowed = 'move';
   };
 
+  const handleAccordionChange = (keys: string | string[]) => {
+    setActiveAccordionKeys(Array.isArray(keys) ? keys : [keys]);
+  };
+
   return (
     <div className="w-full flex h-full">
-      {/* Left Panel - Information Column */}
-      <div className={`transition-all duration-300 ease-in-out pr-4 border-r border-[var(--color-border-2)] overflow-y-auto h-[calc(100vh-200px)] ${
-        isInfoCollapsed ? 'w-0 pr-0 opacity-0' : 'w-1/5'
-      }`}>
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2 text-sm text-[var(--color-text-1)]">{t('studio.information')}</h2>
-          <div className="p-2">
-            <Form form={form} labelCol={{ flex: '0 0 60px' }} wrapperCol={{ flex: '1' }}>
-              <Form.Item
-                label={t('studio.form.name')}
-                name="name"
-                rules={[{ required: true, message: `${t('common.inputMsg')}${t('studio.form.name')}` }]}
-              >
-                <Input />
-              </Form.Item>
-              <Form.Item
-                label={t('studio.form.group')}
-                name="group"
-                rules={[{ required: true, message: `${t('common.inputMsg')}${t('studio.form.group')}` }]}
-              >
-                <Select mode="multiple">
-                  {groups.map((group) => (
-                    <Option key={group.id} value={group.id}>
-                      {group.name}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-              <Form.Item
-                label={t('studio.form.introduction')}
-                name="introduction"
-                rules={[{ required: true, message: `${t('common.inputMsg')}${t('studio.form.introduction')}` }]}
-              >
-                <TextArea rows={4} />
-              </Form.Item>
-            </Form>
-          </div>
-        </div>
-      </div>
-
-      {/* Information Column Toggle Button */}
-      <div className="relative">
-        <button
-          onClick={() => setIsInfoCollapsed(!isInfoCollapsed)}
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-6 h-6 border border-gray-300 rounded-full shadow-sm hover:bg-gray-50 flex items-center justify-center transition-colors"
-          style={{ left: '0px' }}
-        >
-          <Icon 
-            type={isInfoCollapsed ? 'icon-test1' : 'icon-test'} 
-            className="text-gray-500 text-lg"
-          />
-        </button>
-      </div>
-
-      {/* Middle Panel - Node Library Column */}
+      {/* Left Sidebar - Combined Information and Nodes */}
       <div className={`transition-all duration-300 ease-in-out border-r border-[var(--color-border-2)] overflow-y-auto h-[calc(100vh-200px)] ${
-        isNodesCollapsed ? 'w-0 pr-0 opacity-0' : 'w-1/5'
+        isSidebarCollapsed ? 'w-0 opacity-0' : 'w-80'
       }`}>
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2 pl-2 text-sm text-[var(--color-text-1)]">{t('chatflow.nodes')}</h2>
-          <div className="p-2">
-            <Alert message={t('chatflow.messages.dragToCreate')} type="info" showIcon />
-            
-            <Collapse 
-              size="small" 
-              ghost
-              defaultActiveKey={['triggers', 'agents', 'logic', 'actions']}
-              expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
+        <div>
+          <Collapse 
+            size="small"
+            ghost
+            activeKey={activeAccordionKeys}
+            onChange={handleAccordionChange}
+            expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
+            className="bg-transparent"
+          >
+            {/* Information Panel - 默认不展开 */}
+            <Panel 
+              key="information"
+              header={
+                <div className="flex items-center">
+                  <span className="text-sm font-medium">{t('studio.information')}</span>
+                </div>
+              }
             >
-              {nodeCategories.map((category) => (
-                <Panel 
-                  key={category.key}
-                  header={
-                    <div className="flex items-center">
-                      <span className="text-xs mt-[3px]">{t(category.labelKey)}</span>
-                    </div>
-                  }
+              <div className="pt-2">
+                <Form form={form} labelCol={{ flex: '0 0 60px' }} wrapperCol={{ flex: '1' }}>
+                  <Form.Item
+                    label={t('studio.form.name')}
+                    name="name"
+                    rules={[{ required: true, message: `${t('common.inputMsg')}${t('studio.form.name')}` }]}
+                  >
+                    <Input />
+                  </Form.Item>
+                  <Form.Item
+                    label={t('studio.form.group')}
+                    name="group"
+                    rules={[{ required: true, message: `${t('common.inputMsg')}${t('studio.form.group')}` }]}
+                  >
+                    <Select mode="multiple">
+                      {groups.map((group) => (
+                        <Option key={group.id} value={group.id}>
+                          {group.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                  <Form.Item
+                    label={t('studio.form.introduction')}
+                    name="introduction"
+                    rules={[{ required: true, message: `${t('common.inputMsg')}${t('studio.form.introduction')}` }]}
+                  >
+                    <TextArea rows={4} />
+                  </Form.Item>
+                </Form>
+              </div>
+            </Panel>
+
+            {/* Nodes Panel - 默认展开 */}
+            <Panel 
+              key="nodes"
+              header={
+                <div className="flex items-center">
+                  <span className="text-sm font-medium">{t('chatflow.nodes')}</span>
+                </div>
+              }
+            >
+              <div>
+                <Alert 
+                  message={t('chatflow.messages.dragToCreate')} 
+                  type="info" 
+                  showIcon 
+                  className="mb-4"
+                />
+                
+                <Collapse 
+                  size="small" 
+                  ghost
+                  defaultActiveKey={['triggers', 'agents', 'logic', 'actions']}
+                  expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
                 >
-                  <div className="grid grid-cols-2 gap-2">
-                    {category.items.map((item) => (
-                      <NodeLibraryItem
-                        key={item.type}
-                        type={item.type}
-                        icon={item.icon}
-                        label={t(item.labelKey)}
-                        onDragStart={onDragStart}
-                      />
-                    ))}
-                  </div>
-                </Panel>
-              ))}
-            </Collapse>
-          </div>
+                  {nodeCategories.map((category) => (
+                    <Panel 
+                      key={category.key}
+                      header={
+                        <div className="flex items-center">
+                          <span className="text-xs">{t(category.labelKey)}</span>
+                        </div>
+                      }
+                    >
+                      <div className="grid grid-cols-2 gap-2">
+                        {category.items.map((item) => (
+                          <NodeLibraryItem
+                            key={item.type}
+                            type={item.type}
+                            icon={item.icon}
+                            label={t(item.labelKey)}
+                            onDragStart={onDragStart}
+                          />
+                        ))}
+                      </div>
+                    </Panel>
+                  ))}
+                </Collapse>
+              </div>
+            </Panel>
+          </Collapse>
         </div>
       </div>
 
-      {/* Node Library Column Toggle Button */}
+      {/* Sidebar Toggle Button */}
       <div className="relative">
         <button
-          onClick={() => setIsNodesCollapsed(!isNodesCollapsed)}
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-6 h-6 border border-gray-300 rounded-full shadow-sm hover:bg-gray-50 flex items-center justify-center transition-colors"
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-6 h-6 bg-[var(--color-bg)] border border-gray-300 rounded-full shadow-sm hover:bg-gray-50 flex items-center justify-center transition-colors"
           style={{ left: '0px' }}
+          title={isSidebarCollapsed ? t('chatflow.expandSidebar') : t('chatflow.collapseSidebar')}
         >
           <Icon 
-            type={isNodesCollapsed ? 'icon-test1' : 'icon-test'} 
+            type={isSidebarCollapsed ? 'icon-test1' : 'icon-test'} 
             className="text-gray-500 text-lg"
           />
         </button>
       </div>
 
       {/* Right Panel - Chatflow Canvas */}
-      <div className={`flex-1 pl-4 transition-all duration-300 ease-in-out ${
-        isInfoCollapsed && isNodesCollapsed ? 'pl-8' : 
-          (isInfoCollapsed || isNodesCollapsed) ? 'pl-6' : 'pl-4'
+      <div className={`flex-1 transition-all duration-300 ease-in-out ${
+        isSidebarCollapsed ? 'pl-8' : 'pl-4'
       }`}>
-        <div className="flex items-center mb-2">
-          <h2 className="font-semibold text-sm text-[var(--color-text-1)] mr-2">{t('chatflow.canvas')}</h2>
+        <div className="flex items-center justify-between mb-2 px-2">
+          <h2 className="font-semibold text-sm text-[var(--color-text-1)]">{t('chatflow.canvas')}</h2>
           {onClear && (
             <button
               onClick={onClear}
@@ -238,7 +253,7 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({
             </button>
           )}
         </div>
-        <div className="border rounded-md shadow-sm bg-white h-[calc(100vh-230px)]">
+        <div className="border rounded-md shadow-sm bg-white h-[calc(100vh-230px)] mx-2">
           <ChatflowEditor 
             onSave={onSaveWorkflow} 
             initialData={workflowData}
