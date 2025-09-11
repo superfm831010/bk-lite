@@ -1,9 +1,7 @@
-
 /**
  * 拓扑图操作管理核心 Hook，负责图形的初始化、事件处理、节点操作和用户交互
  */
-
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import type { Graph as X6Graph } from '@antv/x6';
 import { v4 as uuidv4 } from 'uuid';
 import { formatTimeRange } from '@/app/ops-analysis/utils/widgetDataTransform';
@@ -39,19 +37,27 @@ export const useGraphOperations = (
 ) => {
   const { getSourceDataByApiId } = useDataSourceApi();
 
+  const isPerformingUndoRedo = useRef(false);
+
   const resetAllStyles = useCallback((graph: X6Graph) => {
     graph.getNodes().forEach((node: any) => {
       const nodeData = node.getData();
       if (nodeData?.type !== 'text') {
-        node.setAttrByPath('body/stroke', nodeData.styleConfig?.borderColor);
+        const borderColor = nodeData?.type === 'single-value'
+          ? (nodeData.styleConfig?.borderColor || 'transparent')
+          : nodeData.styleConfig?.borderColor;
+        node.setAttrByPath('body/stroke', borderColor);
       }
     });
 
     graph.getEdges().forEach((edge: any) => {
+      const edgeData = edge.getData();
+      const customColor = edgeData?.styleConfig?.lineColor;
+
       edge.setAttrs({
         line: {
           ...edge.getAttrs().line,
-          stroke: COLORS.EDGE.DEFAULT,
+          stroke: customColor || COLORS.EDGE.DEFAULT,
         },
       });
     });
@@ -85,7 +91,11 @@ export const useGraphOperations = (
   const resetNodeStyle = useCallback((node: any) => {
     const nodeData = node.getData();
     if (nodeData?.type !== 'text') {
-      node.setAttrByPath('body/stroke', nodeData.styleConfig?.borderColor || '#ddd');
+      // 对于单值节点，如果没有边框颜色则使用透明
+      const borderColor = nodeData?.type === 'single-value'
+        ? (nodeData.styleConfig?.borderColor || 'transparent')
+        : (nodeData.styleConfig?.borderColor || '#ddd');
+      node.setAttrByPath('body/stroke', borderColor);
     }
   }, []);
 
@@ -113,6 +123,181 @@ export const useGraphOperations = (
     startTextEditRef,
     finishTextEditRef,
   } = state;
+
+  // 撤销/恢复相关函数 - 基于操作记录
+  const [operationHistory, setOperationHistory] = useState<Array<{
+    action: 'add' | 'delete' | 'update' | 'move';
+    data: {
+      before?: any;
+      after?: any;
+    };
+    cellType: 'node' | 'edge';
+    cellId: string;
+  }>>([]);
+  const [operationIndex, setOperationIndex] = useState(-1);
+
+  const recordOperation = useCallback((operation: {
+    action: 'add' | 'delete' | 'update' | 'move';
+    data: {
+      before?: any;
+      after?: any;
+    };
+    cellType: 'node' | 'edge';
+    cellId: string;
+  }) => {
+    if (isPerformingUndoRedo.current) return;
+
+    setOperationHistory(prev => {
+      const newHistory = [...prev.slice(0, operationIndex + 1), operation];
+      if (newHistory.length > 50) {
+        const trimmedHistory = newHistory.slice(-50);
+        setOperationIndex(trimmedHistory.length - 1);
+        return trimmedHistory;
+      }
+      setOperationIndex(newHistory.length - 1);
+      return newHistory;
+    });
+  }, [operationIndex]);
+
+  const undo = useCallback(() => {
+    if (!graphInstance || operationIndex < 0 || isPerformingUndoRedo.current) return;
+
+    const operation = operationHistory[operationIndex];
+    if (!operation) return;
+
+    try {
+      isPerformingUndoRedo.current = true;
+
+      switch (operation.action) {
+        case 'add':
+          // 撤销添加：删除节点/边
+          const addedCell = graphInstance.getCellById(operation.cellId);
+          if (addedCell) {
+            graphInstance.removeCell(addedCell);
+          }
+          break;
+
+        case 'delete':
+          // 撤销删除：重新添加节点/边
+          if (operation.data.before) {
+            if (operation.cellType === 'node') {
+              graphInstance.addNode(operation.data.before);
+            } else {
+              graphInstance.addEdge(operation.data.before);
+            }
+          }
+          break;
+
+        case 'move':
+          // 撤销移动：恢复到之前的位置
+          const movedCell = graphInstance.getCellById(operation.cellId);
+          if (movedCell && operation.data.before) {
+            if (operation.cellType === 'node') {
+              movedCell.setPosition(operation.data.before.position);
+            } else if (operation.cellType === 'edge' && operation.data.before.vertices) {
+              movedCell.setVertices(operation.data.before.vertices);
+            }
+          }
+          break;
+
+        case 'update':
+          // 撤销更新：恢复到之前的状态
+          const updatedCell = graphInstance.getCellById(operation.cellId);
+          if (updatedCell && operation.data.before) {
+            // 根据操作类型恢复不同的属性
+            if (operation.data.before.attrs) {
+              updatedCell.setAttrs(operation.data.before.attrs);
+            }
+            if (operation.data.before.data) {
+              updatedCell.setData(operation.data.before.data);
+            }
+            if (operation.data.before.size && operation.cellType === 'node') {
+              updatedCell.setSize(operation.data.before.size);
+            }
+          }
+          break;
+      }
+
+      setOperationIndex(prev => prev - 1);
+      setTimeout(() => {
+        isPerformingUndoRedo.current = false;
+      }, 50);
+    } catch (error) {
+      console.error('撤销失败:', error);
+      isPerformingUndoRedo.current = false;
+    }
+  }, [graphInstance, operationHistory, operationIndex]);
+
+  const redo = useCallback(() => {
+    if (!graphInstance || operationIndex >= operationHistory.length - 1 || isPerformingUndoRedo.current) return;
+
+    const operation = operationHistory[operationIndex + 1];
+    if (!operation) return;
+
+    try {
+      isPerformingUndoRedo.current = true;
+
+      switch (operation.action) {
+        case 'add':
+          // 重做添加：添加节点/边
+          if (operation.data.after) {
+            if (operation.cellType === 'node') {
+              graphInstance.addNode(operation.data.after);
+            } else {
+              graphInstance.addEdge(operation.data.after);
+            }
+          }
+          break;
+
+        case 'delete':
+          // 重做删除：删除节点/边
+          const cellToDelete = graphInstance.getCellById(operation.cellId);
+          if (cellToDelete) {
+            graphInstance.removeCell(cellToDelete);
+          }
+          break;
+
+        case 'move':
+          // 重做移动：移动到新位置
+          const cellToMove = graphInstance.getCellById(operation.cellId);
+          if (cellToMove && operation.data.after) {
+            if (operation.cellType === 'node') {
+              cellToMove.setPosition(operation.data.after.position);
+            } else if (operation.cellType === 'edge' && operation.data.after.vertices) {
+              cellToMove.setVertices(operation.data.after.vertices);
+            }
+          }
+          break;
+
+        case 'update':
+          // 重做更新：应用新的状态
+          const cellToUpdate = graphInstance.getCellById(operation.cellId);
+          if (cellToUpdate && operation.data.after) {
+            if (operation.data.after.attrs) {
+              cellToUpdate.setAttrs(operation.data.after.attrs);
+            }
+            if (operation.data.after.data) {
+              cellToUpdate.setData(operation.data.after.data);
+            }
+            if (operation.data.after.size && operation.cellType === 'node') {
+              cellToUpdate.setSize(operation.data.after.size);
+            }
+          }
+          break;
+      }
+
+      setOperationIndex(prev => prev + 1);
+      setTimeout(() => {
+        isPerformingUndoRedo.current = false;
+      }, 50);
+    } catch (error) {
+      console.error('重做失败:', error);
+      isPerformingUndoRedo.current = false;
+    }
+  }, [graphInstance, operationHistory, operationIndex]);
+
+  const canUndo = operationIndex >= 0 && operationIndex < operationHistory.length;
+  const canRedo = operationIndex >= -1 && operationIndex < operationHistory.length - 1;
 
   const updateSingleNodeData = useCallback(async (nodeConfig: TopologyNodeData) => {
     if (!nodeConfig || !graphInstance) return;
@@ -146,10 +331,16 @@ export const useGraphOperations = (
         const value = getValueByPath(latestData, field);
 
         let displayValue;
-        if (typeof value === 'number') {
-          displayValue = value.toFixed(2);
+        const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+
+        if (typeof numericValue === 'number' && !isNaN(numericValue)) {
+          const decimalPlaces = nodeConfig.decimalPlaces !== undefined ? nodeConfig.decimalPlaces : 2;
+          displayValue = parseFloat(numericValue.toFixed(decimalPlaces)).toString();
         } else {
           displayValue = formatDisplayValue(value);
+        }
+        if (nodeConfig.unit && nodeConfig.unit.trim()) {
+          displayValue = `${displayValue} ${nodeConfig.unit}`;
         }
 
         const currentNodeData = node.getData();
@@ -174,9 +365,8 @@ export const useGraphOperations = (
         hasError: true,
       };
       node.setData(updatedData);
-      node.setAttrByPath('label/text', '无数据');
-
-      adjustSingleValueNodeSize(node, '无数据');
+      node.setAttrByPath('label/text', '--');
+      adjustSingleValueNodeSize(node, '--');
     }
   }, [graphInstance, getSourceDataByApiId]);
 
@@ -213,10 +403,13 @@ export const useGraphOperations = (
       hideAllEdgeTools(graphInstance);
 
       graphInstance.getEdges().forEach((edge: any) => {
+        const edgeData = edge.getData();
+        const customColor = edgeData?.styleConfig?.lineColor;
+
         edge.setAttrs({
           line: {
             ...edge.getAttrs().line,
-            stroke: COLORS.EDGE.DEFAULT,
+            stroke: customColor || COLORS.EDGE.DEFAULT,
             strokeWidth: 1,
           },
         });
@@ -278,9 +471,181 @@ export const useGraphOperations = (
 
   const dataOperations = useGraphData(graphInstance, updateSingleNodeData, startLoadingAnimation, handleSave);
 
+  // 监听图形变化，记录操作而不是保存完整状态
+  useEffect(() => {
+    if (!graphInstance) return;
+
+    const handleNodeAdded = ({ node }: any) => {
+      recordOperation({
+        action: 'add',
+        cellType: 'node',
+        cellId: node.id,
+        data: {
+          after: node.toJSON()
+        }
+      });
+    };
+
+    const handleNodeRemoved = ({ node }: any) => {
+      recordOperation({
+        action: 'delete',
+        cellType: 'node',
+        cellId: node.id,
+        data: {
+          before: node.toJSON()
+        }
+      });
+    };
+
+    const handleEdgeAdded = ({ edge }: any) => {
+      recordOperation({
+        action: 'add',
+        cellType: 'edge',
+        cellId: edge.id,
+        data: {
+          after: edge.toJSON()
+        }
+      });
+    };
+
+    const handleEdgeRemoved = ({ edge }: any) => {
+      recordOperation({
+        action: 'delete',
+        cellType: 'edge',
+        cellId: edge.id,
+        data: {
+          before: edge.toJSON()
+        }
+      });
+    };
+
+    // 记录移动操作
+    const nodePositions = new Map<string, any>();
+    const edgeVertices = new Map<string, any>();
+
+    const handleNodeMoveStart = ({ node }: any) => {
+      nodePositions.set(node.id, node.getPosition());
+    };
+
+    const handleNodeMoved = ({ node }: any) => {
+      const oldPosition = nodePositions.get(node.id);
+      if (oldPosition) {
+        const newPosition = node.getPosition();
+        // 只有位置真正发生变化时才记录
+        if (oldPosition.x !== newPosition.x || oldPosition.y !== newPosition.y) {
+          recordOperation({
+            action: 'move',
+            cellType: 'node',
+            cellId: node.id,
+            data: {
+              before: { position: oldPosition },
+              after: { position: newPosition }
+            }
+          });
+        }
+        nodePositions.delete(node.id);
+      }
+    };
+
+    const handleEdgeVerticesStart = ({ edge }: any) => {
+      edgeVertices.set(edge.id, edge.getVertices());
+    };
+
+    const handleEdgeVerticesChanged = ({ edge }: any) => {
+      const oldVertices = edgeVertices.get(edge.id);
+      if (oldVertices) {
+        const newVertices = edge.getVertices();
+        recordOperation({
+          action: 'move',
+          cellType: 'edge',
+          cellId: edge.id,
+          data: {
+            before: { vertices: oldVertices },
+            after: { vertices: newVertices }
+          }
+        });
+        edgeVertices.delete(edge.id);
+      }
+    };
+
+    graphInstance.on('node:added', handleNodeAdded);
+    graphInstance.on('node:removed', handleNodeRemoved);
+    graphInstance.on('edge:added', handleEdgeAdded);
+    graphInstance.on('edge:removed', handleEdgeRemoved);
+
+    // 监听移动事件
+    graphInstance.on('node:move', handleNodeMoveStart);
+    graphInstance.on('node:moved', handleNodeMoved);
+    graphInstance.on('edge:change:vertices', handleEdgeVerticesStart);
+    graphInstance.on('edge:change:vertices', handleEdgeVerticesChanged);
+
+    return () => {
+      graphInstance.off('node:added', handleNodeAdded);
+      graphInstance.off('node:removed', handleNodeRemoved);
+      graphInstance.off('edge:added', handleEdgeAdded);
+      graphInstance.off('edge:removed', handleEdgeRemoved);
+      graphInstance.off('node:move', handleNodeMoveStart);
+      graphInstance.off('node:moved', handleNodeMoved);
+      graphInstance.off('edge:change:vertices', handleEdgeVerticesStart);
+      graphInstance.off('edge:change:vertices', handleEdgeVerticesChanged);
+    };
+  }, [graphInstance, recordOperation]);
+
   const bindGraphEvents = (graph: X6Graph) => {
     const hideCtx = () => setContextMenuVisible(false);
     document.addEventListener('click', hideCtx);
+
+    graph.on('scale', ({ sx }) => {
+      setScale(sx);
+    });
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const delta = e.deltaY;
+      const factor = 1.1;
+      const currentScale = graph.zoom();
+      const maxScale = 3;
+      const minScale = 0.05;
+
+      let newScale;
+      if (delta > 0) {
+        newScale = currentScale / factor;
+      } else {
+        newScale = currentScale * factor;
+      }
+
+      newScale = Math.max(minScale, Math.min(maxScale, newScale));
+
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const clientX = e.clientX - rect.left;
+        const clientY = e.clientY - rect.top;
+
+        graph.zoom(newScale, {
+          absolute: true,
+          center: { x: clientX, y: clientY }
+        });
+      } else {
+        graph.zoom(newScale, { absolute: true });
+      }
+    };
+
+    if (containerRef.current) {
+      containerRef.current.addEventListener('wheel', handleWheel, { passive: false });
+    }
+
+    const cleanup = () => {
+      document.removeEventListener('click', hideCtx);
+      if (containerRef.current) {
+        containerRef.current.removeEventListener('wheel', handleWheel);
+      }
+    };
 
     graph.on('node:contextmenu', ({ e, node }) => {
       e.preventDefault();
@@ -317,6 +682,7 @@ export const useGraphOperations = (
           id: edge.id,
           lineType: edgeData.lineType || 'common_line',
           lineName: edgeData.lineName || '',
+          styleConfig: edgeData.styleConfig || { lineColor: '#666666' },
           sourceNode: {
             id: sourceNode.id,
             name: sourceNodeData?.name || sourceNode.id,
@@ -338,6 +704,9 @@ export const useGraphOperations = (
       edge.setData({
         lineType: 'common_line',
         lineName: '',
+        styleConfig: {
+          lineColor: '#666666'
+        }
       });
     });
 
@@ -444,10 +813,24 @@ export const useGraphOperations = (
       hideAllEdgeTools(graph);
     });
 
+    // 记录节点大小变化操作
+    const nodeOriginalSizes = new Map<string, any>();
+
     const handleNodeSizeUpdate = (node: any, isRealtime = false) => {
       const nodeData = node.getData();
-
       const size = node.getSize();
+
+      // 记录开始大小变化时的原始大小
+      if (isRealtime && !nodeOriginalSizes.has(node.id)) {
+        const originalSize = node.getSize();
+        const originalData = node.getData();
+        nodeOriginalSizes.set(node.id, {
+          size: { width: originalSize.width, height: originalSize.height },
+          data: originalData,
+          attrs: node.getAttrs()
+        });
+      }
+
       const updatedConfig = {
         ...nodeData,
         styleConfig: {
@@ -462,10 +845,65 @@ export const useGraphOperations = (
       if (nodeData.type === 'icon' || nodeData.type === 'single-value') {
         if (!isRealtime) {
           updateNodeAttributes(node, updatedConfig);
+
+          // 大小变化结束时记录操作
+          const originalState = nodeOriginalSizes.get(node.id);
+          if (originalState) {
+            const newSize = node.getSize();
+            // 只有大小真正发生变化时才记录
+            if (originalState.size.width !== newSize.width || originalState.size.height !== newSize.height) {
+              recordOperation({
+                action: 'update',
+                cellType: 'node',
+                cellId: node.id,
+                data: {
+                  before: {
+                    size: originalState.size,
+                    data: originalState.data,
+                    attrs: originalState.attrs
+                  },
+                  after: {
+                    size: { width: newSize.width, height: newSize.height },
+                    data: updatedConfig,
+                    attrs: node.getAttrs()
+                  }
+                }
+              });
+            }
+            nodeOriginalSizes.delete(node.id);
+          }
         }
       } else if (nodeData.type === 'chart') {
         const chartPortConfig = createPortConfig();
         node.prop('ports', chartPortConfig);
+
+        if (!isRealtime) {
+          // 图表节点大小变化结束时记录操作
+          const originalState = nodeOriginalSizes.get(node.id);
+          if (originalState) {
+            const newSize = node.getSize();
+            if (originalState.size.width !== newSize.width || originalState.size.height !== newSize.height) {
+              recordOperation({
+                action: 'update',
+                cellType: 'node',
+                cellId: node.id,
+                data: {
+                  before: {
+                    size: originalState.size,
+                    data: originalState.data,
+                    attrs: originalState.attrs
+                  },
+                  after: {
+                    size: { width: newSize.width, height: newSize.height },
+                    data: updatedConfig,
+                    attrs: node.getAttrs()
+                  }
+                }
+              });
+            }
+            nodeOriginalSizes.delete(node.id);
+          }
+        }
       }
     };
 
@@ -485,6 +923,8 @@ export const useGraphOperations = (
         );
       }
     });
+
+    return cleanup;
   };
 
   useEffect(() => {
@@ -500,7 +940,13 @@ export const useGraphOperations = (
       grid: true,
       panning: true,
       autoResize: true,
-      mousewheel: { enabled: true, modifiers: 'ctrl' },
+      mousewheel: {
+        enabled: true,
+        modifiers: ['ctrl', 'meta'],
+        factor: 1.1,
+        maxScale: 3,
+        minScale: 0.05
+      },
       connecting: {
         anchor: {
           name: 'center',
@@ -590,10 +1036,11 @@ export const useGraphOperations = (
       })
     );
 
-    bindGraphEvents(graph);
+    const cleanup = bindGraphEvents(graph);
     setGraphInstance(graph);
 
     return () => {
+      cleanup();
       graph.dispose();
     };
   }, []);
@@ -602,24 +1049,21 @@ export const useGraphOperations = (
     if (graphInstance) {
       const next = scale + 0.1;
       graphInstance.zoom(next, { absolute: true });
-      setScale(next);
     }
-  }, [graphInstance, scale, setScale]);
+  }, [graphInstance, scale]);
 
   const zoomOut = useCallback(() => {
     if (graphInstance) {
       const next = scale - 0.1 > 0.1 ? scale - 0.1 : 0.1;
       graphInstance.zoom(next, { absolute: true });
-      setScale(next);
     }
-  }, [graphInstance, scale, setScale]);
+  }, [graphInstance, scale]);
 
   const handleFit = useCallback(() => {
     if (graphInstance && containerRef.current) {
       graphInstance.zoomToFit({ padding: 20, maxScale: 1 });
-      setScale(1);
     }
-  }, [graphInstance, setScale]);
+  }, [graphInstance]);
 
   const handleDelete = useCallback(() => {
     if (graphInstance && selectedCells.length > 0) {
@@ -661,8 +1105,10 @@ export const useGraphOperations = (
       const updatedConfig = {
         id: editingNode.id,
         type: editingNode.type,
-        name: values.name || editingNode.name,
-        description: values.description || editingNode.description || '',
+        name: values.name,
+        unit: values.unit,
+        decimalPlaces: values.decimalPlaces,
+        description: values.description,
         position: editingNode.position,
         logoType: values.logoType || editingNode.logoType,
         logoIcon: values.logoIcon || editingNode.logoIcon,
@@ -674,15 +1120,17 @@ export const useGraphOperations = (
           dataSourceParams: values.dataSourceParams || valueConfig?.dataSourceParams,
         },
         styleConfig: {
-          textColor: values.textColor || styleConfig?.textColor,
-          fontSize: values.fontSize || styleConfig?.fontSize,
-          backgroundColor: values.backgroundColor || styleConfig?.backgroundColor,
-          borderColor: values.borderColor || styleConfig?.borderColor,
-          borderWidth: values.borderWidth || styleConfig?.borderWidth,
-          width: values.width || styleConfig?.width,
-          height: values.height || styleConfig?.height,
-          lineType: values.lineType || styleConfig?.lineType,
-          shapeType: values.shapeType || styleConfig?.shapeType,
+          textColor: values.textColor !== undefined ? values.textColor : styleConfig?.textColor,
+          fontSize: values.fontSize !== undefined ? values.fontSize : styleConfig?.fontSize,
+          backgroundColor: values.backgroundColor !== undefined ? values.backgroundColor : styleConfig?.backgroundColor,
+          borderColor: values.borderColor !== undefined ? values.borderColor : styleConfig?.borderColor,
+          borderWidth: values.borderWidth !== undefined ? values.borderWidth : styleConfig?.borderWidth,
+          width: values.width !== undefined ? values.width : styleConfig?.width,
+          height: values.height !== undefined ? values.height : styleConfig?.height,
+          lineType: values.lineType !== undefined ? values.lineType : styleConfig?.lineType,
+          shapeType: values.shapeType !== undefined ? values.shapeType : styleConfig?.shapeType,
+          nameColor: values.nameColor !== undefined ? values.nameColor : styleConfig?.nameColor,
+          nameFontSize: values.nameFontSize !== undefined ? values.nameFontSize : styleConfig?.nameFontSize,
         },
       };
 
@@ -694,9 +1142,18 @@ export const useGraphOperations = (
       if (!node) {
         return;
       }
+
       updateNodeAttributes(node, updatedConfig);
 
       if (updatedConfig.type === 'single-value' && updatedConfig.valueConfig?.dataSource && updatedConfig.valueConfig?.selectedFields?.length) {
+        // 先设置loading状态
+        const nodeData = node.getData();
+        node.setData({
+          ...nodeData,
+          isLoading: true,
+          hasError: false
+        });
+        startLoadingAnimation(node);
         updateSingleNodeData(updatedConfig);
       }
 
@@ -715,7 +1172,7 @@ export const useGraphOperations = (
       if (node) {
         const updatedData = {
           ...state.editingNodeData,
-          name: values.name || state.editingNodeData.name,
+          name: values.name,
           valueConfig: {
             chartType: values.chartType,
             dataSource: values.dataSource,
@@ -816,6 +1273,10 @@ export const useGraphOperations = (
           selectedFields: valueConfig.selectedFields || [],
           dataSource: valueConfig.dataSource,
           dataSourceParams: valueConfig.dataSourceParams || {},
+          nameColor: styleConfig.nameColor,
+          nameFontSize: styleConfig.nameFontSize,
+          unit: editingNodeData.unit,
+          decimalPlaces: editingNodeData.decimalPlaces,
         };
 
       case 'icon':
@@ -868,6 +1329,10 @@ export const useGraphOperations = (
     toggleEditMode,
     getEditNodeInitialValues,
     handleNodeEditClose,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
     ...dataOperations,
   };
 };

@@ -10,6 +10,7 @@ import {
   Space,
   Typography,
   Radio,
+  ColorPicker,
 } from 'antd';
 
 const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
@@ -28,6 +29,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
       const initialValues = {
         lineType: edgeData.lineType || 'common_line',
         lineName: edgeData.lineName || '',
+        lineColor: edgeData.styleConfig?.lineColor || '#666666',
         sourceInterfaceType: edgeData.sourceInterface?.type || 'existing',
         sourceInterfaceValue: edgeData.sourceInterface?.value || '',
         targetInterfaceType: edgeData.targetInterface?.type || 'existing',
@@ -41,6 +43,12 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
     if (onConfirm) {
       const result = {
         ...values,
+        styleConfig: {
+          lineColor:
+            typeof values.lineColor === 'object'
+              ? values.lineColor.toHexString()
+              : values.lineColor || '#666666',
+        },
         sourceInterface: {
           type: values.sourceInterfaceType,
           value: values.sourceInterfaceValue,
@@ -205,7 +213,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
 
   return (
     <Drawer
-      title={readonly ? t('topology.edgeView') : t('topology.edgeConfig')}
+      title={readonly ? t('topology.edgeView') : t('topology.edgeSetting')}
       placement="right"
       width={600}
       open={visible}
@@ -229,7 +237,8 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
       <div style={{ padding: '24px' }}>
         <Form
           form={form}
-          layout="vertical"
+          layout="horizontal"
+          labelCol={{ span: 5 }}
           onFinish={handleFinish}
           initialValues={{
             lineType: edgeData?.lineType || 'common_line',
@@ -240,6 +249,9 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
             targetInterfaceValue: edgeData?.targetInterface?.value || '',
           }}
         >
+          <div className="font-bold text-[var(--color-text-1)] mb-4">
+            {t('topology.nodeConfig.basicSettings')}
+          </div>
           {/* 线条类型选择 */}
           <Form.Item
             label={t('topology.lineType')}
@@ -262,6 +274,25 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
 
           {/* 线条名称配置 */}
           {renderLineNameConfig()}
+
+          <div className="mb-6">
+            <div className="font-bold text-[var(--color-text-1)] mb-4">
+              {t('topology.styleSettings')}
+            </div>
+
+            <Form.Item
+              label={t('topology.edgeConfig.lineColor')}
+              name="lineColor"
+            >
+              <ColorPicker
+                disabled={readonly}
+                size="small"
+                showText
+                allowClear
+                format="hex"
+              />
+            </Form.Item>
+          </div>
 
           {/* 网络线配置 */}
           {renderNetworkLineConfig()}

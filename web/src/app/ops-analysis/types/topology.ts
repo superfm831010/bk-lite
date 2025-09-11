@@ -49,6 +49,8 @@ export interface TopologyNodeData {
   id?: string;
   type: string;
   name: string;
+  unit?: string;
+  decimalPlaces?: number;
   position?: Point;
   zIndex?: number; 
   logoType?: string;
@@ -79,6 +81,8 @@ export interface TopologyNodeData {
     textColor?: string;
     fontSize?: number;
     fontWeight?: string | number;
+    nameColor?: string;
+    nameFontSize?: number;
   };
 }
 
@@ -133,7 +137,7 @@ export interface PortPositions {
 
 // Hook 返回类型
 export interface UseContextMenuAndModalReturn {
-  handleEdgeConfigConfirm: (values: { lineType: 'common_line' | 'network_line'; lineName?: string }) => void;
+  handleEdgeConfigConfirm: (values: { lineType: 'common_line' | 'network_line'; lineName?: string; styleConfig?: { lineColor?: string } }) => void;
   closeEdgeConfig: () => void;
   handleMenuClick: (event: MenuClickEvent) => void;
 }
@@ -143,6 +147,9 @@ export interface EdgeData {
   id?: string;
   lineType: 'common_line' | 'network_line';
   lineName?: string;
+  styleConfig?: {
+    lineColor?: string;
+  };
   config?: any;
   sourceNode: { id: string; name: string };
   targetNode: { id: string; name: string };
@@ -232,6 +239,10 @@ export interface ToolbarProps {
   onDelete: () => void;
   onSelectMode: () => void;
   onAddText: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 // ViewConfig 表单值类型
@@ -270,6 +281,10 @@ export interface NodeConfigFormValues {
   fontSize?: number;
   lineType?: string;
   shapeType?: string;
+  nameColor?: string;
+  nameFontSize?: number;
+  unit?: string;
+  decimalPlaces?: number;
 }
 
 // Topology 组件 Props 和 Ref 类型
@@ -296,6 +311,7 @@ interface NodeAttrs {
   body?: Record<string, any>;
   image?: Record<string, any>;
   label?: Record<string, any>;
+  nameLabel?: Record<string, any>;
 }
 
 // 创建节点返回的类型

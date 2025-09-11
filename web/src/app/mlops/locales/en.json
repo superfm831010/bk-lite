@@ -19,7 +19,9 @@
     "text": "Text",
     "required": "Required",
     "btn": "Button",
-    "restart": "Restart"
+    "restart": "Restart",
+    "showThumbnail": "Show Thumbnail",
+    "hideThumbnail": "Hide Thumbnail"
   },
   "datasets": {
     "datasets": "Datasets",

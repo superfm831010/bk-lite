@@ -20,7 +20,9 @@
     "required": "必填",
     "noSearchData": "没有找到匹配的结果",
     "btn": "按钮",
-    "restart": "重启"
+    "restart": "重启",
+    "showThumbnail": "显示缩略图",
+    "hideThumbnail": "隐藏缩略图"
   },
   "datasets": {
     "datasets": "数据集",

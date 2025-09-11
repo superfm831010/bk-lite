@@ -12,6 +12,7 @@ import {
   SettingOutlined,
   DeleteOutlined,
   EditOutlined,
+  CopyOutlined,
 } from '@ant-design/icons';
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -36,6 +37,15 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 
   const getNodeEditMenu = () => (
     <Menu onClick={onMenuClick}>
+      <Menu.Item key="edit" icon={<EditOutlined />}>
+        {t('topology.editNode')}
+      </Menu.Item>
+      <Menu.Item key="copy" icon={<CopyOutlined />}>
+        {t('topology.copyNode')}
+      </Menu.Item>
+      <Menu.Item key="delete" icon={<DeleteOutlined />}>
+        {t('topology.delete')}
+      </Menu.Item>
       <Menu.Item key="bringToFront" icon={<VerticalAlignTopOutlined />}>
         {t('topology.bringToFront')}
       </Menu.Item>
@@ -56,12 +66,6 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         {t('topology.doubleArrowConnection')}
       </Menu.Item>
       <Menu.Divider />
-      <Menu.Item key="edit" icon={<EditOutlined />}>
-        {t('topology.editNode')}
-      </Menu.Item>
-      <Menu.Item key="delete" icon={<DeleteOutlined />}>
-        {t('topology.delete')}
-      </Menu.Item>
     </Menu>
   );
 
