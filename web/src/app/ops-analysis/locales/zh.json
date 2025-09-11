@@ -45,7 +45,11 @@
     "styleSettings": "样式设置",
     "filterSettings": "筛选设置",
     "chartTypeLabel": "图表类型",
-    "paramSettings": "参数设置"
+    "paramSettings": "参数设置",
+    "dataFetchFailed": "数据获取失败",
+    "unknownComponentType": "未知的组件类型",
+    "dataCannotRenderAsChart": "数据无法渲染为图表",
+    "dataFormatMismatch": "数据格式不匹配"
   },
   "dataSource": {
     "title": "数据源",

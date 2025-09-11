@@ -19,7 +19,7 @@ const serializeNodeConfig = (nodeData: any, nodeType: string) => {
   const styleConfigMapping: Record<string, string[]> = {
     'single-value': ['textColor', 'fontSize', 'backgroundColor', 'borderColor', 'nameColor', 'nameFontSize'],
     'basic-shape': ['width', 'height', 'backgroundColor', 'borderColor', 'borderWidth', 'lineType', 'shapeType'],
-    icon: ['width', 'height'],
+    icon: ['width', 'height', 'borderColor'],
     text: ['fontSize', 'fontWeight', 'textColor'],
     chart: ['width', 'height'],
   };
