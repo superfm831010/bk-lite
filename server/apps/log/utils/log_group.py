@@ -78,7 +78,23 @@ class LogGroupQueryBuilder:
         if not log_group_ids:
             return user_query, []
 
-        # 获取有效的日志分组
+        # 检查是否包含default分组 - default分组优先策略
+        if "default" in log_group_ids:
+            # default分组代表所有数据，直接使用用户查询
+            group_info = [
+                {"id": "default", "name": "Default", "status": "applied_as_default"}
+            ]
+            # 如果还有其他分组，标记为被忽略
+            if len(log_group_ids) > 1:
+                other_groups = [gid for gid in log_group_ids if gid != "default"]
+                group_info.extend([
+                    {"id": gid, "name": f"分组{gid}", "status": "ignored_due_to_default"}
+                    for gid in other_groups
+                ])
+
+            return user_query if user_query else "*", group_info
+
+        # 获取有效的日志分组（非default情况）
         valid_groups = LogGroupQueryBuilder._get_valid_groups(log_group_ids)
 
         if not valid_groups:
