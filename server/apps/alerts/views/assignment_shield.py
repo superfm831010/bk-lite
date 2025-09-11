@@ -142,7 +142,7 @@ class AlertShieldModelViewSet(ModelViewSet):
 
     @HasPermission("shield_strategy-View")
     def list(self, request, *args, **kwargs):
-        return super(AlertShieldModelViewSet).list(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
     @HasPermission("shield_strategy-Add")
     @transaction.atomic

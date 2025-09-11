@@ -13,7 +13,65 @@
   --stat-grad: linear-gradient(135deg, #1d1d1f 0%, #424242 100%);
   
   --easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  --font-system: -apple-system, BlinkMacSystemFont, sans-serif;
+  /* 跨平台字体栈 - 为不同操作系统提供最佳字体 */
+  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Droid Sans Mono", "Liberation Mono", "Menlo", "Ubuntu Mono", "Consolas", "DejaVu Sans Mono", "Courier New", monospace;
+}
+
+/* 优化字体渲染 - 针对不同操作系统 */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Windows 特定字体渲染优化 */
+@supports (-ms-ime-align: auto) {
+  * {
+    font-feature-settings: "liga" 1, "kern" 1;
+  }
+  
+  /* Windows 下确保字体权重的一致性 */
+  .heroTitleAccent {
+    font-weight: 800 !important;
+  }
+  
+  .heroSubtitle {
+    font-weight: 400 !important;
+  }
+  
+  .statValue {
+    font-weight: 700 !important;
+  }
+  
+  .button {
+    font-weight: 600 !important;
+  }
+  
+  .codeLanguage {
+    font-weight: 600 !important;
+  }
+}
+
+/* Chrome 和基于 Chromium 的浏览器优化 */
+@supports (-webkit-appearance: none) {
+  .heroTitleAccent,
+  .heroSubtitle,
+  .statValue,
+  .button,
+  .codeLanguage {
+    font-display: swap;
+  }
+}
+
+/* Firefox 特定优化 */
+@supports (-moz-appearance: none) {
+  * {
+    -moz-font-feature-settings: "liga=1, kern=1";
+    font-feature-settings: "liga" 1, "kern" 1;
+    -moz-font-language-override: normal;
+    font-language-override: normal;
+  }
 }
 
 [data-theme='dark'] {
@@ -64,7 +122,10 @@
 }
 
 .heroTitleAccent {
-  font: 800 3.75rem/1.2 var(--font-system);
+  font-family: var(--font-system);
+  font-weight: 800;
+  font-size: 3.75rem;
+  line-height: 1.2;
   letter-spacing: -0.03em;
   background: var(--accent-grad);
   -webkit-background-clip: text;
@@ -74,6 +135,8 @@
   padding: 0.1em 0;
   position: relative;
   animation: fadeInUp 0.8s var(--easing) 0.1s both;
+  /* 确保跨平台字体权重一致性 */
+  font-synthesis: weight style;
 }
 
 .heroTitleAccent::after {
@@ -91,11 +154,16 @@
 }
 
 .heroSubtitle {
-  font: 400 1.375rem/1.5 var(--font-system);
+  font-family: var(--font-system);
+  font-weight: 400;
+  font-size: 1.375rem;
+  line-height: 1.5;
   color: var(--text-sub);
   max-width: 640px;
   margin: 0 auto 2rem;
   animation: fadeInUp 0.8s var(--easing) 0.2s both;
+  /* 确保副标题字体一致性 */
+  font-synthesis: weight style;
 }
 
 .heroStats {
@@ -137,12 +205,17 @@
 }
 
 .statValue {
-  font: 700 1.25rem/1.2 var(--font-system);
+  font-family: var(--font-system);
+  font-weight: 700;
+  font-size: 1.25rem;
+  line-height: 1.2;
   margin: 0;
   background: var(--stat-grad);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  /* 确保统计数字字体权重一致 */
+  font-synthesis: weight style;
 }
 
 /* 按钮样式 */
@@ -420,10 +493,14 @@
 }
 
 .codeLanguage {
-  font: 600 0.875rem/1 var(--font-system);
+  font-family: var(--font-system);
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1;
   color: rgba(255, 255, 255, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  font-synthesis: weight style;
 }
 
 .copyButton {
@@ -469,7 +546,10 @@
 .codeContent {
   margin: 0;
   padding: 1.5rem 1.25rem;
-  font: 400 1rem/1.5 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.5;
   color: #e2e8f0;
   background: transparent;
   overflow-x: auto;
@@ -483,6 +563,9 @@
   text-align: center;
   /* 添加动画过渡效果 */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* 确保等宽字体在所有平台上一致 */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 .codeContent code {
@@ -511,9 +594,13 @@
   border-radius: 16px;
   border: 0;
   cursor: pointer;
-  font: 600 1rem/1 var(--font-system);
+  font-family: var(--font-system);
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1;
   text-decoration: none !important;
   transition: all 0.3s var(--easing);
+  font-synthesis: weight style;
 }
 
 .button--primary {
@@ -606,8 +693,8 @@
   border-color: rgba(96, 165, 250, 0.3);
 }
 
-/* 响应式设计 */
-@media (max-width: 996px) {
+/* 响应式设计 - 中等屏幕 (769px - 996px) */
+@media (max-width: 996px) and (min-width: 769px) {
   .heroBanner {
     padding: 1.5rem 0 6rem;
     min-height: 90vh;
@@ -628,7 +715,6 @@
   .quickInstall {
     margin-top: 2rem;
     padding: 0 1rem;
-    /* 在移动端允许自适应宽度 */
     width: auto;
     max-width: 100%;
   }
@@ -636,44 +722,211 @@
     font-size: 0.875rem;
     padding: 1rem;
   }
-  .versionTabs {
-    flex-direction: column;
-    width: 100%;
-    max-width: 450px;
-    gap: 6px;
-  }
-  
-  /* 移动端滑动指示器调整为垂直移动 */
-  .versionTabs::before {
-    width: calc(100% - 12px);
-    height: 70px;
-    transform: translateY(0);
-  }
-  
-  .versionTabs[data-selected="ai"]::before {
-    transform: translateY(76px); /* 70px高度 + 6px间距 */
-  }
-  
-  .versionTab {
-    /* 在移动端允许自适应宽度 */
-    width: auto;
-    min-width: auto;
-    justify-content: center;
-    height: 70px;
-  }
   .heroStats {
-    /* 在移动端允许自适应宽度 */
     width: auto;
     max-width: 100%;
   }
   .statCard {
-    /* 在移动端允许自适应宽度 */
     width: auto;
     flex: 1;
   }
+  
+  /* 中等屏幕的版本选择器仍使用垂直布局 */
+  .versionTabs {
+    flex-direction: column;
+    width: 100%;
+    max-width: 500px;
+    gap: 8px;
+    padding: 8px;
+  }
+  
+  .versionTabs::before {
+    width: calc(100% - 16px);
+    height: 80px;
+    transform: translateY(0);
+  }
+  
+  .versionTabs[data-selected="ai"]::before {
+    transform: translateY(88px); /* 80px高度 + 8px间距 */
+  }
+  
+  .versionTab {
+    width: 100%;
+    height: 80px;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: left;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+  }
+  
+  .versionIcon {
+    font-size: 2rem;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+  
+  .versionInfo {
+    align-items: flex-start;
+    text-align: left;
+    gap: 4px;
+    flex: 1;
+  }
+  
+  .versionName {
+    font-size: 1.1rem;
+  }
+  
+  .versionDesc {
+    font-size: 0.9rem;
+  }
 }
 
-@media (max-width: 768px) {
+/* iPhone Pro 系列和类似尺寸设备优化 (375px - 430px) */
+@media (max-width: 430px) and (min-width: 375px) {
+  .heroBanner {
+    padding: 1.25rem 0 5rem;
+    min-height: 85vh;
+  }
+  
+  .heroTitleAccent {
+    font-size: 2.8rem;
+    line-height: 1.15;
+    margin-bottom: 1.5rem;
+  }
+  
+  .heroSubtitle {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    padding: 0 0.5rem;
+  }
+  
+  .heroStats {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    width: auto;
+    max-width: 300px;
+    min-height: 0;
+  }
+  
+  .statCard {
+    width: 100%;
+    padding: 0.5rem;
+    text-align: center;
+  }
+  
+  .statCard:not(:last-child)::after {
+    display: none;
+  }
+  
+  .statValue {
+    font-size: 1.1rem;
+  }
+  
+  .quickInstall {
+    margin-top: 1.5rem;
+    width: auto;
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+  
+  .versionTabs {
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    gap: 8px;
+    padding: 8px;
+  }
+  
+  /* iPhone Pro 滑动指示器调整 */
+  .versionTabs::before {
+    width: calc(100% - 16px);
+    height: 85px;
+    transform: translateY(0);
+    border-radius: 10px;
+  }
+  
+  .versionTabs[data-selected="ai"]::before {
+    transform: translateY(93px); /* 85px高度 + 8px间距 */
+  }
+  
+  .versionTab {
+    width: 100%;
+    min-width: auto;
+    height: 85px;
+    padding: 1rem;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: left;
+    gap: 0.75rem;
+  }
+  
+  .versionIcon {
+    font-size: 1.8rem;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+  
+  .versionInfo {
+    align-items: flex-start;
+    text-align: left;
+    gap: 2px;
+    flex: 1;
+  }
+  
+  .versionName {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  
+  .versionDesc {
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+  
+  .codeBlock {
+    margin: 0;
+    border-radius: 16px;
+  }
+  
+  .codeContent {
+    font-size: 0.75rem;
+    padding: 0.75rem;
+    min-height: 50px;
+    line-height: 1.4;
+    word-break: break-all;
+    white-space: pre-wrap;
+    text-align: left;
+    justify-content: flex-start;
+  }
+  
+  .copyButton {
+    width: 32px;
+    height: 32px;
+    margin-right: 0.5rem;
+    border-radius: 8px;
+  }
+  
+  .copyIcon {
+    font-size: 0.9rem;
+  }
+  
+  .codeHeader {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .codeLanguage {
+    font-size: 0.75rem;
+  }
+}
+
+/* 适用于更大的移动设备和小平板 (431px - 768px) */
+@media (max-width: 768px) and (min-width: 431px) {
   .heroBanner {
     padding: 1rem 0 4rem;
     min-height: 85vh;
@@ -690,14 +943,12 @@
     gap: 1rem;
     max-width: 400px;
     margin-bottom: 2rem;
-    /* 在768px断点允许自适应宽度 */
     width: auto;
   }
   .quickInstall {
     margin-top: 1.5rem;
     max-width: 100%;
     padding: 0 1rem;
-    /* 在768px断点允许自适应宽度 */
     width: auto;
   }
   .versionTabs {
@@ -707,16 +958,14 @@
     gap: 8px;
   }
   
-  /* 768px断点滑动指示器调整 */
   .versionTabs::before {
     width: calc(100% - 16px);
-    height: auto;
-    min-height: 90px;
+    height: 90px;
     transform: translateY(0);
   }
   
   .versionTabs[data-selected="ai"]::before {
-    transform: translateY(98px); /* 90px最小高度 + 8px间距 */
+    transform: translateY(98px); /* 90px高度 + 8px间距 */
   }
   
   .versionTab {
@@ -724,13 +973,10 @@
     gap: 0.5rem;
     text-align: center;
     flex-direction: column;
-    min-height: 90px;
-    height: auto;
+    height: 90px;
     justify-content: center;
     align-items: center;
-    /* 在768px断点允许自适应宽度 */
-    width: auto;
-    min-width: auto;
+    width: 100%;
   }
   .versionIcon {
     font-size: 2rem;
@@ -766,17 +1012,101 @@
   .codeLanguage {
     font-size: 0.8125rem;
   }
-  .copyButton {
-    width: 32px;
-    height: 32px;
-    margin-right: 0.5rem;
-  }
-  .copyIcon {
-    font-size: 0.9rem;
-  }
   .codeContent {
     font-size: 0.8125rem;
     padding: 0.875rem;
+  }
+}
+
+/* 适用于更小的设备 (最大374px) */
+@media (max-width: 374px) {
+  .heroBanner {
+    padding: 1rem 0 3rem;
+    min-height: 80vh;
+  }
+  
+  .heroTitleAccent {
+    font-size: 2.4rem;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+  }
+  
+  .heroSubtitle {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    padding: 0 0.5rem;
+  }
+  
+  .heroStats {
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    width: auto;
+    max-width: 280px;
+  }
+  
+  .statCard {
+    width: 100%;
+    padding: 0.4rem;
+  }
+  
+  .statValue {
+    font-size: 1rem;
+  }
+  
+  .quickInstall {
+    margin-top: 1rem;
+    padding: 0 0.75rem;
+  }
+  
+  .versionTabs {
+    gap: 6px;
+    padding: 6px;
+  }
+  
+  .versionTabs::before {
+    width: calc(100% - 12px);
+    height: 75px;
+  }
+  
+  .versionTabs[data-selected="ai"]::before {
+    transform: translateY(81px); /* 75px高度 + 6px间距 */
+  }
+  
+  .versionTab {
+    height: 75px;
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+  
+  .versionIcon {
+    font-size: 1.6rem;
+    width: 28px;
+    height: 28px;
+  }
+  
+  .versionName {
+    font-size: 0.9rem;
+  }
+  
+  .versionDesc {
+    font-size: 0.75rem;
+  }
+  
+  .codeContent {
+    font-size: 0.7rem;
+    padding: 0.6rem;
+    line-height: 1.3;
+  }
+  
+  .copyButton {
+    width: 28px;
+    height: 28px;
+    margin-right: 0.4rem;
+  }
+  
+  .copyIcon {
+    font-size: 0.8rem;
   }
 }
 
