@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import Heading from '@theme/Heading';
 import styles from './styles.module.css';
-import { FaHelicopter, FaTicketAlt, FaDatabase, FaChartBar, FaClipboardList, FaBell, FaLaptopCode, FaCogs, FaChartLine, FaServer, FaBrain, FaFlask } from 'react-icons/fa';
+import { FaUserShield, FaTicketAlt, FaDatabase, FaChartBar, FaClipboardList, FaBell, FaLaptopCode, FaCogs, FaChartLine, FaServer, FaBrain, FaFlask } from 'react-icons/fa';
 import { RiMindMap } from 'react-icons/ri';
 import { HiOutlineDatabase } from 'react-icons/hi';
 
@@ -19,6 +19,30 @@ const FeatureList = [
     ),
   },
   {
+    title: '系统管理',
+    icon: <FaUserShield color="var(--ifm-color-primary)" />,
+    gradient: 'gradient-8',
+    badge: '访问控制',
+    highlights: ['多租户管理', '权限管控','审计合规'],
+    description: (
+      <>
+        支持多租户管理与精细化权限控制，结合审计追踪，统一构建访问控制体系，全面保障系统的安全性与合规性。
+      </>
+    ),
+  },  
+  {
+    title: '控制台',
+    icon: <FaLaptopCode color="var(--ifm-color-primary)" />,
+    gradient: 'gradient-7',
+    badge: '智能门户',
+    highlights: ['智能协同', '个性化门户','通知聚合'],
+    description: (
+      <>
+        提供统一的应用入口与个性化门户，聚合多源通知，构建智能门户，提升运维与管理的协同效率。
+      </>
+    ),
+  },  
+  {
     title: 'CMDB',
     icon: <HiOutlineDatabase color="var(--ifm-color-primary)" />,
     gradient: 'gradient-3',
@@ -30,6 +54,19 @@ const FeatureList = [
       </>
     ),
   },   
+  {
+    title: '节点管理',
+    icon: <FaServer color="var(--ifm-color-primary)" />,
+    gradient: 'gradient-10',
+    badge: '集群管理',
+    metric: '节点运维',
+    highlights: ['进程托管', '探针分发'],
+    description: (
+      <>
+        支持节点探针的生命周期管理与批量操作，简化集群环境的基础设施管理。
+      </>
+    ),
+  },  
   {
     title: '监控中心',
     icon: <FaChartBar color="var(--ifm-color-primary)" />,
@@ -97,49 +134,6 @@ const FeatureList = [
       </>
     ),
   },
-
-  {
-    title: 'Console',
-    icon: <FaLaptopCode color="var(--ifm-color-primary)" />,
-    gradient: 'gradient-7',
-    badge: '控制台',
-    metric: '可视化',
-    highlights: ['统一操作', '简化流程'],
-    description: (
-      <>
-        统一的可视化控制台，聚合常用操作与管理入口，简化日常运维操作。
-      </>
-    ),
-  },
-  {
-    title: '系统管理',
-    icon: <FaCogs color="var(--ifm-color-primary)" />,
-    gradient: 'gradient-8',
-    badge: '系统治理',
-    metric: '安全管控',
-    highlights: ['权限管理', '审计日志'],
-    description: (
-      <>
-        提供用户、权限、组织架构与审计日志等功能，支撑系统治理与安全管控。
-      </>
-    ),
-  },
-
-
-  {
-    title: '节点管理',
-    icon: <FaServer color="var(--ifm-color-primary)" />,
-    gradient: 'gradient-10',
-    badge: '集群管理',
-    metric: '节点运维',
-    highlights: ['进程托管', '探针分发'],
-    description: (
-      <>
-        支持节点探针的生命周期管理与批量操作，简化集群环境的基础设施管理。
-      </>
-    ),
-  },
-
   {
     title: 'MLOps',
     icon: <FaBrain color="var(--ifm-color-primary)" />,

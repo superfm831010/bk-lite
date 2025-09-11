@@ -2,11 +2,11 @@
 
 /* 定义跨平台字体变量 */
 :root {
-  /* 系统字体栈 - 为不同平台提供最佳字体支持 */
-  --ifm-font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  /* 系统字体栈 - 优先使用苹果平方字体，为不同平台提供最佳字体支持 */
+  --ifm-font-family-base: "PingFang SC", "PingFang TC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans CJK SC", "Noto Sans", "Liberation Sans", "Hiragino Sans GB", "Source Han Sans SC", "SimHei", "STHeiti", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   
-  /* 等宽字体栈 */
-  --ifm-font-family-monospace: "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Droid Sans Mono", "Liberation Mono", "Menlo", "Ubuntu Mono", "Consolas", "DejaVu Sans Mono", "Courier New", monospace;
+  /* 等宽字体栈 - 优先使用苹果的等宽字体 */
+  --ifm-font-family-monospace: "SF Mono", "PingFang SC", "PingFang TC", Monaco, "Menlo", Inconsolata, "Roboto Mono", "Droid Sans Mono", "Liberation Sans", "Ubuntu Mono", "Consolas", "DejaVu Sans Mono", "Courier New", monospace;
 }
 
 /* 全局字体渲染优化 */
@@ -15,6 +15,9 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "liga" 1, "kern" 1;
+  /* 优化苹果平方字体的显示效果 */
+  font-variant-ligatures: common-ligatures;
+  font-variant-numeric: proportional-nums;
 }
 
 /* 确保所有文本元素都使用正确的字体渲染 */
@@ -28,6 +31,26 @@ button, input, textarea, select,
   font-synthesis: weight style;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 苹果平方字体专属优化 */
+@supports (font-family: "PingFang SC") {
+  * {
+    /* 苹果平方字体的最佳字重设置 */
+    font-weight: 400;
+  }
+  
+  /* 标题使用苹果平方字体的中等字重 */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  
+  /* 导航栏使用苹果平方字体的常规字重 */
+  .navbar__title,
+  .navbar__item {
+    font-weight: 450;
+  }
 }
 
 /* Windows 特定优化 */
@@ -57,6 +80,7 @@ button, input, textarea, select,
 @media (max-width: 768px) {
   html {
     -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
