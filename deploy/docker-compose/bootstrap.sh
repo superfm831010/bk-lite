@@ -374,8 +374,8 @@ log "INFO" "拉取最新的镜像..."
 ${DOCKER_COMPOSE_CMD} pull
 
 # 按照特定顺序启动服务
-log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, FalkorDB, VictoriaLogs, MLFlow, NATS Executor, Vector)..."
-${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics falkordb victoria-logs mlflow nats-executor vector
+log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, FalkorDB, VictoriaLogs, Minio, MLFlow, NATS Executor, Vector)..."
+${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics falkordb victoria-logs minio mlflow nats-executor vector
 
 # 创建 JetStream - 使用正确的网络名称
 log "INFO" "创建JetStream..."
@@ -394,10 +394,10 @@ sleep 10
 
 log "INFO" "开始初始化内置插件"
 $DOCKER_COMPOSE_CMD exec -T server /bin/bash -s <<EOF
-uv run controller_package_init --pk_version latest --file_path /apps/pkgs/controller/fusion-collectors.zip
-uv run collector_package_init --os linux --object Telegraf --pk_version latest --file_path /apps/pkgs/collector/telegraf
-uv run collector_package_init --os linux --object Vector --pk_version latest --file_path /apps/pkgs/collector/vector
-uv run collector_package_init --os linux --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/nats-executor
+uv run manage.py controller_package_init --pk_version latest --file_path /apps/pkgs/controller/fusion-collectors.zip
+uv run manage.py collector_package_init --os linux --object Telegraf --pk_version latest --file_path /apps/pkgs/collector/telegraf
+uv run manage.py collector_package_init --os linux --object Vector --pk_version latest --file_path /apps/pkgs/collector/vector
+uv run manage.py collector_package_init --os linux --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/nats-executor
 EOF
 
 log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_WEB_PORT 访问系统"
