@@ -25,7 +25,7 @@ class AggregationRulesViewSet(viewsets.ModelViewSet):
 
     @HasPermission("correlation_rules-View")
     def list(self, request, *args, **kwargs):
-        return super(AggregationRulesViewSet).list(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         """获取聚合规则查询集，预加载关联规则数据"""
