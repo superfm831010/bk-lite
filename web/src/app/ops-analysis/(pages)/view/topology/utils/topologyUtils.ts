@@ -93,6 +93,7 @@ export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: num
   const nodeData = node.getData();
   const styleConfig = nodeData?.styleConfig || {};
   const fontSize = styleConfig.fontSize || NODE_DEFAULTS.SINGLE_VALUE_NODE.fontSize;
+  const hasName = !!(nodeData?.name && nodeData.name.trim());
 
   // 计算文本宽度
   const textWidth = calculateTextWidth(text, fontSize);
@@ -101,12 +102,22 @@ export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: num
   const targetWidth = Math.max(textWidth + padding, minWidth);
   const currentSize = node.getSize();
 
-  // 只有当宽度变化较大时才调整（避免频繁微调）
-  if (Math.abs(targetWidth - currentSize.width) > 10) {
-    node.resize(targetWidth, currentSize.height);
+  // 如果有名称，确保节点高度足够容纳内容和名称（都在边框内）
+  const nameFontSize = styleConfig.nameFontSize || 12;
+  const minHeightForName = hasName ? Math.max(80, fontSize + nameFontSize + 24) : NODE_DEFAULTS.SINGLE_VALUE_NODE.height;
+  const targetHeight = Math.max(minHeightForName, NODE_DEFAULTS.SINGLE_VALUE_NODE.height);
+
+  const needsWidthUpdate = Math.abs(targetWidth - currentSize.width) > 10;
+  const needsHeightUpdate = Math.abs(targetHeight - currentSize.height) > 5;
+
+  if (needsWidthUpdate || needsHeightUpdate) {
+    const newWidth = needsWidthUpdate ? targetWidth : currentSize.width;
+    const newHeight = needsHeightUpdate ? targetHeight : currentSize.height;
+
+    node.resize(newWidth, newHeight);
 
     // 更新端口配置以适应新尺寸
-    const newPortConfig = createPortConfig(PORT_DEFAULTS.FILL_COLOR, { width: targetWidth, height: currentSize.height });
+    const newPortConfig = createPortConfig(PORT_DEFAULTS.FILL_COLOR, { width: newWidth, height: newHeight });
     node.prop('ports', newPortConfig);
 
     // 更新节点数据中的配置
@@ -114,7 +125,8 @@ export const adjustSingleValueNodeSize = (node: any, text: string, minWidth: num
       ...nodeData,
       styleConfig: {
         ...styleConfig,
-        width: targetWidth,
+        width: newWidth,
+        height: newHeight,
       }
     };
     node.setData(updatedNodeData);

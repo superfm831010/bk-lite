@@ -275,8 +275,11 @@
 }
 
 .iconEmoji {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cardBadge {
@@ -672,7 +675,7 @@
   }
   
   .iconEmoji {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
   
   .featureTitle {
@@ -737,7 +740,7 @@
   }
   
   .iconEmoji {
-    font-size: 1.2rem;
+    font-size: 1.0rem;
   }
   
   .featureTitle {

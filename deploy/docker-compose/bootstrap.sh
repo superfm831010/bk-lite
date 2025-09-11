@@ -63,10 +63,10 @@ if [[ $OPSPILOT_ENABLED == "true" ]]; then
     export INSTALL_APPS="${INSTALL_APPS},opspilot"
     log "INFO" "启用 OpsPilot 功能，安装应用列表: ${INSTALL_APPS}"
     # 使用 compose/ops_pilot.yaml 文件
-    export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/ops_pilot.yaml config --no-interpolate"
+    export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/ops_pilot.yaml -f compose/log.yaml config --no-interpolate"
 else
     log "INFO" "禁用 OpsPilot 功能，安装应用列表: ${INSTALL_APPS}"
-    export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml config --no-interpolate"
+    export COMPOSE_CMD="${DOCKER_COMPOSE_CMD} -f compose/infra.yaml -f compose/monitor.yaml -f compose/server.yaml -f compose/web.yaml -f compose/log.yaml config --no-interpolate"
 fi
 
 # Function to validate environment variables
@@ -247,6 +247,7 @@ DOCKER_IMAGE_NATS_EXECUTOR=$(add_mirror_prefix "bklite/nats-executor")
 DOCKER_IMAGE_FALKORDB=$(add_mirror_prefix "falkordb/falkordb:v4.12.4")
 DOCKER_IMAGE_PGVECTOR=$(add_mirror_prefix "pgvector/pgvector:pg15")
 DOCKER_IMAGE_TELEGRAF=$(add_mirror_prefix "bklite/telegraf:latest")
+DOCKER_IMAGE_VECTOR=$(add_mirror_prefix "timberio/vector:0.48.0-debian")
 # 采集器镜像
 # TODO: 不同OS/架构支持
 export DOCKER_IMAGE_FUSION_COLLECTOR=$(add_mirror_prefix "bklite/fusion-collector:latest")
@@ -309,7 +310,7 @@ authorization {
       user: "${NATS_MONITOR_USERNAME}"
       password: "${NATS_MONITOR_PASSWORD}"
       permissions: {
-        publish = ["metrics.>"]
+        publish = ["metrics.>","vector"]
         subscribe = []
       }
     }
@@ -360,6 +361,7 @@ DOCKER_IMAGE_MLFLOW=${DOCKER_IMAGE_MLFLOW}
 DOCKER_IMAGE_NATS_EXECUTOR=${DOCKER_IMAGE_NATS_EXECUTOR}
 DOCKER_IMAGE_FALKORDB=${DOCKER_IMAGE_FALKORDB}
 DOCKER_IMAGE_PGVECTOR=${DOCKER_IMAGE_PGVECTOR}
+DOCKER_IMAGE_VECTOR=${DOCKER_IMAGE_VECTOR}
 
 INSTALL_APPS="${INSTALL_APPS}"
 EOF
@@ -372,8 +374,8 @@ log "INFO" "拉取最新的镜像..."
 ${DOCKER_COMPOSE_CMD} pull
 
 # 按照特定顺序启动服务
-log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, FalkorDB, VictoriaLogs, MLFlow, NATS Executor)..."
-${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics falkordb victoria-logs mlflow nats-executor
+log "INFO" "启动基础服务 (Traefik, Redis, NATS, VictoriaMetrics, FalkorDB, VictoriaLogs, Minio, MLFlow, NATS Executor, Vector)..."
+${DOCKER_COMPOSE_CMD} up -d traefik redis nats victoria-metrics falkordb victoria-logs minio mlflow nats-executor vector
 
 # 创建 JetStream - 使用正确的网络名称
 log "INFO" "创建JetStream..."
@@ -392,10 +394,10 @@ sleep 10
 
 log "INFO" "开始初始化内置插件"
 $DOCKER_COMPOSE_CMD exec -T server /bin/bash -s <<EOF
-python manage.py controller_package_init --pk_version latest --file_path /apps/pkgs/controller/fusion-collectors.zip
-python manage.py collector_package_init --os linux --object Telegraf --pk_version latest --file_path /apps/pkgs/collector/telegraf
-python manage.py collector_package_init --os linux --object Vector --pk_version latest --file_path /apps/pkgs/collector/vector
-python manage.py collector_package_init --os linux --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/nats-executor
+uv run manage.py controller_package_init --pk_version latest --file_path /apps/pkgs/controller/fusion-collectors.zip
+uv run manage.py collector_package_init --os linux --object Telegraf --pk_version latest --file_path /apps/pkgs/collector/telegraf
+uv run manage.py collector_package_init --os linux --object Vector --pk_version latest --file_path /apps/pkgs/collector/vector
+uv run manage.py collector_package_init --os linux --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/nats-executor
 EOF
 
 log "SUCCESS" "部署成功，访问 http://$HOST_IP:$TRAEFIK_WEB_PORT 访问系统"

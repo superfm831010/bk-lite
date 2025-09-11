@@ -45,7 +45,11 @@
     "styleSettings": "样式设置",
     "filterSettings": "筛选设置",
     "chartTypeLabel": "图表类型",
-    "paramSettings": "参数设置"
+    "paramSettings": "参数设置",
+    "dataFetchFailed": "数据获取失败",
+    "unknownComponentType": "未知的组件类型",
+    "dataCannotRenderAsChart": "数据无法渲染为图表",
+    "dataFormatMismatch": "数据格式不匹配"
   },
   "dataSource": {
     "title": "数据源",
@@ -102,7 +106,7 @@
   },
   "topology": {
     "edgeView": "连线视图",
-    "edgeConfig": "连线配置",
+    "edgeSetting": "连线配置",
     "lineType": "线条类型",
     "lineName": "线条名称",
     "networkLine": "network_line",
@@ -129,14 +133,22 @@
     "noArrowConnection": "无箭头连接",
     "singleArrowConnection": "单向连接",
     "doubleArrowConnection": "双向连接",
-    "editNode": "编辑节点",
+    "editNode": "编辑",
+    "copyNode": "复制",
+    "nodeCopySuccess": "节点复制成功",
+    "nodeCopyFailed": "复制节点失败",
     "configureEdge": "配置边",
     "delete": "删除",
     "minimap": "缩略图",
+    "styleSettings": "样式配置",
+    "undo": "撤销(Ctrl+Z)",
+    "redo": "恢复(Ctrl+Y)",
+    "edgeConfig": {
+        "lineColor": "线条颜色"
+    },
     "nodeConfig": {
         "dataSource": "数据源",
         "dataSettings": "数据设置",
-        "nodeStyle": "节点样式",
         "basicSettings": "基础设置",
         "logoType": "Logo类型",
         "default": "默认",
@@ -157,7 +169,11 @@
         "rectangle": "矩形",
         "circle": "圆形",
         "noColor": "无颜色",
+        "nameColor": "名称颜色",
+        "nameFontSize": "名称字体大小",
         "name": "名称",
+        "unit": "单位",
+        "decimalPlaces": "保留位数",
         "confirm": "确认",
         "close": "关闭",
         "cancel": "取消",
