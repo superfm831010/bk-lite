@@ -44,7 +44,11 @@
     "styleSettings": "Style Settings",
     "filterSettings": "Filter Settings",
     "chartTypeLabel": "Chart Type",
-    "paramSettings": "Parameter Settings"
+    "paramSettings": "Parameter Settings",
+    "dataFetchFailed": "Data fetch failed",
+    "unknownComponentType": "Unknown component type",
+    "dataCannotRenderAsChart": "Data cannot be rendered as chart",
+    "dataFormatMismatch": "Data format mismatch"
   },
   "dataSource": {
     "title": "Data Source",

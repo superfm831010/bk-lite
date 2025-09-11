@@ -92,7 +92,15 @@ const AssetSearch = () => {
       });
       const tabItems: TabItem[] = getAssetList(data);
       const defaultTab = tabItems[0]?.key || '';
-      if (!defaultTab) {
+
+      if (!defaultTab || !data.length) {
+        // 清空所有相关数据
+        setInstData([]);
+        setItems([]);
+        setPropertyList([]);
+        setActiveTab('');
+        setInstDetail([]);
+        setActiveInstItem(-1);
         setPageLoading(false);
         return;
       }
@@ -100,8 +108,16 @@ const AssetSearch = () => {
       setPropertyList(attrList);
       setInstData(tabItems);
       setActiveTab(defaultTab);
+      setActiveInstItem(-1); 
       setPageLoading(false);
     } catch {
+      // 搜索失败时也要清空数据
+      setInstData([]);
+      setItems([]);
+      setPropertyList([]);
+      setActiveTab('');
+      setInstDetail([]);
+      setActiveInstItem(-1);
       setPageLoading(false);
     }
   };
