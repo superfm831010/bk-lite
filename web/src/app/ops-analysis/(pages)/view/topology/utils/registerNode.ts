@@ -243,6 +243,10 @@ const createIconNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData
     width: nodeConfig.styleConfig?.width,
     height: nodeConfig.styleConfig?.height,
     attrs: {
+      body: {
+        stroke: nodeConfig.styleConfig?.borderColor || NODE_DEFAULTS.ICON_NODE.borderColor,
+        strokeWidth: NODE_DEFAULTS.ICON_NODE.strokeWidth
+      },
       image: {
         'xlink:href': logoUrl
       }
@@ -420,6 +424,10 @@ export const createNodeByType = (nodeConfig: TopologyNodeData): CreatedNodeConfi
 const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   const logoUrl = getIconUrl(nodeConfig);
   node.setAttrs({
+    body: {
+      stroke: nodeConfig.styleConfig?.borderColor || NODE_DEFAULTS.ICON_NODE.borderColor,
+      strokeWidth: NODE_DEFAULTS.ICON_NODE.strokeWidth
+    },
     image: {
       'xlink:href': logoUrl
     },

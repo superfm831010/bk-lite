@@ -704,6 +704,15 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
           </>
         )}
 
+        {nodeType === 'icon' && (
+          <Form.Item
+            label={t('topology.nodeConfig.borderColor')}
+            name="borderColor"
+          >
+            {renderColorPicker()}
+          </Form.Item>
+        )}
+
         {nodeType === 'basic-shape' && (
           <>
             <Form.Item
