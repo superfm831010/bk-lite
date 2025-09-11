@@ -552,7 +552,7 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
         };
 
         setNodes((nds) => nds.concat(newNode));
-        message.success(`${t('chatflow.messages.nodeAdded')} ${getNodeLabel(type)}`);
+        // message.success(`${t('chatflow.messages.nodeAdded')} ${getNodeLabel(type)}`);
         
       } catch (error) {
         console.error('拖拽放置错误:', error);
