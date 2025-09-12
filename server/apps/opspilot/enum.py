@@ -14,6 +14,7 @@ class ChannelChoices(models.TextChoices):
 class BotTypeChoice(models.IntegerChoices):
     PILOT = (1, _("Pilot"))
     LOBE = (2, _("LobeChat"))
+    CHAT_FLOW = (3, _("ChatFlow"))
 
 
 class SkillTypeChoices(models.IntegerChoices):
