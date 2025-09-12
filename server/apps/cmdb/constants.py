@@ -353,3 +353,4 @@ PERMISSION_TASK = "task"  # 采集任务
 PERMISSION_MODEL = "model"  # 模型
 OPERATE = "Operate"
 VIEW = "View"
+APP_NAME = "cmdb"
