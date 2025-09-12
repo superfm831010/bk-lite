@@ -149,6 +149,9 @@
       "hiddenFields": "可选字段",
       "searchError": "日志分组不能为空"
     },
+    "analysis": {
+      "dashboard": "仪表盘"
+    },
     "integration": {
       "interval": "间隔",
       "intervalDes": "收集监控数据的时间间隔（单位：秒）。",
