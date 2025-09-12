@@ -1,12 +1,12 @@
 import { TableDataItem } from '@/app/log/types';
-// import { useTranslation } from '@/utils/i18n';
+import { useTranslation } from '@/utils/i18n';
 import { v4 as uuidv4 } from 'uuid';
 
 export const usePacketbeatDashboard = () => {
-  //   const { t } = useTranslation();
+  const { t } = useTranslation();
 
   return {
-    name: '内置packetbeat基础视图',
+    name: t('log.analysis.packetbeat.dashboardName'),
     desc: '',
     id: '1',
     filters: {},
@@ -18,10 +18,10 @@ export const usePacketbeatDashboard = () => {
         x: 0,
         y: 0,
         i: uuidv4(),
-        name: '活跃连接数',
+        name: t('log.analysis.packetbeat.activeConnections'),
         moved: false,
         static: false,
-        description: '当前正在活跃的 TCP/UDP 连接数',
+        description: t('log.analysis.packetbeat.activeConnectionsDesc'),
         valueConfig: {
           chartType: 'single',
           dataSource: 1,
@@ -38,10 +38,10 @@ export const usePacketbeatDashboard = () => {
         x: 8,
         y: 0,
         i: uuidv4(),
-        name: '网络总流量',
+        name: t('log.analysis.packetbeat.totalNetworkTraffic'),
         moved: false,
         static: false,
-        description: '网络总流量（入站 + 出站）字节总和',
+        description: t('log.analysis.packetbeat.totalNetworkTrafficDesc'),
         valueConfig: {
           chartType: 'single',
           dataSource: 1,
@@ -58,10 +58,10 @@ export const usePacketbeatDashboard = () => {
         x: 4,
         y: 0,
         i: uuidv4(),
-        name: 'HTTP 5xx 错误数',
+        name: t('log.analysis.packetbeat.http5xxErrors'),
         moved: false,
         static: false,
-        description: 'HTTP 5xx 错误总数，用于服务健康监控',
+        description: t('log.analysis.packetbeat.http5xxErrorsDesc'),
         valueConfig: {
           chartType: 'single',
           dataSource: 1,
@@ -78,10 +78,10 @@ export const usePacketbeatDashboard = () => {
         x: 0,
         y: 2,
         i: uuidv4(),
-        name: '网络流量趋势',
+        name: t('log.analysis.packetbeat.networkTrafficTrend'),
         moved: false,
         static: false,
-        description: 'HTTP 5xx 错误总数，用于服务健康监控',
+        description: t('log.analysis.packetbeat.networkTrafficTrendDesc'),
         valueConfig: {
           chartType: 'line',
           dataSource: 1,
@@ -98,10 +98,10 @@ export const usePacketbeatDashboard = () => {
         x: 6,
         y: 2,
         i: uuidv4(),
-        name: 'HTTP 请求趋势',
+        name: t('log.analysis.packetbeat.httpRequestTrend'),
         moved: false,
         static: false,
-        description: 'http各个方法的请求数',
+        description: t('log.analysis.packetbeat.httpRequestTrendDesc'),
         valueConfig: {
           chartType: 'line',
           dataSource: 1,
@@ -118,10 +118,10 @@ export const usePacketbeatDashboard = () => {
         x: 0,
         y: 5,
         i: uuidv4(),
-        name: '网络流量top10',
+        name: t('log.analysis.packetbeat.networkTrafficTop10'),
         moved: false,
         static: false,
-        description: '排查主机间流量热点、识别高流量对端或异常流量源',
+        description: t('log.analysis.packetbeat.networkTrafficTop10Desc'),
         valueConfig: {
           chartType: 'table',
           dataSource: 1,
@@ -154,10 +154,10 @@ export const usePacketbeatDashboard = () => {
         x: 6,
         y: 5,
         i: uuidv4(),
-        name: 'HTTP 服务流量top10',
+        name: t('log.analysis.packetbeat.httpServiceTrafficTop10'),
         moved: false,
         static: false,
-        description: 'HTTP 服务负载分析、发现大流量请求的客户端/服务端',
+        description: t('log.analysis.packetbeat.httpServiceTrafficTop10Desc'),
         valueConfig: {
           chartType: 'table',
           dataSource: 1,
@@ -190,10 +190,10 @@ export const usePacketbeatDashboard = () => {
         x: 0,
         y: 9,
         i: uuidv4(),
-        name: '异常流量日志',
+        name: t('log.analysis.packetbeat.abnormalTrafficLogs'),
         moved: false,
         static: false,
-        description: '大流量连接记录，用于快速发现异常流量或潜在攻击',
+        description: t('log.analysis.packetbeat.abnormalTrafficLogsDesc'),
         valueConfig: {
           chartType: 'message',
           dataSource: 1,
@@ -246,10 +246,10 @@ export const usePacketbeatDashboard = () => {
         x: 6,
         y: 9,
         i: uuidv4(),
-        name: 'HTTP 大请求记录',
+        name: t('log.analysis.packetbeat.httpLargeRequestLogs'),
         moved: false,
         static: false,
-        description: '大请求流量 HTTP 请求，用于流量异常分析',
+        description: t('log.analysis.packetbeat.httpLargeRequestLogsDesc'),
         valueConfig: {
           chartType: 'message',
           dataSource: 1,

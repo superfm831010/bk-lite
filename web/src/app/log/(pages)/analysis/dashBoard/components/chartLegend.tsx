@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import EllipsisWithTooltip from '@/components/ellipsis-with-tooltip';
 import { randomColorForLegend } from '@/app/log/utils/randomColorForChart';
+import { useTranslation } from '@/utils/i18n';
 
 interface LegendItem {
   name: string;
@@ -20,6 +21,7 @@ const ChartLegend: React.FC<ChartLegendProps> = ({
   colors = randomColorForLegend(),
   onToggleSelect,
 }) => {
+  const { t } = useTranslation();
   const [selectedLegend, setSelectedLegend] = useState<string[]>([]);
 
   const legendData = data
@@ -111,7 +113,7 @@ const ChartLegend: React.FC<ChartLegendProps> = ({
           <thead>
             <tr>
               <th className="text-left px-2 py-1.5 text-xs text-gray-600 border-b border-gray-200 bg-gray-50">
-                维度
+                {t('log.analysis.dimension')}
                 <span className="text-gray-400">({legendData.length})</span>
               </th>
             </tr>
