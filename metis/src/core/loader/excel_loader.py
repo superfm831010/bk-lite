@@ -55,16 +55,7 @@ class ExcelLoader():
         # 返回结果
         return result
 
-    def load(self):
-        if self.mode == 'full':
-            return self.load_full_content()
-        elif self.mode == 'excel_header_row_parse':
-            return self.title_row_struct_load()
-        else:
-            raise ValueError(
-                f"Unsupported mode: {self.mode}. Supported modes are 'full' and 'excel_header_row_parse'.")
-
-    def load_full_content(self):
+    def excel_full_content_parse_load(self):
         # 使用pandas读取excel文件的所有sheet
         sheets = pd.read_excel(self.path, sheet_name=None)
 
@@ -72,12 +63,50 @@ class ExcelLoader():
         result = []
 
         for sheet_name, df in sheets.items():
-            logger.info(f"Excel文件[{self.path}]的Sheet[{sheet_name}]的全内容将被解析")
+            logger.info(
+                f"Excel文件[{self.path}]的Sheet[{sheet_name}]将被解析为单个Document")
 
-            # 读取Excel 的全内容
+            # 读取Excel Sheet的全内容
             full_content = self.dataframe_to_excel_format_string(df)
             result.append(
-                Document(f'{sheet_name} {full_content}', metadata={"format": "table", "sheet": sheet_name}))
+                Document(full_content, metadata={"format": "table", "sheet": sheet_name, "source": self.path}))
+
+        # 返回结果
+        return result
+
+    def load(self):
+        if self.mode == 'full':
+            return self.load_full_content()
+        elif self.mode == 'excel_header_row_parse':
+            return self.title_row_struct_load()
+        elif self.mode == 'excel_full_content_parse':
+            return self.excel_full_content_parse_load()
+        else:
+            raise ValueError(
+                f"Unsupported mode: {self.mode}. Supported modes are 'full', 'excel_header_row_parse' and 'excel_full_content_parse'.")
+
+    def load_full_content(self):
+        # 使用pandas读取excel文件的所有sheet
+        sheets = pd.read_excel(self.path, sheet_name=None)
+
+        # 初始化一个空字符串来存储所有sheet的内容
+        all_sheets_content = ""
+        sheet_names = []
+
+        for sheet_name, df in sheets.items():
+            logger.info(f"Excel文件[{self.path}]的Sheet[{sheet_name}]的全内容将被解析")
+            sheet_names.append(sheet_name)
+
+            # 读取Excel Sheet的全内容
+            sheet_content = self.dataframe_to_excel_format_string(df)
+            all_sheets_content += f"{sheet_name}\n{sheet_content}\n\n"
+
+        # 创建单个Document包含所有Sheet内容
+        result = [Document(all_sheets_content.strip(), metadata={
+            "format": "table",
+            "sheets": sheet_names,
+            "source": self.path
+        })]
 
         # 返回结果
         return result
