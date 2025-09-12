@@ -31,12 +31,13 @@ const getStatusText = (value: string, TrainText: Record<string, string>) => {
 const TrainTask = () => {
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
-  const { getAnomalyDatasetsList  } = useMlopsManageApi();
+  const { getAnomalyDatasetsList, getRasaDatasetsList } = useMlopsManageApi();
   const {
     getAnomalyTaskList,
     deleteAnomalyTrainTask,
     startAnomalyTrainTask,
     getRasaPipelines,
+    deleteRasaPipelines
   } = useMlopsTaskApi();
   const modalRef = useRef<ModalRef>(null);
   const [tableData, setTableData] = useState<TrainJob[]>([]);
@@ -238,7 +239,18 @@ const TrainTask = () => {
         }));
       } else if (activeTab === 'rasa') {
         const data = await fetchTaskList();
-        setTableData(data);
+        const _data = data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          dataset_count: item?.dataset_count,
+          dataset_nameas: item?.dataset_names,
+          datasets: item.datasets,
+          creator: item?.created_by,
+          created_at: item?.created_at,
+          config: item?.config,
+          datasets_detail: item?.datasets_detail
+        }))
+        setTableData(_data);
         setPagination(prev => ({
           ...prev,
           total: data?.length || 0,
@@ -263,6 +275,15 @@ const TrainTask = () => {
         }
       }) || [];
       setDatasetOptions(items);
+    } else if (activeTab === 'rasa') {
+      const data = await getRasaDatasetsList({});
+      const items = data.map((item: DataSet) => {
+        return {
+          value: item.id,
+          label: item.name
+        }
+      }) || [];
+      setDatasetOptions(items);
     }
   };
 
@@ -278,7 +299,7 @@ const TrainTask = () => {
         items,
         count
       }
-    } else if(activeTab === 'rasa') {
+    } else if (activeTab === 'rasa') {
       const data = await getRasaPipelines({});
       console.log(data)
       return data;
@@ -286,8 +307,11 @@ const TrainTask = () => {
   }, [getAnomalyTaskList]);
 
   const openDrawer = (record: any) => {
-    setSelectTrain(record?.id);
-    setDrawOpen(true);
+    const [key] = selectedKeys;
+    if (key === 'anomaly') {
+      setSelectTrain(record?.id);
+      setDrawOpen(true);
+    }
   };
 
   const handleAdd = () => {
@@ -332,8 +356,13 @@ const TrainTask = () => {
   };
 
   const onDelete = async (record: TrainJob) => {
+    const [key] = selectedKeys;
     try {
-      await deleteAnomalyTrainTask(record.id as string)
+      if (key === 'anomaly') {
+        await deleteAnomalyTrainTask(record.id as string);
+      } else if (key === 'rasa') {
+        await deleteRasaPipelines(record.id as string);
+      }
     } catch (e) {
       console.log(e);
     } finally {
