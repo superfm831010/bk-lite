@@ -14,18 +14,7 @@ import nats_client
 from apps.core.backends import cache
 from apps.core.logger import system_mgmt_logger as logger
 from apps.system_mgmt.guest_menus import CMDB_MENUS, MONITOR_MENUS, OPSPILOT_GUEST_MENUS
-from apps.system_mgmt.models import (
-    App,
-    Channel,
-    ChannelChoices,
-    Group,
-    GroupDataRule,
-    LoginModule,
-    Menu,
-    Role,
-    User,
-    UserRule,
-)
+from apps.system_mgmt.models import App, Channel, ChannelChoices, Group, GroupDataRule, LoginModule, Menu, Role, User, UserRule
 from apps.system_mgmt.models.system_settings import SystemSettings
 from apps.system_mgmt.services.role_manage import RoleManage
 from apps.system_mgmt.utils.channel_utils import send_by_bot, send_email
@@ -202,9 +191,7 @@ def search_users(query_params):
     page = int(query_params.get("page", 1))
     page_size = int(query_params.get("page_size", 10))
     search = query_params.get("search", "")
-    queryset = User.objects.filter(
-        Q(username__icontains=search) | Q(display_name__icontains=search) | Q(email__icontains=search)
-    )
+    queryset = User.objects.filter(Q(username__icontains=search) | Q(display_name__icontains=search) | Q(email__icontains=search))
     start = (page - 1) * page_size
     end = page * page_size
     total = queryset.count()
@@ -216,14 +203,10 @@ def search_users(query_params):
 @nats_client.register
 def init_user_default_attributes(user_id, group_name, default_group_id):
     try:
-        role_ids = list(
-            Role.objects.filter(name="guest", app__in=["opspilot", "cmdb", "monitor"]).values_list("id", flat=True)
-        )
+        role_ids = list(Role.objects.filter(name="guest", app__in=["opspilot", "cmdb", "monitor"]).values_list("id", flat=True))
         normal_role = Role.objects.get(name="normal", app="opspilot")
         user = User.objects.get(id=user_id)
-        top_group, _ = Group.objects.get_or_create(
-            name=os.getenv("DEFAULT_GROUP_NAME", "Guest"), parent_id=0, defaults={"description": ""}
-        )
+        top_group, _ = Group.objects.get_or_create(name=os.getenv("DEFAULT_GROUP_NAME", "Guest"), parent_id=0, defaults={"description": ""})
         if Group.objects.filter(parent_id=top_group.id, name=group_name).exists():
             return {"result": False, "message": "Group already exists"}
 
@@ -321,9 +304,7 @@ def send_msg_with_channel(channel_id, title, content, receivers):
 
 @nats_client.register
 def get_user_rules(group_id, username):
-    rules = UserRule.objects.filter(username=username).filter(
-        Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest")
-    )
+    rules = UserRule.objects.filter(username=username).filter(Q(group_rule__group_id=group_id) | Q(group_rule__group_name="OpsPilotGuest"))
     if not rules:
         return {}
     return_data = {}
@@ -363,9 +344,7 @@ def get_user_rules_by_module(group_id, username, domain, app, module):
         base_filter = Q(group_rule__group_id=group_id)
     module_filter = Q(group_rule__rules__has_key=module)
 
-    rules = UserRule.objects.filter(username=username, domain=domain, group_rule__app=app).filter(
-        base_filter & module_filter
-    )
+    rules = UserRule.objects.filter(username=username, domain=domain, group_rule__app=app).filter(base_filter & module_filter)
     if not rules:
         return {"result": True, "data": all_permission, "team": admin_teams}
     result = {}
@@ -429,9 +408,7 @@ def get_user_rules_by_app(group_id, username, domain, app, module, child_module=
     module_filter = Q(group_rule__rules__has_key=module)
 
     # 如果指定了子模块，不在数据库层面过滤，在Python层面处理复杂嵌套
-    rules = UserRule.objects.filter(username=username, domain=domain, group_rule__app=app).filter(
-        base_filter & module_filter
-    )
+    rules = UserRule.objects.filter(username=username, domain=domain, group_rule__app=app).filter(base_filter & module_filter)
 
     if not rules:
         return {"instance": [], "team": admin_teams}
@@ -478,9 +455,9 @@ def process_rule_data(rule_data):
     """处理规则数据，返回是否为全部权限和具体实例数据"""
     if not rule_data:
         return True, []
-
     if isinstance(rule_data, list):
-        ids = [item.get("id") for item in rule_data if isinstance(item, dict) and item.get("id") not in ["-1", -1]]
+        rule_data = [item for item in rule_data if isinstance(item, dict) and item.get("id") not in ["-1", -1]]
+        ids = [item.get("id") for item in rule_data]
         has_all_permission = 0 in ids or "0" in ids
         return has_all_permission, rule_data if not has_all_permission else []
 
@@ -526,8 +503,7 @@ def wechat_user_register(user_id, nick_name):
         user.group_list = [default_group.id]
     default_role = list(
         Role.objects.filter(
-            Q(name="normal", app__in=["opspilot", "ops-console"])
-            | Q(name="guest", app__in=["opspilot", "cmdb", "monitor", "log"])
+            Q(name="normal", app__in=["opspilot", "ops-console"]) | Q(name="guest", app__in=["opspilot", "cmdb", "monitor", "log"])
         ).values_list("id", flat=True)
     )
     role_list = list(set(user.role_list + default_role))
@@ -669,9 +645,7 @@ def get_user_login_token(user, username):
 
 @nats_client.register
 def get_login_module_domain_list():
-    login_module_list = list(
-        LoginModule.objects.filter(source_type="bk_lite").values_list("other_config__domain", flat=True)
-    )
+    login_module_list = list(LoginModule.objects.filter(source_type="bk_lite").values_list("other_config__domain", flat=True))
     login_module_list.insert(0, "domain.com")
     return {"result": True, "data": login_module_list}
 
@@ -706,9 +680,7 @@ def delete_rules(group_ids, instance_id, app, module, child_module):
             # 删除指定 ID 的权限项
             original_length = len(target_list)
             if child_module:
-                rules_data[module][child_module] = [
-                    item for item in target_list if str(item.get("id")) != str(instance_id)
-                ]
+                rules_data[module][child_module] = [item for item in target_list if str(item.get("id")) != str(instance_id)]
             else:
                 rules_data[module] = [item for item in target_list if str(item.get("id")) != str(instance_id)]
 

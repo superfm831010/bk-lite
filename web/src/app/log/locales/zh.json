@@ -150,7 +150,29 @@
       "searchError": "日志分组不能为空"
     },
     "analysis": {
-      "dashboard": "仪表盘"
+      "dashboard": "仪表盘",
+      "dimension": "维度",
+      "packetbeat": {
+        "dashboardName": "内置packetbeat基础视图",
+        "activeConnections": "活跃连接数",
+        "activeConnectionsDesc": "当前正在活跃的 TCP/UDP 连接数",
+        "totalNetworkTraffic": "网络总流量",
+        "totalNetworkTrafficDesc": "网络总流量（入站 + 出站）字节总和",
+        "http5xxErrors": "HTTP 5xx 错误数",
+        "http5xxErrorsDesc": "HTTP 5xx 错误总数，用于服务健康监控",
+        "networkTrafficTrend": "网络流量趋势",
+        "networkTrafficTrendDesc": "HTTP 5xx 错误总数，用于服务健康监控",
+        "httpRequestTrend": "HTTP 请求趋势",
+        "httpRequestTrendDesc": "http各个方法的请求数",
+        "networkTrafficTop10": "网络流量top10",
+        "networkTrafficTop10Desc": "排查主机间流量热点、识别高流量对端或异常流量源",
+        "httpServiceTrafficTop10": "HTTP 服务流量top10",
+        "httpServiceTrafficTop10Desc": "HTTP 服务负载分析、发现大流量请求的客户端/服务端",
+        "abnormalTrafficLogs": "异常流量日志",
+        "abnormalTrafficLogsDesc": "大流量连接记录，用于快速发现异常流量或潜在攻击",
+        "httpLargeRequestLogs": "HTTP 大请求记录",
+        "httpLargeRequestLogsDesc": "大请求流量 HTTP 请求，用于流量异常分析"
+      }
     },
     "integration": {
       "interval": "间隔",
