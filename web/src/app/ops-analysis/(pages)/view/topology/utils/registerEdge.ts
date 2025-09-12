@@ -2,6 +2,7 @@ import { Graph, Edge } from '@antv/x6';
 import { v4 as uuidv4 } from 'uuid';
 import { getEdgeStyle, addEdgeTools, calculateOptimalPorts } from './topologyUtils';
 import type { EdgeData } from '@/app/ops-analysis/types/topology';
+import { COLORS } from '../constants/nodeDefaults';
 
 // 边创建配置接口
 interface EdgeCreationConfig {
@@ -30,7 +31,7 @@ export const registerStandardEdge = () => {
     router: EDGE_DEFAULTS.router,
     attrs: {
       line: {
-        stroke: '#333',
+        stroke: COLORS.EDGE.DEFAULT,
         strokeWidth: 1,
       },
     },
