@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { message } from 'antd';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from '@/utils/i18n';
+import { COLORS } from '../constants/nodeDefaults';
 import { createEdgeLabel, getEdgeStyle } from '../utils/topologyUtils';
 import { createEdgeByType } from '../utils/registerEdge';
 import {
@@ -112,7 +113,7 @@ export const useContextMenuAndModal = (
           id: edge.id,
           lineType: edgeData.lineType || 'common_line',
           lineName: edgeData.lineName || '',
-          styleConfig: edgeData.styleConfig || { lineColor: '#666666' },
+          styleConfig: edgeData.styleConfig || { lineColor: COLORS.EDGE.DEFAULT, },
           sourceNode: {
             id: sourceNode.id,
             name: sourceNodeData?.name || sourceNode.id,
