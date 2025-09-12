@@ -265,6 +265,9 @@
       "flowsPeriod": "Statistics cycle",
       "flowsPeriodDes": "Traffic statistics cycle (seconds), outputting statistical information every other time."
     },
+    "analysis": {
+      "dashboard": "Dashboard"
+    },
     "event": {
       "executionTime": "Execution Time",
       "effective": "Effective",
