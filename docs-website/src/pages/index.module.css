@@ -548,7 +548,7 @@
   padding: 1.5rem 1.25rem;
   font-family: var(--font-mono);
   font-weight: 400;
-  font-size: 1rem;
+  font-size: 1.1rem;
   line-height: 1.5;
   color: #e2e8f0;
   background: transparent;
@@ -719,7 +719,7 @@
     max-width: 100%;
   }
   .codeContent {
-    font-size: 0.875rem;
+    font-size: 1rem;
     padding: 1rem;
   }
   .heroStats {
@@ -895,7 +895,7 @@
   }
   
   .codeContent {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     padding: 0.75rem;
     min-height: 50px;
     line-height: 1.4;
@@ -1013,7 +1013,7 @@
     font-size: 0.8125rem;
   }
   .codeContent {
-    font-size: 0.8125rem;
+    font-size: 0.9rem;
     padding: 0.875rem;
   }
 }
@@ -1094,7 +1094,7 @@
   }
   
   .codeContent {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     padding: 0.6rem;
     line-height: 1.3;
   }
