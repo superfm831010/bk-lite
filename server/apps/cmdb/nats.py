@@ -30,7 +30,7 @@ def get_cmdb_module_data(module, child_module, page, page_size, group_id):
             page=page,
             page_size=page_size,
             order="",
-            check_permission=False  # 关闭权限检查
+            check_permission=True  # 关闭权限检查
         )
         queryset = []
         for instance in instances:
