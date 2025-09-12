@@ -8,8 +8,9 @@ from apps.core.decorators.api_permission import HasPermission
 from apps.core.logger import opspilot_logger as logger
 from apps.core.utils.viewset_utils import AuthViewSet
 from apps.opspilot.enum import BotTypeChoice, ChannelChoices
-from apps.opspilot.models import Bot, BotChannel, Channel, LLMSkill
+from apps.opspilot.models import Bot, BotChannel, BotWorkFlow, Channel, LLMSkill
 from apps.opspilot.serializers import BotSerializer
+from apps.opspilot.utils.chat_flow_utils.chat_flow_client import ChatFlowClient
 from apps.opspilot.utils.pilot_client import PilotClient
 from apps.opspilot.utils.quota_utils import get_quota_client
 
@@ -64,6 +65,8 @@ class BotViewSet(AuthViewSet):
                     for i in channel_list
                 ]
             )
+        elif data.get("bot_type") == BotTypeChoice.CHAT_FLOW:
+            BotWorkFlow.objects.create(bot_id=bot_obj.id)
         return JsonResponse({"result": True})
 
     @HasPermission("bot_settings-Edit")
@@ -85,6 +88,7 @@ class BotViewSet(AuthViewSet):
         llm_skills = data.pop("llm_skills", [])
         rasa_model = data.pop("rasa_model", None)
         node_port = data.pop("node_port", None)
+        workflow_data = data.pop("workflow_data", None)
         if (not request.user.is_superuser) and (obj.created_by != request.user.username):
             data.pop("team", [])
         if "team" in data:
@@ -102,6 +106,9 @@ class BotViewSet(AuthViewSet):
             obj.llm_skills.set(LLMSkill.objects.filter(id__in=llm_skills))
         if is_publish and not obj.api_token:
             obj.api_token = obj.get_api_token()
+        if workflow_data:
+            chat_json = ChatFlowClient.parse_chat_flow_json(workflow_data)
+            BotWorkFlow.objects.filter(bot_id=obj.id).update(flow_json=chat_json, web_json=workflow_data)
         obj.updated_by = request.user.username
         obj.save()
         if is_publish:
