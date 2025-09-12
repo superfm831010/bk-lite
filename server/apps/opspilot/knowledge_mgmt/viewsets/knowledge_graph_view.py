@@ -6,8 +6,8 @@ from rest_framework.decorators import action
 
 from apps.core.decorators.api_permission import HasPermission
 from apps.core.utils.viewset_utils import MaintainerViewSet
-from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph
 from apps.opspilot.knowledge_mgmt.serializers.knowledge_graph_serializers import KnowledgeGraphSerializer
+from apps.opspilot.models import KnowledgeGraph
 from apps.opspilot.tasks import rebuild_graph_community_by_instance
 from apps.opspilot.utils.graph_utils import GraphUtils
 

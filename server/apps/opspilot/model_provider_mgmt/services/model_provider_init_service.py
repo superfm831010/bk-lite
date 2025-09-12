@@ -1,6 +1,5 @@
-from apps.opspilot.model_provider_mgmt.models import LLMSkill
 from apps.opspilot.model_provider_mgmt.services.skill_init_json import SKILL_LIST
-from apps.opspilot.models import EmbedProvider, LLMModel, OCRProvider, RerankProvider, SkillTools
+from apps.opspilot.models import EmbedProvider, LLMModel, LLMSkill, OCRProvider, RerankProvider, SkillTools
 
 
 class ModelProviderInitService:

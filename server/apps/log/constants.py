@@ -7,8 +7,15 @@ VICTORIALOGS_PWD = os.getenv("VICTORIALOGS_PWD")
 # 添加SSL验证配置，支持环境变量控制
 VICTORIALOGS_SSL_VERIFY = os.getenv("VICTORIALOGS_SSL_VERIFY", "false").lower() == "true"
 
+# SSE连接配置
+SSE_MAX_CONNECTION_TIME = int(os.getenv("SSE_MAX_CONNECTION_TIME", "1800"))  # 默认30分钟
+SSE_KEEPALIVE_INTERVAL = int(os.getenv("SSE_KEEPALIVE_INTERVAL", "45"))     # 默认45秒
+
 # 策略相关常量
 POLICY_MODULE = "policy"
+
+# 采集实例相关常量
+INSTANCE_MODULE = "instance"
 
 # 日志分组相关常量
 LOG_GROUP_MODULE = "log_group"

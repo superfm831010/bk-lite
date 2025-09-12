@@ -93,7 +93,8 @@ class HasPermission(object):
 
     def _get_user_permissions(self, request, app_name: str) -> Set[str]:
         """获取用户在指定app下的权限集合"""
-        app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console"}
+        app_name_map = {"system_mgmt": "system-manager", "node_mgmt": "node", "console_mgmt": "ops-console",
+                        "alerts": "alarm"}
         app_name = app_name_map.get(app_name, app_name)
 
         user_permissions = getattr(request.user, "permission", set())

@@ -4,6 +4,8 @@
 import type { Edge, Node, Cell } from '@antv/x6';
 import { useCallback } from 'react';
 import { message } from 'antd';
+import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from '@/utils/i18n';
 import { createEdgeLabel, getEdgeStyle } from '../utils/topologyUtils';
 import { createEdgeByType } from '../utils/registerEdge';
 import {
@@ -26,6 +28,7 @@ export const useContextMenuAndModal = (
   containerRef: React.RefObject<HTMLDivElement>,
   state: TopologyState
 ): UseContextMenuAndModalReturn => {
+  const { t } = useTranslation();
   const {
     graphInstance,
     contextMenuNodeId,
@@ -39,7 +42,7 @@ export const useContextMenuAndModal = (
   } = state;
 
   const handleEdgeConfigConfirm = useCallback(
-    (values: { lineType: 'common_line' | 'network_line'; lineName?: string }) => {
+    (values: { lineType: 'common_line' | 'network_line'; lineName?: string; styleConfig?: { lineColor?: string } }) => {
       if (!currentEdgeData?.id || !graphInstance) return;
 
       const edge = graphInstance.getCellById(currentEdgeData.id) as Edge;
@@ -49,9 +52,20 @@ export const useContextMenuAndModal = (
 
       edge.setData({
         ...edge.getData(),
-        ...values,
+        lineType: values.lineType,
+        lineName: values.lineName,
+        styleConfig: values.styleConfig,
         vertices: currentVertices
       });
+
+      if (values.styleConfig?.lineColor) {
+        edge.setAttrs({
+          line: {
+            ...edge.getAttrs().line,
+            stroke: values.styleConfig.lineColor,
+          },
+        });
+      }
 
       if (values.lineType === 'network_line') {
         removeAllEdgeLabels(edge);
@@ -66,7 +80,11 @@ export const useContextMenuAndModal = (
       setCurrentEdgeData({
         ...currentEdgeData,
         lineType: values.lineType,
-        lineName: values.lineName
+        lineName: values.lineName,
+        styleConfig: {
+          ...currentEdgeData.styleConfig,
+          lineColor: values.styleConfig?.lineColor
+        }
       });
     },
     [currentEdgeData, graphInstance, setCurrentEdgeData]
@@ -94,6 +112,7 @@ export const useContextMenuAndModal = (
           id: edge.id,
           lineType: edgeData.lineType || 'common_line',
           lineName: edgeData.lineName || '',
+          styleConfig: edgeData.styleConfig || { lineColor: '#666666' },
           sourceNode: {
             id: sourceNode.id,
             name: sourceNodeData?.name || sourceNode.id,
@@ -130,41 +149,126 @@ export const useContextMenuAndModal = (
 
       const currentZIndex = targetNode.getZIndex() || 0;
       const cells = graphInstance.getCells();
+      let newZIndex = currentZIndex;
 
       if (key === 'bringToFront') {
         targetNode.toFront();
+        newZIndex = targetNode.getZIndex() || 0;
         message.success('节点已置顶');
-        return true;
-      }
-
-      if (key === 'bringForward') {
+      } else if (key === 'bringForward') {
         const maxZIndex = Math.max(...cells.map(cell => cell.getZIndex() || 0));
 
         if (currentZIndex < maxZIndex) {
-          targetNode.setZIndex(currentZIndex + 1);
-          message.success(`节点上移一层，当前层级: ${currentZIndex + 1}`);
+          newZIndex = currentZIndex + 1;
+          targetNode.setZIndex(newZIndex);
+          message.success(`节点上移一层，当前层级: ${newZIndex}`);
         } else {
           message.info('节点已在最顶层');
+          return true;
         }
-        return true;
-      }
-
-      if (key === 'sendBackward') {
+      } else if (key === 'sendBackward') {
         const minZIndex = Math.min(...cells.map(cell => cell.getZIndex() || 0));
 
         if (currentZIndex > minZIndex && currentZIndex > 0) {
-          const newZIndex = Math.max(0, currentZIndex - 1);
+          newZIndex = Math.max(0, currentZIndex - 1);
           targetNode.setZIndex(newZIndex);
           message.success(`节点下移一层，当前层级: ${newZIndex}`);
         } else {
           message.info('节点已在最底层');
+          return true;
         }
-        return true;
+      } else {
+        return false;
       }
 
-      return false;
+      if (targetNode.isNode()) {
+        const nodeData = targetNode.getData() || {};
+        targetNode.setData({
+          ...nodeData,
+          zIndex: newZIndex
+        });
+      }
+
+      return true;
     },
     [graphInstance]
+  );
+
+  const handleNodeEdit = useCallback(
+    (selectedCell: Cell) => {
+      if (!selectedCell.isNode()) return;
+
+      const clickedNodeData = selectedCell.getData();
+
+      if (clickedNodeData?.type === 'chart') {
+        const chartNodeData = {
+          ...clickedNodeData,
+          id: selectedCell.id,
+          label: selectedCell.prop('label'),
+        };
+        state.setEditingNodeData(chartNodeData);
+        state.setViewConfigVisible(true);
+      } else if (clickedNodeData?.type !== 'text') {
+        const iconWidth = clickedNodeData.styleConfig?.width;
+        const iconHeight = clickedNodeData.styleConfig?.height;
+        state.setEditingNodeData({
+          ...clickedNodeData,
+          id: selectedCell.id,
+          label: selectedCell.prop('label'),
+          width: iconWidth,
+          height: iconHeight,
+        });
+        state.setNodeEditVisible(true);
+      }
+    },
+    [state]
+  );
+
+  const handleNodeCopy = useCallback(
+    (selectedCell: Cell) => {
+      if (!selectedCell.isNode() || !graphInstance) return;
+
+      try {
+        const originalNodeData = selectedCell.getData();
+        const originalPosition = selectedCell.getPosition();
+        const originalSize = selectedCell.getSize();
+        const originalAttrs = selectedCell.getAttrs();
+
+        const newNodeId = `node_${uuidv4()}`;
+        const newPosition = {
+          x: originalPosition.x + 200,
+          y: originalPosition.y,
+        };
+
+        const newNodeData = {
+          ...originalNodeData,
+          id: newNodeId,
+        };
+
+        const newNode = graphInstance.addNode({
+          id: newNodeId,
+          shape: selectedCell.shape,
+          x: newPosition.x,
+          y: newPosition.y,
+          width: originalSize.width,
+          height: originalSize.height,
+          attrs: { ...originalAttrs },
+          data: newNodeData,
+          zIndex: selectedCell.getZIndex(),
+        });
+
+        message.success(t('topology.nodeCopySuccess'));
+
+        if (state.isEditMode) {
+          setTimeout(() => {
+            graphInstance.select(newNode);
+          }, 100);
+        }
+      } catch {
+        message.error(t('topology.nodeCopyFailed'));
+      }
+    },
+    [graphInstance, state.isEditMode, t]
   );
 
   const handleConnectionDrawing = useCallback(
@@ -306,6 +410,16 @@ export const useContextMenuAndModal = (
           return;
         }
 
+        if (key === 'edit') {
+          handleNodeEdit(selectedCell);
+          return;
+        }
+
+        if (key === 'copy') {
+          handleNodeCopy(selectedCell);
+          return;
+        }
+
         if (handleNodeLayerOperation(key, selectedCell)) {
           return;
         }
@@ -323,8 +437,11 @@ export const useContextMenuAndModal = (
       isEditMode,
       handleEdgeConfiguration,
       handleViewModeMenuClick,
+      handleNodeEdit,
+      handleNodeCopy,
       handleNodeLayerOperation,
       handleConnectionDrawing,
+      state,
     ]
   );
 

@@ -67,6 +67,7 @@ class NatsService:
             - node_id: 节点ID
             - collector_name: 采集器名称
             - env_config: 环境变量配置（可选）
+            - sort_order: 排序（可选）
         """
 
         base_configs = CollectorConfiguration.objects.filter(
@@ -85,6 +86,7 @@ class NatsService:
                 content=config["content"],
                 collector_config_id=base_config_map[(config["node_id"], config["collector_name"])],
                 env_config=config["env_config"],
+                sort_order=config.get("sort_order", 0),
             ))
         if node_objs:
             ChildConfig.objects.bulk_create(node_objs, batch_size=100)

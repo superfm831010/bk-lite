@@ -31,11 +31,12 @@ const getStatusText = (value: string, TrainText: Record<string, string>) => {
 const TrainTask = () => {
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
-  const { getAnomalyDatasetsList } = useMlopsManageApi();
+  const { getAnomalyDatasetsList  } = useMlopsManageApi();
   const {
     getAnomalyTaskList,
     deleteAnomalyTrainTask,
     startAnomalyTrainTask,
+    getRasaPipelines,
   } = useMlopsTaskApi();
   const modalRef = useRef<ModalRef>(null);
   const [tableData, setTableData] = useState<TrainJob[]>([]);
@@ -86,6 +87,7 @@ const TrainTask = () => {
       title: t('mlops-common.creator'),
       key: 'creator',
       dataIndex: 'creator',
+      width: 120,
       render: (_, { creator }) => {
         return creator ? (
           <div className="flex h-full items-center" title={creator}>
@@ -111,6 +113,7 @@ const TrainTask = () => {
       title: t('mlops-common.status'),
       key: 'status',
       dataIndex: 'status',
+      width: 120,
       render: (_, record: TrainJob) => {
         return record.status ? (<Tag color={getStatusColor(record.status, TRAIN_STATUS_MAP)} className=''>
           {t(`traintask.${getStatusText(record.status, TRAIN_TEXT)}`)}
@@ -207,6 +210,7 @@ const TrainTask = () => {
   }, [pagination.current, pagination.pageSize, selectedKeys]);
 
   const getTasks = async (name = '') => {
+    console.log(selectedKeys);
     const [activeTab] = selectedKeys;
     if (!activeTab) return;
     setLoading(true);
@@ -232,6 +236,13 @@ const TrainTask = () => {
           ...prev,
           total: count || 1,
         }));
+      } else if (activeTab === 'rasa') {
+        const data = await fetchTaskList();
+        setTableData(data);
+        setPagination(prev => ({
+          ...prev,
+          total: data?.length || 0,
+        }));
       }
     } catch (e) {
       console.log(e);
@@ -256,14 +267,21 @@ const TrainTask = () => {
   };
 
   const fetchTaskList = useCallback(async (name: string = '', page: number = 1, pageSize: number = 10) => {
-    const { count, items } = await getAnomalyTaskList({
-      name,
-      page,
-      page_size: pageSize
-    });
-    return {
-      items,
-      count
+    const [activeTab] = selectedKeys;
+    if (activeTab === 'anomaly') {
+      const { count, items } = await getAnomalyTaskList({
+        name,
+        page,
+        page_size: pageSize
+      });
+      return {
+        items,
+        count
+      }
+    } else if(activeTab === 'rasa') {
+      const data = await getRasaPipelines({});
+      console.log(data)
+      return data;
     }
   }, [getAnomalyTaskList]);
 
@@ -358,7 +376,7 @@ const TrainTask = () => {
                 <CustomTable
                   rowKey="id"
                   className="mt-3"
-                  scroll={{ x: '100%', y: 'calc(100vh - 420px)' }}
+                  scroll={{ x: '100%', y: 'calc(100vh - 410px)' }}
                   dataSource={tableData}
                   columns={columns}
                   pagination={pagination}

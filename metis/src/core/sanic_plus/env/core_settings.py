@@ -1,3 +1,4 @@
+from gc import enable
 from pydantic_settings import BaseSettings
 
 
@@ -11,6 +12,10 @@ class CoreSettings(BaseSettings):
     knowledge_graph_port: int = 6379
     knowledge_graph_username: str = ''
     knowledge_graph_password: str = ''
+    knowledge_graph_database: str = 'default_db'
+
+    enable_llm_trace: bool = False
+    mlflow_tracking_uri: str = ''
 
     def is_debug_mode(self) -> bool:
         return self.mode == 'DEBUG'

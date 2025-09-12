@@ -109,7 +109,8 @@ const EntityCard: React.FC<EntityCardProps> = ({
     if (bot_type !== undefined) {
       const botTypeMap: { [key: number]: string } = {
         1: 'Copilot',
-        2: 'icon-192x192'
+        2: 'icon-192x192',
+        3: 'Chatflow'
       };
 
       return botTypeMap[bot_type] || iconTypeMapping[getStableRandom(id, iconTypeMapping.length)];

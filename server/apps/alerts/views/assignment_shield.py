@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from apps.alerts.constants import LogAction, LogTargetType
 from apps.alerts.filters import AlertAssignmentModelFilter, AlertShieldModelFilter
 from apps.alerts.serializers.serializers import AlertAssignmentModelSerializer, AlertShieldModelSerializer
+from apps.core.decorators.api_permission import HasPermission
 from config.drf.pagination import CustomPageNumberPagination
 from config.drf.viewsets import ModelViewSet
 from apps.alerts.models import AlertAssignment, AlertReminderTask, AlertShield, OperatorLog
@@ -26,6 +27,11 @@ class AlertAssignmentModelViewSet(ModelViewSet):
     filterset_class = AlertAssignmentModelFilter
     pagination_class = CustomPageNumberPagination
 
+    @HasPermission("alert_assign-View")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @HasPermission("alert_assign-Add")
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -43,6 +49,7 @@ class AlertAssignmentModelViewSet(ModelViewSet):
         OperatorLog.objects.create(**log_data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    @HasPermission("alert_assign-Edit")
     @transaction.atomic
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -57,6 +64,7 @@ class AlertAssignmentModelViewSet(ModelViewSet):
         OperatorLog.objects.create(**log_data)
         return super().update(request, *args, **kwargs)
 
+    @HasPermission("alert_assign-Delete")
     @transaction.atomic
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -132,6 +140,11 @@ class AlertShieldModelViewSet(ModelViewSet):
     filterset_class = AlertShieldModelFilter
     pagination_class = CustomPageNumberPagination
 
+    @HasPermission("shield_strategy-View")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @HasPermission("shield_strategy-Add")
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -149,6 +162,7 @@ class AlertShieldModelViewSet(ModelViewSet):
         OperatorLog.objects.create(**log_data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    @HasPermission("shield_strategy-Edit")
     @transaction.atomic
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -163,6 +177,7 @@ class AlertShieldModelViewSet(ModelViewSet):
         OperatorLog.objects.create(**log_data)
         return super().update(request, *args, **kwargs)
 
+    @HasPermission("shield_strategy-Delete")
     @transaction.atomic
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

@@ -17,7 +17,11 @@
     "nodePanelMsg": "Drag nodes to the canvas to create",
     "reset": "Reset",
     "text": "Text",
-    "required": "Required"
+    "required": "Required",
+    "btn": "Button",
+    "restart": "Restart",
+    "showThumbnail": "Show Thumbnail",
+    "hideThumbnail": "Hide Thumbnail"
   },
   "datasets": {
     "datasets": "Datasets",
@@ -70,6 +74,7 @@
     "addstory": "Add Story",
     "addentity": "Add Entity",
     "addslot": "Add Slot",
+    "addaction": "Add Action",
     "editintent": "Edit Intent",
     "editresponse": "Edit Response",
     "editrule": "Edit Rule",
@@ -77,7 +82,12 @@
     "editentity": "Edit Entity",
     "editslot": "Edit Slot",
     "description": "Description",
-    "editform": "Editing the dataset",
+    "editform": "Edit Form",
+    "editaction": "Edit Action",
+    "action": "Action",
+    "actionTile": "Action manage",
+    "actionName": "Action Name",
+    "actionNode": "Action Node",
     "type": "Type",
     "fileType": "File Type",
     "value": "Value",
@@ -114,7 +124,8 @@
     "selectWarn": "Please select a training file type",
     "editEaxmpleTip": "One example per line. Select text to add entity annotations",
     "noSearchData": "No matching results found",
-    "selectEntityTip": "Tip: Select text in edit mode to add entity annotations"
+    "selectEntityTip": "Tip: Select text in edit mode to add entity annotations",
+    "checkpoint": "CheckPoint"
   },
   "traintask": {
     "train": "Train",

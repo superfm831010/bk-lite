@@ -8,12 +8,19 @@ from django.conf import settings
 from tqdm import tqdm
 
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.knowledge_mgmt.models import KnowledgeGraph, QAPairs
-from apps.opspilot.knowledge_mgmt.models.knowledge_document import DocumentStatus
-from apps.opspilot.knowledge_mgmt.models.knowledge_task import KnowledgeTask
+from apps.opspilot.enum import DocumentStatus
 from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
-from apps.opspilot.model_provider_mgmt.models import LLMModel
-from apps.opspilot.models import FileKnowledge, KnowledgeBase, KnowledgeDocument, ManualKnowledge, WebPageKnowledge
+from apps.opspilot.models import (
+    FileKnowledge,
+    KnowledgeBase,
+    KnowledgeDocument,
+    KnowledgeGraph,
+    KnowledgeTask,
+    LLMModel,
+    ManualKnowledge,
+    QAPairs,
+    WebPageKnowledge,
+)
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 from apps.opspilot.utils.chunk_helper import ChunkHelper
 from apps.opspilot.utils.graph_utils import GraphUtils

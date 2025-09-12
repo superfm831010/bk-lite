@@ -70,6 +70,11 @@ class Controller:
                     configs.append(_config)
         return configs
 
+    def get_child_config_sort_order(self, collect_type: str):
+        """ 获取子配置的排序顺序, 用于配置渲染顺序 """
+        sort_order = 1 if collect_type == "flows" else 0
+        return sort_order
+
     def controller(self):
         base_dir = PLUGIN_DIRECTORY
         configs = self.format_configs()
@@ -101,6 +106,7 @@ class Controller:
                         node_id=config_info["node_id"],
                         collector_name=collector_name,
                         env_config=env_config,
+                        sort_order=self.get_child_config_sort_order(config_info["collect_type"]),
                     )
                     node_child_configs.append(node_child_config)
                 else:

@@ -119,7 +119,11 @@ class DataSourceAPIModelViewSet(ModelViewSet):
         instance = self.get_object()
         params = request.data
         namespace_list = instance.namespaces.all()
-        namespace, path = instance.rest_api.split("/", 1)
+        if "/" not in instance.rest_api:
+            namespace = "default"
+            path = instance.rest_api
+        else:
+            namespace, path = instance.rest_api.split("/", 1)
         client = GetNatsData(namespace=namespace, path=path, params=params, namespace_list=namespace_list,
                              request=request)
         result = []
@@ -148,6 +152,11 @@ class DirectoryModelViewSet(ModelViewSet):
         data = request.data
         Directory.objects.create(**data)
         return Response(data)
+
+
+    def update(self, request, *args, **kwargs):
+        Directory.objects.filter(id=kwargs["pk"]).update(**request.data)
+        return Response(request.data)
 
     @action(detail=False, methods=["get"], url_path="tree")
     def tree(self, request, *args, **kwargs):

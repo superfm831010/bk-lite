@@ -6,7 +6,7 @@ import {
   RightOutlined,
   LeftOutlined,
   AppstoreOutlined,
-  BarChartOutlined,
+  AreaChartOutlined,
   BorderOutlined,
 } from '@ant-design/icons';
 
@@ -46,24 +46,10 @@ const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'chart',
       name: '图表',
-      icon: <BarChartOutlined className="text-purple-500" />,
+      icon: <AreaChartOutlined className="text-purple-500" />,
       description: '添加图表类型节点',
     },
   ];
-
-  const handleNodeTypeClick = (nodeType: NodeType) => {
-    if (!isEditMode) {
-      return;
-    }
-
-    if (nodeType.id === 'chart') {
-      const position = { x: 300, y: 200 };
-      onShowChartSelector?.(position);
-    } else if (onShowNodeConfig) {
-      const position = { x: 300, y: 200 };
-      onShowNodeConfig(nodeType, position);
-    }
-  };
 
   const handleDragStart = (e: React.DragEvent, nodeType: NodeType) => {
     if (!isEditMode) {
@@ -176,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     <>
       <div
         className={`h-full border-r border-[var(--color-border-1)] bg-[var(--color-fill-1)] transition-[width] duration-300 flex-shrink-0 relative ${
-          collapsed ? 'w-0' : 'w-48'
+          collapsed ? 'w-0' : 'w-44'
         }`}
       >
         <Button
@@ -210,7 +196,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                         : 'cursor-not-allowed'
                     }`}
                     draggable={isEditMode}
-                    onClick={() => handleNodeTypeClick(nodeType)}
                     onDragStart={(e) => handleDragStart(e, nodeType)}
                     onDragEnd={handleDragEnd}
                   >

@@ -1,0 +1,38 @@
+api:
+  enabled: true
+  address: "0.0.0.0:8686"
+
+sources:
+  nats_source:
+    type: nats
+    connection_name: vector
+    subject: vector
+    url: nats://nats:4222
+    auth:
+      strategy: user_password
+      user_password:
+        user: ${NATS_ADMIN_USERNAME}
+        password: ${NATS_ADMIN_PASSWORD}
+
+transforms:
+  parse_json:
+   type: remap
+   inputs:
+     - nats_source
+   source: |
+     . = parse_json!(.message)
+
+sinks:
+  vl_sink:
+    type: elasticsearch
+    inputs:
+      - parse_json
+    endpoints: 
+      - http://victorialogs:9428/insert/elasticsearch/
+    compression: gzip
+    healthcheck:
+      enabled: false
+    query:
+      _msg_field: message
+      _time_field: timestamp
+      _stream_fields: instance_id,source_type

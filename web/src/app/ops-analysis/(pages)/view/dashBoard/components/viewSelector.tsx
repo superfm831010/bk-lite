@@ -9,10 +9,9 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import { ComponentSelectorProps } from '@/app/ops-analysis/types/dashBoard';
-import { useNamespaceApi } from '@/app/ops-analysis/api/namespace';
 import { useDataSourceApi } from '@/app/ops-analysis/api/dataSource';
+import { useOpsAnalysis } from '@/app/ops-analysis/context/common';
 import type { DatasourceItem } from '@/app/ops-analysis/types/dataSource';
-import type { TagItem } from '@/app/ops-analysis/types/namespace';
 
 const ComponentSelector: React.FC<ComponentSelectorProps> = ({
   visible,
@@ -22,14 +21,12 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
-  const [tags, setTags] = useState<TagItem[]>([]);
   const [currentDataSources, setCurrentDataSources] = useState<
     DatasourceItem[]
   >([]);
-  const [tagsLoading, setTagsLoading] = useState(false);
   const [dataSourcesLoading, setDataSourcesLoading] = useState(false);
 
-  const { getTagList } = useNamespaceApi();
+  const { tagList, tagsLoading, fetchTags } = useOpsAnalysis();
   const { getDataSourceList } = useDataSourceApi();
 
   const getChartIcon = (chartTypes: any[]) => {
@@ -59,27 +56,10 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
     return <div className="flex gap-1">{icons}</div>;
   };
 
-  const fetchTags = async () => {
-    try {
-      setTagsLoading(true);
-      const response = await getTagList({ page: 1, page_size: 10000 });
-      const tagList = response?.items || [];
-      setTags(tagList);
-      if (tagList.length > 0 && !selectedTagId) {
-        setSelectedTagId(tagList[0].id);
-      }
-    } catch (error) {
-      console.error('获取标签列表失败:', error);
-      setTags([]);
-    } finally {
-      setTagsLoading(false);
-    }
-  };
-
   const fetchDataSourcesByTag = async (tagItemId: number) => {
     try {
       setDataSourcesLoading(true);
-      const list = await getDataSourceList({ tag: tagItemId });
+      const list = await getDataSourceList({ tags: tagItemId });
       setCurrentDataSources(list || []);
     } catch (error) {
       console.error('获取数据源列表失败:', error);
@@ -97,13 +77,19 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
       setCurrentDataSources([]);
       setSearch('');
     }
-  }, [visible]);
+  }, [visible, fetchTags]);
 
   useEffect(() => {
     if (selectedTagId) {
       fetchDataSourcesByTag(selectedTagId);
     }
   }, [selectedTagId]);
+
+  useEffect(() => {
+    if (visible && tagList.length > 0 && !selectedTagId) {
+      setSelectedTagId(tagList[0].id);
+    }
+  }, [visible, tagList, selectedTagId]);
 
   const filteredDataSources = currentDataSources.filter(
     (item: DatasourceItem) =>
@@ -120,7 +106,7 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
     onCancel();
   };
 
-  const menuItems = tags.map((tag) => ({
+  const menuItems = tagList.map((tag) => ({
     key: tag.id,
     label: tag.name,
   }));
@@ -166,13 +152,12 @@ const ComponentSelector: React.FC<ComponentSelectorProps> = ({
             placeholder={t('common.search')}
             allowClear
             className="mb-4"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onSearch={(value) => setSearch(value)}
             onClear={() => setSearch('')}
           />
 
           {dataSourcesLoading ? (
-            <div className="flex justify-center py-8">
+            <div className="flex justify-center py-8 mt-10">
               <Spin size="default" />
             </div>
           ) : (

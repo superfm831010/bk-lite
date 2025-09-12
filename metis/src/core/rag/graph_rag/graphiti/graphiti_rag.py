@@ -10,6 +10,7 @@ from graphiti_core.nodes import EpisodeType
 from graphiti_core.llm_client import OpenAIClient, LLMConfig
 
 from src.core.sanic_plus.env.core_settings import core_settings
+from src.core.rag.graph_rag.graphiti.openai_client_patch import apply_openai_client_patch
 from src.web.entity.rag.graphiti.document_delete_request import DocumentDeleteRequest
 from src.web.entity.rag.graphiti.index_delete_request import IndexDeleteRequest
 from src.web.entity.rag.graphiti.document_ingest_request import GraphitiRagDocumentIngestRequest
@@ -29,7 +30,9 @@ class GraphitiRAG:
     LLM_TIMEOUT_SECONDS = 60*60*24
 
     def __init__(self):
-        pass
+        # 应用OpenAI客户端兼容性补丁
+        # 解决GraphitiCore使用Azure OpenAI特有API的问题
+        apply_openai_client_patch()
 
     def _create_basic_graphiti(self) -> Graphiti:
         """创建基础的Graphiti实例（不包含LLM客户端）"""
@@ -37,7 +40,8 @@ class GraphitiRAG:
             host=core_settings.knowledge_graph_host,
             username=core_settings.knowledge_graph_username,
             password=core_settings.knowledge_graph_password,
-            port=core_settings.knowledge_graph_port
+            port=core_settings.knowledge_graph_port,
+            database=core_settings.knowledge_graph_database
         )
         return Graphiti(graph_driver=driver)
 
@@ -98,7 +102,8 @@ class GraphitiRAG:
             host=core_settings.knowledge_graph_host,
             username=core_settings.knowledge_graph_username,
             password=core_settings.knowledge_graph_password,
-            port=core_settings.knowledge_graph_port
+            port=core_settings.knowledge_graph_port,
+            database=core_settings.knowledge_graph_database
         )
         kwargs['graph_driver'] = driver
         return Graphiti(**kwargs)
