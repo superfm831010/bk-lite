@@ -69,7 +69,7 @@ const config = {
           },
           {
             "label":"产品文档",
-            "to":"/docs/products/opspilot"
+            "to":"/docs/products/opspilot/introduce"
           },
           {
             "label":"运维手册",

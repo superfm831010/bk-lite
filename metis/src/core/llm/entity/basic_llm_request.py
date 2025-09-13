@@ -14,6 +14,7 @@ class BasicLLMRequest(BaseModel):
 
     system_message_prompt: str = ''
     enable_suggest: bool = False
+    enable_query_rewrite: bool = False
     temperature: float = 0.7
 
     user_message: str = ''

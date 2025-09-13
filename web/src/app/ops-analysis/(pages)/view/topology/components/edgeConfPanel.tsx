@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from '@/utils/i18n';
+import { COLORS } from '../constants/nodeDefaults';
 import { EdgeConfigPanelProps } from '@/app/ops-analysis/types/topology';
 import {
   Drawer,
@@ -29,7 +30,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
       const initialValues = {
         lineType: edgeData.lineType || 'common_line',
         lineName: edgeData.lineName || '',
-        lineColor: edgeData.styleConfig?.lineColor || '#666666',
+        lineColor: edgeData.styleConfig?.lineColor || COLORS.EDGE.DEFAULT,
         sourceInterfaceType: edgeData.sourceInterface?.type || 'existing',
         sourceInterfaceValue: edgeData.sourceInterface?.value || '',
         targetInterfaceType: edgeData.targetInterface?.type || 'existing',
@@ -47,7 +48,7 @@ const EdgeConfigPanel: React.FC<EdgeConfigPanelProps> = ({
           lineColor:
             typeof values.lineColor === 'object'
               ? values.lineColor.toHexString()
-              : values.lineColor || '#666666',
+              : values.lineColor || COLORS.EDGE.DEFAULT,
         },
         sourceInterface: {
           type: values.sourceInterfaceType,

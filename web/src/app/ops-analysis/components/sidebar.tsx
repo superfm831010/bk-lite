@@ -86,7 +86,7 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
       setModalTitle(title);
       form.setFieldsValue({
         name: defaultValue,
-        desc: dir ? dir.desc || '' : '',
+        desc: action === 'edit' && dir ? dir.desc : '',
       });
       setCurrentDir(dir);
       setNewItemType(itemType);
@@ -519,7 +519,7 @@ const Sidebar = forwardRef<SidebarRef, SidebarProps>(
             >
               <Input placeholder={t('opsAnalysisSidebar.inputPlaceholder')} />
             </Form.Item>
-            {(newItemType !== 'directory' || modalAction === 'edit') && (
+            {newItemType !== 'directory' && (
               <Form.Item name="desc" label={t('opsAnalysisSidebar.descLabel')}>
                 <Input.TextArea
                   autoSize={{ minRows: 3 }}

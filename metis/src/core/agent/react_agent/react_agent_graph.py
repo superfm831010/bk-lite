@@ -14,7 +14,6 @@ class ReActAgentGraph(ToolsGraph):
 
     async def compile_graph(self, request: ReActAgentRequest):
         """编译 ReAct Agent 执行图"""
-        logger.info("🔧 编译 ReAct Agent 执行图 (使用可复用 ReAct 组合)")
 
         # 初始化节点构建器
         node_builder = ReActAgentNode()
@@ -23,18 +22,15 @@ class ReActAgentGraph(ToolsGraph):
         # 创建状态图
         graph_builder = StateGraph(ReActAgentState)
 
-        # 添加基础图结构（如果需要的话）
+        # 添加基础图结构
         last_edge = self.prepare_graph(graph_builder, node_builder)
-        logger.debug(f"基础图构建完成，连接点: {last_edge}")
 
         # 使用可复用的 ReAct 节点组合构建图
-        react_entry_node, should_continue_func = node_builder.build_react_nodes(
+        react_entry_node = node_builder.build_react_nodes(
             graph_builder=graph_builder,
-            llm_node_name="react_llm",
-            tool_node_name="react_tools",
-            system_prompt=getattr(request, 'system_message_prompt', None),
-            end_node=END,
-            tools_node=None  # 使用内部构建的工具节点
+            composite_node_name="react_agent",
+            system_prompt=request.system_message_prompt,
+            end_node=END
         )
 
         # 连接基础图到 ReAct 入口节点
@@ -42,6 +38,5 @@ class ReActAgentGraph(ToolsGraph):
 
         # 编译并返回图
         compiled_graph = graph_builder.compile()
-        logger.info("✅ ReAct Agent 执行图编译完成 (使用可复用组合)")
 
         return compiled_graph

@@ -71,6 +71,9 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       redo,
       canUndo,
       canRedo,
+      startInitialization,
+      finishInitialization,
+      clearOperationHistory,
     } = useGraphOperations(
       containerRef,
       state,
@@ -260,14 +263,22 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
     }));
 
     useEffect(() => {
+      state.resetAllStates();
+      startInitialization();
+      clearOperationHistory();
+
       if (selectedTopology?.data_id && state.graphInstance) {
-        handleLoadTopology(selectedTopology.data_id);
+        handleLoadTopology(selectedTopology.data_id).finally(() => {
+          setTimeout(() => {
+            finishInitialization();
+          }, 100);
+        });
+      } else if (!selectedTopology?.data_id && state.graphInstance) {
+        setTimeout(() => {
+          finishInitialization();
+        }, 100);
       }
     }, [selectedTopology?.data_id, state.graphInstance]);
-
-    useEffect(() => {
-      state.resetAllStates();
-    }, [selectedTopology?.data_id]);
 
     const handleSelectMode = () => {
       state.setIsSelectMode(!state.isSelectMode);

@@ -7,7 +7,7 @@ import PlatformShowcase from '@site/src/components/AIShowcase';
 import PartnersShowcase from '@site/src/components/PartnersShowcase';
 import FinalCTA from '@site/src/components/FinalCTA';
 import LiquidNavbar from '@site/src/components/LiquidNavbar';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import styles from './index.module.css';
 
@@ -111,6 +111,19 @@ function HomepageHeader() {
     try {
       await navigator.clipboard.writeText(versions[selectedVersion].command);
       
+      // 添加视觉反馈 - 复制按钮样式变化
+      const copyBtn = document.querySelector(`.${styles.copyButton}`);
+      if (copyBtn) {
+        copyBtn.classList.add(styles.copied);
+        copyBtn.querySelector(`.${styles.copyIcon}`).textContent = '✅';
+        
+        // 2秒后恢复原状
+        setTimeout(() => {
+          copyBtn.classList.remove(styles.copied);
+          copyBtn.querySelector(`.${styles.copyIcon}`).textContent = '📋';
+        }, 2000);
+      }
+      
       // 随机选择一种撒花效果
       const effects = [basicCannon, randomDirection, realisticLook];
       const randomEffect = effects[Math.floor(Math.random() * effects.length)];
@@ -118,6 +131,19 @@ function HomepageHeader() {
       
     } catch (err) {
       console.error('复制失败:', err);
+      // 添加失败反馈
+      const copyBtn = document.querySelector(`.${styles.copyButton}`);
+      if (copyBtn) {
+        copyBtn.style.background = 'rgba(239, 68, 68, 0.2)';
+        copyBtn.style.color = '#ef4444';
+        copyBtn.querySelector(`.${styles.copyIcon}`).textContent = '❌';
+        
+        setTimeout(() => {
+          copyBtn.style.background = '';
+          copyBtn.style.color = '';
+          copyBtn.querySelector(`.${styles.copyIcon}`).textContent = '📋';
+        }, 2000);
+      }
     }
   };
 
@@ -197,6 +223,49 @@ function HomepageHeader() {
 
 export default function Home() {
   const {siteConfig} = useDocusaurusContext();
+  
+  // 确保页面加载时滚动到顶部
+  useEffect(() => {
+    // 立即滚动到顶部
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant'
+    });
+    
+    // 使用requestAnimationFrame确保DOM渲染完成后再次检查
+    const handleLoad = () => {
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'instant'
+        });
+      });
+    };
+    
+    // 监听窗口加载完成
+    if (document.readyState === 'complete') {
+      handleLoad();
+    } else {
+      window.addEventListener('load', handleLoad);
+    }
+    
+    // 延迟执行，确保所有动画开始后页面位置正确
+    const timeoutId = setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'instant'
+      });
+    }, 100);
+    
+    return () => {
+      window.removeEventListener('load', handleLoad);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+  
   return (
     <Layout
       title={`${siteConfig.title} - 轻量级运维平台`}

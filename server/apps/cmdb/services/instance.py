@@ -61,15 +61,9 @@ class InstanceManage(object):
 
         # 构建权限过滤条件：有权限的实例 OR 自己创建的实例
         permission_or_creator_filter = None
-        if inst_names and creator:
+        if inst_names:
             # 既有实例名称权限限制，又有创建人条件，构建OR条件
-            permission_or_creator_filter = {
-                "inst_names": inst_names,
-                "creator": creator
-            }
-        elif inst_names:
-            # 只有实例名称权限限制
-            params.append({"field": "inst_name", "type": "str[]", "value": inst_names})
+            permission_or_creator_filter = {"inst_names": inst_names}
         elif creator:
             # 只有创建人条件
             params.append({"field": "_creator", "type": "str=", "value": creator})
@@ -501,50 +495,22 @@ class InstanceManage(object):
         return add_mgs
 
     @staticmethod
-    def inst_export(model_id: str, ids: list, user_groups: list, roles: list, inst_names: list, created: str = "",
+    def inst_export(model_id: str, ids: list, user_groups: list, inst_names: list, created: str = "",
                     attr_list: list = [], association_list: list = []):
         """实例导出"""
         attrs = ModelManage.search_model_attr_v2(model_id)
         association = ModelManage.model_association_search(model_id)
 
         with GraphClient() as ag:
-            if ids:
-                # 如果指定了实例ID，直接查询这些实例
-                inst_list = ag.query_entity_by_ids(ids)
-            else:
-                # 构建权限参数
-                permission_params = InstanceManage.get_permission_params(user_groups, roles)
-
-                # 构建针对单个模型的实例权限参数
-                model_instance_permission_params = []
-                if inst_names:  # 如果有具体的实例名称限制
-                    model_instance_permission_params = [{
-                        'model_id': model_id,
-                        'inst_names': inst_names
-                    }]
-
-                # 构建查询参数
-                query_params = [{"field": "model_id", "type": "str=", "value": model_id}]
-
-                # 使用Neo4j的权限过滤查询
-                instance_permission_str = ag.format_instance_permission_params(model_instance_permission_params,
-                                                                               created)
-
-                # 如果有组织权限，所有条件都必须在组织权限范围内
-                if permission_params:
-                    if instance_permission_str:
-                        # 组织权限 AND (实例权限 OR 创建人权限)
-                        final_permission_condition = f"{permission_params} AND ({instance_permission_str})"
-                    else:
-                        # 仅组织权限
-                        final_permission_condition = permission_params
-                elif instance_permission_str:
-                    # 仅实例权限（包含创建人权限）
-                    final_permission_condition = instance_permission_str
-                else:
-                    final_permission_condition = ""
-
-                inst_list, _ = ag.query_entity(INSTANCE, query_params, permission_params=final_permission_condition)
+            # 使用新的基础权限过滤方法获取有权限的实例
+            inst_list = ag.export_entities_with_permission(
+                label=INSTANCE,
+                teams=user_groups,
+                inst_names=inst_names,
+                creator=created,
+                model_id=model_id,
+                inst_ids=ids  # 在权限范围内过滤指定的实例ID
+            )
 
         attrs = [i for i in attrs if i["attr_id"] in attr_list] if attr_list else attrs
         association = [i for i in association if
@@ -564,7 +530,6 @@ class InstanceManage(object):
         with GraphClient() as ag:
             result = ag.query_topo_test_config(INSTANCE, inst_id, model_id)
         return result
-
 
     @staticmethod
     def create_or_update(data: dict):
@@ -611,34 +576,34 @@ class InstanceManage(object):
                     })
         return result
 
-    @classmethod
-    def model_inst_count(cls, user_groups: list, roles: list, rules: dict = {}, created: str = ""):
-        # 构建基础权限参数
-        permission_params = InstanceManage.get_permission_params(user_groups, roles)
-        instance_permission_params = cls.format_instance_permission_data(rules)
+    @staticmethod
+    def add_inst_name_permission(inst_names):
+        if not inst_names:
+            return ""
+        return f"n.inst_name IN {inst_names}"
 
+    @classmethod
+    def model_inst_count(cls, user_groups: list, inst_names: list, roles: list = [], created: str = ""):
+        permission_params = InstanceManage.get_permission_params(user_groups=user_groups, roles=roles)
+        inst_name_params = cls.add_inst_name_permission(inst_names)
         with GraphClient() as ag:
             data = ag.entity_count(
-                INSTANCE,
-                "model_id",
-                [],
+                label=INSTANCE,
+                group_by_attr="model_id",
+                params=[],
                 permission_params=permission_params,
-                instance_permission_params=instance_permission_params,
+                inst_name_params=inst_name_params,
                 created=created
             )
         return data
 
     @classmethod
-    def fulltext_search(cls, user_groups: list, roles: list, search: str, rules: dict = {}, created: str = ""):
+    def fulltext_search(cls, user_groups: list, roles: list, search: str, inst_names: list, created: str = ""):
         """全文检索"""
         permission_params = InstanceManage.get_permission_params(user_groups, roles)
-
-        # 构建实例权限过滤参数
-        instance_permission_params = cls.format_instance_permission_data(rules)
+        inst_name_params = cls.add_inst_name_permission(inst_names)
 
         with GraphClient() as ag:
-            data = ag.full_text(search, permission_params=permission_params,
-                                instance_permission_params=instance_permission_params,
-                                created=created
-                                )
+            data = ag.full_text(search=search, permission_params=permission_params,
+                                inst_name_params=inst_name_params, created=created)
         return data
