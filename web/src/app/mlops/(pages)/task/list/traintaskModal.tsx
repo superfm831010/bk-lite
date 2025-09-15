@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { ModalRef } from '@/app/mlops/types';
 import { TrainTaskModalProps } from '@/app/mlops/types/task';
-import { useTaskForm } from '../../../hooks/task/useTrainTaskForm';
+import { useTaskForm } from '@/app/mlops/hooks/task/useTrainTaskForm';
 import { useTranslation } from '@/utils/i18n';
 
 const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptions, activeTag, onSuccess }, ref) => {

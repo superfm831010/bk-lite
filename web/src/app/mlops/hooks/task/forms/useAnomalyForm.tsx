@@ -212,6 +212,7 @@ export const useAnomalyForm = ({ datasetOptions, activeTag, onSuccess }: UseAnom
 
   // 渲染表单内容
   const renderFormContent = useCallback(() => {
+    if(key !== 'anomaly') return;
     return (
       <>
         <Form.Item

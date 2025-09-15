@@ -40,14 +40,14 @@ export const useRasaForm = ({ datasetOptions, activeTag, onSuccess }: UseRasaFor
   const [formData, setFormData] = useState<any>(null);
   const [pipeline, setPipeLine] = useState<ConfigList[]>([{ type: '', select: '', config: null }]);
   const [policies, setPolicies] = useState<ConfigList[]>([{ select: '', config: null }]);
-  
+
   // 编辑状态管理
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
   const [configFormData, setConfigFormData] = useState<any>({});
-  
+
   // 使用RASA参数转换工具
   const { configToForm, formToConfig, generateStandaloneFormFields } = useRasaParamsToForm();
-  
+
   // 使用 useMemo 优化静态数据
   const pipelineTypeOptions = useMemo(() => PIPELINE_TYPE_OPTIONS, []);
   const pipelineOptions = useMemo(() => PIPELINE_OPTIONS, []);
@@ -58,7 +58,7 @@ export const useRasaForm = ({ datasetOptions, activeTag, onSuccess }: UseRasaFor
     type: 'add',
     title: 'addtask',
   });
-  
+
   const [loadingState, setLoadingState] = useState<{
     confirm: boolean,
     dataset: boolean,
@@ -87,7 +87,7 @@ export const useRasaForm = ({ datasetOptions, activeTag, onSuccess }: UseRasaFor
   }, []);
 
   const initializeForm = () => {
-    console.log(key, formData);
+    if (key !== 'rasa') return;
     try {
       if (modalState.type === 'add') {
         setPipeLine([{ type: '', select: '', config: null }]);
@@ -349,7 +349,6 @@ export const useRasaForm = ({ datasetOptions, activeTag, onSuccess }: UseRasaFor
           policies
         }
       }
-      console.log(params);
       if (modalState.type === 'add') {
         await addRasaTrainTask(params);
         message.success(t(`common.addSuccess`));
@@ -378,6 +377,7 @@ export const useRasaForm = ({ datasetOptions, activeTag, onSuccess }: UseRasaFor
   };
 
   const renderFormContent = useCallback(() => {
+    if(key !== 'rasa') return;
     return (
       <>
         <Form.Item

@@ -128,55 +128,62 @@ const TrainTask = () => {
       width: 240,
       fixed: 'right',
       align: 'center',
-      render: (_: unknown, record: TrainJob) => (
-        <>
-          <PermissionWrapper requiredPermissions={['Train']}>
-            <Popconfirm
-              title={t('traintask.trainStartTitle')}
-              description={t('traintask.trainStartContent')}
-              okText={t('common.confirm')}
-              cancelText={t('common.cancel')}
-              onConfirm={() => onTrainStart(record)}
-            >
+      render: (_: unknown, record: TrainJob) => {
+        const [key] = selectedKeys;
+        return (
+          <>
+            {key === 'anomaly' &&
+              (<>
+                <PermissionWrapper requiredPermissions={['Train']}>
+                  <Popconfirm
+                    title={t('traintask.trainStartTitle')}
+                    description={t('traintask.trainStartContent')}
+                    okText={t('common.confirm')}
+                    cancelText={t('common.cancel')}
+                    onConfirm={() => onTrainStart(record)}
+                  >
+                    <Button
+                      type="link"
+                      className="mr-[10px]"
+                    >
+                      {t('traintask.train')}
+                    </Button>
+                  </Popconfirm>
+                </PermissionWrapper>
+                <PermissionWrapper requiredPermissions={['View']}>
+                  <Button
+                    type="link"
+                    className="mr-[10px]"
+                    onClick={() => openDrawer(record)}
+                  >
+                    {t('common.detail')}
+                  </Button>
+                </PermissionWrapper>
+              </>)
+            }
+            <PermissionWrapper requiredPermissions={['Edit']}>
               <Button
                 type="link"
                 className="mr-[10px]"
+                onClick={() => handleEdit(record)}
               >
-                {t('traintask.train')}
+                {t('common.edit')}
               </Button>
-            </Popconfirm>
-          </PermissionWrapper>
-          <PermissionWrapper requiredPermissions={['View']}>
-            <Button
-              type="link"
-              className="mr-[10px]"
-              onClick={() => openDrawer(record)}
-            >
-              {t('common.detail')}
-            </Button>
-          </PermissionWrapper>
-          <PermissionWrapper requiredPermissions={['Edit']}>
-            <Button
-              type="link"
-              className="mr-[10px]"
-              onClick={() => handleEdit(record)}
-            >
-              {t('common.edit')}
-            </Button>
-          </PermissionWrapper>
-          <PermissionWrapper requiredPermissions={['Delete']}>
-            <Popconfirm
-              title={t('traintask.delTraintask')}
-              description={t(`traintask.delTraintaskContent`)}
-              okText={t('common.confirm')}
-              cancelText={t('common.cancel')}
-              onConfirm={() => onDelete(record)}
-            >
-              <Button type="link" danger>{t('common.delete')}</Button>
-            </Popconfirm>
-          </PermissionWrapper>
-        </>
-      ),
+            </PermissionWrapper>
+            <PermissionWrapper requiredPermissions={['Delete']}>
+              <Popconfirm
+                title={t('traintask.delTraintask')}
+                description={t(`traintask.delTraintaskContent`)}
+                okText={t('common.confirm')}
+                cancelText={t('common.cancel')}
+                onConfirm={() => onDelete(record)}
+              >
+                <Button type="link" danger>{t('common.delete')}</Button>
+              </Popconfirm>
+            </PermissionWrapper>
+          </>
+        )
+      },
     },
   ];
 
@@ -211,7 +218,6 @@ const TrainTask = () => {
   }, [pagination.current, pagination.pageSize, selectedKeys]);
 
   const getTasks = async (name = '') => {
-    console.log(selectedKeys);
     const [activeTab] = selectedKeys;
     if (!activeTab) return;
     setLoading(true);
@@ -301,7 +307,6 @@ const TrainTask = () => {
       }
     } else if (activeTab === 'rasa') {
       const data = await getRasaPipelines({});
-      console.log(data)
       return data;
     }
   }, [getAnomalyTaskList]);
