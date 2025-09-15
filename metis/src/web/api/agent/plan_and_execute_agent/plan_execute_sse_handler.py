@@ -75,19 +75,10 @@ async def stream_plan_execute_response(
                         await asyncio.sleep(0.1)
 
                 elif message_type == "HumanMessage":
-                    # 人类消息，通常是内部流程，需要判断是否包含重要信息
+                    # 人类消息，直接发送
                     if hasattr(message, 'content') and message.content:
                         raw_content = message.content.strip()
-                        # 检查是否包含计算结果或重要信息
-                        if any(keyword in raw_content.lower() for keyword in ["计算", "等于", "结果", "答案", "乘以", "加", "减", "除", "1+1", "2*2", "×", "+", "-", "="]):
-                            content = f"🤔 **思考中...**\n\n{raw_content}\n\n"
-                            if content not in sent_contents:
-                                yield _create_sse_data(chat_id, created, model, content)
-                                sent_contents.add(content)
-                                logger.info(
-                                    f"[Plan Execute SSE] 发送重要人类消息: {content[:50]}...")
-                                await asyncio.sleep(0.1)
-                        elif not _is_internal_process_message(raw_content):
+                        if raw_content:
                             content = f"🤔 **思考中...**\n\n{raw_content}\n\n"
                             if content not in sent_contents:
                                 yield _create_sse_data(chat_id, created, model, content)
@@ -209,9 +200,7 @@ def _extract_message_content(message: Any, step_counter: int = 0) -> str:
                     # 跳过系统消息
                     return ""
                 elif message_type == "HumanMessage":
-                    # 用户消息通常是内部流程，可能需要过滤
-                    if _is_internal_process_message(content):
-                        return ""
+                    # 人类消息，直接格式化显示
                     content = f"🤔 **思考中...**\n\n{content}"
                 else:
                     # 其他类型的消息
@@ -263,11 +252,6 @@ def _format_ai_message(content: str, step_counter: int = 0) -> str:
                 response = data["action"]["response"]
                 return f"\n\n---\n\n✨ **最终答案**\n\n{response}\n\n"
 
-        # 检查是否是计算相关的内容
-        elif any(keyword in content.lower() for keyword in ["计算", "等于", "结果", "答案", "乘以", "加", "减", "除", "1+1", "2*2", "×", "+", "-", "="]):
-            # 这是重要的计算内容，优先显示
-            return f"\n🧮 **计算结果**\n\n{content}\n\n"
-
         # 其他AI消息的优雅格式化
         elif "步骤" in content or "计划" in content:
             return f"\n📋 **制定计划中...**\n\n{content}\n\n"
@@ -296,8 +280,6 @@ def _format_ai_message(content: str, step_counter: int = 0) -> str:
             return f"\n🔍 **信息搜索**\n\n{content}\n\n"
         elif "分析" in content:
             return f"\n📊 **数据分析**\n\n{content}\n\n"
-        elif any(keyword in content.lower() for keyword in ["计算", "等于", "结果", "答案", "乘以", "加", "减", "除", "1+1", "2*2", "×", "+", "-", "="]):
-            return f"\n🧮 **计算过程**\n\n{content}\n\n"
         else:
             # 直接返回内容，不过度格式化
             return content
@@ -317,29 +299,6 @@ def _format_general_message(content: str) -> str:
         return f"\n📝 {content}\n\n"
 
 
-def _is_internal_process_message(content: str) -> bool:
-    """判断是否是内部流程消息，需要过滤"""
-    # 检查是否包含计算结果或关键答案信息
-    if any(keyword in content.lower() for keyword in ["计算", "等于", "结果", "答案", "乘以", "加", "减", "除", "1+1", "2*2", "×", "+", "-", "="]):
-        return False  # 不过滤包含计算信息的内容
-
-    internal_patterns = [
-        "You are tasked with executing step",
-        "For the following plan:",
-        "已完成的步骤:",
-        "如果这是最后一个步骤",
-        "所有计划步骤已完成",
-        "请根据以下执行结果综合给出最终答案",
-        "重要说明：",
-        "请直接提供最终的答案"
-    ]
-
-    for pattern in internal_patterns:
-        if pattern in content:
-            return True
-    return False
-
-
 def _extract_meaningful_content(node_name: str, node_data: Any) -> str:
     """
     提取有意义的内容，尽量保留更多信息
@@ -357,27 +316,23 @@ def _extract_meaningful_content(node_name: str, node_data: Any) -> str:
                     if isinstance(message, dict):
                         msg_content = message.get("content", "")
                         if isinstance(msg_content, str) and msg_content.strip():
-                            # 只过滤明显的技术内容
-                            if not _is_obvious_technical_message(msg_content):
-                                content = msg_content.strip()
-                                logger.debug(
-                                    f"[Plan Execute SSE] 从messages提取内容: {content[:50]}...")
-                                break
+                            content = msg_content.strip()
+                            logger.debug(
+                                f"[Plan Execute SSE] 从messages提取内容: {content[:50]}...")
+                            break
 
             # 直接提取内容字段
             elif "content" in node_data:
                 msg_content = node_data["content"]
                 if isinstance(msg_content, str) and msg_content.strip():
-                    if not _is_obvious_technical_message(msg_content):
-                        content = msg_content.strip()
-                        logger.debug(
-                            f"[Plan Execute SSE] 从content字段提取内容: {content[:50]}...")
+                    content = msg_content.strip()
+                    logger.debug(
+                        f"[Plan Execute SSE] 从content字段提取内容: {content[:50]}...")
 
         elif isinstance(node_data, str) and node_data.strip():
-            if not _is_obvious_technical_message(node_data):
-                content = node_data.strip()
-                logger.debug(
-                    f"[Plan Execute SSE] 直接提取字符串内容: {content[:50]}...")
+            content = node_data.strip()
+            logger.debug(
+                f"[Plan Execute SSE] 直接提取字符串内容: {content[:50]}...")
 
         # 为不同节点添加适当的前缀和格式
         if content:
@@ -395,44 +350,3 @@ def _extract_meaningful_content(node_name: str, node_data: Any) -> str:
     except Exception as e:
         logger.error(f"[Plan Execute SSE] 提取内容失败: {str(e)}")
         return ""
-
-
-def _is_obvious_technical_message(content: str) -> bool:
-    """
-    判断是否是明显的技术性消息，减少过滤条件
-    """
-    if not content or len(content.strip()) < 3:
-        return True
-
-    # 只过滤最明显的技术内容
-    obvious_technical_patterns = [
-        "tool_call_id:",
-        "function_call:",
-        "usage_metadata:",
-        "response_metadata:",
-        '"type":"function"',
-        '"role":"function"',
-        '{"id":"',
-        '{"object":"',
-        "uuid-"
-    ]
-
-    content_lower = content.lower()
-
-    # 检查是否包含明显的技术模式
-    for pattern in obvious_technical_patterns:
-        if pattern in content_lower:
-            logger.debug(f"[Plan Execute SSE] 过滤技术内容: {pattern}")
-            return True
-
-    # 过滤纯JSON格式但长度较短的内容
-    if (content.strip().startswith('{') and content.strip().endswith('}') and
-            len(content.strip()) < 50):
-        try:
-            json.loads(content)
-            logger.debug(f"[Plan Execute SSE] 过滤短JSON内容")
-            return True
-        except:
-            pass
-
-    return False
