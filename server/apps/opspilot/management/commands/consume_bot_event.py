@@ -8,9 +8,9 @@ from django.core.management import BaseCommand
 from django.db import close_old_connections
 
 from apps.core.logger import opspilot_logger as logger
-from apps.opspilot.bot_mgmt.utils import get_user_info
 from apps.opspilot.enum import ChannelChoices
 from apps.opspilot.models import Bot, BotConversationHistory, ChannelUser
+from apps.opspilot.utils.bot_utils import get_user_info
 
 channel_map = {}
 
@@ -35,9 +35,7 @@ def on_message(channel, method_frame, header_frame, body):
                 input_channel = channel_map.get(sender_id)
                 if not input_channel:
                     channel_user = ChannelUser.objects.get(user_id=sender_id)
-                    input_channel = (
-                        channel_user.channel_type if channel_user.channel_type != ChannelChoices.WEB else "socketio"
-                    )
+                    input_channel = channel_user.channel_type if channel_user.channel_type != ChannelChoices.WEB else "socketio"
             user, _ = get_user_info(bot_id, input_channel, sender_id)
             bot = Bot.objects.get(id=bot_id)
             msg = message.get("metadata", {}).get("other_data", {}).get("citing_knowledge", [])

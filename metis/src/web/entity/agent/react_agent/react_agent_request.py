@@ -7,3 +7,4 @@ from src.core.llm.entity.tools_server import ToolsServer
 class ReActAgentRequest(BasicLLMRequest):
     tools_servers: List[ToolsServer] = []
     langchain_tools: List[str] = []
+    max_iterations: int = 10  # ReAct Agent 最大迭代次数

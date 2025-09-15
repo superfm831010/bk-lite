@@ -38,6 +38,7 @@ export const useGraphOperations = (
   const { getSourceDataByApiId } = useDataSourceApi();
 
   const isPerformingUndoRedo = useRef(false);
+  const isInitializing = useRef(true);
 
   const resetAllStyles = useCallback((graph: X6Graph) => {
     graph.getNodes().forEach((node: any) => {
@@ -145,7 +146,7 @@ export const useGraphOperations = (
     cellType: 'node' | 'edge';
     cellId: string;
   }) => {
-    if (isPerformingUndoRedo.current) return;
+    if (isPerformingUndoRedo.current || isInitializing.current) return;
 
     setOperationHistory(prev => {
       const newHistory = [...prev.slice(0, operationIndex + 1), operation];
@@ -437,15 +438,20 @@ export const useGraphOperations = (
       graph.use(
         new MiniMap({
           container: minimapContainerRef.current,
-          width: 210,
-          height: 144,
-          padding: 0,
+          width: 200,
+          height: 117,
+          padding: 6,
           scalable: true,
           minScale: 0.01,
           maxScale: 16,
           graphOptions: {
-            grid: false,
-            background: false,
+            grid: {
+              visible: false,
+            },
+            background: {
+              color: 'rgba(248, 249, 250, 0.8)',
+            },
+            interacting: false,
           },
         })
       );
@@ -531,7 +537,6 @@ export const useGraphOperations = (
       const oldPosition = nodePositions.get(node.id);
       if (oldPosition) {
         const newPosition = node.getPosition();
-        // 只有位置真正发生变化时才记录
         if (oldPosition.x !== newPosition.x || oldPosition.y !== newPosition.y) {
           recordOperation({
             action: 'move',
@@ -682,7 +687,7 @@ export const useGraphOperations = (
           id: edge.id,
           lineType: edgeData.lineType || 'common_line',
           lineName: edgeData.lineName || '',
-          styleConfig: edgeData.styleConfig || { lineColor: '#666666' },
+          styleConfig: edgeData.styleConfig || { lineColor: COLORS.EDGE.DEFAULT, },
           sourceNode: {
             id: sourceNode.id,
             name: sourceNodeData?.name || sourceNode.id,
@@ -705,7 +710,7 @@ export const useGraphOperations = (
         lineType: 'common_line',
         lineName: '',
         styleConfig: {
-          lineColor: '#666666'
+          lineColor: COLORS.EDGE.DEFAULT,
         }
       });
     });
@@ -1023,7 +1028,7 @@ export const useGraphOperations = (
         resizing: {
           enabled: (node) => {
             const nodeData = node.getData();
-            return nodeData?.type !== 'text';
+            return state.isEditModeRef.current && nodeData?.type !== 'text';
           },
           minWidth: 32,
           minHeight: 32,
@@ -1314,6 +1319,22 @@ export const useGraphOperations = (
     state.setEditingNodeData(null);
   }, [state]);
 
+  // 手动完成初始化，启用操作记录
+  const finishInitialization = useCallback(() => {
+    isInitializing.current = false;
+  }, []);
+
+  // 重新开始初始化，禁用操作记录
+  const startInitialization = useCallback(() => {
+    isInitializing.current = true;
+  }, []);
+
+  // 清空操作历史记录
+  const clearOperationHistory = useCallback(() => {
+    setOperationHistory([]);
+    setOperationIndex(-1);
+  }, []);
+
   return {
     zoomIn,
     zoomOut,
@@ -1333,6 +1354,9 @@ export const useGraphOperations = (
     redo,
     canUndo,
     canRedo,
+    finishInitialization,
+    startInitialization,
+    clearOperationHistory,
     ...dataOperations,
   };
 };

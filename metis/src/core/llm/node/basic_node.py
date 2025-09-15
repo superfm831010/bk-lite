@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, TypedDict
 
 import json_repair
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
@@ -77,6 +77,8 @@ class BasicNode:
         rag_result = []
 
         for rag_search_request in naive_rag_request:
+            rag_search_request.search_query = config["configurable"]["graph_user_message"]
+
             if len(selected_knowledge_ids) != 0 and rag_search_request.index_name not in selected_knowledge_ids:
                 logger.info(
                     f"智能知识路由判断:[{rag_search_request.index_name}]不适合当前问题,跳过检索")
@@ -274,8 +276,6 @@ class BasicNode:
 
         return SummaryResult()
 
-        return SummaryResult()
-
     def _prepare_template_data(self, rag_result: list, config: RunnableConfig) -> dict:
         """准备模板渲染所需的数据"""
         # 转换RAG结果为模板友好的格式
@@ -340,7 +340,67 @@ class BasicNode:
 
         return doc
 
+    def _rewrite_query(self, request: BasicLLMRequest, config: RunnableConfig) -> str:
+        """
+        使用聊天历史上下文改写用户问题
+
+        Args:
+            request: 基础LLM请求对象
+            config: 运行时配置
+
+        Returns:
+            改写后的问题字符串
+        """
+        try:
+            # 准备模板数据
+            template_data = {
+                'user_message': request.user_message,
+                'chat_history': request.chat_history
+            }
+
+            # 渲染问题改写prompt
+            rewrite_prompt = TemplateLoader.render_template(
+                'prompts/graph/query_rewrite_prompt', template_data)
+
+            # 获取LLM客户端
+            llm = self.get_llm_client(request, disable_stream=True)
+
+            # 执行问题改写
+            response = llm.invoke([HumanMessage(content=rewrite_prompt)])
+            rewritten_query = response.content.strip()
+            return rewritten_query
+
+        except Exception as e:
+            logger.error(f"问题改写过程中发生异常: {str(e)}")
+            raise
+
     def user_message_node(self, state: Dict[str, Any], config: RunnableConfig) -> Dict[str, Any]:
-        state["messages"].append(HumanMessage(
-            content=config["configurable"]["graph_request"].user_message))
+        request = config["configurable"]["graph_request"]
+        user_message = request.user_message
+
+        # 如果启用问题改写功能
+        if config["configurable"].get('enable_query_rewrite', False) and request.chat_history:
+            try:
+                rewritten_message = self._rewrite_query(request, config)
+                if rewritten_message and rewritten_message.strip():
+                    user_message = rewritten_message
+                    self.log(
+                        config, f"问题改写完成: {request.user_message} -> {user_message}")
+            except Exception as e:
+                logger.warning(f"问题改写失败，使用原始问题: {str(e)}")
+                user_message = request.user_message
+
+        state["messages"].append(HumanMessage(content=user_message))
+        config["configurable"]["graph_user_message"] = user_message
         return state
+
+    def chat_node(self, state: Dict[str, Any], config: RunnableConfig) -> Dict[str, Any]:
+        request = config["configurable"]["graph_request"]
+
+        # 获取LLM客户端并调用
+        llm = self.get_llm_client(request)
+        result = llm.invoke(state["messages"])
+
+        return {
+            'messages': result
+        }
