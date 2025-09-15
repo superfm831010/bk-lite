@@ -64,8 +64,43 @@
     border-radius: 4px !important;
     bottom: 12px !important;
     right: 12px !important;
-    width: 120px !important;
-    height: 80px !important;
+    width: 180px !important;
+    height: 120px !important;
+    z-index: 5 !important;
+    overflow: hidden !important;
+  }
+  
+  /* 缩略图内部节点样式 */
+  :global(.react-flow__minimap-node) {
+    fill: var(--color-primary) !important;
+    stroke: var(--color-border) !important;
+    stroke-width: 1 !important;
+    opacity: 0.8 !important;
+  }
+  
+  /* 缩略图视窗区域样式 - 这是关键的修复 */
+  :global(.react-flow__minimap-mask) {
+    fill: rgba(240, 240, 240, 0.7) !important;
+    // stroke: var(--color-primary) !important;
+    stroke-width: 2 !important;
+    stroke-dasharray: none !important;
+    opacity: 1 !important;
+  }
+  
+  /* 缩略图视窗描述区域 - 确保正确显示当前可视区域 */
+  :global(.react-flow__minimap-describe) {
+    fill: rgba(255, 255, 255, 0.1) !important;
+    // stroke: var(--color-primary) !important;
+    stroke-width: 2 !important;
+    stroke-opacity: 1 !important;
+    stroke-dasharray: 5,3 !important;
+  }
+  
+  /* 缩略图SVG容器 */
+  :global(.react-flow__minimap svg) {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
   }
   
   :global(.react-flow__background) {
@@ -151,7 +186,7 @@
   background: var(--color-bg-1);
   border: 2px solid var(--color-border);
   border-radius: 8px;
-  min-width: 160px;
+  width: 160px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   
@@ -178,12 +213,17 @@
     font-size: 16px;
     margin-right: 8px;
     color: var(--color-primary);
+    flex-shrink: 0; // 防止图标被压缩
   }
   
   .nodeTitle {
     font-weight: 500;
     font-size: 14px;
     color: var(--color-text);
+    white-space: nowrap; // 防止标题换行
+    overflow: hidden; // 隐藏超出部分
+    text-overflow: ellipsis; // 显示省略号
+    flex: 1; // 占据剩余空间
   }
 }
 
@@ -196,10 +236,15 @@
     padding: 6px 8px;
     background: var(--color-fill-1);
     border-radius: 4px;
-    // border-left: 2px solid var(--color-primary);
     min-height: 20px;
     display: flex;
     align-items: center;
+    
+    // 关键修复：文本截断相关样式
+    white-space: nowrap; // 强制单行显示
+    overflow: hidden; // 隐藏超出部分
+    text-overflow: ellipsis; // 显示省略号
+    max-width: 100%; // 确保不超出容器宽度
     
     &:empty {
       display: none;
@@ -211,6 +256,13 @@
     font-size: 12px;
     color: var(--color-text-3);
     line-height: 1.4;
+    
+    // 为描述文本也添加截断
+    display: -webkit-box;
+    -webkit-line-clamp: 2; // 最多显示2行
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

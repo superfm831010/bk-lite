@@ -6,6 +6,7 @@ import { DeleteOutlined, InboxOutlined } from '@ant-design/icons';
 import { Node } from '@xyflow/react';
 import type { UploadProps, UploadFile } from 'antd';
 import { useSkillApi } from '@/app/opspilot/api/skill';
+import dayjs from 'dayjs';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -34,7 +35,7 @@ interface NodeConfigDrawerProps {
 const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   visible,
   node,
-  nodes = [], // 接收画布节点数据
+  nodes = [],
   onClose,
   onSave,
   onDelete
@@ -44,22 +45,22 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   const [paramRows, setParamRows] = useState<Array<{ key: string, value: string }>>([]);
   const [headerRows, setHeaderRows] = useState<Array<{ key: string, value: string }>>([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([]);
-  const [llmModels, setLlmModels] = useState<any[]>([]);
-  const [loadingLlmModels, setLoadingLlmModels] = useState(false);
+  const [skills, setSkills] = useState<any[]>([]);
+  const [loadingSkills, setLoadingSkills] = useState(false);
 
-  const { fetchLlmModels } = useSkillApi();
+  const { fetchSkill } = useSkillApi();
 
   // 获取LLM模型列表
   const loadLlmModels = async () => {
     try {
-      setLoadingLlmModels(true);
-      const models = await fetchLlmModels();
-      setLlmModels(models || []);
+      setLoadingSkills(true);
+      const skills = await fetchSkill({is_template: 0});
+      setSkills(skills || []);
     } catch (error) {
       console.error('获取智能体列表失败:', error);
       message.error('获取智能体列表失败');
     } finally {
-      setLoadingLlmModels(false);
+      setLoadingSkills(false);
     }
   };
 
@@ -70,15 +71,44 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
       // 强制重置表单，确保每次打开都是最新的节点数据
       form.resetFields();
       
-      // 设置表单值，包括节点名称（来自node.data.label）和其他配置
-      form.setFieldsValue({
+      // 处理时间字段，确保转换为正确的 dayjs 对象
+      const formValues: any = {
         name: node.data.label, // 回显节点名称
         ...config
-      });
+      };
+
+      // 如果是 celery 节点且有时间配置，需要转换时间格式
+      if (node.data.type === 'celery' && config.time) {
+        try {
+          // 如果 time 是字符串格式（如 "14:30"），转换为 dayjs 对象
+          if (typeof config.time === 'string') {
+            // 只处理 HH:mm 格式，创建今天的这个时间点
+            const timeStr = config.time.includes(':') ? config.time : `${config.time}:00`;
+            const today = new Date().toISOString().split('T')[0]; // 获取今天的日期 YYYY-MM-DD
+            formValues.time = dayjs(`${today} ${timeStr}`, 'YYYY-MM-DD HH:mm');
+          } else if (config.time && typeof config.time === 'object' && config.time._isAMomentObject) {
+            // 如果是 moment 对象，转换为 dayjs
+            formValues.time = dayjs(config.time.format('HH:mm'), 'HH:mm');
+          } else if (config.time && typeof config.time === 'object' && config.time.$d) {
+            // 如果已经是 dayjs 对象，直接使用
+            formValues.time = config.time;
+          } else {
+            // 其他情况，尝试解析
+            formValues.time = dayjs(config.time);
+          }
+        } catch (error) {
+          console.warn('时间格式转换失败:', config.time, error);
+          // 如果转换失败，设置为 undefined，让用户重新选择
+          formValues.time = undefined;
+        }
+      }
+      
+      // 设置表单值
+      form.setFieldsValue(formValues);
 
       // 设置频率状态
-      if ((config as any).frequency) {
-        setFrequency((config as any).frequency);
+      if (config.frequency) {
+        setFrequency(config.frequency);
       } else {
         setFrequency('daily'); // 重置为默认值
       }
@@ -140,6 +170,18 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         params: paramRows.filter(row => row.key && row.value),
         headers: headerRows.filter(row => row.key && row.value)
       };
+
+      // 如果是 celery 节点且有时间配置，只保存时分格式
+      if (node.data.type === 'celery' && configData.time) {
+        try {
+          // 如果是 dayjs 对象，提取 HH:mm 格式
+          if (configData.time && typeof configData.time === 'object' && configData.time.format) {
+            configData.time = configData.time.format('HH:mm');
+          }
+        } catch (error) {
+          console.warn('时间格式保存失败:', configData.time, error);
+        }
+      }
 
       onSave(node.id, configData);
       message.success('节点配置已保存');
@@ -261,7 +303,31 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   // 获取触发器节点列表（用于条件分支配置）
   const getTriggerNodes = () => {
     const triggerTypes = ['celery', 'restful', 'openai'];
-    return nodes.filter(n => triggerTypes.includes(n.data.type));
+    
+    // 多重安全检查
+    if (!nodes) {
+      console.warn('NodeConfigDrawer: nodes is null or undefined');
+      return [];
+    }
+    
+    if (!Array.isArray(nodes)) {
+      console.warn('NodeConfigDrawer: nodes is not an array:', typeof nodes, nodes);
+      return [];
+    }
+    
+    try {
+      return nodes.filter(n => {
+        // 确保节点有正确的数据结构
+        if (!n || !n.data || typeof n.data.type !== 'string') {
+          console.warn('NodeConfigDrawer: Invalid node structure:', n);
+          return false;
+        }
+        return triggerTypes.includes(n.data.type);
+      });
+    } catch (error) {
+      console.error('NodeConfigDrawer: Error filtering trigger nodes:', error);
+      return [];
+    }
   };
 
   const renderConfigForm = () => {
@@ -474,7 +540,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
             case 'agents':
               // 处理智能体选择，同时保存名称和ID
               const handleAgentChange = (agentId: string) => {
-                const selectedAgent = llmModels.find(model => model.id === agentId);
+                const selectedAgent = skills.find(model => model.id === agentId);
                 if (selectedAgent) {
                   // 同时设置agent和agentName字段
                   form.setFieldsValue({
@@ -489,14 +555,15 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                   <Form.Item name="agent" label="选择智能体" rules={[{ required: true }]}>
                     <Select 
                       placeholder="请选择智能体"
-                      loading={loadingLlmModels}
+                      loading={loadingSkills}
+                      disabled={loadingSkills}
                       showSearch
                       onChange={handleAgentChange}
                       filterOption={(input, option) =>
                         option?.label?.toString().toLowerCase().includes(input.toLowerCase()) ?? false
                       }
                     >
-                      {llmModels.map((model) => (
+                      {skills.map((model) => (
                         <Option key={model.id} value={model.id} label={model.name}>
                           {model.name}
                         </Option>

@@ -195,8 +195,30 @@ const ChatflowCanvas: React.FC<ChatflowCanvasProps> = ({ value, onChange }) => {
     },
   ];
 
-  const [nodes, , onNodesChange] = useNodesState(value?.nodes || initialNodes);
+  // 使用 useRef 来跟踪是否正在更新外部数据，避免循环更新
+  const isUpdatingFromParent = React.useRef(false);
+  
+  const [nodes, setNodes, onNodesChange] = useNodesState(value?.nodes || initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(value?.edges || initialEdges);
+
+  // 当外部 value 变化时，更新内部状态（但不触发 onChange）
+  React.useEffect(() => {
+    if (value && !isUpdatingFromParent.current) {
+      isUpdatingFromParent.current = true;
+      
+      if (value.nodes && Array.isArray(value.nodes)) {
+        setNodes(value.nodes);
+      }
+      if (value.edges && Array.isArray(value.edges)) {
+        setEdges(value.edges);
+      }
+      
+      // 延迟重置标志，确保状态更新完成
+      setTimeout(() => {
+        isUpdatingFromParent.current = false;
+      }, 0);
+    }
+  }, [value, setNodes, setEdges]);
 
   // 节点类型定义 - 移除未使用的节点类型
   const nodeTypes: NodeTypes = useMemo(() => ({
@@ -227,10 +249,28 @@ const ChatflowCanvas: React.FC<ChatflowCanvasProps> = ({ value, onChange }) => {
     [setEdges]
   );
 
-  // 通知父组件数据变化
+  // 通知父组件数据变化 - 使用防抖和条件检查避免无限循环
+  const lastNotifiedData = React.useRef<string>('');
+  
   React.useEffect(() => {
-    if (onChange) {
-      onChange({ nodes, edges });
+    // 只有在不是从父组件更新且有 onChange 回调时才通知父组件
+    if (!isUpdatingFromParent.current && onChange) {
+      // 创建数据指纹来避免重复通知相同数据
+      const currentDataFingerprint = JSON.stringify({
+        nodes: nodes.map(n => ({ id: n.id, type: n.type, position: n.position, data: n.data })),
+        edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target }))
+      });
+      
+      // 只有当数据真的发生变化时才通知父组件
+      if (currentDataFingerprint !== lastNotifiedData.current) {
+        lastNotifiedData.current = currentDataFingerprint;
+        
+        const timeoutId = setTimeout(() => {
+          onChange({ nodes, edges });
+        }, 300); // 增加防抖延迟
+        
+        return () => clearTimeout(timeoutId);
+      }
     }
   }, [nodes, edges, onChange]);
 

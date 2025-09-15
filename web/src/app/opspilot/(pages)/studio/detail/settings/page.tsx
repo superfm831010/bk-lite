@@ -69,6 +69,31 @@ const StudioSettingsPage: React.FC = () => {
         const currentBotType = botData.bot_type || 1;
         setBotType(currentBotType);
 
+        // 处理工作流数据回显
+        if (currentBotType === 3 && botData.workflow_data) {
+          console.log('检测到工作流类型机器人，workflow_data:', botData.workflow_data);
+          
+          // 确保 workflow_data 是正确的格式
+          if (botData.workflow_data && typeof botData.workflow_data === 'object') {
+            const { nodes = [], edges = [] } = botData.workflow_data;
+            
+            // 验证节点和边数据是否为数组
+            if (Array.isArray(nodes) && Array.isArray(edges)) {
+              console.log('设置工作流数据 - nodes:', nodes.length, 'edges:', edges.length);
+              setWorkflowData({ nodes, edges });
+            } else {
+              console.warn('工作流数据格式不正确，nodes或edges不是数组:', { nodes, edges });
+              setWorkflowData({ nodes: [], edges: [] });
+            }
+          } else {
+            console.log('工作流类型机器人但无有效数据，设置为空');
+            setWorkflowData({ nodes: [], edges: [] });
+          }
+        } else {
+          // 非工作流类型，清空工作流数据
+          setWorkflowData({ nodes: [], edges: [] });
+        }
+
         let initialRasaModel = botData.rasa_model;
         if (!initialRasaModel && rasaModelsData.length > 0) {
           initialRasaModel = rasaModelsData[0].id;
@@ -273,9 +298,16 @@ const StudioSettingsPage: React.FC = () => {
     message.success('画布已清除');
   };
 
-  const handleSaveWorkflow = useCallback((nodes: any[], edges: any[]) => {
-    setWorkflowData({ nodes, edges });
-  }, []);
+  const handleSaveWorkflow = useCallback((newWorkflowData: { nodes: any[], edges: any[] }) => {
+    // 使用数据指纹避免无意义的更新
+    const currentDataStr = JSON.stringify(workflowData);
+    const newDataStr = JSON.stringify(newWorkflowData);
+    
+    if (currentDataStr !== newDataStr) {
+      console.log('StudioSettingsPage: 工作流数据更新', newWorkflowData);
+      setWorkflowData(newWorkflowData);
+    }
+  }, [workflowData]);
 
   const handleChatflowSave = async (isPublish = false) => {
     setSaveLoading(true);

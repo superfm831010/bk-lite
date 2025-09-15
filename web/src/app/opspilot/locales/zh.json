@@ -745,7 +745,6 @@
       "connectionAdded": "连接添加成功",
       "connectionDeleted": "连接删除成功",
       "deleteConfirm": "确定要删除这个节点吗？",
-      "dragToCreate": "从左侧拖拽节点到画布创建",
       "deleteNodeContent": "确定要删除节点吗？此操作无法撤销。",
       "deleteMultipleConfirm": "确认删除多个节点？",
       "deleteMultipleContent": "确定要删除选中的节点吗？此操作无法撤销。",
