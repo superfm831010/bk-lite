@@ -4,6 +4,16 @@ from rest_framework import routers
 
 from apps.mlops.views.anomaly_detection_dataset import AnomalyDetectionDatasetViewSet
 from apps.mlops.views.anomaly_detection_train_data import AnomalyDetectionTrainDataViewSet
+from apps.mlops.views.timeseries_predict_dataset import TimeSeriesPredictDatasetViewSet
+from apps.mlops.views.timeseries_predict_train_data import TimeSeriesPredictTrainDataViewSet
+from apps.mlops.views.timeseries_predict_train_job import TimeSeriesPredictTrainJobViewSet
+from apps.mlops.views.timeseries_predict_train_history import TimeSeriesPredictTrainHistoryViewSet
+from apps.mlops.views.timeseries_predict_serving import TimeSeriesPredictServingViewSet
+from apps.mlops.views.log_clustering_dataset import LogClusteringDatasetViewSet
+from apps.mlops.views.log_clustering_train_data import LogClusteringTrainDataViewSet
+from apps.mlops.views.log_clustering_train_job import LogClusteringTrainJobViewSet
+from apps.mlops.views.log_clustering_train_history import LogClusteringTrainHistoryViewSet
+from apps.mlops.views.log_clustering_serving import LogClusteringServingViewSet
 from apps.mlops.views.rasa_dataset import RasaDatasetViewSet
 from apps.mlops.views.rase_intent import RasaIntentViewSet
 from apps.mlops.views.rasa_response import RasaResponseViewSet
@@ -22,6 +32,20 @@ router.register(r'anomaly_detection_datasets', AnomalyDetectionDatasetViewSet,ba
 router.register(r'anomaly_detection_train_data', AnomalyDetectionTrainDataViewSet,basename='anomaly_detection_train_data')
 router.register(r'anomaly_detection_train_jobs', AnomalyDetectionTrainJobViewSet, basename='anomaly_detection_train_jobs')
 router.register(r'anomaly_detection_servings', AnomalyDetectionServingViewSet, basename='anomaly_detection_servings')
+
+# 时间序列预测
+router.register(r'timeseries_predict_datasets', TimeSeriesPredictDatasetViewSet, basename='timeseries_predict_datasets')
+router.register(r'timeseries_predict_train_data', TimeSeriesPredictTrainDataViewSet, basename='timeseries_predict_train_data')
+router.register(r'timeseries_predict_train_jobs', TimeSeriesPredictTrainJobViewSet, basename='timeseries_predict_train_jobs')
+router.register(r'timeseries_predict_train_history', TimeSeriesPredictTrainHistoryViewSet, basename='timeseries_predict_train_history')
+router.register(r'timeseries_predict_servings', TimeSeriesPredictServingViewSet, basename='timeseries_predict_servings')
+
+# 日志聚类
+router.register(r'log_clustering_datasets', LogClusteringDatasetViewSet, basename='log_clustering_datasets')
+router.register(r'log_clustering_train_data', LogClusteringTrainDataViewSet, basename='log_clustering_train_data')
+router.register(r'log_clustering_train_jobs', LogClusteringTrainJobViewSet, basename='log_clustering_train_jobs')
+router.register(r'log_clustering_train_history', LogClusteringTrainHistoryViewSet, basename='log_clustering_train_history')
+router.register(r'log_clustering_servings', LogClusteringServingViewSet, basename='log_clustering_servings')
 
 #Rasa
 router.register(r'rasa_datasets', RasaDatasetViewSet, basename='rasa_datasets')
