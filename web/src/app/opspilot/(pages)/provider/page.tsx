@@ -317,7 +317,7 @@ const ProviderPage: React.FC = () => {
       team: values.team,
       consumer_team: values.consumer_team,
       label: values.label,
-      model_type: selectedGroupId !== 'all' ? Number(selectedGroupId) : undefined,
+      model_type: values.model_type,
     };
 
     // Build payload based on provider type
