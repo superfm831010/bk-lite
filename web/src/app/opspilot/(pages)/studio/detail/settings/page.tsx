@@ -40,7 +40,7 @@ const StudioSettingsPage: React.FC = () => {
   const [botPermissions, setBotPermissions] = useState<string[]>([]);
   const [online, setOnline] = useState(false);
   const [botType, setBotType] = useState<number>(1);
-  // 将工作流数据状态移到顶层
+  // Move workflow data state to top level
   const [workflowData, setWorkflowData] = useState<{ nodes: any[], edges: any[] }>({ nodes: [], edges: [] });
   
   const searchParams = useSearchParams();
@@ -69,28 +69,28 @@ const StudioSettingsPage: React.FC = () => {
         const currentBotType = botData.bot_type || 1;
         setBotType(currentBotType);
 
-        // 处理工作流数据回显
+        // Handle workflow data for workflow bot type
         if (currentBotType === 3 && botData.workflow_data) {
-          console.log('检测到工作流类型机器人，workflow_data:', botData.workflow_data);
+          console.log('Detected workflow bot type, workflow_data:', botData.workflow_data);
           
-          // 确保 workflow_data 是正确的格式
+          // Ensure workflow_data is in correct format
           if (botData.workflow_data && typeof botData.workflow_data === 'object') {
             const { nodes = [], edges = [] } = botData.workflow_data;
             
-            // 验证节点和边数据是否为数组
+            // Validate nodes and edges data are arrays
             if (Array.isArray(nodes) && Array.isArray(edges)) {
-              console.log('设置工作流数据 - nodes:', nodes.length, 'edges:', edges.length);
+              console.log('Setting workflow data - nodes:', nodes.length, 'edges:', edges.length);
               setWorkflowData({ nodes, edges });
             } else {
-              console.warn('工作流数据格式不正确，nodes或edges不是数组:', { nodes, edges });
+              console.warn('Workflow data format incorrect, nodes or edges are not arrays:', { nodes, edges });
               setWorkflowData({ nodes: [], edges: [] });
             }
           } else {
-            console.log('工作流类型机器人但无有效数据，设置为空');
+            console.log('Workflow bot type but no valid data, setting to empty');
             setWorkflowData({ nodes: [], edges: [] });
           }
         } else {
-          // 非工作流类型，清空工作流数据
+          // Non-workflow type, clear workflow data
           setWorkflowData({ nodes: [], edges: [] });
         }
 
@@ -291,20 +291,20 @@ const StudioSettingsPage: React.FC = () => {
     });
   };
 
-  // 将 chatflow 相关函数移到组件顶层
+  // Move chatflow related functions to top level
   const handleClearCanvas = () => {
-    // 重置工作流数据为空
+    // Reset workflow data to empty
     setWorkflowData({ nodes: [], edges: [] });
-    message.success('画布已清除');
+    message.success('Canvas cleared');
   };
 
   const handleSaveWorkflow = useCallback((newWorkflowData: { nodes: any[], edges: any[] }) => {
-    // 使用数据指纹避免无意义的更新
+    // Use data fingerprint to avoid meaningless updates
     const currentDataStr = JSON.stringify(workflowData);
     const newDataStr = JSON.stringify(newWorkflowData);
     
     if (currentDataStr !== newDataStr) {
-      console.log('StudioSettingsPage: 工作流数据更新', newWorkflowData);
+      console.log('StudioSettingsPage: Workflow data updated', newWorkflowData);
       setWorkflowData(newWorkflowData);
     }
   }, [workflowData]);
@@ -336,7 +336,7 @@ const StudioSettingsPage: React.FC = () => {
     }
   };
 
-  // 将 chatflowMenu 移到组件顶层
+  // Move chatflowMenu to top level
   const chatflowMenu = (
     <Menu style={{ width: 300 }}>
       <Menu.Item key="info" disabled style={{ whiteSpace: 'normal', opacity: 1, cursor: 'default' }}>
@@ -581,7 +581,7 @@ const StudioSettingsPage: React.FC = () => {
                             value={nodePort}
                             onChange={(e) => {
                               const value = Number(e.target.value);
-                              // 端口号的合法范围为 1-65535
+                              // Port number valid range is 1-65535
                               if (!Number.isNaN(value) && value > 0 && value <= 65535) {
                                 setNodePort(value);
                               } else if (e.target.value === '') {
@@ -669,7 +669,7 @@ const StudioSettingsPage: React.FC = () => {
                                 value={nodePort}
                                 onChange={(e) => {
                                   const value = Number(e.target.value);
-                                  // 端口号的合法范围为 1-65535
+                                  // Port number valid range is 1-65535
                                   if (!Number.isNaN(value) && value > 0 && value <= 65535) {
                                     setNodePort(value);
                                   } else if (e.target.value === '') {

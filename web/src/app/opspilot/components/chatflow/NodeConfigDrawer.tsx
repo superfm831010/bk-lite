@@ -11,14 +11,14 @@ import dayjs from 'dayjs';
 const { Option } = Select;
 const { TextArea } = Input;
 
-// 节点数据类型定义
+// Node data type definition
 interface ChatflowNodeData {
   label: string;
   type: string;
   config?: any;
 }
 
-// 扩展Node类型以包含具体的data类型
+// Extended Node type with specific data type
 interface ChatflowNode extends Omit<Node, 'data'> {
   data: ChatflowNodeData;
 }
@@ -26,7 +26,7 @@ interface ChatflowNode extends Omit<Node, 'data'> {
 interface NodeConfigDrawerProps {
   visible: boolean;
   node: ChatflowNode | null;
-  nodes?: ChatflowNode[]; // 使用更具体的类型
+  nodes?: ChatflowNode[];
   onClose: () => void;
   onSave: (nodeId: string, config: any) => void;
   onDelete: (nodeId: string) => void;
@@ -50,7 +50,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
 
   const { fetchSkill } = useSkillApi();
 
-  // 获取LLM模型列表
+  // Load LLM model list
   const loadLlmModels = async () => {
     try {
       setLoadingSkills(true);
@@ -68,71 +68,62 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     if (node && visible) {
       const config = node.data.config || {};
       
-      // 强制重置表单，确保每次打开都是最新的节点数据
+      // Force form reset to ensure latest node data
       form.resetFields();
       
-      // 处理时间字段，确保转换为正确的 dayjs 对象
+      // Handle time field conversion to correct dayjs object
       const formValues: any = {
-        name: node.data.label, // 回显节点名称
+        name: node.data.label,
         ...config
       };
 
-      // 如果是 celery 节点且有时间配置，需要转换时间格式
+      // Time format handling for celery nodes
       if (node.data.type === 'celery' && config.time) {
         try {
-          // 如果 time 是字符串格式（如 "14:30"），转换为 dayjs 对象
+          // String format (e.g., "14:30") to dayjs object
           if (typeof config.time === 'string') {
-            // 只处理 HH:mm 格式，创建今天的这个时间点
             const timeStr = config.time.includes(':') ? config.time : `${config.time}:00`;
-            const today = new Date().toISOString().split('T')[0]; // 获取今天的日期 YYYY-MM-DD
+            const today = new Date().toISOString().split('T')[0];
             formValues.time = dayjs(`${today} ${timeStr}`, 'YYYY-MM-DD HH:mm');
           } else if (config.time && typeof config.time === 'object' && config.time._isAMomentObject) {
-            // 如果是 moment 对象，转换为 dayjs
+            // Convert moment to dayjs
             formValues.time = dayjs(config.time.format('HH:mm'), 'HH:mm');
           } else if (config.time && typeof config.time === 'object' && config.time.$d) {
-            // 如果已经是 dayjs 对象，直接使用
+            // Already dayjs object
             formValues.time = config.time;
           } else {
-            // 其他情况，尝试解析
             formValues.time = dayjs(config.time);
           }
         } catch (error) {
           console.warn('时间格式转换失败:', config.time, error);
-          // 如果转换失败，设置为 undefined，让用户重新选择
           formValues.time = undefined;
         }
       }
       
-      // 设置表单值
       form.setFieldsValue(formValues);
 
-      // 设置频率状态
       if (config.frequency) {
         setFrequency(config.frequency);
       } else {
-        setFrequency('daily'); // 重置为默认值
+        setFrequency('daily');
       }
       
-      // 设置参数和请求头 - 根据节点类型决定是否显示和初始化
+      // Initialize params and headers based on node type
       const needsParamsAndHeaders = ['http', 'restful', 'openai'];
       
       if (needsParamsAndHeaders.includes(node.data.type)) {
-        // 需要显示参数和请求头的节点类型
         if ((config as any).params && Array.isArray((config as any).params) && (config as any).params.length > 0) {
-          setParamRows([...(config as any).params]); // 使用展开运算符确保是新数组
+          setParamRows([...(config as any).params]);
         } else {
-          // 如果没有保存的参数，初始化一个空行供用户填写
           setParamRows([{ key: '', value: '' }]);
         }
         
         if ((config as any).headers && Array.isArray((config as any).headers) && (config as any).headers.length > 0) {
-          setHeaderRows([...(config as any).headers]); // 使用展开运算符确保是新数组
+          setHeaderRows([...(config as any).headers]);
         } else {
-          // 如果没有保存的请求头，初始化一个空行供用户填写
           setHeaderRows([{ key: '', value: '' }]);
         }
       } else {
-        // 其他节点类型不显示参数和请求头，但保留数据结构
         if ((config as any).params && Array.isArray((config as any).params)) {
           setParamRows([...(config as any).params]);
         } else {
@@ -146,12 +137,12 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         }
       }
 
-      // 如果是智能体节点，加载LLM模型列表
+      // Load LLM models for agent nodes
       if (node.data.type === 'agents') {
         loadLlmModels();
       }
     } else {
-      // 当抽屉关闭时，重置所有状态
+      // Reset all states when drawer closes
       form.resetFields();
       setParamRows([]);
       setHeaderRows([]);
@@ -159,22 +150,20 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     }
   }, [node, visible, form]);
 
-  // 保存配置
+  // Save configuration
   const handleSave = () => {
     if (!node) return;
 
     form.validateFields().then((values) => {
       const configData = {
         ...values,
-        // 确保所有节点都有 params 和 headers 配置
         params: paramRows.filter(row => row.key && row.value),
         headers: headerRows.filter(row => row.key && row.value)
       };
 
-      // 如果是 celery 节点且有时间配置，只保存时分格式
+      // Save time in HH:mm format for celery nodes
       if (node.data.type === 'celery' && configData.time) {
         try {
-          // 如果是 dayjs 对象，提取 HH:mm 格式
           if (configData.time && typeof configData.time === 'object' && configData.time.format) {
             configData.time = configData.time.format('HH:mm');
           }
@@ -235,20 +224,18 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     setHeaderRows(newRows);
   };
 
-  // 文件上传配置
+  // File upload configuration
   const uploadProps: UploadProps = {
     name: 'file',
     multiple: true,
     accept: '.md',
     fileList: uploadedFiles,
     beforeUpload: (file) => {
-      // 检查文件类型
       if (!file.name.toLowerCase().endsWith('.md')) {
         message.error('只支持上传 .md 格式的文件');
         return false;
       }
       
-      // 检查文件大小（例如限制为10MB）
       const isLt10M = file.size / 1024 / 1024 < 10;
       if (!isLt10M) {
         message.error('文件大小不能超过 10MB');
@@ -277,7 +264,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     },
     customRequest: async ({ file, onSuccess, onError }) => {
       try {
-        // 这里应该调用真实的上传API
+        // TODO: Replace with actual upload API
         // const formData = new FormData();
         // formData.append('file', file);
         // const response = await fetch('/api/upload/knowledge', {
@@ -285,7 +272,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         //   body: formData
         // });
         
-        // 模拟上传过程
+        // Simulate upload process
         setTimeout(() => {
           onSuccess && onSuccess({
             fileId: Date.now().toString(),
@@ -300,11 +287,11 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     }
   };
 
-  // 获取触发器节点列表（用于条件分支配置）
+  // Get trigger nodes list for condition branch configuration
   const getTriggerNodes = () => {
     const triggerTypes = ['celery', 'restful', 'openai'];
     
-    // 多重安全检查
+    // Safety checks
     if (!nodes) {
       console.warn('NodeConfigDrawer: nodes is null or undefined');
       return [];
@@ -317,7 +304,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     
     try {
       return nodes.filter(n => {
-        // 确保节点有正确的数据结构
+        // Ensure node has correct data structure
         if (!n || !n.data || typeof n.data.type !== 'string') {
           console.warn('NodeConfigDrawer: Invalid node structure:', n);
           return false;
@@ -337,12 +324,12 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
 
     return (
       <>
-        {/* 通用节点名称配置 - 所有节点类型都需要 */}
+        {/* Common node name configuration for all node types */}
         <Form.Item name="name" label="节点名称" rules={[{ required: true, message: '请输入节点名称' }]}>
           <Input placeholder="请输入节点名称" />
         </Form.Item>
 
-        {/* 根据节点类型渲染特定配置 */}
+        {/* Render specific configuration based on node type */}
         {(() => {
           switch (nodeType) {
             case 'celery':
@@ -538,11 +525,10 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
               );
 
             case 'agents':
-              // 处理智能体选择，同时保存名称和ID
+              // Handle agent selection, save both name and ID
               const handleAgentChange = (agentId: string) => {
                 const selectedAgent = skills.find(model => model.id === agentId);
                 if (selectedAgent) {
-                  // 同时设置agent和agentName字段
                   form.setFieldsValue({
                     agent: agentId,
                     agentName: selectedAgent.name
@@ -570,7 +556,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                       ))}
                     </Select>
                   </Form.Item>
-                  {/* 隐藏字段保存智能体名称 */}
+                  {/* Hidden field to save agent name */}
                   <Form.Item name="agentName" style={{ display: 'none' }}>
                     <Input />
                   </Form.Item>

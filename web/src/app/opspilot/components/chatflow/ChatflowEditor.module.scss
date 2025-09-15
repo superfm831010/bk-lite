@@ -7,7 +7,7 @@
   border-radius: 8px;
   overflow: hidden;
   
-  /* ReactFlow 全局样式覆盖 */
+  /* ReactFlow global style overrides */
   :global(.react-flow__node) {
     cursor: pointer;
     background: transparent !important;
@@ -70,7 +70,7 @@
     overflow: hidden !important;
   }
   
-  /* 缩略图内部节点样式 */
+  /* Minimap internal node styles */
   :global(.react-flow__minimap-node) {
     fill: var(--color-primary) !important;
     stroke: var(--color-border) !important;
@@ -78,25 +78,23 @@
     opacity: 0.8 !important;
   }
   
-  /* 缩略图视窗区域样式 - 这是关键的修复 */
+  /* Minimap viewport area styles - critical fix */
   :global(.react-flow__minimap-mask) {
     fill: rgba(240, 240, 240, 0.7) !important;
-    // stroke: var(--color-primary) !important;
     stroke-width: 2 !important;
     stroke-dasharray: none !important;
     opacity: 1 !important;
   }
   
-  /* 缩略图视窗描述区域 - 确保正确显示当前可视区域 */
+  /* Minimap viewport description area - ensure proper display of current visible area */
   :global(.react-flow__minimap-describe) {
     fill: rgba(255, 255, 255, 0.1) !important;
-    // stroke: var(--color-primary) !important;
     stroke-width: 2 !important;
     stroke-opacity: 1 !important;
     stroke-dasharray: 5,3 !important;
   }
   
-  /* 缩略图SVG容器 */
+  /* Minimap SVG container */
   :global(.react-flow__minimap svg) {
     width: 100% !important;
     height: 100% !important;
@@ -117,7 +115,7 @@
     border: 1px solid var(--color-border);
   }
 
-  /* 连接点样式 - 调整为10px */
+  /* Connection handle styles - adjusted to 10px */
   :global(.react-flow__handle) {
     width: 10px !important;
     height: 10px !important;
@@ -146,7 +144,7 @@
     right: 0px !important;
   }
   
-  /* 连线流动动画 - 向右流动 */
+  /* Connection flow animation - rightward flow */
   @keyframes flowAnimation {
     0% {
       stroke-dashoffset: 0;
@@ -213,17 +211,17 @@
     font-size: 16px;
     margin-right: 8px;
     color: var(--color-primary);
-    flex-shrink: 0; // 防止图标被压缩
+    flex-shrink: 0; // Prevent icon compression
   }
   
   .nodeTitle {
     font-weight: 500;
     font-size: 14px;
     color: var(--color-text);
-    white-space: nowrap; // 防止标题换行
-    overflow: hidden; // 隐藏超出部分
-    text-overflow: ellipsis; // 显示省略号
-    flex: 1; // 占据剩余空间
+    white-space: nowrap; // Prevent title wrapping
+    overflow: hidden; // Hide overflow content
+    text-overflow: ellipsis; // Show ellipsis
+    flex: 1; // Take remaining space
   }
 }
 
@@ -240,11 +238,11 @@
     display: flex;
     align-items: center;
     
-    // 关键修复：文本截断相关样式
-    white-space: nowrap; // 强制单行显示
-    overflow: hidden; // 隐藏超出部分
-    text-overflow: ellipsis; // 显示省略号
-    max-width: 100%; // 确保不超出容器宽度
+    // Critical fix: text truncation styles
+    white-space: nowrap; // Force single line display
+    overflow: hidden; // Hide overflow content
+    text-overflow: ellipsis; // Show ellipsis
+    max-width: 100%; // Ensure not exceeding container width
     
     &:empty {
       display: none;
@@ -257,9 +255,9 @@
     color: var(--color-text-3);
     line-height: 1.4;
     
-    // 为描述文本也添加截断
+    // Add truncation for description text
     display: -webkit-box;
-    -webkit-line-clamp: 2; // 最多显示2行
+    -webkit-line-clamp: 2; // Maximum 2 lines display
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
