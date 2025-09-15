@@ -265,6 +265,31 @@
       "flowsPeriod": "Statistics cycle",
       "flowsPeriodDes": "Traffic statistics cycle (seconds), outputting statistical information every other time."
     },
+    "analysis": {
+      "dashboard": "Dashboard",
+      "dimension": "Dimension",
+      "packetbeat": {
+        "dashboardName": "Built-in Packetbeat Basic View",
+        "activeConnections": "Active Connections",
+        "activeConnectionsDesc": "Current active TCP/UDP connections",
+        "totalNetworkTraffic": "Total Network Traffic",
+        "totalNetworkTrafficDesc": "Total network traffic (inbound + outbound) bytes",
+        "http5xxErrors": "HTTP 5xx Errors",
+        "http5xxErrorsDesc": "Total HTTP 5xx errors for service health monitoring",
+        "networkTrafficTrend": "Network Traffic Trend",
+        "networkTrafficTrendDesc": "Total HTTP 5xx errors for service health monitoring",
+        "httpRequestTrend": "HTTP Request Trend",
+        "httpRequestTrendDesc": "Number of requests for each HTTP method",
+        "networkTrafficTop10": "Top 10 Network Traffic",
+        "networkTrafficTop10Desc": "Investigate inter-host traffic hotspots, identify high-traffic peers or abnormal traffic sources",
+        "httpServiceTrafficTop10": "Top 10 HTTP Service Traffic",
+        "httpServiceTrafficTop10Desc": "HTTP service load analysis, discover high-traffic request clients/servers",
+        "abnormalTrafficLogs": "Abnormal Traffic Logs",
+        "abnormalTrafficLogsDesc": "High-traffic connection records for quick detection of abnormal traffic or potential attacks",
+        "httpLargeRequestLogs": "HTTP Large Request Logs",
+        "httpLargeRequestLogsDesc": "Large request traffic HTTP requests for traffic anomaly analysis"
+      }
+    },
     "event": {
       "executionTime": "Execution Time",
       "effective": "Effective",

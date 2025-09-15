@@ -178,3 +178,16 @@ export const getRecentTimeRange = (timeValues: TimeValuesProps) => {
   }
   return timeValues.timeRange;
 };
+
+// 判断一个字符串是否是JSON
+export const isJSON = (input: string): boolean => {
+  try {
+    if (typeof input !== 'string') {
+      return false;
+    }
+    const parsed = JSON.parse(input);
+    return !!parsed;
+  } catch {
+    return false;
+  }
+};

@@ -113,6 +113,13 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       height: nodeDefaults.height,
     };
 
+    if (nodeType === 'single-value') {
+      defaultValues.nameFontSize = 12;
+      defaultValues.nameColor = '#666666';
+      defaultValues.unit = '';
+      defaultValues.decimalPlaces = 2;
+    }
+
     if (nodeType === 'basic-shape') {
       const basicShapeDefaults =
         nodeDefaults as typeof NODE_DEFAULTS.BASIC_SHAPE_NODE;
@@ -150,6 +157,10 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         borderWidth: values.borderWidth,
         lineType: values.lineType,
         shapeType: values.shapeType,
+        nameFontSize: values.nameFontSize,
+        nameColor: values.nameColor,
+        unit: values.unit,
+        decimalPlaces: values.decimalPlaces,
       };
 
       setSelectedIcon(values.logoIcon || 'cc-host');
@@ -362,11 +373,13 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     try {
       const values = await form.validateFields();
 
-      ['textColor', 'backgroundColor', 'borderColor'].forEach((key) => {
-        if (values[key]) {
-          values[key] = processColorValue(values[key]);
+      ['textColor', 'backgroundColor', 'borderColor', 'nameColor'].forEach(
+        (key) => {
+          if (values[key]) {
+            values[key] = processColorValue(values[key]);
+          }
         }
-      });
+      );
 
       if (values.params && selectedDataSource?.params) {
         values.dataSourceParams = processFormParamsForSubmit(
@@ -612,7 +625,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     return (
       <div className="mb-6">
         <div className="font-bold text-[var(--color-text-1)] mb-4">
-          {t('topology.nodeConfig.nodeStyle')}
+          {t('topology.styleSettings')}
         </div>
 
         {nodeType === 'single-value' && (
@@ -635,6 +648,28 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
             <Form.Item
               label={t('topology.nodeConfig.textColor')}
               name="textColor"
+            >
+              {renderColorPicker()}
+            </Form.Item>
+
+            <Form.Item
+              label={t('topology.nodeConfig.nameFontSize')}
+              name="nameFontSize"
+            >
+              <InputNumber
+                min={10}
+                max={24}
+                step={1}
+                addonAfter="px"
+                disabled={readonly}
+                placeholder="12"
+                style={{ width: '120px' }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={t('topology.nodeConfig.nameColor')}
+              name="nameColor"
             >
               {renderColorPicker()}
             </Form.Item>
@@ -667,6 +702,15 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
               />
             </Form.Item>
           </>
+        )}
+
+        {nodeType === 'icon' && (
+          <Form.Item
+            label={t('topology.nodeConfig.borderColor')}
+            name="borderColor"
+          >
+            {renderColorPicker()}
+          </Form.Item>
         )}
 
         {nodeType === 'basic-shape' && (
@@ -720,21 +764,48 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   }, [nodeType, readonly, form, t]);
 
   const renderBasicSettings = useMemo(() => {
-    if (nodeType === 'single-value') return null;
-
     return (
       <>
         <div className="font-bold text-[var(--color-text-1)] mb-4">
           {t('topology.nodeConfig.basicSettings')}
         </div>
-        {nodeType === 'icon' && (
-          <Form.Item
-            label={t('topology.nodeConfig.name')}
-            name="name"
-            rules={[{ required: true, message: t('common.inputMsg') }]}
-          >
-            <Input placeholder={t('common.inputMsg')} disabled={readonly} />
-          </Form.Item>
+
+        <Form.Item
+          label={t('topology.nodeConfig.name')}
+          name="name"
+          rules={
+            nodeType === 'icon'
+              ? [{ required: true, message: t('common.inputMsg') }]
+              : undefined
+          }
+        >
+          <Input placeholder={t('common.inputMsg')} disabled={readonly} />
+        </Form.Item>
+
+        {nodeType === 'single-value' && (
+          <>
+            <Form.Item label={t('topology.nodeConfig.unit')} name="unit">
+              <Input
+                placeholder={t('common.inputMsg')}
+                disabled={readonly}
+                style={{ width: '200px' }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={t('topology.nodeConfig.decimalPlaces')}
+              name="decimalPlaces"
+            >
+              <InputNumber
+                min={0}
+                max={10}
+                step={1}
+                placeholder="2"
+                disabled={readonly}
+                style={{ width: '120px' }}
+              />
+            </Form.Item>
+          </>
         )}
 
         {nodeType === 'basic-shape' && (
@@ -785,7 +856,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         </div>
       }
     >
-      <Form form={form} labelCol={{ span: 4 }} layout="horizontal">
+      <Form form={form} labelCol={{ span: 5 }} layout="horizontal">
         {renderBasicSettings}
         {renderDataSourceConfig}
         {renderStyleConfig}

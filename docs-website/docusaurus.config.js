@@ -69,7 +69,7 @@ const config = {
           },
           {
             "label":"产品文档",
-            "to":"/docs/products/opspilot"
+            "to":"/docs/products/opspilot/introduce"
           },
           {
             "label":"运维手册",
@@ -111,7 +111,7 @@ const config = {
               },
               {
                 label: '部署指南',
-                to: '#',
+                to: '/docs/deploy/docker-compose',
               }
             ],
           },
@@ -131,10 +131,6 @@ const config = {
           {
             title: '更多',
             items: [
-              {
-                label: '企业版',
-                href: '#',
-              },
               {
                 label: '开源协议',
                 href: 'https://github.com/TencentBlueKing/bk-lite/blob/master/LICENSE.txt',

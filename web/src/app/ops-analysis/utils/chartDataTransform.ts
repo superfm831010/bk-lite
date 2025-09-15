@@ -228,4 +228,69 @@ export class ChartDataTransformer {
     }
     return data.categories && data.categories.length > 0;
   }
+
+  /**
+   * 校验原始数据是否可以转换为折线图/柱状图数据
+   */
+  static validateLineBarData(rawData: any, errorMessage?: string): { isValid: boolean; message?: string } {
+    // 数据为空时图表组件会显示 Empty 状态，不需要校验
+    if (!rawData || (Array.isArray(rawData) && rawData.length === 0)) {
+      return { isValid: true };
+    }
+
+    try {
+      const transformedData = this.transformToLineBarData(rawData);
+
+      if (!transformedData.categories || transformedData.categories.length === 0) {
+        return { isValid: false, message: errorMessage || '数据格式不匹配' };
+      }
+
+      // 检查数值数据
+      const hasValidData = transformedData.series
+        ? transformedData.series.some(series =>
+          series.data && series.data.length > 0 &&
+          series.data.some(val => typeof val === 'number' && !isNaN(val))
+        )
+        : transformedData.values &&
+        transformedData.values.some(val => typeof val === 'number' && !isNaN(val));
+
+      if (!hasValidData) {
+        return { isValid: false, message: errorMessage || '数据格式不匹配' };
+      }
+
+      return { isValid: true };
+    } catch {
+      return { isValid: false, message: errorMessage || '数据格式不匹配' };
+    }
+  }
+
+  /**
+   * 校验原始数据是否可以转换为饼图数据
+   */
+  static validatePieData(rawData: any, errorMessage?: string): { isValid: boolean; message?: string } {
+    // 数据为空时图表组件会显示 Empty 状态，不需要校验
+    if (!rawData) {
+      return { isValid: true };
+    }
+
+    try {
+      const transformedData = this.transformToPieData(rawData);
+
+      if (!transformedData || transformedData.length === 0) {
+        return { isValid: true }; // 空数据让图表组件自行处理
+      }
+
+      const hasValidValues = transformedData.some(item =>
+        item && typeof item.value === 'number' && !isNaN(item.value) && item.value > 0
+      );
+
+      if (!hasValidValues) {
+        return { isValid: false, message: errorMessage || '数据格式不匹配' };
+      }
+
+      return { isValid: true };
+    } catch {
+      return { isValid: false, message: errorMessage || '数据格式不匹配' };
+    }
+  }
 }

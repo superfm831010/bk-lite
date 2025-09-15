@@ -1,6 +1,5 @@
 from langgraph.constants import END
 from langgraph.graph import StateGraph
-from langgraph.types import RetryPolicy
 from sanic.log import logger
 
 from src.core.agent.plan_and_execute_agent.plan_and_execute_agent_node import PlanAndExecuteAgentNode
@@ -10,9 +9,9 @@ from src.web.entity.agent.plan_and_execute_agent.plan_and_execute_agent_request 
 
 
 class PlanAndExecuteAgentGraph(ToolsGraph):
-    """Plan and Execute Agent的图实现
+    """Plan and Execute Agent的图实现 - 简化版本
 
-    负责构建和执行Plan and Execute智能体的工作流图
+    使用抽象的 ReAct 节点组合和 chat_node 大幅简化实现
     """
 
     async def compile_graph(self, request: PlanAndExecuteAgentRequest):
@@ -38,33 +37,19 @@ class PlanAndExecuteAgentGraph(ToolsGraph):
         # 准备基本图结构
         last_edge = self.prepare_graph(graph_builder, node_builder)
 
-        # 添加Plan and Execute特定节点
-        graph_builder.add_node("llm", node_builder.execute_step,
-                               retry=RetryPolicy(max_attempts=5))
-        graph_builder.add_node("planner", node_builder.plan_step)
-        graph_builder.add_node("replan", node_builder.replan_step)
+        # 添加计划生成节点
+        graph_builder.add_node("planner", node_builder.planner_node)
+
+        # 使用 ReAct 组合节点处理计划执行和重新规划
+        react_entry_node = node_builder.build_plan_execute_react_nodes(
+            graph_builder=graph_builder,
+            composite_node_name="plan_execute_agent",
+            end_node=END
+        )
 
         # 设置图边缘
         graph_builder.add_edge(last_edge, "planner")
-        graph_builder.add_edge("planner", "llm")
-        graph_builder.add_conditional_edges(
-            "llm",
-            node_builder.should_end,
-            {
-                "llm": "llm",  # 继续执行下一步
-                "replan": "replan",  # 重新规划
-                END: END,  # 结束执行
-            }
-        )
-        graph_builder.add_conditional_edges(
-            "replan",
-            node_builder.should_end,
-            {
-                "llm": "llm",  # 继续执行新计划
-                "replan": "replan",  # 继续重新规划
-                END: END,  # 结束执行
-            }
-        )
+        graph_builder.add_edge("planner", react_entry_node)
 
         # 编译图
         logger.info(f"编译Plan and Execute Agent图")

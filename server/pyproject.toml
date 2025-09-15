@@ -1,3 +1,11 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["apps*", "config*", "nats_client*"]
+exclude = ["envs*", "locale*", "assets*", "templates*", "scripts*", "support-files*", "mlruns*", "coverage_html*"]
+
 [project]
 name = "server"
 version = "3.7.0"
@@ -60,7 +68,7 @@ dependencies = [
     "pillow==11.3.0",
 ]
 
-[dependency-groups]
+[project.optional-dependencies]
 cmdb = [
     "cos-python-sdk-v5==1.9.37",
     "falkordb==1.2.0",
@@ -96,3 +104,20 @@ mlops = [
 opspilot = [
     "langserve[client]==0.2.2",
 ]
+
+[tool.black]
+line-length = 150
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''

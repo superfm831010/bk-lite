@@ -15,6 +15,19 @@
   );
   position: relative;
   overflow: hidden;
+  /* 修改入场动画 - 避免translateY */
+  opacity: 0;
+  animation: sectionFadeIn 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* 修改区域入场动画 - 只使用透明度 */
+@keyframes sectionFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .features::after {
@@ -60,6 +73,19 @@
   margin-bottom: 6rem;
   position: relative;
   z-index: 2;
+  /* 修改标题动画 - 避免translateY */
+  opacity: 0;
+  animation: headerFadeIn 1.0s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+}
+
+/* 修改标题动画 - 只使用透明度 */
+@keyframes headerFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .sectionTitle {
@@ -69,7 +95,19 @@
   color: #1d1d1f;
   letter-spacing: -0.03em;
   line-height: 1.1;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-family: var(--ifm-font-family-base) !important;
+  /* 添加标题的细微呼吸动画 */
+  animation: titleGlow 3s ease-in-out infinite;
+}
+
+/* 标题呼吸动画 */
+@keyframes titleGlow {
+  0%, 100% {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    text-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);
+  }
 }
 
 .sectionSubtitle {
@@ -79,7 +117,20 @@
   max-width: 700px;
   margin: 0 auto;
   font-weight: 400;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-family: var(--ifm-font-family-base) !important;
+  /* 修改副标题动画 - 避免translateY */
+  opacity: 0;
+  animation: subtitleFadeIn 1.0s cubic-bezier(0.4, 0, 0.2, 1) 0.5s both;
+}
+
+/* 修改副标题动画 - 只使用透明度 */
+@keyframes subtitleFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Modern Grid Layout */
@@ -115,6 +166,37 @@
 .featureItem {
   display: flex;
   height: 100%;
+  /* 修改卡片级联动画 - 避免translateY */
+  opacity: 0;
+  transform: scale(0.95);
+  animation: featureItemScale 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 为每个特性卡片添加不同的延迟 */
+.featureItem:nth-child(1) { animation-delay: 0.7s; }
+.featureItem:nth-child(2) { animation-delay: 0.8s; }
+.featureItem:nth-child(3) { animation-delay: 0.9s; }
+.featureItem:nth-child(4) { animation-delay: 1.0s; }
+.featureItem:nth-child(5) { animation-delay: 1.1s; }
+.featureItem:nth-child(6) { animation-delay: 1.2s; }
+.featureItem:nth-child(7) { animation-delay: 1.3s; }
+.featureItem:nth-child(8) { animation-delay: 1.4s; }
+.featureItem:nth-child(9) { animation-delay: 1.5s; }
+.featureItem:nth-child(10) { animation-delay: 1.6s; }
+.featureItem:nth-child(11) { animation-delay: 1.7s; }
+.featureItem:nth-child(12) { animation-delay: 1.8s; }
+.featureItem:nth-child(13) { animation-delay: 1.9s; }
+
+/* 修改特性卡片动画 - 避免translateY */
+@keyframes featureItemScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .featureCard {
@@ -129,7 +211,8 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   padding: 1.5rem;
-  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  /* 改进卡片动画 */
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
   height: 100%;
   min-height: 320px;
   position: relative;
@@ -141,14 +224,34 @@
     inset 0 -1px 0 rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
+  /* 添加微妙的呼吸动画 */
+  animation: cardBreathe 4s ease-in-out infinite;
+}
+
+/* 卡片呼吸动画 */
+@keyframes cardBreathe {
+  0%, 100% {
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.12),
+      0 2px 8px rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 10px 36px rgba(0, 0, 0, 0.15),
+      0 3px 10px rgba(255, 255, 255, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+  }
 }
 
 .featureCard:hover {
-  transform: translateY(-12px) scale(1.02);
+  transform: translateY(-16px) scale(1.03);
   box-shadow: 
-    0 25px 50px rgba(0, 0, 0, 0.18),
-    0 12px 24px rgba(59, 130, 246, 0.15),
-    0 4px 12px rgba(255, 255, 255, 0.1),
+    0 30px 60px rgba(0, 0, 0, 0.2),
+    0 16px 32px rgba(59, 130, 246, 0.18),
+    0 8px 16px rgba(255, 255, 255, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
@@ -158,6 +261,8 @@
     rgba(255, 255, 255, 0.08) 50%,
     rgba(255, 255, 255, 0.05) 100%
   );
+  /* 暂停呼吸动画 */
+  animation-play-state: paused;
 }
 
 .featureCard::before {
@@ -228,13 +333,33 @@
   -webkit-backdrop-filter: blur(12px) saturate(1.5);
   backdrop-filter: blur(12px) saturate(1.5);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  /* 改进图标动画 */
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
   box-shadow: 
     0 4px 16px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
+  /* 添加图标的微妙脉冲动画 */
+  animation: iconPulse 3s ease-in-out infinite;
+}
+
+/* 图标脉冲动画 */
+@keyframes iconPulse {
+  0%, 100% {
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 6px 20px rgba(0, 0, 0, 0.12),
+      0 0 20px rgba(59, 130, 246, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.45),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+  }
 }
 
 .featureIcon::before {
@@ -256,9 +381,10 @@
 }
 
 .featureCard:hover .featureIcon {
-  transform: scale(1.08) rotate(2deg);
+  transform: scale(1.12) rotate(3deg);
   box-shadow: 
-    0 8px 24px rgba(0, 0, 0, 0.15),
+    0 12px 32px rgba(0, 0, 0, 0.18),
+    0 0 25px rgba(59, 130, 246, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
     inset 0 -1px 0 rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
@@ -268,6 +394,8 @@
     rgba(255, 255, 255, 0.15) 50%,
     rgba(255, 255, 255, 0.08) 100%
   );
+  /* 暂停脉冲动画 */
+  animation-play-state: paused;
 }
 
 .featureCard:hover .featureIcon::before {
@@ -275,8 +403,18 @@
 }
 
 .iconEmoji {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 添加图标旋转动画 */
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* 图标hover时的旋转效果 */
+.featureCard:hover .iconEmoji {
+  transform: scale(1.1) rotate(-3deg);
 }
 
 .cardBadge {
@@ -354,7 +492,7 @@
   text-align: left;
   position: relative;
   z-index: 3;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-family: var(--ifm-font-family-base) !important;
 }
 
 .featureDescription {
@@ -362,7 +500,7 @@
   line-height: 1.6;
   font-size: 0.875rem;
   font-weight: 400;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-family: var(--ifm-font-family-base) !important;
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   text-align: left;
   margin: 0 0 1.25rem 0;
@@ -413,7 +551,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-family: var(--ifm-font-family-base) !important;
 }
 
 .metricValue::before {
@@ -475,7 +613,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-family: var(--ifm-font-family-base) !important;
 }
 
 .highlightTag::before {
@@ -672,7 +810,7 @@
   }
   
   .iconEmoji {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
   
   .featureTitle {
@@ -737,7 +875,7 @@
   }
   
   .iconEmoji {
-    font-size: 1.2rem;
+    font-size: 1.0rem;
   }
   
   .featureTitle {
@@ -769,5 +907,53 @@
   
   .highlightTags {
     gap: 0.3rem;
+  }
+}
+
+/* 添加性能优化和动画控制 */
+@media (prefers-reduced-motion: reduce) {
+  /* 为有动画偏好设置的用户禁用动画 */
+  .features,
+  .sectionHeader,
+  .sectionTitle,
+  .sectionSubtitle,
+  .featureItem,
+  .featureCard,
+  .featureIcon,
+  .iconEmoji {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .featureCard:hover {
+    transform: none !important;
+  }
+}
+
+/* 为低性能设备优化 */
+@media (max-width: 480px) and (prefers-reduced-motion: no-preference) {
+  /* 移动设备上简化动画 */
+  .featureCard {
+    animation-duration: 2s; /* 减少呼吸动画频率 */
+  }
+  
+  .featureIcon {
+    animation-duration: 4s; /* 减少脉冲动画频率 */
+  }
+  
+  .sectionTitle {
+    animation-duration: 4s; /* 减少标题动画频率 */
+  }
+}
+
+/* 高性能设备增强 */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .featureCard {
+    /* 增强hover效果 */
+    will-change: transform, box-shadow;
+  }
+  
+  .featureCard:hover {
+    transform: translateY(-20px) scale(1.04);
   }
 }

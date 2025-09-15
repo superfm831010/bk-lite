@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import styles from './index.module.scss';
 import { Spin } from 'antd';
-import { PictureOutlined, MinusOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, CloseOutlined } from '@ant-design/icons';
 import { v4 as uuidv4 } from 'uuid';
 import { useTopologyState } from './hooks/useTopologyState';
 import { useGraphOperations } from './hooks/useGraphOperations';
@@ -67,6 +67,13 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       loading,
       getEditNodeInitialValues,
       toggleEditMode,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
+      startInitialization,
+      finishInitialization,
+      clearOperationHistory,
     } = useGraphOperations(
       containerRef,
       state,
@@ -187,6 +194,8 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           id: `node_${uuidv4()}`,
           type: selectedNodeType.id,
           name: values.name || selectedNodeType.name,
+          unit: values.unit,
+          decimalPlaces: values.decimalPlaces,
           position: dropPosition,
           logoType: values.logoType,
           logoIcon: values.logoIcon,
@@ -207,6 +216,8 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
             fontSize: values.fontSize,
             lineType: values.lineType,
             shapeType: values.shapeType,
+            nameColor: values.nameColor,
+            nameFontSize: values.nameFontSize,
           },
         };
         addNewNode(nodeConfig);
@@ -216,11 +227,11 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       handleNodeEditClose();
     };
 
-    const getNodeInitialValues = () => {
+    const getNodeInitialValues = (): NodeConfigFormValues | undefined => {
       return addNodeVisible ? undefined : getEditNodeInitialValues();
     };
 
-    const getNodeType = () => {
+    const getNodeType = (): 'single-value' | 'icon' | 'basic-shape' => {
       return addNodeVisible
         ? (selectedNodeType?.id as 'single-value' | 'icon' | 'basic-shape')
         : (state.editingNodeData?.type as
@@ -229,11 +240,11 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
             | 'basic-shape');
     };
 
-    const getNodeTitle = () => {
+    const getNodeTitle = (): string => {
       return state.isEditMode ? '编辑节点' : '查看节点';
     };
 
-    const getNodeReadonly = () => {
+    const getNodeReadonly = (): boolean => {
       return addNodeVisible ? false : !state.isEditMode;
     };
 
@@ -252,14 +263,22 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
     }));
 
     useEffect(() => {
+      state.resetAllStates();
+      startInitialization();
+      clearOperationHistory();
+
       if (selectedTopology?.data_id && state.graphInstance) {
-        handleLoadTopology(selectedTopology.data_id);
+        handleLoadTopology(selectedTopology.data_id).finally(() => {
+          setTimeout(() => {
+            finishInitialization();
+          }, 100);
+        });
+      } else if (!selectedTopology?.data_id && state.graphInstance) {
+        setTimeout(() => {
+          finishInitialization();
+        }, 100);
       }
     }, [selectedTopology?.data_id, state.graphInstance]);
-
-    useEffect(() => {
-      state.resetAllStates();
-    }, [selectedTopology?.data_id]);
 
     const handleSelectMode = () => {
       state.setIsSelectMode(!state.isSelectMode);
@@ -267,6 +286,26 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
         state.graphInstance.enableSelection();
       }
     };
+
+    // 键盘快捷键监听
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.ctrlKey || e.metaKey) {
+          if (e.key === 'z' && !e.shiftKey) {
+            e.preventDefault();
+            undo();
+          } else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) {
+            e.preventDefault();
+            redo();
+          }
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }, [undo, redo]);
 
     return (
       <div
@@ -283,6 +322,10 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           onDelete={handleDelete}
           onSelectMode={handleSelectMode}
           onAddText={handleAddText}
+          onUndo={undo}
+          onRedo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
           isSelectMode={state.isSelectMode}
           isEditMode={state.isEditMode}
         />
@@ -323,13 +366,12 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
             {minimapVisible && (
               <div className={styles.minimapContainer}>
                 <div className={styles.minimapHeader}>
-                  <span></span>
                   <button
                     onClick={() => setMinimapVisible(false)}
                     className={styles.minimapCloseBtn}
                     title="收起缩略图"
                   >
-                    <MinusOutlined />
+                    <CloseOutlined />
                   </button>
                 </div>
                 <div
@@ -344,7 +386,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
                 className={styles.minimapShowBtn}
                 title="显示缩略图"
               >
-                <PictureOutlined />
+                <AppstoreOutlined />
               </button>
             )}
 
