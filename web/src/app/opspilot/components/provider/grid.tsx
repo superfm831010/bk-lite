@@ -62,7 +62,6 @@ const ProviderGrid: React.FC<ProviderGridProps> = ({ models, filterType, loading
   );
 
   const handleEditOk = async (values: any) => {
-    console.log('Edit form values:', values);
     if (!selectedModel) return;
 
     const configField = CONFIG_MAP[filterType];
