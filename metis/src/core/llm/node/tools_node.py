@@ -43,8 +43,20 @@ class ToolsNodes(BasicNode):
     async def setup(self, request: BaseModel):
         """初始化工具节点"""
         # 初始化MCP客户端配置
+        logger.info({len(request.tools_servers)})
         for server in request.tools_servers:
-            if not server.url.startswith("langchain:"):
+            logger.info(f"Tools Server: {server}")
+            if server.url.startswith("langchain:"):
+                continue
+
+            if server.url.startswith("stdio-mcp:"):
+                # stdio-mcp:name
+                self.mcp_config[server.name] = {
+                    "command": server.command,
+                    "args": server.args,
+                    "transport": 'stdio'
+                }
+            else:
                 self.mcp_config[server.name] = {
                     "url": server.url,
                     "transport": 'sse'
