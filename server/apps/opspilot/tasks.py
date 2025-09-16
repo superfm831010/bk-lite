@@ -9,7 +9,6 @@ from tqdm import tqdm
 
 from apps.core.logger import opspilot_logger as logger
 from apps.opspilot.enum import DocumentStatus
-from apps.opspilot.knowledge_mgmt.services.knowledge_search_service import KnowledgeSearchService
 from apps.opspilot.models import (
     FileKnowledge,
     KnowledgeBase,
@@ -21,6 +20,7 @@ from apps.opspilot.models import (
     QAPairs,
     WebPageKnowledge,
 )
+from apps.opspilot.services.knowledge_search_service import KnowledgeSearchService
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 from apps.opspilot.utils.chunk_helper import ChunkHelper
 from apps.opspilot.utils.graph_utils import GraphUtils
@@ -120,7 +120,13 @@ def invoke_one_document(document, is_show=False):
         ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
         if source_type == "file":
             files = source_data.pop("file")
-            response = requests.post(source_remote, headers=headers, data=form_data, files=files, verify=ssl_verify)
+            response = requests.post(
+                source_remote,
+                headers=headers,
+                data=form_data,
+                files=files,
+                verify=ssl_verify,
+            )
         else:
             form_data.update(source_data)
             response = requests.post(source_remote, headers=headers, data=form_data, verify=ssl_verify)
@@ -137,7 +143,18 @@ def invoke_one_document(document, is_show=False):
 
 def format_file_invoke_kwargs(document):
     knowledge = FileKnowledge.objects.filter(knowledge_document_id=document.id).first()
-    return {"file": [("file", (knowledge.file.name, knowledge.file.read(), "application/octet-stream"))]}
+    return {
+        "file": [
+            (
+                "file",
+                (
+                    knowledge.file.name,
+                    knowledge.file.read(),
+                    "application/octet-stream",
+                ),
+            )
+        ]
+    }
 
 
 def format_manual_invoke_kwargs(document):
@@ -194,9 +211,7 @@ def format_invoke_kwargs(knowledge_document: KnowledgeDocument, preview=False):
         "chunk_size": knowledge_document.general_parse_chunk_size,
         "chunk_overlap": knowledge_document.general_parse_chunk_overlap,
         "load_mode": knowledge_document.mode,
-        "semantic_chunk_model_base_url": [semantic_embed_config.get("base_url", "")]
-        if semantic_embed_config.get("base_url", "")
-        else [],
+        "semantic_chunk_model_base_url": [semantic_embed_config.get("base_url", "")] if semantic_embed_config.get("base_url", "") else [],
         "semantic_chunk_model_api_key": semantic_embed_config.get("api_key", "") or " ",
         "semantic_chunk_model": semantic_embed_config.get("model", semantic_embed_model_name),
         "preview": "true" if preview else "false",
@@ -219,7 +234,11 @@ def sync_web_page_knowledge(web_page_knowledge_id):
     web_page.knowledge_document.train_status = DocumentStatus.CHUNKING
     web_page.knowledge_document.save()
     general_embed_by_document_list(
-        document_list, False, web_page.knowledge_document.created_by, web_page.knowledge_document.domain, True
+        document_list,
+        False,
+        web_page.knowledge_document.created_by,
+        web_page.knowledge_document.domain,
+        True,
     )
 
 
@@ -274,7 +293,13 @@ def create_qa_pairs(qa_pairs_id_list, only_question, delete_old_qa_pairs=False):
             task_obj.total_count = len(content_list)
             task_obj.save()
             success_count = client.create_document_qa_pairs(
-                content_list, embed_config, es_index, llm_setting, qa_pairs_obj, only_question, task_obj
+                content_list,
+                embed_config,
+                es_index,
+                llm_setting,
+                qa_pairs_obj,
+                only_question,
+                task_obj,
             )
         except Exception as e:
             logger.exception(e)
@@ -485,7 +510,10 @@ def _create_single_qa_item(qa_item, index, kwargs, metadata, url, headers):
     # 构建请求参数
     params = dict(kwargs, **{"content": qa_item["instruction"]})
     params["metadata"] = json.dumps(
-        dict(metadata, **{"qa_question": qa_item["instruction"], "qa_answer": qa_item["output"]})
+        dict(
+            metadata,
+            **{"qa_question": qa_item["instruction"], "qa_answer": qa_item["output"]},
+        )
     )
 
     # 尝试创建问答对，带重试机制
@@ -571,9 +599,7 @@ def create_qa_pairs_by_custom(qa_pairs_id, content_list):
         total_count=len(content_list),
     )
     try:
-        success_count = ChunkHelper.create_qa_pairs(
-            content_list, chunk_obj, es_index, embed_config, qa_pairs_id, task_obj
-        )
+        success_count = ChunkHelper.create_qa_pairs(content_list, chunk_obj, es_index, embed_config, qa_pairs_id, task_obj)
         qa_pairs.generate_count = success_count
         qa_pairs.status = "completed"
     except Exception as e:

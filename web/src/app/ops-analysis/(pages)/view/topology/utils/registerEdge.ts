@@ -2,6 +2,7 @@ import { Graph, Edge } from '@antv/x6';
 import { v4 as uuidv4 } from 'uuid';
 import { getEdgeStyle, addEdgeTools, calculateOptimalPorts } from './topologyUtils';
 import type { EdgeData } from '@/app/ops-analysis/types/topology';
+import { COLORS } from '../constants/nodeDefaults';
 
 // 边创建配置接口
 interface EdgeCreationConfig {
@@ -30,7 +31,7 @@ export const registerStandardEdge = () => {
     router: EDGE_DEFAULTS.router,
     attrs: {
       line: {
-        stroke: '#333',
+        stroke: COLORS.EDGE.DEFAULT,
         strokeWidth: 1,
       },
     },
@@ -71,10 +72,13 @@ export const createEdge = (graphInstance: any, config: EdgeCreationConfig): Edge
 
   // 设置边数据
   edge.setData({
-    connectionType: config.connectionType,
+    arrowDirection: config.connectionType, 
     lineType: config.lineType || EDGE_DEFAULTS.lineType,
     lineName: config.lineName || EDGE_DEFAULTS.lineName,
     vertices: config.vertices || [],
+    styleConfig: {
+      lineColor: COLORS.EDGE.DEFAULT,
+    }
   });
 
   // 如果有拐点数据，恢复拐点
@@ -106,6 +110,8 @@ const createEdgeData = (edge: Edge, sourceNode: any, targetNode: any): EdgeData 
     id: edge.id,
     lineType: edgeData.lineType || 'common_line',
     lineName: edgeData.lineName || '',
+    arrowDirection: edgeData.arrowDirection || 'single', 
+    styleConfig: edgeData.styleConfig || { lineColor: COLORS.EDGE.DEFAULT },
     sourceNode: {
       id: sourceNode.id,
       name: getNodeName(sourceNode),

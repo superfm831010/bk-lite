@@ -74,9 +74,9 @@ export const TYPOGRAPHY = {
     EXTRA_LARGE: 18,
 
     // 节点特定字体大小
-    ICON_LABEL: 12,
-    SINGLE_VALUE: 14,
-    TEXT_NODE: 14,
+    ICON_LABEL: 16,
+    SINGLE_VALUE: 20,
+    TEXT_NODE: 18,
   },
 
   FONT_WEIGHT: {

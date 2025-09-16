@@ -10,10 +10,10 @@ from django.http import StreamingHttpResponse
 
 from apps.core.logger import opspilot_logger as logger
 from apps.core.utils.async_utils import create_async_compatible_generator
-from apps.opspilot.bot_mgmt.utils import insert_skill_log
 from apps.opspilot.enum import SkillTypeChoices
-from apps.opspilot.model_provider_mgmt.services.llm_service import llm_service
 from apps.opspilot.models import LLMModel, TeamTokenUseInfo
+from apps.opspilot.services.llm_service import llm_service
+from apps.opspilot.utils.bot_utils import insert_skill_log
 from apps.opspilot.utils.chat_server_helper import ChatServerHelper
 
 
@@ -69,7 +69,14 @@ def _process_think_buffer(think_buffer, in_think_block):
     return "".join(output_chunks), think_buffer, in_think_block
 
 
-def _process_think_content(content_chunk, think_buffer, in_think_block, is_first_content, show_think, has_think_tags):
+def _process_think_content(
+    content_chunk,
+    think_buffer,
+    in_think_block,
+    is_first_content,
+    show_think,
+    has_think_tags,
+):
     """处理思考过程相关的内容过滤"""
     if show_think:
         return content_chunk, think_buffer, in_think_block, False, has_think_tags
@@ -238,13 +245,25 @@ def _generate_sse_stream(url, headers, chat_kwargs, skill_name, show_think):
     in_think_block = False
     is_first_content = True
     has_think_tags = True
-    sse_headers = {**headers, "Accept": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive"}
+    sse_headers = {
+        **headers,
+        "Accept": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+    }
 
     # SSL验证配置 - 从环境变量读取
     ssl_verify = os.getenv("METIS_SSL_VERIFY", "false").lower() == "true"
 
     try:
-        res = requests.post(url, headers=sse_headers, json=chat_kwargs, timeout=300, verify=ssl_verify, stream=True)
+        res = requests.post(
+            url,
+            headers=sse_headers,
+            json=chat_kwargs,
+            timeout=300,
+            verify=ssl_verify,
+            stream=True,
+        )
         res.raise_for_status()
 
         for line in res.iter_lines(decode_unicode=True):
@@ -296,7 +315,15 @@ def _generate_sse_stream(url, headers, chat_kwargs, skill_name, show_think):
 
 
 def _log_and_update_tokens_sync(
-    final_stats, skill_name, skill_id, current_ip, kwargs, user_message, show_think, group, llm_model
+    final_stats,
+    skill_name,
+    skill_id,
+    current_ip,
+    kwargs,
+    user_message,
+    show_think,
+    group,
+    llm_model,
 ):
     """同步记录日志和更新token使用量"""
     try:
@@ -317,7 +344,11 @@ def _log_and_update_tokens_sync(
                 "total_tokens": final_stats["prompt_tokens"] + final_stats["completion_tokens"],
             },
             "choices": [
-                {"message": {"role": "assistant", "content": final_content}, "finish_reason": "stop", "index": 0}
+                {
+                    "message": {"role": "assistant", "content": final_content},
+                    "finish_reason": "stop",
+                    "index": 0,
+                }
             ],
         }
 
@@ -326,9 +357,7 @@ def _log_and_update_tokens_sync(
         # 更新token使用量
         used_token = final_stats["prompt_tokens"] + final_stats["completion_tokens"]
 
-        team_info, is_created = TeamTokenUseInfo.objects.get_or_create(
-            group=group, llm_model=llm_model.name, defaults={"used_token": used_token}
-        )
+        team_info, is_created = TeamTokenUseInfo.objects.get_or_create(group=group, llm_model=llm_model.name, defaults={"used_token": used_token})
         if not is_created:
             team_info.used_token += used_token
             team_info.save()
@@ -363,11 +392,13 @@ def stream_chat(params, skill_name, kwargs, current_ip, user_message, skill_id=N
             for chunk in stream_gen:
                 if isinstance(chunk, tuple) and chunk[0] == "STATS":
                     # 收集统计信息
-                    _, final_stats["content"], final_stats["prompt_tokens"], final_stats["completion_tokens"] = chunk
-                    logger.info(
-                        f"Token statistics - prompt: {final_stats['prompt_tokens']}, "
-                        f"completion: {final_stats['completion_tokens']}"
-                    )
+                    (
+                        _,
+                        final_stats["content"],
+                        final_stats["prompt_tokens"],
+                        final_stats["completion_tokens"],
+                    ) = chunk
+                    logger.info(f"Token statistics - prompt: {final_stats['prompt_tokens']}, " f"completion: {final_stats['completion_tokens']}")
 
                     # 在流结束时同步处理日志记录
                     if final_stats["content"] or final_stats["prompt_tokens"] or final_stats["completion_tokens"]:

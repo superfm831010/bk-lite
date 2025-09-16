@@ -8,6 +8,7 @@ import { Upload, Button, message, Checkbox, type UploadFile, type UploadProps } 
 import { InboxOutlined } from '@ant-design/icons';
 import { ModalConfig, ModalRef, TableData } from '@/app/mlops/types';
 import { TrainDataParams } from '@/app/mlops/types/manage';
+import { useSearchParams } from 'next/navigation';
 const { Dragger } = Upload;
 
 interface UploadModalProps {
@@ -16,7 +17,9 @@ interface UploadModalProps {
 
 const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) => {
   const { t } = useTranslation();
-  const { addAnomalyTrainData } = useMlopsManageApi();
+  const searchParams = useSearchParams();
+  const activeType = searchParams.get('activeTap') || '';
+  const { addAnomalyTrainData, addTimeSeriesPredictTrainData, addLogClusteringTrainData } = useMlopsManageApi();
   const [visiable, setVisiable] = useState<boolean>(false);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [fileList, setFileList] = useState<UploadFile<any>[]>([]);
@@ -37,6 +40,7 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
     setFileList(fileList);
   };
 
+
   const props: UploadProps = {
     name: 'file',
     multiple: false,
@@ -44,31 +48,43 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
     fileList: fileList,
     onChange: handleChange,
     beforeUpload: (file) => {
-      const isCSV = file.type === "text/csv" || file.name.endsWith('.csv');
-      if (!isCSV) {
-        message.warning(t('datasets.uploadWarn'))
+      if (activeType !== 'log_clustering') {
+        const isCSV = file.type === "text/csv" || file.name.endsWith('.csv');
+        if (!isCSV) {
+          message.warning(t('datasets.uploadWarn'))
+        }
+        return isCSV;
+      } else {
+        const isTxt = file.type === 'text/plain' || file.name.endsWith('.txt');
+        if (!isTxt) {
+          message.warning(t('datasets.uploadWarn'))
+        }
+        return isTxt;
       }
-      return isCSV;
+
     },
-    accept: '.csv'
+    accept: activeType !== 'log_clustering' ? '.csv' : '.txt'
   };
 
-  const handleFileRead = (text: string) => {
+  const handleFileRead = (text: string, type: string) => {
     // 统一换行符为 \n
     const lines = text.replace(/\r\n|\r|\n/g, '\n')?.split('\n').filter(line => line.trim() !== '');
     if (!lines.length) return [];
-    const headers = ['timestamp', 'value', 'label'];
-    const data = lines.slice(1).map((line, index) => {
-      const values = line.split(',');
-      return headers.reduce((obj: Record<string, any>, key, idx) => {
-        obj[key] = key === 'timestamp'
-          ? new Date(values[idx]).getTime() / 1000
-          : Number(values[idx]);
-        obj['index'] = index;
-        return obj;
-      }, {});
-    });
-    return data as TrainDataParams[];
+    if (type !== 'log_clustering') {
+      const headers = type === 'anomaly' ? ['timestamp', 'value', 'label'] : lines[0]?.split(',');
+      const data = lines.slice(1).map((line, index) => {
+        const values = line.split(',');
+        return headers.reduce((obj: Record<string, any>, key, idx) => {
+          obj[key] = key === 'timestamp'
+            ? new Date(values[idx]).getTime() / 1000
+            : Number(values[idx]);
+          obj['index'] = index;
+          return obj;
+        }, {});
+      });
+      return data as TrainDataParams[];
+    }
+    return lines;
   };
 
   const onSelectChange = (value: string[]) => {
@@ -92,7 +108,7 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
       }
       if (formData?.activeTap === 'anomaly') {
         const text = await file?.originFileObj.text();
-        const data: TrainDataParams[] = handleFileRead(text);
+        const data: TrainDataParams[] = handleFileRead(text, formData?.activeTap) as TrainDataParams[];
         const train_data = data.map(item => ({ timestamp: item.timestamp, value: item.value }));
         const points = data.filter(item => item?.label === 1).map(k => k.index);
         const params = {
@@ -105,6 +121,34 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
           ...selectTags
         };
         await addAnomalyTrainData(params);
+        setConfirmLoading(false);
+        setVisiable(false);
+        message.success(t('datasets.uploadSuccess'));
+        onSuccess();
+      } else if (formData?.activeTap === 'timeseries_predict') {
+        const text = await file?.originFileObj.text();
+        const data: TrainDataParams[] = handleFileRead(text, formData?.activeTap) as TrainDataParams[];
+        const params = {
+          dataset: formData?.dataset_id,
+          name: file.name,
+          train_data: data,
+          ...selectTags
+        };
+        await addTimeSeriesPredictTrainData(params);
+        setConfirmLoading(false);
+        setVisiable(false);
+        message.success(t('datasets.uploadSuccess'));
+        onSuccess();
+      } else {
+        const text = await file?.originFileObj.text();
+        const data: string[] = handleFileRead(text, formData?.activeTap) as string[];
+        const params = {
+          dataset: formData?.dataset_id,
+          name: file.name,
+          train_data: data,
+          ...selectTags
+        };
+        await addLogClusteringTrainData(params);
         setConfirmLoading(false);
         setVisiable(false);
         message.success(t('datasets.uploadSuccess'));
@@ -208,7 +252,7 @@ const UploadModal = forwardRef<ModalRef, UploadModalProps>(({ onSuccess }, ref) 
         </p>
         <p className="ant-upload-text">{t('datasets.uploadText')}</p>
       </Dragger>
-      <p>{t('datasets.downloadText')}<Button type='link' onClick={downloadTemplate}>{t('datasets.template')}</Button></p>
+      <p>{t(`datasets.${activeType !== 'log_clustering' ? 'downloadCSV' : 'downloadTxt'}`)}<Button type='link' onClick={downloadTemplate}>{t('datasets.template')}</Button></p>
     </OperateModal>
   )
 });

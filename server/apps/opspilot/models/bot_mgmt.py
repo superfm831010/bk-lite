@@ -59,13 +59,9 @@ class BotChannel(models.Model, EncryptMixin):
         if self.channel_config is None:
             super(BotChannel, self).save()
         if self.channel_type == ChannelChoices.GITLAB:
-            self.decrypt_field(
-                "secret_token", self.channel_config["channels.gitlab_review_channel.GitlabReviewChannel"]
-            )
+            self.decrypt_field("secret_token", self.channel_config["channels.gitlab_review_channel.GitlabReviewChannel"])
 
-            self.encrypt_field(
-                "secret_token", self.channel_config["channels.gitlab_review_channel.GitlabReviewChannel"]
-            )
+            self.encrypt_field("secret_token", self.channel_config["channels.gitlab_review_channel.GitlabReviewChannel"])
 
         elif self.channel_type == ChannelChoices.DING_TALK:
             self.decrypt_field("client_secret", self.channel_config["channels.dingtalk_channel.DingTalkChannel"])
@@ -119,9 +115,7 @@ class BotChannel(models.Model, EncryptMixin):
             self.decrypt_field("token", decrypted_config[key])
 
         elif self.channel_type == ChannelChoices.ENTERPRISE_WECHAT_BOT:
-            self.decrypt_field(
-                "secret_token", decrypted_config["channels.enterprise_wechat_bot_channel.EnterpriseWechatBotChannel"]
-            )
+            self.decrypt_field("secret_token", decrypted_config["channels.enterprise_wechat_bot_channel.EnterpriseWechatBotChannel"])
         elif self.channel_type == ChannelChoices.WECHAT_OFFICIAL_ACCOUNT:
             key = "channels.wechat_official_account_channel.WechatOfficialAccountChannel"
             self.decrypt_field("secret", decrypted_config[key])
@@ -143,9 +137,7 @@ class BotConversationHistory(MaintainerInfo):
     conversation_role = models.CharField(max_length=255, verbose_name="对话角色", choices=BOT_CONVERSATION_ROLE_CHOICES)
     conversation = models.TextField(verbose_name="对话内容")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
-    channel_user = models.ForeignKey(
-        "ChannelUser", on_delete=models.CASCADE, verbose_name="通道用户", blank=True, null=True
-    )
+    channel_user = models.ForeignKey("ChannelUser", on_delete=models.CASCADE, verbose_name="通道用户", blank=True, null=True)
     citing_knowledge = models.JSONField(verbose_name="引用知识", default=list, blank=True, null=True)
 
     def __str__(self):
@@ -159,9 +151,7 @@ class BotConversationHistory(MaintainerInfo):
 
 class ConversationTag(models.Model):
     question = models.TextField(verbose_name="问题")
-    answer = models.ForeignKey(
-        "BotConversationHistory", null=True, blank=True, on_delete=models.CASCADE, verbose_name="回答"
-    )
+    answer = models.ForeignKey("BotConversationHistory", null=True, blank=True, on_delete=models.CASCADE, verbose_name="回答")
     content = models.TextField(verbose_name="内容")
     knowledge_base_id = models.IntegerField(verbose_name="知识库ID")
     knowledge_document_id = models.IntegerField(verbose_name="知识文档ID")
@@ -224,3 +214,22 @@ class UserGroup(models.Model):
 
     class Meta:
         db_table = "bot_mgmt_usergroup"
+
+
+class BotWorkFlow(models.Model):
+    bot = models.ForeignKey(Bot, on_delete=models.CASCADE, verbose_name="机器人")
+    flow_json = models.JSONField(verbose_name="流程数据", default=list)
+    web_json = models.JSONField(verbose_name="前端数据", default=dict)
+
+    class Meta:
+        verbose_name = "机器人工作流"
+        verbose_name_plural = verbose_name
+
+
+class WorkFlowTaskResult(models.Model):
+    bot_work_flow = models.ForeignKey(BotWorkFlow, on_delete=models.CASCADE, verbose_name="机器人工作流")
+    run_time = models.DateTimeField(auto_now_add=True, verbose_name="运行时间")
+    status = models.CharField(max_length=50, verbose_name="状态")
+    input_data = models.TextField(verbose_name="输入数据")
+    output_data = models.JSONField(verbose_name="输出数据", default=dict)
+    last_output = models.TextField(verbose_name="最后输出", blank=True, null=True)

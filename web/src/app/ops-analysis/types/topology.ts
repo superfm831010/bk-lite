@@ -83,6 +83,10 @@ export interface TopologyNodeData {
     fontWeight?: string | number;
     nameColor?: string;
     nameFontSize?: number;
+    thresholdColors?: Array<{
+      value: string;
+      color: string;
+    }>;
   };
 }
 
@@ -147,6 +151,7 @@ export interface EdgeData {
   id?: string;
   lineType: 'common_line' | 'network_line';
   lineName?: string;
+  arrowDirection?: 'none' | 'single' | 'double';
   styleConfig?: {
     lineColor?: string;
   };
@@ -285,6 +290,10 @@ export interface NodeConfigFormValues {
   nameFontSize?: number;
   unit?: string;
   decimalPlaces?: number;
+  thresholdColors?: Array<{
+    value: string;
+    color: string;
+  }>;
 }
 
 // Topology 组件 Props 和 Ref 类型
