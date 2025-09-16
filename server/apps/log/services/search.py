@@ -9,6 +9,18 @@ from apps.core.logger import log_logger as logger
 
 
 class SearchService:
+
+    @staticmethod
+    def field_names(start_time, end_time, field, limit=100):
+        """获取字段值列表"""
+        # Create an instance of the VictoriaMetricsAPI
+        vm_api = VictoriaMetricsAPI()
+
+        # Perform the field names query
+        response = vm_api.field_names(start_time, end_time, field, limit)
+
+        return response
+
     @staticmethod
     def search_logs(query, start_time, end_time, limit=10, log_groups=None):
         """搜索日志，支持日志分组过滤

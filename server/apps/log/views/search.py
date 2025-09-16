@@ -12,6 +12,32 @@ from apps.log.filters.log_group import SearchConditionFilter
 
 
 class LogSearchViewSet(ViewSet):
+
+    @swagger_auto_schema(
+        operation_description="search field_names",
+        manual_parameters=[
+            openapi.Parameter('filed', openapi.IN_QUERY, description="Search filed", type=openapi.TYPE_STRING, required=True),
+            openapi.Parameter('start_time', openapi.IN_QUERY, description="Start time for the search", type=openapi.TYPE_STRING, required=True),
+            openapi.Parameter('end_time', openapi.IN_QUERY, description="End time for the search", type=openapi.TYPE_STRING, required=True),
+            openapi.Parameter('limit', openapi.IN_QUERY, description="Number of results to return", type=openapi.TYPE_INTEGER, default=100),
+        ],
+    )
+    @action(methods=['get'], detail=False, url_path='field_names')
+    def field_names(self, request):
+        """
+        Search available log field_names.
+        """
+        field = request.query_params.get('filed', '')
+        start_time = request.query_params.get('start_time', '')
+        end_time = request.query_params.get('end_time', '')
+        limit = int(request.query_params.get('limit', 100))
+
+        if not field:
+            return WebUtils.response_error("Field parameter is required.")
+
+        data = SearchService.field_names(field, start_time, end_time, limit)
+        return WebUtils.response_success(data)
+
     @swagger_auto_schema(
         operation_description="Search logs",
         request_body=openapi.Schema(
