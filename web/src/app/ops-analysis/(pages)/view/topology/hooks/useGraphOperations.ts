@@ -28,6 +28,7 @@ import {
   createPortConfig,
   adjustSingleValueNodeSize,
 } from '../utils/topologyUtils';
+import { getColorByThreshold } from '../utils/thresholdUtils';
 
 export const useGraphOperations = (
   containerRef: React.RefObject<HTMLDivElement>,
@@ -344,6 +345,12 @@ export const useGraphOperations = (
           displayValue = `${displayValue} ${nodeConfig.unit}`;
         }
 
+        // 根据阈值配置计算文本颜色
+        let textColor = nodeConfig.styleConfig?.textColor;
+        if (nodeConfig.styleConfig?.thresholdColors?.length) {
+          textColor = getColorByThreshold(value, nodeConfig.styleConfig.thresholdColors, nodeConfig.styleConfig.textColor);
+        }
+
         const currentNodeData = node.getData();
         const updatedData = {
           ...currentNodeData,
@@ -352,6 +359,7 @@ export const useGraphOperations = (
         };
         node.setData(updatedData);
         node.setAttrByPath('label/text', displayValue);
+        node.setAttrByPath('label/fill', textColor);
 
         adjustSingleValueNodeSize(node, displayValue);
       } else {
@@ -704,11 +712,16 @@ export const useGraphOperations = (
 
     graph.on('edge:connected', ({ edge }: any) => {
       if (!edge || !isEditModeRef.current) return;
-      edge.setAttrs(getEdgeStyle('single').attrs);
+
+      const edgeData = edge.getData() || {};
+      const arrowDirection = edgeData.arrowDirection || 'single';
+
+      edge.setAttrs(getEdgeStyle(arrowDirection).attrs);
       addEdgeTools(edge);
       edge.setData({
         lineType: 'common_line',
         lineName: '',
+        arrowDirection: arrowDirection,
         styleConfig: {
           lineColor: COLORS.EDGE.DEFAULT,
         }
@@ -1136,6 +1149,7 @@ export const useGraphOperations = (
           shapeType: values.shapeType !== undefined ? values.shapeType : styleConfig?.shapeType,
           nameColor: values.nameColor !== undefined ? values.nameColor : styleConfig?.nameColor,
           nameFontSize: values.nameFontSize !== undefined ? values.nameFontSize : styleConfig?.nameFontSize,
+          thresholdColors: values.thresholdColors !== undefined ? values.thresholdColors : styleConfig?.thresholdColors,
         },
       };
 
@@ -1282,6 +1296,7 @@ export const useGraphOperations = (
           nameFontSize: styleConfig.nameFontSize,
           unit: editingNodeData.unit,
           decimalPlaces: editingNodeData.decimalPlaces,
+          thresholdColors: styleConfig.thresholdColors,
         };
 
       case 'icon':
@@ -1292,6 +1307,8 @@ export const useGraphOperations = (
           logoUrl: editingNodeData.logoType === 'custom' ? editingNodeData.logoUrl : undefined,
           width: styleConfig.width,
           height: styleConfig.height,
+          fontSize: styleConfig.fontSize,
+          textColor: styleConfig.textColor,
           backgroundColor: styleConfig.backgroundColor,
           borderColor: styleConfig.borderColor,
           borderWidth: styleConfig.borderWidth,

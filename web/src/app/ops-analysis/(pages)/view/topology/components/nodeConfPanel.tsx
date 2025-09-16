@@ -35,6 +35,8 @@ import {
   UploadOutlined,
   AppstoreOutlined,
   ReloadOutlined,
+  PlusCircleOutlined,
+  MinusCircleOutlined,
 } from '@ant-design/icons';
 
 const NODE_TYPE_DEFAULTS = {
@@ -63,6 +65,17 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   const [currentDataSource, setCurrentDataSource] = useState<number | null>(
     null
   );
+  const [thresholdColors, setThresholdColors] = useState<
+    Array<{
+      value: string;
+      color: string;
+    }>
+  >([
+    { color: '#fd666d', value: '70' },
+    { color: '#EAB839', value: '30' },
+    { color: '#299C46', value: '0' },
+  ]);
+
   const selectIconRef = useRef<SelectIconRef>(null);
   const { getSourceDataByApiId } = useDataSourceApi();
   const { t } = useTranslation();
@@ -98,6 +111,111 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       : `/app/assets/assetModelIcon/cc-default_默认.svg`;
   }, []);
 
+  const handleThresholdChange = useCallback(
+    (index: number, field: 'value' | 'color', value: string) => {
+      setThresholdColors((prev) => {
+        const newThresholds = [...prev];
+        newThresholds[index] = { ...newThresholds[index], [field]: value };
+        return newThresholds;
+      });
+    },
+    []
+  );
+
+  const handleThresholdBlur = useCallback((index: number, value: string) => {
+    setThresholdColors((prev) => {
+      const newThresholds = [...prev];
+      const numValue = parseFloat(value);
+
+      if (isNaN(numValue)) {
+        newThresholds[index] = { ...newThresholds[index], value: '50' };
+        return newThresholds;
+      }
+
+      const isDuplicate = prev.some(
+        (threshold, i) =>
+          i !== index && parseFloat(threshold.value) === numValue
+      );
+
+      if (isDuplicate) {
+        let adjustedValue = numValue;
+        while (
+          prev.some(
+            (threshold, i) =>
+              i !== index && parseFloat(threshold.value) === adjustedValue
+          )
+        ) {
+          adjustedValue += 1;
+        }
+        newThresholds[index] = {
+          ...newThresholds[index],
+          value: adjustedValue.toString(),
+        };
+      } else {
+        newThresholds[index] = {
+          ...newThresholds[index],
+          value: numValue.toString(),
+        };
+      }
+
+      return newThresholds.sort(
+        (a, b) => parseFloat(b.value) - parseFloat(a.value)
+      );
+    });
+  }, []);
+
+  const addThreshold = useCallback((afterIndex?: number) => {
+    setThresholdColors((prev) => {
+      let newValue = 50;
+
+      if (afterIndex !== undefined && afterIndex >= 0) {
+        const currentValue = parseFloat(prev[afterIndex]?.value || '0');
+        const nextValue =
+          afterIndex + 1 < prev.length
+            ? parseFloat(prev[afterIndex + 1]?.value || '0')
+            : 0;
+
+        if (currentValue - nextValue > 1) {
+          newValue = Math.floor((currentValue + nextValue) / 2);
+        } else {
+          newValue = Math.max(currentValue - 5, nextValue + 1);
+        }
+      } else {
+        const values = prev
+          .map((t) => parseFloat(t.value))
+          .filter((v) => !isNaN(v));
+        const maxValue = Math.max(...values);
+        newValue = Math.min(maxValue + 10, 100);
+      }
+
+      const existingValues = prev
+        .map((t) => parseFloat(t.value))
+        .filter((v) => !isNaN(v));
+      while (existingValues.includes(newValue)) {
+        newValue += 1;
+      }
+
+      const newThreshold = { color: '#fd666d', value: newValue.toString() };
+
+      if (afterIndex !== undefined && afterIndex >= 0) {
+        const newThresholds = [...prev];
+        newThresholds.splice(afterIndex + 1, 0, newThreshold);
+        return newThresholds.sort(
+          (a, b) => parseFloat(b.value) - parseFloat(a.value)
+        );
+      } else {
+        const newThresholds = [...prev, newThreshold];
+        return newThresholds.sort(
+          (a, b) => parseFloat(b.value) - parseFloat(a.value)
+        );
+      }
+    });
+  }, []);
+
+  const removeThreshold = useCallback((index: number) => {
+    setThresholdColors((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
   const initializeNewNode = useCallback(() => {
     const defaultValues: any = {
       logoType: 'default',
@@ -128,6 +246,12 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       defaultValues.shapeType = basicShapeDefaults.shapeType;
     }
 
+    if (nodeType === 'icon') {
+      const iconDefaults = nodeDefaults as typeof NODE_DEFAULTS.ICON_NODE;
+      defaultValues.fontSize = iconDefaults.fontSize;
+      defaultValues.textColor = iconDefaults.textColor;
+    }
+
     setSelectedIcon('cc-host');
     setLogoType('default');
     setLogoPreview('');
@@ -137,7 +261,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
     setSelectedFields([]);
 
     form.setFieldsValue(defaultValues);
-  }, [form, setSelectedDataSource, nodeType]);
+  }, [form, setSelectedDataSource, nodeType, nodeDefaults]);
 
   const initializeEditNode = useCallback(
     (values: any) => {
@@ -167,6 +291,20 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       setLogoType(values.logoType || 'default');
       setCurrentDataSource(values.dataSource || null);
       setSelectedFields(values.selectedFields || []);
+
+      // 初始化阈值颜色配置
+      if (values.thresholdColors && Array.isArray(values.thresholdColors)) {
+        const sortedThresholds = [...values.thresholdColors].sort(
+          (a, b) => parseFloat(b.value) - parseFloat(a.value)
+        );
+        setThresholdColors(sortedThresholds);
+      } else {
+        setThresholdColors([
+          { color: '#fd666d', value: '70' },
+          { color: '#EAB839', value: '30' },
+          { color: '#299C46', value: '0' },
+        ]);
+      }
 
       if (values.logoUrl) {
         setLogoPreview(values.logoUrl);
@@ -387,6 +525,11 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
           selectedDataSource.params
         );
         delete values.params;
+      }
+
+      // 添加阈值颜色配置
+      if (nodeType === 'single-value') {
+        values.thresholdColors = thresholdColors;
       }
 
       onConfirm?.(values);
@@ -645,11 +788,91 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
               />
             </Form.Item>
 
-            <Form.Item
-              label={t('topology.nodeConfig.textColor')}
-              name="textColor"
-            >
-              {renderColorPicker()}
+            {/* 阈值配色 */}
+            <Form.Item label="阈值配色">
+              <div className="space-y-3">
+                {thresholdColors.map((threshold, index) => {
+                  const isBaseThreshold = index === thresholdColors.length - 1;
+
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 p-2 border border-gray-200 rounded-md bg-gray-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-600 whitespace-nowrap">
+                          当值 ≥
+                        </span>
+                        <Input
+                          value={threshold.value}
+                          onChange={(e) =>
+                            handleThresholdChange(
+                              index,
+                              'value',
+                              e.target.value
+                            )
+                          }
+                          onBlur={(e) => {
+                            if (!readonly && !isBaseThreshold) {
+                              handleThresholdBlur(index, e.target.value);
+                            }
+                          }}
+                          placeholder="阈值"
+                          disabled={readonly || isBaseThreshold}
+                          style={{ width: '80px' }}
+                          size="small"
+                        />
+                        <span className="text-sm text-gray-600">时显示</span>
+                      </div>
+                      <ColorPicker
+                        value={threshold.color}
+                        onChange={(color) =>
+                          handleThresholdChange(
+                            index,
+                            'color',
+                            color.toHexString()
+                          )
+                        }
+                        disabled={readonly}
+                        size="small"
+                        showText
+                      />
+                      <div className="flex items-center gap-3 pl-4">
+                        {!readonly && (
+                          <span
+                            onClick={() => addThreshold(index)}
+                            className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                            style={{ fontSize: '16px' }}
+                            title="在此行下方添加阈值"
+                          >
+                            <PlusCircleOutlined />
+                          </span>
+                        )}
+                        {!readonly && (
+                          <span
+                            onClick={
+                              isBaseThreshold
+                                ? undefined
+                                : () => removeThreshold(index)
+                            }
+                            className={`transition-colors duration-200 ${
+                              isBaseThreshold
+                                ? 'text-gray-200 cursor-not-allowed'
+                                : 'cursor-pointer text-gray-400 hover:text-gray-600'
+                            }`}
+                            style={{ fontSize: '16px' }}
+                            title={
+                              isBaseThreshold ? '基础阈值不可删除' : '删除阈值'
+                            }
+                          >
+                            <MinusCircleOutlined />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </Form.Item>
 
             <Form.Item
@@ -705,12 +928,43 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         )}
 
         {nodeType === 'icon' && (
-          <Form.Item
-            label={t('topology.nodeConfig.borderColor')}
-            name="borderColor"
-          >
-            {renderColorPicker()}
-          </Form.Item>
+          <>
+            <Form.Item
+              label={t('topology.nodeConfig.fontSize')}
+              name="fontSize"
+            >
+              <InputNumber
+                min={8}
+                max={24}
+                step={1}
+                addonAfter="px"
+                disabled={readonly}
+                placeholder={t('common.inputMsg')}
+                style={{ width: '120px' }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={t('topology.nodeConfig.textColor')}
+              name="textColor"
+            >
+              {renderColorPicker()}
+            </Form.Item>
+
+            <Form.Item
+              label={t('topology.nodeConfig.backgroundColor')}
+              name="backgroundColor"
+            >
+              {renderColorPicker()}
+            </Form.Item>
+
+            <Form.Item
+              label={t('topology.nodeConfig.borderColor')}
+              name="borderColor"
+            >
+              {renderColorPicker()}
+            </Form.Item>
+          </>
         )}
 
         {nodeType === 'basic-shape' && (

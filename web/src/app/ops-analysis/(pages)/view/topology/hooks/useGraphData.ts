@@ -17,9 +17,9 @@ import { createNodeByType } from '../utils/registerNode';
 
 const serializeNodeConfig = (nodeData: any, nodeType: string) => {
   const styleConfigMapping: Record<string, string[]> = {
-    'single-value': ['textColor', 'fontSize', 'backgroundColor', 'borderColor', 'nameColor', 'nameFontSize'],
+    'single-value': ['textColor', 'fontSize', 'backgroundColor', 'borderColor', 'nameColor', 'nameFontSize', 'thresholdColors'],
     'basic-shape': ['width', 'height', 'backgroundColor', 'borderColor', 'borderWidth', 'lineType', 'shapeType'],
-    icon: ['width', 'height', 'borderColor'],
+    icon: ['width', 'height', 'backgroundColor', 'borderColor', 'fontSize', 'textColor'],
     text: ['fontSize', 'fontWeight', 'textColor'],
     chart: ['width', 'height'],
   };
@@ -85,6 +85,7 @@ export const useGraphData = (
         targetPort: edge.getTargetPortId(),
         lineType: edgeData?.lineType || 'common_line',
         lineName: edgeData?.lineName || '',
+        arrowDirection: edgeData?.arrowDirection || 'single',
         sourceInterface: edgeData?.sourceInterface,
         targetInterface: edgeData?.targetInterface,
         vertices: vertices || [],
@@ -200,9 +201,11 @@ export const useGraphData = (
     });
 
     data.edges?.forEach((edgeConfig) => {
+      const connectionType = (edgeConfig as any).arrowDirection || 'single';
       const edgeData: any = {
         lineType: edgeConfig.lineType as 'common_line' | 'network_line',
         lineName: edgeConfig.lineName,
+        arrowDirection: connectionType, 
         sourceInterface: edgeConfig.sourceInterface,
         targetInterface: edgeConfig.targetInterface,
         vertices: edgeConfig.vertices || [],
@@ -210,7 +213,7 @@ export const useGraphData = (
         config: edgeConfig.config,
       };
 
-      const edgeStyle = getEdgeStyleWithLabel(edgeData, 'single');
+      const edgeStyle = getEdgeStyleWithLabel(edgeData, connectionType);
 
       if (edgeConfig.styleConfig?.lineColor) {
         edgeStyle.attrs = {
