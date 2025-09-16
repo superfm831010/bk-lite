@@ -364,7 +364,9 @@
       "seeMore": "查看详情",
       "noticeWay": "暂无通知渠道，可去",
       "systemManage": "系统管理",
-      "config": "配置。"
+      "config": "配置。",
+      "displayFields": "展示字段",
+      "displayFieldsDes": "请为日志产生的告警，选择告警详情中表格的展示字段，以便获取更多的信息便于告警分析。"
     }
   }
 }
