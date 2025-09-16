@@ -245,10 +245,16 @@ const createIconNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData
     attrs: {
       body: {
         stroke: nodeConfig.styleConfig?.borderColor || NODE_DEFAULTS.ICON_NODE.borderColor,
-        strokeWidth: NODE_DEFAULTS.ICON_NODE.strokeWidth
+        strokeWidth: NODE_DEFAULTS.ICON_NODE.strokeWidth,
+        fill: nodeConfig.styleConfig?.backgroundColor || NODE_DEFAULTS.ICON_NODE.backgroundColor,
       },
       image: {
         'xlink:href': logoUrl
+      },
+      label: {
+        fill: nodeConfig.styleConfig?.textColor || NODE_DEFAULTS.ICON_NODE.textColor,
+        fontSize: nodeConfig.styleConfig?.fontSize || NODE_DEFAULTS.ICON_NODE.fontSize,
+        textWrap: false,
       }
     },
     ports: createPortConfig()
@@ -426,13 +432,16 @@ const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   node.setAttrs({
     body: {
       stroke: nodeConfig.styleConfig?.borderColor || NODE_DEFAULTS.ICON_NODE.borderColor,
-      strokeWidth: NODE_DEFAULTS.ICON_NODE.strokeWidth
+      strokeWidth: NODE_DEFAULTS.ICON_NODE.strokeWidth,
+      fill: nodeConfig.styleConfig?.backgroundColor || NODE_DEFAULTS.ICON_NODE.backgroundColor,
     },
     image: {
       'xlink:href': logoUrl
     },
     label: {
-      fill: nodeConfig.styleConfig?.textColor
+      fill: nodeConfig.styleConfig?.textColor || NODE_DEFAULTS.ICON_NODE.textColor,
+      fontSize: nodeConfig.styleConfig?.fontSize || NODE_DEFAULTS.ICON_NODE.fontSize,
+      textWrap: false, 
     }
   });
 
