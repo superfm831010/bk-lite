@@ -22,7 +22,7 @@ export const useRasaParamsToForm = () => {
     return (componentName: string, configData: ConfigData): FormData => {
       const componentConfig = RASA_CONFIG[componentName];
       if (!componentConfig) {
-        console.warn(`Unknown RASA component: ${componentName}`);
+        // console.warn(`Unknown RASA component: ${componentName}`);
         return {};
       }
 
