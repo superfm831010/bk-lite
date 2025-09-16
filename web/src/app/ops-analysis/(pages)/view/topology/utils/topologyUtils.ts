@@ -261,13 +261,20 @@ export const getEdgeStyle = (connectionType: 'none' | 'single' | 'double') => {
     },
   };
 
+  const lineAttrs: any = {
+    stroke: COLORS.EDGE.DEFAULT,
+    strokeWidth: SPACING.STROKE_WIDTH.THIN,
+    ...arrowConfig[connectionType],
+  };
+  // 为单箭头线条添加虚线和CSS类名
+  if (connectionType === 'single') {
+    lineAttrs.strokeDasharray = '5 5';
+    lineAttrs.class = 'edge-flow-animation';
+  }
+
   return {
     attrs: {
-      line: {
-        stroke: COLORS.EDGE.DEFAULT,
-        strokeWidth: SPACING.STROKE_WIDTH.THIN,
-        ...arrowConfig[connectionType],
-      },
+      line: lineAttrs,
     },
     labels: [],
   };

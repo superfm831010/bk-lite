@@ -49,7 +49,8 @@
     "dataFetchFailed": "数据获取失败",
     "unknownComponentType": "未知的组件类型",
     "dataCannotRenderAsChart": "数据无法渲染为图表",
-    "dataFormatMismatch": "数据格式不匹配"
+    "dataFormatMismatch": "数据格式不匹配",
+    "noData": "暂无数据"
   },
   "dataSource": {
     "title": "数据源",

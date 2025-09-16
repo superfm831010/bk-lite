@@ -72,10 +72,13 @@ export const createEdge = (graphInstance: any, config: EdgeCreationConfig): Edge
 
   // 设置边数据
   edge.setData({
-    connectionType: config.connectionType,
+    arrowDirection: config.connectionType, 
     lineType: config.lineType || EDGE_DEFAULTS.lineType,
     lineName: config.lineName || EDGE_DEFAULTS.lineName,
     vertices: config.vertices || [],
+    styleConfig: {
+      lineColor: COLORS.EDGE.DEFAULT,
+    }
   });
 
   // 如果有拐点数据，恢复拐点
@@ -107,6 +110,8 @@ const createEdgeData = (edge: Edge, sourceNode: any, targetNode: any): EdgeData 
     id: edge.id,
     lineType: edgeData.lineType || 'common_line',
     lineName: edgeData.lineName || '',
+    arrowDirection: edgeData.arrowDirection || 'single', 
+    styleConfig: edgeData.styleConfig || { lineColor: COLORS.EDGE.DEFAULT },
     sourceNode: {
       id: sourceNode.id,
       name: getNodeName(sourceNode),

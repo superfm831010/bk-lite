@@ -269,7 +269,7 @@ const KnowledgeAppendNode = (props: any) => (
 
 interface ChatflowEditorProps {
   onSave?: (nodes: Node[], edges: Edge[]) => void;
-  initialData?: { nodes: Node[], edges: Edge[] };
+  initialData?: { nodes: Node[], edges: Edge[] } | null;
 }
 
 const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) => {
@@ -280,18 +280,14 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
   const [isConfigDrawerVisible, setIsConfigDrawerVisible] = useState(false);
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
   const [selectedEdges, setSelectedEdges] = useState<Edge[]>([]);
-
-  // 初始节点 - 空画布
-  const getInitialNodes = useCallback((): Node[] => [], []);
-
-  const getInitialEdges = useCallback((): Edge[] => [], []);
+  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 0.8 });
 
   // 使用外部传入的 initialData 或默认数据
   const [nodes, setNodes, onNodesChange] = useNodesState(
-    initialData?.nodes?.length ? initialData.nodes : getInitialNodes()
+    initialData?.nodes && Array.isArray(initialData.nodes) ? initialData.nodes : []
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState(
-    initialData?.edges?.length ? initialData.edges : getInitialEdges()
+    initialData?.edges && Array.isArray(initialData.edges) ? initialData.edges : []
   );
 
   // 添加一个 ref 来跟踪是否正在同步外部数据，避免循环调用
@@ -299,20 +295,41 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
   
   // 监听 initialData 变化，当外部数据更新时同步更新内部状态
   useEffect(() => {
+    console.log('ChatflowEditor useEffect - initialData changed:', initialData);
+    
     if (initialData && !isSyncingExternalData.current) {
       isSyncingExternalData.current = true;
-      setNodes(initialData.nodes || []);
-      setEdges(initialData.edges || []);
-      // 延迟重置标志，确保状态更新完成
+      
+      // 安全地设置节点数据
+      const safeNodes = Array.isArray(initialData.nodes) ? initialData.nodes : [];
+      const safeEdges = Array.isArray(initialData.edges) ? initialData.edges : [];
+      
+      console.log('Setting nodes and edges:', { nodes: safeNodes.length, edges: safeEdges.length });
+      
+      // 只有当数据真的发生变化时才更新
+      setNodes(prev => {
+        const prevStr = JSON.stringify(prev.map(n => ({ id: n.id, position: n.position, data: n.data })));
+        const newStr = JSON.stringify(safeNodes.map(n => ({ id: n.id, position: n.position, data: n.data })));
+        return prevStr !== newStr ? safeNodes : prev;
+      });
+      
+      setEdges(prev => {
+        const prevStr = JSON.stringify(prev);
+        const newStr = JSON.stringify(safeEdges);
+        return prevStr !== newStr ? safeEdges : prev;
+      });
+      
+      // 重置同步标志
       setTimeout(() => {
         isSyncingExternalData.current = false;
-      }, 0);
+      }, 100);
     }
-  }, [initialData, setNodes, setEdges]);
+  }, [initialData]);
 
   // 当 nodes 或 edges 发生变化时，自动调用 onSave 同步数据
   // 添加防抖和初始化标志，避免无限循环
   const [isInitialized, setIsInitialized] = useState(false);
+  const lastSaveData = useRef<string>('');
   
   useEffect(() => {
     // 如果正在同步外部数据，则不触发 onSave
@@ -320,15 +337,31 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
       return;
     }
     
-    // 首次加载时标记为已初始化
+    // 首次加载时标记为已初始化，但不触发保存
     if (!isInitialized) {
       setIsInitialized(true);
       return;
     }
     
-    // 只有在初始化完成后且不是同步外部数据时才调用 onSave
+    // 只有在有实际数据变化时才调用 onSave
     if (isInitialized && onSave) {
-      onSave(nodes, edges);
+      // 使用数据指纹避免重复保存相同数据
+      const currentData = JSON.stringify({ 
+        nodes: nodes.map(n => ({ id: n.id, type: n.type, position: n.position, data: n.data })), 
+        edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target }))
+      });
+      
+      if (currentData !== lastSaveData.current && (nodes.length > 0 || edges.length > 0)) {
+        lastSaveData.current = currentData;
+        
+        // 使用防抖延迟避免频繁调用
+        const timeoutId = setTimeout(() => {
+          console.log('ChatflowEditor: 保存数据变化', { nodes: nodes.length, edges: edges.length });
+          onSave(nodes, edges);
+        }, 500);
+        
+        return () => clearTimeout(timeoutId);
+      }
     }
   }, [nodes, edges, onSave, isInitialized]);
 
@@ -387,6 +420,14 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
   // ReactFlow 实例初始化
   const onInit = useCallback((instance: any) => {
     setReactFlowInstance(instance);
+    // 初始化时设置视窗状态
+    const currentViewport = instance.getViewport();
+    setViewport(currentViewport);
+  }, []);
+
+  // 视窗变化处理
+  const onMove = useCallback((event: any, newViewport: any) => {
+    setViewport(newViewport);
   }, []);
 
   // 处理连接
@@ -608,12 +649,26 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
             onDragOver={onDragOver}
             onSelectionChange={onSelectionChange}
             nodeTypes={nodeTypes}
-            defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+            defaultViewport={viewport}
+            onMove={onMove}
             minZoom={0.1}
             maxZoom={2}
             attributionPosition="bottom-left"
+            fitView={false}
+            fitViewOptions={{
+              padding: 0.2,
+              includeHiddenNodes: false,
+            }}
           >
-            <MiniMap />
+            <MiniMap 
+              nodeColor="#1890ff"
+              nodeStrokeColor="#f0f0f0"
+              nodeStrokeWidth={1}
+              maskColor="rgba(255, 255, 255, 0.8)"
+              pannable={true}
+              zoomable={true}
+              ariaLabel="流程图缩略图"
+            />
             <Controls />
             <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
           </ReactFlow>
@@ -624,7 +679,7 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
       <NodeConfigDrawer
         visible={isConfigDrawerVisible}
         node={selectedNode}
-        nodes={nodes as ChatflowNode[]} // 使用类型断言传递画布节点数据
+        nodes={Array.isArray(nodes) ? nodes.filter(isChatflowNode) : []} // 确保传递正确格式的数组
         onClose={() => setIsConfigDrawerVisible(false)}
         onSave={handleSaveConfig}
         onDelete={handleDeleteNode}
