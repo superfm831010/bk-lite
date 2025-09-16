@@ -27,3 +27,5 @@ class BasicLLMRequest(BaseModel):
     naive_rag_request: List[DocumentRetrieverRequest] = []
 
     extra_config: Optional[dict] = {}
+
+    graph_user_message: Optional[str] = ''
