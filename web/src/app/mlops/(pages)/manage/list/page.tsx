@@ -23,13 +23,25 @@ const { confirm } = Modal;
 const DatasetManagePage = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { deleteAnomalyDatasets, deleteRasaDatasets, getAnomalyDatasetsList, getRasaDatasetsList } = useMlopsManageApi();
+  const { 
+    deleteAnomalyDatasets, 
+    deleteRasaDatasets, 
+    getAnomalyDatasetsList, 
+    getRasaDatasetsList,
+    getLogClusteringList,
+    getTimeSeriesPredictList,
+    deleteLogClustering,
+    deleteTimeSeriesPredict,
+  } = useMlopsManageApi();
   const [datasets, setDatasets] = useState<DataSet[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const modalRef = useRef<ModalRef>(null);
   const datasetTypes = [
     { key: 'anomaly', value: 'anomaly', label: t('datasets.anomaly') },
+    { key: 'rasa', value: 'rasa', label: t('datasets.rasa') },
+    { key: 'log_clustering', value: 'log_clustering', label: t('datasets.logClustering') },
+    { key: 'timeseries_predict', value: 'timeseries_predict', label: t('datasets.timeseriesPredict') }
   ];
 
   const treeData: TreeDataNode[] = [
@@ -45,6 +57,14 @@ const DatasetManagePage = () => {
         {
           title: t(`datasets.rasa`),
           key: 'rasa',
+        },
+        {
+          title: t(`datasets.logClustering`),
+          key: 'log_clustering',
+        },
+        {
+          title: t(`datasets.timeseriesPredict`),
+          key: 'timeseries_predict',
         }
       ]
     },
@@ -60,12 +80,16 @@ const DatasetManagePage = () => {
 
   const handleAddMap: Record<string, any> = {
     'anomaly': getAnomalyDatasetsList,
-    'rasa': getRasaDatasetsList
+    'rasa': getRasaDatasetsList,
+    'log_clustering': getLogClusteringList, // 请求方法留空
+    'timeseries_predict': getTimeSeriesPredictList, // 请求方法留空
   };
 
   const handleDelMap: Record<string, any> = {
     'anomaly': deleteAnomalyDatasets,
-    'rasa': deleteRasaDatasets
+    'rasa': deleteRasaDatasets,
+    'log_clustering': deleteLogClustering, // 请求方法留空
+    'timeseries_predict': deleteTimeSeriesPredict, // 请求方法留空
   };
 
 
@@ -95,7 +119,7 @@ const DatasetManagePage = () => {
   const navigateToNode = (item: any) => {
     const [activeTab] = selectedKeys;
     router.push(
-      `/mlops/manage/detail?folder_id=${item?.id}&folder_name=${item.name}&description=${item.description}&activeTap=${activeTab}&menu=intent`
+      `/mlops/manage/detail?folder_id=${item?.id}&folder_name=${item.name}&description=${item.description}&activeTap=${activeTab}&menu=${activeTab === 'rasa' ? 'intent' : ''}`
     );
   };
 

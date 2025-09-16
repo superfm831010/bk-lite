@@ -147,7 +147,10 @@
       "search": "Search",
       "displayFields": "Table Display Fields",
       "hiddenFields": "Optional Fields",
-      "searchError": "Log grouping cannot be empty"
+      "searchError": "Log grouping cannot be empty",
+      "storageConditions": "Storage Conditions",
+      "loadConditions": "Load Conditions",
+      "query": "Query"
     },
     "integration": {
       "interval": "Interval",

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Form, Input, Select, Collapse, Alert } from 'antd';
+import { Form, Input, Select, Collapse } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
 import { useTranslation } from '@/utils/i18n';
 import ChatflowEditor from '@/app/opspilot/components/chatflow/ChatflowEditor';
@@ -89,8 +89,8 @@ interface ChatflowSettingsProps {
   form: any;
   groups: any[];
   onClear?: () => void;
-  onSaveWorkflow?: (nodes: any[], edges: any[]) => void;
-  workflowData?: { nodes: any[], edges: any[] };
+  onSaveWorkflow?: (workflowData: { nodes: any[], edges: any[] }) => void;
+  workflowData?: { nodes: any[], edges: any[] } | null;
 }
 
 const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({ 
@@ -112,6 +112,17 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({
   const handleAccordionChange = (keys: string | string[]) => {
     setActiveAccordionKeys(Array.isArray(keys) ? keys : [keys]);
   };
+
+  // 处理工作流数据变化的回调
+  const handleWorkflowChange = (nodes: any[], edges: any[]) => {
+    console.log('ChatflowSettings: 工作流数据变化', { nodes: nodes.length, edges: edges.length });
+    if (onSaveWorkflow) {
+      onSaveWorkflow({ nodes, edges });
+    }
+  };
+
+  // 添加调试日志
+  console.log('ChatflowSettings: 接收到的workflowData', workflowData);
 
   return (
     <div className="w-full flex h-full">
@@ -180,13 +191,6 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({
               }
             >
               <div>
-                <Alert 
-                  message={t('chatflow.messages.dragToCreate')} 
-                  type="info" 
-                  showIcon 
-                  className="mb-4"
-                />
-                
                 <Collapse 
                   size="small" 
                   ghost
@@ -198,7 +202,7 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({
                       key={category.key}
                       header={
                         <div className="flex items-center">
-                          <span className="text-xs">{t(category.labelKey)}</span>
+                          <span className="text-xs mt-[3px]">{t(category.labelKey)}</span>
                         </div>
                       }
                     >
@@ -255,7 +259,7 @@ const ChatflowSettings: React.FC<ChatflowSettingsProps> = ({
         </div>
         <div className="border rounded-md shadow-sm bg-white h-[calc(100vh-230px)] mx-2">
           <ChatflowEditor 
-            onSave={onSaveWorkflow} 
+            onSave={handleWorkflowChange} 
             initialData={workflowData}
           />
         </div>

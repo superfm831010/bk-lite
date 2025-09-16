@@ -218,6 +218,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
             shapeType: values.shapeType,
             nameColor: values.nameColor,
             nameFontSize: values.nameFontSize,
+            thresholdColors: values.thresholdColors,
           },
         };
         addNewNode(nodeConfig);

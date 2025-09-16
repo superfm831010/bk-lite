@@ -147,7 +147,10 @@
       "search": "搜索",
       "displayFields": "表格展示字段",
       "hiddenFields": "可选字段",
-      "searchError": "日志分组不能为空"
+      "searchError": "日志分组不能为空",
+      "storageConditions": "保存条件",
+      "loadConditions": "加载条件",
+      "query": "查询"
     },
     "analysis": {
       "dashboard": "仪表盘",

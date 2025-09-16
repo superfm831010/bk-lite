@@ -1,7 +1,27 @@
+/* 线条流动动画 */
+@keyframes edgeFlowAnimation {
+  0% {
+    stroke-dashoffset: 10;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
 /* 拓扑图容器样式 */
 .topologyContainer {
   :global(.x6-node foreignObject) {
     overflow: hidden !important;
+  }
+  
+  /* 单箭头线条流动动画 */
+  :global(.edge-flow-animation) {
+    animation: edgeFlowAnimation 1.5s linear infinite;
+  }
+  
+  /* 针对有虚线的SVG路径元素 */
+  :global(.x6-edge path[stroke-dasharray]) {
+    animation: edgeFlowAnimation 1.5s linear infinite;
   }
   
   // 全局优化minimap相关样式

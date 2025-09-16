@@ -77,7 +77,7 @@ class BasicNode:
         rag_result = []
 
         for rag_search_request in naive_rag_request:
-            rag_search_request.search_query = config["configurable"]["graph_user_message"]
+            rag_search_request.search_query = config["configurable"]["graph_request"].graph_user_message
 
             if len(selected_knowledge_ids) != 0 and rag_search_request.index_name not in selected_knowledge_ids:
                 logger.info(
@@ -391,7 +391,7 @@ class BasicNode:
                 user_message = request.user_message
 
         state["messages"].append(HumanMessage(content=user_message))
-        config["configurable"]["graph_user_message"] = user_message
+        request.graph_user_message = user_message
         return state
 
     def chat_node(self, state: Dict[str, Any], config: RunnableConfig) -> Dict[str, Any]:
