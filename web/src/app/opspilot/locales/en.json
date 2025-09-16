@@ -742,7 +742,6 @@
       "connectionAdded": "Connection added successfully",
       "connectionDeleted": "Connection deleted successfully",
       "deleteConfirm": "Are you sure you want to delete this node?",
-      "dragToCreate": "Drag nodes from the left to create on canvas",
       "deleteNodeContent": "Are you sure you want to delete this node? This action cannot be undone.",
       "deleteMultipleConfirm": "Confirm delete multiple nodes?",
       "deleteMultipleContent": "Are you sure you want to delete the selected nodes? This action cannot be undone.",

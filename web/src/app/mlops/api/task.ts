@@ -13,6 +13,18 @@ interface TrainTaskParams {
   windows_size?: number;
 }
 
+interface RasaPipelinesProps {
+  name: string;
+  datasets: number[];
+  dataset_names: string[];
+  config: {
+    pipeline: any;
+    policies: any;
+  };
+  datasets_detail?: any[];
+  [key: string]: any
+}
+
 
 
 const useMlopsTaskApi = () => {
@@ -75,6 +87,11 @@ const useMlopsTaskApi = () => {
     return await post(`/mlops/anomaly_detection_train_jobs/`, params)
   };
 
+  // 新建Rasa训练流水线
+  const addRasaTrainTask = async (params: RasaPipelinesProps) => {
+    return await post(`/mlops/rasa_pipelines/`, params);
+  };
+
   // 启动异常检测训练任务
   const startAnomalyTrainTask = async (id: number | string) => {
     return await post(`/mlops/anomaly_detection_train_jobs/${id}/train/`);
@@ -85,9 +102,19 @@ const useMlopsTaskApi = () => {
     return await patch(`/mlops/anomaly_detection_train_jobs/${id}/`, params);
   };
 
+  // 编辑Rasa训练任务
+  const updateRasaPipelines = async (id: string, params: RasaPipelinesProps) => {
+    return await patch(`/mlops/rasa_pipelines/${id}/`, params);
+  };
+
   // 删除异常检测训练任务
   const deleteAnomalyTrainTask = async (id: string) => {
     return await del(`/mlops/anomaly_detection_train_jobs/${id}/`);
+  };
+
+  // 删除Rasa训练流水线
+  const deleteRasaPipelines = async (id: string) => {
+    return await del(`/mlops/rasa_pipelines/${id}`);
   };
 
   return {
@@ -98,9 +125,12 @@ const useMlopsTaskApi = () => {
     getTrainTaskMetricsDetail,
     getRasaPipelines,
     addAnomalyTrainTask,
+    addRasaTrainTask,
     startAnomalyTrainTask,
     updateAnomalyTrainTask,
+    updateRasaPipelines,
     deleteAnomalyTrainTask,
+    deleteRasaPipelines
   }
 
 };
