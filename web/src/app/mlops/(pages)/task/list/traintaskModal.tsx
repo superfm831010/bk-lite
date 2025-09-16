@@ -2,11 +2,13 @@
 import OperateModal from '@/components/operate-modal';
 import {
   Form,
+  FormInstance,
   Button
 } from 'antd';
 import {
   useImperativeHandle,
-  forwardRef
+  forwardRef,
+  useRef
 } from 'react';
 import { ModalRef } from '@/app/mlops/types';
 import { TrainTaskModalProps } from '@/app/mlops/types/task';
@@ -15,15 +17,16 @@ import { useTranslation } from '@/utils/i18n';
 
 const TrainTaskModal = forwardRef<ModalRef, TrainTaskModalProps>(({ datasetOptions, activeTag, onSuccess }, ref) => {
   const { t } = useTranslation();
+  const formRef = useRef<FormInstance>(null);
   const {
     modalState,
-    formRef,
+    // formRef,
     loadingState,
     showModal,
     handleSubmit,
     handleCancel,
     renderFormContent
-  } = useTaskForm({ datasetOptions, activeTag, onSuccess }); // 使用统一入口
+  } = useTaskForm({ datasetOptions, activeTag, onSuccess, formRef }); // 使用统一入口
 
   useImperativeHandle(ref, () => ({
     showModal: ({ type, title, form }) => {

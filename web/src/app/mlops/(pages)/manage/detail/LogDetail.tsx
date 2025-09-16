@@ -22,10 +22,10 @@ const { Search } = Input;
 
 const LogDetail = () => {
   const { t } = useTranslation();
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const { getLogClusteringTrainData, deleteLogClusteringTrainData, updateLogClusteringTrainData } = useMlopsManageApi();
   const modalRef = useRef<ModalRef>(null);
+  const searchParams = useSearchParams();
+  const { getLogClusteringTrainData, deleteLogClusteringTrainData, updateLogClusteringTrainData } = useMlopsManageApi();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [currentData, setCurrentData] = useState<any>(null);
@@ -41,7 +41,7 @@ const LogDetail = () => {
   const {
     folder_id,
     folder_name,
-    description,
+    // description,
     activeTap
   } = useMemo(() => ({
     folder_id: searchParams.get('folder_id'),
@@ -57,23 +57,15 @@ const LogDetail = () => {
       dataIndex: 'name',
     },
     {
-      title: t('datasets.anomalyTitle'),
-      key: 'count',
-      dataIndex: 'count',
-    },
-    {
       title: t('datasets.trainFileType'),
       key: 'type',
       dataIndex: 'type',
-      render(_, record) {
+      render: (_, record) => {
         const activeTypes = Object.entries(record.type)
           .filter(([, value]) => value === true)
           .map(([key]) => <Tag key={key} color={TYPE_COLOR[key]}>{t(`datasets.${TYPE_CONTENT[key]}`)}</Tag>);
-        return (
-          <>
-            {activeTypes.length ? activeTypes : '--'}
-          </>
-        )
+
+        return (<>{activeTypes.length ? activeTypes : '--'}</>)
       },
     },
     {
@@ -84,13 +76,6 @@ const LogDetail = () => {
       fixed: 'right',
       render: (_: unknown, record) => (
         <>
-          <Button
-            type="link"
-            className="mr-[10px]"
-            onClick={() => toAnnotation(record)}
-          >
-            {t('datasets.annotate')}
-          </Button>
           <PermissionWrapper requiredPermissions={['File Edit']}>
             <Button
               type="link"
@@ -192,10 +177,6 @@ const LogDetail = () => {
     }
   };
 
-  const toAnnotation = (data: any) => {
-    router.push(`/mlops/manage/annotation?id=${data.id}&folder_id=${folder_id}&folder_name=${folder_name}&description=${description}&activeTap=${activeTap}`);
-  };
-
   const handleChange = (value: any) => {
     setPagination(value);
   };
@@ -242,12 +223,8 @@ const LogDetail = () => {
           <Breadcrumb
             separator=">"
             items={[
-              {
-                title: <a href="#" onClick={() => router.push(`/mlops/manage/list`)}>{t(`datasets.datasets`)}</a>
-              },
-              {
-                title: t(`datasets.datasetsDetail`)
-              }
+              { title: <a href="#" onClick={() => router.push(`/mlops/manage/list`)}>{t(`datasets.datasets`)}</a> },
+              { title: t(`datasets.datasetsDetail`) }
             ]}
           />
         </div>

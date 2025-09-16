@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, RefObject } from 'react';
 import { FormInstance, message, Form, Select, Input, Button } from 'antd';
 import { useTranslation } from '@/utils/i18n';
 import useMlopsTaskApi from '@/app/mlops/api/task';
@@ -17,6 +17,7 @@ interface UseRasaFormProps {
   datasetOptions: Option[];
   activeTag: string[];
   onSuccess: () => void;
+  formRef: RefObject<FormInstance>;
 }
 
 interface ConfigList {
@@ -32,10 +33,10 @@ interface EditingItem {
   formData: any;
 }
 
-export const useRasaForm = ({ datasetOptions, activeTag, onSuccess }: UseRasaFormProps) => {
+export const useRasaForm = ({ datasetOptions, activeTag, onSuccess, formRef }: UseRasaFormProps) => {
   const { t } = useTranslation();
   const [key] = activeTag;
-  const formRef = useRef<FormInstance>(null);
+  // const formRef = useRef<FormInstance>(null);
   const { addRasaTrainTask, updateRasaPipelines } = useMlopsTaskApi();
   const [formData, setFormData] = useState<any>(null);
   const [pipeline, setPipeLine] = useState<ConfigList[]>([{ type: '', select: '', config: null }]);
@@ -70,6 +71,7 @@ export const useRasaForm = ({ datasetOptions, activeTag, onSuccess }: UseRasaFor
   });
 
   useEffect(() => {
+    console.log('init', modalState);
     if (modalState.isOpen) {
       initializeForm();
     }
@@ -338,6 +340,7 @@ export const useRasaForm = ({ datasetOptions, activeTag, onSuccess }: UseRasaFor
   const handleSubmit = async () => {
     setLoadingState(prev => ({ ...prev, confirm: true }));
     try {
+      if (!formRef) return;
       const value = await formRef.current?.validateFields();
       const datasets: number[] = value.dataset_id || [];
       const params = {
@@ -367,17 +370,18 @@ export const useRasaForm = ({ datasetOptions, activeTag, onSuccess }: UseRasaFor
   };
 
   const handleCancel = () => {
-    setModalState((prev) => ({
-      ...prev,
+    setModalState({
       isOpen: false,
-    }));
+      type: 'add',
+      title: 'addtask',
+    });
     setPipeLine([{ type: '', select: '', config: null }]);
     setPolicies([{ select: '', config: null }]);
     formRef.current?.resetFields();
   };
 
   const renderFormContent = useCallback(() => {
-    if(key !== 'rasa') return;
+    if (key !== 'rasa') return;
     return (
       <>
         <Form.Item

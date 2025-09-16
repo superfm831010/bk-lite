@@ -56,89 +56,6 @@ const RasaDetail = () => {
   </>);
 
   const columnsMap: Record<string, ColumnItem[]> = {
-    // 'intent': [
-    //   {
-    //     title: t(`datasets.intentName`),
-    //     dataIndex: 'name',
-    //     key: 'name'
-    //   },
-    //   {
-    //     title: t(`datasets.exampleNum`),
-    //     dataIndex: 'example_count',
-    //     key: 'example_count'
-    //   },
-    //   {
-    //     title: t(`common.action`),
-    //     dataIndex: 'action',
-    //     key: 'action',
-    //     width: 180,
-    //     render: (_, record) => btnsElements(record)
-    //   }
-    // ],
-    // 'story': [
-    //   {
-    //     title: t(`datasets.storyName`),
-    //     dataIndex: 'name',
-    //     key: 'name'
-    //   },
-    //   {
-    //     title: t(`datasets.intentNum`),
-    //     dataIndex: 'intent_count',
-    //     key: 'intent_count'
-    //   },
-    //   {
-    //     title: t(`datasets.responseNum`),
-    //     dataIndex: 'response_count',
-    //     key: 'response_count'
-    //   },
-    //   {
-    //     title: t(`datasets.slotNum`),
-    //     dataIndex: 'slot_count',
-    //     key: 'slot_count'
-    //   },
-    //   {
-    //     title: t(`datasets.formNum`),
-    //     dataIndex: 'form_count',
-    //     key: 'form_count'
-    //   },
-    //   {
-    //     title: t(`common.action`),
-    //     dataIndex: 'action',
-    //     key: 'action',
-    //     width: 180,
-    //     render: (_, record) => (<>
-    //       <Button type="link" className="mr-2" onClick={() => handleEdit(record)}>{t(`common.edit`)}</Button>
-    //       <Popconfirm
-    //         title={t(`common.delConfirm`)}
-    //         description={t(`common.delConfirmCxt`)}
-    //         okText={t('common.confirm')}
-    //         cancelText={t('common.cancel')}
-    //         onConfirm={() => handleDel(record.id)}
-    //       >
-    //         <Button type="link" danger>{t(`common.delete`)}</Button>
-    //       </Popconfirm>
-    //     </>)
-    //   }
-    // ],
-    // 'response': [
-    //   {
-    //     title: t(`datasets.responseName`),
-    //     dataIndex: 'name',
-    //     key: 'name'
-    //   },
-    //   {
-    //     title: t(`datasets.responseNum`),
-    //     dataIndex: 'example_count',
-    //     key: 'example_count'
-    //   },
-    //   {
-    //     title: t(`common.action`),
-    //     dataIndex: 'action',
-    //     key: 'action',
-    //     width: 180,
-    //     render: (_, record) => btnsElements(record)
-    //   }
-    // ],
     'rule': [
       {
         title: t(`datasets.ruleName`),
@@ -285,23 +202,18 @@ const RasaDetail = () => {
     menu: searchParams.get('menu') || 'intent',
   }), [searchParams]);
 
-
   useEffect(() => {
     if (menu) {
       getTableData();
     }
   }, [menu]);
 
-
   const getTableData = async (search: string = '') => {
     setLoading(true);
     try {
       const data = await getFileMap[menu]({ name: search, dataset: folder_id });
       if (menu === 'story') {
-        const _data = data?.map(((item: any) => ({
-          ...item,
-          icon: 'chakanshuji'
-        })));
+        const _data = data?.map((item: any) => ({ ...item, icon: 'chakanshuji' }));
         setTableData(_data);
       } else {
         setTableData(data);
@@ -314,10 +226,6 @@ const RasaDetail = () => {
       setLoading(false);
     }
   };
-
-  // const onChange = (key: string) => {
-  //   setSelectKey(key);
-  // };
 
   const onSearch = (value: string) => {
     getTableData(value);
@@ -343,46 +251,39 @@ const RasaDetail = () => {
     }
   };
 
-
-  return (
-    <>
-      <div className="w-full h-full relative">
-        {
-          treeList.includes(menu) ? (
-            <>
-              <ExampleContent
-                dataset={folder_id || ''}
-                menu={menu}
-                loading={loading}
-                data={tableData}
-                handleAdd={handleAdd}
-                handleDel={handleDel}
-                handleEdit={handleEdit}
-                onSuccess={getTableData}
-              />
-            </>
-          ) : (
-            <>
-              <div className="flex justify-end">
-                <Search
-                  className="w-[240px] mr-1.5"
-                  placeholder={t('common.search')}
-                  enterButton
-                  onSearch={onSearch}
-                  style={{ fontSize: 15 }}
-                />
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                  {t(`common.add`)}
-                </Button>
-              </div>
-              <CustomTable rowKey="id" loading={loading} columns={columnsMap[menu]} dataSource={tableData} />
-            </>
-          )
-        }
-      </div>
-      <RasaModal ref={modalRef} selectKey={menu} folder_id={folder_id as string} onSuccess={() => getTableData()} />
-    </>
-  )
+  return (<>
+    <div className="w-full h-full relative">{
+      treeList.includes(menu) ? (
+        <>
+          <ExampleContent
+            dataset={folder_id || ''}
+            menu={menu}
+            loading={loading}
+            data={tableData}
+            handleAdd={handleAdd}
+            handleDel={handleDel}
+            handleEdit={handleEdit}
+            onSuccess={getTableData}
+          />
+        </>
+      ) : (<>
+        <div className="flex justify-end">
+          <Search
+            className="w-[240px] mr-1.5"
+            placeholder={t('common.search')}
+            enterButton
+            onSearch={onSearch}
+            style={{ fontSize: 15 }}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+            {t(`common.add`)}
+          </Button>
+        </div>
+        <CustomTable rowKey="id" loading={loading} columns={columnsMap[menu]} dataSource={tableData} />
+      </>)
+    }</div>
+    <RasaModal ref={modalRef} selectKey={menu} folder_id={folder_id as string} onSuccess={() => getTableData()} />
+  </>)
 };
 
 export default RasaDetail;

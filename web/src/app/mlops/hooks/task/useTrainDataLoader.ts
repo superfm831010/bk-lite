@@ -4,10 +4,15 @@ import { TrainData } from "@/app/mlops/types/manage";
 
 
 const useTrainDataLoader = () => {
-  const { getAnomalyTrainData, getAnomalyTrainDataInfo } = useMlopsManageApi();
+  const { getAnomalyTrainData, getLogClusteringTrainData, getTimeSeriesPredictTrainData, getAnomalyTrainDataInfo } = useMlopsManageApi();
+  const getTrainData: Record<string, any> = {
+    'anomaly': getAnomalyTrainData,
+    'log_clustering': getLogClusteringTrainData,
+    'timeseries_predict': getTimeSeriesPredictTrainData
+  };
 
-  const loadTrainOptions = useCallback(async (datasetId: number) => {
-    const trainData = await getAnomalyTrainData({ dataset: datasetId });
+  const loadTrainOptions = useCallback(async (datasetId: number, key: string) => {
+    const trainData = await getTrainData[key]({ dataset: datasetId });
 
     return {
       trainOption: trainData.filter((item: TrainData) => item.is_train_data).map((item: TrainData) => ({
@@ -30,7 +35,7 @@ const useTrainDataLoader = () => {
     return dataset;
   }, [getAnomalyTrainDataInfo]);
 
-  return {loadTrainOptions, getDatasetByTrainId}
+  return { loadTrainOptions, getDatasetByTrainId }
 };
 
 export default useTrainDataLoader;
