@@ -63,7 +63,7 @@ const ConditionList = forwardRef<ModalRef, ModalConfig>(
             >
               {t('log.search.query')}
             </Button>
-            <Permission requiredPermissions={['Delete', 'View']}>
+            <Permission requiredPermissions={['Delete']}>
               <Popconfirm
                 title={t('common.deleteTitle')}
                 description={t('common.deleteContent')}
