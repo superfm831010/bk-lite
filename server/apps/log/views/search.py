@@ -35,7 +35,7 @@ class LogSearchViewSet(ViewSet):
         if not field:
             return WebUtils.response_error("Field parameter is required.")
 
-        data = SearchService.field_names(field, start_time, end_time, limit)
+        data = SearchService.field_names(start_time, end_time, field, limit)
         return WebUtils.response_success(data)
 
     @swagger_auto_schema(
