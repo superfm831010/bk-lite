@@ -64,9 +64,7 @@ class EventFilter(django_filters.FilterSet):
 
 class EventRawDataFilter(django_filters.FilterSet):
     event_id = django_filters.CharFilter(field_name='event__id')
-    event_time = django_filters.DateTimeFromToRangeFilter(field_name='event__event_time')
-    created_at = django_filters.DateTimeFromToRangeFilter(field_name='event__created_at')
 
     class Meta:
         model = EventRawData
-        fields = ['event_id', 'event_time', 'created_at']
+        fields = ['event_id']

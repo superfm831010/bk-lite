@@ -618,48 +618,29 @@ class EventRawDataViewSet(viewsets.ReadOnlyModelViewSet):
         return EventRawData.objects.select_related('event').order_by('-event__event_time', '-id')
 
     @swagger_auto_schema(
-        operation_id="rawdata_list_by_event_id",
-        operation_description="根据事件ID获取原始数据列表（支持分页）",
+        operation_id="rawdata_get_by_event_id",
+        operation_description="根据事件ID获取原始数据",
         manual_parameters=[
             openapi.Parameter('event_id', openapi.IN_QUERY, description="事件ID", type=openapi.TYPE_STRING, required=True),
-            openapi.Parameter('page', openapi.IN_QUERY, description="页码", type=openapi.TYPE_INTEGER, required=False, default=1),
-            openapi.Parameter('page_size', openapi.IN_QUERY, description="每页数据条数", type=openapi.TYPE_INTEGER, required=False, default=10),
-            openapi.Parameter('event_time_after', openapi.IN_QUERY, description="事件时间过滤（开始）", type=openapi.TYPE_STRING, required=False),
-            openapi.Parameter('event_time_before', openapi.IN_QUERY, description="事件时间过滤（结束）", type=openapi.TYPE_STRING, required=False),
         ]
     )
     @action(methods=['get'], detail=False, url_path='by_event_id')
     def rawdata_list_by_event_id(self, request):
         """
-        根据事件ID获取原始数据列表，支持分页和时间排序
+        根据事件ID获取原始数据
 
-        URL: /api/event-raw-data/by_event_id/?event_id=xxx&page=1&page_size=10
+        由于每个事件只对应一条原始数据记录，所以直接返回对应的数据，无需分页
+
+        URL: /api/event-raw-data/by_event_id/?event_id=xxx
         """
         event_id = request.query_params.get('event_id')
         if not event_id:
             return WebUtils.response_error("缺少事件ID参数")
 
-        # 基于event_id过滤数据
-        queryset = self.filter_queryset(self.get_queryset())
-        queryset = queryset.filter(event_id=event_id)
-
-        # 获取分页参数
-        page = int(request.GET.get('page', 1))
-        page_size = int(request.GET.get('page_size', 10))
-
-        # 获取总数
-        total_count = queryset.count()
-
-        # 特殊处理：page=-1 表示查询全部数据
-        if page_size == -1:
-            page_data = queryset
-        else:
-            # 正常分页逻辑
-            start = (page - 1) * page_size
-            end = start + page_size
-            page_data = queryset[start:end]
-
-        serializer = self.get_serializer(page_data, many=True)
-        results = serializer.data
-
-        return WebUtils.response_success({"count": total_count, "items": results})
+        try:
+            # 直接获取对应的原始数据记录
+            event_raw_data = EventRawData.objects.select_related('event').get(event_id=event_id)
+            serializer = self.get_serializer(event_raw_data)
+            return WebUtils.response_success(serializer.data)
+        except EventRawData.DoesNotExist:
+            return WebUtils.response_error("未找到对应的原始数据")
