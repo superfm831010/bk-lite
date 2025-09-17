@@ -16,7 +16,16 @@ interface DatasetModalProps {
 
 const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess, activeTag }, ref) => {
   const { t } = useTranslation();
-  const { addAnomalyDatasets, updateAnomalyDatasets, addRasaDatasets, updateRasaDatasets } = useMlopsManageApi();
+  const {
+    addAnomalyDatasets,
+    updateAnomalyDatasets,
+    addRasaDatasets,
+    updateRasaDatasets,
+    addLogClusteringDatasets,
+    addTimeSeriesPredictDatasets,
+    updateLogClustering,
+    updateTimeSeriesPredict
+  } = useMlopsManageApi();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [type, setType] = useState<string>('edit');
   const [title, setTitle] = useState<string>('editform');
@@ -51,6 +60,12 @@ const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess, activ
     },
     'rasa': async (params: any) => {
       await addRasaDatasets(params);
+    },
+    'log_clustering': async (params: any) => {
+      await addLogClusteringDatasets(params);
+    },
+    'timeseries_predict': async (params: any) => {
+      await addTimeSeriesPredictDatasets(params);
     }
   };
 
@@ -60,6 +75,12 @@ const DatasetModal = forwardRef<ModalRef, DatasetModalProps>(({ onSuccess, activ
     },
     'rasa': async (id: number, params: any) => {
       await updateRasaDatasets(id, params);
+    },
+    'log_clustering': async (id: number, params: any) => {
+      await updateLogClustering(id, params);
+    },
+    'timeseries_predict': async (id: number, params: any) => {
+      await updateTimeSeriesPredict(id, params);
     }
   };
 

@@ -5,13 +5,28 @@ import { Drawer, Form, Input, Select, InputNumber, Button, message, TimePicker, 
 import { DeleteOutlined, InboxOutlined } from '@ant-design/icons';
 import { Node } from '@xyflow/react';
 import type { UploadProps, UploadFile } from 'antd';
+import { useSkillApi } from '@/app/opspilot/api/skill';
+import dayjs from 'dayjs';
 
 const { Option } = Select;
 const { TextArea } = Input;
 
+// Node data type definition
+interface ChatflowNodeData {
+  label: string;
+  type: string;
+  config?: any;
+}
+
+// Extended Node type with specific data type
+interface ChatflowNode extends Omit<Node, 'data'> {
+  data: ChatflowNodeData;
+}
+
 interface NodeConfigDrawerProps {
   visible: boolean;
-  node: Node | null;
+  node: ChatflowNode | null;
+  nodes?: ChatflowNode[];
   onClose: () => void;
   onSave: (nodeId: string, config: any) => void;
   onDelete: (nodeId: string) => void;
@@ -20,36 +35,122 @@ interface NodeConfigDrawerProps {
 const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   visible,
   node,
+  nodes = [],
   onClose,
   onSave,
   onDelete
 }) => {
   const [form] = Form.useForm();
   const [frequency, setFrequency] = useState('daily');
-  const [paramRows, setParamRows] = useState<Array<{ key: string, value: string }>>([{ key: '', value: '' }]);
-  const [headerRows, setHeaderRows] = useState<Array<{ key: string, value: string }>>([{ key: '', value: '' }]);
+  const [paramRows, setParamRows] = useState<Array<{ key: string, value: string }>>([]);
+  const [headerRows, setHeaderRows] = useState<Array<{ key: string, value: string }>>([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([]);
+  const [skills, setSkills] = useState<any[]>([]);
+  const [loadingSkills, setLoadingSkills] = useState(false);
+
+  const { fetchSkill } = useSkillApi();
+
+  // Load LLM model list
+  const loadLlmModels = async () => {
+    try {
+      setLoadingSkills(true);
+      const skills = await fetchSkill({is_template: 0});
+      setSkills(skills || []);
+    } catch (error) {
+      console.error('获取智能体列表失败:', error);
+      message.error('获取智能体列表失败');
+    } finally {
+      setLoadingSkills(false);
+    }
+  };
 
   React.useEffect(() => {
     if (node && visible) {
       const config = node.data.config || {};
-      form.setFieldsValue(config);
+      
+      // Force form reset to ensure latest node data
+      form.resetFields();
+      
+      // Handle time field conversion to correct dayjs object
+      const formValues: any = {
+        name: node.data.label,
+        ...config
+      };
 
-      // 设置频率状态
-      if ((config as any).frequency) {
-        setFrequency((config as any).frequency);
+      // Time format handling for celery nodes
+      if (node.data.type === 'celery' && config.time) {
+        try {
+          // String format (e.g., "14:30") to dayjs object
+          if (typeof config.time === 'string') {
+            const timeStr = config.time.includes(':') ? config.time : `${config.time}:00`;
+            const today = new Date().toISOString().split('T')[0];
+            formValues.time = dayjs(`${today} ${timeStr}`, 'YYYY-MM-DD HH:mm');
+          } else if (config.time && typeof config.time === 'object' && config.time._isAMomentObject) {
+            // Convert moment to dayjs
+            formValues.time = dayjs(config.time.format('HH:mm'), 'HH:mm');
+          } else if (config.time && typeof config.time === 'object' && config.time.$d) {
+            // Already dayjs object
+            formValues.time = config.time;
+          } else {
+            formValues.time = dayjs(config.time);
+          }
+        } catch (error) {
+          console.warn('时间格式转换失败:', config.time, error);
+          formValues.time = undefined;
+        }
       }
       
-      // 设置参数和请求头
-      if ((config as any).params) {
-        setParamRows((config as any).params);
+      form.setFieldsValue(formValues);
+
+      if (config.frequency) {
+        setFrequency(config.frequency);
+      } else {
+        setFrequency('daily');
       }
-      if ((config as any).headers) {
-        setHeaderRows((config as any).headers);
+      
+      // Initialize params and headers based on node type
+      const needsParamsAndHeaders = ['http', 'restful', 'openai'];
+      
+      if (needsParamsAndHeaders.includes(node.data.type)) {
+        if ((config as any).params && Array.isArray((config as any).params) && (config as any).params.length > 0) {
+          setParamRows([...(config as any).params]);
+        } else {
+          setParamRows([{ key: '', value: '' }]);
+        }
+        
+        if ((config as any).headers && Array.isArray((config as any).headers) && (config as any).headers.length > 0) {
+          setHeaderRows([...(config as any).headers]);
+        } else {
+          setHeaderRows([{ key: '', value: '' }]);
+        }
+      } else {
+        if ((config as any).params && Array.isArray((config as any).params)) {
+          setParamRows([...(config as any).params]);
+        } else {
+          setParamRows([]);
+        }
+        
+        if ((config as any).headers && Array.isArray((config as any).headers)) {
+          setHeaderRows([...(config as any).headers]);
+        } else {
+          setHeaderRows([]);
+        }
       }
+
+      // Load LLM models for agent nodes
+      if (node.data.type === 'agents') {
+        loadLlmModels();
+      }
+    } else {
+      // Reset all states when drawer closes
+      form.resetFields();
+      setParamRows([]);
+      setHeaderRows([]);
+      setFrequency('daily');
     }
   }, [node, visible, form]);
 
+  // Save configuration
   const handleSave = () => {
     if (!node) return;
 
@@ -59,6 +160,17 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         params: paramRows.filter(row => row.key && row.value),
         headers: headerRows.filter(row => row.key && row.value)
       };
+
+      // Save time in HH:mm format for celery nodes
+      if (node.data.type === 'celery' && configData.time) {
+        try {
+          if (configData.time && typeof configData.time === 'object' && configData.time.format) {
+            configData.time = configData.time.format('HH:mm');
+          }
+        } catch (error) {
+          console.warn('时间格式保存失败:', configData.time, error);
+        }
+      }
 
       onSave(node.id, configData);
       message.success('节点配置已保存');
@@ -112,20 +224,18 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     setHeaderRows(newRows);
   };
 
-  // 文件上传配置
+  // File upload configuration
   const uploadProps: UploadProps = {
     name: 'file',
     multiple: true,
     accept: '.md',
     fileList: uploadedFiles,
     beforeUpload: (file) => {
-      // 检查文件类型
       if (!file.name.toLowerCase().endsWith('.md')) {
         message.error('只支持上传 .md 格式的文件');
         return false;
       }
       
-      // 检查文件大小（例如限制为10MB）
       const isLt10M = file.size / 1024 / 1024 < 10;
       if (!isLt10M) {
         message.error('文件大小不能超过 10MB');
@@ -154,7 +264,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     },
     customRequest: async ({ file, onSuccess, onError }) => {
       try {
-        // 这里应该调用真实的上传API
+        // TODO: Replace with actual upload API
         // const formData = new FormData();
         // formData.append('file', file);
         // const response = await fetch('/api/upload/knowledge', {
@@ -162,7 +272,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         //   body: formData
         // });
         
-        // 模拟上传过程
+        // Simulate upload process
         setTimeout(() => {
           onSuccess && onSuccess({
             fileId: Date.now().toString(),
@@ -177,312 +287,398 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     }
   };
 
+  // Get trigger nodes list for condition branch configuration
+  const getTriggerNodes = () => {
+    const triggerTypes = ['celery', 'restful', 'openai'];
+    
+    // Safety checks
+    if (!nodes) {
+      console.warn('NodeConfigDrawer: nodes is null or undefined');
+      return [];
+    }
+    
+    if (!Array.isArray(nodes)) {
+      console.warn('NodeConfigDrawer: nodes is not an array:', typeof nodes, nodes);
+      return [];
+    }
+    
+    try {
+      return nodes.filter(n => {
+        // Ensure node has correct data structure
+        if (!n || !n.data || typeof n.data.type !== 'string') {
+          console.warn('NodeConfigDrawer: Invalid node structure:', n);
+          return false;
+        }
+        return triggerTypes.includes(n.data.type);
+      });
+    } catch (error) {
+      console.error('NodeConfigDrawer: Error filtering trigger nodes:', error);
+      return [];
+    }
+  };
+
   const renderConfigForm = () => {
     if (!node) return null;
 
     const nodeType = node.data.type;
 
-    switch (nodeType) {
-      case 'timeTrigger':
-        return (
-          <>
-            <Form.Item name="frequency" label="触发频率" rules={[{ required: true }]}>
-              <Select placeholder="选择触发频率" onChange={handleFrequencyChange}>
-                <Option value="daily">每日触发</Option>
-                <Option value="weekly">每周触发</Option>
-                <Option value="monthly">每月触发</Option>
-              </Select>
-            </Form.Item>
+    return (
+      <>
+        {/* Common node name configuration for all node types */}
+        <Form.Item name="name" label="节点名称" rules={[{ required: true, message: '请输入节点名称' }]}>
+          <Input placeholder="请输入节点名称" />
+        </Form.Item>
 
-            {frequency === 'daily' && (
-              <Form.Item name="time" label="触发时间" rules={[{ required: true }]}>
-                <TimePicker
-                  format="HH:mm"
-                  placeholder="选择时间"
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            )}
+        {/* Render specific configuration based on node type */}
+        {(() => {
+          switch (nodeType) {
+            case 'celery':
+              return (
+                <>
+                  <Form.Item name="frequency" label="触发频率" rules={[{ required: true }]}>
+                    <Select placeholder="选择触发频率" onChange={handleFrequencyChange}>
+                      <Option value="daily">每日触发</Option>
+                      <Option value="weekly">每周触发</Option>
+                      <Option value="monthly">每月触发</Option>
+                    </Select>
+                  </Form.Item>
 
-            {frequency === 'weekly' && (
-              <>
-                <Form.Item name="weekday" label="星期" rules={[{ required: true }]}>
-                  <Select placeholder="选择星期">
-                    <Option value={1}>星期一</Option>
-                    <Option value={2}>星期二</Option>
-                    <Option value={3}>星期三</Option>
-                    <Option value={4}>星期四</Option>
-                    <Option value={5}>星期五</Option>
-                    <Option value={6}>星期六</Option>
-                    <Option value={0}>星期日</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item name="time" label="触发时间" rules={[{ required: true }]}>
-                  <TimePicker
-                    format="HH:mm"
-                    placeholder="选择时间"
-                    style={{ width: '100%' }}
-                  />
-                </Form.Item>
-              </>
-            )}
-
-            {frequency === 'monthly' && (
-              <>
-                <Form.Item name="day" label="日期" rules={[{ required: true }]}>
-                  <Select placeholder="选择日期">
-                    {Array.from({ length: 31 }, (_, i) => (
-                      <Option key={i + 1} value={i + 1}>{i + 1}日</Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-                <Form.Item name="time" label="触发时间" rules={[{ required: true }]}>
-                  <TimePicker
-                    format="HH:mm"
-                    placeholder="选择时间"
-                    style={{ width: '100%' }}
-                  />
-                </Form.Item>
-              </>
-            )}
-
-            <Form.Item name="message" label="触发输入语" rules={[{ required: true }]}>
-              <TextArea rows={3} placeholder="请输入初始message内容..." />
-            </Form.Item>
-          </>
-        );
-
-      case 'httpRequest':
-        return (
-          <>
-            <Form.Item label="API" required>
-              <div className="flex gap-2">
-                <Form.Item name="method" noStyle rules={[{ required: true }]}>
-                  <Select style={{ width: 100 }} placeholder="方法">
-                    <Option value="GET">GET</Option>
-                    <Option value="POST">POST</Option>
-                    <Option value="PUT">PUT</Option>
-                    <Option value="DELETE">DELETE</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item name="url" noStyle rules={[{ required: true }]}>
-                  <Input placeholder="输入URL" style={{ flex: 1 }} />
-                </Form.Item>
-              </div>
-            </Form.Item>
-
-            <Form.Item label="请求参数">
-              <div className="space-y-2">
-                <div className="grid gap-2 text-sm text-gray-500 mb-1" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
-                  <span>变量名</span>
-                  <span>变量值</span>
-                  <span>操作</span>
-                </div>
-                {paramRows.map((row, index) => (
-                  <div key={index} className="grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
-                    <Input
-                      placeholder="输入参数名"
-                      value={row.key}
-                      onChange={(e) => updateParamRow(index, 'key', e.target.value)}
-                    />
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs bg-gray-100 px-1 rounded">str</span>
-                      <Input
-                        placeholder="输入或引用参数值"
-                        value={row.value}
-                        onChange={(e) => updateParamRow(index, 'value', e.target.value)}
+                  {frequency === 'daily' && (
+                    <Form.Item name="time" label="触发时间" rules={[{ required: true }]}>
+                      <TimePicker
+                        format="HH:mm"
+                        placeholder="选择时间"
+                        style={{ width: '100%' }}
                       />
+                    </Form.Item>
+                  )}
+
+                  {frequency === 'weekly' && (
+                    <>
+                      <Form.Item name="weekday" label="星期" rules={[{ required: true }]}>
+                        <Select placeholder="选择星期">
+                          <Option value={1}>星期一</Option>
+                          <Option value={2}>星期二</Option>
+                          <Option value={3}>星期三</Option>
+                          <Option value={4}>星期四</Option>
+                          <Option value={5}>星期五</Option>
+                          <Option value={6}>星期六</Option>
+                          <Option value={0}>星期日</Option>
+                        </Select>
+                      </Form.Item>
+                      <Form.Item name="time" label="触发时间" rules={[{ required: true }]}>
+                        <TimePicker
+                          format="HH:mm"
+                          placeholder="选择时间"
+                          style={{ width: '100%' }}
+                        />
+                      </Form.Item>
+                    </>
+                  )}
+
+                  {frequency === 'monthly' && (
+                    <>
+                      <Form.Item name="day" label="日期" rules={[{ required: true }]}>
+                        <Select placeholder="选择日期">
+                          {Array.from({ length: 31 }, (_, i) => (
+                            <Option key={i + 1} value={i + 1}>{i + 1}日</Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                      <Form.Item name="time" label="触发时间" rules={[{ required: true }]}>
+                        <TimePicker
+                          format="HH:mm"
+                          placeholder="选择时间"
+                          style={{ width: '100%' }}
+                        />
+                      </Form.Item>
+                    </>
+                  )}
+
+                  <Form.Item name="message" label="触发输入语" rules={[{ required: true }]}>
+                    <TextArea rows={3} placeholder="请输入初始message内容..." />
+                  </Form.Item>
+                </>
+              );
+
+            case 'http':
+              return (
+                <>
+                  <Form.Item label="API" required>
+                    <div className="flex gap-2">
+                      <Form.Item name="method" noStyle rules={[{ required: true }]}>
+                        <Select style={{ width: 100 }} placeholder="方法">
+                          <Option value="GET">GET</Option>
+                          <Option value="POST">POST</Option>
+                          <Option value="PUT">PUT</Option>
+                          <Option value="DELETE">DELETE</Option>
+                        </Select>
+                      </Form.Item>
+                      <Form.Item name="url" noStyle rules={[{ required: true }]}>
+                        <Input placeholder="输入URL" style={{ flex: 1 }} />
+                      </Form.Item>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        type="text"
-                        size="small"
-                        icon="+"
-                        onClick={addParamRow}
-                      />
-                      <Button
-                        type="text"
-                        size="small"
-                        icon="-"
-                        onClick={() => removeParamRow(index)}
-                        disabled={paramRows.length === 1}
-                      />
+                  </Form.Item>
+
+                  <Form.Item label="请求参数">
+                    <div className="space-y-2">
+                      <div className="grid gap-2 text-sm text-gray-500 mb-1" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                        <span>变量名</span>
+                        <span>变量值</span>
+                        <span>操作</span>
+                      </div>
+                      {paramRows.map((row, index) => (
+                        <div key={index} className="grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                          <Input
+                            placeholder="输入参数名"
+                            value={row.key}
+                            onChange={(e) => updateParamRow(index, 'key', e.target.value)}
+                          />
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs bg-[var(--color-fill-1)] px-1 rounded">str</span>
+                            <Input
+                              placeholder="输入或引用参数值"
+                              value={row.value}
+                              onChange={(e) => updateParamRow(index, 'value', e.target.value)}
+                            />
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              type="text"
+                              size="small"
+                              icon="+"
+                              onClick={addParamRow}
+                            />
+                            <Button
+                              type="text"
+                              size="small"
+                              icon="-"
+                              onClick={() => removeParamRow(index)}
+                              disabled={paramRows.length === 1}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Form.Item>
+
+                  <Form.Item label="请求头">
+                    <div className="space-y-2">
+                      <div className="grid gap-2 text-sm text-gray-500 mb-1" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                        <span>变量名</span>
+                        <span>变量值</span>
+                        <span>操作</span>
+                      </div>
+                      {headerRows.map((row, index) => (
+                        <div key={index} className="grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
+                          <Input
+                            placeholder="输入参数名"
+                            value={row.key}
+                            onChange={(e) => updateHeaderRow(index, 'key', e.target.value)}
+                          />
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs bg-[var(--color-fill-1)] px-1 rounded">str</span>
+                            <Input
+                              placeholder="输入或引用参数值"
+                              value={row.value}
+                              onChange={(e) => updateHeaderRow(index, 'value', e.target.value)}
+                            />
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              type="text"
+                              size="small"
+                              icon="+"
+                              onClick={addHeaderRow}
+                            />
+                            <Button
+                              type="text"
+                              size="small"
+                              icon="-"
+                              onClick={() => removeHeaderRow(index)}
+                              disabled={headerRows.length === 1}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Form.Item>
+
+                  <Form.Item name="requestBody" label="请求体">
+                    <Select defaultValue="JSON" style={{ width: '100%', marginBottom: 8 }}>
+                      <Option value="JSON">JSON</Option>
+                    </Select>
+                    <TextArea rows={6} placeholder="请输入JSON格式的请求体" />
+                  </Form.Item>
+
+                  <Form.Item name="timeout" label="超时设置（秒）">
+                    <InputNumber min={1} max={300} style={{ width: '100%' }} />
+                  </Form.Item>
+
+                  <Form.Item name="outputMode" label="输出模式">
+                    <Radio.Group>
+                      <Radio value="stream">流式（SSE）</Radio>
+                      <Radio value="once">一次性返回</Radio>
+                    </Radio.Group>
+                  </Form.Item>
+                </>
+              );
+
+            case 'agents':
+              // Handle agent selection, save both name and ID
+              const handleAgentChange = (agentId: string) => {
+                const selectedAgent = skills.find(model => model.id === agentId);
+                if (selectedAgent) {
+                  form.setFieldsValue({
+                    agent: agentId,
+                    agentName: selectedAgent.name
+                  });
+                }
+              };
+
+              return (
+                <>
+                  <Form.Item name="agent" label="选择智能体" rules={[{ required: true }]}>
+                    <Select 
+                      placeholder="请选择智能体"
+                      loading={loadingSkills}
+                      disabled={loadingSkills}
+                      showSearch
+                      onChange={handleAgentChange}
+                      filterOption={(input, option) =>
+                        option?.label?.toString().toLowerCase().includes(input.toLowerCase()) ?? false
+                      }
+                    >
+                      {skills.map((model) => (
+                        <Option key={model.id} value={model.id} label={model.name}>
+                          {model.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                  {/* Hidden field to save agent name */}
+                  <Form.Item name="agentName" style={{ display: 'none' }}>
+                    <Input />
+                  </Form.Item>
+                </>
+              );
+
+            case 'restful':
+              return (
+                <>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-gray-600 mb-2">
+                      对外提供REST接口，适合以外部系统/应用进行调用，可指定&ldquo;接口文档&rdquo;查看具体步骤和参数
+                    </p>
+                    <a href="#" className="text-blue-500 text-sm hover:underline">
+                      查看接口文档 →
+                    </a>
+                  </div>
+                </>
+              );
+
+            case 'openai':
+              return (
+                <>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-gray-600 mb-2">
+                      对外提供的接口，可通过OpenAI的方式进行流程调用，支持SSE、流式设置完成后，可前往&ldquo;接口文档&rdquo;查看具体步骤和参数
+                    </p>
+                    <a href="#" className="text-blue-500 text-sm hover:underline">
+                      查看接口文档 →
+                    </a>
+                  </div>
+                </>
+              );
+
+            case 'prompt':
+              return (
+                <>
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600 mb-3">
+                      在流程流转过程中，需要追加更多的指令，让智能体的执行更符合预期和使用场景
+                    </p>
+                  </div>
+                  <Form.Item name="prompt" label="Prompt" rules={[{ required: true }]}>
+                    <TextArea rows={6} placeholder="请输入Prompt内容..." />
+                  </Form.Item>
+                </>
+              );
+
+            case 'knowledge':
+              return (
+                <>
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600 mb-3">
+                      在流程流转过程中，需要追加更多知识，这些知识会作为智能体执行的前提条件进行输入
+                    </p>
+                  </div>
+                  <Form.Item label="上传知识">
+                    <Upload.Dragger {...uploadProps}>
+                      <p className="ant-upload-drag-icon">
+                        <InboxOutlined />
+                      </p>
+                      <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+                      <p className="ant-upload-hint">支持单个或批量上传，仅支持 .md 格式文件</p>
+                    </Upload.Dragger>
+                  </Form.Item>
+                </>
+              );
+
+            case 'condition':
+              const triggerNodes = getTriggerNodes();
+              
+              return (
+                <>
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium mb-3">分支条件</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Form.Item name="conditionField" rules={[{ required: true }]}>
+                        <Select placeholder="触发类型">
+                          <Option value="triggerType">触发类型</Option>
+                        </Select>
+                      </Form.Item>
+                      <Form.Item name="conditionOperator" rules={[{ required: true }]}>
+                        <Select placeholder="条件">
+                          <Option value="equals">等于</Option>
+                          <Option value="notEquals">不等于</Option>
+                        </Select>
+                      </Form.Item>
+                      <Form.Item name="conditionValue" rules={[{ required: true }]}>
+                        <Select placeholder="选择值">
+                          {triggerNodes.length === 0 ? (
+                            <Option value="" disabled>暂无触发器节点</Option>
+                          ) : (
+                            triggerNodes.map((triggerNode) => (
+                              <Option key={triggerNode.id} value={triggerNode.id}>
+                                {triggerNode.data.label}
+                              </Option>
+                            ))
+                          )}
+                        </Select>
+                      </Form.Item>
+                    </div>
+                    <div className="mt-4 p-3 bg-[var(--color-fill-1)] rounded-md">
+                      <p className="text-xs text-gray-600 mb-2">连接说明：</p>
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span>右侧上方连接点：条件为 True 时的执行路径</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs mt-1">
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span>右侧下方连接点：条件为 False 时的执行路径</span>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </Form.Item>
+                </>
+              );
 
-            <Form.Item label="请求头">
-              <div className="space-y-2">
-                <div className="grid gap-2 text-sm text-gray-500 mb-1" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
-                  <span>变量名</span>
-                  <span>变量值</span>
-                  <span>操作</span>
-                </div>
-                {headerRows.map((row, index) => (
-                  <div key={index} className="grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 1fr 60px' }}>
-                    <Input
-                      placeholder="输入参数名"
-                      value={row.key}
-                      onChange={(e) => updateHeaderRow(index, 'key', e.target.value)}
-                    />
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs bg-gray-100 px-1 rounded">str</span>
-                      <Input
-                        placeholder="输入或引用参数值"
-                        value={row.value}
-                        onChange={(e) => updateHeaderRow(index, 'value', e.target.value)}
-                      />
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        type="text"
-                        size="small"
-                        icon="+"
-                        onClick={addHeaderRow}
-                      />
-                      <Button
-                        type="text"
-                        size="small"
-                        icon="-"
-                        onClick={() => removeHeaderRow(index)}
-                        disabled={headerRows.length === 1}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Form.Item>
-
-            <Form.Item name="requestBody" label="请求体">
-              <Select defaultValue="JSON" style={{ width: '100%', marginBottom: 8 }}>
-                <Option value="JSON">JSON</Option>
-              </Select>
-              <TextArea rows={6} placeholder="请输入JSON格式的请求体" />
-            </Form.Item>
-
-            <Form.Item name="timeout" label="超时设置（秒）">
-              <InputNumber min={1} max={300} style={{ width: '100%' }} />
-            </Form.Item>
-
-            <Form.Item name="outputMode" label="输出模式">
-              <Radio.Group>
-                <Radio value="stream">流式（SSE）</Radio>
-                <Radio value="once">一次性返回</Radio>
-              </Radio.Group>
-            </Form.Item>
-          </>
-        );
-
-      case 'agents':
-        return (
-          <>
-            <Form.Item name="agent" label="选择智能体" rules={[{ required: true }]}>
-              <Select placeholder="请选择智能体">
-                <Option value="ops-agent">运维助手</Option>
-                <Option value="monitor-agent">监控助手</Option>
-                <Option value="security-agent">安全助手</Option>
-                <Option value="analysis-agent">分析助手</Option>
-              </Select>
-            </Form.Item>
-          </>
-        );
-
-      case 'restfulApi':
-        return (
-          <>
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-gray-600 mb-2">
-                对外提供REST接口，适合以外部系统/应用进行调用，可指定&ldquo;接口文档&rdquo;查看具体步骤和参数
-              </p>
-              <a href="#" className="text-blue-500 text-sm hover:underline">
-                查看接口文档 →
-              </a>
-            </div>
-          </>
-        );
-
-      case 'openaiApi':
-        return (
-          <>
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-gray-600 mb-2">
-                对外提供的接口，可通过OpenAI的方式进行流程调用，支持SSE、流式设置完成后，可前往&ldquo;接口文档&rdquo;查看具体步骤和参数
-              </p>
-              <a href="#" className="text-blue-500 text-sm hover:underline">
-                查看接口文档 →
-              </a>
-            </div>
-          </>
-        );
-
-      case 'promptAppend':
-        return (
-          <>
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-3">
-                在流程流转过程中，需要追加更多的指令，让智能体的执行更符合预期和使用场景
-              </p>
-            </div>
-            <Form.Item name="prompt" label="Prompt" rules={[{ required: true }]}>
-              <TextArea rows={6} placeholder="请输入Prompt内容..." />
-            </Form.Item>
-          </>
-        );
-
-      case 'knowledgeAppend':
-        return (
-          <>
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-3">
-                在流程流转过程中，需要追加更多知识，这些知识会作为智能体执行的前提条件进行输入
-              </p>
-            </div>
-            <Form.Item label="上传知识">
-              <Upload.Dragger {...uploadProps}>
-                <p className="ant-upload-drag-icon">
-                  <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-                <p className="ant-upload-hint">支持单个或批量上传，仅支持 .md 格式文件</p>
-              </Upload.Dragger>
-            </Form.Item>
-          </>
-        );
-
-      case 'ifCondition':
-        return (
-          <>
-            <div className="mb-4">
-              <h4 className="text-sm font-medium mb-3">分支条件</h4>
-              <div className="grid grid-cols-3 gap-2">
-                <Form.Item name="conditionField" rules={[{ required: true }]}>
-                  <Select placeholder="触发类型">
-                    <Option value="triggerType">触发类型</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item name="conditionOperator" rules={[{ required: true }]}>
-                  <Select placeholder="条件">
-                    <Option value="equals">等于</Option>
-                    <Option value="notEquals">不等于</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item name="conditionValue" rules={[{ required: true }]}>
-                  <Select placeholder="选择值">
-                    <Option value="timeTrigger">定时触发</Option>
-                    <Option value="restfulApi">Restful API</Option>
-                    <Option value="openaiApi">OpenAI API</Option>
-                  </Select>
-                </Form.Item>
-              </div>
-            </div>
-          </>
-        );
-
-      default:
-        return null;
-    }
+            default:
+              return null;
+          }
+        })()}
+      </>
+    );
   };
 
   return (

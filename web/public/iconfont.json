@@ -62,6 +62,13 @@
       "unicode_decimal": 59131
     },
     {
+      "icon_id": "11599788",
+      "name": "Rasa分支",
+      "font_class": "fenzhi",
+      "unicode": "e6f0",
+      "unicode_decimal": 59120
+    },
+    {
       "icon_id": "4946348",
       "name": "左边",
       "font_class": "icon-test",

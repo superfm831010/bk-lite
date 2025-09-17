@@ -123,8 +123,6 @@ class TemplateLoader:
                 full_path = base_path_obj / template_path
 
                 if full_path.exists() and full_path.is_file():
-                    logger.debug(
-                        f"Found template: {template_path} -> {full_path}")
                     return template_path
 
         return None
@@ -157,13 +155,10 @@ class TemplateLoader:
 
         try:
             template = env.get_template(template_path)
-            logger.debug(f"Template loaded successfully: {template_path}")
 
             # 如果提供了 context，直接渲染并返回文本
             if context is not None:
                 rendered_text = template.render(**context)
-                logger.debug(
-                    f"Template rendered with context: {template_path}, context_keys: {list(context.keys())}")
                 return rendered_text
 
             return template
@@ -197,9 +192,6 @@ class TemplateLoader:
         try:
             template = cls.load_template(filepath, base_path=base_path)
             rendered_text = template.render(**context)
-
-            logger.debug(
-                f"Template rendered successfully: {filepath}, context_keys: {list(context.keys())}")
             return rendered_text
 
         except Exception as e:

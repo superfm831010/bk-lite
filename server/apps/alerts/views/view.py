@@ -73,15 +73,15 @@ class AlterModelViewSet(ModelViewSet):
 
     @HasPermission("Alarms-View")
     def list(self, request, *args, **kwargs):
-        return super(AlterModelViewSet, self).list(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
     @HasPermission("Alarms-Edit")
     def update(self, request, *args, **kwargs):
-        return super(AlterModelViewSet, self).update(request, *args, **kwargs)
+        return super().update(request, *args, **kwargs)
 
     @HasPermission("Alarms-Delete")
     def destroy(self, request, *args, **kwargs):
-        return super(AlterModelViewSet, self).destroy(request, *args, **kwargs)
+        return super().destroy(request, *args, **kwargs)
 
     @HasPermission("Alarms-Edit")
     @action(methods=['post'], detail=False, url_path='operator/(?P<operator_action>[^/.]+)', url_name='operator')
@@ -124,7 +124,7 @@ class EventModelViewSet(ModelViewSet):
 
     @HasPermission("Integration-View,Alarms-View")
     def list(self, request, *args, **kwargs):
-        return super(EventModelViewSet, self).list(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
 
 class LevelModelViewSet(ModelViewSet):
@@ -159,7 +159,7 @@ class IncidentModelViewSet(ModelViewSet):
 
     @HasPermission("Incidents-View")
     def list(self, request, *args, **kwargs):
-        return super(IncidentModelViewSet, self).list(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
     @HasPermission("Alarms-Edit")
     @transaction.atomic
@@ -293,7 +293,7 @@ class SystemSettingModelViewSet(ModelViewSet):
 
     @HasPermission("global_config-View")
     def list(self, request, *args, **kwargs):
-        return super(SystemSettingModelViewSet, self).list(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
     @HasPermission("global_config-View")
     @action(methods=['get'], detail=False, url_path='get_setting_key/(?P<setting_key>[^/.]+)')
@@ -516,4 +516,4 @@ class SystemLogModelViewSet(ModelViewSet):
 
     @HasPermission("operation_log-View")
     def list(self, request, *args, **kwargs):
-        return super(SystemLogModelViewSet, self).list(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)

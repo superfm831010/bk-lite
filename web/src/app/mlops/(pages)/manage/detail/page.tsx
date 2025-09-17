@@ -7,6 +7,8 @@ import { useTranslation } from '@/utils/i18n';
 import { useRouter } from 'next/navigation';
 import AnomalyDetail from './AnomalyDetail';
 import RasaDetail from './RasaDetail';
+import LogDetail from './LogDetail';
+import TimeSeriesPredict from './TimeSeriesPredict';
 import Sublayout from '@/components/sub-layout';
 import TopSection from '@/components/top-section';
 import { MenuItem } from '@/types';
@@ -115,12 +117,14 @@ const Detail = () => {
   ];
 
   const showSideMenu = useMemo(() => {
-    return activeTap === 'anomaly' ? false : true;
+    return activeTap !== 'rasa' ? false : true;
   }, [activeTap]);
 
   const renderPage: Record<string, React.ReactNode> = useMemo(() => ({
     anomaly: <AnomalyDetail />,
-    rasa: <RasaDetail />
+    rasa: <RasaDetail />,
+    log_clustering: <LogDetail />,
+    timeseries_predict: <TimeSeriesPredict />
   }), [activeTap]);
 
   const Intro = useMemo(() => (
