@@ -186,6 +186,7 @@ export const useRasaParamsToForm = () => {
               <span className='font-mini text-[#666]'>{label}</span>
               <Switch
                 size="small"
+                className='!w-[32px]'
                 checked={Boolean(value)}
                 onChange={onChange}
               />

@@ -71,7 +71,6 @@ export const useRasaForm = ({ datasetOptions, activeTag, onSuccess, formRef }: U
   });
 
   useEffect(() => {
-    console.log('init', modalState);
     if (modalState.isOpen) {
       initializeForm();
     }
@@ -198,7 +197,7 @@ export const useRasaForm = ({ datasetOptions, activeTag, onSuccess, formRef }: U
 
     return (
       <div className='bg-[#f8f9fa] p-[6px] rounded-[6px] border border-[#e9ecef] my-1'>
-        <div className='flex items-center w-full overflow-x-auto gap-3 whitespace-nowrap'>
+        <div className='flex items-end w-full overflow-x-auto gap-3 whitespace-nowrap'>
           <div style={{ display: 'flex', gap: '5px', flexShrink: 0 }}>
             {fields}
           </div>
