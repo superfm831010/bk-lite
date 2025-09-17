@@ -709,6 +709,10 @@
     "selectedAgent": "Agent",
     "knowledgeBase": "Knowledge Base",
     "apiInterface": "API Interface",
+    "unsavedChanges": "Unsaved Changes",
+    "unsavedChangesWarning": "You have unsaved changes. Are you sure you want to leave this page?",
+    "unsavedWorkflowChanges": "You have unsaved workflow changes. Do you want to save before leaving?",
+    "saveAndLeave": "Save and Leave",
     "nodeProperties": {
       "name": "Node Name",
       "type": "Node Type"
