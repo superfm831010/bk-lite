@@ -11,3 +11,4 @@ models
 release/
 test_results/
 !graphiti_core/models
+mcp-servers/
