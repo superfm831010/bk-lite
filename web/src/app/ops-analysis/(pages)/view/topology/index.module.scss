@@ -19,11 +19,6 @@
     animation: edgeFlowAnimation 1.5s linear infinite;
   }
   
-  /* 针对有虚线的SVG路径元素 */
-  :global(.x6-edge path[stroke-dasharray]) {
-    animation: edgeFlowAnimation 1.5s linear infinite;
-  }
-  
   // 全局优化minimap相关样式
   :global(.x6-widget-minimap) {
     border-radius: 0 0 8px 8px !important;

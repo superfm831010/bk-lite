@@ -94,7 +94,7 @@ const registerSingleValueNode = () => {
         textVerticalAnchor: 'middle',
         refX: '50%',
         refY: '38%',
-        textWrap: { width: '90%', ellipsis: true }
+        textWrap: false
       },
       nameLabel: {
         fill: '#666666',
@@ -238,6 +238,10 @@ const getIconUrl = (nodeConfig: TopologyNodeData): string => {
 const createIconNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
   const logoUrl = getIconUrl(nodeConfig);
 
+  const iconPadding = nodeConfig.styleConfig?.iconPadding || 0;
+  // 最小保持10%避免图标消失
+  const iconSize = Math.max(10, 100 - iconPadding * 2);
+
   return {
     ...baseNodeData,
     width: nodeConfig.styleConfig?.width,
@@ -249,7 +253,13 @@ const createIconNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData
         fill: nodeConfig.styleConfig?.backgroundColor || NODE_DEFAULTS.ICON_NODE.backgroundColor,
       },
       image: {
-        'xlink:href': logoUrl
+        'xlink:href': logoUrl,
+        refWidth: `${iconSize}%`,
+        refHeight: `${iconSize}%`,
+        refX: '50%',
+        refY: '50%',
+        refX2: `-${iconSize / 2}%`,
+        refY2: `-${iconSize / 2}%`,
       },
       label: {
         fill: nodeConfig.styleConfig?.textColor || NODE_DEFAULTS.ICON_NODE.textColor,
@@ -284,7 +294,8 @@ const createSingleValueNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseN
         fill: nodeConfig.styleConfig?.textColor,
         fontSize: nodeConfig.styleConfig?.fontSize,
         refY: hasName ? '38%' : '50%',
-        text: initialText
+        text: initialText,
+        textWrap: false
       },
       nameLabel: {
         text: hasName ? nodeConfig.name : '',
@@ -429,6 +440,11 @@ export const createNodeByType = (nodeConfig: TopologyNodeData): CreatedNodeConfi
 
 const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   const logoUrl = getIconUrl(nodeConfig);
+
+  const iconPadding = nodeConfig.styleConfig?.iconPadding || 0;
+  // 最小保持10%避免图标消失
+  const iconSize = Math.max(10, 100 - iconPadding * 2);
+
   node.setAttrs({
     body: {
       stroke: nodeConfig.styleConfig?.borderColor || NODE_DEFAULTS.ICON_NODE.borderColor,
@@ -436,7 +452,13 @@ const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
       fill: nodeConfig.styleConfig?.backgroundColor || NODE_DEFAULTS.ICON_NODE.backgroundColor,
     },
     image: {
-      'xlink:href': logoUrl
+      'xlink:href': logoUrl,
+      refWidth: `${iconSize}%`,
+      refHeight: `${iconSize}%`,
+      refX: '50%',
+      refY: '50%',
+      refX2: `-${iconSize / 2}%`,
+      refY2: `-${iconSize / 2}%`,
     },
     label: {
       fill: nodeConfig.styleConfig?.textColor || NODE_DEFAULTS.ICON_NODE.textColor,
@@ -480,7 +502,8 @@ const updateSingleValueNodeAttributes = (node: Node, nodeConfig: TopologyNodeDat
     label: {
       fill: nodeConfig.styleConfig?.textColor,
       fontSize: nodeConfig.styleConfig?.fontSize,
-      refY: hasName ? '38%' : '50%'
+      refY: hasName ? '38%' : '50%',
+      textWrap: false
     },
     nameLabel: {
       text: hasName ? nodeConfig.name : '',
@@ -581,10 +604,13 @@ const updateBasicShapeNodeAttributes = (node: Node, nodeConfig: TopologyNodeData
 export const updateNodeAttributes = (node: Node, nodeConfig: TopologyNodeData): void => {
   if (!node || !nodeConfig) return;
 
-  // 对于非单值节点，设置label文本为name
   if (nodeConfig.type !== 'single-value') {
     node.setAttrByPath('label/text', nodeConfig.name);
   }
+
+  // 解决 X6 setData 数组合并问题：先删除 thresholdColors，再设置新值
+  node.removeProp('data/styleConfig/thresholdColors');
+
   node.setData({
     ...node.getData(),
     ...nodeConfig,

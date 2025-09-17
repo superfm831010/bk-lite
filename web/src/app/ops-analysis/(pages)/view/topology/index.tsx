@@ -65,7 +65,6 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
       handleLoadTopology,
       resizeCanvas,
       loading,
-      getEditNodeInitialValues,
       toggleEditMode,
       undo,
       redo,
@@ -195,6 +194,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           type: selectedNodeType.id,
           name: values.name || selectedNodeType.name,
           unit: values.unit,
+          conversionFactor: values.conversionFactor,
           decimalPlaces: values.decimalPlaces,
           position: dropPosition,
           logoType: values.logoType,
@@ -214,6 +214,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
             borderWidth: values.borderWidth,
             textColor: values.textColor,
             fontSize: values.fontSize,
+            iconPadding: values.iconPadding,
             lineType: values.lineType,
             shapeType: values.shapeType,
             nameColor: values.nameColor,
@@ -226,10 +227,6 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
         await handleNodeUpdate(values);
       }
       handleNodeEditClose();
-    };
-
-    const getNodeInitialValues = (): NodeConfigFormValues | undefined => {
-      return addNodeVisible ? undefined : getEditNodeInitialValues();
     };
 
     const getNodeType = (): 'single-value' | 'icon' | 'basic-shape' => {
@@ -424,7 +421,7 @@ const Topology = forwardRef<TopologyRef, TopologyProps>(
           title={getNodeTitle()}
           nodeType={getNodeType()}
           readonly={getNodeReadonly()}
-          initialValues={getNodeInitialValues()}
+          editingNodeData={addNodeVisible ? null : state.editingNodeData}
           onClose={handleNodeEditClose}
           onConfirm={handleNodeConfirm}
           onCancel={handleNodeEditClose}

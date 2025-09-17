@@ -144,7 +144,14 @@
     "undo": "Undo(Ctrl+Z)",
     "redo": "Redo(Ctrl+Y)",
     "edgeConfig": {
-        "lineColor": "Line Color"
+        "lineColor": "Line Color",
+        "lineWidth": "Line Width",
+        "lineStyle": "Line Style",
+        "lineStyleSolid": "Solid",
+        "lineStyleDotted": "Dotted",
+        "lineStylePoint": "Point",
+        "enableAnimation": "Enable Animation",
+        "animationTip": "Animation is only available for single arrow edges with dotted or point line style"
     },
     "nodeConfig": {
         "dataSource": "Data Source",
@@ -156,7 +163,7 @@
         "selectIcon": "Select Icon",
         "uploadImage": "Upload Image",
         "fontSize": "Font Size",
-        "textColor": "Text Color",
+        "textColor": "Font Color",
         "width": "Width",
         "height": "Height",
         "backgroundColor": "Background Color",
