@@ -88,12 +88,14 @@ export const validateThresholds = (thresholds: ThresholdColorConfig[]) => {
  * @param value 原始值
  * @param unit 单位
  * @param decimalPlaces 小数位数
+ * @param conversionFactor 换算系数，默认为1
  * @returns 格式化后的显示值
  */
 export const formatDisplayValue = (
   value: number | string | null | undefined,
   unit?: string,
-  decimalPlaces?: number
+  decimalPlaces?: number,
+  conversionFactor?: number
 ): string => {
   if (value === null || value === undefined || value === '') {
     return '--';
@@ -105,10 +107,14 @@ export const formatDisplayValue = (
     return String(value);
   }
 
+  // 应用换算系数
+  const factor = conversionFactor !== undefined ? conversionFactor : 1;
+  const convertedValue = numValue * factor;
+
   // 格式化小数位
   let formattedValue = decimalPlaces !== undefined
-    ? numValue.toFixed(decimalPlaces)
-    : String(numValue);
+    ? convertedValue.toFixed(decimalPlaces)
+    : String(convertedValue);
 
   // 添加单位
   if (unit && unit.trim()) {

@@ -145,7 +145,14 @@
     "undo": "撤销(Ctrl+Z)",
     "redo": "恢复(Ctrl+Y)",
     "edgeConfig": {
-        "lineColor": "线条颜色"
+        "lineColor": "线条颜色",
+        "lineWidth": "线条粗细",
+        "lineStyle": "线条样式",
+        "lineStyleSolid": "实线",
+        "lineStyleDotted": "虚线",
+        "lineStylePoint": "点线",
+        "enableAnimation": "启用动画",
+        "animationTip": "单向箭头且线条样式为虚线或点线才可启用动画"
     },
     "nodeConfig": {
         "dataSource": "数据源",
@@ -157,7 +164,7 @@
         "selectIcon": "选择图标",
         "uploadImage": "上传图片",
         "fontSize": "字体大小",
-        "textColor": "文本颜色",
+        "textColor": "字体颜色",
         "width": "宽度",
         "height": "高度",
         "backgroundColor": "背景颜色",

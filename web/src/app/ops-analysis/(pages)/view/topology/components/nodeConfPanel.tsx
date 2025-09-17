@@ -48,7 +48,7 @@ const NODE_TYPE_DEFAULTS = {
 const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   nodeType,
   readonly = false,
-  initialValues,
+  editingNodeData,
   visible = false,
   title,
   onClose,
@@ -112,57 +112,64 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   }, []);
 
   const handleThresholdChange = useCallback(
-    (index: number, field: 'value' | 'color', value: string) => {
+    (index: number, field: 'value' | 'color', value: string | number) => {
       setThresholdColors((prev) => {
         const newThresholds = [...prev];
-        newThresholds[index] = { ...newThresholds[index], [field]: value };
+        newThresholds[index] = {
+          ...newThresholds[index],
+          [field]: field === 'value' ? String(value) : value,
+        };
         return newThresholds;
       });
     },
     []
   );
 
-  const handleThresholdBlur = useCallback((index: number, value: string) => {
-    setThresholdColors((prev) => {
-      const newThresholds = [...prev];
-      const numValue = parseFloat(value);
+  const handleThresholdBlur = useCallback(
+    (index: number, value: number | null) => {
+      setThresholdColors((prev) => {
+        const newThresholds = [...prev];
 
-      if (isNaN(numValue)) {
-        newThresholds[index] = { ...newThresholds[index], value: '50' };
-        return newThresholds;
-      }
-
-      const isDuplicate = prev.some(
-        (threshold, i) =>
-          i !== index && parseFloat(threshold.value) === numValue
-      );
-
-      if (isDuplicate) {
-        let adjustedValue = numValue;
-        while (
-          prev.some(
-            (threshold, i) =>
-              i !== index && parseFloat(threshold.value) === adjustedValue
-          )
-        ) {
-          adjustedValue += 1;
+        if (value === null || value === undefined) {
+          newThresholds[index] = { ...newThresholds[index], value: '50' };
+          return newThresholds;
         }
-        newThresholds[index] = {
-          ...newThresholds[index],
-          value: adjustedValue.toString(),
-        };
-      } else {
-        newThresholds[index] = {
-          ...newThresholds[index],
-          value: numValue.toString(),
-        };
-      }
 
-      return newThresholds.sort(
-        (a, b) => parseFloat(b.value) - parseFloat(a.value)
-      );
-    });
-  }, []);
+        const numValue = Number(value);
+
+        const isDuplicate = prev.some(
+          (threshold, i) =>
+            i !== index && parseFloat(threshold.value) === numValue
+        );
+
+        if (isDuplicate) {
+          let adjustedValue = numValue;
+          while (
+            prev.some(
+              (threshold, i) =>
+                i !== index && parseFloat(threshold.value) === adjustedValue
+            )
+          ) {
+            adjustedValue += 1;
+          }
+          newThresholds[index] = {
+            ...newThresholds[index],
+            value: adjustedValue.toString(),
+          };
+        } else {
+          newThresholds[index] = {
+            ...newThresholds[index],
+            value: numValue.toString(),
+          };
+        }
+
+        return newThresholds.sort(
+          (a, b) => parseFloat(b.value) - parseFloat(a.value)
+        );
+      });
+    },
+    []
+  );
 
   const addThreshold = useCallback((afterIndex?: number) => {
     setThresholdColors((prev) => {
@@ -235,6 +242,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       defaultValues.nameFontSize = 12;
       defaultValues.nameColor = '#666666';
       defaultValues.unit = '';
+      defaultValues.conversionFactor = 1;
       defaultValues.decimalPlaces = 2;
     }
 
@@ -250,6 +258,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       const iconDefaults = nodeDefaults as typeof NODE_DEFAULTS.ICON_NODE;
       defaultValues.fontSize = iconDefaults.fontSize;
       defaultValues.textColor = iconDefaults.textColor;
+      defaultValues.iconPadding = 4;
     }
 
     setSelectedIcon('cc-host');
@@ -264,37 +273,50 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
   }, [form, setSelectedDataSource, nodeType, nodeDefaults]);
 
   const initializeEditNode = useCallback(
-    (values: any) => {
+    (editingNodeData: any) => {
+      const { styleConfig = {}, valueConfig = {} } = editingNodeData;
+
       const formValues: any = {
-        name: values.name,
-        logoType: values.logoType,
-        logoIcon: values.logoType === 'default' ? values.logoIcon : undefined,
-        logoUrl: values.logoType === 'custom' ? values.logoUrl : undefined,
-        dataSource: values.dataSource,
-        selectedFields: values.selectedFields,
-        width: values.width,
-        height: values.height,
-        fontSize: values.fontSize,
-        textColor: values.textColor,
-        backgroundColor: values.backgroundColor,
-        borderColor: values.borderColor,
-        borderWidth: values.borderWidth,
-        lineType: values.lineType,
-        shapeType: values.shapeType,
-        nameFontSize: values.nameFontSize,
-        nameColor: values.nameColor,
-        unit: values.unit,
-        decimalPlaces: values.decimalPlaces,
+        name: editingNodeData.name,
+        logoType: editingNodeData.logoType,
+        logoIcon:
+          editingNodeData.logoType === 'default'
+            ? editingNodeData.logoIcon
+            : undefined,
+        logoUrl:
+          editingNodeData.logoType === 'custom'
+            ? editingNodeData.logoUrl
+            : undefined,
+        dataSource: valueConfig.dataSource,
+        selectedFields: valueConfig.selectedFields,
+        width: styleConfig.width,
+        height: styleConfig.height,
+        fontSize: styleConfig.fontSize,
+        textColor: styleConfig.textColor,
+        backgroundColor: styleConfig.backgroundColor,
+        borderColor: styleConfig.borderColor,
+        borderWidth: styleConfig.borderWidth,
+        iconPadding: styleConfig.iconPadding,
+        lineType: styleConfig.lineType,
+        shapeType: styleConfig.shapeType,
+        nameFontSize: styleConfig.nameFontSize,
+        nameColor: styleConfig.nameColor,
+        unit: editingNodeData.unit,
+        conversionFactor: editingNodeData.conversionFactor,
+        decimalPlaces: editingNodeData.decimalPlaces,
       };
 
-      setSelectedIcon(values.logoIcon || 'cc-host');
-      setLogoType(values.logoType || 'default');
-      setCurrentDataSource(values.dataSource || null);
-      setSelectedFields(values.selectedFields || []);
+      setSelectedIcon(editingNodeData.logoIcon || 'cc-host');
+      setLogoType(editingNodeData.logoType || 'default');
+      setCurrentDataSource(valueConfig.dataSource || null);
+      setSelectedFields(valueConfig.selectedFields || []);
 
       // 初始化阈值颜色配置
-      if (values.thresholdColors && Array.isArray(values.thresholdColors)) {
-        const sortedThresholds = [...values.thresholdColors].sort(
+      if (
+        styleConfig.thresholdColors &&
+        Array.isArray(styleConfig.thresholdColors)
+      ) {
+        const sortedThresholds = [...styleConfig.thresholdColors].sort(
           (a, b) => parseFloat(b.value) - parseFloat(a.value)
         );
         setThresholdColors(sortedThresholds);
@@ -306,13 +328,13 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         ]);
       }
 
-      if (values.logoUrl) {
-        setLogoPreview(values.logoUrl);
+      if (editingNodeData.logoUrl) {
+        setLogoPreview(editingNodeData.logoUrl);
       }
 
-      if (values.dataSource && filteredDataSources.length > 0) {
+      if (valueConfig.dataSource && filteredDataSources.length > 0) {
         const selectedSource = filteredDataSources.find(
-          (ds) => ds.id === values.dataSource
+          (ds) => ds.id === valueConfig.dataSource
         );
         setSelectedDataSource(selectedSource);
 
@@ -321,8 +343,11 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         if (selectedSource?.params?.length) {
           setDefaultParamValues(selectedSource.params, formValues.params);
 
-          if (values.dataSourceParams?.length) {
-            restoreUserParamValues(values.dataSourceParams, formValues.params);
+          if (valueConfig.dataSourceParams?.length) {
+            restoreUserParamValues(
+              valueConfig.dataSourceParams,
+              formValues.params
+            );
           }
         }
       } else {
@@ -343,13 +368,13 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
 
   useEffect(() => {
     if (dataSources.length > 0 || !dataSourcesLoading) {
-      if (initialValues) {
-        initializeEditNode(initialValues);
+      if (editingNodeData) {
+        initializeEditNode(editingNodeData);
       } else {
         initializeNewNode();
       }
     }
-  }, [visible, dataSourcesLoading]);
+  }, [visible, dataSourcesLoading, editingNodeData]);
 
   const handleLogoUpload = useCallback(
     (file: any) => {
@@ -803,24 +828,25 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
                         <span className="text-sm text-gray-600 whitespace-nowrap">
                           当值 ≥
                         </span>
-                        <Input
-                          value={threshold.value}
-                          onChange={(e) =>
-                            handleThresholdChange(
-                              index,
-                              'value',
-                              e.target.value
-                            )
+                        <InputNumber
+                          value={parseFloat(threshold.value)}
+                          onChange={(value) =>
+                            handleThresholdChange(index, 'value', value || 0)
                           }
                           onBlur={(e) => {
                             if (!readonly && !isBaseThreshold) {
-                              handleThresholdBlur(index, e.target.value);
+                              const value = parseFloat(e.target.value);
+                              handleThresholdBlur(
+                                index,
+                                isNaN(value) ? 0 : value
+                              );
                             }
                           }}
-                          placeholder="阈值"
+                          placeholder={t('common.inputMsg')}
                           disabled={readonly || isBaseThreshold}
-                          style={{ width: '80px' }}
+                          style={{ width: '100px' }}
                           size="small"
+                          min={0}
                         />
                         <span className="text-sm text-gray-600">时显示</span>
                       </div>
@@ -881,11 +907,11 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
             >
               <InputNumber
                 min={10}
-                max={24}
+                max={40}
                 step={1}
                 addonAfter="px"
                 disabled={readonly}
-                placeholder="12"
+                placeholder={t('common.inputMsg')}
                 style={{ width: '120px' }}
               />
             </Form.Item>
@@ -935,7 +961,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
             >
               <InputNumber
                 min={8}
-                max={24}
+                max={40}
                 step={1}
                 addonAfter="px"
                 disabled={readonly}
@@ -963,6 +989,18 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
               name="borderColor"
             >
               {renderColorPicker()}
+            </Form.Item>
+
+            <Form.Item label="图标间距" name="iconPadding">
+              <InputNumber
+                min={0}
+                max={80}
+                step={1}
+                addonAfter="px"
+                disabled={readonly}
+                placeholder={t('common.inputMsg')}
+                style={{ width: '120px' }}
+              />
             </Form.Item>
           </>
         )}
@@ -1046,6 +1084,17 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
               />
             </Form.Item>
 
+            <Form.Item label="换算系数" name="conversionFactor">
+              <InputNumber
+                min={0}
+                max={100000}
+                step={1}
+                placeholder={t('common.inputMsg')}
+                disabled={readonly}
+                style={{ width: '120px' }}
+              />
+            </Form.Item>
+
             <Form.Item
               label={t('topology.nodeConfig.decimalPlaces')}
               name="decimalPlaces"
@@ -1054,7 +1103,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
                 min={0}
                 max={10}
                 step={1}
-                placeholder="2"
+                placeholder={t('common.inputMsg')}
                 disabled={readonly}
                 style={{ width: '120px' }}
               />
