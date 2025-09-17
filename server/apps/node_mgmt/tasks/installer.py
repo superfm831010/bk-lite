@@ -197,7 +197,7 @@ def install_collector(task_id):
                 # 如果是目录，递归设置目录内所有文件的执行权限
                 # 如果是文件，直接设置执行权限
                 exec_command_to_local(
-                    node_obj.node_id,
+                    node_obj.node_id, 
                     f"if [ -d '{executable_path}' ]; then find '{executable_path}' -type f -exec chmod +x {{}} \\; ; else chmod +x '{executable_path}'; fi"
                 )
             node_obj.status = "success"

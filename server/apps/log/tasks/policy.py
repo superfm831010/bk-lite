@@ -3,7 +3,7 @@ from celery.app import shared_task
 from datetime import datetime, timezone
 
 from apps.core.exceptions.base_app_exception import BaseAppException
-from apps.log.constants import KEYWORD, AGGREGATE, ALERT_STATUS_NEW
+from apps.log.constants import KEYWORD, AGGREGATE, ALERT_STATUS_NEW, WEB_URL
 from apps.log.models.policy import Policy, Alert, Event, EventRawData
 from apps.log.utils.query_log import VictoriaMetricsAPI
 from apps.log.utils.log_group import LogGroupQueryBuilder
@@ -664,13 +664,35 @@ class LogPolicyScan:
             logger.error(f"create events failed for policy {self.policy.id}: {e}")
             return []
 
+    def _format_notice_content(self, event_obj):
+        """格式化通知内容
+        Args:
+            event_obj: 事件对象
+        Returns:
+            tuple: (title, content) 格式化后的标题和内容
+        """
+        # 格式化标题
+        title = "【日志告警通知】"
+        url = f"{WEB_URL}/log/event/alert"
+        # 格式化内容
+        content_parts = [
+            f"时间：{event_obj.event_time}",
+            f"告警内容：{event_obj.content}",
+            f"策略名称：{self.policy.name}",
+            f'查看告警详情：<a href=f"{url}">点击查看详情</a>'
+        ]
+
+        content = "\n".join(content_parts)
+
+        return title, content
+
     def send_notice(self, event_obj):
         """发送通知"""
         if not self.policy.notice_users:
             return False, []
 
-        title = f"日志告警通知：{self.policy.name}"
-        content = f"告警内容：{event_obj.content}\n时间：{event_obj.event_time}\n来源：{event_obj.source_id}"
+        # 使用新的格式化方法
+        title, content = self._format_notice_content(event_obj)
 
         try:
             result = SystemMgmtUtils.send_msg_with_channel(
