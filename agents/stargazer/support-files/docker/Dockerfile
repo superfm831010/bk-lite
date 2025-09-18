@@ -10,8 +10,7 @@ WORKDIR /app
 ADD . .
 
 ADD support-files/supervisor/service.conf /etc/supervisor/conf.d/service.conf
-
-RUN pip install -r ./requirements/requirements-core.txt 
-RUN pip install -r ./requirements/requirements-extra.txt 
+RUN uv sync --all-groups
+RUN uv sync --all-extras
 
 CMD ["supervisord", "-n"]
