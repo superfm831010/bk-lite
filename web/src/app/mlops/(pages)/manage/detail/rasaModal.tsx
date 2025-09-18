@@ -50,15 +50,11 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
     if (visiable && formRef.current && formData) {
       formRef.current?.resetFields();
       if (formData?.name) {
-        formRef.current?.setFieldsValue({
-          name: formData?.name
-        });
+        formRef.current?.setFieldsValue({ name: formData?.name });
       }
 
       if (formData?.entity_type) {
-        formRef.current?.setFieldsValue({
-          entity_type: formData?.entity_type
-        });
+        formRef.current?.setFieldsValue({ entity_type: formData?.entity_type });
         onEntityTypeChange(formData?.entity_type);
       } else if (formData?.slot_type) {
         onSlotTypeChange(formData?.slot_type);
@@ -89,9 +85,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
           <Form.Item
             name='name'
             label={t(`common.name`)}
-            rules={[
-              { required: true, message: t('common.inputMsg') },
-            ]}
+            rules={[{ required: true, message: t('common.inputMsg') }]}
           >
             <Input
               placeholder={t(`common.inputMsg`)}
@@ -104,9 +98,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
               <Form.Item
                 name='entity_type'
                 label={t(`common.type`)}
-                rules={[
-                  { required: true, message: t('common.selectMsg') },
-                ]}
+                rules={[{ required: true, message: t('common.selectMsg') }]}
               >
                 <Select
                   placeholder={t(`common.selectMsg`)}
@@ -132,9 +124,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
               <Form.Item
                 name="slot_type"
                 label={t(`common.type`)}
-                rules={[
-                  { required: true, message: t(`common.selectMsg`) }
-                ]}
+                rules={[{ required: true, message: t(`common.selectMsg`) }]}
               >
                 <Select options={[
                   {
@@ -162,9 +152,7 @@ const RasaModal = forwardRef<ModalRef, RasaModalProps>(({ selectKey, folder_id, 
               <Form.Item
                 name={'is_apply'}
                 label={t(`datasets.slotApply`)}
-                rules={[
-                  { required: true, message: t(`common.selectMsg`) }
-                ]}
+                rules={[{ required: true, message: t(`common.selectMsg`) }]}
               >
                 <Switch onChange={onSlotPredictionChange} defaultChecked={false} />
               </Form.Item>

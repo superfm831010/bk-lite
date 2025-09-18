@@ -22,7 +22,7 @@ export const useRasaParamsToForm = () => {
     return (componentName: string, configData: ConfigData): FormData => {
       const componentConfig = RASA_CONFIG[componentName];
       if (!componentConfig) {
-        console.warn(`Unknown RASA component: ${componentName}`);
+        // console.warn(`Unknown RASA component: ${componentName}`);
         return {};
       }
 
@@ -186,6 +186,7 @@ export const useRasaParamsToForm = () => {
               <span className='font-mini text-[#666]'>{label}</span>
               <Switch
                 size="small"
+                className='!w-[32px]'
                 checked={Boolean(value)}
                 onChange={onChange}
               />
