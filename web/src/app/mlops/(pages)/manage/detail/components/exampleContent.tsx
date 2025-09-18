@@ -106,12 +106,10 @@ const ExampleContent = ({ menu, data, dataset, loading, handleAdd, handleEdit, h
 
   const filterTreeData = useCallback((data: any[], searchValue: string) => {
     if (!searchValue.trim()) return data;
-
     const searchTerm = searchValue.toLowerCase().trim();
 
     return data.filter((item: any) => {
       const itemName = item?.name?.toLowerCase() || '';
-
 
       return itemName.includes(searchTerm) ||
         searchTerm.split('').every(char => itemName.includes(char));

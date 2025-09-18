@@ -31,14 +31,22 @@ const getStatusText = (value: string, TrainText: Record<string, string>) => {
 const TrainTask = () => {
   const { t } = useTranslation();
   const { convertToLocalizedTime } = useLocalizedTime();
-  const { getAnomalyDatasetsList, getRasaDatasetsList } = useMlopsManageApi();
+  const { getAnomalyDatasetsList, getRasaDatasetsList, getLogClusteringList, getTimeSeriesPredictList } = useMlopsManageApi();
   const {
     getAnomalyTaskList,
     deleteAnomalyTrainTask,
     startAnomalyTrainTask,
     getRasaPipelines,
-    deleteRasaPipelines
+    deleteRasaPipelines,
+    getLogClusteringTaskList,
+    deleteLogClusteringTrainTask,
+    startLogClusteringTrainTask,
+    getTimeSeriesTaskList,
+    deleteTimeSeriesTrainTask,
+    startTimeSeriesTrainTask
   } = useMlopsTaskApi();
+
+  // 状态定义
   const modalRef = useRef<ModalRef>(null);
   const [tableData, setTableData] = useState<TrainJob[]>([]);
   const [datasetOptions, setDatasetOptions] = useState<Option[]>([]);
@@ -51,6 +59,66 @@ const TrainTask = () => {
     total: 0,
     pageSize: 10,
   });
+
+  // 数据集获取映射
+  const datasetApiMap: Record<string, () => Promise<DataSet[]>> = {
+    'anomaly': () => getAnomalyDatasetsList({}),
+    'rasa': () => getRasaDatasetsList({}),
+    'log_clustering': () => getLogClusteringList({}),
+    'timeseries_predict': () => getTimeSeriesPredictList({})
+  };
+
+  // 任务获取映射
+  const taskApiMap: Record<string, (params: any) => Promise<any>> = {
+    'anomaly': (params) => getAnomalyTaskList(params),
+    'rasa': () => getRasaPipelines({}),
+    'log_clustering': (params) => getLogClusteringTaskList(params),
+    'timeseries_predict': (params) => getTimeSeriesTaskList(params)
+  };
+
+  // 训练开始操作映射
+  const trainStartApiMap: Record<string, (id: any) => Promise<void>> = {
+    'anomaly': startAnomalyTrainTask,
+    'log_clustering': startLogClusteringTrainTask,
+    'timeseries_predict': startTimeSeriesTrainTask
+  };
+
+  // 删除操作映射
+  const deleteApiMap: Record<string, (id: string) => Promise<void>> = {
+    'anomaly': deleteAnomalyTrainTask,
+    'rasa': deleteRasaPipelines,
+    'log_clustering': deleteLogClusteringTrainTask,
+    'timeseries_predict': deleteTimeSeriesTrainTask
+  };
+
+  // 抽屉操作映射
+  const drawerSupportMap: Record<string, boolean> = {
+    'anomaly': true,
+    'rasa': false,
+    'log_clustering': false,
+    'timeseries_predict': false
+  };
+
+  // 数据处理映射
+  const dataProcessorMap: Record<string, (data: any) => { tableData: TrainJob[], total: number }> = {
+    'anomaly': (data) => processAnomalyLikeData(data),
+    'rasa': (data) => {
+      const _data = data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        dataset_count: item?.dataset_count,
+        dataset_nameas: item?.dataset_names,
+        datasets: item.datasets,
+        creator: item?.created_by,
+        created_at: item?.created_at,
+        config: item?.config,
+        datasets_detail: item?.datasets_detail
+      }));
+      return { tableData: _data, total: data?.length || 0 };
+    },
+    'log_clustering': (data) => processAnomalyLikeData(data),
+    'timeseries_predict': (data) => processAnomalyLikeData(data)
+  };
 
   const treeData: TreeDataNode[] = [
     {
@@ -65,7 +133,15 @@ const TrainTask = () => {
         {
           title: t(`datasets.rasa`),
           key: 'rasa'
-        }
+        },
+        {
+          title: t(`datasets.timeseriesPredict`),
+          key: 'timeseries_predict',
+        },
+        {
+          title: t(`datasets.logClustering`),
+          key: 'log_clustering',
+        },
       ]
     }
   ];
@@ -217,49 +293,38 @@ const TrainTask = () => {
     getTasks();
   }, [pagination.current, pagination.pageSize, selectedKeys]);
 
+  const processAnomalyLikeData = (data: any) => {
+    const { items, count } = data;
+    const _data = items?.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      train_data_id: item.train_data_id,
+      val_data_id: item.val_data_id,
+      test_data_id: item.test_data_id,
+      created_at: item.created_at,
+      creator: item?.created_by,
+      status: item?.status,
+      max_evals: item.max_evals,
+      algorithm: item.algorithm,
+      hyperopt_config: item.hyperopt_config
+    })) || [];
+    return { tableData: _data, total: count || 1 };
+  };
+
   const getTasks = async (name = '') => {
     const [activeTab] = selectedKeys;
     if (!activeTab) return;
+
     setLoading(true);
     try {
-      if (activeTab === 'anomaly') {
-        const { items, count } = await fetchTaskList(name, pagination.current, pagination.pageSize);
-        const _data =
-          items?.map((item: any) => ({
-            id: item.id,
-            name: item.name,
-            train_data_id: item.train_data_id,
-            val_data_id: item.val_data_id,
-            test_data_id: item.test_data_id,
-            created_at: item.created_at,
-            creator: item?.created_by,
-            status: item?.status,
-            max_evals: item.max_evals,
-            algorithm: item.algorithm,
-            hyperopt_config: item.hyperopt_config
-          })) || [];
-        setTableData(_data as TrainJob[]);
+      const data = await fetchTaskList(name, pagination.current, pagination.pageSize);
+
+      if (data && dataProcessorMap[activeTab]) {
+        const { tableData, total } = dataProcessorMap[activeTab](data);
+        setTableData(tableData as TrainJob[]);
         setPagination(prev => ({
           ...prev,
-          total: count || 1,
-        }));
-      } else if (activeTab === 'rasa') {
-        const data = await fetchTaskList();
-        const _data = data.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          dataset_count: item?.dataset_count,
-          dataset_nameas: item?.dataset_names,
-          datasets: item.datasets,
-          creator: item?.created_by,
-          created_at: item?.created_at,
-          config: item?.config,
-          datasets_detail: item?.datasets_detail
-        }))
-        setTableData(_data);
-        setPagination(prev => ({
-          ...prev,
-          total: data?.length || 0,
+          total: total,
         }));
       }
     } catch (e) {
@@ -271,49 +336,46 @@ const TrainTask = () => {
 
   const getDatasetList = async () => {
     const [activeTab] = selectedKeys;
-    if (!activeTab) return;
-    if (activeTab === 'anomaly') {
-      const data = await getAnomalyDatasetsList({});
-      const items = data.map((item: DataSet) => {
-        return {
-          value: item.id,
-          label: item.name
-        }
-      }) || [];
+    if (!activeTab || !datasetApiMap[activeTab]) return;
+
+    try {
+      const data = await datasetApiMap[activeTab]();
+      const items = data.map((item: DataSet) => ({
+        value: item.id,
+        label: item.name
+      })) || [];
       setDatasetOptions(items);
-    } else if (activeTab === 'rasa') {
-      const data = await getRasaDatasetsList({});
-      const items = data.map((item: DataSet) => {
-        return {
-          value: item.id,
-          label: item.name
-        }
-      }) || [];
-      setDatasetOptions(items);
+    } catch (error) {
+      console.error('Failed to get dataset list:', error);
     }
   };
 
   const fetchTaskList = useCallback(async (name: string = '', page: number = 1, pageSize: number = 10) => {
     const [activeTab] = selectedKeys;
-    if (activeTab === 'anomaly') {
-      const { count, items } = await getAnomalyTaskList({
-        name,
-        page,
-        page_size: pageSize
-      });
-      return {
-        items,
-        count
+    if (!activeTab || !taskApiMap[activeTab]) return { items: [], count: 0 };
+
+    try {
+      if (activeTab === 'rasa') {
+        // RASA 特殊处理，不需要分页参数
+        return await taskApiMap[activeTab]({});
+      } else {
+        // 其他类型需要分页参数
+        const result = await taskApiMap[activeTab]({
+          name,
+          page,
+          page_size: pageSize
+        });
+        return result;
       }
-    } else if (activeTab === 'rasa') {
-      const data = await getRasaPipelines({});
-      return data;
+    } catch (error) {
+      console.error(error);
+      return { items: [], count: 0 };
     }
-  }, [getAnomalyTaskList]);
+  }, [selectedKeys, taskApiMap]);
 
   const openDrawer = (record: any) => {
-    const [key] = selectedKeys;
-    if (key === 'anomaly') {
+    const [activeTab] = selectedKeys;
+    if (drawerSupportMap[activeTab]) {
       setSelectTrain(record?.id);
       setDrawOpen(true);
     }
@@ -341,7 +403,13 @@ const TrainTask = () => {
 
   const onTrainStart = async (record: TrainJob) => {
     try {
-      await startAnomalyTrainTask(record.id);
+      const [activeTab] = selectedKeys;
+      if (!activeTab || !trainStartApiMap[activeTab]) {
+        message.error(t('traintask.trainNotSupported'));
+        return;
+      }
+
+      await trainStartApiMap[activeTab](record.id);
       message.success(t(`traintask.trainStartSucess`));
     } catch (e) {
       console.log(e);
@@ -350,7 +418,6 @@ const TrainTask = () => {
       getTasks();
     }
   };
-
 
   const handleChange = (value: any) => {
     setPagination(value);
@@ -361,17 +428,19 @@ const TrainTask = () => {
   };
 
   const onDelete = async (record: TrainJob) => {
-    const [key] = selectedKeys;
+    const [activeTab] = selectedKeys;
+    if (!activeTab || !deleteApiMap[activeTab]) {
+      message.error(t('common.deleteNotSupported'));
+      return;
+    }
+
     try {
-      if (key === 'anomaly') {
-        await deleteAnomalyTrainTask(record.id as string);
-      } else if (key === 'rasa') {
-        await deleteRasaPipelines(record.id as string);
-      }
+      await deleteApiMap[activeTab](record.id as string);
+      message.success(t('common.delSuccess'));
     } catch (e) {
       console.log(e);
+      message.error(t('common.delFailed'));
     } finally {
-      message.success(t('common.delSuccess'));
       getTasks();
     }
   };

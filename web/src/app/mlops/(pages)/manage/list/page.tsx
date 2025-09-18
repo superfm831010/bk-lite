@@ -23,10 +23,10 @@ const { confirm } = Modal;
 const DatasetManagePage = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { 
-    deleteAnomalyDatasets, 
-    deleteRasaDatasets, 
-    getAnomalyDatasetsList, 
+  const {
+    deleteAnomalyDatasets,
+    deleteRasaDatasets,
+    getAnomalyDatasetsList,
     getRasaDatasetsList,
     getLogClusteringList,
     getTimeSeriesPredictList,
@@ -59,13 +59,13 @@ const DatasetManagePage = () => {
           key: 'rasa',
         },
         {
+          title: t(`datasets.timeseriesPredict`),
+          key: 'timeseries_predict',
+        },
+        {
           title: t(`datasets.logClustering`),
           key: 'log_clustering',
         },
-        {
-          title: t(`datasets.timeseriesPredict`),
-          key: 'timeseries_predict',
-        }
       ]
     },
   ];
@@ -81,15 +81,15 @@ const DatasetManagePage = () => {
   const handleAddMap: Record<string, any> = {
     'anomaly': getAnomalyDatasetsList,
     'rasa': getRasaDatasetsList,
-    'log_clustering': getLogClusteringList, // 请求方法留空
-    'timeseries_predict': getTimeSeriesPredictList, // 请求方法留空
+    'log_clustering': getLogClusteringList,
+    'timeseries_predict': getTimeSeriesPredictList,
   };
 
   const handleDelMap: Record<string, any> = {
     'anomaly': deleteAnomalyDatasets,
     'rasa': deleteRasaDatasets,
-    'log_clustering': deleteLogClustering, // 请求方法留空
-    'timeseries_predict': deleteTimeSeriesPredict, // 请求方法留空
+    'log_clustering': deleteLogClustering,
+    'timeseries_predict': deleteTimeSeriesPredict,
   };
 
 
@@ -165,30 +165,17 @@ const DatasetManagePage = () => {
       <Menu onClick={(e) => e.domEvent.preventDefault()}>
         <Menu.Item
           className="!p-0"
-          onClick={() =>
-            handleOpenModal({ title: 'editform', type: 'edit', form: item })
-          }
+          onClick={() => handleOpenModal({ title: 'editform', type: 'edit', form: item })}
         >
-          <PermissionWrapper
-            requiredPermissions={['Edit']}
-            className="!block"
-          >
+          <PermissionWrapper requiredPermissions={['Edit']} className="!block" >
             <Button type="text" className="w-full">
               {t(`common.edit`)}
             </Button>
           </PermissionWrapper>
         </Menu.Item>
         {item?.name !== "default" && (
-          <Menu.Item
-            className="!p-0"
-            onClick={() =>
-              handleDelete(item.id)
-            }
-          >
-            <PermissionWrapper
-              requiredPermissions={['Delete']}
-              className="!block"
-            >
+          <Menu.Item className="!p-0" onClick={() => handleDelete(item.id)}>
+            <PermissionWrapper requiredPermissions={['Delete']} className="!block" >
               <Button type="text" className="w-full">
                 {t(`common.delete`)}
               </Button>
@@ -199,9 +186,7 @@ const DatasetManagePage = () => {
     )
   };
 
-  const topSection = (
-    <TopSection title={t('datasets.datasets')} content={t('traintask.description')} />
-  );
+  const topSection = (<TopSection title={t('datasets.datasets')} content={t('traintask.description')} />);
 
   const leftSection = (
     <div className='w-full'>

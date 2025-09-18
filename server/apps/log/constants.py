@@ -44,3 +44,6 @@ ALERT_LEVEL_CRITICAL = "critical"
 NOTICE_TYPE_EMAIL = "email"
 NOTICE_TYPE_SMS = "sms"
 NOTICE_TYPE_WEBHOOK = "webhook"
+
+# WEB URL
+WEB_URL = os.getenv("WEB_URL", "http://localhost:8000")

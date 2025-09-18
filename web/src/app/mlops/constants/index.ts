@@ -33,7 +33,7 @@ const TRAIN_TEXT = {
   failed: 'failed'
 };
 
-const ALGORITHMS_PARAMS: Record<string, AlgorithmParam[]> = {
+const ANOMALY_ALGORITHMS_PARAMS: Record<string, AlgorithmParam[]> = {
   'RandomForest': [
     { name: 'n_estimators', type: 'randint', default: [100, 500] },
     { name: 'max_depth', type: 'randint', default: [10, 50] },
@@ -68,10 +68,10 @@ const ALGORITHMS_PARAMS: Record<string, AlgorithmParam[]> = {
         { label: 'none', value: 'none' },
       ]
     },
-  ]
+  ],
 };
 
-const ALGORITHMS_TYPE: Record<string, any> = {
+const ANOMALY_ALGORITHMS_TYPE: Record<string, any> = {
   'RandomForest': {
     n_estimators: 'randint',
     max_depth: 'randint',
@@ -81,6 +81,42 @@ const ALGORITHMS_TYPE: Record<string, any> = {
     bootstrap: 'choice',
     class_weight: 'choice'
   }
+};
+
+const LOG_CLUSTERING_ALGORITHMS_PARAMS: Record<string, AlgorithmParam[]> = {
+  'KMeans': [],
+  'DBSCAN': [],
+  'AgglomerativeClustering': [],
+  'Drain': [],
+  'LogCluster': [],
+};
+
+const LOG_CLUSTERING_ALGORITHMS_TYPE: Record<string, any> = {
+  'KMeans': {},
+  'DBSCAN': {},
+  'AgglomerativeClustering': {},
+  'Drain': {},
+  'LogCluster': {},
+};
+
+const TIMESERIES_PREDICT_ALGORITHMS_PARAMS: Record<string, AlgorithmParam[]> = {
+  'Prophet': []
+};
+
+const TIMESERIES_PREDICT_ALGORITHMS_TYPE: Record<string, any> = {
+  'Prophet': {}
+};
+
+const ALGORITHMS_PARAMS: Record<string, AlgorithmParam[]> = {
+  ...ANOMALY_ALGORITHMS_PARAMS,
+  ...LOG_CLUSTERING_ALGORITHMS_PARAMS,
+  ...TIMESERIES_PREDICT_ALGORITHMS_PARAMS
+};
+
+const ALGORITHMS_TYPE: Record<string, any> = {
+  ...ANOMALY_ALGORITHMS_TYPE,
+  ...LOG_CLUSTERING_ALGORITHMS_TYPE,
+  ...TIMESERIES_PREDICT_ALGORITHMS_TYPE
 };
 
 type TRAIN_STATUS = 'not_started' | 'in_progress' | 'completed' | 'failed';
@@ -402,5 +438,8 @@ export {
   RASA_CONFIG,
   PIPELINE_OPTIONS,
   POLICIES_OPTIONS,
-  PIPELINE_TYPE_OPTIONS
+  PIPELINE_TYPE_OPTIONS,
+  ANOMALY_ALGORITHMS_PARAMS,
+  LOG_CLUSTERING_ALGORITHMS_PARAMS,
+  TIMESERIES_PREDICT_ALGORITHMS_PARAMS
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState, useMemo, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -267,12 +267,16 @@ const KnowledgeAppendNode = (props: any) => (
   <BaseNode {...props} icon={nodeConfig.knowledge.icon} color={nodeConfig.knowledge.color} hasInput={true} hasOutput={true} />
 );
 
+interface ChatflowEditorRef {
+  clearCanvas: () => void;
+}
+
 interface ChatflowEditorProps {
   onSave?: (nodes: Node[], edges: Edge[]) => void;
   initialData?: { nodes: Node[], edges: Edge[] } | null;
 }
 
-const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) => {
+const ChatflowEditor = forwardRef<ChatflowEditorRef, ChatflowEditorProps>(({ onSave, initialData }, ref) => {
   const { t } = useTranslation();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
@@ -290,53 +294,11 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
     initialData?.edges && Array.isArray(initialData.edges) ? initialData.edges : []
   );
 
-  // 添加一个 ref 来跟踪是否正在同步外部数据，避免循环调用
-  const isSyncingExternalData = useRef(false);
-  
-  // 监听 initialData 变化，当外部数据更新时同步更新内部状态
-  useEffect(() => {
-    console.log('ChatflowEditor useEffect - initialData changed:', initialData);
-    
-    if (initialData && !isSyncingExternalData.current) {
-      isSyncingExternalData.current = true;
-      
-      // 安全地设置节点数据
-      const safeNodes = Array.isArray(initialData.nodes) ? initialData.nodes : [];
-      const safeEdges = Array.isArray(initialData.edges) ? initialData.edges : [];
-      
-      console.log('Setting nodes and edges:', { nodes: safeNodes.length, edges: safeEdges.length });
-      
-      // 只有当数据真的发生变化时才更新
-      setNodes(prev => {
-        const prevStr = JSON.stringify(prev.map(n => ({ id: n.id, position: n.position, data: n.data })));
-        const newStr = JSON.stringify(safeNodes.map(n => ({ id: n.id, position: n.position, data: n.data })));
-        return prevStr !== newStr ? safeNodes : prev;
-      });
-      
-      setEdges(prev => {
-        const prevStr = JSON.stringify(prev);
-        const newStr = JSON.stringify(safeEdges);
-        return prevStr !== newStr ? safeEdges : prev;
-      });
-      
-      // 重置同步标志
-      setTimeout(() => {
-        isSyncingExternalData.current = false;
-      }, 100);
-    }
-  }, [initialData]);
-
   // 当 nodes 或 edges 发生变化时，自动调用 onSave 同步数据
-  // 添加防抖和初始化标志，避免无限循环
   const [isInitialized, setIsInitialized] = useState(false);
   const lastSaveData = useRef<string>('');
   
   useEffect(() => {
-    // 如果正在同步外部数据，则不触发 onSave
-    if (isSyncingExternalData.current) {
-      return;
-    }
-    
     // 首次加载时标记为已初始化，但不触发保存
     if (!isInitialized) {
       setIsInitialized(true);
@@ -351,19 +313,41 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
         edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target }))
       });
       
-      if (currentData !== lastSaveData.current && (nodes.length > 0 || edges.length > 0)) {
+      // 无论数据是否为空都可以保存（包括清空操作）
+      if (currentData !== lastSaveData.current) {
         lastSaveData.current = currentData;
         
-        // 使用防抖延迟避免频繁调用
+        // 立即保存数据变化
         const timeoutId = setTimeout(() => {
-          console.log('ChatflowEditor: 保存数据变化', { nodes: nodes.length, edges: edges.length });
+          console.log('ChatflowEditor: 保存数据变化', { 
+            nodes: nodes.length, 
+            edges: edges.length,
+            actualNodes: nodes,
+            actualEdges: edges
+          });
           onSave(nodes, edges);
-        }, 500);
+        }, 100);
         
         return () => clearTimeout(timeoutId);
       }
     }
   }, [nodes, edges, onSave, isInitialized]);
+
+  // 清空画布的方法
+  const clearCanvas = useCallback(() => {
+    setNodes([]);
+    setEdges([]);
+    setSelectedNode(null);
+    setSelectedNodes([]);
+    setSelectedEdges([]);
+    setIsConfigDrawerVisible(false);
+    lastSaveData.current = JSON.stringify({ nodes: [], edges: [] });
+  }, [setNodes, setEdges]);
+
+  // 暴露清空方法给外部组件
+  useImperativeHandle(ref, () => ({
+    clearCanvas
+  }), [clearCanvas]);
 
   // 节点删除处理 - 提前声明
   const handleDeleteNode = useCallback((nodeId: string) => {
@@ -380,10 +364,8 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
 
   // 节点配置处理 - 提前声明
   const handleConfigNode = useCallback((nodeId: string) => {
-    console.log('点击节点配置:', nodeId); // 添加调试日志
     const node = nodes.find(n => n.id === nodeId);
     if (node && isChatflowNode(node)) {
-      console.log('找到节点:', node); // 添加调试日志
       setSelectedNode(node);
       setIsConfigDrawerVisible(true);
     } else {
@@ -534,6 +516,7 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  // Handle drag and drop operations
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
@@ -546,27 +529,26 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
           return;
         }
 
-        // 计算鼠标相对于 ReactFlow 容器的精确位置
+        // Calculate mouse position relative to ReactFlow container
         const mouseX = event.clientX - reactFlowBounds.left;
         const mouseY = event.clientY - reactFlowBounds.top;
 
-        // 检查鼠标是否在画布范围内
+        // Check if mouse is within canvas bounds
         if (mouseX < 0 || mouseY < 0 || mouseX > reactFlowBounds.width || mouseY > reactFlowBounds.height) {
-          // 鼠标超出画布范围，取消拖放
           return;
         }
 
-        // 直接将屏幕坐标转换为流程图坐标系，使用ReactFlow的内置方法
+        // Convert screen coordinates to flow position using ReactFlow's built-in method
         const flowPosition = reactFlowInstance.screenToFlowPosition({
           x: event.clientX,
           y: event.clientY,
         });
 
-        // 节点尺寸（用于调整放置位置，让节点中心对齐鼠标）
+        // Node dimensions for positioning adjustment
         const nodeWidth = 160;
         const nodeHeight = 80;
         
-        // 调整位置，让节点中心对齐鼠标位置
+        // Adjust position to center node on mouse position
         const adjustedPosition = {
           x: flowPosition.x - nodeWidth / 2,
           y: flowPosition.y - nodeHeight / 2,
@@ -580,6 +562,64 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
           }
         };
 
+        // Set default input/output parameters for all node types
+        const getDefaultConfig = (nodeType: string) => {
+          const baseConfig = {
+            inputParams: 'last_message',
+            outputParams: 'last_message'
+          };
+
+          // Add node-type specific default configurations
+          switch (nodeType) {
+            case 'celery':
+              return {
+                ...baseConfig,
+                frequency: 'daily',
+                time: null,
+                message: ''
+              };
+            case 'http':
+              return {
+                ...baseConfig,
+                method: 'GET',
+                url: '',
+                params: [],
+                headers: [],
+                requestBody: '',
+                timeout: 30,
+                outputMode: 'once'
+              };
+            case 'agents':
+              return {
+                ...baseConfig,
+                agent: null,
+                agentName: ''
+              };
+            case 'condition':
+              return {
+                ...baseConfig,
+                conditionField: '',
+                conditionOperator: 'equals',
+                conditionValue: ''
+              };
+            case 'prompt':
+              return {
+                ...baseConfig,
+                prompt: ''
+              };
+            case 'knowledge':
+              return {
+                ...baseConfig,
+                uploadedFiles: []
+              };
+            case 'restful':
+            case 'openai':
+              return baseConfig;
+            default:
+              return baseConfig;
+          }
+        };
+
         const newNode: ChatflowNode = {
           id: `${type}-${Date.now()}`,
           type,
@@ -587,20 +627,31 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
           data: { 
             label: getNodeLabel(type),
             type: type as ChatflowNodeData['type'],
-            config: {},
+            config: getDefaultConfig(type),
             description: ''
           },
         };
 
-        setNodes((nds) => nds.concat(newNode));
-        // message.success(`${t('chatflow.messages.nodeAdded')} ${getNodeLabel(type)}`);
+        
+        setNodes((nds) => {
+          const updatedNodes = nds.concat(newNode);
+          
+          // Immediately trigger save after node addition
+          setTimeout(() => {
+            if (onSave) {
+              onSave(updatedNodes, edges);
+            }
+          }, 50);
+          
+          return updatedNodes;
+        });
         
       } catch (error) {
-        console.error('拖拽放置错误:', error);
+        console.error('Drag and drop error:', error);
         message.error(t('chatflow.messages.dragFailed'));
       }
     },
-    [reactFlowInstance, setNodes, t]
+    [reactFlowInstance, setNodes, edges, onSave, t]
   );
 
   // 保存配置
@@ -686,9 +737,11 @@ const ChatflowEditor: React.FC<ChatflowEditorProps> = ({ onSave, initialData }) 
       />
     </div>
   );
-};
+});
+
+ChatflowEditor.displayName = 'ChatflowEditor';
 
 export default ChatflowEditor;
 
 // 导出类型映射函数供其他组件使用
-export type { ChatflowNodeData };
+export type { ChatflowNodeData, ChatflowEditorRef };
