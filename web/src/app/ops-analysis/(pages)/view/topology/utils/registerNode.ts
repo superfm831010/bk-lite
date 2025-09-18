@@ -20,6 +20,58 @@ const NODE_TYPE_MAP = {
 
 const DEFAULT_ICON_PATH = '/app/assets/assetModelIcon/cc-default_默认.svg';
 
+const getLabelAttrsByDirection = (direction: 'top' | 'bottom' | 'left' | 'right' = 'bottom') => {
+  switch (direction) {
+    case 'top':
+      return {
+        textAnchor: 'middle',
+        textVerticalAnchor: 'bottom',
+        refX: '50%',
+        refY: '0%',
+        refY2: '-8',
+        textWrap: { width: '90%', ellipsis: true }
+      };
+    case 'bottom':
+      return {
+        textAnchor: 'middle',
+        textVerticalAnchor: 'top',
+        refX: '50%',
+        refY: '100%',
+        refY2: '8',
+        textWrap: { width: '90%', ellipsis: true }
+      };
+    case 'left':
+      return {
+        textAnchor: 'end',
+        textVerticalAnchor: 'middle',
+        refX: '0%',
+        refX2: '-5',
+        refY: '50%',
+        refY2: '1',
+        textWrap: { width: '60px', ellipsis: true }
+      };
+    case 'right':
+      return {
+        textAnchor: 'start',
+        textVerticalAnchor: 'middle',
+        refX: '100%',
+        refX2: '5',
+        refY: '50%',
+        refY2: '1',
+        textWrap: { width: '60px', ellipsis: true }
+      };
+    default:
+      return {
+        textAnchor: 'middle',
+        textVerticalAnchor: 'top',
+        refX: '50%',
+        refY: '100%',
+        refY2: '8',
+        textWrap: { width: '90%', ellipsis: true }
+      };
+  }
+};
+
 const registerIconNode = () => {
   const { ICON_NODE } = NODE_DEFAULTS;
 
@@ -239,8 +291,12 @@ const createIconNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData
   const logoUrl = getIconUrl(nodeConfig);
 
   const iconPadding = nodeConfig.styleConfig?.iconPadding || 0;
-  // 最小保持10%避免图标消失
   const iconSize = Math.max(10, 100 - iconPadding * 2);
+
+  const textDirection = nodeConfig.styleConfig?.textDirection || 'bottom';
+  const labelAttrs = getLabelAttrsByDirection(textDirection);
+
+  const hasName = !!(nodeConfig.name && nodeConfig.name.trim());
 
   return {
     ...baseNodeData,
@@ -264,14 +320,14 @@ const createIconNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData
       label: {
         fill: nodeConfig.styleConfig?.textColor || NODE_DEFAULTS.ICON_NODE.textColor,
         fontSize: nodeConfig.styleConfig?.fontSize || NODE_DEFAULTS.ICON_NODE.fontSize,
-        textWrap: false,
+        text: hasName ? nodeConfig.name : '',
+        display: hasName ? 'block' : 'none',
+        ...labelAttrs
       }
     },
     ports: createPortConfig()
   };
-};
-
-const createSingleValueNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
+}; const createSingleValueNode = (nodeConfig: TopologyNodeData, baseNodeData: BaseNodeData): CreatedNodeConfig => {
   const valueConfig = nodeConfig.valueConfig || {};
   const hasDataSource = !!(valueConfig.dataSource && (valueConfig.selectedFields?.length ?? 0) > 0);
   const hasName = !!(nodeConfig.name && nodeConfig.name.trim());
@@ -442,8 +498,12 @@ const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   const logoUrl = getIconUrl(nodeConfig);
 
   const iconPadding = nodeConfig.styleConfig?.iconPadding || 0;
-  // 最小保持10%避免图标消失
   const iconSize = Math.max(10, 100 - iconPadding * 2);
+
+  const textDirection = nodeConfig.styleConfig?.textDirection || 'bottom';
+  const labelAttrs = getLabelAttrsByDirection(textDirection);
+
+  const hasName = !!(nodeConfig.name && nodeConfig.name.trim());
 
   node.setAttrs({
     body: {
@@ -463,7 +523,9 @@ const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
     label: {
       fill: nodeConfig.styleConfig?.textColor || NODE_DEFAULTS.ICON_NODE.textColor,
       fontSize: nodeConfig.styleConfig?.fontSize || NODE_DEFAULTS.ICON_NODE.fontSize,
-      textWrap: false, 
+      text: hasName ? nodeConfig.name : '',
+      display: hasName ? 'block' : 'none',
+      ...labelAttrs
     }
   });
 
@@ -475,9 +537,7 @@ const updateIconNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
       node.prop('ports', createPortConfig());
     }
   }
-};
-
-const updateSingleValueNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
+}; const updateSingleValueNodeAttributes = (node: Node, nodeConfig: TopologyNodeData) => {
   const hasName = !!(nodeConfig.name && nodeConfig.name.trim());
 
   const nodeData = node.getData();
@@ -608,7 +668,6 @@ export const updateNodeAttributes = (node: Node, nodeConfig: TopologyNodeData): 
     node.setAttrByPath('label/text', nodeConfig.name);
   }
 
-  // 解决 X6 setData 数组合并问题：先删除 thresholdColors，再设置新值
   node.removeProp('data/styleConfig/thresholdColors');
 
   node.setData({

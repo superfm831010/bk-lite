@@ -85,6 +85,7 @@ export interface TopologyNodeData {
     fontWeight?: string | number;
     nameColor?: string;
     nameFontSize?: number;
+    textDirection?: 'top' | 'bottom' | 'left' | 'right';
     thresholdColors?: Array<{
       value: string;
       color: string;
