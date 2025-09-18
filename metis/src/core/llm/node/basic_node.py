@@ -20,6 +20,7 @@ class BasicNode:
     def get_llm_client(self, request: BasicLLMRequest, disable_stream=False) -> ChatOpenAI:
         llm = ChatOpenAI(model=request.model, base_url=request.openai_api_base,
                          disable_streaming=disable_stream,
+                         timeout=3000,
                          api_key=request.openai_api_key, temperature=request.temperature)
         if llm.extra_body is None:
             llm.extra_body = {}
