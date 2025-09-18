@@ -53,6 +53,7 @@ services:
       - FALKORDB_REQUIREPASS=${FALKORDB_PASSWORD}
       - FALKORDB_HOST=falkordb
       - FALKORDB_PORT=6379
+      - UV_OFFLINE=True
     healthcheck:
       test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", "http://127.0.0.1:8000/"]
       interval: 10s
