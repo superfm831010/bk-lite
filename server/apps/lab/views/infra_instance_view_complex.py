@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 基础设施实例视图 - MVP 简化版本
-专注核心功能：启动/停止容器，确保同技术栈网络互通
 """
 
 import logging
+from django.conf import settings
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 
 class InfraInstanceViewSet(viewsets.ModelViewSet):
     """
-    基础设施实例视图集 - MVP 版本
+    基础设施实例视图集
     
-    提供基础设施实例的增删改查功能，专注 Docker 容器管理
+    提供基础设施实例的增删改查功能
     """
     queryset = InfraInstance.objects.select_related('image').order_by('-created_at')
     serializer_class = InfraInstanceSerializer
@@ -84,18 +84,17 @@ class InfraInstanceViewSet(viewsets.ModelViewSet):
             docker_service = self.get_docker_service()
             result = docker_service.start_container(instance)
             
-            # 更新实例状态和端点
+            # 更新实例状态
             instance.status = result['status']
             if result.get('endpoint'):
                 instance.endpoint = result['endpoint']
             instance.save(update_fields=['status', 'endpoint', 'updated_at'])
             
             return Response({
-                'detail': '实例启动完成',
+                'detail': '实例启动命令已发送',
                 'status': instance.status,
                 'endpoint': instance.endpoint,
-                'message': result.get('message', ''),
-                'container_id': result.get('container_id')
+                'message': result.get('message', '启动中')
             })
             
         except Exception as e:
@@ -111,6 +110,40 @@ class InfraInstanceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
+    async def stop_container_async(self, instance: InfraInstance):
+        """异步停止容器"""
+        try:
+            # 获取容器编排器
+            orchestrator_type = self.get_orchestrator_type()
+            orchestrator_config = self.get_orchestrator_config()
+            orchestrator = ContainerOrchestratorFactory.create(
+                orchestrator_type, 
+                orchestrator_config
+            )
+            
+            # 停止容器
+            container_status = await orchestrator.stop_container(instance.name)
+            
+            # 更新实例状态
+            status_mapping = {
+                'running': 'running',
+                'starting': 'starting', 
+                'stopped': 'stopped',
+                'stopping': 'stopping',
+                'error': 'error'
+            }
+            
+            instance.status = status_mapping.get(container_status.status, 'error')
+            instance.save(update_fields=['status', 'updated_at'])
+            
+            return container_status
+            
+        except Exception as e:
+            logger.error(f"停止容器失败 {instance.name}: {e}")
+            instance.status = 'error'
+            instance.save(update_fields=['status', 'updated_at'])
+            raise
+        
     @action(detail=True, methods=['post'])
     def stop(self, request, pk=None):
         """停止基础设施实例"""
@@ -123,19 +156,17 @@ class InfraInstanceViewSet(viewsets.ModelViewSet):
             )
         
         try:
-            # 停止容器
-            docker_service = self.get_docker_service()
-            result = docker_service.stop_container(instance.name)
+            # 先设置状态为停止中
+            instance.status = 'stopping'
+            instance.save(update_fields=['status', 'updated_at'])
             
-            # 更新实例状态
-            instance.status = result['status']
-            instance.endpoint = None  # 清除端点信息
-            instance.save(update_fields=['status', 'endpoint', 'updated_at'])
+            # 停止容器
+            container_status = run_async_in_thread(self.stop_container_async(instance))
             
             return Response({
-                'detail': '实例停止完成',
+                'detail': '实例停止命令已发送',
                 'status': instance.status,
-                'message': result.get('message', '')
+                'message': container_status.message if container_status else '停止中，请稍后查看实例状态'
             })
             
         except Exception as e:
@@ -143,10 +174,30 @@ class InfraInstanceViewSet(viewsets.ModelViewSet):
             return Response(
                 {
                     'detail': '停止实例失败',
-                    'error': str(e)
+                    'error': str(e),
+                    'status': instance.status
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+    async def get_container_logs_async(self, instance: InfraInstance, lines: int = 100):
+        """异步获取容器日志"""
+        try:
+            # 获取容器编排器
+            orchestrator_type = self.get_orchestrator_type()
+            orchestrator_config = self.get_orchestrator_config()
+            orchestrator = ContainerOrchestratorFactory.create(
+                orchestrator_type, 
+                orchestrator_config
+            )
+            
+            # 获取日志
+            logs = await orchestrator.get_container_logs(instance.name, lines)
+            return logs
+            
+        except Exception as e:
+            logger.error(f"获取容器日志失败 {instance.name}: {e}")
+            return f"获取日志失败: {str(e)}"
         
     @action(detail=True, methods=['get'])
     def logs(self, request, pk=None):
@@ -155,8 +206,7 @@ class InfraInstanceViewSet(viewsets.ModelViewSet):
         lines = int(request.query_params.get('lines', 100))
         
         try:
-            docker_service = self.get_docker_service()
-            logs = docker_service.get_container_logs(instance.name, lines)
+            logs = run_async_in_thread(self.get_container_logs_async(instance, lines))
             
             return Response({
                 'instance_name': instance.name,
@@ -175,31 +225,62 @@ class InfraInstanceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
+    async def sync_container_status_async(self, instance: InfraInstance):
+        """异步同步容器状态"""
+        try:
+            # 获取容器编排器
+            orchestrator_type = self.get_orchestrator_type()
+            orchestrator_config = self.get_orchestrator_config()
+            orchestrator = ContainerOrchestratorFactory.create(
+                orchestrator_type, 
+                orchestrator_config
+            )
+            
+            # 获取容器状态
+            container_status = await orchestrator.get_container_status(instance.name)
+            
+            # 更新实例状态
+            status_mapping = {
+                'running': 'running',
+                'starting': 'starting', 
+                'stopped': 'stopped',
+                'stopping': 'stopping',
+                'error': 'error'
+            }
+            
+            old_status = instance.status
+            instance.status = status_mapping.get(container_status.status, 'error')
+            if container_status.endpoint:
+                instance.endpoint = container_status.endpoint
+                
+            instance.save(update_fields=['status', 'endpoint', 'updated_at'])
+            
+            return {
+                'old_status': old_status,
+                'new_status': instance.status,
+                'endpoint': instance.endpoint,
+                'message': container_status.message
+            }
+            
+        except Exception as e:
+            logger.error(f"同步容器状态失败 {instance.name}: {e}")
+            raise
+        
     @action(detail=True, methods=['post'])
     def sync_status(self, request, pk=None):
         """同步容器状态"""
         instance = self.get_object()
         
         try:
-            docker_service = self.get_docker_service()
-            result = docker_service.get_container_status(instance.name)
-            
-            old_status = instance.status
-            instance.status = result['status']
-            if result.get('endpoint'):
-                instance.endpoint = result['endpoint']
-            elif result['status'] == 'stopped':
-                instance.endpoint = None
-                
-            instance.save(update_fields=['status', 'endpoint', 'updated_at'])
+            result = run_async_in_thread(self.sync_container_status_async(instance))
             
             return Response({
                 'detail': '状态同步完成',
                 'instance_name': instance.name,
-                'old_status': old_status,
-                'new_status': instance.status,
-                'endpoint': instance.endpoint,
-                'message': result.get('message', '')
+                'old_status': result['old_status'],
+                'new_status': result['new_status'],
+                'endpoint': result['endpoint'],
+                'message': result['message']
             })
             
         except Exception as e:
