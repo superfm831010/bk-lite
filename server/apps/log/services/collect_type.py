@@ -173,76 +173,6 @@ class CollectTypeService:
             instance.collectinstanceorganization_set.create(organization=org)
 
     @staticmethod
-    def search_instance(collect_type_id, name, page, page_size, current_team, accessible_instance_ids=None):
-        """
-        查询采集实例列表
-
-        Args:
-            collect_type_id: 采集类型ID，可选
-            name: 实例名称，可选，支持模糊查询
-            page: 页码
-            page_size: 每页数量
-            current_team: 当前组织ID，必填
-            accessible_instance_ids: 有权限访问的实例ID列表，可选，用于权限过滤
-        """
-        queryset = CollectInstance.objects.select_related("collect_type")
-
-        # 根据当前组织过滤采集实例（必填条件）
-        queryset = queryset.filter(
-            collectinstanceorganization__organization=current_team
-        )
-
-        if collect_type_id:
-            queryset = queryset.filter(collect_type_id=collect_type_id)
-        if name:
-            queryset = queryset.filter(name__icontains=name)
-
-        # 如果提供了权限过滤的实例ID列表，则进一步过滤
-        if accessible_instance_ids is not None:
-            queryset = queryset.filter(id__in=accessible_instance_ids)
-
-        # 计算总数
-        total_count = queryset.count()
-        # 计算分页
-        start = (page - 1) * page_size
-        end = page * page_size
-        # 获取当前页的数据
-        data_list = queryset.values("id", "name", "node_id", "collect_type_id", "collect_type__name", "collect_type__collector")[start:end]
-
-        instance_ids = [item["id"] for item in data_list]
-
-        # 补充组织与配置
-        org_map = defaultdict(list)
-        org_objs = CollectInstanceOrganization.objects.filter(
-            collect_instance_id__in=instance_ids
-        ).values_list("collect_instance_id", "organization")
-        for instance_id, organization in org_objs:
-            org_map[instance_id].append(organization)
-
-        conf_map = defaultdict(list)
-        conf_objs = CollectConfig.objects.filter(
-            collect_instance_id__in=instance_ids
-        ).values_list("collect_instance", "id")
-        for instance_id, config_id in conf_objs:
-            conf_map[instance_id].append(config_id)
-
-        nodes = NodeMgmt().node_list(dict(page_size=-1))
-        node_map = {node["id"]: node["name"] for node in nodes["nodes"]}
-
-        items = []
-        for info in data_list:
-            info.update(
-                organization=org_map.get(info["id"]),
-                config_id=conf_map.get(info["id"]),
-                node_name=node_map.get(info["node_id"], ""),
-            )
-            items.append(info)
-
-        data = {"count": total_count, "items": items}
-
-        return data
-
-    @staticmethod
     def search_instance_with_permission(collect_type_id, name, page, page_size, queryset):
         """
         使用权限过滤后的查询集查询采集实例列表（参考监控模块实现）
@@ -294,7 +224,7 @@ class CollectTypeService:
         for instance_id, config_id in conf_objs:
             conf_map[instance_id].append(config_id)
 
-        # 获取节点信息
+        # 获取节点信息(只补充节点名称，可以不用鉴权)
         nodes = NodeMgmt().node_list(dict(page_size=-1))
         node_map = {node["id"]: node["name"] for node in nodes["nodes"]}
 

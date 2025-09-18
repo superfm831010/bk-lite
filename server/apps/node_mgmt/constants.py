@@ -50,3 +50,7 @@ CACHE_TIMEOUT = 60 * 5  # 5分钟
 
 # 控制器默认更新时间
 DEFAULT_UPDATE_INTERVAL = 30    # 30秒
+
+# 权限相关常量
+DEFAULT_PERMISSION = ['View', 'Operate']
+NODE_MODULE = "node"
