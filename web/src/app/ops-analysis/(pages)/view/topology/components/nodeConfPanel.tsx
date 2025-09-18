@@ -259,6 +259,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
       defaultValues.fontSize = iconDefaults.fontSize;
       defaultValues.textColor = iconDefaults.textColor;
       defaultValues.iconPadding = 4;
+      defaultValues.textDirection = 'bottom';
     }
 
     setSelectedIcon('cc-host');
@@ -301,6 +302,7 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         shapeType: styleConfig.shapeType,
         nameFontSize: styleConfig.nameFontSize,
         nameColor: styleConfig.nameColor,
+        textDirection: styleConfig.textDirection ,
         unit: editingNodeData.unit,
         conversionFactor: editingNodeData.conversionFactor,
         decimalPlaces: editingNodeData.decimalPlaces,
@@ -956,6 +958,19 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
         {nodeType === 'icon' && (
           <>
             <Form.Item
+              label="文字位置"
+              name="textDirection"
+              initialValue="bottom"
+            >
+              <Select placeholder="请选择文字位置" disabled={readonly}>
+                <Select.Option value="top">上方</Select.Option>
+                <Select.Option value="bottom">下方</Select.Option>
+                <Select.Option value="left">左侧</Select.Option>
+                <Select.Option value="right">右侧</Select.Option>
+              </Select>
+            </Form.Item>
+
+            <Form.Item
               label={t('topology.nodeConfig.fontSize')}
               name="fontSize"
             >
@@ -1062,15 +1077,9 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
           {t('topology.nodeConfig.basicSettings')}
         </div>
 
-        <Form.Item
-          label={t('topology.nodeConfig.name')}
-          name="name"
-          rules={
-            nodeType === 'icon'
-              ? [{ required: true, message: t('common.inputMsg') }]
-              : undefined
-          }
-        >
+        {nodeType === 'icon' && renderLogoSelector}
+
+        <Form.Item label={t('topology.nodeConfig.name')} name="name">
           <Input placeholder={t('common.inputMsg')} disabled={readonly} />
         </Form.Item>
 
@@ -1127,8 +1136,6 @@ const NodeConfPanel: React.FC<NodeConfPanelProps> = ({
             </Select>
           </Form.Item>
         )}
-
-        {nodeType === 'icon' && renderLogoSelector}
       </>
     );
   }, [nodeType, readonly, renderLogoSelector, t]);

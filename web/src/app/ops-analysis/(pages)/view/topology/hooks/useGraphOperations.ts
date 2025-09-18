@@ -1164,6 +1164,7 @@ export const useGraphOperations = (
           shapeType: values.shapeType !== undefined ? values.shapeType : styleConfig?.shapeType,
           nameColor: values.nameColor !== undefined ? values.nameColor : styleConfig?.nameColor,
           nameFontSize: values.nameFontSize !== undefined ? values.nameFontSize : styleConfig?.nameFontSize,
+          textDirection: values.textDirection !== undefined ? values.textDirection : styleConfig?.textDirection,
           thresholdColors: values.thresholdColors !== undefined ? values.thresholdColors : styleConfig?.thresholdColors,
         },
       };
